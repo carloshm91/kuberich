@@ -24,6 +24,8 @@ DISCONNECTED_STATUS = "Disconnected · No resource data"
 class HelpScreen(ModalScreen[None]):
     """Scrollable help keeps its close control accessible in small terminals."""
 
+    AUTO_FOCUS = "#help-scroll"
+
     def compose(self) -> ComposeResult:
         with Vertical(id="help-dialog"):
             yield Static("Keyboard help", id="help-title", markup=False)
@@ -33,6 +35,7 @@ class HelpScreen(ModalScreen[None]):
                         "/                 Focus filter\n"
                         ":                 Focus command\n"
                         "? or F1           Open help\n"
+                        "PageUp / PageDown Scroll help\n"
                         "Tab / Shift+Tab   Move focus\n"
                         "Escape            Back / leave input\n"
                         "Escape in table   Clear active filter\n"

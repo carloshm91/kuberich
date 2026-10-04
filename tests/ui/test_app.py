@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 from rich.text import Text
+from textual.containers import VerticalScroll
 from textual.events import Paste
 from textual.widgets import Static
 
@@ -93,6 +94,17 @@ async def test_help_close_button_is_visible_and_clickable(size: tuple[int, int])
     app = make_app()
     async with app.run_test(size=size) as pilot:
         await pilot.press("question_mark")
+        await pilot.pause()
+        scroll = app.screen.query_one("#help-scroll", VerticalScroll)
+        assert app.focused is scroll
+        if size == (40, 12):
+            assert scroll.max_scroll_y > 0
+            await pilot.press("pagedown")
+            await pilot.pause()
+            assert scroll.scroll_y > 0
+            await pilot.press("home")
+            await pilot.pause()
+            assert scroll.scroll_y == 0
         close = app.screen.query_one("#close-help")
         assert close.region.bottom <= size[1] and close.region.right <= size[0]
         assert await pilot.click("#close-help")

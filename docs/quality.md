@@ -150,6 +150,14 @@ job retains actual SVGs and terminal restoration evidence; SSH/tmux and cluster
 qualification remain future work. The README must
 never show an unmeasured coverage badge or imply that planned checks already run.
 
+The PTY harness retains a shell-like session owner while the actual CLI process
+runs. It records all terminal attributes immediately before/after that process,
+using a separate completion pipe, before the session owner exits and macOS
+[revokes access to the terminal](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/kern_exit.c#L2093).
+The parent verifies both against the original PTY
+mode and checks terminal control restoration in the actual output. Timeouts
+terminate/kill the owned process group and close every descriptor.
+
 ## Sources
 
 - [Coverage configuration](https://coverage.readthedocs.io/en/latest/config.html)

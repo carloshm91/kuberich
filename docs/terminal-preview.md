@@ -19,6 +19,7 @@ resources, details, logs, shell and resource commands are upcoming tasks.
 | `Enter` in the filter | Keep the filter text and return to the table |
 | `Enter` in the command | Submit `help` or `quit`; aliases `?`, `q` and `exit` also work |
 | `?` outside an input, or F1 anywhere | Open scrollable keyboard help |
+| PageUp/PageDown, Home/End in help | Scroll its body using the keyboard |
 | `Esc` in help | Close help and restore the previous focus |
 | `Esc` in an input | Cancel command text and return to the table; retain filter text |
 | `Esc` in the table | Clear the filter and reset the disconnected status |
