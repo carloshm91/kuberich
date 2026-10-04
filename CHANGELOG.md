@@ -33,3 +33,14 @@ Release entries are written in release PRs and linked to their Git tags.
 
 No public application release has been published. Development installation is
 available from a source checkout; PyPI and Homebrew publication come later.
+
+### Security
+
+- Shared bounded literal display text, credential redaction and control escaping,
+  with explicit multiline behavior and preserved actionable error context.
+- Immutable argument vectors and client/context/UID target captures with stale
+  target rejection; operation enforcement remains part of upcoming services.
+- Test-wide ambient Kubernetes credential traps and a qualified owned local
+  fixture loader that preserves configuration files and SDK defaults.
+- Focused trust-boundary model draft and documented integration responsibilities
+  for authentication helpers, plugins, terminal sinks and release artifacts.

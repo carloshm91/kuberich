@@ -19,10 +19,10 @@ or reliable installation.
 | Dependencies | No unresolved actionable high/critical vulnerability without a documented, time-bounded mitigation reviewed in the PR |
 
 The current critical modules are the CLI/module entry points, preference schema
-validation/precedence, and diagnostic redaction/control handling. Future
-critical modules are the context-generation/target-identity checks, mutation
-guard and command construction, redaction/control-sequence handling, and the
-resource-state transition/reconnect decisions. Keep those decisions separate
+validation/precedence, diagnostic redaction, control escaping, literal text
+presentation, argument validation/capture, and client/UID target identity checks.
+Future critical modules include mutation guards, tool-specific command builders,
+and resource-state transition/reconnect decisions. Keep those decisions separate
 from transport and widget glue so exhaustive tests are practical. The critical
 module list is maintained in `tool.kubetrol.coverage.critical_modules` in
 pyproject.toml and changes with code review. Each listed file must exist, contain
@@ -147,7 +147,11 @@ workspace, Pilot behavior tests, normal/compact geometry snapshots and real PTY
 checks for resize, rapid command input, Unicode paste, quit and failure. Installed
 wheel console/module launches also run in PTYs outside the checkout. Each matrix
 job retains actual SVGs and terminal restoration evidence; SSH/tmux and cluster
-qualification remain future work. The README must
+qualification remain future work. F04 adds hostile text/argument and immutable
+target tests, ambient credential traps for all test families, unsafe fixture
+negative controls and a real isolated SDK configuration load without an API
+connection. [Test isolation](security-primitives.md) describes the qualified
+fixture path and limitations. The README must
 never show an unmeasured coverage badge or imply that planned checks already run.
 
 The PTY harness retains a shell-like session owner while the actual CLI process

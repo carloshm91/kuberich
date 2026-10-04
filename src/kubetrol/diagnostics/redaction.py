@@ -2,6 +2,8 @@
 
 import re
 
+from kubetrol.security.controls import escape_controls
+
 _PATTERNS = (
     # Include unterminated blocks so truncation cannot reveal part of a private key.
     (
@@ -21,13 +23,12 @@ _PATTERNS = (
 _REDACTORS = tuple(
     (re.compile(pattern, re.IGNORECASE), replacement) for pattern, replacement in _PATTERNS
 )
-_CONTROLS = re.compile(r"[\x00-\x1f\x7f-\x9f\u202a-\u202e\u2066-\u2069]")
 
 
-def sanitize_text(text: str) -> str:
-    """Redact common credentials and render controls as inert escapes on one line."""
+def sanitize_text(text: str, *, allow_newlines: bool = False) -> str:
+    """Redact credentials and escape controls; diagnostics stay on one line by default."""
     # Defensive bound before regex work. Secret patterns also consume truncated values.
     text = text[:65536]
     for pattern, replacement in _REDACTORS:
         text = pattern.sub(replacement, text)
-    return _CONTROLS.sub(lambda match: f"\\u{ord(match.group()):04x}", text)
+    return escape_controls(text, allow_newlines=allow_newlines)

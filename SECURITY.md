@@ -25,3 +25,11 @@ release provenance are tracked in the backlog.
 
 Tests use disposable local clusters. No test may silently select or modify a
 developer's default production context.
+
+The current disconnected build includes bounded literal-text/control helpers,
+diagnostic redaction, immutable target/argument captures and ambient SDK loader
+traps in tests. Integration responsibilities and known limitations are documented
+in [security primitives](docs/security-primitives.md) and the
+[threat model draft](docs/kubetrol-threat-model.md). Pattern redaction does not
+recognize every opaque secret; adapters must avoid collecting raw credentials
+and construct allowlisted error summaries.
