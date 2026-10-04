@@ -74,7 +74,11 @@ deployment would require a new model and reconsideration of TM-004.
   preconditions at service boundary (`ResourceTarget.require_current`; S03/M01).
 - Operator plugin configuration → future local executable → application/terminal:
   deliberate invocation, fixed scope and owned processes; user privileges and no
-  assumed isolation. Output still requires sanitization (`SECURITY.md`; U03/S03).
+  assumed isolation. Captured UI/log output requires sanitization; interactive
+  foreground handoff permits a direct TTY stream and its terminal controls.
+  S03 owns this deliberate session boundary and restoration, including remote
+  container output. Trusted auth-helper interactive prompts likewise require
+  deliberate terminal ownership (`SECURITY.md`; U03/S03/C06/C07).
 - PR/dependencies → CI → candidate artifacts → future installer: Git checkout,
   package-index resolution, builds and downloads. Current lock/action pins and
   read-only workflow permissions reduce drift; publishing requires approval,
@@ -152,7 +156,7 @@ and the local OS remain external authorities (`SECURITY.md`; `ui.app.compose`).
 | Resource/log strings | Future API responses | Cluster → terminal | F04 helpers exist; API integration pending | `safe_text`; C04/S02/B04 |
 | Selection/action identifiers | Future UI actions | UI → service/API | Immutable snapshot exists; execution enforcement pending | `ResourceTarget`; S03/M01 |
 | Kubeconfig exec credentials | Future explicit config load | Local config → process | Trusted operator selection; never cluster supplied | `docs/architecture.md`; C01/C06/C07 |
-| Tool/plugin argv and output | Future explicit action | Config/data → process/terminal | No shell interpolation or automatic discovery | `freeze_arguments`; S03/U03 |
+| Tool/plugin argv and output | Future explicit action | Config/data → process/terminal | No shell interpolation/automatic discovery; interactive TTY admits controls, captured UI output is sanitized | `freeze_arguments`; S03/U03 |
 | Test config loaders | Every test family | Test code → SDK/cluster | Traps and qualified escape hatch | `isolated_kubernetes`, `load_disposable_config` |
 | Dependency/workflow/artifact changes | PR, build, future install | Source/vendor → runnable code | Candidate checks exist; publishing/security audit pending | `uv.lock`, `quality.yml`; Q04/D04 |
 
@@ -189,7 +193,7 @@ not claims of exploitable cluster features in the disconnected build.
 
 | Threat ID | Threat source | Prerequisites | Threat action | Impact | Impacted assets | Existing controls (evidence) | Gaps | Recommended mitigations | Detection ideas | Likelihood | Impact severity | Priority |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| TM-001 | Workload/resource author | Future API/log view; unsafe display sink | Inject markup, ANSI/OSC or bidi text | Spoof display/link/clipboard | Terminal decisions | `safe_text`, `escape_controls`; actual Rich rendering tests | Future views must adopt helpers | B04/S02/U03: use literal Text and sanitize tool output; review every sink | Hostile string UI/PTY regressions | medium once views exist | medium | medium |
+| TM-001 | Workload/resource author | Future API/log view with unsafe sink, or operator-entered interactive session | Inject markup, ANSI/OSC or bidi text | Spoof display/link/clipboard | Terminal decisions | `safe_text`, `escape_controls`; actual Rich rendering tests | Future views must adopt helpers; direct interactive TTY admits controls | B04/S02/U03: literal Text for captured output; S03: document interactive trust and verify restoration | Hostile string UI/PTY regressions | medium once views exist | medium | medium |
 | TM-002 | Credential-bearing response or operator data | Sensitive data reaches a display/log/export sink | Leak labeled or opaque credentials | Cluster/cloud credential disclosure | Credentials/logs | `sanitize_text`, `SanitizedFormatter`; fatal UI traceback suppression | Regex cannot identify arbitrary secrets; raw SDK errors/export not implemented | C01/B04/A07: allowlisted errors, concealed Secret defaults, explicit reveal/export policy | Synthetic opaque/labeled secrets across errors and artifacts | medium during adapter expansion | high | high |
 | TM-003 | Timing/concurrent cluster changes | A pending future action and client/object change | Redirect action through mutable selection or name reuse | Unintended resource mutation | Cluster integrity | Frozen `SessionIdentity`/`ResourceTarget`, `require_current` | Local guard is not API atomicity/authorization | C01/M01/S03: bind owned client, reject stale sessions, read-only gates, UID/version preconditions | Delayed confirmations/context switches/object recreation tests | medium once actions exist | high | high |
 | TM-004 | Malicious offered config/plugin | Operator trust mistake or automatic discovery/import | Execute unexpected helper/plugin | Local code access with user privileges | Credentials/host files | No current execution path; explicit local trust policy in `SECURITY.md` | Future helper/plugin integration; no sandbox assumed | C01/U03: trusted explicit config, no cluster/CWD discovery, deliberate plugin invocation and cleanup | Tests that cluster data never selects executable helpers/plugins; configured auth-helper refresh remains allowed | low with explicit trust; medium if autoimported | high | high |

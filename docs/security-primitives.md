@@ -48,8 +48,9 @@ boundary, not the Python language or terminal framework.
 
 ## Presenting untrusted text
 
-Resource names, annotations, logs, kubeconfig labels and tool output must pass
-through `security.presentation.safe_text`. It returns a literal Rich `Text`,
+Resource names, annotations, logs, kubeconfig labels and captured tool output
+displayed inside Kubetrol must pass through `security.presentation.safe_text`.
+It returns a literal Rich `Text`,
 which can be passed directly to Textual widgets and table cells. Rich markup
 such as `[link=...]` remains visible text without adding styles or hyperlinks.
 Do not pass its `.plain` value back through a markup parser.
@@ -69,6 +70,16 @@ the truncation notice. Unicode text and emoji joiners remain intact. Only
 `multiline=True` preserves line feeds; tabs, carriage returns and other controls
 remain escaped. A future log service must also bound its retained buffer and
 queue; a per-chunk bound alone does not establish bounded stream memory.
+
+Interactive full-terminal handoff is a separate boundary: a shell, editor or
+foreground plugin needs the real terminal and its control sequences. Its direct
+TTY stream is not passed through `safe_text`; the operator deliberately enters
+that session. Local programs and remote container output can then emit terminal
+controls. S03 must document that trust boundary, own interruption/cleanup and
+prove terminal restoration; sanitizing captured UI text does not sandbox the
+interactive session. Captured summaries and diagnostic records still use the
+safe presentation/redaction contracts. Provider-required interactive prompts
+need equivalent explicit terminal ownership during authentication qualification.
 
 `diagnostics.redaction.sanitize_text` uses the same control helper with a
 65,536-character input bound and single-line output by default. Existing
