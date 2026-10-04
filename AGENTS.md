@@ -35,6 +35,8 @@ implementation; do not claim to switch models without actual environment support
   in the earliest unfinished product milestone; see docs/backlog.md.
 - Use a short-lived issue branch, an issue-linked pull request, required checks,
   and squash merging. Keep main releasable.
+- Sign off authored commits with the repository identity (`git commit -s`) and
+  preserve the sign-off in squash commits; satisfy the DCO check.
 - A plan, stub, or mocked demonstration does not complete a behavior issue.
 - Update documentation and acceptance evidence with the implementation. Treat
   GitHub as the live status source; the checked-in backlog is the planning map.

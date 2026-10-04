@@ -25,8 +25,10 @@ Git tags are vX.Y.Z-rc.N; the release workflow validates normalized equivalence.
 
 ## Release sequence
 
-1. Close every required task in the target milestone and complete its release
-   gate issue. Record known limitations and the qualified support matrix.
+1. Close implementation tasks after their candidate-level checks pass. Open the
+   release gate and complete its pre-publication checklist, recording limitations
+   and the qualified support matrix. The gate stays open through publication
+   and verification of the public installation channels.
 2. Open a release PR that updates project.version, uv.lock if affected, the
    changelog, installation documentation, and migration notes. Link the gate issue.
 3. Run the complete quality, integration, terminal, dependency, and clean-install
@@ -49,6 +51,11 @@ workflow's GITHUB_TOKEN to trigger a second workflow. Serialize release runs;
 grant write/id-token permissions only to the jobs that need them. Fork PRs get
 neither publishing privileges nor cluster credentials. Pin third-party actions
 to commit SHAs and update them through reviewed dependency PRs.
+
+A channel implementation task (such as D03) can finish with a tested local release
+candidate and update automation. Its first live publication and public install
+verification belong to the release gate. This avoids requiring an already-published
+package before the first release is allowed to publish.
 
 ## Failure and recovery
 
