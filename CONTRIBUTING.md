@@ -52,8 +52,8 @@ coverage is not fabricated for a repository without application code.
 
 ## Toolchain
 
-The first implementation task creates the installable src-layout package,
-pyproject.toml, uv.lock, test layout, and these commands:
+The development package uses a src layout, pyproject.toml, a committed uv.lock,
+and the following commands. Python 3.12 through 3.14 is the qualified range:
 
 ```sh
 uv sync --locked --group dev
@@ -62,11 +62,16 @@ uv run ruff format --check .
 uv run mypy --strict src/kubetrol
 uv run pytest --cov=kubetrol --cov-branch --cov-report=xml --cov-report=json
 uv build
+uv run twine check dist/*
 ```
 
-These are the agreed tooling contract; they become runnable when the package
-bootstrap issue is implemented. Additional coverage gates inspect JSON and
-changed lines. A combined pytest-cov percentage alone is insufficient.
+The packaging tests build a wheel and source distribution, rebuild the source
+distribution, and run installed entry points in a fresh virtual environment
+outside the checkout. They require uv on PATH and package-index access to install
+dependencies. The CLI itself requires no cluster or network connection.
+
+F02 adds the independent required coverage gates over JSON and changed lines.
+A combined pytest-cov percentage alone is insufficient.
 
 ## Commits and releases
 

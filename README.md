@@ -11,14 +11,33 @@ All Kubetrol capabilities will be open source under MIT, with no paid feature ti
 
 ## Project status
 
-**Planning and repository preparation. No application release is available yet.**
+**The development CLI is installable from this checkout. No public application
+release is available yet.**
+
+It currently provides `--help`, `--version`, and an honest development-status
+message. The terminal interface and Kubernetes connections are the next steps.
 
 The first release, **0.0.1**, will provide a usable resource browser, live pod
 updates, filtering, resource details, container logs, and interactive exec.
 Linux and macOS are the initial supported operating systems. Textual Web is
 outside the product scope.
 
-## Installation
+## Try the development CLI
+
+With [uv](https://docs.astral.sh/uv/getting-started/installation/) and Python
+3.12, 3.13, or 3.14, run these commands from the repository:
+
+```sh
+uv sync --locked --group dev
+uv run kubetrol --help
+uv run kubetrol --version
+uv run kubetrol
+```
+
+The last command reports the current development stage. It does not require a
+kubeconfig or contact a cluster. `uv run python -m kubetrol` is also supported.
+
+## Public installation
 
 Installation instructions will be published after the first release passes its
 release checklist. The planned first-release channels are PyPI (uv/pipx) and
@@ -40,8 +59,8 @@ for 0.1.0. These channels are tracked work, not currently available downloads.
 - [Development assistants and skills](docs/agent-setup.md)
 
 Application coverage must reach **at least 90% for lines and branches separately**.
-The target is 100% for critical logic. There is no application code yet, so an
-application coverage percentage would currently be misleading.
+The target is 100% for critical logic. The bootstrap tests measure the actual
+package; the independent required coverage gates are the next foundation task.
 
 ## Community
 
