@@ -153,7 +153,9 @@ target tests, ambient credential traps for all test families, unsafe fixture
 negative controls and a real isolated SDK configuration load without an API
 connection. F05 stage 1 adds audited option/alias tests, a reviewed help snapshot,
 service-level policy negative controls, visibility/initial-command Pilot evidence,
-real PTY restoration and clean-installed launch contract checks. The connection,
+real PTY restoration and clean-installed launch contract checks. Reviewed help
+snapshots preserve argparse's native alias formatting on Python 3.12 and 3.13/3.14.
+The connection,
 refresh and effectful service integrations remain pending; a parsed flag is not
 compatibility evidence. [Test isolation](security-primitives.md) describes the qualified
 fixture path and limitations. The README must

@@ -1,6 +1,7 @@
 """Operator-facing audited launch contract and rejection before side effects."""
 
 import json
+import sys
 from importlib.metadata import version
 from pathlib import Path
 
@@ -134,7 +135,9 @@ def test_inspection_commands_refuse_runtime_options_instead_of_ignoring_them(
 
 
 def test_help_matches_reviewable_contract_snapshot() -> None:
-    expected = (Path(__file__).parent / "snapshots" / "launch-help.txt").read_text()
+    # argparse 3.13+ lists aliases with one trailing metavar; keep native formatting.
+    name = "launch-help-py312.txt" if sys.version_info < (3, 13) else "launch-help-py313plus.txt"
+    expected = (Path(__file__).parent / "snapshots" / name).read_text()
     assert cli._parser().format_help() == expected
 
 
