@@ -74,6 +74,12 @@ Use Conventional Commit PR titles: feat, fix, perf, refactor, test, docs, build,
 ci, or chore, with an optional scope. Mark incompatible changes with ! and
 explain the migration. The squash commit follows the PR title.
 
+Sign off your own commits with `git commit -s` using your contributor identity.
+The repository has a DCO check; a sign-off certifies the contribution under the
+[Developer Certificate of Origin](https://developercertificate.org/). This is a
+commit trailer, separate from cryptographic commit signing. Preserve the trailer
+in the squash commit and do not sign off on behalf of another contributor.
+
 Version changes happen in release PRs. Patches repair behavior; minor versions
 add capabilities. Before 1.0, incompatible changes also require a minor version
 and migration notes. See [the exact release procedure](docs/releases.md).

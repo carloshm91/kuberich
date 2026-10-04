@@ -1167,11 +1167,11 @@
       ],
       "scope": "Create carloshm91/homebrew-tap and a source-based formula with hashed Python dependencies and release update automation.",
       "acceptance": [
-        "Formula installs the published version in an isolated environment with resources and required package assets.",
+        "Formula definition installs the supplied release-candidate sdist in an isolated environment with hashed resources and required package assets; the release gate later binds it to the published immutable artifact.",
         "Run brew style/audit/install/test on declared Linux/macOS targets; install and upgrade preserve user configuration.",
-        "Release automation opens a version/checksum update PR and verifies it before declaring the channel ready; initial release documents the artifact-first ordering."
+        "Release automation opens a version/checksum update PR. This task proves candidate installation and update automation; D04 performs the first live formula merge and public channel verification after PyPI publication."
       ],
-      "verification": "Use a local release-candidate sdist for formula dry-run before PyPI publication, then verify the published formula; clean installs and upgrade smoke on declared targets.",
+      "verification": "Use a local release-candidate sdist for formula audit and clean install/upgrade smoke before PyPI publication. D04 verifies the published formula; D03 does not require a package that has not been released yet.",
       "priority": "P1"
     },
     {
