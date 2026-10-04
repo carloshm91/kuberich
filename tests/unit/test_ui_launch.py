@@ -33,7 +33,7 @@ def test_terminal_return_code_is_propagated_safely(
     class _App:
         return_code = result
 
-        def __init__(self, settings: Settings, logger: logging.Logger) -> None:
+        def __init__(self, settings: Settings, logger: logging.Logger, **kwargs: object) -> None:
             assert settings.theme == "textual-dark"
 
         def run(self) -> None:

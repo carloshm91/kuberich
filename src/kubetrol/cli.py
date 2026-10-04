@@ -9,13 +9,20 @@ from collections.abc import Sequence
 from importlib.metadata import version
 from typing import NoReturn
 
+from platformdirs import user_data_path
+
+from kubetrol.config.launch import PENDING_OPTIONS, require_available
 from kubetrol.config.paths import config_location, log_location
 from kubetrol.config.schema import ConfigDocument, resolve_settings
 from kubetrol.config.store import read_config, write_config
 from kubetrol.diagnostics.logging import diagnostic_logging
 from kubetrol.diagnostics.redaction import sanitize_text
 from kubetrol.errors import AppError, ExitCode
+from kubetrol.security.arguments import validate_argument
+from kubetrol.services.access import AccessPolicy
+from kubetrol.services.commands import Command, CommandService
 from kubetrol.ui.launch import run_terminal
+from kubetrol.ui.presentation import Presentation
 
 
 class _Parser(argparse.ArgumentParser):
@@ -25,12 +32,20 @@ class _Parser(argparse.ArgumentParser):
         self.exit(2, "kubetrol: invalid command line; run kubetrol --help.\n")
 
 
+def _argument(value: str) -> str:
+    try:
+        return validate_argument(value)
+    except AppError:
+        raise argparse.ArgumentTypeError("Invalid option value.") from None
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = _Parser(
         prog="kubetrol",
         description="A Kubernetes terminal UI built with Python and Textual.",
         epilog="Terminal window preview: Kubernetes connections are not available yet.",
         allow_abbrev=False,
+        formatter_class=lambda prog: argparse.HelpFormatter(prog, width=100),
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {version('kubetrol')}")
     parser.add_argument("--config", help="Kubetrol preferences YAML (separate from kubeconfig)")
@@ -44,7 +59,70 @@ def _parser() -> argparse.ArgumentParser:
         dest="log_level",
         help="DEBUG, INFO, WARNING, ERROR, or CRITICAL",
     )
-    commands = parser.add_subparsers(dest="command")
+    parser.add_argument(
+        "--refresh",
+        "-r",
+        dest="refresh_seconds",
+        type=float,
+        help="refresh seconds (0.1-3600); info/check only until C03 #24",
+    )
+    parser.add_argument(
+        "--readonly",
+        dest="read_only",
+        action="store_true",
+        default=None,
+        help="block mutations, shell, attach and plugins",
+    )
+    parser.add_argument(
+        "--write",
+        action="store_true",
+        default=None,
+        help="override the configured read-only preference for this session",
+    )
+    parser.add_argument(
+        "--command",
+        "-c",
+        dest="initial_command",
+        type=_argument,
+        help="initial terminal command: help or quit; resource views await B03 #27",
+    )
+    for flag in ("headless", "logoless", "crumbsless"):
+        parser.add_argument(
+            f"--{flag}",
+            action="store_true",
+            default=None,
+            help={
+                "headless": "hide the application header",
+                "logoless": "hide the brand in the header",
+                "crumbsless": "hide the context/namespace scope bar",
+            }[flag],
+        )
+    pending = parser.add_argument_group("Recognized options awaiting their owning feature (exit 4)")
+    for option in PENDING_OPTIONS:
+        if option.boolean:
+            pending.add_argument(
+                *option.flags,
+                dest=option.destination,
+                action="store_true",
+                default=None,
+                help=f"unavailable: {option.owner}",
+            )
+        else:
+            pending.add_argument(
+                *option.flags,
+                dest=option.destination,
+                type=_argument,
+                action="append" if option.repeated else "store",
+                help=f"unavailable: {option.owner}",
+            )
+    commands = parser.add_subparsers(dest="subcommand")
+    commands.add_parser(
+        "help", help="show launch help without loading configuration", allow_abbrev=False
+    )
+    release = commands.add_parser(
+        "version", help="show installed version without loading configuration", allow_abbrev=False
+    )
+    release.add_argument("--short", "-s", action="store_true", help="print only the version number")
     commands.add_parser(
         "info", help="show safe local paths, preferences and installed versions", allow_abbrev=False
     )
@@ -63,12 +141,42 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     """Keep filesystem/debug details away from terminal output and return stable codes."""
-    arguments = _parser().parse_args(argv)
+    parser = _parser()
+    arguments = parser.parse_args(argv)
     try:
+        values = vars(arguments)
+        require_available(values)
+        runtime = {
+            key: values[key]
+            for key in (
+                "log_file",
+                "log_level",
+                "refresh_seconds",
+                "read_only",
+                "write",
+                "initial_command",
+                "headless",
+                "logoless",
+                "crumbsless",
+            )
+            if values[key] is not None
+        }
+        if arguments.subcommand in {"help", "version"}:
+            if runtime or arguments.config is not None:
+                raise AppError("help/version do not accept runtime overrides or --config.")
+            if arguments.subcommand == "help":
+                parser.print_help()
+            else:
+                print(version("kubetrol") if arguments.short else f"kubetrol {version('kubetrol')}")
+            return 0
+        if arguments.subcommand is not None and any(
+            key in runtime for key in ("initial_command", "headless", "logoless", "crumbsless")
+        ):
+            raise AppError("Command and presentation flags apply only to terminal launch.")
         location = config_location(arguments.config, os.environ)
-        if arguments.command == "config" and arguments.operation == "init":
-            if arguments.log_file is not None or arguments.log_level is not None:
-                raise AppError("Log flags are runtime overrides; omit them for config init.")
+        if arguments.subcommand == "config" and arguments.operation == "init":
+            if runtime:
+                raise AppError("Flags are runtime overrides; omit them for config init.")
             write_config(location.path, ConfigDocument())
             print("Created default Kubetrol preferences. Run kubetrol info to see local paths.")
             return 0
@@ -78,16 +186,36 @@ def main(argv: Sequence[str] | None = None) -> int:
             for key, value in {
                 "log_file": arguments.log_file,
                 "log_level": arguments.log_level,
+                "refresh_seconds": arguments.refresh_seconds,
+                "read_only": False if arguments.write else arguments.read_only,
             }.items()
             if value is not None
         }
         settings = resolve_settings(document, os.environ, overrides)
+        if (
+            arguments.initial_command is not None
+            and not arguments.initial_command.strip().removeprefix(":").strip()
+        ):
+            raise AppError("--command must name an initial command; use help or quit.")
+        initial = CommandService(AccessPolicy(settings.read_only)).resolve(
+            arguments.initial_command or ""
+        )
+        if initial is Command.UNAVAILABLE:
+            raise AppError(
+                "--command resource/action is unavailable in this preview; requires resource commands (B03 #27). Use help or quit.",
+                ExitCode.UNAVAILABLE,
+            )
+        if arguments.subcommand is None and arguments.refresh_seconds is not None:
+            raise AppError(
+                "--refresh is unavailable for terminal launch; requires live synchronization (C03 #24). Use info/config check to validate it.",
+                ExitCode.UNAVAILABLE,
+            )
         log_file = log_location(
             settings,
             location.path,
             from_file="log_file" not in overrides and "KUBETROL_LOG_FILE" not in os.environ,
         )
-        if arguments.command == "info":
+        if arguments.subcommand == "info":
             print(
                 json.dumps(
                     {
@@ -99,6 +227,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                             for name in ("textual", "kubernetes-asyncio", "platformdirs", "pyyaml")
                         },
                         "config_file": sanitize_text(str(location.path)),
+                        "data_dir": sanitize_text(str(user_data_path("kubetrol", appauthor=False))),
                         "log_file": sanitize_text(str(log_file)),
                         "config_exists": location.path.exists(),
                         "migration_pending": document.migrated,
@@ -114,13 +243,22 @@ def main(argv: Sequence[str] | None = None) -> int:
                     indent=2,
                 )
             )
-        elif arguments.command == "config":
+        elif arguments.subcommand == "config":
             print("Kubetrol preferences are valid. No files were changed.")
         else:
             with diagnostic_logging(log_file, settings.log_level) as logger:
                 try:
                     logger.debug("Launching terminal interface; no cluster connection.")
-                    run_terminal(settings, logger)
+                    run_terminal(
+                        settings,
+                        logger,
+                        presentation=Presentation(
+                            bool(arguments.headless),
+                            bool(arguments.logoless),
+                            bool(arguments.crumbsless),
+                        ),
+                        initial_command=initial,
+                    )
                 except Exception:
                     logger.debug("Terminal launch failed.", exc_info=True)
                     raise

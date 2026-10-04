@@ -7,6 +7,7 @@ class ExitCode(IntEnum):
     FAILURE = 1
     INVALID_INPUT = 2
     LOCAL_IO = 3
+    UNAVAILABLE = 4
     INTERRUPTED = 130
 
 

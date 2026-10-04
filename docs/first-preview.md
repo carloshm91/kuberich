@@ -9,6 +9,7 @@ Do not wait for every epic or the complete 1.0.0 parity audit to get feedback.
 | Installed CLI | F01, then F02 quality gates | Run help/version from an installed development wheel |
 | Local preferences and diagnostics | F03 | Run `info`/`config check`, create defaults and inspect sanitized local logs |
 | First terminal window | F01 → F02 → F03 → B01 | Launch the Textual shell, navigate, open help, resize and quit; show an honest unconnected state |
+| Launch contract | F05 stage 1 | Try help/version subcommands, visibility flags, initial help and read-only command guards; pending features fail explicitly |
 | First live cluster view | F04/F05, C01-C04, B02/B03/B04 | Choose context/namespace, inspect live pods, filter and open details/events |
 | Logs and interactive shell | S01-S04, credential/PTY/integration checks | Follow current/previous logs, choose a container, enter its shell and return safely |
 | Public 0.0.1 preview | D04 and every v0.0.1 acceptance gate | Install through tested PyPI/Homebrew channels and follow the verified first-user guide |
@@ -61,6 +62,25 @@ Feedback: report whether it opens, whether help/filter/quit work, and your
 terminal name and size if anything overlaps or is difficult to read.
 The [control reference](terminal-preview.md) covers focus, themes and errors.
 Context selection, pods, logs and interactive exec arrive in their own tickets.
+
+## Launch options: F05 stage 1
+
+```sh
+uv sync --locked --group dev
+uv run kubetrol version --short
+uv run kubetrol --readonly --headless --command help
+```
+
+Close help with Esc. Confirm the header is hidden and `Read-only` appears at the
+start of the status. Type `:shell` and Enter: the status must say read-only blocks
+it. Press `q` from the table to return to your shell. You can separately try
+`uv run kubetrol --logoless` or `uv run kubetrol --crumbsless` and compare the header
+and scope bar with the default launch.
+
+`uv run kubetrol --context example` must return exit 4 explaining that C01 #20
+supplies Kubernetes sessions. This is an unavailable-feature check and does not
+read your kubeconfig or contact a cluster. F05 remains open until its connection
+and execution integrations are qualified. See the [full launch contract](k9s-cli.md).
 
 Cloud authentication and real-terminal checks run early. A successful mocked UI
 is useful feedback, but it does not certify that EKS/AKS credentials, exec,

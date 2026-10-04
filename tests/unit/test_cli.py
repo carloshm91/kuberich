@@ -50,7 +50,7 @@ def test_entry_point_reads_process_arguments(
     assert "requires an interactive terminal" in capsys.readouterr().err
 
 
-@pytest.mark.parametrize("arguments", [["--context", "example"], ["--ver"], ["pods"]])
+@pytest.mark.parametrize("arguments", [["--ver"], ["pods"]])
 def test_unsupported_arguments_fail_explicitly(
     arguments: list[str], capsys: pytest.CaptureFixture[str]
 ) -> None:

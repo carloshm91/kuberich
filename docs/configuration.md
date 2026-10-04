@@ -3,8 +3,8 @@
 This development build provides `info`, `config init`, `config check`, and local
 diagnostic logging, alongside the [terminal preview](terminal-preview.md).
 It does not connect to Kubernetes. The UI applies built-in themes and displays
-the read-only preference; cluster services will consume refresh/read-only settings
-when their owning behavior is implemented.
+read-only mode in both header/status and shared command decisions. Cluster services
+will consume refresh and apply the shared guard when their behavior is implemented.
 
 ## Commands
 
@@ -18,9 +18,9 @@ uv run kubetrol --log-level DEBUG --log-file /path/to/kubetrol.log
 
 Place global flags before a command. `--logLevel`/`-l` and `--logFile` are aliases
 for `--log-level` and `--log-file`. `--config` selects **Kubetrol preferences**;
-the future `--kubeconfig` option is separate.
+`--kubeconfig` is separate and currently returns unavailable (exit 4).
 
-`info` prints JSON with installed versions, local config/log paths, validated
+`info` prints JSON with installed versions, local config/data/log paths, validated
 effective preferences, unknown-field count and migration status. It never prints
 unknown field names/values, credential environment variables or kubeconfig
 contents. `info` and `config check` create no files. They do not execute cloud
@@ -28,7 +28,7 @@ credential helpers or inspect/connect to a cluster.
 
 `config init` creates schema-v1 defaults at the selected path. It never overwrites
 an existing file, persists environment overrides, or creates diagnostic logs.
-Runtime log flags are rejected for this command. You can edit the YAML with your
+All runtime overrides are rejected for this command. You can edit the YAML with your
 own editor and run `config check` afterward. There is no automatic rewrite on load.
 
 ## Paths and precedence
@@ -57,8 +57,8 @@ The file is always read; log flags do not bypass a broken config.
 | YAML field | Default | Environment | Runtime CLI |
 | --- | --- | --- | --- |
 | `theme` | `textual-dark` | `KUBETROL_THEME` | Not yet available |
-| `refresh_seconds` | `2.0` | `KUBETROL_REFRESH` | Not yet available |
-| `read_only` | `false` | `KUBETROL_READONLY` | Not yet available |
+| `refresh_seconds` | `2.0` | `KUBETROL_REFRESH` | `--refresh`, `-r` for info/check; terminal use unavailable until C03 |
+| `read_only` | `false` | `KUBETROL_READONLY` | `--readonly` / `--write` (mutually exclusive) |
 | `log_level` | `WARNING` | `KUBETROL_LOG_LEVEL` | `--log-level`, `--logLevel`, `-l` |
 | `log_file` | `null` (platform path) | `KUBETROL_LOG_FILE` | `--log-file`, `--logFile` |
 
@@ -75,6 +75,13 @@ default, while an empty path is an error.
 Relative `log_file` values from YAML resolve against that file's directory.
 Relative environment/CLI paths resolve against the invocation's working directory,
 including when their text happens to match the file's value.
+
+Runtime choices never rewrite preferences. `--write` explicitly overrides a valid
+file/environment read-only setting for this invocation. Read-only blocks commands
+through a shared service decision; actual cluster effects remain upcoming.
+See the [launch contract](k9s-cli.md) for aliases, availability and command-specific
+option handling. Context-specific preference precedence arrives with context support;
+the current flat schema applies global settings only.
 
 ## Schema, compatibility and writes
 
@@ -140,6 +147,7 @@ contains no secret. Debug output stays in the file.
 | `1` | Unexpected internal/local failure; concise message without raw exception |
 | `2` | Invalid arguments, settings, schema, YAML or a noninteractive UI launch |
 | `3` | Missing explicit file, local permissions/I/O, existing init destination or log ownership failure |
+| `4` | Recognized option/command requires behavior not shipped in this development build |
 | `130` | Interrupted non-UI operation |
 
 Argument parsing does not echo rejected arguments, which might contain tokens.

@@ -184,3 +184,45 @@ def test_installed_terminal_launch_restores_tty_outside_the_checkout(
         terminal.send(b"q")
         terminal.finish()
         terminal.save_evidence(f"installed-{entry_point}")
+
+
+@pytest.mark.parametrize(
+    "arguments,expected",
+    [
+        (["help"], 0),
+        (["version", "--short"], 0),
+        (["--readonly", "info"], 0),
+        (["--context", "fixture"], 4),
+        (["--token", "opaque-secret"], 4),
+        (["--readonly", "-c", "shell"], 2),
+    ],
+)
+def test_installed_launch_contract_outside_checkout(
+    installed_wheel: tuple[Path, Path],
+    arguments: list[str],
+    expected: int,
+) -> None:
+    binary_dir, directory = installed_wheel
+    output = run([str(binary_dir / "kubetrol"), *arguments], directory, 10, check=False)
+    assert output.returncode == expected
+    assert "opaque-secret" not in output.stdout + output.stderr
+    if arguments == ["version", "--short"]:
+        assert output.stdout == f"{PROJECT['version']}\n"
+    elif arguments == ["--readonly", "info"]:
+        assert json.loads(output.stdout)["preferences"]["read_only"]
+    elif expected == 4:
+        assert "unavailable" in output.stderr and "C01 #20" in output.stderr
+    elif expected == 2:
+        assert "Read-only mode blocks" in output.stderr
+
+
+def test_installed_initial_help_and_visibility_options_restore_tty(
+    installed_wheel: tuple[Path, Path],
+) -> None:
+    binary_dir, directory = installed_wheel
+    command = [str(binary_dir / "kubetrol"), "--logoless", "--crumbsless", "--command", "help"]
+    with TerminalSession(command, directory) as terminal:
+        terminal.wait_for(b"Keyboard help")
+        terminal.send(b"\x11")
+        terminal.finish()
+        terminal.save_evidence("installed-launch-help")

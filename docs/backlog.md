@@ -10,6 +10,11 @@ then its first unblocked task in the order below. F00 prepares the repository;
 F01 starts the product. B01 is deliberately early so the maintainer can try the
 first terminal window before the full first release. See [preview checkpoints](first-preview.md).
 
+F05 has a local launch-contract checkpoint before C01, with precise unavailable
+errors for absent behaviors. Its connection integration phase requires C01; keep
+F05 open while that work is pending. This prevents closing a connection contract
+from parser tests alone. See [current CLI behavior](k9s-cli.md).
+
 ## Epics
 
 | Issue | Outcome | Completion milestone |
@@ -39,7 +44,7 @@ First usable terminal preview: live pods, navigation, details, logs, exec, enfor
 | [F03 #16](https://github.com/carloshm91/kubetrol/issues/16) | Implement validated configuration and sanitized diagnostics | [F02 #15](https://github.com/carloshm91/kubetrol/issues/15) |
 | [B01 #17](https://github.com/carloshm91/kubetrol/issues/17) | Build the Textual application shell and responsive layout | [F02 #15](https://github.com/carloshm91/kubetrol/issues/15), [F03 #16](https://github.com/carloshm91/kubetrol/issues/16) |
 | [F04 #18](https://github.com/carloshm91/kubetrol/issues/18) | Define and test Kubernetes, plugin, and terminal trust boundaries | [F02 #15](https://github.com/carloshm91/kubetrol/issues/15) |
-| [F05 #19](https://github.com/carloshm91/kubetrol/issues/19) | Implement the complete launch CLI and diagnostic command contract | [F03 #16](https://github.com/carloshm91/kubetrol/issues/16), [F04 #18](https://github.com/carloshm91/kubetrol/issues/18) |
+| [F05 #19](https://github.com/carloshm91/kubetrol/issues/19) | Implement the complete launch CLI and diagnostic command contract | [F03 #16](https://github.com/carloshm91/kubetrol/issues/16), [F04 #18](https://github.com/carloshm91/kubetrol/issues/18), [C01 #20](https://github.com/carloshm91/kubetrol/issues/20) |
 | [C01 #20](https://github.com/carloshm91/kubetrol/issues/20) | Create isolated kubeconfig and context sessions | [F03 #16](https://github.com/carloshm91/kubetrol/issues/16), [F04 #18](https://github.com/carloshm91/kubetrol/issues/18) |
 | [C06 #21](https://github.com/carloshm91/kubetrol/issues/21) | Qualify EKS authentication and credential refresh | [C01 #20](https://github.com/carloshm91/kubetrol/issues/20), [F05 #19](https://github.com/carloshm91/kubetrol/issues/19) |
 | [C07 #22](https://github.com/carloshm91/kubetrol/issues/22) | Qualify AKS Entra and Azure kubelogin authentication | [C01 #20](https://github.com/carloshm91/kubetrol/issues/20), [F05 #19](https://github.com/carloshm91/kubetrol/issues/19) |

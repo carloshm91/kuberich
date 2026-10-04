@@ -703,7 +703,8 @@
       "milestone": "v0.0.1",
       "requires": [
         "F03",
-        "F04"
+        "F04",
+        "C01"
       ],
       "scope": "Implement all launch, connection, impersonation, and presentation flags enumerated in docs/k9s-cli.md; expose only behavior that actually works in the milestone.",
       "acceptance": [
@@ -1635,8 +1636,8 @@
     "F03",
     "B01",
     "F04",
-    "F05",
     "C01",
+    "F05",
     "C06",
     "C07",
     "C02",

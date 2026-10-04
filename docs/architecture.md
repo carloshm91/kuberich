@@ -192,6 +192,18 @@ run with the launching user's privileges, without an application sandbox.
 Provider interaction, process ownership and read-only enforcement remain
 separate implementation/qualification requirements in their existing issues.
 
+F05 stage 1 registers the audited CLI contract while retaining explicit
+unavailable gates in `config/launch.py` for absent transport/export/theme behavior.
+Gates run before filesystem work or authentication. A frozen `AccessPolicy` and
+`CommandService` in `services/` are shared by initial CLI and interactive command
+resolution; unknown typed actions fail closed. Future effectful services must use
+this guard before their adapters. This stage does not prove API/RBAC enforcement
+for operations that do not exist yet, and F05 remains open pending integrations.
+Session-only `ui/presentation.py` controls widget visibility, independent of
+settings/policy. Read-only status survives hidden headers and input updates.
+Refresh can be validated by local diagnostics but explicit UI use fails until
+live synchronization exists. See the [current CLI contract](k9s-cli.md).
+
 ## Sources
 
 - [Textual workers](https://textual.textualize.io/guide/workers/)

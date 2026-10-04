@@ -7,6 +7,13 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Help/version subcommands and short version output, all audited launch flags
+  with explicit unavailable-feature errors, and a diagnostic data-directory path.
+- Header/logo/scope visibility, initial terminal help/quit, and read-only/write
+  invocation overrides with shared CLI/UI command policy and persistent status.
+- Launch-contract/alias/precedence tests, reviewed help snapshot, visibility Pilot
+  evidence and real-terminal initial help/quit restoration checks.
+
 - Real terminal workspace with context/namespace/connection indicators, an empty
   resource table, filter/command inputs, keyboard/mouse navigation, scrollable
   help, responsive layouts, built-in themes and packaged styles.
@@ -35,6 +42,10 @@ No public application release has been published. Development installation is
 available from a source checkout; PyPI and Homebrew publication come later.
 
 ### Security
+
+- Immutable service-level action policy that refuses unknown actions and blocks
+  mutation, exec, attach and unclassified plugins in read-only mode; actual
+  cluster-service enforcement must be qualified as those operations ship.
 
 - Shared bounded literal display text, credential redaction and control escaping,
   with explicit multiline behavior and preserved actionable error context.

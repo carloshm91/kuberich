@@ -203,7 +203,7 @@ async def test_known_light_theme_and_readonly_preference_are_applied() -> None:
     async with app.run_test() as pilot:
         await pilot.pause()
         assert app.theme == "textual-light"
-        assert "Read-only preference" in str(app.query_one("#build-info", Static).content)
+        assert "Read-only" in str(app.query_one("#build-info", Static).content)
 
 
 @pytest.mark.asyncio
