@@ -29,7 +29,7 @@ def helper(directory: Path, source: str, **overrides) -> ExecToken:
         "args": ["helper.py"],
         **overrides,
     }
-    return ExecToken(Entry(spec, directory), {"server": "https://127.0.0.1:12345"}, 0.4)
+    return ExecToken(Entry(spec, directory), {"server": "https://127.0.0.1:12345"}, 5.0)
 
 
 def response(**status) -> dict:
@@ -196,6 +196,10 @@ async def test_timeout_or_cancellation_kills_and_reaps_owned_helper(
         tmp_path,
         'import os, time\nfrom pathlib import Path\nPath("pid").write_text(str(os.getpid()))\ntime.sleep(30)',
     )
+    if not cancel:
+        # The deliberate timeout path has its own deadline; successful helpers
+        # need a scheduling budget under coverage on shared CI runners.
+        credentials.timeout = 1.0
     task = asyncio.create_task(credentials.token())
     async with asyncio.timeout(2):
         while not (tmp_path / "pid").exists():
