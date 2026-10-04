@@ -7,6 +7,12 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Isolated kubeconfig/context sessions, namespace discovery and selectors,
+  TLS/client-certificate/static-token authentication and bounded noninteractive
+  exec-token helpers, with distinct connection states and owned cleanup.
+- Real HTTP/TLS/helper, Pilot, terminal and disposable-kind verification for the
+  context checkpoint. Live resource views and provider qualification remain upcoming.
+
 - Help/version subcommands and short version output, all audited launch flags
   with explicit unavailable-feature errors, and a diagnostic data-directory path.
 - Header/logo/scope visibility, initial terminal help/quit, and read-only/write

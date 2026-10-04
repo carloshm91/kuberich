@@ -14,14 +14,14 @@ All Kubetrol capabilities will be open source under MIT, with no paid feature ti
 **The development CLI is installable from this checkout. No public application
 release is available yet.**
 
-It currently opens a real terminal workspace with context/namespace indicators,
-an empty resource table, filter and command inputs, keyboard/mouse navigation,
-help, themes and responsive layouts. It also provides `--help`, `--version`, safe
-local `info`, preference initialization/validation and private diagnostic logs.
-Launch options include `--readonly`/`--write`, header/logo/scope visibility and
-initial help/quit commands. All audited options are recognized; connection,
-authentication and later-feature requests report their unavailable owning task.
-Kubernetes connections and live resources are upcoming.
+It opens a terminal workspace with isolated context sessions, namespace discovery
+and selection, filter/command inputs, help, themes and responsive layouts. It
+supports kubeconfig/context/namespace/timeout flags, static token and certificate
+authentication and noninteractive exec tokens. Live pods, logs and shell are
+upcoming. See [context sessions](docs/context-sessions.md) for supported credentials,
+connection states and limits. Local diagnostics, read-only command guards,
+header/logo/scope visibility and initial help/quit commands remain available.
+All audited flags are recognized; unimplemented options identify their owning task.
 
 The first release, **0.0.1**, will provide a usable resource browser, live pod
 updates, filtering, resource details, container logs, and interactive exec.
@@ -45,7 +45,10 @@ uv run kubetrol
 
 The last command opens the terminal window in an interactive terminal. Press
 `?` for help, `Esc` to return, and `q` outside an input to quit; Ctrl+Q quits from
-anywhere. It does not require a kubeconfig or contact a cluster.
+anywhere. Launch reads your selected/default local kubeconfig and connects to its
+current context. Without configuration it opens disconnected. Configured credential
+helpers are trusted local programs and may run automatically for authentication.
+Help/version/info/config inspection never connects or executes helpers.
 Try `uv run kubetrol --readonly --headless --command help` to start with help
 and a compact header. Read-only command decisions use a shared service guard;
 actual cluster operations are not implemented yet.

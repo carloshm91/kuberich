@@ -205,3 +205,39 @@ def test_fixture_paths_cannot_escape_the_owned_directory_or_use_special_files(
         os.mkfifo(unsafe)
     with pytest.raises(AssertionError, match="owned temporary kubeconfig"):
         replace(owned_context, kubeconfig=unsafe).validate()
+
+
+def test_new_catalog_reader_rejects_files_outside_owned_test_directory(tmp_path: Path) -> None:
+    from kubetrol.config import catalog
+
+    with pytest.raises(AssertionError, match="owned temporary files"):
+        catalog.regular_bytes(tmp_path.parent / "unowned-kubeconfig")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "host,proxy",
+    [
+        ("https://production.invalid:6443", None),
+        ("http://127.0.0.1:64321", "https://production.invalid:6443"),
+    ],
+)
+async def test_new_adapter_guard_rejects_remote_identity_or_proxy(
+    host: str, proxy: str | None
+) -> None:
+    from kubernetes_asyncio import client
+
+    configuration = Configuration(host=host)
+    configuration.proxy = proxy
+    with pytest.raises(AssertionError, match="owned numeric loopback"):
+        client.ApiClient(configuration=configuration)
+    with pytest.raises(AssertionError, match="explicit SDK configuration"):
+        client.ApiClient()
+
+
+@pytest.mark.asyncio
+async def test_new_helper_guard_rejects_unowned_working_directory(tmp_path: Path) -> None:
+    from kubetrol.adapters import credentials
+
+    with pytest.raises(AssertionError, match="owned temporary working directory"):
+        await credentials._execute(["never-start"], {}, tmp_path.parent, 1)

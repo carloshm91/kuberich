@@ -2,7 +2,7 @@
 
 F04 provides shared helpers and test isolation. It does not connect a cluster,
 execute a plugin, or implement mutation authorization. The terminal preview
-continues to start disconnected. See the [threat model](kubetrol-threat-model.md)
+opens disconnected when no context is selected; C01 otherwise connects an owned session. See the [threat model](kubetrol-threat-model.md)
 for boundaries, existing controls and the remaining issue owners.
 
 ## Local execution model
@@ -11,7 +11,7 @@ On 2026-10-04 the maintainer chose K9s-style local execution for the first produ
 trusted operator-selected kubeconfig, authentication helpers and locally
 configured plugins, with the launching OS user's privileges and no application
 sandbox. This preserves access to the operator's installed provider tooling and
-credential caches. The current disconnected build does not execute these tools.
+credential caches. C01 executes configured noninteractive auth helpers; ordinary plugins remain unimplemented.
 
 Authentication helpers are different from ordinary plugins: a chosen kubeconfig
 may invoke its helper automatically to authenticate or renew credentials,
@@ -166,8 +166,9 @@ created for an owned disposable cluster.
 The permitted loader receives an explicit context and a separate SDK
 `Configuration`, with persistence disabled. The SDK default and caller's config
 file are preserved. The guard tests load a synthetic file without opening an API
-connection. Starting/cleaning kind clusters and real API qualification remain C01
-and the corresponding integration issues.
+connection. C01 additionally qualifies namespace discovery/TLS/client authentication
+on an owned disposable kind cluster; its harness creates and deletes only that
+cluster with an explicit temporary kubeconfig.
 
 This is a regression barrier for trusted test authors, not an OS network sandbox.
 Direct HTTP calls, subprocesses and aliases captured before fixture installation
@@ -187,3 +188,20 @@ ambient-loader refusal, unsafe fixture rejection, and an actual isolated SDK
 configuration load. The full suite and coverage commands remain in
 [the quality policy](quality.md). All four new production helper modules are
 designated critical and require 100% line and applicable branch coverage.
+
+## C01 integration evidence
+
+The new catalogue reader accepts only each test's owned temporary source paths.
+The explicit SDK constructor guard refuses implicit configurations, nonnumeric or
+remote endpoints and unregistered proxies. Synthetic exec helpers require an owned temporary
+working directory. These barriers retain the F04 SDK-loader traps; they are
+regression guards for reviewed tests, not a process/network sandbox. The separate
+kind harness owns its cluster, explicit config and deletion lifecycle. Child
+terminal/package processes receive explicit temporary config paths.
+
+C01 API/helper errors are application-owned summaries: they do not collect raw
+response bodies, helper stderr/stdout or SDK exception values for diagnostics.
+Context names use literal safe text, and context/scope changes replace client
+identity or advance generation. No resource mutations or delegated cluster tools
+are implemented; their existing policy/UID/PTY obligations remain open.
+See [context sessions](context-sessions.md) for TLS, credentials and limits.

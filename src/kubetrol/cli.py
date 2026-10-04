@@ -17,6 +17,7 @@ from kubetrol.config.schema import ConfigDocument, resolve_settings
 from kubetrol.config.store import read_config, write_config
 from kubetrol.diagnostics.logging import diagnostic_logging
 from kubetrol.diagnostics.redaction import sanitize_text
+from kubetrol.domain.connections import ConnectionRequest, request_duration
 from kubetrol.errors import AppError, ExitCode
 from kubetrol.security.arguments import validate_argument
 from kubetrol.services.access import AccessPolicy
@@ -43,12 +44,38 @@ def _parser() -> argparse.ArgumentParser:
     parser = _Parser(
         prog="kubetrol",
         description="A Kubernetes terminal UI built with Python and Textual.",
-        epilog="Terminal window preview: Kubernetes connections are not available yet.",
+        epilog="Context session preview: namespace discovery is available; resource views are upcoming.",
         allow_abbrev=False,
         formatter_class=lambda prog: argparse.HelpFormatter(prog, width=100),
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {version('kubetrol')}")
     parser.add_argument("--config", help="Kubetrol preferences YAML (separate from kubeconfig)")
+    parser.add_argument(
+        "--kubeconfig",
+        type=_argument,
+        help="single kubeconfig file (otherwise KUBECONFIG or ~/.kube/config)",
+    )
+    parser.add_argument(
+        "--context", type=_argument, help="context to connect (otherwise current-context)"
+    )
+    parser.add_argument(
+        "--namespace",
+        "-n",
+        type=_argument,
+        help="initial namespace (otherwise the context namespace)",
+    )
+    parser.add_argument(
+        "--all-namespaces",
+        "-A",
+        action="store_true",
+        default=None,
+        help="select all namespaces for this session",
+    )
+    parser.add_argument(
+        "--request-timeout",
+        type=_argument,
+        help="API/helper timeout: 0.1-3600 seconds, or ms/s/m/h (default 10s)",
+    )
     parser.add_argument(
         "--log-file", "--logFile", dest="log_file", help="local diagnostic log path"
     )
@@ -158,6 +185,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "headless",
                 "logoless",
                 "crumbsless",
+                "kubeconfig",
+                "context",
+                "namespace",
+                "all_namespaces",
+                "request_timeout",
             )
             if values[key] is not None
         }
@@ -173,6 +205,22 @@ def main(argv: Sequence[str] | None = None) -> int:
             key in runtime for key in ("initial_command", "headless", "logoless", "crumbsless")
         ):
             raise AppError("Command and presentation flags apply only to terminal launch.")
+        if arguments.subcommand is not None and any(
+            key in runtime
+            for key in ("kubeconfig", "context", "namespace", "all_namespaces", "request_timeout")
+        ):
+            raise AppError(
+                "Connection flags apply only to terminal launch; diagnostics never load credentials."
+            )
+        connection = ConnectionRequest(
+            arguments.kubeconfig,
+            arguments.context,
+            arguments.namespace,
+            bool(arguments.all_namespaces),
+            request_duration(arguments.request_timeout)
+            if arguments.request_timeout is not None
+            else 10.0,
+        )
         location = config_location(arguments.config, os.environ)
         if arguments.subcommand == "config" and arguments.operation == "init":
             if runtime:
@@ -248,7 +296,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             with diagnostic_logging(log_file, settings.log_level) as logger:
                 try:
-                    logger.debug("Launching terminal interface; no cluster connection.")
+                    logger.debug("Launching terminal interface.")
                     run_terminal(
                         settings,
                         logger,
@@ -258,6 +306,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                             bool(arguments.crumbsless),
                         ),
                         initial_command=initial,
+                        connection=connection,
                     )
                 except Exception:
                     logger.debug("Terminal launch failed.", exc_info=True)

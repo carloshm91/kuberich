@@ -4,7 +4,7 @@ Reference: K9s v0.51.0,
 [launch flags](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/cmd/root.go).
 This is the first-release contract. The development build implements help/version
 commands, `info`, `config init`/`check`, log options, read-only policy, initial
-help/quit commands and three terminal visibility flags. It recognizes all 26
+help/quit commands, three terminal visibility flags and C01 context/namespace sessions. It recognizes all 26
 audited flags, with explicit unavailable errors for behavior that has not shipped.
 Recognizing a flag does not establish Kubernetes or K9s compatibility.
 See the development checkpoint below, [local preferences](configuration.md) and
@@ -45,7 +45,7 @@ scheduled later report that limitation until their owning task is implemented.
 | `--client-certificate` | Client certificate override; F05/C08 |
 | `--token` | Explicit token override, redacted everywhere; F05/C08 |
 
-## Current development checkpoint: F05, stage 1
+## Current development checkpoint: F05 stage 1 and C01
 
 | Options / commands | Tested behavior now |
 | --- | --- |
@@ -59,7 +59,8 @@ scheduled later report that limitation until their owning task is implemented.
 | `--crumbsless` | Hide the current context/namespace scope bar; resource-view breadcrumbs do not exist yet |
 | `--command`, `-c` | Open terminal help or quit; `?`, `q`, `exit` aliases also work; other commands return exit 4 |
 | `--refresh`, `-r` | Validate/report seconds through `info` or `config check`; explicit terminal use returns exit 4 until C03 #24 |
-| Connection, identity, TLS, token and namespace options | Exit 4 naming the owning feature; no files read, helpers run or logs created |
+| `--kubeconfig`, `--context`, `--namespace`/`-n`, `--all-namespaces`/`-A`, `--request-timeout` | Read-only catalogue, explicit background client and namespace discovery/selection; see [C01](context-sessions.md) |
+| Cluster/user/token/TLS/impersonation CLI overrides | Exit 4 naming F05/C08; no files read or helpers run |
 | `--splashless`, `--invert`, `--screen-dump-dir` | Exit 4; there is currently no splash, theme inversion or screen export to control |
 
 Place global options before a subcommand. Scalar options repeated on the command
@@ -69,10 +70,10 @@ certificate must be supplied together. Namespace/all-namespaces and readonly/wri
 are mutually exclusive, with owned errors that identify the conflicting flags.
 Syntax/type errors do not echo rejected values. Pending string arguments are
 bounded and reject controls; transport-specific validation and missing-file checks
-arrive with the owning adapter. For example, a missing `--kubeconfig` currently
-returns unavailable, rather than pretending a file was loaded.
+are applied by the owning adapter. A missing explicit `--kubeconfig` now returns
+local I/O exit 3; an absent default opens disconnected.
 
-Presentation and initial-command options are terminal-only and are refused by
+Connection, presentation and initial-command options are terminal-only and are refused by
 `info`/`config`. Runtime preference options are allowed by `info`/`config check`,
 where they affect the effective settings, but refused by `config init`.
 `help`/`version` subcommands bypass preferences and credential loading and refuse
@@ -89,7 +90,8 @@ it grants no API permission. The read-only indicator remains visible when the
 header is hidden and after filter/status updates.
 
 F05 remains open: this checkpoint does not complete the initial-release criteria.
-C01 supplies real connection/namespace/transport behavior, C03 consumes refresh,
+C01 supplies real sessions and namespace discovery with tested credential mechanisms;
+connection overrides remain F05/C08, C03 consumes refresh,
 B03 supplies resource commands, and S03/S04 prove guarded interactive execution.
 C08/M01 qualify the later authentication and mutation paths. The delivery record
 must recheck these integrations before F05 closes; completion remains a first-release

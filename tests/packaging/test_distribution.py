@@ -192,7 +192,7 @@ def test_installed_terminal_launch_restores_tty_outside_the_checkout(
         (["help"], 0),
         (["version", "--short"], 0),
         (["--readonly", "info"], 0),
-        (["--context", "fixture"], 4),
+        (["--context", "fixture"], 2),
         (["--token", "opaque-secret"], 4),
         (["--readonly", "-c", "shell"], 2),
     ],
@@ -211,7 +211,9 @@ def test_installed_launch_contract_outside_checkout(
     elif arguments == ["--readonly", "info"]:
         assert json.loads(output.stdout)["preferences"]["read_only"]
     elif expected == 4:
-        assert "unavailable" in output.stderr and "C01 #20" in output.stderr
+        assert "unavailable" in output.stderr and "F05 #19" in output.stderr
+    elif arguments == ["--context", "fixture"]:
+        assert "interactive terminal" in output.stderr
     elif expected == 2:
         assert "Read-only mode blocks" in output.stderr
 
@@ -226,3 +228,39 @@ def test_installed_initial_help_and_visibility_options_restore_tty(
         terminal.send(b"\x11")
         terminal.finish()
         terminal.save_evidence("installed-launch-help")
+
+
+def test_installed_wheel_connects_to_owned_api_and_changes_namespace(
+    installed_wheel: tuple[Path, Path],
+) -> None:
+    import threading
+    from http.server import HTTPServer
+
+    from tests.terminal.test_contexts import Handler, config
+
+    binary_dir, directory = installed_wheel
+    server = HTTPServer(("127.0.0.1", 0), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    path = config(
+        directory / "owned-installed-config",
+        f"http://127.0.0.1:{server.server_port}",
+        {"token": "synthetic-pty"},
+    )
+    before = path.read_bytes()
+    try:
+        with TerminalSession(
+            [str(binary_dir / "kubetrol"), "--kubeconfig", str(path)], directory
+        ) as terminal:
+            terminal.wait_for(b"Session connected")
+            marker = terminal.send(b":ns team\r")
+            terminal.wait_for(b"Namespace: team", since=marker)
+            terminal.send(b"q")
+            terminal.finish()
+            terminal.save_evidence("installed-context-session")
+        assert path.read_bytes() == before
+    finally:
+        server.shutdown()
+        thread.join(timeout=2)
+        server.server_close()
+        assert not thread.is_alive()
