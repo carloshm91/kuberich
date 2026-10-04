@@ -1,0 +1,4 @@
+interface:
+  display_name: "Python Textual Kubernetes"
+  short_description: "Engineer reliable Python Kubernetes terminal apps"
+  default_prompt: "Use $python-textual-kubernetes to implement or review this terminal Kubernetes workflow and verify its lifecycle behavior."

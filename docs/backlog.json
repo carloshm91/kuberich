@@ -1,0 +1,1711 @@
+{
+  "schema_version": 1,
+  "repository": "carloshm91/kubetrol",
+  "planning_date": "2026-10-04",
+  "milestones": [
+    {
+      "title": "v0.0.1",
+      "description": "First usable terminal preview: live pods, navigation, details, logs, exec, enforced quality, and verified PyPI/Homebrew installation."
+    },
+    {
+      "title": "v0.1.0",
+      "description": "Standard resource families, safe workload mutations, editing, port forwarding, standalone executables, and performance qualification."
+    },
+    {
+      "title": "v0.2.0",
+      "description": "Generic CRDs, multi-container logs, themes, configurable navigation/views, and external command plugins."
+    },
+    {
+      "title": "v0.3.0",
+      "description": "Resource metrics, cluster overview, relationships, RBAC analysis, guided troubleshooting, and sanitized exports."
+    },
+    {
+      "title": "v0.4.0",
+      "description": "Node operations, ephemeral debugging, HTTP benchmarks, and policy/quota exploration."
+    },
+    {
+      "title": "v0.5.0",
+      "description": "Extended delivery: Windows/PowerShell qualification, shell completion, OCI terminal image, and distribution-channel recipes."
+    },
+    {
+      "title": "v1.0.0",
+      "description": "Qualified compatibility, migration and support contracts, a complete capability audit, and a stable release."
+    },
+    {
+      "title": "Later: documentation website",
+      "description": "Versioned MkDocs documentation on GitHub Pages after the v0.1.0 terminal product is usable and installable."
+    }
+  ],
+  "epics": [
+    {
+      "id": "E01",
+      "title": "Project foundation and enforced quality",
+      "milestone": "v0.0.1",
+      "area": "foundation",
+      "outcome": "Establish a clean Python package, reproducible development workflow, validated configuration, and quality gates before product features."
+    },
+    {
+      "id": "E02",
+      "title": "Kubernetes sessions, discovery, and live state",
+      "milestone": "v0.2.0",
+      "area": "kubernetes",
+      "outcome": "Maintain correct resource state across context changes, API failures, pagination, watches, and custom resources."
+    },
+    {
+      "id": "E03",
+      "title": "Terminal resource browsing and navigation",
+      "milestone": "v0.2.0",
+      "area": "tui",
+      "outcome": "Deliver responsive resource tables, predictable keyboard navigation, useful details, and generic resource views."
+    },
+    {
+      "id": "E04",
+      "title": "Logs and interactive sessions",
+      "milestone": "v0.2.0",
+      "area": "sessions",
+      "outcome": "Provide reliable logs, container shells, and managed port forwarding with explicit targets and cleanup."
+    },
+    {
+      "id": "E05",
+      "title": "Safe workload and configuration operations",
+      "milestone": "v0.3.0",
+      "area": "operations",
+      "outcome": "Implement useful Kubernetes writes with read-only enforcement, clear targets, validation, conflict handling, and tested outcomes."
+    },
+    {
+      "id": "E06",
+      "title": "Themes, configuration, and plugins",
+      "milestone": "v0.2.0",
+      "area": "customization",
+      "outcome": "Let users customize appearance, navigation, columns, and external commands through documented, validated contracts."
+    },
+    {
+      "id": "E07",
+      "title": "Observability and troubleshooting",
+      "milestone": "v0.3.0",
+      "area": "observability",
+      "outcome": "Connect metrics, events, resource relationships, and permission evidence into practical troubleshooting workflows."
+    },
+    {
+      "id": "E08",
+      "title": "Advanced cluster operations",
+      "milestone": "v0.4.0",
+      "area": "operations",
+      "outcome": "Add node maintenance, diagnostic sessions, and bounded service benchmarks with predictable cleanup and disruption handling."
+    },
+    {
+      "id": "E09",
+      "title": "Packaging, installation, and release delivery",
+      "milestone": "v1.0.0",
+      "area": "release",
+      "outcome": "Publish tested immutable releases through PyPI, Homebrew, and standalone downloads with reproducible provenance and upgrade paths."
+    },
+    {
+      "id": "E10",
+      "title": "Integration, performance, and compatibility qualification",
+      "milestone": "v1.0.0",
+      "area": "quality",
+      "outcome": "Validate real API/terminal behavior, bounded resources, supported versions, and the stable product contract."
+    },
+    {
+      "id": "E11",
+      "title": "User documentation and contribution experience",
+      "milestone": "Later: documentation website",
+      "area": "docs",
+      "outcome": "Keep installation and user guidance accurate, then publish a versioned documentation website after the core product ships."
+    },
+    {
+      "id": "E12",
+      "title": "Extended platforms and ecosystem delivery",
+      "milestone": "v0.5.0",
+      "area": "release",
+      "outcome": "Track the full upstream installation surface without implying that external registries have accepted a package."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "F00",
+      "title": "Prepare repository governance and the complete implementation backlog",
+      "epic": "E01",
+      "milestone": "v0.0.1",
+      "requires": [],
+      "scope": "Prepare the public MIT repository, planning documents, issue hierarchy, project, author identity, and protected contribution workflow before application implementation.",
+      "acceptance": [
+        "README states the planning stage and briefly credits K9s; architecture, quality, release, and distribution decisions are checked in.",
+        "Every planned task has an epic, milestone, priority, acceptance criteria, verification, and explicit blockers; the dependency graph is acyclic.",
+        "Git author email is repository-local, initial docs pass checks, main is protected, and the repository/project are accessible publicly."
+      ],
+      "verification": "Verify GitHub state, documentation links, planning data, CI, SSH push, and repository-local Git identity. No application release is created.",
+      "priority": "P0"
+    },
+    {
+      "id": "F01",
+      "title": "Bootstrap the installable Python package and developer toolchain",
+      "epic": "E01",
+      "milestone": "v0.0.1",
+      "requires": [
+        "F00"
+      ],
+      "scope": "Create the src/kubetrol package, Hatchling build metadata, argparse entry point, uv lockfile, and supported Python matrix.",
+      "acceptance": [
+        "Project/import/CLI names are kubetrol; pyproject.toml owns the version; --help and --version work from an installed wheel.",
+        "Released Textual and kubernetes_asyncio dependencies are pinned by uv.lock; the declared Python range matches tested versions.",
+        "Dev commands and package assets are configured; the initial CLI reports its actual limited capability without fake cluster data."
+      ],
+      "verification": "Run clean uv sync, CLI behavior tests, Ruff, strict mypy, build/metadata validation, and wheel installation on Python 3.12-3.14.",
+      "priority": "P0"
+    },
+    {
+      "id": "F02",
+      "title": "Enforce independent coverage and required application CI gates",
+      "epic": "E01",
+      "milestone": "v0.0.1",
+      "requires": [
+        "F01"
+      ],
+      "scope": "Replace the planning-only quality stage with required application verification before feature work.",
+      "acceptance": [
+        "CI measures all production modules and independently fails below 90% lines or 90% branches; changed-line coverage is at least 90%.",
+        "Critical deterministic modules have a maintained 100% gate; tests and broad exclusions cannot inflate production coverage.",
+        "Ruff, format, strict mypy, tests, build, and the aggregate quality-gate block merge on failure, cancellation, or invalid skip; branch protection requires it."
+      ],
+      "verification": "Use controlled failing fixtures/temporary changes to demonstrate each gate rejects regressions; verify coverage artifacts and Linux/macOS CI.",
+      "priority": "P0"
+    },
+    {
+      "id": "F03",
+      "title": "Implement validated configuration and sanitized diagnostics",
+      "epic": "E01",
+      "milestone": "v0.0.1",
+      "requires": [
+        "F02"
+      ],
+      "scope": "Add platform-appropriate settings, a versioned YAML schema, application errors, and useful local diagnostics.",
+      "acceptance": [
+        "Configuration has typed defaults, atomic writes, explicit precedence, invalid-value errors, and forward-compatible unknown-field handling.",
+        "No configuration operation changes kubeconfig current-context; missing configuration starts with documented defaults.",
+        "Logs rotate and redact credentials; CLI errors have stable exit behavior and concise user messages; debug details stay outside terminal rendering."
+      ],
+      "verification": "Test missing/malformed files, interrupted writes, migrations, path handling, permissions, log bounds, and redaction with temporary directories.",
+      "priority": "P0"
+    },
+    {
+      "id": "F04",
+      "title": "Define and test Kubernetes, plugin, and terminal trust boundaries",
+      "epic": "E01",
+      "milestone": "v0.0.1",
+      "requires": [
+        "F02"
+      ],
+      "scope": "Write the focused threat model and implement shared input/redaction/target primitives needed by the first workflows.",
+      "acceptance": [
+        "Document trust boundaries for kubeconfig exec credentials, API fields, logs, terminal controls, subprocesses, plugins, and release artifacts.",
+        "Shared helpers escape untrusted markup/control sequences and redact credentials without hiding actionable error context.",
+        "Mutation/command target identities are immutable snapshots; tests never silently use a developer cluster; secret fixtures are synthetic."
+      ],
+      "verification": "Exercise hostile names/log controls, credential-bearing errors, target capture, and unsafe test-context rejection; critical helpers meet 100% coverage.",
+      "priority": "P0"
+    },
+    {
+      "id": "C01",
+      "title": "Create isolated kubeconfig and context sessions",
+      "epic": "E02",
+      "milestone": "v0.0.1",
+      "requires": [
+        "F03",
+        "F04"
+      ],
+      "scope": "Implement explicit asynchronous clients and context/namespace selection without global configuration mutation.",
+      "acceptance": [
+        "Load explicit/default kubeconfig paths and supported credential mechanisms with TLS verification on by default.",
+        "Each context owns its API session, namespace, and generation; context selection does not rewrite user kubeconfig.",
+        "Unavailable credentials, forbidden namespace listing, timeouts, and disconnected clusters produce distinct actionable states."
+      ],
+      "verification": "Test multiple contexts, credential-exec contracts, invalid certificates, missing config, restricted RBAC, and session closure using fake endpoints.",
+      "priority": "P0"
+    },
+    {
+      "id": "C02",
+      "title": "Implement API discovery and consistent paginated resource listing",
+      "epic": "E02",
+      "milestone": "v0.0.1",
+      "requires": [
+        "C01"
+      ],
+      "scope": "Provide discovery and normalized resource snapshots for the initial pod/namespace/detail workflows.",
+      "acceptance": [
+        "Distinguish namespaced and cluster-scoped endpoints; discover supported verbs and API groups instead of assuming universal access.",
+        "Follow continue tokens while preserving the collection snapshot/resourceVersion and normalize typed display data separately from raw manifests.",
+        "Handle partial discovery and forbidden requests explicitly; expose list resourceVersion for the watch engine."
+      ],
+      "verification": "Contract-test empty/multiple pages, expired pagination, denied groups, malformed responses, and correct namespace scoping.",
+      "priority": "P0"
+    },
+    {
+      "id": "C03",
+      "title": "Implement resilient list-watch synchronization",
+      "epic": "E02",
+      "milestone": "v0.0.1",
+      "requires": [
+        "C02"
+      ],
+      "scope": "Maintain live resource state using the initial collection version and a recoverable watch stream.",
+      "acceptance": [
+        "Apply ADDED/MODIFIED/DELETED and BOOKMARK events idempotently with stable UID identity and opaque resourceVersion handling.",
+        "Recover timeouts/EOF/retryable transport failures with bounded backoff and jitter; relist on expired versions/410.",
+        "Permission failures are surfaced without hot retry loops; stream and queue lifetimes are bounded and cancellable."
+      ],
+      "verification": "Use deterministic fake-server/clock tests for list-watch gaps, duplicates, deletion/recreation, 410, reconnect, permission denial, and cancellation.",
+      "priority": "P0"
+    },
+    {
+      "id": "C04",
+      "title": "Own session cancellation and reject stale-context updates",
+      "epic": "E02",
+      "milestone": "v0.0.1",
+      "requires": [
+        "C03"
+      ],
+      "scope": "Connect session lifecycle, resource state, and view subscriptions with explicit cleanup.",
+      "acceptance": [
+        "Context/namespace/resource switches cancel and await obsolete work and reject late results with generation checks.",
+        "UI subscriptions observe bounded state updates; inactive resources do not accumulate unbounded watches.",
+        "Disconnected/stale status is visible and recovery replaces the correct snapshot; exit leaves no owned tasks or sessions."
+      ],
+      "verification": "Race-test rapid switches, late pages/events, cancelled reconnects, repeated opening/closing, and task/session leak detection.",
+      "priority": "P0"
+    },
+    {
+      "id": "C05",
+      "title": "Support dynamic custom resource discovery and version selection",
+      "epic": "E02",
+      "milestone": "v0.2.0",
+      "requires": [
+        "C02",
+        "B05"
+      ],
+      "scope": "Extend the adapter contract to arbitrary accessible resource types and CRDs.",
+      "acceptance": [
+        "Resolve group/version/resource and scope from discovery, including preferred versions and ambiguous short-name handling.",
+        "Custom resources support generic list/watch/get and server-provided Table metadata with a graceful fallback.",
+        "Discovery refresh handles installed/removed CRDs and inaccessible API groups without breaking core views."
+      ],
+      "verification": "Test namespaced/cluster CRDs, version changes, alias collisions, missing Table responses, and restricted discovery on a disposable cluster.",
+      "priority": "P1"
+    },
+    {
+      "id": "B01",
+      "title": "Build the Textual application shell and responsive layout",
+      "epic": "E03",
+      "milestone": "v0.0.1",
+      "requires": [
+        "F02",
+        "F03"
+      ],
+      "scope": "Create the real terminal shell with header, resource region, command/filter inputs, status, and contextual help.",
+      "acceptance": [
+        "The header always identifies context/namespace and connection state; the main view starts without an artificial splash delay.",
+        "Keyboard focus, mouse selection, Escape/back, help, and narrow-window layouts behave consistently.",
+        "Normal handlers do not block the event loop; styles are packaged assets and the app restores terminal state on exit."
+      ],
+      "verification": "Use Pilot tests at small/normal/large sizes for focus, navigation, resize, errors, and clean shutdown; add limited layout snapshots.",
+      "priority": "P1"
+    },
+    {
+      "id": "B02",
+      "title": "Implement the live pod table with stable selection and typed sorting",
+      "epic": "E03",
+      "milestone": "v0.0.1",
+      "requires": [
+        "B01",
+        "C04"
+      ],
+      "scope": "Render live resource snapshots incrementally with meaningful pod/container health columns.",
+      "acceptance": [
+        "Rows use stable identity; updates preserve selection and scroll position and do not rebuild the whole table per event.",
+        "Readiness, restarts, age, waiting/termination reasons, and pod status are derived accurately; typed sorting is numeric/chronological.",
+        "Horizontal/vertical scrolling and deletion of a selected object have deterministic behavior; empty/error/loading states differ."
+      ],
+      "verification": "Test updates while sorting/scrolling, selected deletion/recreation, init/multi-container statuses, quantity ordering, and Unicode width.",
+      "priority": "P1"
+    },
+    {
+      "id": "B03",
+      "title": "Add resource commands, filtering, namespace shortcuts, and help",
+      "epic": "E03",
+      "milestone": "v0.0.1",
+      "requires": [
+        "B02"
+      ],
+      "scope": "Provide keyboard-first command navigation and filtering with discoverable actions.",
+      "acceptance": [
+        "Colon commands and resource aliases navigate accessible views; slash filtering supports documented text/regex modes and clear invalid-pattern errors.",
+        "Namespace/context selection and navigation history preserve the intended view state without stale updates.",
+        "Contextual help matches actual bindings and available actions; typing/filtering cannot accidentally invoke destructive bindings."
+      ],
+      "verification": "Pilot-test command completion/unknown commands, invalid regex, namespace changes, focus routing, and history restoration.",
+      "priority": "P1"
+    },
+    {
+      "id": "B04",
+      "title": "Show YAML, resource details, and related events",
+      "epic": "E03",
+      "milestone": "v0.0.1",
+      "requires": [
+        "B03",
+        "C02",
+        "F04"
+      ],
+      "scope": "Add useful read-only inspection of the selected resource and its warning events.",
+      "acceptance": [
+        "YAML preserves API field names and omits presentation-only fields; secrets remain hidden in ordinary views.",
+        "Details and related events retain the captured resource/context identity and show permission/unavailable errors clearly.",
+        "Search, scroll, copy of non-sensitive content, and return-to-table preserve navigation state.",
+        "Support managedFields visibility and text search; describe renders resource-specific evidence without exposing secret values."
+      ],
+      "verification": "Test field serialization, event association, stale selection, access denial, redaction, markup escaping, and viewer navigation.",
+      "priority": "P1"
+    },
+    {
+      "id": "B05",
+      "title": "Add standard workload, networking, and storage resource views",
+      "epic": "E03",
+      "milestone": "v0.1.0",
+      "requires": [
+        "B04",
+        "C02"
+      ],
+      "scope": "Extend the resource registry with deployments, replica/stateful/daemon sets, jobs/cronjobs, services/endpoints, ingress, configmaps, secrets, nodes, PVCs/PVs, and storage classes.",
+      "acceptance": [
+        "Each advertised resource has a functional discovered endpoint, scoped list/watch/detail support, and meaningful typed columns.",
+        "Supported actions are resource-specific; inaccessible or absent APIs are presented accurately.",
+        "Registry definitions are reusable and tested; the UI does not require a new large screen class for each resource."
+      ],
+      "verification": "Use parameterized registry/column contracts and kind fixtures covering workload, network, storage, batch, and cluster-scoped resources.",
+      "priority": "P1"
+    },
+    {
+      "id": "B06",
+      "title": "Deliver generic CRD tables and configurable resource columns",
+      "epic": "E03",
+      "milestone": "v0.2.0",
+      "requires": [
+        "C05",
+        "B05"
+      ],
+      "scope": "Make dynamically discovered resources browsable with useful server and fallback columns.",
+      "acceptance": [
+        "Generic resource navigation supports CRDs, scope, aliases, version identity, and raw YAML/details.",
+        "Use server-provided columns when available, with stable fallback columns and typed sorting.",
+        "Removed schemas, unknown fields, and column configuration errors preserve a usable view."
+      ],
+      "verification": "Pilot and integration tests cover namespaced/cluster CRDs, server Table fallback, discovery refresh, and malformed column values.",
+      "priority": "P1"
+    },
+    {
+      "id": "S01",
+      "title": "Implement cancellable current and previous container log streams",
+      "epic": "E04",
+      "milestone": "v0.0.1",
+      "requires": [
+        "C04"
+      ],
+      "scope": "Add a log adapter that follows container output independently of resource watches.",
+      "acceptance": [
+        "Support selected regular/init containers, tail/since options, timestamps, previous logs, and normal end-of-stream.",
+        "Handle chunk boundaries, long lines, partial UTF-8, disconnects, deleted pods, and permission failures explicitly.",
+        "Cancellation closes connections; queues and retained data are bounded; retry behavior documents possible duplicates."
+      ],
+      "verification": "Contract-test chunking/encoding, abrupt disconnects, previous-container errors, cancellation, and bounded memory.",
+      "priority": "P1"
+    },
+    {
+      "id": "S02",
+      "title": "Build the log viewer with pause, follow, search, and bounded scrolling",
+      "epic": "E04",
+      "milestone": "v0.0.1",
+      "requires": [
+        "S01",
+        "B03",
+        "F04"
+      ],
+      "scope": "Display usable streaming logs while keeping terminal input responsive.",
+      "acceptance": [
+        "Container selection, previous/current mode, timestamps, wrap, search, and follow/pause controls are visible and keyboard accessible.",
+        "Scrolling back disables forced follow; returning to follow is explicit; a bounded buffer clearly reports truncated history.",
+        "Render in batches, escape untrusted terminal controls, and close streams on exit/context change.",
+        "Track timestamps, wrap, head/tail/time windows, clear/mark, column lock, fullscreen and save/copy actions from the audit; later export/clipboard enhancements link to their owning issues."
+      ],
+      "verification": "Pilot-test scroll/follow transitions, search, resize, hostile output, and stream cleanup; replay a high-volume synthetic stream.",
+      "priority": "P1"
+    },
+    {
+      "id": "S03",
+      "title": "Implement explicit-target subprocess and terminal handoff services",
+      "epic": "E04",
+      "milestone": "v0.0.1",
+      "requires": [
+        "F04",
+        "C01",
+        "F05"
+      ],
+      "scope": "Create the shared runner for kubectl, editors, and later plugins.",
+      "acceptance": [
+        "Use argument vectors and explicit kubeconfig/context/namespace; validate executable availability and capture targets before awaiting.",
+        "Distinguish captured-output processes, background sessions, and foreground terminal handoff with typed outcomes.",
+        "Restore terminal state and clean up children on success, exception, Ctrl-C, cancellation, and parent shutdown."
+      ],
+      "verification": "Test hostile argument values, missing executables, exit statuses, interruptions, and repeated PTY handoffs; command construction meets 100% coverage.",
+      "priority": "P0"
+    },
+    {
+      "id": "S04",
+      "title": "Provide interactive exec with container selection and reliable return",
+      "epic": "E04",
+      "milestone": "v0.0.1",
+      "requires": [
+        "S03",
+        "B02"
+      ],
+      "scope": "Open a real container shell through Textual suspension and kubectl exec.",
+      "acceptance": [
+        "Select the exact pod/container/context/namespace and a configured shell; support multiple containers and explain unavailable shells.",
+        "Keyboard input, terminal resizing, Ctrl-C, and full-screen programs pass through the real terminal.",
+        "Exit or failed exec restores the previous resource view; deleted pods, permissions, and missing kubectl yield actionable errors."
+      ],
+      "verification": "Run fake-kubectl argument tests and real PTY/kind exec tests covering resize, interruption, failure, and repeated enter/exit.",
+      "priority": "P1"
+    },
+    {
+      "id": "S05",
+      "title": "Manage port-forward sessions and their lifecycle",
+      "epic": "E04",
+      "milestone": "v0.1.0",
+      "requires": [
+        "S03",
+        "S04"
+      ],
+      "scope": "Start, inspect, stop, and clean up explicitly targeted pod/service port forwards.",
+      "acceptance": [
+        "Validate mappings and collisions, bind loopback by default, and report readiness from the actual process.",
+        "List active sessions with context/resource/ports/status; expose deliberate stop and context-switch behavior.",
+        "Failures, resource deletion, app exit, and repeated start/stop leave no orphan processes or listeners."
+      ],
+      "verification": "Test occupied ports, invalid mappings, startup failure, process death, context switching, and actual network forwarding in kind.",
+      "priority": "P1"
+    },
+    {
+      "id": "S06",
+      "title": "Add aggregated logs and structured-output controls",
+      "epic": "E04",
+      "milestone": "v0.2.0",
+      "requires": [
+        "S02",
+        "B05"
+      ],
+      "scope": "Follow multiple containers or workload pods with identifiable, searchable output.",
+      "acceptance": [
+        "Prefix every line with source identity; add/remove streams as workload pods change with a documented concurrency limit.",
+        "Offer plain/JSON display, source filtering, and sanitized export without freezing the UI.",
+        "Document ordering/clock limitations, cap per-source and aggregate buffers, and close every stream when leaving."
+      ],
+      "verification": "Test interleaving, pod churn, bad JSON, slow/noisy sources, timestamp differences, cancellation, and aggregate memory bounds.",
+      "priority": "P1"
+    },
+    {
+      "id": "M01",
+      "title": "Create guarded mutation services and read-only mode",
+      "epic": "E05",
+      "milestone": "v0.1.0",
+      "requires": [
+        "C04",
+        "F04",
+        "B04"
+      ],
+      "scope": "Centralize Kubernetes modifications before adding write actions to resource views.",
+      "acceptance": [
+        "Read-only mode blocks application writes and state-changing commands through a common guard.",
+        "Confirmation shows captured context, namespace, resource identity, and intended effect; identity is revalidated where needed.",
+        "Permission denial, conflict, timeout, and uncertain write outcomes are distinct; retries do not repeat non-idempotent writes blindly."
+      ],
+      "verification": "Test every guard bypass route, stale-context race, UID replacement, RBAC denial, and uncertain outcome; deterministic guards meet 100% coverage.",
+      "priority": "P0"
+    },
+    {
+      "id": "M02",
+      "title": "Edit manifests with preview, validation, and conflict handling",
+      "epic": "E05",
+      "milestone": "v0.1.0",
+      "requires": [
+        "M01",
+        "S03"
+      ],
+      "scope": "Open selected manifests in the configured editor and apply reviewed changes.",
+      "acceptance": [
+        "Use private temporary files with deterministic cleanup and a safe editor argument parser.",
+        "Show a diff, validate YAML/resource identity, perform supported dry-run validation, and handle conflicts without silent overwrite.",
+        "Cancelled/unchanged edits make no API write; sensitive fields are handled deliberately and never logged."
+      ],
+      "verification": "Test malformed YAML, editor failure, no-op edits, changed identity, server validation, conflict/retry, and temp-file cleanup.",
+      "priority": "P1"
+    },
+    {
+      "id": "M03",
+      "title": "Implement scale and rollout operations",
+      "epic": "E05",
+      "milestone": "v0.1.0",
+      "requires": [
+        "M01",
+        "B05"
+      ],
+      "scope": "Support scaling, rollout restart/status, and explicit rollback for supported workloads.",
+      "acceptance": [
+        "Actions are offered only for applicable resources and capture the intended target.",
+        "Validate replica counts and show progress/status from actual API state; cancellation stops monitoring without misreporting server rollback.",
+        "Handle HPA conflicts, paused/failed rollouts, unsupported rollback, and permissions with useful messages."
+      ],
+      "verification": "Test service contracts plus kind deployment scale/restart/status/rollback, forbidden writes, and timeout/cancellation.",
+      "priority": "P1"
+    },
+    {
+      "id": "M04",
+      "title": "Implement deletion and Job/CronJob operations",
+      "epic": "E05",
+      "milestone": "v0.1.0",
+      "requires": [
+        "M01",
+        "B05"
+      ],
+      "scope": "Add deliberate delete/batch-delete, Job creation from CronJobs, and suspension controls.",
+      "acceptance": [
+        "Deletion confirms identity, scope, propagation/grace options, and batch count; read-only mode applies.",
+        "CronJob trigger and suspend/resume use supported API semantics and report created resource identity.",
+        "Partial batch results, finalizers, resource replacement, permission failures, and ambiguous timeouts remain visible."
+      ],
+      "verification": "Test mixed batch outcomes, stale UIDs, finalizers, denied operations, duplicate trigger prevention, and real batch API fixtures.",
+      "priority": "P1"
+    },
+    {
+      "id": "M05",
+      "title": "Add deliberate ConfigMap and Secret inspection/editing",
+      "epic": "E05",
+      "milestone": "v0.2.0",
+      "requires": [
+        "M02",
+        "B05"
+      ],
+      "scope": "Provide configuration inspection and explicit secret reveal/copy operations.",
+      "acceptance": [
+        "Secret values are hidden by default; reveal/copy are explicit scoped user actions with clear state.",
+        "Handle text/binary data and base64 errors without leaking content to logs, snapshots, exceptions, or support bundles.",
+        "Editing preserves object identity and uses the common conflict/read-only/mutation flow."
+      ],
+      "verification": "Use synthetic secret fixtures to test reveal lifecycle, clipboard errors, binary values, redaction across outputs, and guarded edits.",
+      "priority": "P1"
+    },
+    {
+      "id": "U01",
+      "title": "Implement configurable themes and accessible terminal presentation",
+      "epic": "E06",
+      "milestone": "v0.2.0",
+      "requires": [
+        "B03",
+        "F03"
+      ],
+      "scope": "Register built-in/custom Textual themes with validated persistent configuration.",
+      "acceptance": [
+        "Users can preview/select themes and save global/context preferences with predictable precedence.",
+        "Color is not the only indicator of status; low-color and narrow-terminal fallbacks remain readable.",
+        "Invalid theme values recover with an actionable error and preserve working settings.",
+        "Provide original Kubetrol about/branding content and an opt-in version notice; startup works offline and no external check is required."
+      ],
+      "verification": "Test theme precedence, invalid files, live switching, contrast/status cues, and representative terminal snapshots.",
+      "priority": "P1"
+    },
+    {
+      "id": "U02",
+      "title": "Configure hotkeys, aliases, and resource views",
+      "epic": "E06",
+      "milestone": "v0.2.0",
+      "requires": [
+        "U01",
+        "B06"
+      ],
+      "scope": "Expose user-configurable navigation keys, aliases, column visibility/order, and sorting.",
+      "acceptance": [
+        "Validate reserved keys, conflicts, recursive/ambiguous aliases, and per-resource applicability.",
+        "Persist column order/visibility/width and typed sort preferences with schema migrations.",
+        "Help and command completion reflect effective configuration; invalid overrides leave the UI navigable."
+      ],
+      "verification": "Test conflicts, migration/precedence, unknown resource fields, input focus, and custom-view persistence.",
+      "priority": "P1"
+    },
+    {
+      "id": "U03",
+      "title": "Define and load the external plugin contract",
+      "epic": "E06",
+      "milestone": "v0.2.0",
+      "requires": [
+        "S03",
+        "U02",
+        "F04"
+      ],
+      "scope": "Implement validated plugin manifests, resource scopes, hotkeys, and selected-resource variables.",
+      "acceptance": [
+        "Document command/arguments/environment, scopes, foreground/background behavior, confirmation, and working-directory rules.",
+        "Load only configured user plugin locations; cluster objects/current-directory files cannot register executable commands automatically.",
+        "Context/resource variables are captured explicitly; malformed or conflicting manifests are rejected with useful messages.",
+        "Cover plugin shortcut override, confirmation, dangerous classification, output behavior, per-context directory loading, braced variables/COL fields and typed string/number/bool/dropdown inputs with validation and cancellation."
+      ],
+      "verification": "Test manifest schema, scope resolution, precedence, hostile variable values, key collisions, and deliberate plugin discovery.",
+      "priority": "P1"
+    },
+    {
+      "id": "U04",
+      "title": "Execute plugins with bounded output and owned process cleanup",
+      "epic": "E06",
+      "milestone": "v0.2.0",
+      "requires": [
+        "U03",
+        "M01"
+      ],
+      "scope": "Run configured plugin commands through the shared process and terminal services.",
+      "acceptance": [
+        "Respect configured foreground/background mode and explicit confirmation; represent plugins as unsandboxed local commands.",
+        "Read-only mode disables plugins unless an explicit trusted read-only classification is configured; arbitrary plugins cannot be inferred safe.",
+        "Limit captured output, redact context-sensitive data, expose exit status/cancellation, and clean up owned processes."
+      ],
+      "verification": "Test successful/failing commands, malformed environments, noisy output, cancellation, terminal restoration, and read-only gating.",
+      "priority": "P1"
+    },
+    {
+      "id": "U05",
+      "title": "Document and test plugin compatibility and example workflows",
+      "epic": "E06",
+      "milestone": "v0.2.0",
+      "requires": [
+        "U04"
+      ],
+      "scope": "Publish a precise supported plugin schema and useful original examples.",
+      "acceptance": [
+        "Document which K9s plugin configuration fields/variables are compatible, translated, or unsupported; do not claim drop-in compatibility without tests.",
+        "Provide tested examples for a resource inspection command, an interactive command, and a background workflow.",
+        "Validate examples automatically and document required executables, trust assumptions, and error behavior.",
+        "Classify every bundled upstream plugin in the pinned inventory, document external dependencies and free alternatives, and provide tested translation fixtures; third-party tool features are not falsely claimed as native capabilities."
+      ],
+      "verification": "Run example manifests against synthetic selected-resource fixtures and harmless test executables; check compatibility mapping and documentation.",
+      "priority": "P1"
+    },
+    {
+      "id": "F05",
+      "title": "Implement the complete launch CLI and diagnostic command contract",
+      "epic": "E01",
+      "milestone": "v0.0.1",
+      "requires": [
+        "F03",
+        "F04"
+      ],
+      "scope": "Implement all launch, connection, impersonation, and presentation flags enumerated in docs/k9s-cli.md; expose only behavior that actually works in the milestone.",
+      "acceptance": [
+        "Initial release supports help, version, info, --context, --kubeconfig, --namespace/-n, --all-namespaces/-A, --command/-c, --readonly, --write, --refresh/-r, log destination/level, request timeout, cluster/user overrides, impersonation, token and TLS certificate overrides.",
+        "Document flag/env/file precedence, mutually exclusive flags, aliases and exit codes. A later-feature flag returns a precise unavailable error until its owning task ships; it never silently succeeds.",
+        "Read-only mode blocks shell/attach and every mutating path through shared services, including commands invoked without a UI shortcut; defaults verify TLS and credentials never enter diagnostics."
+      ],
+      "verification": "Table-driven CLI tests for every audited flag, help snapshots, precedence, invalid combinations, repeated groups, missing files, secret redaction, and read-only bypass attempts.",
+      "priority": "P0"
+    },
+    {
+      "id": "C06",
+      "title": "Qualify EKS authentication and credential refresh",
+      "epic": "E02",
+      "milestone": "v0.0.1",
+      "requires": [
+        "C01",
+        "F05"
+      ],
+      "scope": "Support EKS kubeconfig exec credentials through the existing AWS CLI without embedding cloud credentials or provisioning clusters.",
+      "acceptance": [
+        "Honor kubeconfig exec API versions, args/env, AWS profiles/roles and externally established SSO sessions; use aws eks get-token through its declared exec entry.",
+        "Refresh expiring tokens without leaking credentials or freezing the UI; explain missing AWS CLI, expired SSO, denied role and API authorization failures separately.",
+        "Verify the same identity/overrides reach both API and kubectl subprocess paths; publish cloud qualification evidence honestly."
+      ],
+      "verification": "ExecCredential contract fixtures cover token expiry, refresh concurrency, role/profile env, invalid JSON and cancellation; opt-in real EKS smoke uses a maintainer-provided test cluster.",
+      "priority": "P0"
+    },
+    {
+      "id": "C07",
+      "title": "Qualify AKS Entra and Azure kubelogin authentication",
+      "epic": "E02",
+      "milestone": "v0.0.1",
+      "requires": [
+        "C01",
+        "F05"
+      ],
+      "scope": "Support AKS kubeconfig exec authentication using Azure kubelogin and externally established Azure identities.",
+      "acceptance": [
+        "Cover azurecli, devicecode, service-principal and workload-identity credential contracts without implementing a parallel identity store.",
+        "Interactive authentication has explicit terminal handoff/retry; noninteractive sessions fail clearly instead of hanging; distinguish missing kubelogin, expired login, tenant and RBAC failures.",
+        "Support exec v1/v1beta1 as appropriate to the SDK, expiration refresh and certificate/token results; unsupported SDK behavior is fixed in the adapter with contract tests."
+      ],
+      "verification": "Use stub kubelogin commands to test supported modes, expiry, environment, cancellation, redaction and non-TTY behavior; real AKS certification requires an opt-in test tenant.",
+      "priority": "P0"
+    },
+    {
+      "id": "C08",
+      "title": "Qualify generic kubeconfig, GKE, OIDC, proxy and authentication transport",
+      "epic": "E02",
+      "milestone": "v0.1.0",
+      "requires": [
+        "C06",
+        "C07",
+        "S04"
+      ],
+      "scope": "Close client-go interoperability gaps in Python and keep SDK and delegated tools on the same effective connection.",
+      "acceptance": [
+        "Test merged KUBECONFIG files, relative cert/key paths, embedded certs, token files, exec credentials, gke-gcloud-auth-plugin and external OIDC helpers.",
+        "Apply server/proxy/TLS settings and repeated impersonation groups consistently to browsing, logs, exec, Helm and port forwarding; temporary derived config is permission-restricted and cleaned up.",
+        "Publish exact supported ExecCredential interactiveMode/provideClusterInfo behavior and any unsupported legacy auth-provider mode with a migration path; do not silently fall back to a different identity."
+      ],
+      "verification": "HTTPS fake-API and fake-exec contracts test proxy, TLS failures, authorization, refresh races and effective subprocess context; optional GKE smoke, never the current user cluster.",
+      "priority": "P0"
+    },
+    {
+      "id": "B07",
+      "title": "Complete navigation, filtering, scrolling and remote clipboard behavior",
+      "epic": "E03",
+      "milestone": "v0.2.0",
+      "requires": [
+        "B05",
+        "U02",
+        "Q02"
+      ],
+      "scope": "Close the audited table and text interaction surface beyond the first usable browser.",
+      "acceptance": [
+        "Support command history/back-forward/last command, completion, inverse regex, fuzzy, labels/fields, namespace favorites, errors-only and wide-column toggles, selection ranges and typed sorting.",
+        "Provide horizontal/vertical scrolling, page/home/end keys, mouse opt-in, breadcrumbs/header/fullscreen toggles, Unicode width handling and stable focus during live updates.",
+        "Copy names/namespaces/text with native and OSC52 backends, explicit user intent and payload bounds; support SSH/tmux without interpreting remote text as terminal controls."
+      ],
+      "verification": "Pilot behavioral tests plus PTY resize/Unicode/SSH/tmux transcripts cover every mapped action; fuzz regex/filter input with bounded evaluation to prevent UI stalls.",
+      "priority": "P1"
+    },
+    {
+      "id": "S07",
+      "title": "Attach to containers and transfer files with explicit targets",
+      "epic": "E04",
+      "milestone": "v0.1.0",
+      "requires": [
+        "S04",
+        "M01",
+        "C08"
+      ],
+      "scope": "Add kubectl attach and kubectl cp workflows with selected init/regular/ephemeral container identity.",
+      "acceptance": [
+        "Restore terminal state on attach success, EOF, signals and failure, and preserve exit status.",
+        "Transfer uploads/downloads using explicit local and remote paths; show overwrite/size/destination intent, explain tar requirements, and never construct shell command strings.",
+        "Read-only gates block attach/uploads; downloads require explicit destination and handle traversal/symlink/overwrite risks; cancelled copies leave a clear partial-file state."
+      ],
+      "verification": "Use disposable pod round trips for small/binary/space-containing files, missing tar and interrupted copies; PTY tests verify attach signals and restoration.",
+      "priority": "P1"
+    },
+    {
+      "id": "S08",
+      "title": "Implement FastForward presets and port-forward transport compatibility",
+      "epic": "E04",
+      "milestone": "v0.2.0",
+      "requires": [
+        "S05",
+        "C08"
+      ],
+      "scope": "Support named/numeric ports, multi-forward presets, configurable addresses and K9s-style annotations.",
+      "acceptance": [
+        "Parse documented port-forward annotation syntax including container names and local/remote ports; expose user-confirmed automatic-start preferences.",
+        "Annotations from a cluster cannot silently open a listener: automatic forwarding requires explicit local opt-in, loopback defaults and collision validation.",
+        "Cover WebSocket/SPDY kubectl transport selection, reconnect state, service-to-pod changes and lifecycle cleanup; feature env names are documented."
+      ],
+      "verification": "Parse fixtures for every annotation form; real kind forwards check collisions, cancellation, transport failure, remote binding opt-in and stale context events.",
+      "priority": "P1"
+    },
+    {
+      "id": "M06",
+      "title": "Browse, inspect and roll back Helm releases",
+      "epic": "E05",
+      "milestone": "v0.3.0",
+      "requires": [
+        "M01",
+        "C08",
+        "B05"
+      ],
+      "scope": "Use an optional Helm executable behind a typed adapter for release list/status/values/manifest/history and rollback/uninstall.",
+      "acceptance": [
+        "Display releases across allowed namespaces, revision history, values and manifests with secret-aware defaults; identify supported Helm versions/storage drivers.",
+        "Rollback to a selected revision and uninstall require target confirmation and read-only enforcement; handle hooks, timeout and failed/partial releases.",
+        "Pass effective context/namespace/identity securely; missing Helm is an actionable feature-specific error.",
+        "Include chart notes, user-supplied versus all values, and uninstall keep-history semantics in the compatibility contract."
+      ],
+      "verification": "Install an original tiny chart in kind, upgrade twice, inspect and roll back; contract tests cover redaction, CLI JSON parsing, missing executable and failures.",
+      "priority": "P1"
+    },
+    {
+      "id": "M07",
+      "title": "Browse local manifests and apply/delete with Kustomize awareness",
+      "epic": "E05",
+      "milestone": "v0.3.0",
+      "requires": [
+        "M02",
+        "C08"
+      ],
+      "scope": "Implement the local directory workflow with YAML inspection, editing, rendered Kustomize output, preview and guarded apply/delete.",
+      "acceptance": [
+        "Navigate directories without automatically executing files or remote Kustomize plugins; document symlink and allowed-root handling.",
+        "Show rendered resources, namespace/context and server-side dry-run/diff before applying; surface admission errors and per-resource partial outcomes.",
+        "Deletion requires explicit resource preview; read-only blocks writes; external editor uses owned terminal handoff."
+      ],
+      "verification": "Temporary directory fixtures and kind cover multi-document YAML, nested kustomization, malformed files, denial, conflicts, partial apply, deletion and cancellation.",
+      "priority": "P1"
+    },
+    {
+      "id": "M08",
+      "title": "Manage local context names and completed-pod cleanup",
+      "epic": "E05",
+      "milestone": "v0.2.0",
+      "requires": [
+        "C01",
+        "M01",
+        "B05"
+      ],
+      "scope": "Cover explicit kubeconfig context rename/delete and the completed/error-pod cleanup action.",
+      "acceptance": [
+        "Context management is separate from normal selection: preview the owning kubeconfig file, make a recoverable backup and write atomically; refuse ambiguous merged ownership.",
+        "Renaming/deleting a context does not erase shared cluster/user credentials; handle current-context deliberately with a confirmation and documented behavior.",
+        "Preview exact pod UIDs/states before cleanup; revalidate before delete and report races/partial failures; read-only prevents both local config edits and cluster cleanup."
+      ],
+      "verification": "Fixture tests cover merged files, concurrent edits, backup recovery and permissions; kind tests verify cleanup excludes running and changed-UID pods.",
+      "priority": "P1"
+    },
+    {
+      "id": "U06",
+      "title": "Implement custom resource jumps and reactive configuration",
+      "epic": "E06",
+      "milestone": "v0.2.0",
+      "requires": [
+        "U02",
+        "C05"
+      ],
+      "scope": "Support declarative relationships and live reload of settings, aliases, views, themes and plugin definitions.",
+      "acceptance": [
+        "Map source GVR to target GVR with namespace/label/field selector templates and documented restricted value evaluation; no executable expressions.",
+        "Reload atomically after validation; keep the last valid config and report invalid files without losing selection or running sessions.",
+        "Support per-context overrides, theme inversion/transparent colors and full GVR titles; version the compatibility/import schema and report unsupported fields."
+      ],
+      "verification": "Contract/Pilot tests cover malformed templates, missing fields, selector escaping, namespace scope, invalid reload and precedence of context/global settings.",
+      "priority": "P1"
+    },
+    {
+      "id": "O01",
+      "title": "Collect and present resource metrics with explicit availability",
+      "epic": "E07",
+      "milestone": "v0.3.0",
+      "requires": [
+        "C04",
+        "B05"
+      ],
+      "scope": "Poll metrics APIs and reconcile CPU/memory requests, limits, usage, percentages and node/GPU capacity.",
+      "acceptance": [
+        "Distinguish missing metrics-server, forbidden, stale and zero values; aggregate workload/node totals with documented units.",
+        "Support custom GPU vendor resource names and extended resources without hard-coding one device vendor.",
+        "Bound concurrency/cache lifetime and stop old-context polls; sorting uses numeric values, not formatted strings."
+      ],
+      "verification": "Unit-test Kubernetes quantities and denominators including absent/zero limits; integration contracts cover missing API and stale metrics; UI asserts status and sorting.",
+      "priority": "P1"
+    },
+    {
+      "id": "O02",
+      "title": "Build a cluster pulse overview and CPU/memory drill-downs",
+      "epic": "E07",
+      "milestone": "v0.3.0",
+      "requires": [
+        "O01",
+        "B05"
+      ],
+      "scope": "Present node/pod health, capacity, scheduling pressure and metric summaries with navigable drill-downs.",
+      "acceptance": [
+        "Summaries carry timestamp and scope and distinguish unavailable data from healthy state.",
+        "Keyboard actions jump to the exact underlying resource/filter while preserving context and navigation history.",
+        "Large-cluster summaries use incremental bounded work and responsive loading states."
+      ],
+      "verification": "Scenario fixtures and Pilot tests cover healthy/degraded/partial-RBAC clusters, metrics loss and scope changes; include performance measurements.",
+      "priority": "P1"
+    },
+    {
+      "id": "O03",
+      "title": "Build XRay-style relationships and resource references",
+      "epic": "E07",
+      "milestone": "v0.3.0",
+      "requires": [
+        "B05",
+        "C05",
+        "U06"
+      ],
+      "scope": "Navigate ownership, selectors, endpoints and used-by relationships for workloads and referenced configuration/storage/identities.",
+      "acceptance": [
+        "Follow controller ownerReferences, workload pods, service endpoints and node placement without equating names to identity.",
+        "Support used-by views for ConfigMaps, Secrets, service accounts, PVCs and priority classes; distinguish static references from inferred relationships.",
+        "Bound graph expansion, detect cycles and display forbidden/missing resources honestly; custom jumps integrate with the same navigation state."
+      ],
+      "verification": "Fixture graph tests cover cycles, deleted owners, cross-namespace invalid references and recreated UIDs; kind/Pilot workflows cover workload-to-pod and service endpoints.",
+      "priority": "P1"
+    },
+    {
+      "id": "O04",
+      "title": "Explain effective RBAC and subject/resource permissions",
+      "epic": "E07",
+      "milestone": "v0.3.0",
+      "requires": [
+        "C02",
+        "M01"
+      ],
+      "scope": "Browse roles/bindings, users/groups/service accounts and evaluate permission evidence using Kubernetes authorization APIs.",
+      "acceptance": [
+        "Show subject rules, role references and namespace/cluster scopes including aggregated roles and wildcard/non-resource permissions.",
+        "SelfSubjectAccessReview results are authoritative for current identity; who-can analysis explicitly identifies its limits and does not claim certainty for external authorizers.",
+        "Missing review/list privileges produce unknown/forbidden state, not an allowed action; impersonation remains permission-checked server-side."
+      ],
+      "verification": "Tests cover denied reviews, aggregation, wildcards, group membership uncertainty and kind RBAC scenarios; API failures cannot enable guarded operations.",
+      "priority": "P1"
+    },
+    {
+      "id": "O05",
+      "title": "Integrate cluster diagnostics and Popeye-style reports",
+      "epic": "E07",
+      "milestone": "v0.3.0",
+      "requires": [
+        "S06",
+        "O03",
+        "O04"
+      ],
+      "scope": "Link pod/workload failures to events, conditions, logs and optional Popeye report ingestion.",
+      "acceptance": [
+        "Explain evidence for image pull, scheduling, crash-loop, readiness and volume failures without presenting heuristics as certainty.",
+        "Run a configured external Popeye tool with bounded output, cancellation and per-context configuration; parse versioned reports and identify missing dependencies.",
+        "Diagnostic findings navigate to resources and preserve severity/source; no automatic remediation or secret disclosure."
+      ],
+      "verification": "Golden input reports and disposable cluster scenarios cover failures, stale evidence, missing privileges and malformed tool output; verify subprocess cleanup.",
+      "priority": "P1"
+    },
+    {
+      "id": "O06",
+      "title": "Save, browse and share redacted resource and diagnostic exports",
+      "epic": "E07",
+      "milestone": "v0.3.0",
+      "requires": [
+        "O05",
+        "M05"
+      ],
+      "scope": "Provide screen dumps, YAML/log exports and a local saved-artifact browser with safe defaults.",
+      "acceptance": [
+        "Users choose location/overwrite behavior; exports include context/time/scope and remove credentials and secret data by default.",
+        "Saved-artifact browsing supports filtering, viewing, copying and explicit deletion without following untrusted paths.",
+        "Opt-in sensitive exports require clear acknowledgement and restrictive permissions; support bundles are inspectable before sharing and never uploaded automatically."
+      ],
+      "verification": "Golden redaction tests and temp-filesystem tests cover symlinks, traversal, permissions, interrupted writes, control sequences and export/view round trips.",
+      "priority": "P1"
+    },
+    {
+      "id": "O07",
+      "title": "Inspect container environments and image vulnerabilities",
+      "epic": "E07",
+      "milestone": "v0.3.0",
+      "requires": [
+        "O03",
+        "M05",
+        "U04"
+      ],
+      "scope": "Present declared/resolved environment provenance and optional image scan reports using a free scanner adapter such as Trivy.",
+      "acceptance": [
+        "Show env/envFrom/fieldRef/resourceFieldRef sources with explicit secret reveal; distinguish declared config from actual process environment.",
+        "Run scans only on explicit opt-in with bounded concurrency/cache/disk usage; show image digest, scan time, severity, affected package and fixed version.",
+        "Handle private registry auth through external tool configuration, offline DB, scanner failure and advisory links; never launch browsers from untrusted arbitrary URLs."
+      ],
+      "verification": "Contract fixtures cover env expansion/source failures, secret redaction, scanner JSON schema, malformed output, cancellation and registry failures; no network scan in ordinary unit CI.",
+      "priority": "P1"
+    },
+    {
+      "id": "A01",
+      "title": "Open controlled node-shell diagnostic sessions",
+      "epic": "E08",
+      "milestone": "v0.4.0",
+      "requires": [
+        "S04",
+        "M01",
+        "O04"
+      ],
+      "scope": "Provide node shell through an explicitly configured temporary diagnostic pod, not SSH credentials.",
+      "acceptance": [
+        "Preview target node, image, namespace, privileges and host mounts before creation; configurable approved image/limits and feature enablement.",
+        "Handle Pod Security/RBAC/admission denial and scheduling timeout without reducing cluster policies.",
+        "Track owned pod UID and clean it up on completion, interruption and startup recovery; read-only disables creation."
+      ],
+      "verification": "Disposable kind tests cover node selection, denial, timeout and cleanup plus PTY restoration; verify no unrelated pod can be removed.",
+      "priority": "P1"
+    },
+    {
+      "id": "A02",
+      "title": "Cordon, drain and uncordon nodes with disruption awareness",
+      "epic": "E08",
+      "milestone": "v0.4.0",
+      "requires": [
+        "A01",
+        "M01"
+      ],
+      "scope": "Implement explicit node maintenance using Kubernetes eviction semantics.",
+      "acceptance": [
+        "Preview affected workloads, PDB constraints, DaemonSets and local data; separate force/delete-emptydir overrides require explicit consent.",
+        "Respect eviction retries/timeouts and cancellation; show partial progress and keep final cordon state visible.",
+        "Uncordon is a deliberate operation; never silently bypass PDBs or claim cancellation reversed completed evictions."
+      ],
+      "verification": "Multi-node kind scenarios cover PDB blocking, terminating pods, local storage, DaemonSets, API failure and cancel/uncordon behavior.",
+      "priority": "P1"
+    },
+    {
+      "id": "A03",
+      "title": "Launch ephemeral container debugging sessions",
+      "epic": "E08",
+      "milestone": "v0.4.0",
+      "requires": [
+        "S04",
+        "M01",
+        "B05"
+      ],
+      "scope": "Add an explicit ephemeral-container workflow with image/target/security options supported by the cluster.",
+      "acceptance": [
+        "Explain that ephemeral containers cannot be removed from the pod spec after addition; confirm before mutation.",
+        "Validate target container, identity and admission restrictions and preserve terminal behavior.",
+        "Show running/completed debug sessions; handle unsupported API versions and denied access without fallback privilege escalation."
+      ],
+      "verification": "Kind tests cover successful debug launch, denied subresource, target termination and repeated names; PTY tests cover disconnect and completion.",
+      "priority": "P1"
+    },
+    {
+      "id": "A04",
+      "title": "Run bounded HTTP benchmarks through selected services and forwards",
+      "epic": "E08",
+      "milestone": "v0.4.0",
+      "requires": [
+        "S08",
+        "O01"
+      ],
+      "scope": "Integrate a free HTTP benchmark executable with explicit rate/concurrency/duration and local results.",
+      "acceptance": [
+        "Preview endpoint, method and load; default to conservative limits with cancellation; redact auth headers.",
+        "Show latency percentiles, errors, throughput and run parameters; persist and browse results with limits.",
+        "Tie forwarding/process lifetime to session ownership and forbid accidental background load after UI exit."
+      ],
+      "verification": "Run against a local test HTTP server; test limits, error stats, malformed output, cancellation and process cleanup without external traffic.",
+      "priority": "P1"
+    },
+    {
+      "id": "A05",
+      "title": "Explore policy, quota, admission and scheduling resources",
+      "epic": "E08",
+      "milestone": "v0.4.0",
+      "requires": [
+        "B06",
+        "O04"
+      ],
+      "scope": "Add useful policy-oriented columns and relationships over generic resource support.",
+      "acceptance": [
+        "Cover NetworkPolicy, ResourceQuota, LimitRange, PDB, admission webhooks/policies, HPA and scheduling/priority resources available via discovery.",
+        "Explain selectors and configured constraints without claiming a complete network-policy or admission simulator.",
+        "Deprecated or absent APIs are reported through discovery; never require removed PodSecurityPolicy APIs on current Kubernetes."
+      ],
+      "verification": "Versioned API fixtures and kind policy scenarios verify rendering, related subjects/selectors and discovery fallback.",
+      "priority": "P1"
+    },
+    {
+      "id": "D01",
+      "title": "Build and verify wheel and source distribution artifacts",
+      "epic": "E09",
+      "milestone": "v0.0.1",
+      "requires": [
+        "F02"
+      ],
+      "scope": "Produce installable artifacts from the committed source and verify their contents in clean environments.",
+      "acceptance": [
+        "Wheel/sdist contain required assets, metadata/license and correct version; no credentials/tests/cache leaks.",
+        "uv tool and pipx installations expose kubetrol and run help/version without a cluster; sdist builds successfully.",
+        "Test supported Python versions/platforms using installed artifacts, not an import from the checkout."
+      ],
+      "verification": "Build/metadata checks, clean venv wheel/sdist installation and executable smoke matrix; compare expected packaged assets.",
+      "priority": "P1"
+    },
+    {
+      "id": "D02",
+      "title": "Create the approved immutable release pipeline and PyPI publishing",
+      "epic": "E09",
+      "milestone": "v0.0.1",
+      "requires": [
+        "D01",
+        "Q04"
+      ],
+      "scope": "Implement docs/releases.md using a maintainer-dispatched, environment-protected workflow and PyPI Trusted Publishing.",
+      "acceptance": [
+        "Verify main commit, version and successful required checks; build once, test artifacts, create immutable tag and publish the exact artifacts with OIDC/provenance.",
+        "Release dry-run performs all validation without publishing; credentials are scoped to the publish job and fork PRs have no publishing rights.",
+        "Document initial PyPI owner/pending-publisher setup, pre-release normalization, partial failure recovery and patch/yank process; no production release during implementation."
+      ],
+      "verification": "Exercise dry-run and TestPyPI staging, permission and version rejection cases, concurrent release prevention and identical-artifact retry; require real owner setup before publication.",
+      "priority": "P0"
+    },
+    {
+      "id": "D03",
+      "title": "Create and test the Homebrew tap and formula delivery",
+      "epic": "E09",
+      "milestone": "v0.0.1",
+      "requires": [
+        "D01",
+        "D02"
+      ],
+      "scope": "Create carloshm91/homebrew-tap and a source-based formula with hashed Python dependencies and release update automation.",
+      "acceptance": [
+        "Formula installs the published version in an isolated environment with resources and required package assets.",
+        "Run brew style/audit/install/test on declared Linux/macOS targets; install and upgrade preserve user configuration.",
+        "Release automation opens a version/checksum update PR and verifies it before declaring the channel ready; initial release documents the artifact-first ordering."
+      ],
+      "verification": "Use a local release-candidate sdist for formula dry-run before PyPI publication, then verify the published formula; clean installs and upgrade smoke on declared targets.",
+      "priority": "P1"
+    },
+    {
+      "id": "D05",
+      "title": "Ship qualified standalone Linux and macOS executables",
+      "epic": "E09",
+      "milestone": "v0.1.0",
+      "requires": [
+        "D01",
+        "Q02"
+      ],
+      "scope": "Build platform-specific PyInstaller bundles for declared Linux/macOS architectures.",
+      "acceptance": [
+        "Build on each supported OS/architecture; record minimum glibc/macOS versions and include Textual assets, certificates and dependency notices.",
+        "Run on clean hosts without Python; basic browsing works while optional external-tool requirements remain explicit.",
+        "Publish checksums/provenance and document macOS signing/notarization status accurately; never instruct users to disable platform security globally."
+      ],
+      "verification": "Clean-host CLI/UI smoke and disposable-cluster checks, archive layout validation and external credential-plugin/exec discovery tests.",
+      "priority": "P1"
+    },
+    {
+      "id": "Q01",
+      "title": "Build the disposable Kubernetes integration and API fault suite",
+      "epic": "E10",
+      "milestone": "v0.0.1",
+      "requires": [
+        "C04",
+        "B04",
+        "S04",
+        "S02",
+        "C06",
+        "C07"
+      ],
+      "scope": "Create reproducible kind fixtures and a controllable API/credential server for real behavior and failures.",
+      "acceptance": [
+        "Test list/watch pagination, 410 recovery, reconnect, context switches, restricted RBAC, logs and exec outcomes.",
+        "Use explicit generated kubeconfigs and verify disposable-cluster identity before writes; cleanup runs on failures and cancellation.",
+        "Critical acceptance paths run in required CI; slower soak tests have a documented release schedule and artifacts."
+      ],
+      "verification": "Run suite from a clean environment and intentionally inject watch/API/process faults; prove no ambient user context is consulted.",
+      "priority": "P0"
+    },
+    {
+      "id": "Q02",
+      "title": "Verify real terminal, SSH, tmux and shell restoration behavior",
+      "epic": "E10",
+      "milestone": "v0.0.1",
+      "requires": [
+        "B03",
+        "S02",
+        "S04"
+      ],
+      "scope": "Create real PTY acceptance checks supplementing headless Textual Pilot tests.",
+      "acceptance": [
+        "Cover narrow terminals, resize storms, scroll/focus, Unicode, color fallback, stdout/stderr and interactive exec.",
+        "Verify raw/cooked terminal modes restore after subprocess exit, signals, exceptions and lost connection.",
+        "Document Linux/macOS terminal support and automated SSH/tmux fixtures; manual checks have recorded evidence and version."
+      ],
+      "verification": "PTY transcript/termios assertions and repeatable SSH/tmux sessions; Pilot tests alone cannot satisfy this issue.",
+      "priority": "P0"
+    },
+    {
+      "id": "Q03",
+      "title": "Measure large-cluster responsiveness and sustained memory behavior",
+      "epic": "E10",
+      "milestone": "v0.1.0",
+      "requires": [
+        "Q01",
+        "S05"
+      ],
+      "scope": "Implement reproducible workload generators and performance checks for the targets in docs/quality.md.",
+      "acceptance": [
+        "Measure 10k resources, 100 events/sec and 2k log lines/sec with a bounded retained buffer; document machine and methodology.",
+        "Measure p95 input response against the 100ms target and a 30-minute memory plateau; identify hot paths rather than raising limits silently.",
+        "Context churn, slow consumers and cancelled forwards do not leak tasks, descriptors, subprocesses or buffers."
+      ],
+      "verification": "Store baseline distributions and profiles; controlled slow-consumer/large-object cases verify backpressure, overflow messaging and recovery.",
+      "priority": "P1"
+    },
+    {
+      "id": "Q04",
+      "title": "Add dependency security, license, SBOM and provenance checks",
+      "epic": "E10",
+      "milestone": "v0.0.1",
+      "requires": [
+        "D01",
+        "F04"
+      ],
+      "scope": "Enforce dependency/source provenance and auditable release artifact composition.",
+      "acceptance": [
+        "Audit locked runtime dependencies, generate an SBOM and license notices, and pin CI actions by commit.",
+        "Vulnerability exceptions require a specific issue, owner, rationale and expiry; no blanket ignore or ignored required failure.",
+        "Test malicious resource text/plugin substitutions/export paths and document security-sensitive modules requiring full deterministic coverage."
+      ],
+      "verification": "Inject a known vulnerable fixture/dependency policy violation in an isolated test to prove the gate; validate SBOM schema and artifact digest linkage.",
+      "priority": "P0"
+    },
+    {
+      "id": "Q05",
+      "title": "Qualify Kubernetes, credential, config and platform compatibility",
+      "epic": "E10",
+      "milestone": "v1.0.0",
+      "requires": [
+        "Q01",
+        "C05",
+        "U05",
+        "Q03",
+        "D11"
+      ],
+      "scope": "Publish an evidence-backed support matrix and migration policy for the first stable release.",
+      "acceptance": [
+        "Test the current Kubernetes minor and two prior minors selected at release time where supported by the Python client; respect kubectl skew.",
+        "Record EKS/AKS/GKE auth contracts separately from opt-in real-provider certification and list exact SDK/tool versions.",
+        "Verify config migration/rollback paths and all advertised terminal/OS/artifact combinations; unsupported combinations are explicit."
+      ],
+      "verification": "Run versioned kind and credential-contract matrices, migration fixture suites and platform install/upgrade tests; publish linked CI artifacts.",
+      "priority": "P1"
+    },
+    {
+      "id": "Q06",
+      "title": "Audit complete feature parity and resolve every remaining gap",
+      "epic": "E10",
+      "milestone": "v1.0.0",
+      "requires": [
+        "Q05",
+        "D11"
+      ],
+      "scope": "Reconcile the pinned source inventory, capability matrix, community plugin workflows and any publicly documented Alpha additions with implementation evidence.",
+      "acceptance": [
+        "Every inventory row and every flag/action/schema/plugin entry has a delivered test or a clearly stated compatibility difference; planned rows are never counted as implemented.",
+        "Refresh the latest stable upstream comparison and create tickets for new features before freezing the stable parity claim.",
+        "Maintain the Alpha evidence gap until authoritative material is available; do not claim 100% paid-feature parity without a verifiable catalog and tests."
+      ],
+      "verification": "Automated matrix completeness checks plus a human end-to-end checklist and links to tests/releases for each claim; no untriaged entry may be silently dropped.",
+      "priority": "P0"
+    },
+    {
+      "id": "Q07",
+      "title": "Investigate publicly documented K9sAlpha additions",
+      "epic": "E10",
+      "milestone": "v0.4.0",
+      "requires": [
+        "F00"
+      ],
+      "scope": "Recover a verifiable official feature catalog for the historically advertised K9sAlpha offering without accessing private or proprietary materials without permission.",
+      "acceptance": [
+        "The official v0.24.7 release establishes Alpha existence but not a complete feature list; capture official links, versions and dates for any further evidence.",
+        "Map every substantiated additional behavior to an MIT implementation ticket and acceptance tests; do not reproduce proprietary source/assets.",
+        "If authoritative material remains unavailable, publish the precise unresolved evidence gap and keep parity unclaimed; closing the investigation does not certify unknown features."
+      ],
+      "verification": "Review cited first-party materials and audit all resulting matrix rows. Investigation outcome may be evidence-unavailable, but must be explicit.",
+      "priority": "P1"
+    },
+    {
+      "id": "W01",
+      "title": "Write and validate the first-user installation and trial guide",
+      "epic": "E11",
+      "milestone": "v0.0.1",
+      "requires": [
+        "B04",
+        "S04",
+        "S02",
+        "D03",
+        "C06",
+        "C07"
+      ],
+      "scope": "Give a new user a verified path from installation to browsing, logs and a shell in a disposable cluster.",
+      "acceptance": [
+        "Include --context/--kubeconfig/namespace examples, EKS/AKS prerequisites, read-only use, terminal keys and actionable troubleshooting.",
+        "State exactly which features are available in 0.0.1 and how to return from shell/quit; explain kubectl exec rather than SSH into pods.",
+        "Rehearse install, context switch, pod browse, details/logs/shell and uninstall on clean Linux/macOS; tell the maintainer when this first phase is ready to try."
+      ],
+      "verification": "Execute all published quickstart commands with released candidate artifacts and disposable fixtures; manual trial results link to the release gate.",
+      "priority": "P1"
+    },
+    {
+      "id": "W02",
+      "title": "Build versioned MkDocs documentation after the usable product",
+      "epic": "E11",
+      "milestone": "Later: documentation website",
+      "requires": [
+        "D06",
+        "W01"
+      ],
+      "scope": "Create a searchable documentation site from validated user/developer docs after 0.1.0.",
+      "acceptance": [
+        "Organize installation, concepts, CLI, resources, customization/plugins, troubleshooting, security and contributing with version labels.",
+        "Examples match installed behavior, navigation works on mobile and keyboard, and no unreleased feature is documented as available.",
+        "Build strict link/reference checks in CI and retain older released-version instructions."
+      ],
+      "verification": "Strict site build, internal-link validation and accessibility/navigation review with version-switch smoke.",
+      "priority": "P1"
+    },
+    {
+      "id": "W03",
+      "title": "Deploy and maintain the versioned documentation website",
+      "epic": "E11",
+      "milestone": "Later: documentation website",
+      "requires": [
+        "W02"
+      ],
+      "scope": "Publish the approved documentation build with GitHub Pages and scoped Actions permissions.",
+      "acceptance": [
+        "Use a protected deployment environment and immutable build artifact; PR previews cannot publish production.",
+        "Link website from README and releases only after its public URL works; custom domain is optional and requires domain-owner setup.",
+        "Document rollback and release-version updates; preserve working old-version links."
+      ],
+      "verification": "Run staging/build checks, verify public pages/assets/search and rehearse artifact rollback.",
+      "priority": "P1"
+    },
+    {
+      "id": "D12",
+      "title": "Qualify Windows terminal operation and packaged installation",
+      "epic": "E12",
+      "milestone": "v0.5.0",
+      "requires": [
+        "D05",
+        "S07",
+        "U05",
+        "Q02"
+      ],
+      "scope": "Extend the platform abstraction to native Windows terminals and PowerShell; WSL remains the Linux path.",
+      "acceptance": [
+        "Test Textual keyboard/rendering and kubectl terminal handoff on Windows without POSIX-only signal assumptions.",
+        "Build a Windows executable and document supported architecture, auth plugins, clipboard and configuration paths.",
+        "Provide tested Scoop/Winget/Chocolatey manifests where feasible; registry acceptance is external and never advertised before approval."
+      ],
+      "verification": "Windows CI install/upgrade, PTY or ConPTY sessions, PowerShell quoting, credential helpers, plugin and file-copy fixtures; document unresolved platform gaps.",
+      "priority": "P1"
+    },
+    {
+      "id": "D13",
+      "title": "Provide shell completion and an OCI terminal container image",
+      "epic": "E12",
+      "milestone": "v0.5.0",
+      "requires": [
+        "F05",
+        "D05"
+      ],
+      "scope": "Add bash/zsh/fish/PowerShell completion and a minimal OCI distribution for terminal use.",
+      "acceptance": [
+        "Completion covers options, subcommands and optionally local kubeconfig names without starting network/auth operations unexpectedly.",
+        "OCI image uses a non-root default and explicit kubeconfig/credential-helper mounts, with supported architectures and pinned build inputs.",
+        "Container docs explain TTY, host port forwarding, local exec plugins and file paths; ship SBOM/provenance and smoke checks."
+      ],
+      "verification": "Shell completion fixtures and container CLI/UI/kind smoke verify permissions, mounted config, signals and documented limitations.",
+      "priority": "P1"
+    },
+    {
+      "id": "D14",
+      "title": "Prepare Linux/BSD/macOS package recipes and channel ownership",
+      "epic": "E12",
+      "milestone": "v0.5.0",
+      "requires": [
+        "D05",
+        "D03"
+      ],
+      "scope": "Track apt/deb, rpm, Arch, openSUSE, snap, FreeBSD, MacPorts, Homebrew/core, pkgx, gah and Webi and other upstream-listed delivery paths.",
+      "acceptance": [
+        "Maintain a channel matrix with tested package recipes, owner, architecture, dependencies, signing/update policy and actual submission status.",
+        "Test install/upgrade/removal on each claimed target; qualify FreeBSD runtime before claiming its port works.",
+        "Separate project-hosted packages from community-registry acceptance and third-party Docker Desktop/Webi integrations; provide a documented supported fallback where acceptance is external."
+      ],
+      "verification": "Package lint and disposable OS/container/VM smoke appropriate to each target; unsupported or unavailable infrastructure remains an explicit open gap.",
+      "priority": "P1"
+    },
+    {
+      "id": "D04",
+      "title": "Publish and verify the first usable 0.0.1 release",
+      "epic": "E09",
+      "milestone": "v0.0.1",
+      "requires": [
+        "F00",
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "S01",
+        "S02",
+        "S03",
+        "S04",
+        "F05",
+        "C06",
+        "C07",
+        "D01",
+        "D02",
+        "D03",
+        "Q01",
+        "Q02",
+        "Q04",
+        "W01"
+      ],
+      "scope": "Execute docs/releases.md only after the milestone behavior and required quality gates are complete.",
+      "acceptance": [
+        "All milestone acceptance criteria have real evidence, line and branch coverage independently reach 90%, and critical deterministic modules reach 100%.",
+        "Run the declared installed-artifact, terminal, security and disposable-cluster checks on the exact release candidate; the maintainer approves publication in the release environment.",
+        "Publish immutable tag/artifacts/changelog, verify every promised installation channel and quickstart, update the capability matrix and notify the maintainer of usable behavior."
+      ],
+      "verification": "Attach CI, coverage, artifact digests, installation transcripts and manual trial evidence; close the milestone only after public installation verification.",
+      "priority": "P0"
+    },
+    {
+      "id": "D06",
+      "title": "Publish and verify the workload-operations release",
+      "epic": "E09",
+      "milestone": "v0.1.0",
+      "requires": [
+        "B05",
+        "S05",
+        "M01",
+        "M02",
+        "M03",
+        "M04",
+        "C08",
+        "S07",
+        "D05",
+        "Q03",
+        "D04"
+      ],
+      "scope": "Execute docs/releases.md only after the milestone behavior and required quality gates are complete.",
+      "acceptance": [
+        "All milestone acceptance criteria have real evidence, line and branch coverage independently reach 90%, and critical deterministic modules reach 100%.",
+        "Run the declared installed-artifact, terminal, security and disposable-cluster checks on the exact release candidate; the maintainer approves publication in the release environment.",
+        "Publish immutable tag/artifacts/changelog, verify every promised installation channel and quickstart, update the capability matrix and notify the maintainer of usable behavior."
+      ],
+      "verification": "Attach CI, coverage, artifact digests, installation transcripts and manual trial evidence; close the milestone only after public installation verification.",
+      "priority": "P0"
+    },
+    {
+      "id": "D07",
+      "title": "Publish and verify the extensibility release",
+      "epic": "E09",
+      "milestone": "v0.2.0",
+      "requires": [
+        "C05",
+        "B06",
+        "S06",
+        "M05",
+        "U01",
+        "U02",
+        "U03",
+        "U04",
+        "U05",
+        "B07",
+        "S08",
+        "M08",
+        "U06",
+        "D06"
+      ],
+      "scope": "Execute docs/releases.md only after the milestone behavior and required quality gates are complete.",
+      "acceptance": [
+        "All milestone acceptance criteria have real evidence, line and branch coverage independently reach 90%, and critical deterministic modules reach 100%.",
+        "Run the declared installed-artifact, terminal, security and disposable-cluster checks on the exact release candidate; the maintainer approves publication in the release environment.",
+        "Publish immutable tag/artifacts/changelog, verify every promised installation channel and quickstart, update the capability matrix and notify the maintainer of usable behavior."
+      ],
+      "verification": "Attach CI, coverage, artifact digests, installation transcripts and manual trial evidence; close the milestone only after public installation verification.",
+      "priority": "P0"
+    },
+    {
+      "id": "D08",
+      "title": "Publish and verify the observability release",
+      "epic": "E09",
+      "milestone": "v0.3.0",
+      "requires": [
+        "M06",
+        "M07",
+        "O01",
+        "O02",
+        "O03",
+        "O04",
+        "O05",
+        "O06",
+        "O07",
+        "D07"
+      ],
+      "scope": "Execute docs/releases.md only after the milestone behavior and required quality gates are complete.",
+      "acceptance": [
+        "All milestone acceptance criteria have real evidence, line and branch coverage independently reach 90%, and critical deterministic modules reach 100%.",
+        "Run the declared installed-artifact, terminal, security and disposable-cluster checks on the exact release candidate; the maintainer approves publication in the release environment.",
+        "Publish immutable tag/artifacts/changelog, verify every promised installation channel and quickstart, update the capability matrix and notify the maintainer of usable behavior."
+      ],
+      "verification": "Attach CI, coverage, artifact digests, installation transcripts and manual trial evidence; close the milestone only after public installation verification.",
+      "priority": "P0"
+    },
+    {
+      "id": "D09",
+      "title": "Publish and verify the advanced-operations release",
+      "epic": "E09",
+      "milestone": "v0.4.0",
+      "requires": [
+        "A01",
+        "A02",
+        "A03",
+        "A04",
+        "A05",
+        "Q07",
+        "D08"
+      ],
+      "scope": "Execute docs/releases.md only after the milestone behavior and required quality gates are complete.",
+      "acceptance": [
+        "All milestone acceptance criteria have real evidence, line and branch coverage independently reach 90%, and critical deterministic modules reach 100%.",
+        "Run the declared installed-artifact, terminal, security and disposable-cluster checks on the exact release candidate; the maintainer approves publication in the release environment.",
+        "Publish immutable tag/artifacts/changelog, verify every promised installation channel and quickstart, update the capability matrix and notify the maintainer of usable behavior."
+      ],
+      "verification": "Attach CI, coverage, artifact digests, installation transcripts and manual trial evidence; close the milestone only after public installation verification.",
+      "priority": "P0"
+    },
+    {
+      "id": "D11",
+      "title": "Publish and verify the extended-platform release",
+      "epic": "E09",
+      "milestone": "v0.5.0",
+      "requires": [
+        "D12",
+        "D13",
+        "D14",
+        "D09"
+      ],
+      "scope": "Execute docs/releases.md only after the milestone behavior and required quality gates are complete.",
+      "acceptance": [
+        "All milestone acceptance criteria have real evidence, line and branch coverage independently reach 90%, and critical deterministic modules reach 100%.",
+        "Run the declared installed-artifact, terminal, security and disposable-cluster checks on the exact release candidate; the maintainer approves publication in the release environment.",
+        "Publish immutable tag/artifacts/changelog, verify every promised installation channel and quickstart, update the capability matrix and notify the maintainer of usable behavior."
+      ],
+      "verification": "Attach CI, coverage, artifact digests, installation transcripts and manual trial evidence; close the milestone only after public installation verification.",
+      "priority": "P0"
+    },
+    {
+      "id": "D10",
+      "title": "Publish the qualified stable 1.0.0 release",
+      "epic": "E09",
+      "milestone": "v1.0.0",
+      "requires": [
+        "Q05",
+        "Q06",
+        "D11"
+      ],
+      "scope": "Execute docs/releases.md only after the milestone behavior and required quality gates are complete.",
+      "acceptance": [
+        "All milestone acceptance criteria have real evidence, line and branch coverage independently reach 90%, and critical deterministic modules reach 100%.",
+        "Run the declared installed-artifact, terminal, security and disposable-cluster checks on the exact release candidate; the maintainer approves publication in the release environment.",
+        "Publish immutable tag/artifacts/changelog, verify every promised installation channel and quickstart, update the capability matrix and notify the maintainer of usable behavior."
+      ],
+      "verification": "Attach CI, coverage, artifact digests, installation transcripts and manual trial evidence; close the milestone only after public installation verification.",
+      "priority": "P0"
+    }
+  ],
+  "dependency_order": [
+    "F00",
+    "F01",
+    "F02",
+    "F03",
+    "B01",
+    "F04",
+    "F05",
+    "C01",
+    "C06",
+    "C07",
+    "C02",
+    "C03",
+    "C04",
+    "B02",
+    "B03",
+    "B04",
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "Q02",
+    "D01",
+    "Q04",
+    "D02",
+    "D03",
+    "Q01",
+    "W01",
+    "D04",
+    "B05",
+    "S05",
+    "M01",
+    "M02",
+    "M03",
+    "M04",
+    "C08",
+    "S07",
+    "D05",
+    "Q03",
+    "D06",
+    "C05",
+    "B06",
+    "S06",
+    "M05",
+    "U01",
+    "U02",
+    "U03",
+    "U04",
+    "U05",
+    "B07",
+    "S08",
+    "M08",
+    "U06",
+    "D07",
+    "M06",
+    "M07",
+    "O01",
+    "O02",
+    "O03",
+    "O04",
+    "O05",
+    "O06",
+    "O07",
+    "D08",
+    "A01",
+    "A02",
+    "A03",
+    "A04",
+    "A05",
+    "Q07",
+    "D09",
+    "D12",
+    "D13",
+    "D14",
+    "D11",
+    "Q05",
+    "Q06",
+    "D10",
+    "W02",
+    "W03"
+  ]
+}

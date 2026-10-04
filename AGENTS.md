@@ -1,0 +1,77 @@
+# Working on Kubetrol
+
+Read the selected GitHub issue, CONTRIBUTING.md, docs/architecture.md,
+docs/quality.md, and the relevant release milestone before implementation.
+
+## Current stage
+
+This repository starts with a reviewed plan and a GitHub backlog. Product
+implementation begins only after the maintainer starts the first implementation
+issue. The requested model workflow is Astra for planning and GPT-6.1 Sol for
+implementation; do not claim to switch models without actual environment support.
+
+## Scope and ownership
+
+- Build a new Python terminal application. K9s is a design inspiration, not a
+  source tree to copy. Keep the README attribution short.
+- Keep unrelated experiments and their history out of public documentation,
+  tickets, source, and commit messages.
+- Python 3.12+; initially test CPython 3.12, 3.13, and 3.14. Linux and macOS first.
+- Textual Web and a hosted backend are out of scope. A documentation website is
+  a later milestone, separate from the terminal product.
+- Repository: carloshm91/kubetrol. SSH remote:
+  git@github.com:carloshm91/kubetrol.git.
+- Use repository-local author email carloshm91@gmail.com for the maintainer's
+  commits. Do not change global Git identity or overwrite another contributor's
+  identity. Never include credentials or kubeconfig contents in commits.
+
+## Delivery workflow
+
+- Notify the maintainer at each usable checkpoint in docs/first-preview.md, with
+  the exact tested command and honest feature status. B01 is prioritized early.
+- Keep docs/capabilities.json and the pinned source inventory traceable to issues;
+  do not claim parity from planned work or an unverifiable paid feature catalog.
+- Work on one implementation issue at a time. Select the first unblocked issue
+  in the earliest unfinished product milestone; see docs/backlog.md.
+- Use a short-lived issue branch, an issue-linked pull request, required checks,
+  and squash merging. Keep main releasable.
+- A plan, stub, or mocked demonstration does not complete a behavior issue.
+- Update documentation and acceptance evidence with the implementation. Treat
+  GitHub as the live status source; the checked-in backlog is the planning map.
+- Create tags and publish releases only as part of an explicitly requested
+  release task, following docs/releases.md. Do not bump a version for every PR.
+
+## Engineering invariants
+
+- Follow the architecture in docs/architecture.md. Inject a per-context client;
+  avoid process-global Kubernetes configuration and singletons.
+- Keep domain operations independent of Textual. Own and cancel every watch,
+  log stream, subprocess, and port-forward session.
+- Never block the Textual event loop with synchronous network or process waits
+  during normal UI operation. Terminal handoff is an explicit exception.
+- Use stable resource identity, preserve cursor/scroll state, bound log memory,
+  and reject results from previous context generations.
+- Pass subprocess argument vectors and explicit kubeconfig/context/namespace;
+  do not interpolate resource names into shell command strings.
+- Escape untrusted markup and control sequences before display. Redact secrets
+  and credentials in logs, diagnostics, exports, and default views.
+- Use disposable local test clusters. Do not use the user's active Kubernetes
+  context for tests or mutate a real cluster without task-specific authorization.
+
+## Verification
+
+- Enforce at least 90% line coverage AND 90% branch coverage over all production
+  code, plus 90% changed-line coverage. Target and enforce 100% for the critical
+  deterministic modules described in docs/quality.md.
+- Run Ruff, formatting, strict type checking, behavioral tests, and applicable
+  integration/terminal/package checks. Required checks must not ignore failures.
+- Coverage excludes tests, but includes unimported production modules. Do not
+  add broad exclusions or meaningless tests to increase a percentage.
+- Publish measured results honestly. Coverage is not a substitute for testing
+  reconnects, cancellation, terminal restoration, permissions, or installations.
+
+## Skills
+
+Relevant optional Codex skills and reproducible installation instructions are
+documented in docs/agent-setup.md. They support this workflow and do not grant
+permission for unrelated publication, cluster operations, or configuration changes.

@@ -1,0 +1,6907 @@
+{
+  "schema_version": 1,
+  "reviewed_on": "2026-10-04",
+  "baseline": {
+    "tag": "v0.51.0",
+    "commit": "558caafe7ba067467de46b320cc22ef11fef9c34",
+    "release": "https://github.com/derailed/k9s/releases/tag/v0.51.0"
+  },
+  "method": "Source-file census with heuristic extraction of identifiers/actions/fields, plus manual README, schema, command, view and adapter review. Identifiers are not copied implementations. Runtime-generated commands and third-party tool behavior require semantic acceptance review; this is not proof of behavioral parity.",
+  "status": "planned, not implemented",
+  "records": [
+    {
+      "source": "cmd/info.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/cmd/info.go",
+      "sha256": "e33cfbc5ffa30bd7691102465eb63d9b1577dfd33d9bde8825ded52532a7f652",
+      "tasks": [
+        "F05",
+        "D13"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "cmd/root.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/cmd/root.go",
+      "sha256": "125ffdd490eae4e854f69c8c55bae2a9da890d197728018779a69dfa8eab2e4e",
+      "tasks": [
+        "F05",
+        "D13"
+      ],
+      "symbols": {
+        "launch_flags": [
+          "refresh",
+          "logLevel",
+          "logFile",
+          "headless",
+          "logoless",
+          "crumbsless",
+          "splashless",
+          "invert",
+          "all-namespaces",
+          "command",
+          "readonly",
+          "write",
+          "screen-dump-dir",
+          "kubeconfig",
+          "request-timeout",
+          "context",
+          "cluster",
+          "user",
+          "namespace",
+          "as",
+          "as-group",
+          "insecure-skip-tls-verify",
+          "certificate-authority",
+          "client-key",
+          "client-certificate",
+          "token"
+        ]
+      }
+    },
+    {
+      "source": "cmd/version.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/cmd/version.go",
+      "sha256": "2d5485d00ad59786343946cf94d3567546c2f0bc5b612491e0cc98678347f800",
+      "tasks": [
+        "F05",
+        "D13"
+      ],
+      "symbols": {
+        "version_flags": [
+          "short"
+        ]
+      }
+    },
+    {
+      "source": "internal/client/client.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/client/client.go",
+      "sha256": "401b70e89c8946147ac599136a1c6f4a472dda72c79da688661b063e49e04f99",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {
+        "environment_names": [
+          "KUBECACHEDIR"
+        ]
+      }
+    },
+    {
+      "source": "internal/client/config.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/client/config.go",
+      "sha256": "bd9bcdb3b86f616a232294dc7380a344f4bf27fe1e29da36c3fff3f7e7ec60df",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/client/errors.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/client/errors.go",
+      "sha256": "5b95e878ccb8327e1c116968661aeb2addfcb946e61df4107dfffe2b7dca7ed2",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/client/gvr.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/client/gvr.go",
+      "sha256": "90cd08c613b11453f58ddd69f63b803a6a99fd5da1cb0d88605630033d7a1be2",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/client/gvrs.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/client/gvrs.go",
+      "sha256": "e9092d195cd01be45a2fdb77ff3ecfab240b91794910f7886aa0cd5f6beb14dc",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {
+        "resource_identifiers": [
+          "apps/v1/deployments",
+          "apps/v1/statefulsets",
+          "apps/v1/daemonsets",
+          "apps/v1/replicasets",
+          "apps/v1/replicationcontrollers",
+          "v1/serviceaccounts",
+          "v1/persistentvolumeclaims",
+          "v1/persistentvolumes",
+          "v1/configmaps",
+          "v1/secrets",
+          "events.k8s.io/v1/events",
+          "v1/endpoints",
+          "v1/pods",
+          "v1/namespaces",
+          "v1/nodes",
+          "v1/services",
+          "discovery.k8s.io/v1/endpointslices",
+          "autoscaling/v1/horizontalpodautoscalers",
+          "batch/v1/cronjobs",
+          "batch/v1/jobs",
+          "apiextensions.k8s.io/v1/customresourcedefinitions",
+          "scheduling.k8s.io/v1/priorityclasses",
+          "networking.k8s.io/v1/networkpolicies",
+          "storage.k8s.io/v1/storageclasses",
+          "policy/v1/poddisruptionbudgets",
+          "policy/v1beta1/podsecuritypolicies",
+          "networking.k8s.io/v1/ingresses",
+          "metrics.k8s.io/v1beta1/nodes",
+          "metrics.k8s.io/v1beta1/pods",
+          "cpu",
+          "memory",
+          "workloads",
+          "containers",
+          "contexts",
+          "references",
+          "pulses",
+          "scans",
+          "dirs",
+          "portforwards",
+          "screendumps",
+          "benchmarks",
+          "aliases",
+          "xrays",
+          "help",
+          "quit",
+          "helm",
+          "helm-history",
+          "rbac",
+          "policy",
+          "users",
+          "groups",
+          "rbac.authorization.k8s.io/v1/clusterroles",
+          "rbac.authorization.k8s.io/v1/clusterrolebindings",
+          "rbac.authorization.k8s.io/v1/roles",
+          "rbac.authorization.k8s.io/v1/rolebindings"
+        ]
+      }
+    },
+    {
+      "source": "internal/client/helpers.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/client/helpers.go",
+      "sha256": "aceb1dff07ceb857c394db3778f40d033a0c74d887e84091ebac80bc77857631",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/client/metrics.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/client/metrics.go",
+      "sha256": "fe0271658dd5906a318583f6ff559e980bfed83206528d601d60854916178ec0",
+      "tasks": [
+        "O01",
+        "O02"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/client/types.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/client/types.go",
+      "sha256": "7af40336cc3e3d4a4ffdab0b26f777d0697dbe23c1457187b961f6b4bf237420",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/color/colorize.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/color/colorize.go",
+      "sha256": "c19d314687eda95eb5f0ae443056956ca26ddb0a997b03cbebb8cd4b435c95e9",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/config/alias.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/alias.go",
+      "sha256": "fad021b74f312b4066a5ca5e200d38ff78b5a0db8cd518b14a0a9bfbde49b16e",
+      "tasks": [
+        "U02",
+        "U03",
+        "U04",
+        "U05"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "aliases"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/benchmark.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/benchmark.go",
+      "sha256": "754f1a2d6b7130ab6142ad731919d03e0315b8b2ca9ab87a471ec045ee1e9c01",
+      "tasks": [
+        "A04"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "auth",
+          "benchmarks",
+          "body",
+          "concurrency",
+          "defaults",
+          "headers",
+          "host",
+          "http",
+          "http2",
+          "method",
+          "password",
+          "path",
+          "requests",
+          "user"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/color.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/color.go",
+      "sha256": "e469cbaaee75fdd558864750453abbb0fee63ace8838b657bdd9e10100b6a250",
+      "tasks": [
+        "F03",
+        "U01",
+        "U02",
+        "U06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/config/config.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/config.go",
+      "sha256": "63494c89158fdc6c9eb49850f82cc6cc851841f86bc96973b6f4c3bb46e2ecc6",
+      "tasks": [
+        "F03",
+        "U01",
+        "U02",
+        "U06"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "k9s"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/data/config.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/data/config.go",
+      "sha256": "a9c08f1fadc3380c15f92b4ed3069ed5605f7caa97dcf70630c3e52c386585c0",
+      "tasks": [
+        "F03",
+        "U01",
+        "U02",
+        "U06"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "k9s"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/data/context.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/data/context.go",
+      "sha256": "3f37d530099a459d02279ad7edae3bbd36a4720c33adc715e0ee8fae060355f8",
+      "tasks": [
+        "C01",
+        "M08",
+        "B03"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "cluster",
+          "featureGates",
+          "namespace",
+          "proxy",
+          "readOnly",
+          "skin",
+          "view"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/data/dir.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/data/dir.go",
+      "sha256": "be6fb3fdb78ac3e2d7a29c5ba091d5b164f122ebe4a2b143f6d794ca80c765b1",
+      "tasks": [
+        "M07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/config/data/feature_gate.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/data/feature_gate.go",
+      "sha256": "d97ed8cff6cdae5d05ae6e993b5f2846c8057057ce55a63ce38f308e839fc0f3",
+      "tasks": [
+        "F03",
+        "U01",
+        "U02",
+        "U06"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "nodeShell"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/data/helpers.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/data/helpers.go",
+      "sha256": "829ef362cd13bc4b1587839e8ec301d1c33a08f71762089d9a7580d9369afdf3",
+      "tasks": [
+        "F03",
+        "U01",
+        "U02",
+        "U06"
+      ],
+      "symbols": {
+        "environment_names": [
+          "K9S_FEATURE_GATE_NODE_SHELL"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/data/ns.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/data/ns.go",
+      "sha256": "134dd076752b04fb291fc40b7bca60dd48cceb18461986b6768fb7873db7aff6",
+      "tasks": [
+        "C01",
+        "M08",
+        "B03"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "active",
+          "favorites",
+          "lockFavorites"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/data/proxy.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/data/proxy.go",
+      "sha256": "8342c50f18004a0a663f0f9bad79ada48e50c9f7914e3570daf82aa99cdb432e",
+      "tasks": [
+        "F03",
+        "U01",
+        "U02",
+        "U06"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "address"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/data/types.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/data/types.go",
+      "sha256": "4c19cd20002bd5d66f7c2164a6a3ae78dd1412615fd34ee238aedcef7b2b78f8",
+      "tasks": [
+        "F03",
+        "U01",
+        "U02",
+        "U06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/config/data/view.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/data/view.go",
+      "sha256": "1f002ff39289971901b63b1b443d1b8e9febca174f14ed1a25d5745f4a1fe430",
+      "tasks": [
+        "F03",
+        "U01",
+        "U02",
+        "U06"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "active"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/files.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/files.go",
+      "sha256": "f438ba09bd248c9692a4fdd64dba20502f328250f90ab137908c546e50e5e3d8",
+      "tasks": [
+        "F03",
+        "U01",
+        "U02",
+        "U06"
+      ],
+      "symbols": {
+        "environment_names": [
+          "K9S_CONFIG_DIR",
+          "K9S_LOGS_DIR"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/flags.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/flags.go",
+      "sha256": "29ce1726fe8df5213fdd3959f0796bf72476fe37431346fe3648e85d570e3bb8",
+      "tasks": [
+        "F03",
+        "U01",
+        "U02",
+        "U06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/config/helpers.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/helpers.go",
+      "sha256": "e2f4e2988fc28a01752dbed4e84bb0a48eea415efab2458a90250b82ebb45115",
+      "tasks": [
+        "F03",
+        "U01",
+        "U02",
+        "U06"
+      ],
+      "symbols": {
+        "environment_names": [
+          "K9S_DEFAULT_PF_ADDRESS"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/hotkey.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/hotkey.go",
+      "sha256": "57725e504cbc5f3a249c7f6dd7d751edc6511e7716bbda6c67936a6d7a04339f",
+      "tasks": [
+        "U02",
+        "U03",
+        "U04",
+        "U05"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "command",
+          "description",
+          "hotKeys",
+          "keepHistory",
+          "override",
+          "shortCut"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/json/validator.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/json/validator.go",
+      "sha256": "1b75642409882b5847ef96bcea5aec0aec0b456176372f1f864a5bf5774ca14f",
+      "tasks": [
+        "F03",
+        "U01",
+        "U02",
+        "U06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/config/jumps.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/jumps.go",
+      "sha256": "c7b73770b2a3f53fe4ea0d417bf1cc3f4b665d8be55d756c411f049089489cc8",
+      "tasks": [
+        "U06",
+        "O03"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "fieldSelector",
+          "jumps",
+          "labelSelector",
+          "targetGVR",
+          "targetNamespace"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/k9s.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/k9s.go",
+      "sha256": "928a45c0b5605dcf9365bfc6940a2d0265abd1f43bc410093969d57b7a7cab2e",
+      "tasks": [
+        "F03",
+        "U01",
+        "U02",
+        "U06"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "apiServerTimeout",
+          "defaultView",
+          "disablePodCounting",
+          "gpuVendors",
+          "imageScans",
+          "liveViewAutoRefresh",
+          "logger",
+          "maxConnRetry",
+          "noExitOnCtrlC",
+          "portForwardAddress",
+          "readOnly",
+          "refreshRate",
+          "screenDumpDir",
+          "shellPod",
+          "skipLatestRevCheck",
+          "thresholds",
+          "ui"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/logger.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/logger.go",
+      "sha256": "e2f7aaba10c0cd21ba6aea98c440bbd07328761b8ac204f992390da9338979a0",
+      "tasks": [
+        "S01",
+        "S02",
+        "S06",
+        "F03"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "buffer",
+          "columnLock",
+          "disableAutoscroll",
+          "showTime",
+          "sinceSeconds",
+          "tail",
+          "textWrap"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/mock/test_helpers.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/mock/test_helpers.go",
+      "sha256": "83b55d6cb6b47c17d632853a13121de916ab89a5a02c6d803a6783a0917a2d28",
+      "tasks": [
+        "F03",
+        "U01",
+        "U02",
+        "U06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/config/plugin.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/plugin.go",
+      "sha256": "7d98dab2e73035f9a7fd341887a5e1c76d02d78109f3b4374ad86aba18367ab0",
+      "tasks": [
+        "U02",
+        "U03",
+        "U04",
+        "U05"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "args",
+          "background",
+          "command",
+          "confirm",
+          "dangerous",
+          "default",
+          "description",
+          "inputs",
+          "label",
+          "name",
+          "options",
+          "override",
+          "overwriteOutput",
+          "pipes",
+          "plugins",
+          "required",
+          "scopes",
+          "shortCut",
+          "type"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/scans.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/scans.go",
+      "sha256": "184107501988af3b5251e146dff44a3e045b9c31bf734973c0e8140e7f47cdfa",
+      "tasks": [
+        "F03",
+        "U01",
+        "U02",
+        "U06"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "enable",
+          "exclusions",
+          "labels",
+          "namespaces"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/shell_pod.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/shell_pod.go",
+      "sha256": "0577420215ac56f2057403ee0339487768ece4ae72c36d24425067c15afeca57",
+      "tasks": [
+        "F03",
+        "U01",
+        "U02",
+        "U06"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "args",
+          "command",
+          "hostPath",
+          "hostPathVolume",
+          "image",
+          "imagePullPolicy",
+          "imagePullSecrets",
+          "labels",
+          "limits",
+          "mountPath",
+          "name",
+          "namespace",
+          "readOnly",
+          "tty"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/styles.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/styles.go",
+      "sha256": "24af6286052ee5e15c7b73516fb3a990dccb0bf74295a65e804b91f1413b32a5",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "activeColor",
+          "addColor",
+          "bgColor",
+          "body",
+          "border",
+          "buttonBgColor",
+          "buttonFgColor",
+          "buttonFocusBgColor",
+          "buttonFocusFgColor",
+          "chartBgColor",
+          "charts",
+          "colonColor",
+          "command",
+          "completedColor",
+          "counterColor",
+          "cpuColor",
+          "crumbs",
+          "cursorBgColor",
+          "cursorColor",
+          "cursorFgColor",
+          "cursorTextColor",
+          "default",
+          "defaultChartColors",
+          "defaultDialColors",
+          "dialBgColor",
+          "dialog",
+          "errorColor",
+          "fgColor",
+          "fgStyle",
+          "fieldFgColor",
+          "filterColor",
+          "focusBgColor",
+          "focusColor",
+          "focusFgColor",
+          "frame",
+          "graphicColor",
+          "header",
+          "help",
+          "highlightColor",
+          "indicator",
+          "info",
+          "k9s",
+          "k9sRevColor",
+          "keyColor",
+          "killColor",
+          "labelFgColor",
+          "logoColor",
+          "logoColorError",
+          "logoColorInfo",
+          "logoColorMsg",
+          "logoColorWarn",
+          "logs",
+          "mainColor",
+          "markColor",
+          "memColor",
+          "menu",
+          "modifyColor",
+          "newColor",
+          "numKeyColor",
+          "pendingColor",
+          "picker",
+          "prompt",
+          "resourceColors",
+          "sectionColor",
+          "selectedSortColumnColor",
+          "shortcutColor",
+          "sorterColor",
+          "status",
+          "suggestColor",
+          "table",
+          "title",
+          "toggleOffColor",
+          "toggleOnColor",
+          "valueColor",
+          "views",
+          "xray",
+          "yaml"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/threshold.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/threshold.go",
+      "sha256": "0ea59171d0dbb5a44e245b17b7c3f53eb71a69680747ec4aa320727d4324b4ed",
+      "tasks": [
+        "F03",
+        "U01",
+        "U02",
+        "U06"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "critical",
+          "warn"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/types.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/types.go",
+      "sha256": "a46d9e4e2aed59d6251e5c5f0f956c23e5365f7b58f45882f2b5705e2a0a8041",
+      "tasks": [
+        "F03",
+        "U01",
+        "U02",
+        "U06"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "crumbsless",
+          "defaultsToFullScreen",
+          "enableMouse",
+          "headless",
+          "invert",
+          "logoless",
+          "noIcons",
+          "reactive",
+          "skin",
+          "splashless",
+          "useFullGVRTitle"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/views.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/views.go",
+      "sha256": "0319fa1b4de2ec234bd5f666deb7d0291fc92cdafc7f2132e8cef2ee2c7a73fe",
+      "tasks": [
+        "U02",
+        "U03",
+        "U04",
+        "U05"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "columns",
+          "sortColumn",
+          "views"
+        ]
+      }
+    },
+    {
+      "source": "internal/dao/accessor.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/accessor.go",
+      "sha256": "336731b2a3fe68ff3e5ae75a954dfaf06b339897ebd1e04548be2ffffbf2e307",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/alias.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/alias.go",
+      "sha256": "d65ddd1c475bca8db3f9806367f86cd87dd7dbdb77a97cd1d7258627a318e627",
+      "tasks": [
+        "U02",
+        "U03",
+        "U04",
+        "U05"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/benchmark.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/benchmark.go",
+      "sha256": "4c2625c7fe354d46bd6ad4bcb561119c72acaf37a15436837218e86c5c225ca8",
+      "tasks": [
+        "A04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/cluster.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/cluster.go",
+      "sha256": "069e7eede313b658905c112ac9e54f9737c7b8a57d8afa3a25a64149ed3c556f",
+      "tasks": [
+        "C01",
+        "M08",
+        "B03"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/cm.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/cm.go",
+      "sha256": "f3108c14be2a7c4547c9e10f68957c85fe7a7fa80285434da19319e6847fee0c",
+      "tasks": [
+        "M05",
+        "O07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/container.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/container.go",
+      "sha256": "1f7d870b7a4228fb586288343ddd4ddecbe84dbc1fb4728622fd499b35f91852",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/context.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/context.go",
+      "sha256": "aae86cb92a918235a49ee3e0ea902cf90a7c49375b1a5dc4e2f37af8b5118e22",
+      "tasks": [
+        "C01",
+        "M08",
+        "B03"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/crd.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/crd.go",
+      "sha256": "96a64a1af63eca2567f8cb275e8b03d89b0f41be4ccfbd4de1dd615ff74887c3",
+      "tasks": [
+        "C05",
+        "B06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/cronjob.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/cronjob.go",
+      "sha256": "61634ff501e3b1f89818e5e4999a1f838309191cda05411ad4854d55f03532ba",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/cruiser.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/cruiser.go",
+      "sha256": "ef0e04f6407875e5162fd56906faee97b88ba246699014320b3f52cc76d011e6",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/describe.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/describe.go",
+      "sha256": "2d6381532655c3e4634bf96e34e64b1b58cf897fe202ca02180e1f0eee9280f6",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/dir.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/dir.go",
+      "sha256": "2f5ae3335a69aecfc0989ab5fbac35010d26d392bb74f42b1a1c5557f61d4223",
+      "tasks": [
+        "M07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/dp.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/dp.go",
+      "sha256": "7afc4d592ed24410fbbbad00b54bdd193425b29087579285426a72d14ae1e293",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/ds.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/ds.go",
+      "sha256": "3d0ead4922100f7eca18b6d4d59d21136469473aaa81c9b18ffe55f853e50897",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/dynamic.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/dynamic.go",
+      "sha256": "8cce51facdc986ae089d4bb2f300f4b16e914dc1c4fd4a0ef7c67b87055f5ac3",
+      "tasks": [
+        "C05",
+        "B06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/generic.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/generic.go",
+      "sha256": "12bab644ad8d64328459373992b98f58b01b41fb2415798fafbfb127b575ed9e",
+      "tasks": [
+        "C05",
+        "B06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/helm_chart.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/helm_chart.go",
+      "sha256": "4f0881ffd0aaf7c2d14e48938f5ff3cdb2e9414cf0cb7880c55375d1377cbdfa",
+      "tasks": [
+        "M06"
+      ],
+      "symbols": {
+        "environment_names": [
+          "HELM_DRIVER"
+        ]
+      }
+    },
+    {
+      "source": "internal/dao/helm_history.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/helm_history.go",
+      "sha256": "3c1c610a731ad50a085a775a92d0927e6cce58c299d49f11580378684a73410e",
+      "tasks": [
+        "M06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/helpers.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/helpers.go",
+      "sha256": "1ce00732437dd041a929b63c3574a1120872372cefd1d14499f4f4922acf41cf",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/img_scan.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/img_scan.go",
+      "sha256": "6b68ee39a5c2cb038229976e5ef785f828669c3a8ee6030e396f614a627fdcfb",
+      "tasks": [
+        "O07",
+        "U03"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/job.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/job.go",
+      "sha256": "ccd9979effd4bc325f11a6b895f1e57fb2f8c199c758409fb6c91a171fae62ef",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/log_item.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/log_item.go",
+      "sha256": "c01f3c340bf13d4404d096897637254469a00ae46cd40896f4ae4ef0631414c4",
+      "tasks": [
+        "S01",
+        "S02",
+        "S06",
+        "F03"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/log_items.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/log_items.go",
+      "sha256": "80925f1a6294ffb56dec3f8cca73a3726f87478fd26a7bbb1dae3139fb8d90e1",
+      "tasks": [
+        "S01",
+        "S02",
+        "S06",
+        "F03"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/log_options.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/log_options.go",
+      "sha256": "2374f8bef4acdee024103fb7a9cdd7117bced733044124a84d0cfcde6cb63fde",
+      "tasks": [
+        "S01",
+        "S02",
+        "S06",
+        "F03"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/node.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/node.go",
+      "sha256": "396bcd6c86553e0d39d7e242d01517626f3f3da41ec6775cb464cbc5e3428e6a",
+      "tasks": [
+        "A01",
+        "A02",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/non_resource.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/non_resource.go",
+      "sha256": "34f5aa6f1bafa10c81add348bb1e534e8812348d489c9b27cffdba4350696157",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/ns.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/ns.go",
+      "sha256": "3ae488eaad06fe6e60cfe98e4b36ebcf23682ac4307942bd639a270731067223",
+      "tasks": [
+        "C01",
+        "M08",
+        "B03"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/patch.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/patch.go",
+      "sha256": "155aa57bcfb8ffd6853f12c40b20f543051b01dc9d77d5e063244c581de17259",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "$setElementOrder/containers",
+          "$setElementOrder/initContainers",
+          "containers",
+          "image",
+          "initContainers",
+          "name",
+          "spec",
+          "template"
+        ]
+      }
+    },
+    {
+      "source": "internal/dao/pod.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/pod.go",
+      "sha256": "a7cb159ad2b7f901d0685e61d787fba56309b0979b2ec0b90cd91c3ea3f97cd7",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/port_forward.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/port_forward.go",
+      "sha256": "5b801fdc03b21f857eb0524f3daac00a2b979e86103468b6dfa69069782d7e50",
+      "tasks": [
+        "S05",
+        "S08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/port_forwarder.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/port_forwarder.go",
+      "sha256": "011d884d08f042883c5b54a773dce4e7dd0f631ee118238ef77c1062be511636",
+      "tasks": [
+        "S05",
+        "S08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/pulse.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/pulse.go",
+      "sha256": "f401da3ea7ab7b20a0ea5e99b6243dcd70e4bffa2b5de7c598292cab2be6e766",
+      "tasks": [
+        "O01",
+        "O02"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/rbac.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/rbac.go",
+      "sha256": "dc7ac42350f610679787d0365d2e7eea115bcd47f6e44a9ab7ba3f1f7aa99033",
+      "tasks": [
+        "O04",
+        "A05"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/rbac_policy.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/rbac_policy.go",
+      "sha256": "ba9c8b4ec85aa5eee85858b45dffb2f7b5c92d696a1ef5fbdad31e1311866c4b",
+      "tasks": [
+        "O04",
+        "A05"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/rbac_subject.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/rbac_subject.go",
+      "sha256": "a5343303b09bcffbd8b8bc4fa65026254f480a63f8af7c8d334a54a99a2eaa3d",
+      "tasks": [
+        "O04",
+        "A05"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/recorder.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/recorder.go",
+      "sha256": "b042bae720dd24b82eb446548c548a18c0e8a4697047d88d5792ae2532a8a374",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/reference.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/reference.go",
+      "sha256": "8e28b11f9bb1bee29a2228aa4694641f82775ae81d429f7611196089e25e41a5",
+      "tasks": [
+        "O03"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/registry.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/registry.go",
+      "sha256": "7f95a96ceeaff7cfa5c5c7d0f790cfa94d471506abf50fa91cb66dd58f7bb129",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {
+        "resource_identifiers": [
+          "v1/events",
+          "extensions/v1beta1/ingresses"
+        ]
+      }
+    },
+    {
+      "source": "internal/dao/resource.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/resource.go",
+      "sha256": "66d6b169a70ad0c4c3d86caa459d6319c87503980034f94f9720c40e19a4d7ae",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/rest_mapper.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/rest_mapper.go",
+      "sha256": "00730b213cea8e2fac414e6bf17a73661b541cff28846736ee0b22885ca6cc13",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/rs.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/rs.go",
+      "sha256": "89794b0e6c546f4c49ba7e544babf646c8258b5558bc858241e8c22df4a68325",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/scalable.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/scalable.go",
+      "sha256": "03dd877ca0167abda1a98dd9fb09b64e7841867726b24e7136bf0465ad4f0303",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/screen_dump.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/screen_dump.go",
+      "sha256": "0e1a5f93aa7bb14aad7ff374479215babbc8e9936c866796141906d2403d0ac5",
+      "tasks": [
+        "O06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/secret.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/secret.go",
+      "sha256": "707be9e33bb00357762881429e3a5b83371199c3aeabba675297c6596ef0ce7b",
+      "tasks": [
+        "M05",
+        "O07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/sts.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/sts.go",
+      "sha256": "0d7de182002c8823ee9887281ea99aafcbce15e3611d3ec2e71550f94c02ffe0",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/svc.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/svc.go",
+      "sha256": "189fe34e67de2159848b323e28f60499f5b27e1957da6bdb22944727c522331a",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/table.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/table.go",
+      "sha256": "daec20c42e4538155a33cd8bb1d87b748b0107e630351434a1fbcc6a49a45e17",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/types.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/types.go",
+      "sha256": "77f4e36d97933b1203a6108760b025119baeb2f871b73481dc03083c57dd754d",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/dao/workload.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/workload.go",
+      "sha256": "196ee36809cb5585c06ce26a826345e7d1b6e6f99078da6d72453b13b6ddb2c8",
+      "tasks": [
+        "B05",
+        "M01",
+        "M02",
+        "M03",
+        "M04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/health/check.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/health/check.go",
+      "sha256": "452a478b5e8d71dee516fcc257804dec5ee082aa0518828a6daa126a17465e49",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/health/types.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/health/types.go",
+      "sha256": "158d9c0cf0fa65c35c9f7ad4cb279cc4f9cffe386eaa5f0e8894deaa3589e23d",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/helpers.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/helpers.go",
+      "sha256": "eae67f310bef08802bd7dedf6e2826460b46579ec30b7347fc488bac28004fd6",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/keys.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/keys.go",
+      "sha256": "cc25aba91e3825b9f8ee069f522eb5d204b30a97ee19c903ef64b17edc5cf8db",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/cluster.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/cluster.go",
+      "sha256": "3d79dca5ca90ef69fead955364622d75555ce8e02a712df4b0cf081cc5cada98",
+      "tasks": [
+        "C01",
+        "M08",
+        "B03"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/cluster_info.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/cluster_info.go",
+      "sha256": "c8003ad4005777dfad88f869f2415dc815d96877f10d103715bbcd7b285ca837",
+      "tasks": [
+        "O01",
+        "O02"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/cmd_buff.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/cmd_buff.go",
+      "sha256": "5b22f673ccbefb6b5e392401eecb8cb4d9bdb5cec677736abd849dc9ea3ffc15",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/describe.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/describe.go",
+      "sha256": "6656ed74232fc10608aa039b4fad0e64afd56a602dc4cf167a068de28b168240",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/fish_buff.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/fish_buff.go",
+      "sha256": "e0306e30aa96ca377e74d1809e95c2b2ee168737cdd27c2f2d9d154b110efd5f",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/flash.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/flash.go",
+      "sha256": "cf93de684383f9d75b501cec0d266316b4915e9e3a05e6e6f887a8e7d6e043ed",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/helpers.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/helpers.go",
+      "sha256": "b6ecf5e54101f8586b44600f9ee4bf1fe281f005819dfffc55988b5dd52a459e",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/hint.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/hint.go",
+      "sha256": "12108ac92952a44d2e6744d9a19e7d5b8a9d381084ff6ebaa968d189aa6e505b",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/history.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/history.go",
+      "sha256": "4e3ae90c5773fc325bf731bfc01a24fcc9b501800344042478eab5a89de00c8c",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/log.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/log.go",
+      "sha256": "19edd29f47439c5c09a30e8fb860fde248570b105a554c5358564c194e0ab0da",
+      "tasks": [
+        "S01",
+        "S02",
+        "S06",
+        "F03"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/menu_hint.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/menu_hint.go",
+      "sha256": "764fbd8933228788fbb9ce433ac5d76a93706ad17d23d2d95bcf81495ac9c52b",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/pulse.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/pulse.go",
+      "sha256": "28f832e284d0e85a1d252e1697959360f7edeb763cb3d4b7fad169ade93c5849",
+      "tasks": [
+        "O01",
+        "O02"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/pulse_health.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/pulse_health.go",
+      "sha256": "7610396833c245730c924a023bc123bd3c945072de30267faf179ee66c1d8338",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/registry.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/registry.go",
+      "sha256": "7e6494b17eaff7751b61fe252972838dcfef8db7d060607d92ad5d22bb9cfd1e",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/rev_values.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/rev_values.go",
+      "sha256": "87c9bdcbdcad5f460fa7f76511994c0498f0104e154db037b854abf71032c4c1",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/semver.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/semver.go",
+      "sha256": "27bc367c71c9fedc70b2e8ab74d509af649a951ecbbba8df31a45f21491a59fc",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/stack.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/stack.go",
+      "sha256": "ea938dd35f287d964fbb8885242bf83553a47eb3e72107b80d4549738238e986",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/table.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/table.go",
+      "sha256": "4d9035e445f9571d0edd581d4d7a0e7cee76495e37b5775907509b55751a153a",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/text.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/text.go",
+      "sha256": "95a128222707cfb3634de9570f9e21d9f3066725852b9ea9f3312c0d5f5a8d29",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/tree.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/tree.go",
+      "sha256": "a2d6a7eec25ba17e891d4ddc1982c8dc7bbfdba186d12f4658e8d3589d30a150",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/types.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/types.go",
+      "sha256": "751a833ec72b8bc46f5f65e56a027621934eb76c01365d0302bf2fe4cdbe30fc",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/values.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/values.go",
+      "sha256": "c8172883e2b4652d30891113bc484c79ad60fc9a31c9efb8c0e07d6b537dd2ff",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model/yaml.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model/yaml.go",
+      "sha256": "2b4a13e54e313ff4c5c54f900ea8a272c056ec763274b42d301e1bdf9773e4c6",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model1/color.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model1/color.go",
+      "sha256": "376988d7fe2a47ca5e006602c13ade59ae2381d6446446994d79b2f2cf4e9d3b",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model1/delta.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model1/delta.go",
+      "sha256": "a005245e0bdb341763575f91b704a3033556d78394a3eafd0b0583d84355fe91",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model1/fields.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model1/fields.go",
+      "sha256": "7d9cfc6e036d431f56c87ffa91dba27183b45c48e7360938bef50467785f8e82",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model1/header.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model1/header.go",
+      "sha256": "c88200cfcf0d912318288936d668b0abcb45215e8721e12bcc1fe3d48796d146",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model1/helpers.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model1/helpers.go",
+      "sha256": "783e682e18867768d5430ca14f016e7eb4d0912ff62287ee4b3b411fb1131f79",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model1/pool.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model1/pool.go",
+      "sha256": "dc43eff3a21c1a43ed59278d46e0482fb294e198450fa062fcb865313de5a945",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model1/row.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model1/row.go",
+      "sha256": "7c0594bbd3f299b63e7f295b50048488a935727ec2f4c6777186e16d56796068",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model1/row_event.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model1/row_event.go",
+      "sha256": "d613c8b339ae697418b938c0b202156f4c21dd0c01537861485cef4ab55a0f54",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model1/rows.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model1/rows.go",
+      "sha256": "ce93758b160134b09f4f03a0ab7f0dfc30002747127258f02068fd84385ba411",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model1/table_data.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model1/table_data.go",
+      "sha256": "0609cef74bd9cd7691c45c57818f72fd5e58157a5e28f8e2a876f4de155e6543",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/model1/types.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/model1/types.go",
+      "sha256": "55537e4e3b71dad9d184d1f89c221f39f46ace23ee022bb6e714e12b40ab4b81",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/perf/benchmark.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/perf/benchmark.go",
+      "sha256": "684c02c304641e41fa01a538ae961ef5fbb38dc5bd81bbcd9c337fdb3ac83aea",
+      "tasks": [
+        "A04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/pool.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/pool.go",
+      "sha256": "4393b6984b090636576886cb93137ef490e97fa971e7b8142e8857f14891fb56",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/port/ann.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/port/ann.go",
+      "sha256": "8c82a4a860e031e26079346b9fa11a72861fa1250f61132a6a5313253ca54646",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/port/co_portspec.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/port/co_portspec.go",
+      "sha256": "b093da92a899ee498119ec905bfd8dee97273b2d9f9a1874bb60d94ed9188a9a",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/port/pf.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/port/pf.go",
+      "sha256": "0875f7a80cd2f625f9514dad27ad94ddd64cc2753e6c64fa3932acead0e06922",
+      "tasks": [
+        "S05",
+        "S08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/port/pfs.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/port/pfs.go",
+      "sha256": "5ea0abd6c1ae0313d2a8a6585d0a8fe6d5b3aca871ac2801d930c66b58a03416",
+      "tasks": [
+        "S05",
+        "S08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/port/tunnel.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/port/tunnel.go",
+      "sha256": "64ebd7fc365f798603734000a0132cc0e9248a579493f7a0ac9a93ae535c3335",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/alias.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/alias.go",
+      "sha256": "f8d522f692ca8360022c8dc7d3d7d96a594b42598bf836ec31732d6def627fe5",
+      "tasks": [
+        "U02",
+        "U03",
+        "U04",
+        "U05"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/base.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/base.go",
+      "sha256": "2e0c25a1eeab37aad00864758eb0907477776b84a7ea5463aa7c951bd1118082",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/benchmark.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/benchmark.go",
+      "sha256": "9a6e025fe4e249bc4d4b583da524bafa60f2133c38c1746e29ece31ce6edc03f",
+      "tasks": [
+        "A04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/cm.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/cm.go",
+      "sha256": "095f94b588cbfc0a7393d79706a1e2609da4790186d0c10a99f4f96d11d0282c",
+      "tasks": [
+        "M05",
+        "O07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/container.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/container.go",
+      "sha256": "f970fda7cfedbfa52e385887529b3c5a08f627afeb2f25f0a40c60f1ef4af33d",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/context.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/context.go",
+      "sha256": "641df65b988abe14f5f2e2f0d545b8a0ac0248dce5c038806edc37162005731a",
+      "tasks": [
+        "C01",
+        "M08",
+        "B03"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/cr.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/cr.go",
+      "sha256": "e8a56b4ad70c8d8309fbf4b7b5fbf22adf937ff0ed430656b25cc60bb030e0f9",
+      "tasks": [
+        "O04",
+        "A05"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/crb.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/crb.go",
+      "sha256": "0273a22673a712c42c87c40a20915d484af334da027f3f0903c52429bf9f5e79",
+      "tasks": [
+        "O04",
+        "A05"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/crd.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/crd.go",
+      "sha256": "8ebcf627cd5acfd016f27d7f75e7ba3f2de6a3b390f35db4e66cdbe5ecc81eab",
+      "tasks": [
+        "C05",
+        "B06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/cronjob.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/cronjob.go",
+      "sha256": "f0dfe2fa6bb61770683f8fdd06f9520cf37d68f49a846c78f04f4975c84eaed7",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/cust_col.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/cust_col.go",
+      "sha256": "143fa43cf3ce8243bcd317cbbd0858f3e69a16b5124c8d9f231cbcb079d1911c",
+      "tasks": [
+        "U02",
+        "U03",
+        "U04",
+        "U05"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/cust_cols.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/cust_cols.go",
+      "sha256": "3e285f1e0de1e6af678950822747a4810cebe510d7e8af51c63605a0991e3926",
+      "tasks": [
+        "U02",
+        "U03",
+        "U04",
+        "U05"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/dir.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/dir.go",
+      "sha256": "43ff52935c54d05e74fc9499662e23f907fb106658ee8de11f045a89317db17f",
+      "tasks": [
+        "M07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/dp.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/dp.go",
+      "sha256": "562bcfa06607f27e9515e25765fa002f2667f86e8a173aac0084c666f4113174",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/ds.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/ds.go",
+      "sha256": "1d57f9ce2ef8867c2769a9cd9bc0fde023bfd96cb0752bc179e1cd3548e845e5",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/ep.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/ep.go",
+      "sha256": "5b6db20092fe21a4fb433d927406788f6e12a5f42445fa0e38c122a4a491e732",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/eps.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/eps.go",
+      "sha256": "0aa0e2116d1c8b326479f376eb75de015d717de3551333e4c42171aa5136e0e7",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/ev.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/ev.go",
+      "sha256": "72e54b6a461fea8e701dfa7659cf89e3527163e68a3fb137366a183bf5b29069",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/generic.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/generic.go",
+      "sha256": "8648ccfd686b446733ed2a1c7d2d6e00d08389a0d6b03c9651ec879502eaf679",
+      "tasks": [
+        "C05",
+        "B06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/helm/chart.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/helm/chart.go",
+      "sha256": "b0bd93bdcdeb93644e0616780751cd330c143282ab67417d4e303956aab699b8",
+      "tasks": [
+        "M06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/helm/history.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/helm/history.go",
+      "sha256": "d4af085c8e26048fc47a1ef31d47429155909ef67c93169a4a2fd451cb144f2f",
+      "tasks": [
+        "M06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/helpers.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/helpers.go",
+      "sha256": "4106f7aa8f0a116b792c6e06e7f3a8e8cd6232f4d8f72e5f859a80eaba39e997",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/hpa.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/hpa.go",
+      "sha256": "eb88aeedb2974c30ed9d8e03ccc98abd9311d8af11705cf85a082b41321ca22e",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/img_scan.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/img_scan.go",
+      "sha256": "09b28aeba55bbc235b1d94551cfa739a26b95165d307d96f4d3580741b98aa71",
+      "tasks": [
+        "O07",
+        "U03"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/job.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/job.go",
+      "sha256": "a23a2eea97f75dcdea08e88acb40a31655c5d910188dfb8679f47f80012f7b51",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/node.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/node.go",
+      "sha256": "7ed91165fc9b7d5b91410bf3c607be9a41d750a2e2c0886b86ec0939e20b9653",
+      "tasks": [
+        "A01",
+        "A02",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/np.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/np.go",
+      "sha256": "291e8950c6f3e685b3d11716bf03ef979999d02268d6f0d4e10cb9ad7a7d3b8c",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/ns.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/ns.go",
+      "sha256": "59d1d2149e5f5d26bb9499bfa4f067af8d6cf82ba052fcb769bc69fe55d57115",
+      "tasks": [
+        "C01",
+        "M08",
+        "B03"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/pdb.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/pdb.go",
+      "sha256": "fb9b97a78a018648269186d7e398c78c3efe5acfed5171dc3d61064db67b272e",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/pod.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/pod.go",
+      "sha256": "8af47ff476281a2973c6904c83b436f8e512da29b90e4e2a551816e44f4f7768",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/policy.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/policy.go",
+      "sha256": "153cececb77d8b949ed08d1d9df5d1f13eff0c02052d25cc533d45e27532a2fe",
+      "tasks": [
+        "O04",
+        "A05"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/portforward.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/portforward.go",
+      "sha256": "4958d4abc4a3118dc2ae3fd42386e46b575a4c44c94adb44fb954926e8f7d735",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/pv.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/pv.go",
+      "sha256": "39f15b33824573ebbcfd678e24ae80b435afeb00f97958b9446169089694e5a8",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/pvc.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/pvc.go",
+      "sha256": "20c2c1500c866182135af989af48dadff7e7c698a07e717f4c407f3b7b401cc3",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/rbac.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/rbac.go",
+      "sha256": "4d715da30fbc242f1a0baa232d12bdd40fba574df37517b08edf3103f0afcef7",
+      "tasks": [
+        "O04",
+        "A05"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/reference.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/reference.go",
+      "sha256": "f5fcf8ce3180c8ca8d26050c8ab847f04dcdee9e6a4c656d2e276512f53ab670",
+      "tasks": [
+        "O03"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/ro.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/ro.go",
+      "sha256": "e1a797fdd2ebe1ca8d80065fe12d1c27a6f65affe86511f18cb210d0c6c81d59",
+      "tasks": [
+        "O04",
+        "A05"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/rob.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/rob.go",
+      "sha256": "00b0723aa51df771d1940ba20b970d0650dd128c63871c4612e652dadfe75f2c",
+      "tasks": [
+        "O04",
+        "A05"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/rs.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/rs.go",
+      "sha256": "7d551ef43b3c2779de70c2b928807f40093b63feb83db20b53adb2c4472718fe",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/sa.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/sa.go",
+      "sha256": "e867a89a984f6627c461883b4d457937716ad245aa8f8891a38cc5df99eb62e5",
+      "tasks": [
+        "O04",
+        "A05"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/sc.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/sc.go",
+      "sha256": "cf6bab25c1ccc518c9788240794f315378cc27e27ee5c6f0fcdfa6d33595177f",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/screen_dump.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/screen_dump.go",
+      "sha256": "bdca5f528f3c01611648a96143ee5cc2b80e90546631d4f426605539d528270d",
+      "tasks": [
+        "O06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/secret.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/secret.go",
+      "sha256": "dc079a04ca7194e98675f0f766f7a2f6e3dc8dbb1963db9c77582467b2ef6418",
+      "tasks": [
+        "M05",
+        "O07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/section.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/section.go",
+      "sha256": "13c2e249c77629b3b7b6e9d5fe46e2d92d4dadce7003b5107cd504dbf05c5ec7",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {
+        "serialized_fields": [
+          "group",
+          "gvr",
+          "issues",
+          "level",
+          "message",
+          "sanitizer"
+        ]
+      }
+    },
+    {
+      "source": "internal/render/sts.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/sts.go",
+      "sha256": "c321f51c1ea554ed4f977aa68402ce34c63fbb8561c49fad4f4098042c81abd1",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/subject.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/subject.go",
+      "sha256": "02899f7e9c5747c6e02dff82b3284e8e91ae652225545855b693e5964836b42d",
+      "tasks": [
+        "O04",
+        "A05"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/svc.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/svc.go",
+      "sha256": "f5e98a7cb58adaa8a47ed1b6f593987830ca70ffd439d60996e5eae3094a25c3",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/table.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/table.go",
+      "sha256": "bff818834a60bd56868fe64571c661e780739b744f919519abab37eb1367c925",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/types.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/types.go",
+      "sha256": "5df2c65c1800ac096f4542fd7c49d1622214038878bebbbf43fc128a2c82e273",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/render/workload.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/workload.go",
+      "sha256": "5fadd771f5def1158f750d541636ce1d0714e2a12a1929bc08dd40ae2f1b83a5",
+      "tasks": [
+        "B05",
+        "B06",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/slogs/child.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/slogs/child.go",
+      "sha256": "a5e3c5f9381706c4fc297f66bf534e1ca2d61714ccaeb29a7a3ffe036c352f14",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/slogs/keys.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/slogs/keys.go",
+      "sha256": "fb947f2a75c0562510b2ccdfbf5252555df24ce42f576158d50398147b0642f4",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/tchart/component.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/tchart/component.go",
+      "sha256": "d951605626a49153b66c0fdba420f288d480b7c010eadfbf6af558814b233738",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/tchart/dot_matrix.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/tchart/dot_matrix.go",
+      "sha256": "ddf9b0fac11e942b3b98ba1afa9cdd018ca1f162ae63ae40eb147a83d92fd215",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/tchart/gauge.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/tchart/gauge.go",
+      "sha256": "6b04478402927671a5022a78cd58cab6b7a8635d1a22ce01b156bcca2b5dbadd",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/tchart/series.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/tchart/series.go",
+      "sha256": "5e54c7d3fc39fb8a7eb07c4daf4ecdf7341da1b3637b5381e06de7e916ab711d",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/tchart/sparkline.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/tchart/sparkline.go",
+      "sha256": "e34c713287119026de400b346b930887715ff2de86f090da2a1e858eadea3e0b",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/action.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/action.go",
+      "sha256": "2b7689252c15197a9c4c5f81a6a1b1261ed6c417599da592019c8e655dbe3351",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "d"
+        ]
+      }
+    },
+    {
+      "source": "internal/ui/app.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/app.go",
+      "sha256": "c58772a90249cbb567249618673627285a29b1a046016fba09f005fc486fd1a9",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Clear Filter",
+          "Cmd",
+          "Persist",
+          "Redraw"
+        ]
+      }
+    },
+    {
+      "source": "internal/ui/config.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/config.go",
+      "sha256": "e45bb2a47047b46b3fa1ab32b6ea959dc6dc2d0f8b8f0790e7afc151aee74dde",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "environment_names": [
+          "K9S_SKIN"
+        ]
+      }
+    },
+    {
+      "source": "internal/ui/crumbs.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/crumbs.go",
+      "sha256": "226b37e281014abaa7133bcbbc24607c6653c4c26bc284a8f561d4cf77d58a74",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/deltas.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/deltas.go",
+      "sha256": "ebd77ced3d5150865399b231b53f907eaeac0a865940337b617fa2b2bb541bf9",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/dialog/confirm.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/dialog/confirm.go",
+      "sha256": "8c3e8af1055b5afec84d880567953dd062e397f7267e728d780a592dc605a4c4",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/dialog/delete.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/dialog/delete.go",
+      "sha256": "dc4299534ef994a55f53a31a20e183e3bbd435113c3a1ca1dc4d5312fdb4d35b",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/dialog/error.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/dialog/error.go",
+      "sha256": "0822e3dc160315f49f212df5210ff2dbdacf5e06cfdd9e2c8c4a582de3acebe7",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/dialog/plugin_inputs.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/dialog/plugin_inputs.go",
+      "sha256": "5b6da7c2d209ea917e05bf37eda5e23728688abc316cf69e1e25b0b0a9418a9b",
+      "tasks": [
+        "U02",
+        "U03",
+        "U04",
+        "U05"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/dialog/prompt.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/dialog/prompt.go",
+      "sha256": "604207479f7dceeb55659388e6bdea44bce068413ec3aae4aee8c2e66c57d62e",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/dialog/restart.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/dialog/restart.go",
+      "sha256": "a6cafa13c5ef76cdcfc80d5492263daabfd6410f91cb357137ae5e7a5bb8f971",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/dialog/selection.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/dialog/selection.go",
+      "sha256": "c1f7d6db261e31d891ee771b07cc48ef3cbf1012414d8fb5af864915a38ccf84",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/dialog/transfer.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/dialog/transfer.go",
+      "sha256": "214f810a78447e9bfdfaf59b1ef44293906748ef53c1865d19403d9dbdfad3ac",
+      "tasks": [
+        "S07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/flash.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/flash.go",
+      "sha256": "bc036ebd1d59dd0cbb616548e9f114cc6afd453049779612af5db9969da2b179",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/indicator.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/indicator.go",
+      "sha256": "a501fa39b8e1c1e431ab5eac7f231ca6affef1229513bfefba81fd4783a175e4",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/key.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/key.go",
+      "sha256": "222da4c8c4a2ba5bda777dd29d9dcc726f70379b029bc5540003a62519f0ee45",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/logo.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/logo.go",
+      "sha256": "ec6c3de77cfb88b08ba88565e52b94faec4780c9b7ea3b62570e38bc1723fba3",
+      "tasks": [
+        "S01",
+        "S02",
+        "S06",
+        "F03"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/menu.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/menu.go",
+      "sha256": "cd9bf85dde302d2070a82fd6f425943dcc1351936e2c5d12d69f57a1dc61718e",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/modal_list.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/modal_list.go",
+      "sha256": "2376a601c3b8ded9c81a71575d8dba9308e402c7f6045677231218ce5bd41a25",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/padding.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/padding.go",
+      "sha256": "dcf7a529fc6690b399ff076f0c26161b391e2aaca96147fdf478985e647bd6ba",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/pages.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/pages.go",
+      "sha256": "6e964314cd88e8d4f48e9554c1ab0946d1669f110ce5ba64f91549b6e0fe62d0",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/prompt.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/prompt.go",
+      "sha256": "1376b74682d969746e35d1efb97780cf469adf3020840adb0c99b78f1c7c092c",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/select_table.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/select_table.go",
+      "sha256": "9778ef1c7eb3a968e01fccddb6bb75fc2b3981747a3722db85f490be0db8a4cc",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/splash.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/splash.go",
+      "sha256": "324c78fd45c4523754398e77823f9938700b175fb989ec96d4974931e58c3fc5",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/table.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/table.go",
+      "sha256": "2d34a9abae3b519f2fc39531a4eeb257b6aebb429caf4e14f7072863ab09a757",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Sort Namespace"
+        ]
+      }
+    },
+    {
+      "source": "internal/ui/table_helper.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/table_helper.go",
+      "sha256": "43ca182d218e03f8630f52d09bfbaf2b2a02bac59086bde907bfd5b5bc06e157",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/ui/tree.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/tree.go",
+      "sha256": "79dfdafa56e2aac8af473da4f2c951624e7f9c6b55eddceff9b5af7c3feee8e4",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Expand/Collapse",
+          "Expand/Collapse All"
+        ]
+      }
+    },
+    {
+      "source": "internal/ui/types.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/ui/types.go",
+      "sha256": "4febf388ee88cc09b3df1ff54869104cc0b71aaf07c0107fcb9d569aae69186c",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/actions.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/actions.go",
+      "sha256": "1f24fb1e9eb9c6625499d390419d04cd60b230ca2f6798e85e50dd8355a91710",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "hk",
+          "pp"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/alias.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/alias.go",
+      "sha256": "895aff319891a45753e5be81c6bb0a82be6ae95a67563ac1240659c3d5f460b3",
+      "tasks": [
+        "U02",
+        "U03",
+        "U04",
+        "U05"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Goto",
+          "Sort ApiGroup",
+          "Sort Command",
+          "Sort Resource"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/app.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/app.go",
+      "sha256": "e0e7ca9a4ea372d9949ee587e8e13377413af7673675445c785908b6b34d445a",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Aliases",
+          "Go Back",
+          "Go Forward",
+          "Goto",
+          "Help",
+          "Last View",
+          "Quit",
+          "ToggleCrumbs",
+          "ToggleHeader"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/benchmark.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/benchmark.go",
+      "sha256": "d6c433394517a63cad10736eb1f69fc60b9a4e0ffa345d7abcb0110f716c416c",
+      "tasks": [
+        "A04"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/browser.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/browser.go",
+      "sha256": "d48d87309ebb30d5d3283ebba61aada4e1f781ee490c9657bce4106ade04c817",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Copy",
+          "Copy Namespace",
+          "Delete",
+          "Describe",
+          "Edit",
+          "Filter",
+          "Filter Reset",
+          "Help",
+          "Refresh",
+          "View",
+          "Warp To Namespace",
+          "client",
+          "ns",
+          "yamlAction"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/clipboard.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/clipboard.go",
+      "sha256": "6fe7bf2baaa672a2270777ba0e30234737c19cb043d48169626a9286d008a019",
+      "tasks": [
+        "B07"
+      ],
+      "symbols": {
+        "environment_names": [
+          "K9S_CLIPBOARD"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/cluster_info.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/cluster_info.go",
+      "sha256": "1115f0569784cfb5c396a294a2a5a2faafbd2aadc333866c4e6f5e08b2df6ae4",
+      "tasks": [
+        "O01",
+        "O02"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/cm.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/cm.go",
+      "sha256": "7485207bf663d20b74464174ca2a6058906dea9af1f13cc1693b97e2ec3a7c7a",
+      "tasks": [
+        "M05",
+        "O07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "UsedBy"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/cmd/args.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/cmd/args.go",
+      "sha256": "9b8874bd3f5056961ba5b1f3c23de94d0e53d9f08b9d06311aa83e3d8615f8e9",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/cmd/helpers.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/cmd/helpers.go",
+      "sha256": "a33bf221635c97247e1d7abb78f45bd1b5769bdbf6205b5597c7630cfb7eba58",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/cmd/interpreter.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/cmd/interpreter.go",
+      "sha256": "ec71b58ea4e37bbe6524fd9880cae30b63fde8aee52cc6b5c8755e2cd57f8e68",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/cmd/types.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/cmd/types.go",
+      "sha256": "6d4b760d133d911e61fc4cff5f078e213110f8c65eb423d1774849127c92b90d",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/command.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/command.go",
+      "sha256": "6e79f1edfc3ef72dcad27394fe30998f380ffbc89f74f2d0ba7f618e5ea57f25",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/container.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/container.go",
+      "sha256": "a62dfbacfa1c1054519eabc6498b309b3b7f96b7723c80e3be7dffc11d4de110",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Attach",
+          "PortForward",
+          "Shell",
+          "Show PortForward"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/context.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/context.go",
+      "sha256": "9d917e787043f9f938cce79247f4cc29fc3ead925e69e7958c7e83dddc708bec",
+      "tasks": [
+        "C01",
+        "M08",
+        "B03"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Delete",
+          "Rename"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/cow.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/cow.go",
+      "sha256": "a14c7b05ef54a8ee8bd66d9ebaeedef6634a576f117d319d3ce7e8f956ca7939",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Back"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/crd.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/crd.go",
+      "sha256": "8f24dac4d854028df47d485ec0ef8d5f88980beb7491a6b67641084c64b35cda",
+      "tasks": [
+        "C05",
+        "B06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/cronjob.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/cronjob.go",
+      "sha256": "d83af3e73cf5aa36955a4f9df7a04cf16bf62ce5c15c895c699b088899d0acd9",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Suspend/Resume",
+          "Trigger"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/custom_jump.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/custom_jump.go",
+      "sha256": "4837e6306e7749a0b6ba6727022bb0887b68d15baa88093ba8c96edc0ca33723",
+      "tasks": [
+        "U06",
+        "O03"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/details.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/details.go",
+      "sha256": "2286e7283c9b2b79b09275e985f2ed684bbb949cc901ad3d50a0a84064d29148",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Back",
+          "Copy",
+          "Erase",
+          "Filter",
+          "Filter Mode",
+          "Next Match",
+          "Prev Match",
+          "Save",
+          "Toggle FullScreen"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/dir.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/dir.go",
+      "sha256": "ad7c0d108986e997efa7bda6443ce6562fd811ec44f79e317ee3bcd9e6e13e09",
+      "tasks": [
+        "M07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Apply",
+          "Delete",
+          "Edit",
+          "Goto",
+          "yamlAction"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/dp.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/dp.go",
+      "sha256": "4d8171ce5f57a5601366c79b99a12a5bba2e5677c3e95faccca82dc3e38f43c2",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "ReplicaSets"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/drain_dialog.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/drain_dialog.go",
+      "sha256": "ce2fb778c631ece8d604d3b627ce85f01da56620de9364e2939ecbd02ab1a861",
+      "tasks": [
+        "A01",
+        "A02",
+        "O01"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/ds.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/ds.go",
+      "sha256": "06c0c15791b6e8a290f1d177faec986120271897a4dc370b170f02a30128738f",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/env.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/env.go",
+      "sha256": "8ceffbac9f83531291c67d7b5b10d41b542189b512cd8baa78ad575f9342ba49",
+      "tasks": [
+        "O07",
+        "U03"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/event.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/event.go",
+      "sha256": "42340e2f75615fdf207cbbc91749c111a7c5b4f777ed2c04f1a46bda781ca788",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Toggle Faults"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/exec.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/exec.go",
+      "sha256": "72f29331e791fd81085293b4108fe4301674a6150b9fe9e09d4b97f4758031d2",
+      "tasks": [
+        "S03",
+        "S04",
+        "S07",
+        "A01",
+        "A03"
+      ],
+      "symbols": {
+        "environment_names": [
+          "K9S_EDITOR",
+          "KUBE_EDITOR"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/group.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/group.go",
+      "sha256": "554686a323e59be6a188de3793d2ab68012ce7853e0280775bb4d8016459d9c2",
+      "tasks": [
+        "O04",
+        "A05"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Rules"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/helm_chart.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/helm_chart.go",
+      "sha256": "94c82f02075adb005dc8a37897dd3bf2cacb8a3d84e3a20057d251c36914c1fd",
+      "tasks": [
+        "M06"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Releases"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/helm_history.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/helm_history.go",
+      "sha256": "66d920df8f00a1ee14b866de5c7711bf3189df84f23102d1fd64ccc0c235ec34",
+      "tasks": [
+        "M06"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "RollBackTo...",
+          "Sort Age",
+          "Sort Revision"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/help.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/help.go",
+      "sha256": "4cee06ee9aa4125ff3ee346afc8a3aa7ef10ef9b5a98adab01a33584537bb446",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Back"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/helpers.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/helpers.go",
+      "sha256": "09df8f649ede07b40ce2b1bd3a08eedb79d3fc746f1edaa1d606129ad48b9094",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "environment_names": [
+          "KUBECONFIG"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/image_extender.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/image_extender.go",
+      "sha256": "2467bb34e59994bf8bc9e1da3bf5b08a24834fd88f38dc308bdaaee57695af7f",
+      "tasks": [
+        "O07",
+        "U03"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Set Image"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/img_scan.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/img_scan.go",
+      "sha256": "c261e8c24ac216cf51f04544f31be21d8461376ca20539078e85ff9ff87f2c53",
+      "tasks": [
+        "O07",
+        "U03"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Sort Fixed-in",
+          "Sort Lib",
+          "Sort Severity",
+          "Sort Vulnerability"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/job.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/job.go",
+      "sha256": "180c065ca4b0ddd23caf7a79c812d847e6957f0cd4ea2df6971e3982aaa17836",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/live_view.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/live_view.go",
+      "sha256": "ab96d607d75ca0363df5532f78802572312e474302b7359022eab705468bc687",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Back",
+          "Copy",
+          "Edit",
+          "Erase",
+          "Filter",
+          "Filter Mode",
+          "Next Match",
+          "Prev Match",
+          "Save",
+          "Toggle Auto-Refresh",
+          "Toggle Decode",
+          "Toggle FullScreen",
+          "Toggle ManagedFields"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/log.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/log.go",
+      "sha256": "dbd43a0f32849e2afba6e0cd635ce44f0360d5e329bd439ff2af3c3c25577827",
+      "tasks": [
+        "S01",
+        "S02",
+        "S06",
+        "F03"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "15m",
+          "1h",
+          "1m",
+          "30m",
+          "5m",
+          "Back",
+          "Clear",
+          "Copy",
+          "Filter",
+          "Mark",
+          "Save",
+          "Toggle AllContainers",
+          "Toggle AutoScroll",
+          "Toggle ColumnLock",
+          "Toggle FullScreen",
+          "Toggle Timestamp",
+          "Toggle Wrap",
+          "head",
+          "tail"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/log_indicator.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/log_indicator.go",
+      "sha256": "356a2c3bb011ac2aee6e6222ae076201cab47ebedd0fd49bb741370faa92f0d8",
+      "tasks": [
+        "S01",
+        "S02",
+        "S06",
+        "F03"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/logger.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/logger.go",
+      "sha256": "70aba1ec4a54a6dbe51379bccea1cefcef7fb5ea38a86ac4b787c861e2a560b6",
+      "tasks": [
+        "S01",
+        "S02",
+        "S06",
+        "F03"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Back",
+          "Copy",
+          "Erase",
+          "Filter Mode",
+          "Save"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/logs_extender.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/logs_extender.go",
+      "sha256": "a6b5ac87ac26014081cdfb7b48508ef5f27b9890adbc7758a31c7a1390b6b759",
+      "tasks": [
+        "S01",
+        "S02",
+        "S06",
+        "F03"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Logs",
+          "Logs Previous"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/node.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/node.go",
+      "sha256": "91b9713ddf5b78966624d592582a366b1f85a7a01ca6f3980acfffcb3cd80883",
+      "tasks": [
+        "A01",
+        "A02",
+        "O01"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Cordon",
+          "Drain",
+          "Shell",
+          "Uncordon",
+          "yamlAction"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/ns.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/ns.go",
+      "sha256": "5dee91cb1ba705912c61446d2c24751321d3f1bf2f324b5c1cafaee7f2c3a746",
+      "tasks": [
+        "C01",
+        "M08",
+        "B03"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Use"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/owner_extender.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/owner_extender.go",
+      "sha256": "0cf58649714cbc1984033b555f5ae4b1e172ecc7b267b2a3d7e1ad9524b3b2e0",
+      "tasks": [
+        "O03"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Jump Owner"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/page_stack.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/page_stack.go",
+      "sha256": "99efb0042e8527129d6d7ce04558f633c85d80c00fc66eff233a432f9a7b514c",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/pf.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/pf.go",
+      "sha256": "740d565e8ddee2584757ba147800636f55267b932dbd8f6315e73d7420ebf446",
+      "tasks": [
+        "S05",
+        "S08"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Benchmark Run/Stop",
+          "Delete",
+          "Sort Ports",
+          "Sort URL",
+          "View Benchmarks"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/pf_dialog.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/pf_dialog.go",
+      "sha256": "9cb5a05f23ae6af98cf1bde76e763181a4006628182cd5d181d21e368f27bab6",
+      "tasks": [
+        "S05",
+        "S08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/pf_extender.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/pf_extender.go",
+      "sha256": "f3aaa3844e6587659724695ca1ccabe516edbb13ee5cc0db361767b8b8c1bd40",
+      "tasks": [
+        "S05",
+        "S08"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Port-Forward",
+          "Show PortForward"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/picker.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/picker.go",
+      "sha256": "b0738cff1032b3cd9d54184fdb92ad6514cd5581999591a167fd34eb4a08e8c2",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Back"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/pod.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/pod.go",
+      "sha256": "3d3f46dccc6c4ba7b564828e34b8d9fefc10e4239b3006165ae5f55099a9a327",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Attach",
+          "Kill",
+          "Sanitize",
+          "Shell",
+          "Show Node",
+          "Transfer"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/policy.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/policy.go",
+      "sha256": "cd960261bbb6a4b746370266958bcf1b04c495912cb6200341b2102ba21c7cc5",
+      "tasks": [
+        "O04",
+        "A05"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/priorityclass.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/priorityclass.go",
+      "sha256": "d27b6e00f4844569fea1ae6ef36444a358b8c579816db64ace196a8377ef4760",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "UsedBy"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/pulse.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/pulse.go",
+      "sha256": "18e12b081727ea314fbf20779ab6c43853506e0fef4b09d64fd5dc61ceeb82ba",
+      "tasks": [
+        "O01",
+        "O02"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Down",
+          "Goto",
+          "Next",
+          "Prev",
+          "Up"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/pvc.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/pvc.go",
+      "sha256": "97b588fa40e54b4ec51423ed9d309bfecacf49b5cee744e0647fad171e03743f",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "UsedBy"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/rbac.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/rbac.go",
+      "sha256": "009b1ef7ba0bead937cf73d42f01d42a8d8d257a24fd9f6f4e33bdb1e1bcd8d9",
+      "tasks": [
+        "O04",
+        "A05"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/reference.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/reference.go",
+      "sha256": "564aac81ea03212fa5ee9aed8e9e781f05bce784534f2fd07c7d7e3302b180ce",
+      "tasks": [
+        "O03"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Goto",
+          "Sort GVR"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/registrar.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/registrar.go",
+      "sha256": "b80b5c96c9be1dc9d3bb21a75a21a0676c17b2e02922685c7d59e56028c62b87",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/restart_extender.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/restart_extender.go",
+      "sha256": "c214affac2284f0ab440bfecd38d998fe447d9fb216f864cad076e22498afc0a",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Restart"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/rs.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/rs.go",
+      "sha256": "a0b7419cbd561e0e33bc78794fb0193606feb6655d02ba13564745ad73d29462",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Rollback"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/sa.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/sa.go",
+      "sha256": "f8593f19c27d7be862e5d0961b9893df33ac57c949061eae40a4e2b46b456e97",
+      "tasks": [
+        "O04",
+        "A05"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Rules",
+          "UsedBy"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/scale_extender.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/scale_extender.go",
+      "sha256": "e8d3aebd29c94f05c0fa71152ff19d92fb98b1f8f5f11c2ec4d3d5541650b594",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Scale"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/screen_dump.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/screen_dump.go",
+      "sha256": "77e5e22a1dd6f3771b124df8335d00a6c2d5d3e5d064ef1246066b7842abdd88",
+      "tasks": [
+        "O06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/secret.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/secret.go",
+      "sha256": "65d3d509ae82e81403f9beaa7f5a06f8a27eb8b04784f885671d699d143408a2",
+      "tasks": [
+        "M05",
+        "O07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Decode",
+          "UsedBy"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/sts.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/sts.go",
+      "sha256": "9ea6246e7edf4b2085eeae4afe81365197646bcbfc4cd2ff7697cecebef9e7fb",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/svc.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/svc.go",
+      "sha256": "fdfa98e61e93be0107581610c37f30e4c554349545047dc18beaa574c2d07645",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Bench Run/Stop"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/table.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/table.go",
+      "sha256": "68caddc3529a218dc36ae8d33610cfddfeb10fad63d333d09171dffb0d7495f3",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Filter Mode",
+          "Help",
+          "Mark",
+          "Mark Range",
+          "Marks Clear",
+          "Save",
+          "Sort Age",
+          "Sort Name",
+          "Sort Selected Column",
+          "Sort Status",
+          "Toggle Faults",
+          "Toggle Wide"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/table_helper.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/table_helper.go",
+      "sha256": "688ce405dd3b972dd55a9501a83296202af9cdae8492e96737f139849e7f4192",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/types.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/types.go",
+      "sha256": "0189e6648cf006a6702bd97c03fe85219492ff3cd50599331219d5254f276815",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/view/user.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/user.go",
+      "sha256": "02dd01d9b292ecc8983d572fd3c2d49506fe9b9247216587f505ed6616971386",
+      "tasks": [
+        "O04",
+        "A05"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Rules"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/value_extender.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/value_extender.go",
+      "sha256": "6c19f9e1ca6314b37aca3c0a110c21a97b26b14875e8d03d7b93407d4351dee7",
+      "tasks": [
+        "M05",
+        "O07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Toggle All Values",
+          "Values"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/vul_extender.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/vul_extender.go",
+      "sha256": "67f1d9afc173e9a28343c81b5d4506eb9e3839e2e5325eca6735d70355bdbab9",
+      "tasks": [
+        "O07",
+        "U03"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Show Vulnerabilities",
+          "Sort Vulnerabilities"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/workload.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/workload.go",
+      "sha256": "7be1f4d48362d61dc62ce6a9d0113192e706fbf17216175cf3a3eea72cf137f0",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Delete",
+          "Describe",
+          "Edit",
+          "Sort Age",
+          "Sort Kind",
+          "Sort Ready",
+          "yamlAction"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/xray.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/xray.go",
+      "sha256": "249d3e677b4a7f17224b4aa9d50dc1ece40fe3bdfed25fca8b0f913aa43e1b41",
+      "tasks": [
+        "O03"
+      ],
+      "symbols": {
+        "action_labels_or_identifiers": [
+          "Attach",
+          "Delete",
+          "Describe",
+          "Edit",
+          "Filter Mode",
+          "Filter Reset",
+          "Goto",
+          "Logs",
+          "Logs Previous",
+          "Shell",
+          "yamlAction"
+        ]
+      }
+    },
+    {
+      "source": "internal/view/yaml.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/yaml.go",
+      "sha256": "c4c8a46753068d19ad0f547ffbbcb6ae83f1542173132163ab4d89776d400e9d",
+      "tasks": [
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B07"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/vul/scan.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/vul/scan.go",
+      "sha256": "7967ef5e8db0cd13152231ddd2022d8501be8680e182bfb2bec74afb5181bcbc",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/vul/scanner.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/vul/scanner.go",
+      "sha256": "09432ead6d74f3a2489de1cd536c946d07786ce7de6f7aeba18bd2bffe8b7e4a",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/vul/scorer.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/vul/scorer.go",
+      "sha256": "df4bec2f44e58f4345be78b7201ec3b4c5d2ede4a4309456c4087003459d4732",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/vul/table.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/vul/table.go",
+      "sha256": "c2a4234d4f4985eed4f06d9aea5dc7b6621666d91c15fd716d529ca092239bf4",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/vul/tally.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/vul/tally.go",
+      "sha256": "27df2ebaa8647dcc9c5193204d51224e8f4dc22ac1422d976f70c50ded2b78ec",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/vul/types.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/vul/types.go",
+      "sha256": "1daa77034f2bc4a099f0e7a738be3653fdb408cf2a61c46dbe8730b211f41607",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/watch/factory.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/watch/factory.go",
+      "sha256": "7c009d4fa69a0de6c2d3dc1631009896b93c18f30baad3e1ff649a6e4da37141",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/watch/forwarders.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/watch/forwarders.go",
+      "sha256": "074aca277f67e7ec887453fceedf9f1b51d0f9d951577b85fc611552f22d7440",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/watch/helper.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/watch/helper.go",
+      "sha256": "70e5d73ad6e526d74b7678ae0525c921f716ea7669c27b47ce23be1b636363aa",
+      "tasks": [
+        "C01",
+        "C02",
+        "C03",
+        "C04",
+        "C08"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/xray/container.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/xray/container.go",
+      "sha256": "5691f67f22e6a465285ea4d64545683a10c8bd6bd4b5f4c15bca467eeb71a822",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/xray/dp.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/xray/dp.go",
+      "sha256": "da30d1197e0caed9f0558ed560a5b40dfc2904762f67dc5f2ac3ceb8e2156cdf",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/xray/ds.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/xray/ds.go",
+      "sha256": "92cd1f27a01bebd52b0c194d9a7504f40dbca18ae33b331fea89d8a4df8f9bd9",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/xray/generic.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/xray/generic.go",
+      "sha256": "f2b3a3e61464b3dbfd597d7bd047c7ec770eaa608566bf90e0ab501bd7e392b1",
+      "tasks": [
+        "C05",
+        "B06"
+      ],
+      "symbols": {
+        "resource_identifiers": [
+          "generic"
+        ]
+      }
+    },
+    {
+      "source": "internal/xray/ns.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/xray/ns.go",
+      "sha256": "90738c1509f68c17fa7a572125f8559e5981780709f2b9e8b13928bbe88ec7e9",
+      "tasks": [
+        "C01",
+        "M08",
+        "B03"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/xray/pod.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/xray/pod.go",
+      "sha256": "e026e98aff08a364646f0777789315f3383d271957a92b1da89dd23fd4e9f8b4",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/xray/rs.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/xray/rs.go",
+      "sha256": "62f02a0645222baacf0883d40fde66aaf2ff0fb2026eb1d2266ba6b070f45187",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/xray/sa.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/xray/sa.go",
+      "sha256": "f510afe8ab2fd45e1d81a1d449e44757c32a84d8861ad711da6b1ab5176d681c",
+      "tasks": [
+        "O04",
+        "A05"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/xray/section.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/xray/section.go",
+      "sha256": "60a6f7e007e692487c0f612f21491a2c3d3e7e3468e7d535569f9438d3421153",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/xray/sts.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/xray/sts.go",
+      "sha256": "0e5ec8fcb769dfb154ce31e532eeeba0a4f3cefc29b336be17f5a4e476bc1739",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/xray/svc.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/xray/svc.go",
+      "sha256": "37668f0eba0bfee094dec7afe98220af9b12eeb71610922e88fa09b63a67ecf5",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {}
+    },
+    {
+      "source": "internal/xray/tree_node.go",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/xray/tree_node.go",
+      "sha256": "c66240329e0a8670c7b3f246202d068b7a9da7cf7eaaa68833612d33e8981fb5",
+      "tasks": [
+        "F03",
+        "F04",
+        "Q06"
+      ],
+      "symbols": {
+        "resource_identifiers": [
+          "report"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/json/schemas/aliases.json",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/json/schemas/aliases.json",
+      "tasks": [
+        "U02",
+        "U03",
+        "U04",
+        "U05"
+      ],
+      "symbols": {
+        "schema_property_paths": [
+          "aliases"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/json/schemas/context.json",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/json/schemas/context.json",
+      "tasks": [
+        "C01",
+        "M08",
+        "B03"
+      ],
+      "symbols": {
+        "schema_property_paths": [
+          "k9s",
+          "k9s.cluster",
+          "k9s.featureGates",
+          "k9s.featureGates.nodeShell",
+          "k9s.namespace",
+          "k9s.namespace.active",
+          "k9s.namespace.favorites",
+          "k9s.namespace.lockFavorites",
+          "k9s.proxy",
+          "k9s.proxy.address",
+          "k9s.readOnly",
+          "k9s.skin",
+          "k9s.view",
+          "k9s.view.active"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/json/schemas/hotkeys.json",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/json/schemas/hotkeys.json",
+      "tasks": [
+        "U02",
+        "U03",
+        "U04",
+        "U05"
+      ],
+      "symbols": {
+        "schema_property_paths": [
+          "hotKeys",
+          "hotKeys.command",
+          "hotKeys.description",
+          "hotKeys.keepHistory",
+          "hotKeys.override",
+          "hotKeys.shortCut"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/json/schemas/jumps.json",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/json/schemas/jumps.json",
+      "tasks": [
+        "U06",
+        "O03"
+      ],
+      "symbols": {
+        "schema_property_paths": [
+          "jumps",
+          "jumps.fieldSelector",
+          "jumps.labelSelector",
+          "jumps.targetGVR",
+          "jumps.targetNamespace"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/json/schemas/k9s.json",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/json/schemas/k9s.json",
+      "tasks": [
+        "F03",
+        "U01",
+        "U02",
+        "U06"
+      ],
+      "symbols": {
+        "schema_property_paths": [
+          "k9s",
+          "k9s.apiServerTimeout",
+          "k9s.defaultView",
+          "k9s.disablePodCounting",
+          "k9s.gpuVendors",
+          "k9s.gpuVendors.model",
+          "k9s.gpuVendors.vendor",
+          "k9s.imageScans",
+          "k9s.imageScans.enable",
+          "k9s.imageScans.exclusions",
+          "k9s.imageScans.exclusions.labels",
+          "k9s.imageScans.exclusions.namespaces",
+          "k9s.imageScans.namespace",
+          "k9s.liveViewAutoRefresh",
+          "k9s.logger",
+          "k9s.logger.buffer",
+          "k9s.logger.columnLock",
+          "k9s.logger.disableAutoscroll",
+          "k9s.logger.showTime",
+          "k9s.logger.sinceSeconds",
+          "k9s.logger.tail",
+          "k9s.logger.textWrap",
+          "k9s.maxConnRetry",
+          "k9s.noExitOnCtrlC",
+          "k9s.portForwardAddress",
+          "k9s.readOnly",
+          "k9s.refreshRate",
+          "k9s.screenDumpDir",
+          "k9s.shellPod",
+          "k9s.shellPod.args",
+          "k9s.shellPod.command",
+          "k9s.shellPod.image",
+          "k9s.shellPod.imagePullPolicy",
+          "k9s.shellPod.imagePullSecrets",
+          "k9s.shellPod.imagePullSecrets[].name",
+          "k9s.shellPod.labels",
+          "k9s.shellPod.limits",
+          "k9s.shellPod.limits.cpu",
+          "k9s.shellPod.limits.memory",
+          "k9s.shellPod.namespace",
+          "k9s.shellPod.tty",
+          "k9s.skipLatestRevCheck",
+          "k9s.thresholds",
+          "k9s.thresholds.cpu",
+          "k9s.thresholds.cpu.critical",
+          "k9s.thresholds.cpu.warn",
+          "k9s.thresholds.memory",
+          "k9s.thresholds.memory.critical",
+          "k9s.thresholds.memory.warn",
+          "k9s.ui",
+          "k9s.ui.crumbsless",
+          "k9s.ui.defaultsToFullScreen",
+          "k9s.ui.enableMouse",
+          "k9s.ui.headless",
+          "k9s.ui.invert",
+          "k9s.ui.logoless",
+          "k9s.ui.noIcons",
+          "k9s.ui.reactive",
+          "k9s.ui.skin",
+          "k9s.ui.splashless",
+          "k9s.ui.useFullGVRTitle"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/json/schemas/plugin-multi.json",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/json/schemas/plugin-multi.json",
+      "tasks": [
+        "U02",
+        "U03",
+        "U04",
+        "U05"
+      ],
+      "symbols": {
+        "schema_property_paths": [
+          "args",
+          "background",
+          "command",
+          "confirm",
+          "dangerous",
+          "description",
+          "inputs",
+          "inputs[].default",
+          "inputs[].label",
+          "inputs[].name",
+          "inputs[].options",
+          "inputs[].required",
+          "inputs[].type",
+          "override",
+          "overwriteOutput",
+          "scopes",
+          "shortCut"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/json/schemas/plugin.json",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/json/schemas/plugin.json",
+      "tasks": [
+        "U02",
+        "U03",
+        "U04",
+        "U05"
+      ],
+      "symbols": {
+        "schema_property_paths": [
+          "args",
+          "background",
+          "command",
+          "confirm",
+          "dangerous",
+          "description",
+          "inputs",
+          "inputs[].default",
+          "inputs[].label",
+          "inputs[].name",
+          "inputs[].options",
+          "inputs[].required",
+          "inputs[].type",
+          "override",
+          "overwriteOutput",
+          "scopes",
+          "shortCut"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/json/schemas/plugins.json",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/json/schemas/plugins.json",
+      "tasks": [
+        "U02",
+        "U03",
+        "U04",
+        "U05"
+      ],
+      "symbols": {
+        "schema_property_paths": [
+          "plugins",
+          "plugins.args",
+          "plugins.background",
+          "plugins.command",
+          "plugins.confirm",
+          "plugins.dangerous",
+          "plugins.description",
+          "plugins.inputs",
+          "plugins.inputs[].default",
+          "plugins.inputs[].label",
+          "plugins.inputs[].name",
+          "plugins.inputs[].options",
+          "plugins.inputs[].required",
+          "plugins.inputs[].type",
+          "plugins.override",
+          "plugins.overwriteOutput",
+          "plugins.scopes",
+          "plugins.shortCut"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/json/schemas/skin.json",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/json/schemas/skin.json",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "schema_property_paths": [
+          "k9s",
+          "k9s.body",
+          "k9s.body.bgColor",
+          "k9s.body.fgColor",
+          "k9s.body.logoColor",
+          "k9s.dialog",
+          "k9s.dialog.bgColor",
+          "k9s.dialog.buttonBgColor",
+          "k9s.dialog.buttonFgColor",
+          "k9s.dialog.buttonFocusBgColor",
+          "k9s.dialog.buttonFocusFgColor",
+          "k9s.dialog.fgColor",
+          "k9s.dialog.fieldFgColor",
+          "k9s.dialog.labelFgColor",
+          "k9s.frame",
+          "k9s.frame.border",
+          "k9s.frame.border.bgColor",
+          "k9s.frame.border.fgColor",
+          "k9s.frame.crumbs",
+          "k9s.frame.crumbs.activeColor",
+          "k9s.frame.crumbs.fgColor",
+          "k9s.frame.crumbs.keyColor",
+          "k9s.frame.menu",
+          "k9s.frame.menu.fgColor",
+          "k9s.frame.menu.keyColor",
+          "k9s.frame.menu.numKeyColor",
+          "k9s.frame.status",
+          "k9s.frame.status.addColor:",
+          "k9s.frame.status.completedColor",
+          "k9s.frame.status.errorColor",
+          "k9s.frame.status.highlightColor",
+          "k9s.frame.status.killColor",
+          "k9s.frame.status.modifyColor",
+          "k9s.frame.status.newColor",
+          "k9s.frame.title",
+          "k9s.frame.title.bgColor",
+          "k9s.frame.title.counterColor",
+          "k9s.frame.title.fgColor",
+          "k9s.frame.title.filterColor",
+          "k9s.frame.title.highlightColor",
+          "k9s.help",
+          "k9s.help.bgColor",
+          "k9s.help.fgColor",
+          "k9s.help.keyColor",
+          "k9s.help.numKeyColor",
+          "k9s.help.sectionColor",
+          "k9s.info",
+          "k9s.info.cpuColor",
+          "k9s.info.fgColor",
+          "k9s.info.k9sRevColor",
+          "k9s.info.memColor",
+          "k9s.info.sectionColor",
+          "k9s.prompt",
+          "k9s.prompt.bgColor",
+          "k9s.prompt.fgColor",
+          "k9s.prompt.suggestColor",
+          "k9s.views",
+          "k9s.views.charts",
+          "k9s.views.charts.bgColor",
+          "k9s.views.charts.colonColor",
+          "k9s.views.charts.cursorBgColor",
+          "k9s.views.charts.cursorFgColor",
+          "k9s.views.charts.defaultChartColors",
+          "k9s.views.charts.defaultDialColors",
+          "k9s.views.charts.fgColor",
+          "k9s.views.charts.graphicColor",
+          "k9s.views.charts.header",
+          "k9s.views.charts.header.bgColor",
+          "k9s.views.charts.header.fgColor",
+          "k9s.views.charts.indicator",
+          "k9s.views.charts.indicator.bgColor",
+          "k9s.views.charts.indicator.fgColor",
+          "k9s.views.charts.indicator.toggleOffColor",
+          "k9s.views.charts.indicator.toggleOnColor",
+          "k9s.views.charts.keyColor",
+          "k9s.views.charts.showIcons",
+          "k9s.views.charts.valueColor"
+        ]
+      }
+    },
+    {
+      "source": "internal/config/json/schemas/views.json",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/config/json/schemas/views.json",
+      "tasks": [
+        "U02",
+        "U03",
+        "U04",
+        "U05"
+      ],
+      "symbols": {
+        "schema_property_paths": [
+          "views",
+          "views.columns",
+          "views.sortColumn"
+        ]
+      }
+    },
+    {
+      "source": "plugins/ai-incident-investigation.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/ai-incident-investigation.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "ai-incident-investigation.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/argo-rollouts-powershell.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/argo-rollouts-powershell.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "argo-rollouts-powershell.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/argo-rollouts.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/argo-rollouts.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "argo-rollouts.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/argo-workflows.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/argo-workflows.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "argo-workflows.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/argocd.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/argocd.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "argocd.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/blame.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/blame.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "blame.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/carvel.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/carvel.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "carvel.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/cert-manager.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/cert-manager.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "cert-manager.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/crd-wizard.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/crd-wizard.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "crd-wizard.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/crossplane.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/crossplane.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "crossplane.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/current-ctx-terminal.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/current-ctx-terminal.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "current-ctx-terminal.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/debug-container.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/debug-container.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "debug-container.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/dive.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/dive.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "dive.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/dup.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/dup.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "dup.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/duplik8s.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/duplik8s.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "duplik8s.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/eks-node-viewer.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/eks-node-viewer.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "eks-node-viewer.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/external-secrets.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/external-secrets.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "external-secrets.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/flux.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/flux.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "flux.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/get-all-namespace-resources.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/get-all-namespace-resources.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "get-all-namespace-resources.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/get-all.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/get-all.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "get-all.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/helm-default-values.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/helm-default-values.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "helm-default-values.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/helm-diff.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/helm-diff.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "helm-diff.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/helm-purge.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/helm-purge.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "helm-purge.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/helm-values.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/helm-values.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "helm-values.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/job-suspend.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/job-suspend.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "job-suspend.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/k3d-root-shell.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/k3d-root-shell.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "k3d-root-shell.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/keda-toggle.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/keda-toggle.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "keda-toggle.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/kube-metrics.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/kube-metrics.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "kube-metrics.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/kubectl/kubectl-purge",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/kubectl/kubectl-purge",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "kubectl-purge"
+        ]
+      }
+    },
+    {
+      "source": "plugins/kubectl-get-in-shell.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/kubectl-get-in-shell.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "kubectl-get-in-shell.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/kubectl-plugins/kubectl-jq",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/kubectl-plugins/kubectl-jq",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "kubectl-jq"
+        ]
+      }
+    },
+    {
+      "source": "plugins/liveMigration.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/liveMigration.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "liveMigration.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/log-bunyan.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/log-bunyan.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "log-bunyan.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/log-full.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/log-full.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "log-full.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/log-jq.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/log-jq.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "log-jq.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/log-loki.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/log-loki.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "log-loki.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/log-stern.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/log-stern.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "log-stern.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/node-root-shell.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/node-root-shell.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "node-root-shell.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/openssl.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/openssl.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "openssl.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/pvc-debug-container.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/pvc-debug-container.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "pvc-debug-container.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/pvc-resize.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/pvc-resize.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "pvc-resize.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/remove-finalizers.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/remove-finalizers.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "remove-finalizers.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/resource-recommendations.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/resource-recommendations.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "resource-recommendations.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/rm-ns.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/rm-ns.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "rm-ns.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/spark-operator.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/spark-operator.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "spark-operator.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/start-alpine.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/start-alpine.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "start-alpine.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/szero.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/szero.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "szero.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/trace-dns.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/trace-dns.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "trace-dns.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/vector-dev-top.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/vector-dev-top.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "vector-dev-top.yaml"
+        ]
+      }
+    },
+    {
+      "source": "plugins/watch-events.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/watch-events.yaml",
+      "tasks": [
+        "U05"
+      ],
+      "symbols": {
+        "community_plugin": [
+          "watch-events.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/axual.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/axual.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "axual.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/black-and-wtf.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/black-and-wtf.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "black-and-wtf.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/dracula.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/dracula.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "dracula.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/everforest-dark.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/everforest-dark.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "everforest-dark.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/everforest-light.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/everforest-light.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "everforest-light.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/gruvbox-dark-hard.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/gruvbox-dark-hard.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "gruvbox-dark-hard.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/gruvbox-dark.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/gruvbox-dark.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "gruvbox-dark.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/gruvbox-light-hard.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/gruvbox-light-hard.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "gruvbox-light-hard.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/gruvbox-light.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/gruvbox-light.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "gruvbox-light.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/gruvbox-material-dark-hard.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/gruvbox-material-dark-hard.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "gruvbox-material-dark-hard.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/gruvbox-material-dark-medium.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/gruvbox-material-dark-medium.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "gruvbox-material-dark-medium.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/gruvbox-material-dark-soft.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/gruvbox-material-dark-soft.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "gruvbox-material-dark-soft.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/gruvbox-material-light-hard.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/gruvbox-material-light-hard.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "gruvbox-material-light-hard.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/gruvbox-material-light-medium.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/gruvbox-material-light-medium.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "gruvbox-material-light-medium.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/gruvbox-material-light-soft.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/gruvbox-material-light-soft.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "gruvbox-material-light-soft.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/in-the-navy.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/in-the-navy.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "in-the-navy.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/kanagawa.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/kanagawa.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "kanagawa.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/kiss.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/kiss.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "kiss.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/monokai.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/monokai.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "monokai.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/narsingh.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/narsingh.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "narsingh.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/nightfox.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/nightfox.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "nightfox.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/nord.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/nord.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "nord.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/one-dark.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/one-dark.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "one-dark.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/one-light.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/one-light.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "one-light.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/red.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/red.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "red.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/rose-pine-dawn.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/rose-pine-dawn.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "rose-pine-dawn.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/rose-pine-moon.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/rose-pine-moon.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "rose-pine-moon.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/rose-pine.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/rose-pine.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "rose-pine.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/snazzy.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/snazzy.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "snazzy.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/solarized-16.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/solarized-16.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "solarized-16.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/solarized-dark.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/solarized-dark.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "solarized-dark.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/solarized-light.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/solarized-light.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "solarized-light.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/stock.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/stock.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "stock.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/transparent.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/transparent.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "transparent.yaml"
+        ]
+      }
+    },
+    {
+      "source": "skins/vercel.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/skins/vercel.yaml",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "vercel.yaml"
+        ]
+      }
+    },
+    {
+      "source": "jumps/certificates.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/jumps/certificates.yaml",
+      "tasks": [
+        "U06",
+        "O03"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "certificates.yaml"
+        ]
+      }
+    },
+    {
+      "source": "jumps/karpenter.yaml",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/jumps/karpenter.yaml",
+      "tasks": [
+        "U06",
+        "O03"
+      ],
+      "symbols": {
+        "configuration_example": [
+          "karpenter.yaml"
+        ]
+      }
+    }
+  ],
+  "unreleased_delta": {
+    "commit": "7064f96f1e852e71efcb848a483a5b6d4b986f35",
+    "comparison": "https://github.com/derailed/k9s/compare/v0.51.0...7064f96f1e852e71efcb848a483a5b6d4b986f35",
+    "commits_ahead": 103,
+    "files": [
+      {
+        "source": ".github/workflows/lint.yml",
+        "tasks": [
+          "F03",
+          "F04",
+          "Q06"
+        ]
+      },
+      {
+        "source": ".github/workflows/stales-issues.yml",
+        "tasks": [
+          "F03",
+          "F04",
+          "Q06"
+        ]
+      },
+      {
+        "source": ".github/workflows/stales-prs.yml",
+        "tasks": [
+          "F03",
+          "F04",
+          "Q06"
+        ]
+      },
+      {
+        "source": ".github/workflows/test.yml",
+        "tasks": [
+          "F03",
+          "F04",
+          "Q06"
+        ]
+      },
+      {
+        "source": ".golangci.yml",
+        "tasks": [
+          "F03",
+          "F04",
+          "Q06"
+        ]
+      },
+      {
+        "source": "Dockerfile",
+        "tasks": [
+          "F03",
+          "F04",
+          "Q06"
+        ]
+      },
+      {
+        "source": "Makefile",
+        "tasks": [
+          "F03",
+          "F04",
+          "Q06"
+        ]
+      },
+      {
+        "source": "README.md",
+        "tasks": [
+          "F03",
+          "F04",
+          "Q06"
+        ]
+      },
+      {
+        "source": "cmd/root.go",
+        "tasks": [
+          "F05",
+          "D13"
+        ]
+      },
+      {
+        "source": "go.mod",
+        "tasks": [
+          "F03",
+          "F04",
+          "Q06"
+        ]
+      },
+      {
+        "source": "go.sum",
+        "tasks": [
+          "F03",
+          "F04",
+          "Q06"
+        ]
+      },
+      {
+        "source": "internal/config/json/schemas/k9s.json",
+        "tasks": [
+          "F03",
+          "U01",
+          "U02",
+          "U06"
+        ]
+      },
+      {
+        "source": "internal/config/json/schemas/plugin-multi.json",
+        "tasks": [
+          "U02",
+          "U03",
+          "U04",
+          "U05"
+        ]
+      },
+      {
+        "source": "internal/config/json/schemas/plugin.json",
+        "tasks": [
+          "U02",
+          "U03",
+          "U04",
+          "U05"
+        ]
+      },
+      {
+        "source": "internal/config/json/schemas/plugins.json",
+        "tasks": [
+          "U02",
+          "U03",
+          "U04",
+          "U05"
+        ]
+      },
+      {
+        "source": "internal/config/k9s.go",
+        "tasks": [
+          "F03",
+          "U01",
+          "U02",
+          "U06"
+        ]
+      },
+      {
+        "source": "internal/config/logger.go",
+        "tasks": [
+          "S01",
+          "S02",
+          "S06",
+          "F03"
+        ]
+      },
+      {
+        "source": "internal/config/logger_test.go",
+        "tasks": [
+          "S01",
+          "S02",
+          "S06",
+          "F03"
+        ]
+      },
+      {
+        "source": "internal/config/styles.go",
+        "tasks": [
+          "U01",
+          "U06"
+        ]
+      },
+      {
+        "source": "internal/config/testdata/configs/default.yaml",
+        "tasks": [
+          "F03",
+          "U01",
+          "U02",
+          "U06"
+        ]
+      },
+      {
+        "source": "internal/config/testdata/configs/expected.yaml",
+        "tasks": [
+          "F03",
+          "U01",
+          "U02",
+          "U06"
+        ]
+      },
+      {
+        "source": "internal/config/testdata/configs/k9s.yaml",
+        "tasks": [
+          "F03",
+          "U01",
+          "U02",
+          "U06"
+        ]
+      },
+      {
+        "source": "internal/config/threshold.go",
+        "tasks": [
+          "F03",
+          "U01",
+          "U02",
+          "U06"
+        ]
+      },
+      {
+        "source": "internal/dao/log_options.go",
+        "tasks": [
+          "S01",
+          "S02",
+          "S06",
+          "F03"
+        ]
+      },
+      {
+        "source": "internal/dao/pod.go",
+        "tasks": [
+          "B05",
+          "M01",
+          "M02",
+          "M03",
+          "M04"
+        ]
+      },
+      {
+        "source": "internal/dao/port_forwarder.go",
+        "tasks": [
+          "S05",
+          "S08"
+        ]
+      },
+      {
+        "source": "internal/dao/port_forwarder_test.go",
+        "tasks": [
+          "S05",
+          "S08"
+        ]
+      },
+      {
+        "source": "internal/dao/readlogs_test.go",
+        "tasks": [
+          "S01",
+          "S02",
+          "S06",
+          "F03"
+        ]
+      },
+      {
+        "source": "internal/dao/registry.go",
+        "tasks": [
+          "B05",
+          "M01",
+          "M02",
+          "M03",
+          "M04"
+        ]
+      },
+      {
+        "source": "internal/dao/registry_test.go",
+        "tasks": [
+          "B05",
+          "M01",
+          "M02",
+          "M03",
+          "M04"
+        ]
+      },
+      {
+        "source": "internal/dao/resource.go",
+        "tasks": [
+          "B05",
+          "M01",
+          "M02",
+          "M03",
+          "M04"
+        ]
+      },
+      {
+        "source": "internal/dao/secret.go",
+        "tasks": [
+          "M05",
+          "O07"
+        ]
+      },
+      {
+        "source": "internal/dao/secret_test.go",
+        "tasks": [
+          "B05",
+          "M01",
+          "M02",
+          "M03",
+          "M04"
+        ]
+      },
+      {
+        "source": "internal/dao/testdata/secret.json",
+        "tasks": [
+          "M05",
+          "O07"
+        ]
+      },
+      {
+        "source": "internal/model/log.go",
+        "tasks": [
+          "S01",
+          "S02",
+          "S06",
+          "F03"
+        ]
+      },
+      {
+        "source": "internal/model1/helpers.go",
+        "tasks": [
+          "C01",
+          "C02",
+          "C03",
+          "C04",
+          "C08"
+        ]
+      },
+      {
+        "source": "internal/model1/row_event.go",
+        "tasks": [
+          "C01",
+          "C02",
+          "C03",
+          "C04",
+          "C08"
+        ]
+      },
+      {
+        "source": "internal/model1/row_event_test.go",
+        "tasks": [
+          "C01",
+          "C02",
+          "C03",
+          "C04",
+          "C08"
+        ]
+      },
+      {
+        "source": "internal/model1/row_test.go",
+        "tasks": [
+          "C01",
+          "C02",
+          "C03",
+          "C04",
+          "C08"
+        ]
+      },
+      {
+        "source": "internal/model1/table_data.go",
+        "tasks": [
+          "C01",
+          "C02",
+          "C03",
+          "C04",
+          "C08"
+        ]
+      },
+      {
+        "source": "internal/model1/table_data_test.go",
+        "tasks": [
+          "C01",
+          "C02",
+          "C03",
+          "C04",
+          "C08"
+        ]
+      },
+      {
+        "source": "internal/model1/test_helper_test.go",
+        "tasks": [
+          "C01",
+          "C02",
+          "C03",
+          "C04",
+          "C08"
+        ]
+      },
+      {
+        "source": "internal/render/alias.go",
+        "tasks": [
+          "U02",
+          "U03",
+          "U04",
+          "U05"
+        ]
+      },
+      {
+        "source": "internal/render/benchmark.go",
+        "tasks": [
+          "A04"
+        ]
+      },
+      {
+        "source": "internal/render/cm.go",
+        "tasks": [
+          "M05",
+          "O07"
+        ]
+      },
+      {
+        "source": "internal/render/container.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/context.go",
+        "tasks": [
+          "C01",
+          "M08",
+          "B03"
+        ]
+      },
+      {
+        "source": "internal/render/cr.go",
+        "tasks": [
+          "O04",
+          "A05"
+        ]
+      },
+      {
+        "source": "internal/render/crb.go",
+        "tasks": [
+          "O04",
+          "A05"
+        ]
+      },
+      {
+        "source": "internal/render/crd.go",
+        "tasks": [
+          "C05",
+          "B06"
+        ]
+      },
+      {
+        "source": "internal/render/crd_test.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/cronjob.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/cust_cols.go",
+        "tasks": [
+          "U02",
+          "U03",
+          "U04",
+          "U05"
+        ]
+      },
+      {
+        "source": "internal/render/cust_cols_test.go",
+        "tasks": [
+          "U02",
+          "U03",
+          "U04",
+          "U05"
+        ]
+      },
+      {
+        "source": "internal/render/dir.go",
+        "tasks": [
+          "M07"
+        ]
+      },
+      {
+        "source": "internal/render/dp.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/ds.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/ep.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/eps.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/generic.go",
+        "tasks": [
+          "C05",
+          "B06"
+        ]
+      },
+      {
+        "source": "internal/render/helpers.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/img_scan.go",
+        "tasks": [
+          "O07",
+          "U03"
+        ]
+      },
+      {
+        "source": "internal/render/job.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/node.go",
+        "tasks": [
+          "A01",
+          "A02",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/np.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/ns.go",
+        "tasks": [
+          "C01",
+          "M08",
+          "B03"
+        ]
+      },
+      {
+        "source": "internal/render/pdb.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/pod.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/policy.go",
+        "tasks": [
+          "O04",
+          "A05"
+        ]
+      },
+      {
+        "source": "internal/render/portforward.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/pv.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/pvc.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/rbac.go",
+        "tasks": [
+          "O04",
+          "A05"
+        ]
+      },
+      {
+        "source": "internal/render/reference.go",
+        "tasks": [
+          "O03"
+        ]
+      },
+      {
+        "source": "internal/render/ro.go",
+        "tasks": [
+          "O04",
+          "A05"
+        ]
+      },
+      {
+        "source": "internal/render/rob.go",
+        "tasks": [
+          "O04",
+          "A05"
+        ]
+      },
+      {
+        "source": "internal/render/rs.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/sa.go",
+        "tasks": [
+          "O04",
+          "A05"
+        ]
+      },
+      {
+        "source": "internal/render/sc.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/screen_dump.go",
+        "tasks": [
+          "O06"
+        ]
+      },
+      {
+        "source": "internal/render/secret.go",
+        "tasks": [
+          "M05",
+          "O07"
+        ]
+      },
+      {
+        "source": "internal/render/sts.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/subject.go",
+        "tasks": [
+          "O04",
+          "A05"
+        ]
+      },
+      {
+        "source": "internal/render/svc.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/table.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/table_int_test.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/types.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/render/workload.go",
+        "tasks": [
+          "B05",
+          "B06",
+          "O01"
+        ]
+      },
+      {
+        "source": "internal/ui/table.go",
+        "tasks": [
+          "B01",
+          "B02",
+          "B03",
+          "B04",
+          "B07"
+        ]
+      },
+      {
+        "source": "internal/view/actions.go",
+        "tasks": [
+          "B01",
+          "B02",
+          "B03",
+          "B04",
+          "B07"
+        ]
+      },
+      {
+        "source": "internal/view/app.go",
+        "tasks": [
+          "B01",
+          "B02",
+          "B03",
+          "B04",
+          "B07"
+        ]
+      },
+      {
+        "source": "internal/view/browser.go",
+        "tasks": [
+          "B01",
+          "B02",
+          "B03",
+          "B04",
+          "B07"
+        ]
+      },
+      {
+        "source": "internal/view/cmd/interpreter.go",
+        "tasks": [
+          "B01",
+          "B02",
+          "B03",
+          "B04",
+          "B07"
+        ]
+      },
+      {
+        "source": "internal/view/custom_jump.go",
+        "tasks": [
+          "U06",
+          "O03"
+        ]
+      },
+      {
+        "source": "internal/view/env.go",
+        "tasks": [
+          "O07",
+          "U03"
+        ]
+      },
+      {
+        "source": "internal/view/env_test.go",
+        "tasks": [
+          "B01",
+          "B02",
+          "B03",
+          "B04",
+          "B07"
+        ]
+      },
+      {
+        "source": "internal/view/exec.go",
+        "tasks": [
+          "S03",
+          "S04",
+          "S07",
+          "A01",
+          "A03"
+        ]
+      },
+      {
+        "source": "internal/view/exec_test.go",
+        "tasks": [
+          "B01",
+          "B02",
+          "B03",
+          "B04",
+          "B07"
+        ]
+      },
+      {
+        "source": "internal/view/helpers.go",
+        "tasks": [
+          "B01",
+          "B02",
+          "B03",
+          "B04",
+          "B07"
+        ]
+      },
+      {
+        "source": "internal/view/helpers_test.go",
+        "tasks": [
+          "B01",
+          "B02",
+          "B03",
+          "B04",
+          "B07"
+        ]
+      },
+      {
+        "source": "internal/view/logs_extender.go",
+        "tasks": [
+          "S01",
+          "S02",
+          "S06",
+          "F03"
+        ]
+      },
+      {
+        "source": "internal/view/pf_dialog.go",
+        "tasks": [
+          "S05",
+          "S08"
+        ]
+      },
+      {
+        "source": "internal/view/scale_extender.go",
+        "tasks": [
+          "B01",
+          "B02",
+          "B03",
+          "B04",
+          "B07"
+        ]
+      },
+      {
+        "source": "internal/view/table.go",
+        "tasks": [
+          "B01",
+          "B02",
+          "B03",
+          "B04",
+          "B07"
+        ]
+      },
+      {
+        "source": "internal/view/table_int_test.go",
+        "tasks": [
+          "B01",
+          "B02",
+          "B03",
+          "B04",
+          "B07"
+        ]
+      },
+      {
+        "source": "jumps/persistentvolumeclaims.yaml",
+        "tasks": [
+          "U06",
+          "O03"
+        ]
+      },
+      {
+        "source": "plugins/README.md",
+        "tasks": [
+          "U03",
+          "U04",
+          "U05"
+        ]
+      },
+      {
+        "source": "plugins/argocd.yaml",
+        "tasks": [
+          "U03",
+          "U04",
+          "U05"
+        ]
+      },
+      {
+        "source": "plugins/cert-manager.yaml",
+        "tasks": [
+          "U03",
+          "U04",
+          "U05"
+        ]
+      },
+      {
+        "source": "plugins/cloudnative-pg.yaml",
+        "tasks": [
+          "U03",
+          "U04",
+          "U05"
+        ]
+      },
+      {
+        "source": "plugins/crossplane.yaml",
+        "tasks": [
+          "U03",
+          "U04",
+          "U05"
+        ]
+      },
+      {
+        "source": "plugins/flux.yaml",
+        "tasks": [
+          "U03",
+          "U04",
+          "U05"
+        ]
+      },
+      {
+        "source": "plugins/job-suspend.yaml",
+        "tasks": [
+          "U03",
+          "U04",
+          "U05"
+        ]
+      },
+      {
+        "source": "plugins/k3d-root-shell.yaml",
+        "tasks": [
+          "U03",
+          "U04",
+          "U05"
+        ]
+      },
+      {
+        "source": "plugins/karpenter.yaml",
+        "tasks": [
+          "U03",
+          "U04",
+          "U05"
+        ]
+      },
+      {
+        "source": "plugins/kube-metrics.yaml",
+        "tasks": [
+          "U03",
+          "U04",
+          "U05"
+        ]
+      },
+      {
+        "source": "plugins/log-lnav.yaml",
+        "tasks": [
+          "U03",
+          "U04",
+          "U05"
+        ]
+      },
+      {
+        "source": "plugins/openssl.yaml",
+        "tasks": [
+          "U03",
+          "U04",
+          "U05"
+        ]
+      },
+      {
+        "source": "plugins/tmux.yaml",
+        "tasks": [
+          "U03",
+          "U04",
+          "U05"
+        ]
+      },
+      {
+        "source": "skins/kanagawa.yaml",
+        "tasks": [
+          "U01",
+          "U06"
+        ]
+      },
+      {
+        "source": "skins/modus-operandi-deuteranopia.yaml",
+        "tasks": [
+          "U01",
+          "U06"
+        ]
+      },
+      {
+        "source": "skins/modus-operandi-tinted.yaml",
+        "tasks": [
+          "U01",
+          "U06"
+        ]
+      },
+      {
+        "source": "skins/modus-operandi-tritanopia.yaml",
+        "tasks": [
+          "U01",
+          "U06"
+        ]
+      },
+      {
+        "source": "skins/modus-operandi.yaml",
+        "tasks": [
+          "U01",
+          "U06"
+        ]
+      },
+      {
+        "source": "skins/modus-vivendi-deuteranopia.yaml",
+        "tasks": [
+          "U01",
+          "U06"
+        ]
+      },
+      {
+        "source": "skins/modus-vivendi-tinted.yaml",
+        "tasks": [
+          "U01",
+          "U06"
+        ]
+      },
+      {
+        "source": "skins/modus-vivendi-tritanopia.yaml",
+        "tasks": [
+          "U01",
+          "U06"
+        ]
+      },
+      {
+        "source": "skins/modus-vivendi.yaml",
+        "tasks": [
+          "U01",
+          "U06"
+        ]
+      },
+      {
+        "source": "skins/rose-pine-dawn.yaml",
+        "tasks": [
+          "U01",
+          "U06"
+        ]
+      }
+    ],
+    "review_notes": [
+      "Configurable log channel buffering maps to S01/S02; shellPod host mounts to A01; OCI architectures to D13.",
+      "Numeric plugin input preservation, bool defaults and key-conflict errors map to U03/U04.",
+      "Custom-jump viewer chaining maps to U06; explicit namespace retention to C01/B03; editor argument quoting to S03/M02.",
+      "Remaining changes include rendering/performance fixes, scanner/dependency updates, themes, tests and documentation; their owning families remain in the inventory. Unreleased behavior is not called a stable feature."
+    ]
+  }
+}

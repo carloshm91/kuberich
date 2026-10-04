@@ -1,0 +1,155 @@
+# Architecture decisions
+
+Status: accepted planning baseline, 2026-10-04. Changes require an issue and an
+updated decision record in this document. The product is a new implementation.
+
+## Product boundary
+
+Kubetrol is a local, keyboard-driven Kubernetes terminal application. It also
+runs inside a terminal reached over SSH. There is no application server,
+database, hosted control plane, telemetry service, or Textual Web deployment.
+The later documentation website is separate from the product.
+
+The initial operating systems are Linux and macOS. Python source installations
+target CPython 3.12, 3.13, and 3.14. See distribution.md for qualification rules.
+
+## Chosen stack
+
+| Concern | Decision |
+| --- | --- |
+| Interface | Textual, with its built-in DataTable, screens, workers, themes, and Pilot tests |
+| Kubernetes API | kubernetes_asyncio behind a narrow application-owned adapter |
+| Interactive exec and editor handoff | Explicit kubectl/editor subprocesses with Textual suspension |
+| Port forwarding | Managed kubectl subprocess with an owned lifecycle |
+| Python packaging | src layout, Hatchling, pyproject.toml, uv and a committed uv.lock |
+| CLI entry point | Standard-library argparse; command and import package named kubetrol |
+| Configuration | Versioned YAML schema, validated dataclasses, platformdirs paths |
+| Verification | pytest, pytest-asyncio, pytest-cov/coverage.py, Ruff, strict mypy |
+| Cluster integration | Disposable kind clusters and a controllable fake API server |
+
+The generated async client is selected for explicit API coverage and control
+over watches and cancellation. Do not mix clients throughout the UI or rely on
+the development branch of an unreleased client. Pin a released compatible
+dependency set during bootstrap; uv.lock is the development/test resolution.
+An alternative client requires a demonstrated gap and a decision update.
+
+## Why Python and Textual
+
+This is a product decision, not a promise that every upstream behavior is supplied
+by the UI framework. Textual supplies widgets, layout, reactive UI, workers and
+test tooling; Kubetrol must implement Kubernetes semantics, streaming, permissions,
+plugins and release engineering. Terminal suspension supports the chosen shell
+handoff design. Pilot tests are complemented by real PTY tests.
+
+| Option | Fit and tradeoff |
+| --- | --- |
+| Python + Textual | Chosen: strong fit for Python contributors and a rich terminal UI; requires careful async lifecycle, bounded rendering and platform packaging |
+| Python + prompt_toolkit | Strong for interactive command editing; more application-specific work for a full resource browser |
+| Python + curses/urwid | Viable, but more layout/state/test infrastructure to assemble for this product |
+| Go + tview or Bubble Tea | Strong alternative if native distribution and direct client-go behavior become dominant; changes the project's Python contribution model |
+| Rust + Ratatui | Strong performance/control option; higher implementation effort for this team's stated Python preference |
+
+The early delivery gates must demonstrate credential compatibility, real-terminal
+exec, and watch correctness before the UI expands. Performance measurements and
+clean-machine installations determine whether the implementation is viable. If a
+concrete gap cannot be solved in the adapter, record evidence and revisit the
+client or language decision rather than hiding the limitation.
+
+## Authentication and delegated tools
+
+Treat kubeconfig as trusted local configuration: its exec credential helpers can
+run local code. Never fetch and execute a kubeconfig from a cluster resource.
+EKS uses the configured AWS exec helper; AKS uses the configured Azure kubelogin
+helper. Honor expiration and interactive behavior, and distinguish authentication
+failure from API authorization. Qualification tasks cover the Python SDK's gaps
+relative to client-go; using the SDK alone is not proof of compatibility.
+
+Build an effective per-session connection specification from file/environment/CLI
+precedence. Both SDK calls and delegated kubectl/Helm commands must use it,
+including impersonation, proxy and TLS overrides. When a temporary kubeconfig is
+needed, use restrictive permissions, do not log it, and clean it up. Never fall
+back silently to another context or user. See [CLI contract](k9s-cli.md).
+
+## Dependency direction
+
+```text
+CLI -> Textual UI -> application services -> Kubernetes/process adapters
+                         |                          |
+                         v                          v
+                  domain state/models       API and process events
+                         ^                          |
+                         +--------------------------+
+```
+
+Use src/kubetrol/{ui,services,domain,adapters,config}, with tests grouped into
+unit, contract, ui, integration, terminal, and packaging. Keep this structure
+small initially; create modules when real behavior needs them.
+
+Domain code imports neither Textual nor generated SDK models. Normalize SDK
+responses to application-owned resource snapshots. Preserve Kubernetes field
+names when retaining raw manifests, and use separate derived display values.
+
+## Cluster sessions and watches
+
+Each context has an explicit client configuration, session generation, task
+owner, resource store, and cleanup path. Do not mutate process-global client
+configuration or the user's current kubeconfig context.
+
+LIST returns an initial snapshot and collection resourceVersion. WATCH starts
+from that version. Handle ADDED, MODIFIED, DELETED, BOOKMARK, timeout, EOF,
+expired versions (410 with relist), retryable failures with bounded exponential
+backoff/jitter, and non-retryable permission failures. Follow pagination without
+losing the collection's consistent snapshot. Resource versions are opaque.
+
+Switching context or scope cancels and awaits old tasks, closes streams, and
+rejects late results using the captured session generation. Show stale or
+disconnected state explicitly. Do not turn permission or transport failures into
+empty resource lists. Watch only resources needed for active views and bounded
+background features.
+
+## Terminal behavior
+
+Use stable resource identity (context, group/resource, namespace, UID); derive
+row order separately. Preserve selection and scroll position while applying
+batched incremental updates. Sort quantities and timestamps by typed values.
+Respect focus, terminal resize, narrow screens, Unicode width, and plain-color
+fallbacks. Key hints must reflect actions actually available in the current view.
+
+Keep normal UI event handlers free of blocking I/O. Capture the target context,
+namespace, resource, and container before starting an action. Each stream or
+process has a lifecycle owner. Log storage and render queues have bounded
+capacity; implement explicit overflow and backpressure behavior.
+
+For an interactive shell, suspend Textual and hand the real terminal to kubectl
+with an argument vector, explicit kubeconfig/context, namespace, and container.
+Restore the terminal on normal exit, failure, Ctrl-C, and exceptions. A fully
+embedded terminal emulator is outside the initial scope; the supported shell
+experience is full-terminal handoff and return.
+
+## Actions, configuration, and trust
+
+Mutations go through services that capture identity, enforce read-only mode,
+present the target and consequences, handle permissions/conflicts, and return a
+typed outcome. Never retry an uncertain non-idempotent mutation blindly.
+
+Configuration has a schema version, validated defaults, atomic writes, unknown
+field handling, and migration tests. Secrets are hidden in ordinary views and
+redacted from exports and diagnostics. Escaping resource markup and terminal
+controls is separate from Kubernetes authorization.
+
+Plugins are trusted local executables declared by users. Resolve bindings and
+resource scope before invocation, pass selected-resource context deliberately,
+and own foreground/background process cleanup. Never auto-discover executable
+plugins from a cluster response or the current working directory.
+
+## Sources
+
+- [Textual workers](https://textual.textualize.io/guide/workers/)
+- [Textual app suspension](https://textual.textualize.io/api/app/#textual.app.App.suspend)
+- [Kubernetes API concepts](https://kubernetes.io/docs/reference/using-api/api-concepts/)
+- [kubernetes_asyncio](https://github.com/tomplus/kubernetes_asyncio)
+
+- [AWS EKS kubeconfig and authentication](https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html)
+- [AKS kubelogin authentication](https://learn.microsoft.com/en-us/azure/aks/kubelogin-authentication)
+- [Bubble Tea](https://github.com/charmbracelet/bubbletea)
+- [Ratatui](https://ratatui.rs/)

@@ -1,0 +1,31 @@
+# Python and development environments
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage.xml
+coverage.json
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Local credentials and generated diagnostic material
+.env
+.env.*
+!.env.example
+.kube/
+kubeconfig
+kubeconfig.*
+*.pem
+*.key
+*.log
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/

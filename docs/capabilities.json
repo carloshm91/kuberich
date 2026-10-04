@@ -1,0 +1,726 @@
+{
+  "schema_version": 1,
+  "baseline": {
+    "tag": "v0.51.0",
+    "commit": "558caafe7ba067467de46b320cc22ef11fef9c34",
+    "release": "https://github.com/derailed/k9s/releases/tag/v0.51.0"
+  },
+  "rows": [
+    {
+      "id": "CLI01",
+      "capability": "All 26 explicitly registered launch flags; help/version/info and completion",
+      "tasks": [
+        "F05",
+        "D13"
+      ],
+      "source": "cmd/root.go",
+      "status": "planned",
+      "difference": "Complete flag mapping is in k9s-cli.md; completion ships later."
+    },
+    {
+      "id": "AUTH01",
+      "capability": "Context/kubeconfig/cluster/user/namespace selection and connection overrides",
+      "tasks": [
+        "C01",
+        "F05",
+        "C08"
+      ],
+      "source": "internal/client/config.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "AUTH02",
+      "capability": "AWS EKS, Azure AKS, GKE and generic exec/OIDC/cert/token credentials",
+      "tasks": [
+        "C06",
+        "C07",
+        "C08"
+      ],
+      "source": "internal/client/client.go",
+      "status": "planned",
+      "difference": "SDK compatibility must be tested; upstream client-go support does not automatically transfer to Python."
+    },
+    {
+      "id": "AUTH03",
+      "capability": "TLS/CA/client certificates, proxy, request timeout and impersonation",
+      "tasks": [
+        "F05",
+        "C08",
+        "O04"
+      ],
+      "source": "cmd/root.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "AUTH04",
+      "capability": "Context rename/delete and persisted per-context view/namespace preferences",
+      "tasks": [
+        "M08",
+        "C01",
+        "F03"
+      ],
+      "source": "internal/view/context.go",
+      "status": "planned",
+      "difference": "Ordinary context switching never rewrites kubeconfig; explicit local edits require preview/backup."
+    },
+    {
+      "id": "CORE01",
+      "capability": "API discovery, resource aliases and dynamic/CRD server columns",
+      "tasks": [
+        "C02",
+        "C05",
+        "B05",
+        "B06"
+      ],
+      "source": "internal/dao/registry.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "CORE02",
+      "capability": "Live resource updates, manual refresh, retry/reconnect and errors",
+      "tasks": [
+        "C03",
+        "C04",
+        "B02"
+      ],
+      "source": "internal/view/browser.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "UI01",
+      "capability": "Resource command mode, aliases, autocomplete, namespace/context arguments",
+      "tasks": [
+        "B03",
+        "U02",
+        "B07"
+      ],
+      "source": "internal/view/cmd/interpreter.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "UI02",
+      "capability": "Regex/inverse/fuzzy filtering, label/field selectors and filter history",
+      "tasks": [
+        "B03",
+        "B07"
+      ],
+      "source": "internal/view/cmd/types.go",
+      "status": "planned",
+      "difference": "Bound regex evaluation; unsupported regex dialect features receive explicit errors."
+    },
+    {
+      "id": "UI03",
+      "capability": "Breadcrumbs, back/forward/last-command navigation, namespace favorites",
+      "tasks": [
+        "B03",
+        "B07",
+        "F03"
+      ],
+      "source": "internal/view/page_stack.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "UI04",
+      "capability": "Keyboard/mouse, horizontal/vertical scrolling, paging, resize and Unicode",
+      "tasks": [
+        "B01",
+        "B02",
+        "B07",
+        "Q02"
+      ],
+      "source": "internal/view/table.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "UI05",
+      "capability": "Typed sorting, movable/custom/wide columns, errors-only and selection ranges",
+      "tasks": [
+        "B02",
+        "B07",
+        "U02"
+      ],
+      "source": "internal/view/table.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "UI06",
+      "capability": "Help, key hints, header/logo/breadcrumb visibility, fullscreen and quit behavior",
+      "tasks": [
+        "B01",
+        "B03",
+        "B07",
+        "F05"
+      ],
+      "source": "internal/view/help.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "UI07",
+      "capability": "YAML/describe/details, managedFields toggle, text search and auto-refresh",
+      "tasks": [
+        "B04",
+        "U06"
+      ],
+      "source": "internal/view/live_view.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "UI08",
+      "capability": "Copy resource/namespace/text with native clipboard and OSC52 over SSH/tmux",
+      "tasks": [
+        "B07",
+        "Q02"
+      ],
+      "source": "internal/view/clipboard.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "UI09",
+      "capability": "Save resources/logs, screen-dump browser and export path settings",
+      "tasks": [
+        "O06",
+        "S02",
+        "F05"
+      ],
+      "source": "internal/view/screen_dump.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "UI10",
+      "capability": "About/branding and optional update notification",
+      "tasks": [
+        "U01",
+        "D02"
+      ],
+      "source": "internal/view/cow.go",
+      "status": "planned",
+      "difference": "Original Kubetrol branding; no copied art. Update checking is opt-in and never required for offline startup."
+    },
+    {
+      "id": "RES01",
+      "capability": "Pods/containers including init and ephemeral containers, events and namespaces",
+      "tasks": [
+        "B02",
+        "B04",
+        "B05",
+        "S04"
+      ],
+      "source": "internal/view/registrar.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "RES02",
+      "capability": "Deployments, StatefulSets, DaemonSets, ReplicaSets, replication controllers, workloads",
+      "tasks": [
+        "B05",
+        "M03"
+      ],
+      "source": "internal/client/gvrs.go",
+      "status": "planned",
+      "difference": "Discover served API groups/versions rather than copying stale upstream GVR constants."
+    },
+    {
+      "id": "RES03",
+      "capability": "Services, Endpoints, EndpointSlices, Ingresses and NetworkPolicies",
+      "tasks": [
+        "B05",
+        "O03",
+        "A05"
+      ],
+      "source": "internal/client/gvrs.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "RES04",
+      "capability": "Nodes, PV/PVC, StorageClasses, priority/scheduling, HPA/PDB/quota/limits",
+      "tasks": [
+        "B05",
+        "O01",
+        "A05"
+      ],
+      "source": "internal/client/gvrs.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "RES05",
+      "capability": "ConfigMaps, Secrets, service accounts and RBAC resource families",
+      "tasks": [
+        "B05",
+        "M05",
+        "O04"
+      ],
+      "source": "internal/view/registrar.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "RES06",
+      "capability": "Custom resources, unknown APIs and custom columns/jump chains",
+      "tasks": [
+        "C05",
+        "B06",
+        "U02",
+        "U06"
+      ],
+      "source": "internal/view/custom_jump.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "LOG01",
+      "capability": "Current/previous logs, container selection and all-container/workload logs",
+      "tasks": [
+        "S01",
+        "S02",
+        "S06"
+      ],
+      "source": "internal/view/logs_extender.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "LOG02",
+      "capability": "Head/tail/time windows, timestamps, wrap, follow/pause and column lock",
+      "tasks": [
+        "S02"
+      ],
+      "source": "internal/view/log.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "LOG03",
+      "capability": "Log search/filter, clear, marks, fullscreen, copy/save and bounded buffering",
+      "tasks": [
+        "S02",
+        "B07",
+        "O06"
+      ],
+      "source": "internal/view/log.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "SES01",
+      "capability": "Shell exec with chosen container and configurable shell command",
+      "tasks": [
+        "S03",
+        "S04",
+        "Q02"
+      ],
+      "source": "internal/view/exec.go",
+      "status": "planned",
+      "difference": "kubectl exec API session with terminal handoff; this is not SSH to a pod."
+    },
+    {
+      "id": "SES02",
+      "capability": "Attach to running containers and bidirectional file transfer",
+      "tasks": [
+        "S07"
+      ],
+      "source": "internal/view/pod.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "SES03",
+      "capability": "Pod/container/service port forwarding, listing, deletion and bind address",
+      "tasks": [
+        "S05"
+      ],
+      "source": "internal/view/pf.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "SES04",
+      "capability": "FastForward annotations, named ports, multiple presets and WebSocket transport",
+      "tasks": [
+        "S08"
+      ],
+      "source": "README.md",
+      "status": "planned",
+      "difference": "Cluster annotations require local opt-in before automatic listeners start."
+    },
+    {
+      "id": "OPS01",
+      "capability": "Read-only mode, permissions, target validation and dangerous-action gates",
+      "tasks": [
+        "F04",
+        "F05",
+        "M01"
+      ],
+      "source": "internal/view/actions.go",
+      "status": "planned",
+      "difference": "Read-only conservatively blocks shell/attach/unclassified plugins; it is not an RBAC security boundary."
+    },
+    {
+      "id": "OPS02",
+      "capability": "Edit manifests with external editor and conflict/diff validation",
+      "tasks": [
+        "M02",
+        "S03"
+      ],
+      "source": "internal/view/live_view.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "OPS03",
+      "capability": "Scale, restart and rollback workloads; deployment ReplicaSet drill-down",
+      "tasks": [
+        "M03",
+        "B05"
+      ],
+      "source": "internal/view/restart_extender.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "OPS04",
+      "capability": "Delete/force-delete/bulk actions and pod completed/error cleanup",
+      "tasks": [
+        "M04",
+        "M08"
+      ],
+      "source": "internal/view/pod.go",
+      "status": "planned",
+      "difference": "Force-delete keeps an explicit confirmation; instant unconfirmed deletion is an intentional safety difference."
+    },
+    {
+      "id": "OPS05",
+      "capability": "Trigger/suspend jobs and CronJobs",
+      "tasks": [
+        "M04"
+      ],
+      "source": "internal/view/cronjob.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "OPS06",
+      "capability": "ConfigMap/Secret content, encoded/decoded toggle and environment provenance",
+      "tasks": [
+        "M05",
+        "O07"
+      ],
+      "source": "internal/view/secret.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "OPS07",
+      "capability": "Local manifest directories, YAML edit, apply/delete and Kustomize",
+      "tasks": [
+        "M07"
+      ],
+      "source": "internal/view/dir.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "HELM01",
+      "capability": "Helm list/status/notes/values/all-values/manifest/history",
+      "tasks": [
+        "M06"
+      ],
+      "source": "internal/dao/helm_chart.go",
+      "status": "planned",
+      "difference": "Optional external Helm adapter; no Go SDK inside Python."
+    },
+    {
+      "id": "HELM02",
+      "capability": "Helm rollback and uninstall with history options",
+      "tasks": [
+        "M06"
+      ],
+      "source": "internal/dao/helm_history.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "EXT01",
+      "capability": "Global/per-context themes, transparent colors, light/dark inversion, icon settings",
+      "tasks": [
+        "U01",
+        "U06"
+      ],
+      "source": "internal/config/styles.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "EXT02",
+      "capability": "Aliases, hotkeys, columns, alignment/width/order, context/resource view overrides",
+      "tasks": [
+        "U02"
+      ],
+      "source": "internal/config/views.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "EXT03",
+      "capability": "Custom GVR relationship jumps with selectors/templates/namespace",
+      "tasks": [
+        "U06",
+        "O03"
+      ],
+      "source": "internal/config/json/schemas/jumps.json",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "EXT04",
+      "capability": "Reactive settings reload, paths, feature gates, connection/log/metric thresholds",
+      "tasks": [
+        "F03",
+        "U06",
+        "O01"
+      ],
+      "source": "internal/config/k9s.go",
+      "status": "planned",
+      "difference": "All schema fields are enumerated in the source inventory; compatible semantics do not imply identical config files."
+    },
+    {
+      "id": "EXT05",
+      "capability": "Plugin search paths, scopes, shortcut overrides, confirmation and dangerous flag",
+      "tasks": [
+        "U03",
+        "U04"
+      ],
+      "source": "internal/config/plugin.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "EXT06",
+      "capability": "Plugin environment/column/resource expansion and foreground/background execution",
+      "tasks": [
+        "U03",
+        "U04"
+      ],
+      "source": "internal/view/env.go",
+      "status": "planned",
+      "difference": "Explicitly configured shell plugins remain unsandboxed local commands; no automatic shell interpolation."
+    },
+    {
+      "id": "EXT07",
+      "capability": "Typed plugin inputs, defaults, validation, cancellation and output options",
+      "tasks": [
+        "U03",
+        "U04"
+      ],
+      "source": "internal/ui/dialog/plugin_inputs.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "EXT08",
+      "capability": "Every bundled community plugin workflow and external-tool dependency",
+      "tasks": [
+        "U05"
+      ],
+      "source": "plugins/README.md",
+      "status": "planned",
+      "difference": "Inventory includes all plugin files. External Argo/Flux/Helm/AI tools keep their own support/licensing; optional services are never required by Kubetrol."
+    },
+    {
+      "id": "OBS01",
+      "capability": "CPU/memory usage, requests/limits/percentages, extended/GPU resources",
+      "tasks": [
+        "O01"
+      ],
+      "source": "internal/client/metrics.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "OBS02",
+      "capability": "Pulse cluster overview and CPU/memory drill-downs",
+      "tasks": [
+        "O02"
+      ],
+      "source": "internal/view/pulse.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "OBS03",
+      "capability": "XRay relationships, jump-to-owner/node, service endpoints and UsedBy",
+      "tasks": [
+        "O03"
+      ],
+      "source": "internal/view/xray.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "OBS04",
+      "capability": "RBAC can/user/group/service-account policies and rule inspection",
+      "tasks": [
+        "O04"
+      ],
+      "source": "internal/view/rbac.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "OBS05",
+      "capability": "Popeye/cluster diagnostic reports and actionable failure evidence",
+      "tasks": [
+        "O05"
+      ],
+      "source": "README.md",
+      "status": "planned",
+      "difference": "README advertises Popeye; treat this as documented surface, not proof of a working builtin in the pinned binary."
+    },
+    {
+      "id": "OBS06",
+      "capability": "Opt-in image vulnerability scans, severity/package/fix views and advisory links",
+      "tasks": [
+        "O07"
+      ],
+      "source": "internal/view/img_scan.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "ADV01",
+      "capability": "Node shell helper pods, configurable image/namespace/limits/host mounts",
+      "tasks": [
+        "A01"
+      ],
+      "source": "internal/view/node.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "ADV02",
+      "capability": "Cordon/uncordon/drain, disruption constraints and explicit overrides",
+      "tasks": [
+        "A02"
+      ],
+      "source": "internal/view/drain_dialog.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "ADV03",
+      "capability": "Ephemeral debug containers and diagnostic sessions",
+      "tasks": [
+        "A03",
+        "U05"
+      ],
+      "source": "plugins/debug-container.yaml",
+      "status": "planned",
+      "difference": "Available through upstream plugin workflows; planned first-class Kubetrol action."
+    },
+    {
+      "id": "ADV04",
+      "capability": "HTTP benchmarks, per-context options, results browser and cancellation",
+      "tasks": [
+        "A04"
+      ],
+      "source": "internal/view/benchmark.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "ADV05",
+      "capability": "Policy/quota/admission/scheduling views and removed-API handling",
+      "tasks": [
+        "A05"
+      ],
+      "source": "internal/client/gvrs.go",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "DIST01",
+      "capability": "Linux/macOS downloads, source installs and Homebrew",
+      "tasks": [
+        "D01",
+        "D02",
+        "D03",
+        "D05"
+      ],
+      "source": "README.md",
+      "status": "planned",
+      "difference": "Python uses PyPI/uv/pipx instead of go install."
+    },
+    {
+      "id": "DIST02",
+      "capability": "Windows executables, PowerShell, Winget/Scoop/Chocolatey",
+      "tasks": [
+        "D12"
+      ],
+      "source": "README.md",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "DIST03",
+      "capability": "Linux packages, snap, FreeBSD, MacPorts and community package managers",
+      "tasks": [
+        "D14"
+      ],
+      "source": "README.md",
+      "status": "planned",
+      "difference": "Registry acceptance, Webi/pkgx/gah and Docker Desktop extensions need separate ownership; not guaranteed by a local recipe."
+    },
+    {
+      "id": "DIST04",
+      "capability": "OCI terminal image and shell completion",
+      "tasks": [
+        "D13"
+      ],
+      "source": "README.md",
+      "status": "planned",
+      "difference": ""
+    },
+    {
+      "id": "PAID01",
+      "capability": "Additional K9sAlpha capabilities beyond the public baseline",
+      "tasks": [
+        "Q07",
+        "Q06"
+      ],
+      "source": "https://github.com/derailed/k9s/releases/tag/v0.24.7",
+      "status": "evidence-gap",
+      "difference": "Evidence gap: historical existence verified; no complete official accessible feature catalog found. Not counted as parity."
+    },
+    {
+      "id": "DELTA01",
+      "capability": "Unreleased upstream fixes/configuration additions after v0.51.0",
+      "tasks": [
+        "Q06",
+        "S01",
+        "S02",
+        "U03",
+        "U04",
+        "U06",
+        "A01",
+        "D13"
+      ],
+      "source": "https://github.com/derailed/k9s/compare/v0.51.0...7064f96f1e852e71efcb848a483a5b6d4b986f35",
+      "status": "planned",
+      "difference": "103 commits/129 changed files indexed; relevant UI/CLI/configuration changes reviewed separately from released behavior. Refresh before stable release."
+    }
+  ]
+}
