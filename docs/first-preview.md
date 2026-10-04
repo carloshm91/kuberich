@@ -1,7 +1,7 @@
 # First things to try
 
-The repository is currently in planning. These checkpoints describe when a
-maintainer can begin trying the product; they are not available commands yet.
+The installable development CLI is the first checkpoint. The terminal interface
+and live Kubernetes views are subsequent checkpoints:
 Do not wait for every epic or the complete 1.0.0 parity audit to get feedback.
 
 | Checkpoint | Required work | What can actually be tried |
@@ -16,6 +16,11 @@ The implementation order deliberately puts B01 immediately after configuration
 and quality foundations. At each checkpoint, the implementing PR must provide the
 exact tested development-install/run command and state which capabilities exist.
 Avoid publishing guessed installation commands before the package exists.
+
+For the CLI checkpoint, run `uv sync --locked --group dev`, then
+`uv run kubetrol --help`, `uv run kubetrol --version`, and `uv run kubetrol`
+from the checkout. The default invocation explains that the terminal UI is not
+available yet. No cluster or kubeconfig is required. See the README for details.
 
 Cloud authentication and real-terminal checks run early. A successful mocked UI
 is useful feedback, but it does not certify that EKS/AKS credentials, exec,

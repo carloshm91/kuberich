@@ -73,10 +73,11 @@ failures before changing the budget; preserve comparable benchmark results.
 
 ## Current repository stage
 
-Only planning, community files, and repository validation exist initially.
-Application coverage is not applicable. F01 creates the package and F02 enables
-the application quality gates before feature implementation begins. The README
-must never show an unmeasured coverage badge or imply planned checks already run.
+F01 provides the installable development CLI, behavioral/artifact tests, and a
+Linux/macOS Python 3.12-3.14 bootstrap matrix. Coverage is measured over the
+production package. F02 adds the independent required coverage and changed-line
+gates before feature implementation begins. The README must never show an
+unmeasured coverage badge or imply that planned checks already run.
 
 ## Sources
 
