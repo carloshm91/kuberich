@@ -69,7 +69,8 @@ assets, and edits to non-executable continuations do not establish new coverage.
 No changed executable lines means N/A. The negative-control tests verify 0%,
 80%, the exact 90% boundary, a docs-only diff, and an unavailable base.
 
-Coverage JSON/XML, changed-line JSON, and candidate distributions are retained
+Coverage JSON/XML, changed-line JSON, actual UI SVGs, PTY transcripts/restoration
+summaries and candidate distributions are retained
 for seven days, including available evidence after failures. They are test
 artifacts, not published release packages.
 
@@ -141,7 +142,12 @@ F02 implements independent coverage, changed-line and critical-module gates,
 negative controls, and the aggregate application matrix. Automatic protected-
 branch enforcement remains unavailable under the current private-repository
 plan, as recorded above. F03 adds local configuration, sanitized diagnostics and
-temporary-file/process/artifact checks. The terminal UI is a subsequent task. The README must
+temporary-file/process/artifact checks. B01 adds the real disconnected terminal
+workspace, Pilot behavior tests, normal/compact geometry snapshots and real PTY
+checks for resize, rapid command input, Unicode paste, quit and failure. Installed
+wheel console/module launches also run in PTYs outside the checkout. Each matrix
+job retains actual SVGs and terminal restoration evidence; SSH/tmux and cluster
+qualification remain future work. The README must
 never show an unmeasured coverage badge or imply that planned checks already run.
 
 ## Sources

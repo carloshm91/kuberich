@@ -4,7 +4,9 @@ Reference: K9s v0.51.0,
 [launch flags](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/cmd/root.go).
 This is the first-release contract. The development build currently implements
 help/version, `info`, `config init`/`check`, `--config` and the log destination/level
-flags. See [local preferences](configuration.md) for that tested subset. Remaining
+flags, plus the default terminal window with help/quit commands. See
+[local preferences](configuration.md) and [terminal controls](terminal-preview.md)
+for that tested subset. Remaining
 flags/commands are planned and rejected until their owning behavior exists.
 No Kubetrol application is publicly released yet.
 

@@ -59,6 +59,8 @@ jobs:
             coverage.xml
             diff-coverage.json
             dist/*
+            artifacts/ui/*
+            artifacts/terminal/*
           if-no-files-found: error
           retention-days: 7
   quality-gate:

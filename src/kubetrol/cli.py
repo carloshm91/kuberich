@@ -15,6 +15,7 @@ from kubetrol.config.store import read_config, write_config
 from kubetrol.diagnostics.logging import diagnostic_logging
 from kubetrol.diagnostics.redaction import sanitize_text
 from kubetrol.errors import AppError, ExitCode
+from kubetrol.ui.launch import run_terminal
 
 
 class _Parser(argparse.ArgumentParser):
@@ -28,7 +29,7 @@ def _parser() -> argparse.ArgumentParser:
     parser = _Parser(
         prog="kubetrol",
         description="A Kubernetes terminal UI built with Python and Textual.",
-        epilog="Development build: the terminal interface is not available yet.",
+        epilog="Terminal window preview: Kubernetes connections are not available yet.",
         allow_abbrev=False,
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {version('kubetrol')}")
@@ -107,7 +108,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                             for key, value in settings.to_mapping().items()
                             if key != "log_file"
                         },
-                        "terminal_ui_available": False,
+                        "terminal_ui_available": True,
                         "cluster_connected": False,
                     },
                     indent=2,
@@ -118,11 +119,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             with diagnostic_logging(log_file, settings.log_level) as logger:
                 try:
-                    logger.debug("Development CLI started; no cluster connection.")
-                    print("Kubetrol is installed. Use --help, --version, info, or config.")
-                    print("The terminal interface is not available yet.")
+                    logger.debug("Launching terminal interface; no cluster connection.")
+                    run_terminal(settings, logger)
                 except Exception:
-                    logger.debug("Development CLI failed.", exc_info=True)
+                    logger.debug("Terminal launch failed.", exc_info=True)
                     raise
         return 0
     except KeyboardInterrupt:

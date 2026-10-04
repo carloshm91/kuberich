@@ -7,6 +7,12 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Real terminal workspace with context/namespace/connection indicators, an empty
+  resource table, filter/command inputs, keyboard/mouse navigation, scrollable
+  help, responsive layouts, built-in themes and packaged styles.
+- Pilot/layout tests and real PTY evidence for navigation, resize, Unicode paste,
+  rapid command input, normal/error terminal restoration and installed entry points.
+
 - Versioned YAML preferences with typed defaults, explicit environment/CLI
   precedence, legacy migration, retained unknown fields and atomic private writes.
 - Safe local `info`, `config init`/`check`, config/log path flags and stable
@@ -16,7 +22,7 @@ Release entries are written in release PRs and linked to their Git tags.
 - Project roadmap, architecture, quality requirements, and release methodology.
 - Contribution and security policies, issue templates, and a structured backlog.
 - Installable Python development package with `kubetrol --help`, `--version`,
-  module invocation, and an explicit status message before the terminal UI exists.
+  module invocation and a default terminal launch.
 - Locked Textual/Kubernetes dependencies, developer tooling, and clean-artifact
   installation tests for Python 3.12 through 3.14 on Linux and macOS.
 - Independent production line/branch coverage gates, 90% changed-line coverage,

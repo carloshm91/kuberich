@@ -19,7 +19,7 @@ def test_help_describes_available_behavior(flag: str, capsys: pytest.CaptureFixt
     output = capsys.readouterr()
     assert "usage: kubetrol" in output.out
     assert "--version" in output.out
-    assert "terminal interface is not available yet" in output.out
+    assert "Kubernetes connections are not available yet" in output.out
     assert output.err == ""
 
 
@@ -33,13 +33,12 @@ def test_version_uses_installed_distribution_metadata(capsys: pytest.CaptureFixt
     assert output.err == ""
 
 
-def test_no_arguments_reports_the_actual_stage(capsys: pytest.CaptureFixture[str]) -> None:
-    assert main([]) == 0
+def test_no_arguments_requires_a_real_terminal(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main([]) == 2
 
     output = capsys.readouterr()
-    assert "Kubetrol is installed" in output.out
-    assert "terminal interface is not available yet" in output.out
-    assert output.err == ""
+    assert output.out == ""
+    assert "requires an interactive terminal" in output.err
 
 
 def test_entry_point_reads_process_arguments(
@@ -47,8 +46,8 @@ def test_entry_point_reads_process_arguments(
 ) -> None:
     monkeypatch.setattr(sys, "argv", ["kubetrol"])
 
-    assert main() == 0
-    assert "Kubetrol is installed" in capsys.readouterr().out
+    assert main() == 2
+    assert "requires an interactive terminal" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize("arguments", [["--context", "example"], ["--ver"], ["pods"]])

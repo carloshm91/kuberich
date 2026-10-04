@@ -14,12 +14,14 @@ from pathlib import Path
 
 import pytest
 
+from tests.terminal.pty_support import TerminalSession
+
 ROOT = Path(__file__).resolve().parents[2]
 PROJECT = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]
 
 
 def run(
-    command: list[str], directory: Path, timeout: int = 120
+    command: list[str], directory: Path, timeout: int = 120, *, check: bool = True
 ) -> subprocess.CompletedProcess[str]:
     """Run tools with an explicit directory and without ambient source import paths."""
     environment = os.environ.copy()
@@ -37,7 +39,7 @@ def run(
         env=environment,
         capture_output=True,
         text=True,
-        check=True,
+        check=check,
         timeout=timeout,
     )
 
@@ -71,6 +73,7 @@ def test_wheel_metadata_entry_point_and_assets(artifacts: tuple[Path, Path]) -> 
     with zipfile.ZipFile(artifacts[0]) as archive:
         names = archive.namelist()
         assert "kubetrol/py.typed" in names
+        assert "kubetrol/ui/kubetrol.tcss" in names
         metadata_name = next(name for name in names if name.endswith(".dist-info/METADATA"))
         metadata = BytesParser().parsebytes(archive.read(metadata_name))
         assert metadata["Name"] == "kubetrol"
@@ -93,6 +96,7 @@ def test_source_distribution_can_build_a_wheel(
         archive.extractall(tmp_path, filter="data")
     source = next(tmp_path.glob("kubetrol-*"))
     assert (source / "src/kubetrol/py.typed").is_file()
+    assert (source / "src/kubetrol/ui/kubetrol.tcss").is_file()
     assert (source / "LICENSE").is_file()
     rebuilt = tmp_path / "rebuilt"
     run([uv, "build", "--wheel", "--out-dir", str(rebuilt)], source)
@@ -115,8 +119,13 @@ def test_installed_entry_points_work_without_source_or_cluster(
         ]
     if argument is not None:
         command.append(argument)
-    output = run(command, directory, 10)
+    output = run(command, directory, 10, check=argument is not None)
 
+    if argument is None:
+        assert output.returncode == 2
+        assert output.stdout == ""
+        assert "requires an interactive terminal" in output.stderr
+        return
     assert output.stderr == ""
     if argument == "--version":
         assert output.stdout == f"kubetrol {PROJECT['version']}\n"
@@ -126,8 +135,7 @@ def test_installed_entry_points_work_without_source_or_cluster(
         information = json.loads(output.stdout)
         assert information["config_file"] == str(directory / "preferences.yaml")
         assert not information["cluster_connected"]
-    else:
-        assert "terminal interface is not available yet" in output.stdout
+        assert information["terminal_ui_available"]
 
 
 def test_installed_package_has_assets_and_runtime_dependencies(
@@ -159,3 +167,20 @@ def test_installed_config_init_check_and_refusal_to_overwrite(
         run([*command, "config", "init"], directory, 10)
     assert error.value.returncode == 3
     assert "already exist" in error.value.stderr
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+def test_installed_terminal_launch_restores_tty_outside_the_checkout(
+    installed_wheel: tuple[Path, Path], entry_point: str
+) -> None:
+    binary_dir, directory = installed_wheel
+    command = (
+        [str(binary_dir / "kubetrol")]
+        if entry_point == "console"
+        else [str(binary_dir / "python"), "-m", "kubetrol"]
+    )
+    with TerminalSession(command, directory) as terminal:
+        terminal.wait_for(b"Disconnected")
+        terminal.send(b"q")
+        terminal.finish()
+        terminal.save_evidence(f"installed-{entry_point}")
