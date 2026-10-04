@@ -59,8 +59,10 @@ and the following commands. Python 3.12 through 3.14 is the qualified range:
 uv sync --locked --group dev
 uv run ruff check .
 uv run ruff format --check .
-uv run mypy --strict src/kubetrol
+uv run mypy --strict src/kubetrol scripts/check_coverage.py scripts/check_quality_gate.py
 uv run pytest --cov=kubetrol --cov-branch --cov-report=xml --cov-report=json
+uv run python scripts/check_coverage.py coverage.json
+uv run diff-cover coverage.xml --compare-branch origin/main --fail-under 90 --total-percent-float
 uv build
 uv run twine check dist/*
 ```
@@ -70,8 +72,14 @@ distribution, and run installed entry points in a fresh virtual environment
 outside the checkout. They require uv on PATH and package-index access to install
 dependencies. The CLI itself requires no cluster or network connection.
 
-F02 adds the independent required coverage gates over JSON and changed lines.
-A combined pytest-cov percentage alone is insufficient.
+The coverage script independently checks lines and branches, the complete
+production inventory, and the maintained critical-module list. diff-cover checks
+changed executable lines against the merge base; fetch the current base branch
+before running it. Its local invocation includes staged and unstaged edits;
+CI compares committed code against the exact event base. A diff with no changed
+executable production lines is not applicable, not a new 100% coverage result.
+See [quality policy](docs/quality.md) for the required check names and the current
+private-repository branch-protection limitation.
 
 ## Commits and releases
 

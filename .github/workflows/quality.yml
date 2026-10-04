@@ -1,4 +1,4 @@
-name: Package bootstrap
+name: Application quality
 on:
   push:
     branches: [main]
@@ -6,11 +6,11 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: bootstrap-${{ github.ref }}
+  group: quality-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  bootstrap:
-    name: Bootstrap (${{ matrix.os }}, Python ${{ matrix.python }})
+  application:
+    name: Application (${{ matrix.os }}, Python ${{ matrix.python }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:
@@ -20,6 +20,8 @@ jobs:
         python: ['3.12', '3.13', '3.14']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
       - name: Install uv and select Python
         uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
@@ -32,31 +34,42 @@ jobs:
         run: |
           uv run ruff check .
           uv run ruff format --check .
-          uv run mypy --strict src/kubetrol
-      - name: Run behavioral and clean-distribution checks
+          uv run mypy --strict src/kubetrol scripts/check_coverage.py scripts/check_quality_gate.py
+      - name: Run behavioral, gate-regression and clean-distribution checks
         run: uv run pytest --cov=kubetrol --cov-branch --cov-report=term-missing --cov-report=xml --cov-report=json
+      - name: Enforce independent production and critical-module coverage
+        run: uv run python scripts/check_coverage.py coverage.json
+      - name: Enforce changed executable-line coverage against the merge base
+        env:
+          KUBETROL_COVERAGE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          git rev-parse --verify "$KUBETROL_COVERAGE_BASE^{commit}"
+          uv run diff-cover coverage.xml --compare-branch "$KUBETROL_COVERAGE_BASE" --fail-under 90 --ignore-staged --ignore-unstaged --total-percent-float --format json:diff-coverage.json
       - name: Build and validate artifact metadata
         run: |
           uv build
           uv run twine check dist/*
       - name: Retain coverage evidence and candidate artifacts
+        if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: bootstrap-${{ matrix.os }}-python-${{ matrix.python }}
+          name: quality-${{ matrix.os }}-python-${{ matrix.python }}
           path: |
             coverage.json
             coverage.xml
+            diff-coverage.json
             dist/*
           if-no-files-found: error
           retention-days: 7
-  bootstrap-gate:
-    name: Bootstrap checks
+  quality-gate:
+    name: Quality gate
     if: ${{ always() }}
-    needs: bootstrap
+    needs: application
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Require the complete matrix to succeed
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Require every application matrix job to succeed
         env:
-          KUBETROL_BOOTSTRAP_RESULT: ${{ needs.bootstrap.result }}
-        run: test "$KUBETROL_BOOTSTRAP_RESULT" = success
+          KUBETROL_JOB_RESULTS: ${{ toJSON(needs) }}
+        run: python3 scripts/check_quality_gate.py

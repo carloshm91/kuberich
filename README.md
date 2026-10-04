@@ -59,8 +59,10 @@ for 0.1.0. These channels are tracked work, not currently available downloads.
 - [Development assistants and skills](docs/agent-setup.md)
 
 Application coverage must reach **at least 90% for lines and branches separately**.
-The target is 100% for critical logic. The bootstrap tests measure the actual
-package; the independent required coverage gates are the next foundation task.
+The reviewed critical modules must reach 100%. CI checks the complete production
+package, changed executable lines, and critical modules independently, with tests
+that demonstrate rejection of regressions. See the quality policy for check names
+and the current private-repository branch-protection limitation.
 
 ## Community
 

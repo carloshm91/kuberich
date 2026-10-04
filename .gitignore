@@ -9,6 +9,7 @@ __pycache__/
 .coverage.*
 coverage.xml
 coverage.json
+diff-coverage.json
 htmlcov/
 build/
 dist/
