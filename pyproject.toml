@@ -24,6 +24,8 @@ classifiers = [
 ]
 dependencies = [
     "kubernetes-asyncio>=36.1.0,<37",
+    "platformdirs>=4.12.3,<5",
+    "pyyaml>=6.0.3,<7",
     "textual>=8.2.8,<9",
 ]
 
@@ -46,6 +48,7 @@ dev = [
     "pytest-cov>=7.1.0,<8",
     "ruff>=0.16.10,<0.17",
     "twine>=7.0.0,<8",
+    "types-pyyaml>=6.0.12,<7",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -98,4 +101,9 @@ show_contexts = true
 
 [tool.kubetrol.coverage]
 # Extend this reviewed list when deterministic security/state decisions are added.
-critical_modules = ["src/kubetrol/cli.py", "src/kubetrol/__main__.py"]
+critical_modules = [
+    "src/kubetrol/cli.py",
+    "src/kubetrol/__main__.py",
+    "src/kubetrol/config/schema.py",
+    "src/kubetrol/diagnostics/redaction.py",
+]

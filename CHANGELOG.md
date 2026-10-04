@@ -7,6 +7,12 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Versioned YAML preferences with typed defaults, explicit environment/CLI
+  precedence, legacy migration, retained unknown fields and atomic private writes.
+- Safe local `info`, `config init`/`check`, config/log path flags and stable
+  errors that do not echo configuration values or rejected arguments.
+- Private rotating diagnostic logs, process ownership, bounded records, credential
+  redaction and debug locations without exception values or console tracebacks.
 - Project roadmap, architecture, quality requirements, and release methodology.
 - Contribution and security policies, issue templates, and a structured backlog.
 - Installable Python development package with `kubetrol --help`, `--version`,

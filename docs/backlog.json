@@ -167,7 +167,7 @@
       "acceptance": [
         "CI measures all production modules and independently fails below 90% lines or 90% branches; changed-line coverage is at least 90%.",
         "Critical deterministic modules have a maintained 100% gate; tests and broad exclusions cannot inflate production coverage.",
-        "Ruff, format, strict mypy, tests, build, and the aggregate quality-gate block merge on failure, cancellation, or invalid skip; branch protection requires it."
+        "Ruff, format, strict mypy, tests, build, and the aggregate quality gate reject failures, cancellation, or invalid skips. During approved private GitHub Free development, the maintainer verifies every check before merging; automatic branch protection is required before first public release (D04)."
       ],
       "verification": "Use controlled failing fixtures/temporary changes to demonstrate each gate rejects regressions; verify coverage artifacts and Linux/macOS CI.",
       "priority": "P0"
@@ -1474,6 +1474,7 @@
       ],
       "scope": "Execute docs/releases.md only after the milestone behavior and required quality gates are complete.",
       "acceptance": [
+        "Activate and verify automatic main-branch protection for Quality gate, Repository checks and DCO with strict up-to-date checks and admin enforcement before public release; repository/project visibility and publication require explicit maintainer authorization.",
         "All milestone acceptance criteria have real evidence, line and branch coverage independently reach 90%, and critical deterministic modules reach 100%.",
         "Run the declared installed-artifact, terminal, security and disposable-cluster checks on the exact release candidate; the maintainer approves publication in the release environment.",
         "Publish immutable tag/artifacts/changelog, verify every promised installation channel and quickstart, update the capability matrix and notify the maintainer of usable behavior."
