@@ -115,6 +115,22 @@ background features.
 
 ## Terminal behavior
 
+B01 implements `ui/app.py` as the disconnected Textual workspace and
+`ui/launch.py` as its synchronous CLI/TTY boundary. Settings and an owned
+diagnostic logger are injected; no Kubernetes configuration or client is loaded.
+Packaged TCSS styles resolve relative to the application module, including in
+installed wheels. Shortcut focus changes use the public `App.set_focus` API
+immediately, with priority bindings disabled inside inputs, so the next queued
+key reaches the selected input even when the terminal batches keystrokes.
+
+Textual 8.x's default fatal-error display includes exception values, source and
+locals. Two narrowly scoped private overrides preserve its exception handling,
+test propagation and terminal cleanup while routing errors to the sanitized
+logger and suppressing raw console tracebacks. The launcher reports an owned
+message/exit code. Pilot and real PTY failure tests qualify this boundary; each
+Textual upgrade must recheck those hooks against the pinned implementation.
+There are no custom background tasks or blocking I/O in B01 event handlers.
+
 Use stable resource identity (context, group/resource, namespace, UID); derive
 row order separately. Preserve selection and scroll position while applying
 batched incremental updates. Sort quantities and timestamps by typed values.
@@ -163,6 +179,7 @@ plugins from a cluster response or the current working directory.
 ## Sources
 
 - [Textual workers](https://textual.textualize.io/guide/workers/)
+- [Textual focus API](https://textual.textualize.io/api/app/#textual.app.App.set_focus)
 - [Textual app suspension](https://textual.textualize.io/api/app/#textual.app.App.suspend)
 - [Textual packaging with Hatch](https://textual.textualize.io/how-to/package-with-hatch/)
 - [uv build backends](https://docs.astral.sh/uv/concepts/build-backend/)

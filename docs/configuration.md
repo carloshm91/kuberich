@@ -1,9 +1,10 @@
 # Local preferences and diagnostics
 
 This development build provides `info`, `config init`, `config check`, and local
-diagnostic logging. It does not connect to Kubernetes or launch a terminal UI yet.
-Theme, refresh and read-only preferences are validated and reported now; the UI
-and cluster services will consume them in their own implementation tasks.
+diagnostic logging, alongside the [terminal preview](terminal-preview.md).
+It does not connect to Kubernetes. The UI applies built-in themes and displays
+the read-only preference; cluster services will consume refresh/read-only settings
+when their owning behavior is implemented.
 
 ## Commands
 
@@ -66,7 +67,9 @@ DEBUG, INFO, WARNING, ERROR or CRITICAL, case insensitive, and are normalized to
 uppercase in effective settings. Refresh must be a finite number
 in 0.1–3600 seconds; booleans and numeric strings in YAML are rejected. Theme IDs
 are 1–64 ASCII letters/digits/underscores/hyphens starting with a letter; available
-theme registration belongs to the UI task. A null log path selects the platform
+themes must also be registered built-in Textual themes when opening the UI.
+`config check` validates the schema, while the UI validates availability.
+A null log path selects the platform
 default, while an empty path is an error.
 
 Relative `log_file` values from YAML resolve against that file's directory.
@@ -133,11 +136,11 @@ contains no secret. Debug output stays in the file.
 
 | Exit | Meaning |
 | --- | --- |
-| `0` | Successful command, help or version |
+| `0` | Successful command, help, version or normal UI quit (including Ctrl+C) |
 | `1` | Unexpected internal/local failure; concise message without raw exception |
-| `2` | Invalid arguments, settings, schema or YAML |
+| `2` | Invalid arguments, settings, schema, YAML or a noninteractive UI launch |
 | `3` | Missing explicit file, local permissions/I/O, existing init destination or log ownership failure |
-| `130` | Interrupted operation |
+| `130` | Interrupted non-UI operation |
 
 Argument parsing does not echo rejected arguments, which might contain tokens.
 Settings errors name the setting without printing its value. Logging failures

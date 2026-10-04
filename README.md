@@ -14,9 +14,11 @@ All Kubetrol capabilities will be open source under MIT, with no paid feature ti
 **The development CLI is installable from this checkout. No public application
 release is available yet.**
 
-It currently provides `--help`, `--version`, safe local `info`, preference
-initialization/validation, and private rotating diagnostic logs. The terminal
-interface and Kubernetes connections are the next steps.
+It currently opens a real terminal workspace with context/namespace indicators,
+an empty resource table, filter and command inputs, keyboard/mouse navigation,
+help, themes and responsive layouts. It also provides `--help`, `--version`, safe
+local `info`, preference initialization/validation and private diagnostic logs.
+Kubernetes connections and live resources are upcoming.
 
 The first release, **0.0.1**, will provide a usable resource browser, live pod
 updates, filtering, resource details, container logs, and interactive exec.
@@ -37,12 +39,16 @@ uv run kubetrol config check
 uv run kubetrol
 ```
 
-The last command reports the current development stage. It does not require a
-kubeconfig or contact a cluster. `uv run python -m kubetrol` is also supported.
+The last command opens the terminal window in an interactive terminal. Press
+`?` for help, `Esc` to return, and `q` outside an input to quit; Ctrl+Q quits from
+anywhere. It does not require a kubeconfig or contact a cluster.
+`uv run python -m kubetrol` is also supported.
 `info` and `config check` create no files. `config init` optionally creates default
 preferences without overwriting an existing file. See
 [configuration and diagnostics](docs/configuration.md) for paths, precedence,
 schema, runtime log flags and error codes.
+See [the terminal preview](docs/terminal-preview.md) for the available controls
+and [first things to try](docs/first-preview.md) for a short feedback trial.
 
 ## Public installation
 
@@ -59,6 +65,7 @@ for 0.1.0. These channels are tracked work, not currently available downloads.
 - [Complete K9s capability audit](docs/k9s-parity.md)
 - [CLI and authentication compatibility](docs/k9s-cli.md)
 - [Local configuration and diagnostics](docs/configuration.md)
+- [Terminal preview controls](docs/terminal-preview.md)
 - [Architecture decisions](docs/architecture.md)
 - [Contribution workflow](CONTRIBUTING.md)
 - [Testing and coverage policy](docs/quality.md)

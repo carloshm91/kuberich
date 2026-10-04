@@ -136,7 +136,13 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": ""
+      "difference": "B01 implements keyboard/mouse focus, table navigation, horizontal column scrolling, responsive resize and Unicode inputs. Live-row state, paging and SSH/tmux qualification remain planned.",
+      "partial_evidence": [
+        "docs/terminal-preview.md",
+        "tests/ui/test_app.py",
+        "tests/ui/test_layout_snapshots.py",
+        "tests/terminal/test_shell.py"
+      ]
     },
     {
       "id": "UI05",
@@ -161,7 +167,13 @@
       ],
       "source": "internal/view/help.go",
       "status": "planned",
-      "difference": ""
+      "difference": "B01 implements scrollable help, available-key hints, a scope/connection header and normal/error terminal restoration. Visibility flags, breadcrumbs and extended navigation remain planned.",
+      "partial_evidence": [
+        "docs/terminal-preview.md",
+        "tests/ui/test_app.py",
+        "tests/terminal/test_shell.py",
+        "tests/packaging/test_distribution.py"
+      ]
     },
     {
       "id": "UI07",

@@ -1,0 +1,198 @@
+Screen {
+    background: $background;
+    color: $text;
+    layout: vertical;
+}
+
+#app-header {
+    height: 2;
+    padding: 0 1;
+    background: $panel;
+}
+
+#brand {
+    width: auto;
+    color: $accent;
+    text-style: bold;
+}
+
+#build-info {
+    width: 1fr;
+    text-align: right;
+    color: $text-muted;
+}
+
+#scope-bar {
+    height: 1;
+    padding: 0 1;
+}
+
+#context, #namespace {
+    width: 1fr;
+    height: 1;
+}
+
+#connection {
+    width: auto;
+    height: 1;
+    color: $warning;
+}
+
+#resource-view {
+    height: 1fr;
+    min-height: 4;
+    border: round $primary-muted;
+    margin: 1 1 0 1;
+}
+
+#resource-view:focus-within {
+    border: round $primary;
+}
+
+#resources {
+    height: auto;
+    min-height: 2;
+    max-height: 100%;
+    background: $background;
+}
+
+#empty-state {
+    height: 1fr;
+    align: center middle;
+    padding: 0 1;
+}
+
+#empty-title, #empty-description, #empty-hint {
+    height: auto;
+    text-align: center;
+}
+
+#empty-title {
+    text-style: bold;
+    color: $text;
+}
+
+#empty-description {
+    margin-top: 1;
+    color: $text-muted;
+}
+
+#empty-hint {
+    margin-top: 1;
+    color: $text-muted;
+}
+
+.input-bar {
+    height: 1;
+    margin: 0 1;
+    background: $panel;
+}
+
+#filter-bar {
+    margin: 1 1 0 1;
+}
+
+.input-label {
+    width: 2;
+    height: 1;
+    color: $accent;
+    text-style: bold;
+}
+
+Input {
+    width: 1fr;
+    height: 1;
+    border: none;
+    padding: 0;
+    background: $panel;
+}
+
+Input:focus {
+    border: none;
+    background: $primary 15%;
+}
+
+#status {
+    height: 1;
+    margin: 0 1;
+    color: $text-muted;
+    text-overflow: ellipsis;
+}
+
+Footer {
+    height: 1;
+}
+
+.compact #app-header {
+    height: 1;
+}
+
+.compact #build-info, .compact #empty-description, .compact #empty-hint {
+    display: none;
+}
+
+.compact #scope-bar {
+    layout: vertical;
+    height: 3;
+}
+
+.compact #connection {
+    width: 1fr;
+}
+
+.compact #resource-view {
+    margin: 0 1;
+}
+
+.compact #filter-bar {
+    margin: 0 1;
+}
+
+.short #app-header {
+    height: 1;
+}
+
+.short #resource-view, .short #filter-bar {
+    margin: 0 1;
+}
+
+.short #empty-state {
+    display: none;
+}
+
+HelpScreen {
+    align: center middle;
+    background: $background 70%;
+}
+
+#help-dialog {
+    width: 90%;
+    max-width: 72;
+    height: 80%;
+    max-height: 24;
+    min-height: 6;
+    border: round $primary;
+    background: $panel;
+    padding: 0 1;
+}
+
+#help-title {
+    height: 1;
+    color: $accent;
+    text-style: bold;
+}
+
+#help-scroll {
+    height: 1fr;
+    min-height: 1;
+}
+
+#help-content {
+    height: auto;
+}
+
+#close-help {
+    width: 1fr;
+    height: 1;
+    margin-top: 1;
+}

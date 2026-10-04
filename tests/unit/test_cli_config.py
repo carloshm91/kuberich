@@ -26,7 +26,7 @@ def test_info_reports_defaults_without_creating_files_or_reading_kubeconfig(
     assert information["config_file"] == str(tmp_path / "config/config.yaml")
     assert information["log_file"] == str(tmp_path / "logs/kubetrol.log")
     assert information["preferences"]["theme"] == "textual-dark"
-    assert not information["cluster_connected"] and not information["terminal_ui_available"]
+    assert not information["cluster_connected"] and information["terminal_ui_available"]
     assert not information["config_exists"] and not information["migration_pending"]
     assert information["dependencies"]["textual"]
     assert "opaque-sensitive-token" not in output.out and output.err == ""
@@ -102,8 +102,9 @@ def test_cli_log_aliases_override_file_and_environment(
     monkeypatch.setenv("KUBETROL_LOG_LEVEL", "INFO")
     monkeypatch.setenv("KUBETROL_LOG_FILE", str(tmp_path / "env.log"))
     selected = tmp_path / "cli.log"
+    monkeypatch.setattr(cli, "run_terminal", lambda settings, logger: None)
     assert main(["--logFile", str(selected), "-l", "DEBUG"]) == 0
-    assert "Development CLI started" in selected.read_text()
+    assert "Launching terminal interface" in selected.read_text()
     assert capsys.readouterr().err == ""
     assert not (tmp_path / "file.log").exists() and not (tmp_path / "env.log").exists()
 
@@ -154,15 +155,11 @@ def test_subcommand_arguments_are_explicit_and_not_abbreviated(
 def test_unexpected_runtime_failure_has_safe_console_message_and_debug_locations(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    original_print = print
-
-    def broken_output(*args: object, **kwargs: object) -> None:
-        if kwargs.get("file") is None:
-            raise RuntimeError("opaque-sensitive-runtime-data")
-        original_print(*args, **kwargs)
+    def broken_launch(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("opaque-sensitive-runtime-data")
 
     monkeypatch.setenv("KUBETROL_LOG_LEVEL", "DEBUG")
-    monkeypatch.setattr(cli, "print", broken_output, raising=False)
+    monkeypatch.setattr(cli, "run_terminal", broken_launch)
     assert main([]) == 1
     assert "unexpected local failure" in capsys.readouterr().err
     contents = (tmp_path / "logs/kubetrol.log").read_text()

@@ -1,7 +1,7 @@
 # First things to try
 
-The installable development CLI is the first checkpoint. The terminal interface
-and live Kubernetes views are subsequent checkpoints:
+The installable CLI, local preferences and first terminal window are available
+from the development checkout. Live Kubernetes views are subsequent checkpoints.
 Do not wait for every epic or the complete 1.0.0 parity audit to get feedback.
 
 | Checkpoint | Required work | What can actually be tried |
@@ -19,9 +19,8 @@ exact tested development-install/run command and state which capabilities exist.
 Avoid publishing guessed installation commands before the package exists.
 
 For the CLI checkpoint, run `uv sync --locked --group dev`, then
-`uv run kubetrol --help`, `uv run kubetrol --version`, and `uv run kubetrol`
-from the checkout. The default invocation explains that the terminal UI is not
-available yet. No cluster or kubeconfig is required. See the README for details.
+`uv run kubetrol --help` and `uv run kubetrol --version` from the checkout.
+No cluster or kubeconfig is required. See the README for details.
 
 For the F03 checkpoint, run `uv run kubetrol info` and
 `uv run kubetrol config check`. Neither writes files. To test initialization
@@ -35,9 +34,33 @@ uv run kubetrol --config "$trial_dir/preferences.yaml" info
 ```
 
 The second `config init` at the same path must refuse to overwrite and exit 3.
-`info` reports `terminal_ui_available: false` and `cluster_connected: false`.
-The first Textual window is B01, immediately after this checkpoint is accepted.
+`info` now reports `terminal_ui_available: true` and `cluster_connected: false`.
 See [preferences](configuration.md) for optional debug-log testing.
+
+## First terminal window: B01
+
+From an interactive terminal in the checkout:
+
+```sh
+uv sync --locked --group dev
+uv run kubetrol
+```
+
+1. Confirm you see Kubetrol, `Context: —`, `Namespace: —` and `Disconnected`.
+   The resource table has headers and no rows because no cluster is connected.
+2. Press `?` to open help, then `Esc` to return.
+3. Press `/`, type a few letters, then `Enter` to return to the table. `Esc`
+   clears the active filter. The input works; there are no resources to filter yet.
+4. Press `:`, type `help`, then `Enter`. Close the help with `Esc` or its Back button.
+5. Resize the window. Context, namespace, connection state and controls stay
+   accessible down to the tested size of 40 columns by 12 rows. In narrow windows,
+   use left/right arrows in the table to see columns outside the viewport.
+6. Press `q` while the table has focus, or Ctrl+Q anywhere, to return to your shell.
+
+Feedback: report whether it opens, whether help/filter/quit work, and your
+terminal name and size if anything overlaps or is difficult to read.
+The [control reference](terminal-preview.md) covers focus, themes and errors.
+Context selection, pods, logs and interactive exec arrive in their own tickets.
 
 Cloud authentication and real-terminal checks run early. A successful mocked UI
 is useful feedback, but it does not certify that EKS/AKS credentials, exec,
