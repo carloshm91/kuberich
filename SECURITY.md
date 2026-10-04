@@ -30,6 +30,6 @@ The current disconnected build includes bounded literal-text/control helpers,
 diagnostic redaction, immutable target/argument captures and ambient SDK loader
 traps in tests. Integration responsibilities and known limitations are documented
 in [security primitives](docs/security-primitives.md) and the
-[threat model draft](docs/kubetrol-threat-model.md). Pattern redaction does not
+[threat model](docs/kubetrol-threat-model.md). Pattern redaction does not
 recognize every opaque secret; adapters must avoid collecting raw credentials
 and construct allowlisted error summaries.

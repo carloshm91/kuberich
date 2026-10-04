@@ -42,5 +42,5 @@ available from a source checkout; PyPI and Homebrew publication come later.
   target rejection; operation enforcement remains part of upcoming services.
 - Test-wide ambient Kubernetes credential traps and a qualified owned local
   fixture loader that preserves configuration files and SDK defaults.
-- Focused trust-boundary model draft and documented integration responsibilities
+- Focused trust-boundary model and documented integration responsibilities
   for authentication helpers, plugins, terminal sinks and release artifacts.

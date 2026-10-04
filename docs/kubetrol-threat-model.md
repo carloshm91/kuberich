@@ -1,9 +1,9 @@
 # Kubetrol threat model
 
-**Draft for F04 #18.** Context confirmation is pending: retain the approved local
-CLI architecture where operator-selected authentication helpers and plugins run
-with the operator's privileges, without an application sandbox? This document
-does not change that architecture or authorize publication.
+**F04 #18, context validated on 2026-10-04.** The maintainer chose the K9s-style
+local execution model: trusted kubeconfig authentication helpers and deliberately
+invoked local plugins run with the launching user's privileges, without an
+application sandbox. See the [decision and upstream evidence](security-primitives.md#local-execution-model).
 
 ## Executive summary
 
@@ -32,10 +32,13 @@ enforcement at the future adapters/services, not just reusable helpers.
   requests. Real-cluster performance, SSH transport security and compromised
   operating systems/Kubernetes control planes are outside implementation scope.
 
-Open context question: should helpers/plugins instead require isolation beyond
-the operator's privileges? If so, execution design and TM-004 priority change.
-Cloud-helper compatibility, write policy and release trust are pending their
-linked issues; their absence is not described as a current exploitable service.
+The local execution context question is resolved. Authentication helpers may run
+automatically for the chosen trusted kubeconfig, including credential renewal;
+ordinary plugins require operator invocation. This distinction must be preserved
+in C01/U03. Cloud-helper compatibility, write policy and release trust remain
+qualification questions for their linked issues; their absence is not described
+as a current exploitable service. An isolation requirement or unattended/hosted
+deployment would require a new model and reconsideration of TM-004.
 
 ## System model
 
@@ -62,7 +65,8 @@ linked issues; their absence is not described as a current exploitable service.
   text, redaction and inert controls; transport/queue limits remain C04/S02 work.
 - Operator kubeconfig → future credential helper: local parsing/subprocess,
   helper execution with user privileges. Trust is established by deliberate local
-  config choice, not resource origin; never import helpers from cluster data
+  config choice, not a confirmation on every credential refresh. Never import
+  helpers from cluster data
   (`docs/architecture.md`, Authentication and delegated tools). Kubernetes
   [warns that untrusted kubeconfigs can execute code](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/).
 - Captured selection → future service → API/command: frozen context/client/UID

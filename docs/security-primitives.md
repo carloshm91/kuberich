@@ -5,6 +5,47 @@ execute a plugin, or implement mutation authorization. The terminal preview
 continues to start disconnected. See the [threat model](kubetrol-threat-model.md)
 for boundaries, existing controls and the remaining issue owners.
 
+## Local execution model
+
+On 2026-10-04 the maintainer chose K9s-style local execution for the first product:
+trusted operator-selected kubeconfig, authentication helpers and locally
+configured plugins, with the launching OS user's privileges and no application
+sandbox. This preserves access to the operator's installed provider tooling and
+credential caches. The current disconnected build does not execute these tools.
+
+Authentication helpers are different from ordinary plugins: a chosen kubeconfig
+may invoke its helper automatically to authenticate or renew credentials,
+including provider-required interactive login. C01/C06/C07 must qualify that
+contract rather than request a new confirmation on every renewal. Ordinary
+plugins run on operator invocation, with configured scopes and captured target
+values; S03/U03 own process cleanup and dangerous-action policy. Scopes and
+confirmations do not isolate local executable privileges. Explicitly configured
+shell plugins remain trusted local code; target values must be passed as data,
+not interpolated into shell source.
+
+Upstream evidence was checked against K9s v0.51.0, commit
+`558caafe7ba067467de46b320cc22ef11fef9c34`:
+
+- K9s builds its connection through Kubernetes `client-go` kubeconfig loading
+  ([Config.RESTConfig/clientConfig](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/client/config.go)).
+  Its declared client-go v0.35.3 executes credential helpers as local processes
+  with inherited environment and token caching/refresh
+  ([Authenticator](https://github.com/kubernetes/client-go/blob/v0.35.3/plugin/pkg/client/auth/exec/exec.go)).
+  Optional helper admission policies do not sandbox an admitted process.
+- Plugin definitions have commands, arguments, shortcuts, resource scopes and
+  foreground/background behavior ([plugin documentation](https://k9scli.io/topics/plugins/)).
+  Activation dispatches the configured command to the local process runner
+  ([pluginAction/executePlugin](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/actions.go)).
+- That runner uses ordinary local process execution with no application sandbox.
+  Foreground work suspends the UI; pod shells use `kubectl exec` with context and
+  configured kubeconfig flags ([run/execute/sshIn](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/exec.go)).
+
+Kubetrol adopts this trust boundary with its own implementation. Kubernetes
+authorization, literal safe rendering, secret handling, immutable target checks
+and test-cluster isolation remain separate requirements. A same-privilege plugin
+can access files that the launching user can access; configuration trust is the
+boundary, not the Python language or terminal framework.
+
 ## Presenting untrusted text
 
 Resource names, annotations, logs, kubeconfig labels and tool output must pass

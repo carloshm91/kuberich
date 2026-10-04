@@ -68,7 +68,7 @@ for 0.1.0. These channels are tracked work, not currently available downloads.
 - [Terminal preview controls](docs/terminal-preview.md)
 - [Architecture decisions](docs/architecture.md)
 - [Security helpers and test isolation](docs/security-primitives.md)
-- [Focused threat model draft](docs/kubetrol-threat-model.md)
+- [Focused threat model](docs/kubetrol-threat-model.md)
 - [Contribution workflow](CONTRIBUTING.md)
 - [Testing and coverage policy](docs/quality.md)
 - [Versioning, tags, and release procedure](docs/releases.md)
