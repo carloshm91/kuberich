@@ -46,14 +46,42 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
-def test_connected_cli_context_namespace_retry_and_terminal_restoration(tmp_path: Path) -> None:
+@pytest.mark.parametrize("authentication", ["token", "exec-null-env"])
+def test_connected_cli_context_namespace_retry_and_terminal_restoration(
+    tmp_path: Path, authentication: str
+) -> None:
     server = HTTPServer(("127.0.0.1", 0), Handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
+    user = {"token": "synthetic-pty"}
+    if authentication == "exec-null-env":
+        script = tmp_path / "provider.py"
+        script.write_text(
+            "import json\nprint("
+            + repr(
+                json.dumps(
+                    {
+                        "apiVersion": "client.authentication.k8s.io/v1beta1",
+                        "kind": "ExecCredential",
+                        "status": {"token": "synthetic-pty"},
+                    }
+                )
+            )
+            + ")"
+        )
+        user = {
+            "exec": {
+                "apiVersion": "client.authentication.k8s.io/v1beta1",
+                "interactiveMode": "IfAvailable",
+                "command": sys.executable,
+                "args": [str(script)],
+                "env": None,
+            }
+        }
     path = config(
         tmp_path / "owned-config",
         f"http://127.0.0.1:{server.server_port}",
-        {"token": "synthetic-pty"},
+        user,
     )
     original = path.read_bytes()
     try:
@@ -66,11 +94,20 @@ def test_connected_cli_context_namespace_retry_and_terminal_restoration(tmp_path
             terminal.wait_for(b"Choose context", since=marker)
             marker = terminal.send(b"\x1b")
             terminal.wait_for(b"Cmd ", since=marker)
+            for key in (b"n", b"\x1bOR", b"\x1b[13~"):
+                marker = terminal.send(key)
+                terminal.wait_for(b"Choose namespace", since=marker)
+                marker = terminal.send(b"\x1b")
+                terminal.wait_for(b"Cmd ", since=marker)
             marker = terminal.send(b":ns team\r")
             terminal.wait_for(b"Namespace: team", since=marker)
+            marker = terminal.send(b":status\r")
+            terminal.wait_for(b"Connection status", since=marker)
+            marker = terminal.send(b"\x1b")
+            terminal.wait_for(b"Cmd ", since=marker)
             terminal.send(b"q")
             terminal.finish()
-            terminal.save_evidence("context-session")
+            terminal.save_evidence(f"context-session-{authentication}")
         assert path.read_bytes() == original
     finally:
         server.shutdown()

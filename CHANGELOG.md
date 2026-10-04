@@ -5,6 +5,13 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ## Unreleased
 
+### Fixed
+
+- Accept null optional exec credential args/env lists, including doctl's `env: null`,
+  with regression tests for authentication and switching away from an auth error.
+- Reach context/namespace pickers with `c`/`n` outside text inputs and connection
+  status/retry with `i`/`r` or `:status`/`:retry` when a terminal intercepts function keys.
+
 ### Added
 
 - Isolated kubeconfig/context sessions, namespace discovery and selectors,

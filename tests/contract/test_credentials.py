@@ -102,6 +102,73 @@ async def test_expiration_refresh_and_beta_default_interactive_mode(tmp_path: Pa
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("optional", ["missing", "null", "empty"])
+async def test_optional_exec_lists_match_client_go_empty_slice_behavior(
+    tmp_path: Path, optional: str
+) -> None:
+    executable = tmp_path / "owned-helper"
+    executable.write_text(
+        "#!" + sys.executable + "\nimport sys\nassert len(sys.argv) == 1\n" + printer(response())
+    )
+    executable.chmod(0o700)
+    credentials = helper(tmp_path, "", command=str(executable))
+    for field in ("args", "env"):
+        if optional == "missing":
+            credentials.entry.data.pop(field, None)
+        else:
+            credentials.entry.data[field] = None if optional == "null" else []
+    assert await credentials.token() == "synthetic"
+
+
+@pytest.mark.asyncio
+async def test_doctl_shaped_exec_with_null_env_connects_without_rewriting_config(
+    tmp_path: Path,
+) -> None:
+    script = tmp_path / "provider.py"
+    beta = "client.authentication.k8s.io/v1beta1"
+    script.write_text(
+        "import json, os, sys\n"
+        "assert sys.argv[1:] == ['kubernetes', 'cluster', 'kubeconfig', 'exec-credential', '--version=v1beta1', 'synthetic-cluster']\n"
+        "assert json.loads(os.environ['KUBERNETES_EXEC_INFO'])['spec']['interactive'] is False\n"
+        + printer({"apiVersion": beta, "kind": "ExecCredential", "status": {"token": "synthetic"}})
+    )
+    user = {
+        "exec": {
+            "apiVersion": beta,
+            "command": sys.executable,
+            "args": [
+                str(script),
+                "kubernetes",
+                "cluster",
+                "kubeconfig",
+                "exec-credential",
+                "--version=v1beta1",
+                "synthetic-cluster",
+            ],
+            "env": None,
+            "interactiveMode": "IfAvailable",
+            "provideClusterInfo": False,
+        }
+    }
+
+    async def handler(request):
+        assert request.headers["Authorization"] == "Bearer synthetic"
+        return namespaces("default", "team")
+
+    async with fake_api(handler) as url:
+        catalog = catalog_fixture(tmp_path, url, user)
+        before = (tmp_path / "fixture-config").read_bytes()
+        sessions = SessionService(catalog, ConnectionRequest())
+        try:
+            observation = await sessions.connect("kubetrol-test-one")
+            assert observation.state is ConnectionState.CONNECTED
+            assert observation.namespaces == ("default", "team")
+            assert (tmp_path / "fixture-config").read_bytes() == before
+        finally:
+            await sessions.close()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "value",
     [

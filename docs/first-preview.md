@@ -102,10 +102,17 @@ uv run kubetrol
 
 1. Check the context, namespace and connection state. Resource rows remain empty:
    this checkpoint discovers namespaces; the pod browser comes next.
-2. Press F2, choose a context with arrows and Enter. Check its state updates.
-3. Press F3, choose a namespace and Enter. For restricted namespace-list RBAC,
+2. Press `c` (or F2), choose a context with arrows and Enter. Check its state updates.
+3. Press `n` (or F3), choose a namespace and Enter. For restricted namespace-list RBAC,
    type `:ns YOUR_NAMESPACE` and Enter instead.
-4. Press F4 to reconnect; Ctrl+Q returns to your shell.
+4. Press `i` or type `:status` and Enter to read the complete connection message.
+5. Press `r` or type `:retry` and Enter to reconnect; Ctrl+Q returns to your shell.
+
+Letter shortcuts work outside the text fields; Escape returns to the table.
+If your terminal intercepts F2/F3, type `:ctx` or `:ns` and Enter instead.
+The context-preview correction (#102) accepts null optional exec lists, including
+`env: null` in doctl-generated configuration. Restart from the corrected branch
+before trying the context again; no kubeconfig edits are needed.
 
 Optionally launch with `uv run kubetrol --context YOUR_CONTEXT -n YOUR_NAMESPACE`.
 Nothing changes your kubeconfig or its current context. Report the connection

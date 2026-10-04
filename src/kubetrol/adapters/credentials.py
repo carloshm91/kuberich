@@ -125,6 +125,8 @@ class ExecToken:
                 if "/" in command and not Path(command).is_absolute():
                     command = str(self.entry.directory / command)
                 args = spec.get("args", [])
+                if args is None:
+                    args = []
                 if not isinstance(args, list) or len(args) > 256:
                     raise auth_problem(
                         "Credential helper args must be a list of at most 256 strings."
@@ -132,6 +134,8 @@ class ExecToken:
                 argv = [command, *(text(arg) for arg in args)]
                 environment = dict(os.environ)
                 variables = spec.get("env", [])
+                if variables is None:
+                    variables = []
                 if not isinstance(variables, list) or len(variables) > 256:
                     raise auth_problem(
                         "Credential helper env must be a list of at most 256 entries."

@@ -25,12 +25,17 @@ shows the loaded contexts; it does not reload changed files. Restart after editi
 kubeconfig. An explicit unknown context produces a configuration state without
 falling back to another context.
 
-- **F2**, `:ctx` or `:context`: choose a context; `:ctx NAME` selects it directly.
-- **F3**, `:ns` or `:namespace`: choose a namespace; `:ns NAME` permits manual selection.
+- **c / F2**, `:ctx` or `:context`: choose a context; `:ctx NAME` selects it directly.
+- **n / F3**, `:ns` or `:namespace`: choose a namespace; `:ns NAME` permits manual selection.
 - **`:ns *`** or `*` in the selector: select all namespaces.
-- **F5**: read the full connection message in a scrollable dialog, including in narrow terminals.
-- **F4**: reconnect the selected context with a fresh client and helper cache.
+- **i / F5** or `:status`: read the full connection message in a scrollable dialog, including in narrow terminals.
+- **r / F4** or `:retry`: reconnect the selected context with a fresh client and helper cache.
 - **Ctrl+Q**: quit while connecting, selecting or editing an input.
+
+Letter shortcuts work outside text inputs; typing in the filter or command field
+keeps those letters. Press Escape to return to the resource table. If the terminal
+intercepts a function key, use the letter or type the colon command and Enter.
+Kubetrol cannot receive a key consumed by an outer terminal or tmux binding.
 
 Selectors support arrows, PageUp/PageDown, mouse and Esc/Back. Names are rendered
 as literal text. Selecting a namespace records a scope; it does not grant RBAC
@@ -65,6 +70,11 @@ Supported now:
   rejected with 401 invalidates and retries once. Helpers drain both output pipes,
   cap stdout at 1 MiB/stderr at 64 KiB, and kill/reap their owned process group on
   failure, timeout, cancellation and completion.
+
+Optional exec `args` and `env` lists may be absent, null or empty. This includes
+the `env: null` form emitted in DigitalOcean/doctl kubeconfigs. Null lists are
+treated as empty; malformed non-list values still produce a safe auth error.
+This compatibility fix does not qualify every provider/login combination.
 
 Kubeconfig is trusted local configuration: configured helpers run with your user
 privileges, including in application read-only mode. Never launch with an
