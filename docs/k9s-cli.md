@@ -2,7 +2,11 @@
 
 Reference: K9s v0.51.0,
 [launch flags](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/cmd/root.go).
-This is a planned contract. No Kubetrol application is released yet.
+This is the first-release contract. The development build currently implements
+help/version, `info`, `config init`/`check`, `--config` and the log destination/level
+flags. See [local preferences](configuration.md) for that tested subset. Remaining
+flags/commands are planned and rejected until their owning behavior exists.
+No Kubetrol application is publicly released yet.
 
 Every explicitly registered launch flag is represented below. Kubetrol keeps the
 familiar spelling as a compatibility alias; kebab-case aliases may also be

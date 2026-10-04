@@ -143,6 +143,18 @@ field handling, and migration tests. Secrets are hidden in ordinary views and
 redacted from exports and diagnostics. Escaping resource markup and terminal
 controls is separate from Kubernetes authorization.
 
+F03 implements a flat schema-v1 dataclass for theme, refresh, read-only and
+diagnostic settings. Its bounded safe YAML loader rejects duplicate/nonstring
+keys and aliases, retains unknown fields, and migrates v0 names in memory.
+Global file/environment/CLI precedence is explicit; context-specific overrides
+arrive with the context implementation. Atomic writes never happen on load.
+The owned rotating logger uses private files, a process lock, credential
+redaction and bounded records; debug traceback values/source/locals are omitted.
+CLI diagnostics use an allowlist and never load Kubernetes credentials or run auth helpers.
+See [configuration](configuration.md) for the implemented contract and exit codes.
+Startup filesystem work runs before Textual; future UI reads/writes must use
+an owned worker rather than blocking a normal event handler.
+
 Plugins are trusted local executables declared by users. Resolve bindings and
 resource scope before invocation, pass selected-resource context deliberately,
 and own foreground/background process cleanup. Never auto-discover executable

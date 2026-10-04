@@ -14,8 +14,9 @@ All Kubetrol capabilities will be open source under MIT, with no paid feature ti
 **The development CLI is installable from this checkout. No public application
 release is available yet.**
 
-It currently provides `--help`, `--version`, and an honest development-status
-message. The terminal interface and Kubernetes connections are the next steps.
+It currently provides `--help`, `--version`, safe local `info`, preference
+initialization/validation, and private rotating diagnostic logs. The terminal
+interface and Kubernetes connections are the next steps.
 
 The first release, **0.0.1**, will provide a usable resource browser, live pod
 updates, filtering, resource details, container logs, and interactive exec.
@@ -31,11 +32,17 @@ With [uv](https://docs.astral.sh/uv/getting-started/installation/) and Python
 uv sync --locked --group dev
 uv run kubetrol --help
 uv run kubetrol --version
+uv run kubetrol info
+uv run kubetrol config check
 uv run kubetrol
 ```
 
 The last command reports the current development stage. It does not require a
 kubeconfig or contact a cluster. `uv run python -m kubetrol` is also supported.
+`info` and `config check` create no files. `config init` optionally creates default
+preferences without overwriting an existing file. See
+[configuration and diagnostics](docs/configuration.md) for paths, precedence,
+schema, runtime log flags and error codes.
 
 ## Public installation
 
@@ -51,6 +58,7 @@ for 0.1.0. These channels are tracked work, not currently available downloads.
 - [Issue index and implementation order](docs/backlog.md)
 - [Complete K9s capability audit](docs/k9s-parity.md)
 - [CLI and authentication compatibility](docs/k9s-cli.md)
+- [Local configuration and diagnostics](docs/configuration.md)
 - [Architecture decisions](docs/architecture.md)
 - [Contribution workflow](CONTRIBUTING.md)
 - [Testing and coverage policy](docs/quality.md)

@@ -23,9 +23,14 @@ def run(
 ) -> subprocess.CompletedProcess[str]:
     """Run tools with an explicit directory and without ambient source import paths."""
     environment = os.environ.copy()
+    for name in os.environ:
+        if name.startswith("KUBETROL_"):
+            environment.pop(name)
     environment.pop("PYTHONPATH", None)
     environment.pop("VIRTUAL_ENV", None)
     environment["KUBECONFIG"] = str(directory / "no-cluster-config")
+    environment["KUBETROL_CONFIG"] = str(directory / "preferences.yaml")
+    environment["KUBETROL_LOG_FILE"] = str(directory / "kubetrol.log")
     return subprocess.run(
         command,
         cwd=directory,
@@ -53,6 +58,7 @@ def installed_wheel(
     uv = shutil.which("uv")
     assert uv is not None
     directory = tmp_path_factory.mktemp("installed-wheel")
+    (directory / "preferences.yaml").write_text("schema_version: 1\n", encoding="utf-8")
     venv = directory / "venv"
     run([uv, "venv", "--python", sys.executable, str(venv)], directory)
     binary_dir = venv / ("Scripts" if sys.platform == "win32" else "bin")
@@ -94,7 +100,7 @@ def test_source_distribution_can_build_a_wheel(
 
 
 @pytest.mark.parametrize("entry_point", ["console", "module"])
-@pytest.mark.parametrize("argument", ["--help", "--version", None])
+@pytest.mark.parametrize("argument", ["--help", "--version", "info", None])
 def test_installed_entry_points_work_without_source_or_cluster(
     installed_wheel: tuple[Path, Path], entry_point: str, argument: str | None
 ) -> None:
@@ -116,6 +122,10 @@ def test_installed_entry_points_work_without_source_or_cluster(
         assert output.stdout == f"kubetrol {PROJECT['version']}\n"
     elif argument == "--help":
         assert "usage: kubetrol" in output.stdout
+    elif argument == "info":
+        information = json.loads(output.stdout)
+        assert information["config_file"] == str(directory / "preferences.yaml")
+        assert not information["cluster_connected"]
     else:
         assert "terminal interface is not available yet" in output.stdout
 
@@ -127,7 +137,7 @@ def test_installed_package_has_assets_and_runtime_dependencies(
     python = binary_dir / ("python.exe" if sys.platform == "win32" else "python")
     code = (
         "import importlib.metadata as m, importlib.resources as r, json; "
-        "import textual, kubernetes_asyncio; "
+        "import textual, kubernetes_asyncio, platformdirs, yaml; "
         "print(json.dumps({'version': m.version('kubetrol'), "
         "'typed': r.files('kubetrol').joinpath('py.typed').is_file(), "
         "'textual': m.version('textual'), 'kubernetes_asyncio': m.version('kubernetes-asyncio')}))"
@@ -136,3 +146,16 @@ def test_installed_package_has_assets_and_runtime_dependencies(
     assert result["version"] == PROJECT["version"]
     assert result["typed"] is True
     assert result["textual"] and result["kubernetes_asyncio"]
+
+
+def test_installed_config_init_check_and_refusal_to_overwrite(
+    installed_wheel: tuple[Path, Path], tmp_path: Path
+) -> None:
+    binary_dir, directory = installed_wheel
+    command = [str(binary_dir / "kubetrol"), "--config", str(tmp_path / "preferences.yaml")]
+    assert "Created default" in run([*command, "config", "init"], directory, 10).stdout
+    assert "valid" in run([*command, "config", "check"], directory, 10).stdout
+    with pytest.raises(subprocess.CalledProcessError) as error:
+        run([*command, "config", "init"], directory, 10)
+    assert error.value.returncode == 3
+    assert "already exist" in error.value.stderr

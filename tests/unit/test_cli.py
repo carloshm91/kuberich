@@ -61,7 +61,7 @@ def test_unsupported_arguments_fail_explicitly(
     assert exit_info.value.code == 2
     output = capsys.readouterr()
     assert output.out == ""
-    assert "unrecognized arguments" in output.err
+    assert "invalid command line" in output.err
 
 
 def test_importing_module_does_not_execute_cli(

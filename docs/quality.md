@@ -18,7 +18,8 @@ or reliable installation.
 | Artifacts | Build, metadata validation, and clean-environment installation pass |
 | Dependencies | No unresolved actionable high/critical vulnerability without a documented, time-bounded mitigation reviewed in the PR |
 
-The initial critical modules are the CLI and module entry points. Future
+The current critical modules are the CLI/module entry points, preference schema
+validation/precedence, and diagnostic redaction/control handling. Future
 critical modules are the context-generation/target-identity checks, mutation
 guard and command construction, redaction/control-sequence handling, and the
 resource-state transition/reconnect decisions. Keep those decisions separate
@@ -90,9 +91,12 @@ Once protection is available, configure those three checks as required with
 strict/up-to-date status, enforce them for admins, require PRs and resolved
 conversations, retain linear history, and prohibit force pushes/deletions.
 Replace the old Bootstrap checks requirement with Quality gate and verify the
-actual returned configuration. Repository visibility changes still require the
-maintainer's explicit approval; F02 is not fully accepted until this protection
-criterion is satisfied or the maintainer approves a documented scope adjustment.
+actual returned configuration. The maintainer accepted this temporary manual
+workflow by merging PR #96 and authorizing continued private development on
+2026-10-04. F02 is complete under that documented scope adjustment; automatic
+enforcement must be enabled and verified before the first public release in
+[D04 #40](https://github.com/carloshm91/kubetrol/issues/40). Repository visibility
+changes still require the maintainer's explicit approval.
 See [GitHub's protected-branch availability](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
 
 ## Test layers
@@ -136,7 +140,8 @@ F01 provides the installable development CLI and behavioral/artifact tests.
 F02 implements independent coverage, changed-line and critical-module gates,
 negative controls, and the aggregate application matrix. Automatic protected-
 branch enforcement remains unavailable under the current private-repository
-plan, as recorded above. The terminal UI is a subsequent task. The README must
+plan, as recorded above. F03 adds local configuration, sanitized diagnostics and
+temporary-file/process/artifact checks. The terminal UI is a subsequent task. The README must
 never show an unmeasured coverage badge or imply that planned checks already run.
 
 ## Sources
