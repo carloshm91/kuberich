@@ -176,6 +176,22 @@ resource scope before invocation, pass selected-resource context deliberately,
 and own foreground/background process cleanup. Never auto-discover executable
 plugins from a cluster response or the current working directory.
 
+F04 adds literal bounded Rich text, shared control escaping, immutable argv and
+client/UID target snapshots. Diagnostic redaction uses the shared control helper.
+Per-client UUIDs distinguish even reopened contexts with the same name/generation.
+These helpers do not authorize writes or make a local staleness check atomic:
+future services must enforce read-only policy, bind the captured client and use
+appropriate API preconditions. Tests trap ambient SDK loaders and permit only a
+qualified owned loopback fixture. See [security integration contracts](security-primitives.md)
+and the [focused threat model](kubetrol-threat-model.md).
+
+The maintainer validated the K9s-style local execution model for F04 on
+2026-10-04: configured authentication helpers may run automatically for login
+and credential renewal; ordinary plugins require operator invocation. Both
+run with the launching user's privileges, without an application sandbox.
+Provider interaction, process ownership and read-only enforcement remain
+separate implementation/qualification requirements in their existing issues.
+
 ## Sources
 
 - [Textual workers](https://textual.textualize.io/guide/workers/)

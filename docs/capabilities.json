@@ -379,7 +379,7 @@
       ],
       "source": "internal/view/actions.go",
       "status": "planned",
-      "difference": "Read-only conservatively blocks shell/attach/unclassified plugins; it is not an RBAC security boundary."
+      "difference": "F04 implements immutable client/UID targets and safe presentation/argv helpers; service integration and read-only enforcement remain planned. Read-only conservatively blocks shell/attach/unclassified plugins; it is not an RBAC security boundary."
     },
     {
       "id": "OPS02",

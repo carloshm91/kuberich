@@ -3,7 +3,9 @@
 Reviewed 2026-10-04. Reference: [K9s v0.51.0](https://github.com/derailed/k9s/releases/tag/v0.51.0),
 commit `558caafe7ba067467de46b320cc22ef11fef9c34`.
 
-**All product rows are planned; none is implemented or verified yet.**
+**Complete product capability rows remain planned.** Local CLI/configuration,
+the disconnected terminal preview and F04 security helpers have implementation
+evidence, but do not establish a complete capability family's K9s parity.
 
 The goal is complete functional coverage of the public reference, with every
 discovered capability assigned to implementation and verification work. A source
@@ -75,7 +77,7 @@ single generic “plugins” or “configuration” checkbox.
 | SES02 | Attach to running containers and bidirectional file transfer | [S07 #48](https://github.com/carloshm91/kubetrol/issues/48) | [Source](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/pod.go).  |
 | SES03 | Pod/container/service port forwarding, listing, deletion and bind address | [S05 #42](https://github.com/carloshm91/kubetrol/issues/42) | [Source](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/pf.go).  |
 | SES04 | FastForward annotations, named ports, multiple presets and WebSocket transport | [S08 #62](https://github.com/carloshm91/kubetrol/issues/62) | [Source](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/README.md). Cluster annotations require local opt-in before automatic listeners start. |
-| OPS01 | Read-only mode, permissions, target validation and dangerous-action gates | [F04 #18](https://github.com/carloshm91/kubetrol/issues/18), [F05 #19](https://github.com/carloshm91/kubetrol/issues/19), [M01 #43](https://github.com/carloshm91/kubetrol/issues/43) | [Source](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/actions.go). Read-only conservatively blocks shell/attach/unclassified plugins; it is not an RBAC security boundary. |
+| OPS01 | Read-only mode, permissions, target validation and dangerous-action gates | [F04 #18](https://github.com/carloshm91/kubetrol/issues/18), [F05 #19](https://github.com/carloshm91/kubetrol/issues/19), [M01 #43](https://github.com/carloshm91/kubetrol/issues/43) | [Source](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/actions.go). F04 adds immutable client/UID targets and safe presentation/argv helpers; service integration/read-only enforcement remain planned. Read-only conservatively blocks shell/attach/unclassified plugins; it is not an RBAC security boundary. |
 | OPS02 | Edit manifests with external editor and conflict/diff validation | [M02 #44](https://github.com/carloshm91/kubetrol/issues/44), [S03 #31](https://github.com/carloshm91/kubetrol/issues/31) | [Source](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/live_view.go).  |
 | OPS03 | Scale, restart and rollback workloads; deployment ReplicaSet drill-down | [M03 #45](https://github.com/carloshm91/kubetrol/issues/45), [B05 #41](https://github.com/carloshm91/kubetrol/issues/41) | [Source](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/restart_extender.go).  |
 | OPS04 | Delete/force-delete/bulk actions and pod completed/error cleanup | [M04 #46](https://github.com/carloshm91/kubetrol/issues/46), [M08 #63](https://github.com/carloshm91/kubetrol/issues/63) | [Source](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/pod.go). Force-delete keeps an explicit confirmation; instant unconfirmed deletion is an intentional safety difference. |

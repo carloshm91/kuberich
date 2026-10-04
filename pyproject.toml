@@ -106,4 +106,8 @@ critical_modules = [
     "src/kubetrol/__main__.py",
     "src/kubetrol/config/schema.py",
     "src/kubetrol/diagnostics/redaction.py",
+    "src/kubetrol/security/controls.py",
+    "src/kubetrol/security/presentation.py",
+    "src/kubetrol/security/arguments.py",
+    "src/kubetrol/domain/targets.py",
 ]
