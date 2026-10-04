@@ -39,6 +39,7 @@ Changelog = "https://github.com/carloshm91/kubetrol/blob/main/CHANGELOG.md"
 [dependency-groups]
 dev = [
     "build>=1.6.1,<2",
+    "diff-cover>=10.6.0,<11",
     "mypy>=2.4.0,<3",
     "pytest>=9.1.1,<10",
     "pytest-asyncio>=1.4.0,<2",
@@ -54,6 +55,7 @@ packages = ["src/kubetrol"]
 include = [
     "/src",
     "/tests",
+    "/scripts",
     "/pyproject.toml",
     "/uv.lock",
     "/README.md",
@@ -81,10 +83,19 @@ asyncio_default_fixture_loop_scope = "function"
 [tool.coverage.run]
 branch = true
 source = ["kubetrol"]
+relative_files = true
 
 [tool.coverage.report]
 show_missing = true
 precision = 2
+include_namespace_packages = true
+# Every production decision stays in the denominator, including no-cover pragmas.
+exclude_lines = []
+partial_branches = []
 
 [tool.coverage.json]
 show_contexts = true
+
+[tool.kubetrol.coverage]
+# Extend this reviewed list when deterministic security/state decisions are added.
+critical_modules = ["src/kubetrol/cli.py", "src/kubetrol/__main__.py"]

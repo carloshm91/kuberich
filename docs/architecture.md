@@ -27,6 +27,12 @@ target CPython 3.12, 3.13, and 3.14. See distribution.md for qualification rules
 | Verification | pytest, pytest-asyncio, pytest-cov/coverage.py, Ruff, strict mypy |
 | Cluster integration | Disposable kind clusters and a controllable fake API server |
 
+uv manages development environments, locked dependency resolution, and build
+invocation. Hatchling is the configured build backend that produces wheels and
+source distributions; `uv build` delegates to it. This retains standard Python
+packaging and the Hatchling approach shown in Textual's packaging guide without
+requiring contributors to manage two environment tools.
+
 The generated async client is selected for explicit API coverage and control
 over watches and cancellation. Do not mix clients throughout the UI or rely on
 the development branch of an unreleased client. Pin a released compatible
@@ -146,6 +152,8 @@ plugins from a cluster response or the current working directory.
 
 - [Textual workers](https://textual.textualize.io/guide/workers/)
 - [Textual app suspension](https://textual.textualize.io/api/app/#textual.app.App.suspend)
+- [Textual packaging with Hatch](https://textual.textualize.io/how-to/package-with-hatch/)
+- [uv build backends](https://docs.astral.sh/uv/concepts/build-backend/)
 - [Kubernetes API concepts](https://kubernetes.io/docs/reference/using-api/api-concepts/)
 - [kubernetes_asyncio](https://github.com/tomplus/kubernetes_asyncio)
 
