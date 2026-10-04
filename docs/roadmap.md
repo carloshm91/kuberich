@@ -16,12 +16,28 @@ or a placeholder screen.
 | v0.4.0 | Advanced operations: node shell, cordon/drain, ephemeral debugging, service benchmarks, policy/quota exploration |
 | v0.5.0 | Extended delivery: Windows, shell completion, OCI image and tested distribution recipes |
 | v1.0.0 | Qualified stability: supported API/terminal/platform matrix, compatibility contracts, migration tests, full capability audit |
-| Later: documentation website | Versioned MkDocs documentation on GitHub Pages, after the 0.1.0 product release |
+| Later: documentation website | Expanded, versioned MkDocs documentation after the 0.1.0 product release |
 
 Patch releases such as 0.0.2 and 0.1.1 repair released behavior as needed. They
 are created for actual fixes, not prefilled with speculative work. Feature
 milestones have no invented delivery dates. Scope changes require a documented
 issue and an updated roadmap.
+
+## Public launch preparation
+
+The repository and GitHub roadmap remain private until the maintainer explicitly
+approves the visibility change. Prepare a simple landing page and initial
+documentation before that decision. The landing page should explain the product
+and show its actual terminal interface; initial documentation should cover
+verified installation, a quick start, supported features, and known limitations.
+This launch material does not wait for the expanded documentation milestone.
+
+The proposed address structure is a root domain for the landing page and its
+`docs` subdomain for documentation, for example `kubetrol.com` and
+`docs.kubetrol.com`. These addresses are proposals, not ownership or hosting
+claims. The maintainer chooses the domain and approves any purchase, DNS change,
+hosting publication, or repository visibility change. There is no automatic
+publication deadline.
 
 ## Delivery policy
 

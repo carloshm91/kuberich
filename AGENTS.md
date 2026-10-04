@@ -17,8 +17,9 @@ implementation; do not claim to switch models without actual environment support
 - Keep unrelated experiments and their history out of public documentation,
   tickets, source, and commit messages.
 - Python 3.12+; initially test CPython 3.12, 3.13, and 3.14. Linux and macOS first.
-- Textual Web and a hosted backend are out of scope. A documentation website is
-  a later milestone, separate from the terminal product.
+- Textual Web and a hosted backend are out of scope. Prepare a simple landing
+  page and initial documentation before the public launch; the expanded,
+  versioned documentation website remains a separate later milestone.
 - Repository: carloshm91/kubetrol. SSH remote:
   git@github.com:carloshm91/kubetrol.git.
 - Use repository-local author email carloshm91@gmail.com for the maintainer's
@@ -27,6 +28,14 @@ implementation; do not claim to switch models without actual environment support
 
 ## Delivery workflow
 
+- Keep the repository and GitHub roadmap private until the maintainer explicitly
+  authorizes making them public. Open-source intent, a merged PR, or an estimated
+  launch date does not authorize a visibility change.
+- Ask before changing repository/project visibility, publishing a website,
+  creating a public distribution repository, or publishing package artifacts.
+  Prepare and verify the concrete result first, then request approval for the
+  publication step. Domain names are proposals until the maintainer chooses one;
+  do not purchase domains or change DNS without explicit authorization.
 - Notify the maintainer at each usable checkpoint in docs/first-preview.md, with
   the exact tested command and honest feature status. B01 is prioritized early.
 - Keep docs/capabilities.json and the pinned source inventory traceable to issues;
