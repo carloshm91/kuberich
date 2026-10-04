@@ -19,7 +19,7 @@ def test_help_describes_available_behavior(flag: str, capsys: pytest.CaptureFixt
     output = capsys.readouterr()
     assert "usage: kubetrol" in output.out
     assert "--version" in output.out
-    assert "Kubernetes connections are not available yet" in output.out
+    assert "namespace discovery is available" in output.out
     assert output.err == ""
 
 

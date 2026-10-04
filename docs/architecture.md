@@ -204,6 +204,32 @@ settings/policy. Read-only status survives hidden headers and input updates.
 Refresh can be validated by local diagnostics but explicit UI use fails until
 live synchronization exists. See the [current CLI contract](k9s-cli.md).
 
+## C01 session adapter decision
+
+`config/catalog.py` owns bounded read-only kubeconfig merge/provenance.
+`domain/connections.py` defines validated requests and safe state observations.
+`services/sessions.py` owns client replacement, generations and namespace scope;
+`adapters/kubernetes.py` owns explicit SDK configurations/private TLS material;
+`adapters/credentials.py` owns noninteractive bounded exec-token processes/cache.
+`ui/scopes.py` and the app render these contracts without SDK models.
+
+The pinned SDK's default loader can run helpers with unbounded sequential pipe
+reads, log raw helper errors, refresh/persist provider configuration and use
+process-global defaults. C01 constructs explicit configurations without those
+loaders. Its namespace adapter uses the SDK-created TLS connector and API-owned
+pool with bounded streaming reads, disabled redirects/decompression and explicit
+proxy configuration. It replaces the pool before requests to disable ambient
+netrc/proxy identity, using a narrow SDK `rest_client.pool_manager` boundary.
+Transport tests qualify this boundary and must be rerun on SDK upgrades.
+Generic exec tokens are implemented; interactive provider login and exec
+certificate rotation remain explicitly unavailable for C08 qualification.
+
+The UI owns its connection task chain. Context replacement cancels/awaits the
+previous task before opening the next client, rejects late observations and
+awaits final session cleanup on unmount. File preparation runs in an owned
+shielded thread task: cancellation waits for it before deleting TLS files.
+See [supported behavior and bounds](context-sessions.md).
+
 ## Sources
 
 - [Textual workers](https://textual.textualize.io/guide/workers/)

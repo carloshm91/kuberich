@@ -155,8 +155,12 @@ connection. F05 stage 1 adds audited option/alias tests, a reviewed help snapsho
 service-level policy negative controls, visibility/initial-command Pilot evidence,
 real PTY restoration and clean-installed launch contract checks. Reviewed help
 snapshots preserve argparse's native alias formatting on Python 3.12 and 3.13/3.14.
-The connection,
-refresh and effectful service integrations remain pending; a parsed flag is not
+C01 adds real loopback HTTP/TLS and synthetic exec-helper contract tests,
+responsive context/namespace Pilot selectors and owned client/process cleanup.
+Linux/Python 3.12 additionally requires disposable-kind namespace/TLS/client-auth
+verification and retains sanitized cluster evidence. The deterministic catalogue,
+connection-request and session-state modules join the critical 100% inventory.
+Provider qualification, refresh and effectful integrations remain pending; a parsed flag is not
 compatibility evidence. [Test isolation](security-primitives.md) describes the qualified
 fixture path and limitations. The README must
 never show an unmeasured coverage badge or imply that planned checks already run.

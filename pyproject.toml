@@ -23,6 +23,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
+    "aiohttp>=3.13.3,<4",
     "kubernetes-asyncio>=36.1.0,<37",
     "platformdirs>=4.12.3,<5",
     "pyyaml>=6.0.3,<7",
@@ -41,6 +42,7 @@ Changelog = "https://github.com/carloshm91/kubetrol/blob/main/CHANGELOG.md"
 [dependency-groups]
 dev = [
     "build>=1.6.1,<2",
+    "cryptography>=50.0.2,<51",
     "diff-cover>=10.6.0,<11",
     "mypy>=2.4.0,<3",
     "pytest>=9.1.1,<10",
@@ -113,4 +115,7 @@ critical_modules = [
     "src/kubetrol/config/launch.py",
     "src/kubetrol/services/access.py",
     "src/kubetrol/services/commands.py",
+    "src/kubetrol/config/catalog.py",
+    "src/kubetrol/domain/connections.py",
+    "src/kubetrol/services/sessions.py",
 ]

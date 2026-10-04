@@ -15,11 +15,12 @@
       ],
       "source": "cmd/root.go",
       "status": "planned",
-      "difference": "F05 stage 1 implements inspection commands, log/read-only/presentation options and initial help/quit, with explicit unavailable gates for unimplemented behavior. Connection, refresh, resource-command integrations and completion remain planned.",
+      "difference": "F05 stage 1 implements local inspection, policy, presentation and initial help/quit; C01 implements kubeconfig/context/namespace/timeout flags. Remaining connection overrides, refresh, resource-command integration and completion remain planned.",
       "partial_evidence": [
         "docs/k9s-cli.md",
         "tests/unit/test_launch_contract.py",
-        "tests/packaging/test_distribution.py"
+        "tests/packaging/test_distribution.py",
+        "docs/context-sessions.md"
       ]
     },
     {
@@ -32,7 +33,14 @@
       ],
       "source": "internal/client/config.go",
       "status": "planned",
-      "difference": ""
+      "difference": "C01 implements read-only kubeconfig merging, explicit per-context SDK sessions, context/namespace selection and timeout states. Cluster/user/credential/TLS CLI overrides remain F05/C08. See docs/context-sessions.md for tested behavior and limits.",
+      "partial_evidence": [
+        "docs/context-sessions.md",
+        "tests/contract/test_sessions.py",
+        "tests/contract/test_credentials.py",
+        "tests/ui/test_sessions.py",
+        "scripts/verify_contexts_kind.py"
+      ]
     },
     {
       "id": "AUTH02",
@@ -44,7 +52,14 @@
       ],
       "source": "internal/client/client.go",
       "status": "planned",
-      "difference": "SDK compatibility must be tested; upstream client-go support does not automatically transfer to Python."
+      "difference": "C01 qualifies static token/token-file, static embedded/file certificates and synthetic noninteractive exec-token contracts. EKS/AKS/GKE, interactive helpers, legacy providers and exec certificate rotation remain C06/C07/C08; no real-cloud compatibility claim.",
+      "partial_evidence": [
+        "docs/context-sessions.md",
+        "tests/contract/test_sessions.py",
+        "tests/contract/test_credentials.py",
+        "tests/ui/test_sessions.py",
+        "scripts/verify_contexts_kind.py"
+      ]
     },
     {
       "id": "AUTH03",
@@ -56,7 +71,14 @@
       ],
       "source": "cmd/root.go",
       "status": "planned",
-      "difference": ""
+      "difference": "C01 tests native kubeconfig TLS/CA/client certificates and request deadlines. Native proxies are explicit; proxy/provider qualification and CLI overrides/impersonation remain F05/C08/O04.",
+      "partial_evidence": [
+        "docs/context-sessions.md",
+        "tests/contract/test_sessions.py",
+        "tests/contract/test_credentials.py",
+        "tests/ui/test_sessions.py",
+        "scripts/verify_contexts_kind.py"
+      ]
     },
     {
       "id": "AUTH04",
@@ -68,7 +90,14 @@
       ],
       "source": "internal/view/context.go",
       "status": "planned",
-      "difference": "Ordinary context switching never rewrites kubeconfig; explicit local edits require preview/backup."
+      "difference": "C01 ordinary context/scope switching never rewrites kubeconfig. Persisted per-context view preferences and explicit rename/delete remain F03/M08.",
+      "partial_evidence": [
+        "docs/context-sessions.md",
+        "tests/contract/test_sessions.py",
+        "tests/contract/test_credentials.py",
+        "tests/ui/test_sessions.py",
+        "scripts/verify_contexts_kind.py"
+      ]
     },
     {
       "id": "CORE01",

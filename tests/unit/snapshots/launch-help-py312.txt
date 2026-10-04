@@ -1,9 +1,9 @@
-usage: kubetrol [-h] [--version] [--config CONFIG] [--log-file LOG_FILE] [--log-level LOG_LEVEL]
-                [--refresh REFRESH_SECONDS] [--readonly] [--write] [--command INITIAL_COMMAND]
-                [--headless] [--logoless] [--crumbsless] [--splashless] [--invert]
-                [--screen-dump-dir SCREEN_DUMP_DIR] [--kubeconfig KUBECONFIG] [--context CONTEXT]
-                [--cluster CLUSTER] [--user USER] [--namespace NAMESPACE] [--all-namespaces]
-                [--request-timeout REQUEST_TIMEOUT] [--as AS_USER] [--as-group AS_GROUP]
+usage: kubetrol [-h] [--version] [--config CONFIG] [--kubeconfig KUBECONFIG] [--context CONTEXT]
+                [--namespace NAMESPACE] [--all-namespaces] [--request-timeout REQUEST_TIMEOUT]
+                [--log-file LOG_FILE] [--log-level LOG_LEVEL] [--refresh REFRESH_SECONDS]
+                [--readonly] [--write] [--command INITIAL_COMMAND] [--headless] [--logoless]
+                [--crumbsless] [--splashless] [--invert] [--screen-dump-dir SCREEN_DUMP_DIR]
+                [--cluster CLUSTER] [--user USER] [--as AS_USER] [--as-group AS_GROUP]
                 [--insecure-skip-tls-verify] [--certificate-authority CERTIFICATE_AUTHORITY]
                 [--client-key CLIENT_KEY] [--client-certificate CLIENT_CERTIFICATE] [--token TOKEN]
                 {help,version,info,config} ...
@@ -21,6 +21,14 @@ options:
   -h, --help            show this help message and exit
   --version             show program's version number and exit
   --config CONFIG       Kubetrol preferences YAML (separate from kubeconfig)
+  --kubeconfig KUBECONFIG
+                        single kubeconfig file (otherwise KUBECONFIG or ~/.kube/config)
+  --context CONTEXT     context to connect (otherwise current-context)
+  --namespace NAMESPACE, -n NAMESPACE
+                        initial namespace (otherwise the context namespace)
+  --all-namespaces, -A  select all namespaces for this session
+  --request-timeout REQUEST_TIMEOUT
+                        API/helper timeout: 0.1-3600 seconds, or ms/s/m/h (default 10s)
   --log-file LOG_FILE, --logFile LOG_FILE
                         local diagnostic log path
   --log-level LOG_LEVEL, --logLevel LOG_LEVEL, -l LOG_LEVEL
@@ -40,26 +48,18 @@ Recognized options awaiting their owning feature (exit 4):
   --invert              unavailable: theme inversion (U01 #56)
   --screen-dump-dir SCREEN_DUMP_DIR
                         unavailable: screen exports (O06 #73)
-  --kubeconfig KUBECONFIG
-                        unavailable: Kubernetes sessions (C01 #20)
-  --context CONTEXT     unavailable: Kubernetes sessions (C01 #20)
-  --cluster CLUSTER     unavailable: Kubernetes sessions (C01 #20)
-  --user USER           unavailable: Kubernetes sessions (C01 #20)
-  --namespace NAMESPACE, -n NAMESPACE
-                        unavailable: namespace selection (C01 #20)
-  --all-namespaces, -A  unavailable: namespace selection (C01 #20)
-  --request-timeout REQUEST_TIMEOUT
-                        unavailable: API requests (C01 #20)
-  --as AS_USER          unavailable: impersonation transport (C01 #20 / C08 #47)
-  --as-group AS_GROUP   unavailable: impersonation transport (C01 #20 / C08 #47)
+  --cluster CLUSTER     unavailable: connection overrides (F05 #19 / C08 #47)
+  --user USER           unavailable: connection overrides (F05 #19 / C08 #47)
+  --as AS_USER          unavailable: impersonation transport (F05 #19 / C08 #47)
+  --as-group AS_GROUP   unavailable: impersonation transport (F05 #19 / C08 #47)
   --insecure-skip-tls-verify
-                        unavailable: TLS transport (C01 #20 / C08 #47)
+                        unavailable: TLS transport (F05 #19 / C08 #47)
   --certificate-authority CERTIFICATE_AUTHORITY
-                        unavailable: TLS transport (C01 #20 / C08 #47)
+                        unavailable: TLS transport (F05 #19 / C08 #47)
   --client-key CLIENT_KEY
-                        unavailable: TLS transport (C01 #20 / C08 #47)
+                        unavailable: TLS transport (F05 #19 / C08 #47)
   --client-certificate CLIENT_CERTIFICATE
-                        unavailable: TLS transport (C01 #20 / C08 #47)
-  --token TOKEN         unavailable: credential overrides (C01 #20 / C08 #47)
+                        unavailable: TLS transport (F05 #19 / C08 #47)
+  --token TOKEN         unavailable: credential overrides (F05 #19 / C08 #47)
 
-Terminal window preview: Kubernetes connections are not available yet.
+Context session preview: namespace discovery is available; resource views are upcoming.

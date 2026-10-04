@@ -19,33 +19,26 @@ PENDING_OPTIONS = (
     PendingOption(("--splashless",), "splashless", "startup splash (U01 #56)", boolean=True),
     PendingOption(("--invert",), "invert", "theme inversion (U01 #56)", boolean=True),
     PendingOption(("--screen-dump-dir",), "screen_dump_dir", "screen exports (O06 #73)"),
-    PendingOption(("--kubeconfig",), "kubeconfig", "Kubernetes sessions (C01 #20)"),
-    PendingOption(("--context",), "context", "Kubernetes sessions (C01 #20)"),
-    PendingOption(("--cluster",), "cluster", "Kubernetes sessions (C01 #20)"),
-    PendingOption(("--user",), "user", "Kubernetes sessions (C01 #20)"),
-    PendingOption(("--namespace", "-n"), "namespace", "namespace selection (C01 #20)"),
+    PendingOption(("--cluster",), "cluster", "connection overrides (F05 #19 / C08 #47)"),
+    PendingOption(("--user",), "user", "connection overrides (F05 #19 / C08 #47)"),
+    PendingOption(("--as",), "as_user", "impersonation transport (F05 #19 / C08 #47)"),
     PendingOption(
-        ("--all-namespaces", "-A"), "all_namespaces", "namespace selection (C01 #20)", boolean=True
-    ),
-    PendingOption(("--request-timeout",), "request_timeout", "API requests (C01 #20)"),
-    PendingOption(("--as",), "as_user", "impersonation transport (C01 #20 / C08 #47)"),
-    PendingOption(
-        ("--as-group",), "as_group", "impersonation transport (C01 #20 / C08 #47)", repeated=True
+        ("--as-group",), "as_group", "impersonation transport (F05 #19 / C08 #47)", repeated=True
     ),
     PendingOption(
         ("--insecure-skip-tls-verify",),
         "insecure",
-        "TLS transport (C01 #20 / C08 #47)",
+        "TLS transport (F05 #19 / C08 #47)",
         boolean=True,
     ),
     PendingOption(
-        ("--certificate-authority",), "certificate_authority", "TLS transport (C01 #20 / C08 #47)"
+        ("--certificate-authority",), "certificate_authority", "TLS transport (F05 #19 / C08 #47)"
     ),
-    PendingOption(("--client-key",), "client_key", "TLS transport (C01 #20 / C08 #47)"),
+    PendingOption(("--client-key",), "client_key", "TLS transport (F05 #19 / C08 #47)"),
     PendingOption(
-        ("--client-certificate",), "client_certificate", "TLS transport (C01 #20 / C08 #47)"
+        ("--client-certificate",), "client_certificate", "TLS transport (F05 #19 / C08 #47)"
     ),
-    PendingOption(("--token",), "token", "credential overrides (C01 #20 / C08 #47)"),
+    PendingOption(("--token",), "token", "credential overrides (F05 #19 / C08 #47)"),
 )
 
 

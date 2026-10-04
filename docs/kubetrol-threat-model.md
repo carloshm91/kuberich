@@ -10,9 +10,9 @@ application sandbox. See the [decision and upstream evidence](security-primitive
 The highest prospective risks are exposing Kubernetes credentials, acting on a
 different cluster/object than the operator selected, and giving unexpected local
 execution authority to configuration or plugins. Cluster text can also attack
-terminal integrity and availability. Current runtime behavior is a disconnected
-local UI with private diagnostics; Kubernetes transports, delegated commands,
-plugins and publishing workflows are planned. F04 implements presentation,
+terminal integrity and availability. Current runtime includes explicit context sessions, bounded namespace discovery
+and trusted noninteractive credential helpers, with private diagnostics. Delegated
+cluster commands, plugins and publishing workflows remain planned. F04 implements presentation,
 argument and target primitives plus test isolation. F05 stage 1 adds shared
 read-only command decisions and pre-I/O unavailable gates. Remaining risks require
 enforcement at the future adapters/services, not just reusable helpers.
@@ -48,12 +48,12 @@ deployment would require a new model and reconsideration of TM-004.
 
 | Component | Evidence and current status |
 | --- | --- |
-| Local CLI/UI | `cli.main`, `ui.app.KubetrolApp`, `ui.launch.run_terminal`; real disconnected terminal, no SDK loader/client |
+| Local CLI/UI | `cli.main`, `ui.app.KubetrolApp`, `ui.launch.run_terminal`; real terminal with C01 explicit context clients and namespace discovery; no ambient SDK loader |
 | Local preference files | `config.store.read_config`/`write_config`, `config.schema.Settings`; bounded schema and private atomic writes |
 | Diagnostics | `diagnostics.logging.diagnostic_logging`/`SanitizedFormatter`, `diagnostics.redaction.sanitize_text`; owned private bounded log files |
 | Shared security/domain helpers | `security.presentation.safe_text`, `security.arguments.freeze_arguments`, `domain.targets.ResourceTarget`; implemented, future cluster sinks/services must integrate them |
-| Launch/access decisions | `config.launch.require_available`, `services.access.AccessPolicy`, `services.commands.CommandService`; pre-I/O availability errors and shared CLI/UI read-only requests; actual API/process effects absent |
-| Kubernetes and process adapters | Planned in `docs/architecture.md`, C01/C04/S03/M01/U03; per-session client, kubectl/editor/plugins, lifecycle ownership |
+| Launch/access decisions | `config.launch.require_available`, `services.access.AccessPolicy`, `services.commands.CommandService`; pre-I/O availability errors and shared CLI/UI read-only requests; resource mutations/delegated tools absent; C01 authentication helpers and namespace reads are active |
+| Kubernetes and credential adapters | C01 `config/catalog.py`, `services/sessions.py`, `adapters/kubernetes.py`/`credentials.py`; explicit client, TLS and bounded exec-token lifecycle. Watches/delegated tools/plugins remain C04/S03/M01/U03 |
 | Build/CI/install | `.github/workflows/quality.yml`/`repository.yml`, `pyproject.toml`, `uv.lock`; candidate builds/tests exist, publishing/provenance are planned in `docs/releases.md` |
 
 ### Data flows and trust boundaries
@@ -62,11 +62,11 @@ deployment would require a new model and reconsideration of TM-004.
   CLI errors and F03 bounded YAML/schema validation. Files are operator controlled;
   mode 0600/atomic writes protect ordinary local confidentiality/integrity
   (`cli._Parser`, `config.store`, `config.schema`).
-- Future cluster → adapter → display/log sink: HTTPS API/watch/log data using
+- Cluster namespace response → adapter → display/status; future watches/logs → sinks: HTTPS API/watch/log data using
   explicit per-session credentials and verified TLS by design; API identity and
   RBAC do not make response text safe. `safe_text` provides bounded literal Rich
   text, redaction and inert controls; transport/queue limits remain C04/S02 work.
-- Operator kubeconfig → future credential helper: local parsing/subprocess,
+- Operator kubeconfig → configured credential helper: local parsing/subprocess,
   helper execution with user privileges. Trust is established by deliberate local
   config choice, not a confirmation on every credential refresh. Never import
   helpers from cluster data
@@ -145,7 +145,7 @@ and require different trust decisions (`docs/architecture.md`; `quality.yml`).
 ### Non-capabilities
 
 Browsing a cluster does not inherently give a workload author local file writes,
-plugin installation or cloud credential access. The current disconnected UI
+plugin installation or cloud credential access. The F04 disconnected baseline UI
 exposes no network listener/API ingress. A deliberately installed same-privilege
 plugin is not separated from user secrets by a claimed sandbox. Kubernetes RBAC
 and the local OS remain external authorities (`SECURITY.md`; `ui.app.compose`).
@@ -158,7 +158,7 @@ and the local OS remain external authorities (`SECURITY.md`; `ui.app.compose`).
 | Exceptions/diagnostic records | Runtime failure | Data → local sink | Current; type/locations without raw exception/source/locals | `SanitizedFormatter`, `KubetrolApp._handle_exception` |
 | Resource/log strings | Future API responses | Cluster → terminal | F04 helpers exist; API integration pending | `safe_text`; C04/S02/B04 |
 | Selection/action identifiers | Future UI actions | UI → service/API | Immutable snapshot exists; execution enforcement pending | `ResourceTarget`; S03/M01 |
-| Kubeconfig exec credentials | Future explicit config load | Local config → process | Trusted operator selection; never cluster supplied | `docs/architecture.md`; C01/C06/C07 |
+| Kubeconfig exec credentials | C01 selected local config | Local config → process | Trusted operator selection; never cluster supplied | `docs/architecture.md`; C01/C06/C07 |
 | Tool/plugin argv and output | Future explicit action | Config/data → process/terminal | No shell interpolation/automatic discovery; interactive TTY admits controls, captured UI output is sanitized | `freeze_arguments`; S03/U03 |
 | Test config loaders | Every test family | Test code → SDK/cluster | Traps and qualified escape hatch | `isolated_kubernetes`, `load_disposable_config` |
 | Dependency/workflow/artifact changes | PR, build, future install | Source/vendor → runnable code | Candidate checks exist; publishing/security audit pending | `uv.lock`, `quality.yml`; Q04/D04 |
@@ -192,18 +192,18 @@ and the local OS remain external authorities (`SECURITY.md`; `ui.app.compose`).
 ## Threat model table
 
 Priorities below describe residual risk and planned integration requirements,
-not claims of exploitable cluster features in the disconnected build.
+C01 has active namespace/authentication boundaries; planned mutation/log/plugin paths remain future exposure.
 
 | Threat ID | Threat source | Prerequisites | Threat action | Impact | Impacted assets | Existing controls (evidence) | Gaps | Recommended mitigations | Detection ideas | Likelihood | Impact severity | Priority |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | TM-001 | Workload/resource author | Future API/log view with unsafe sink, or operator-entered interactive session | Inject markup, ANSI/OSC or bidi text | Spoof display/link/clipboard | Terminal decisions | `safe_text`, `escape_controls`; actual Rich rendering tests | Future views must adopt helpers; direct interactive TTY admits controls | B04/S02/U03: literal Text for captured output; S03: document interactive trust and verify restoration | Hostile string UI/PTY regressions | medium once views exist | medium | medium |
 | TM-002 | Credential-bearing response or operator data | Sensitive data reaches a display/log/export sink | Leak labeled or opaque credentials | Cluster/cloud credential disclosure | Credentials/logs | `sanitize_text`, `SanitizedFormatter`; fatal UI traceback suppression | Regex cannot identify arbitrary secrets; raw SDK errors/export not implemented | C01/B04/A07: allowlisted errors, concealed Secret defaults, explicit reveal/export policy | Synthetic opaque/labeled secrets across errors and artifacts | medium during adapter expansion | high | high |
 | TM-003 | Timing/concurrent cluster changes | A pending future action and client/object change | Redirect action through mutable selection or name reuse | Unintended resource mutation | Cluster integrity | Frozen `SessionIdentity`/`ResourceTarget`, `require_current`; F05 shared command read-only policy | Local guards are not API atomicity/authorization; actual effects absent | C01/M01/S03: bind owned client, reject stale sessions, apply service guard before effects, UID/version preconditions | Delayed confirmations/context switches/object recreation and service-policy tests | medium once actions exist | high | high |
-| TM-004 | Malicious offered config/plugin | Operator trust mistake or automatic discovery/import | Execute unexpected helper/plugin | Local code access with user privileges | Credentials/host files | No current execution path; explicit local trust policy in `SECURITY.md` | Future helper/plugin integration; no sandbox assumed | C01/U03: trusted explicit config, no cluster/CWD discovery, deliberate plugin invocation and cleanup | Tests that cluster data never selects executable helpers/plugins; configured auth-helper refresh remains allowed | low with explicit trust; medium if autoimported | high | high |
+| TM-004 | Malicious offered config/plugin | Operator trust mistake or automatic discovery/import | Execute unexpected helper/plugin | Local code access with user privileges | Credentials/host files | C01 runs only helpers configured in trusted local kubeconfig, with bounded output/deadlines and owned process cleanup; local trust policy in `SECURITY.md` | Provider interaction/certificate rotation and ordinary plugins remain pending; no sandbox assumed | C01/U03: trusted explicit config, no cluster/CWD discovery, deliberate plugin invocation and cleanup | Tests that cluster data never selects executable helpers/plugins; configured auth-helper refresh remains allowed | low with explicit trust; medium if autoimported | high | high |
 | TM-005 | Resource/config author | Future command builder treats data as syntax | Shell or option injection | Wrong operation/local execution | Host/cluster integrity | `freeze_arguments`, target control/leading-option checks | Builders/options/process lifecycle absent | S03: fixed argv builder, explicit effective scope, shell-free APIs and tool-specific option handling | Adversarial argv and PTY lifecycle tests | low with fixed builders; medium without | high | high |
 | TM-006 | Resource/log author; malformed local file | Future stream accepts unbounded data, or parser limit bypass | Exhaust parsing, queue, render or disk capacity | UI stall/storage exhaustion | Availability | F03 YAML limits/log rotation; F04 display bounds | No live stream queues yet; config file reads happen before UI | C04/S02/Q02: payload/queue/buffer bounds, backpressure and cancellation tests | Soak memory/latency and malformed input fixtures | medium for busy clusters | medium | medium |
 | TM-007 | Dependency/action/publishing compromise | Trusted build or release path compromised | Replace runnable package/artifact | Local execution on installation | Release integrity/credentials | Lockfile, action SHA pins, read-only CI, clean installs (`quality.yml`) | No implemented SBOM/audit/provenance/publishing; private plan lacks branch enforcement | Q04/D04: security/license checks, attestation, approved exact-byte publication and protected main | Artifact digest/provenance comparison; install qualification | low but material | high | high |
-| TM-008 | Test fallback or unsafe fixture | Test loader reaches ambient or external credentials | Authenticate outside owned fixture | Developer-cluster access | Developer cluster/credentials | `isolated_kubernetes`, qualified bounded fixture loader; refusal and real SDK config tests | Direct HTTP/subprocess/pre-captured aliases need review; kind/helper harness pending | C01/Q01: own cluster cleanup; explicit helper qualification; preserve traps | Negative fixture controls and ambient loader failure | low for trapped loaders | high | medium |
+| TM-008 | Test fallback or unsafe fixture | Test loader reaches ambient or external credentials | Authenticate outside owned fixture | Developer-cluster access | Developer cluster/credentials | `isolated_kubernetes`, qualified bounded fixture loader; refusal and real SDK config tests | Direct HTTP/subprocess/pre-captured aliases need review; C01 kind/helper harness active; additional qualification pending | C01/Q01: own cluster cleanup; explicit helper qualification; preserve traps | Negative fixture controls and ambient loader failure | low for trapped loaders | high | medium |
 
 ## Criticality calibration
 
@@ -239,3 +239,28 @@ M01 writes, U03 plugins and Q04/D04 publishing. Keep evidence tied to implemente
 symbols and measured checks. Planned controls are conditional acceptance work,
 not completed security guarantees. All fixture credentials are synthetic; no
 real kubeconfig or cluster was consulted for this model.
+
+## C01 boundary review, 2026-10-04
+
+C01 adds network and local authentication execution to the F04/F05 baseline.
+Catalogue reads preserve first-file precedence and source-relative credentials;
+no global SDK config or caller kubeconfig is rewritten. API reads are deadline/
+size/page bounded, redirects/decompression disabled, raw error/helper values
+excluded from logs, and TLS verified unless explicitly configured otherwise.
+An explicit insecure transport remains visibly marked. Client replacement
+awaits old requests/helpers and uses new identity; scope changes advance generation.
+Private TLS material is deleted after client closure. File-reading cancellation
+waits for the owned thread before cleanup; helper cancellation kills/reaps the
+owned process group, including cancellation during creation.
+
+TM-002 now has active API/helper sinks, verified with opaque synthetic error data.
+TM-003 session binding is active for namespace reads, but resource effects and API
+UID preconditions remain pending. TM-004 local helper execution is intentional
+user-privileged code, not a sandbox; untrusted kubeconfig remains unsafe. TM-008
+adds owned-file/explicit-loopback/helper-working-directory guards and an isolated
+kind harness. Test authors/direct HTTP/pre-captured aliases still require review.
+
+Residual gaps remain explicit: no exec-certificate rotation or stdin-driven
+provider login; cloud/provider/proxy qualification remains C06/C07/C08. Raw
+resource/log/plugin sinks, effectful policy enforcement and publishing trust keep
+their existing owners. See [C01 limits and evidence](context-sessions.md).

@@ -19,20 +19,13 @@ from kubetrol.ui.presentation import Presentation
         (["--splashless"], "--splashless", "U01 #56"),
         (["--invert"], "--invert", "U01 #56"),
         (["--screen-dump-dir", "fixture"], "--screen-dump-dir", "O06 #73"),
-        (["--kubeconfig", "fixture"], "--kubeconfig", "C01 #20"),
-        (["--context", "fixture"], "--context", "C01 #20"),
-        (["--cluster", "fixture"], "--cluster", "C01 #20"),
-        (["--user", "fixture"], "--user", "C01 #20"),
-        (["--namespace", "fixture"], "--namespace", "C01 #20"),
-        (["-n", "fixture"], "--namespace", "C01 #20"),
-        (["--all-namespaces"], "--all-namespaces", "C01 #20"),
-        (["-A"], "--all-namespaces", "C01 #20"),
-        (["--request-timeout", "5s"], "--request-timeout", "C01 #20"),
-        (["--as", "fixture"], "--as", "C01 #20"),
-        (["--insecure-skip-tls-verify"], "--insecure-skip-tls-verify", "C01 #20"),
-        (["--certificate-authority", "fixture"], "--certificate-authority", "C01 #20"),
-        (["--client-key", "fixture", "--client-certificate", "fixture"], "--client-key", "C01 #20"),
-        (["--token", "opaque-secret"], "--token", "C01 #20"),
+        (["--cluster", "fixture"], "--cluster", "F05 #19"),
+        (["--user", "fixture"], "--user", "F05 #19"),
+        (["--as", "fixture"], "--as", "F05 #19"),
+        (["--insecure-skip-tls-verify"], "--insecure-skip-tls-verify", "F05 #19"),
+        (["--certificate-authority", "fixture"], "--certificate-authority", "F05 #19"),
+        (["--client-key", "fixture", "--client-certificate", "fixture"], "--client-key", "F05 #19"),
+        (["--token", "opaque-secret"], "--token", "F05 #19"),
     ],
 )
 def test_pending_flags_name_the_missing_behavior_without_any_io(
@@ -63,7 +56,7 @@ def test_pending_identity_options_do_not_read_selected_files_even_for_info(
     kubeconfig = tmp_path / "kubeconfig"
     contents = "users: [{token: opaque-secret}]\n"
     kubeconfig.write_text(contents)
-    assert cli.main(["--kubeconfig", str(kubeconfig), "info"]) == 4
+    assert cli.main(["--kubeconfig", str(kubeconfig), "info"]) == 2
     assert kubeconfig.read_text() == contents
     assert "opaque-secret" not in capsys.readouterr().err
     assert cli.main(["--certificate-authority", str(tmp_path / "missing")]) == 4
@@ -327,3 +320,64 @@ def test_launch_receives_effective_policy_presentation_and_initial_command(
     assert settings.read_only
     assert presentation == Presentation(True, True, True)
     assert initial is (Command.HELP if command == "help" else Command.QUIT)
+
+
+@pytest.mark.parametrize(
+    "arguments",
+    [
+        ["--context", "chosen"],
+        ["--kubeconfig", "owned"],
+        ["-n", "team"],
+        ["-A"],
+        ["--request-timeout", "2s"],
+    ],
+)
+@pytest.mark.parametrize("subcommand", [["info"], ["config", "check"], ["help"]])
+def test_connection_flags_never_load_credentials_in_inspection(
+    arguments, subcommand, monkeypatch, capsys
+):
+    monkeypatch.setattr(
+        cli, "read_config", lambda *args, **kwargs: pytest.fail("No preference I/O before refusal")
+    )
+    assert cli.main([*arguments, *subcommand]) == 2
+    assert "chosen" not in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "arguments", [["--request-timeout", "0"], ["--request-timeout", "nan"], ["-n", "INVALID"]]
+)
+def test_invalid_connection_values_are_owned_errors_before_any_io(arguments, monkeypatch, capsys):
+    monkeypatch.setattr(
+        cli,
+        "read_config",
+        lambda *args, **kwargs: pytest.fail("Invalid connection reached preferences"),
+    )
+    assert cli.main(arguments) == 2
+    assert capsys.readouterr().out == ""
+
+
+def test_launch_passes_context_scope_and_timeout_without_loading_credentials(monkeypatch):
+    captured = []
+    monkeypatch.setattr(
+        cli, "run_terminal", lambda *args, **kwargs: captured.append(kwargs["connection"])
+    )
+    assert (
+        cli.main(
+            [
+                "--kubeconfig",
+                "owned",
+                "--context",
+                "CasePreserved",
+                "-n",
+                "team",
+                "--request-timeout",
+                "1500ms",
+            ]
+        )
+        == 0
+    )
+    request = captured[0]
+    assert request.context == "CasePreserved" and request.namespace == "team"
+    assert request.kubeconfig == "owned" and request.timeout == 1.5
+    assert cli.main(["-A"]) == 0
+    assert captured[1].all_namespaces

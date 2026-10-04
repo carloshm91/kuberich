@@ -2,13 +2,14 @@
 
 Run `uv run kubetrol` or `uv run python -m kubetrol` in an interactive terminal.
 The current development build opens the workspace directly, without a splash
-delay. It shows the selected context and namespace as `—`, the connection as
-`Disconnected`, and an empty resource table. Startup does not load kubeconfig,
-run credential helpers or connect to Kubernetes.
+delay. It loads a local kubeconfig catalogue before the UI, then authenticates and
+discovers namespaces in an owned background session. Without a selected context
+it stays disconnected. Pod/resource rows remain empty: those views are upcoming.
+See [context sessions](context-sessions.md) for flags, credentials, states and bounds.
 
 The workspace has a resource region, filter and command inputs, status and
-available-key hints. This is the first UI checkpoint; context selection, live
-resources, details, logs, shell and resource commands are upcoming tasks.
+available-key hints. Context/namespace selectors are scrollable and maintain
+literal names. Live resources, details, logs and shell are subsequent tasks.
 
 ## Controls
 
@@ -17,21 +18,24 @@ resources, details, logs, shell and resource commands are upcoming tasks.
 | `/` outside an input | Focus the filter |
 | `:` outside an input | Focus the command input |
 | `Enter` in the filter | Keep the filter text and return to the table |
-| `Enter` in the command | Submit `help` or `quit`; aliases `?`, `q` and `exit` also work |
+| `Enter` in the command | Submit help/quit or `ctx [NAME]` / `ns [NAME or *]` |
+| F2 / F3 | Choose context / namespace |
+| F4 | Retry the selected connection |
+| F5 | Read the full connection message in a scrollable dialog |
 | `?` outside an input, or F1 anywhere | Open scrollable keyboard help |
 | PageUp/PageDown, Home/End in help | Scroll its body using the keyboard |
 | `Esc` in help | Close help and restore the previous focus |
 | `Esc` in an input | Cancel command text and return to the table; retain filter text |
-| `Esc` in the table | Clear the filter and reset the disconnected status |
+| `Esc` in the table | Clear the filter and restore the current connection status |
 | `Tab` / `Shift+Tab` | Move keyboard focus |
 | Click | Focus an input or select a table row when rows exist |
 | Left/right arrows in the table | Scroll columns horizontally in a narrow window |
 | `q` outside inputs | Quit |
 | Ctrl+Q or Ctrl+C | Quit, including while editing an input or reading help |
 
-An active filter reports that no resources are available while disconnected.
-Unknown commands show a concise unavailable message. Neither input contacts a
-cluster. Both inputs are limited to 256 characters and support Unicode text
+An active filter reports that resource views are upcoming. Context commands
+connect explicitly; namespace commands record scope. Unknown commands show a
+concise unavailable message. Both inputs are limited to 256 characters and support Unicode text
 and terminal paste. Typing `q`, `/`, `:` or `?` inside an input inserts text;
 F1 remains available for help.
 
