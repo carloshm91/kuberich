@@ -4,8 +4,9 @@ Reviewed 2026-10-04. Reference: [K9s v0.51.0](https://github.com/derailed/k9s/re
 commit `558caafe7ba067467de46b320cc22ef11fef9c34`.
 
 **Complete product capability rows remain planned.** Local CLI/configuration,
-the disconnected terminal preview, F04 security helpers and F05 launch checkpoint have implementation
-evidence, but do not establish a complete capability family's K9s parity.
+the disconnected terminal preview, F04 security helpers and F05 launch checkpoint
+have implementation evidence, but do not establish a complete capability family's
+K9s parity.
 
 The goal is complete functional coverage of the public reference, with every
 discovered capability assigned to implementation and verification work. A source

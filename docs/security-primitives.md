@@ -118,6 +118,12 @@ to each write. Otherwise a resource could change between checking and using it.
 Confirmation, conflict handling and uncertain write outcomes remain those
 services' responsibility. Kubernetes RBAC remains the authorization boundary.
 
+F05 stage 1 implements `services.access.AccessPolicy` and `services.commands`
+as immutable shared CLI/UI decisions. Read-only command requests are refused
+independently of shortcuts, and unknown typed actions fail closed. Actual
+Kubernetes/process effects are absent: S03/M01 must invoke this guard before their
+adapters and test the effect boundary. See the [launch contract](k9s-cli.md).
+
 ## Process arguments
 
 `security.arguments.freeze_arguments` copies an explicit sequence into a tuple.
@@ -133,8 +139,10 @@ a shell. Bind flag values in forms such as `--context=value`; use the tool's
 supported option terminator for positional values where appropriate. Avoid
 implicit environment/current-directory context fallback. See Python's
 [subprocess security contract](https://docs.python.org/3/library/subprocess.html#security-considerations).
-PTY handoff, subprocess cleanup, cancellation and read-only classification are
-future integration work; these pure helpers do not qualify those behaviors.
+PTY handoff, subprocess cleanup, cancellation and applying read-only policy before
+process effects remain future integration work; pure argv helpers do not qualify
+those behaviors. F05's shared command classification is not proof of subprocess
+enforcement for operations that do not exist yet.
 
 ## Preventing accidental test-cluster access
 

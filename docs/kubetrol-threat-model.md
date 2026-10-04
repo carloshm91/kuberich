@@ -13,12 +13,14 @@ execution authority to configuration or plugins. Cluster text can also attack
 terminal integrity and availability. Current runtime behavior is a disconnected
 local UI with private diagnostics; Kubernetes transports, delegated commands,
 plugins and publishing workflows are planned. F04 implements presentation,
-argument and target primitives plus test isolation. Remaining risks require
+argument and target primitives plus test isolation. F05 stage 1 adds shared
+read-only command decisions and pre-I/O unavailable gates. Remaining risks require
 enforcement at the future adapters/services, not just reusable helpers.
 
 ## Scope and assumptions
 
-- Runtime: `src/kubetrol` CLI, preferences, diagnostics, UI and F04 helpers.
+- Runtime: `src/kubetrol` CLI, preferences, diagnostics, UI, F04 helpers and F05
+  local launch/access services.
 - Development: `tests`, `scripts`, `.github/workflows`, `pyproject.toml`, `uv.lock`
   and the planned release contract in `docs/releases.md` are modeled separately.
 - Deployment is a local Linux/macOS terminal, including a terminal reached over
@@ -50,6 +52,7 @@ deployment would require a new model and reconsideration of TM-004.
 | Local preference files | `config.store.read_config`/`write_config`, `config.schema.Settings`; bounded schema and private atomic writes |
 | Diagnostics | `diagnostics.logging.diagnostic_logging`/`SanitizedFormatter`, `diagnostics.redaction.sanitize_text`; owned private bounded log files |
 | Shared security/domain helpers | `security.presentation.safe_text`, `security.arguments.freeze_arguments`, `domain.targets.ResourceTarget`; implemented, future cluster sinks/services must integrate them |
+| Launch/access decisions | `config.launch.require_available`, `services.access.AccessPolicy`, `services.commands.CommandService`; pre-I/O availability errors and shared CLI/UI read-only requests; actual API/process effects absent |
 | Kubernetes and process adapters | Planned in `docs/architecture.md`, C01/C04/S03/M01/U03; per-session client, kubectl/editor/plugins, lifecycle ownership |
 | Build/CI/install | `.github/workflows/quality.yml`/`repository.yml`, `pyproject.toml`, `uv.lock`; candidate builds/tests exist, publishing/provenance are planned in `docs/releases.md` |
 
@@ -195,7 +198,7 @@ not claims of exploitable cluster features in the disconnected build.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | TM-001 | Workload/resource author | Future API/log view with unsafe sink, or operator-entered interactive session | Inject markup, ANSI/OSC or bidi text | Spoof display/link/clipboard | Terminal decisions | `safe_text`, `escape_controls`; actual Rich rendering tests | Future views must adopt helpers; direct interactive TTY admits controls | B04/S02/U03: literal Text for captured output; S03: document interactive trust and verify restoration | Hostile string UI/PTY regressions | medium once views exist | medium | medium |
 | TM-002 | Credential-bearing response or operator data | Sensitive data reaches a display/log/export sink | Leak labeled or opaque credentials | Cluster/cloud credential disclosure | Credentials/logs | `sanitize_text`, `SanitizedFormatter`; fatal UI traceback suppression | Regex cannot identify arbitrary secrets; raw SDK errors/export not implemented | C01/B04/A07: allowlisted errors, concealed Secret defaults, explicit reveal/export policy | Synthetic opaque/labeled secrets across errors and artifacts | medium during adapter expansion | high | high |
-| TM-003 | Timing/concurrent cluster changes | A pending future action and client/object change | Redirect action through mutable selection or name reuse | Unintended resource mutation | Cluster integrity | Frozen `SessionIdentity`/`ResourceTarget`, `require_current` | Local guard is not API atomicity/authorization | C01/M01/S03: bind owned client, reject stale sessions, read-only gates, UID/version preconditions | Delayed confirmations/context switches/object recreation tests | medium once actions exist | high | high |
+| TM-003 | Timing/concurrent cluster changes | A pending future action and client/object change | Redirect action through mutable selection or name reuse | Unintended resource mutation | Cluster integrity | Frozen `SessionIdentity`/`ResourceTarget`, `require_current`; F05 shared command read-only policy | Local guards are not API atomicity/authorization; actual effects absent | C01/M01/S03: bind owned client, reject stale sessions, apply service guard before effects, UID/version preconditions | Delayed confirmations/context switches/object recreation and service-policy tests | medium once actions exist | high | high |
 | TM-004 | Malicious offered config/plugin | Operator trust mistake or automatic discovery/import | Execute unexpected helper/plugin | Local code access with user privileges | Credentials/host files | No current execution path; explicit local trust policy in `SECURITY.md` | Future helper/plugin integration; no sandbox assumed | C01/U03: trusted explicit config, no cluster/CWD discovery, deliberate plugin invocation and cleanup | Tests that cluster data never selects executable helpers/plugins; configured auth-helper refresh remains allowed | low with explicit trust; medium if autoimported | high | high |
 | TM-005 | Resource/config author | Future command builder treats data as syntax | Shell or option injection | Wrong operation/local execution | Host/cluster integrity | `freeze_arguments`, target control/leading-option checks | Builders/options/process lifecycle absent | S03: fixed argv builder, explicit effective scope, shell-free APIs and tool-specific option handling | Adversarial argv and PTY lifecycle tests | low with fixed builders; medium without | high | high |
 | TM-006 | Resource/log author; malformed local file | Future stream accepts unbounded data, or parser limit bypass | Exhaust parsing, queue, render or disk capacity | UI stall/storage exhaustion | Availability | F03 YAML limits/log rotation; F04 display bounds | No live stream queues yet; config file reads happen before UI | C04/S02/Q02: payload/queue/buffer bounds, backpressure and cancellation tests | Soak memory/latency and malformed input fixtures | medium for busy clusters | medium | medium |
@@ -223,7 +226,7 @@ unimplemented service/transport behavior. No current threat is ranked critical.
 | Path | Why it matters | Related Threat IDs |
 | --- | --- | --- |
 | `src/kubetrol/security`, `src/kubetrol/diagnostics` | Display controls, limits, credential policy and error sinks | TM-001, TM-002, TM-005, TM-006 |
-| `src/kubetrol/domain/targets.py` and future services | Context/client/UID capture and execution enforcement | TM-003, TM-005 |
+| `src/kubetrol/domain/targets.py`, `src/kubetrol/services` and future adapters | Context/client/UID capture, shared policy and future execution enforcement | TM-003, TM-005 |
 | `src/kubetrol/config`, future Kubernetes/process adapters | Trusted configuration, TLS/auth, argv and lifecycle | TM-002, TM-004, TM-005, TM-006 |
 | `src/kubetrol/ui/app.py` and future resource/log views | Raw output, exceptions and input/selection ownership | TM-001, TM-002, TM-003, TM-006 |
 | `tests/conftest.py`, `tests/support/clusters.py` | Ambient credential traps and fixture escape hatch | TM-008 |
