@@ -15,7 +15,12 @@
       ],
       "source": "cmd/root.go",
       "status": "planned",
-      "difference": "Complete flag mapping is in k9s-cli.md; completion ships later."
+      "difference": "F05 stage 1 implements inspection commands, log/read-only/presentation options and initial help/quit, with explicit unavailable gates for unimplemented behavior. Connection, refresh, resource-command integrations and completion remain planned.",
+      "partial_evidence": [
+        "docs/k9s-cli.md",
+        "tests/unit/test_launch_contract.py",
+        "tests/packaging/test_distribution.py"
+      ]
     },
     {
       "id": "AUTH01",
@@ -167,10 +172,10 @@
       ],
       "source": "internal/view/help.go",
       "status": "planned",
-      "difference": "B01 implements scrollable help, available-key hints, a scope/connection header and normal/error terminal restoration. Visibility flags, breadcrumbs and extended navigation remain planned.",
+      "difference": "B01 implements help/key hints and normal/error terminal restoration. F05 stage 1 adds header/logo/scope visibility and initial help/quit; actual view breadcrumbs and extended navigation remain planned.",
       "partial_evidence": [
         "docs/terminal-preview.md",
-        "tests/ui/test_app.py",
+        "tests/ui/test_launch_options.py",
         "tests/terminal/test_shell.py",
         "tests/packaging/test_distribution.py"
       ]
@@ -379,7 +384,13 @@
       ],
       "source": "internal/view/actions.go",
       "status": "planned",
-      "difference": "F04 implements immutable client/UID targets and safe presentation/argv helpers; service integration and read-only enforcement remain planned. Read-only conservatively blocks shell/attach/unclassified plugins; it is not an RBAC security boundary."
+      "difference": "F04 implements immutable client/UID targets and safe text/argv helpers. F05 stage 1 applies a shared immutable read-only command policy to CLI/UI; actual exec/attach/plugin/mutation service integration and RBAC evidence remain planned. Application read-only is not a security boundary.",
+      "partial_evidence": [
+        "docs/k9s-cli.md",
+        "tests/unit/test_access_policy.py",
+        "tests/unit/test_launch_contract.py",
+        "tests/ui/test_launch_options.py"
+      ]
     },
     {
       "id": "OPS02",

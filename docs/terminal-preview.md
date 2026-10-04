@@ -42,11 +42,21 @@ context and namespace indicators stack vertically; below 16 rows, secondary
 preview copy is hidden to preserve the table and controls. Help has its own
 scrollable body and accessible Back button. Smaller sizes are not qualified.
 
+`--headless` hides the application header, `--logoless` hides its brand, and
+`--crumbsless` hides the context/namespace scope bar. These invocation-only flags
+preserve filter/command inputs, status and key hints through resize. Initial
+`--command help` (or `-c help`) opens the help dialog; `--command quit` exits
+cleanly. Other initial commands return unavailable until resource routing ships.
+
 The configured `theme` selects a built-in Textual theme, such as `textual-dark`,
 `textual-light` or `nord`. An unregistered theme fails safely with exit 2 before
 opening the UI. `NO_COLOR` selects the framework's monochrome mode. The
-`read_only` preference appears in the header; resource mutations do not exist
-in this preview. Refresh settings will be consumed by the cluster services.
+`read_only` preference, overridden by `--readonly` or `--write`, appears in the
+header and at the start of the status. Shared command decisions refuse mutation,
+shell, attach and unclassified plugins in read-only mode. These operations are
+unavailable in write mode too: this preview has no cluster effects. Actual future
+services must use the guard before any effect. Explicit launch refresh is
+unavailable; stored refresh preferences await the cluster services.
 See [preferences](configuration.md) for file and environment configuration.
 
 ## Exit and diagnostics
@@ -62,7 +72,8 @@ Launching the UI with redirected stdin or stdout fails immediately with exit 2
 and an interactive-terminal hint. `info`, `config check`, help and version remain
 usable without a terminal. No Kubernetes connection is inferred from TTY access.
 
-Pilot tests cover navigation, mouse focus/selection, resize, input, help, themes
+Pilot tests cover launch visibility/initial commands, shared read-only guards,
+navigation, mouse focus/selection, resize, input, help, themes
 and error cleanup. Two checked-in geometry snapshots guard normal/compact
 layouts; tests export actual workspace/help SVGs as CI artifacts. Real PTY tests
 exercise quit, command bursts, Unicode paste, resize and failure restoration,

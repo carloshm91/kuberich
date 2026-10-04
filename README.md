@@ -18,6 +18,9 @@ It currently opens a real terminal workspace with context/namespace indicators,
 an empty resource table, filter and command inputs, keyboard/mouse navigation,
 help, themes and responsive layouts. It also provides `--help`, `--version`, safe
 local `info`, preference initialization/validation and private diagnostic logs.
+Launch options include `--readonly`/`--write`, header/logo/scope visibility and
+initial help/quit commands. All audited options are recognized; connection,
+authentication and later-feature requests report their unavailable owning task.
 Kubernetes connections and live resources are upcoming.
 
 The first release, **0.0.1**, will provide a usable resource browser, live pod
@@ -34,6 +37,7 @@ With [uv](https://docs.astral.sh/uv/getting-started/installation/) and Python
 uv sync --locked --group dev
 uv run kubetrol --help
 uv run kubetrol --version
+uv run kubetrol version --short
 uv run kubetrol info
 uv run kubetrol config check
 uv run kubetrol
@@ -42,6 +46,9 @@ uv run kubetrol
 The last command opens the terminal window in an interactive terminal. Press
 `?` for help, `Esc` to return, and `q` outside an input to quit; Ctrl+Q quits from
 anywhere. It does not require a kubeconfig or contact a cluster.
+Try `uv run kubetrol --readonly --headless --command help` to start with help
+and a compact header. Read-only command decisions use a shared service guard;
+actual cluster operations are not implemented yet.
 `uv run python -m kubetrol` is also supported.
 `info` and `config check` create no files. `config init` optionally creates default
 preferences without overwriting an existing file. See

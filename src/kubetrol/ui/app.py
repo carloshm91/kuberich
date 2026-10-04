@@ -17,6 +17,9 @@ from textual.widgets import Button, DataTable, Footer, Input, Static
 
 from kubetrol.config.schema import Settings
 from kubetrol.errors import AppError
+from kubetrol.services.access import AccessPolicy
+from kubetrol.services.commands import Command, CommandService
+from kubetrol.ui.presentation import DEFAULT_PRESENTATION, Presentation
 
 DISCONNECTED_STATUS = "Disconnected · No resource data"
 
@@ -71,15 +74,25 @@ class KubetrolApp(App[None]):
         Binding("ctrl+c", "quit", "Quit", show=False, priority=True),
     ]
 
-    def __init__(self, settings: Settings, logger: logging.Logger) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        logger: logging.Logger,
+        *,
+        presentation: Presentation = DEFAULT_PRESENTATION,
+        initial_command: Command = Command.EMPTY,
+    ) -> None:
         super().__init__()
         self.title = "Kubetrol"
         self.sub_title = "Local preview"
         self._diagnostic_logger = logger
+        self._presentation = presentation
+        self._initial_command = initial_command
+        self.commands = CommandService(AccessPolicy(settings.read_only))
         if settings.theme not in self.available_themes:
             raise AppError("Selected theme is unavailable; choose a built-in Textual theme.")
         self.theme = settings.theme
-        self._mode = "Read-only preference" if settings.read_only else "Local preview"
+        self._mode = "Read-only" if settings.read_only else "Local preview"
         self.resources = DataTable[Text](id="resources", cursor_type="row", zebra_stripes=True)
         self.filter_input = Input(
             placeholder="Filter resources", id="filter", compact=True, max_length=256
@@ -88,6 +101,10 @@ class KubetrolApp(App[None]):
             placeholder="help / quit", id="command", compact=True, max_length=256
         )
         self.status = Static(DISCONNECTED_STATUS, id="status", markup=False)
+
+    def _set_status(self, message: str) -> None:
+        prefix = "Read-only · " if self.commands.policy.read_only else ""
+        self.status.update(prefix + message)
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="app-header"):
@@ -121,11 +138,16 @@ class KubetrolApp(App[None]):
         yield Footer()
 
     def on_mount(self) -> None:
+        self.query_one("#app-header").display = not self._presentation.headless
+        self.query_one("#brand").display = not self._presentation.logoless
+        self.query_one("#scope-bar").display = not self._presentation.crumbsless
         self.resources.add_columns("NAMESPACE", "NAME", "READY", "STATUS", "AGE")
         self.query_one("#resource-view", Vertical).border_title = "Resources · no connection"
         self.screen.set_class(self.size.width < 70, "compact")
         self.screen.set_class(self.size.height < 16, "short")
         self.set_focus(self.resources)
+        self._set_status(DISCONNECTED_STATUS)
+        self._apply_command(self._initial_command)
 
     def on_resize(self, event: Resize) -> None:
         self.screen_stack[0].set_class(event.size.width < 70, "compact")
@@ -155,11 +177,11 @@ class KubetrolApp(App[None]):
             self.set_focus(self.resources)
         else:
             self.filter_input.value = ""
-            self.status.update(DISCONNECTED_STATUS)
+            self._set_status(DISCONNECTED_STATUS)
 
     @on(Input.Changed, "#filter")
     def filter_changed(self, event: Input.Changed) -> None:
-        self.status.update(
+        self._set_status(
             "Filter active · No resources while disconnected"
             if event.value
             else DISCONNECTED_STATUS
@@ -171,17 +193,24 @@ class KubetrolApp(App[None]):
 
     @on(Input.Submitted, "#command")
     def command_submitted(self, event: Input.Submitted) -> None:
-        command = event.value.strip().removeprefix(":").lower()
         self.command_input.value = ""
         self.set_focus(self.resources)
-        if command in {"help", "?"}:
+        try:
+            command = self.commands.resolve(event.value)
+        except AppError as error:
+            self._set_status(str(error))
+            return
+        self._apply_command(command)
+
+    def _apply_command(self, command: Command) -> None:
+        if command is Command.HELP:
             self.action_show_help()
-        elif command in {"quit", "q", "exit"}:
+        elif command is Command.QUIT:
             self.exit()
-        elif command:
-            self.status.update("Command unavailable in this preview. Use help or quit.")
+        elif command is Command.UNAVAILABLE:
+            self._set_status("Command unavailable in this preview. Use help or quit.")
         else:
-            self.status.update(DISCONNECTED_STATUS)
+            self._set_status(DISCONNECTED_STATUS)
 
     def _handle_exception(self, error: Exception) -> None:
         """Narrow Textual 8.x boundary: log safely while preserving its cleanup/testing."""

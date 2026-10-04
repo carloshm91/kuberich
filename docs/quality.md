@@ -20,7 +20,8 @@ or reliable installation.
 
 The current critical modules are the CLI/module entry points, preference schema
 validation/precedence, diagnostic redaction, control escaping, literal text
-presentation, argument validation/capture, and client/UID target identity checks.
+presentation, argument validation/capture, client/UID target identity checks,
+launch availability/exclusivity and shared access/command decisions.
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
 from transport and widget glue so exhaustive tests are practical. The critical
@@ -150,7 +151,11 @@ job retains actual SVGs and terminal restoration evidence; SSH/tmux and cluster
 qualification remain future work. F04 adds hostile text/argument and immutable
 target tests, ambient credential traps for all test families, unsafe fixture
 negative controls and a real isolated SDK configuration load without an API
-connection. [Test isolation](security-primitives.md) describes the qualified
+connection. F05 stage 1 adds audited option/alias tests, a reviewed help snapshot,
+service-level policy negative controls, visibility/initial-command Pilot evidence,
+real PTY restoration and clean-installed launch contract checks. The connection,
+refresh and effectful service integrations remain pending; a parsed flag is not
+compatibility evidence. [Test isolation](security-primitives.md) describes the qualified
 fixture path and limitations. The README must
 never show an unmeasured coverage badge or imply that planned checks already run.
 

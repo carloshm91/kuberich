@@ -102,7 +102,7 @@ def test_cli_log_aliases_override_file_and_environment(
     monkeypatch.setenv("KUBETROL_LOG_LEVEL", "INFO")
     monkeypatch.setenv("KUBETROL_LOG_FILE", str(tmp_path / "env.log"))
     selected = tmp_path / "cli.log"
-    monkeypatch.setattr(cli, "run_terminal", lambda settings, logger: None)
+    monkeypatch.setattr(cli, "run_terminal", lambda settings, logger, **kwargs: None)
     assert main(["--logFile", str(selected), "-l", "DEBUG"]) == 0
     assert "Launching terminal interface" in selected.read_text()
     assert capsys.readouterr().err == ""

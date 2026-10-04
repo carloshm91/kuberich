@@ -2,12 +2,13 @@
 
 Reference: K9s v0.51.0,
 [launch flags](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/cmd/root.go).
-This is the first-release contract. The development build currently implements
-help/version, `info`, `config init`/`check`, `--config` and the log destination/level
-flags, plus the default terminal window with help/quit commands. See
-[local preferences](configuration.md) and [terminal controls](terminal-preview.md)
-for that tested subset. Remaining
-flags/commands are planned and rejected until their owning behavior exists.
+This is the first-release contract. The development build implements help/version
+commands, `info`, `config init`/`check`, log options, read-only policy, initial
+help/quit commands and three terminal visibility flags. It recognizes all 26
+audited flags, with explicit unavailable errors for behavior that has not shipped.
+Recognizing a flag does not establish Kubernetes or K9s compatibility.
+See the development checkpoint below, [local preferences](configuration.md) and
+[terminal controls](terminal-preview.md).
 No Kubetrol application is publicly released yet.
 
 Every explicitly registered launch flag is represented below. Kubetrol keeps the
@@ -44,7 +45,61 @@ scheduled later report that limitation until their owning task is implemented.
 | `--client-certificate` | Client certificate override; F05/C08 |
 | `--token` | Explicit token override, redacted everywhere; F05/C08 |
 
-Commands: `help`/`--help`, `version`/`--version`, `version --short`/`-s`, and
+## Current development checkpoint: F05, stage 1
+
+| Options / commands | Tested behavior now |
+| --- | --- |
+| `help`, `--help`, `-h` | Launch help, including the owning task for unavailable options |
+| `version`, `--version` | Installed distribution version with the program name |
+| `version --short`, `version -s` | Version number only |
+| `info`, `config init`, `config check`, `--config`, log options | Local diagnostic/preferences behavior; no credential loading |
+| `--readonly`, `--write` | Override file/environment preference for this invocation; shared command policy, visible status |
+| `--headless` | Hide the application header; status/controls remain visible |
+| `--logoless` | Hide the brand, retaining build information where the layout permits |
+| `--crumbsless` | Hide the current context/namespace scope bar; resource-view breadcrumbs do not exist yet |
+| `--command`, `-c` | Open terminal help or quit; `?`, `q`, `exit` aliases also work; other commands return exit 4 |
+| `--refresh`, `-r` | Validate/report seconds through `info` or `config check`; explicit terminal use returns exit 4 until C03 #24 |
+| Connection, identity, TLS, token and namespace options | Exit 4 naming the owning feature; no files read, helpers run or logs created |
+| `--splashless`, `--invert`, `--screen-dump-dir` | Exit 4; there is currently no splash, theme inversion or screen export to control |
+
+Place global options before a subcommand. Scalar options repeated on the command
+line use their last value; `--as-group` preserves every occurrence in order, but
+impersonation is unavailable. `--as-group` requires `--as`; client key and client
+certificate must be supplied together. Namespace/all-namespaces and readonly/write
+are mutually exclusive, with owned errors that identify the conflicting flags.
+Syntax/type errors do not echo rejected values. Pending string arguments are
+bounded and reject controls; transport-specific validation and missing-file checks
+arrive with the owning adapter. For example, a missing `--kubeconfig` currently
+returns unavailable, rather than pretending a file was loaded.
+
+Presentation and initial-command options are terminal-only and are refused by
+`info`/`config`. Runtime preference options are allowed by `info`/`config check`,
+where they affect the effective settings, but refused by `config init`.
+`help`/`version` subcommands bypass preferences and credential loading and refuse
+explicit runtime/config overrides. Standard `--help`/`--version` flags exit
+immediately as inspection requests. Neither path opens logs.
+
+Read-only policy is immutable for the invocation and shared by initial and
+interactive command resolution. It refuses mutation, exec/shell, attach and
+unclassified external-plugin actions independently of UI shortcuts. These actions
+are not implemented in this preview; write mode still returns unavailable.
+S03/S04 and M01 must call this same service guard before their actual effects and
+provide integration evidence. `--write` only changes an application preference;
+it grants no API permission. The read-only indicator remains visible when the
+header is hidden and after filter/status updates.
+
+F05 remains open: this checkpoint does not complete the initial-release criteria.
+C01 supplies real connection/namespace/transport behavior, C03 consumes refresh,
+B03 supplies resource commands, and S03/S04 prove guarded interactive execution.
+C08/M01 qualify the later authentication and mutation paths. The delivery record
+must recheck these integrations before F05 closes; completion remains a first-release
+gate rather than a parser-only claim. Shell completion stays with D13.
+
+Exit codes: 0 success/inspection/normal terminal quit; 1 internal failure; 2 invalid
+input or noninteractive launch; 3 local file/log failure; 4 recognized unavailable
+behavior; 130 interrupted non-UI operation. See [error details](configuration.md).
+
+First-release commands: `help`/`--help`, `version`/`--version`, `version --short`/`-s`, and
 `info` are first-release contracts. `info` shows configuration/data/log paths and
 dependency availability without printing credentials. Shell completion for
 bash/zsh/fish/PowerShell is D13; dynamic context completion reads local names
