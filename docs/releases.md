@@ -1,5 +1,15 @@
 # Versioning and releases
 
+## Publication approval
+
+Keep the repository and GitHub roadmap private until the maintainer explicitly
+approves making them public. Prepare the simple landing page and initial user
+documentation described in [the roadmap](roadmap.md) before the public launch.
+An open-source license, merged implementation task, or proposed release date
+does not authorize publication. Prepare tested artifacts and the proposed public
+pages for review, then obtain explicit approval for visibility changes, website
+publication, and public distribution channels, including PyPI and a Homebrew tap.
+
 ## Version rules
 
 The first usable public application release is **0.0.1**. Repository preparation
