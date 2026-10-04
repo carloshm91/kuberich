@@ -8,10 +8,11 @@ import pytest
 from aiohttp import web
 from textual.widgets import OptionList, Static
 
+from kubetrol.config.catalog import Entry
 from kubetrol.config.schema import Settings
 from kubetrol.domain.connections import ConnectionRequest, ConnectionState
 from kubetrol.ui.app import KubetrolApp
-from kubetrol.ui.scopes import ScopeScreen
+from kubetrol.ui.scopes import ConnectionScreen, ScopeScreen
 from tests.support.connections import catalog_fixture, fake_api, namespaces
 
 
@@ -159,6 +160,67 @@ async def test_no_config_context_namespace_retry_and_cancel_are_actionable() -> 
         app._namespace_selected(None)
         app._namespace_selected("default")
         assert "Connect to a context" in str(app.status.content)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("size", [(40, 12), (100, 30)])
+async def test_navigation_without_function_keys_and_recovery_from_auth_failure(
+    tmp_path: Path, size: tuple[int, int]
+) -> None:
+    async def handler(request):
+        if request.headers.get("Authorization") == "Bearer rejected":
+            return web.Response(status=401, text="opaque-secret")
+        assert request.headers["Authorization"] == "Bearer synthetic"
+        return namespaces("default", "team")
+
+    async with fake_api(handler) as url:
+        catalog = catalog_fixture(tmp_path, url)
+        catalog.users["rejected"] = Entry({"token": "rejected"}, tmp_path)
+        catalog.contexts["kubetrol-test-one"].data["user"] = "rejected"
+        app = KubetrolApp(Settings(), logging.Logger("navigation"), catalog=catalog)
+        async with app.run_test(size=size) as pilot:
+            await app._connection_task
+            assert app.sessions.observation.state is ConnectionState.AUTH_ERROR
+            await pilot.press("colon", *"status", "enter")
+            assert isinstance(app.screen, ConnectionScreen)
+            assert "401" in str(app.screen.query_one("#connection-details", Static).content)
+            await pilot.press("escape", "c", "c", "n", "i")
+            assert isinstance(app.screen, ScopeScreen) and len(app.screen_stack) == 2
+            options = app.screen.query_one("#scope-options", OptionList)
+            options.highlighted = catalog.names.index("kubetrol-test-Two")
+            await pilot.press("enter")
+            await connected(app)
+            await pilot.pause()
+            assert str(app.query_one("#connection", Static).content) == "Connected"
+            assert "401" not in str(app.status.content)
+            assert str(app.query_one("#context", Static).content) == "Context: kubetrol-test-Two"
+            await pilot.press("n", "n")
+            assert isinstance(app.screen, ScopeScreen) and len(app.screen_stack) == 2
+            options = app.screen.query_one("#scope-options", OptionList)
+            options.highlighted = app.screen.values.index("team")
+            await pilot.press("enter")
+            assert app.sessions.observation.namespace == "team"
+            identity = app.sessions.observation.identity
+            await pilot.press("r")
+            await app._connection_task
+            assert app.sessions.observation.identity.connection_id != identity.connection_id
+            assert app.sessions.observation.namespace == "team"
+            await pilot.press("i", "escape", "colon", *"retry", "enter")
+            await app._connection_task
+            assert app.sessions.observation.state is ConnectionState.CONNECTED
+            await pilot.press("slash", *"cnri")
+            assert app.filter_input.value == "cnri" and len(app.screen_stack) == 1
+            await pilot.press("escape", "colon", *"cnri")
+            assert app.command_input.value == "cnri" and len(app.screen_stack) == 1
+            await pilot.press("escape", "colon", *"ns", "enter")
+            assert isinstance(app.screen, ScopeScreen)
+            await pilot.press("escape", "colon", *"status unexpected", "enter")
+            assert len(app.screen_stack) == 1
+            evidence = Path("artifacts/ui").resolve()
+            evidence.mkdir(parents=True, exist_ok=True)
+            app.save_screenshot(filename=f"context-navigation-{size[0]}.svg", path=str(evidence))
+            await pilot.press("q")
+        assert app.sessions.client is None
 
 
 @pytest.mark.asyncio

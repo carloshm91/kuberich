@@ -50,16 +50,18 @@ class HelpScreen(ModalScreen[None]):
                         "/                 Focus filter\n"
                         ":                 Focus command\n"
                         "? or F1           Open help\n"
-                        "F2 / F3           Contexts / namespaces\n"
-                        "F4                Retry connection\n"
-                        "F5                Full connection status\n"
+                        "c / F2            Contexts (:ctx)\n"
+                        "n / F3            Namespaces (:ns)\n"
+                        "r / F4            Retry connection (:retry)\n"
+                        "i / F5            Connection status (:status)\n"
+                        "Letter shortcuts work outside text inputs.\n"
                         "PageUp / PageDown Scroll help\n"
                         "Tab / Shift+Tab   Move focus\n"
                         "Escape            Back / leave input\n"
                         "Escape in table   Clear active filter\n"
                         "q / Ctrl+Q        Quit (q outside inputs)\n"
                         "Ctrl+C            Quit\n\n"
-                        "Commands: help, quit, ctx [NAME], ns [NAME or *].\n\n"
+                        "Commands: help, quit, ctx [NAME], ns [NAME or *], status, retry.\n\n"
                         "Context sessions and namespace discovery are available. "
                         "Live resources, logs and shell are upcoming."
                     ),
@@ -83,6 +85,10 @@ class KubetrolApp(App[None]):
         Binding("colon", "focus_command", "Cmd", key_display=":", priority=True),
         Binding("question_mark", "show_help", "Help", key_display="?"),
         Binding("f1", "show_help", "Help", show=False, priority=True),
+        Binding("c", "contexts", "Ctx"),
+        Binding("n", "namespaces", "Ns"),
+        Binding("r", "retry", "Retry", show=False),
+        Binding("i", "connection_details", "Status", show=False),
         Binding("f2", "contexts", "Contexts", show=False, priority=True),
         Binding("f3", "namespaces", "Namespaces", show=False, priority=True),
         Binding("f4", "retry", "Retry", show=False, priority=True),
@@ -352,6 +358,12 @@ class KubetrolApp(App[None]):
                 self._namespace_selected(value.strip())
             else:
                 self.action_namespaces()
+            return
+        if not value.strip() and verb.lower() in {"status", "retry"}:
+            if verb.lower() == "status":
+                self.action_connection_details()
+            else:
+                self.action_retry()
             return
         try:
             command = self.commands.resolve(event.value)
