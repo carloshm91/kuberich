@@ -286,7 +286,7 @@ class KubernetesSession:
         """None reports open headers; quiet follows have no artificial body deadline."""
         try:
             async with self._response(
-                path, params, "text/plain", None if follow else self.timeout
+                path, params, "*/*", None if follow else self.timeout
             ) as response:
                 yield None
                 async for chunk in response.content.iter_chunked(8192):

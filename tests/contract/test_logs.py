@@ -53,6 +53,10 @@ async def test_stream_selected_container_options_split_unicode_and_normal_eof(
         if not request.path.endswith("/log"):
             gets.append(request.path)
             return web.json_response(manifest())
+        # API routing negotiates Kubernetes serializers before returning text.
+        # A narrow plaintext Accept caused a real kube-apiserver 406.
+        if request.headers.get("Accept") not in {"*/*", "application/json"}:
+            return web.Response(status=406)
         queries.append(dict(request.query))
         response = web.StreamResponse()
         await response.prepare(request)

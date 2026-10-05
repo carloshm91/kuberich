@@ -23,7 +23,10 @@ Tail accepts -1 for all or 0–1,000,000; sinceSeconds is 1–2,147,483,647. Tim
 options are mutually exclusive and sinceTime is sent in UTC. Regular and init
 containers are supported; ephemeral/debug container browsing remains later work.
 
-HTTP connection/header establishment uses the selected request timeout. Quiet
+The log request uses wildcard Accept negotiation and consumes response bytes
+directly: the API server negotiates Kubernetes serializers before returning its
+plain-text stream, and a narrow plaintext Accept was rejected with 406 in the
+real-cluster trial. HTTP connection/header establishment uses the selected request timeout. Quiet
 follow streams have no artificial body deadline; cancelling the owned run closes
 the response. Non-follow snapshots retain the request timeout. Graceful EOF is a
 normal completion, including a final line without a newline. An abrupt/incomplete
