@@ -417,7 +417,13 @@
       ],
       "source": "internal/view/logs_extender.go",
       "status": "planned",
-      "difference": ""
+      "difference": "S01 delivers backend current/previous regular/init logs with tail/since/timestamps, bounded framing and owned cancellation. Container-selection UI and aggregated/workload output remain S02/S06.",
+      "partial_evidence": [
+        "docs/container-log-transport.md",
+        "tests/unit/test_logs.py",
+        "tests/contract/test_logs.py",
+        "scripts/verify_contexts_kind.py"
+      ]
     },
     {
       "id": "LOG02",

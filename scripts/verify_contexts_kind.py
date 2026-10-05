@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import subprocess
+from datetime import timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from uuid import uuid4
@@ -15,11 +16,15 @@ from kubernetes_asyncio.client import CoreV1Api, V1Namespace, V1ObjectMeta
 
 from kubetrol.config.catalog import load_catalog
 from kubetrol.config.schema import Settings
-from kubetrol.domain.connections import ConnectionRequest, ConnectionState
+from kubetrol.domain.connections import ConnectionProblem, ConnectionRequest, ConnectionState
+from kubetrol.domain.logs import LogBuffer, LogOptions
 from kubetrol.domain.pods import pod_row, utc_now
 from kubetrol.domain.resources import resource_record
+from kubetrol.domain.targets import ResourceTarget
 from kubetrol.domain.views import ResourceSelection, ViewStatus
 from kubetrol.domain.watches import EventType, SyncStatus, SyncUpdate
+from kubetrol.services.access import AccessPolicy
+from kubetrol.services.logs import LogStream
 from kubetrol.services.resources import ResourceReader
 from kubetrol.services.sessions import SessionService
 from kubetrol.services.watches import ListWatch
@@ -393,6 +398,80 @@ async def verify_quiet_renewal(reader, resource, catalog, path, context) -> dict
     }
 
 
+async def verify_logs(reader, snapshot, sessions):
+    """Real current/previous log API and cancellation on this owned kind only."""
+    async with asyncio.timeout(90):
+        while True:
+            record = next(item for item in snapshot.items if item.name.startswith("coredns-"))
+            status = record.manifest.get("status", {})
+            if status.get("phase") == "Running" and any(
+                value.get("name") == "coredns" and value.get("ready")
+                for value in status.get("containerStatuses", [])
+            ):
+                break
+            await asyncio.sleep(0.2)
+            snapshot = await reader.list(snapshot.resource, "kube-system")
+    print("Owned CoreDNS log fixture is Running and Ready.")
+    container = record.manifest["spec"]["containers"][0]["name"]
+    identity = sessions.observation.identity
+    target = ResourceTarget(identity, "", "pods", "kube-system", record.name, record.uid, container)
+    service = LogStream(
+        reader.session,
+        target,
+        AccessPolicy(True),
+        lambda: sessions.client is reader.session and sessions.observation.identity == identity,
+    )
+    buffer = LogBuffer()
+
+    async def retain(line):
+        buffer.append(line)
+
+    count = await service.run(LogOptions(follow=False, tail_lines=10, timestamps=True), retain)
+    assert count and buffer.lines and all(line.text[:4].isdigit() for line in buffer.lines)
+    assert any("CoreDNS" in line.text for line in buffer.lines)
+    all_count = await service.run(LogOptions(follow=False, tail_lines=-1), retain)
+    assert all_count >= count
+    assert await service.run(LogOptions(follow=False, since_seconds=3600), retain)
+    assert await service.run(
+        LogOptions(follow=False, since_time=utc_now() - timedelta(hours=1)), retain
+    )
+    received = asyncio.Event()
+    hold = asyncio.Event()
+
+    async def pause_after_first(line):
+        received.set()
+        await hold.wait()
+
+    follow = asyncio.create_task(service.run(LogOptions(tail_lines=1), pause_after_first))
+    try:
+        async with asyncio.timeout(30):
+            await received.wait()
+        follow.cancel()
+        try:
+            await follow
+        except asyncio.CancelledError:
+            pass
+        else:
+            raise AssertionError("Owned follow must cancel")
+    finally:
+        follow.cancel()
+        await asyncio.gather(follow, return_exceptions=True)
+    try:
+        await service.run(LogOptions(follow=False, previous=True), retain)
+    except ConnectionProblem as error:
+        assert "Previous container logs unavailable (400)" in str(error)
+    else:
+        raise AssertionError("New CoreDNS pod must not have a previous container instance")
+    return {
+        "real_current_container_log_snapshot": True,
+        "real_log_timestamps_and_tail": True,
+        "real_log_all_tail_and_since_windows": True,
+        "real_follow_log_cancellation_awaited": True,
+        "real_previous_log_unavailable": True,
+        "real_log_retention_lines": len(buffer.lines),
+    }
+
+
 async def verify(path: Path, context: str) -> dict[str, object]:
     request = ConnectionRequest(kubeconfig=str(path), context=context, timeout=15)
     catalog = load_catalog(request, {})
@@ -431,6 +510,7 @@ async def verify(path: Path, context: str) -> dict[str, object]:
         assert deployments.api_version == "apps/v1"
         deployment_snapshot = await reader.list(deployments, "kube-system", page_size=1)
         assert deployment_snapshot.resource_version and deployment_snapshot.items
+        log_evidence = await verify_logs(reader, scoped_pods, sessions)
         watch_evidence = await verify_watch(reader, discovery.find("configmaps"))
         quiet_evidence = await verify_quiet_renewal(
             reader, discovery.find("secrets"), catalog, path, context
@@ -461,6 +541,7 @@ async def verify(path: Path, context: str) -> dict[str, object]:
         "collection_versions_and_item_uids": True,
         "discovered_resource_count": len(discovery.resources),
         "scoped_pod_count": len(scoped_pods.items),
+        **log_evidence,
         **watch_evidence,
         **quiet_evidence,
         **workspace_evidence,

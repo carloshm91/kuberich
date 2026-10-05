@@ -315,3 +315,13 @@ name, reads bounded UID-associated core/v1 events, and drains owned serializatio
 work on cancellation. `ui/inspection.py` owns the read task and read-only TextArea
 modal, preserving the underlying table while rejecting invalidated targets.
 See [ordinary-view policy and controls](resource-inspection.md).
+
+## S01 log transport
+
+`domain/logs.py` validates query options and frames/redacts bounded UTF-8 lines
+with consumer-owned retention. The adapter opens a scoped `text/plain` stream
+with bounded headers and an explicit indefinite quiet-follow body. `services/logs.py`
+verifies captured pod UID/container before and after opening, awaits each consumer
+and closes its generator on cancellation/failure. Logs have no watch checkpoints
+and are never automatically replayed. UI ownership/presentation follow in S02.
+See [the transport contract](container-log-transport.md).
