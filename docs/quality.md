@@ -21,7 +21,8 @@ or reliable installation.
 The current critical modules are the CLI/module entry points, preference schema
 validation/precedence, diagnostic redaction, control escaping, literal text
 presentation, argument validation/capture, client/UID target identity checks,
-launch availability/exclusivity and shared access/command decisions.
+launch availability/exclusivity, shared access/command decisions, context catalogue
+and session identity, and resource endpoint/scope/alias/manifest normalization.
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
 from transport and widget glue so exhaustive tests are practical. The critical
@@ -160,6 +161,12 @@ responsive context/namespace Pilot selectors and owned client/process cleanup.
 Linux/Python 3.12 additionally requires disposable-kind namespace/TLS/client-auth
 verification and retains sanitized cluster evidence. The deterministic catalogue,
 connection-request and session-state modules join the critical 100% inventory.
+C02 adds real HTTP discovery negotiation, consistent/expired pagination,
+partial/forbidden groups, bounded snapshots and cancellation tests. The resource
+domain joins the critical inventory. Disposable-kind verification additionally
+requires core/named-group discovery and real paginated namespace/pod/deployment
+snapshots with collection versions and item UIDs. The UI still has no resource
+rows; live updates remain C03/C04/B02.
 Provider qualification, refresh and effectful integrations remain pending; a parsed flag is not
 compatibility evidence. [Test isolation](security-primitives.md) describes the qualified
 fixture path and limitations. The README must

@@ -37,7 +37,7 @@ jobs:
           uv run mypy --strict src/kubetrol scripts/check_coverage.py scripts/check_quality_gate.py
       - name: Run behavioral, gate-regression and clean-distribution checks
         run: uv run pytest --cov=kubetrol --cov-branch --cov-report=term-missing --cov-report=xml --cov-report=json
-      - name: Verify context sessions on an owned disposable cluster
+      - name: Verify context sessions and resource snapshots on an owned disposable cluster
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.12' }}
         run: |
           curl --fail --location --retry 3 --max-time 60 https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64 --output "$RUNNER_TEMP/kubetrol-kind"

@@ -110,7 +110,13 @@
       ],
       "source": "internal/dao/registry.go",
       "status": "planned",
-      "difference": ""
+      "difference": "C02 implements discovery, backend aliases and consistent scoped snapshots. Dynamic/CRD columns and UI resource integration remain planned in the existing tasks; this does not establish full CORE01 parity.",
+      "partial_evidence": [
+        "docs/resource-discovery.md",
+        "tests/unit/test_resources.py",
+        "tests/contract/test_resources.py",
+        "scripts/verify_contexts_kind.py"
+      ]
     },
     {
       "id": "CORE02",

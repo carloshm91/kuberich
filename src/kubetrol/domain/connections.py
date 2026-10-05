@@ -71,6 +71,26 @@ class ConnectionProblem(Exception):
         self.state = state
 
 
+class HttpProblem(ConnectionProblem):
+    """Carry an HTTP status without retaining the server body or credentials."""
+
+    def __init__(self, status: int) -> None:
+        state = (
+            ConnectionState.AUTH_ERROR
+            if status == 401
+            else ConnectionState.LIMITED
+            if status == 403
+            else ConnectionState.API_ERROR
+        )
+        message = (
+            "The API rejected credentials (401). Complete provider login and retry."
+            if status == 401
+            else f"API read failed (HTTP {status}). Check access and retry."
+        )
+        super().__init__(state, message)
+        self.status = status
+
+
 @dataclass(frozen=True)
 class SessionObservation:
     state: ConnectionState = ConnectionState.DISCONNECTED

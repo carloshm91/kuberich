@@ -230,6 +230,22 @@ awaits final session cleanup on unmount. File preparation runs in an owned
 shielded thread task: cancellation waits for it before deleting TLS files.
 See [supported behavior and bounds](context-sessions.md).
 
+## C02 discovery and snapshot decision
+
+`domain/resources.py` contains validated discovery descriptors, scoped endpoint
+construction, alias resolution and immutable typed metadata/raw manifest records.
+`services/resources.py` negotiates modern/legacy discovery and reads complete
+atomic, version-consistent collections using an existing explicit session.
+`adapters/kubernetes.py` shares its authenticated, bounded read-only JSON transport
+between namespace and resource discovery. Owned JSON-decoding tasks are awaited
+even on cancellation; HTTP failures expose safe status codes without server bodies.
+
+Partial discovery is explicit, list errors never become successful empty rows,
+and expired pagination restarts the entire snapshot once. Optional UID/version
+values on non-watch aggregate APIs remain absent rather than fabricated. This
+backend does not start UI workers or live watches; C03/C04/B02 integrate those
+behaviors. See [resource discovery](resource-discovery.md) for the contract and limits.
+
 ## Sources
 
 - [Textual workers](https://textual.textualize.io/guide/workers/)
