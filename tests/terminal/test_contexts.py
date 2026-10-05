@@ -5,77 +5,12 @@ import os
 import sys
 import threading
 import time
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlsplit
 
 import pytest
-import yaml
 
-from tests.support.resources import collection, item, legacy_roots
-from tests.support.watches import bookmark, frame
+from tests.support.terminal_api import Server, config
 from tests.terminal.pty_support import TerminalSession
-
-
-def config(path: Path, server: str, user: dict) -> Path:
-    data = {
-        "current-context": "kubetrol-test-pty",
-        "contexts": [
-            {"name": "kubetrol-test-pty", "context": {"cluster": "owned", "user": "owned"}}
-        ],
-        "clusters": [{"name": "owned", "cluster": {"server": server}}],
-        "users": [{"name": "owned", "user": user}],
-    }
-    path.write_text(yaml.safe_dump(data))
-    return path
-
-
-class Handler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        assert self.headers.get("Authorization") == "Bearer synthetic-pty"
-        parsed = urlsplit(self.path)
-        if "watch" in parse_qs(parsed.query):
-            if self.server.fail_watches.is_set():
-                self.send_error(503, "Owned fixture outage")
-                return
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            try:
-                while not self.server.stopping.wait(0.03):
-                    self.wfile.write(frame(bookmark("owned-pty-version")))
-                    self.wfile.flush()
-            except OSError:
-                pass
-            return
-        if parsed.path == "/api/v1/namespaces":
-            payload = {
-                "items": [{"metadata": {"name": "default"}}, {"metadata": {"name": "team"}}],
-                "metadata": {},
-            }
-        elif parsed.path in legacy_roots():
-            payload = legacy_roots()[parsed.path]
-        elif parsed.path.endswith("/pods"):
-            namespace = parsed.path.split("/")[4] if "/namespaces/" in parsed.path else "default"
-            payload = collection(item("owned-pty-pod", namespace=namespace))
-        else:
-            self.send_error(404)
-            return
-        body = json.dumps(payload).encode()
-        self.send_response(200)
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-
-    def log_message(self, *args):
-        pass
-
-
-class Server(ThreadingHTTPServer):
-    def __init__(self):
-        super().__init__(("127.0.0.1", 0), Handler)
-        self.fail_watches = threading.Event()
-        self.stopping = threading.Event()
 
 
 @pytest.mark.parametrize("authentication", ["token", "exec-null-env"])
@@ -120,7 +55,8 @@ def test_connected_cli_context_namespace_retry_and_terminal_restoration(
         with TerminalSession(
             [sys.executable, "-m", "kubetrol", "--kubeconfig", str(path)], tmp_path
         ) as terminal:
-            terminal.wait_for(b"Session connected")
+            terminal.wait_for(b"Live")
+            terminal.wait_for(b"1 pods")
             assert b"synthetic-pty" not in terminal.transcript
             marker = terminal.send(b":ctx\r")
             terminal.wait_for(b"Choose context", since=marker)

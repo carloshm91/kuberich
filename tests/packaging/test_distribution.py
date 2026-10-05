@@ -234,12 +234,11 @@ def test_installed_wheel_connects_to_owned_api_and_changes_namespace(
     installed_wheel: tuple[Path, Path],
 ) -> None:
     import threading
-    from http.server import HTTPServer
 
-    from tests.terminal.test_contexts import Handler, config
+    from tests.support.terminal_api import Server, config
 
     binary_dir, directory = installed_wheel
-    server = HTTPServer(("127.0.0.1", 0), Handler)
+    server = Server()
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     path = config(
@@ -252,14 +251,17 @@ def test_installed_wheel_connects_to_owned_api_and_changes_namespace(
         with TerminalSession(
             [str(binary_dir / "kubetrol"), "--kubeconfig", str(path)], directory
         ) as terminal:
-            terminal.wait_for(b"Session connected")
+            terminal.wait_for(b"Live")
+            terminal.wait_for(b"1 pods")
             marker = terminal.send(b":ns team\r")
             terminal.wait_for(b"Namespace: team", since=marker)
+            terminal.wait_for(b"Live", since=marker)
             terminal.send(b"q")
             terminal.finish()
             terminal.save_evidence("installed-context-session")
         assert path.read_bytes() == before
     finally:
+        server.stopping.set()
         server.shutdown()
         thread.join(timeout=2)
         server.server_close()
