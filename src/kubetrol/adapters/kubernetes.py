@@ -201,7 +201,7 @@ class KubernetesSession:
 
     @asynccontextmanager
     async def _response(
-        self, path: str, params: dict[str, str] | None, accept: str, timeout: float
+        self, path: str, params: dict[str, str] | None, accept: str, timeout: float | None
     ) -> AsyncIterator[aiohttp.ClientResponse]:
         api, configuration, credentials = self.api, self.configuration, self.credentials
         if api is None or configuration is None:
@@ -216,7 +216,7 @@ class KubernetesSession:
                 headers["Authorization"] = token
             # Bound connection/header establishment separately from a watch's
             # longer body lifetime. An idle watch need not send bookmarks.
-            handshake = min(self.timeout, timeout)
+            handshake = self.timeout if timeout is None else min(self.timeout, timeout)
             async with asyncio.timeout(handshake):
                 response = await api.rest_client.pool_manager.get(
                     str(configuration.host) + path,
@@ -278,6 +278,33 @@ class KubernetesSession:
         except (AppError, ValueError, UnicodeError, RecursionError, TypeError):
             raise ConnectionProblem(
                 ConnectionState.API_ERROR, "Invalid or oversized Kubernetes JSON response."
+            ) from None
+
+    async def log_bytes(
+        self, path: str, params: dict[str, str], *, follow: bool
+    ) -> AsyncGenerator[bytes | None, None]:
+        """None reports open headers; quiet follows have no artificial body deadline."""
+        try:
+            async with self._response(
+                path, params, "text/plain", None if follow else self.timeout
+            ) as response:
+                yield None
+                async for chunk in response.content.iter_chunked(8192):
+                    yield chunk
+        except TimeoutError:
+            raise ConnectionProblem(
+                ConnectionState.TIMEOUT,
+                "Log request timed out while connecting or reading a snapshot.",
+            ) from None
+        except (aiohttp.ClientSSLError, ssl.SSLError):
+            raise ConnectionProblem(
+                ConnectionState.TLS_ERROR,
+                "Log TLS verification failed. Check the cluster CA and server name.",
+            ) from None
+        except aiohttp.ClientError:
+            raise ConnectionProblem(
+                ConnectionState.UNREACHABLE,
+                "Log stream disconnected. Reopening may repeat historical output.",
             ) from None
 
     @property

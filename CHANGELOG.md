@@ -19,6 +19,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Backend current/previous regular/init container logs with captured UID/context,
+  tail/since/timestamp options, incremental UTF-8 framing and explicit errors.
+- Owned cancellation, quiet-follow semantics, bounded redacted lines/retention
+  and consumer backpressure; the terminal log viewer remains S02.
+
 - Read-only captured-UID pod YAML, details and related events, with managedFields
   visibility, literal search, redacted copying and return to the live table.
 - Clear denied/missing reads, same-name recreation rejection, viewer invalidation

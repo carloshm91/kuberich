@@ -280,3 +280,16 @@ Report whether the selected pod opens, whether events show data or a clear
 permission error, and whether search/return work in your terminal. Reopen to
 refresh inspection data. Logs and shell remain upcoming. See the
 [viewer contract](resource-inspection.md) and [B04 evidence](acceptance/B04.md).
+
+## Log transport: S01
+
+The selected-container transport now has API/encoding/cancellation tests and an
+owned-cluster trial. This backend checkpoint adds no terminal log action yet;
+S02 supplies the viewer and controls. Continue testing the live table and B04
+inspection above. Developers can run:
+
+```sh
+uv run pytest tests/unit/test_logs.py tests/contract/test_logs.py
+```
+
+See [log semantics and limits](container-log-transport.md).
