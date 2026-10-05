@@ -474,9 +474,10 @@ async def test_repeated_cancellation_during_client_preparation_and_cancelled_clo
             await asyncio.sleep(0)
         closing = asyncio.create_task(owner.close())
         await asyncio.sleep(0)
-        closing.cancel()
-        await asyncio.sleep(0)
-        assert not finished.is_set() and directory.exists() and not closing.done()
+        for _ in range(3):
+            closing.cancel()
+            await asyncio.sleep(0)
+            assert not finished.is_set() and directory.exists() and not closing.done()
         release.set()
         with pytest.raises(asyncio.CancelledError):
             await closing

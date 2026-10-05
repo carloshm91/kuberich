@@ -76,11 +76,15 @@ def _cancel_once(task: asyncio.Task[None] | None) -> None:
 
 async def _join(task: asyncio.Task[None]) -> None:
     completion = asyncio.gather(task, return_exceptions=True)
-    try:
-        await asyncio.shield(completion)
-    except asyncio.CancelledError:
-        await completion
-        raise
+    cancelled = False
+    while not completion.done():
+        try:
+            await asyncio.shield(completion)
+        except asyncio.CancelledError:
+            # A second interrupt must not cancel the cleanup being drained either.
+            cancelled = True
+    if cancelled:
+        raise asyncio.CancelledError
 
 
 class WorkspaceService:
