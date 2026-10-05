@@ -76,6 +76,8 @@ async def test_live_view_search_vim_modes_copy_save_resize_and_return(tmp_path, 
             before = app.resources.capture_viewport()
             screen = await open_logs(app, pilot)
             await wait_for(lambda: len(screen.body.rows) == 80)
+            # Retention/layout publish before Textual's deferred viewport refresh.
+            await wait_for(lambda: screen.body.follow and screen.body.scroll_y > 0)
             await pilot.pause()
             assert screen.body.follow and screen.body.scroll_y > 0
             screen.body.post_message(
