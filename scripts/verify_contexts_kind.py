@@ -1,4 +1,4 @@
-"""C01-C03 qualification on a newly created, explicitly owned disposable kind cluster."""
+"""C01-C04 qualification on a newly created, explicitly owned disposable kind cluster."""
 
 import argparse
 import asyncio
@@ -14,10 +14,12 @@ from kubernetes_asyncio.client import CoreV1Api, V1Namespace, V1ObjectMeta
 
 from kubetrol.config.catalog import load_catalog
 from kubetrol.domain.connections import ConnectionRequest, ConnectionState
-from kubetrol.domain.watches import EventType, SyncStatus
+from kubetrol.domain.views import ResourceSelection, ViewStatus
+from kubetrol.domain.watches import EventType, SyncStatus, SyncUpdate
 from kubetrol.services.resources import ResourceReader
 from kubetrol.services.sessions import SessionService
 from kubetrol.services.watches import ListWatch
+from kubetrol.services.workspace import WorkspaceService
 
 NODE_IMAGE = (
     "kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed"
@@ -115,6 +117,78 @@ async def verify_watch(reader: ResourceReader, resource) -> dict[str, object]:
     }
 
 
+async def verify_workspace(catalog, path: Path, context: str) -> dict[str, object]:
+    owner = WorkspaceService(
+        SessionService(
+            catalog, ConnectionRequest(kubeconfig=str(path), namespace="kube-system", timeout=15)
+        )
+    )
+    subscription = owner.subscribe()
+
+    async def live():
+        async with asyncio.timeout(30):
+            while owner.store.observation.status is not ViewStatus.LIVE:
+                if owner.store.observation.status is ViewStatus.FAILED:
+                    raise AssertionError(
+                        "Owned workspace could not synchronize its selected resource."
+                    )
+                await asyncio.sleep(0.01)
+        return owner.store.observation
+
+    try:
+        await owner.connect(context)
+        first = await live()
+        assert first.scope.namespace == "kube-system" and len(first.snapshot.items) > 2
+        old_watch = owner._watch
+        transition = owner.select_namespace("default")
+        assert owner.store.observation.snapshot is None
+        await transition
+        second = await live()
+        assert old_watch.done() and second.scope.namespace == "default"
+        assert second.scope.session.generation > first.scope.session.generation
+        assert second.scope.session.connection_id == first.scope.session.connection_id
+        await owner.select_resource(ResourceSelection("namespaces"))
+        cluster = await live()
+        assert cluster.scope.namespace is None and len(cluster.snapshot.items) > 1
+        for _ in range(20):
+            owner.select_namespace("default")
+            owner.select_namespace("kube-system")
+        await owner.select_resource(ResourceSelection("po"))
+        current = await live()
+        assert current.scope.namespace == "kube-system" and current.scope.resource.name == "pods"
+        assert all(record.namespace == "kube-system" for record in current.snapshot.items)
+        api = owner.sessions.client.api
+        directory = Path(owner.sessions.client.directory.name)
+        await owner.connect(context)
+        reopened = await live()
+        assert reopened.scope.session.connection_id != current.scope.session.connection_id
+        assert api.rest_client.pool_manager.closed and not directory.exists()
+        assert not owner.store.apply(
+            first.revision, first.scope, SyncUpdate(SyncStatus.LIVE, first.snapshot)
+        )
+        assert (await anext(subscription)) is reopened
+        final_api = owner.sessions.client.api
+    finally:
+        await owner.close()
+    assert final_api.rest_client.pool_manager.closed
+    assert owner._watch is None and owner._operation is None and owner.task.done()
+    assert not owner._subscriptions and owner.store.observation.status is ViewStatus.DISCONNECTED
+    assert not [
+        task
+        for task in asyncio.all_tasks()
+        if task.get_name() in {"kubetrol-workspace", "kubetrol-resource-watch"}
+    ]
+    return {
+        "real_workspace_scope_switch": True,
+        "real_workspace_resource_switch": True,
+        "real_coalesced_switches": True,
+        "prior_generation_rejected": True,
+        "real_workspace_reopened_client": True,
+        "latest_subscription_observation": True,
+        "workspace_exit_cleanup": True,
+    }
+
+
 async def verify(path: Path, context: str) -> dict[str, object]:
     request = ConnectionRequest(kubeconfig=str(path), context=context, timeout=15)
     catalog = load_catalog(request, {})
@@ -154,6 +228,7 @@ async def verify(path: Path, context: str) -> dict[str, object]:
         deployment_snapshot = await reader.list(deployments, "kube-system", page_size=1)
         assert deployment_snapshot.resource_version and deployment_snapshot.items
         watch_evidence = await verify_watch(reader, discovery.find("configmaps"))
+        workspace_evidence = await verify_workspace(catalog, path, context)
         assert path.read_bytes() == before
         active = sessions.client.api
     finally:
@@ -179,6 +254,7 @@ async def verify(path: Path, context: str) -> dict[str, object]:
         "discovered_resource_count": len(discovery.resources),
         "scoped_pod_count": len(scoped_pods.items),
         **watch_evidence,
+        **workspace_evidence,
     }
 
 

@@ -4,12 +4,14 @@ Run `uv run kubetrol` or `uv run python -m kubetrol` in an interactive terminal.
 The current development build opens the workspace directly, without a splash
 delay. It loads a local kubeconfig catalogue before the UI, then authenticates and
 discovers namespaces in an owned background session. Without a selected context
-it stays disconnected. Pod/resource rows remain empty: those views are upcoming.
+it stays disconnected. A connected scope now synchronizes pods and shows the
+live count and stale/error status. Pod/resource rows remain empty until B02.
 See [context sessions](context-sessions.md) for flags, credentials, states and bounds.
+See [active resource views](resource-views.md) for freshness, switching and cleanup.
 
 The workspace has a resource region, filter and command inputs, status and
 available-key hints. Context/namespace selectors are scrollable and maintain
-literal names. Live resources, details, logs and shell are subsequent tasks.
+literal names. Table rendering, details, logs and shell are subsequent tasks.
 
 ## Controls
 

@@ -14,6 +14,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Active pod synchronization with live counts and loading/stale/error status,
+  generation-bound snapshots, coalesced scope changes and bounded UI subscriptions.
+- Awaited cleanup and late-result rejection, with rapid-switch, real-API, Pilot
+  and PTY recovery/exit tests. Pod table rows remain upcoming.
+
 - Backend list/watch synchronization with stable UID state, idempotent events,
   bookmarks, opaque checkpoints, bounded retries and full relists after expiry.
 - Real streaming/backpressure/cancellation tests and disposable-kind create,

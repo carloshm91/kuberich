@@ -23,7 +23,8 @@ validation/precedence, diagnostic redaction, control escaping, literal text
 presentation, argument validation/capture, client/UID target identity checks,
 launch availability/exclusivity, shared access/command decisions, context catalogue
 and session identity, resource endpoint/scope/alias/manifest normalization, and
-watch events, UID state/replays and recovery decisions.
+watch events, UID state/replays and recovery decisions, plus active-view identity,
+snapshot invalidation and freshness decisions.
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
 from transport and widget glue so exhaustive tests are practical. The critical
@@ -178,6 +179,13 @@ Provider qualification, refresh and effectful integrations remain pending; a par
 compatibility evidence. [Test isolation](security-primitives.md) describes the qualified
 fixture path and limitations. The README must
 never show an unmeasured coverage badge or imply that planned checks already run.
+
+C04 adds bounded latest-state subscriptions, generation/client/scope rejection,
+rapid switches, cancelled preparation/reconnect, late pages/callbacks and leak tests.
+Its view domain joins the critical inventory. Pilot and PTYs verify stale/live/error
+status and terminal restoration. The kind check adds actual namespace/resource
+switches, client reopening and workspace exit cleanup. UI counts are available;
+B02 still owns table rows and Q01 owns performance qualification.
 
 The PTY harness retains a shell-like session owner while the actual CLI process
 runs. It records all terminal attributes immediately before/after that process,

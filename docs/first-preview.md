@@ -158,3 +158,26 @@ These tests cover real loopback HTTP streams, opaque versions, duplicate events,
 UID recreation, expired versions, permissions, retries and cleanup. The required
 kind check also exercises actual resource changes in an owned disposable cluster.
 See [synchronization behavior and limits](resource-watches.md).
+
+## Active view ownership: C04
+
+From an interactive terminal in the development checkout:
+
+```sh
+uv sync --locked --group dev
+uv run kubetrol
+```
+
+1. Choose a context with `:ctx` or `c`. Look for `Live` and the pod count.
+   **The table still has no rows**; B02 #26 supplies them next.
+2. Type `:ns YOUR_NAMESPACE` and Enter. Check the namespace and count update;
+   the old snapshot is cleared while the new scope loads. `:ns *` selects all.
+3. Press `i` or enter `:status` for the full message. Lost connectivity or denied
+   reads must show stale/error state, rather than a successful empty list.
+4. Close details with Esc, try another context or `:retry`, then Ctrl+Q to quit.
+
+Report whether the context/namespace and count match `kubectl` for that scope,
+and the safe status message for a failure. No credentials or kubeconfig contents
+are needed. These commands are qualified with owned fake APIs, real PTYs and a
+disposable kind cluster; actual cloud-provider qualification remains pending.
+See [active-view behavior](resource-views.md) for isolated tests and limits.

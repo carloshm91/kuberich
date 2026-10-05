@@ -1,4 +1,4 @@
-"""A responsive, disconnected workspace ready for real resource services."""
+"""A responsive workspace subscribed to its owned Kubernetes resource view."""
 
 import asyncio
 import logging
@@ -21,15 +21,15 @@ from kubetrol.config.schema import Settings
 from kubetrol.domain.connections import (
     DEFAULT_CONNECTION,
     ConnectionRequest,
-    ConnectionState,
-    SessionObservation,
 )
+from kubetrol.domain.views import USABLE_CONNECTIONS, ViewObservation, ViewStatus
 from kubetrol.errors import AppError
 from kubetrol.security.arguments import validate_argument
 from kubetrol.security.presentation import safe_text
 from kubetrol.services.access import AccessPolicy
 from kubetrol.services.commands import Command, CommandService
 from kubetrol.services.sessions import SessionService
+from kubetrol.services.workspace import ViewSubscription, WorkspaceService
 from kubetrol.ui.presentation import DEFAULT_PRESENTATION, Presentation
 from kubetrol.ui.scopes import ConnectionScreen, ScopeScreen
 
@@ -62,8 +62,8 @@ class HelpScreen(ModalScreen[None]):
                         "q / Ctrl+Q        Quit (q outside inputs)\n"
                         "Ctrl+C            Quit\n\n"
                         "Commands: help, quit, ctx [NAME], ns [NAME or *], status, retry.\n\n"
-                        "Context sessions and namespace discovery are available. "
-                        "Live resources, logs and shell are upcoming."
+                        "Context sessions and live pod synchronization are available. "
+                        "The resource table, logs and shell are upcoming."
                     ),
                     id="help-content",
                 )
@@ -119,7 +119,8 @@ class KubetrolApp(App[None]):
             catalog if catalog is not None else KubeCatalog(), connection
         )
         self._connection_task: asyncio.Task[None] | None = None
-        self._connection_attempt = 0
+        self.workspace = WorkspaceService(self.sessions, on_error=self._handle_exception)
+        self._view_task: asyncio.Task[None] | None = None
         self.commands = CommandService(AccessPolicy(settings.read_only))
         if settings.theme not in self.available_themes:
             raise AppError("Selected theme is unavailable; choose a built-in Textual theme.")
@@ -136,15 +137,13 @@ class KubetrolApp(App[None]):
 
     def _set_status(self, message: str) -> None:
         prefix = "Read-only · " if self.commands.policy.read_only else ""
-        insecure = "Insecure transport · " if self.sessions.observation.insecure else ""
+        insecure = (
+            "Insecure transport · " if self.workspace.store.observation.connection.insecure else ""
+        )
         self.status.update(safe_text(prefix + insecure + message))
 
     def _workspace_status(self) -> str:
-        return (
-            self.sessions.observation.message
-            if self.sessions.observation.identity is not None
-            else DISCONNECTED_STATUS
-        )
+        return self.workspace.store.observation.message
 
     def compose(self) -> ComposeResult:
         with Horizontal(id="app-header"):
@@ -189,6 +188,8 @@ class KubetrolApp(App[None]):
         self._set_status(DISCONNECTED_STATUS)
         self._apply_command(self._initial_command)
         if self._initial_command is not Command.QUIT:
+            subscription = self.workspace.subscribe()
+            self._view_task = asyncio.create_task(self._observe_view(subscription))
             context = self.sessions.request.context or self.sessions.catalog.current
             if context is not None:
                 self._start_connection(context)
@@ -199,57 +200,65 @@ class KubetrolApp(App[None]):
         except AppError as error:
             self._set_status(str(error))
             return
-        previous = self._connection_task
-        if previous is not None:
-            previous.cancel()
-        self._connection_attempt += 1
-        attempt = self._connection_attempt
+        self._connection_task = self.workspace.connect(context)
         self.query_one("#context", Static).update(safe_text(f"Context: {context}"))
         self.query_one("#namespace", Static).update("Namespace: —")
         self.query_one("#connection", Static).update("Connecting")
         self._set_status("Connecting · F2 contexts · F4 retry · Ctrl+Q quit")
-        self._connection_task = asyncio.create_task(self._connect(context, previous, attempt))
 
-    async def _connect(
-        self, context: str, previous: asyncio.Task[None] | None, attempt: int
-    ) -> None:
-        if previous is not None:
-            await asyncio.gather(previous, return_exceptions=True)
+    async def _observe_view(self, subscription: ViewSubscription) -> None:
         try:
-            observation = await self.sessions.connect(context)
-            if attempt == self._connection_attempt and self.is_running:
-                self._show_connection(observation)
+            async for observation in subscription:
+                if observation.context is None:
+                    continue
+                if (
+                    self.is_running
+                    and observation.revision == self.workspace.store.observation.revision
+                ):
+                    self._show_view(observation)
         except Exception as error:
             self._handle_exception(error)
+        finally:
+            subscription.close()
 
-    def _show_connection(self, observation: SessionObservation) -> None:
-        identity = observation.identity
-        self.query_one("#context", Static).update(
-            safe_text(f"Context: {identity.context if identity else '—'}")
-        )
+    def _show_view(self, view: ViewObservation) -> None:
+        observation = view.connection
+        self.query_one("#context", Static).update(safe_text(f"Context: {view.context or '—'}"))
         self.query_one("#namespace", Static).update(
-            safe_text(f"Namespace: {observation.namespace or 'All'}")
+            safe_text(
+                f"Namespace: {'—' if view.status is ViewStatus.CONNECTING else observation.namespace or 'All'}"
+            )
         )
-        state = observation.state.name.replace("_", " ").title()
+        state = (
+            "Connecting"
+            if view.status is ViewStatus.CONNECTING
+            else observation.state.name.replace("_", " ").title()
+        )
         self.query_one("#connection", Static).update(state)
-        usable = observation.state in {ConnectionState.CONNECTED, ConnectionState.LIMITED}
+        usable = observation.state in USABLE_CONNECTIONS
         self.query_one("#empty-title", Static).update(
-            "Session connected" if usable else "Connection unavailable"
+            "Stale resource data"
+            if view.snapshot is not None and view.problem is not None
+            else "Resource data unavailable"
+            if usable and view.status is ViewStatus.FAILED
+            else "Session connected"
+            if usable
+            else "Connection unavailable"
         )
         self.query_one("#empty-description", Static).update(
-            "Live resource views are upcoming."
-            if usable
-            else "Check the connection status below; F2 contexts · F4 retry."
+            "Live synchronization is active; the table view is upcoming."
+            if view.status is ViewStatus.LIVE
+            else "Check the synchronization status below; :ctx contexts · :retry reconnect."
         )
-        self.query_one("#resource-view", Vertical).border_title = "Resources · " + state.lower()
-        self._set_status(observation.message)
+        self.query_one("#resource-view", Vertical).border_title = (
+            "Resources · " + view.status.name.lower()
+        )
+        self._set_status(view.message)
 
     async def on_unmount(self) -> None:
-        self._connection_attempt += 1
-        if self._connection_task is not None:
-            self._connection_task.cancel()
-            await asyncio.gather(self._connection_task, return_exceptions=True)
-        await self.sessions.close()
+        await self.workspace.close()
+        if self._view_task is not None:
+            await asyncio.gather(self._view_task, return_exceptions=True)
 
     def action_contexts(self) -> None:
         if not self.sessions.catalog.names:
@@ -268,17 +277,12 @@ class KubetrolApp(App[None]):
             self._start_connection(value)
 
     def action_namespaces(self) -> None:
-        if self.sessions.observation.state not in {
-            ConnectionState.CONNECTED,
-            ConnectionState.LIMITED,
-        }:
+        observation = self.workspace.store.observation.connection
+        if observation.state not in USABLE_CONNECTIONS:
             self._set_status("Connect to a context before selecting a namespace.")
         elif not isinstance(self.screen, ModalScreen):
             values = tuple(
-                sorted(
-                    set(self.sessions.observation.namespaces)
-                    | {self.sessions.observation.namespace or "default"}
-                )
+                sorted(set(observation.namespaces) | {observation.namespace or "default"})
             )
             self.push_screen(
                 ScopeScreen("Choose namespace (* = All)", ("*", *values)), self._namespace_selected
@@ -287,17 +291,17 @@ class KubetrolApp(App[None]):
     def _namespace_selected(self, value: str | None) -> None:
         if value is not None:
             try:
-                self._show_connection(
-                    self.sessions.select_namespace(None if value == "*" else value)
+                self._connection_task = self.workspace.select_namespace(
+                    None if value == "*" else value
                 )
             except AppError as error:
                 self._set_status(str(error))
 
     def action_retry(self) -> None:
         context = (
-            self.sessions.observation.identity.context
-            if self.sessions.observation.identity
-            else self.sessions.request.context or self.sessions.catalog.current
+            self.workspace.store.observation.context
+            or self.sessions.request.context
+            or self.sessions.catalog.current
         )
         if context is not None:
             self._start_connection(context)
