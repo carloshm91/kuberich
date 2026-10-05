@@ -89,3 +89,6 @@ belongs to a newly created/deleted cluster, never an ambient context.
 Framework and API references: [Textual DataTable](https://textual.textualize.io/widgets/data_table/),
 [pod lifecycle](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/),
 [sidecar semantics](https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/).
+
+Measured delivery evidence and unavailable platform checks are recorded in
+[B02 acceptance](acceptance/B02.md).
