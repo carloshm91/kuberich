@@ -104,6 +104,30 @@ enforcement must be enabled and verified before the first public release in
 changes still require the maintainer's explicit approval.
 See [GitHub's protected-branch availability](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
 
+## Temporary private-development workflow when Actions is unavailable
+
+On 2026-10-04, during PR #108, GitHub refused to start hosted jobs after the
+maintainer exhausted the account's 2,000 included Actions minutes. The maintainer
+explicitly authorized continuing private development and merging with measured
+local checks while this quota/billing restriction remains. This authorization
+takes precedence over the usual requirement for green hosted checks during this
+temporary condition.
+
+Before a merge, run the applicable full suite, independent line/branch/changed-line
+and critical-module gates, lint/formatting, strict typing, build/metadata checks,
+and relevant owned-cluster/PTY/install verification locally. Record the tested
+commit/application tree, interpreter/platform, commands, counts and results in
+the PR/issue. Record which hosted jobs did not run; Linux evidence does not
+establish a new macOS result. Failed local checks still block delivery.
+
+Keep the hosted workflows and their true failure status; never manufacture a
+passing check or report blocked jobs as passed. Restore full platform CI when
+the restriction is resolved, and qualify the full supported matrix before the
+first public release. [Follow-up #109](https://github.com/carloshm91/kubetrol/issues/109)
+tracks a less costly development matrix and trigger policy. Account budgets,
+paid/persistent runners, repository visibility and publication remain separate
+maintainer decisions.
+
 ## Test layers
 
 - Unit: domain rules, typed sorting, quantities, validation, redaction, command
@@ -186,6 +210,11 @@ Its view domain joins the critical inventory. Pilot and PTYs verify stale/live/e
 status and terminal restoration. The kind check adds actual namespace/resource
 switches, client reopening and workspace exit cleanup. UI counts are available;
 B02 still owns table rows and Q01 owns performance qualification.
+
+Preview correction #107 adds no-bookmark idle streams, normal renewal/checkpoint
+continuity and failed-establishment/timeout backoff regression tests. Pilot and
+source/installed CLI PTYs verify the clearer live/count state and terminal cleanup;
+the kind check requires two real quiet-watch renewals without stale status or relisting.
 
 The PTY harness retains a shell-like session owner while the actual CLI process
 runs. It records all terminal attributes immediately before/after that process,

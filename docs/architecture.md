@@ -261,6 +261,13 @@ apply backpressure and consumer failures propagate. Context-generation routing,
 UI subscriptions and batched presentation remain C04/B02. See the implemented
 [resource synchronization contract](resource-watches.md).
 
+Preview correction #107 separates ordinary request/header deadlines from watch
+body lifetime. Server expiry happens before the bounded client lifetime; no
+bookmark traffic is assumed. Clean EOF after a healthy established interval
+renews the checkpoint while keeping LIVE. Immediate EOF/transport failures keep
+stale/retry behavior; only an established healthy stream resets prior failures.
+The interval starts after headers, so failed slow establishment cannot mask outages.
+
 ## C04 active-view ownership decision
 
 `domain/views.py` owns immutable view observations and pure generation/freshness

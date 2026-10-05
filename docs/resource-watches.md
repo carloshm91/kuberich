@@ -37,16 +37,19 @@ and secret-redaction boundaries.
 
 | Condition | Behavior |
 | --- | --- |
-| EOF, timeout, incomplete trailing frame, transport failure | Retain the last state and retry from the last fully applied checkpoint |
+| Clean EOF after a healthy open watch | Renew from the last checkpoint, keeping LIVE without a stale warning or backoff |
+| Very short EOF, timeout, incomplete trailing frame, transport failure | Retain the last state, show stale status and retry from the last fully applied checkpoint |
 | HTTP/in-stream 408, 429, 500, 502, 503, 504 | Retry with bounded delay |
 | HTTP/in-stream 410 | Invalidate the old cache, back off, then perform a complete new LIST before WATCH |
 | HTTP 401 with exec-token credentials | The shared transport refreshes once; a further rejection stops |
 | Other auth/permission errors, missing API, TLS failure, malformed data, limits | Surface the failure and stop automatic retry |
 
 Retries start at 0.25 seconds with ±20% jitter and double up to 30 seconds.
-Successful event processing resets the delay. A healthy response lasting at least
-`min(1 second, request_timeout / 2)` also resets it, so idle resources do not cause
-ever-longer recovery delays. Repeated immediate EOF/410 responses back off.
+Successful event processing resets the delay. An established stream lasting at
+least `min(1 second, request_timeout / 2)` also resets it on a transport failure.
+Clean EOF after that interval renews normally, without RETRYING or backoff.
+The interval starts when response headers arrive, so slow failed handshakes/LISTs
+cannot reset failures. Repeated immediate EOF/410 responses still back off.
 Decimal Retry-After seconds and Status.details.retryAfterSeconds can raise the
 delay up to 300 seconds. Unsupported HTTP-date/invalid header values use ordinary
 backoff. There is no automatic retry of mutations: the product loop sends GETs.
@@ -71,8 +74,16 @@ This is not a measured total-RSS guarantee; full workload performance remains Q0
 Watch requests use the existing authenticated/TLS/proxy client, with redirects
 and automatic decompression disabled. Each event is limited to 8 MiB; complete
 newline-delimited JSON is required. Partial trailing frames are discarded and
-retried from the last applied version. HTTP request lifetime is bounded by
-`min(request_timeout, 60 seconds)`; the server also receives timeoutSeconds.
+retried from the last applied version. Ordinary reads retain their request deadline;
+watch connections/header establishment are separately bounded by that deadline
+and the watch's total lifetime. The server receives an integer renewal interval of
+`ceil(min(request_timeout, 60 seconds))`. The client allows that interval plus
+`min(request_timeout, 60 seconds) + 1 second` for establishment and expiry delivery,
+so quiet resources do not time out merely because no events/bookmarks arrive.
+The maximum watch lifetime is 121 seconds, subject to aiohttp's rounding of
+timeouts of five seconds or more to the next whole-second scheduling boundary.
+A server that never closes still produces an actual bounded timeout and stale
+status. Cancellation never waits for these deadlines.
 JSON decoding and event normalization use owned thread tasks and await them even
 on cancellation. Closing/cancelling the loop or a consumer failure closes the
 response. Backoff waits and slow consumers remain cancellable. No other context
@@ -92,6 +103,10 @@ qualify normalization, UID/recreation/replay rules, memory bounds and retry
 decisions; the domain watch module has a critical 100% line/branch coverage gate.
 Actual HTTP tests cover chunks, EOF, 410, denied reads, malformed data, token
 refresh, backoff, slow consumers and cancellation, including worker cleanup.
+[Preview correction #107](https://github.com/carloshm91/kubetrol/issues/107)
+adds quiet renewal without bookmarks, checkpoint continuity, delayed headers,
+and timeout/backoff recovery; Pilot, source/installed CLI PTYs and kind verify
+that normal renewals keep the visible state live.
 
 The existing [disposable-kind verification](resource-discovery.md#verification)
 also creates an owned namespace/ConfigMap, receives a write made between LIST and
@@ -101,3 +116,5 @@ setup inside the script's newly created local cluster, not application mutation
 features. CI requires this on Linux/Python 3.12 and retains sanitized evidence.
 
 Source: [Kubernetes list/watch, bookmarks and expired versions](https://kubernetes.io/docs/reference/using-api/api-concepts/#efficient-detection-of-changes).
+See also [aiohttp timeouts and response ownership](https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientTimeout)
+and [client-go's clean/very-short watch handling](https://github.com/kubernetes/client-go/blob/v0.36.4/tools/cache/reflector.go).

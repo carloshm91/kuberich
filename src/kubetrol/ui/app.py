@@ -85,8 +85,8 @@ class KubetrolApp(App[None]):
         Binding("colon", "focus_command", "Cmd", key_display=":", priority=True),
         Binding("question_mark", "show_help", "Help", key_display="?"),
         Binding("f1", "show_help", "Help", show=False, priority=True),
-        Binding("c", "contexts", "Ctx"),
-        Binding("n", "namespaces", "Ns"),
+        Binding("c", "contexts", "Contexts"),
+        Binding("n", "namespaces", "Namespaces"),
         Binding("r", "retry", "Retry", show=False),
         Binding("i", "connection_details", "Status", show=False),
         Binding("f2", "contexts", "Contexts", show=False, priority=True),
@@ -241,14 +241,18 @@ class KubetrolApp(App[None]):
             if view.snapshot is not None and view.problem is not None
             else "Resource data unavailable"
             if usable and view.status is ViewStatus.FAILED
-            else "Session connected"
+            else "Resource data ready"
+            if view.status is ViewStatus.LIVE
+            else "Loading resources"
             if usable
             else "Connection unavailable"
         )
         self.query_one("#empty-description", Static).update(
-            "Live synchronization is active; the table view is upcoming."
+            "Table rows arrive in the next preview. :ns choose namespace · :ctx choose context."
             if view.status is ViewStatus.LIVE
-            else "Check the synchronization status below; :ctx contexts · :retry reconnect."
+            else "Keeping the last snapshot while reconnecting. Press i for details."
+            if view.status is ViewStatus.STALE
+            else "Press i for status · r retry · :ctx choose context."
         )
         self.query_one("#resource-view", Vertical).border_title = (
             "Resources · " + view.status.name.lower()

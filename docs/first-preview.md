@@ -181,3 +181,25 @@ and the safe status message for a failure. No credentials or kubeconfig contents
 are needed. These commands are qualified with owned fake APIs, real PTYs and a
 disposable kind cluster; actual cloud-provider qualification remains pending.
 See [active-view behavior](resource-views.md) for isolated tests and limits.
+
+## Quiet-watch correction: #107
+
+From this correction's branch, in your interactive terminal:
+
+```sh
+git fetch origin
+git switch fix/107-watch-preview
+uv sync --locked --group dev
+uv run kubetrol
+```
+
+Choose a context with `:ctx`, then type `:ns YOUR_NAMESPACE` and Enter. Look for
+**Resource data ready** and **Live · N pods**. Leave it open for 30 seconds:
+ordinary watch renewal should keep Live without periodic reconnect warnings.
+The table still has no rows; B02 #26 adds them next. `:ctx` is a shortcut hint,
+not an automatic context change. A real failed stream still shows stale/error
+state; press `i` to read the full safe message. Ctrl+Q returns to your shell.
+
+For feedback, report the namespace/count and, if a retry still appears, only its
+safe status text. These steps use your chosen trusted local configuration; the
+automated evidence uses owned fake APIs and a uniquely created/deleted kind cluster.

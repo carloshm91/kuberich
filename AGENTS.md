@@ -44,6 +44,10 @@ implementation; do not claim to switch models without actual environment support
   in the earliest unfinished product milestone; see docs/backlog.md.
 - Use a short-lived issue branch, an issue-linked pull request, required checks,
   and squash merging. Keep main releasable.
+- While hosted Actions cannot start because of the account quota/billing block,
+  follow the maintainer-authorized temporary local verification workflow in
+  docs/quality.md. Record real local evidence and unavailable platform checks;
+  preserve coverage gates and qualify full platform CI before a public release.
 - Sign off authored commits with the repository identity (`git commit -s`) and
   preserve the sign-off in squash commits; satisfy the DCO check.
 - A plan, stub, or mocked demonstration does not complete a behavior issue.

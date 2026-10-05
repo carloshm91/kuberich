@@ -214,15 +214,22 @@ class KubernetesSession:
             token = configuration.api_key.get("BearerToken")
             if token:
                 headers["Authorization"] = token
-            async with api.rest_client.pool_manager.get(
-                str(configuration.host) + path,
-                headers=headers,
-                params=params,
-                proxy=configuration.proxy,
-                server_hostname=configuration.tls_server_name,
-                allow_redirects=False,
-                timeout=aiohttp.ClientTimeout(total=timeout, connect=timeout, sock_read=timeout),
-            ) as response:
+            # Bound connection/header establishment separately from a watch's
+            # longer body lifetime. An idle watch need not send bookmarks.
+            handshake = min(self.timeout, timeout)
+            async with asyncio.timeout(handshake):
+                response = await api.rest_client.pool_manager.get(
+                    str(configuration.host) + path,
+                    headers=headers,
+                    params=params,
+                    proxy=configuration.proxy,
+                    server_hostname=configuration.tls_server_name,
+                    allow_redirects=False,
+                    timeout=aiohttp.ClientTimeout(
+                        total=timeout, connect=handshake, sock_read=timeout
+                    ),
+                )
+            async with response:
                 if response.status == 401 and credentials is not None and not refreshed:
                     credentials.invalidate()
                     refreshed = True
@@ -273,19 +280,27 @@ class KubernetesSession:
                 ConnectionState.API_ERROR, "Invalid or oversized Kubernetes JSON response."
             ) from None
 
+    @property
+    def watch_seconds(self) -> int:
+        """Server renewal interval, independent of connection establishment."""
+        return ceil(min(self.timeout, 60.0))
+
     async def watch_json(
         self, path: str, resource_version: str, *, max_bytes: int = 8 * 1024 * 1024
     ) -> AsyncGenerator[dict[str, Any] | None, None]:
         """None signals an opened stream; complete JSON lines follow, without a queue."""
-        duration = min(self.timeout, 60.0)
+        duration = self.watch_seconds
+        # Allow headers and graceful server expiry before the client deadline.
+        # A server which never finishes still times out, including with no events.
+        lifetime = duration + min(self.timeout, 60.0) + 1.0
         params = {
             "watch": "true",
             "resourceVersion": resource_version,
             "allowWatchBookmarks": "true",
-            "timeoutSeconds": str(max(1, ceil(duration))),
+            "timeoutSeconds": str(duration),
         }
         try:
-            async with self._response(path, params, "application/json", duration) as response:
+            async with self._response(path, params, "application/json", lifetime) as response:
                 yield None
                 buffer = bytearray()
                 async for chunk in response.content.iter_chunked(16384):

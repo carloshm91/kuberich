@@ -7,6 +7,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Fixed
 
+- Keep quiet resource watches live through normal renewal without false timeout
+  warnings or growing retries; still expose genuine outages with bounded recovery.
+- Replace “Session connected” with “Resource data ready”, distinguish loading
+  from a successful empty collection, and spell out context/namespace shortcut hints.
+
 - Accept null optional exec credential args/env lists, including doctl's `env: null`,
   with regression tests for authentication and switching away from an auth error.
 - Reach context/namespace pickers with `c`/`n` outside text inputs and connection

@@ -25,6 +25,12 @@ a second person's approval is not mandatory. A contributor cannot be expected
 to approve their own PR. Add mandatory independent review when another active
 maintainer is available.
 
+While the documented account quota/billing restriction blocks hosted Actions,
+the maintainer has authorized merges backed by measured local checks. Follow
+the [temporary verification workflow](docs/quality.md#temporary-private-development-workflow-when-actions-is-unavailable),
+record unavailable platform checks honestly, and retain the full public-release
+qualification requirement.
+
 GitHub issues and project status are the live record. The checked-in backlog
 captures scope and dependencies; update it when the plan changes materially.
 
