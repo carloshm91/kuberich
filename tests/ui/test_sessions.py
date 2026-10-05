@@ -11,9 +11,11 @@ from textual.widgets import OptionList, Static
 from kubetrol.config.catalog import Entry
 from kubetrol.config.schema import Settings
 from kubetrol.domain.connections import ConnectionRequest, ConnectionState
+from kubetrol.domain.views import ViewStatus
 from kubetrol.ui.app import KubetrolApp
 from kubetrol.ui.scopes import ConnectionScreen, ScopeScreen
 from tests.support.connections import catalog_fixture, namespaces
+from tests.support.workspace import wait_for
 from tests.support.workspace import workspace_api as fake_api
 
 
@@ -37,8 +39,9 @@ async def test_select_context_namespace_scroll_and_retry_without_rewriting_file(
         app = KubetrolApp(Settings(read_only=True), logging.Logger("contexts"), catalog=catalog)
         async with app.run_test(size=size) as pilot:
             await connected(app)
+            await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
             await pilot.pause()
-            assert "Session connected" in str(app.query_one("#empty-title", Static).content)
+            assert "Resource data ready" in str(app.query_one("#empty-title", Static).content)
             assert "Read-only" in str(app.status.content) and "Insecure transport" in str(
                 app.status.content
             )
@@ -69,7 +72,9 @@ async def test_select_context_namespace_scroll_and_retry_without_rewriting_file(
             await connected(app)
             assert app.sessions.observation.namespace is None
             await pilot.press("slash", "a", "escape", "escape")
-            assert "Connected" in str(app.status.content)
+            await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
+            await pilot.pause()
+            assert "Live" in str(app.status.content)
             evidence = Path("artifacts/ui").resolve()
             evidence.mkdir(parents=True, exist_ok=True)
             app.save_screenshot(filename=f"context-sessions-{size[0]}.svg", path=str(evidence))

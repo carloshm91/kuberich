@@ -87,7 +87,7 @@ def test_current_updates_map_to_explicit_state_and_never_fake_an_empty_snapshot(
             has_snapshot and status is not SyncStatus.RELISTING
         )
     else:
-        assert "1 pods" in view.message if has_snapshot else "0 pods" in view.message
+        assert "1 pods" in view.message if has_snapshot else view.message == "Loading pods"
 
 
 def test_switch_clears_snapshot_immediately_and_rejects_all_old_results():

@@ -123,6 +123,56 @@ def test_stale_live_recovery_scope_switch_and_quit_restore_real_terminal(tmp_pat
         assert not thread.is_alive()
 
 
+def test_quiet_watch_renewals_keep_the_real_cli_live_without_retry_hints(tmp_path):
+    server = Server()
+    server.quiet_watches.set()
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    path = config(
+        tmp_path / "owned-config",
+        f"http://127.0.0.1:{server.server_port}",
+        {"token": "synthetic-pty"},
+    )
+    before = path.read_bytes()
+    try:
+        with TerminalSession(
+            [
+                sys.executable,
+                "-m",
+                "kubetrol",
+                "--kubeconfig",
+                str(path),
+                "--request-timeout",
+                "250ms",
+            ],
+            tmp_path,
+        ) as terminal:
+            terminal.wait_for(b"Resource data ready")
+            terminal.wait_for(b"Live")
+            terminal.wait_for(b"1 pods")
+            deadline = time.monotonic() + 8
+            while not server.renewed.is_set():
+                terminal._read()
+                assert time.monotonic() < deadline, "Quiet CLI watch failed to renew"
+            assert len(server.watch_versions) == 3
+            assert len(set(server.watch_versions)) == 1
+            assert b"Stale resource data" not in terminal.transcript
+            assert b"Reconnecting" not in terminal.transcript
+            assert b"timed out" not in terminal.transcript
+            assert b"Session connected" not in terminal.transcript
+            assert b"synthetic-pty" not in terminal.transcript
+            terminal.send(b"\x11")
+            terminal.finish()
+            terminal.save_evidence("workspace-quiet-watch-renewal")
+        assert path.read_bytes() == before
+    finally:
+        server.stopping.set()
+        server.shutdown()
+        thread.join(timeout=2)
+        server.server_close()
+        assert not thread.is_alive()
+
+
 def test_quitting_during_exec_helper_reaps_process_and_restores_tty(tmp_path: Path) -> None:
     script = tmp_path / "helper.py"
     pid_path = tmp_path / "helper-pid"

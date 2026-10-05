@@ -53,8 +53,8 @@ bounds do not establish maximum-load/RSS performance; Q01 owns that qualificatio
 | State | Data and action |
 | --- | --- |
 | Disconnected | No active configuration/data; select a configured context |
-| Connecting/loading | Previous snapshot is cleared; inputs and quit remain responsive |
-| Live | LIST succeeded and WATCH opened; show the collection count |
+| Connecting/loading | Previous snapshot is cleared; no zero count is invented before LIST; inputs and quit remain responsive |
+| Live | LIST succeeded and WATCH opened; “Resource data ready” and the collection count; normal watch renewals keep this state |
 | Stale/reconnecting | Keep the last snapshot with an explicit freshness warning |
 | Relisting | Expiration discards the snapshot before loading its replacement |
 | Failed | Show the owned error; retained data, if any, remains stale |
@@ -66,6 +66,12 @@ must independently succeed. Denied reads never become a successful empty list or
 hot retries. `i` / `:status` opens the full synchronization message, and `r` /
 `:retry` reopens the currently requested context. Read-only and insecure-transport
 indicators remain visible in the status.
+
+The center explains that table rows arrive in the next preview; it does not mean
+the cluster has no pods. A real successful empty snapshot shows `Live · 0 pods`.
+`:ctx` chooses a context and `:ns` chooses a namespace. Those are keyboard hints;
+automatic watch renewal never chooses a different context. Context/namespace
+footer labels are written out rather than abbreviated.
 
 ## Trial and verification
 

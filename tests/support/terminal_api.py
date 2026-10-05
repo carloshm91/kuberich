@@ -2,6 +2,7 @@
 
 import json
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
@@ -29,17 +30,24 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         assert self.headers.get("Authorization") == "Bearer synthetic-pty"
         parsed = urlsplit(self.path)
-        if "watch" in parse_qs(parsed.query):
+        query = parse_qs(parsed.query)
+        if "watch" in query:
             if self.server.fail_watches.is_set():
                 self.send_error(503, "Owned fixture outage")
                 return
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
+            with self.server.watch_lock:
+                self.server.watch_versions.append(query["resourceVersion"][0])
+                if len(self.server.watch_versions) >= 3:
+                    self.server.renewed.set()
+            deadline = time.monotonic() + int(query["timeoutSeconds"][0])
             try:
-                while not self.server.stopping.wait(0.03):
-                    self.wfile.write(frame(bookmark("owned-pty-version")))
-                    self.wfile.flush()
+                while time.monotonic() < deadline and not self.server.stopping.wait(0.03):
+                    if not self.server.quiet_watches.is_set():
+                        self.wfile.write(frame(bookmark("owned-pty-version")))
+                        self.wfile.flush()
             except OSError:
                 pass
             return
@@ -71,3 +79,7 @@ class Server(ThreadingHTTPServer):
         super().__init__(("127.0.0.1", 0), Handler)
         self.fail_watches = threading.Event()
         self.stopping = threading.Event()
+        self.quiet_watches = threading.Event()
+        self.renewed = threading.Event()
+        self.watch_versions = []
+        self.watch_lock = threading.Lock()

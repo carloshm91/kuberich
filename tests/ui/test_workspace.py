@@ -10,6 +10,7 @@ from aiohttp import web
 from textual.widgets import Static
 
 from kubetrol.config.schema import Settings
+from kubetrol.domain.connections import ConnectionRequest
 from kubetrol.domain.views import ViewStatus
 from kubetrol.ui.app import KubetrolApp
 from kubetrol.ui.scopes import ConnectionScreen
@@ -152,3 +153,59 @@ async def test_denied_pod_list_is_an_error_then_manual_allowed_namespace_recover
             assert app.workspace.store.observation.snapshot.items[0].namespace == "allowed"
             assert "Live" in str(app.status.content)
             await pilot.press("ctrl+q")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("size,count", [((40, 12), 0), ((100, 30), 1)])
+async def test_quiet_renewal_preserves_live_preview_copy_and_selected_context(
+    tmp_path, monkeypatch, size, count
+):
+    versions, displayed = [], []
+
+    async def handler(request):
+        return namespaces("team")
+
+    async def resources(request):
+        if "watch" not in request.query:
+            return web.json_response(collection(*([item()] if count else [])))
+        versions.append(request.query["resourceVersion"])
+        response = web.StreamResponse()
+        await response.prepare(request)
+        await asyncio.sleep(int(request.query["timeoutSeconds"]))
+        await response.write_eof()
+        return response
+
+    async with workspace_api(handler, resources) as url:
+        app = KubetrolApp(
+            Settings(),
+            logging.Logger("quiet-preview"),
+            catalog=catalog_fixture(tmp_path, url),
+            connection=ConnectionRequest(timeout=0.25),
+        )
+        show = app._show_view
+
+        def record(view):
+            displayed.append(view)
+            show(view)
+
+        monkeypatch.setattr(app, "_show_view", record)
+        async with app.run_test(size=size) as pilot:
+            await wait_for(lambda: len(versions) >= 3)
+            await pilot.pause()
+            assert str(app.query_one("#empty-title", Static).content) == "Resource data ready"
+            description = str(app.query_one("#empty-description", Static).content)
+            assert "Table rows arrive in the next preview" in description
+            assert ":ctx choose context" in description
+            assert str(app.query_one("#context", Static).content) == "Context: kubetrol-test-one"
+            assert f"Live · {count} pods" in str(app.status.content)
+            assert len(set(versions)) == 1
+            assert displayed and all(
+                view.status not in {ViewStatus.STALE, ViewStatus.FAILED, ViewStatus.RELISTING}
+                for view in displayed
+            )
+            assert app.resources.row_count == 0
+            evidence = Path("artifacts/ui").resolve()
+            evidence.mkdir(parents=True, exist_ok=True)
+            app.save_screenshot(filename=f"workspace-quiet-live-{size[0]}.svg", path=str(evidence))
+            await pilot.press("ctrl+q")
+        assert app.sessions.client is None and app._view_task.done()

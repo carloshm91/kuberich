@@ -27,6 +27,10 @@ commands, refresh and effectful-operation integration stay with their owners.
 C02 delivers discovery and complete resource snapshots; B02 delivers the visible
 live table. Do not label namespace selection as an implemented pod browser.
 
+The C04 trial exposed misleading idle-watch retries and preview text. Focused
+[correction #107](https://github.com/carloshm91/kubetrol/issues/107) precedes B02;
+it repairs renewal/status behavior and does not supply table rows.
+
 ## Epics
 
 | Issue | Outcome | Completion milestone |

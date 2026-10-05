@@ -187,6 +187,11 @@ status and terminal restoration. The kind check adds actual namespace/resource
 switches, client reopening and workspace exit cleanup. UI counts are available;
 B02 still owns table rows and Q01 owns performance qualification.
 
+Preview correction #107 adds no-bookmark idle streams, normal renewal/checkpoint
+continuity and failed-establishment/timeout backoff regression tests. Pilot and
+source/installed CLI PTYs verify the clearer live/count state and terminal cleanup;
+the kind check requires two real quiet-watch renewals without stale status or relisting.
+
 The PTY harness retains a shell-like session owner while the actual CLI process
 runs. It records all terminal attributes immediately before/after that process,
 using a separate completion pipe, before the session owner exits and macOS

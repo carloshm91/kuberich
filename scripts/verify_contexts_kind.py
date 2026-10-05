@@ -189,6 +189,64 @@ async def verify_workspace(catalog, path: Path, context: str) -> dict[str, objec
     }
 
 
+async def verify_quiet_renewal(reader, resource, catalog, path, context) -> dict[str, object]:
+    """Renew a quiet read in a namespace created only inside the owned cluster."""
+    api = CoreV1Api(reader.session.api)
+    namespace = "kubetrol-quiet-" + uuid4().hex[:12]
+    created = await api.create_namespace(V1Namespace(metadata=V1ObjectMeta(name=namespace)))
+    sessions = SessionService(
+        catalog,
+        ConnectionRequest(kubeconfig=str(path), context=context, namespace=namespace, timeout=2),
+    )
+    updates, opened = [], 0
+    finished = asyncio.Event()
+
+    async def sink(update):
+        nonlocal opened
+        updates.append(update.status)
+        if update.status is SyncStatus.LIVE and update.event is None:
+            opened += 1
+            if opened == 3:
+                finished.set()
+
+    try:
+        await sessions.connect(context)
+        task = asyncio.create_task(
+            ListWatch(ResourceReader(sessions.client)).run(resource, namespace, sink)
+        )
+        completion = asyncio.create_task(finished.wait())
+        try:
+            done, _ = await asyncio.wait(
+                {task, completion}, timeout=15, return_when=asyncio.FIRST_COMPLETED
+            )
+            if task in done:
+                await task
+            assert finished.is_set() and opened == 3
+            assert updates.count(SyncStatus.SNAPSHOT) == 1
+            assert not set(updates) & {SyncStatus.RETRYING, SyncStatus.RELISTING, SyncStatus.FAILED}
+        finally:
+            task.cancel()
+            completion.cancel()
+            results = await asyncio.gather(task, completion, return_exceptions=True)
+        assert isinstance(results[0], asyncio.CancelledError)
+        assert not sessions.client.api.rest_client.pool_manager.connector._acquired
+        owned_api = sessions.client.api
+    finally:
+        try:
+            await sessions.close()
+        finally:
+            await api.delete_namespace(
+                namespace, body={"preconditions": {"uid": created.metadata.uid}}
+            )
+    assert owned_api.rest_client.pool_manager.closed
+    return {
+        "real_quiet_watch_renewal": True,
+        "normal_watch_renewal_stays_live": True,
+        "quiet_watch_renews_without_relist": True,
+        "owned_quiet_watch_cleanup": True,
+    }
+
+
 async def verify(path: Path, context: str) -> dict[str, object]:
     request = ConnectionRequest(kubeconfig=str(path), context=context, timeout=15)
     catalog = load_catalog(request, {})
@@ -228,6 +286,9 @@ async def verify(path: Path, context: str) -> dict[str, object]:
         deployment_snapshot = await reader.list(deployments, "kube-system", page_size=1)
         assert deployment_snapshot.resource_version and deployment_snapshot.items
         watch_evidence = await verify_watch(reader, discovery.find("configmaps"))
+        quiet_evidence = await verify_quiet_renewal(
+            reader, discovery.find("secrets"), catalog, path, context
+        )
         workspace_evidence = await verify_workspace(catalog, path, context)
         assert path.read_bytes() == before
         active = sessions.client.api
@@ -254,6 +315,7 @@ async def verify(path: Path, context: str) -> dict[str, object]:
         "discovered_resource_count": len(discovery.resources),
         "scoped_pod_count": len(scoped_pods.items),
         **watch_evidence,
+        **quiet_evidence,
         **workspace_evidence,
     }
 

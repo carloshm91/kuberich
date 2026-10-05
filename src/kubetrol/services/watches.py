@@ -73,6 +73,7 @@ class ListWatch:
         failures = 0
         await sink(SyncUpdate(SyncStatus.LOADING))
         while True:
+            opened = None
             try:
                 if state is None:
                     try:
@@ -83,11 +84,11 @@ class ListWatch:
                             "Invalid Kubernetes live collection snapshot.",
                         ) from None
                     await _emit(sink, SyncUpdate(SyncStatus.SNAPSHOT, state.snapshot))
-                started = self.monotonic()
                 stream = self.reader.session.watch_json(path, state.resource_version)
                 async with aclosing(stream):
                     async for payload in stream:
                         if payload is None:
+                            opened = self.monotonic()
                             await _emit(sink, SyncUpdate(SyncStatus.LIVE, state.snapshot))
                             continue
                         event = await self._event(resource, payload, namespace)
@@ -101,9 +102,12 @@ class ListWatch:
                         failures = 0
                         if changed:
                             await _emit(sink, SyncUpdate(SyncStatus.LIVE, state.snapshot, event))
-                # Short successful responses without progress still back off.
-                if self.monotonic() - started >= min(1.0, self.reader.session.timeout / 2):
+                if opened is not None and self.monotonic() - opened >= min(
+                    1.0, self.reader.session.timeout / 2
+                ):
+                    # Normal bounded watch renewal retains LIVE and the checkpoint.
                     failures = 0
+                    continue
                 problem = ConnectionProblem(
                     ConnectionState.UNREACHABLE,
                     "The watch ended. Reconnecting from its last version.",
@@ -112,6 +116,14 @@ class ListWatch:
                 raise error.problem from None
             except ConnectionProblem as error:
                 problem = error
+            # Only an established healthy stream resets consecutive failures.
+            # Slow failed headers, LISTs and immediate EOFs still back off.
+            if (
+                opened is not None
+                and problem.state in {ConnectionState.TIMEOUT, ConnectionState.UNREACHABLE}
+                and self.monotonic() - opened >= min(1.0, self.reader.session.timeout / 2)
+            ):
+                failures = 0
             action = recovery(problem)
             if action is Recovery.STOP:
                 await sink(

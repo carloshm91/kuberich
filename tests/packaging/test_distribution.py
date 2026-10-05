@@ -230,15 +230,20 @@ def test_installed_initial_help_and_visibility_options_restore_tty(
         terminal.save_evidence("installed-launch-help")
 
 
+@pytest.mark.parametrize("quiet", [False, True])
 def test_installed_wheel_connects_to_owned_api_and_changes_namespace(
     installed_wheel: tuple[Path, Path],
+    quiet: bool,
 ) -> None:
     import threading
+    import time
 
     from tests.support.terminal_api import Server, config
 
     binary_dir, directory = installed_wheel
     server = Server()
+    if quiet:
+        server.quiet_watches.set()
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     path = config(
@@ -249,16 +254,28 @@ def test_installed_wheel_connects_to_owned_api_and_changes_namespace(
     before = path.read_bytes()
     try:
         with TerminalSession(
-            [str(binary_dir / "kubetrol"), "--kubeconfig", str(path)], directory
+            [str(binary_dir / "kubetrol"), "--kubeconfig", str(path), "--request-timeout", "250ms"],
+            directory,
         ) as terminal:
             terminal.wait_for(b"Live")
             terminal.wait_for(b"1 pods")
+            terminal.wait_for(b"Resource data ready")
+            if quiet:
+                deadline = time.monotonic() + 8
+                while not server.renewed.is_set():
+                    terminal._read()
+                    assert time.monotonic() < deadline, "Installed quiet watch failed to renew"
+                assert len(set(server.watch_versions)) == 1
+                assert b"Stale resource data" not in terminal.transcript
+                assert b"Reconnecting" not in terminal.transcript
             marker = terminal.send(b":ns team\r")
             terminal.wait_for(b"Namespace: team", since=marker)
             terminal.wait_for(b"Live", since=marker)
             terminal.send(b"q")
             terminal.finish()
-            terminal.save_evidence("installed-context-session")
+            terminal.save_evidence(
+                "installed-quiet-watch" if quiet else "installed-context-session"
+            )
         assert path.read_bytes() == before
     finally:
         server.stopping.set()

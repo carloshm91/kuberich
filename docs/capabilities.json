@@ -128,7 +128,7 @@
       ],
       "source": "internal/view/browser.go",
       "status": "planned",
-      "difference": "C03 implements backend list/watch updates and recovery. C04 connects one active generation-bound pod view, bounded subscriptions, scope cancellation and visible live/stale/error counts. Table rows/manual refresh remain B02/F05; complete CORE02 parity is still planned.",
+      "difference": "C03 implements backend list/watch updates and recovery. C04 connects one active generation-bound pod view, bounded subscriptions, scope cancellation and visible live/stale/error counts. Preview correction #107 keeps quiet renewals live, bounds failed streams and clarifies loading/count/shortcut status. Table rows/manual refresh remain B02/F05; complete CORE02 parity is still planned.",
       "partial_evidence": [
         "docs/resource-watches.md",
         "tests/unit/test_watches.py",
@@ -138,7 +138,8 @@
         "tests/unit/test_views.py",
         "tests/contract/test_workspace.py",
         "tests/ui/test_workspace.py",
-        "tests/terminal/test_contexts.py"
+        "tests/terminal/test_contexts.py",
+        "tests/packaging/test_distribution.py"
       ]
     },
     {

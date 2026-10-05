@@ -184,19 +184,35 @@ async def test_retries_retain_checkpoint_and_exponentially_bound_failures(
 @pytest.mark.asyncio
 async def test_long_healthy_stream_resets_backoff_even_without_bookmarks(tmp_path: Path) -> None:
     clock = Clock()
+    opened = asyncio.Event()
+    calls = 0
 
     async def handler(request):
+        nonlocal calls
         if "watch" not in request.query:
             return web.json_response(collection())
-        if len(clock.delays) == 3:
+        calls += 1
+        if calls == 5:
             return web.Response(status=403)
-        if len(clock.delays) == 2:
+        if calls == 4:
+            return web.Response(status=503)
+        if calls == 3:
+            opened.clear()
+            response = web.StreamResponse()
+            await response.prepare(request)
+            await opened.wait()
             clock.now += 2
+            await response.write_eof()
+            return response
         return web.Response(body=b"")
+
+    async def sink(update):
+        if update.status is SyncStatus.LIVE:
+            opened.set()
 
     async with reader_fixture(tmp_path, handler) as reader:
         with pytest.raises(HttpProblem):
-            await follower(reader, clock).run(pod_resource(), None, lambda update: asyncio.sleep(0))
+            await follower(reader, clock).run(pod_resource(), None, sink)
     assert clock.delays == [0.25, 0.5, 0.25]
 
 
@@ -525,7 +541,8 @@ async def test_watch_timeout_resumes_version_after_backoff(tmp_path: Path) -> No
             return web.Response(status=403)
         response = web.StreamResponse()
         await response.prepare(request)
-        await asyncio.sleep(1)
+        while request.transport is not None and not request.transport.is_closing():
+            await asyncio.sleep(0.01)
         return response
 
     async with reader_fixture(tmp_path, handler, timeout=0.1) as reader:
@@ -536,6 +553,130 @@ async def test_watch_timeout_resumes_version_after_backoff(tmp_path: Path) -> No
     assert clock.delays == [0.25]
     retry = next(update for update in updates if update.status is SyncStatus.RETRYING)
     assert retry.problem.state is ConnectionState.TIMEOUT
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("checkpoint", [False, True])
+async def test_quiet_watch_outlives_request_deadline_and_renews_without_stale_state(
+    tmp_path: Path, checkpoint: bool
+) -> None:
+    lists, versions, updates, clock = [], [], [], Clock()
+
+    async def handler(request):
+        if "watch" not in request.query:
+            lists.append(True)
+            return web.json_response(collection(item(), rv="initial-checkpoint"))
+        versions.append(request.query["resourceVersion"])
+        assert request.query["timeoutSeconds"] == "1"
+        response = web.StreamResponse()
+        await response.prepare(request)
+        if checkpoint and len(versions) == 1:
+            await response.write(frame(bookmark("renewed-checkpoint")))
+        await asyncio.sleep(int(request.query["timeoutSeconds"]))
+        await response.write_eof()
+        return response
+
+    async def sink(update):
+        updates.append(update)
+        if update.status is SyncStatus.LIVE and len(versions) == 3:
+            raise Finished
+
+    async with reader_fixture(tmp_path, handler, timeout=0.1) as reader:
+        before = (tmp_path / "fixture-config").read_bytes()
+        async with asyncio.timeout(5):
+            with pytest.raises(Finished):
+                await ListWatch(reader, sleep=clock.sleep).run(pod_resource(), "team", sink)
+        assert not reader.session.api.rest_client.pool_manager.connector._acquired
+        assert (tmp_path / "fixture-config").read_bytes() == before
+    assert versions == [
+        "initial-checkpoint",
+        "renewed-checkpoint" if checkpoint else "initial-checkpoint",
+        "renewed-checkpoint" if checkpoint else "initial-checkpoint",
+    ]
+    assert len(lists) == 1 and clock.delays == []
+    assert all(
+        update.status not in {SyncStatus.RETRYING, SyncStatus.RELISTING} for update in updates
+    )
+    assert updates[-1].snapshot.items[0].uid == "owned-one"
+
+
+@pytest.mark.asyncio
+async def test_established_idle_client_timeout_resets_previous_failure_backoff(tmp_path: Path):
+    calls, updates, clock = 0, [], Clock()
+
+    async def handler(request):
+        nonlocal calls
+        if "watch" not in request.query:
+            return web.json_response(collection(rv="kept-version"))
+        calls += 1
+        assert request.query["resourceVersion"] == "kept-version"
+        if calls < 3:
+            return web.Response(status=503)
+        if calls == 4:
+            return web.Response(status=403)
+        response = web.StreamResponse()
+        await response.prepare(request)
+        # Deliberately ignore timeoutSeconds: this is an actual failed stream.
+        while request.transport is not None and not request.transport.is_closing():
+            await asyncio.sleep(0.01)
+        return response
+
+    async with reader_fixture(tmp_path, handler, timeout=0.1) as reader:
+        async with asyncio.timeout(5):
+            with pytest.raises(HttpProblem):
+                await ListWatch(reader, sleep=clock.sleep, jitter=lambda: 0.5).run(
+                    pod_resource(), None, lambda update: collect(updates, update)
+                )
+    assert clock.delays == [0.25, 0.5, 0.25]
+    retries = [update for update in updates if update.status is SyncStatus.RETRYING]
+    assert retries[-1].problem.state is ConnectionState.TIMEOUT
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("result", ["slow_headers", "slow_error"])
+async def test_failed_watch_establishment_does_not_reset_failure_backoff(tmp_path: Path, result):
+    clock, calls, updates = Clock(), 0, []
+
+    async def handler(request):
+        nonlocal calls
+        if "watch" not in request.query:
+            return web.json_response(collection())
+        calls += 1
+        if calls == 3:
+            return web.Response(status=403)
+        if result == "slow_headers":
+            await asyncio.sleep(0.2)
+        else:
+            clock.now += 2
+        return web.Response(status=503)
+
+    async with reader_fixture(tmp_path, handler, timeout=0.1) as reader:
+        with pytest.raises(HttpProblem):
+            await follower(reader, clock).run(
+                pod_resource(), None, lambda update: collect(updates, update)
+            )
+    assert clock.delays == [0.25, 0.5]
+    assert not any(update.status is SyncStatus.LIVE for update in updates)
+    assert next(
+        update for update in updates if update.status is SyncStatus.RETRYING
+    ).problem.state is (
+        ConnectionState.TIMEOUT if result == "slow_headers" else ConnectionState.API_ERROR
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("timeout,seconds", [(0.1, "1"), (1.25, "2"), (5, "5"), (3600, "60")])
+async def test_watch_server_interval_is_an_independent_bounded_integer(tmp_path, timeout, seconds):
+    async def handler(request):
+        assert request.query["timeoutSeconds"] == seconds
+        return web.Response(body=b"")
+
+    async with (
+        reader_fixture(tmp_path, handler, timeout=timeout) as reader,
+        aclosing(reader.session.watch_json("/api/v1/pods", "opaque")) as stream,
+    ):
+        assert await anext(stream) is None
+        assert [value async for value in stream] == []
 
 
 @pytest.mark.asyncio

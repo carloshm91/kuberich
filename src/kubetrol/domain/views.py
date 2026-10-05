@@ -78,10 +78,12 @@ class ViewObservation:
         if self.status is ViewStatus.FAILED:
             return self.connection.message
         if self.scope is None:
-            return "Connected · Loading resource discovery."
-        count = len(self.snapshot.items) if self.snapshot is not None else 0
-        phase = "Live" if self.status is ViewStatus.LIVE else "Loading snapshot/watch"
-        return f"Connected · {phase} · {count} {self.scope.resource.name} · Table view is upcoming."
+            return "Loading resource discovery."
+        if self.snapshot is None:
+            return f"Loading {self.scope.resource.name}"
+        count = len(self.snapshot.items)
+        phase = "Live" if self.status is ViewStatus.LIVE else "Starting live updates"
+        return f"{phase} · {count} {self.scope.resource.name}"
 
 
 _SYNC_STATUSES = {
