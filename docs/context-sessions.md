@@ -1,7 +1,9 @@
 # Context sessions
 
-C01 connects to Kubernetes for bounded namespace discovery. It does not yet
-list pods, watch resources, display logs or execute commands in containers.
+C01 connects to Kubernetes for bounded namespace discovery. The terminal does not
+yet show pods, watch resources, display logs or execute commands in containers.
+C02 adds a separate [resource read backend](resource-discovery.md), qualified
+independently of UI integration.
 Connection errors remain in the UI so you can choose another context or retry.
 
 ## Start and select
@@ -110,8 +112,9 @@ CLI cluster/user/token/TLS/impersonation overrides remain gated by F05/C08.
 | Config error | Invalid connection/catalogue fields; fix config or select another context |
 | API error | Unexpected status, malformed/excessive response; check endpoint and retry |
 
-A 403 cannot establish that any resource operation is authorized. No resource
-operation is attempted in this checkpoint. Namespace discovery follows at most
+A 403 cannot establish that any resource operation is authorized. The terminal
+checkpoint attempts namespace discovery; C02 resource reads have their own
+explicit permission/error results. Namespace discovery follows at most
 32 pages and retains at most 2048 namespace names, with 1 MiB per response;
 exceeding a limit is a visible error rather than a truncated successful list.
 Automatic response decompression and redirects are disabled. Kubeconfig reads
@@ -132,7 +135,8 @@ Installed artifacts and the OS/Python matrix qualify the same code.
 
 `scripts/verify_contexts_kind.py --kind /path/to/verified-kind` creates a uniquely
 named local kind cluster with an explicit temporary kubeconfig, verifies namespace
-listing, TLS/client-certificate authentication, generations and client cleanup,
+listing, TLS/client-certificate authentication, generations, resource discovery,
+consistent paginated snapshots and client cleanup,
 then deletes only its owned cluster in `finally`. It never selects an ambient
 cluster. CI requires this check on Linux/Python 3.12 and retains sanitized JSON
 evidence. The binary/version/image are pinned in the workflow/script.

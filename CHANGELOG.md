@@ -14,6 +14,12 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Backend API discovery with core/named groups, modern/legacy negotiation,
+  aliases and explicit partial results, plus scoped atomic paginated snapshots,
+  collection versions and one full restart for expired continuation tokens.
+- Resource normalization/HTTP cancellation tests and real disposable-kind
+  paginated resource qualification. Terminal pod rows remain upcoming.
+
 - Isolated kubeconfig/context sessions, namespace discovery and selectors,
   TLS/client-certificate/static-token authentication and bounded noninteractive
   exec-token helpers, with distinct connection states and owned cleanup.

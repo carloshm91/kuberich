@@ -1,4 +1,4 @@
-"""C01 qualification on a newly created, explicitly owned disposable kind cluster."""
+"""C01/C02 qualification on a newly created, explicitly owned disposable kind cluster."""
 
 import argparse
 import asyncio
@@ -13,6 +13,7 @@ import yaml
 
 from kubetrol.config.catalog import load_catalog
 from kubetrol.domain.connections import ConnectionRequest, ConnectionState
+from kubetrol.services.resources import ResourceReader
 from kubetrol.services.sessions import SessionService
 
 NODE_IMAGE = (
@@ -38,6 +39,26 @@ async def verify(path: Path, context: str) -> dict[str, object]:
         assert second.identity.connection_id != first.identity.connection_id
         assert second.namespace == "kube-system"
         assert api.rest_client.pool_manager.closed
+        reader = ResourceReader(sessions.client)
+        discovery = await reader.discover()
+        assert not discovery.partial
+        pods = discovery.find("po")
+        assert pods.namespaced and {"list", "watch"} <= pods.verbs
+        scoped_pods = await reader.list(pods, "kube-system", page_size=2)
+        assert scoped_pods.namespace == "kube-system" and scoped_pods.resource_version
+        assert len(scoped_pods.items) > 2
+        assert all(record.uid and record.namespace == "kube-system" for record in scoped_pods.items)
+        assert all(record.manifest["kind"] == "Pod" for record in scoped_pods.items)
+        namespaces = discovery.find("namespaces")
+        assert not namespaces.namespaced
+        namespace_snapshot = await reader.list(namespaces, page_size=1)
+        assert namespace_snapshot.resource_version and len(namespace_snapshot.items) > 1
+        assert {"default", "kube-system"} <= {record.name for record in namespace_snapshot.items}
+        assert all(record.uid and record.namespace is None for record in namespace_snapshot.items)
+        deployments = discovery.find("deployments", group="apps")
+        assert deployments.api_version == "apps/v1"
+        deployment_snapshot = await reader.list(deployments, "kube-system", page_size=1)
+        assert deployment_snapshot.resource_version and deployment_snapshot.items
         assert path.read_bytes() == before
         active = sessions.client.api
     finally:
@@ -53,6 +74,15 @@ async def verify(path: Path, context: str) -> dict[str, object]:
         "prior_and_current_clients_closed": True,
         "kubeconfig_unchanged": True,
         "namespace_count": len(first.namespaces),
+        "api_discovery": True,
+        "discovery_complete": True,
+        "core_and_named_groups": True,
+        "resource_aliases": True,
+        "namespaced_and_cluster_scoped_listing": True,
+        "consistent_paginated_snapshots": True,
+        "collection_versions_and_item_uids": True,
+        "discovered_resource_count": len(discovery.resources),
+        "scoped_pod_count": len(scoped_pods.items),
     }
 
 
@@ -92,7 +122,10 @@ def main() -> None:
                 json.dumps({"kind": "0.33.0", "node_image": NODE_IMAGE, **evidence}, indent=2)
                 + "\n"
             )
-            print("Real API, TLS, client auth, scope isolation and cleanup passed.", flush=True)
+            print(
+                "Real API, discovery, paginated resource snapshots, TLS, scope and cleanup passed.",
+                flush=True,
+            )
         finally:
             subprocess.run(
                 [arguments.kind, "delete", "cluster", "--name", name],

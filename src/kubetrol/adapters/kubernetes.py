@@ -7,7 +7,7 @@ import json
 import ssl
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any
+from typing import Any, NoReturn
 from urllib.parse import urlsplit
 
 import aiohttp
@@ -15,8 +15,21 @@ from kubernetes_asyncio import client
 
 from kubetrol.adapters.credentials import ExecToken, auth_problem
 from kubetrol.config.catalog import ContextConfig, Entry, mapping, regular_bytes, text
-from kubetrol.domain.connections import ConnectionProblem, ConnectionState, namespace_name
+from kubetrol.domain.connections import (
+    ConnectionProblem,
+    ConnectionState,
+    HttpProblem,
+    namespace_name,
+)
 from kubetrol.errors import AppError
+
+
+def _decode(data: bytes) -> dict[str, Any]:
+    return mapping(json.loads(data, parse_constant=_invalid_constant))
+
+
+def _invalid_constant(value: str) -> NoReturn:
+    raise ValueError("Nonfinite JSON constants are invalid.")
 
 
 def _endpoint(value: Any) -> str:
@@ -168,69 +181,59 @@ class KubernetesSession:
             await self.close()
             raise
 
-    async def namespaces(self) -> tuple[str, ...]:
-        assert self.api is not None and self.configuration is not None
+    async def get_json(
+        self,
+        path: str,
+        *,
+        params: dict[str, str] | None = None,
+        max_bytes: int = 8 * 1024 * 1024,
+        accept: str = "application/json",
+    ) -> dict[str, Any]:
+        """Owned read-only transport; callers construct discovered API paths."""
+        if self.api is None or self.configuration is None:
+            raise ConnectionProblem(ConnectionState.DISCONNECTED, "The selected session is closed.")
         try:
             async with asyncio.timeout(self.timeout):
-                names: set[str] = set()
-                continuation = ""
                 refreshed = False
-                for _ in range(32):
+                while True:
                     if self.credentials is not None:
                         self.configuration.api_key["BearerToken"] = (
                             "Bearer " + await self.credentials.token()
                         )
-                    headers = {"Accept": "application/json", "Accept-Encoding": "identity"}
+                    headers = {"Accept": accept, "Accept-Encoding": "identity"}
                     token = self.configuration.api_key.get("BearerToken")
                     if token:
                         headers["Authorization"] = token
                     async with self.api.rest_client.pool_manager.get(
-                        str(self.configuration.host) + "/api/v1/namespaces",
+                        str(self.configuration.host) + path,
                         headers=headers,
-                        params={"limit": "500", "continue": continuation},
+                        params=params,
                         proxy=self.configuration.proxy,
                         server_hostname=self.configuration.tls_server_name,
                         allow_redirects=False,
                     ) as response:
-                        if response.status == 401:
-                            if self.credentials is not None and not refreshed:
-                                self.credentials.invalidate()
-                                refreshed = True
-                                continue
-                            raise auth_problem(
-                                "The API rejected credentials (401). Complete provider login and retry."
-                            )
-                        if response.status == 403:
-                            raise ConnectionProblem(
-                                ConnectionState.LIMITED,
-                                "Namespace listing is forbidden (403). Select an allowed namespace with :ns NAME or --namespace.",
-                            )
+                        if (
+                            response.status == 401
+                            and self.credentials is not None
+                            and not refreshed
+                        ):
+                            self.credentials.invalidate()
+                            refreshed = True
+                            continue
                         if response.status != 200:
-                            raise ConnectionProblem(
-                                ConnectionState.API_ERROR,
-                                "Namespace discovery failed. Check the API endpoint and retry (F4).",
-                            )
+                            raise HttpProblem(response.status)
                         data = bytearray()
                         async for chunk in response.content.iter_chunked(16384):
                             data.extend(chunk)
-                            if len(data) > 1024 * 1024:
+                            if len(data) > max_bytes:
                                 raise ValueError
-                    payload = mapping(json.loads(data))
-                    items = payload.get("items")
-                    if not isinstance(items, list) or len(items) > 2048:
-                        raise ValueError
-                    for item in items:
-                        names.add(
-                            namespace_name(text(mapping(mapping(item).get("metadata")).get("name")))
-                        )
-                    if len(names) > 2048:
-                        raise ValueError
-                    continuation = mapping(payload.get("metadata", {})).get("continue", "")
-                    if not isinstance(continuation, str) or len(continuation) > 8192:
-                        raise ValueError
-                    if not continuation:
-                        return tuple(sorted(names))
-                raise ValueError
+                    decoding = asyncio.create_task(asyncio.to_thread(_decode, bytes(data)))
+                    try:
+                        return await asyncio.shield(decoding)
+                    except asyncio.CancelledError:
+                        # Even a pure decoding thread must be awaited on cancellation.
+                        await asyncio.gather(decoding, return_exceptions=True)
+                        raise
         except TimeoutError:
             raise ConnectionProblem(
                 ConnectionState.TIMEOUT,
@@ -247,6 +250,56 @@ class KubernetesSession:
                 "Cluster is unreachable. Check VPN, network and server address; retry with F4.",
             ) from None
         except (AppError, ValueError, UnicodeError, RecursionError, TypeError):
+            raise ConnectionProblem(
+                ConnectionState.API_ERROR, "Invalid or oversized Kubernetes JSON response."
+            ) from None
+
+    async def namespaces(self) -> tuple[str, ...]:
+        try:
+            async with asyncio.timeout(self.timeout):
+                names: set[str] = set()
+                continuation = ""
+                for _ in range(32):
+                    payload = await self.get_json(
+                        "/api/v1/namespaces",
+                        params={"limit": "500", "continue": continuation},
+                        max_bytes=1024 * 1024,
+                    )
+                    items = payload.get("items")
+                    if not isinstance(items, list) or len(items) > 2048:
+                        raise ValueError
+                    for item in items:
+                        names.add(
+                            namespace_name(text(mapping(mapping(item).get("metadata")).get("name")))
+                        )
+                    if len(names) > 2048:
+                        raise ValueError
+                    continuation = mapping(payload.get("metadata", {})).get("continue", "")
+                    if not isinstance(continuation, str) or len(continuation) > 8192:
+                        raise ValueError
+                    if not continuation:
+                        return tuple(sorted(names))
+                raise ValueError
+        except HttpProblem as error:
+            if error.status == 401:
+                raise auth_problem(
+                    "The API rejected credentials (401). Complete provider login and retry."
+                ) from None
+            if error.status == 403:
+                raise ConnectionProblem(
+                    ConnectionState.LIMITED,
+                    "Namespace listing is forbidden (403). Select an allowed namespace with :ns NAME or --namespace.",
+                ) from None
+            raise ConnectionProblem(
+                ConnectionState.API_ERROR,
+                "Namespace discovery failed. Check the API endpoint and retry (F4).",
+            ) from None
+        except TimeoutError:
+            raise ConnectionProblem(
+                ConnectionState.TIMEOUT,
+                "Namespace discovery timed out. Check --request-timeout and retry.",
+            ) from None
+        except (AppError, ValueError, TypeError):
             raise ConnectionProblem(
                 ConnectionState.API_ERROR,
                 "Invalid or oversized namespace response (maximum 2048 namespaces, 32 pages, 1 MiB per page).",

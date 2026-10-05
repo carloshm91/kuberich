@@ -15,6 +15,18 @@ errors for absent behaviors. Its connection integration phase requires C01; keep
 F05 open while that work is pending. This prevents closing a connection contract
 from parser tests alone. See [current CLI behavior](k9s-cli.md).
 
+## Current maintainer priority
+
+After C01 and its preview correction (#102), prioritize the path to the first
+pod view: **C02 → C03 → C04 → B02 → B03**. This delivery order takes precedence
+over the remaining v0.0.1 table order below, preserves every prerequisite, and
+keeps one implementation issue in progress. The maintainer authorized advancing
+toward visible pods and Tab completion during the first context trial.
+Advanced F05 connection overrides and cloud qualification remain open; resource
+commands, refresh and effectful-operation integration stay with their owners.
+C02 delivers discovery and complete resource snapshots; B02 delivers the visible
+live table. Do not label namespace selection as an implemented pod browser.
+
 ## Epics
 
 | Issue | Outcome | Completion milestone |

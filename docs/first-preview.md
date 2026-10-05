@@ -11,6 +11,7 @@ Do not wait for every epic or the complete 1.0.0 parity audit to get feedback.
 | First terminal window | F01 → F02 → F03 → B01 | Launch the Textual shell, navigate, open help, resize and quit; show an honest unconnected state |
 | Launch contract | F05 stage 1 | Try help/version subcommands, visibility flags, initial help and read-only command guards; pending features fail explicitly |
 | Context session | C01 | Connect, select contexts/namespaces, retry and observe distinct connection errors |
+| Resource read backend | C02 | Verify real discovery and paginated snapshots on an owned disposable cluster; the UI table is still empty |
 | First live cluster view | F04/F05, C01-C04, B02/B03/B04 | Choose context/namespace, inspect live pods, filter and open details/events |
 | Logs and interactive shell | S01-S04, credential/PTY/integration checks | Follow current/previous logs, choose a container, enter its shell and return safely |
 | Public 0.0.1 preview | D04 and every v0.0.1 acceptance gate | Install through tested PyPI/Homebrew channels and follow the verified first-user guide |
@@ -119,3 +120,22 @@ Nothing changes your kubeconfig or its current context. Report the connection
 state/message and whether the selectors and quit work; never paste credentials
 or kubeconfig contents. Provider-specific qualification is still pending.
 See [supported authentication and limits](context-sessions.md).
+
+## Resource reads: C02 backend checkpoint
+
+The backend now discovers resource types and reads consistent paginated snapshots.
+There is no new terminal interaction to try in this PR: `:ns NAME` selects a scope
+and the table still has no pod rows. C03 (updates), C04 (store) and B02 (table)
+complete the first visible pod view. Command/argument suggestions with Tab are
+accepted work in B03 #27, not implemented completion in this checkpoint.
+
+To verify this backend without using a real cluster, run:
+
+```sh
+uv sync --locked --group dev
+uv run pytest tests/unit/test_resources.py tests/contract/test_resources.py
+```
+
+The tests own their loopback servers and synthetic credentials. For the actual
+Kubernetes qualification command and retained evidence, see
+[resource discovery](resource-discovery.md).
