@@ -38,7 +38,13 @@ class LogStream:
         if self.target.container not in log_containers(record.manifest):
             raise AppError("Selected regular/init container is unavailable in this pod.")
 
-    async def run(self, options: LogOptions, sink: Callable[[LogLine], Awaitable[None]]) -> int:
+    async def run(
+        self,
+        options: LogOptions,
+        sink: Callable[[LogLine], Awaitable[None]],
+        *,
+        opened: Callable[[], None] | None = None,
+    ) -> int:
         self.policy.require(Action.READ)
         self.require_current()
         if (
@@ -63,6 +69,8 @@ class LogStream:
                         # Verify after opening too: a name recreation between GET and
                         # the log request must not emit the replacement pod's output.
                         await self._verify(path)
+                        if opened is not None:
+                            opened()
                         continue
                     for line in decoder.feed(chunk):
                         self.require_current()

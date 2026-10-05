@@ -310,3 +310,16 @@ def test_installed_resource_inspection_outside_checkout(installed_wheel, entry_p
         else [str(binary_dir / "python"), "-m", "kubetrol"]
     )
     terminal_inspection(command, directory, evidence=f"installed-inspection-{entry_point}")
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+def test_installed_log_viewer_outside_checkout(installed_wheel, entry_point):
+    from tests.support.log_viewer import terminal_logs
+
+    binary_dir, directory = installed_wheel
+    command = (
+        [str(binary_dir / "kubetrol")]
+        if entry_point == "console"
+        else [str(binary_dir / "python"), "-m", "kubetrol"]
+    )
+    terminal_logs(command, directory, evidence=f"installed-log-viewer-{entry_point}")

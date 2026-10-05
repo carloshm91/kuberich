@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from collections.abc import Callable
 from contextlib import suppress
 from importlib.metadata import version
 from pathlib import Path
@@ -16,13 +17,16 @@ from textual.events import Event, Key, Resize
 from textual.screen import ModalScreen
 from textual.widgets import Button, DataTable, Footer, Input, Static
 
+from kubetrol.adapters.kubernetes import KubernetesSession
 from kubetrol.config.catalog import KubeCatalog
 from kubetrol.config.schema import Settings
 from kubetrol.domain.connections import (
     DEFAULT_CONNECTION,
     ConnectionRequest,
 )
+from kubetrol.domain.logs import log_containers
 from kubetrol.domain.navigation import NamespaceChoice, NavigationHistory, NavigationState
+from kubetrol.domain.resources import ApiResource, ResourceRecord
 from kubetrol.domain.targets import ResourceTarget
 from kubetrol.domain.views import USABLE_CONNECTIONS, ViewObservation, ViewStatus
 from kubetrol.errors import AppError
@@ -38,11 +42,13 @@ from kubetrol.services.commands import (
 )
 from kubetrol.services.filtering import apply_filter
 from kubetrol.services.inspection import InspectionService
+from kubetrol.services.logs import LogStream
 from kubetrol.services.pods import PodProjection
 from kubetrol.services.sessions import SessionService
 from kubetrol.services.workspace import ViewSubscription, WorkspaceService
 from kubetrol.ui.commands import CommandInput, NavigationInput
 from kubetrol.ui.inspection import InspectionScreen, Page
+from kubetrol.ui.logs import LogScreen
 from kubetrol.ui.pods import PodTable, Viewport
 from kubetrol.ui.presentation import DEFAULT_PRESENTATION, Presentation
 from kubetrol.ui.scopes import ConnectionScreen, ScopeScreen
@@ -84,7 +90,9 @@ class HelpScreen(ModalScreen[None]):
                         "Searches namespace, name, readiness, status and restarts. "
                         "Invalid or timed-out regex shows all pods and an error.\n\n"
                         "Context sessions and live pod synchronization are available. "
-                        "Pod rows are live. Logs and shell are upcoming.\n"
+                        "Pod rows and container logs are live. Shell is upcoming.\n"
+                        "l                 Selected pod logs (regular / init)\n"
+                        "Logs: g/G first/last, j/k, / search, p pause, f follow, ? controls.\n"
                         "Enter / d         Resource details\n"
                         "y / e             YAML / related events\n"
                         "Viewer: m managedFields, / search, n/N matches, Ctrl+Y copy.\n"
@@ -116,6 +124,7 @@ class KubetrolApp(App[None]):
         Binding("y", "inspect_yaml", "YAML"),
         Binding("d", "inspect_details", "Details"),
         Binding("e", "inspect_events", "Events"),
+        Binding("l", "logs", "Logs"),
         Binding("c", "contexts", "Contexts"),
         Binding("n", "namespaces", "Namespaces"),
         Binding("r", "retry", "Retry", show=False),
@@ -309,8 +318,9 @@ class KubetrolApp(App[None]):
                 ):
                     self._render_ready.set()
                     self.command_input.refresh_choices()
-                    if isinstance(self.screen, InspectionScreen):
-                        self.screen.validate_target()
+                    for screen in tuple(self.screen_stack):
+                        if isinstance(screen, (InspectionScreen, LogScreen)):
+                            screen.validate_target()
         except Exception as error:
             self._handle_exception(error)
         finally:
@@ -437,18 +447,52 @@ class KubetrolApp(App[None]):
         self._inspect("events")
 
     def _inspect(self, page: Page) -> None:
-        if isinstance(self.screen, ModalScreen):
+        selection = self._capture_target()
+        if selection is not None:
+            client, resource, _, target, current = selection
+            self.push_screen(
+                InspectionScreen(
+                    InspectionService(client, resource, target, self.commands.policy, current),
+                    page,
+                )
+            )
+
+    def action_logs(self) -> None:
+        selection = self._capture_target()
+        if selection is None:
             return
+        client, resource, record, target, current = selection
+        try:
+            if resource.group or resource.name != "pods" or not record.namespace:
+                raise AppError("Select a namespaced pod to open container logs.")
+            containers = log_containers(record.manifest)
+            if not containers:
+                raise AppError("The selected pod has no regular/init containers.")
+        except AppError as error:
+            self._set_status(str(error))
+            return
+        self.push_screen(
+            LogScreen(LogStream(client, target, self.commands.policy, current), containers)
+        )
+
+    def _capture_target(
+        self,
+    ) -> (
+        tuple[KubernetesSession, ApiResource, ResourceRecord, ResourceTarget, Callable[[], bool]]
+        | None
+    ):
+        if isinstance(self.screen, ModalScreen):
+            return None
         view = self.workspace.store.observation
         scope, snapshot, client = view.scope, view.snapshot, self.sessions.client
         uid = self.resources.selected_uid
         if scope is None or snapshot is None or client is None or uid is None:
-            self._set_status("Select a connected resource before opening inspection.")
-            return
+            self._set_status("Select a connected resource before opening a viewer.")
+            return None
         record = next((item for item in snapshot.items if item.uid == uid), None)
         if record is None or record.uid is None:
             self._set_status("The selected target is stale; select the resource again.")
-            return
+            return None
         target = ResourceTarget(
             scope.session,
             scope.resource.group,
@@ -468,12 +512,7 @@ class KubetrolApp(App[None]):
                 and any(item.uid == target.uid for item in observation.snapshot.items)
             )
 
-        self.push_screen(
-            InspectionScreen(
-                InspectionService(client, scope.resource, target, self.commands.policy, current),
-                page,
-            )
-        )
+        return client, scope.resource, record, target, current
 
     def action_contexts(self) -> None:
         if not self.sessions.catalog.names:
@@ -551,6 +590,7 @@ class KubetrolApp(App[None]):
             "inspect_yaml",
             "inspect_details",
             "inspect_events",
+            "logs",
         }:
             return not isinstance(self.screen, ModalScreen) and not isinstance(self.focused, Input)
         return True
@@ -567,7 +607,7 @@ class KubetrolApp(App[None]):
             self.push_screen(HelpScreen())
 
     async def action_back(self) -> None:
-        if isinstance(self.screen, InspectionScreen):
+        if isinstance(self.screen, (InspectionScreen, LogScreen)):
             self.screen.back()
         elif isinstance(self.screen, ModalScreen):
             self.screen.dismiss()

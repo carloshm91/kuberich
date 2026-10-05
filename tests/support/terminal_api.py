@@ -33,6 +33,28 @@ class Handler(BaseHTTPRequestHandler):
         assert self.headers.get("Authorization") == "Bearer synthetic-pty"
         parsed = urlsplit(self.path)
         query = parse_qs(parsed.query)
+        if parsed.path.endswith("/log"):
+            if query.get("previous") == ["true"]:
+                self.send_error(400, "Owned previous instance unavailable")
+                return
+            body = "".join(
+                f"2026-10-05T12:00:00Z log-line-{i:03} 你好 [red]literal[/red] token=hidden-log-token\n"
+                for i in range(80)
+            ).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain")
+            if query.get("follow") != ["true"]:
+                self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            try:
+                self.wfile.write(body)
+                self.wfile.flush()
+                while query.get("follow") == ["true"] and not self.server.stopping.wait(0.1):
+                    self.wfile.write(b"2026-10-05T12:00:01Z owned quiet follow\n")
+                    self.wfile.flush()
+            except OSError:
+                pass
+            return
         if "watch" in query:
             if self.server.fail_watches.is_set():
                 self.send_error(503, "Owned fixture outage")

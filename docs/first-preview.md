@@ -1,8 +1,8 @@
 # First things to try
 
 The installable CLI, local preferences and first terminal window are available
-from the development checkout, including the live pod table. Use the latest
-B04 trial below; earlier sections record previous checkpoints and may name
+from the development checkout, including the live pod table and container logs. Use the latest
+S02 trial below; earlier sections record previous checkpoints and may name
 short-lived branches that have since been deleted.
 Do not wait for every epic or the complete 1.0.0 parity audit to get feedback.
 
@@ -293,3 +293,32 @@ uv run pytest tests/unit/test_logs.py tests/contract/test_logs.py
 ```
 
 See [log semantics and limits](container-log-transport.md).
+
+## Container logs: S02 — current trial
+
+From an interactive terminal on updated `main`:
+
+```sh
+git switch main
+git pull --ff-only
+uv sync --locked --group dev
+uv run kubetrol
+```
+
+1. Choose your context/namespace with `:ctx` and `:ns`, select a pod and press `l`.
+   Choose a container if there is more than one. Check that the title names it.
+2. Press `g` to read the oldest retained output, then `G` (Shift+G) to follow
+   the newest. `j/k`, arrows and page keys scroll; upward movement leaves follow.
+3. Press `/`, type visible text and Enter; `n/N` move through matching lines.
+4. Press `p` to pause reception. Try `g`, `G` and `f`: navigation still works,
+   and following does not unpause. Press `p` again to resume reception.
+5. Try `w` for wrapping, `t` for timestamps and `?` for all controls.
+   Escape leaves an input, then returns to your pod table; Ctrl+Q quits.
+
+Compare against `kubectl logs` for the same explicit context, namespace,
+container and time window. Report any safe error text and whether scrolling,
+search, resize and return work. Retention is bounded to 5,000 lines and 4 MiB;
+the dropped counter explains missing older history. Previous output may be
+unavailable before a container restart. Read-only mode supports this viewer.
+See [log behavior and limits](log-viewer.md) and [S02 evidence](acceptance/S02.md).
+Interactive shell remains the next product checkpoint; no public release exists.

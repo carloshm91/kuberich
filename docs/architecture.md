@@ -323,5 +323,27 @@ with consumer-owned retention. The adapter opens a scoped `text/plain` stream
 with bounded headers and an explicit indefinite quiet-follow body. `services/logs.py`
 verifies captured pod UID/container before and after opening, awaits each consumer
 and closes its generator on cancellation/failure. Logs have no watch checkpoints
-and are never automatically replayed. UI ownership/presentation follow in S02.
+and are never automatically replayed. S02 owns the UI presentation and lifetime.
 See [the transport contract](container-log-transport.md).
+
+## S02 log viewer
+
+`domain/log_view.py` owns retained line identities, marks, read windows and
+clipboard bounds. `ui/log_body.py` virtualizes retained line layouts, yields
+layout work, preserves viewport identity and separates navigation follow from
+reception pause. `ui/logs.py` owns one serialized read controller, batched render
+task and optional save task. Changing options cancels and awaits the old read;
+dismissal cancels tasks before widgets are removed and unmount drains them.
+
+The pinned Textual 8 ScrollView needs its scrollbar bounds synchronized when
+virtual content grows without changing outer geometry. The body's public
+`watch_virtual_size` uses the framework's `_scroll_update` boundary before
+restoring the viewport. Qualify initial follow, mouse/keyboard scrolling,
+eviction and resize on framework upgrades; changing content size alone must
+not leave scrolling disabled.
+
+`services/log_export.py` saves sanitized retained text outside the event loop to
+an exclusive mode-0600 file, never replacing an existing file/symlink. Explicitly
+requested file work is drained even if the viewer closes. Captured pod/client
+invalidation clears the viewer and prevents later display/copy/save, including
+while a child prompt is open. See [the viewer contract](log-viewer.md).
