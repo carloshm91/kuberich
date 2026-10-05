@@ -71,7 +71,18 @@ async def verify_pod_table(reader, resource, catalog, path, context):
         output = Path("artifacts/ui").resolve()
         output.mkdir(parents=True, exist_ok=True)
         app.save_screenshot(filename="pods-owned-kind.svg", path=str(output))
-        await pilot.press("colon", *"ns default", "enter")
+        await pilot.press("slash", *"re:coredns", "enter")
+        async with asyncio.timeout(30):
+            while not app.resources.row_count or any(
+                "coredns" not in str(app.resources.get_cell(row.key, "name"))
+                for row in app.resources.ordered_rows
+            ):
+                await asyncio.sleep(0.01)
+        assert "Filter active" in str(app.status.content)
+        await pilot.press("escape", "colon", *"ns def")
+        await pilot.pause()
+        assert "ns default" in app.command_input.choices
+        await pilot.press("tab", "enter")
         async with asyncio.timeout(30):
             while (
                 app.workspace.store.observation.status is not ViewStatus.LIVE
@@ -81,6 +92,23 @@ async def verify_pod_table(reader, resource, catalog, path, context):
         await pilot.pause()
         assert app.resources.row_count == 0
         assert "No pods in this scope" in str(app.query_one("#empty-title").content)
+        await pilot.press("alt+left")
+        async with asyncio.timeout(30):
+            while (
+                app.workspace.store.observation.status is not ViewStatus.LIVE
+                or app.workspace.store.observation.connection.namespace != "kube-system"
+                or app.resources.selected_uid != selected
+            ):
+                await asyncio.sleep(0.01)
+        assert app.resources.descending
+        await pilot.press("alt+right")
+        async with asyncio.timeout(30):
+            while (
+                app.workspace.store.observation.status is not ViewStatus.LIVE
+                or app.workspace.store.observation.connection.namespace != "default"
+            ):
+                await asyncio.sleep(0.01)
+        assert app.resources.row_count == 0
         await pilot.press("ctrl+q")
     assert app.sessions.client is None and app._view_task.done() and not app._pod_projection._cache
     return {
@@ -88,6 +116,9 @@ async def verify_pod_table(reader, resource, catalog, path, context):
         "real_live_pod_widget": True,
         "real_pod_widget_selection_sort_scope": True,
         "pod_widget_clients_and_projection_closed": True,
+        "real_local_regex_filter": True,
+        "real_namespace_tab_completion": True,
+        "real_navigation_history_selection_and_sort": True,
         "server_table_pod_count": len(table["rows"]),
     }
 

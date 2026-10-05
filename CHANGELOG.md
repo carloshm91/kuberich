@@ -19,6 +19,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Shared initial/interactive pod/context/namespace commands, bounded literal
+  suggestions with Tab acceptance, and local Unicode text/regex filtering.
+- Navigation back/forward preserving scope, filter, typed sorting, UID selection
+  and viewport; stale-result rejection and awaited worker cleanup.
+
 - Live UID keyed pod rows with readiness, init/sidecar/waiting/termination reasons,
   restarts, continuously updating age, typed sorting and stable selection/scroll.
 - Incremental cell/row patches, cancellation-safe background projection, distinct

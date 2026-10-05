@@ -12,7 +12,9 @@ See [active resource views](resource-views.md) for freshness, switching and clea
 
 The workspace has a resource region, filter and command inputs, status and
 available-key hints. Context/namespace selectors are scrollable and maintain
-literal names. Filtering/completion, details, logs and shell are subsequent tasks.
+literal names. Commands, Tab suggestions, text/regex filters and bounded navigation
+history are available; details, logs and shell remain subsequent tasks.
+See [command navigation](command-navigation.md) for semantics and limits.
 
 ## Controls
 
@@ -21,7 +23,7 @@ literal names. Filtering/completion, details, logs and shell are subsequent task
 | `/` outside an input | Focus the filter |
 | `:` outside an input | Focus the command input |
 | `Enter` in the filter | Keep the filter text and return to the table |
-| `Enter` in the command | Submit help/quit or `ctx [NAME]` / `ns [NAME or *]` |
+| `Enter` in the command | Submit an available pod/context/namespace/history/help command |
 | F2 / F3 | Choose context / namespace |
 | F4 | Retry the selected connection |
 | F5 | Read the full connection message in a scrollable dialog |
@@ -30,14 +32,19 @@ literal names. Filtering/completion, details, logs and shell are subsequent task
 | `Esc` in help | Close help and restore the previous focus |
 | `Esc` in an input | Cancel command text and return to the table; retain filter text |
 | `Esc` in the table | Clear the filter and restore the current connection status |
-| `Tab` / `Shift+Tab` | Move keyboard focus |
+| `Tab` in command | Accept selected suggestion; move focus if none applies |
+| Up/Down in command | Select a suggestion |
+| `Shift+Tab` | Move keyboard focus backward |
+| Alt+Left / Alt+Right | Restore previous / next scope and view state |
 | Click | Focus an input or select a table row when rows exist |
 | Left/right arrows in the table | Scroll columns horizontally in a narrow window |
 | `q` outside inputs | Quit |
 | Ctrl+Q or Ctrl+C | Quit, including while editing an input or reading help |
 
-The filter input is available; actual filtering ships in B03 #27. Context commands
-connect explicitly; namespace commands record scope. Unknown commands show a
+The filter searches current pod rows as you type. Plain text is literal and
+case-insensitive; `re:PATTERN` uses bounded regex matching. Invalid/timed-out regex
+shows all current pods with an error. Context commands connect explicitly;
+namespace commands record scope. Unknown commands show a
 concise unavailable message. Both inputs are limited to 256 characters and support Unicode text
 and terminal paste. Typing `q`, `/`, `:` or `?` inside an input inserts text;
 F1 remains available for help.
@@ -53,7 +60,8 @@ scrollable body and accessible Back button. Smaller sizes are not qualified.
 `--crumbsless` hides the context/namespace scope bar. These invocation-only flags
 preserve filter/command inputs, status and key hints through resize. Initial
 `--command help` (or `-c help`) opens the help dialog; `--command quit` exits
-cleanly. Other initial commands return unavailable until resource routing ships.
+cleanly. Initial pod/context/namespace commands use the shared grammar and start
+the requested scope directly. Unsupported resource/action commands remain unavailable.
 
 The configured `theme` selects a built-in Textual theme, such as `textual-dark`,
 `textual-light` or `nord`. An unregistered theme fails safely with exit 2 before

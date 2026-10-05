@@ -44,7 +44,7 @@ def _parser() -> argparse.ArgumentParser:
     parser = _Parser(
         prog="kubetrol",
         description="A Kubernetes terminal UI built with Python and Textual.",
-        epilog="Live pod table preview: contexts, namespaces and sorting; logs and shell are upcoming.",
+        epilog="Live pod table preview: commands, completion, filters and history; logs and shell are upcoming.",
         allow_abbrev=False,
         formatter_class=lambda prog: argparse.HelpFormatter(prog, width=100),
     )
@@ -111,7 +111,7 @@ def _parser() -> argparse.ArgumentParser:
         "-c",
         dest="initial_command",
         type=_argument,
-        help="initial terminal command: help or quit; resource views await B03 #27",
+        help="initial terminal command: po, ctx, ns, status, retry, back, forward, help or quit",
     )
     for flag in ("headless", "logoless", "crumbsless"):
         parser.add_argument(
@@ -250,7 +250,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         if initial is Command.UNAVAILABLE:
             raise AppError(
-                "--command resource/action is unavailable in this preview; requires resource commands (B03 #27). Use help or quit.",
+                "--command resource/action is unavailable in this preview. Available: po, ctx, ns, status, retry, help, quit.",
                 ExitCode.UNAVAILABLE,
             )
         if arguments.subcommand is None and arguments.refresh_seconds is not None:

@@ -89,6 +89,18 @@ class PodTable(DataTable[PodCell]):
         )
         return Viewport(self.selected_uid, self.cursor_row, self.scroll_x, self.scroll_y, top)
 
+    def capture_viewport(self) -> Viewport:
+        return self._capture()
+
+    def restore_viewport(self, viewport: Viewport) -> None:
+        self._restore(viewport)
+
+    def restore_sort(self, column: PodColumn, descending: bool) -> None:
+        self.sort_column = column
+        self.descending = descending
+        self._sort()
+        self.post_message(self.SortChanged())
+
     def _restore(self, viewport: Viewport) -> None:
         destination = (
             self.get_row_index(viewport.selected)

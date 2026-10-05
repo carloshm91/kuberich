@@ -6,6 +6,7 @@ from dataclasses import dataclass, replace
 
 from kubetrol.adapters.kubernetes import KubernetesSession
 from kubetrol.domain.connections import ConnectionProblem, ConnectionState, namespace_name
+from kubetrol.domain.navigation import NamespaceChoice
 from kubetrol.domain.resources import Discovery
 from kubetrol.domain.views import (
     USABLE_CONNECTIONS,
@@ -134,11 +135,20 @@ class WorkspaceService:
             self.task = asyncio.create_task(self._drive(), name="kubetrol-workspace")
         return self.task
 
-    def connect(self, context: str) -> asyncio.Task[None]:
+    def connect(self, context: str, *, scope: NamespaceChoice | None = None) -> asyncio.Task[None]:
         self._require_open()
         validate_argument(context)
         revision = self.store.begin(context)
-        return self._schedule(_Selection(revision, context, self.selection, reconnect=True))
+        return self._schedule(
+            _Selection(
+                revision,
+                context,
+                self.selection,
+                reconnect=True,
+                change_namespace=scope is not None,
+                namespace=scope.namespace if scope is not None else None,
+            )
+        )
 
     def _current_context(self) -> str:
         self._require_open()
@@ -219,10 +229,12 @@ class WorkspaceService:
             if selection.reconnect:
                 self._discovery = None
                 observation = await self.sessions.connect(selection.context)
-            elif selection.change_namespace:
-                observation = self.sessions.select_namespace(selection.namespace)
             else:
                 observation = self.sessions.observation
+            if selection.revision != self.store.observation.revision:
+                return
+            if selection.change_namespace and observation.state in USABLE_CONNECTIONS:
+                observation = self.sessions.select_namespace(selection.namespace)
             if not self.store.connected(selection.revision, observation):
                 return
             self._publish()

@@ -27,6 +27,7 @@ dependencies = [
     "kubernetes-asyncio>=36.1.0,<37",
     "platformdirs>=4.12.3,<5",
     "pyyaml>=6.0.3,<7",
+    "regex>=2026.9.29,<2027",
     "textual>=8.2.8,<9",
 ]
 
@@ -51,6 +52,7 @@ dev = [
     "ruff>=0.16.10,<0.17",
     "twine>=7.0.0,<8",
     "types-pyyaml>=6.0.12,<7",
+    "types-regex>=2026.9.29.20261005,<2027",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -121,5 +123,6 @@ critical_modules = [
     "src/kubetrol/domain/watches.py",
     "src/kubetrol/domain/views.py",
     "src/kubetrol/domain/pods.py",
+    "src/kubetrol/domain/navigation.py",
     "src/kubetrol/services/sessions.py",
 ]
