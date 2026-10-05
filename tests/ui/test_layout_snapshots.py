@@ -51,7 +51,7 @@ async def test_layout_and_rendered_evidence(
         assert "Disconnected" in screenshot and "NAMESPACE" in screenshot
         if name == "compact":
             assert app.resources.max_scroll_x > 0
-            await pilot.press("right", "right")
+            await pilot.press("right", "end")
             assert app.resources.scroll_x > 0
             assert "AGE" in app.export_screenshot()
         await pilot.press("question_mark")

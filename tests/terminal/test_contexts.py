@@ -147,7 +147,7 @@ def test_quiet_watch_renewals_keep_the_real_cli_live_without_retry_hints(tmp_pat
             ],
             tmp_path,
         ) as terminal:
-            terminal.wait_for(b"Resource data ready")
+            terminal.wait_for(b"owned-pty-pod")
             terminal.wait_for(b"Live")
             terminal.wait_for(b"1 pods")
             deadline = time.monotonic() + 8

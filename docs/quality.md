@@ -24,7 +24,7 @@ presentation, argument validation/capture, client/UID target identity checks,
 launch availability/exclusivity, shared access/command decisions, context catalogue
 and session identity, resource endpoint/scope/alias/manifest normalization, and
 watch events, UID state/replays and recovery decisions, plus active-view identity,
-snapshot invalidation and freshness decisions.
+snapshot invalidation and freshness decisions, plus pod health and typed ordering.
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
 from transport and widget glue so exhaustive tests are practical. The critical

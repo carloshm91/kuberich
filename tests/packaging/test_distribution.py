@@ -259,7 +259,7 @@ def test_installed_wheel_connects_to_owned_api_and_changes_namespace(
         ) as terminal:
             terminal.wait_for(b"Live")
             terminal.wait_for(b"1 pods")
-            terminal.wait_for(b"Resource data ready")
+            terminal.wait_for(b"owned-pty-pod")
             if quiet:
                 deadline = time.monotonic() + 8
                 while not server.renewed.is_set():

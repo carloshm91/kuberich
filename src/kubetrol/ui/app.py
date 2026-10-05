@@ -14,7 +14,7 @@ from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.events import Resize
 from textual.screen import ModalScreen
-from textual.widgets import Button, DataTable, Footer, Input, Static
+from textual.widgets import Button, Footer, Input, Static
 
 from kubetrol.config.catalog import KubeCatalog
 from kubetrol.config.schema import Settings
@@ -28,8 +28,10 @@ from kubetrol.security.arguments import validate_argument
 from kubetrol.security.presentation import safe_text
 from kubetrol.services.access import AccessPolicy
 from kubetrol.services.commands import Command, CommandService
+from kubetrol.services.pods import PodProjection
 from kubetrol.services.sessions import SessionService
 from kubetrol.services.workspace import ViewSubscription, WorkspaceService
+from kubetrol.ui.pods import PodTable
 from kubetrol.ui.presentation import DEFAULT_PRESENTATION, Presentation
 from kubetrol.ui.scopes import ConnectionScreen, ScopeScreen
 
@@ -63,7 +65,11 @@ class HelpScreen(ModalScreen[None]):
                         "Ctrl+C            Quit\n\n"
                         "Commands: help, quit, ctx [NAME], ns [NAME or *], status, retry.\n\n"
                         "Context sessions and live pod synchronization are available. "
-                        "The resource table, logs and shell are upcoming."
+                        "Pod rows are live. Logs and shell are upcoming.\n"
+                        "s                 Cycle sort column\n"
+                        "Shift+S           Reverse sort\n"
+                        "Header click      Sort / reverse column\n"
+                        "Arrows / PageUp / PageDown navigate the table."
                     ),
                     id="help-content",
                 )
@@ -126,7 +132,8 @@ class KubetrolApp(App[None]):
             raise AppError("Selected theme is unavailable; choose a built-in Textual theme.")
         self.theme = settings.theme
         self._mode = "Read-only" if settings.read_only else "Local preview"
-        self.resources = DataTable[Text](id="resources", cursor_type="row", zebra_stripes=True)
+        self.resources = PodTable()
+        self._pod_projection = PodProjection()
         self.filter_input = Input(
             placeholder="Filter resources", id="filter", compact=True, max_length=256
         )
@@ -177,10 +184,13 @@ class KubetrolApp(App[None]):
         yield Footer()
 
     def on_mount(self) -> None:
-        self.query_one("#app-header").display = not self._presentation.headless
+        self.query_one("#app-header").display = (
+            not self._presentation.headless and self.size.height >= 16
+        )
         self.query_one("#brand").display = not self._presentation.logoless
         self.query_one("#scope-bar").display = not self._presentation.crumbsless
-        self.resources.add_columns("NAMESPACE", "NAME", "READY", "STATUS", "AGE")
+        self.resources.setup()
+        self.set_interval(1, self.resources.refresh_ages)
         self.query_one("#resource-view", Vertical).border_title = "Resources · no connection"
         self.screen.set_class(self.size.width < 70, "compact")
         self.screen.set_class(self.size.height < 16, "short")
@@ -201,6 +211,7 @@ class KubetrolApp(App[None]):
             self._set_status(str(error))
             return
         self._connection_task = self.workspace.connect(context)
+        self._clear_rows()
         self.query_one("#context", Static).update(safe_text(f"Context: {context}"))
         self.query_one("#namespace", Static).update("Namespace: —")
         self.query_one("#connection", Static).update("Connecting")
@@ -215,7 +226,17 @@ class KubetrolApp(App[None]):
                     self.is_running
                     and observation.revision == self.workspace.store.observation.revision
                 ):
-                    self._show_view(observation)
+                    rows = await self._pod_projection.project(observation.snapshot)
+                    revision = observation.revision
+
+                    def current(revision: int = revision) -> bool:
+                        return (
+                            self.is_running
+                            and revision == self.workspace.store.observation.revision
+                        )
+
+                    if await self.resources.apply_rows(rows, observation.revision, current):
+                        self._show_view(observation)
         except Exception as error:
             self._handle_exception(error)
         finally:
@@ -241,14 +262,16 @@ class KubetrolApp(App[None]):
             if view.snapshot is not None and view.problem is not None
             else "Resource data unavailable"
             if usable and view.status is ViewStatus.FAILED
-            else "Resource data ready"
+            else "No pods in this scope"
+            if view.snapshot is not None and not view.snapshot.items
+            else "Pods ready"
             if view.status is ViewStatus.LIVE
             else "Loading resources"
             if usable
             else "Connection unavailable"
         )
         self.query_one("#empty-description", Static).update(
-            "Table rows arrive in the next preview. :ns choose namespace · :ctx choose context."
+            "No pods were returned. :ns choose namespace · :ctx choose context."
             if view.status is ViewStatus.LIVE
             else "Keeping the last snapshot while reconnecting. Press i for details."
             if view.status is ViewStatus.STALE
@@ -257,12 +280,20 @@ class KubetrolApp(App[None]):
         self.query_one("#resource-view", Vertical).border_title = (
             "Resources · " + view.status.name.lower()
         )
+        self.query_one("#empty-state").display = not bool(self.resources.row_count)
+        self.resources.set_class(bool(self.resources.row_count), "populated")
+        self._show_sort()
         self._set_status(view.message)
+
+    @on(PodTable.SortChanged)
+    def _show_sort(self) -> None:
+        self.query_one("#resource-view", Vertical).border_subtitle = self.resources.sort_summary
 
     async def on_unmount(self) -> None:
         await self.workspace.close()
         if self._view_task is not None:
             await asyncio.gather(self._view_task, return_exceptions=True)
+        await self._pod_projection.project(None)
 
     def action_contexts(self) -> None:
         if not self.sessions.catalog.names:
@@ -279,6 +310,12 @@ class KubetrolApp(App[None]):
     def _context_selected(self, value: str | None) -> None:
         if value is not None:
             self._start_connection(value)
+
+    def _clear_rows(self) -> None:
+        self.resources.reset(self.workspace.store.observation.revision)
+        self.resources.remove_class("populated")
+        self.query_one("#empty-state").display = True
+        self.query_one("#empty-title", Static).update("Loading resources")
 
     def action_namespaces(self) -> None:
         observation = self.workspace.store.observation.connection
@@ -298,6 +335,9 @@ class KubetrolApp(App[None]):
                 self._connection_task = self.workspace.select_namespace(
                     None if value == "*" else value
                 )
+                self._clear_rows()
+                self.query_one("#namespace", Static).update(safe_text(f"Namespace: {value}"))
+                self._set_status(self._workspace_status())
             except AppError as error:
                 self._set_status(str(error))
 
@@ -313,6 +353,9 @@ class KubetrolApp(App[None]):
             self.action_contexts()
 
     def on_resize(self, event: Resize) -> None:
+        self.screen_stack[0].query_one("#app-header").display = (
+            not self._presentation.headless and event.size.height >= 16
+        )
         self.screen_stack[0].set_class(event.size.width < 70, "compact")
         self.screen_stack[0].set_class(event.size.height < 16, "short")
 

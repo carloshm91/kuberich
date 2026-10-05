@@ -47,7 +47,7 @@ async def test_visible_stale_recovery_status_details_and_namespace_change(tmp_pa
             assert "Read-only" in str(app.status.content)
             assert "Insecure transport" in str(app.status.content)
             assert "Stale resource data" in str(app.query_one("#empty-title", Static).content)
-            assert app.workspace.store.observation.snapshot.items and app.resources.row_count == 0
+            assert app.workspace.store.observation.snapshot.items and app.resources.row_count == 1
             evidence = Path("artifacts/ui").resolve()
             evidence.mkdir(parents=True, exist_ok=True)
             app.save_screenshot(filename=f"workspace-stale-{size[0]}.svg", path=str(evidence))
@@ -192,9 +192,11 @@ async def test_quiet_renewal_preserves_live_preview_copy_and_selected_context(
         async with app.run_test(size=size) as pilot:
             await wait_for(lambda: len(versions) >= 3)
             await pilot.pause()
-            assert str(app.query_one("#empty-title", Static).content) == "Resource data ready"
+            assert str(app.query_one("#empty-title", Static).content) == (
+                "Pods ready" if count else "No pods in this scope"
+            )
             description = str(app.query_one("#empty-description", Static).content)
-            assert "Table rows arrive in the next preview" in description
+            assert "No pods were returned" in description
             assert ":ctx choose context" in description
             assert str(app.query_one("#context", Static).content) == "Context: kubetrol-test-one"
             assert f"Live · {count} pods" in str(app.status.content)
@@ -203,7 +205,7 @@ async def test_quiet_renewal_preserves_live_preview_copy_and_selected_context(
                 view.status not in {ViewStatus.STALE, ViewStatus.FAILED, ViewStatus.RELISTING}
                 for view in displayed
             )
-            assert app.resources.row_count == 0
+            assert app.resources.row_count == count
             evidence = Path("artifacts/ui").resolve()
             evidence.mkdir(parents=True, exist_ok=True)
             app.save_screenshot(filename=f"workspace-quiet-live-{size[0]}.svg", path=str(evidence))

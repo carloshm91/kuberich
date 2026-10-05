@@ -128,7 +128,7 @@
       ],
       "source": "internal/view/browser.go",
       "status": "planned",
-      "difference": "C03 implements backend list/watch updates and recovery. C04 connects one active generation-bound pod view, bounded subscriptions, scope cancellation and visible live/stale/error counts. Preview correction #107 keeps quiet renewals live, bounds failed streams and clarifies loading/count/shortcut status. Table rows/manual refresh remain B02/F05; complete CORE02 parity is still planned.",
+      "difference": "B02 adds actual incremental pod rows and stale/error retention to the C03/C04 backend, including quiet renewal correction #107. Manual refresh and wider resource integration remain planned; no full CORE02 parity claim.",
       "partial_evidence": [
         "docs/resource-watches.md",
         "tests/unit/test_watches.py",
@@ -139,7 +139,12 @@
         "tests/contract/test_workspace.py",
         "tests/ui/test_workspace.py",
         "tests/terminal/test_contexts.py",
-        "tests/packaging/test_distribution.py"
+        "tests/packaging/test_distribution.py",
+        "docs/pod-table.md",
+        "tests/unit/test_pods.py",
+        "tests/ui/test_pods.py",
+        "tests/contract/test_pod_projection.py",
+        "tests/terminal/test_pods.py"
       ]
     },
     {
@@ -188,12 +193,18 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B01 implements keyboard/mouse focus, table navigation, horizontal column scrolling, responsive resize and Unicode inputs. Live-row state, paging and SSH/tmux qualification remain planned.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. SSH/tmux and broader terminal qualification remain B07/Q02.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
         "tests/ui/test_layout_snapshots.py",
-        "tests/terminal/test_shell.py"
+        "tests/terminal/test_shell.py",
+        "docs/pod-table.md",
+        "tests/unit/test_pods.py",
+        "tests/ui/test_pods.py",
+        "tests/contract/test_pod_projection.py",
+        "tests/terminal/test_pods.py",
+        "scripts/verify_contexts_kind.py"
       ]
     },
     {
@@ -206,7 +217,15 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": ""
+      "difference": "B02 implements numeric restart/readiness and chronological age sorting, stable ties, reverse/header sorting and retained UID selection. Custom/wide/movable columns, error filters and selection ranges remain B07/U02.",
+      "partial_evidence": [
+        "docs/pod-table.md",
+        "tests/unit/test_pods.py",
+        "tests/ui/test_pods.py",
+        "tests/contract/test_pod_projection.py",
+        "tests/terminal/test_pods.py",
+        "scripts/verify_contexts_kind.py"
+      ]
     },
     {
       "id": "UI06",
@@ -283,7 +302,15 @@
       ],
       "source": "internal/view/registrar.go",
       "status": "planned",
-      "difference": ""
+      "difference": "B02 delivers live pod health including init and restartable sidecars, excluding ephemeral debug containers from readiness/restarts. Container browsing, events and other resource tables remain B04/B05/S04.",
+      "partial_evidence": [
+        "docs/pod-table.md",
+        "tests/unit/test_pods.py",
+        "tests/ui/test_pods.py",
+        "tests/contract/test_pod_projection.py",
+        "tests/terminal/test_pods.py",
+        "scripts/verify_contexts_kind.py"
+      ]
     },
     {
       "id": "RES02",

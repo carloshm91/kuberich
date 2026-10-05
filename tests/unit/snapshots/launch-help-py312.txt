@@ -62,4 +62,4 @@ Recognized options awaiting their owning feature (exit 4):
                         unavailable: TLS transport (F05 #19 / C08 #47)
   --token TOKEN         unavailable: credential overrides (F05 #19 / C08 #47)
 
-Context session preview: namespace discovery is available; resource views are upcoming.
+Live pod table preview: contexts, namespaces and sorting; logs and shell are upcoming.

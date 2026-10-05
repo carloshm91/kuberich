@@ -1,7 +1,9 @@
 # First things to try
 
 The installable CLI, local preferences and first terminal window are available
-from the development checkout. Live Kubernetes views are subsequent checkpoints.
+from the development checkout, including the live pod table. Use the latest
+B02 trial below; earlier sections record previous checkpoints and may name
+short-lived branches that have since been deleted.
 Do not wait for every epic or the complete 1.0.0 parity audit to get feedback.
 
 | Checkpoint | Required work | What can actually be tried |
@@ -203,3 +205,30 @@ state; press `i` to read the full safe message. Ctrl+Q returns to your shell.
 For feedback, report the namespace/count and, if a retry still appears, only its
 safe status text. These steps use your chosen trusted local configuration; the
 automated evidence uses owned fake APIs and a uniquely created/deleted kind cluster.
+
+
+## Live pod table: B02 #26 — current trial
+
+Run from your checkout in an interactive terminal:
+
+```sh
+git switch main
+git pull --ff-only
+uv sync --locked --group dev
+uv run kubetrol
+```
+
+1. Enter `:ctx`, choose your context and press Enter.
+2. Enter `:ns YOUR_NAMESPACE` and Enter. You should now see actual pod rows with
+   READY, STATUS, RESTARTS and AGE. Compare with `kubectl get pods -n YOUR_NAMESPACE`
+   using that same context. A successful empty scope says **No pods in this scope**.
+3. Use arrows/PageDown; `s` cycles sorting and Shift+S reverses it. Left/right and
+   Home/End scroll columns. Click a header if you prefer the mouse.
+4. Leave it open for 30 seconds. Existing rows/selection should remain stable and
+   ages update. A genuine outage keeps rows with a stale warning.
+5. Try `:ns *` for all namespaces, then Ctrl+Q to return to your shell.
+
+Report whether rows/count match the chosen scope, which state looks wrong if any,
+and whether navigation feels comfortable. Filtering and Tab suggestions are next
+in B03; details/logs/exec have their own tickets. See [pod semantics](pod-table.md).
+No public package/release has been published.

@@ -19,21 +19,26 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Live UID keyed pod rows with readiness, init/sidecar/waiting/termination reasons,
+  restarts, continuously updating age, typed sorting and stable selection/scroll.
+- Incremental cell/row patches, cancellation-safe background projection, distinct
+  loading/empty/error states and visible data at 40×12, with real API/PTY/install evidence.
+
 - Active pod synchronization with live counts and loading/stale/error status,
   generation-bound snapshots, coalesced scope changes and bounded UI subscriptions.
 - Awaited cleanup and late-result rejection, with rapid-switch, real-API, Pilot
-  and PTY recovery/exit tests. Pod table rows remain upcoming.
+  and PTY recovery/exit tests. Pod table rows are delivered in B02.
 
 - Backend list/watch synchronization with stable UID state, idempotent events,
   bookmarks, opaque checkpoints, bounded retries and full relists after expiry.
 - Real streaming/backpressure/cancellation tests and disposable-kind create,
-  modify, delete and same-name recreation qualification. UI pod rows remain upcoming.
+  modify, delete and same-name recreation qualification. UI pod rows are delivered in B02.
 
 - Backend API discovery with core/named groups, modern/legacy negotiation,
   aliases and explicit partial results, plus scoped atomic paginated snapshots,
   collection versions and one full restart for expired continuation tokens.
 - Resource normalization/HTTP cancellation tests and real disposable-kind
-  paginated resource qualification. Terminal pod rows remain upcoming.
+  paginated resource qualification. Terminal pod rows are delivered in B02.
 
 - Isolated kubeconfig/context sessions, namespace discovery and selectors,
   TLS/client-certificate/static-token authentication and bounded noninteractive

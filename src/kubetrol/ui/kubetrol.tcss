@@ -56,6 +56,10 @@ Screen {
     background: $background;
 }
 
+#resources.populated {
+    height: 1fr;
+}
+
 #empty-state {
     height: 1fr;
     align: center middle;
@@ -149,7 +153,7 @@ Footer {
 }
 
 .short #app-header {
-    height: 1;
+    display: none;
 }
 
 .short #resource-view, .short #filter-bar {
