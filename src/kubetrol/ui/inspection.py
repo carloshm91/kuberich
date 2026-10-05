@@ -102,7 +102,8 @@ class InspectionScreen(ModalScreen[None]):
 
     async def on_unmount(self) -> None:
         if self._load_task is not None:
-            self._load_task.cancel()
+            if not self._load_task.cancelling():
+                self._load_task.cancel()
             await asyncio.gather(self._load_task, return_exceptions=True)
 
     def validate_target(self) -> None:
@@ -112,7 +113,7 @@ class InspectionScreen(ModalScreen[None]):
             self.result = None
             self.viewer.load_text("")
             self.status.update(safe_text(str(error)))
-            if self._load_task is not None:
+            if self._load_task is not None and not self._load_task.cancelling():
                 self._load_task.cancel()
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:

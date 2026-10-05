@@ -52,6 +52,10 @@ class InspectionService:
     async def load(self) -> InspectionResult:
         self.policy.require(Action.READ)
         self.require_current()
+        if self.client.context.name != self.target.session.context:
+            raise AppError("Inspection client does not match the captured context.")
+        if self.resource.namespaced and self.target.namespace is None:
+            raise AppError("Namespaced inspection requires a captured namespace.")
         if self.target.group != self.resource.group or self.target.resource != self.resource.name:
             raise AppError("Inspection target does not match the captured resource API.")
         if "get" not in self.resource.verbs:

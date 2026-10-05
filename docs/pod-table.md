@@ -10,8 +10,9 @@ uv run kubetrol --context YOUR_CONTEXT -n YOUR_NAMESPACE
 ```
 
 This uses your trusted local kubeconfig and credential helpers. The table performs
-reads only. Logs, exec, details and other resource tables remain later checkpoints.
-The filter input and Tab completion are B03 #27, which follows this checkpoint.
+reads only. Logs, exec and other resource tables remain later checkpoints.
+[Filtering and Tab completion](command-navigation.md) are available in B03;
+[pod YAML, details and related events](resource-inspection.md) are available in B04.
 
 ## Columns and controls
 

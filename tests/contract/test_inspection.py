@@ -20,7 +20,9 @@ def make_service(reader, *, current=lambda: True, resource=None, name="api", uid
     return InspectionService(
         reader.session,
         resource or pod_resource(),
-        ResourceTarget(SessionIdentity("owned", 1), "", "pods", "team", name, uid),
+        ResourceTarget(
+            SessionIdentity(reader.session.context.name, 1), "", "pods", "team", name, uid
+        ),
         AccessPolicy(True),
         current,
     )
@@ -193,3 +195,26 @@ async def test_cancellation_drains_serializer_thread_and_stale_result_is_discard
         monkeypatch.setattr(inspection, "inspection_documents", delayed)
         with pytest.raises(AppError, match="stale"):
             await make_service(reader, current=lambda: valid).load()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("kind", ["context", "namespace"])
+async def test_wrong_context_or_missing_namespace_is_rejected_before_io(tmp_path, kind):
+    calls = []
+
+    async def handler(request):
+        calls.append(request.path)
+        return web.json_response(pod("api"))
+
+    async with reader_fixture(tmp_path, handler) as reader:
+        service = make_service(reader)
+        service.target = replace(
+            service.target,
+            session=SessionIdentity("other-context", 1)
+            if kind == "context"
+            else service.target.session,
+            namespace=None if kind == "namespace" else "team",
+        )
+        with pytest.raises(AppError, match="context" if kind == "context" else "namespace"):
+            await service.load()
+        assert calls == []

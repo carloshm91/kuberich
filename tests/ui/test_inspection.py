@@ -285,3 +285,66 @@ async def test_unexpected_inspection_failure_propagates_through_safe_app_cleanup
                 await loaded(app)
                 await pilot.press("y")
         assert app.sessions.client is None
+
+
+@pytest.mark.asyncio
+async def test_scope_invalidation_then_close_drains_the_same_serializer_once(tmp_path, monkeypatch):
+    import threading
+
+    from kubetrol.services import inspection
+
+    started, release, ended = (threading.Event() for _ in range(3))
+    unmounting = asyncio.Event()
+    original = inspection.inspection_documents
+    original_unmount = InspectionScreen.on_unmount
+
+    def controlled(*args):
+        started.set()
+        try:
+            assert release.wait(5)
+            return original(*args)
+        finally:
+            ended.set()
+
+    async def observe_unmount(self):
+        unmounting.set()
+        await original_unmount(self)
+
+    monkeypatch.setattr(inspection, "inspection_documents", controlled)
+    monkeypatch.setattr(InspectionScreen, "on_unmount", observe_unmount)
+
+    async def handler(request):
+        if "watch" in request.query:
+            return await stable_watch(request)
+        if request.path.endswith("/events"):
+            return web.json_response(collection())
+        return web.json_response(
+            collection(manifest()) if request.path.endswith("/pods") else manifest()
+        )
+
+    async with workspace_api(ns, handler) as url:
+        app = app_for(tmp_path, url)
+        async with app.run_test() as pilot:
+            await loaded(app)
+            await pilot.press("y")
+            screen = app.screen
+            await wait_for(started.is_set)
+            app._namespace_selected("default")
+            await wait_for(lambda: screen._load_task.cancelling() > 0)
+
+            async def monitor():
+                try:
+                    await unmounting.wait()
+                    await asyncio.sleep(0.02)
+                    assert not screen._load_task.done() and not ended.is_set()
+                finally:
+                    release.set()
+
+            check = asyncio.create_task(monitor())
+            try:
+                await pilot.press("escape")
+                await check
+            finally:
+                release.set()
+                await asyncio.gather(check, return_exceptions=True)
+            assert ended.is_set() and screen._load_task.done()
