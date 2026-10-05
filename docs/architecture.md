@@ -25,6 +25,7 @@ target CPython 3.12, 3.13, and 3.14. See distribution.md for qualification rules
 | CLI entry point | Standard-library argparse; command and import package named kubetrol |
 | Configuration | Versioned YAML schema, validated dataclasses, platformdirs paths |
 | Verification | pytest, pytest-asyncio, pytest-cov/coverage.py, Ruff, strict mypy |
+| Local regex filters | regex VERSION1 with a total match timeout, owned background work and stale-result guards |
 | Cluster integration | Disposable kind clusters and a controllable fake API server |
 
 uv manages development environments, locked dependency resolution, and build
@@ -32,6 +33,14 @@ invocation. Hatchling is the configured build backend that produces wheels and
 source distributions; `uv build` delegates to it. This retains standard Python
 packaging and the Hatchling approach shown in Textual's packaging guide without
 requiring contributors to manage two environment tools.
+
+B03 adds `regex` for local filtering because matching supports an actual timeout
+and releases the GIL for immutable strings. A thread alone cannot stop an
+unbounded standard-library regex match. Queries remain bounded and matching uses
+a total 50 ms budget per snapshot; cancellation drains the worker before exit.
+This does not establish the separate maximum-workload performance gate.
+See [filter semantics](command-navigation.md) and the
+[engine's timeout/threading documentation](https://pypi.org/project/regex/).
 
 The generated async client is selected for explicit API coverage and control
 over watches and cancellation. Do not mix clients throughout the UI or rely on

@@ -103,3 +103,6 @@ Sources: [Textual Input](https://textual.textualize.io/widgets/input/),
 [bindings](https://textual.textualize.io/guide/input/#bindings),
 [queued callbacks](https://textual.textualize.io/api/message_pump/#textual.message_pump.MessagePump.call_later),
 [regex timeout and threading](https://pypi.org/project/regex/).
+
+Measured delivery evidence and unavailable platform checks:
+[B03 acceptance](acceptance/B03.md).
