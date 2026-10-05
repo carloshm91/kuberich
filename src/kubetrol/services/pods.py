@@ -36,6 +36,7 @@ class PodProjection:
                     continue
                 except Exception:
                     break
-            if not worker.cancelled():
-                worker.exception()
+            # Retrieve a decoding failure; a cancelled future likewise propagates
+            # cancellation, so both states preserve the caller's cancellation.
+            worker.exception()
             raise
