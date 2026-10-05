@@ -12,6 +12,7 @@ Do not wait for every epic or the complete 1.0.0 parity audit to get feedback.
 | Launch contract | F05 stage 1 | Try help/version subcommands, visibility flags, initial help and read-only command guards; pending features fail explicitly |
 | Context session | C01 | Connect, select contexts/namespaces, retry and observe distinct connection errors |
 | Resource read backend | C02 | Verify real discovery and paginated snapshots on an owned disposable cluster; the UI table is still empty |
+| Resource synchronization backend | C03 | Verify live UID state, reconnect and cancellation; UI subscription/table integration follows |
 | First live cluster view | F04/F05, C01-C04, B02/B03/B04 | Choose context/namespace, inspect live pods, filter and open details/events |
 | Logs and interactive shell | S01-S04, credential/PTY/integration checks | Follow current/previous logs, choose a container, enter its shell and return safely |
 | Public 0.0.1 preview | D04 and every v0.0.1 acceptance gate | Install through tested PyPI/Homebrew channels and follow the verified first-user guide |
@@ -139,3 +140,21 @@ uv run pytest tests/unit/test_resources.py tests/contract/test_resources.py
 The tests own their loopback servers and synthetic credentials. For the actual
 Kubernetes qualification command and retained evidence, see
 [resource discovery](resource-discovery.md).
+
+## Resource updates: C03 backend checkpoint
+
+The backend now keeps resource snapshots updated through a recoverable watch.
+The terminal still shows the context/namespace checkpoint with no pod rows;
+C04 #25 integrates context/scope ownership and B02 #26 provides the visible table.
+
+For this block's isolated behavioral trial:
+
+```sh
+uv sync --locked --group dev
+uv run pytest tests/unit/test_watches.py tests/contract/test_watches.py
+```
+
+These tests cover real loopback HTTP streams, opaque versions, duplicate events,
+UID recreation, expired versions, permissions, retries and cleanup. The required
+kind check also exercises actual resource changes in an owned disposable cluster.
+See [synchronization behavior and limits](resource-watches.md).

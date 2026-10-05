@@ -74,7 +74,7 @@ class ConnectionProblem(Exception):
 class HttpProblem(ConnectionProblem):
     """Carry an HTTP status without retaining the server body or credentials."""
 
-    def __init__(self, status: int) -> None:
+    def __init__(self, status: int, *, retry_after: float | None = None) -> None:
         state = (
             ConnectionState.AUTH_ERROR
             if status == 401
@@ -89,6 +89,7 @@ class HttpProblem(ConnectionProblem):
         )
         super().__init__(state, message)
         self.status = status
+        self.retry_after = retry_after
 
 
 @dataclass(frozen=True)

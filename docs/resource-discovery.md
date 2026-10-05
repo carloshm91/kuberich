@@ -1,8 +1,9 @@
 # Resource discovery and collection snapshots
 
-C02 implements the backend reads for resource browsers. It uses an existing
-explicit context session; it does not load another kubeconfig, change the current
-context or create a fallback client. The terminal still displays the C01 namespace
+C02 implements the backend reads for resource browsers. C03 adds a
+[recoverable synchronization loop](resource-watches.md). Both use an existing
+explicit context session; neither loads another kubeconfig, changes the current
+context or creates a fallback client. The terminal still displays the C01 namespace
 checkpoint. Live pod rows arrive after C03/C04/B02; selecting `:ns NAME` alone
 does not populate the table in this checkpoint.
 
@@ -97,8 +98,9 @@ This command creates its own uniquely named kind cluster and temporary kubeconfi
 tests real core/named-group discovery, aliases, paginated namespace/pod/deployment
 reads, collection versions and UIDs, then deletes only that owned cluster.
 Sanitized evidence is written to `artifacts/cluster/context-sessions.json`.
-CI requires it on Linux/Python 3.12. It does not qualify cloud providers, live
-watches, UI resource rows or performance at the configured maximum dataset size.
+CI requires it on Linux/Python 3.12. C03 extends the script with real list/watch
+changes and UID recreation. It does not qualify cloud providers, UI resource rows
+or performance at the configured maximum dataset size.
 
 Sources: [Kubernetes API discovery](https://kubernetes.io/docs/concepts/overview/kubernetes-api/),
 [pagination and resource versions](https://kubernetes.io/docs/reference/using-api/api-concepts/).

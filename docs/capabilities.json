@@ -128,7 +128,13 @@
       ],
       "source": "internal/view/browser.go",
       "status": "planned",
-      "difference": ""
+      "difference": "C03 implements backend list/watch updates, opaque checkpoints, UID recreation, reconnect/backoff and permission failures. Context-bound subscriptions and UI refresh/retry remain C04/B02/F05; complete CORE02 parity is still planned.",
+      "partial_evidence": [
+        "docs/resource-watches.md",
+        "tests/unit/test_watches.py",
+        "tests/contract/test_watches.py",
+        "scripts/verify_contexts_kind.py"
+      ]
     },
     {
       "id": "UI01",

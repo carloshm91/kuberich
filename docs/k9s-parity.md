@@ -4,7 +4,7 @@ Reviewed 2026-10-04. Reference: [K9s v0.51.0](https://github.com/derailed/k9s/re
 commit `558caafe7ba067467de46b320cc22ef11fef9c34`.
 
 **Complete product capability rows remain planned.** Local CLI/configuration,
-the terminal preview, F04 security helpers, F05 launch checkpoint, C01 sessions and C02 resource reads
+the terminal preview, F04 security helpers, F05 launch checkpoint, C01 sessions, C02 resource reads and C03 synchronization
 have implementation evidence, but do not establish a complete capability family's
 K9s parity.
 
