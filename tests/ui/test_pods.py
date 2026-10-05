@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 from aiohttp import web
+from textual.events import Paste
 
 from kubetrol.config.schema import Settings
 from kubetrol.domain.pods import PodColumn, pod_row
@@ -292,7 +293,11 @@ async def test_namespace_switch_remains_responsive_and_rejects_a_blocked_old_pro
         async with app.run_test() as pilot:
             try:
                 await wait_for(started.is_set)
-                await pilot.press("colon", *"ns default", "enter")
+                await pilot.press("colon")
+                # Keep the five-second fault fixture independent of per-key Pilot delays.
+                app.command_input.post_message(Paste("ns default"))
+                await pilot.pause()
+                await pilot.press("enter")
                 await wait_for(
                     lambda: (
                         app.workspace.store.observation.status is ViewStatus.LIVE
