@@ -118,5 +118,6 @@ critical_modules = [
     "src/kubetrol/config/catalog.py",
     "src/kubetrol/domain/connections.py",
     "src/kubetrol/domain/resources.py",
+    "src/kubetrol/domain/watches.py",
     "src/kubetrol/services/sessions.py",
 ]

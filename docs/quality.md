@@ -22,7 +22,8 @@ The current critical modules are the CLI/module entry points, preference schema
 validation/precedence, diagnostic redaction, control escaping, literal text
 presentation, argument validation/capture, client/UID target identity checks,
 launch availability/exclusivity, shared access/command decisions, context catalogue
-and session identity, and resource endpoint/scope/alias/manifest normalization.
+and session identity, resource endpoint/scope/alias/manifest normalization, and
+watch events, UID state/replays and recovery decisions.
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
 from transport and widget glue so exhaustive tests are practical. The critical
@@ -167,6 +168,12 @@ domain joins the critical inventory. Disposable-kind verification additionally
 requires core/named-group discovery and real paginated namespace/pod/deployment
 snapshots with collection versions and item UIDs. The UI still has no resource
 rows; live updates remain C03/C04/B02.
+C03 adds pure critical watch-state/retry decisions and actual HTTP framing,
+list/watch continuity, replay/recreation, retry/backoff, permission, token refresh,
+bounded slow-consumer and cancellation tests. The required kind check exercises
+a real write between LIST and WATCH plus create/update/delete/recreation and owned
+watch/fixture cleanup. UI resource subscriptions remain C04/B02; C03 does not
+establish a visible live pod table or maximum-workload performance.
 Provider qualification, refresh and effectful integrations remain pending; a parsed flag is not
 compatibility evidence. [Test isolation](security-primitives.md) describes the qualified
 fixture path and limitations. The README must

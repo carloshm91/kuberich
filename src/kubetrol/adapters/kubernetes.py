@@ -5,6 +5,9 @@ import base64
 import binascii
 import json
 import ssl
+from collections.abc import AsyncGenerator, AsyncIterator
+from contextlib import asynccontextmanager
+from math import ceil
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, NoReturn
@@ -30,6 +33,21 @@ def _decode(data: bytes) -> dict[str, Any]:
 
 def _invalid_constant(value: str) -> NoReturn:
     raise ValueError("Nonfinite JSON constants are invalid.")
+
+
+async def _decode_owned(data: bytes) -> dict[str, Any]:
+    decoding = asyncio.create_task(asyncio.to_thread(_decode, data))
+    try:
+        return await asyncio.shield(decoding)
+    except asyncio.CancelledError:
+        await asyncio.gather(decoding, return_exceptions=True)
+        raise
+
+
+def _retry_after(value: str | None) -> float | None:
+    if value is None or not value.isascii() or not value.isdigit():
+        return None
+    return float(min(int(value), 300)) if len(value) < 8 else 300.0
 
 
 def _endpoint(value: Any) -> str:
@@ -181,6 +199,42 @@ class KubernetesSession:
             await self.close()
             raise
 
+    @asynccontextmanager
+    async def _response(
+        self, path: str, params: dict[str, str] | None, accept: str, timeout: float
+    ) -> AsyncIterator[aiohttp.ClientResponse]:
+        api, configuration, credentials = self.api, self.configuration, self.credentials
+        if api is None or configuration is None:
+            raise ConnectionProblem(ConnectionState.DISCONNECTED, "The selected session is closed.")
+        refreshed = False
+        while True:
+            if credentials is not None:
+                configuration.api_key["BearerToken"] = "Bearer " + await credentials.token()
+            headers = {"Accept": accept, "Accept-Encoding": "identity"}
+            token = configuration.api_key.get("BearerToken")
+            if token:
+                headers["Authorization"] = token
+            async with api.rest_client.pool_manager.get(
+                str(configuration.host) + path,
+                headers=headers,
+                params=params,
+                proxy=configuration.proxy,
+                server_hostname=configuration.tls_server_name,
+                allow_redirects=False,
+                timeout=aiohttp.ClientTimeout(total=timeout, connect=timeout, sock_read=timeout),
+            ) as response:
+                if response.status == 401 and credentials is not None and not refreshed:
+                    credentials.invalidate()
+                    refreshed = True
+                    continue
+                if response.status != 200:
+                    raise HttpProblem(
+                        response.status,
+                        retry_after=_retry_after(response.headers.get("Retry-After")),
+                    )
+                yield response
+                return
+
     async def get_json(
         self,
         path: str,
@@ -190,50 +244,15 @@ class KubernetesSession:
         accept: str = "application/json",
     ) -> dict[str, Any]:
         """Owned read-only transport; callers construct discovered API paths."""
-        if self.api is None or self.configuration is None:
-            raise ConnectionProblem(ConnectionState.DISCONNECTED, "The selected session is closed.")
         try:
             async with asyncio.timeout(self.timeout):
-                refreshed = False
-                while True:
-                    if self.credentials is not None:
-                        self.configuration.api_key["BearerToken"] = (
-                            "Bearer " + await self.credentials.token()
-                        )
-                    headers = {"Accept": accept, "Accept-Encoding": "identity"}
-                    token = self.configuration.api_key.get("BearerToken")
-                    if token:
-                        headers["Authorization"] = token
-                    async with self.api.rest_client.pool_manager.get(
-                        str(self.configuration.host) + path,
-                        headers=headers,
-                        params=params,
-                        proxy=self.configuration.proxy,
-                        server_hostname=self.configuration.tls_server_name,
-                        allow_redirects=False,
-                    ) as response:
-                        if (
-                            response.status == 401
-                            and self.credentials is not None
-                            and not refreshed
-                        ):
-                            self.credentials.invalidate()
-                            refreshed = True
-                            continue
-                        if response.status != 200:
-                            raise HttpProblem(response.status)
-                        data = bytearray()
-                        async for chunk in response.content.iter_chunked(16384):
-                            data.extend(chunk)
-                            if len(data) > max_bytes:
-                                raise ValueError
-                    decoding = asyncio.create_task(asyncio.to_thread(_decode, bytes(data)))
-                    try:
-                        return await asyncio.shield(decoding)
-                    except asyncio.CancelledError:
-                        # Even a pure decoding thread must be awaited on cancellation.
-                        await asyncio.gather(decoding, return_exceptions=True)
-                        raise
+                async with self._response(path, params, accept, self.timeout) as response:
+                    data = bytearray()
+                    async for chunk in response.content.iter_chunked(16384):
+                        data.extend(chunk)
+                        if len(data) > max_bytes:
+                            raise ValueError
+                return await _decode_owned(bytes(data))
         except TimeoutError:
             raise ConnectionProblem(
                 ConnectionState.TIMEOUT,
@@ -252,6 +271,56 @@ class KubernetesSession:
         except (AppError, ValueError, UnicodeError, RecursionError, TypeError):
             raise ConnectionProblem(
                 ConnectionState.API_ERROR, "Invalid or oversized Kubernetes JSON response."
+            ) from None
+
+    async def watch_json(
+        self, path: str, resource_version: str, *, max_bytes: int = 8 * 1024 * 1024
+    ) -> AsyncGenerator[dict[str, Any] | None, None]:
+        """None signals an opened stream; complete JSON lines follow, without a queue."""
+        duration = min(self.timeout, 60.0)
+        params = {
+            "watch": "true",
+            "resourceVersion": resource_version,
+            "allowWatchBookmarks": "true",
+            "timeoutSeconds": str(max(1, ceil(duration))),
+        }
+        try:
+            async with self._response(path, params, "application/json", duration) as response:
+                yield None
+                buffer = bytearray()
+                async for chunk in response.content.iter_chunked(16384):
+                    buffer.extend(chunk)
+                    while (end := buffer.find(b"\n")) >= 0:
+                        if end > max_bytes:
+                            raise ValueError
+                        line = bytes(buffer[:end])
+                        del buffer[: end + 1]
+                        if line.strip():
+                            yield await _decode_owned(line)
+                    if len(buffer) > max_bytes:
+                        raise ValueError
+                if buffer.strip():
+                    raise ConnectionProblem(
+                        ConnectionState.UNREACHABLE,
+                        "The watch ended with an incomplete event. Reconnecting from its last version.",
+                    )
+        except TimeoutError:
+            raise ConnectionProblem(
+                ConnectionState.TIMEOUT, "The watch request timed out."
+            ) from None
+        except (aiohttp.ClientSSLError, ssl.SSLError):
+            raise ConnectionProblem(
+                ConnectionState.TLS_ERROR,
+                "Watch TLS verification failed. Check the cluster CA and server name.",
+            ) from None
+        except aiohttp.ClientError:
+            raise ConnectionProblem(
+                ConnectionState.UNREACHABLE,
+                "Watch connection failed. Check network and server access.",
+            ) from None
+        except (AppError, ValueError, UnicodeError, RecursionError, TypeError):
+            raise ConnectionProblem(
+                ConnectionState.API_ERROR, "Invalid or oversized Kubernetes watch response."
             ) from None
 
     async def namespaces(self) -> tuple[str, ...]:

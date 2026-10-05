@@ -14,6 +14,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Backend list/watch synchronization with stable UID state, idempotent events,
+  bookmarks, opaque checkpoints, bounded retries and full relists after expiry.
+- Real streaming/backpressure/cancellation tests and disposable-kind create,
+  modify, delete and same-name recreation qualification. UI pod rows remain upcoming.
+
 - Backend API discovery with core/named groups, modern/legacy negotiation,
   aliases and explicit partial results, plus scoped atomic paginated snapshots,
   collection versions and one full restart for expired continuation tokens.

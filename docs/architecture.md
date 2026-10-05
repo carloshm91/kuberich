@@ -246,6 +246,21 @@ values on non-watch aggregate APIs remain absent rather than fabricated. This
 backend does not start UI workers or live watches; C03/C04/B02 integrate those
 behaviors. See [resource discovery](resource-discovery.md) for the contract and limits.
 
+## C03 synchronization decision
+
+`domain/watches.py` owns event/Status normalization, UID-indexed state, bounded
+replay memory and pure retry decisions. `services/watches.py` owns an awaited
+list/watch loop and its explicit sink, response closure, cancellation and retry
+timing. The adapter shares authentication/TLS requests between bounded JSON reads
+and watches. It yields complete JSON lines without a producer queue; owned
+decoding and normalization workers are awaited on cancellation.
+
+EOF/transient failures resume the last fully applied opaque version. Expiration
+invalidates the cache and relists; permission/protocol failures stop. Slow sinks
+apply backpressure and consumer failures propagate. Context-generation routing,
+UI subscriptions and batched presentation remain C04/B02. See the implemented
+[resource synchronization contract](resource-watches.md).
+
 ## Sources
 
 - [Textual workers](https://textual.textualize.io/guide/workers/)

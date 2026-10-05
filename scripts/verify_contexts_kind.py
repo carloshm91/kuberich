@@ -1,4 +1,4 @@
-"""C01/C02 qualification on a newly created, explicitly owned disposable kind cluster."""
+"""C01-C03 qualification on a newly created, explicitly owned disposable kind cluster."""
 
 import argparse
 import asyncio
@@ -10,15 +10,109 @@ from tempfile import TemporaryDirectory
 from uuid import uuid4
 
 import yaml
+from kubernetes_asyncio.client import CoreV1Api, V1Namespace, V1ObjectMeta
 
 from kubetrol.config.catalog import load_catalog
 from kubetrol.domain.connections import ConnectionRequest, ConnectionState
+from kubetrol.domain.watches import EventType, SyncStatus
 from kubetrol.services.resources import ResourceReader
 from kubetrol.services.sessions import SessionService
+from kubetrol.services.watches import ListWatch
 
 NODE_IMAGE = (
     "kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed"
 )
+
+
+async def verify_watch(reader: ResourceReader, resource) -> dict[str, object]:
+    """Mutate only fixtures inside this script's newly created local kind cluster."""
+    api = CoreV1Api(reader.session.api)
+    namespace = "kubetrol-watch-" + uuid4().hex[:12]
+    created_namespace = await api.create_namespace(
+        V1Namespace(metadata=V1ObjectMeta(name=namespace))
+    )
+    name = "owned-watch-example"
+    finished = asyncio.Event()
+    uid = None
+    steps = []
+
+    async def sink(update) -> None:
+        nonlocal uid
+        if update.status is SyncStatus.SNAPSHOT:
+            assert all(record.name != name for record in update.snapshot.items)
+            # This write happens between LIST and opening WATCH: it must not be lost.
+            await api.create_namespaced_config_map(
+                namespace,
+                {"metadata": {"name": name}, "data": {"stage": "created"}},
+            )
+        if update.event is None or update.event.record is None:
+            return
+        record = update.event.record
+        # Namespace controllers may also publish kube-root-ca.crt here.
+        if record.name != name:
+            return
+        assert record.name == name and record.namespace == namespace and record.uid
+        target_items = tuple(item for item in update.snapshot.items if item.name == name)
+        if update.event.type is EventType.ADDED and uid is None:
+            uid = record.uid
+            steps.append("ADDED")
+            assert len(target_items) == 1
+            await api.replace_namespaced_config_map(
+                name,
+                namespace,
+                {
+                    "apiVersion": "v1",
+                    "kind": "ConfigMap",
+                    "metadata": {"name": name, "resourceVersion": record.resource_version},
+                    "data": {"stage": "modified"},
+                },
+            )
+        elif update.event.type is EventType.MODIFIED:
+            assert record.uid == uid and record.manifest["data"]["stage"] == "modified"
+            steps.append("MODIFIED")
+            await api.delete_namespaced_config_map(
+                name,
+                namespace,
+                body={"preconditions": {"uid": uid}},
+            )
+        elif update.event.type is EventType.DELETED:
+            assert record.uid == uid and not target_items
+            steps.append("DELETED")
+            await api.create_namespaced_config_map(
+                namespace,
+                {"metadata": {"name": name}, "data": {"stage": "recreated"}},
+            )
+        elif update.event.type is EventType.ADDED:
+            assert record.uid != uid and len(target_items) == 1
+            assert target_items[0].uid == record.uid
+            steps.append("RECREATED")
+            finished.set()
+
+    task = asyncio.create_task(ListWatch(reader).run(resource, namespace, sink))
+    completion = asyncio.create_task(finished.wait())
+    try:
+        done, _ = await asyncio.wait(
+            {task, completion}, timeout=30, return_when=asyncio.FIRST_COMPLETED
+        )
+        if task in done:
+            await task
+        assert finished.is_set() and steps == ["ADDED", "MODIFIED", "DELETED", "RECREATED"]
+    finally:
+        completion.cancel()
+        task.cancel()
+        results = await asyncio.gather(task, completion, return_exceptions=True)
+        await api.delete_namespace(
+            namespace,
+            body={"preconditions": {"uid": created_namespace.metadata.uid}},
+        )
+    assert isinstance(results[0], asyncio.CancelledError)
+    return {
+        "real_list_watch_gap": True,
+        "real_added_modified_deleted": True,
+        "real_same_name_new_uid": True,
+        "watch_cancellation_awaited": True,
+        "owned_watch_fixture_deleted": True,
+    }
 
 
 async def verify(path: Path, context: str) -> dict[str, object]:
@@ -59,6 +153,7 @@ async def verify(path: Path, context: str) -> dict[str, object]:
         assert deployments.api_version == "apps/v1"
         deployment_snapshot = await reader.list(deployments, "kube-system", page_size=1)
         assert deployment_snapshot.resource_version and deployment_snapshot.items
+        watch_evidence = await verify_watch(reader, discovery.find("configmaps"))
         assert path.read_bytes() == before
         active = sessions.client.api
     finally:
@@ -83,6 +178,7 @@ async def verify(path: Path, context: str) -> dict[str, object]:
         "collection_versions_and_item_uids": True,
         "discovered_resource_count": len(discovery.resources),
         "scoped_pod_count": len(scoped_pods.items),
+        **watch_evidence,
     }
 
 
@@ -123,7 +219,7 @@ def main() -> None:
                 + "\n"
             )
             print(
-                "Real API, discovery, paginated resource snapshots, TLS, scope and cleanup passed.",
+                "Real API, discovery, snapshots, list/watch changes, TLS, scope and cleanup passed.",
                 flush=True,
             )
         finally:

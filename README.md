@@ -19,7 +19,8 @@ and selection, filter/command inputs, help, themes and responsive layouts. It
 supports kubeconfig/context/namespace/timeout flags, static token and certificate
 authentication and noninteractive exec tokens. Live pods, logs and shell are
 upcoming. The [resource read backend](docs/resource-discovery.md) now provides real
-API discovery and consistent paginated snapshots; it is not wired into the UI yet.
+API discovery and consistent paginated snapshots, with
+[backend watch synchronization](docs/resource-watches.md); UI integration is upcoming.
 See [context sessions](docs/context-sessions.md) for supported credentials,
 connection states and limits. Local diagnostics, read-only command guards,
 header/logo/scope visibility and initial help/quit commands remain available.

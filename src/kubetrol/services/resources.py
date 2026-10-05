@@ -7,6 +7,8 @@ from typing import Any
 from kubetrol.adapters.kubernetes import KubernetesSession
 from kubetrol.domain.connections import ConnectionProblem, ConnectionState, HttpProblem
 from kubetrol.domain.resources import (
+    MAX_RESOURCE_BYTES,
+    MAX_RESOURCE_ITEMS,
     ApiResource,
     Discovery,
     DiscoveryIssue,
@@ -25,9 +27,9 @@ DISCOVERY_ACCEPT = (
 )
 MAX_VERSIONS = 128
 MAX_RESOURCES = 8192
-MAX_ITEMS = 10000
+MAX_ITEMS = MAX_RESOURCE_ITEMS
 MAX_PAGES = 256
-MAX_SNAPSHOT_BYTES = 64 * 1024 * 1024
+MAX_SNAPSHOT_BYTES = MAX_RESOURCE_BYTES
 
 
 def _entries(value: Any, limit: int) -> list[Any]:

@@ -10,6 +10,9 @@ from kubetrol.domain.connections import namespace_name
 from kubetrol.errors import AppError
 from kubetrol.security.arguments import validate_argument
 
+MAX_RESOURCE_ITEMS = 10000
+MAX_RESOURCE_BYTES = 64 * 1024 * 1024
+
 
 def resource_object(value: Any) -> dict[str, Any]:
     if not isinstance(value, dict) or not all(isinstance(key, str) for key in value):
