@@ -1,8 +1,9 @@
 # Resource synchronization
 
 C03 adds backend list/watch synchronization on top of C02's complete snapshots.
-It does not yet populate the terminal table: C04 owns context/scope generations
-and UI subscriptions; B02 renders the first live pod view. CLI refresh options
+It does not yet populate the terminal table: C04 now implements
+[context/scope generations and UI subscriptions](resource-views.md); B02 renders
+the first live pod table. CLI refresh options
 and advanced connection behavior remain with their existing tasks.
 
 ## Data and continuity
@@ -55,7 +56,7 @@ SNAPSHOT means LIST succeeded; LIVE means the watch opened. RETRYING carries the
 last known data and a delay, not a claim of current freshness. RELISTING carries
 no usable snapshot. FAILED retains only any still-usable prior snapshot and raises
 the safe connection problem. Consumer exceptions propagate rather than being
-misclassified as network failures. C04 must render these observations and reject
+misclassified as network failures. C04 renders these observations and rejects
 late results from previous context/scope generations.
 
 ## Bounds and cleanup

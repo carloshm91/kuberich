@@ -5,12 +5,15 @@ import os
 import sys
 import threading
 import time
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 import yaml
 
+from tests.support.resources import collection, item, legacy_roots
+from tests.support.watches import bookmark, frame
 from tests.terminal.pty_support import TerminalSession
 
 
@@ -29,14 +32,36 @@ def config(path: Path, server: str, user: dict) -> Path:
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        assert self.path.startswith("/api/v1/namespaces")
         assert self.headers.get("Authorization") == "Bearer synthetic-pty"
-        body = json.dumps(
-            {
+        parsed = urlsplit(self.path)
+        if "watch" in parse_qs(parsed.query):
+            if self.server.fail_watches.is_set():
+                self.send_error(503, "Owned fixture outage")
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            try:
+                while not self.server.stopping.wait(0.03):
+                    self.wfile.write(frame(bookmark("owned-pty-version")))
+                    self.wfile.flush()
+            except OSError:
+                pass
+            return
+        if parsed.path == "/api/v1/namespaces":
+            payload = {
                 "items": [{"metadata": {"name": "default"}}, {"metadata": {"name": "team"}}],
                 "metadata": {},
             }
-        ).encode()
+        elif parsed.path in legacy_roots():
+            payload = legacy_roots()[parsed.path]
+        elif parsed.path.endswith("/pods"):
+            namespace = parsed.path.split("/")[4] if "/namespaces/" in parsed.path else "default"
+            payload = collection(item("owned-pty-pod", namespace=namespace))
+        else:
+            self.send_error(404)
+            return
+        body = json.dumps(payload).encode()
         self.send_response(200)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
@@ -46,11 +71,18 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
+class Server(ThreadingHTTPServer):
+    def __init__(self):
+        super().__init__(("127.0.0.1", 0), Handler)
+        self.fail_watches = threading.Event()
+        self.stopping = threading.Event()
+
+
 @pytest.mark.parametrize("authentication", ["token", "exec-null-env"])
 def test_connected_cli_context_namespace_retry_and_terminal_restoration(
     tmp_path: Path, authentication: str
 ) -> None:
-    server = HTTPServer(("127.0.0.1", 0), Handler)
+    server = Server()
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     user = {"token": "synthetic-pty"}
@@ -110,6 +142,45 @@ def test_connected_cli_context_namespace_retry_and_terminal_restoration(
             terminal.save_evidence(f"context-session-{authentication}")
         assert path.read_bytes() == original
     finally:
+        server.stopping.set()
+        server.shutdown()
+        thread.join(timeout=2)
+        server.server_close()
+        assert not thread.is_alive()
+
+
+def test_stale_live_recovery_scope_switch_and_quit_restore_real_terminal(tmp_path):
+    server = Server()
+    server.fail_watches.set()
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    path = config(
+        tmp_path / "owned-config",
+        f"http://127.0.0.1:{server.server_port}",
+        {"token": "synthetic-pty"},
+    )
+    before = path.read_bytes()
+    try:
+        with TerminalSession(
+            [sys.executable, "-m", "kubetrol", "--kubeconfig", str(path)], tmp_path
+        ) as terminal:
+            terminal.wait_for(b"Stale resource data")
+            assert b"synthetic-pty" not in terminal.transcript
+            server.fail_watches.clear()
+            terminal.wait_for(b"Live")
+            marker = terminal.send(b":ns team\r")
+            terminal.wait_for(b"Namespace: team", since=marker)
+            terminal.resize(40, 12)
+            marker = terminal.send(b":status\r")
+            terminal.wait_for(b"Connection status", since=marker)
+            marker = terminal.send(b"\x1b")
+            terminal.wait_for(b"Cmd ", since=marker)
+            terminal.send(b"\x11")
+            terminal.finish()
+            terminal.save_evidence("workspace-stale-live-scope")
+        assert path.read_bytes() == before
+    finally:
+        server.stopping.set()
         server.shutdown()
         thread.join(timeout=2)
         server.server_close()

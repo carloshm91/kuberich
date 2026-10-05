@@ -1,9 +1,9 @@
 # Context sessions
 
-C01 connects to Kubernetes for bounded namespace discovery. The terminal does not
-yet show pods, watch resources, display logs or execute commands in containers.
-C02 adds a separate [resource read backend](resource-discovery.md), qualified
-independently of UI integration.
+C01 connects for bounded namespace discovery. C02/C03 provide resource reads/watches,
+and C04's [active view](resource-views.md) synchronizes pods for the selected scope
+with live/stale/error status and a collection count. The table still has no pod
+rows; logs and container exec are upcoming.
 Connection errors remain in the UI so you can choose another context or retry.
 
 ## Start and select
@@ -103,7 +103,7 @@ CLI cluster/user/token/TLS/impersonation overrides remain gated by F05/C08.
 | --- | --- |
 | Disconnected | No selected configuration; configure kubeconfig or use F2 |
 | Connecting | Background authentication/discovery; inputs and quit stay responsive |
-| Connected | Namespace discovery succeeded; resource views are upcoming |
+| Connected | Namespace discovery succeeded; resource status separately reports pod synchronization |
 | Limited | Listing namespaces returned 403; select an allowed namespace manually |
 | Auth error | Missing/rejected/unsupported credentials or helper failure; check login and retry |
 | TLS error | Invalid/untrusted certificates or hostname mismatch; check CA/server/client files |

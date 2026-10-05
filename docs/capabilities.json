@@ -128,12 +128,17 @@
       ],
       "source": "internal/view/browser.go",
       "status": "planned",
-      "difference": "C03 implements backend list/watch updates, opaque checkpoints, UID recreation, reconnect/backoff and permission failures. Context-bound subscriptions and UI refresh/retry remain C04/B02/F05; complete CORE02 parity is still planned.",
+      "difference": "C03 implements backend list/watch updates and recovery. C04 connects one active generation-bound pod view, bounded subscriptions, scope cancellation and visible live/stale/error counts. Table rows/manual refresh remain B02/F05; complete CORE02 parity is still planned.",
       "partial_evidence": [
         "docs/resource-watches.md",
         "tests/unit/test_watches.py",
         "tests/contract/test_watches.py",
-        "scripts/verify_contexts_kind.py"
+        "scripts/verify_contexts_kind.py",
+        "docs/resource-views.md",
+        "tests/unit/test_views.py",
+        "tests/contract/test_workspace.py",
+        "tests/ui/test_workspace.py",
+        "tests/terminal/test_contexts.py"
       ]
     },
     {

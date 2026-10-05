@@ -48,7 +48,7 @@ class SessionService:
                 namespaces = await self.client.namespaces()
                 self.observation = SessionObservation(
                     ConnectionState.CONNECTED,
-                    "Connected · Resource views are upcoming. :ctx contexts · :ns namespaces.",
+                    "Connected · :ctx contexts · :ns namespaces.",
                     identity,
                     namespace,
                     namespaces,

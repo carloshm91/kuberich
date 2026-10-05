@@ -13,7 +13,8 @@ from kubetrol.config.schema import Settings
 from kubetrol.domain.connections import ConnectionRequest, ConnectionState
 from kubetrol.ui.app import KubetrolApp
 from kubetrol.ui.scopes import ConnectionScreen, ScopeScreen
-from tests.support.connections import catalog_fixture, fake_api, namespaces
+from tests.support.connections import catalog_fixture, namespaces
+from tests.support.workspace import workspace_api as fake_api
 
 
 async def connected(app: KubetrolApp) -> None:

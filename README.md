@@ -17,10 +17,10 @@ release is available yet.**
 It opens a terminal workspace with isolated context sessions, namespace discovery
 and selection, filter/command inputs, help, themes and responsive layouts. It
 supports kubeconfig/context/namespace/timeout flags, static token and certificate
-authentication and noninteractive exec tokens. Live pods, logs and shell are
-upcoming. The [resource read backend](docs/resource-discovery.md) now provides real
-API discovery and consistent paginated snapshots, with
-[backend watch synchronization](docs/resource-watches.md); UI integration is upcoming.
+authentication and noninteractive exec tokens. The [active view](docs/resource-views.md)
+now synchronizes pods for the selected scope and shows live counts, stale states
+and errors using discovery, paginated snapshots and recoverable watches.
+**The table still has no pod rows**; row rendering, logs and shell are upcoming.
 See [context sessions](docs/context-sessions.md) for supported credentials,
 connection states and limits. Local diagnostics, read-only command guards,
 header/logo/scope visibility and initial help/quit commands remain available.
@@ -54,7 +54,7 @@ helpers are trusted local programs and may run automatically for authentication.
 Help/version/info/config inspection never connects or executes helpers.
 Try `uv run kubetrol --readonly --headless --command help` to start with help
 and a compact header. Read-only command decisions use a shared service guard;
-actual cluster operations are not implemented yet.
+workload changes, container exec and plugins are upcoming.
 `uv run python -m kubetrol` is also supported.
 `info` and `config check` create no files. `config init` optionally creates default
 preferences without overwriting an existing file. See

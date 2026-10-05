@@ -261,6 +261,20 @@ apply backpressure and consumer failures propagate. Context-generation routing,
 UI subscriptions and batched presentation remain C04/B02. See the implemented
 [resource synchronization contract](resource-watches.md).
 
+## C04 active-view ownership decision
+
+`domain/views.py` owns immutable view observations and pure generation/freshness
+decisions. `services/workspace.py` connects explicit sessions, per-client discovery,
+one active watch and bounded latest-state subscriptions. Selection invalidates
+snapshots immediately, coalesces intent, cancels once and awaits obsolete work.
+Captured client/session/scope and revision reject late results/errors. Published
+problems copy safe fields without transport traceback/client references.
+
+The Textual app subscribes on mount, checks current revisions and updates status
+on the event loop. Unmount awaits watch/transition/client/subscription cleanup.
+Pod counts and stale/failed states are visible; rendering rows, sort/cursor
+preservation and commands remain B02/B03. See [active resource views](resource-views.md).
+
 ## Sources
 
 - [Textual workers](https://textual.textualize.io/guide/workers/)
