@@ -19,7 +19,8 @@ than an atomic server-side UID transaction.
 
 LogOptions supports follow, previous, timestamps, tailLines, sinceSeconds or an
 aware sinceTime. Defaults: follow and timestamps enabled, current logs, tail 1000.
-Tail accepts -1 for all or 0–1,000,000; sinceSeconds is 1–2,147,483,647. Time-window
+Tail accepts -1 for all or 0–1,000,000; -1 omits the API tailLines parameter,
+because the server rejects negative tail counts. SinceSeconds is 1–2,147,483,647. Time-window
 options are mutually exclusive and sinceTime is sent in UTC. Regular and init
 containers are supported; ephemeral/debug container browsing remains later work.
 
@@ -69,9 +70,10 @@ Run the focused contract and deterministic tests with:
 uv run pytest tests/unit/test_logs.py tests/contract/test_logs.py
 ```
 
-The integration script also exercises snapshots, timestamp/tail options,
+The integration script also exercises snapshots, timestamp/tail/all/since options,
 cancellable follow and unavailable previous logs on an owned disposable kind
 cluster. See [S01 acceptance evidence](acceptance/S01.md).
 
 API semantics follow the [Kubernetes logs reference](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/)
+and [server log-option validation](https://github.com/kubernetes/kubernetes/blob/v1.36.4/pkg/apis/core/validation/validation.go),
 and [aiohttp streaming response contract](https://docs.aiohttp.org/en/stable/client_quickstart.html#streaming-response-content).

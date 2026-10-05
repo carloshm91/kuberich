@@ -51,8 +51,9 @@ class LogOptions:
             "follow": str(self.follow).lower(),
             "previous": str(self.previous).lower(),
             "timestamps": str(self.timestamps).lower(),
-            "tailLines": str(self.tail_lines),
         }
+        if self.tail_lines >= 0:
+            result["tailLines"] = str(self.tail_lines)
         if self.since_seconds is not None:
             result["sinceSeconds"] = str(self.since_seconds)
         if self.since_time is not None:

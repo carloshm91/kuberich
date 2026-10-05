@@ -25,12 +25,12 @@ def test_log_query_parameters_selected_container_time_windows_and_exact_booleans
         "follow": "false",
         "previous": "true",
         "timestamps": "false",
-        "tailLines": "-1",
         "sinceSeconds": "30",
     }
     time = datetime(2026, 10, 5, 10, tzinfo=timezone(timedelta(hours=2)))
     assert LogOptions(since_time=time).parameters("app")["sinceTime"] == "2026-10-05T08:00:00Z"
     assert LogOptions().parameters("app")["tailLines"] == "1000"
+    assert LogOptions(tail_lines=0).parameters("app")["tailLines"] == "0"
     with pytest.raises(AppError, match="segment"):
         value.parameters("bad/name")
 

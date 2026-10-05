@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import subprocess
+from datetime import timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from uuid import uuid4
@@ -428,6 +429,12 @@ async def verify_logs(reader, snapshot, sessions):
     count = await service.run(LogOptions(follow=False, tail_lines=10, timestamps=True), retain)
     assert count and buffer.lines and all(line.text[:4].isdigit() for line in buffer.lines)
     assert any("CoreDNS" in line.text for line in buffer.lines)
+    all_count = await service.run(LogOptions(follow=False, tail_lines=-1), retain)
+    assert all_count >= count
+    assert await service.run(LogOptions(follow=False, since_seconds=3600), retain)
+    assert await service.run(
+        LogOptions(follow=False, since_time=utc_now() - timedelta(hours=1)), retain
+    )
     received = asyncio.Event()
     hold = asyncio.Event()
 
@@ -458,6 +465,7 @@ async def verify_logs(reader, snapshot, sessions):
     return {
         "real_current_container_log_snapshot": True,
         "real_log_timestamps_and_tail": True,
+        "real_log_all_tail_and_since_windows": True,
         "real_follow_log_cancellation_awaited": True,
         "real_previous_log_unavailable": True,
         "real_log_retention_lines": len(buffer.lines),
