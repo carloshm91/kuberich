@@ -53,6 +53,12 @@ class LogBody(ScrollView, can_focus=True):
         index = min(len(self.rows) - 1, bisect_right(self.starts, int(self.scroll_y)) - 1)
         return self.rows[index][0], int(self.scroll_y) - self.starts[index]
 
+    def watch_virtual_size(self, size: Size) -> None:
+        # Textual 8's ScrollView may keep unchanged outer geometry when content
+        # grows. Synchronize scrollbars/bounds explicitly before scroll_to,
+        # whose permission check otherwise sees the old (hidden) scrollbars.
+        self._scroll_update(size)
+
     async def load(
         self,
         entries: tuple[LogEntry, ...],

@@ -80,6 +80,7 @@ async def test_live_view_search_vim_modes_copy_save_resize_and_return(tmp_path, 
             await wait_for(lambda: screen.body.follow and screen.body.scroll_y > 0)
             await pilot.pause()
             assert screen.body.follow and screen.body.scroll_y > 0
+            assert screen.body.show_vertical_scrollbar
             screen.body.post_message(
                 MouseScrollUp(screen.body, 1, 1, 0, -1, 0, False, False, False)
             )

@@ -335,6 +335,13 @@ reception pause. `ui/logs.py` owns one serialized read controller, batched rende
 task and optional save task. Changing options cancels and awaits the old read;
 dismissal cancels tasks before widgets are removed and unmount drains them.
 
+The pinned Textual 8 ScrollView needs its scrollbar bounds synchronized when
+virtual content grows without changing outer geometry. The body's public
+`watch_virtual_size` uses the framework's `_scroll_update` boundary before
+restoring the viewport. Qualify initial follow, mouse/keyboard scrolling,
+eviction and resize on framework upgrades; changing content size alone must
+not leave scrolling disabled.
+
 `services/log_export.py` saves sanitized retained text outside the event loop to
 an exclusive mode-0600 file, never replacing an existing file/symlink. Explicitly
 requested file work is drained even if the viewer closes. Captured pod/client
