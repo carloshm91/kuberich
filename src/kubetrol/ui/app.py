@@ -14,7 +14,7 @@ from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.events import Event, Key, Resize
 from textual.screen import ModalScreen
-from textual.widgets import Button, Footer, Input, Static
+from textual.widgets import Button, DataTable, Footer, Input, Static
 
 from kubetrol.config.catalog import KubeCatalog
 from kubetrol.config.schema import Settings
@@ -23,6 +23,7 @@ from kubetrol.domain.connections import (
     ConnectionRequest,
 )
 from kubetrol.domain.navigation import NamespaceChoice, NavigationHistory, NavigationState
+from kubetrol.domain.targets import ResourceTarget
 from kubetrol.domain.views import USABLE_CONNECTIONS, ViewObservation, ViewStatus
 from kubetrol.errors import AppError
 from kubetrol.security.arguments import validate_argument
@@ -36,10 +37,12 @@ from kubetrol.services.commands import (
     suggestions,
 )
 from kubetrol.services.filtering import apply_filter
+from kubetrol.services.inspection import InspectionService
 from kubetrol.services.pods import PodProjection
 from kubetrol.services.sessions import SessionService
 from kubetrol.services.workspace import ViewSubscription, WorkspaceService
 from kubetrol.ui.commands import CommandInput, NavigationInput
+from kubetrol.ui.inspection import InspectionScreen, Page
 from kubetrol.ui.pods import PodTable, Viewport
 from kubetrol.ui.presentation import DEFAULT_PRESENTATION, Presentation
 from kubetrol.ui.scopes import ConnectionScreen, ScopeScreen
@@ -82,6 +85,9 @@ class HelpScreen(ModalScreen[None]):
                         "Invalid or timed-out regex shows all pods and an error.\n\n"
                         "Context sessions and live pod synchronization are available. "
                         "Pod rows are live. Logs and shell are upcoming.\n"
+                        "Enter / d         Resource details\n"
+                        "y / e             YAML / related events\n"
+                        "Viewer: m managedFields, / search, n/N matches, Ctrl+Y copy.\n"
                         "s                 Cycle sort column\n"
                         "Shift+S           Reverse sort\n"
                         "Header click      Sort / reverse column\n"
@@ -107,6 +113,9 @@ class KubetrolApp(App[None]):
         Binding("colon", "focus_command", "Cmd", key_display=":", priority=True),
         Binding("question_mark", "show_help", "Help", key_display="?"),
         Binding("f1", "show_help", "Help", show=False, priority=True),
+        Binding("y", "inspect_yaml", "YAML"),
+        Binding("d", "inspect_details", "Details"),
+        Binding("e", "inspect_events", "Events"),
         Binding("c", "contexts", "Contexts"),
         Binding("n", "namespaces", "Namespaces"),
         Binding("r", "retry", "Retry", show=False),
@@ -300,6 +309,8 @@ class KubetrolApp(App[None]):
                 ):
                     self._render_ready.set()
                     self.command_input.refresh_choices()
+                    if isinstance(self.screen, InspectionScreen):
+                        self.screen.validate_target()
         except Exception as error:
             self._handle_exception(error)
         finally:
@@ -412,6 +423,58 @@ class KubetrolApp(App[None]):
             await asyncio.gather(self._render_task, return_exceptions=True)
         await self._pod_projection.project(None)
 
+    @on(DataTable.RowSelected, "#resources")
+    def row_selected(self) -> None:
+        self._inspect("details")
+
+    def action_inspect_yaml(self) -> None:
+        self._inspect("yaml")
+
+    def action_inspect_details(self) -> None:
+        self._inspect("details")
+
+    def action_inspect_events(self) -> None:
+        self._inspect("events")
+
+    def _inspect(self, page: Page) -> None:
+        if isinstance(self.screen, ModalScreen):
+            return
+        view = self.workspace.store.observation
+        scope, snapshot, client = view.scope, view.snapshot, self.sessions.client
+        uid = self.resources.selected_uid
+        if scope is None or snapshot is None or client is None or uid is None:
+            self._set_status("Select a connected resource before opening inspection.")
+            return
+        record = next((item for item in snapshot.items if item.uid == uid), None)
+        if record is None or record.uid is None:
+            self._set_status("The selected target is stale; select the resource again.")
+            return
+        target = ResourceTarget(
+            scope.session,
+            scope.resource.group,
+            scope.resource.name,
+            record.namespace,
+            record.name,
+            record.uid,
+        )
+
+        def current() -> bool:
+            observation = self.workspace.store.observation
+            return (
+                self.sessions.client is client
+                and observation.scope == scope
+                and observation.revision == view.revision
+                and observation.snapshot is not None
+                and any(item.uid == target.uid for item in observation.snapshot.items)
+            )
+
+        self.push_screen(
+            InspectionScreen(
+                InspectionService(client, scope.resource, target, self.commands.policy, current),
+                page,
+            )
+        )
+
     def action_contexts(self) -> None:
         if not self.sessions.catalog.names:
             self._set_status("No contexts found. Configure KUBECONFIG or use --kubeconfig.")
@@ -480,7 +543,15 @@ class KubetrolApp(App[None]):
         self.call_after_refresh(self.show_completions)
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
-        if action in {"focus_filter", "focus_command", "history_back", "history_forward"}:
+        if action in {
+            "focus_filter",
+            "focus_command",
+            "history_back",
+            "history_forward",
+            "inspect_yaml",
+            "inspect_details",
+            "inspect_events",
+        }:
             return not isinstance(self.screen, ModalScreen) and not isinstance(self.focused, Input)
         return True
 
@@ -496,7 +567,9 @@ class KubetrolApp(App[None]):
             self.push_screen(HelpScreen())
 
     async def action_back(self) -> None:
-        if isinstance(self.screen, ModalScreen):
+        if isinstance(self.screen, InspectionScreen):
+            self.screen.back()
+        elif isinstance(self.screen, ModalScreen):
             self.screen.dismiss()
         elif isinstance(self.focused, Input):
             self.command_input.value = ""

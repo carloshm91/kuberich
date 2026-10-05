@@ -24,7 +24,9 @@ The [live pod table](docs/pod-table.md) now displays readiness, health reasons,
 restarts and age, with typed sorting, scrolling and selection preserved through
 updates. Quiet watch renewal keeps Live; successful empty scopes and denied reads
 are distinct. [Commands, Tab suggestions, local text/regex filters and navigation
-history](docs/command-navigation.md) are available. Details, logs and shell are upcoming.
+history](docs/command-navigation.md) are available. [Pod YAML, details and related
+events](docs/resource-inspection.md) include search, managedFields visibility and
+redacted copying. Logs and shell are upcoming.
 See [context sessions](docs/context-sessions.md) for supported credentials,
 connection states and limits. Local diagnostics, read-only command guards,
 header/logo/scope visibility and initial view/scope/help commands remain available.

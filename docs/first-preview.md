@@ -2,7 +2,7 @@
 
 The installable CLI, local preferences and first terminal window are available
 from the development checkout, including the live pod table. Use the latest
-B02 trial below; earlier sections record previous checkpoints and may name
+B04 trial below; earlier sections record previous checkpoints and may name
 short-lived branches that have since been deleted.
 Do not wait for every epic or the complete 1.0.0 parity audit to get feedback.
 
@@ -257,3 +257,26 @@ and history returns to the intended view. These commands only read your chosen
 cluster; credential helpers retain the established local trust model. Test evidence
 uses owned APIs and a disposable kind cluster. See [navigation behavior and
 limits](command-navigation.md); no public package or release has been published.
+
+## Resource inspection: B04
+
+From an interactive terminal on updated `main`:
+
+```sh
+uv sync --locked --group dev
+uv run kubetrol
+```
+
+1. Use `:ctx` and `:ns` to choose your context and namespace; select a pod row.
+2. Press `y` for YAML, `d` or Enter for details, and `e` for related events.
+3. Press `m` to show/hide managedFields. Press `/`, type `containers` and Enter;
+   `n`/`N` move through matches.
+4. Use arrows and PageUp/PageDown to scroll; Ctrl+Y copies redacted text if the
+   terminal permits clipboard writes.
+5. Escape leaves the search input, then returns to the table with its selection,
+   sorting, filter and viewport retained.
+
+Report whether the selected pod opens, whether events show data or a clear
+permission error, and whether search/return work in your terminal. Reopen to
+refresh inspection data. Logs and shell remain upcoming. See the
+[viewer contract](resource-inspection.md) and [B04 evidence](acceptance/B04.md).

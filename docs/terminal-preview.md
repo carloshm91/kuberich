@@ -13,7 +13,9 @@ See [active resource views](resource-views.md) for freshness, switching and clea
 The workspace has a resource region, filter and command inputs, status and
 available-key hints. Context/namespace selectors are scrollable and maintain
 literal names. Commands, Tab suggestions, text/regex filters and bounded navigation
-history are available; details, logs and shell remain subsequent tasks.
+history are available. Pod inspection uses `y` for YAML, `d`/Enter for details
+and `e` for related events; logs and shell remain subsequent tasks.
+See [resource inspection](resource-inspection.md) for search, copying and limits.
 See [command navigation](command-navigation.md) for semantics and limits.
 
 ## Controls

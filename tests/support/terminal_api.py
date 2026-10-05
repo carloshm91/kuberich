@@ -83,6 +83,39 @@ class Handler(BaseHTTPRequestHandler):
                         for index in range(80)
                     )
                 )
+        elif "/pods/" in parsed.path:
+            namespace = parsed.path.split("/")[4]
+            name = parsed.path.rsplit("/", 1)[1]
+            uid = (
+                f"owned-{namespace}-{name.rsplit('-', 1)[1]}"
+                if self.server.pod_table.is_set()
+                else f"owned-{name}"
+            )
+            payload = pod(name, namespace=namespace, uid=uid)
+            payload["metadata"]["managedFields"] = [{"manager": "owned-manager", "fieldsV1": {}}]
+            payload["spec"]["containers"][0]["env"] = [{"name": "VALUE", "value": "hidden-pty-env"}]
+        elif parsed.path.endswith("/events"):
+            namespace = parsed.path.split("/")[4]
+            payload = {
+                "apiVersion": "v1",
+                "kind": "EventList",
+                "metadata": {},
+                "items": [
+                    {
+                        "apiVersion": "v1",
+                        "kind": "Event",
+                        "metadata": {
+                            "name": "owned-event",
+                            "namespace": namespace,
+                            "uid": "owned-event-uid",
+                        },
+                        "involvedObject": {"uid": f"owned-{namespace}-000", "namespace": namespace},
+                        "type": "Warning",
+                        "reason": "OwnedWarning",
+                        "message": "token=hidden-pty-token",
+                    }
+                ],
+            }
         else:
             self.send_error(404)
             return

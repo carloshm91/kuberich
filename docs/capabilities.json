@@ -276,7 +276,15 @@
       ],
       "source": "internal/view/live_view.go",
       "status": "planned",
-      "difference": ""
+      "difference": "B04 delivers captured-UID pod YAML/details/events, managedFields visibility and literal text search. Automatic viewer refresh remains U06.",
+      "partial_evidence": [
+        "docs/resource-inspection.md",
+        "tests/unit/test_inspection.py",
+        "tests/contract/test_inspection.py",
+        "tests/ui/test_inspection.py",
+        "tests/terminal/test_inspection.py",
+        "scripts/verify_contexts_kind.py"
+      ]
     },
     {
       "id": "UI08",
@@ -287,7 +295,12 @@
       ],
       "source": "internal/view/clipboard.go",
       "status": "planned",
-      "difference": ""
+      "difference": "B04 copies redacted viewer text using Textual OSC52. Native clipboard and SSH/tmux qualification remain B07/Q02.",
+      "partial_evidence": [
+        "docs/resource-inspection.md",
+        "tests/ui/test_inspection.py",
+        "tests/terminal/test_inspection.py"
+      ]
     },
     {
       "id": "UI09",
@@ -323,14 +336,15 @@
       ],
       "source": "internal/view/registrar.go",
       "status": "planned",
-      "difference": "B02 delivers live pod health including init and restartable sidecars, excluding ephemeral debug containers from readiness/restarts. Container browsing, events and other resource tables remain B04/B05/S04.",
+      "difference": "B02 delivers live pod health; B04 adds pod details and captured-UID related events. Container browsing, standalone events/namespace tables and ephemeral debug containers remain B05/S04.",
       "partial_evidence": [
         "docs/pod-table.md",
         "tests/unit/test_pods.py",
         "tests/ui/test_pods.py",
         "tests/contract/test_pod_projection.py",
         "tests/terminal/test_pods.py",
-        "scripts/verify_contexts_kind.py"
+        "scripts/verify_contexts_kind.py",
+        "docs/resource-inspection.md"
       ]
     },
     {
