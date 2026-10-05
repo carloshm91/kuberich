@@ -1,9 +1,9 @@
 # Container log transport: S01
 
 The backend can read current or previous output from a captured regular/init
-container, independently of resource watches. The terminal log viewer and its
-container picker, pause/follow/search controls remain S02. There is no new log
-shortcut or launch flag in S01; the live table and inspection controls still work.
+container, independently of resource watches. The [S02 terminal viewer](log-viewer.md)
+now opens with `l` on a selected pod and owns container selection, pause/follow,
+search and scrolling. This document describes the underlying S01 transport.
 
 `services.logs.LogStream` owns a run with an explicit KubernetesSession,
 ResourceTarget, AccessPolicy and current-generation predicate. The target includes

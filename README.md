@@ -26,7 +26,9 @@ updates. Quiet watch renewal keeps Live; successful empty scopes and denied read
 are distinct. [Commands, Tab suggestions, local text/regex filters and navigation
 history](docs/command-navigation.md) are available. [Pod YAML, details and related
 events](docs/resource-inspection.md) include search, managedFields visibility and
-redacted copying. Logs and shell are upcoming.
+redacted copying. The [container log viewer](docs/log-viewer.md) provides current/
+previous output, container selection, Vim navigation, search, follow/pause,
+bounded retention and redacted copy/save. Interactive shell remains upcoming.
 See [context sessions](docs/context-sessions.md) for supported credentials,
 connection states and limits. Local diagnostics, read-only command guards,
 header/logo/scope visibility and initial view/scope/help commands remain available.

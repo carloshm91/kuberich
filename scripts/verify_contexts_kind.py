@@ -31,6 +31,7 @@ from kubetrol.services.watches import ListWatch
 from kubetrol.services.workspace import WorkspaceService
 from kubetrol.ui.app import KubetrolApp
 from kubetrol.ui.inspection import InspectionScreen
+from kubetrol.ui.logs import LogScreen
 
 NODE_IMAGE = (
     "kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed"
@@ -131,6 +132,35 @@ async def verify_pod_table(reader, resource, catalog, path, context):
             ):
                 await asyncio.sleep(0.01)
         assert "Filter active" in str(app.status.content)
+        log_uid = app.resources.selected_uid
+        log_viewport = app.resources.capture_viewport()
+        await pilot.press("l")
+        async with asyncio.timeout(30):
+            while (
+                not isinstance(app.screen, LogScreen)
+                or not app.screen.history.entries
+                or not app.screen.body.rows
+            ):
+                await asyncio.sleep(0.01)
+        logs = app.screen
+        assert logs.stream.target.uid == log_uid
+        assert any("CoreDNS" in entry.line.text for entry in logs.history.entries)
+        await pilot.press("g", "G", "p", "g", "G")
+        assert logs.paused and logs.body.follow
+        await pilot.press("p", "slash", *"CoreDNS", "enter", "t", "w", "ctrl+y")
+        await pilot.pause()
+        assert logs.body.matches and not logs.timestamps and logs.wrap
+        assert "CoreDNS" in app.clipboard
+        app.save_screenshot(filename="logs-owned-kind.svg", path=str(output))
+        await pilot.press("v")
+        async with asyncio.timeout(30):
+            while "Previous container logs unavailable" not in logs.message:
+                await asyncio.sleep(0.01)
+        await pilot.press("escape")
+        async with asyncio.timeout(30):
+            while not logs._read_task.done() or not logs._renderer.done():
+                await asyncio.sleep(0.01)
+        assert app.resources.capture_viewport() == log_viewport
         await pilot.press("escape", "colon", *"ns def")
         await pilot.pause()
         assert "ns default" in app.command_input.choices
@@ -171,6 +201,9 @@ async def verify_pod_table(reader, resource, catalog, path, context):
         "real_resource_yaml_describe_events": True,
         "real_inspection_uid_events_search_copy_managed_fields": True,
         "real_local_regex_filter": True,
+        "real_container_log_viewer": True,
+        "real_log_vim_search_follow_pause_timestamps_wrap_previous_copy": True,
+        "real_log_view_cleanup_and_table_return": True,
         "real_namespace_tab_completion": True,
         "real_navigation_history_selection_and_sort": True,
         "server_table_pod_count": len(table["rows"]),

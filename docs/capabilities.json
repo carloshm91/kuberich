@@ -295,11 +295,13 @@
       ],
       "source": "internal/view/clipboard.go",
       "status": "planned",
-      "difference": "B04 copies redacted viewer text using Textual OSC52. Native clipboard and SSH/tmux qualification remain B07/Q02.",
+      "difference": "B04 and S02 copy redacted inspection/log text using Textual OSC52. Native clipboard and SSH/tmux qualification remain B07/Q02.",
       "partial_evidence": [
         "docs/resource-inspection.md",
+        "docs/log-viewer.md",
         "tests/ui/test_inspection.py",
-        "tests/terminal/test_inspection.py"
+        "tests/ui/test_logs.py",
+        "tests/terminal/test_logs.py"
       ]
     },
     {
@@ -312,7 +314,12 @@
       ],
       "source": "internal/view/screen_dump.go",
       "status": "planned",
-      "difference": ""
+      "difference": "S02 saves retained redacted timestamped logs to an explicit new private file without overwrite. Resource export, saved-export browsing and export path settings remain O06/F05.",
+      "partial_evidence": [
+        "docs/log-viewer.md",
+        "tests/unit/test_log_export.py",
+        "tests/ui/test_logs.py"
+      ]
     },
     {
       "id": "UI10",
@@ -417,11 +424,14 @@
       ],
       "source": "internal/view/logs_extender.go",
       "status": "planned",
-      "difference": "S01 delivers backend current/previous regular/init logs with tail/since/timestamps, bounded framing and owned cancellation. Container-selection UI and aggregated/workload output remain S02/S06.",
+      "difference": "S01/S02 implement captured-UID current/previous regular/init logs and a container selector. Aggregated all-container/workload output remains S06.",
       "partial_evidence": [
         "docs/container-log-transport.md",
+        "docs/log-viewer.md",
         "tests/unit/test_logs.py",
         "tests/contract/test_logs.py",
+        "tests/ui/test_logs.py",
+        "tests/terminal/test_logs.py",
         "scripts/verify_contexts_kind.py"
       ]
     },
@@ -432,8 +442,15 @@
         "S02"
       ],
       "source": "internal/view/log.go",
-      "status": "planned",
-      "difference": ""
+      "status": "implemented",
+      "difference": "S02 implements head 1000, tail 100/1000/all, relative or RFC3339 time windows, timestamps, wrapping, separate reception pause/viewport follow and column lock. Retained output is bounded; the API may rotate older output.",
+      "evidence": [
+        "docs/log-viewer.md",
+        "tests/unit/test_log_view.py",
+        "tests/ui/test_logs.py",
+        "tests/terminal/test_logs.py",
+        "scripts/verify_contexts_kind.py"
+      ]
     },
     {
       "id": "LOG03",
@@ -445,7 +462,14 @@
       ],
       "source": "internal/view/log.go",
       "status": "planned",
-      "difference": ""
+      "difference": "S02 implements literal search/match navigation, clear/retained marks/fullscreen, bounded virtualized scrolling, redacted OSC52 copy and exclusive private-file save. Native clipboard, richer search/filter modes and saved-export browsing remain B07/O06.",
+      "partial_evidence": [
+        "docs/log-viewer.md",
+        "tests/unit/test_log_view.py",
+        "tests/unit/test_log_export.py",
+        "tests/ui/test_logs.py",
+        "tests/terminal/test_logs.py"
+      ]
     },
     {
       "id": "SES01",

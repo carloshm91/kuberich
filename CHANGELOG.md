@@ -19,10 +19,15 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Container log viewer with regular/init selection, current/previous output,
+  head/tail/time windows, timestamps, wrapping, literal search and Vim navigation.
+- Separate reception pause and viewport follow, bounded virtualized history,
+  clear/marks/column lock/fullscreen, redacted copy/save and awaited cleanup.
+
 - Backend current/previous regular/init container logs with captured UID/context,
   tail/since/timestamp options, incremental UTF-8 framing and explicit errors.
 - Owned cancellation, quiet-follow semantics, bounded redacted lines/retention
-  and consumer backpressure; the terminal log viewer remains S02.
+  and consumer backpressure, integrated into the S02 terminal log viewer.
 
 - Read-only captured-UID pod YAML, details and related events, with managedFields
   visibility, literal search, redacted copying and return to the live table.
