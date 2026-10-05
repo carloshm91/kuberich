@@ -2,8 +2,9 @@
 
 C04 connects the context, discovery and list/watch services to the terminal.
 It synchronizes **pods** in the selected namespace and displays loading, live,
-stale or failed status and the collection count. The table has no rows yet;
-B02 #26 owns row rendering, sorting and selection. Commands and Tab completion
+stale or failed status and the collection count. B02 #26 now renders the
+[live pod table](pod-table.md), including health, sorting and stable selection.
+Commands and Tab completion
 remain B03 #27. No new launch flags are enabled here.
 
 ## Ownership and scope
@@ -54,7 +55,7 @@ bounds do not establish maximum-load/RSS performance; Q01 owns that qualificatio
 | --- | --- |
 | Disconnected | No active configuration/data; select a configured context |
 | Connecting/loading | Previous snapshot is cleared; no zero count is invented before LIST; inputs and quit remain responsive |
-| Live | LIST succeeded and WATCH opened; “Resource data ready” and the collection count; normal watch renewals keep this state |
+| Live | LIST succeeded and WATCH opened; pod rows (or a distinct empty state) and the collection count; normal watch renewals keep this state |
 | Stale/reconnecting | Keep the last snapshot with an explicit freshness warning |
 | Relisting | Expiration discards the snapshot before loading its replacement |
 | Failed | Show the owned error; retained data, if any, remains stale |
@@ -83,7 +84,7 @@ uv run kubetrol
 ```
 
 Use `:ctx` to choose a configured context, then `:ns NAME`. Look for `Live` and
-the pod count; the table still has no rows. Use `:status` for a complete message,
+the pod count and rows. Use `:status` for a complete message,
 and Ctrl+Q to return to the shell. Launch uses your trusted kubeconfig/helpers;
 see [context sessions](context-sessions.md).
 

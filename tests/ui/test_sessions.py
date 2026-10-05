@@ -41,7 +41,7 @@ async def test_select_context_namespace_scroll_and_retry_without_rewriting_file(
             await connected(app)
             await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
             await pilot.pause()
-            assert "Resource data ready" in str(app.query_one("#empty-title", Static).content)
+            assert "No pods in this scope" in str(app.query_one("#empty-title", Static).content)
             assert "Read-only" in str(app.status.content) and "Insecure transport" in str(
                 app.status.content
             )

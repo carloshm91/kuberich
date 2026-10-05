@@ -120,5 +120,6 @@ critical_modules = [
     "src/kubetrol/domain/resources.py",
     "src/kubetrol/domain/watches.py",
     "src/kubetrol/domain/views.py",
+    "src/kubetrol/domain/pods.py",
     "src/kubetrol/services/sessions.py",
 ]

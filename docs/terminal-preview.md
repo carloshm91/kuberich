@@ -5,13 +5,14 @@ The current development build opens the workspace directly, without a splash
 delay. It loads a local kubeconfig catalogue before the UI, then authenticates and
 discovers namespaces in an owned background session. Without a selected context
 it stays disconnected. A connected scope now synchronizes pods and shows the
-live count and stale/error status. Pod/resource rows remain empty until B02.
+live count, pod rows and stale/error status. See the [pod table](pod-table.md)
+for column semantics and typed sorting.
 See [context sessions](context-sessions.md) for flags, credentials, states and bounds.
 See [active resource views](resource-views.md) for freshness, switching and cleanup.
 
 The workspace has a resource region, filter and command inputs, status and
 available-key hints. Context/namespace selectors are scrollable and maintain
-literal names. Table rendering, details, logs and shell are subsequent tasks.
+literal names. Filtering/completion, details, logs and shell are subsequent tasks.
 
 ## Controls
 
@@ -35,7 +36,7 @@ literal names. Table rendering, details, logs and shell are subsequent tasks.
 | `q` outside inputs | Quit |
 | Ctrl+Q or Ctrl+C | Quit, including while editing an input or reading help |
 
-An active filter reports that resource views are upcoming. Context commands
+The filter input is available; actual filtering ships in B03 #27. Context commands
 connect explicitly; namespace commands record scope. Unknown commands show a
 concise unavailable message. Both inputs are limited to 256 characters and support Unicode text
 and terminal paste. Typing `q`, `/`, `:` or `?` inside an input inserts text;
@@ -45,7 +46,7 @@ F1 remains available for help.
 
 Layouts are tested from 40 columns by 12 rows through 160 by 50. Below 70 columns,
 context and namespace indicators stack vertically; below 16 rows, secondary
-preview copy is hidden to preserve the table and controls. Help has its own
+preview copy and the application header are hidden to preserve data rows and controls. Help has its own
 scrollable body and accessible Back button. Smaller sizes are not qualified.
 
 `--headless` hides the application header, `--logoless` hides its brand, and

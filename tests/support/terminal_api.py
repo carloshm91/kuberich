@@ -1,6 +1,7 @@
 """Shared owned HTTP API and kubeconfig fixtures for actual CLI/install PTYs."""
 
 import json
+import queue
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -9,6 +10,7 @@ from urllib.parse import parse_qs, urlsplit
 
 import yaml
 
+from tests.support.pods import NOW, pod
 from tests.support.resources import collection, item, legacy_roots
 from tests.support.watches import bookmark, frame
 
@@ -45,6 +47,13 @@ class Handler(BaseHTTPRequestHandler):
             deadline = time.monotonic() + int(query["timeoutSeconds"][0])
             try:
                 while time.monotonic() < deadline and not self.server.stopping.wait(0.03):
+                    try:
+                        update = self.server.pod_events.get_nowait()
+                    except queue.Empty:
+                        update = None
+                    if update is not None:
+                        self.wfile.write(frame(update))
+                        self.wfile.flush()
                     if not self.server.quiet_watches.is_set():
                         self.wfile.write(frame(bookmark("owned-pty-version")))
                         self.wfile.flush()
@@ -61,6 +70,19 @@ class Handler(BaseHTTPRequestHandler):
         elif parsed.path.endswith("/pods"):
             namespace = parsed.path.split("/")[4] if "/namespaces/" in parsed.path else "default"
             payload = collection(item("owned-pty-pod", namespace=namespace))
+            if self.server.pod_table.is_set():
+                payload = collection(
+                    *(
+                        pod(
+                            f"owned-pty-pod-{index:03}",
+                            namespace=namespace,
+                            uid=f"owned-{namespace}-{index:03}",
+                            restarts=index,
+                            created=NOW,
+                        )
+                        for index in range(80)
+                    )
+                )
         else:
             self.send_error(404)
             return
@@ -83,3 +105,5 @@ class Server(ThreadingHTTPServer):
         self.renewed = threading.Event()
         self.watch_versions = []
         self.watch_lock = threading.Lock()
+        self.pod_events = queue.Queue()
+        self.pod_table = threading.Event()

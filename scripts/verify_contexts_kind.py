@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import json
+import logging
 import os
 import subprocess
 from pathlib import Path
@@ -13,17 +14,82 @@ import yaml
 from kubernetes_asyncio.client import CoreV1Api, V1Namespace, V1ObjectMeta
 
 from kubetrol.config.catalog import load_catalog
+from kubetrol.config.schema import Settings
 from kubetrol.domain.connections import ConnectionRequest, ConnectionState
+from kubetrol.domain.pods import pod_row, utc_now
+from kubetrol.domain.resources import resource_record
 from kubetrol.domain.views import ResourceSelection, ViewStatus
 from kubetrol.domain.watches import EventType, SyncStatus, SyncUpdate
 from kubetrol.services.resources import ResourceReader
 from kubetrol.services.sessions import SessionService
 from kubetrol.services.watches import ListWatch
 from kubetrol.services.workspace import WorkspaceService
+from kubetrol.ui.app import KubetrolApp
 
 NODE_IMAGE = (
     "kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed"
 )
+
+
+async def verify_pod_table(reader, resource, catalog, path, context):
+    """Compare real pod columns with the API server's Table and run the UI on kind."""
+    table = await reader.session.get_json(
+        resource.path("kube-system"),
+        params={"includeObject": "Object"},
+        accept="application/json;as=Table;g=meta.k8s.io;v=v1",
+    )
+    assert table["kind"] == "Table" and table["rows"]
+    for entry in table["rows"]:
+        row = pod_row(resource_record(resource, entry["object"], "kube-system"))
+        cells = row.cells(utc_now())
+        assert cells[1] == entry["cells"][0]
+        assert cells[2] == entry["cells"][1]
+        assert cells[3] == entry["cells"][2]
+        assert row.restarts == int(str(entry["cells"][3]).split()[0])
+        assert row.created_at is not None and cells[-1] != "—"
+    app = KubetrolApp(
+        Settings(read_only=True),
+        logging.Logger("owned-kind-pod-table"),
+        catalog=catalog,
+        connection=ConnectionRequest(
+            kubeconfig=str(path), context=context, namespace="kube-system", timeout=15
+        ),
+    )
+    async with app.run_test(size=(100, 30)) as pilot:
+        async with asyncio.timeout(30):
+            while (
+                app.workspace.store.observation.status is not ViewStatus.LIVE
+                or not app.resources.row_count
+            ):
+                await asyncio.sleep(0.01)
+        await pilot.pause()
+        assert not app.query_one("#empty-state").display
+        selected = app.resources.selected_uid
+        await pilot.press("s", "s", "s", "S")
+        assert app.resources.selected_uid == selected
+        assert app.resources.descending
+        output = Path("artifacts/ui").resolve()
+        output.mkdir(parents=True, exist_ok=True)
+        app.save_screenshot(filename="pods-owned-kind.svg", path=str(output))
+        await pilot.press("colon", *"ns default", "enter")
+        async with asyncio.timeout(30):
+            while (
+                app.workspace.store.observation.status is not ViewStatus.LIVE
+                or app.workspace.store.observation.connection.namespace != "default"
+            ):
+                await asyncio.sleep(0.01)
+        await pilot.pause()
+        assert app.resources.row_count == 0
+        assert "No pods in this scope" in str(app.query_one("#empty-title").content)
+        await pilot.press("ctrl+q")
+    assert app.sessions.client is None and app._view_task.done() and not app._pod_projection._cache
+    return {
+        "real_pod_columns_match_server_table": True,
+        "real_live_pod_widget": True,
+        "real_pod_widget_selection_sort_scope": True,
+        "pod_widget_clients_and_projection_closed": True,
+        "server_table_pod_count": len(table["rows"]),
+    }
 
 
 async def verify_watch(reader: ResourceReader, resource) -> dict[str, object]:
@@ -290,6 +356,7 @@ async def verify(path: Path, context: str) -> dict[str, object]:
             reader, discovery.find("secrets"), catalog, path, context
         )
         workspace_evidence = await verify_workspace(catalog, path, context)
+        pod_evidence = await verify_pod_table(reader, pods, catalog, path, context)
         assert path.read_bytes() == before
         active = sessions.client.api
     finally:
@@ -317,6 +384,7 @@ async def verify(path: Path, context: str) -> dict[str, object]:
         **watch_evidence,
         **quiet_evidence,
         **workspace_evidence,
+        **pod_evidence,
     }
 
 

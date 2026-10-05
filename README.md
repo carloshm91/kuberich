@@ -20,9 +20,10 @@ supports kubeconfig/context/namespace/timeout flags, static token and certificat
 authentication and noninteractive exec tokens. The [active view](docs/resource-views.md)
 now synchronizes pods for the selected scope and shows live counts, stale states
 and errors using discovery, paginated snapshots and recoverable watches.
-Quiet watch renewals keep the state live; “Resource data ready” means the snapshot
-is available, and the status shows its count.
-**The table still has no pod rows**; row rendering, logs and shell are upcoming.
+The [live pod table](docs/pod-table.md) now displays readiness, health reasons,
+restarts and age, with typed sorting, scrolling and selection preserved through
+updates. Quiet watch renewal keeps Live; successful empty scopes and denied reads
+are distinct. Filtering/completion, details, logs and shell are upcoming.
 See [context sessions](docs/context-sessions.md) for supported credentials,
 connection states and limits. Local diagnostics, read-only command guards,
 header/logo/scope visibility and initial help/quit commands remain available.
