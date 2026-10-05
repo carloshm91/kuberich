@@ -54,6 +54,8 @@ class CommandInput(NavigationInput):
         self.choices: tuple[str, ...] = ()
         self.selected = 0
         self._accepted: str | None = None
+        self._query = ""
+        self._cycled = False
         super().__init__(
             focus_table,
             placeholder="po / ctx / ns · Tab completes",
@@ -70,10 +72,26 @@ class CommandInput(NavigationInput):
             if self.has_focus and self.cursor_at_end and self.value != self._accepted
             else ()
         )
-        if choices != self.choices:
+        if choices != self.choices or self.value != self._query:
+            self._query = self.value
             self.choices = choices
             self.selected = 0
+            self._cycled = False
             self.post_message(self.ChoicesChanged())
+
+    def reset_choice(self) -> None:
+        """A new workspace generation must not inherit an arrow selection."""
+        self._cycled = False
+        self.selected = 0
+        self.refresh_choices()
+
+    async def action_submit(self) -> None:
+        self.refresh_choices()
+        if self._cycled and self.choices:
+            # Capture before assigning value: reactive input watchers reset choices.
+            self.value = self.choices[self.selected]
+            self.cursor_position = len(self.value)
+        await super().action_submit()
 
     def on_focus(self, event: Focus) -> None:
         self.refresh_choices()
@@ -104,6 +122,7 @@ class CommandInput(NavigationInput):
         self.refresh_choices()
         if self.choices:
             self.selected = (self.selected + delta) % len(self.choices)
+            self._cycled = True
             self.post_message(self.ChoicesChanged())
 
     def action_previous_choice(self) -> None:

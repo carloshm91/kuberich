@@ -31,7 +31,10 @@ plugins are still unavailable; the shared policy rejects them in read-only mode.
 ## Completion
 
 The command input shows up to eight literal prefix matches. Up/Down select a
-candidate, Tab accepts it, and Enter submits. Matching ignores case; the accepted
+candidate. Tab accepts it for editing; Enter after Up/Down accepts and submits
+the highlighted candidate once. Enter without arrow selection submits the typed
+text, so bare `:ns` and `:ctx` still open their ordinary selectors. Editing the
+query, leaving the input or changing scope discards prior arrow selection. Matching ignores case; the accepted
 context name retains its original case. The selected candidate remains visible
 at 40×12. Long labels are clipped visually; inputs/candidates are bounded to 256
 characters. Suggestions overlay the resource area and leave the input visible.

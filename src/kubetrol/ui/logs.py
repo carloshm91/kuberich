@@ -90,7 +90,7 @@ class LogHelpScreen(ModalScreen[None]):
                     "t timestamps · w wrap · L lock horizontal offset during follow\n"
                     "C clear retained history · m mark first visible line\n"
                     "z fullscreen · Ctrl+Y copy retained text · Ctrl+S save to a new file\n"
-                    "? these controls · Esc leaves an input then returns to pods\n\n"
+                    "? these controls · Esc leaves an input then returns to the prior view\n\n"
                     "Oldest lines are evicted at 5,000 lines or 4 MiB. g/G only navigate\n"
                     "retained output. Reopening or changing a window requests history\n"
                     "again and may repeat it. No automatic stream replay.\n"
@@ -141,10 +141,19 @@ class LogScreen(ModalScreen[None]):
     #log-status, #log-hints { color: $text-muted; text-overflow: ellipsis; }
     """
 
-    def __init__(self, stream: LogStream, containers: tuple[str, ...]) -> None:
+    def __init__(
+        self,
+        stream: LogStream,
+        containers: tuple[str, ...],
+        *,
+        selected: str | None = None,
+    ) -> None:
         super().__init__()
+        if selected is not None and selected not in containers:
+            raise AppError("Selected log container is unavailable in this pod.")
         self.stream, self.containers = stream, containers
-        self.container = containers[0]
+        self.container = selected if selected is not None else containers[0]
+        self._selected = selected
         self.history = LogHistory()
         self.body = LogBody()
         self.search = NavigationInput(
@@ -194,7 +203,7 @@ class LogScreen(ModalScreen[None]):
         self._controller = asyncio.create_task(self._control())
         self._renderer = asyncio.create_task(self._render_logs())
         self._status()
-        if len(self.containers) == 1:
+        if self._selected is not None or len(self.containers) == 1:
             self._restart()
         else:
             self.action_container()

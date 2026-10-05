@@ -47,6 +47,7 @@ from kubetrol.services.pods import PodProjection
 from kubetrol.services.sessions import SessionService
 from kubetrol.services.workspace import ViewSubscription, WorkspaceService
 from kubetrol.ui.commands import CommandInput, NavigationInput
+from kubetrol.ui.containers import ContainerScreen
 from kubetrol.ui.inspection import InspectionScreen, Page
 from kubetrol.ui.logs import LogScreen
 from kubetrol.ui.pods import PodTable, Viewport
@@ -77,7 +78,7 @@ class HelpScreen(ModalScreen[None]):
                         "Letter shortcuts work outside text inputs.\n"
                         "PageUp / PageDown Scroll help\n"
                         "Tab in command    Accept selected suggestion\n"
-                        "Up / Down         Select command suggestion\n"
+                        "Up / Down + Enter Select and submit suggestion\n"
                         "Tab / Shift+Tab   Move focus when no suggestion\n"
                         "Alt+Left / Right  Navigation back / forward\n"
                         "Escape            Back / leave input\n"
@@ -93,7 +94,8 @@ class HelpScreen(ModalScreen[None]):
                         "Pod rows and container logs are live. Shell is upcoming.\n"
                         "l                 Selected pod logs (regular / init)\n"
                         "Logs: g/G first/last, j/k, / search, p pause, f follow, ? controls.\n"
-                        "Enter / d         Resource details\n"
+                        "Enter             Pod containers → container logs\n"
+                        "d                 Resource details\n"
                         "y / e             YAML / related events\n"
                         "Viewer: m managedFields, / search, n/N matches, Ctrl+Y copy.\n"
                         "s                 Cycle sort column\n"
@@ -319,7 +321,7 @@ class KubetrolApp(App[None]):
                     self._render_ready.set()
                     self.command_input.refresh_choices()
                     for screen in tuple(self.screen_stack):
-                        if isinstance(screen, (InspectionScreen, LogScreen)):
+                        if isinstance(screen, (InspectionScreen, LogScreen, ContainerScreen)):
                             screen.validate_target()
         except Exception as error:
             self._handle_exception(error)
@@ -434,8 +436,8 @@ class KubetrolApp(App[None]):
         await self._pod_projection.project(None)
 
     @on(DataTable.RowSelected, "#resources")
-    def row_selected(self) -> None:
-        self._inspect("details")
+    def row_selected(self, event: DataTable.RowSelected) -> None:
+        self._open_logs(containers_first=True, uid=event.row_key.value)
 
     def action_inspect_yaml(self) -> None:
         self._inspect("yaml")
@@ -458,7 +460,10 @@ class KubetrolApp(App[None]):
             )
 
     def action_logs(self) -> None:
-        selection = self._capture_target()
+        self._open_logs()
+
+    def _open_logs(self, *, containers_first: bool = False, uid: str | None = None) -> None:
+        selection = self._capture_target(uid)
         if selection is None:
             return
         client, resource, record, target, current = selection
@@ -471,12 +476,16 @@ class KubetrolApp(App[None]):
         except AppError as error:
             self._set_status(str(error))
             return
+        stream = LogStream(client, target, self.commands.policy, current)
         self.push_screen(
-            LogScreen(LogStream(client, target, self.commands.policy, current), containers)
+            ContainerScreen(stream, record.manifest)
+            if containers_first
+            else LogScreen(stream, containers)
         )
 
     def _capture_target(
         self,
+        uid: str | None = None,
     ) -> (
         tuple[KubernetesSession, ApiResource, ResourceRecord, ResourceTarget, Callable[[], bool]]
         | None
@@ -485,7 +494,7 @@ class KubetrolApp(App[None]):
             return None
         view = self.workspace.store.observation
         scope, snapshot, client = view.scope, view.snapshot, self.sessions.client
-        uid = self.resources.selected_uid
+        uid = uid if uid is not None else self.resources.selected_uid
         if scope is None or snapshot is None or client is None or uid is None:
             self._set_status("Select a connected resource before opening a viewer.")
             return None
@@ -536,7 +545,7 @@ class KubetrolApp(App[None]):
         self.resources.remove_class("populated")
         self.query_one("#empty-state").display = True
         self.query_one("#empty-title", Static).update("Loading resources")
-        self.command_input.refresh_choices()
+        self.command_input.reset_choice()
 
     def action_namespaces(self) -> None:
         observation = self.workspace.store.observation.connection

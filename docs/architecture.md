@@ -347,3 +347,27 @@ an exclusive mode-0600 file, never replacing an existing file/symlink. Explicitl
 requested file work is drained even if the viewer closes. Captured pod/client
 invalidation clears the viewer and prevents later display/copy/save, including
 while a child prompt is open. See [the viewer contract](log-viewer.md).
+
+## Enter navigation feedback: #115
+
+Command arrow selection is deliberate completion intent. The Input key action
+refreshes current candidates and accepts the selected value before posting the
+submitted message or moving focus. Query/focus/candidate changes and a workspace
+revision reset that intent; plain literal submissions remain independent.
+
+Pod Enter captures the same owned client/session/namespace/UID/current predicate
+as direct logs, then opens a container DataTable screen. Rows are bounded regular
+and init names from that captured manifest, with app/init/sidecar type labels.
+Enter captures the row before opening LogScreen with an explicit initial container;
+the log screen retains all names for its existing container-switch action. The
+parent screen stays on the stack, preserving its cursor/viewport. Esc cancels
+and awaits log ownership before returning to containers, then pods.
+
+The workspace observer validates both visible and covered container/log screens.
+Stale targets disable container selection; the log service still verifies the
+captured pod UID and declared container before and after opening the API stream.
+The container list is a snapshot; reopening refreshes it. Live container status,
+ephemeral containers and broader resource drill-down remain B05/S04/A03.
+
+This uses public [Textual DataTable](https://textual.textualize.io/widgets/data_table/)
+row events/actions and [Input](https://textual.textualize.io/widgets/input/) submissions.

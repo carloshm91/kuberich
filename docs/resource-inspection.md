@@ -1,6 +1,6 @@
 # Inspecting a pod
 
-Select a live pod row, then press `Enter` or `d` for details, `y` for YAML, or
+Select a live pod row, then press `d` for details, `y` for YAML, or
 `e` for its related events. The viewer shows the captured context, namespace and
 resource name. These actions work in read-only mode and make only API reads.
 

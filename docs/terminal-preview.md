@@ -13,8 +13,9 @@ See [active resource views](resource-views.md) for freshness, switching and clea
 The workspace has a resource region, filter and command inputs, status and
 available-key hints. Context/namespace selectors are scrollable and maintain
 literal names. Commands, Tab suggestions, text/regex filters and bounded navigation
-history are available. Pod inspection uses `y` for YAML, `d`/Enter for details
-and `e` for related events. `l` opens container logs; interactive shell remains
+history are available. Pod inspection uses `y` for YAML, `d` for details
+and `e` for related events. Enter opens the pod’s container table; Enter again
+opens the chosen container’s logs. `l` opens container logs directly; interactive shell remains
 upcoming. See [log controls](log-viewer.md) for scoped Vim navigation,
 search, follow/pause, container selection and redacted copy/save.
 See [resource inspection](resource-inspection.md) for search, copying and limits.

@@ -268,7 +268,7 @@ uv run kubetrol
 ```
 
 1. Use `:ctx` and `:ns` to choose your context and namespace; select a pod row.
-2. Press `y` for YAML, `d` or Enter for details, and `e` for related events.
+2. Press `y` for YAML, `d` for details, and `e` for related events.
 3. Press `m` to show/hide managedFields. Press `/`, type `containers` and Enter;
    `n`/`N` move through matches.
 4. Use arrows and PageUp/PageDown to scroll; Ctrl+Y copies redacted text if the
@@ -305,15 +305,16 @@ uv sync --locked --group dev
 uv run kubetrol
 ```
 
-1. Choose your context/namespace with `:ctx` and `:ns`, select a pod and press `l`.
-   Choose a container if there is more than one. Check that the title names it.
+1. Choose your context/namespace with `:ctx` and `:ns`. Select a pod and press
+   Enter to see its containers, then Enter on a container to read its logs.
+   Check that the title names it. `l` remains the direct log shortcut.
 2. Press `g` to read the oldest retained output, then `G` (Shift+G) to follow
    the newest. `j/k`, arrows and page keys scroll; upward movement leaves follow.
 3. Press `/`, type visible text and Enter; `n/N` move through matching lines.
 4. Press `p` to pause reception. Try `g`, `G` and `f`: navigation still works,
    and following does not unpause. Press `p` again to resume reception.
 5. Try `w` for wrapping, `t` for timestamps and `?` for all controls.
-   Escape leaves an input, then returns to your pod table; Ctrl+Q quits.
+   Escape leaves an input, then returns logs → containers → pods; Ctrl+Q quits.
 
 Compare against `kubectl logs` for the same explicit context, namespace,
 container and time window. Report any safe error text and whether scrolling,
