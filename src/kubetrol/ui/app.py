@@ -12,7 +12,7 @@ from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.events import Resize
+from textual.events import Event, Key, Resize
 from textual.screen import ModalScreen
 from textual.widgets import Button, Footer, Input, Static
 
@@ -22,16 +22,25 @@ from kubetrol.domain.connections import (
     DEFAULT_CONNECTION,
     ConnectionRequest,
 )
+from kubetrol.domain.navigation import NamespaceChoice, NavigationHistory, NavigationState
 from kubetrol.domain.views import USABLE_CONNECTIONS, ViewObservation, ViewStatus
 from kubetrol.errors import AppError
 from kubetrol.security.arguments import validate_argument
 from kubetrol.security.presentation import safe_text
 from kubetrol.services.access import AccessPolicy
-from kubetrol.services.commands import Command, CommandService
+from kubetrol.services.commands import (
+    Command,
+    CommandService,
+    ResolvedCommand,
+    ScopedCommand,
+    suggestions,
+)
+from kubetrol.services.filtering import apply_filter
 from kubetrol.services.pods import PodProjection
 from kubetrol.services.sessions import SessionService
 from kubetrol.services.workspace import ViewSubscription, WorkspaceService
-from kubetrol.ui.pods import PodTable
+from kubetrol.ui.commands import CommandInput, NavigationInput
+from kubetrol.ui.pods import PodTable, Viewport
 from kubetrol.ui.presentation import DEFAULT_PRESENTATION, Presentation
 from kubetrol.ui.scopes import ConnectionScreen, ScopeScreen
 
@@ -58,12 +67,19 @@ class HelpScreen(ModalScreen[None]):
                         "i / F5            Connection status (:status)\n"
                         "Letter shortcuts work outside text inputs.\n"
                         "PageUp / PageDown Scroll help\n"
-                        "Tab / Shift+Tab   Move focus\n"
+                        "Tab in command    Accept selected suggestion\n"
+                        "Up / Down         Select command suggestion\n"
+                        "Tab / Shift+Tab   Move focus when no suggestion\n"
+                        "Alt+Left / Right  Navigation back / forward\n"
                         "Escape            Back / leave input\n"
                         "Escape in table   Clear active filter\n"
                         "q / Ctrl+Q        Quit (q outside inputs)\n"
                         "Ctrl+C            Quit\n\n"
-                        "Commands: help, quit, ctx [NAME], ns [NAME or *], status, retry.\n\n"
+                        "Commands: po/pod/pods [NS or *], ctx [NAME], ns [NAME or *], "
+                        "status, retry, back, forward, help, quit.\n"
+                        "Filter: plain case-insensitive text; re:PATTERN for regex. "
+                        "Searches namespace, name, readiness, status and restarts. "
+                        "Invalid or timed-out regex shows all pods and an error.\n\n"
                         "Context sessions and live pod synchronization are available. "
                         "Pod rows are live. Logs and shell are upcoming.\n"
                         "s                 Cycle sort column\n"
@@ -95,6 +111,8 @@ class KubetrolApp(App[None]):
         Binding("n", "namespaces", "Namespaces"),
         Binding("r", "retry", "Retry", show=False),
         Binding("i", "connection_details", "Status", show=False),
+        Binding("alt+left", "history_back", "Previous view", show=False),
+        Binding("alt+right", "history_forward", "Next view", show=False),
         Binding("f2", "contexts", "Contexts", show=False, priority=True),
         Binding("f3", "namespaces", "Namespaces", show=False, priority=True),
         Binding("f4", "retry", "Retry", show=False, priority=True),
@@ -111,7 +129,7 @@ class KubetrolApp(App[None]):
         logger: logging.Logger,
         *,
         presentation: Presentation = DEFAULT_PRESENTATION,
-        initial_command: Command = Command.EMPTY,
+        initial_command: ResolvedCommand = Command.EMPTY,
         catalog: KubeCatalog | None = None,
         connection: ConnectionRequest = DEFAULT_CONNECTION,
     ) -> None:
@@ -127,6 +145,11 @@ class KubetrolApp(App[None]):
         self._connection_task: asyncio.Task[None] | None = None
         self.workspace = WorkspaceService(self.sessions, on_error=self._handle_exception)
         self._view_task: asyncio.Task[None] | None = None
+        self._render_task: asyncio.Task[None] | None = None
+        self._render_ready = asyncio.Event()
+        self._input_completion: asyncio.Future[None] | None = None
+        self.history = NavigationHistory()
+        self._restore_state: tuple[int, NavigationState] | None = None
         self.commands = CommandService(AccessPolicy(settings.read_only))
         if settings.theme not in self.available_themes:
             raise AppError("Selected theme is unavailable; choose a built-in Textual theme.")
@@ -134,12 +157,16 @@ class KubetrolApp(App[None]):
         self._mode = "Read-only" if settings.read_only else "Local preview"
         self.resources = PodTable()
         self._pod_projection = PodProjection()
-        self.filter_input = Input(
-            placeholder="Filter resources", id="filter", compact=True, max_length=256
+
+        def focus_table() -> None:
+            self.set_focus(self.resources)
+
+        self.filter_input = NavigationInput(
+            focus_table, placeholder="Filter resources", id="filter"
         )
-        self.command_input = Input(
-            placeholder="help / ctx / ns / quit", id="command", compact=True, max_length=256
-        )
+        self.command_input = CommandInput(self._suggestions, focus_table)
+        self.completion = Static("", id="completion", markup=False)
+        self.completion.display = False
         self.status = Static(DISCONNECTED_STATUS, id="status", markup=False)
 
     def _set_status(self, message: str) -> None:
@@ -148,6 +175,35 @@ class KubetrolApp(App[None]):
             "Insecure transport · " if self.workspace.store.observation.connection.insecure else ""
         )
         self.status.update(safe_text(prefix + insecure + message))
+
+    async def on_event(self, event: Event) -> None:
+        focused = (
+            self.focused
+            if isinstance(event, Key) and not event.is_forwarded and self.screen_stack
+            else None
+        )
+        input_key = (
+            isinstance(event, Key)
+            and not event.is_forwarded
+            and isinstance(focused, NavigationInput)
+            and event.key not in {"ctrl+q", "ctrl+c"}
+        )
+        await super().on_event(event)
+        if input_key and isinstance(focused, NavigationInput):
+            # Forwarded printable keys use the widget's queue. Drain that key before
+            # the app decides a subsequent Tab/Enter against the input's value.
+            completion: asyncio.Future[None] = asyncio.get_running_loop().create_future()
+            self._input_completion = completion
+
+            def settle() -> None:
+                if not completion.done():
+                    completion.set_result(None)
+
+            try:
+                if focused.call_later(settle):
+                    await completion
+            finally:
+                self._input_completion = None
 
     def _workspace_status(self) -> str:
         return self.workspace.store.observation.message
@@ -174,6 +230,7 @@ class KubetrolApp(App[None]):
                     id="empty-hint",
                     markup=False,
                 )
+            yield self.completion
         with Horizontal(id="filter-bar", classes="input-bar"):
             yield Static("/", classes="input-label", markup=False)
             yield self.filter_input
@@ -196,21 +253,36 @@ class KubetrolApp(App[None]):
         self.screen.set_class(self.size.height < 16, "short")
         self.set_focus(self.resources)
         self._set_status(DISCONNECTED_STATUS)
-        self._apply_command(self._initial_command)
         if self._initial_command is not Command.QUIT:
             subscription = self.workspace.subscribe()
             self._view_task = asyncio.create_task(self._observe_view(subscription))
+            self._render_task = asyncio.create_task(self._render_views())
             context = self.sessions.request.context or self.sessions.catalog.current
+            initial = self._initial_command
+            scope = None
+            if isinstance(initial, ScopedCommand):
+                if initial.command is Command.CONTEXTS:
+                    context = initial.argument
+                else:
+                    scope = NamespaceChoice(None if initial.argument == "*" else initial.argument)
             if context is not None:
-                self._start_connection(context)
+                self._start_connection(context, scope=scope)
+            if not isinstance(initial, ScopedCommand):
+                self._apply_command(initial)
+        else:
+            self.exit()
 
-    def _start_connection(self, context: str) -> None:
+    def _start_connection(
+        self, context: str, *, scope: NamespaceChoice | None = None, remember: bool = True
+    ) -> None:
         try:
             validate_argument(context)
         except AppError as error:
             self._set_status(str(error))
             return
-        self._connection_task = self.workspace.connect(context)
+        if remember:
+            self._remember_view()
+        self._connection_task = self.workspace.connect(context, scope=scope)
         self._clear_rows()
         self.query_one("#context", Static).update(safe_text(f"Context: {context}"))
         self.query_one("#namespace", Static).update("Namespace: —")
@@ -226,21 +298,58 @@ class KubetrolApp(App[None]):
                     self.is_running
                     and observation.revision == self.workspace.store.observation.revision
                 ):
-                    rows = await self._pod_projection.project(observation.snapshot)
-                    revision = observation.revision
-
-                    def current(revision: int = revision) -> bool:
-                        return (
-                            self.is_running
-                            and revision == self.workspace.store.observation.revision
-                        )
-
-                    if await self.resources.apply_rows(rows, observation.revision, current):
-                        self._show_view(observation)
+                    self._render_ready.set()
+                    self.command_input.refresh_choices()
         except Exception as error:
             self._handle_exception(error)
         finally:
             subscription.close()
+
+    async def _render_views(self) -> None:
+        try:
+            while True:
+                await self._render_ready.wait()
+                self._render_ready.clear()
+                view = self.workspace.store.observation
+                query = self.filter_input.value
+                rows = await self._pod_projection.project(view.snapshot)
+                result = await apply_filter(rows, query)
+
+                def current(view: ViewObservation = view, query: str = query) -> bool:
+                    return (
+                        self.is_running
+                        and view is self.workspace.store.observation
+                        and query == self.filter_input.value
+                    )
+
+                if not current():
+                    continue
+                if await self.resources.apply_rows(result.rows, view.revision, current):
+                    self._show_view(view)
+                    if query:
+                        self._set_status(
+                            result.problem
+                            or f"Filter active · {len(result.rows)}/{len(rows)} pods · {view.message}"
+                        )
+                        if not result.rows and view.snapshot is not None:
+                            self.query_one("#empty-title", Static).update(
+                                "No pods match this filter"
+                            )
+                            self.query_one("#empty-description", Static).update(
+                                "Escape in the table clears the filter."
+                            )
+                    if (
+                        self._restore_state is not None
+                        and self._restore_state[0] == view.revision
+                        and view.snapshot is not None
+                    ):
+                        state = self._restore_state[1]
+                        self.resources.restore_viewport(
+                            Viewport(state.selected, state.index, state.x, state.y, state.top)
+                        )
+                        self._restore_state = None
+        except Exception as error:
+            self._handle_exception(error)
 
     def _show_view(self, view: ViewObservation) -> None:
         observation = view.connection
@@ -293,6 +402,9 @@ class KubetrolApp(App[None]):
         await self.workspace.close()
         if self._view_task is not None:
             await asyncio.gather(self._view_task, return_exceptions=True)
+        if self._render_task is not None:
+            self._render_task.cancel()
+            await asyncio.gather(self._render_task, return_exceptions=True)
         await self._pod_projection.project(None)
 
     def action_contexts(self) -> None:
@@ -312,29 +424,31 @@ class KubetrolApp(App[None]):
             self._start_connection(value)
 
     def _clear_rows(self) -> None:
+        self._restore_state = None
         self.resources.reset(self.workspace.store.observation.revision)
         self.resources.remove_class("populated")
         self.query_one("#empty-state").display = True
         self.query_one("#empty-title", Static).update("Loading resources")
+        self.command_input.refresh_choices()
 
     def action_namespaces(self) -> None:
         observation = self.workspace.store.observation.connection
         if observation.state not in USABLE_CONNECTIONS:
             self._set_status("Connect to a context before selecting a namespace.")
         elif not isinstance(self.screen, ModalScreen):
-            values = tuple(
-                sorted(set(observation.namespaces) | {observation.namespace or "default"})
-            )
             self.push_screen(
-                ScopeScreen("Choose namespace (* = All)", ("*", *values)), self._namespace_selected
+                ScopeScreen("Choose namespace (* = All)", self._namespace_choices()),
+                self._namespace_selected,
             )
 
     def _namespace_selected(self, value: str | None) -> None:
         if value is not None:
             try:
-                self._connection_task = self.workspace.select_namespace(
-                    None if value == "*" else value
-                )
+                choice = NamespaceChoice(None if value == "*" else value)
+                current = self._capture_view()
+                self._connection_task = self.workspace.select_namespace(choice.namespace)
+                if current is not None:
+                    self.history.visit(current)
                 self._clear_rows()
                 self.query_one("#namespace", Static).update(safe_text(f"Namespace: {value}"))
                 self._set_status(self._workspace_status())
@@ -358,9 +472,10 @@ class KubetrolApp(App[None]):
         )
         self.screen_stack[0].set_class(event.size.width < 70, "compact")
         self.screen_stack[0].set_class(event.size.height < 16, "short")
+        self.call_after_refresh(self.show_completions)
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
-        if action in {"focus_filter", "focus_command"}:
+        if action in {"focus_filter", "focus_command", "history_back", "history_forward"}:
             return not isinstance(self.screen, ModalScreen) and not isinstance(self.focused, Input)
         return True
 
@@ -387,35 +502,10 @@ class KubetrolApp(App[None]):
 
     @on(Input.Changed, "#filter")
     def filter_changed(self, event: Input.Changed) -> None:
-        self._set_status(
-            "Filter active · Resource views are upcoming"
-            if event.value
-            else self._workspace_status()
-        )
-
-    @on(Input.Submitted, "#filter")
-    def filter_submitted(self) -> None:
-        self.set_focus(self.resources)
+        self._render_ready.set()
 
     @on(Input.Submitted, "#command")
     def command_submitted(self, event: Input.Submitted) -> None:
-        self.command_input.value = ""
-        self.set_focus(self.resources)
-        verb, _, value = event.value.strip().removeprefix(":").strip().partition(" ")
-        if verb.lower() in {"ctx", "context", "ns", "namespace"}:
-            if verb.lower() in {"ctx", "context"}:
-                self._start_connection(value.strip()) if value.strip() else self.action_contexts()
-            elif value.strip():
-                self._namespace_selected(value.strip())
-            else:
-                self.action_namespaces()
-            return
-        if not value.strip() and verb.lower() in {"status", "retry"}:
-            if verb.lower() == "status":
-                self.action_connection_details()
-            else:
-                self.action_retry()
-            return
         try:
             command = self.commands.resolve(event.value)
         except AppError as error:
@@ -423,18 +513,120 @@ class KubetrolApp(App[None]):
             return
         self._apply_command(command)
 
-    def _apply_command(self, command: Command) -> None:
+    def _apply_command(self, command: ResolvedCommand) -> None:
+        if isinstance(command, ScopedCommand):
+            if command.command is Command.CONTEXTS:
+                self._start_connection(command.argument)
+            else:
+                self._namespace_selected(command.argument)
+            return
         if command is Command.HELP:
             self.action_show_help()
         elif command is Command.QUIT:
             self.exit()
         elif command is Command.UNAVAILABLE:
-            self._set_status("Command unavailable in this preview. Use help or quit.")
+            self._set_status(
+                "Command unavailable in this preview. Use :help for available views and actions."
+            )
+        elif command is Command.CONTEXTS:
+            self.action_contexts()
+        elif command is Command.NAMESPACES:
+            self.action_namespaces()
+        elif command is Command.STATUS:
+            self.action_connection_details()
+        elif command is Command.RETRY:
+            self.action_retry()
+        elif command is Command.BACK:
+            self.action_history_back()
+        elif command is Command.FORWARD:
+            self.action_history_forward()
+        elif command is Command.PODS:
+            self._set_status(self._workspace_status())
         else:
             self._set_status(self._workspace_status())
 
+    def _namespace_choices(self) -> tuple[str, ...]:
+        connection = self.workspace.store.observation.connection
+        if connection.state not in USABLE_CONNECTIONS:
+            return ()
+        current = (connection.namespace,) if connection.namespace is not None else ()
+        return ("*", *sorted(set(connection.namespaces) | set(current)))
+
+    def _suggestions(self, value: str) -> tuple[str, ...]:
+        return suggestions(value, self.sessions.catalog.names, self._namespace_choices())
+
+    @on(Input.Changed, "#command")
+    def command_changed(self) -> None:
+        self.command_input.refresh_choices()
+
+    @on(CommandInput.ChoicesChanged)
+    def show_completions(self) -> None:
+        choices = self.command_input.choices
+        self.completion.display = (
+            bool(choices) and self.command_input.has_focus and len(self.screen_stack) == 1
+        )
+        capacity = max(1, self.screen_stack[0].query_one("#resource-view").region.height - 2)
+        start = max(0, self.command_input.selected - capacity + 1)
+        self.completion.update(
+            safe_text(
+                "\n".join(
+                    ("> " if index == self.command_input.selected else "  ") + value
+                    for index, value in enumerate(choices[start : start + capacity], start)
+                )
+            )
+        )
+        self.completion.border_title = "Tab completes · ↑/↓ choose"
+
+    def _capture_view(self) -> NavigationState | None:
+        view = self.workspace.store.observation
+        if view.context is None or view.connection.state not in USABLE_CONNECTIONS:
+            return None
+        viewport = self.resources.capture_viewport()
+        return NavigationState(
+            view.context,
+            view.connection.namespace,
+            self.filter_input.value,
+            self.resources.sort_column,
+            self.resources.descending,
+            viewport.selected,
+            viewport.index,
+            viewport.x,
+            viewport.y,
+            viewport.top,
+        )
+
+    def _remember_view(self) -> None:
+        current = self._capture_view()
+        if current is not None:
+            self.history.visit(current)
+
+    def _navigate_history(self, *, forward: bool = False) -> None:
+        current = self._capture_view()
+        view = self.workspace.store.observation
+        if current is None and view.context is not None:
+            current = NavigationState(view.context, view.connection.namespace)
+        state = self.history.move(current, forward=forward) if current is not None else None
+        if state is None:
+            self._set_status(
+                "No next view in history." if forward else "No previous view in history."
+            )
+            return
+        scope = NamespaceChoice(state.namespace)
+        self._start_connection(state.context, scope=scope, remember=False)
+        self.filter_input.value = state.query
+        self.resources.restore_sort(state.column, state.descending)
+        self._restore_state = self.workspace.store.observation.revision, state
+
+    def action_history_back(self) -> None:
+        self._navigate_history()
+
+    def action_history_forward(self) -> None:
+        self._navigate_history(forward=True)
+
     def _handle_exception(self, error: Exception) -> None:
         """Narrow Textual 8.x boundary: log safely while preserving its cleanup/testing."""
+        if self._input_completion is not None and not self._input_completion.done():
+            self._input_completion.set_result(None)
         with suppress(AppError):
             self._diagnostic_logger.error(
                 "Terminal interface failed.", exc_info=(type(error), error, error.__traceback__)

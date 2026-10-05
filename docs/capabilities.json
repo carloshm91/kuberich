@@ -15,12 +15,15 @@
       ],
       "source": "cmd/root.go",
       "status": "planned",
-      "difference": "F05 stage 1 implements local inspection, policy, presentation and initial help/quit; C01 implements kubeconfig/context/namespace/timeout flags. Remaining connection overrides, refresh, resource-command integration and completion remain planned.",
+      "difference": "F05 implements local inspection, policy and presentation; C01 implements kubeconfig/context/namespace/timeout flags; B03 adds initial pod/context/namespace commands. Connection overrides, refresh and shell completion remain planned.",
       "partial_evidence": [
         "docs/k9s-cli.md",
         "tests/unit/test_launch_contract.py",
         "tests/packaging/test_distribution.py",
-        "docs/context-sessions.md"
+        "docs/context-sessions.md",
+        "docs/command-navigation.md",
+        "tests/ui/test_navigation.py",
+        "tests/terminal/test_navigation.py"
       ]
     },
     {
@@ -157,7 +160,12 @@
       ],
       "source": "internal/view/cmd/interpreter.go",
       "status": "planned",
-      "difference": ""
+      "difference": "B03 implements available pod aliases, shared initial/interactive scope commands and local bounded Tab suggestions. Additional resource tables, CRD/custom aliases and broader command routing remain their owning tickets.",
+      "partial_evidence": [
+        "docs/command-navigation.md",
+        "tests/ui/test_navigation.py",
+        "tests/terminal/test_navigation.py"
+      ]
     },
     {
       "id": "UI02",
@@ -168,7 +176,12 @@
       ],
       "source": "internal/view/cmd/types.go",
       "status": "planned",
-      "difference": "Bound regex evaluation; unsupported regex dialect features receive explicit errors."
+      "difference": "B03 implements local case-insensitive literal text and Unicode VERSION1 regex filters with a total timeout, explicit errors and current snapshot/query guards. Inverse/fuzzy matching, selectors and saved filter history remain B07.",
+      "partial_evidence": [
+        "docs/command-navigation.md",
+        "tests/ui/test_navigation.py",
+        "tests/terminal/test_navigation.py"
+      ]
     },
     {
       "id": "UI03",
@@ -180,7 +193,12 @@
       ],
       "source": "internal/view/page_stack.go",
       "status": "planned",
-      "difference": ""
+      "difference": "B03 implements bounded invocation-local context/namespace history restoring filter, sorting, UID selection and viewport. Namespace favorites, persisted history and last-command recall remain B07.",
+      "partial_evidence": [
+        "docs/command-navigation.md",
+        "tests/ui/test_navigation.py",
+        "tests/terminal/test_navigation.py"
+      ]
     },
     {
       "id": "UI04",
@@ -238,12 +256,15 @@
       ],
       "source": "internal/view/help.go",
       "status": "planned",
-      "difference": "B01 implements help/key hints and normal/error terminal restoration. F05 stage 1 adds header/logo/scope visibility and initial help/quit; actual view breadcrumbs and extended navigation remain planned.",
+      "difference": "B01 implements help/key hints and normal/error terminal restoration; F05 adds header/logo/scope visibility. B03 updates help for actual commands, completions, filters and history. Fullscreen, favorites and broader resource breadcrumbs remain planned.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_launch_options.py",
         "tests/terminal/test_shell.py",
-        "tests/packaging/test_distribution.py"
+        "tests/packaging/test_distribution.py",
+        "docs/command-navigation.md",
+        "tests/ui/test_navigation.py",
+        "tests/terminal/test_navigation.py"
       ]
     },
     {

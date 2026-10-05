@@ -4,7 +4,7 @@ Reference: K9s v0.51.0,
 [launch flags](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/cmd/root.go).
 This is the first-release contract. The development build implements help/version
 commands, `info`, `config init`/`check`, log options, read-only policy, initial
-help/quit commands, three terminal visibility flags and C01 context/namespace sessions. It recognizes all 26
+view/scope/help commands, three terminal visibility flags and C01 context/namespace sessions. It recognizes all 26
 audited flags, with explicit unavailable errors for behavior that has not shipped.
 Recognizing a flag does not establish Kubernetes or K9s compatibility.
 See the development checkpoint below, [local preferences](configuration.md) and
@@ -45,7 +45,7 @@ scheduled later report that limitation until their owning task is implemented.
 | `--client-certificate` | Client certificate override; F05/C08 |
 | `--token` | Explicit token override, redacted everywhere; F05/C08 |
 
-## Current development checkpoint: F05 stage 1 and C01
+## Current development checkpoint: F05 stage 1, C01 and B03
 
 | Options / commands | Tested behavior now |
 | --- | --- |
@@ -57,7 +57,7 @@ scheduled later report that limitation until their owning task is implemented.
 | `--headless` | Hide the application header; status/controls remain visible |
 | `--logoless` | Hide the brand, retaining build information where the layout permits |
 | `--crumbsless` | Hide the current context/namespace scope bar; resource-view breadcrumbs do not exist yet |
-| `--command`, `-c` | Open terminal help or quit; `?`, `q`, `exit` aliases also work; other commands return exit 4 |
+| `--command`, `-c` | Initial available pod/context/namespace/help/status/history commands share the UI grammar; unsupported views/actions return exit 4; see [B03](command-navigation.md) |
 | `--refresh`, `-r` | Validate/report seconds through `info` or `config check`; explicit terminal use returns exit 4 until C03 #24 |
 | `--kubeconfig`, `--context`, `--namespace`/`-n`, `--all-namespaces`/`-A`, `--request-timeout` | Read-only catalogue, explicit background client and namespace discovery/selection; see [C01](context-sessions.md) |
 | Cluster/user/token/TLS/impersonation CLI overrides | Exit 4 naming F05/C08; no files read or helpers run |

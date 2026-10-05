@@ -167,7 +167,10 @@ async def test_unknown_and_empty_commands_do_not_echo_input_or_break_navigation(
         await pilot.press("colon")
         app.command_input.value = "[red]opaque-secret[/red]\x1b]52;c;danger\x07"
         await pilot.press("enter")
-        assert str(app.status.content) == "Command unavailable in this preview. Use help or quit."
+        assert (
+            str(app.status.content)
+            == "Command unavailable in this preview. Use :help for available views and actions."
+        )
         assert app.command_input.value == "" and app.focused is app.resources
         await pilot.press("colon", "enter")
         assert str(app.status.content) == DISCONNECTED_STATUS

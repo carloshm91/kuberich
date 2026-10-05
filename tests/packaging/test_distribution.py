@@ -14,6 +14,7 @@ from pathlib import Path
 
 import pytest
 
+from tests.support.navigation import terminal_navigation
 from tests.terminal.pty_support import TerminalSession
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -228,6 +229,19 @@ def test_installed_initial_help_and_visibility_options_restore_tty(
         terminal.send(b"\x11")
         terminal.finish()
         terminal.save_evidence("installed-launch-help")
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+def test_installed_navigation_and_initial_namespace_outside_checkout(installed_wheel, entry_point):
+    binary_dir, directory = installed_wheel
+    command = (
+        [str(binary_dir / "kubetrol")]
+        if entry_point == "console"
+        else [str(binary_dir / "python"), "-m", "kubetrol"]
+    )
+    terminal_navigation(
+        command, directory, evidence=f"installed-navigation-{entry_point}", initial_scope=True
+    )
 
 
 @pytest.mark.parametrize("quiet", [False, True])

@@ -8,7 +8,7 @@ from kubetrol.config.catalog import load_catalog
 from kubetrol.config.schema import Settings
 from kubetrol.domain.connections import DEFAULT_CONNECTION, ConnectionRequest
 from kubetrol.errors import AppError, ExitCode
-from kubetrol.services.commands import Command
+from kubetrol.services.commands import Command, ResolvedCommand
 from kubetrol.ui.app import KubetrolApp
 from kubetrol.ui.presentation import DEFAULT_PRESENTATION, Presentation
 
@@ -18,7 +18,7 @@ def run_terminal(
     logger: logging.Logger,
     *,
     presentation: Presentation = DEFAULT_PRESENTATION,
-    initial_command: Command = Command.EMPTY,
+    initial_command: ResolvedCommand = Command.EMPTY,
     connection: ConnectionRequest = DEFAULT_CONNECTION,
 ) -> None:
     if not sys.stdin.isatty() or not sys.stdout.isatty():

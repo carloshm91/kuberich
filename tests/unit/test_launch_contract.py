@@ -253,12 +253,12 @@ def test_readonly_initial_commands_use_the_service_policy_before_launch(
     assert not (tmp_path / "logs").exists()
 
 
-@pytest.mark.parametrize("command", ["pods", "shell", "help extra"])
+@pytest.mark.parametrize("command", ["deployments", "shell", "help extra"])
 def test_initial_commands_require_real_behavior(
     command: str, capsys: pytest.CaptureFixture[str]
 ) -> None:
     assert cli.main(["-c", command]) == 4
-    assert "B03 #27" in capsys.readouterr().err
+    assert "Available: po, ctx, ns" in capsys.readouterr().err
 
 
 @pytest.mark.parametrize("command", [" ", ":", ": "])

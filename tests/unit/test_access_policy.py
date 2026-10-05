@@ -77,7 +77,7 @@ def test_command_service_guard_is_independent_of_widgets(text: str) -> None:
         ("q", Command.QUIT),
         ("exit", Command.QUIT),
         ("help extra", Command.UNAVAILABLE),
-        ("pods", Command.UNAVAILABLE),
+        ("pods", Command.PODS),
     ],
 )
 def test_available_commands_work_in_readonly_mode(text: str, expected: Command) -> None:

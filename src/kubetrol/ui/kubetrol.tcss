@@ -60,6 +60,19 @@ Screen {
     height: 1fr;
 }
 
+#completion {
+    overlay: screen;
+    layer: completions;
+    dock: bottom;
+    width: 100%;
+    height: auto;
+    max-height: 100%;
+    border: round $accent;
+    background: $panel;
+    padding: 0 1;
+    text-overflow: ellipsis;
+}
+
 #empty-state {
     height: 1fr;
     align: center middle;

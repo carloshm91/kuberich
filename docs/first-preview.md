@@ -229,6 +229,31 @@ uv run kubetrol
 5. Try `:ns *` for all namespaces, then Ctrl+Q to return to your shell.
 
 Report whether rows/count match the chosen scope, which state looks wrong if any,
-and whether navigation feels comfortable. Filtering and Tab suggestions are next
-in B03; details/logs/exec have their own tickets. See [pod semantics](pod-table.md).
+and whether navigation feels comfortable. Details/logs/exec have their own tickets.
+See [pod semantics](pod-table.md).
 No public package/release has been published.
+
+## Commands and filters: B03 #27 — current trial
+
+```sh
+git switch main
+git pull --ff-only
+uv sync --locked --group dev
+uv run kubetrol
+```
+
+1. Type `:ctx ` followed by the first letters of your context. Check the visible
+   suggestions, select with Up/Down, press Tab and then Enter.
+2. Type `:ns ` and part of your namespace; Tab and Enter should open its pods.
+   If namespace listing is denied, type the complete permitted name instead.
+3. Press `/`, type part of a pod name and Enter. Check **visible/total pods**.
+   Escape in the table clears it. Try `/re:api|worker` for regex matching.
+4. Change namespace with `:ns NAME`, then `:back` and `:forward`. Scope, filter,
+   sorting and surviving pod selection should return. Alt+Left/Right also work.
+5. Type `:help` for the current commands; Ctrl+Q returns to your shell.
+
+Report whether Tab chooses the expected literal name, counts/filter results match,
+and history returns to the intended view. These commands only read your chosen
+cluster; credential helpers retain the established local trust model. Test evidence
+uses owned APIs and a disposable kind cluster. See [navigation behavior and
+limits](command-navigation.md); no public package or release has been published.

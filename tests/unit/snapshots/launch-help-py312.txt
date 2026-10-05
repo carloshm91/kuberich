@@ -38,7 +38,8 @@ options:
   --readonly            block mutations, shell, attach and plugins
   --write               override the configured read-only preference for this session
   --command INITIAL_COMMAND, -c INITIAL_COMMAND
-                        initial terminal command: help or quit; resource views await B03 #27
+                        initial terminal command: po, ctx, ns, status, retry, back, forward, help or
+                        quit
   --headless            hide the application header
   --logoless            hide the brand in the header
   --crumbsless          hide the context/namespace scope bar
@@ -62,4 +63,4 @@ Recognized options awaiting their owning feature (exit 4):
                         unavailable: TLS transport (F05 #19 / C08 #47)
   --token TOKEN         unavailable: credential overrides (F05 #19 / C08 #47)
 
-Live pod table preview: contexts, namespaces and sorting; logs and shell are upcoming.
+Live pod table preview: commands, completion, filters and history; logs and shell are upcoming.

@@ -23,10 +23,11 @@ and errors using discovery, paginated snapshots and recoverable watches.
 The [live pod table](docs/pod-table.md) now displays readiness, health reasons,
 restarts and age, with typed sorting, scrolling and selection preserved through
 updates. Quiet watch renewal keeps Live; successful empty scopes and denied reads
-are distinct. Filtering/completion, details, logs and shell are upcoming.
+are distinct. [Commands, Tab suggestions, local text/regex filters and navigation
+history](docs/command-navigation.md) are available. Details, logs and shell are upcoming.
 See [context sessions](docs/context-sessions.md) for supported credentials,
 connection states and limits. Local diagnostics, read-only command guards,
-header/logo/scope visibility and initial help/quit commands remain available.
+header/logo/scope visibility and initial view/scope/help commands remain available.
 All audited flags are recognized; unimplemented options identify their owning task.
 
 The first release, **0.0.1**, will provide a usable resource browser, live pod
@@ -82,6 +83,7 @@ for 0.1.0. These channels are tracked work, not currently available downloads.
 - [CLI and authentication compatibility](docs/k9s-cli.md)
 - [Local configuration and diagnostics](docs/configuration.md)
 - [Terminal preview controls](docs/terminal-preview.md)
+- [Commands, completion, filters and history](docs/command-navigation.md)
 - [Architecture decisions](docs/architecture.md)
 - [Security helpers and test isolation](docs/security-primitives.md)
 - [Focused threat model](docs/kubetrol-threat-model.md)
