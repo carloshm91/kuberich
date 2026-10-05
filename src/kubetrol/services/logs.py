@@ -84,10 +84,12 @@ class LogStream:
                     ConnectionState.API_ERROR,
                     "Pod or container logs unavailable (404); the pod may have been deleted.",
                 ) from None
-            if error.status == 400 and options.previous:
+            if error.status == 400:
                 raise ConnectionProblem(
                     ConnectionState.API_ERROR,
-                    "Previous container logs unavailable (400); no previous instance may exist.",
+                    "Previous container logs unavailable (400); no previous instance may exist."
+                    if options.previous
+                    else "Container logs unavailable (400); the selected instance may not have started.",
                 ) from None
             raise
         return count

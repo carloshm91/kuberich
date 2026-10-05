@@ -96,7 +96,7 @@ async def test_stream_selected_container_options_split_unicode_and_normal_eof(
         (400, True, "Previous"),
         (500, False, "HTTP 500"),
         (401, False, "credentials"),
-        (400, False, "HTTP 400"),
+        (400, False, "may not have started"),
     ],
 )
 async def test_clear_safe_rbac_deleted_previous_and_other_errors(

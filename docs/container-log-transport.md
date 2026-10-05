@@ -32,7 +32,8 @@ the response. Non-follow snapshots retain the request timeout. Graceful EOF is a
 normal completion, including a final line without a newline. An abrupt/incomplete
 HTTP response reports disconnection; a 403 identifies required pod/pods-log read
 access, a 404 identifies unavailable/deleted targets, and previous-instance 400
-errors explain that previous output may not exist. Server error bodies, endpoint
+errors explain that previous output may not exist. A current-instance 400
+explains that the container may not have started. Server error bodies, endpoint
 credentials and raw TLS errors never enter these messages.
 
 There is no automatic log replay/retry. Reopening explicitly can repeat history

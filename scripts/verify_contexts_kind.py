@@ -399,7 +399,18 @@ async def verify_quiet_renewal(reader, resource, catalog, path, context) -> dict
 
 async def verify_logs(reader, snapshot, sessions):
     """Real current/previous log API and cancellation on this owned kind only."""
-    record = next(item for item in snapshot.items if item.name.startswith("coredns-"))
+    async with asyncio.timeout(90):
+        while True:
+            record = next(item for item in snapshot.items if item.name.startswith("coredns-"))
+            status = record.manifest.get("status", {})
+            if status.get("phase") == "Running" and any(
+                value.get("name") == "coredns" and value.get("ready")
+                for value in status.get("containerStatuses", [])
+            ):
+                break
+            await asyncio.sleep(0.2)
+            snapshot = await reader.list(snapshot.resource, "kube-system")
+    print("Owned CoreDNS log fixture is Running and Ready.")
     container = record.manifest["spec"]["containers"][0]["name"]
     identity = sessions.observation.identity
     target = ResourceTarget(identity, "", "pods", "kube-system", record.name, record.uid, container)
