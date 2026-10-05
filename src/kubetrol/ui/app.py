@@ -331,7 +331,12 @@ class KubetrolApp(App[None]):
                             result.problem
                             or f"Filter active · {len(result.rows)}/{len(rows)} pods · {view.message}"
                         )
-                        if not result.rows and view.snapshot is not None:
+                        if (
+                            rows
+                            and not result.rows
+                            and view.status is ViewStatus.LIVE
+                            and result.problem is None
+                        ):
                             self.query_one("#empty-title", Static).update(
                                 "No pods match this filter"
                             )
@@ -565,17 +570,19 @@ class KubetrolApp(App[None]):
         self.completion.display = (
             bool(choices) and self.command_input.has_focus and len(self.screen_stack) == 1
         )
-        capacity = max(1, self.screen_stack[0].query_one("#resource-view").region.height - 2)
+        capacity = max(
+            1, self.screen_stack[0].query_one("#resource-view").content_region.height - 2
+        )
         start = max(0, self.command_input.selected - capacity + 1)
         self.completion.update(
-            safe_text(
-                "\n".join(
-                    ("> " if index == self.command_input.selected else "  ") + value
-                    for index, value in enumerate(choices[start : start + capacity], start)
-                )
+            Text("\n").join(
+                safe_text(("> " if index == self.command_input.selected else "  ") + value)
+                for index, value in enumerate(choices[start : start + capacity], start)
             )
         )
-        self.completion.border_title = "Tab completes · ↑/↓ choose"
+        self.completion.border_title = (
+            f"Tab completes · {self.command_input.selected + 1}/{len(choices)} · ↑/↓"
+        )
 
     def _capture_view(self) -> NavigationState | None:
         view = self.workspace.store.observation

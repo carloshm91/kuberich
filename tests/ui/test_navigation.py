@@ -63,6 +63,13 @@ async def test_completion_commands_multiple_choices_tab_focus_and_literal_small_
         assert app.command_input.choices == ("context", "contexts", "ctx")
         assert app.completion.display
         assert "> context" in str(app.completion.content)
+        assert app.completion.content.plain.splitlines() == (
+            ["> context"] if size == (40, 12) else ["> context", "  contexts", "  ctx"]
+        )
+        assert app.completion.content_region.height >= len(
+            app.completion.content.plain.splitlines()
+        )
+        assert "\\u000a" not in str(app.completion.content)
         assert app.completion.region.bottom <= app.filter_input.region.y
         await pilot.press("down", "down", "tab")
         assert app.command_input.value == "ctx" and app.focused is app.command_input
@@ -413,6 +420,10 @@ async def test_narrow_completions_keep_selected_choice_visible_and_cursor_edits_
         assert app.command_input.selected == 7
         selected = app.command_input.choices[7]
         assert "> " + selected in str(app.completion.content)
+        await pilot.pause()
+        assert app.completion.content_region.height >= len(
+            app.completion.content.plain.splitlines()
+        )
         assert app.completion.region.bottom <= app.filter_input.region.y
         await pilot.press("tab")
         assert app.command_input.value == selected
@@ -474,3 +485,45 @@ async def test_history_returns_from_a_failed_context_and_new_navigation_discards
                 )
             )
             assert not app.history.following
+
+
+@pytest.mark.asyncio
+async def test_filter_does_not_misrepresent_an_empty_or_stale_scope(tmp_path):
+    async def namespace_handler(request):
+        return namespaces("team", "default")
+
+    async def resources(request):
+        if "watch" in request.query:
+            if "/namespaces/team/" in request.path:
+                return web.Response(status=403)
+            return await stable_watch(request)
+        return web.json_response(
+            collection(pod("api")) if "/namespaces/team/" in request.path else collection()
+        )
+
+    async with workspace_api(namespace_handler, resources) as url:
+        app = make_app(catalog_fixture(tmp_path, url))
+        async with app.run_test() as pilot:
+            await wait_for(
+                lambda: (
+                    app.workspace.store.observation.status is ViewStatus.FAILED
+                    and app.resources.row_count == 1
+                )
+            )
+            await pilot.press("slash")
+            app.filter_input.value = "no-match"
+            await wait_for(
+                lambda: app.resources.row_count == 0 and "Filter active" in str(app.status.content)
+            )
+            assert "Stale resource data" in str(app.query_one("#empty-title", Static).content)
+            app._namespace_selected("default")
+            await wait_for(
+                lambda: (
+                    app.workspace.store.observation.status is ViewStatus.LIVE
+                    and "No pods in this scope"
+                    in str(app.query_one("#empty-title", Static).content)
+                )
+            )
+            app.filter_input.value = "re:["
+            await wait_for(lambda: "Invalid regex" in str(app.status.content))
+            assert "No pods in this scope" in str(app.query_one("#empty-title", Static).content)
