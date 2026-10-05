@@ -19,6 +19,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Read-only captured-UID pod YAML, details and related events, with managedFields
+  visibility, literal search, redacted copying and return to the live table.
+- Clear denied/missing reads, same-name recreation rejection, viewer invalidation
+  and awaited request/serializer cleanup, with API, Pilot, PTY and install checks.
+
 - Shared initial/interactive pod/context/namespace commands, bounded literal
   suggestions with Tab acceptance, and local Unicode text/regex filtering.
 - Navigation back/forward preserving scope, filter, typed sorting, UID selection

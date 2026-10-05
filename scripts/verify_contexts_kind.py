@@ -25,6 +25,7 @@ from kubetrol.services.sessions import SessionService
 from kubetrol.services.watches import ListWatch
 from kubetrol.services.workspace import WorkspaceService
 from kubetrol.ui.app import KubetrolApp
+from kubetrol.ui.inspection import InspectionScreen
 
 NODE_IMAGE = (
     "kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed"
@@ -71,6 +72,52 @@ async def verify_pod_table(reader, resource, catalog, path, context):
         output = Path("artifacts/ui").resolve()
         output.mkdir(parents=True, exist_ok=True)
         app.save_screenshot(filename="pods-owned-kind.svg", path=str(output))
+        selected_record = next(
+            item for item in app.workspace.store.observation.snapshot.items if item.uid == selected
+        )
+        api = CoreV1Api(reader.session.api)
+        owned_event = await api.create_namespaced_event(
+            "kube-system",
+            {
+                "metadata": {"generateName": "kubetrol-test-inspection-"},
+                "involvedObject": {
+                    "name": selected_record.name,
+                    "namespace": "kube-system",
+                    "uid": selected,
+                    "apiVersion": "v1",
+                    "kind": "Pod",
+                },
+                "reason": "OwnedInspection",
+                "message": "owned disposable inspection fixture",
+                "type": "Warning",
+                "count": 1,
+                "source": {"component": "kubetrol-test"},
+            },
+        )
+        await pilot.press("y")
+        async with asyncio.timeout(30):
+            while not isinstance(app.screen, InspectionScreen) or app.screen.result is None:
+                await asyncio.sleep(0.01)
+        inspection = app.screen
+        actual_yaml = yaml.safe_load(inspection.viewer.text)
+        assert actual_yaml["metadata"]["uid"] == selected
+        assert "managedFields" not in actual_yaml["metadata"]
+        await pilot.press("m")
+        assert "managedFields" in inspection.viewer.text
+        await pilot.press("slash", *"containers", "enter")
+        assert inspection.viewer.selected_text == "containers"
+        await pilot.press("ctrl+y")
+        assert app.clipboard == "containers"
+        await pilot.press("e")
+        assert "OwnedInspection" in inspection.viewer.text
+        event_values = yaml.safe_load(inspection.viewer.text)
+        assert all(item["involvedObject"]["uid"] == selected for item in event_values)
+        await pilot.press("d")
+        assert "containerStatuses" in inspection.viewer.text
+        app.save_screenshot(filename="inspection-owned-kind.svg", path=str(output))
+        await pilot.press("escape")
+        assert app.resources.selected_uid == selected and inspection._load_task.done()
+        await api.delete_namespaced_event(owned_event.metadata.name, "kube-system")
         await pilot.press("slash", *"re:coredns", "enter")
         async with asyncio.timeout(30):
             while not app.resources.row_count or any(
@@ -116,6 +163,8 @@ async def verify_pod_table(reader, resource, catalog, path, context):
         "real_live_pod_widget": True,
         "real_pod_widget_selection_sort_scope": True,
         "pod_widget_clients_and_projection_closed": True,
+        "real_resource_yaml_describe_events": True,
+        "real_inspection_uid_events_search_copy_managed_fields": True,
         "real_local_regex_filter": True,
         "real_namespace_tab_completion": True,
         "real_navigation_history_selection_and_sort": True,

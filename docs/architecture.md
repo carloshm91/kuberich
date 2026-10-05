@@ -305,3 +305,13 @@ preservation and commands remain B02/B03. See [active resource views](resource-v
 - [AKS kubelogin authentication](https://learn.microsoft.com/en-us/azure/aks/kubelogin-authentication)
 - [Bubble Tea](https://github.com/charmbracelet/bubbletea)
 - [Ratatui](https://ratatui.rs/)
+
+## B04 resource inspection
+
+`domain/inspection.py` produces bounded redacted plain-text documents and literal
+search coordinates without SDK or Textual types. `services/inspection.py` captures
+an explicit client/API descriptor/target, verifies the individual GET's UID and
+name, reads bounded UID-associated core/v1 events, and drains owned serialization
+work on cancellation. `ui/inspection.py` owns the read task and read-only TextArea
+modal, preserving the underlying table while rejecting invalidated targets.
+See [ordinary-view policy and controls](resource-inspection.md).

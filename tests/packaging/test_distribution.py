@@ -297,3 +297,16 @@ def test_installed_wheel_connects_to_owned_api_and_changes_namespace(
         thread.join(timeout=2)
         server.server_close()
         assert not thread.is_alive()
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+def test_installed_resource_inspection_outside_checkout(installed_wheel, entry_point):
+    from tests.support.inspection import terminal_inspection
+
+    binary_dir, directory = installed_wheel
+    command = (
+        [str(binary_dir / "kubetrol")]
+        if entry_point == "console"
+        else [str(binary_dir / "python"), "-m", "kubetrol"]
+    )
+    terminal_inspection(command, directory, evidence=f"installed-inspection-{entry_point}")
