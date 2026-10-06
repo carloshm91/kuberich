@@ -44,6 +44,11 @@ The clarified feedback [#121](https://github.com/carloshm91/kubetrol/issues/121)
 now prioritizes a real embedded shell inside Textual. It supersedes the earlier
 initial-scope terminal-emulator exclusion and precedes the remaining F05 work.
 S03/S04 are its closed prerequisites; Q02 retains platform/terminal qualification.
+Additional feedback tasks [#123](https://github.com/carloshm91/kubetrol/issues/123)
+(v0.1.0 bounded terminal history/search/copy) and
+[#124](https://github.com/carloshm91/kubetrol/issues/124)
+(v0.2.0 mouse/keyboard protocol compatibility) follow it; they are outside the
+original 79-task planning inventory.
 
 ## Epics
 

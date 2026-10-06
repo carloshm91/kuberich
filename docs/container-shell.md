@@ -99,7 +99,9 @@ qualification remains C06/C07/C08. Attach, file transfer, node/ephemeral shells
 remain separate work. This checkpoint supports shell keys, bounded Unicode paste,
 ANSI/256/true colors, cursor reports and alternate screens. It does not implement
 mouse reporting, terminal graphics, advanced keyboard protocols or retained
-scrollback/search; those require follow-up terminal qualification. There is no
+scrollback/search; these are tracked in [#123](https://github.com/carloshm91/kubetrol/issues/123) and
+[#124](https://github.com/carloshm91/kubetrol/issues/124), with platform qualification
+in Q02. There is no
 promise that every terminal program is compatible or that K9s parity is complete.
 
 Output storage is limited to two 400×150 cell screens, 32 code points per cell,
