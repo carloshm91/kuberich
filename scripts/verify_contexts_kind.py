@@ -72,6 +72,25 @@ async def verify_pod_table(reader, resource, catalog, path, context):
                 await asyncio.sleep(0.01)
         await pilot.pause()
         assert not app.query_one("#empty-state").display
+        frame = app.query_one("#resource-view").region
+        identity = app.sessions.observation.identity
+        await pilot.press("colon", *"ctx", "enter")
+        async with asyncio.timeout(30):
+            while app.context_table.row_count != len(catalog.names):
+                await asyncio.sleep(0.01)
+        assert app._resource_name == "contexts" and len(app.screen_stack) == 1
+        assert app.query_one("#resource-view").region == frame
+        app.context_table.move_cursor(row=app.context_table.get_row_index(context))
+        assert app.context_table.get_row(context)[0].plain == "*"
+        await pilot.press("enter")
+        async with asyncio.timeout(30):
+            while (
+                app.workspace.store.observation.status is not ViewStatus.LIVE
+                or not app.resources.row_count
+            ):
+                await asyncio.sleep(0.01)
+        assert app._resource_name == "pods" and app.sessions.observation.identity.context == context
+        assert app.sessions.observation.identity.connection_id != identity.connection_id
         selected = app.resources.selected_uid
         await pilot.press("s", "s", "s", "S")
         assert app.resources.selected_uid == selected
@@ -140,6 +159,11 @@ async def verify_pod_table(reader, resource, catalog, path, context):
         containers = app.screen
         assert containers.stream.target.uid == log_uid
         assert containers.table.row_count >= 1
+        assert len(containers.table.columns) == 10
+        assert any(
+            "coredns" in row.image.lower() and row.state == "Running" for row in containers.rows
+        )
+        assert all(row.cpu != "—/—" and row.ports != "—" for row in containers.rows)
         app.save_screenshot(filename="containers-owned-kind.svg", path=str(output))
         await pilot.press("enter")
         async with asyncio.timeout(30):

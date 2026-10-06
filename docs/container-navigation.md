@@ -3,8 +3,11 @@
 Select a connected pod and press Enter. A scrollable table shows the selected
 pod’s regular and init containers, including pods with only one container.
 Type labels distinguish App, Init and restartable init Sidecar containers.
+Rows also show captured image, readiness, state/reason, restarts, probes,
+CPU/memory requests/limits and ports. Status is matched by name; missing status
+is explicit. See [column semantics](resource-workspace.md#container-details).
 Press Enter or `l` on a row to open that container’s logs directly.
-Press `s` or `x` for its [native shell](container-shell.md); read-only mode blocks
+Press `s` or `x` for its [embedded shell](container-shell.md); read-only mode blocks
 that action. `x`, `:shell` and `:exec` on pods also open this container picker.
 
 Esc returns logs → containers → pods. Both tables retain their selection and
@@ -17,7 +20,7 @@ The container table supports arrows, PageUp/PageDown, `j/k` and `g/G` (Shift+G)
 for first/last row. These letters remain log controls after opening logs.
 The view fits 40×12 and 100×30 windows, with horizontal scrolling for long names.
 
-This table uses names from the captured pod snapshot. Reopen it to refresh.
+This table uses data from the captured pod snapshot. Reopen it to refresh.
 Live container status and ephemeral debug container browsing remain later work.
 Read-only mode supports container navigation and logs. No kubeconfig or cluster
 resource is modified by opening these views.

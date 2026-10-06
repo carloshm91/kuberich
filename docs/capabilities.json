@@ -160,7 +160,7 @@
       ],
       "source": "internal/view/cmd/interpreter.go",
       "status": "planned",
-      "difference": "B03 implements available pod aliases, shared initial/interactive scope commands and local bounded Tab/arrow suggestions (#115). Preview #125 adds a real namespace workspace table and resource-aware command/history routing. Other resource tables, CRD/custom aliases and broader command routing remain their owning tickets. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks.",
+      "difference": "B03 implements available pod aliases, shared initial/interactive scope commands and local bounded Tab/arrow suggestions (#115). Preview #125 adds a real namespace workspace table and resource-aware command/history routing. Other resource tables, CRD/custom aliases and broader command routing remain their owning tickets. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage.",
       "partial_evidence": [
         "docs/command-navigation.md",
         "tests/ui/test_navigation.py",
@@ -169,7 +169,11 @@
         "docs/resource-workspace.md",
         "docs/acceptance/resource-workspace.md",
         "tests/ui/test_resource_workspace.py",
-        "docs/acceptance/stable-workspace.md"
+        "docs/acceptance/stable-workspace.md",
+        "https://github.com/carloshm91/kubetrol/issues/129",
+        "docs/acceptance/context-container-workspace.md",
+        "tests/ui/test_context_workspace.py",
+        "tests/unit/test_container_rows.py"
       ]
     },
     {
@@ -198,14 +202,18 @@
       ],
       "source": "internal/view/page_stack.go",
       "status": "planned",
-      "difference": "B03 implements bounded scope/filter/viewport history. Preview #125 retains pod/namespace resource kind and displays nested namespace/pod/container/log routes with the current Escape destination. Broader resource drill-down remains planned.",
+      "difference": "B03 implements bounded scope/filter/viewport history. Preview #125 retains pod/namespace resource kind and displays nested namespace/pod/container/log routes with the current Escape destination. Broader resource drill-down remains planned. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage.",
       "partial_evidence": [
         "docs/command-navigation.md",
         "tests/ui/test_navigation.py",
         "tests/terminal/test_navigation.py",
         "docs/resource-workspace.md",
         "docs/acceptance/resource-workspace.md",
-        "tests/ui/test_resource_workspace.py"
+        "tests/ui/test_resource_workspace.py",
+        "https://github.com/carloshm91/kubetrol/issues/129",
+        "docs/acceptance/context-container-workspace.md",
+        "tests/ui/test_context_workspace.py",
+        "tests/unit/test_container_rows.py"
       ]
     },
     {
@@ -219,7 +227,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. SSH/tmux and broader terminal qualification remain B07/Q02. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. SSH/tmux and broader terminal qualification remain B07/Q02. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -231,7 +239,11 @@
         "tests/contract/test_pod_projection.py",
         "tests/terminal/test_pods.py",
         "scripts/verify_contexts_kind.py",
-        "docs/acceptance/stable-workspace.md"
+        "docs/acceptance/stable-workspace.md",
+        "https://github.com/carloshm91/kubetrol/issues/129",
+        "docs/acceptance/context-container-workspace.md",
+        "tests/ui/test_context_workspace.py",
+        "tests/unit/test_container_rows.py"
       ]
     },
     {
@@ -362,7 +374,7 @@
       ],
       "source": "internal/view/registrar.go",
       "status": "planned",
-      "difference": "Live UID-based pod tables and captured regular/init container navigation are implemented. Preview #125 adds the real Namespace LIST/WATCH table with lifecycle/age, filtering, all-scope action and Enter/Escape restoration. Live container status, ephemeral containers and the remaining resource tables remain planned.",
+      "difference": "Live UID-based pod tables and captured regular/init container navigation are implemented. Preview #125 adds the real Namespace LIST/WATCH table with lifecycle/age, filtering, all-scope action and Enter/Escape restoration. Live container status, ephemeral containers and the remaining resource tables remain planned. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage.",
       "partial_evidence": [
         "docs/pod-table.md",
         "tests/unit/test_pods.py",
@@ -390,7 +402,11 @@
         "docs/resource-workspace.md",
         "docs/acceptance/resource-workspace.md",
         "tests/ui/test_resource_workspace.py",
-        "scripts/verify_contexts_kind.py"
+        "scripts/verify_contexts_kind.py",
+        "https://github.com/carloshm91/kubetrol/issues/129",
+        "docs/acceptance/context-container-workspace.md",
+        "tests/ui/test_context_workspace.py",
+        "tests/unit/test_container_rows.py"
       ]
     },
     {

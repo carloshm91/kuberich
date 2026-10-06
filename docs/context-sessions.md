@@ -27,7 +27,9 @@ shows the loaded contexts; it does not reload changed files. Restart after editi
 kubeconfig. An explicit unknown context produces a configuration state without
 falling back to another context.
 
-- **c / F2**, `:ctx` or `:context`: choose a context; `:ctx NAME` selects it directly.
+- **c / F2**, `:ctx` or `:context`: browse the local context workspace table;
+  `/` filters, Enter connects and Escape restores the preceding resource view.
+  `:ctx NAME` selects it directly.
 - **n / F3**, `:ns` or `:namespace`: choose a namespace; `:ns NAME` permits manual selection.
 - **`:ns *`** or `*` in the selector: select all namespaces.
 - **i / F5** or `:status`: read the full connection message in a scrollable dialog, including in narrow terminals.

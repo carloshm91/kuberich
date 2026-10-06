@@ -9,6 +9,18 @@ MAX_HISTORY = 32
 
 
 @dataclass(frozen=True)
+class ContextRow:
+    name: str
+    cluster: str
+    user: str
+    namespace: str
+    current: bool = False
+
+    def cells(self) -> tuple[str, ...]:
+        return ("*" if self.current else "", self.name, self.cluster, self.user, self.namespace)
+
+
+@dataclass(frozen=True)
 class NamespaceChoice:
     namespace: str | None
 

@@ -6,14 +6,14 @@ from pathlib import Path
 
 import pytest
 from aiohttp import web
-from textual.widgets import OptionList, Static
+from textual.widgets import Static
 
 from kubetrol.config.catalog import Entry
 from kubetrol.config.schema import Settings
 from kubetrol.domain.connections import ConnectionRequest, ConnectionState
 from kubetrol.domain.views import ViewStatus
 from kubetrol.ui.app import KubetrolApp
-from kubetrol.ui.scopes import ConnectionScreen, ScopeScreen
+from kubetrol.ui.scopes import ConnectionScreen
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.workspace import wait_for
 from tests.support.workspace import workspace_api as fake_api
@@ -48,13 +48,13 @@ async def test_select_context_namespace_scroll_and_retry_without_rewriting_file(
             assert app.resources.row_count == 0
             old = app.sessions.observation.identity
             await pilot.press("f2")
-            assert isinstance(app.screen, ScopeScreen)
+            await wait_for(lambda: app.context_table.row_count == 2)
+            assert app._resource_name == "contexts" and len(app.screen_stack) == 1
             await pilot.press("f2", "f1")
             assert len(app.screen_stack) == 2
-            assert await pilot.click("#scope-close")
+            assert await pilot.click("#close-help")
             await pilot.press("f2")
-            options = app.screen.query_one("#scope-options", OptionList)
-            options.highlighted = catalog.names.index("kubetrol-test-Two")
+            app.context_table.move_cursor(row=app.context_table.get_row_index("kubetrol-test-Two"))
             await pilot.press("enter")
             await connected(app)
             assert app.sessions.observation.identity.context == "kubetrol-test-Two"
@@ -122,7 +122,7 @@ async def test_case_preserved_commands_and_manual_namespace_for_restricted_rbac(
             await pilot.press("colon")
             app.command_input.value = "ctx"
             await pilot.press("enter")
-            assert isinstance(app.screen, ScopeScreen)
+            assert app._resource_name == "contexts" and len(app.screen_stack) == 1
             await pilot.press("escape", "q")
 
 
@@ -193,10 +193,10 @@ async def test_navigation_without_function_keys_and_recovery_from_auth_failure(
             await pilot.press("colon", *"status", "enter")
             assert isinstance(app.screen, ConnectionScreen)
             assert "401" in str(app.screen.query_one("#connection-details", Static).content)
-            await pilot.press("escape", "c", "c", "n", "i")
-            assert isinstance(app.screen, ScopeScreen) and len(app.screen_stack) == 2
-            options = app.screen.query_one("#scope-options", OptionList)
-            options.highlighted = catalog.names.index("kubetrol-test-Two")
+            await pilot.press("escape", "c", "c")
+            await wait_for(lambda: app.context_table.row_count == 2)
+            assert app._resource_name == "contexts" and len(app.screen_stack) == 1
+            app.context_table.move_cursor(row=app.context_table.get_row_index("kubetrol-test-Two"))
             await pilot.press("enter")
             await connected(app)
             await pilot.pause()

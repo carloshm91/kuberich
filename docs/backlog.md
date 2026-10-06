@@ -63,6 +63,12 @@ header geometry and a dedicated inline command suggestion bar without a dropdown
 It follows #125 before remaining F05 work; the previous temporary dropdown
 preference in B07 is superseded. Wider B07 requirements remain open.
 
+The next maintainer feedback [#129](https://github.com/carloshm91/kubetrol/issues/129)
+prioritizes a bordered command bar, local contexts as a normal workspace table,
+and captured container status/specification columns before remaining F05 work.
+It is independently unblocked after #127. Live container refresh, metrics and
+ephemeral debugging remain separate work; the release process remains #36/#40.
+
 ## Epics
 
 | Issue | Outcome | Completion milestone |

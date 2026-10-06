@@ -65,6 +65,15 @@ NS_SHORTCUTS = (
     ("Esc", "Pods"),
     ("?", "Help"),
 )
+CTX_SHORTCUTS = (
+    ("Enter", "Connect"),
+    ("j/k", "Down / up"),
+    ("g/G", "First / last"),
+    ("/", "Filter"),
+    (":", "Command"),
+    ("Esc", "Previous view"),
+    ("?", "Help"),
+)
 CONTAINER_SHORTCUTS = (
     ("Enter / l", "Logs"),
     ("s / x", "Shell"),
@@ -97,10 +106,10 @@ class WorkspaceChrome:
 
 
 class WorkspaceBars(Vertical):
-    """Reserve the same two interaction rows in each workspace view."""
+    """Reserve consistent bordered/compact interaction space in each view."""
 
     DEFAULT_CSS = """
-    WorkspaceBars { height: 2; margin: 0 1; }
+    WorkspaceBars { height: 4; margin: 0 1; }
     WorkspaceBars > Static, WorkspaceBars > Horizontal { height: 1; }
     WorkspaceBars .input-bar { margin: 0; }
     """
