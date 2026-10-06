@@ -60,12 +60,13 @@ async def test_select_context_namespace_scroll_and_retry_without_rewriting_file(
             assert app.sessions.observation.identity.context == "kubetrol-test-Two"
             assert app.sessions.observation.identity.connection_id != old.connection_id
             await pilot.press("f3", "f3", "pagedown")
-            assert len(app.screen_stack) == 2
+            assert len(app.screen_stack) == 1
+            await wait_for(lambda: app.namespace_table.row_count == 52)
+            await pilot.press("pagedown")
             await pilot.pause()
-            options = app.screen.query_one("#scope-options", OptionList)
-            assert options.scroll_y > 0
-            options.highlighted = 0
-            await pilot.press("enter")
+            assert app.namespace_table.scroll_y > 0
+            await pilot.press("0")
+            await app._connection_task
             assert app.sessions.observation.namespace is None
             assert str(app.query_one("#namespace", Static).content) == "Namespace: All"
             await pilot.press("f4")
@@ -114,7 +115,9 @@ async def test_case_preserved_commands_and_manual_namespace_for_restricted_rbac(
             await pilot.press("colon")
             app.command_input.value = "ns"
             await pilot.press("enter")
-            assert isinstance(app.screen, ScopeScreen)
+            await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.FAILED)
+            assert app._resource_name == "namespaces" and len(app.screen_stack) == 1
+            assert "403" in str(app.status.content)
             await pilot.press("escape")
             await pilot.press("colon")
             app.command_input.value = "ctx"
@@ -197,14 +200,15 @@ async def test_navigation_without_function_keys_and_recovery_from_auth_failure(
             await pilot.press("enter")
             await connected(app)
             await pilot.pause()
-            assert str(app.query_one("#connection", Static).content) == "Connected"
+            assert str(app.query_one("#connection", Static).content) == "State: Connected"
             assert "401" not in str(app.status.content)
             assert str(app.query_one("#context", Static).content) == "Context: kubetrol-test-Two"
             await pilot.press("n", "n")
-            assert isinstance(app.screen, ScopeScreen) and len(app.screen_stack) == 2
-            options = app.screen.query_one("#scope-options", OptionList)
-            options.highlighted = app.screen.values.index("team")
+            assert len(app.screen_stack) == 1
+            await wait_for(lambda: app.namespace_table.row_count == 2)
+            app.namespace_table.move_cursor(row=app.namespace_table.get_row_index("namespace-team"))
             await pilot.press("enter")
+            await app._connection_task
             assert app.sessions.observation.namespace == "team"
             identity = app.sessions.observation.identity
             await pilot.press("r")
@@ -219,7 +223,7 @@ async def test_navigation_without_function_keys_and_recovery_from_auth_failure(
             await pilot.press("escape", "colon", *"cnri")
             assert app.command_input.value == "cnri" and len(app.screen_stack) == 1
             await pilot.press("escape", "colon", *"ns", "enter")
-            assert isinstance(app.screen, ScopeScreen)
+            assert app._resource_name == "namespaces" and len(app.screen_stack) == 1
             await pilot.press("escape", "colon", *"status unexpected", "enter")
             assert len(app.screen_stack) == 1
             evidence = Path("artifacts/ui").resolve()

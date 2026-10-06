@@ -29,7 +29,9 @@ inspection redaction/search, log query/framing/retention, and retained log ident
 window selection, start-time validation and clipboard bounds, plus immutable
 process/environment capture, scoped kubectl/editor builders and exit decisions,
 plus shell target validation and sanitized return decisions, plus bounded terminal
-geometry and keyboard/paste encoding.
+geometry and keyboard/paste encoding. Namespace UID/lifecycle values in
+`domain/namespaces.py` join the critical inventory in #125; shared workspace
+layout receives Pilot and real-terminal checks.
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
 from transport and widget glue so exhaustive tests are practical. The critical

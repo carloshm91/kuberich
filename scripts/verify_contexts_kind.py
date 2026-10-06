@@ -200,6 +200,59 @@ async def verify_pod_table(reader, resource, catalog, path, context):
             ):
                 await asyncio.sleep(0.01)
         assert app.resources.row_count == 0
+        await pilot.press("colon", *"ns", "enter")
+        async with asyncio.timeout(30):
+            while (
+                app.workspace.store.observation.status is not ViewStatus.LIVE
+                or not app.namespace_table.row_count
+            ):
+                await asyncio.sleep(0.01)
+        assert len(app.screen_stack) == 1
+        assert app.workspace.store.observation.scope.resource.name == "namespaces"
+        namespace_record = next(
+            item
+            for item in app.workspace.store.observation.snapshot.items
+            if item.name == "kube-system"
+        )
+        assert app.namespace_table.get_row(namespace_record.uid)[1].plain == "Active"
+        owned_namespace = await api.create_namespace(
+            V1Namespace(metadata=V1ObjectMeta(name="kubetrol-ui-" + uuid4().hex[:12]))
+        )
+        async with asyncio.timeout(30):
+            while owned_namespace.metadata.uid not in app.namespace_table.rows:
+                await asyncio.sleep(0.01)
+        await api.delete_namespace(owned_namespace.metadata.name)
+        async with asyncio.timeout(30):
+            while owned_namespace.metadata.uid in app.namespace_table.rows:
+                await asyncio.sleep(0.01)
+        app.namespace_table.move_cursor(row=app.namespace_table.get_row_index(namespace_record.uid))
+        await pilot.pause()
+        app.save_screenshot(filename="namespaces-owned-kind.svg", path=str(output))
+        await pilot.press("enter")
+        async with asyncio.timeout(30):
+            while (
+                app._resource_name != "pods"
+                or app.workspace.store.observation.status is not ViewStatus.LIVE
+                or not app.resources.row_count
+            ):
+                await asyncio.sleep(0.01)
+        assert app.workspace.store.observation.connection.namespace == "kube-system"
+        await pilot.press("escape")
+        async with asyncio.timeout(30):
+            while (
+                app._resource_name != "namespaces"
+                or app.namespace_table.selected_uid != namespace_record.uid
+            ):
+                await asyncio.sleep(0.01)
+        await pilot.press("0")
+        async with asyncio.timeout(30):
+            while (
+                app._resource_name != "pods"
+                or app.workspace.store.observation.status is not ViewStatus.LIVE
+                or app.workspace.store.observation.scope.namespace is not None
+            ):
+                await asyncio.sleep(0.01)
+        assert app.resources.row_count > 0
         await pilot.press("ctrl+q")
     assert app.sessions.client is None and app._view_task.done() and not app._pod_projection._cache
     return {
@@ -216,6 +269,8 @@ async def verify_pod_table(reader, resource, catalog, path, context):
         "real_namespace_arrow_enter_completion": True,
         "real_pod_container_log_enter_and_back": True,
         "real_navigation_history_selection_and_sort": True,
+        "real_namespace_table_uid_status_and_watch_create_delete": True,
+        "real_namespace_enter_pods_escape_and_all_scope": True,
         "server_table_pod_count": len(table["rows"]),
     }
 

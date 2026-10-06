@@ -84,8 +84,18 @@ class Handler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/api/v1/namespaces":
             payload = {
-                "items": [{"metadata": {"name": "default"}}, {"metadata": {"name": "team"}}],
-                "metadata": {},
+                "items": [
+                    {
+                        "metadata": {
+                            "name": name,
+                            "uid": f"namespace-{name}",
+                            "resourceVersion": "owned-ns-object",
+                        },
+                        "status": {"phase": "Active"},
+                    }
+                    for name in ("default", "team")
+                ],
+                "metadata": {"resourceVersion": "owned-ns-list"},
             }
         elif parsed.path in legacy_roots():
             payload = legacy_roots()[parsed.path]

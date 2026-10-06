@@ -29,7 +29,7 @@ async def test_startup_is_disconnected_and_core_controls_fit(size: tuple[int, in
         assert app.focused is app.resources
         assert str(app.query_one("#context", Static).content) == "Context: —"
         assert str(app.query_one("#namespace", Static).content) == "Namespace: —"
-        assert str(app.query_one("#connection", Static).content) == "Disconnected"
+        assert str(app.query_one("#connection", Static).content) == "State: Disconnected"
         for identifier in ("context", "namespace", "connection", "filter", "command", "status"):
             region = app.query_one(f"#{identifier}").region
             assert region.width > 0 and region.height > 0

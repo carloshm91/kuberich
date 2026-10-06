@@ -50,6 +50,13 @@ Additional feedback tasks [#123](https://github.com/carloshm91/kubetrol/issues/1
 (v0.2.0 mouse/keyboard protocol compatibility) follow it; they are outside the
 original 79-task planning inventory.
 
+The maintainer's screenshot feedback prioritizes
+[#125](https://github.com/carloshm91/kubetrol/issues/125) after the embedded shell:
+shared K9s-inspired workspace, top inputs, default `k9s` theme, Escape trails and
+a live namespace table. It precedes remaining F05 work and is outside the original
+inventory. U01/B07 retain broader theme/update/navigation contracts; O01/O02
+retain metrics and cluster overview.
+
 ## Epics
 
 | Issue | Outcome | Completion milestone |

@@ -67,13 +67,13 @@ preview copy and the application header are hidden to preserve data rows and con
 scrollable body and accessible Back button. Smaller sizes are not qualified.
 
 `--headless` hides the application header, `--logoless` hides its brand, and
-`--crumbsless` hides the context/namespace scope bar. These invocation-only flags
+`--crumbsless` hides the context/namespace scope bar and navigation trail. These invocation-only flags
 preserve filter/command inputs, status and key hints through resize. Initial
 `--command help` (or `-c help`) opens the help dialog; `--command quit` exits
 cleanly. Initial pod/context/namespace commands use the shared grammar and start
 the requested scope directly. Unsupported resource/action commands remain unavailable.
 
-The configured `theme` selects a built-in Textual theme, such as `textual-dark`,
+The configured `theme` selects `k9s` (the new default) or a built-in Textual theme, such as `textual-dark`,
 `textual-light` or `nord`. An unregistered theme fails safely with exit 2 before
 opening the UI. `NO_COLOR` selects the framework's monochrome mode. The
 `read_only` preference, overridden by `--readonly` or `--write`, appears in the

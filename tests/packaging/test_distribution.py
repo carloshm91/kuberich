@@ -299,7 +299,7 @@ def test_installed_wheel_connects_to_owned_api_and_changes_namespace(
                 assert b"Stale resource data" not in terminal.transcript
                 assert b"Reconnecting" not in terminal.transcript
             marker = terminal.send(b":ns team\r")
-            terminal.wait_for(b"Namespace: team", since=marker)
+            terminal.wait_for_screen("Namespace: team")
             terminal.wait_for(b"Live", since=marker)
             terminal.send(b"q")
             terminal.finish()

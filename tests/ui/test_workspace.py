@@ -197,7 +197,7 @@ async def test_quiet_renewal_preserves_live_preview_copy_and_selected_context(
             )
             description = str(app.query_one("#empty-description", Static).content)
             assert "No pods were returned" in description
-            assert ":ctx choose context" in description
+            assert ":ctx contexts" in description
             assert str(app.query_one("#context", Static).content) == "Context: kubetrol-test-one"
             assert f"Live · {count} pods" in str(app.status.content)
             assert len(set(versions)) == 1

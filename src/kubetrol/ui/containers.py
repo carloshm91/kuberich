@@ -18,6 +18,7 @@ from kubetrol.security.presentation import safe_text
 from kubetrol.services.logs import LogStream
 from kubetrol.services.processes import ProcessRunner
 from kubetrol.services.shell import ShellService
+from kubetrol.ui.chrome import CONTAINER_SHORTCUTS, Breadcrumbs, WorkspaceChrome, WorkspaceHeader
 from kubetrol.ui.logs import LogScreen
 from kubetrol.ui.terminal import ShellScreen
 
@@ -39,11 +40,11 @@ class ContainerScreen(ModalScreen[None]):
         Binding("x", "shell", "Shell", show=False),
     ]
     DEFAULT_CSS = """
-    ContainerScreen { align: center middle; background: $background 80%; }
-    #container-dialog { width: 96%; height: 96%; border: round $primary; }
+    ContainerScreen { layout: vertical; background: $background; }
+    #container-dialog { width: 100%; height: 1fr; min-height: 3; border: solid $primary; border-title-align: center; }
     #container-title, #container-hints, #container-status { height: 1; text-overflow: ellipsis; }
     #container-title { color: $accent; }
-    #container-feedback { height: 3; }
+    #container-feedback { height: 1; }
     #container-status { height: auto; text-overflow: fold; }
     #containers { height: 1fr; }
     #container-back { height: 1; border: none; }
@@ -56,10 +57,13 @@ class ContainerScreen(ModalScreen[None]):
         *,
         shell: ShellService | None = None,
         processes: ProcessRunner | None = None,
+        chrome: WorkspaceChrome | None = None,
+        trail: tuple[str, ...] = ("pods",),
     ) -> None:
         super().__init__()
         self.stream = stream
         self.shell, self.processes = shell, processes
+        self.chrome, self.trail = chrome, (*trail, "containers")
         self.names = log_containers(manifest)
         if not self.names:
             raise AppError("The selected pod has no regular/init containers.")
@@ -76,6 +80,8 @@ class ContainerScreen(ModalScreen[None]):
 
     def compose(self) -> ComposeResult:
         target = self.stream.target
+        if self.chrome is not None:
+            yield WorkspaceHeader(self.chrome, CONTAINER_SHORTCUTS)
         with Vertical(id="container-dialog"):
             yield Static(
                 safe_text(
@@ -94,8 +100,17 @@ class ContainerScreen(ModalScreen[None]):
             with VerticalScroll(id="container-feedback"):
                 yield self.status
             yield Button("Back to pods", id="container-back", compact=True)
+        yield Breadcrumbs(
+            self.trail,
+            "Pods",
+            visible=self.chrome is None or not self.chrome.presentation.crumbsless,
+        )
 
     def on_mount(self) -> None:
+        target = self.stream.target
+        self.query_one("#container-dialog", Vertical).border_title = safe_text(
+            f"containers({target.namespace}/{target.name})[{len(self.names)}]"
+        )
         self.table.add_columns("Container", "Type")
         for name in self.names:
             self.table.add_row(safe_text(name), safe_text(self.kinds.get(name, "App")), key=name)
@@ -150,7 +165,9 @@ class ContainerScreen(ModalScreen[None]):
             self.validate_target()
             self.status.update(safe_text(str(error)))
             return
-        self.app.push_screen(LogScreen(self.stream, self.names, selected=name))
+        self.app.push_screen(
+            LogScreen(self.stream, self.names, selected=name, chrome=self.chrome, trail=self.trail)
+        )
 
     @on(Button.Pressed, "#container-back")
     def back(self) -> None:

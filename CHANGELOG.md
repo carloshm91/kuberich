@@ -29,6 +29,13 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- K9s-inspired black/cyan/yellow workspace and a default `k9s` theme, with
+  context/cluster/user/version header, top inputs, view shortcuts and Escape trails.
+- Live namespace NAME/STATUS/AGE table via `:ns` / `n`, Enter-to-pods and `0` for
+  all namespaces; returning retains namespace filtering, UID cursor and viewport.
+- Common full-workspace container/log layouts with top log search, retaining the
+  embedded shell, captured targets and existing stream cleanup.
+
 - Embedded selected-container shells via kubectl exec, with `x`/`:shell` on pods,
   `s`/`x` on containers and a configurable literal shell argument list.
 - Private connection snapshots pinned to the prepared session, pod-UID checks,

@@ -25,7 +25,7 @@ def test_info_reports_defaults_without_creating_files_or_reading_kubeconfig(
     assert information["version"] == cli.version("kubetrol")
     assert information["config_file"] == str(tmp_path / "config/config.yaml")
     assert information["log_file"] == str(tmp_path / "logs/kubetrol.log")
-    assert information["preferences"]["theme"] == "textual-dark"
+    assert information["preferences"]["theme"] == "k9s"
     assert not information["cluster_connected"] and information["terminal_ui_available"]
     assert not information["config_exists"] and not information["migration_pending"]
     assert information["dependencies"]["textual"]

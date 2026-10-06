@@ -29,6 +29,7 @@ class NavigationState:
     x: float = 0
     y: float = 0
     top: str | None = None
+    resource: str = "pods"
 
 
 class NavigationHistory:

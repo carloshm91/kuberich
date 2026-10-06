@@ -45,7 +45,7 @@ def test_live_pod_navigation_update_sort_scope_and_resize_restore_terminal(tmp_p
             terminal.wait_for(b"CrashLoopBackOff", since=marker)
             terminal.wait_for(b"1000", since=marker)
             marker = terminal.send(b":ns team\r")
-            terminal.wait_for(b"Namespace: team", since=marker)
+            terminal.wait_for_screen("Namespace: team")
             terminal.wait_for(b"team      ", since=marker)
             # Scope changes preserve the fallback cursor; explicitly request the top.
             terminal.send(b"\x1b[1;5H")
