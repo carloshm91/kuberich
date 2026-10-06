@@ -26,7 +26,8 @@ and session identity, resource endpoint/scope/alias/manifest normalization, and
 watch events, UID state/replays and recovery decisions, plus active-view identity,
 snapshot invalidation and freshness decisions, plus pod health, typed ordering,
 inspection redaction/search, log query/framing/retention, and retained log identities,
-window selection, start-time validation and clipboard bounds.
+window selection, start-time validation and clipboard bounds, plus immutable
+process/environment capture, scoped kubectl/editor builders and exit decisions.
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
 from transport and widget glue so exhaustive tests are practical. The critical

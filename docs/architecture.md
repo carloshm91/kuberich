@@ -371,3 +371,26 @@ ephemeral containers and broader resource drill-down remain B05/S04/A03.
 
 This uses public [Textual DataTable](https://textual.textualize.io/widgets/data_table/)
 row events/actions and [Input](https://textual.textualize.io/widgets/input/) submissions.
+
+## S03 process and terminal ownership
+
+`domain/processes.py` captures command/environment/cwd/mode/purpose and explicit
+kubectl/editor arguments before awaits. `services/processes.py` owns an injected
+per-app runner, shielded startup/resolution, typed sessions and bounded
+asyncio SubprocessProtocol transports. Read-only policy runs before lookup and
+cannot be bypassed through a raw service call. The app closes its runner on
+unmount. Background handles retain ownership when an individual waiter cancels.
+
+`adapters/terminal.py` leases actual POSIX foreground-group ownership and TTY
+attributes. `ui/handoff.py` composes it with public Textual suspension, refuses
+concurrent/native-incompatible handoffs and resumes before propagating any
+error/cancellation. The pinned context manager's post-yield resumption makes
+that ordering necessary. Parent SIGTERM during handoff requests cancellation;
+app exit follows terminal restoration, avoiding a driver restart/shutdown race.
+The low-level protocol bounds captured bytes without StreamReader pipe-drain
+deadlocks when an exited leader leaves descendants holding descriptors.
+
+S03 requires F05's merged stage-1 shared policy/argument contract; advanced
+connection overrides remain in the open F05 issue. The native pod/container
+exec route and actual Kubernetes exec qualification remain S04. See the
+[service contract and limits](process-handoff.md).

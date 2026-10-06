@@ -31,6 +31,11 @@ The C04 trial exposed misleading idle-watch retries and preview text. Focused
 [correction #107](https://github.com/carloshm91/kubetrol/issues/107) precedes B02;
 it repairs renewal/status behavior and does not supply table rows.
 
+After B03/B04/S02 and preview feedback #115, continue **S03 → S04** for the
+native container shell checkpoint. S03's F05 dependency means its already-merged
+stage-1 shared command/read-only policy, not the still-open advanced connection
+overrides. GitHub #31 records this readiness clarification; F05 stays open.
+
 ## Epics
 
 | Issue | Outcome | Completion milestone |

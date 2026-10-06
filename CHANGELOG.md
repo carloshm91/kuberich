@@ -22,6 +22,10 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Shared bounded local-process runner and native terminal handoff foundation,
+  with captured scope/arguments, enforced read-only policy and owned cleanup.
+  The pod/container shell shortcut remains the next implementation checkpoint.
+
 - Enter on a pod opens its regular/init container table, including single-container
   pods; Enter on a container opens its logs. Esc returns through both views, while
   `d` keeps resource details and `l` keeps the direct log shortcut.

@@ -349,3 +349,19 @@ Live container health and ephemeral container browsing remain later work.
 Report whether namespace arrow/Enter selection and both returns work in your
 terminal. See [behavior and limits](container-navigation.md) and
 [measured acceptance evidence](acceptance/enter-navigation.md).
+
+## Process and terminal foundation: S03
+
+The shared local-process runner and native terminal adapter are implemented.
+This backend checkpoint does not add a pod/container shell shortcut; S04 #32
+provides that user-facing route and actual Kubernetes exec qualification.
+Continue the pod/container/log trial above. Developers can run:
+
+```sh
+uv run pytest tests/unit/test_processes.py tests/contract/test_processes.py tests/unit/test_terminal_lease.py tests/ui/test_handoff.py tests/terminal/test_handoff.py
+```
+
+These tests use owned synthetic local programs and real PTYs, including keyboard
+input, resize, Ctrl+C, repeated handoffs, startup failure, cancellation and parent
+termination. No user kubeconfig or cluster is used. See the
+[process/terminal contract](process-handoff.md).
