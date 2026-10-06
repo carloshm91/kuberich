@@ -162,7 +162,7 @@ class TerminalModel:
         value = self.controls.feed(self.decoder.decode(data))
         try:
             self.stream.feed(value)
-        except (ValueError, IndexError):
-            # Unsupported/malformed color parameters cannot abort the Textual application.
+        except (ValueError, IndexError, TypeError):
+            # Malformed/unsupported parameters or arity cannot abort the Textual application.
             # Pyte resets its parser after a dispatch error; retained cells remain valid.
             return

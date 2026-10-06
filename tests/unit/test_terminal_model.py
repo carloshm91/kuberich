@@ -145,3 +145,14 @@ def test_reset_c1_controls_and_cursor_visibility():
         model.screen is model.normal and not model.application_cursor and not model.bracketed_paste
     )
     assert model.screen.display[0].strip() == "" and not model.screen.cursor.hidden
+
+
+@pytest.mark.parametrize("sequence", [b"\x1b[1;2;3H", b"\x1b[?6n", b"\x1b[1;2;3f"])
+def test_malformed_or_unsupported_csi_cannot_abort_the_terminal(sequence):
+    replies = []
+    model = TerminalModel(20, 4, replies.append)
+    model.feed(b"BEFORE")
+    model.feed(sequence)
+    model.feed(b"\rAFTER")
+    assert model.screen.display[0].startswith("AFTER")
+    assert not replies
