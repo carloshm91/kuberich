@@ -84,6 +84,9 @@ a cluster:
 uv run pytest tests/unit/test_processes.py tests/contract/test_processes.py tests/unit/test_terminal_lease.py tests/ui/test_handoff.py tests/terminal/test_handoff.py
 ```
 
+See [measured S03 acceptance evidence](acceptance/S03.md) for the qualified
+interpreters, coverage gates, installed-wheel trial and platform limits.
+
 See [Textual suspension](https://textual.textualize.io/api/app/#textual.app.App.suspend),
 [asyncio subprocess protocols](https://docs.python.org/3.12/library/asyncio-protocol.html#subprocess-protocols)
 and [POSIX foreground groups](https://docs.python.org/3.12/library/os.html#os.tcsetpgrp).

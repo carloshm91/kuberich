@@ -364,4 +364,5 @@ uv run pytest tests/unit/test_processes.py tests/contract/test_processes.py test
 These tests use owned synthetic local programs and real PTYs, including keyboard
 input, resize, Ctrl+C, repeated handoffs, startup failure, cancellation and parent
 termination. No user kubeconfig or cluster is used. See the
-[process/terminal contract](process-handoff.md).
+[process/terminal contract](process-handoff.md) and
+[measured acceptance evidence](acceptance/S03.md).

@@ -493,6 +493,7 @@
       "difference": "S03 implements the scoped kubectl exec argument builder, owned process runner and native terminal adapter. The user-facing shell route, configured shell choice and actual Kubernetes exec qualification remain S04/Q02; this is kubectl exec, not SSH to a pod.",
       "partial_evidence": [
         "docs/process-handoff.md",
+        "docs/acceptance/S03.md",
         "tests/unit/test_processes.py",
         "tests/contract/test_processes.py",
         "tests/terminal/test_handoff.py"
@@ -558,6 +559,7 @@
       "difference": "S03 implements captured editor argv/file boundaries and the shared process/terminal lifecycle. Manifest editing, preview/conflict handling and cluster writes remain M02.",
       "partial_evidence": [
         "docs/process-handoff.md",
+        "docs/acceptance/S03.md",
         "tests/unit/test_processes.py",
         "tests/terminal/test_handoff.py"
       ]
