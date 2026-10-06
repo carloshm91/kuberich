@@ -63,4 +63,4 @@ Recognized options awaiting their owning feature (exit 4):
                         unavailable: TLS transport (F05 #19 / C08 #47)
   --token TOKEN         unavailable: credential overrides (F05 #19 / C08 #47)
 
-Live pod table preview: commands, completion, filters and history; logs and shell are upcoming.
+Live pod table preview: commands, completion, filters, logs and native container shells.

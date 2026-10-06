@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import os
 from collections.abc import Callable
 from contextlib import suppress
 from importlib.metadata import version
@@ -32,7 +33,7 @@ from kubetrol.domain.views import USABLE_CONNECTIONS, ViewObservation, ViewStatu
 from kubetrol.errors import AppError
 from kubetrol.security.arguments import validate_argument
 from kubetrol.security.presentation import safe_text
-from kubetrol.services.access import AccessPolicy
+from kubetrol.services.access import AccessPolicy, Action
 from kubetrol.services.commands import (
     Command,
     CommandService,
@@ -46,6 +47,7 @@ from kubetrol.services.logs import LogStream
 from kubetrol.services.pods import PodProjection
 from kubetrol.services.processes import ProcessRunner
 from kubetrol.services.sessions import SessionService
+from kubetrol.services.shell import ShellService
 from kubetrol.services.workspace import ViewSubscription, WorkspaceService
 from kubetrol.ui.commands import CommandInput, NavigationInput
 from kubetrol.ui.containers import ContainerScreen
@@ -87,15 +89,17 @@ class HelpScreen(ModalScreen[None]):
                         "q / Ctrl+Q        Quit (q outside inputs)\n"
                         "Ctrl+C            Quit\n\n"
                         "Commands: po/pod/pods [NS or *], ctx [NAME], ns [NAME or *], "
-                        "status, retry, back, forward, help, quit.\n"
+                        "status, retry, back, forward, shell/exec, help, quit.\n"
                         "Filter: plain case-insensitive text; re:PATTERN for regex. "
                         "Searches namespace, name, readiness, status and restarts. "
                         "Invalid or timed-out regex shows all pods and an error.\n\n"
                         "Context sessions and live pod synchronization are available. "
-                        "Pod rows and container logs are live. Shell is upcoming.\n"
+                        "Pod rows, container logs and native shells are available.\n"
                         "l                 Selected pod logs (regular / init)\n"
                         "Logs: g/G first/last, j/k, / search, p pause, f follow, ? controls.\n"
                         "Enter             Pod containers → container logs\n"
+                        "x / :shell        Choose a pod's container for its shell\n"
+                        "Containers: s/x shell, Enter/l logs, Esc pods.\n"
                         "d                 Resource details\n"
                         "y / e             YAML / related events\n"
                         "Viewer: m managedFields, / search, n/N matches, Ctrl+Y copy.\n"
@@ -128,6 +132,7 @@ class KubetrolApp(App[None]):
         Binding("d", "inspect_details", "Details"),
         Binding("e", "inspect_events", "Events"),
         Binding("l", "logs", "Logs"),
+        Binding("x", "shell", "Shell"),
         Binding("c", "contexts", "Contexts"),
         Binding("n", "namespaces", "Namespaces"),
         Binding("r", "retry", "Retry", show=False),
@@ -173,6 +178,9 @@ class KubetrolApp(App[None]):
         self._restore_state: tuple[int, NavigationState] | None = None
         self.commands = CommandService(AccessPolicy(settings.read_only))
         self.processes = ProcessRunner(self.commands.policy)
+        self._shell = settings.shell
+        self._process_environment = dict(os.environ)
+        self._process_directory = Path.cwd()
         if settings.theme not in self.available_themes:
             raise AppError("Selected theme is unavailable; choose a built-in Textual theme.")
         self.theme = settings.theme
@@ -465,6 +473,14 @@ class KubetrolApp(App[None]):
     def action_logs(self) -> None:
         self._open_logs()
 
+    def action_shell(self) -> None:
+        try:
+            self.commands.policy.require(Action.EXEC)
+        except AppError as error:
+            self._set_status(str(error))
+            return
+        self._open_logs(containers_first=True)
+
     def _open_logs(self, *, containers_first: bool = False, uid: str | None = None) -> None:
         selection = self._capture_target(uid)
         if selection is None:
@@ -481,7 +497,20 @@ class KubetrolApp(App[None]):
             return
         stream = LogStream(client, target, self.commands.policy, current)
         self.push_screen(
-            ContainerScreen(stream, record.manifest)
+            ContainerScreen(
+                stream,
+                record.manifest,
+                shell=ShellService(
+                    client,
+                    target,
+                    self.commands.policy,
+                    current,
+                    shell=self._shell,
+                    environment=self._process_environment,
+                    directory=self._process_directory,
+                ),
+                processes=self.processes,
+            )
             if containers_first
             else LogScreen(stream, containers)
         )
@@ -603,6 +632,7 @@ class KubetrolApp(App[None]):
             "inspect_details",
             "inspect_events",
             "logs",
+            "shell",
         }:
             return not isinstance(self.screen, ModalScreen) and not isinstance(self.focused, Input)
         return True
@@ -672,6 +702,8 @@ class KubetrolApp(App[None]):
             self.action_history_forward()
         elif command is Command.PODS:
             self._set_status(self._workspace_status())
+        elif command is Command.SHELL:
+            self.action_shell()
         else:
             self._set_status(self._workspace_status())
 

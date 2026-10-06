@@ -1,8 +1,8 @@
 # First things to try
 
 The installable CLI, local preferences and first terminal window are available
-from the development checkout, including the live pod table and container logs. Use the latest
-S02 trial below; earlier sections record previous checkpoints and may name
+from the development checkout, including the live pod table, container logs and native shells. Use the latest
+S04 trial below; earlier sections record previous checkpoints and may name
 short-lived branches that have since been deleted.
 Do not wait for every epic or the complete 1.0.0 parity audit to get feedback.
 
@@ -366,3 +366,36 @@ input, resize, Ctrl+C, repeated handoffs, startup failure, cancellation and pare
 termination. No user kubeconfig or cluster is used. See the
 [process/terminal contract](process-handoff.md) and
 [measured acceptance evidence](acceptance/S03.md).
+
+
+## Selected-container shell: S04 #32 — current trial
+
+From an interactive terminal on merged `main`, with kubectl installed and a
+kubeconfig you trust:
+
+```sh
+git switch main
+git pull --ff-only
+uv sync --locked --group dev
+uv run kubetrol
+```
+
+1. Choose your context with `:ctx`, then `:ns YOUR_NAMESPACE`.
+2. Select a running pod and press Enter. Choose its container with Up/Down.
+3. Press `s` (or `x`). The terminal opens that container's `sh`; try `pwd`.
+4. Type `exit`. Check that the same container remains selected. Press Esc to
+   return to the same pod and viewport.
+5. Alternatively, `x`, `:shell` or `:exec` on pods opens the container picker.
+   Enter on containers still opens logs; shell launch always requires `s`/`x`.
+
+Read-only mode refuses shell execution. An image without `sh`, a stopped
+container or denied pods/exec permission returns an actionable message. For a
+different image shell, configure a YAML argument list such as
+`shell: ["/bin/bash", "-l"]` and restart. The shell must exist in that image.
+See [shell controls, requirements and limits](container-shell.md) and
+[measured acceptance evidence](acceptance/S04.md).
+
+For feedback, report whether the selected container is correct and whether
+exit, resize and return preserve the table. No credentials or kubeconfig
+contents are needed. Automated trials use owned fake APIs, actual PTYs and an
+explicitly created/deleted kind cluster; they do not use your contexts.

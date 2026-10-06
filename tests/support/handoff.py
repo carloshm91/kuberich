@@ -21,7 +21,8 @@ termios.tcsetattr(0, termios.TCSANOW, mode)
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 def resize(signum, frame):
     size = os.get_terminal_size(0)
-    print('CHILD RESIZED ' + str(size.columns) + ' ' + str(size.lines), flush=True)
+    # A signal can interrupt buffered stdout while its lock is held.
+    os.write(1, ('CHILD RESIZED ' + str(size.columns) + ' ' + str(size.lines) + '\\n').encode())
 signal.signal(signal.SIGWINCH, resize)
 def terminate(signum, frame):
     tty.setraw(0)

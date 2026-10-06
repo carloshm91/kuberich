@@ -16,6 +16,7 @@ import pytest
 
 from tests.support.handoff import terminal_handoff_trial
 from tests.support.navigation import terminal_navigation
+from tests.support.shell import terminal_shell
 from tests.terminal.pty_support import TerminalSession
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -93,6 +94,13 @@ def test_installed_terminal_handoff_uses_packaged_services(installed_wheel) -> N
     binary_dir, directory = installed_wheel
     terminal_handoff_trial(
         str(binary_dir / "python"), directory, "success", name="installed-handoff"
+    )
+
+
+def test_installed_selected_container_shell_uses_real_cli(installed_wheel) -> None:
+    binary_dir, directory = installed_wheel
+    terminal_shell(
+        [str(binary_dir / "kubetrol")], directory, "success", evidence="installed-container-shell"
     )
 
 

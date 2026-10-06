@@ -82,10 +82,11 @@ immediately as inspection requests. Neither path opens logs.
 
 Read-only policy is immutable for the invocation and shared by initial and
 interactive command resolution. It refuses mutation, exec/shell, attach and
-unclassified external-plugin actions independently of UI shortcuts. These actions
-are not implemented in this preview; write mode still returns unavailable.
-S03/S04 and M01 must call this same service guard before their actual effects and
-provide integration evidence. `--write` only changes an application preference;
+unclassified external-plugin actions independently of UI shortcuts. S03/S04 enforce this policy for the native container shell. Attach, workload
+mutation and plugins remain unavailable. `:shell`/`:exec` opens the container
+picker in write mode; startup `--command shell` is refused because shell
+execution requires deliberate pod/container selection. M01 must enforce the
+same guard before its effects and provide integration evidence. `--write` only changes an application preference;
 it grants no API permission. The read-only indicator remains visible when the
 header is hidden and after filter/status updates.
 

@@ -19,6 +19,7 @@ class Command(Enum):
     RETRY = auto()
     BACK = auto()
     FORWARD = auto()
+    SHELL = auto()
     UNAVAILABLE = auto()
 
 
@@ -39,6 +40,8 @@ ALIASES = {
     "retry": Command.RETRY,
     "back": Command.BACK,
     "forward": Command.FORWARD,
+    "shell": Command.SHELL,
+    "exec": Command.SHELL,
 }
 
 

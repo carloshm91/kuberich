@@ -15,8 +15,14 @@ from kubetrol.services.commands import ALIASES, Command, CommandService, ScopedC
 
 @pytest.mark.parametrize("alias,command", ALIASES.items())
 def test_aliases_share_one_readonly_initial_and_interactive_parser(alias, command):
+    text = " :" + alias.upper() + " "
+    assert CommandService(AccessPolicy(False)).resolve(text) is command
     service = CommandService(AccessPolicy(True))
-    assert service.resolve(" :" + alias.upper() + " ") is command
+    if command is Command.SHELL:
+        with pytest.raises(AppError, match="Read-only"):
+            service.resolve(text)
+    else:
+        assert service.resolve(text) is command
 
 
 @pytest.mark.parametrize("alias", ["po", "pod", "pods", "ns", "namespace", "namespaces"])

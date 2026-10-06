@@ -62,7 +62,8 @@ def test_readonly_cannot_be_changed_mid_action() -> None:
 def test_command_service_guard_is_independent_of_widgets(text: str) -> None:
     with pytest.raises(AppError, match="Read-only mode blocks"):
         CommandService(AccessPolicy(True)).resolve(text)
-    assert CommandService(AccessPolicy(False)).resolve(text) is Command.UNAVAILABLE
+    expected = Command.SHELL if text == "shell" else Command.UNAVAILABLE
+    assert CommandService(AccessPolicy(False)).resolve(text) is expected
 
 
 @pytest.mark.parametrize(

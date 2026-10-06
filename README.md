@@ -28,7 +28,9 @@ history](docs/command-navigation.md) are available. [Pod YAML, details and relat
 events](docs/resource-inspection.md) include search, managedFields visibility and
 redacted copying. The [container log viewer](docs/log-viewer.md) provides current/
 previous output, container selection, Vim navigation, search, follow/pause,
-bounded retention and redacted copy/save. Interactive shell remains upcoming.
+bounded retention and redacted copy/save. [Native container shells](docs/container-shell.md)
+use the selected context, pod and container, with a configurable shell and return
+to the retained table.
 See [context sessions](docs/context-sessions.md) for supported credentials,
 connection states and limits. Local diagnostics, read-only command guards,
 header/logo/scope visibility and initial view/scope/help commands remain available.
@@ -62,7 +64,8 @@ helpers are trusted local programs and may run automatically for authentication.
 Help/version/info/config inspection never connects or executes helpers.
 Try `uv run kubetrol --readonly --headless --command help` to start with help
 and a compact header. Read-only command decisions use a shared service guard;
-workload changes, container exec and plugins are upcoming.
+read-only blocks container shells before preparation. Workload changes and
+plugins remain upcoming.
 `uv run python -m kubetrol` is also supported.
 `info` and `config check` create no files. `config init` optionally creates default
 preferences without overwriting an existing file. See

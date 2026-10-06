@@ -4,6 +4,8 @@ Select a connected pod and press Enter. A scrollable table shows the selected
 pod’s regular and init containers, including pods with only one container.
 Type labels distinguish App, Init and restartable init Sidecar containers.
 Press Enter or `l` on a row to open that container’s logs directly.
+Press `s` or `x` for its [native shell](container-shell.md); read-only mode blocks
+that action. `x`, `:shell` and `:exec` on pods also open this container picker.
 
 Esc returns logs → containers → pods. Both tables retain their selection and
 viewport. In logs, `c` still switches among all of this pod’s containers.

@@ -26,7 +26,7 @@ def test_both_streams_must_belong_to_an_interactive_terminal(
         launch.run_terminal(Settings(), logging.Logger("fixture"))
 
 
-@pytest.mark.parametrize("result", [0, 1])
+@pytest.mark.parametrize("result", [0, 1, 143])
 def test_terminal_return_code_is_propagated_safely(
     monkeypatch: pytest.MonkeyPatch, result: int
 ) -> None:
@@ -42,7 +42,11 @@ def test_terminal_return_code_is_propagated_safely(
     monkeypatch.setattr(sys, "stdin", _Terminal())
     monkeypatch.setattr(sys, "stdout", _Terminal())
     monkeypatch.setattr(launch, "KubetrolApp", _App)
-    if result:
+    if result == 143:
+        with pytest.raises(AppError, match="terminated; terminal restored") as error:
+            launch.run_terminal(Settings(), logging.Logger("fixture"))
+        assert error.value.code == 143
+    elif result:
         with pytest.raises(AppError, match="Terminal interface failed") as error:
             launch.run_terminal(Settings(), logging.Logger("fixture"))
         assert error.value.code == 1

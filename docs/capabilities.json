@@ -345,7 +345,7 @@
       ],
       "source": "internal/view/registrar.go",
       "status": "planned",
-      "difference": "B02 delivers live pod health; B04 adds pod details and captured-UID related events. #115 adds captured regular/init container-name browsing and Enter-to-logs. Live container status, standalone events/namespace tables and ephemeral debug containers remain B05/S04/A03.",
+      "difference": "B02 delivers live pod health; B04 adds pod details and captured-UID related events. #115 adds captured regular/init container-name browsing and Enter-to-logs. Live container status, standalone events/namespace tables and ephemeral debug containers remain B05/A03. S04 adds explicit chosen-container shell execution and safe return.",
       "partial_evidence": [
         "docs/pod-table.md",
         "tests/unit/test_pods.py",
@@ -357,7 +357,12 @@
         "docs/container-navigation.md",
         "tests/ui/test_containers.py",
         "docs/acceptance/enter-navigation.md",
-        "https://github.com/carloshm91/kubetrol/issues/115"
+        "https://github.com/carloshm91/kubetrol/issues/115",
+        "docs/container-shell.md",
+        "docs/acceptance/S04.md",
+        "tests/terminal/test_container_shell.py",
+        "scripts/verify_shell_kind.py",
+        "https://github.com/carloshm91/kubetrol/issues/32"
       ]
     },
     {
@@ -490,13 +495,21 @@
       ],
       "source": "internal/view/exec.go",
       "status": "planned",
-      "difference": "S03 implements the scoped kubectl exec argument builder, owned process runner and native terminal adapter. The user-facing shell route, configured shell choice and actual Kubernetes exec qualification remain S04/Q02; this is kubectl exec, not SSH to a pod.",
+      "difference": "S03/S04 provide captured, chosen-container native kubectl exec with a literal configured shell, private prepared-session connection, guarded launch and retained view on return. Actual Linux PTY, installed CLI and disposable-kind evidence is available. Remote SSH/tmux/macOS qualification remains Q02/full platform CI; this does not establish the full capability family.",
       "partial_evidence": [
         "docs/process-handoff.md",
         "docs/acceptance/S03.md",
         "tests/unit/test_processes.py",
         "tests/contract/test_processes.py",
-        "tests/terminal/test_handoff.py"
+        "tests/terminal/test_handoff.py",
+        "docs/container-shell.md",
+        "docs/acceptance/S04.md",
+        "tests/unit/test_shell.py",
+        "tests/contract/test_shell.py",
+        "tests/ui/test_shell.py",
+        "tests/terminal/test_container_shell.py",
+        "scripts/verify_shell_kind.py",
+        "https://github.com/carloshm91/kubetrol/issues/32"
       ]
     },
     {
