@@ -1,6 +1,5 @@
 """Pod/container drill-down retains the captured target and the parent viewport."""
 
-import asyncio
 from typing import Any, ClassVar
 
 from rich.text import Text
@@ -12,17 +11,15 @@ from textual.events import ScreenResume
 from textual.screen import ModalScreen
 from textual.widgets import Button, DataTable, Static
 
-from kubetrol.domain.connections import ConnectionProblem
 from kubetrol.domain.logs import log_containers
 from kubetrol.domain.resources import resource_object
-from kubetrol.domain.shell import shell_result
-from kubetrol.errors import AppError, ExecutableUnavailable
+from kubetrol.errors import AppError
 from kubetrol.security.presentation import safe_text
 from kubetrol.services.logs import LogStream
 from kubetrol.services.processes import ProcessRunner
-from kubetrol.services.shell import ShellRequest, ShellService
-from kubetrol.ui.handoff import terminal_handoff
+from kubetrol.services.shell import ShellService
 from kubetrol.ui.logs import LogScreen
+from kubetrol.ui.terminal import ShellScreen
 
 
 class ContainerTable(DataTable[Text]):
@@ -63,7 +60,6 @@ class ContainerScreen(ModalScreen[None]):
         super().__init__()
         self.stream = stream
         self.shell, self.processes = shell, processes
-        self._shell_task: asyncio.Task[None] | None = None
         self.names = log_containers(manifest)
         if not self.names:
             raise AppError("The selected pod has no regular/init containers.")
@@ -129,7 +125,7 @@ class ContainerScreen(ModalScreen[None]):
         return True
 
     def action_shell(self) -> None:
-        if self.app.screen is not self or self._shell_task is not None:
+        if self.app.screen is not self:
             return
         if self.shell is None or self.processes is None:
             return
@@ -138,34 +134,12 @@ class ContainerScreen(ModalScreen[None]):
         except AppError as error:
             self.status.update(safe_text(str(error)))
             return
-        self.status.update("Opening the selected container shell…")
-        self._shell_task = asyncio.create_task(self._run_shell(request))
 
-    async def _run_shell(self, request: ShellRequest) -> None:
-        assert self.shell is not None and self.processes is not None
-        try:
-            async with self.shell.stage(request) as command:
-                result = await terminal_handoff(
-                    self.app, self.processes, command, guard=self.shell.require_current
-                )
-            message = shell_result(result)
-        except ExecutableUnavailable:
-            message = "kubectl is unavailable. Install kubectl on PATH, then press s to retry."
-        except (AppError, ConnectionProblem) as error:
-            message = str(error)
-        except Exception as error:
-            self.app._handle_exception(error)
-            return
-        finally:
-            self._shell_task = None
-        if self.is_mounted:
+        def returned(message: str | None) -> None:
             self.validate_target()
-            self.status.update(safe_text(message))
+            self.status.update(safe_text(message or "Shell closed."))
 
-    async def on_unmount(self) -> None:
-        if self._shell_task is not None:
-            self._shell_task.cancel()
-            await asyncio.gather(self._shell_task, return_exceptions=True)
+        self.app.push_screen(ShellScreen(self.shell, self.processes, request), returned)
 
     def _open(self, name: str) -> None:
         if self.app.screen is not self:

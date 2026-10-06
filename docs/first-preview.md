@@ -1,8 +1,8 @@
 # First things to try
 
 The installable CLI, local preferences and first terminal window are available
-from the development checkout, including the live pod table, container logs and native shells. Use the latest
-S04 trial below; earlier sections record previous checkpoints and may name
+from the development checkout, including the live pod table, container logs and embedded shells. Use the latest
+embedded-shell trial below; earlier sections record previous checkpoints and may name
 short-lived branches that have since been deleted.
 Do not wait for every epic or the complete 1.0.0 parity audit to get feedback.
 
@@ -368,7 +368,7 @@ termination. No user kubeconfig or cluster is used. See the
 [measured acceptance evidence](acceptance/S03.md).
 
 
-## Selected-container shell: S04 #32 — current trial
+## Selected-container shell: #121 — current embedded trial
 
 From an interactive terminal on merged `main`, with kubectl installed and a
 kubeconfig you trust:
@@ -382,10 +382,11 @@ uv run kubetrol
 
 1. Choose your context with `:ctx`, then `:ns YOUR_NAMESPACE`.
 2. Select a running pod and press Enter. Choose its container with Up/Down.
-3. Press `s` (or `x`). A clean terminal screen shows the selected context, pod
-   and container, then opens that container's `sh`; try `pwd`. The launch command
-   should no longer sit above the remote prompt.
-4. Type `exit`. Check that the same container remains selected. Press Esc to
+3. Press `s` (or `x`). The shell opens **inside a full-screen Kubetrol frame**,
+   with context, pod and container visible. Try `pwd`; resize the window and
+   check that the frame stays visible. Ctrl+C interrupts the remote program.
+4. Type `exit` or press Ctrl+] to close the shell. Check that the same container
+   remains selected. Press Esc to
    return to the same pod and viewport.
 5. Alternatively, `x`, `:shell` or `:exec` on pods opens the container picker.
    Enter on containers still opens logs; shell launch always requires `s`/`x`.
@@ -395,8 +396,7 @@ container or denied pods/exec permission returns an actionable message. For a
 different image shell, configure a YAML argument list such as
 `shell: ["/bin/bash", "-l"]` and restart. The shell must exist in that image.
 See [shell controls, requirements and limits](container-shell.md) and
-[measured acceptance evidence](acceptance/S04.md), including the
-[clean-screen correction](acceptance/shell-transition.md).
+[measured embedded-shell evidence](acceptance/embedded-shell.md).
 
 For feedback, report whether the selected container is correct and whether
 exit, resize and return preserve the table. No credentials or kubeconfig

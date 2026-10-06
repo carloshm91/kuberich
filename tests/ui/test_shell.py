@@ -3,17 +3,18 @@
 import asyncio
 import json
 import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import pytest
 from aiohttp import web
 from textual.containers import VerticalScroll
 
-import kubetrol.ui.containers as module
 from kubetrol.config.schema import Settings
 from kubetrol.domain.connections import ConnectionProblem, ConnectionState
 from kubetrol.domain.processes import ProcessResult, ProcessStatus
 from kubetrol.errors import AppError, ExecutableUnavailable
+from kubetrol.services.processes import ProcessRunner
 from kubetrol.ui.app import KubetrolApp
 from kubetrol.ui.containers import ContainerScreen
 from kubetrol.ui.logs import LogScreen
@@ -21,6 +22,34 @@ from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
 from tests.support.resources import collection
 from tests.support.workspace import stable_watch, wait_for, workspace_api
+
+
+class EmptyTerminal:
+    async def read(self):
+        return b""
+
+    def write(self, data):
+        pass
+
+    def resize(self, width, height):
+        pass
+
+
+class CompletedProcess:
+    def __init__(self, result):
+        self.result = result
+
+    async def wait(self):
+        return self.result
+
+
+def patch_terminal(monkeypatch, operation):
+    @asynccontextmanager
+    async def terminal(self, command, *, width, height, guard):
+        result = await operation(command, guard=guard)
+        yield EmptyTerminal(), CompletedProcess(result)
+
+    monkeypatch.setattr(ProcessRunner, "terminal", terminal)
 
 
 async def ns(request):
@@ -49,7 +78,7 @@ async def test_selected_container_configured_shell_repeat_and_both_retained_view
             return await stable_watch(request)
         return web.json_response(collection(value) if request.path.endswith("/pods") else value)
 
-    async def handoff(app, runner, command, *, guard):
+    async def handoff(command, *, guard):
         guard()
         file = Path(command.argv[1].split("=", 1)[1])
         assert json.loads(file.read_text())["current-context"] == "kubetrol-test-one"
@@ -57,7 +86,7 @@ async def test_selected_container_configured_shell_repeat_and_both_retained_view
         await asyncio.sleep(0)
         return ProcessResult(ProcessStatus.SUCCEEDED, 0)
 
-    monkeypatch.setattr(module, "terminal_handoff", handoff)
+    patch_terminal(monkeypatch, handoff)
     async with workspace_api(ns, handler) as url:
         app = app_for(tmp_path, url)
         async with app.run_test(size=size) as pilot:
@@ -72,9 +101,7 @@ async def test_selected_container_configured_shell_repeat_and_both_retained_view
                 count = len(executed)
                 await pilot.press(key)
                 await wait_for(
-                    lambda count=count: (
-                        len(executed) == count + 1 and containers._shell_task is None
-                    )
+                    lambda count=count: len(executed) == count + 1 and app.screen is containers
                 )
                 command, path = executed[-1]
                 assert command.target.container == "worker-22"
@@ -119,20 +146,21 @@ async def test_shell_failures_return_to_the_selected_view_and_cleanup(
             return await stable_watch(request)
         return web.json_response(collection(value) if request.path.endswith("/pods") else value)
 
-    async def handoff(app, runner, command, *, guard):
+    async def handoff(command, *, guard):
         paths.append(Path(command.argv[1].split("=", 1)[1]))
         if isinstance(outcome, BaseException):
             raise outcome
         return outcome
 
-    monkeypatch.setattr(module, "terminal_handoff", handoff)
+    patch_terminal(monkeypatch, handoff)
     async with workspace_api(ns, handler) as url:
         app = app_for(tmp_path, url)
         async with app.run_test(size=(40, 12)) as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
-            await pilot.press("enter", "s")
+            await pilot.press("enter")
             containers = app.screen
-            await wait_for(lambda: paths and containers._shell_task is None)
+            await pilot.press("s")
+            await wait_for(lambda: paths and app.screen is containers)
             assert expected in str(containers.status.content) and app.screen is containers
             assert not paths[0].exists()
             assert containers.table.cursor_row == 0
@@ -188,24 +216,26 @@ async def test_delayed_preparation_captures_target_and_owns_cancellation(
         await release.wait()
         return web.json_response(value)
 
-    async def handoff(app, runner, command, *, guard):
+    async def handoff(command, *, guard):
         executed.append(command.target.container)
         return ProcessResult(ProcessStatus.SUCCEEDED, 0)
 
-    monkeypatch.setattr(module, "terminal_handoff", handoff)
+    patch_terminal(monkeypatch, handoff)
     async with workspace_api(ns, handler) as url:
         app = app_for(tmp_path, url)
         async with app.run_test() as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
-            await pilot.press("enter", "down", "s")
+            await pilot.press("enter", "down")
             containers = app.screen
+            await pilot.press("s")
             await started.wait()
-            task = containers._shell_task
+            task = app.screen._session_task
             containers.action_shell()
-            assert containers._shell_task is task
+            assert app.screen._session_task is task
             if action == "cancel":
-                await pilot.press("escape")
-                assert task.done() and task.cancelled()
+                await pilot.press("ctrl+right_square_bracket")
+                await wait_for(lambda: app.screen is containers)
+                assert task.done()
             elif action == "scope":
                 app._namespace_selected("default")
             else:
@@ -221,7 +251,11 @@ async def test_delayed_preparation_captures_target_and_owns_cancellation(
 
 
 @pytest.mark.asyncio
-async def test_native_handoff_refuses_headless_and_retains_container_view(tmp_path):
+async def test_missing_kubectl_retains_container_view(tmp_path, monkeypatch):
+    async def missing(command, *, guard):
+        raise ExecutableUnavailable("owned missing tool")
+
+    patch_terminal(monkeypatch, missing)
     value = pod("api")
 
     async def handler(request):
@@ -233,10 +267,11 @@ async def test_native_handoff_refuses_headless_and_retains_container_view(tmp_pa
         app = app_for(tmp_path, url)
         async with app.run_test() as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
-            await pilot.press("enter", "s")
+            await pilot.press("enter")
             containers = app.screen
-            await wait_for(lambda: containers._shell_task is None)
-            assert "native terminal" in str(containers.status.content)
+            await pilot.press("s")
+            await wait_for(lambda: app.screen is containers)
+            assert "Install kubectl" in str(containers.status.content)
             assert not list(Path(app.sessions.client.directory.name).glob("exec-*.json"))
             await pilot.press("escape")
 
@@ -266,7 +301,7 @@ async def test_missing_controller_and_delayed_parent_actions_are_noops(tmp_path)
             await pilot.press("enter")
             assert isinstance(app.screen, LogScreen)
             containers.action_shell()
-            assert containers._shell_task is None
+            assert app.screen is not containers
             await pilot.press("escape", "escape")
 
 
@@ -290,11 +325,11 @@ async def test_unexpected_handoff_failure_reaches_app_cleanup_and_drains_shell(
             return await stable_watch(request)
         return web.json_response(collection(value) if request.path.endswith("/pods") else value)
 
-    async def handoff(app, runner, command, *, guard):
+    async def handoff(command, *, guard):
         paths.append(Path(command.argv[1].split("=", 1)[1]))
         raise RuntimeError("owned-shell-failure")
 
-    monkeypatch.setattr(module, "terminal_handoff", handoff)
+    patch_terminal(monkeypatch, handoff)
     async with workspace_api(ns, handler) as url:
         app = app_for(tmp_path, url)
         with pytest.raises(RuntimeError, match="owned-shell-failure"):
@@ -303,8 +338,6 @@ async def test_unexpected_handoff_failure_reaches_app_cleanup_and_drains_shell(
                 await pilot.press("enter")
                 containers = app.screen
                 containers.action_shell()
-                task = containers._shell_task
-                await wait_for(lambda: task.done())
-        assert task.exception() is None and containers._shell_task is None
+                await wait_for(lambda: app._exception is not None)
         assert paths and not paths[0].exists()
         assert app.sessions.client is None

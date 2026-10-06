@@ -142,45 +142,48 @@ def trial(
             terminal.send(b"\x1b[B")
             for attempt in range(attempts):
                 marker = terminal.send(b"s")
-                terminal.wait_for(
-                    b"\x1b[H\x1b[2JKubetrol shell | exit to return", since=marker, timeout=30
-                )
-                terminal.wait_for(b"Context: kubetrol-test-Alias", since=marker)
-                terminal.wait_for(b"Pod: kubetrol-shell-test/owned-shell-pod", since=marker)
-                terminal.wait_for(b"Container: app-b", since=marker)
+                terminal.wait_for_screen("Kubetrol · Container shell", timeout=30)
+                terminal.wait_for_screen("Context: kubetrol-test-Alias")
+                terminal.wait_for_screen("Pod: kubetrol-shell-test/owned-shell-pod")
+                terminal.wait_for_screen("Container: app-b")
+                assert b"\x1b[?1049l" not in terminal.transcript[marker:]
                 if scenario in {"denied", "missing-shell"}:
                     terminal.wait_for(b"kubectl exec failed", since=marker, timeout=30)
                     terminal.wait_for(b"pods/exec", since=marker)
                     assert b"OWNED-SHELL> " not in terminal.transcript[marker:]
                     break
-                terminal.wait_for(b"OWNED-SHELL> ", since=marker, timeout=30)
+                terminal.wait_for_screen("OWNED-SHELL> ", timeout=30)
                 marker = terminal.send(b"printf 'REMOTE_%s\\n' \"$KUBETROL_OWNED_CONTAINER\"\n")
-                terminal.wait_for(b"REMOTE_app-b\r\nOWNED-SHELL> ", since=marker)
+                terminal.wait_for_screen("REMOTE_app-b")
                 marker = terminal.resize(80, 25)
+                terminal.wait_for_screen("╰" + "─" * 78 + "╯")
                 terminal.send(b"stty size\n")
-                terminal.wait_for(b"25 80\r\nOWNED-SHELL> ", since=marker)
+                terminal.wait_for_screen("19 78")
                 if scenario == "success" and attempt == 0:
                     marker = terminal.send(b"vi /tmp/owned-shell-trial\n")
-                    terminal.wait_for(b"- /tmp/owned-shell-trial 1/1", since=marker)
+                    terminal.wait_for_screen("- /tmp/owned-shell-trial 1/1")
                     marker = terminal.resize(100, 30)
-                    terminal.wait_for(b"\x1b[30;1H", since=marker)
+                    terminal.wait_for_screen("╰" + "─" * 98 + "╯")
+                    terminal.wait_for_screen("Container: app-b")
+                    terminal.wait_for_screen("- /tmp/owned-shell-trial 1/1", row=27)
                     marker = terminal.resize(80, 25)
-                    terminal.wait_for(b"\x1b[25;1H", since=marker)
+                    terminal.wait_for_screen("╰" + "─" * 78 + "╯")
+                    terminal.wait_for_screen("- /tmp/owned-shell-trial 1/1", row=22)
                     marker = terminal.send(b"iOWNED_REMOTE_EDIT")
-                    terminal.wait_for(b"OWNED_REMOTE_EDIT", since=marker)
+                    terminal.wait_for_screen("OWNED_REMOTE_EDIT")
                     marker = terminal.send(b"\x1b")
-                    terminal.wait_for(b"- /tmp/owned-shell-trial", since=marker)
+                    terminal.wait_for_screen("- /tmp/owned-shell-trial")
                     marker = terminal.send(b":wq\r")
-                    terminal.wait_for(b"\x1b[?1049l", since=marker)
-                    terminal.wait_for(b"OWNED-SHELL> ", since=marker)
+                    assert b"\x1b[?1049l" not in terminal.transcript[marker:]
+                    terminal.wait_for_screen("OWNED-SHELL> ")
                     marker = terminal.send(b"cat /tmp/owned-shell-trial\n")
-                    terminal.wait_for(b"OWNED_REMOTE_EDIT\r\nOWNED-SHELL> ", since=marker)
+                    terminal.wait_for_screen("OWNED_REMOTE_EDIT")
                     marker = terminal.send(b"printf 'SLEEP_%s\\n' READY; sleep 30\n")
-                    terminal.wait_for(b"SLEEP_READY\r\n", since=marker)
+                    terminal.wait_for_screen("SLEEP_READY")
                     terminal.send(b"\x03")
-                    terminal.wait_for(b"OWNED-SHELL> ", since=marker)
+                    terminal.wait_for_screen("OWNED-SHELL> ")
                     marker = terminal.send(b"printf 'AFTER_%s\\n' \"$KUBETROL_OWNED_CONTAINER\"\n")
-                    terminal.wait_for(b"AFTER_app-b", since=marker)
+                    terminal.wait_for_screen("AFTER_app-b")
                 marker = terminal.send(b"exit\n")
                 terminal.wait_for(b"Shell closed", since=marker)
                 terminal.resize(100, 30)
@@ -283,7 +286,7 @@ def main() -> None:
                         "owned_cluster": name,
                         "resource": resource,
                         "real_two_container_selection": True,
-                        "clean_shell_screen_and_captured_heading": True,
+                        "embedded_shell_and_persistent_captured_heading": True,
                         "configured_shell": True,
                         "changed_source_config_does_not_retarget": True,
                         "real_keyboard_resize_ctrl_c": True,

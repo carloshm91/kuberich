@@ -345,7 +345,7 @@
       ],
       "source": "internal/view/registrar.go",
       "status": "planned",
-      "difference": "B02 delivers live pod health; B04 adds pod details and captured-UID related events. #115 adds captured regular/init container-name browsing and Enter-to-logs. Live container status, standalone events/namespace tables and ephemeral debug containers remain B05/A03. S04 adds explicit chosen-container shell execution and safe return; #119 introduces it on a clean full-terminal screen with the captured target.",
+      "difference": "B02 delivers live pod health; B04 adds pod details and captured-UID related events. #115 adds captured regular/init container-name browsing and Enter-to-logs. Live container status, standalone events/namespace tables and ephemeral debug containers remain B05/A03. S04 adds explicit chosen-container shell execution and safe return; #119 introduces it on a clean full-terminal screen with the captured target. #121 replaces the default native shell route with an embedded Textual PTY/emulator and a persistent target frame; terminal compatibility/platform qualification still remains open.",
       "partial_evidence": [
         "docs/pod-table.md",
         "tests/unit/test_pods.py",
@@ -364,7 +364,12 @@
         "tests/terminal/test_container_shell.py",
         "scripts/verify_shell_kind.py",
         "https://github.com/carloshm91/kubetrol/issues/32",
-        "https://github.com/carloshm91/kubetrol/issues/119"
+        "https://github.com/carloshm91/kubetrol/issues/119",
+        "docs/acceptance/embedded-shell.md",
+        "tests/unit/test_terminal_model.py",
+        "tests/contract/test_pty.py",
+        "tests/ui/test_embedded_terminal.py",
+        "https://github.com/carloshm91/kubetrol/issues/121"
       ]
     },
     {
@@ -497,7 +502,7 @@
       ],
       "source": "internal/view/exec.go",
       "status": "planned",
-      "difference": "S03/S04 provide captured, chosen-container native kubectl exec with a literal configured shell, private prepared-session connection, guarded launch and retained view on return. #119 adds a clean full-terminal entry and bounded captured-target heading. Actual Linux PTY, installed CLI and disposable-kind evidence is available. Remote SSH/tmux/macOS qualification remains Q02/full platform CI; this does not establish the full capability family.",
+      "difference": "S03/S04 provide captured, chosen-container native kubectl exec with a literal configured shell, private prepared-session connection, guarded launch and retained view on return. #119 adds a clean full-terminal entry and bounded captured-target heading. Actual Linux PTY, installed CLI and disposable-kind evidence is available. Remote SSH/tmux/macOS qualification remains Q02/full platform CI; this does not establish the full capability family. #121 replaces the default native shell route with an embedded Textual PTY/emulator and a persistent target frame; terminal compatibility/platform qualification still remains open.",
       "partial_evidence": [
         "docs/process-handoff.md",
         "docs/acceptance/S03.md",
@@ -513,7 +518,12 @@
         "tests/terminal/test_container_shell.py",
         "scripts/verify_shell_kind.py",
         "https://github.com/carloshm91/kubetrol/issues/32",
-        "https://github.com/carloshm91/kubetrol/issues/119"
+        "https://github.com/carloshm91/kubetrol/issues/119",
+        "docs/acceptance/embedded-shell.md",
+        "tests/unit/test_terminal_model.py",
+        "tests/contract/test_pty.py",
+        "tests/ui/test_embedded_terminal.py",
+        "https://github.com/carloshm91/kubetrol/issues/121"
       ]
     },
     {
