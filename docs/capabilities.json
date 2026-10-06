@@ -160,7 +160,7 @@
       ],
       "source": "internal/view/cmd/interpreter.go",
       "status": "planned",
-      "difference": "B03 implements available pod aliases, shared initial/interactive scope commands and local bounded Tab/arrow suggestions (#115). Preview #125 adds a real namespace workspace table and resource-aware command/history routing. Other resource tables, CRD/custom aliases and broader command routing remain their owning tickets.",
+      "difference": "B03 implements available pod aliases, shared initial/interactive scope commands and local bounded Tab/arrow suggestions (#115). Preview #125 adds a real namespace workspace table and resource-aware command/history routing. Other resource tables, CRD/custom aliases and broader command routing remain their owning tickets. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks.",
       "partial_evidence": [
         "docs/command-navigation.md",
         "tests/ui/test_navigation.py",
@@ -168,7 +168,8 @@
         "docs/acceptance/enter-navigation.md",
         "docs/resource-workspace.md",
         "docs/acceptance/resource-workspace.md",
-        "tests/ui/test_resource_workspace.py"
+        "tests/ui/test_resource_workspace.py",
+        "docs/acceptance/stable-workspace.md"
       ]
     },
     {
@@ -218,7 +219,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. SSH/tmux and broader terminal qualification remain B07/Q02.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. SSH/tmux and broader terminal qualification remain B07/Q02. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -229,7 +230,8 @@
         "tests/ui/test_pods.py",
         "tests/contract/test_pod_projection.py",
         "tests/terminal/test_pods.py",
-        "scripts/verify_contexts_kind.py"
+        "scripts/verify_contexts_kind.py",
+        "docs/acceptance/stable-workspace.md"
       ]
     },
     {
@@ -263,7 +265,7 @@
       ],
       "source": "internal/view/help.go",
       "status": "planned",
-      "difference": "Implemented pod, namespace, container and log shortcuts appear in the shared responsive header (#125); help retains secondary keys in short terminals. Per-view custom hotkeys and other resource actions remain planned.",
+      "difference": "Implemented pod, namespace, container and log shortcuts appear in the shared responsive header (#125); help retains secondary keys in short terminals. Per-view custom hotkeys and other resource actions remain planned. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_launch_options.py",
@@ -274,7 +276,8 @@
         "tests/terminal/test_navigation.py",
         "docs/resource-workspace.md",
         "docs/acceptance/resource-workspace.md",
-        "tests/ui/test_resource_workspace.py"
+        "tests/ui/test_resource_workspace.py",
+        "docs/acceptance/stable-workspace.md"
       ]
     },
     {

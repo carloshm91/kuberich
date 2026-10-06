@@ -7,6 +7,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Fixed
 
+- Keep frame margins, header columns and interaction/footer rows stable across
+  pod, namespace, container and log navigation, focus changes and mouse clicks.
+- Render the selected command completion inline in the dedicated `:` bar,
+  without a dropdown; retain Tab/cycling acceptance and literal Enter behavior.
+
 - Open container shells inside a full-screen Textual terminal with a persistent
   context/pod/container frame. Ctrl+C reaches the remote program; Ctrl+] returns
   to the retained container view, and Ctrl+Q closes the owned session and quits.

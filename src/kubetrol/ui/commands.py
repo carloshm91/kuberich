@@ -5,8 +5,10 @@ from typing import ClassVar
 
 from textual.binding import Binding, BindingType
 from textual.events import Blur, Focus
-from textual.message import Message
+from textual.strip import Strip
 from textual.widgets import Input
+
+from kubetrol.security.presentation import safe_text
 
 
 class NavigationInput(Input):
@@ -44,9 +46,6 @@ class CommandInput(NavigationInput):
         Binding("down", "next_choice", "Next suggestion", show=False, priority=True),
     ]
 
-    class ChoicesChanged(Message):
-        pass
-
     def __init__(
         self,
         provider: Callable[[str], tuple[str, ...]],
@@ -70,6 +69,37 @@ class CommandInput(NavigationInput):
     def watch_selection(self) -> None:
         self.refresh_choices()
 
+    @property
+    def inline_completion(self) -> str:
+        """A display projection, never submitted text until deliberate acceptance."""
+        if self.value and self.choices and self.has_focus and self.cursor_at_end:
+            candidate = safe_text(self.choices[self.selected]).plain
+            # The provider matches case-insensitively. Preserve the literal typed
+            # prefix, including an optional leading colon, in the display only.
+            prefix = self.value.removeprefix(":").casefold()
+            if not candidate.casefold().startswith(prefix):
+                return ""  # Redaction may replace part of the typed prefix.
+            boundary, folded = 0, ""
+            while len(folded) < len(prefix):
+                folded += candidate[boundary].casefold()
+                boundary += 1
+            return self.value + folded[len(prefix) :] + candidate[boundary:]
+        return ""
+
+    def render_line(self, y: int) -> Strip:
+        self.refresh_choices()
+        # Pinned Textual 8.2 Input renders this literal styled suffix with native
+        # cursor/selection/Unicode scrolling. A synchronous local projection
+        # avoids asynchronous suggester messages outliving a context revision.
+        self._suggestion = self.inline_completion
+        return super().render_line(y)
+
+    def action_cursor_right(self, select: bool = False) -> None:
+        # Native Input also accepts its suggestion on Right. Keep Right for
+        # editing and reserve acceptance for Tab or deliberate arrow+Enter.
+        self._suggestion = ""
+        super().action_cursor_right(select)
+
     def refresh_choices(self) -> None:
         choices = (
             self.provider(self.value)
@@ -81,13 +111,14 @@ class CommandInput(NavigationInput):
             self.choices = choices
             self.selected = 0
             self._cycled = False
-            self.post_message(self.ChoicesChanged())
+            self.refresh()
 
     def reset_choice(self) -> None:
         """A new workspace generation must not inherit an arrow selection."""
         self._cycled = False
         self.selected = 0
         self.refresh_choices()
+        self.refresh()
 
     async def action_submit(self) -> None:
         self.refresh_choices()
@@ -126,7 +157,7 @@ class CommandInput(NavigationInput):
             self._accepted = self.value
             self.choices = ()
             self.selected = 0
-            self.post_message(self.ChoicesChanged())
+            self.refresh()
         else:
             self.screen.focus_next()
 
@@ -135,7 +166,7 @@ class CommandInput(NavigationInput):
         if self.choices:
             self.selected = (self.selected + delta) % len(self.choices)
             self._cycled = True
-            self.post_message(self.ChoicesChanged())
+            self.refresh()
 
     def action_previous_choice(self) -> None:
         self._cycle(-1)

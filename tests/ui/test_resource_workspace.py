@@ -56,11 +56,17 @@ async def test_top_input_namespace_table_drilldown_escape_and_actual_view_hints(
             assert app.command_input.region.y < app.resources.region.y
             assert "owned" in str(app.header.query_one("#cluster", Static).content)
             assert "0.0.1.dev0" in str(app.header.query_one("#build-info", Static).content)
+            await pilot.pause()
+            frame = app.query_one("#resource-view").region
+            identifiers = ("workspace-top", "scope-bar", "app-header", "view-actions", "brand")
+            header_regions = tuple(app.screen.query_one(f"#{key}").region for key in identifiers)
+            footer = app.breadcrumbs.region
             await pilot.press("colon", *"ns", "enter")
             await wait_for(lambda: app.namespace_table.row_count == 40)
             assert len(app.screen_stack) == 1 and app.focused is app.namespace_table
             assert app.workspace.store.observation.scope.resource.name == "namespaces"
             assert app.namespace_table.get_row("namespace-team-00")[1].plain == "Active"
+            assert app.query_one("#resource-view").region == frame
             await pilot.press("slash", *"re:team-", "enter", "G", "up")
             await pilot.pause()
             uid = app.namespace_table.selected_uid
@@ -75,6 +81,7 @@ async def test_top_input_namespace_table_drilldown_escape_and_actual_view_hints(
             assert app.filter_input.value == ""
             assert "namespaces > pods" in str(app.breadcrumbs.content)
             assert "Esc → Namespaces" in str(app.breadcrumbs.content)
+            assert app.query_one("#resource-view").region == frame
             await pilot.press("enter")
             assert isinstance(app.screen, ContainerScreen)
             containers = app.screen
@@ -84,7 +91,15 @@ async def test_top_input_namespace_table_drilldown_escape_and_actual_view_hints(
             else:
                 assert "shell" in str(containers.query_one("#container-hints", Static).content)
             assert "containers" in str(containers.query_one("#breadcrumbs", Static).content)
-            assert containers.query_one("#container-dialog").region.width == size[0]
+            assert containers.query_one("#container-dialog").region == frame
+            assert containers.table.content_region.height >= 2
+            assert containers.query_one("#container-back").region.bottom <= frame.y
+            assert (
+                tuple(containers.query_one(f"#{key}").region for key in identifiers)
+                == header_regions
+            )
+            assert containers.query_one("#breadcrumbs").region == footer
+            app.save_screenshot(filename=f"workspace-containers-{size[0]}.svg", path=str(out))
             await pilot.press("enter")
             await wait_for(lambda: isinstance(app.screen, LogScreen) and app.screen.body.rows)
             logs = app.screen
@@ -96,6 +111,20 @@ async def test_top_input_namespace_table_drilldown_escape_and_actual_view_hints(
             assert logs.breadcrumbs.content.cell_len <= logs.breadcrumbs.size.width
             assert logs.search.region.y < logs.body.region.y
             assert logs.body.content_region.height >= 1
+            assert logs.query_one("#log-dialog").region == frame
+            assert tuple(logs.query_one(f"#{key}").region for key in identifiers) == header_regions
+            assert logs.breadcrumbs.region == footer
+            await pilot.click("#log-search")
+            await pilot.pause()
+            assert logs.focused is logs.search and logs.query_one("#log-dialog").region == frame
+            await pilot.click("#log-pause")
+            await pilot.pause()
+            assert logs.paused and logs.query_one("#log-dialog").region == frame
+            await pilot.click("#log-pause")
+            await pilot.resize_terminal(80, 24)
+            await pilot.resize_terminal(*size)
+            await pilot.pause()
+            assert logs.query_one("#log-dialog").region == frame
             app.save_screenshot(filename=f"workspace-logs-{size[0]}.svg", path=str(out))
             await pilot.press("slash", *"own")
             assert "Leave search" in str(logs.breadcrumbs.content)

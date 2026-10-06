@@ -18,43 +18,25 @@ Screen {
 .header-short #scope-bar { width: 1fr; height: 3; }
 .header-short #cluster, .header-short #user, .header-short #build-info { display: none; }
 
-#resource-view {
-    height: 1fr;
-    min-height: 4;
-    border: solid $primary;
-    border-title-align: center;
-    margin: 0 1;
-}
 #resources, #namespaces { height: auto; min-height: 2; max-height: 100%; background: $background; }
 #resources.populated, #namespaces.populated { height: 1fr; }
 #all-namespaces { height: 1; width: 1fr; border: none; background: $background; color: $accent; }
 
-#completion {
-    overlay: screen;
-    layer: completions;
-    dock: top;
-    width: 100%;
-    height: auto;
-    max-height: 100%;
-    border: solid $primary;
-    background: $panel;
-    padding: 0 1;
-    text-overflow: ellipsis;
-}
 #empty-state { height: 1fr; align: center middle; padding: 0 1; }
 #empty-title, #empty-description, #empty-hint { height: auto; text-align: center; }
 #empty-title { text-style: bold; color: $text; }
 #empty-description, #empty-hint { margin-top: 1; color: $text-muted; }
-.input-bar { height: 1; margin: 0 1; background: $panel; }
+.input-bar { height: 1; margin: 0; background: $panel; }
 .input-label { width: 2; height: 1; color: $accent; text-style: bold; }
 Input { width: 1fr; height: 1; border: none; padding: 0; background: $panel; }
 Input:focus { border: none; background: $primary 15%; }
+CommandInput > .input--suggestion { color: $text-muted; text-style: italic; }
 #status, #breadcrumbs { height: 1; margin: 0 1; text-overflow: ellipsis; }
 #status { color: $text-muted; }
 #breadcrumbs { color: $accent; }
 .short #empty-state { display: none; }
-.short #log-title, .short #log-targets, .short #log-hints { display: none; }
-.short #container-title { display: none; }
+.short #log-title, .short #log-targets { display: none; }
+.short #log-hints { visibility: hidden; }
 
 .-theme-k9s DataTable > .datatable--header { background: #000000; color: #ffffff; text-style: bold; }
 .-theme-k9s DataTable > .datatable--cursor { background: #5fd7ff; color: #000000; text-style: none; }

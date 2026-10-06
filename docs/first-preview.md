@@ -6,7 +6,7 @@ resource-workspace trial below; earlier sections record previous checkpoints and
 short-lived branches that have since been deleted.
 Do not wait for every epic or the complete 1.0.0 parity audit to get feedback.
 
-## Resource workspace: #125 — current trial
+## Stable workspace and inline command bar: #127 — current trial
 
 From the latest main checkout in an interactive terminal:
 
@@ -21,12 +21,15 @@ preferences name another theme; it changes no file. Add `--context YOUR_CONTEXT`
 if needed.
 
 1. Check context/cluster/user aliases and installed `0.0.1.dev0` above the table.
-   Press `:` or `/`: input/completion now appear above resources.
+   Press `:` and type `c`: `context` appears as a suggested suffix on that
+   same bar, without a dropdown. Down cycles candidates; Tab accepts one.
+   Press Escape, then `/` to try the separate filter row.
 2. Enter `:ns` for the live namespace table. Filter with `/`, select with arrows
    or `j/k`, then Enter for pods. Escape first clears a filter, then follows
    the bottom route back to namespaces. `0` opens all namespaces.
-3. Enter a pod, then Enter a container for logs. Check changing top shortcuts,
-   search above output and Escape through the bottom route.
+3. Enter a pod, then Enter a container for logs. Check that the outer frame and header columns stay in place while the
+   available shortcuts change. Click Pause and the search input; resize and return
+   to the original size. Escape follows the bottom route.
 4. In containers, `s` opens the existing embedded shell. `exit` or Ctrl+] returns
    to that container; Ctrl+C interrupts the remote program and Ctrl+Q quits.
 

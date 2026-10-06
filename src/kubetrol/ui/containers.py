@@ -6,7 +6,7 @@ from rich.text import Text
 from textual import on
 from textual.app import ComposeResult
 from textual.binding import Binding, BindingType
-from textual.containers import Vertical, VerticalScroll
+from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.events import ScreenResume
 from textual.screen import ModalScreen
 from textual.widgets import Button, DataTable, Static
@@ -18,7 +18,14 @@ from kubetrol.security.presentation import safe_text
 from kubetrol.services.logs import LogStream
 from kubetrol.services.processes import ProcessRunner
 from kubetrol.services.shell import ShellService
-from kubetrol.ui.chrome import CONTAINER_SHORTCUTS, Breadcrumbs, WorkspaceChrome, WorkspaceHeader
+from kubetrol.ui.chrome import (
+    CONTAINER_SHORTCUTS,
+    Breadcrumbs,
+    WorkspaceBars,
+    WorkspaceChrome,
+    WorkspaceFrame,
+    WorkspaceHeader,
+)
 from kubetrol.ui.logs import LogScreen
 from kubetrol.ui.terminal import ShellScreen
 
@@ -41,14 +48,15 @@ class ContainerScreen(ModalScreen[None]):
     ]
     DEFAULT_CSS = """
     ContainerScreen { layout: vertical; background: $background; }
-    #container-dialog { width: 100%; height: 1fr; min-height: 3; border: solid $primary; border-title-align: center; }
     #container-title, #container-hints, #container-status { height: 1; text-overflow: ellipsis; }
     #container-title { color: $accent; }
     #container-feedback { height: auto; min-height: 1; max-height: 3; }
-    ContainerScreen.short #container-feedback { max-height: 2; }
+    ContainerScreen.short #container-feedback { max-height: 1; }
     #container-status { height: auto; text-overflow: fold; }
     #containers { height: 1fr; }
-    #container-back { height: 1; border: none; }
+    #container-hints { width: 1fr; }
+    #container-back { width: 14; min-width: 14; height: 1; border: none; }
+    #workspace-status { height: 1; margin: 0 1; }
     """
 
     def __init__(
@@ -83,29 +91,32 @@ class ContainerScreen(ModalScreen[None]):
         target = self.stream.target
         if self.chrome is not None:
             yield WorkspaceHeader(self.chrome, CONTAINER_SHORTCUTS)
-        with Vertical(id="container-dialog"):
+        with WorkspaceBars():
             yield Static(
                 safe_text(
                     f"Containers · {target.namespace}/{target.name} · {target.session.context}"
                 ),
                 id="container-title",
             )
-            yield Static(
-                "Enter/l logs · s shell · Esc pods"
-                if self.shell is not None
-                else "Enter/l logs · j/k ↑/↓ · g/G first/last · Esc pods",
-                markup=False,
-                id="container-hints",
-            )
+            with Horizontal():
+                yield Static(
+                    "Enter/l logs · s shell · Esc pods"
+                    if self.shell is not None
+                    else "Enter/l logs · j/k ↑/↓ · g/G first/last · Esc pods",
+                    markup=False,
+                    id="container-hints",
+                )
+                yield Button("Back to pods", id="container-back", compact=True)
+        with WorkspaceFrame(id="container-dialog"):
             yield self.table
             with VerticalScroll(id="container-feedback"):
                 yield self.status
-            yield Button("Back to pods", id="container-back", compact=True)
         yield Breadcrumbs(
             self.trail,
             "Pods",
             visible=self.chrome is None or not self.chrome.presentation.crumbsless,
         )
+        yield Static("", id="workspace-status", markup=False)
 
     def on_mount(self) -> None:
         target = self.stream.target

@@ -15,12 +15,19 @@ KUBETROL_THEME=k9s uv run kubetrol
 The top header shows context, cluster/user **aliases**, namespace, connection
 state and installed application version, without credentials. View-specific
 shortcuts show implemented pod, namespace, container and log actions. Inputs sit
-above resources; the bounded Tab/arrow suggestion list sits below command input.
+above resources. The dedicated `:` bar shows the selected completion suffix next
+to typed text, in muted italic styling; it never opens a dropdown over resources.
+Tab accepts it and Up/Down cycles the bounded local candidates. Plain Enter
+submits literal input; Enter after deliberate cycling accepts that candidate.
 Typing makes no API requests; suggestions still use the session name catalogue.
 
 The bottom trail identifies the current view and Escape action. Escape first
 leaves an input, then clears an active filter, then returns to the parent view.
-Container/log views retain captured pod identity and parent viewport. Embedded
+Pods, namespaces, containers and logs share the same frame margins, header
+columns and reserved interaction/footer rows at a fixed terminal size. Clicking
+controls or changing focus does not move that frame. View actions change while
+their header columns retain a fixed row count. Container/log views retain captured
+pod identity and parent viewport. Embedded
 shells retain their existing target frame, remote-key routing and cleanup.
 
 ## Live namespaces
@@ -67,8 +74,9 @@ The header shows the actual installed development version. Optional real release
 notices and custom/live/context themes remain [U01 #56](https://github.com/carloshm91/kubetrol/issues/56).
 Kubernetes-version/CPU/memory presentation belongs to [O01 #68](https://github.com/carloshm91/kubetrol/issues/68)
 and [O02 #69](https://github.com/carloshm91/kubetrol/issues/69).
-Optional inline suggestions and broader navigation/clipboard qualification remain
-[B07 #61](https://github.com/carloshm91/kubetrol/issues/61). This preview does not
+Stable geometry and inline completion are the focused correction
+[#127](https://github.com/carloshm91/kubetrol/issues/127). Broader navigation/clipboard
+qualification remains [B07 #61](https://github.com/carloshm91/kubetrol/issues/61). This preview does not
 establish full K9s parity.
 
 Behavior references: [K9s commands](https://k9scli.io/topics/commands/),

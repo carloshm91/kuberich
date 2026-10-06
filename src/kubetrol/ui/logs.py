@@ -22,7 +22,14 @@ from kubetrol.errors import AppError
 from kubetrol.security.presentation import safe_text
 from kubetrol.services.log_export import save_logs
 from kubetrol.services.logs import LogStream
-from kubetrol.ui.chrome import LOG_SHORTCUTS, Breadcrumbs, WorkspaceChrome, WorkspaceHeader
+from kubetrol.ui.chrome import (
+    LOG_SHORTCUTS,
+    Breadcrumbs,
+    WorkspaceBars,
+    WorkspaceChrome,
+    WorkspaceFrame,
+    WorkspaceHeader,
+)
 from kubetrol.ui.commands import NavigationInput
 from kubetrol.ui.log_body import LogBody
 from kubetrol.ui.scopes import ScopeScreen
@@ -134,12 +141,13 @@ class LogScreen(ModalScreen[None]):
     ]
     DEFAULT_CSS = """
     LogScreen { layout: vertical; background: $background; }
-    #log-dialog { width: 100%; height: 1fr; min-height: 3; border: solid $primary; border-title-align: center; }
     #log-dialog.fullscreen { border: none; }
     #log-title, #log-status, #log-hints, #log-search, #log-targets, #log-controls { height: 1; }
     #log-title { color: $accent; text-overflow: ellipsis; padding: 0 1; }
     #log-targets Button, #log-controls Button { height: 1; min-width: 5; width: 1fr; border: none; }
     #log-status, #log-hints { color: $text-muted; text-overflow: ellipsis; }
+    #log-status { margin: 0 1; }
+    #log-search-bar { height: 1; }
     """
 
     def __init__(
@@ -190,9 +198,15 @@ class LogScreen(ModalScreen[None]):
     def compose(self) -> ComposeResult:
         if self.chrome is not None:
             yield WorkspaceHeader(self.chrome, LOG_SHORTCUTS)
-        with Vertical(id="log-dialog"):
+        with WorkspaceBars(id="log-bars"):
+            with Horizontal(id="log-search-bar", classes="input-bar"):
+                yield Static("/", classes="input-label", markup=False)
+                yield self.search
+            yield Static(
+                "g/G first/last · / search · p pause · ? controls", markup=False, id="log-hints"
+            )
+        with WorkspaceFrame(id="log-dialog"):
             yield self.heading
-            yield self.search
             with Horizontal(id="log-targets"):
                 yield Button("Container", id="log-container", compact=True)
                 yield self.previous_button
@@ -204,12 +218,9 @@ class LogScreen(ModalScreen[None]):
                 yield Button("Wrap", id="log-wrap", compact=True)
                 yield Button("Time", id="log-timestamps", compact=True)
                 yield Button("Help", id="log-help", compact=True)
-            yield Static(
-                "g/G first/last · / search · p pause · ? controls", markup=False, id="log-hints"
-            )
             yield self.body
-            yield self.status
         yield self.breadcrumbs
+        yield self.status
 
     def on_descendant_focus(self, event: DescendantFocus) -> None:
         self.breadcrumbs.show_trail(

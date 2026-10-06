@@ -48,7 +48,7 @@ def current_names(app):
 
 
 async def paste_command(app, pilot, value):
-    await pilot.press("ctrl+a")
+    await pilot.press("ctrl+shift+a")
     app.command_input.post_message(Paste(value))
     await pilot.pause()
 
@@ -61,27 +61,24 @@ async def test_completion_commands_multiple_choices_tab_focus_and_literal_small_
         await pilot.press("colon", "c")
         await pilot.pause()
         assert app.command_input.choices == ("context", "contexts", "ctx")
-        assert app.completion.display
-        assert "> context" in str(app.completion.content)
-        assert app.completion.content.plain.splitlines() == (
-            ["> context"] if size == (40, 12) else ["> context", "  contexts", "  ctx"]
-        )
-        assert app.completion.content_region.height >= len(
-            app.completion.content.plain.splitlines()
-        )
-        assert "\\u000a" not in str(app.completion.content)
-        assert app.completion.region.y > app.command_input.region.y
-        assert app.completion.region.bottom <= app.query_one("#resource-view").region.bottom
+        assert app.command_input.value == "c"
+        assert app.command_input.inline_completion == "context"
+        assert "context" in app.command_input.render_line(0).text
+        assert not app.query("#completion")
+        frame = app.query_one("#resource-view").region
+        await pilot.press("right")
+        assert app.command_input.value == "c"  # Right edits; Tab accepts.
+        assert app.query_one("#resource-view").region == frame
         await pilot.press("down", "down", "tab")
         assert app.command_input.value == "ctx" and app.focused is app.command_input
-        assert not app.completion.display
+        assert not app.command_input.inline_completion
         await pilot.press("enter")
         assert "No contexts found" in str(app.status.content)
         await pilot.press("colon", "p", "tab")
         assert app.command_input.value == "po"
         await pilot.press("escape")
         assert app.command_input.value == "" and app.focused is app.resources
-        assert not app.completion.display
+        assert not app.command_input.inline_completion
         await pilot.press("colon", "x", "tab")
         assert app.focused is app.resources  # no candidate: ordinary focus traversal
         await pilot.press("slash", "c", "n", "r", "q", "s", "colon", "slash")
@@ -96,7 +93,7 @@ async def test_disconnected_namespace_candidates_are_absent_and_help_matches_act
         await pilot.press("colon")
         app.command_input.value = "ns "
         await pilot.pause()
-        assert not app.command_input.choices and not app.completion.display
+        assert not app.command_input.choices and not app.command_input.inline_completion
         await pilot.press("enter")
         assert "Connect to a context" in str(app.status.content)
         await pilot.press("alt+left")
@@ -113,8 +110,9 @@ async def test_disconnected_namespace_candidates_are_absent_and_help_matches_act
 @pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
 async def test_cached_scope_completions_filter_errors_and_history_restore_without_keystroke_io(
-    tmp_path, size
+    tmp_path, size, monkeypatch
 ):
+    monkeypatch.delenv("NO_COLOR", raising=False)
     reads = []
 
     async def namespace_handler(request):
@@ -147,8 +145,8 @@ async def test_cached_scope_completions_filter_errors_and_history_restore_withou
             await pilot.press("colon")
             await paste_command(app, pilot, "ctx [")
             assert app.command_input.choices == ("ctx [red]Production[/red]",)
-            assert "[red]Production[/red]" in str(app.completion.content)
-            assert app.completion.content.spans == []
+            assert "[red]Production[/red]" in app.command_input.render_line(0).text
+            assert app.command_input.value == "ctx ["
             await pilot.press("escape", "colon")
             await paste_command(app, pilot, "ns t")
             assert app.command_input.choices == ("ns team", "ns team-blue", "ns team-green")
@@ -242,7 +240,7 @@ async def test_namespace_suggestions_are_invalidated_before_a_new_context_can_au
             assert app.command_input.choices == ("ns old-only",)
             app._start_connection("kubetrol-test-Two")
             await pilot.pause()
-            assert not app.command_input.choices and not app.completion.display
+            assert not app.command_input.choices and not app.command_input.inline_completion
             await pilot.press("tab")
             assert app.command_input.value == "ns old" and app.focused is app.resources
             release.set()
@@ -420,21 +418,85 @@ async def test_narrow_completions_keep_selected_choice_visible_and_cursor_edits_
         await pilot.press("colon", *(["down"] * 7))
         assert app.command_input.selected == 7
         selected = app.command_input.choices[7]
-        assert "> " + selected in str(app.completion.content)
+        assert app.command_input.value == ""  # Cycling is intent, not entered text.
         await pilot.pause()
-        assert app.completion.content_region.height >= len(
-            app.completion.content.plain.splitlines()
-        )
-        assert app.completion.region.y > app.command_input.region.y
-        assert app.completion.region.bottom <= app.query_one("#resource-view").region.bottom
+        assert not app.command_input.inline_completion  # Empty input uses its placeholder.
+        assert app.command_input.region.height == 1
+        assert not app.query("#completion")
         await pilot.press("tab")
         assert app.command_input.value == selected
         await pilot.press("escape", "colon", "c", "left")
-        assert not app.completion.display
+        assert not app.command_input.inline_completion
         await pilot.press("right")
-        assert app.completion.display
+        assert app.command_input.inline_completion
         await pilot.press("up", "tab")
         assert app.command_input.value == "ctx"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("size", [(40, 12), (100, 30)])
+async def test_inline_unicode_scroll_literal_style_and_mouse_blur_do_not_move_frame(size):
+    app = make_app()
+    candidate = "ctx \uff30roduction界e\u0301-" + "x" * 80 + "[red]team[/red]"
+    app.command_input.provider = lambda value: (
+        (candidate,) if candidate.casefold().startswith(value.casefold()) else ()
+    )
+    async with app.run_test(size=size) as pilot:
+        await pilot.pause()
+        frame = app.query_one("#resource-view").region
+        await pilot.press("colon")
+        await paste_command(app, pilot, "CTX \uff30")
+        assert app.command_input.value == "CTX \uff30"
+        assert app.command_input.inline_completion.startswith("CTX \uff30roduction界e\u0301")
+        strip = app.command_input.render_line(0)
+        assert "CTX \uff30roduction界e\u0301" in strip.text
+        assert any(segment.style.italic for segment in strip if segment.style)
+        assert app.query_one("#resource-view").region == frame
+        await pilot.press("right")
+        assert app.command_input.value == "CTX \uff30"
+        await pilot.click("#filter")
+        assert not app.command_input.inline_completion
+        await pilot.click("#command")
+        await pilot.press("end")
+        await paste_command(app, pilot, candidate[:-6])
+        assert app.command_input.scroll_x > 0
+        assert app.command_input.inline_completion == candidate
+        assert "[red]team" in app.command_input.render_line(0).text
+        assert app.command_input.value == candidate[:-6]
+        await pilot.resize_terminal(60, 18)
+        await pilot.resize_terminal(*size)
+        await pilot.pause()
+        assert app.query_one("#resource-view").region == frame
+        await pilot.press("left")
+        assert not app.command_input.inline_completion
+        await pilot.press("end", "tab")
+        assert app.command_input.value == candidate
+        assert not app.command_input.inline_completion
+        assert not app.query("#completion")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "query,candidate,display",
+    [
+        ("ctx stras", "ctx Straße", "ctx strasse"),
+        ("CTX STRASS", "ctx Straße", "CTX STRASSe"),
+        ("ctx to", "ctx token=synthetic-credential", "ctx token=[REDACTED]"),
+        ("ctx token=s", "ctx token=synthetic-credential", ""),
+        (":", "ctx team", ":ctx team"),
+    ],
+)
+async def test_inline_casefold_boundaries_and_whole_candidate_redaction(query, candidate, display):
+    app = make_app()
+    app.command_input.provider = lambda value: (candidate,)
+    async with app.run_test() as pilot:
+        await pilot.press("colon")
+        await paste_command(app, pilot, query)
+        assert app.command_input.value == query
+        assert app.command_input.inline_completion == display
+        assert "synthetic-credential" not in app.command_input.render_line(0).text
+        await pilot.press("tab")
+        assert app.command_input.value == candidate
 
 
 @pytest.mark.asyncio
@@ -555,7 +617,7 @@ async def test_arrow_enter_submits_the_highlighted_namespace_once(tmp_path, valu
             await pilot.press("enter")
             await loaded(app, expected)
             assert len(app.screen_stack) == 1 and app.focused is app.resources
-            assert app.command_input.value == "" and not app.completion.display
+            assert app.command_input.value == "" and not app.command_input.inline_completion
             assert len(app.history.previous) == 1
 
 
