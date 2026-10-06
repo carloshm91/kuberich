@@ -115,8 +115,8 @@ class ShellScreen(ModalScreen[str]):
         self._session_task: asyncio.Task[None] | None = None
         self.message: str | None = None
         self._previous_sigterm: signal._HANDLER | None = None
-        self._unmounting = False
-        self._closing = False
+        self._shell_unmounting = False
+        self._shell_closing = False
 
     def compose(self) -> ComposeResult:
         target = self.request.command.target
@@ -140,12 +140,12 @@ class ShellScreen(ModalScreen[str]):
         signal.signal(signal.SIGTERM, lambda *_: self.app.exit(return_code=ExitCode.TERMINATED))
         self._session_task = asyncio.create_task(self._run())
         self._session_task.add_done_callback(self._finished)
-        if self._closing:
+        if self._shell_closing:
             self._session_task.cancel()
 
     def _finished(self, task: asyncio.Task[None]) -> None:
         self._session_task = None
-        if self.is_mounted and not self._unmounting:
+        if self.is_mounted and not self._shell_unmounting:
             self.dismiss(self.message or "Shell closed · Container selection retained.")
 
     def validate_target(self) -> None:
@@ -156,14 +156,14 @@ class ShellScreen(ModalScreen[str]):
             self.close_shell()
 
     def close_shell(self) -> None:
-        self._closing = True
+        self._shell_closing = True
         self.terminal.endpoint = None
         self.terminal.pending.clear()
         if self._session_task is not None:
             self._session_task.cancel()
 
     def key(self, event: Key) -> None:
-        if self._closing:
+        if self._shell_closing:
             return
         if event.key == "ctrl+right_square_bracket":
             self.close_shell()
@@ -180,7 +180,7 @@ class ShellScreen(ModalScreen[str]):
             self.query_one("#shell-controls", Static).update(safe_text(str(error)))
 
     def paste(self, event: Paste) -> None:
-        if self._closing:
+        if self._shell_closing:
             return
         try:
             self.terminal.write(
@@ -214,7 +214,7 @@ class ShellScreen(ModalScreen[str]):
             self.terminal.endpoint = None
 
     async def on_unmount(self) -> None:
-        self._unmounting = True
+        self._shell_unmounting = True
         self.close_shell()
         if self._session_task is not None:
             await asyncio.gather(self._session_task, return_exceptions=True)
