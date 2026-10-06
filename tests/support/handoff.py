@@ -9,6 +9,10 @@ from tests.terminal.pty_support import TerminalSession
 
 CHILD = """
 import os, signal, sys, termios, tty
+print('HANDOFF START', flush=True)
+# An actual terminal read waits for the parent to give this group foreground
+# ownership (SIGTTIN/SIGCONT). Starting the interpreter alone is not that boundary.
+assert sys.stdin.readline().strip() == 'start'
 assert os.tcgetpgrp(0) == os.getpgrp()
 mode = termios.tcgetattr(0)
 assert mode[3] & termios.ICANON and mode[3] & termios.ECHO
@@ -93,6 +97,8 @@ def terminal_handoff_trial(python: str, directory: Path, scenario: str, *, name:
                 terminal.wait_for(b"RETURN ERROR", since=marker)
                 assert b"HANDOFF READY" not in terminal.transcript[marker:]
                 continue
+            terminal.wait_for(b"HANDOFF START", since=marker)
+            terminal.send(b"start\n")
             terminal.wait_for(b"HANDOFF READY", since=marker)
             if scenario == "parent_shutdown":
                 parent = int((directory / "owned-parent.pid").read_text())
