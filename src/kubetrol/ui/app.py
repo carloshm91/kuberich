@@ -54,7 +54,9 @@ from kubetrol.ui.chrome import (
     NS_SHORTCUTS,
     POD_SHORTCUTS,
     Breadcrumbs,
+    WorkspaceBars,
     WorkspaceChrome,
+    WorkspaceFrame,
     WorkspaceHeader,
 )
 from kubetrol.ui.commands import CommandInput, NavigationInput
@@ -220,8 +222,6 @@ class KubetrolApp(App[None]):
             focus_table, placeholder="Filter resources", id="filter"
         )
         self.command_input = CommandInput(self._suggestions, focus_table, self._submit_command)
-        self.completion = Static("", id="completion", markup=False)
-        self.completion.display = False
         self.status = Static(DISCONNECTED_STATUS, id="status", markup=False)
 
     @property
@@ -326,13 +326,14 @@ class KubetrolApp(App[None]):
 
     def compose(self) -> ComposeResult:
         yield self.header
-        with Horizontal(id="filter-bar", classes="input-bar"):
-            yield Static("/", classes="input-label", markup=False)
-            yield self.filter_input
-        with Horizontal(id="command-bar", classes="input-bar"):
-            yield Static(":", classes="input-label", markup=False)
-            yield self.command_input
-        with Vertical(id="resource-view"):
+        with WorkspaceBars():
+            with Horizontal(id="filter-bar", classes="input-bar"):
+                yield Static("/", classes="input-label", markup=False)
+                yield self.filter_input
+            with Horizontal(id="command-bar", classes="input-bar"):
+                yield Static(":", classes="input-label", markup=False)
+                yield self.command_input
+        with WorkspaceFrame(id="resource-view"):
             yield Button("0  All namespaces", id="all-namespaces", compact=True)
             yield self.resources
             yield self.namespace_table
@@ -348,7 +349,6 @@ class KubetrolApp(App[None]):
                     id="empty-hint",
                     markup=False,
                 )
-            yield self.completion
         yield self.breadcrumbs
         yield self.status
 
@@ -777,7 +777,6 @@ class KubetrolApp(App[None]):
         self.header.layout_header()
         self.screen_stack[0].set_class(event.size.width < 70, "compact")
         self.screen_stack[0].set_class(event.size.height < 16, "short")
-        self.call_after_refresh(self.show_completions)
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
         if action in {
@@ -895,26 +894,6 @@ class KubetrolApp(App[None]):
     @on(Input.Changed, "#command")
     def command_changed(self) -> None:
         self.command_input.refresh_choices()
-
-    @on(CommandInput.ChoicesChanged)
-    def show_completions(self) -> None:
-        choices = self.command_input.choices
-        self.completion.display = (
-            bool(choices) and self.command_input.has_focus and len(self.screen_stack) == 1
-        )
-        capacity = max(
-            1, self.screen_stack[0].query_one("#resource-view").content_region.height - 2
-        )
-        start = max(0, self.command_input.selected - capacity + 1)
-        self.completion.update(
-            Text("\n").join(
-                safe_text(("> " if index == self.command_input.selected else "  ") + value)
-                for index, value in enumerate(choices[start : start + capacity], start)
-            )
-        )
-        self.completion.border_title = (
-            f"Tab completes · {self.command_input.selected + 1}/{len(choices)} · ↑/↓"
-        )
 
     def _capture_view(self) -> NavigationState | None:
         view = self.workspace.store.observation

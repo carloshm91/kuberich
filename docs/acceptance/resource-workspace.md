@@ -102,7 +102,9 @@ Evidence is under `/tmp/kubetrol-125-evidence/kind`; no operator context is used
 
 The displayed version comes from the installed package. Real optional release
 notices and custom/live themes remain #56; Kubernetes-version/CPU/memory display
-remains #68/#69. Inline completion and broader terminal qualification remain #61.
+remains #68/#69. Inline completion was deferred at this checkpoint; the later
+[correction #127](stable-workspace.md) records its implementation and stable
+geometry qualification. Broader terminal qualification remains #61.
 This does not establish full K9s parity or universal terminal compatibility.
 
 Hosted application and repository jobs cannot start under the account

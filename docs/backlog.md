@@ -57,6 +57,12 @@ a live namespace table. It precedes remaining F05 work and is outside the origin
 inventory. U01/B07 retain broader theme/update/navigation contracts; O01/O02
 retain metrics and cluster overview.
 
+The next maintainer preview correction
+[#127](https://github.com/carloshm91/kubetrol/issues/127) prioritizes stable frame/
+header geometry and a dedicated inline command suggestion bar without a dropdown.
+It follows #125 before remaining F05 work; the previous temporary dropdown
+preference in B07 is superseded. Wider B07 requirements remain open.
+
 ## Epics
 
 | Issue | Outcome | Completion milestone |

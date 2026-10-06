@@ -34,14 +34,19 @@ The shared policy rejects effectful commands in read-only mode.
 
 ## Completion
 
-The command input shows up to eight literal prefix matches. Up/Down select a
-candidate. Tab accepts it for editing; Enter after Up/Down accepts and submits
-the highlighted candidate once. Enter without arrow selection submits the typed
-text, so bare `:ns` opens the namespace table and `:ctx` opens the context picker. Editing the
-query, leaving the input or changing scope discards prior arrow selection. Matching ignores case; the accepted
-context name retains its original case. The selected candidate remains visible
-at 40×12. Long labels are clipped visually; inputs/candidates are bounded to 256
-characters. Suggestions overlay the resource area and leave the input visible.
+The dedicated `:` bar shows the selected prefix match as an inline suggested
+suffix in muted italic styling. Up/Down cycle up to eight local candidates;
+there is no dropdown. The suffix is display text until accepted. Tab accepts it
+for editing; Enter after Up/Down accepts and submits the selected candidate once.
+Enter without arrow selection submits the typed text, so bare `:ns` opens the
+namespace table and `:ctx` opens the context picker. Editing the query, leaving
+the input or changing scope discards prior arrow selection. Matching ignores
+case; the accepted context name retains its original case. At 40×12 the native
+one-line input scrolls horizontally with its cursor.
+Inputs/candidates are bounded to 256 characters; only the suffix that fits in the
+remaining input width is visible. Empty input retains its placeholder. Suggestions
+never resize the bar or cover resources. Right moves the editing cursor rather
+than accepting a completion.
 
 Candidates come from local command aliases, the loaded kubeconfig catalogue and
 the active session's namespace cache. Typing, selecting and accepting suggestions

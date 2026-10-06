@@ -33,7 +33,8 @@ use the selected context, pod and container, with a configurable shell and retur
 to the retained table.
 The [resource workspace](docs/resource-workspace.md) adds a built-in `k9s` theme,
 top inputs and view-specific shortcuts, identity/version headers, Escape trails,
-and a live namespace table with Enter/Escape navigation.
+and a live namespace table with Enter/Escape navigation. The command bar suggests
+completion inline, while resource frames keep their position across these views.
 See [context sessions](docs/context-sessions.md) for supported credentials,
 connection states and limits. Local diagnostics, read-only command guards,
 header/logo/scope visibility and initial view/scope/help commands remain available.

@@ -96,6 +96,27 @@ class WorkspaceChrome:
     presentation: Presentation = DEFAULT_PRESENTATION
 
 
+class WorkspaceBars(Vertical):
+    """Reserve the same two interaction rows in each workspace view."""
+
+    DEFAULT_CSS = """
+    WorkspaceBars { height: 2; margin: 0 1; }
+    WorkspaceBars > Static, WorkspaceBars > Horizontal { height: 1; }
+    WorkspaceBars .input-bar { margin: 0; }
+    """
+
+
+class WorkspaceFrame(Vertical):
+    """Shared resource boundary, independent of its table or viewer contents."""
+
+    DEFAULT_CSS = """
+    WorkspaceFrame {
+        width: 1fr; height: 1fr; min-height: 4;
+        margin: 0 1; border: solid $primary; border-title-align: center;
+    }
+    """
+
+
 class WorkspaceHeader(Horizontal):
     """Responsive shared header; identity comes from the owned workspace."""
 
@@ -148,7 +169,7 @@ class WorkspaceHeader(Horizontal):
         widget = self.query_one("#view-actions", Static)
         width = max(1, widget.content_region.width)
         columns = max(1, width // 24)
-        rows = (len(self.shortcuts) + columns - 1) // columns
+        rows = max(1, widget.content_region.height)
         output = Text()
         for row in range(min(rows, 6)):
             if row:

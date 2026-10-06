@@ -460,3 +460,21 @@ projection caches are cleared. All-namespaces is an explicit scope action.
 Container/log screens retain existing lifetime/target services with shared headers
 and trails. Embedded shells keep independent remote-key routing and target frame.
 See [workspace controls and limits](resource-workspace.md).
+
+## Stable workspace and inline input: #127
+
+`WorkspaceBars` reserves two interaction rows and `WorkspaceFrame` owns the same
+resource margins/minimum height across root, container and log screens. Header
+shortcut columns use the available fixed header rows, independent of action
+count. Breadcrumbs and the footer status row stay outside the frame. Log search
+is above the frame and stream/target ownership is unchanged.
+
+`CommandInput` retains the bounded synchronous session-local completion provider.
+It projects the selected suffix into pinned Textual 8.2's `_suggestion` field only
+when rendering, using the native Input renderer for styling, literal Rich text,
+cursor/selection and Unicode horizontal scrolling. This single private field is
+a qualified framework boundary: recheck it on Textual upgrades. No asynchronous
+suggester worker/cache can outlive a workspace generation. Right retains editing
+semantics; Tab or deliberate cycling+Enter accepts actual candidate text.
+The resource overlay widget is removed. See [controls](command-navigation.md) and
+[geometry/terminal evidence](acceptance/stable-workspace.md).

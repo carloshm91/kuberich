@@ -180,7 +180,10 @@ async def test_quiet_renewal_preserves_live_preview_copy_and_selected_context(
             Settings(),
             logging.Logger("quiet-preview"),
             catalog=catalog_fixture(tmp_path, url),
-            connection=ConnectionRequest(timeout=0.25),
+            # A UI trial qualifies quiet EOF renewal, not a 250 ms paint/header
+            # race on a contended host. Keep actual 1 s server expiry/renewal;
+            # short ordinary-header versus quiet-body deadlines have contract tests.
+            connection=ConnectionRequest(timeout=1.0),
         )
         show = app._show_view
 
