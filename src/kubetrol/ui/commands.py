@@ -48,8 +48,12 @@ class CommandInput(NavigationInput):
         pass
 
     def __init__(
-        self, provider: Callable[[str], tuple[str, ...]], focus_table: Callable[[], None]
+        self,
+        provider: Callable[[str], tuple[str, ...]],
+        focus_table: Callable[[], None],
+        submit: Callable[[str], None] | None = None,
     ) -> None:
+        self.submit = submit
         self.provider = provider
         self.choices: tuple[str, ...] = ()
         self.selected = 0
@@ -91,7 +95,15 @@ class CommandInput(NavigationInput):
             # Capture before assigning value: reactive input watchers reset choices.
             self.value = self.choices[self.selected]
             self.cursor_position = len(self.value)
-        await super().action_submit()
+        if self.submit is None:
+            await super().action_submit()
+        else:
+            # Complete the command's synchronous navigation decision before the
+            # next queued app key. Posting Input.Submitted can lag typeahead.
+            value = self.value
+            self.value = ""
+            self.focus_table()
+            self.submit(value)
 
     def on_focus(self, event: Focus) -> None:
         self.refresh_choices()

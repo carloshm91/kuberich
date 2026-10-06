@@ -2,9 +2,37 @@
 
 The installable CLI, local preferences and first terminal window are available
 from the development checkout, including the live pod table, container logs and embedded shells. Use the latest
-embedded-shell trial below; earlier sections record previous checkpoints and may name
+resource-workspace trial below; earlier sections record previous checkpoints and may name
 short-lived branches that have since been deleted.
 Do not wait for every epic or the complete 1.0.0 parity audit to get feedback.
+
+## Resource workspace: #125 — current trial
+
+From the latest main checkout in an interactive terminal:
+
+```sh
+git pull --ff-only
+uv sync --locked --group dev
+KUBETROL_THEME=k9s uv run kubetrol
+```
+
+The environment override selects the reference theme even if existing
+preferences name another theme; it changes no file. Add `--context YOUR_CONTEXT`
+if needed.
+
+1. Check context/cluster/user aliases and installed `0.0.1.dev0` above the table.
+   Press `:` or `/`: input/completion now appear above resources.
+2. Enter `:ns` for the live namespace table. Filter with `/`, select with arrows
+   or `j/k`, then Enter for pods. Escape first clears a filter, then follows
+   the bottom route back to namespaces. `0` opens all namespaces.
+3. Enter a pod, then Enter a container for logs. Check changing top shortcuts,
+   search above output and Escape through the bottom route.
+4. In containers, `s` opens the existing embedded shell. `exit` or Ctrl+] returns
+   to that container; Ctrl+C interrupts the remote program and Ctrl+Q quits.
+
+Update notices, cluster metrics and custom/live themes remain planned.
+See [workspace behavior](resource-workspace.md) and
+[qualification evidence](acceptance/resource-workspace.md).
 
 | Checkpoint | Required work | What can actually be tried |
 | --- | --- | --- |

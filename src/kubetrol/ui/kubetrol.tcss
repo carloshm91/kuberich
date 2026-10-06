@@ -4,178 +4,62 @@ Screen {
     layout: vertical;
 }
 
-#app-header {
-    height: 2;
-    padding: 0 1;
-    background: $panel;
-}
-
-#brand {
-    width: auto;
-    color: $accent;
-    text-style: bold;
-}
-
-#build-info {
-    width: 1fr;
-    text-align: right;
-    color: $text-muted;
-}
-
-#scope-bar {
-    height: 1;
-    padding: 0 1;
-}
-
-#context, #namespace {
-    width: 1fr;
-    height: 1;
-}
-
-#connection {
-    width: auto;
-    height: 1;
-    color: $warning;
-}
+#workspace-top { height: 6; padding: 0 1; background: $background; }
+#scope-bar { width: 40%; min-width: 24; height: 6; }
+#scope-bar Static { height: 1; text-overflow: ellipsis; }
+#build-info { color: $text-muted; }
+#app-header { width: 1fr; height: 6; }
+#view-actions { width: 1fr; height: 6; color: $text-muted; text-overflow: ellipsis; }
+#brand { width: 10; height: 3; color: $accent; text-style: bold; }
+.header-compact #scope-bar { width: 1fr; height: 4; }
+.header-compact #app-header { width: 1fr; height: 4; }
+.header-compact #view-actions { height: 4; }
+.header-compact #cluster, .header-compact #user { display: none; }
+.header-short #scope-bar { width: 1fr; height: 3; }
+.header-short #cluster, .header-short #user, .header-short #build-info { display: none; }
 
 #resource-view {
     height: 1fr;
     min-height: 4;
-    border: round $primary-muted;
-    margin: 1 1 0 1;
+    border: solid $primary;
+    border-title-align: center;
+    margin: 0 1;
 }
-
-#resource-view:focus-within {
-    border: round $primary;
-}
-
-#resources {
-    height: auto;
-    min-height: 2;
-    max-height: 100%;
-    background: $background;
-}
-
-#resources.populated {
-    height: 1fr;
-}
+#resources, #namespaces { height: auto; min-height: 2; max-height: 100%; background: $background; }
+#resources.populated, #namespaces.populated { height: 1fr; }
+#all-namespaces { height: 1; width: 1fr; border: none; background: $background; color: $accent; }
 
 #completion {
     overlay: screen;
     layer: completions;
-    dock: bottom;
+    dock: top;
     width: 100%;
     height: auto;
     max-height: 100%;
-    border: round $accent;
+    border: solid $primary;
     background: $panel;
     padding: 0 1;
     text-overflow: ellipsis;
 }
+#empty-state { height: 1fr; align: center middle; padding: 0 1; }
+#empty-title, #empty-description, #empty-hint { height: auto; text-align: center; }
+#empty-title { text-style: bold; color: $text; }
+#empty-description, #empty-hint { margin-top: 1; color: $text-muted; }
+.input-bar { height: 1; margin: 0 1; background: $panel; }
+.input-label { width: 2; height: 1; color: $accent; text-style: bold; }
+Input { width: 1fr; height: 1; border: none; padding: 0; background: $panel; }
+Input:focus { border: none; background: $primary 15%; }
+#status, #breadcrumbs { height: 1; margin: 0 1; text-overflow: ellipsis; }
+#status { color: $text-muted; }
+#breadcrumbs { color: $accent; }
+.short #empty-state { display: none; }
+.short #log-title, .short #log-targets, .short #log-hints { display: none; }
+.short #container-title { display: none; }
 
-#empty-state {
-    height: 1fr;
-    align: center middle;
-    padding: 0 1;
-}
-
-#empty-title, #empty-description, #empty-hint {
-    height: auto;
-    text-align: center;
-}
-
-#empty-title {
-    text-style: bold;
-    color: $text;
-}
-
-#empty-description {
-    margin-top: 1;
-    color: $text-muted;
-}
-
-#empty-hint {
-    margin-top: 1;
-    color: $text-muted;
-}
-
-.input-bar {
-    height: 1;
-    margin: 0 1;
-    background: $panel;
-}
-
-#filter-bar {
-    margin: 1 1 0 1;
-}
-
-.input-label {
-    width: 2;
-    height: 1;
-    color: $accent;
-    text-style: bold;
-}
-
-Input {
-    width: 1fr;
-    height: 1;
-    border: none;
-    padding: 0;
-    background: $panel;
-}
-
-Input:focus {
-    border: none;
-    background: $primary 15%;
-}
-
-#status {
-    height: 1;
-    margin: 0 1;
-    color: $text-muted;
-    text-overflow: ellipsis;
-}
-
-Footer {
-    height: 1;
-}
-
-.compact #app-header {
-    height: 1;
-}
-
-.compact #build-info, .compact #empty-description, .compact #empty-hint {
-    display: none;
-}
-
-.compact #scope-bar {
-    layout: vertical;
-    height: 3;
-}
-
-.compact #connection {
-    width: 1fr;
-}
-
-.compact #resource-view {
-    margin: 0 1;
-}
-
-.compact #filter-bar {
-    margin: 0 1;
-}
-
-.short #app-header {
-    display: none;
-}
-
-.short #resource-view, .short #filter-bar {
-    margin: 0 1;
-}
-
-.short #empty-state {
-    display: none;
-}
+.-theme-k9s DataTable > .datatable--header { background: #000000; color: #ffffff; text-style: bold; }
+.-theme-k9s DataTable > .datatable--cursor { background: #5fd7ff; color: #000000; text-style: none; }
+.-theme-k9s DataTable > .datatable--even-row, .-theme-k9s DataTable > .datatable--odd-row { background: #000000; }
+.-theme-k9s LogBody { background: #000000; color: #5fd7ff; }
 
 HelpScreen {
     align: center middle;

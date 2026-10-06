@@ -70,7 +70,8 @@ async def test_completion_commands_multiple_choices_tab_focus_and_literal_small_
             app.completion.content.plain.splitlines()
         )
         assert "\\u000a" not in str(app.completion.content)
-        assert app.completion.region.bottom <= app.filter_input.region.y
+        assert app.completion.region.y > app.command_input.region.y
+        assert app.completion.region.bottom <= app.query_one("#resource-view").region.bottom
         await pilot.press("down", "down", "tab")
         assert app.command_input.value == "ctx" and app.focused is app.command_input
         assert not app.completion.display
@@ -424,7 +425,8 @@ async def test_narrow_completions_keep_selected_choice_visible_and_cursor_edits_
         assert app.completion.content_region.height >= len(
             app.completion.content.plain.splitlines()
         )
-        assert app.completion.region.bottom <= app.filter_input.region.y
+        assert app.completion.region.y > app.command_input.region.y
+        assert app.completion.region.bottom <= app.query_one("#resource-view").region.bottom
         await pilot.press("tab")
         assert app.command_input.value == selected
         await pilot.press("escape", "colon", "c", "left")

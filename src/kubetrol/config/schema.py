@@ -28,7 +28,7 @@ def shell_arguments(value: object) -> tuple[str, ...]:
 
 @dataclass(frozen=True)
 class Settings:
-    theme: str = "textual-dark"
+    theme: str = "k9s"
     refresh_seconds: float = 2.0
     read_only: bool = False
     log_level: str = "WARNING"

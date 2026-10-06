@@ -11,7 +11,7 @@ from textual.app import ComposeResult
 from textual.await_complete import AwaitComplete
 from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.events import Resize
+from textual.events import DescendantFocus, Resize
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Static
 
@@ -22,6 +22,7 @@ from kubetrol.errors import AppError
 from kubetrol.security.presentation import safe_text
 from kubetrol.services.log_export import save_logs
 from kubetrol.services.logs import LogStream
+from kubetrol.ui.chrome import LOG_SHORTCUTS, Breadcrumbs, WorkspaceChrome, WorkspaceHeader
 from kubetrol.ui.commands import NavigationInput
 from kubetrol.ui.log_body import LogBody
 from kubetrol.ui.scopes import ScopeScreen
@@ -132,9 +133,9 @@ class LogScreen(ModalScreen[None]):
         Binding("ctrl+s", "save", "Save", priority=True),
     ]
     DEFAULT_CSS = """
-    LogScreen { align: center middle; background: $background 80%; }
-    #log-dialog { width: 96%; height: 96%; border: round $primary; }
-    #log-dialog.fullscreen { width: 100%; height: 100%; border: none; }
+    LogScreen { layout: vertical; background: $background; }
+    #log-dialog { width: 100%; height: 1fr; min-height: 3; border: solid $primary; border-title-align: center; }
+    #log-dialog.fullscreen { border: none; }
     #log-title, #log-status, #log-hints, #log-search, #log-targets, #log-controls { height: 1; }
     #log-title { color: $accent; text-overflow: ellipsis; padding: 0 1; }
     #log-targets Button, #log-controls Button { height: 1; min-width: 5; width: 1fr; border: none; }
@@ -147,11 +148,19 @@ class LogScreen(ModalScreen[None]):
         containers: tuple[str, ...],
         *,
         selected: str | None = None,
+        chrome: WorkspaceChrome | None = None,
+        trail: tuple[str, ...] = ("pods",),
     ) -> None:
         super().__init__()
         if selected is not None and selected not in containers:
             raise AppError("Selected log container is unavailable in this pod.")
         self.stream, self.containers = stream, containers
+        self.chrome, self.trail = chrome, trail
+        self.breadcrumbs = Breadcrumbs(
+            (*trail, "logs"),
+            trail[-1].title(),
+            visible=chrome is None or not chrome.presentation.crumbsless,
+        )
         self.container = selected if selected is not None else containers[0]
         self._selected = selected
         self.history = LogHistory()
@@ -179,8 +188,11 @@ class LogScreen(ModalScreen[None]):
         self._layout_lock = asyncio.Lock()
 
     def compose(self) -> ComposeResult:
+        if self.chrome is not None:
+            yield WorkspaceHeader(self.chrome, LOG_SHORTCUTS)
         with Vertical(id="log-dialog"):
             yield self.heading
+            yield self.search
             with Horizontal(id="log-targets"):
                 yield Button("Container", id="log-container", compact=True)
                 yield self.previous_button
@@ -196,8 +208,13 @@ class LogScreen(ModalScreen[None]):
                 "g/G first/last · / search · p pause · ? controls", markup=False, id="log-hints"
             )
             yield self.body
-            yield self.search
             yield self.status
+        yield self.breadcrumbs
+
+    def on_descendant_focus(self, event: DescendantFocus) -> None:
+        self.breadcrumbs.show_trail(
+            destination="Leave search" if isinstance(self.focused, Input) else None
+        )
 
     def on_mount(self) -> None:
         self._controller = asyncio.create_task(self._control())
@@ -350,6 +367,9 @@ class LogScreen(ModalScreen[None]):
             return
         mode = "previous" if self.previous else "current"
         target = self.stream.target
+        self.query_one("#log-dialog").border_title = safe_text(
+            f"logs({target.namespace}/{target.name}:{self.container}) · {mode}"
+        )
         self.heading.update(
             safe_text(
                 f"Logs · {self.container} · {mode} · {target.namespace}/{target.name} · {target.session.context}"
@@ -452,7 +472,14 @@ class LogScreen(ModalScreen[None]):
             self._display_changed()
 
     def action_fullscreen(self) -> None:
-        self.query_one("#log-dialog").toggle_class("fullscreen")
+        frame = self.query_one("#log-dialog")
+        frame.toggle_class("fullscreen")
+        fullscreen = frame.has_class("fullscreen")
+        for header in self.query(WorkspaceHeader):
+            header.display = not fullscreen
+        self.breadcrumbs.display = not fullscreen and (
+            self.chrome is None or not self.chrome.presentation.crumbsless
+        )
 
     def action_search(self) -> None:
         self.set_focus(self.search)

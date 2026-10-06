@@ -56,7 +56,7 @@ scheduled later report that limitation until their owning task is implemented.
 | `--readonly`, `--write` | Override file/environment preference for this invocation; shared command policy, visible status |
 | `--headless` | Hide the application header; status/controls remain visible |
 | `--logoless` | Hide the brand, retaining build information where the layout permits |
-| `--crumbsless` | Hide the current context/namespace scope bar; resource-view breadcrumbs do not exist yet |
+| `--crumbsless` | Hide the identity bar and resource-view navigation trail |
 | `--command`, `-c` | Initial available pod/context/namespace/help/status/history commands share the UI grammar; unsupported views/actions return exit 4; see [B03](command-navigation.md) |
 | `--refresh`, `-r` | Validate/report seconds through `info` or `config check`; explicit terminal use returns exit 4 until C03 #24 |
 | `--kubeconfig`, `--context`, `--namespace`/`-n`, `--all-namespaces`/`-A`, `--request-timeout` | Read-only catalogue, explicit background client and namespace discovery/selection; see [C01](context-sessions.md) |

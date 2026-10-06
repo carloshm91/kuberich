@@ -31,6 +31,9 @@ previous output, container selection, Vim navigation, search, follow/pause,
 bounded retention and redacted copy/save. [Embedded container shells](docs/container-shell.md)
 use the selected context, pod and container, with a configurable shell and return
 to the retained table.
+The [resource workspace](docs/resource-workspace.md) adds a built-in `k9s` theme,
+top inputs and view-specific shortcuts, identity/version headers, Escape trails,
+and a live namespace table with Enter/Escape navigation.
 See [context sessions](docs/context-sessions.md) for supported credentials,
 connection states and limits. Local diagnostics, read-only command guards,
 header/logo/scope visibility and initial view/scope/help commands remain available.
@@ -90,6 +93,7 @@ for 0.1.0. These channels are tracked work, not currently available downloads.
 - [CLI and authentication compatibility](docs/k9s-cli.md)
 - [Local configuration and diagnostics](docs/configuration.md)
 - [Terminal preview controls](docs/terminal-preview.md)
+- [Resource workspace and namespace navigation](docs/resource-workspace.md)
 - [Commands, completion, filters and history](docs/command-navigation.md)
 - [Architecture decisions](docs/architecture.md)
 - [Security helpers and test isolation](docs/security-primitives.md)

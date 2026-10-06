@@ -160,12 +160,15 @@
       ],
       "source": "internal/view/cmd/interpreter.go",
       "status": "planned",
-      "difference": "B03 implements available pod aliases, shared initial/interactive scope commands and local bounded Tab suggestions and deliberate arrow/Enter completion (#115). Additional resource tables, CRD/custom aliases and broader command routing remain their owning tickets.",
+      "difference": "B03 implements available pod aliases, shared initial/interactive scope commands and local bounded Tab/arrow suggestions (#115). Preview #125 adds a real namespace workspace table and resource-aware command/history routing. Other resource tables, CRD/custom aliases and broader command routing remain their owning tickets.",
       "partial_evidence": [
         "docs/command-navigation.md",
         "tests/ui/test_navigation.py",
         "tests/terminal/test_navigation.py",
-        "docs/acceptance/enter-navigation.md"
+        "docs/acceptance/enter-navigation.md",
+        "docs/resource-workspace.md",
+        "docs/acceptance/resource-workspace.md",
+        "tests/ui/test_resource_workspace.py"
       ]
     },
     {
@@ -194,11 +197,14 @@
       ],
       "source": "internal/view/page_stack.go",
       "status": "planned",
-      "difference": "B03 implements bounded invocation-local context/namespace history restoring filter, sorting, UID selection and viewport. Namespace favorites, persisted history and last-command recall remain B07.",
+      "difference": "B03 implements bounded scope/filter/viewport history. Preview #125 retains pod/namespace resource kind and displays nested namespace/pod/container/log routes with the current Escape destination. Broader resource drill-down remains planned.",
       "partial_evidence": [
         "docs/command-navigation.md",
         "tests/ui/test_navigation.py",
-        "tests/terminal/test_navigation.py"
+        "tests/terminal/test_navigation.py",
+        "docs/resource-workspace.md",
+        "docs/acceptance/resource-workspace.md",
+        "tests/ui/test_resource_workspace.py"
       ]
     },
     {
@@ -257,7 +263,7 @@
       ],
       "source": "internal/view/help.go",
       "status": "planned",
-      "difference": "B01 implements help/key hints and normal/error terminal restoration; F05 adds header/logo/scope visibility. B03 updates help for actual commands, completions, filters and history. Fullscreen, favorites and broader resource breadcrumbs remain planned.",
+      "difference": "Implemented pod, namespace, container and log shortcuts appear in the shared responsive header (#125); help retains secondary keys in short terminals. Per-view custom hotkeys and other resource actions remain planned.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_launch_options.py",
@@ -265,7 +271,10 @@
         "tests/packaging/test_distribution.py",
         "docs/command-navigation.md",
         "tests/ui/test_navigation.py",
-        "tests/terminal/test_navigation.py"
+        "tests/terminal/test_navigation.py",
+        "docs/resource-workspace.md",
+        "docs/acceptance/resource-workspace.md",
+        "tests/ui/test_resource_workspace.py"
       ]
     },
     {
@@ -332,7 +341,12 @@
       ],
       "source": "internal/view/cow.go",
       "status": "planned",
-      "difference": "Original Kubetrol branding; no copied art. Update checking is opt-in and never required for offline startup."
+      "difference": "Preview #125 displays the actual installed application version in the shared header. A real optional cached/offline-safe release check remains U01 #56; no newer-release state is fabricated.",
+      "partial_evidence": [
+        "docs/resource-workspace.md",
+        "docs/acceptance/resource-workspace.md",
+        "tests/ui/test_resource_workspace.py"
+      ]
     },
     {
       "id": "RES01",
@@ -345,7 +359,7 @@
       ],
       "source": "internal/view/registrar.go",
       "status": "planned",
-      "difference": "B02 delivers live pod health; B04 adds pod details and captured-UID related events. #115 adds captured regular/init container-name browsing and Enter-to-logs. Live container status, standalone events/namespace tables and ephemeral debug containers remain B05/A03. S04 adds explicit chosen-container shell execution and safe return; #119 introduces it on a clean full-terminal screen with the captured target. #121 replaces the default native shell route with an embedded Textual PTY/emulator and a persistent target frame; terminal compatibility/platform qualification still remains open.",
+      "difference": "Live UID-based pod tables and captured regular/init container navigation are implemented. Preview #125 adds the real Namespace LIST/WATCH table with lifecycle/age, filtering, all-scope action and Enter/Escape restoration. Live container status, ephemeral containers and the remaining resource tables remain planned.",
       "partial_evidence": [
         "docs/pod-table.md",
         "tests/unit/test_pods.py",
@@ -369,7 +383,11 @@
         "tests/unit/test_terminal_model.py",
         "tests/contract/test_pty.py",
         "tests/ui/test_embedded_terminal.py",
-        "https://github.com/carloshm91/kubetrol/issues/121"
+        "https://github.com/carloshm91/kubetrol/issues/121",
+        "docs/resource-workspace.md",
+        "docs/acceptance/resource-workspace.md",
+        "tests/ui/test_resource_workspace.py",
+        "scripts/verify_contexts_kind.py"
       ]
     },
     {
@@ -673,7 +691,12 @@
       ],
       "source": "internal/config/styles.go",
       "status": "planned",
-      "difference": ""
+      "difference": "The built-in original k9s theme and explicit Textual theme selection are implemented in preview #125. Custom user skins, live reload, per-context overrides and remaining skin semantics stay U01 #56.",
+      "partial_evidence": [
+        "docs/resource-workspace.md",
+        "docs/acceptance/resource-workspace.md",
+        "tests/ui/test_resource_workspace.py"
+      ]
     },
     {
       "id": "EXT02",

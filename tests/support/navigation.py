@@ -1,6 +1,7 @@
 """One actual terminal trial reused for source and freshly installed entry points."""
 
 import threading
+import time
 
 from tests.support.terminal_api import Server, config
 from tests.terminal.pty_support import TerminalSession
@@ -31,7 +32,7 @@ def terminal_navigation(command, directory, *, evidence, initial_scope=False):
             terminal.wait_for(b"owned-pty-pod-000")
             terminal.wait_for(b"80 pods")
             if initial_scope:
-                terminal.wait_for(b"Namespace: team")
+                terminal.wait_for_screen("Namespace: team")
             marker = terminal.send(b":p")
             terminal.wait_for(b"Tab completes", since=marker)
             terminal.send(b"\t\r")
@@ -46,31 +47,55 @@ def terminal_navigation(command, directory, *, evidence, initial_scope=False):
             marker = terminal.send(b":ns de" if initial_scope else b":ns te")
             terminal.wait_for(b"Tab completes", since=marker)
             marker = terminal.send(b"\t\r")
-            terminal.wait_for(
-                b"Namespace: default" if initial_scope else b"Namespace: team", since=marker
-            )
+            terminal.wait_for_screen("Namespace: default" if initial_scope else "Namespace: team")
             terminal.wait_for(b"80 pods", since=marker)
             marker = terminal.send(b":back\r")
-            terminal.wait_for(
-                b"Namespace: team" if initial_scope else b"Namespace: default", since=marker
-            )
+            terminal.wait_for_screen("Namespace: team" if initial_scope else "Namespace: default")
             terminal.wait_for(b"Live", since=marker)
             marker = terminal.send(b":forward\r")
-            terminal.wait_for(
-                b"Namespace: default" if initial_scope else b"Namespace: team", since=marker
-            )
+            terminal.wait_for_screen("Namespace: default" if initial_scope else "Namespace: team")
             terminal.wait_for(b"Live", since=marker)
             marker = terminal.send(b":ns ")
             terminal.wait_for(b"ns team", since=marker)
             marker = terminal.send(b"\x1b[A\r" if initial_scope else b"\x1b[B\r")
-            terminal.wait_for(
-                b"Namespace: team" if initial_scope else b"Namespace: default", since=marker
-            )
+            terminal.wait_for_screen("Namespace: team" if initial_scope else "Namespace: default")
             terminal.wait_for(b"80 pods", since=marker)
             marker = terminal.send(b":ctx kub")
             terminal.wait_for(b"kubetrol-test-pty", since=marker)
+            server.namespace_requested.clear()
+            server.namespace_gate.clear()
             marker = terminal.send(b"\t\r")
-            terminal.wait_for(b"Live", since=marker)
+            deadline = time.monotonic() + 10
+            while not server.namespace_requested.is_set():
+                terminal._read()
+                assert time.monotonic() < deadline, "Context command did not reach owned API"
+            terminal.wait_for_screen("State: Connecting", since=marker)
+            marker = terminal.send(b":ns\r")
+            terminal.wait_for_screen("Connect to a context before selecting", since=marker)
+            marker = len(terminal.transcript)
+            server.namespace_gate.set()
+            terminal.wait_for_screen("State: Connected", since=marker, absent=("Connecting",))
+            scope = "team" if initial_scope else "default"
+            terminal.wait_for_screen(f"pods({scope})[80] · live", since=marker)
+            marker = terminal.send(b":ns\r")
+            terminal.wait_for_screen("namespaces(all)[2]", since=marker)
+            assert any(
+                "NAME" in line and "STATUS" in line and "AGE" in line
+                for line in terminal.screen.display
+            )
+            marker = terminal.send(b"/te\r")
+            terminal.wait_for_screen("Filter active · 1/2 namespaces", since=marker)
+            marker = terminal.send(b"\r")
+            terminal.wait_for_screen("Namespace: team", since=marker)
+            terminal.wait_for_screen("Esc → Namespaces")
+            marker = terminal.send(b"\x1b")
+            terminal.wait_for_screen("namespaces(all)[1]", since=marker)
+            terminal.wait_for_screen("/ te")
+            marker = terminal.send(b"\x1b")
+            terminal.wait_for_screen("namespaces(all)[2]", since=marker)
+            marker = terminal.send(b"0")
+            terminal.wait_for_screen("Namespace: All", since=marker)
+            terminal.wait_for(b"80 pods", since=marker)
             terminal.resize(40, 12)
             marker = terminal.send(b":c")
             terminal.wait_for(b"Tab completes", since=marker)
@@ -82,6 +107,7 @@ def terminal_navigation(command, directory, *, evidence, initial_scope=False):
             assert b"synthetic-pty" not in terminal.transcript
         assert path.read_bytes() == before
     finally:
+        server.namespace_gate.set()
         server.stopping.set()
         server.shutdown()
         thread.join(timeout=2)

@@ -443,3 +443,20 @@ See [shell behavior, dependency license and limits](container-shell.md) and
 qualification remains in [S03](acceptance/S03.md), [S04](acceptance/S04.md) and
 [the clean native transition](acceptance/shell-transition.md); it does not prove
 embedded-terminal behavior.
+
+## Shared resource workspace: #125
+
+`ui/chrome.py` supplies an original built-in `k9s` theme, injected identity/shortcut
+headers and literal Escape trails. It owns no network requests. Context/cluster/
+user aliases pass through redacted literal text; installed version is local
+metadata, without inferred release/metric state.
+
+Namespaces use the existing active-resource LIST/WATCH service. The root switches
+pod/namespace tables and retains resource kind in bounded navigation history.
+Critical `domain/namespaces.py` derives UID/lifecycle/age values. Shared typed
+projection/filter services retain owned thread drain and stale-result guards.
+Tables patch at most 128 rows per turn and preserve UID cursor/viewport; inactive
+projection caches are cleared. All-namespaces is an explicit scope action.
+Container/log screens retain existing lifetime/target services with shared headers
+and trails. Embedded shells keep independent remote-key routing and target frame.
+See [workspace controls and limits](resource-workspace.md).

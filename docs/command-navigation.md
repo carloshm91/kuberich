@@ -1,8 +1,7 @@
 # Commands, filtering and navigation
 
-The development terminal has a live pod view. Resource commands route to this
-available view. Selected pods support [inspection](resource-inspection.md),
-[logs](log-viewer.md) and [native shells](container-shell.md); other resource
+The development terminal has live pod and namespace views. Selected pods support [inspection](resource-inspection.md),
+[logs](log-viewer.md) and [embedded shells](container-shell.md); other resource
 tables remain separate work.
 
 ## Commands
@@ -16,7 +15,7 @@ read-only policy handle `--command` / `-c` at launch. Arguments preserve casing.
 | `po NAMESPACE`, `po *` | Select a pod namespace or all namespaces |
 | `ctx`, `context`, `contexts` | Open the context picker |
 | `ctx NAME` | Connect directly to that context |
-| `ns`, `namespace`, `namespaces` | Open the namespace picker |
+| `ns`, `namespace`, `namespaces` | Open the live namespace workspace table |
 | `ns NAME`, `ns *` | Select that namespace or all namespaces |
 | `shell`, `exec` | Open the selected pod’s container picker; `s`/`x` launches its shell |
 | `status`, `retry` | Open connection details / reconnect |
@@ -28,7 +27,7 @@ For example, `uv run kubetrol --context YOUR_CONTEXT --command 'po YOUR_NAMESPAC
 connects once and starts the requested pod scope without first watching another
 namespace. `--command 'ctx NAME'` selects that context before authentication.
 Unsupported commands report unavailable; they never display a substitute table.
-Inspection commands remain usable in read-only mode. Native shells are available
+Inspection commands remain usable in read-only mode. Embedded shells are available
 in write mode; startup `--command shell`/`exec` is refused because a deliberately
 selected pod is required. Mutations, attach and plugins remain unavailable.
 The shared policy rejects effectful commands in read-only mode.
@@ -38,7 +37,7 @@ The shared policy rejects effectful commands in read-only mode.
 The command input shows up to eight literal prefix matches. Up/Down select a
 candidate. Tab accepts it for editing; Enter after Up/Down accepts and submits
 the highlighted candidate once. Enter without arrow selection submits the typed
-text, so bare `:ns` and `:ctx` still open their ordinary selectors. Editing the
+text, so bare `:ns` opens the namespace table and `:ctx` opens the context picker. Editing the
 query, leaving the input or changing scope discards prior arrow selection. Matching ignores case; the accepted
 context name retains its original case. The selected candidate remains visible
 at 40×12. Long labels are clipped visually; inputs/candidates are bounded to 256
@@ -114,3 +113,5 @@ Sources: [Textual Input](https://textual.textualize.io/widgets/input/),
 
 Measured delivery evidence and unavailable platform checks:
 [B03 acceptance](acceptance/B03.md).
+
+Namespaces share these filter bounds for name/status. See [workspace layout, live namespaces and Escape routes](resource-workspace.md).

@@ -14,9 +14,9 @@ from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.events import Event, Key, Paste, Resize
+from textual.events import DescendantFocus, Event, Key, Paste, Resize
 from textual.screen import ModalScreen
-from textual.widgets import Button, DataTable, Footer, Input, Static
+from textual.widgets import Button, DataTable, Input, Static
 
 from kubetrol.adapters.kubernetes import KubernetesSession
 from kubetrol.config.catalog import KubeCatalog
@@ -29,7 +29,7 @@ from kubetrol.domain.logs import log_containers
 from kubetrol.domain.navigation import NamespaceChoice, NavigationHistory, NavigationState
 from kubetrol.domain.resources import ApiResource, ResourceRecord
 from kubetrol.domain.targets import ResourceTarget
-from kubetrol.domain.views import USABLE_CONNECTIONS, ViewObservation, ViewStatus
+from kubetrol.domain.views import USABLE_CONNECTIONS, ResourceSelection, ViewObservation, ViewStatus
 from kubetrol.errors import AppError
 from kubetrol.security.arguments import validate_argument
 from kubetrol.security.presentation import safe_text
@@ -44,15 +44,24 @@ from kubetrol.services.commands import (
 from kubetrol.services.filtering import apply_filter
 from kubetrol.services.inspection import InspectionService
 from kubetrol.services.logs import LogStream
-from kubetrol.services.pods import PodProjection
+from kubetrol.services.pods import NamespaceProjection, PodProjection
 from kubetrol.services.processes import ProcessRunner
 from kubetrol.services.sessions import SessionService
 from kubetrol.services.shell import ShellService
 from kubetrol.services.workspace import ViewSubscription, WorkspaceService
+from kubetrol.ui.chrome import (
+    K9S_THEME,
+    NS_SHORTCUTS,
+    POD_SHORTCUTS,
+    Breadcrumbs,
+    WorkspaceChrome,
+    WorkspaceHeader,
+)
 from kubetrol.ui.commands import CommandInput, NavigationInput
 from kubetrol.ui.containers import ContainerScreen
 from kubetrol.ui.inspection import InspectionScreen, Page
 from kubetrol.ui.logs import LogScreen
+from kubetrol.ui.namespaces import NamespaceTable
 from kubetrol.ui.pods import PodTable, Viewport
 from kubetrol.ui.presentation import DEFAULT_PRESENTATION, Presentation
 from kubetrol.ui.scopes import ConnectionScreen, ScopeScreen
@@ -182,23 +191,83 @@ class KubetrolApp(App[None]):
         self._shell = settings.shell
         self._process_environment = dict(os.environ)
         self._process_directory = Path.cwd()
+        self.register_theme(K9S_THEME)
         if settings.theme not in self.available_themes:
-            raise AppError("Selected theme is unavailable; choose a built-in Textual theme.")
+            raise AppError("Selected theme is unavailable; choose k9s or a built-in Textual theme.")
         self.theme = settings.theme
         self._mode = "Read-only" if settings.read_only else "Local preview"
         self.resources = PodTable()
+        self.namespace_table = NamespaceTable()
+        self.namespace_table.display = False
+        self._resource_name = "pods"
+        self._namespace_parent: NavigationState | None = None
+        self._namespace_state: NavigationState | None = None
+        self._namespace_route = False
         self._pod_projection = PodProjection()
+        self._namespace_projection = NamespaceProjection()
+        self.chrome = WorkspaceChrome(
+            self._header_identity, f"Kubetrol: {version('kubetrol')} · {self._mode}", presentation
+        )
+        self.header = WorkspaceHeader(self.chrome, POD_SHORTCUTS)
+        self.breadcrumbs = Breadcrumbs(
+            ("pods",), "Clear filter", visible=not presentation.crumbsless
+        )
 
         def focus_table() -> None:
-            self.set_focus(self.resources)
+            self.set_focus(self._active_table)
 
         self.filter_input = NavigationInput(
             focus_table, placeholder="Filter resources", id="filter"
         )
-        self.command_input = CommandInput(self._suggestions, focus_table)
+        self.command_input = CommandInput(self._suggestions, focus_table, self._submit_command)
         self.completion = Static("", id="completion", markup=False)
         self.completion.display = False
         self.status = Static(DISCONNECTED_STATUS, id="status", markup=False)
+
+    @property
+    def _active_table(self) -> PodTable | NamespaceTable:
+        return self.namespace_table if self._resource_name == "namespaces" else self.resources
+
+    def _header_identity(self) -> tuple[str, str, str, str, str]:
+        view = self.workspace.store.observation
+        entry = self.sessions.catalog.contexts.get(view.context or "")
+        context = entry.data if entry is not None else {}
+        cluster, user = context.get("cluster"), context.get("user")
+        return (
+            view.context or "—",
+            cluster if isinstance(cluster, str) else "—",
+            user if isinstance(user, str) else "—",
+            "—"
+            if view.context is None or view.status is ViewStatus.CONNECTING
+            else view.connection.namespace or "All",
+            "Connecting"
+            if view.status is ViewStatus.CONNECTING
+            else view.connection.state.name.replace("_", " ").title(),
+        )
+
+    def _update_trail(self) -> None:
+        trail = (
+            ("namespaces", "pods")
+            if self._namespace_route and self._resource_name == "pods"
+            else (self._resource_name,)
+        )
+        self.breadcrumbs.trail = trail
+        destination = (
+            "Leave input"
+            if isinstance(self.focused, Input)
+            else "Clear filter"
+            if self.filter_input.value
+            else "Namespaces"
+            if self._namespace_route and self._resource_name == "pods"
+            else "Pods"
+            if self._resource_name == "namespaces"
+            else "Stay in pods"
+        )
+        self.breadcrumbs.destination = destination
+        self.breadcrumbs.show_trail()
+
+    def on_descendant_focus(self, event: DescendantFocus) -> None:
+        self._update_trail()
 
     def _set_status(self, message: str) -> None:
         prefix = "Read-only · " if self.commands.policy.read_only else ""
@@ -256,15 +325,17 @@ class KubetrolApp(App[None]):
         return self.workspace.store.observation.message
 
     def compose(self) -> ComposeResult:
-        with Horizontal(id="app-header"):
-            yield Static("kubetrol", id="brand", markup=False)
-            yield Static(f"{version('kubetrol')} · {self._mode}", id="build-info", markup=False)
-        with Horizontal(id="scope-bar"):
-            yield Static("Context: —", id="context", markup=False)
-            yield Static("Namespace: —", id="namespace", markup=False)
-            yield Static("Disconnected", id="connection", markup=False)
+        yield self.header
+        with Horizontal(id="filter-bar", classes="input-bar"):
+            yield Static("/", classes="input-label", markup=False)
+            yield self.filter_input
+        with Horizontal(id="command-bar", classes="input-bar"):
+            yield Static(":", classes="input-label", markup=False)
+            yield self.command_input
         with Vertical(id="resource-view"):
+            yield Button("0  All namespaces", id="all-namespaces", compact=True)
             yield self.resources
+            yield self.namespace_table
             with Vertical(id="empty-state"):
                 yield Static("No cluster connection", id="empty-title", markup=False)
                 yield Static(
@@ -278,23 +349,15 @@ class KubetrolApp(App[None]):
                     markup=False,
                 )
             yield self.completion
-        with Horizontal(id="filter-bar", classes="input-bar"):
-            yield Static("/", classes="input-label", markup=False)
-            yield self.filter_input
-        with Horizontal(id="command-bar", classes="input-bar"):
-            yield Static(":", classes="input-label", markup=False)
-            yield self.command_input
+        yield self.breadcrumbs
         yield self.status
-        yield Footer()
 
     def on_mount(self) -> None:
-        self.query_one("#app-header").display = (
-            not self._presentation.headless and self.size.height >= 16
-        )
-        self.query_one("#brand").display = not self._presentation.logoless
-        self.query_one("#scope-bar").display = not self._presentation.crumbsless
+        self.query_one("#all-namespaces").display = False
         self.resources.setup()
+        self.namespace_table.setup()
         self.set_interval(1, self.resources.refresh_ages)
+        self.set_interval(1, self.namespace_table.refresh_ages)
         self.query_one("#resource-view", Vertical).border_title = "Resources · no connection"
         self.screen.set_class(self.size.width < 70, "compact")
         self.screen.set_class(self.size.height < 16, "short")
@@ -306,6 +369,9 @@ class KubetrolApp(App[None]):
             self._render_task = asyncio.create_task(self._render_views())
             context = self.sessions.request.context or self.sessions.catalog.current
             initial = self._initial_command
+            if initial is Command.NAMESPACES:
+                self.workspace.selection = ResourceSelection("namespaces")
+                self._display_resource("namespaces")
             scope = None
             if isinstance(initial, ScopedCommand):
                 if initial.command is Command.CONTEXTS:
@@ -314,7 +380,7 @@ class KubetrolApp(App[None]):
                     scope = NamespaceChoice(None if initial.argument == "*" else initial.argument)
             if context is not None:
                 self._start_connection(context, scope=scope)
-            if not isinstance(initial, ScopedCommand):
+            if not isinstance(initial, ScopedCommand) and initial is not Command.NAMESPACES:
                 self._apply_command(initial)
         else:
             self.exit()
@@ -329,11 +395,13 @@ class KubetrolApp(App[None]):
             return
         if remember:
             self._remember_view()
+        if context != self.workspace.store.observation.context:
+            self._namespace_parent = self._namespace_state = None
+            self._namespace_route = False
         self._connection_task = self.workspace.connect(context, scope=scope)
         self._clear_rows()
-        self.query_one("#context", Static).update(safe_text(f"Context: {context}"))
-        self.query_one("#namespace", Static).update("Namespace: —")
-        self.query_one("#connection", Static).update("Connecting")
+        self.header.update_identity()
+        self._update_trail()
         self._set_status("Connecting · F2 contexts · F4 retry · Ctrl+Q quit")
 
     async def _observe_view(self, subscription: ViewSubscription) -> None:
@@ -347,6 +415,8 @@ class KubetrolApp(App[None]):
                 ):
                     self._render_ready.set()
                     self.command_input.refresh_choices()
+                    for header in self.query(WorkspaceHeader):
+                        header.update_identity()
                     for screen in tuple(self.screen_stack):
                         if isinstance(
                             screen, (InspectionScreen, LogScreen, ContainerScreen, ShellScreen)
@@ -364,33 +434,46 @@ class KubetrolApp(App[None]):
                 self._render_ready.clear()
                 view = self.workspace.store.observation
                 query = self.filter_input.value
-                rows = await self._pod_projection.project(view.snapshot)
-                result = await apply_filter(rows, query)
+                kind = self._resource_name
 
-                def current(view: ViewObservation = view, query: str = query) -> bool:
+                def current(
+                    view: ViewObservation = view, query: str = query, kind: str = kind
+                ) -> bool:
                     return (
                         self.is_running
                         and view is self.workspace.store.observation
                         and query == self.filter_input.value
+                        and kind == self._resource_name
                     )
 
-                if not current():
-                    continue
-                if await self.resources.apply_rows(result.rows, view.revision, current):
+                if kind == "namespaces":
+                    await self._pod_projection.project(None)
+                    ns_rows = await self._namespace_projection.project(view.snapshot)
+                    ns_result = await apply_filter(ns_rows, query, "namespaces")
+                    count, filtered, problem = len(ns_rows), len(ns_result.rows), ns_result.problem
+                    applied = await self.namespace_table.apply_rows(
+                        ns_result.rows, view.revision, current
+                    )
+                else:
+                    await self._namespace_projection.project(None)
+                    rows = await self._pod_projection.project(view.snapshot)
+                    result = await apply_filter(rows, query)
+                    count, filtered, problem = len(rows), len(result.rows), result.problem
+                    applied = await self.resources.apply_rows(result.rows, view.revision, current)
+                if applied:
                     self._show_view(view)
                     if query:
                         self._set_status(
-                            result.problem
-                            or f"Filter active · {len(result.rows)}/{len(rows)} pods · {view.message}"
+                            problem or f"Filter active · {filtered}/{count} {kind} · {view.message}"
                         )
                         if (
-                            rows
-                            and not result.rows
+                            count
+                            and not filtered
                             and view.status is ViewStatus.LIVE
-                            and result.problem is None
+                            and problem is None
                         ):
                             self.query_one("#empty-title", Static).update(
-                                "No pods match this filter"
+                                f"No {kind} match this filter"
                             )
                             self.query_one("#empty-description", Static).update(
                                 "Escape in the table clears the filter."
@@ -401,59 +484,54 @@ class KubetrolApp(App[None]):
                         and view.snapshot is not None
                     ):
                         state = self._restore_state[1]
-                        self.resources.restore_viewport(
+                        self._active_table.restore_viewport(
                             Viewport(state.selected, state.index, state.x, state.y, state.top)
                         )
                         self._restore_state = None
+                    self._update_trail()
         except Exception as error:
             self._handle_exception(error)
 
     def _show_view(self, view: ViewObservation) -> None:
         observation = view.connection
-        self.query_one("#context", Static).update(safe_text(f"Context: {view.context or '—'}"))
-        self.query_one("#namespace", Static).update(
-            safe_text(
-                f"Namespace: {'—' if view.status is ViewStatus.CONNECTING else observation.namespace or 'All'}"
-            )
-        )
-        state = (
-            "Connecting"
-            if view.status is ViewStatus.CONNECTING
-            else observation.state.name.replace("_", " ").title()
-        )
-        self.query_one("#connection", Static).update(state)
+        self.header.update_identity()
         usable = observation.state in USABLE_CONNECTIONS
         self.query_one("#empty-title", Static).update(
             "Stale resource data"
             if view.snapshot is not None and view.problem is not None
             else "Resource data unavailable"
             if usable and view.status is ViewStatus.FAILED
-            else "No pods in this scope"
+            else f"No {self._resource_name} in this scope"
             if view.snapshot is not None and not view.snapshot.items
-            else "Pods ready"
+            else f"{self._resource_name.title()} ready"
             if view.status is ViewStatus.LIVE
             else "Loading resources"
             if usable
             else "Connection unavailable"
         )
         self.query_one("#empty-description", Static).update(
-            "No pods were returned. :ns choose namespace · :ctx choose context."
+            f"No {self._resource_name} were returned. :ns namespaces · :ctx contexts."
             if view.status is ViewStatus.LIVE
             else "Keeping the last snapshot while reconnecting. Press i for details."
             if view.status is ViewStatus.STALE
             else "Press i for status · r retry · :ctx choose context."
         )
-        self.query_one("#resource-view", Vertical).border_title = (
-            "Resources · " + view.status.name.lower()
+        scope = "all" if self._resource_name == "namespaces" else observation.namespace or "all"
+        self.query_one("#resource-view", Vertical).border_title = safe_text(
+            f"{self._resource_name}({scope})[{self._active_table.row_count}] · {view.status.name.lower()}"
         )
-        self.query_one("#empty-state").display = not bool(self.resources.row_count)
-        self.resources.set_class(bool(self.resources.row_count), "populated")
+        self.query_one("#empty-state").display = not bool(self._active_table.row_count)
+        self._active_table.set_class(bool(self._active_table.row_count), "populated")
         self._show_sort()
         self._set_status(view.message)
 
     @on(PodTable.SortChanged)
     def _show_sort(self) -> None:
-        self.query_one("#resource-view", Vertical).border_subtitle = self.resources.sort_summary
+        self.query_one("#resource-view", Vertical).border_subtitle = (
+            self.resources.sort_summary
+            if self._resource_name == "pods"
+            else "Name ↑ · Enter use namespace · 0 all"
+        )
 
     async def on_unmount(self) -> None:
         await self.processes.close()
@@ -464,6 +542,23 @@ class KubetrolApp(App[None]):
             self._render_task.cancel()
             await asyncio.gather(self._render_task, return_exceptions=True)
         await self._pod_projection.project(None)
+        await self._namespace_projection.project(None)
+
+    @on(DataTable.RowSelected, "#namespaces")
+    def namespace_selected(self, event: DataTable.RowSelected) -> None:
+        event.stop()
+        view = self.workspace.store.observation
+        record = (
+            next((item for item in view.snapshot.items if item.uid == event.row_key.value), None)
+            if view.snapshot is not None
+            else None
+        )
+        if self._resource_name == "namespaces" and record is not None:
+            self._namespace_selected(record.name)
+
+    @on(Button.Pressed, "#all-namespaces")
+    def action_all_namespaces(self) -> None:
+        self._namespace_selected("*")
 
     @on(DataTable.RowSelected, "#resources")
     def row_selected(self, event: DataTable.RowSelected) -> None:
@@ -529,9 +624,11 @@ class KubetrolApp(App[None]):
                     directory=self._process_directory,
                 ),
                 processes=self.processes,
+                chrome=self.chrome,
+                trail=self.breadcrumbs.trail,
             )
             if containers_first
-            else LogScreen(stream, containers)
+            else LogScreen(stream, containers, chrome=self.chrome, trail=self.breadcrumbs.trail)
         )
 
     def _capture_target(
@@ -545,7 +642,7 @@ class KubetrolApp(App[None]):
             return None
         view = self.workspace.store.observation
         scope, snapshot, client = view.scope, view.snapshot, self.sessions.client
-        uid = uid if uid is not None else self.resources.selected_uid
+        uid = uid if uid is not None else self._active_table.selected_uid
         if scope is None or snapshot is None or client is None or uid is None:
             self._set_status("Select a connected resource before opening a viewer.")
             return None
@@ -592,8 +689,8 @@ class KubetrolApp(App[None]):
 
     def _clear_rows(self) -> None:
         self._restore_state = None
-        self.resources.reset(self.workspace.store.observation.revision)
-        self.resources.remove_class("populated")
+        self._active_table.reset(self.workspace.store.observation.revision)
+        self._active_table.remove_class("populated")
         self.query_one("#empty-state").display = True
         self.query_one("#empty-title", Static).update("Loading resources")
         self.command_input.reset_choice()
@@ -603,21 +700,64 @@ class KubetrolApp(App[None]):
         if observation.state not in USABLE_CONNECTIONS:
             self._set_status("Connect to a context before selecting a namespace.")
         elif not isinstance(self.screen, ModalScreen):
-            self.push_screen(
-                ScopeScreen("Choose namespace (* = All)", self._namespace_choices()),
-                self._namespace_selected,
-            )
+            self._select_resource("namespaces", restore=self._namespace_state)
+
+    def _display_resource(self, resource: str, *, focus: bool = True) -> None:
+        self._resource_name = resource
+        namespaces = resource == "namespaces"
+        self.namespace_table.display = namespaces
+        self.resources.display = not namespaces
+        self.query_one("#all-namespaces").display = namespaces
+        self.header.shortcuts = NS_SHORTCUTS if namespaces else POD_SHORTCUTS
+        self.header.render_shortcuts()
+        if focus and len(self.screen_stack) == 1:
+            self.set_focus(self._active_table)
+        self._update_trail()
+
+    def _select_resource(self, resource: str, *, restore: NavigationState | None = None) -> None:
+        current = self._capture_view()
+        if resource == self._resource_name:
+            self.set_focus(self._active_table)
+            return
+        try:
+            self._connection_task = self.workspace.select_resource(ResourceSelection(resource))
+        except AppError as error:
+            self._set_status(str(error))
+            return
+        if current is not None:
+            self.history.visit(current)
+            if current.resource == "namespaces":
+                self._namespace_state = current
+                self._namespace_route = True
+            else:
+                self._namespace_parent = current
+        self._display_resource(resource)
+        self._clear_rows()
+        self.filter_input.value = restore.query if restore is not None else ""
+        if restore is not None:
+            self._restore_state = self.workspace.store.observation.revision, restore
+        self._render_ready.set()
 
     def _namespace_selected(self, value: str | None) -> None:
         if value is not None:
             try:
                 choice = NamespaceChoice(None if value == "*" else value)
                 current = self._capture_view()
+                was_namespace_view = self._resource_name == "namespaces"
+                self.workspace.select_resource(ResourceSelection("pods"))
                 self._connection_task = self.workspace.select_namespace(choice.namespace)
+                if was_namespace_view:
+                    self._namespace_state = current
+                    self._namespace_route = True
                 if current is not None:
                     self.history.visit(current)
+                self._display_resource(
+                    "pods", focus=was_namespace_view or not isinstance(self.focused, Input)
+                )
                 self._clear_rows()
-                self.query_one("#namespace", Static).update(safe_text(f"Namespace: {value}"))
+                if was_namespace_view:
+                    self.filter_input.value = ""
+                self.header.update_identity()
                 self._set_status(self._workspace_status())
             except AppError as error:
                 self._set_status(str(error))
@@ -634,9 +774,7 @@ class KubetrolApp(App[None]):
             self.action_contexts()
 
     def on_resize(self, event: Resize) -> None:
-        self.screen_stack[0].query_one("#app-header").display = (
-            not self._presentation.headless and event.size.height >= 16
-        )
+        self.header.layout_header()
         self.screen_stack[0].set_class(event.size.width < 70, "compact")
         self.screen_stack[0].set_class(event.size.height < 16, "short")
         self.call_after_refresh(self.show_completions)
@@ -674,7 +812,20 @@ class KubetrolApp(App[None]):
             self.screen.dismiss()
         elif isinstance(self.focused, Input):
             self.command_input.value = ""
-            self.set_focus(self.resources)
+            self.set_focus(self._active_table)
+            self._update_trail()
+        elif self.filter_input.value:
+            self.filter_input.value = ""
+            self._set_status(self._workspace_status())
+            self._update_trail()
+        elif self._resource_name == "pods" and self._namespace_route:
+            self.action_namespaces()
+        elif self._resource_name == "namespaces":
+            self._namespace_route = False
+            if self._namespace_parent is not None:
+                self._restore_navigation(self._namespace_parent)
+            else:
+                self._select_resource("pods")
         else:
             self.filter_input.value = ""
             self._set_status(self._workspace_status())
@@ -682,11 +833,15 @@ class KubetrolApp(App[None]):
     @on(Input.Changed, "#filter")
     def filter_changed(self, event: Input.Changed) -> None:
         self._render_ready.set()
+        self._update_trail()
 
     @on(Input.Submitted, "#command")
     def command_submitted(self, event: Input.Submitted) -> None:
+        self._submit_command(event.value)
+
+    def _submit_command(self, value: str) -> None:
         try:
-            command = self.commands.resolve(event.value)
+            command = self.commands.resolve(value)
         except AppError as error:
             self._set_status(str(error))
             return
@@ -720,6 +875,7 @@ class KubetrolApp(App[None]):
         elif command is Command.FORWARD:
             self.action_history_forward()
         elif command is Command.PODS:
+            self._select_resource("pods")
             self._set_status(self._workspace_status())
         elif command is Command.SHELL:
             self.action_shell()
@@ -764,7 +920,7 @@ class KubetrolApp(App[None]):
         view = self.workspace.store.observation
         if view.context is None or view.connection.state not in USABLE_CONNECTIONS:
             return None
-        viewport = self.resources.capture_viewport()
+        viewport = self._active_table.capture_viewport()
         return NavigationState(
             view.context,
             view.connection.namespace,
@@ -776,6 +932,7 @@ class KubetrolApp(App[None]):
             viewport.x,
             viewport.y,
             viewport.top,
+            self._resource_name,
         )
 
     def _remember_view(self) -> None:
@@ -794,10 +951,24 @@ class KubetrolApp(App[None]):
                 "No next view in history." if forward else "No previous view in history."
             )
             return
+        self._restore_navigation(state)
+
+    def _restore_navigation(self, state: NavigationState) -> None:
         scope = NamespaceChoice(state.namespace)
-        self._start_connection(state.context, scope=scope, remember=False)
+        current = self.workspace.store.observation
+        if state.context == current.context and current.connection.state in USABLE_CONNECTIONS:
+            self.workspace.select_resource(ResourceSelection(state.resource))
+            self._connection_task = self.workspace.select_namespace(state.namespace)
+            self._display_resource(state.resource)
+            self._clear_rows()
+            self.header.update_identity()
+        else:
+            self.workspace.selection = ResourceSelection(state.resource)
+            self._display_resource(state.resource)
+            self._start_connection(state.context, scope=scope, remember=False)
         self.filter_input.value = state.query
-        self.resources.restore_sort(state.column, state.descending)
+        if state.resource == "pods":
+            self.resources.restore_sort(state.column, state.descending)
         self._restore_state = self.workspace.store.observation.revision, state
 
     def action_history_back(self) -> None:

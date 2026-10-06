@@ -56,7 +56,7 @@ The file is always read; log flags do not bypass a broken config.
 | YAML field | Default | Environment | Runtime CLI |
 | --- | --- | --- | --- |
 | `shell` | `["sh"]` | Not available | Not available; configure YAML |
-| `theme` | `textual-dark` | `KUBETROL_THEME` | Not yet available |
+| `theme` | `k9s` | `KUBETROL_THEME` | Not yet available |
 | `refresh_seconds` | `2.0` | `KUBETROL_REFRESH` | `--refresh`, `-r` for info/check; terminal use unavailable until C03 |
 | `read_only` | `false` | `KUBETROL_READONLY` | `--readonly` / `--write` (mutually exclusive) |
 | `log_level` | `WARNING` | `KUBETROL_LOG_LEVEL` | `--log-level`, `--logLevel`, `-l` |
@@ -67,7 +67,7 @@ DEBUG, INFO, WARNING, ERROR or CRITICAL, case insensitive, and are normalized to
 uppercase in effective settings. Refresh must be a finite number
 in 0.1–3600 seconds; booleans and numeric strings in YAML are rejected. Theme IDs
 are 1–64 ASCII letters/digits/underscores/hyphens starting with a letter; available
-themes must also be registered built-in Textual themes when opening the UI.
+themes must also be `k9s` or registered built-in Textual themes when opening the UI.
 `config check` validates the schema, while the UI validates availability.
 A null log path selects the platform
 default, while an empty path is an error.

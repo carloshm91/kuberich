@@ -83,9 +83,23 @@ class Handler(BaseHTTPRequestHandler):
                 pass
             return
         if parsed.path == "/api/v1/namespaces":
+            self.server.namespace_requested.set()
+            if not self.server.namespace_gate.wait(10):
+                self.send_error(503, "Owned namespace gate timed out")
+                return
             payload = {
-                "items": [{"metadata": {"name": "default"}}, {"metadata": {"name": "team"}}],
-                "metadata": {},
+                "items": [
+                    {
+                        "metadata": {
+                            "name": name,
+                            "uid": f"namespace-{name}",
+                            "resourceVersion": "owned-ns-object",
+                        },
+                        "status": {"phase": "Active"},
+                    }
+                    for name in ("default", "team")
+                ],
+                "metadata": {"resourceVersion": "owned-ns-list"},
             }
         elif parsed.path in legacy_roots():
             payload = legacy_roots()[parsed.path]
@@ -175,3 +189,6 @@ class Server(ThreadingHTTPServer):
         self.pod_table = threading.Event()
         self.shell_containers: tuple[str, ...] = ()
         self.pod_get_status = 200
+        self.namespace_requested = threading.Event()
+        self.namespace_gate = threading.Event()
+        self.namespace_gate.set()

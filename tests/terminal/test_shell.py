@@ -38,8 +38,8 @@ def test_real_terminal_unicode_filter_paste_and_return(tmp_path: Path) -> None:
         marker = terminal.send(b"/\x1b[200~" + "café🙂".encode() + b"\x1b[201~")
         terminal.wait_for("café🙂".encode(), since=marker)
         marker = terminal.send(b"\r")
-        # The input status is already active; restored command hints prove focus returned.
-        terminal.wait_for(b"Cmd ", since=marker)
+        # The trail changes only when input focus actually returns to the table.
+        terminal.wait_for_screen("Esc → Clear filter", since=marker)
         terminal.send(b"q")
         terminal.finish()
         terminal.save_evidence("unicode-paste")
@@ -82,7 +82,9 @@ def test_real_terminal_initial_help_and_readonly_with_hidden_header(tmp_path: Pa
         terminal.wait_for(b"Keyboard help")
         marker = terminal.send(b"\x1b")
         # Wait for restored workspace bindings, not a background redraw beneath help.
-        terminal.wait_for(b"Cmd ", since=marker)
+        terminal.wait_for_screen(
+            "Resources · no connection", since=marker, absent=("Keyboard help",)
+        )
         assert b"Read-only" in terminal.transcript
         marker = terminal.send(b":shell\r")
         terminal.wait_for(b"Read-only mode blocks", since=marker)

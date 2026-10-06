@@ -46,8 +46,18 @@ def namespaces(*names: str, continuation: str = "") -> web.Response:
     return web.json_response(
         {
             "kind": "NamespaceList",
-            "metadata": {"continue": continuation},
-            "items": [{"metadata": {"name": name}} for name in names],
+            "metadata": {"continue": continuation, "resourceVersion": "owned-namespace-list"},
+            "items": [
+                {
+                    "metadata": {
+                        "name": name,
+                        "uid": f"namespace-{name}",
+                        "resourceVersion": "owned-namespace-object",
+                    },
+                    "status": {"phase": "Active"},
+                }
+                for name in names
+            ],
         }
     )
 
