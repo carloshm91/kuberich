@@ -66,8 +66,9 @@ ephemeral-debug workflow, not an invented SSH connection.
 
 ## Verification and remaining scope
 
-See [measured S04 acceptance evidence](acceptance/S04.md) for the qualified commit,
-coverage, actual terminal/cluster trials and unavailable platform checks.
+See [measured S04 acceptance evidence](acceptance/S04.md) and the
+[clean-screen transition evidence](acceptance/shell-transition.md) for qualified
+commits, coverage, actual terminal/cluster trials and unavailable platform checks.
 
 Behavioral checks cover immutable capture, exact arguments, private file modes,
 UID replacement, stale views, read-only policy and repeated cancellation/cleanup.

@@ -395,7 +395,8 @@ container or denied pods/exec permission returns an actionable message. For a
 different image shell, configure a YAML argument list such as
 `shell: ["/bin/bash", "-l"]` and restart. The shell must exist in that image.
 See [shell controls, requirements and limits](container-shell.md) and
-[measured acceptance evidence](acceptance/S04.md).
+[measured acceptance evidence](acceptance/S04.md), including the
+[clean-screen correction](acceptance/shell-transition.md).
 
 For feedback, report whether the selected container is correct and whether
 exit, resize and return preserve the table. No credentials or kubeconfig
