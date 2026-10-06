@@ -392,7 +392,8 @@ Read-only mode refuses shell execution. An image without `sh`, a stopped
 container or denied pods/exec permission returns an actionable message. For a
 different image shell, configure a YAML argument list such as
 `shell: ["/bin/bash", "-l"]` and restart. The shell must exist in that image.
-See [shell controls, requirements and limits](container-shell.md).
+See [shell controls, requirements and limits](container-shell.md) and
+[measured acceptance evidence](acceptance/S04.md).
 
 For feedback, report whether the selected container is correct and whether
 exit, resize and return preserve the table. No credentials or kubeconfig
