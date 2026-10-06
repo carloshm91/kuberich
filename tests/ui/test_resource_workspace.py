@@ -176,7 +176,7 @@ async def test_namespace_api_errors_and_updates_preserve_live_identity_and_do_no
                 assert app.query_one("#all-namespaces").display
             elif state == "forbidden":
                 await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.FAILED)
-                assert "403" in str(app.status.content)
+                await wait_for(lambda: "403" in str(app.status.content))
                 await wait_for(
                     lambda: (
                         "unavailable" in str(app.query_one("#empty-title", Static).content).lower()
@@ -190,7 +190,9 @@ async def test_namespace_api_errors_and_updates_preserve_live_identity_and_do_no
                 await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.STALE)
                 await wait_for(lambda: app.namespace_table.row_count == 1)
                 assert app.namespace_table.row_count == 1
-                assert "Stale" in str(app.status.content) and "503" in str(app.status.content)
+                await wait_for(
+                    lambda: "Stale" in str(app.status.content) and "503" in str(app.status.content)
+                )
             else:
                 await wait_for(lambda: app.namespace_table.row_count == 1)
                 queue.put_nowait({"type": "DELETED", "object": initial})
@@ -224,6 +226,10 @@ async def test_initial_namespaces_history_and_connecting_scope_guard_preserve_ro
         async with app.run_test() as pilot:
             await wait_for(lambda: app.namespace_table.row_count == 2)
             assert app.resources.row_count == 0 and app.focused is app.namespace_table
+            await pilot.press("escape")
+            await wait_for(lambda: app._resource_name == "pods" and app.resources.row_count == 1)
+            await pilot.press("colon", *"ns", "enter")
+            await wait_for(lambda: app.namespace_table.row_count == 2)
             await pilot.press("colon", *"po", "enter")
             await wait_for(lambda: app.resources.row_count == 1)
             await pilot.press("alt+left")
@@ -234,6 +240,8 @@ async def test_initial_namespaces_history_and_connecting_scope_guard_preserve_ro
             await wait_for(lambda: app._resource_name == "pods" and app.resources.row_count == 1)
             app.action_namespaces()
             app._start_connection("kubetrol-test-Two")
+            app._submit_command("po")
+            assert app._resource_name == "namespaces"
             app._namespace_selected("default")
             await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
             await pilot.pause()

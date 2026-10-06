@@ -1,6 +1,7 @@
 """One actual terminal trial reused for source and freshly installed entry points."""
 
 import threading
+import time
 
 from tests.support.terminal_api import Server, config
 from tests.terminal.pty_support import TerminalSession
@@ -61,8 +62,21 @@ def terminal_navigation(command, directory, *, evidence, initial_scope=False):
             terminal.wait_for(b"80 pods", since=marker)
             marker = terminal.send(b":ctx kub")
             terminal.wait_for(b"kubetrol-test-pty", since=marker)
+            server.namespace_requested.clear()
+            server.namespace_gate.clear()
             marker = terminal.send(b"\t\r")
-            terminal.wait_for(b"Live", since=marker)
+            deadline = time.monotonic() + 10
+            while not server.namespace_requested.is_set():
+                terminal._read()
+                assert time.monotonic() < deadline, "Context command did not reach owned API"
+            terminal.wait_for_screen("State: Connecting", since=marker)
+            marker = terminal.send(b":ns\r")
+            terminal.wait_for_screen("Connect to a context before selecting", since=marker)
+            marker = len(terminal.transcript)
+            server.namespace_gate.set()
+            terminal.wait_for_screen("State: Connected", since=marker, absent=("Connecting",))
+            scope = "team" if initial_scope else "default"
+            terminal.wait_for_screen(f"pods({scope})[80] · live", since=marker)
             marker = terminal.send(b":ns\r")
             terminal.wait_for_screen("namespaces(all)[2]", since=marker)
             assert any(
@@ -93,6 +107,7 @@ def terminal_navigation(command, directory, *, evidence, initial_scope=False):
             assert b"synthetic-pty" not in terminal.transcript
         assert path.read_bytes() == before
     finally:
+        server.namespace_gate.set()
         server.stopping.set()
         server.shutdown()
         thread.join(timeout=2)
