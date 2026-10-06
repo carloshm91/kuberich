@@ -164,7 +164,8 @@
       "partial_evidence": [
         "docs/command-navigation.md",
         "tests/ui/test_navigation.py",
-        "tests/terminal/test_navigation.py"
+        "tests/terminal/test_navigation.py",
+        "docs/acceptance/enter-navigation.md"
       ]
     },
     {
@@ -355,6 +356,7 @@
         "docs/resource-inspection.md",
         "docs/container-navigation.md",
         "tests/ui/test_containers.py",
+        "docs/acceptance/enter-navigation.md",
         "https://github.com/carloshm91/kubetrol/issues/115"
       ]
     },

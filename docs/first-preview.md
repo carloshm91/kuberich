@@ -323,3 +323,29 @@ the dropped counter explains missing older history. Previous output may be
 unavailable before a container restart. Read-only mode supports this viewer.
 See [log behavior and limits](log-viewer.md) and [S02 evidence](acceptance/S02.md).
 Interactive shell remains the next product checkpoint; no public release exists.
+
+## Enter navigation: feedback #115 — current trial
+
+From an interactive terminal on updated `main`:
+
+```sh
+git switch main
+git pull --ff-only
+uv sync --locked --group dev
+uv run kubetrol
+```
+
+1. Type `:ns ` and part of a namespace. Select the suggestion with Up/Down and
+   Enter. Check that its pods appear without reopening the namespace picker.
+2. Select a pod and press Enter, including a pod with only one container.
+   Select a container and press Enter again to read its logs.
+3. Press Esc to return to containers, then Esc to return to the pod table.
+   Check that the selection and viewport remain where you left them.
+4. On pods, `d` still opens details and `l` still opens logs directly. In the
+   container table, `j/k` and `g/G` navigate; Ctrl+Q quits.
+
+Container names/types come from the selected pod snapshot; reopen to refresh.
+Live container health and ephemeral container browsing remain later work.
+Report whether namespace arrow/Enter selection and both returns work in your
+terminal. See [behavior and limits](container-navigation.md) and
+[measured acceptance evidence](acceptance/enter-navigation.md).
