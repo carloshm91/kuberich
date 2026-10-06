@@ -367,7 +367,7 @@ The workspace observer validates both visible and covered container/log screens.
 Stale targets disable container selection; the log service still verifies the
 captured pod UID and declared container before and after opening the API stream.
 The container list is a snapshot; reopening refreshes it. Live container status,
-ephemeral containers and broader resource drill-down remain B05/S04/A03.
+ephemeral containers and broader resource drill-down remain B05/A03.
 
 This uses public [Textual DataTable](https://textual.textualize.io/widgets/data_table/)
 row events/actions and [Input](https://textual.textualize.io/widgets/input/) submissions.
@@ -394,3 +394,30 @@ S03 requires F05's merged stage-1 shared policy/argument contract; advanced
 connection overrides remain in the open F05 issue. The native pod/container
 exec route and actual Kubernetes exec qualification remain S04. See the
 [service contract and limits](process-handoff.md).
+
+
+## S04 captured shell and prepared connection
+
+`services/shell.py` captures the selected container, pod UID, session and literal
+shell argv before awaits. It GETs that exact pod, rejects mismatched/replaced or
+finished/deleting targets, and rechecks the current view before terminal handoff.
+Read-only policy precedes capture, file work and executable lookup. The server
+authorizes pods/exec; Kubetrol never retries an exec automatically.
+
+`KubernetesSession.delegated_config()` snapshots the already prepared endpoint,
+TLS material and credential mechanism. Kubectl receives only that session via an
+explicit mode-0600 kubeconfig in the owned mode-0700 SDK directory, plus explicit
+context/namespace/pod/container flags. This avoids rereading a changed source
+kubeconfig and delegating to another server/user. Relative helper executable
+paths are resolved against their original kubeconfig directory. Helper arguments
+remain literal; configured helpers are trusted local programs. Advanced connection
+overrides remain F05/C08. The staged file is removed after return, failure or
+cancellation; owned file threads are drained before session cleanup.
+
+The container screen owns its shell task and keeps the parent pod table mounted.
+S03 hands kubectl the actual controlling terminal and restores it before the
+result is shown. A scrollable feedback region retains full safe errors at 40×12.
+Enter-to-logs is preserved; `s`/`x` explicitly invokes the shell.
+See [native-shell behavior](container-shell.md),
+[Kubernetes exec](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_exec/)
+and [Textual suspension](https://textual.textualize.io/api/app/#textual.app.App.suspend).

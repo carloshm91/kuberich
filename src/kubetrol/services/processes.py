@@ -18,7 +18,7 @@ from kubetrol.domain.processes import (
     exit_status,
     process_timeout,
 )
-from kubetrol.errors import AppError
+from kubetrol.errors import AppError, ExecutableUnavailable
 from kubetrol.services.access import AccessPolicy
 
 TargetGuard = Callable[[], None]
@@ -45,7 +45,9 @@ def _executable(command: ProcessCommand) -> str:
         name = str(Path(name) if Path(name).is_absolute() else command.directory / name)
     resolved = shutil.which(name, path=path)
     if resolved is None:
-        raise AppError("Executable is unavailable; check its installation, PATH and permissions.")
+        raise ExecutableUnavailable(
+            "Executable is unavailable; check its installation, PATH and permissions."
+        )
     return resolved
 
 

@@ -1,7 +1,7 @@
 # Local processes and terminal handoff
 
 S03 #31 implements the shared process service and native terminal adapter.
-The pod/container shell shortcut belongs to S04 #32 and is not available yet.
+S04 #32 uses it for [selected-container shells](container-shell.md).
 Plugins, manifest editing and managed port-forward views retain their own tasks.
 
 ## Captured commands
@@ -72,8 +72,9 @@ The foreground child is explicitly invoked local code with the user's privileges
 and direct terminal access. The app does not sandbox it. Descendants that
 deliberately detach from the owned process group are outside this group's cleanup
 contract; future plugin configuration must retain that local trust boundary.
-No shell shortcut, Kubernetes exec qualification, cloud compatibility or remote
-SSH/tmux qualification is claimed by this foundation checkpoint.
+This foundation checkpoint records its local-process scope. S04 adds the CLI
+shell shortcut and actual Kubernetes exec evidence; cloud and remote SSH/tmux
+qualification remain separate.
 
 ## Trial and references
 

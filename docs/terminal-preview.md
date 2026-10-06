@@ -15,8 +15,9 @@ available-key hints. Context/namespace selectors are scrollable and maintain
 literal names. Commands, Tab suggestions, text/regex filters and bounded navigation
 history are available. Pod inspection uses `y` for YAML, `d` for details
 and `e` for related events. Enter opens the pod’s container table; Enter again
-opens the chosen container’s logs. `l` opens container logs directly; interactive shell remains
-upcoming. See [log controls](log-viewer.md) for scoped Vim navigation,
+opens the chosen container’s logs. `l` opens container logs directly. `x`,
+`:shell` or `:exec` opens the container picker; `s`/`x` on a container launches
+its [native shell](container-shell.md). See [log controls](log-viewer.md) for scoped Vim navigation,
 search, follow/pause, container selection and redacted copy/save.
 See [resource inspection](resource-inspection.md) for search, copying and limits.
 See [command navigation](command-navigation.md) for semantics and limits.
@@ -44,8 +45,11 @@ See [command navigation](command-navigation.md) for semantics and limits.
 | Click | Focus an input or select a table row when rows exist |
 | Left/right arrows in the table | Scroll columns horizontally in a narrow window |
 | `l` on a selected pod | Open current/previous container logs |
+| `x`, `:shell`, `:exec` on pods | Choose a container for its native shell |
+| `s` / `x` in containers | Launch the configured shell for the selected container |
 | `q` outside inputs | Quit |
-| Ctrl+Q or Ctrl+C | Quit, including while editing an input or reading help |
+| Ctrl+Q or Ctrl+C in the UI | Quit, including while editing an input or reading help |
+| Ctrl+C during a native shell | Sent to the remote foreground program; use `exit` to return |
 
 The filter searches current pod rows as you type. Plain text is literal and
 case-insensitive; `re:PATTERN` uses bounded regex matching. Invalid/timed-out regex
@@ -75,8 +79,9 @@ opening the UI. `NO_COLOR` selects the framework's monochrome mode. The
 `read_only` preference, overridden by `--readonly` or `--write`, appears in the
 header and at the start of the status. Shared command decisions refuse mutation,
 shell, attach and unclassified plugins in read-only mode. These operations are
-unavailable in write mode too: this preview has no cluster effects. Actual future
-services must use the guard before any effect. Explicit launch refresh is
+enforced by the process and shell services before lookup or preparation.
+Shells are available in write mode; other mutations, attach and plugins remain
+unavailable. Explicit launch refresh is
 unavailable; stored refresh preferences await the cluster services.
 See [preferences](configuration.md) for file and environment configuration.
 

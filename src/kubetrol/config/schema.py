@@ -5,10 +5,25 @@ from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
 
 from kubetrol.errors import AppError
+from kubetrol.security.arguments import freeze_arguments
 
 SCHEMA_VERSION = 1
 LOG_LEVELS = frozenset({"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"})
-FIELDS = frozenset({"theme", "refresh_seconds", "read_only", "log_level", "log_file"})
+FIELDS = frozenset({"theme", "refresh_seconds", "read_only", "log_level", "log_file", "shell"})
+
+
+def shell_arguments(value: object) -> tuple[str, ...]:
+    if not isinstance(value, (list, tuple)) or not 1 <= len(value) <= 32:
+        raise AppError("shell must be an argument list with 1-32 strings.")
+    if not all(isinstance(item, str) for item in value):
+        raise AppError("shell arguments must be strings.")
+    try:
+        arguments = freeze_arguments(value)
+    except AppError:
+        raise AppError("shell arguments must be bounded nonempty text without controls.") from None
+    if arguments[0].startswith("-"):
+        raise AppError("shell executable cannot be a command option.")
+    return arguments
 
 
 @dataclass(frozen=True)
@@ -18,8 +33,10 @@ class Settings:
     read_only: bool = False
     log_level: str = "WARNING"
     log_file: str | None = None
+    shell: tuple[str, ...] = ("sh",)
 
     def __post_init__(self) -> None:
+        object.__setattr__(self, "shell", shell_arguments(self.shell))
         if not isinstance(self.theme, str) or not re.fullmatch(
             r"[a-zA-Z][\w-]{0,63}", self.theme, re.ASCII
         ):
@@ -66,7 +83,14 @@ def settings_from(values: Mapping[str, object]) -> Settings:
         seconds = float(refresh)
     except OverflowError:
         raise AppError("refresh_seconds must be a finite number between 0.1 and 3600.") from None
-    return Settings(theme, seconds, read_only, level.upper(), log_file)
+    return Settings(
+        theme,
+        seconds,
+        read_only,
+        level.upper(),
+        log_file,
+        shell_arguments(values.get("shell", defaults.shell)),
+    )
 
 
 @dataclass(frozen=True)

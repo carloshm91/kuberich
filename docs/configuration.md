@@ -2,9 +2,8 @@
 
 This development build provides `info`, `config init`, `config check`, and local
 diagnostic logging, alongside the [terminal preview](terminal-preview.md).
-It does not connect to Kubernetes. The UI applies built-in themes and displays
-read-only mode in both header/status and shared command decisions. Cluster services
-will consume refresh and apply the shared guard when their behavior is implemented.
+Preference inspection does not connect to Kubernetes. The UI applies built-in themes and displays
+read-only mode in both header/status and shared command decisions. The native shell service applies the shared read-only guard before preparation.
 
 ## Commands
 
@@ -18,7 +17,7 @@ uv run kubetrol --log-level DEBUG --log-file /path/to/kubetrol.log
 
 Place global flags before a command. `--logLevel`/`-l` and `--logFile` are aliases
 for `--log-level` and `--log-file`. `--config` selects **Kubetrol preferences**;
-`--kubeconfig` is separate and currently returns unavailable (exit 4).
+`--kubeconfig` selects Kubernetes connection configuration for a terminal launch.
 
 `info` prints JSON with installed versions, local config/data/log paths, validated
 effective preferences, unknown-field count and migration status. It never prints
@@ -56,6 +55,7 @@ The file is always read; log flags do not bypass a broken config.
 
 | YAML field | Default | Environment | Runtime CLI |
 | --- | --- | --- | --- |
+| `shell` | `["sh"]` | Not available | Not available; configure YAML |
 | `theme` | `textual-dark` | `KUBETROL_THEME` | Not yet available |
 | `refresh_seconds` | `2.0` | `KUBETROL_REFRESH` | `--refresh`, `-r` for info/check; terminal use unavailable until C03 |
 | `read_only` | `false` | `KUBETROL_READONLY` | `--readonly` / `--write` (mutually exclusive) |
@@ -78,10 +78,16 @@ including when their text happens to match the file's value.
 
 Runtime choices never rewrite preferences. `--write` explicitly overrides a valid
 file/environment read-only setting for this invocation. Read-only blocks commands
-through a shared service decision; actual cluster effects remain upcoming.
+through a shared service decision, including the native shell service.
 See the [launch contract](k9s-cli.md) for aliases, availability and command-specific
 option handling. Context-specific preference precedence arrives with context support;
 the current flat schema applies global settings only.
+
+`shell` is a list of 1–32 nonempty strings, with an executable first and
+literal arguments after it. Strings and shell expressions are rejected. For
+example, `shell: ["/bin/bash", "-l"]` selects bash only in images that contain it.
+The list is captured at launch; restart after changing it. Diagnostics omit this
+argument list. See [native shells](container-shell.md).
 
 ## Schema, compatibility and writes
 
@@ -92,6 +98,7 @@ refresh_seconds: 2.0
 read_only: false
 log_level: WARNING
 log_file: null
+shell: ["sh"]
 ```
 
 Unknown fields are retained in memory and preserved by the atomic save API; they
@@ -149,6 +156,7 @@ contains no secret. Debug output stays in the file.
 | `3` | Missing explicit file, local permissions/I/O, existing init destination or log ownership failure |
 | `4` | Recognized option/command requires behavior not shipped in this development build |
 | `130` | Interrupted non-UI operation |
+| `143` | SIGTERM during a native shell, after cleanup and terminal restoration |
 
 Argument parsing does not echo rejected arguments, which might contain tokens.
 Settings errors name the setting without printing its value. Logging failures

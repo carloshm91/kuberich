@@ -190,3 +190,21 @@ def test_interrupt_returns_130_without_traceback(
     monkeypatch.setattr(cli, "read_config", interrupted)
     assert main(["config", "check"]) == 130
     assert capsys.readouterr().err == "kubetrol: interrupted.\n"
+
+
+def test_info_omits_sensitive_shell_arguments_and_retains_only_safe_preferences(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    path = tmp_path / "preferences.yaml"
+    contents = 'schema_version: 1\nshell: ["sh", "-c", "opaque-sensitive-shell-argument"]\n'
+    path.write_text(contents)
+    assert main(["--config", str(path), "info"]) == 0
+    output = capsys.readouterr()
+    assert "opaque-sensitive-shell-argument" not in output.out and not output.err
+    assert set(json.loads(output.out)["preferences"]) == {
+        "theme",
+        "refresh_seconds",
+        "read_only",
+        "log_level",
+    }
+    assert path.read_text() == contents

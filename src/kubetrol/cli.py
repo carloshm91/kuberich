@@ -44,7 +44,7 @@ def _parser() -> argparse.ArgumentParser:
     parser = _Parser(
         prog="kubetrol",
         description="A Kubernetes terminal UI built with Python and Textual.",
-        epilog="Live pod table preview: commands, completion, filters and history; logs and shell are upcoming.",
+        epilog="Live pod table preview: commands, completion, filters, logs and native container shells.",
         allow_abbrev=False,
         formatter_class=lambda prog: argparse.HelpFormatter(prog, width=100),
     )
@@ -248,9 +248,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         initial = CommandService(AccessPolicy(settings.read_only)).resolve(
             arguments.initial_command or ""
         )
-        if initial is Command.UNAVAILABLE:
+        if initial in {Command.UNAVAILABLE, Command.SHELL}:
             raise AppError(
-                "--command resource/action is unavailable in this preview. Available: po, ctx, ns, status, retry, help, quit.",
+                "--command requires an available startup view; shell actions need a selected pod. Available: po, ctx, ns, status, retry, help, quit.",
                 ExitCode.UNAVAILABLE,
             )
         if arguments.subcommand is None and arguments.refresh_seconds is not None:
@@ -283,7 +283,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         "preferences": {
                             key: value
                             for key, value in settings.to_mapping().items()
-                            if key != "log_file"
+                            if key in {"theme", "refresh_seconds", "read_only", "log_level"}
                         },
                         "terminal_ui_available": True,
                         "cluster_connected": False,

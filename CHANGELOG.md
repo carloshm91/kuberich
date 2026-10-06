@@ -7,6 +7,9 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Fixed
 
+- Preserve exit 143 after SIGTERM during a native shell instead of reporting a
+  terminal failure after successful cleanup and restoration.
+
 - Enter after arrow navigation submits the highlighted command/namespace/context
   suggestion once; editing or changing scope discards the old selection.
 
@@ -22,9 +25,14 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Native selected-container shells via kubectl exec, with `x`/`:shell` on pods,
+  `s`/`x` on containers and a configurable literal shell argument list.
+- Private connection snapshots pinned to the prepared session, pod-UID checks,
+  read-only enforcement and return to the retained table after exit or failure.
+
 - Shared bounded local-process runner and native terminal handoff foundation,
   with captured scope/arguments, enforced read-only policy and owned cleanup.
-  The pod/container shell shortcut remains the next implementation checkpoint.
+  Used by the selected-container shell route.
 
 - Enter on a pod opens its regular/init container table, including single-container
   pods; Enter on a container opens its logs. Esc returns through both views, while

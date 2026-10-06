@@ -106,6 +106,9 @@ class Handler(BaseHTTPRequestHandler):
                     )
                 )
         elif "/pods/" in parsed.path:
+            if self.server.pod_get_status != 200:
+                self.send_error(self.server.pod_get_status, "Owned pod preflight failure")
+                return
             namespace = parsed.path.split("/")[4]
             name = parsed.path.rsplit("/", 1)[1]
             uid = (
@@ -141,6 +144,14 @@ class Handler(BaseHTTPRequestHandler):
         else:
             self.send_error(404)
             return
+        if self.server.shell_containers and (
+            parsed.path.endswith("/pods") or "/pods/" in parsed.path
+        ):
+            values = payload["items"] if payload.get("kind") == "PodList" else [payload]
+            for value in values:
+                value["spec"]["containers"].extend(
+                    {"name": name, "image": "synthetic"} for name in self.server.shell_containers
+                )
         body = json.dumps(payload).encode()
         self.send_response(200)
         self.send_header("Content-Length", str(len(body)))
@@ -162,3 +173,5 @@ class Server(ThreadingHTTPServer):
         self.watch_lock = threading.Lock()
         self.pod_events = queue.Queue()
         self.pod_table = threading.Event()
+        self.shell_containers: tuple[str, ...] = ()
+        self.pod_get_status = 200

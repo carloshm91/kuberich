@@ -12,7 +12,7 @@ jobs:
   application:
     name: Application (${{ matrix.os }}, Python ${{ matrix.python }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -44,6 +44,14 @@ jobs:
           printf '%s  %s\n' 'aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d' "$RUNNER_TEMP/kubetrol-kind" | sha256sum --check
           chmod 700 "$RUNNER_TEMP/kubetrol-kind"
           uv run python scripts/verify_contexts_kind.py --kind "$RUNNER_TEMP/kubetrol-kind"
+      - name: Verify actual selected-container shells on an owned disposable cluster
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.12' }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/kubetrol-shell/bin"
+          curl --fail --location --retry 3 --max-time 60 https://dl.k8s.io/release/v1.36.4/bin/linux/amd64/kubectl --output "$RUNNER_TEMP/kubetrol-shell/bin/kubectl"
+          printf '%s  %s\n' '8b8f088da2dab964f853b38464033b1be15ede2839eca751482357c45abdd05a' "$RUNNER_TEMP/kubetrol-shell/bin/kubectl" | sha256sum --check
+          chmod 700 "$RUNNER_TEMP/kubetrol-shell/bin/kubectl"
+          uv run python -m scripts.verify_shell_kind --kind "$RUNNER_TEMP/kubetrol-kind" --kubectl "$RUNNER_TEMP/kubetrol-shell/bin/kubectl"
       - name: Enforce independent production and critical-module coverage
         run: uv run python scripts/check_coverage.py coverage.json
       - name: Enforce changed executable-line coverage against the merge base

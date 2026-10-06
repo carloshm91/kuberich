@@ -3,6 +3,7 @@
 import asyncio
 import base64
 import binascii
+import copy
 import json
 import ssl
 from collections.abc import AsyncGenerator, AsyncIterator
@@ -151,6 +152,59 @@ class KubernetesSession:
         self.configuration: client.Configuration | None = None
         self.credentials: ExecToken | None = None
         self.insecure = False
+
+    def delegated_config(self) -> dict[str, Any]:
+        """Pin kubectl to this prepared session, rather than reloading ambient files."""
+        configuration = self.configuration
+        if configuration is None:
+            raise AppError("The selected Kubernetes session is closed.")
+        cluster: dict[str, Any] = {
+            "server": configuration.host,
+            "insecure-skip-tls-verify": not configuration.verify_ssl,
+        }
+        for source, destination in (
+            ("ssl_ca_cert", "certificate-authority"),
+            ("tls_server_name", "tls-server-name"),
+            ("proxy", "proxy-url"),
+        ):
+            value = getattr(configuration, source)
+            if value is not None:
+                cluster[destination] = value
+        if "extensions" in self.context.cluster.data:
+            cluster["extensions"] = copy.deepcopy(self.context.cluster.data["extensions"])
+        user: dict[str, Any] = {}
+        for source, destination in (
+            ("cert_file", "client-certificate"),
+            ("key_file", "client-key"),
+        ):
+            value = getattr(configuration, source)
+            if value is not None:
+                user[destination] = value
+        if self.credentials is not None:
+            helper = copy.deepcopy(self.credentials.entry.data)
+            command = text(helper["command"])
+            if "/" in command and not Path(command).is_absolute():
+                helper["command"] = str(self.credentials.entry.directory / command)
+            user["exec"] = helper
+        elif token := configuration.api_key.get("BearerToken"):
+            user["token"] = token.removeprefix("Bearer ")
+        return {
+            "apiVersion": "v1",
+            "kind": "Config",
+            "current-context": self.context.name,
+            "clusters": [{"name": "kubetrol-session", "cluster": cluster}],
+            "users": [{"name": "kubetrol-session", "user": user}],
+            "contexts": [
+                {
+                    "name": self.context.name,
+                    "context": {
+                        "cluster": "kubetrol-session",
+                        "user": "kubetrol-session",
+                        "namespace": self.context.namespace,
+                    },
+                }
+            ],
+        }
 
     async def open(self) -> None:
         preparation = asyncio.create_task(

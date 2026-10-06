@@ -1,7 +1,9 @@
 # Commands, filtering and navigation
 
 The development terminal has a live pod view. Resource commands route to this
-available view; other resource tables, details, logs and exec have separate tickets.
+available view. Selected pods support [inspection](resource-inspection.md),
+[logs](log-viewer.md) and [native shells](container-shell.md); other resource
+tables remain separate work.
 
 ## Commands
 
@@ -16,6 +18,7 @@ read-only policy handle `--command` / `-c` at launch. Arguments preserve casing.
 | `ctx NAME` | Connect directly to that context |
 | `ns`, `namespace`, `namespaces` | Open the namespace picker |
 | `ns NAME`, `ns *` | Select that namespace or all namespaces |
+| `shell`, `exec` | Open the selected pod’s container picker; `s`/`x` launches its shell |
 | `status`, `retry` | Open connection details / reconnect |
 | `back`, `forward` | Restore the previous / next navigation state |
 | `help`, `?` | Show actual keyboard actions and limits |
@@ -25,8 +28,10 @@ For example, `uv run kubetrol --context YOUR_CONTEXT --command 'po YOUR_NAMESPAC
 connects once and starts the requested pod scope without first watching another
 namespace. `--command 'ctx NAME'` selects that context before authentication.
 Unsupported commands report unavailable; they never display a substitute table.
-Inspection commands remain usable in read-only mode. Mutations, exec, attach and
-plugins are still unavailable; the shared policy rejects them in read-only mode.
+Inspection commands remain usable in read-only mode. Native shells are available
+in write mode; startup `--command shell`/`exec` is refused because a deliberately
+selected pod is required. Mutations, attach and plugins remain unavailable.
+The shared policy rejects effectful commands in read-only mode.
 
 ## Completion
 

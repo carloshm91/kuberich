@@ -27,7 +27,8 @@ watch events, UID state/replays and recovery decisions, plus active-view identit
 snapshot invalidation and freshness decisions, plus pod health, typed ordering,
 inspection redaction/search, log query/framing/retention, and retained log identities,
 window selection, start-time validation and clipboard bounds, plus immutable
-process/environment capture, scoped kubectl/editor builders and exit decisions.
+process/environment capture, scoped kubectl/editor builders and exit decisions,
+plus shell target validation and sanitized return decisions.
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
 from transport and widget glue so exhaustive tests are practical. The critical
@@ -231,3 +232,15 @@ terminate/kill the owned process group and close every descriptor.
 
 - [Coverage configuration](https://coverage.readthedocs.io/en/latest/config.html)
 - [Textual testing](https://textual.textualize.io/guide/testing/)
+
+
+S04 adds selected-container shell identity/return decisions to the critical
+inventory. API/Pilot/native-PTY/fresh-install cases cover configured/default
+shells, read-only policy, scoped arguments, private connection preparation, stale
+UIDs, failures and cleanup. The Linux/Python 3.12 job additionally requires
+`scripts.verify_shell_kind`: actual kubectl exec, two containers, fullscreen vi,
+resize, interruption, repeated return, source-kubeconfig pinning and RBAC denial.
+Its matching kubectl 1.36.4 is downloaded into the runner's temporary directory
+and verified against a pinned SHA-256; no global kubectl is replaced. The owned
+cluster is deleted on success/failure and sanitized terminal/cluster evidence is
+retained. Hosted/macOS results remain unavailable under the billing restriction.

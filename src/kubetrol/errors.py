@@ -9,6 +9,7 @@ class ExitCode(IntEnum):
     LOCAL_IO = 3
     UNAVAILABLE = 4
     INTERRUPTED = 130
+    TERMINATED = 143
 
 
 class AppError(Exception):
@@ -17,3 +18,7 @@ class AppError(Exception):
     def __init__(self, message: str, code: ExitCode = ExitCode.INVALID_INPUT) -> None:
         super().__init__(message)
         self.code = code
+
+
+class ExecutableUnavailable(AppError):
+    """A missing local executable, without retaining its potentially sensitive argv."""
