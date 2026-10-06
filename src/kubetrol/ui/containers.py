@@ -44,7 +44,8 @@ class ContainerScreen(ModalScreen[None]):
     #container-dialog { width: 100%; height: 1fr; min-height: 3; border: solid $primary; border-title-align: center; }
     #container-title, #container-hints, #container-status { height: 1; text-overflow: ellipsis; }
     #container-title { color: $accent; }
-    #container-feedback { height: 1; }
+    #container-feedback { height: auto; min-height: 1; max-height: 3; }
+    ContainerScreen.short #container-feedback { max-height: 2; }
     #container-status { height: auto; text-overflow: fold; }
     #containers { height: 1fr; }
     #container-back { height: 1; border: none; }

@@ -93,6 +93,7 @@ async def test_top_input_namespace_table_drilldown_escape_and_actual_view_hints(
             assert "logs" in str(logs.breadcrumbs.content) and "Containers" in str(
                 logs.breadcrumbs.content
             )
+            assert logs.breadcrumbs.content.cell_len <= logs.breadcrumbs.size.width
             assert logs.search.region.y < logs.body.region.y
             assert logs.body.content_region.height >= 1
             app.save_screenshot(filename=f"workspace-logs-{size[0]}.svg", path=str(out))

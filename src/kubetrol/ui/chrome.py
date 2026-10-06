@@ -171,12 +171,24 @@ class Breadcrumbs(Static):
     def __init__(self, trail: tuple[str, ...], destination: str, *, visible: bool = True) -> None:
         super().__init__("", id="breadcrumbs", markup=False)
         self.trail, self.destination = trail, destination
+        self._destination_override: str | None = None
         self.display = visible
 
     def on_mount(self) -> None:
         self.show_trail()
 
     def show_trail(self, *, destination: str | None = None) -> None:
-        self.update(
-            safe_text(" > ".join(self.trail) + "   Esc → " + (destination or self.destination))
-        )
+        self._destination_override = destination
+        self._render_trail()
+
+    def on_resize(self) -> None:
+        self._render_trail()
+
+    def _render_trail(self) -> None:
+        route = safe_text(" > ".join(self.trail))
+        action = safe_text("   Esc → " + (self._destination_override or self.destination))
+        width = self.size.width
+        if width and route.cell_len + action.cell_len > width:
+            route = safe_text(self.trail[-1])
+            route.truncate(max(0, width - action.cell_len), overflow="ellipsis")
+        self.update(route + action)

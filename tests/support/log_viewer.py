@@ -45,7 +45,11 @@ def terminal_logs(command, directory, *, evidence, error_exit=False):
             marker = terminal.send(b"?")
             terminal.wait_for(b"Log controls", since=marker)
             marker = terminal.send(b"\x1b")
-            terminal.wait_for(b"g/G first/last", since=marker)
+            terminal.wait_for_screen(
+                "Esc → Pods" if error_exit else "Esc → Containers",
+                since=marker,
+                absent=("Log controls",),
+            )
             terminal.resize(100, 30)
             if error_exit:
                 marker = terminal.send(b"v")
