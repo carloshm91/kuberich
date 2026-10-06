@@ -382,7 +382,9 @@ uv run kubetrol
 
 1. Choose your context with `:ctx`, then `:ns YOUR_NAMESPACE`.
 2. Select a running pod and press Enter. Choose its container with Up/Down.
-3. Press `s` (or `x`). The terminal opens that container's `sh`; try `pwd`.
+3. Press `s` (or `x`). A clean terminal screen shows the selected context, pod
+   and container, then opens that container's `sh`; try `pwd`. The launch command
+   should no longer sit above the remote prompt.
 4. Type `exit`. Check that the same container remains selected. Press Esc to
    return to the same pod and viewport.
 5. Alternatively, `x`, `:shell` or `:exec` on pods opens the container picker.
@@ -393,7 +395,8 @@ container or denied pods/exec permission returns an actionable message. For a
 different image shell, configure a YAML argument list such as
 `shell: ["/bin/bash", "-l"]` and restart. The shell must exist in that image.
 See [shell controls, requirements and limits](container-shell.md) and
-[measured acceptance evidence](acceptance/S04.md).
+[measured acceptance evidence](acceptance/S04.md), including the
+[clean-screen correction](acceptance/shell-transition.md).
 
 For feedback, report whether the selected container is correct and whether
 exit, resize and return preserve the table. No credentials or kubeconfig

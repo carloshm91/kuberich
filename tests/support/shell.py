@@ -115,8 +115,19 @@ def terminal_shell(command: list[str], directory: Path, scenario: str, *, eviden
                     }[scenario]
                     terminal.wait_for(expected, since=marker)
                     assert b"SHELL CHILD START" not in terminal.transcript[marker:]
+                    if scenario in {"readonly", "deleted"}:
+                        assert (
+                            b"Kubetrol shell | exit to return" not in terminal.transcript[marker:]
+                        )
                     break
                 terminal.wait_for(b"SHELL CHILD START", since=marker)
+                entering = terminal.transcript[marker:]
+                heading = b"\x1b[H\x1b[2JKubetrol shell | exit to return"
+                assert entering.index(heading) < entering.index(b"SHELL CHILD START")
+                assert b"Context: kubetrol-test-pty" in entering
+                assert b"Pod: default/owned-pty-pod-079" in entering
+                assert b"Container: worker" in entering
+                assert b"\x1b[3J" not in entering
                 terminal.send(b"start\n")
                 if scenario == "fullscreen":
                     terminal.wait_for(b"OWNED FULLSCREEN READY", since=marker)

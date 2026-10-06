@@ -5,6 +5,24 @@ from kubetrol.domain.processes import ProcessResult, ProcessStatus
 from kubetrol.domain.resources import ResourceRecord, resource_object
 from kubetrol.domain.targets import ResourceTarget
 from kubetrol.errors import AppError
+from kubetrol.security.presentation import safe_text
+
+
+def shell_banner(target: ResourceTarget, width: int) -> str:
+    """A bounded introductory heading; the remote program keeps the whole TTY."""
+    columns = max(1, min(width, 160))
+    lines = (
+        "Kubetrol shell | exit to return",
+        f"Context: {target.session.context}",
+        f"Pod: {target.namespace}/{target.name}",
+        f"Container: {target.container}",
+    )
+    rendered = []
+    for line in lines:
+        text = safe_text(line)
+        text.truncate(columns, overflow="ellipsis")
+        rendered.append(text.plain)
+    return "\n".join(rendered) + "\n\n"
 
 
 def verify_shell_target(target: ResourceTarget, record: ResourceRecord) -> None:

@@ -1,6 +1,7 @@
 """Cancellation/errors leave suspension normally before being propagated."""
 
 import asyncio
+import os
 import signal
 from contextlib import contextmanager
 
@@ -13,6 +14,7 @@ from kubetrol.domain.processes import (
     ProcessStatus,
     capture_command,
 )
+from kubetrol.domain.targets import ResourceTarget, SessionIdentity
 from kubetrol.errors import AppError
 from kubetrol.services.access import AccessPolicy
 from kubetrol.services.processes import ProcessRunner
@@ -150,3 +152,78 @@ async def test_concurrent_handoff_is_refused_before_changing_driver_or_signals(t
         with runner.reserve_terminal(), pytest.raises(AppError, match="already active"):
             await handoff.terminal_handoff(app, runner, command(tmp_path))
         assert not app.events and signal.getsignal(signal.SIGTERM) == before
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "selected,presentation_failure", [(True, False), (True, True), (False, False)]
+)
+async def test_shell_screen_precedes_child_and_presentation_failure_restores_app(
+    tmp_path, monkeypatch, selected, presentation_failure
+):
+    app = NativeApp()
+    runner = ProcessRunner(AccessPolicy(False))
+    target = ResourceTarget(
+        SessionIdentity("owned-context", 1), "", "pods", "team", "api", "uid", "worker"
+    )
+    spec = capture_command(
+        ["owned"],
+        environment={},
+        directory=tmp_path,
+        mode=ProcessMode.FOREGROUND,
+        purpose=ProcessPurpose.EXEC,
+        target=target if selected else None,
+    )
+
+    def guard():
+        pass
+
+    class Lease:
+        descriptor = 27
+
+        def __init__(self, fd):
+            pass
+
+        def __enter__(self):
+            app.events.append("terminal leased")
+            return self
+
+        def __exit__(self, *args):
+            app.events.append("terminal restored")
+
+        def claim(self, group):
+            pass
+
+        def present(self, heading):
+            assert "Context: owned-context" in heading
+            assert "Pod: team/api" in heading and "Container: worker" in heading
+            app.events.append("screen presented")
+            if presentation_failure:
+                raise AppError("owned screen failure")
+
+    async def foreground(command, *, descriptor, claim, guard):
+        assert command is spec and descriptor == 27
+        app.events.append("child started")
+        return ProcessResult(ProcessStatus.SUCCEEDED, 0)
+
+    monkeypatch.setattr(handoff, "TerminalLease", Lease)
+    monkeypatch.setattr(os, "get_terminal_size", lambda _: os.terminal_size((40, 12)))
+    monkeypatch.setattr(runner, "foreground", foreground)
+    previous = signal.getsignal(signal.SIGTERM)
+    try:
+        if presentation_failure:
+            with pytest.raises(AppError, match="screen failure"):
+                await handoff.terminal_handoff(app, runner, spec, guard=guard)
+        else:
+            assert (await handoff.terminal_handoff(app, runner, spec, guard=guard)).returncode == 0
+        assert app.events == [
+            "suspended",
+            "terminal leased",
+            *(["screen presented"] if selected else []),
+            *([] if presentation_failure else ["child started"]),
+            "terminal restored",
+            "resumed",
+        ]
+        assert signal.getsignal(signal.SIGTERM) == previous
+    finally:
+        await runner.close()

@@ -36,6 +36,10 @@ native container shell checkpoint. S03's F05 dependency means its already-merged
 stage-1 shared command/read-only policy, not the still-open advanced connection
 overrides. GitHub #31 records this readiness clarification; F05 stays open.
 
+The maintainer's shell-screen feedback [#119](https://github.com/carloshm91/kubetrol/issues/119)
+adds a focused clean-screen/target-heading correction after S04 and before
+resuming the remaining F05 connection options. It preserves native handoff.
+
 ## Epics
 
 | Issue | Outcome | Completion milestone |

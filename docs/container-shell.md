@@ -8,6 +8,11 @@ Enter/`l` still opens logs. Pod `s` continues to change the sort column.
 Kubetrol suspends the UI and delegates the actual terminal to
 [kubectl exec](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_exec/).
 Keyboard input, Ctrl+C and window-size changes reach the foreground program.
+Opening a shell clears the visible terminal and starts at the top with a compact
+heading showing the captured context, namespace/pod and container, followed by
+`exit` guidance and the image's own prompt. Heading lines are literal, redacted
+and truncated to terminal cell width. It is an introduction: fullscreen programs
+can use every row and replace it. Kubetrol does not send scrollback-erasure controls.
 SIGTERM during handoff cleans up the owned process and exits the CLI with 143
 after terminal restoration. Type `exit` to return to the same container selection; Esc returns to the
 retained pod table. A failed exec also returns to that view. Long feedback can
@@ -61,8 +66,9 @@ ephemeral-debug workflow, not an invented SSH connection.
 
 ## Verification and remaining scope
 
-See [measured S04 acceptance evidence](acceptance/S04.md) for the qualified commit,
-coverage, actual terminal/cluster trials and unavailable platform checks.
+See [measured S04 acceptance evidence](acceptance/S04.md) and the
+[clean-screen transition evidence](acceptance/shell-transition.md) for qualified
+commits, coverage, actual terminal/cluster trials and unavailable platform checks.
 
 Behavioral checks cover immutable capture, exact arguments, private file modes,
 UID replacement, stale views, read-only policy and repeated cancellation/cleanup.
