@@ -143,9 +143,11 @@ class TerminalSession:
         os.write(self.master, data)
         return marker
 
-    def wait_for_screen(self, text: str, *, timeout: float = 15) -> None:
+    def wait_for_screen(self, text: str, *, row: int | None = None, timeout: float = 15) -> None:
         deadline = time.monotonic() + timeout
-        while text not in "\n".join(self.screen.display):
+        while text not in "\n".join(
+            self.screen.display if row is None else self.screen.display[row : row + 1]
+        ):
             self._read()
             assert self.process.poll() is None, f"Exited before visible {text!r}"
             assert time.monotonic() < deadline, f"Missing visible {text!r}: {self.screen.display!r}"

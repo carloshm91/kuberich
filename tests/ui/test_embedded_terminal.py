@@ -178,3 +178,38 @@ async def test_immediate_close_after_mount_returns_without_starting_process(tmp_
             app.screen.close_shell()
             await wait_for(lambda: app.screen is containers)
             assert app.processes.active_count == 0
+
+
+@pytest.mark.asyncio
+async def test_close_before_mount_prevents_preparation_and_process_launch(tmp_path):
+    value = pod("api")
+    gets = []
+
+    async def ns(request):
+        return namespaces("team")
+
+    async def handler(request):
+        if "watch" in request.query:
+            return await stable_watch(request)
+        if not request.path.endswith("/pods"):
+            gets.append(request.path)
+        return web.json_response(collection(value) if request.path.endswith("/pods") else value)
+
+    async with workspace_api(ns, handler) as url:
+        app = KubetrolApp(
+            Settings(), logging.Logger("before-mount"), catalog=catalog_fixture(tmp_path, url)
+        )
+        async with app.run_test() as pilot:
+            await wait_for(lambda: app.resources.row_count == 1)
+            await pilot.press("enter")
+            parent = app.screen
+            screen = ShellScreen(
+                parent.shell, parent.processes, parent.shell.capture(parent.names[0])
+            )
+            screen.close_shell()
+            screen.key(Key("x", "x"))
+            screen.paste(Paste("ignored"))
+            app.push_screen(screen)
+            await wait_for(lambda: app.screen is parent)
+            assert not gets and app.processes.active_count == 0 and not screen.terminal.pending
+            assert not list(Path(app.sessions.client.directory.name).glob("exec-*.json"))
