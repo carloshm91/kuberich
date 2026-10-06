@@ -44,6 +44,7 @@ from kubetrol.services.filtering import apply_filter
 from kubetrol.services.inspection import InspectionService
 from kubetrol.services.logs import LogStream
 from kubetrol.services.pods import PodProjection
+from kubetrol.services.processes import ProcessRunner
 from kubetrol.services.sessions import SessionService
 from kubetrol.services.workspace import ViewSubscription, WorkspaceService
 from kubetrol.ui.commands import CommandInput, NavigationInput
@@ -171,6 +172,7 @@ class KubetrolApp(App[None]):
         self.history = NavigationHistory()
         self._restore_state: tuple[int, NavigationState] | None = None
         self.commands = CommandService(AccessPolicy(settings.read_only))
+        self.processes = ProcessRunner(self.commands.policy)
         if settings.theme not in self.available_themes:
             raise AppError("Selected theme is unavailable; choose a built-in Textual theme.")
         self.theme = settings.theme
@@ -427,6 +429,7 @@ class KubetrolApp(App[None]):
         self.query_one("#resource-view", Vertical).border_subtitle = self.resources.sort_summary
 
     async def on_unmount(self) -> None:
+        await self.processes.close()
         await self.workspace.close()
         if self._view_task is not None:
             await asyncio.gather(self._view_task, return_exceptions=True)

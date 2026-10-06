@@ -14,6 +14,7 @@ from pathlib import Path
 
 import pytest
 
+from tests.support.handoff import terminal_handoff_trial
 from tests.support.navigation import terminal_navigation
 from tests.terminal.pty_support import TerminalSession
 
@@ -86,6 +87,13 @@ def test_wheel_metadata_entry_point_and_assets(artifacts: tuple[Path, Path]) -> 
         entry_points.read_string(archive.read(entry_name).decode())
         assert entry_points["console_scripts"]["kubetrol"] == "kubetrol.cli:main"
         assert not any(name.startswith(("tests/", ".venv/", ".github/")) for name in names)
+
+
+def test_installed_terminal_handoff_uses_packaged_services(installed_wheel) -> None:
+    binary_dir, directory = installed_wheel
+    terminal_handoff_trial(
+        str(binary_dir / "python"), directory, "success", name="installed-handoff"
+    )
 
 
 def test_source_distribution_can_build_a_wheel(
