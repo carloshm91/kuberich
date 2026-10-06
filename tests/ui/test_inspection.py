@@ -114,7 +114,7 @@ async def test_yaml_details_events_search_copy_managed_scroll_and_return_keep_ta
             await pilot.pause()
             assert app.resources.capture_viewport() == before
             assert app.filter_input.value == query and app.resources.sort_column == sorting
-            await pilot.press("enter")
+            await pilot.press("d")
             reopened = await viewer_loaded(app)
             assert reopened.page == "details"
             await pilot.press("escape")

@@ -30,6 +30,7 @@ from kubetrol.services.sessions import SessionService
 from kubetrol.services.watches import ListWatch
 from kubetrol.services.workspace import WorkspaceService
 from kubetrol.ui.app import KubetrolApp
+from kubetrol.ui.containers import ContainerScreen
 from kubetrol.ui.inspection import InspectionScreen
 from kubetrol.ui.logs import LogScreen
 
@@ -134,7 +135,13 @@ async def verify_pod_table(reader, resource, catalog, path, context):
         assert "Filter active" in str(app.status.content)
         log_uid = app.resources.selected_uid
         log_viewport = app.resources.capture_viewport()
-        await pilot.press("l")
+        await pilot.press("enter")
+        assert isinstance(app.screen, ContainerScreen)
+        containers = app.screen
+        assert containers.stream.target.uid == log_uid
+        assert containers.table.row_count >= 1
+        app.save_screenshot(filename="containers-owned-kind.svg", path=str(output))
+        await pilot.press("enter")
         async with asyncio.timeout(30):
             while (
                 not isinstance(app.screen, LogScreen)
@@ -160,11 +167,13 @@ async def verify_pod_table(reader, resource, catalog, path, context):
         async with asyncio.timeout(30):
             while not logs._read_task.done() or not logs._renderer.done():
                 await asyncio.sleep(0.01)
+        assert app.screen is containers
+        await pilot.press("escape")
         assert app.resources.capture_viewport() == log_viewport
         await pilot.press("escape", "colon", *"ns def")
         await pilot.pause()
         assert "ns default" in app.command_input.choices
-        await pilot.press("tab", "enter")
+        await pilot.press("up", "enter")
         async with asyncio.timeout(30):
             while (
                 app.workspace.store.observation.status is not ViewStatus.LIVE
@@ -204,7 +213,8 @@ async def verify_pod_table(reader, resource, catalog, path, context):
         "real_container_log_viewer": True,
         "real_log_vim_search_follow_pause_timestamps_wrap_previous_copy": True,
         "real_log_view_cleanup_and_table_return": True,
-        "real_namespace_tab_completion": True,
+        "real_namespace_arrow_enter_completion": True,
+        "real_pod_container_log_enter_and_back": True,
         "real_navigation_history_selection_and_sort": True,
         "server_table_pod_count": len(table["rows"]),
     }

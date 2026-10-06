@@ -23,7 +23,13 @@ def terminal_logs(command, directory, *, evidence, error_exit=False):
             [*command, "--kubeconfig", str(path), "--readonly"], directory
         ) as terminal:
             terminal.wait_for(b"80 pods")
-            marker = terminal.send(b"l")
+            if not error_exit:
+                marker = terminal.send(b"\r")
+                terminal.wait_for(b"Containers", since=marker)
+                terminal.wait_for(b"Back to pods", since=marker)
+                marker = terminal.send(b"\r")
+            else:
+                marker = terminal.send(b"l")
             terminal.wait_for(b"Logs", since=marker)
             terminal.wait_for(b"log-line-", since=marker)
             marker = terminal.send(b"p")
@@ -46,6 +52,8 @@ def terminal_logs(command, directory, *, evidence, error_exit=False):
                 terminal.wait_for(b"Previous container logs unavailable", since=marker)
                 terminal.send(b"\x11")
             else:
+                marker = terminal.send(b"\x1b")
+                terminal.wait_for(b"Back to pods", since=marker)
                 marker = terminal.send(b"\x1b")
                 terminal.wait_for(b"80 pods", since=marker)
                 terminal.send(b"\x11")

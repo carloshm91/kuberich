@@ -193,3 +193,10 @@ The first product task is [F01 #14](https://github.com/carloshm91/kubetrol/issue
 
 See [coverage policy](quality.md), [release procedure](releases.md), and
 [capability audit](k9s-parity.md).
+
+## Preview feedback follow-up
+
+[#115](https://github.com/carloshm91/kubetrol/issues/115) corrects arrow/Enter
+command completion and adds pod → container → log Enter navigation in v0.0.1.
+It is a focused follow-up to B03/B04/S02, before the next exec checkpoint.
+GitHub records its current status and measured acceptance evidence.

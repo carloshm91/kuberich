@@ -7,6 +7,9 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Fixed
 
+- Enter after arrow navigation submits the highlighted command/namespace/context
+  suggestion once; editing or changing scope discards the old selection.
+
 - Keep quiet resource watches live through normal renewal without false timeout
   warnings or growing retries; still expose genuine outages with bounded recovery.
 - Replace “Session connected” with “Resource data ready”, distinguish loading
@@ -18,6 +21,10 @@ Release entries are written in release PRs and linked to their Git tags.
   status/retry with `i`/`r` or `:status`/`:retry` when a terminal intercepts function keys.
 
 ### Added
+
+- Enter on a pod opens its regular/init container table, including single-container
+  pods; Enter on a container opens its logs. Esc returns through both views, while
+  `d` keeps resource details and `l` keeps the direct log shortcut.
 
 - Container log viewer with regular/init selection, current/previous output,
   head/tail/time windows, timestamps, wrapping, literal search and Vim navigation.

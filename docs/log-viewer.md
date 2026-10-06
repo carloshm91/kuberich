@@ -1,6 +1,9 @@
 # Container log viewer: S02
 
-Select a connected pod and press `l`. A single regular container opens directly;
+Select a connected pod and press Enter to open its [container table](container-navigation.md),
+then Enter on a container to read its logs. Esc returns logs → containers → pods.
+
+For the direct log shortcut, press `l` on a pod. A single regular container opens directly;
 multiple regular/init containers open a selector first. `c` or **Container**
 changes the selected container. Logs work in read-only mode and use the captured
 context, namespace, pod UID and container, independently of resource watches.
@@ -37,7 +40,7 @@ These keys act in the log body; letters in search/value inputs remain text.
 | Ctrl+Y | Copy retained redacted timestamped output, at most 1 MiB |
 | Ctrl+S | Save retained redacted timestamped output to an explicit new file |
 | `?` / Help | Read all controls and the complete state |
-| Esc / Back | Leave an input, then return to the pod table |
+| Esc / Back | Leave an input, then return to containers (Enter path) or pods (`l` path) |
 
 Reading older output does not pause reception. Pausing reception does not freeze
 navigation, search, wrapping or help. G/f do not unpause a paused stream. A paused

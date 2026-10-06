@@ -60,6 +60,13 @@ def terminal_navigation(command, directory, *, evidence, initial_scope=False):
                 b"Namespace: default" if initial_scope else b"Namespace: team", since=marker
             )
             terminal.wait_for(b"Live", since=marker)
+            marker = terminal.send(b":ns ")
+            terminal.wait_for(b"ns team", since=marker)
+            marker = terminal.send(b"\x1b[A\r" if initial_scope else b"\x1b[B\r")
+            terminal.wait_for(
+                b"Namespace: team" if initial_scope else b"Namespace: default", since=marker
+            )
+            terminal.wait_for(b"80 pods", since=marker)
             marker = terminal.send(b":ctx kub")
             terminal.wait_for(b"kubetrol-test-pty", since=marker)
             marker = terminal.send(b"\t\r")

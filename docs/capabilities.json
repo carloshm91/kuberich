@@ -160,11 +160,12 @@
       ],
       "source": "internal/view/cmd/interpreter.go",
       "status": "planned",
-      "difference": "B03 implements available pod aliases, shared initial/interactive scope commands and local bounded Tab suggestions. Additional resource tables, CRD/custom aliases and broader command routing remain their owning tickets.",
+      "difference": "B03 implements available pod aliases, shared initial/interactive scope commands and local bounded Tab suggestions and deliberate arrow/Enter completion (#115). Additional resource tables, CRD/custom aliases and broader command routing remain their owning tickets.",
       "partial_evidence": [
         "docs/command-navigation.md",
         "tests/ui/test_navigation.py",
-        "tests/terminal/test_navigation.py"
+        "tests/terminal/test_navigation.py",
+        "docs/acceptance/enter-navigation.md"
       ]
     },
     {
@@ -344,7 +345,7 @@
       ],
       "source": "internal/view/registrar.go",
       "status": "planned",
-      "difference": "B02 delivers live pod health; B04 adds pod details and captured-UID related events. Container browsing, standalone events/namespace tables and ephemeral debug containers remain B05/S04.",
+      "difference": "B02 delivers live pod health; B04 adds pod details and captured-UID related events. #115 adds captured regular/init container-name browsing and Enter-to-logs. Live container status, standalone events/namespace tables and ephemeral debug containers remain B05/S04/A03.",
       "partial_evidence": [
         "docs/pod-table.md",
         "tests/unit/test_pods.py",
@@ -352,7 +353,11 @@
         "tests/contract/test_pod_projection.py",
         "tests/terminal/test_pods.py",
         "scripts/verify_contexts_kind.py",
-        "docs/resource-inspection.md"
+        "docs/resource-inspection.md",
+        "docs/container-navigation.md",
+        "tests/ui/test_containers.py",
+        "docs/acceptance/enter-navigation.md",
+        "https://github.com/carloshm91/kubetrol/issues/115"
       ]
     },
     {

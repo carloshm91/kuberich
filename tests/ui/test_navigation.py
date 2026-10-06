@@ -527,3 +527,83 @@ async def test_filter_does_not_misrepresent_an_empty_or_stale_scope(tmp_path):
             app.filter_input.value = "re:["
             await wait_for(lambda: "Invalid regex" in str(app.status.content))
             assert "No pods in this scope" in str(app.query_one("#empty-title", Static).content)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("value,expected", [("ns te", "team-blue"), ("ns ", "default")])
+@pytest.mark.parametrize("size", [(40, 12), (100, 30)])
+async def test_arrow_enter_submits_the_highlighted_namespace_once(tmp_path, value, expected, size):
+    async def namespace_handler(request):
+        return namespaces("team", "team-blue", "team-green", "default")
+
+    async def resources(request):
+        if "watch" in request.query:
+            return await stable_watch(request)
+        namespace = request.path.split("/")[4] if "/namespaces/" in request.path else "team"
+        return web.json_response(collection(*(pod(name, namespace=namespace) for name in "abcd")))
+
+    async with workspace_api(namespace_handler, resources) as url:
+        app = make_app(catalog_fixture(tmp_path, url))
+        async with app.run_test(size=size) as pilot:
+            await loaded(app)
+            await pilot.press("colon")
+            await paste_command(app, pilot, value)
+            await pilot.press("down")
+            assert app.command_input.choices[app.command_input.selected] == f"ns {expected}"
+            await pilot.press("enter")
+            await loaded(app, expected)
+            assert len(app.screen_stack) == 1 and app.focused is app.resources
+            assert app.command_input.value == "" and not app.completion.display
+            assert len(app.history.previous) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("reset", ["edit", "scope", "blur"])
+async def test_edit_scope_and_focus_changes_discard_arrow_selection(tmp_path, reset):
+    async def namespace_handler(request):
+        return namespaces("team", "team-blue", "team-green", "default")
+
+    async with workspace_api(namespace_handler) as url:
+        app = make_app(catalog_fixture(tmp_path, url))
+        async with app.run_test() as pilot:
+            await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
+            await pilot.press("colon")
+            await paste_command(app, pilot, "ns t")
+            await pilot.press("down")
+            assert app.command_input.choices[app.command_input.selected] == "ns team-blue"
+            if reset == "edit":
+                await pilot.press("e")  # Same candidate tuple; query identity still changed.
+            elif reset == "scope":
+                app._namespace_selected("default")
+                await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
+            else:
+                app.set_focus(app.resources)
+                await pilot.pause()
+                await pilot.press("colon")
+            literal = "te" if reset == "edit" else "t"
+            await pilot.press("enter")
+            await wait_for(lambda: app.workspace.store.observation.scope.namespace == literal)
+            assert len(app.screen_stack) == 1
+
+
+@pytest.mark.asyncio
+async def test_arrow_enter_accepts_case_preserved_context_name(tmp_path):
+    async def namespace_handler(request):
+        return namespaces("team", "default")
+
+    async with workspace_api(namespace_handler) as url:
+        app = make_app(catalog_fixture(tmp_path, url))
+        async with app.run_test() as pilot:
+            await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
+            before = app.sessions.observation.identity
+            await pilot.press("colon")
+            await paste_command(app, pilot, "ctx kubetrol-test-")
+            await pilot.press("down", "enter")
+            await wait_for(
+                lambda: (
+                    app.workspace.store.observation.status is ViewStatus.LIVE
+                    and app.workspace.store.observation.context == "kubetrol-test-Two"
+                )
+            )
+            assert app.sessions.observation.identity != before
+            assert len(app.screen_stack) == 1 and app.focused is app.resources

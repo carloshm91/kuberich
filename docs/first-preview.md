@@ -268,7 +268,7 @@ uv run kubetrol
 ```
 
 1. Use `:ctx` and `:ns` to choose your context and namespace; select a pod row.
-2. Press `y` for YAML, `d` or Enter for details, and `e` for related events.
+2. Press `y` for YAML, `d` for details, and `e` for related events.
 3. Press `m` to show/hide managedFields. Press `/`, type `containers` and Enter;
    `n`/`N` move through matches.
 4. Use arrows and PageUp/PageDown to scroll; Ctrl+Y copies redacted text if the
@@ -305,15 +305,16 @@ uv sync --locked --group dev
 uv run kubetrol
 ```
 
-1. Choose your context/namespace with `:ctx` and `:ns`, select a pod and press `l`.
-   Choose a container if there is more than one. Check that the title names it.
+1. Choose your context/namespace with `:ctx` and `:ns`. Select a pod and press
+   Enter to see its containers, then Enter on a container to read its logs.
+   Check that the title names it. `l` remains the direct log shortcut.
 2. Press `g` to read the oldest retained output, then `G` (Shift+G) to follow
    the newest. `j/k`, arrows and page keys scroll; upward movement leaves follow.
 3. Press `/`, type visible text and Enter; `n/N` move through matching lines.
 4. Press `p` to pause reception. Try `g`, `G` and `f`: navigation still works,
    and following does not unpause. Press `p` again to resume reception.
 5. Try `w` for wrapping, `t` for timestamps and `?` for all controls.
-   Escape leaves an input, then returns to your pod table; Ctrl+Q quits.
+   Escape leaves an input, then returns logs → containers → pods; Ctrl+Q quits.
 
 Compare against `kubectl logs` for the same explicit context, namespace,
 container and time window. Report any safe error text and whether scrolling,
@@ -322,3 +323,29 @@ the dropped counter explains missing older history. Previous output may be
 unavailable before a container restart. Read-only mode supports this viewer.
 See [log behavior and limits](log-viewer.md) and [S02 evidence](acceptance/S02.md).
 Interactive shell remains the next product checkpoint; no public release exists.
+
+## Enter navigation: feedback #115 — current trial
+
+From an interactive terminal on updated `main`:
+
+```sh
+git switch main
+git pull --ff-only
+uv sync --locked --group dev
+uv run kubetrol
+```
+
+1. Type `:ns ` and part of a namespace. Select the suggestion with Up/Down and
+   Enter. Check that its pods appear without reopening the namespace picker.
+2. Select a pod and press Enter, including a pod with only one container.
+   Select a container and press Enter again to read its logs.
+3. Press Esc to return to containers, then Esc to return to the pod table.
+   Check that the selection and viewport remain where you left them.
+4. On pods, `d` still opens details and `l` still opens logs directly. In the
+   container table, `j/k` and `g/G` navigate; Ctrl+Q quits.
+
+Container names/types come from the selected pod snapshot; reopen to refresh.
+Live container health and ephemeral container browsing remain later work.
+Report whether namespace arrow/Enter selection and both returns work in your
+terminal. See [behavior and limits](container-navigation.md) and
+[measured acceptance evidence](acceptance/enter-navigation.md).
