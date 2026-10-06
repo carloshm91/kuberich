@@ -153,6 +153,9 @@ class ContainerScreen(ModalScreen[None]):
             message = "kubectl is unavailable. Install kubectl on PATH, then press s to retry."
         except (AppError, ConnectionProblem) as error:
             message = str(error)
+        except Exception as error:
+            self.app._handle_exception(error)
+            return
         finally:
             self._shell_task = None
         if self.is_mounted:

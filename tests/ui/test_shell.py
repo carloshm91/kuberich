@@ -276,3 +276,35 @@ async def test_shell_without_a_connected_selection_is_actionable():
     async with app.run_test() as pilot:
         await pilot.press("x")
         assert "Select a connected resource" in str(app.status.content)
+
+
+@pytest.mark.asyncio
+async def test_unexpected_handoff_failure_reaches_app_cleanup_and_drains_shell(
+    tmp_path, monkeypatch
+):
+    value = pod("api")
+    paths = []
+
+    async def handler(request):
+        if "watch" in request.query:
+            return await stable_watch(request)
+        return web.json_response(collection(value) if request.path.endswith("/pods") else value)
+
+    async def handoff(app, runner, command, *, guard):
+        paths.append(Path(command.argv[1].split("=", 1)[1]))
+        raise RuntimeError("owned-shell-failure")
+
+    monkeypatch.setattr(module, "terminal_handoff", handoff)
+    async with workspace_api(ns, handler) as url:
+        app = app_for(tmp_path, url)
+        with pytest.raises(RuntimeError, match="owned-shell-failure"):
+            async with app.run_test() as pilot:
+                await wait_for(lambda: app.resources.row_count == 1)
+                await pilot.press("enter")
+                containers = app.screen
+                containers.action_shell()
+                task = containers._shell_task
+                await wait_for(lambda: task.done())
+        assert task.exception() is None and containers._shell_task is None
+        assert paths and not paths[0].exists()
+        assert app.sessions.client is None
