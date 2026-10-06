@@ -852,6 +852,9 @@ class KubetrolApp(App[None]):
                 choice = NamespaceChoice(None if value == "*" else value)
                 current = self._capture_view()
                 was_namespace_view = self._resource_name == "namespaces"
+                was_context_view = self._resource_name == "contexts"
+                if was_context_view:
+                    self._context_state = current
                 self.workspace.select_resource(ResourceSelection("pods"))
                 self._connection_task = self.workspace.select_namespace(choice.namespace)
                 if was_namespace_view:
@@ -860,10 +863,13 @@ class KubetrolApp(App[None]):
                 if current is not None:
                     self.history.visit(current)
                 self._display_resource(
-                    "pods", focus=was_namespace_view or not isinstance(self.focused, Input)
+                    "pods",
+                    focus=was_namespace_view
+                    or was_context_view
+                    or not isinstance(self.focused, Input),
                 )
                 self._clear_rows()
-                if was_namespace_view:
+                if was_namespace_view or was_context_view:
                     self.filter_input.value = ""
                 self.header.update_identity()
                 self._set_status(self._workspace_status())

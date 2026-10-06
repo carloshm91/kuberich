@@ -82,6 +82,17 @@ async def verify_pod_table(reader, resource, catalog, path, context):
         assert app.query_one("#resource-view").region == frame
         app.context_table.move_cursor(row=app.context_table.get_row_index(context))
         assert app.context_table.get_row(context)[0].plain == "*"
+        await pilot.press("slash", *context, "enter", "colon", *"ns kube-system", "enter")
+        async with asyncio.timeout(30):
+            while (
+                app.workspace.store.observation.status is not ViewStatus.LIVE
+                or not app.resources.row_count
+            ):
+                await asyncio.sleep(0.01)
+        assert app._resource_name == "pods" and app.filter_input.value == ""
+        await pilot.press("c")
+        await pilot.pause()
+        assert app._resource_name == "contexts" and app.filter_input.value == context
         await pilot.press("enter")
         async with asyncio.timeout(30):
             while (

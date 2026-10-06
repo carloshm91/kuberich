@@ -77,6 +77,8 @@ Escape first clears the filter, then restores the preceding pod/namespace view
 and its filter/viewport. Back/forward also retains the context table state.
 Direct `:ctx NAME` still connects immediately; context tables have no resource
 YAML/details/events because their rows are local configuration.
+Scoped `:ns NAME`, `:ns *` and `:po NAME` from contexts open pods with their own
+filter; they preserve the context query/cursor for returning to the catalogue.
 
 ## Container details
 
