@@ -38,7 +38,12 @@ overrides. GitHub #31 records this readiness clarification; F05 stays open.
 
 The maintainer's shell-screen feedback [#119](https://github.com/carloshm91/kubetrol/issues/119)
 adds a focused clean-screen/target-heading correction after S04 and before
-resuming the remaining F05 connection options. It preserves native handoff.
+resuming the remaining F05 connection options. It preserved native handoff.
+
+The clarified feedback [#121](https://github.com/carloshm91/kubetrol/issues/121)
+now prioritizes a real embedded shell inside Textual. It supersedes the earlier
+initial-scope terminal-emulator exclusion and precedes the remaining F05 work.
+S03/S04 are its closed prerequisites; Q02 retains platform/terminal qualification.
 
 ## Epics
 

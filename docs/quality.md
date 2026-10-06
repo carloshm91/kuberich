@@ -28,7 +28,8 @@ snapshot invalidation and freshness decisions, plus pod health, typed ordering,
 inspection redaction/search, log query/framing/retention, and retained log identities,
 window selection, start-time validation and clipboard bounds, plus immutable
 process/environment capture, scoped kubectl/editor builders and exit decisions,
-plus shell target validation and sanitized return decisions.
+plus shell target validation and sanitized return decisions, plus bounded terminal
+geometry and keyboard/paste encoding.
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
 from transport and widget glue so exhaustive tests are practical. The critical

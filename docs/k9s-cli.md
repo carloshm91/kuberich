@@ -82,7 +82,7 @@ immediately as inspection requests. Neither path opens logs.
 
 Read-only policy is immutable for the invocation and shared by initial and
 interactive command resolution. It refuses mutation, exec/shell, attach and
-unclassified external-plugin actions independently of UI shortcuts. S03/S04 enforce this policy for the native container shell. Attach, workload
+unclassified external-plugin actions independently of UI shortcuts. S03/S04 and #121 enforce this policy for the embedded container shell. Attach, workload
 mutation and plugins remain unavailable. `:shell`/`:exec` opens the container
 picker in write mode; startup `--command shell` is refused because shell
 execution requires deliberate pod/container selection. M01 must enforce the

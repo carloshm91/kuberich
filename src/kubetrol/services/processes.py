@@ -4,12 +4,15 @@ import asyncio
 import os
 import shutil
 import signal
-from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+import sys
+from collections.abc import AsyncIterator, Callable, Iterator
+from contextlib import asynccontextmanager, contextmanager
+from dataclasses import replace
 from pathlib import Path
 from types import TracebackType
 from typing import cast
 
+from kubetrol.adapters.pty import PtyEndpoint
 from kubetrol.domain.processes import (
     ProcessCommand,
     ProcessMode,
@@ -223,6 +226,7 @@ class ProcessRunner:
         timeout: float | None,
         guard: TargetGuard | None,
         terminal_fd: int | None,
+        embedded: bool = False,
     ) -> ProcessSession:
         resolving = asyncio.create_task(asyncio.to_thread(_executable, command))
         try:
@@ -234,17 +238,24 @@ class ProcessRunner:
         try:
             output = _Output(self.output_limit)
             foreground = terminal_fd is not None
+            argv = (executable, *command.argv[1:])
+            if embedded:
+                argv = (
+                    sys.executable,
+                    "-I",
+                    str(Path(__file__).parents[1] / "adapters" / "pty_child.py"),
+                    *argv,
+                )
             transport, _ = await asyncio.get_running_loop().subprocess_exec(
                 lambda: output,
-                executable,
-                *command.argv[1:],
+                *argv,
                 env=dict(command.environment),
                 cwd=command.directory,
                 stdin=terminal_fd if foreground else asyncio.subprocess.DEVNULL,
                 stdout=terminal_fd if foreground else asyncio.subprocess.PIPE,
                 stderr=terminal_fd if foreground else asyncio.subprocess.PIPE,
-                start_new_session=not foreground,
-                process_group=0 if foreground else None,
+                start_new_session=embedded or not foreground,
+                process_group=0 if foreground and not embedded else None,
             )
         except OSError:
             raise AppError(
@@ -267,10 +278,16 @@ class ProcessRunner:
         timeout: float | None,
         guard: TargetGuard | None,
         terminal_fd: int | None = None,
+        embedded: bool = False,
     ) -> ProcessSession:
         self.require(command, mode, guard)
         process_timeout(timeout)
-        launching = asyncio.create_task(self._launch(command, timeout, guard, terminal_fd))
+        if embedded:
+            launching = asyncio.create_task(
+                self._launch(command, timeout, guard, terminal_fd, True)
+            )
+        else:
+            launching = asyncio.create_task(self._launch(command, timeout, guard, terminal_fd))
         self._launches.add(launching)
         try:
             return await asyncio.shield(launching)
@@ -326,6 +343,32 @@ class ProcessRunner:
         except BaseException:
             await session.close()
             raise
+
+    @asynccontextmanager
+    async def terminal(
+        self, command: ProcessCommand, *, width: int, height: int, guard: TargetGuard
+    ) -> AsyncIterator[tuple[PtyEndpoint, ProcessSession]]:
+        self.require(command, ProcessMode.FOREGROUND, guard)
+        environment = {
+            **dict(command.environment),
+            "TERM": "xterm-256color",
+            "COLORTERM": "truecolor",
+        }
+        captured = replace(command, environment=tuple(environment.items()))
+        endpoint = PtyEndpoint(width, height)
+        session: ProcessSession | None = None
+        try:
+            session = await self._start(
+                captured, ProcessMode.FOREGROUND, None, guard, endpoint.slave, True
+            )
+            endpoint.release_slave()
+            yield endpoint, session
+        finally:
+            try:
+                if session is not None:
+                    await session.close()
+            finally:
+                endpoint.close()
 
     async def _shutdown(self) -> None:
         await asyncio.gather(*tuple(self._launches), return_exceptions=True)

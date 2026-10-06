@@ -1,22 +1,27 @@
-# Selected-container native shell
+# Selected-container embedded shell
 
 On pods, `x`, `:shell` or `:exec` opens the container table. Enter on a pod also
 opens that table, including single-container pods. Choose a regular/init container
 with arrows or `j/k`, then press `s` or `x` to launch its configured shell.
 Enter/`l` still opens logs. Pod `s` continues to change the sort column.
 
-Kubetrol suspends the UI and delegates the actual terminal to
+Kubetrol opens a full-screen **embedded terminal inside Textual**. Its frame keeps
+context, namespace/pod and container visible while an owned PTY runs
 [kubectl exec](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_exec/).
-Keyboard input, Ctrl+C and window-size changes reach the foreground program.
-Opening a shell clears the visible terminal and starts at the top with a compact
-heading showing the captured context, namespace/pod and container, followed by
-`exit` guidance and the image's own prompt. Heading lines are literal, redacted
-and truncated to terminal cell width. It is an introduction: fullscreen programs
-can use every row and replace it. Kubetrol does not send scrollback-erasure controls.
-SIGTERM during handoff cleans up the owned process and exits the CLI with 143
-after terminal restoration. Type `exit` to return to the same container selection; Esc returns to the
-retained pod table. A failed exec also returns to that view. Long feedback can
-be read by focusing/scrolling its region, including at 40×12.
+The actual shell prompt, ANSI colors, cursor movement and alternate-screen
+programs are rendered by an emulator. Textual stays active throughout the session.
+
+- `exit` or Ctrl+D returns to the retained container selection.
+- Ctrl+] closes the owned exec session and returns to containers.
+- Ctrl+C reaches the shell/program; it does not quit Kubetrol here.
+- Ctrl+Q quits Kubetrol and cleans up the exec process.
+- Escape, Tab, arrows, `q`, `:` and `/` reach the remote program while this screen is open.
+- After returning, Escape goes from containers to the retained pod table.
+
+The frame consumes two columns and six rows; resizing a 80×25 terminal gives the
+remote PTY 78×19 cells. Target lines are literal, redacted and clipped in compact
+windows. A failed exec returns to safe, scrollable feedback. SIGTERM cleans up
+and exits the CLI with 143 after terminal restoration.
 
 ## Requirements and preferences
 
@@ -60,20 +65,20 @@ Missing local kubectl, denied pod reads, deleted/replaced pods, unavailable
 containers and nonzero exec exits produce safe feedback. Exit 126/127 suggests
 an unavailable image shell. Other kubectl failures name the exit code and
 permission/state/shell checks; raw stderr appears only in the deliberately
-handed-off terminal and is not retained in UI diagnostics. Exec is never retried
+opened embedded terminal and is not retained in UI diagnostics. Exec is never retried
 automatically. An image without a shell requires a suitable image or the later
 ephemeral-debug workflow, not an invented SSH connection.
 
 ## Verification and remaining scope
 
 See [measured S04 acceptance evidence](acceptance/S04.md) and the
-[clean-screen transition evidence](acceptance/shell-transition.md) for qualified
+[embedded-terminal acceptance](acceptance/embedded-shell.md) for qualified
 commits, coverage, actual terminal/cluster trials and unavailable platform checks.
 
 Behavioral checks cover immutable capture, exact arguments, private file modes,
 UID replacement, stale views, read-only policy and repeated cancellation/cleanup.
 Pilot trials cover selected-container launch, compact feedback and retained
-cursor/viewport. Source and freshly installed CLI PTYs cover actual foreground
+cursor/viewport. Source and freshly installed CLI PTYs cover actual child controlling-terminal
 ownership, input, resize, Ctrl+C, fullscreen use, failures and terminal restoration.
 
 The isolated Kubernetes trial creates and deletes its own cluster and fixtures:
@@ -91,5 +96,22 @@ connection to verify the prepared session remains pinned. Evidence is written to
 
 SSH/tmux/macOS qualification remains Q02/full platform CI. EKS/AKS/provider smoke
 qualification remains C06/C07/C08. Attach, file transfer, node/ephemeral shells
-and terminal emulation remain separate work. This provides native local-terminal
-container exec; it does not establish complete K9s capability parity.
+remain separate work. This checkpoint supports shell keys, bounded Unicode paste,
+ANSI/256/true colors, cursor reports and alternate screens. It does not implement
+mouse reporting, terminal graphics, advanced keyboard protocols or retained
+scrollback/search; those require follow-up terminal qualification. There is no
+promise that every terminal program is compatible or that K9s parity is complete.
+
+Output storage is limited to two 400×150 cell screens, 32 code points per cell,
+a single saved cursor and 128-byte control sequences. PTY reads backpressure at
+8×16 KiB and pending input at 64 KiB; paste accepts at most 16,384 characters.
+Remote OSC/DCS/APC/PM/SOS strings, including clipboard/title/link/image commands,
+are consumed without being relayed to the host. Terminal output is deliberately
+visible to its operator and is not stored in application diagnostic logs.
+
+[Pyte 0.8.2](https://github.com/selectel/pyte/tree/0.8.2) is an unmodified,
+dynamically imported LGPLv3 dependency, pinned in pyproject.toml and
+uv.lock. Kubetrol's own adapter/widget code is original MIT code; no upstream
+widget source is copied. Pyte's license and replacement/source availability must
+be preserved in future standalone distributions; Q04 owns the complete license
+and SBOM release checks.

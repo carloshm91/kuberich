@@ -28,7 +28,7 @@ history](docs/command-navigation.md) are available. [Pod YAML, details and relat
 events](docs/resource-inspection.md) include search, managedFields visibility and
 redacted copying. The [container log viewer](docs/log-viewer.md) provides current/
 previous output, container selection, Vim navigation, search, follow/pause,
-bounded retention and redacted copy/save. [Native container shells](docs/container-shell.md)
+bounded retention and redacted copy/save. [Embedded container shells](docs/container-shell.md)
 use the selected context, pod and container, with a configurable shell and return
 to the retained table.
 See [context sessions](docs/context-sessions.md) for supported credentials,

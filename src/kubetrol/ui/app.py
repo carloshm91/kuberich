@@ -14,7 +14,7 @@ from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, Vertical, VerticalScroll
-from textual.events import Event, Key, Resize
+from textual.events import Event, Key, Paste, Resize
 from textual.screen import ModalScreen
 from textual.widgets import Button, DataTable, Footer, Input, Static
 
@@ -56,6 +56,7 @@ from kubetrol.ui.logs import LogScreen
 from kubetrol.ui.pods import PodTable, Viewport
 from kubetrol.ui.presentation import DEFAULT_PRESENTATION, Presentation
 from kubetrol.ui.scopes import ConnectionScreen, ScopeScreen
+from kubetrol.ui.terminal import ShellScreen
 
 DISCONNECTED_STATUS = "Disconnected · No resource data"
 
@@ -94,12 +95,12 @@ class HelpScreen(ModalScreen[None]):
                         "Searches namespace, name, readiness, status and restarts. "
                         "Invalid or timed-out regex shows all pods and an error.\n\n"
                         "Context sessions and live pod synchronization are available. "
-                        "Pod rows, container logs and native shells are available.\n"
+                        "Pod rows, container logs and embedded shells are available.\n"
                         "l                 Selected pod logs (regular / init)\n"
                         "Logs: g/G first/last, j/k, / search, p pause, f follow, ? controls.\n"
                         "Enter             Pod containers → container logs\n"
                         "x / :shell        Choose a pod's container for its shell\n"
-                        "Containers: s/x shell, Enter/l logs, Esc pods.\n"
+                        "Containers: s/x shell, Enter/l logs, Esc pods.\nShell: Ctrl+] return, Ctrl+C interrupt, Ctrl+Q quit.\n"
                         "d                 Resource details\n"
                         "y / e             YAML / related events\n"
                         "Viewer: m managedFields, / search, n/N matches, Ctrl+Y copy.\n"
@@ -207,6 +208,22 @@ class KubetrolApp(App[None]):
         self.status.update(safe_text(prefix + insecure + message))
 
     async def on_event(self, event: Event) -> None:
+        if (
+            self.screen_stack
+            and isinstance(self.screen, ShellScreen)
+            and isinstance(event, (Key, Paste))
+            and not event.is_forwarded
+        ):
+            if isinstance(event, Key):
+                if event.key == "ctrl+q":
+                    self.exit()
+                else:
+                    self.screen.key(event)
+            else:
+                self.screen.paste(event)
+            event.stop()
+            event.prevent_default()
+            return
         focused = (
             self.focused
             if isinstance(event, Key) and not event.is_forwarded and self.screen_stack
@@ -331,7 +348,9 @@ class KubetrolApp(App[None]):
                     self._render_ready.set()
                     self.command_input.refresh_choices()
                     for screen in tuple(self.screen_stack):
-                        if isinstance(screen, (InspectionScreen, LogScreen, ContainerScreen)):
+                        if isinstance(
+                            screen, (InspectionScreen, LogScreen, ContainerScreen, ShellScreen)
+                        ):
                             screen.validate_target()
         except Exception as error:
             self._handle_exception(error)

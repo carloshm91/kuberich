@@ -16,6 +16,8 @@ from tests.support.shell import terminal_shell
         "failure",
         "ctrl_c",
         "terminate",
+        "quit",
+        "close",
         "fullscreen",
         "missing",
         "readonly",
@@ -23,7 +25,7 @@ from tests.support.shell import terminal_shell
         "shell_missing",
     ],
 )
-def test_native_selected_container_shell(tmp_path, entry, scenario):
+def test_embedded_selected_container_shell(tmp_path, entry, scenario):
     command = (
         [sys.executable, "-m", "kubetrol"] if entry == "module" else [shutil.which("kubetrol")]
     )

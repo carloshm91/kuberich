@@ -120,35 +120,51 @@ def terminal_shell(command: list[str], directory: Path, scenario: str, *, eviden
                             b"Kubetrol shell | exit to return" not in terminal.transcript[marker:]
                         )
                     break
-                terminal.wait_for(b"SHELL CHILD START", since=marker)
+                terminal.wait_for_screen("SHELL CHILD START")
                 entering = terminal.transcript[marker:]
-                heading = b"\x1b[H\x1b[2JKubetrol shell | exit to return"
-                assert entering.index(heading) < entering.index(b"SHELL CHILD START")
-                assert b"Context: kubetrol-test-pty" in entering
-                assert b"Pod: default/owned-pty-pod-079" in entering
-                assert b"Container: worker" in entering
+                terminal.wait_for_screen("Kubetrol · Container shell")
+                terminal.wait_for_screen("Context: kubetrol-test-pty")
+                terminal.wait_for_screen("Pod: default/owned-pty-pod-079")
+                terminal.wait_for_screen("Container: worker")
+                terminal.wait_for_screen("SHELL CHILD START")
+                assert b"\x1b[?1049l" not in entering
                 assert b"\x1b[3J" not in entering
                 terminal.send(b"start\n")
                 if scenario == "fullscreen":
-                    terminal.wait_for(b"OWNED FULLSCREEN READY", since=marker)
-                    marker = terminal.resize(80, 25)
-                    terminal.wait_for(b"FULLSCREEN SIZE 80 25", since=marker)
+                    terminal.wait_for_screen("OWNED FULLSCREEN READY")
+                    terminal.resize(80, 25)
+                    terminal.wait_for_screen("FULLSCREEN SIZE 78 19")
+                    terminal.wait_for_screen("Container: worker")
                     terminal.send(b"q")
                     terminal.wait_for(b"Shell closed", since=marker)
                 else:
-                    terminal.wait_for(b"SHELL CHILD READY", since=marker)
+                    terminal.wait_for_screen("SHELL CHILD READY")
                     marker = terminal.resize(80, 25)
-                    terminal.wait_for(b"SHELL CHILD SIZE 80 25", since=marker)
+                    terminal.wait_for_screen("SHELL CHILD SIZE 78 19")
                     if scenario == "terminate":
                         os.kill(int((directory / "caller-pid").read_text()), signal.SIGTERM)
                         terminal.finish(expected=143)
                         break
-                    if scenario == "ctrl_c":
+                    if scenario == "quit":
+                        terminal.send(b"\x11")
+                        terminal.finish()
+                        break
+                    if scenario == "close":
+                        terminal.send(b"\x1d")
+                        terminal.wait_for(b"Shell closed", since=marker)
+                    elif scenario == "ctrl_c":
                         terminal.send(b"\x03")
                         terminal.wait_for(b"Shell interrupted", since=marker)
                     else:
                         terminal.send(b"owned selected worker\n")
-                        terminal.wait_for(b"SHELL INPUT owned selected worker", since=marker)
+                        terminal.wait_for(
+                            b"Shell closed"
+                            if scenario == "success"
+                            else b"preferences"
+                            if scenario == "shell_missing"
+                            else b"pods/exec",
+                            since=marker,
+                        )
                         terminal.wait_for(
                             b"preferences"
                             if scenario == "shell_missing"
@@ -159,7 +175,7 @@ def terminal_shell(command: list[str], directory: Path, scenario: str, *, eviden
                         )
                 terminal.resize(100, 30)
                 terminal.send(b"\x1b[1;5H\x1b[1;5F")
-            if scenario != "terminate":
+            if scenario not in {"terminate", "quit"}:
                 marker = terminal.send(b"\x1b")
                 terminal.wait_for(b"Sort NAME", since=marker)
                 marker = terminal.send(b":shell\r" if scenario != "readonly" else b"\r")

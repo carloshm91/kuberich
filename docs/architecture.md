@@ -53,8 +53,8 @@ An alternative client requires a demonstrated gap and a decision update.
 This is a product decision, not a promise that every upstream behavior is supplied
 by the UI framework. Textual supplies widgets, layout, reactive UI, workers and
 test tooling; Kubetrol must implement Kubernetes semantics, streaming, permissions,
-plugins and release engineering. Terminal suspension supports the chosen shell
-handoff design. Pilot tests are complemented by real PTY tests.
+plugins and release engineering. An owned PTY and terminal emulator support the
+embedded shell design. Pilot tests are complemented by real PTY tests.
 
 | Option | Fit and tradeoff |
 | --- | --- |
@@ -151,11 +151,13 @@ namespace, resource, and container before starting an action. Each stream or
 process has a lifecycle owner. Log storage and render queues have bounded
 capacity; implement explicit overflow and backpressure behavior.
 
-For an interactive shell, suspend Textual and hand the real terminal to kubectl
-with an argument vector, explicit kubeconfig/context, namespace, and container.
-Restore the terminal on normal exit, failure, Ctrl-C, and exceptions. A fully
-embedded terminal emulator is outside the initial scope; the supported shell
-experience is full-terminal handoff and return.
+Container shells use an owned nonblocking PTY and an embedded terminal screen.
+Textual retains the host terminal and draws a persistent target frame. Capture
+argv, prepared kubeconfig/context, namespace, pod UID and container before awaits;
+resize the child PTY to the widget, route shell keys deliberately and reap owned
+processes before dismissing. Generic native handoff remains available for other
+effectful tools. The maintainer's clarified feedback #121 supersedes the earlier
+initial-scope decision that excluded terminal emulation.
 
 ## Actions, configuration, and trust
 
@@ -414,17 +416,30 @@ remain literal; configured helpers are trusted local programs. Advanced connecti
 overrides remain F05/C08. The staged file is removed after return, failure or
 cancellation; owned file threads are drained before session cleanup.
 
-The container screen owns its shell task and keeps the parent pod table mounted.
-S03 hands kubectl the actual controlling terminal and restores it before the
-result is shown. A scrollable feedback region retains full safe errors at 40×12.
-Enter-to-logs is preserved; `s`/`x` explicitly invokes the shell.
-Preview feedback #119 adds an introductory native shell screen after suspension
-and terminal leasing, before child startup. `domain/shell.py` supplies literal,
-redacted, cell-width-bounded target lines. The terminal adapter clears only the
-visible screen, drains partial writes and reports safe write errors. It does not
-reserve rows, rewrite the remote prompt or add an alternate-buffer nesting layer;
-fullscreen programs retain their native terminal behavior. Failed presentation
-leaves the lease/suspension normally before the existing error path handles it.
-See [native-shell behavior](container-shell.md),
-[Kubernetes exec](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_exec/)
-and [Textual suspension](https://textual.textualize.io/api/app/#textual.app.App.suspend).
+S04 and feedback #119 originally used S03's native controlling-terminal handoff.
+Feedback #121 replaces the default shell route with `ui/terminal.py` and keeps the
+container/pod screens mounted. The shell screen owns preparation, PTY reading,
+cleanup and the return result; covered-screen target validation cancels stale
+sessions. App key routing sends input to the remote process before global
+bindings; Ctrl+] returns locally and Ctrl+Q quits. The normal UI never suspends.
+
+`adapters/pty.py` uses nonblocking master descriptors and event-loop readers/writers
+with bounded queues. `ProcessRunner.terminal` retains the shared policy, startup
+race guards and process-group cleanup. A stdlib-only child launcher, executed by
+the current interpreter with `-I`, acquires its new session's controlling slave
+before exec; no preexec hook runs Python after a threaded fork. Explicit argv,
+captured environment/cwd and staged authentication remain unchanged.
+
+`adapters/emulator.py` wraps pinned, unmodified Pyte 0.8.2 using its documented
+screen/event-listener API. A dynamic listener routes cached callbacks to normal
+and alternate buffers. Only supported terminal modes are accepted; geometry,
+control-sequence memory, saved cursors and combining cells are bounded. Remote
+control strings never reach the host driver. `domain/terminal.py` supplies critical
+size/keyboard/paste decisions. Rendering builds literal styled segments and
+coalesces equal styles; color values are validated before Rich sees them.
+
+See [shell behavior, dependency license and limits](container-shell.md) and
+[embedded-shell evidence](acceptance/embedded-shell.md). Native handoff's earlier
+qualification remains in [S03](acceptance/S03.md), [S04](acceptance/S04.md) and
+[the clean native transition](acceptance/shell-transition.md); it does not prove
+embedded-terminal behavior.

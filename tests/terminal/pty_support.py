@@ -1,5 +1,6 @@
 """A bounded, disposable real terminal with explicit process and descriptor ownership."""
 
+import codecs
 import errno
 import fcntl
 import json
@@ -14,6 +15,8 @@ import termios
 import time
 from pathlib import Path
 from types import TracebackType
+
+import pyte
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -56,6 +59,9 @@ class TerminalSession:
         self.completion: dict[str, object] | None = None
         self.transcript = bytearray()
         self.sizes = [size]
+        self.screen = pyte.Screen(*size)
+        self.screen_stream = pyte.Stream(self.screen)
+        self.screen_decoder = codecs.getincrementaldecoder("utf-8")("replace")
         fcntl.ioctl(self.slave, termios.TIOCSWINSZ, struct.pack("HHHH", size[1], size[0], 0, 0))
         preferences = directory / "preferences.yaml"
         if not preferences.exists():
@@ -111,7 +117,9 @@ class TerminalSession:
                 self.completion = json.loads(self.completion_bytes)
         if self.master in ready:
             try:
-                self.transcript.extend(os.read(self.master, 65536))
+                data = os.read(self.master, 65536)
+                self.transcript.extend(data)
+                self.screen_stream.feed(self.screen_decoder.decode(data))
             except OSError as error:
                 if error.errno != errno.EIO:
                     raise
@@ -135,9 +143,17 @@ class TerminalSession:
         os.write(self.master, data)
         return marker
 
+    def wait_for_screen(self, text: str, *, timeout: float = 15) -> None:
+        deadline = time.monotonic() + timeout
+        while text not in "\n".join(self.screen.display):
+            self._read()
+            assert self.process.poll() is None, f"Exited before visible {text!r}"
+            assert time.monotonic() < deadline, f"Missing visible {text!r}: {self.screen.display!r}"
+
     def resize(self, width: int, height: int) -> int:
         marker = len(self.transcript)
         self.sizes.append((width, height))
+        self.screen.resize(lines=height, columns=width)
         fcntl.ioctl(self.slave, termios.TIOCSWINSZ, struct.pack("HHHH", height, width, 0, 0))
         os.killpg(self.process.pid, signal.SIGWINCH)
         return marker
