@@ -35,7 +35,7 @@ if needed.
 
 Update notices, cluster metrics and custom/live themes remain planned.
 See [workspace behavior](resource-workspace.md) and
-[qualification evidence](acceptance/resource-workspace.md).
+[qualification evidence](acceptance/stable-workspace.md).
 
 | Checkpoint | Required work | What can actually be tried |
 | --- | --- | --- |
