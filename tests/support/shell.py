@@ -53,7 +53,8 @@ if scenario=='fullscreen':
     raise SystemExit(0)
 def resize(signum,frame):
     size=os.get_terminal_size(0)
-    print('SHELL CHILD SIZE '+str(size.columns)+' '+str(size.lines),flush=True)
+    # A resize may interrupt stdout's buffered READY write; avoid reentrant IO.
+    os.write(1,('SHELL CHILD SIZE '+str(size.columns)+' '+str(size.lines)+'\\n').encode())
 signal.signal(signal.SIGWINCH,resize)
 print('SHELL CHILD READY',flush=True)
 line=sys.stdin.readline().strip()
