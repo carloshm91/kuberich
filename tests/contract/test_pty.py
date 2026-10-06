@@ -3,11 +3,12 @@
 import asyncio
 import os
 import signal
+import sys
 
 import pytest
 
 from kubetrol.adapters.pty import PtyEndpoint
-from kubetrol.domain.processes import ProcessMode, ProcessStatus
+from kubetrol.domain.processes import ProcessMode, ProcessPurpose, ProcessStatus, capture_command
 from kubetrol.errors import AppError
 from kubetrol.services.access import AccessPolicy
 from kubetrol.services.processes import ProcessRunner
@@ -26,10 +27,35 @@ async def until(endpoint, marker):
 
 @pytest.mark.asyncio
 async def test_actual_child_pty_geometry_input_unicode_and_ctrl_c(tmp_path):
-    code = "import os,signal; signal.signal(signal.SIGWINCH,lambda *_:print('RESIZE',os.get_terminal_size(0),flush=True)); print('OWNER',os.getpgrp()==os.tcgetpgrp(0),os.environ['TERM'],os.get_terminal_size(0),flush=True); print('INPUT',input(),flush=True); print('WAIT',flush=True); input()"
+    # Signal handlers must not re-enter stdout while the initial print flushes.
+    # Observe the signal in normal child execution before printing its geometry.
+    code = """
+import os, signal, time
+resized = False
+def resize(*_):
+    global resized
+    resized = True
+signal.signal(signal.SIGWINCH, resize)
+print('OWNER', os.getpgrp() == os.tcgetpgrp(0), os.environ['TERM'], os.get_terminal_size(0), flush=True)
+while not resized:
+    time.sleep(0.01)
+print('RESIZE', os.get_terminal_size(0), flush=True)
+print('INPUT', input(), flush=True)
+print('WAIT', flush=True)
+input()
+"""
+    script = tmp_path / "resize_child.py"
+    script.write_text(code)
+    captured = capture_command(
+        [sys.executable, str(script)],
+        environment=dict(os.environ),
+        directory=tmp_path,
+        mode=ProcessMode.FOREGROUND,
+        purpose=ProcessPurpose.PLUGIN,
+    )
     async with ProcessRunner(AccessPolicy(False)) as runner:
         async with runner.terminal(
-            command(tmp_path, code, mode=ProcessMode.FOREGROUND),
+            captured,
             width=71,
             height=19,
             guard=lambda: None,
@@ -37,7 +63,7 @@ async def test_actual_child_pty_geometry_input_unicode_and_ctrl_c(tmp_path):
             data = await until(endpoint, b"lines=19")
             assert b"OWNER True xterm-256color" in data
             endpoint.resize(80, 25)
-            assert b"columns=80, lines=25" in await until(endpoint, b"RESIZE")
+            assert b"columns=80, lines=25" in await until(endpoint, b"lines=25")
             endpoint.write("unicode á\r".encode())
             assert "INPUT unicode á".encode() in await until(endpoint, b"WAIT")
             endpoint.write(b"\x03")
