@@ -66,3 +66,31 @@ def test_job_control_failure_restores_the_signal_mask(monkeypatch):
     with pytest.raises(OSError):
         terminal._foreground(0, os.getpgrp())
     assert signal.pthread_sigmask(signal.SIG_BLOCK, set()) == previous
+
+
+def test_screen_presentation_drains_partial_writes_without_erasing_scrollback(monkeypatch):
+    received = bytearray()
+
+    def partial(descriptor, data):
+        assert descriptor == 27
+        chunk = data[:3]
+        received.extend(chunk)
+        return len(chunk)
+
+    monkeypatch.setattr(os, "write", partial)
+    terminal.TerminalLease(27).present("Owned heading\n\n")
+    assert received == b"\x1b[H\x1b[2JOwned heading\n\n"
+    assert b"\x1b[3J" not in received
+
+
+@pytest.mark.parametrize("no_progress", [False, True])
+def test_screen_write_failures_are_actionable_without_raw_error_values(monkeypatch, no_progress):
+    def failed(descriptor, data):
+        if no_progress:
+            return 0
+        raise OSError("opaque-sensitive-terminal-value")
+
+    monkeypatch.setattr(os, "write", failed)
+    with pytest.raises(AppError, match="Check the terminal") as error:
+        terminal.TerminalLease(27).present("Owned heading\n")
+    assert "opaque-sensitive-terminal-value" not in str(error.value)

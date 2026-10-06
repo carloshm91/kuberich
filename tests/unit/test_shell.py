@@ -16,7 +16,7 @@ from kubetrol.config.schema import (
     settings_from,
 )
 from kubetrol.domain.processes import ProcessResult, ProcessStatus
-from kubetrol.domain.shell import shell_result, verify_shell_target
+from kubetrol.domain.shell import shell_banner, shell_result, verify_shell_target
 from kubetrol.domain.targets import ResourceTarget, SessionIdentity
 from kubetrol.errors import AppError
 from kubetrol.services.access import AccessPolicy
@@ -29,6 +29,30 @@ def target(**changes):
         SessionIdentity("fixture", 1), "", "pods", "team", "api", "api-uid", "app"
     )
     return replace(base, **changes)
+
+
+@pytest.mark.parametrize("width", [0, 1, 40, 100, 10000])
+def test_shell_heading_uses_terminal_cells_and_bounds_long_unicode_names(width):
+    from rich.cells import cell_len
+
+    value = target(
+        session=SessionIdentity("cluster-" + "界" * 100, 1),
+        name="pod-" + "界" * 100,
+        container="worker-" + "界" * 100,
+    )
+    heading = shell_banner(value, width)
+    lines = heading.splitlines()
+    assert len(lines) == 5 and lines[-1] == ""
+    assert all(cell_len(line) <= max(1, min(width, 160)) for line in lines)
+    assert len(heading) < 650 and "\x1b" not in heading
+
+
+def test_shell_heading_is_literal_and_redacts_credentials_in_context_names():
+    value = target(session=SessionIdentity("[red] bearer sensitive-owned-value", 1))
+    heading = shell_banner(value, 100)
+    assert "[red]" in heading and "sensitive-owned-value" not in heading
+    assert "Pod: team/api" in heading and "Container: app" in heading
+    assert heading.startswith("Kubetrol shell | exit to return\nContext: ")
 
 
 @pytest.mark.parametrize(

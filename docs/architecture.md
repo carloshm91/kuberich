@@ -418,6 +418,13 @@ The container screen owns its shell task and keeps the parent pod table mounted.
 S03 hands kubectl the actual controlling terminal and restores it before the
 result is shown. A scrollable feedback region retains full safe errors at 40×12.
 Enter-to-logs is preserved; `s`/`x` explicitly invokes the shell.
+Preview feedback #119 adds an introductory native shell screen after suspension
+and terminal leasing, before child startup. `domain/shell.py` supplies literal,
+redacted, cell-width-bounded target lines. The terminal adapter clears only the
+visible screen, drains partial writes and reports safe write errors. It does not
+reserve rows, rewrite the remote prompt or add an alternate-buffer nesting layer;
+fullscreen programs retain their native terminal behavior. Failed presentation
+leaves the lease/suspension normally before the existing error path handles it.
 See [native-shell behavior](container-shell.md),
 [Kubernetes exec](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_exec/)
 and [Textual suspension](https://textual.textualize.io/api/app/#textual.app.App.suspend).

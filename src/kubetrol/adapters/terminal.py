@@ -39,6 +39,20 @@ class TerminalLease:
         with suppress(ProcessLookupError):
             os.killpg(group, signal.SIGCONT)
 
+    def present(self, heading: str) -> None:
+        """Clear the visible screen and introduce a native handoff, preserving scrollback."""
+        data = ("\x1b[H\x1b[2J" + heading).encode("utf-8")
+        try:
+            while data:
+                count = os.write(self.descriptor, data)
+                if count == 0:
+                    raise OSError("Terminal write made no progress.")
+                data = data[count:]
+        except OSError:
+            raise AppError(
+                "Cannot prepare the container shell screen. Check the terminal."
+            ) from None
+
     def __exit__(
         self,
         kind: type[BaseException] | None,

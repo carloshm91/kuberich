@@ -142,6 +142,12 @@ def trial(
             terminal.send(b"\x1b[B")
             for attempt in range(attempts):
                 marker = terminal.send(b"s")
+                terminal.wait_for(
+                    b"\x1b[H\x1b[2JKubetrol shell | exit to return", since=marker, timeout=30
+                )
+                terminal.wait_for(b"Context: kubetrol-test-Alias", since=marker)
+                terminal.wait_for(b"Pod: kubetrol-shell-test/owned-shell-pod", since=marker)
+                terminal.wait_for(b"Container: app-b", since=marker)
                 if scenario in {"denied", "missing-shell"}:
                     terminal.wait_for(b"kubectl exec failed", since=marker, timeout=30)
                     terminal.wait_for(b"pods/exec", since=marker)
@@ -277,6 +283,7 @@ def main() -> None:
                         "owned_cluster": name,
                         "resource": resource,
                         "real_two_container_selection": True,
+                        "clean_shell_screen_and_captured_heading": True,
                         "configured_shell": True,
                         "changed_source_config_does_not_retarget": True,
                         "real_keyboard_resize_ctrl_c": True,

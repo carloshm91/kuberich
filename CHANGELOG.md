@@ -7,6 +7,10 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Fixed
 
+- Open container shells on a clean full-terminal screen with the captured
+  context/pod/container and `exit` guidance, instead of leaving the remote
+  prompt below the launch command. Fullscreen programs retain every terminal row.
+
 - Preserve exit 143 after SIGTERM during a native shell instead of reporting a
   terminal failure after successful cleanup and restoration.
 

@@ -1,6 +1,7 @@
 """Resume public Textual suspension before propagating errors or cancellation."""
 
 import asyncio
+import os
 import signal
 import sys
 from typing import Any
@@ -8,7 +9,8 @@ from typing import Any
 from textual.app import App
 
 from kubetrol.adapters.terminal import TerminalLease
-from kubetrol.domain.processes import ProcessCommand, ProcessMode, ProcessResult
+from kubetrol.domain.processes import ProcessCommand, ProcessMode, ProcessPurpose, ProcessResult
+from kubetrol.domain.shell import shell_banner
 from kubetrol.errors import AppError
 from kubetrol.services.processes import ProcessRunner, TargetGuard
 
@@ -42,6 +44,13 @@ async def terminal_handoff(
             with app.suspend():
                 try:
                     with TerminalLease(sys.__stdin__.fileno()) as terminal:
+                        if command.purpose is ProcessPurpose.EXEC and command.target is not None:
+                            terminal.present(
+                                shell_banner(
+                                    command.target,
+                                    os.get_terminal_size(terminal.descriptor).columns,
+                                )
+                            )
                         result = await runner.foreground(
                             command,
                             descriptor=terminal.descriptor,
