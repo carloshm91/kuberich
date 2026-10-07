@@ -36,6 +36,10 @@ Captured container specification/status decisions in `domain/containers.py`
 join the critical 100% line/branch inventory in #129.
 F05 invocation overrides and bounded impersonation decisions in
 `domain/connection_overrides.py` join the critical inventory in #19.
+Fixed provider diagnostic decisions in `domain/credential_helpers.py` join the
+critical 100% line/branch inventory in C06 #21. Synthetic provider contracts,
+responsive Pilot navigation and the owned-kind AWS-shaped helper qualify local
+behavior; real EKS evidence remains a separate explicit test-context requirement.
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
 from transport and widget glue so exhaustive tests are practical. The critical

@@ -275,6 +275,14 @@ Transport tests qualify this boundary and must be rerun on SDK upgrades.
 Generic exec tokens are implemented; interactive provider login and exec
 certificate rotation remain explicitly unavailable for C08 qualification.
 
+C06 #21 captures inherited helper environment per session, preserves declared
+AWS args/env and pins delegated AWS variables/HOME, helper executable and working
+directory to the same session. Credential cache revisions prevent delayed 401s
+from invalidating a newer refresh, even for identical token bytes. Pure fixed
+provider diagnostics remain independent of process/UI glue. The optional EKS
+smoke requires an explicit authorized test kubeconfig/context/namespace; actual
+cloud qualification remains pending. See [EKS contracts](eks-authentication.md).
+
 The UI owns its connection task chain. Context replacement cancels/awaits the
 previous task before opening the next client, rejects late observations and
 awaits final session cleanup on unmount. File preparation runs in an owned

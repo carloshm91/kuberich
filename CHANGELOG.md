@@ -12,6 +12,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Fixed
 
+- Distinguish recognized AWS helper login/role failures from API 401/403 without
+  exposing provider output; share expiring-token refreshes and ignore delayed
+  401 invalidation of newer cache revisions, including identical token bytes.
+- Preserve a session's captured AWS environment, working directory and helper
+  executable in delegated shells. Real EKS qualification remains pending C06 #21.
 - Reflow header shortcuts when the logo changes width during terminal resizing.
 - Keep frame margins, header columns and interaction/footer rows stable across
   pod, namespace, container and log navigation, focus changes and mouse clicks.
