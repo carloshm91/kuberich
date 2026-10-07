@@ -45,8 +45,10 @@ Changelog = "https://github.com/carloshm91/kubetrol/blob/main/CHANGELOG.md"
 dev = [
     "build>=1.6.1,<2",
     "cryptography>=50.0.2,<51",
+    "cyclonedx-bom>=7.5.0,<8",
     "diff-cover>=10.6.0,<11",
     "mypy>=2.4.0,<3",
+    "pip-audit>=2.10.1,<3",
     "pipx>=1.17.11,<2",
     "pytest>=9.1.1,<10",
     "pytest-asyncio>=1.4.0,<2",
@@ -89,6 +91,7 @@ select = ["E4", "E7", "E9", "F", "I", "UP", "B", "SIM", "RUF"]
 python_version = "3.12"
 strict = true
 files = ["src/kubetrol"]
+mypy_path = ["scripts/typing"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
