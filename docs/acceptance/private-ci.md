@@ -69,6 +69,15 @@ PR. Runtime source is unchanged; its previous independently measured line,
 branch and critical-module evidence remains historical evidence rather than
 a newly measured application suite. Changed executable production lines: N/A.
 
+The initial Linux/Python 3.12 quality/packaging run had 435 passes and one failure:
+the installed uv-wheel PTY probe missed its command-rejection notice while a
+context API was deliberately gated, then that gate timed out. Its log and failed
+terminal capture are retained. The isolated unchanged case passed; the shared
+probe now confirms visible `:ns` entry before Enter, retaining the rejection,
+API-gate and terminal-restoration assertions. Fast typeahead in ordinary commands
+is still exercised. Fresh verification of this adjusted probe is required before
+merge; the original failed run is not reported as successful.
+
 Hosted jobs still cannot start because of the quota/billing restriction. #109
 stays open for an actual after-change hosted observation and, when accessible,
 account usage reconciliation. Once jobs resume, retain run IDs, each job's actual
