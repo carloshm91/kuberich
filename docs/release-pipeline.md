@@ -28,9 +28,11 @@ Before preparing or publishing, require all of the following:
 - All implementation prerequisites of the pinned source plan's applicable release
   milestone are closed in GitHub. The release gate itself stays open until public
   channel verification finishes; a patch uses its established milestone baseline.
-- Successful latest main-push quality and repository runs for that exact commit,
+- Successful latest main-dispatch quality and main-push repository runs for that exact commit,
   including **every Linux/macOS Python 3.12/3.13/3.14 job**, not a green aggregate
   or an older successful attempt beside a failed rerun.
+  Dispatch Application quality on main before the release workflow; routine
+  three/four-environment development runs cannot satisfy this gate.
 - The retained Linux 3.12 quality artifact and complete fresh audit/SBOM/notices
   bound to its wheel/sdist and source/lock/policy inputs.
 

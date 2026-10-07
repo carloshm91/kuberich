@@ -47,6 +47,8 @@ INPUT_FILES = (
     ".github/workflows/release.yml",
     "scripts/release.py",
     "scripts/release_policy.py",
+    "scripts/ci_policy.py",
+    "scripts/check_quality_gate.py",
     "docs/backlog.json",
     "docs/github-issues.json",
 )

@@ -166,7 +166,7 @@ def trusted_run(path=".github/workflows/quality.yml"):
         "head_sha": SHA,
         "path": path,
         "head_branch": "main",
-        "event": "push",
+        "event": "workflow_dispatch" if path.endswith("quality.yml") else "push",
         "status": "completed",
         "conclusion": "success",
         "head_repository": {"full_name": REPOSITORY},
@@ -182,6 +182,7 @@ def trusted_run(path=".github/workflows/quality.yml"):
         ("path", ".github/workflows/other.yml"),
         ("head_branch", "feature"),
         ("event", "pull_request"),
+        ("event", "push"),
         ("status", "queued"),
         ("conclusion", "skipped"),
         ("head_repository", {"full_name": "fork/kubetrol"}),
@@ -221,7 +222,7 @@ def trusted_api():
         f"{prefix}/commits/{'b' * 40}/check-runs?per_page=100": {
             "check_runs": [{"name": "DCO", "conclusion": "success", "app": {"id": 1861}}]
         },
-        f"{prefix}/actions/workflows/quality.yml/runs?head_sha={SHA}&event=push&per_page=100": {
+        f"{prefix}/actions/workflows/quality.yml/runs?head_sha={SHA}&event=workflow_dispatch&per_page=100": {
             "workflow_runs": [trusted_run()]
         },
         f"{prefix}/actions/workflows/repository.yml/runs?head_sha={SHA}&event=push&per_page=100": {
@@ -318,7 +319,7 @@ def test_incomplete_or_ambiguous_release_qualification_is_rejected(mutation):
             checks.append(deepcopy(checks[0]))
     elif mutation.startswith("run_"):
         runs = data[
-            f"{prefix}/actions/workflows/quality.yml/runs?head_sha={SHA}&event=push&per_page=100"
+            f"{prefix}/actions/workflows/quality.yml/runs?head_sha={SHA}&event=workflow_dispatch&per_page=100"
         ]["workflow_runs"]
         if mutation == "run_missing":
             runs.clear()
@@ -449,3 +450,12 @@ def test_missing_or_ambiguous_release_readiness_cannot_pass(mutation):
         issue["pull_request"] = {}
     with pytest.raises(ValueError):
         milestone_readiness(lambda _: issue, "0.0.1", plan, index)
+
+
+@pytest.mark.parametrize("missing", ["macos-latest", "Python 3.13", "Python 3.14"])
+def test_routine_development_matrix_does_not_qualify_publication(missing):
+    data = trusted_api()
+    path = f"repos/{REPOSITORY}/actions/runs/12/jobs?filter=latest&per_page=100"
+    data[path]["jobs"] = [job for job in data[path]["jobs"] if missing not in job["name"]]
+    with pytest.raises(ValueError, match="Required job"):
+        release_preflight(data.__getitem__, SHA, "0.0.1", "pypi")

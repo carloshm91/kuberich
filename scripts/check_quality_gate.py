@@ -4,7 +4,9 @@ import json
 import os
 import sys
 
-REQUIRED_JOBS = {"application"}
+from scripts.ci_policy import matrix
+
+REQUIRED_JOBS = {"plan", "application"}
 
 
 def main() -> int:
@@ -15,6 +17,13 @@ def main() -> int:
         for name, job in results.items():
             if not isinstance(job, dict) or job.get("result") != "success":
                 raise ValueError(f"required job did not succeed: {name}")
+        expected = matrix(os.environ["GITHUB_EVENT_NAME"], os.environ["GITHUB_REF"])
+        outputs = results["plan"].get("outputs")
+        if not isinstance(outputs, dict) or not isinstance(outputs.get("matrix"), str):
+            raise ValueError("the planned matrix output must be present")
+        planned = json.loads(outputs["matrix"])
+        if planned != expected:
+            raise ValueError("the verified event's complete matrix must be planned")
     except (KeyError, ValueError) as error:
         print(f"Quality gate failed: {error}", file=sys.stderr)
         return 1

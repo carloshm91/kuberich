@@ -77,7 +77,12 @@ def terminal_navigation(command, directory, *, evidence, initial_scope=False):
                 terminal._read()
                 assert time.monotonic() < deadline, "Context command did not reach owned API"
             terminal.wait_for_screen("State: Connecting", since=marker)
-            marker = terminal.send(b":ns\r")
+            # This probe checks rejection while the API is gated, not typeahead.
+            # Confirm the command is visibly entered before submitting so the
+            # preceding context/connection render cannot obscure its feedback.
+            marker = terminal.send(b":ns")
+            terminal.wait_for_screen(": ns", since=marker)
+            marker = terminal.send(b"\r")
             terminal.wait_for_screen("Connect to a context before selecting", since=marker)
             marker = len(terminal.transcript)
             server.namespace_gate.set()

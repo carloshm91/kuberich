@@ -23,6 +23,9 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Reduce repeated private macOS CI work while retaining full selected-job suites,
+  independent coverage gates and mandatory six-environment release qualification.
+
 - Describe embedded shells accurately in CLI help and provide one current
   installation/trial guide with a reproducible installed-wheel kind rehearsal.
 

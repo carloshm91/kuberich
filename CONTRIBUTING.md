@@ -15,7 +15,8 @@ reports, and practical terminal UX feedback are welcome.
 4. Implement the behavior with relevant tests and user-facing documentation.
    Small prerequisite corrections belong in the same PR only if needed for it.
    Record newly discovered independent work as a separate issue.
-5. Open a pull request with “Closes #<issue>”, acceptance evidence, test results,
+5. Open a pull request with “Closes #<issue>” when all criteria are complete
+   (otherwise “Refs #<issue>” and keep remaining criteria open), acceptance evidence, test results,
    and screenshots or a terminal recording when the visible interaction changes.
 6. Merge with squash only after the required checks pass and review is resolved.
    Delete the branch, close the issue, and update the project card.
@@ -88,6 +89,12 @@ CI compares committed code against the exact event base. A diff with no changed
 executable production lines is not applicable, not a new 100% coverage result.
 See [quality policy](docs/quality.md) for the required check names and the current
 private-repository branch-protection limitation.
+
+Every PR runs Linux on Python 3.12/3.13/3.14 and the macOS/Python 3.12 baseline.
+Main pushes repeat Linux; manual Application quality dispatches on main qualify
+all six combinations before release. Every selected environment retains the full
+suite and independent coverage gates. Do not use a manual dispatch as a substitute
+for PR checks or a routine development matrix as release qualification.
 
 ## Commits and releases
 
