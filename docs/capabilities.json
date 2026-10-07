@@ -262,7 +262,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40×12 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -970,12 +970,18 @@
       ],
       "source": "README.md",
       "status": "planned",
-      "difference": "D01 qualifies local Python wheel/sdist contents and isolated uv tool/pip-backed pipx installation, actual installed navigation/shell and cleanup. Public PyPI/Homebrew delivery remains D02/D03, and standalone downloads remain D05; unavailable macOS execution stays a public-release gate.",
+      "difference": "D01 qualifies local Python wheel/sdist contents and isolated uv tool/pip-backed pipx installs. D02 adds maintainer-dispatched immutable candidate/publishing automation and measured local RC/HTTP/Git tests; live OIDC/TestPyPI/protection and public channel qualification remain D04. Homebrew remains D03; standalone downloads remain D05; macOS execution remains a public-release gate.",
       "partial_evidence": [
         "docs/distribution.md",
         "docs/acceptance/distribution-artifacts.md",
         "tests/packaging/test_artifacts.py",
-        "tests/packaging/test_installers.py"
+        "tests/packaging/test_installers.py",
+        "docs/release-pipeline.md",
+        "scripts/release.py",
+        "scripts/release_policy.py",
+        "tests/quality/test_release_policy.py",
+        "tests/quality/test_release_transport.py",
+        "tests/packaging/test_release_candidate.py"
       ]
     },
     {

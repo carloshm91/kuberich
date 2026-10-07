@@ -4,8 +4,10 @@
 
 The installed version is `0.0.1.dev0`; merges collect entries under Unreleased
 and do not create GitHub Releases or tags. The workflow below is the required
-release procedure. Implementing its publishing automation remains D02 #36;
-qualifying and publishing the first usable `0.0.1` remains D04 #40.
+release procedure. D02 #36 implements the
+[approved immutable pipeline](release-pipeline.md); live TestPyPI/OIDC and full
+platform/protection qualification, and publishing the first usable `0.0.1`, remain
+D04 #40.
 The header shows installed package metadata. Automatic new-release notices remain
 U01 #56, rather than an inferred claim that this checkout is a published release.
 
@@ -55,8 +57,10 @@ Git tags are vX.Y.Z-rc.N; the release workflow validates normalized equivalence.
 4. The maintainer dispatches the release workflow with the intended version and
    exact main commit. It validates version/tag agreement, that commit's checks,
    milestone readiness, and that the tag/version has not already been published.
-5. Build artifacts once from that exact commit. Verify metadata, packaged assets,
-   checksums, clean installs, and provenance. Retain those tested artifact bytes.
+5. Consume the artifacts already built and tested by that exact commit's successful
+   main quality run. Verify metadata, packaged assets, checksums, clean installs,
+   audits and provenance. Retain those tested bytes without rebuilding them in
+   the release workflow.
 6. After the release environment is approved by the maintainer, create the
    annotated tag and publish those same artifacts to PyPI using OIDC Trusted
    Publishing. Publish a GitHub Release with notes, artifacts, and checksums.

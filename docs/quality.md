@@ -75,6 +75,13 @@ exact distribution bytes. Every finding requires a reviewed, exact, expiring
 exception; missing/skipped evidence and scanner errors fail. See
 [dependency security](dependency-security.md) for commands, scope and limits.
 
+D02 retains local candidate identity under `artifacts/releases`. Release decision
+and owned HTTP/Git transport tests run in every application job; actual canonical
+RC builds/audits/installations exercise preparation without publication. The
+dispatch pipeline still requires real green hosted Linux/macOS qualification,
+protected main and approved environments; private local checks never bypass it.
+See [release pipeline](release-pipeline.md) for the owner setup and retry contract.
+
 Configure coverage over the entire src/kubetrol package, including modules not
 imported by tests. Do not include tests in the denominator. Do not omit entire
 UI, client, or subprocess modules. A combined coverage.py percentage is not the

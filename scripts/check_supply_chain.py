@@ -44,6 +44,11 @@ INPUT_FILES = (
     "scripts/dependency_inventory.py",
     ".github/workflows/quality.yml",
     ".github/workflows/repository.yml",
+    ".github/workflows/release.yml",
+    "scripts/release.py",
+    "scripts/release_policy.py",
+    "docs/backlog.json",
+    "docs/github-issues.json",
 )
 
 

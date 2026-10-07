@@ -1,0 +1,166 @@
+name: Approved immutable release
+'on':
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: Exact qualified main commit (40 characters)
+        required: true
+        type: string
+      version:
+        description: Canonical package version (X.Y.Z or X.Y.ZrcN)
+        required: true
+        type: string
+      dry_run:
+        description: Validate all gates and retain a candidate without publication
+        required: true
+        default: true
+        type: boolean
+      index:
+        description: Owner-configured Trusted Publisher destination
+        required: true
+        default: testpypi
+        type: choice
+        options: [testpypi, pypi]
+      reuse_run:
+        description: Previous release run for identical-byte retry (0 for a new candidate)
+        required: true
+        default: '0'
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: kubetrol-release
+  cancel-in-progress: false
+env:
+  RELEASE_COMMIT: ${{ inputs.commit }}
+  RELEASE_VERSION: ${{ inputs.version }}
+  RELEASE_INDEX: ${{ inputs.index }}
+  RELEASE_REUSE_RUN: ${{ inputs.reuse_run }}
+jobs:
+  validate:
+    name: Validate release
+    if: ${{ github.repository == 'carloshm91/kubetrol' && github.ref == 'refs/heads/main' && github.actor == 'carloshm91' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      environment: ${{ steps.preflight.outputs.environment }}
+      tag: ${{ steps.preflight.outputs.tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: '0.10.4'
+          python-version: '3.12'
+      - run: uv sync --locked --group dev
+      - name: Require real main/DCO/matrix/protection qualification
+        id: preflight
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          uv run --locked python -m scripts.release preflight
+          --commit "$RELEASE_COMMIT" --version "$RELEASE_VERSION"
+          --index "$RELEASE_INDEX" --reuse-run "$RELEASE_REUSE_RUN"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.commit }}
+          persist-credentials: false
+      - run: uv sync --locked --group dev
+      - name: Download the already built and tested immutable bytes
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ steps.preflight.outputs.artifact_id }}
+          merge-multiple: true
+          run-id: ${{ steps.preflight.outputs.download_run_id }}
+          github-token: ${{ github.token }}
+          path: qualified
+      - name: Verify and prepare candidate; never rebuild
+        run: |
+          if [ "$RELEASE_REUSE_RUN" = '0' ]; then
+            uv run --locked python -m scripts.release prepare --commit "$RELEASE_COMMIT" --version "$RELEASE_VERSION"
+          else
+            mv qualified release-candidate
+          fi
+          uv run --locked python -m scripts.release verify --commit "$RELEASE_COMMIT" --version "$RELEASE_VERSION"
+      - name: Retain the verified candidate for approval or retry
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-candidate-${{ inputs.commit }}-${{ inputs.version }}
+          path: release-candidate/
+          if-no-files-found: error
+          retention-days: 30
+  publish:
+    name: Publish approved release
+    needs: validate
+    if: ${{ !inputs.dry_run }}
+    environment:
+      name: ${{ needs.validate.outputs.environment }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.commit }}
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: '0.10.4'
+          python-version: '3.12'
+      - run: uv sync --locked --group dev
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-candidate-${{ inputs.commit }}-${{ inputs.version }}
+          path: release-candidate
+      - name: Revalidate after maintainer approval and plan missing PyPI files
+        id: missing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          uv run --locked python -m scripts.release pypi-missing
+          --commit "$RELEASE_COMMIT" --version "$RELEASE_VERSION"
+          --index "$RELEASE_INDEX" --output missing
+      - name: Attest the exact tested distribution bytes
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: release-candidate/dist/*
+      - name: Attest the audited installed wheel SBOM
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: release-candidate/dist/*.whl
+          sbom-path: release-candidate/artifacts/security/locked-sbom.json
+      - name: Create the immutable production tag before upload
+        if: ${{ inputs.index == 'pypi' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          uv run --locked python -m scripts.release tag --commit "$RELEASE_COMMIT"
+          --version "$RELEASE_VERSION" --index pypi
+      - name: Publish only absent files with PyPI Trusted Publishing
+        if: ${{ steps.missing.outputs.count != '0' }}
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          repository-url: ${{ inputs.index == 'pypi' && 'https://upload.pypi.org/legacy/' || 'https://test.pypi.org/legacy/' }}
+          packages-dir: missing/
+          attestations: true
+      - name: Verify complete matching publication on the selected index
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          uv run --locked python -m scripts.release pypi-verify
+          --commit "$RELEASE_COMMIT" --version "$RELEASE_VERSION" --index "$RELEASE_INDEX"
+      - name: Verify complete PyPI publication, upload missing identical assets and publish GitHub release
+        if: ${{ inputs.index == 'pypi' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          uv run --locked python -m scripts.release github-assets
+          --commit "$RELEASE_COMMIT" --version "$RELEASE_VERSION" --index pypi
