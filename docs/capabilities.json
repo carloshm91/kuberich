@@ -27,7 +27,8 @@
         "tests/contract/test_connection_overrides.py",
         "tests/unit/test_connection_overrides.py",
         "tests/ui/test_launch_options.py",
-        "scripts/verify_shell_kind.py"
+        "scripts/verify_shell_kind.py",
+        "docs/acceptance/connection-overrides.md"
       ]
     },
     {
@@ -51,7 +52,8 @@
         "tests/contract/test_connection_overrides.py",
         "tests/unit/test_connection_overrides.py",
         "tests/ui/test_launch_options.py",
-        "scripts/verify_shell_kind.py"
+        "scripts/verify_shell_kind.py",
+        "docs/acceptance/connection-overrides.md"
       ]
     },
     {
@@ -94,7 +96,8 @@
         "tests/contract/test_connection_overrides.py",
         "tests/unit/test_connection_overrides.py",
         "tests/ui/test_launch_options.py",
-        "scripts/verify_shell_kind.py"
+        "scripts/verify_shell_kind.py",
+        "docs/acceptance/connection-overrides.md"
       ]
     },
     {
@@ -627,7 +630,8 @@
         "tests/ui/test_launch_options.py",
         "tests/contract/test_connection_overrides.py",
         "tests/unit/test_connection_overrides.py",
-        "scripts/verify_shell_kind.py"
+        "scripts/verify_shell_kind.py",
+        "docs/acceptance/connection-overrides.md"
       ]
     },
     {
