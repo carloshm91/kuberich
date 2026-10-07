@@ -57,8 +57,9 @@ sdist-to-wheel equivalence and actual isolated uv tool/pip-backed pipx installs.
 Each interpreter runs installed CLI/navigation/shell trials outside the checkout.
 Installer evidence is retained under `artifacts/packaging`; installed dependencies
 are measured independently of the development lock. Tool subprocesses own their
-process group and reap children on timeout. Application jobs allow 30 minutes
-for the measured full suite, cold pip-backed installs and owned cluster checks.
+process group and reap children on timeout. Application jobs allow 45 minutes
+for the measured full suite, cold pip-backed installs and owned cluster checks,
+including the setup/body cancellation qualification added in Q01 #38.
 
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
