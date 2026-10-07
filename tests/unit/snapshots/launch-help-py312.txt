@@ -66,4 +66,4 @@ Session connection overrides:
                         client certificate file; requires --client-key
   --token TOKEN         bearer token override; never included in diagnostics
 
-Live pod table preview: commands, completion, filters, logs and native container shells.
+Live pod table preview: commands, completion, filters, logs and embedded container shells.
