@@ -2,6 +2,7 @@
 
 import base64
 import json
+import subprocess
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
@@ -14,10 +15,43 @@ from scripts.release import (
     immutable_tag,
     preflight,
     request,
+    require_source,
 )
 from scripts.release_policy import REPOSITORY, release_preflight
 from tests.quality.test_release_policy import SHA, trusted_api
 from tests.support.release_server import release_server
+
+
+@pytest.mark.parametrize("name", ["docs/backlog.json", "docs/github-issues.json"])
+def test_exact_source_rejects_dirty_pinned_release_plan(tmp_path, name):
+    path = tmp_path / name
+    path.parent.mkdir()
+    path.write_text("{}\n")
+
+    def git(*arguments):
+        return subprocess.check_output(
+            ["git", "-C", str(tmp_path), *arguments], text=True, timeout=10
+        ).strip()
+
+    git("init", "--quiet")
+    git("add", name)
+    git(
+        "-c",
+        "user.name=Release Fixture",
+        "-c",
+        "user.email=fixture@example.invalid",
+        "commit",
+        "--quiet",
+        "-m",
+        "Owned source fixture",
+    )
+    sha = git("rev-parse", "HEAD")
+    require_source(tmp_path, sha)
+    with pytest.raises(ValueError, match="clean committed"):
+        require_source(tmp_path, "b" * 40)
+    path.write_text('{"changed": true}\n')
+    with pytest.raises(ValueError, match="clean committed"):
+        require_source(tmp_path, sha)
 
 
 def test_actual_http_main_qualification_is_readonly_and_source_version_matches(tmp_path):
