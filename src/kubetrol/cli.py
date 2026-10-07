@@ -52,7 +52,7 @@ def _parser() -> argparse.ArgumentParser:
     parser = _Parser(
         prog="kubetrol",
         description="A Kubernetes terminal UI built with Python and Textual.",
-        epilog="Live pod table preview: commands, completion, filters, logs and native container shells.",
+        epilog="Live pod table preview: commands, completion, filters, logs and embedded container shells.",
         allow_abbrev=False,
         formatter_class=lambda prog: argparse.HelpFormatter(prog, width=100),
     )

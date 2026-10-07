@@ -1,5 +1,20 @@
 # First things to try
 
+## Current installation and trial guide: W01 #39
+
+Use the [current quickstart](quickstart.md) for one ordered trial of the installed
+preview. Checkout launch example:
+`uv run kubetrol --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly`.
+For a deliberately selected test scope, `--write` enables embedded shells even
+when the preferences are read-only. Public 0.0.1/PyPI/Homebrew publication remains
+pending #40; the source checkout reports `0.0.1.dev0`. Earlier sections below
+preserve historical checkpoints.
+The installed Linux candidate rehearsal passed with this exact command:
+`uv run python -m scripts.verify_quickstart --wheel /tmp/kubetrol-39-evidence/target-3.13/canonical-rc0/release-candidate/dist/kubetrol-0.0.1rc1-py3-none-any.whl --kind /tmp/kubetrol-tools/kind --kubectl /tmp/kubetrol-tools/shell/bin/kubectl --evidence /tmp/kubetrol-39-evidence/quickstart-frozen-rc.json`.
+It exercised read-only navigation/logs and a write-enabled embedded shell outside
+the checkout, then removed its own installation and disposable cluster.
+See [measured W01 evidence](acceptance/quickstart.md) for scope and limitations.
+
 The installable CLI, local preferences and first terminal window are available
 from the development checkout, including the live pod table, container logs and embedded shells. Use the latest
 resource-workspace trial below; earlier sections record previous checkpoints and may name

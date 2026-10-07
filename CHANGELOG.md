@@ -23,6 +23,9 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Describe embedded shells accurately in CLI help and provide one current
+  installation/trial guide with a reproducible installed-wheel kind rehearsal.
+
 - Restrict wheel/source artifacts to runtime/build assets, metadata, license and
   release notes. Development tests/scripts/lock, caches and undeclared private
   configuration/credential files stay outside the distribution.

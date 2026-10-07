@@ -15,6 +15,7 @@ from contextlib import suppress
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
+from typing import BinaryIO
 
 # A remote/pane session owner records attributes while its TTY still exists.
 # A caught HUP keeps the observer alive; exec resets that caught handler in the
@@ -91,7 +92,7 @@ class TerminalTransport:
         self.socket = directory / "tmux.socket"
         self.socket_directory: TemporaryDirectory[str] | None = None
         self.server: subprocess.Popen[bytes] | None = None
-        self.server_log = None
+        self.server_log: BinaryIO | None = None
         self.started = False
         self.disconnected = False
         self.record: dict[str, object] | None = None

@@ -90,6 +90,9 @@ for 0.1.0. These channels are tracked work, not currently available downloads.
 
 ## Development
 
+Start with the [installation and trial guide](docs/quickstart.md) for the current
+usable preview, actual controls and public-release limits.
+
 - [First preview checkpoints](docs/first-preview.md)
 - [Roadmap and release milestones](docs/roadmap.md)
 - [Issue index and implementation order](docs/backlog.md)

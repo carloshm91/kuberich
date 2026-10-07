@@ -19,6 +19,7 @@ import yaml
 NODE_IMAGE = (
     "kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed"
 )
+SHELL_IMAGE = "alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b"
 
 
 def run_owned(argv: Sequence[str], environment: Mapping[str, str], timeout: float = 30) -> str:

@@ -45,7 +45,7 @@ jobs:
         run: |
           uv run ruff check .
           uv run ruff format --check .
-          uv run mypy --strict src/kubetrol scripts/check_coverage.py scripts/check_quality_gate.py scripts/check_supply_chain.py scripts/supply_chain.py scripts/dependency_inventory.py scripts/release.py scripts/release_policy.py scripts/homebrew.py scripts/owned_kind.py scripts/verify_kind_lifecycle.py
+          uv run mypy --strict src/kubetrol scripts/check_coverage.py scripts/check_quality_gate.py scripts/check_supply_chain.py scripts/supply_chain.py scripts/dependency_inventory.py scripts/release.py scripts/release_policy.py scripts/homebrew.py scripts/owned_kind.py scripts/verify_kind_lifecycle.py scripts/verify_quickstart.py
       - name: Run behavioral, gate-regression and clean-distribution checks
         run: uv run pytest --cov=kubetrol --cov-branch --cov-report=term-missing --cov-report=xml --cov-report=json
       - name: Verify context sessions, resource views and watches on an owned disposable cluster
@@ -80,6 +80,9 @@ jobs:
           uv run twine check dist/*
       - name: Verify audited installed runtimes and artifact-linked security evidence
         run: uv run python -m scripts.check_supply_chain --verify
+      - name: Rehearse the installed first-user guide on an owned disposable cluster
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.12' }}
+        run: uv run python -m scripts.verify_quickstart --wheel dist/*.whl --kind "$RUNNER_TEMP/kubetrol-kind" --kubectl "$RUNNER_TEMP/kubetrol-shell/bin/kubectl"
       - name: Retain coverage evidence and candidate artifacts
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -96,6 +99,7 @@ jobs:
             artifacts/security/*
             artifacts/releases/*
             artifacts/cluster/*
+            artifacts/quickstart/*
           if-no-files-found: error
           retention-days: 7
   quality-gate:
