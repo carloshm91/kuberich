@@ -19,6 +19,7 @@ from kubernetes_asyncio import client
 
 from kubetrol.adapters.credentials import ExecToken, auth_problem
 from kubetrol.config.catalog import ContextConfig, Entry, mapping, regular_bytes, text
+from kubetrol.domain.connection_overrides import IMPERSONATION_FIELDS, impersonation_headers
 from kubetrol.domain.connections import (
     ConnectionProblem,
     ConnectionState,
@@ -152,6 +153,7 @@ class KubernetesSession:
         self.configuration: client.Configuration | None = None
         self.credentials: ExecToken | None = None
         self.insecure = False
+        self.impersonation: tuple[tuple[str, str], ...] = ()
 
     def delegated_config(self) -> dict[str, Any]:
         """Pin kubectl to this prepared session, rather than reloading ambient files."""
@@ -188,6 +190,9 @@ class KubernetesSession:
             user["exec"] = helper
         elif token := configuration.api_key.get("BearerToken"):
             user["token"] = token.removeprefix("Bearer ")
+        for field in IMPERSONATION_FIELDS:
+            if field in self.context.user.data:
+                user[field] = copy.deepcopy(self.context.user.data[field])
         return {
             "apiVersion": "v1",
             "kind": "Config",
@@ -218,6 +223,7 @@ class KubernetesSession:
                 await asyncio.gather(preparation, return_exceptions=True)
                 raise
             self.configuration = configuration
+            self.impersonation = impersonation_headers(self.context.user.data)
             self.insecure = not configuration.verify_ssl or str(configuration.host).startswith(
                 "http:"
             )
@@ -264,10 +270,10 @@ class KubernetesSession:
         while True:
             if credentials is not None:
                 configuration.api_key["BearerToken"] = "Bearer " + await credentials.token()
-            headers = {"Accept": accept, "Accept-Encoding": "identity"}
+            headers = [("Accept", accept), ("Accept-Encoding", "identity"), *self.impersonation]
             token = configuration.api_key.get("BearerToken")
             if token:
-                headers["Authorization"] = token
+                headers.append(("Authorization", token))
             # Bound connection/header establishment separately from a watch's
             # longer body lifetime. An idle watch need not send bookmarks.
             handshake = self.timeout if timeout is None else min(self.timeout, timeout)

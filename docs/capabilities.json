@@ -15,7 +15,7 @@
       ],
       "source": "cmd/root.go",
       "status": "planned",
-      "difference": "F05 implements local inspection, policy and presentation; C01 implements kubeconfig/context/namespace/timeout flags; B03 adds initial pod/context/namespace commands. Connection overrides, refresh and shell completion remain planned.",
+      "difference": "F05 implements local inspection, policy, presentation, initial views, periodic table repaint and invocation connection overrides. All audited flags are recognized; splash/inversion/export remain explicitly unavailable under U01/O06 and shell completion remains D13.",
       "partial_evidence": [
         "docs/k9s-cli.md",
         "tests/unit/test_launch_contract.py",
@@ -23,7 +23,11 @@
         "docs/context-sessions.md",
         "docs/command-navigation.md",
         "tests/ui/test_navigation.py",
-        "tests/terminal/test_navigation.py"
+        "tests/terminal/test_navigation.py",
+        "tests/contract/test_connection_overrides.py",
+        "tests/unit/test_connection_overrides.py",
+        "tests/ui/test_launch_options.py",
+        "scripts/verify_shell_kind.py"
       ]
     },
     {
@@ -36,13 +40,18 @@
       ],
       "source": "internal/client/config.go",
       "status": "planned",
-      "difference": "C01 implements read-only kubeconfig merging, explicit per-context SDK sessions, context/namespace selection and timeout states. Cluster/user/credential/TLS CLI overrides remain F05/C08. See docs/context-sessions.md for tested behavior and limits.",
+      "difference": "C01 and F05 implement read-only catalogue merging, explicit context/scope clients, alternate cluster/user aliases and credential/TLS overrides shared with watches, logs and captured shells. Advanced provider/proxy qualification remains C08; no complete authentication parity claim.",
       "partial_evidence": [
         "docs/context-sessions.md",
         "tests/contract/test_sessions.py",
         "tests/contract/test_credentials.py",
         "tests/ui/test_sessions.py",
-        "scripts/verify_contexts_kind.py"
+        "scripts/verify_contexts_kind.py",
+        "docs/k9s-cli.md",
+        "tests/contract/test_connection_overrides.py",
+        "tests/unit/test_connection_overrides.py",
+        "tests/ui/test_launch_options.py",
+        "scripts/verify_shell_kind.py"
       ]
     },
     {
@@ -74,13 +83,18 @@
       ],
       "source": "cmd/root.go",
       "status": "planned",
-      "difference": "C01 tests native kubeconfig TLS/CA/client certificates and request deadlines. Native proxies are explicit; proxy/provider qualification and CLI overrides/impersonation remain F05/C08/O04.",
+      "difference": "C01/F05 qualify native and CLI CA/client certificates, TLS verification overrides, deadlines and repeated impersonation across API streams and kubectl shells, including actual kind RBAC denial. Native proxy transport has owned local evidence; advanced proxy/provider combinations remain C08 and permission browser remains O04.",
       "partial_evidence": [
         "docs/context-sessions.md",
         "tests/contract/test_sessions.py",
         "tests/contract/test_credentials.py",
         "tests/ui/test_sessions.py",
-        "scripts/verify_contexts_kind.py"
+        "scripts/verify_contexts_kind.py",
+        "docs/k9s-cli.md",
+        "tests/contract/test_connection_overrides.py",
+        "tests/unit/test_connection_overrides.py",
+        "tests/ui/test_launch_options.py",
+        "scripts/verify_shell_kind.py"
       ]
     },
     {
@@ -605,12 +619,15 @@
       ],
       "source": "internal/view/actions.go",
       "status": "planned",
-      "difference": "F04 implements immutable client/UID targets and safe text/argv helpers. F05 stage 1 applies a shared immutable read-only command policy to CLI/UI; actual exec/attach/plugin/mutation service integration and RBAC evidence remain planned. Application read-only is not a security boundary.",
+      "difference": "F04/F05 enforce immutable target identity and read-only policy in CLI, UI, process and shell services; actual shell RBAC denial has owned-cluster evidence. Attach, mutation and plugins remain unavailable until their guarded services ship. Application read-only is not a security boundary.",
       "partial_evidence": [
         "docs/k9s-cli.md",
         "tests/unit/test_access_policy.py",
         "tests/unit/test_launch_contract.py",
-        "tests/ui/test_launch_options.py"
+        "tests/ui/test_launch_options.py",
+        "tests/contract/test_connection_overrides.py",
+        "tests/unit/test_connection_overrides.py",
+        "scripts/verify_shell_kind.py"
       ]
     },
     {

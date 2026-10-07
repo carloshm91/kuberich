@@ -4,7 +4,8 @@ Reference: K9s v0.51.0,
 [launch flags](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/cmd/root.go).
 This is the first-release contract. The development build implements help/version
 commands, `info`, `config init`/`check`, log options, read-only policy, initial
-view/scope/help commands, three terminal visibility flags and C01 context/namespace sessions. It recognizes all 26
+view/scope/help commands, three terminal visibility flags, context/namespace sessions,
+effective refresh and invocation connection overrides. It recognizes all 26
 audited flags, with explicit unavailable errors for behavior that has not shipped.
 Recognizing a flag does not establish Kubernetes or K9s compatibility.
 See the development checkpoint below, [local preferences](configuration.md) and
@@ -45,7 +46,7 @@ scheduled later report that limitation until their owning task is implemented.
 | `--client-certificate` | Client certificate override; F05/C08 |
 | `--token` | Explicit token override, redacted everywhere; F05/C08 |
 
-## Current development checkpoint: F05 stage 1, C01 and B03
+## Current development checkpoint: F05 connection integration
 
 | Options / commands | Tested behavior now |
 | --- | --- |
@@ -58,14 +59,14 @@ scheduled later report that limitation until their owning task is implemented.
 | `--logoless` | Hide the brand, retaining build information where the layout permits |
 | `--crumbsless` | Hide the identity bar and resource-view navigation trail |
 | `--command`, `-c` | Initial available pod/context/namespace/help/status/history commands share the UI grammar; unsupported views/actions return exit 4; see [B03](command-navigation.md) |
-| `--refresh`, `-r` | Validate/report seconds through `info` or `config check`; explicit terminal use returns exit 4 until C03 #24 |
+| `--refresh`, `-r` | Effective periodic table ages/local repaint (0.1–3600 seconds); watches remain live independently; validated/reportable through `info` and `config check` |
 | `--kubeconfig`, `--context`, `--namespace`/`-n`, `--all-namespaces`/`-A`, `--request-timeout` | Read-only catalogue, explicit background client and namespace discovery/selection; see [C01](context-sessions.md) |
-| Cluster/user/token/TLS/impersonation CLI overrides | Exit 4 naming F05/C08; no files read or helpers run |
+| Cluster/user/token/TLS/impersonation CLI overrides | Per-invocation effective connection shared by API reads, watches, logs and captured kubectl shells; source kubeconfigs stay unchanged |
 | `--splashless`, `--invert`, `--screen-dump-dir` | Exit 4; there is currently no splash, theme inversion or screen export to control |
 
 Place global options before a subcommand. Scalar options repeated on the command
 line use their last value; `--as-group` preserves every occurrence in order, but
-impersonation is unavailable. `--as-group` requires `--as`; client key and client
+impersonation requires API-server authorization. `--as-group` requires `--as`; client key and client
 certificate must be supplied together. Namespace/all-namespaces and readonly/write
 are mutually exclusive, with owned errors that identify the conflicting flags.
 Syntax/type errors do not echo rejected values. Pending string arguments are
@@ -90,13 +91,50 @@ same guard before its effects and provide integration evidence. `--write` only c
 it grants no API permission. The read-only indicator remains visible when the
 header is hidden and after filter/status updates.
 
-F05 remains open: this checkpoint does not complete the initial-release criteria.
-C01 supplies real sessions and namespace discovery with tested credential mechanisms;
-connection overrides remain F05/C08, C03 consumes refresh,
-B03 supplies resource commands, and S03/S04 prove guarded interactive execution.
-C08/M01 qualify the later authentication and mutation paths. The delivery record
-must recheck these integrations before F05 closes; completion remains a first-release
-gate rather than a parser-only claim. Shell completion stays with D13.
+F05 #19 completes the initial launch connection contract with the integrations
+above. Provider qualification remains C06/C07/C08, later mutations remain M01,
+and shell completion remains D13. Unsupported presentation/export flags continue
+to fail explicitly until their owning feature ships.
+
+## Effective invocation connection
+
+`--cluster` and `--user` select named entries from the merged kubeconfig, overriding
+the selected context's references. Missing aliases fail safely; there is no
+fallback identity. The selected context and its namespace remain independent.
+The header shows effective aliases/impersonated subject, while `:ctx` lists the
+stored catalogue entries. Overrides persist across context switches for this
+invocation and never rewrite the source kubeconfigs.
+
+`--token` replaces the selected user's token-file, certificate, exec and legacy
+mechanisms. A client certificate requires both `--client-certificate` and
+`--client-key` and also replaces those mechanisms. Replaced helpers never run.
+Token and client-certificate overrides are mutually exclusive, an intentional
+restriction to make the effective identity unambiguous. Ordinary kubeconfig
+credential support and its provider limits are described in [sessions](context-sessions.md).
+
+`--certificate-authority` replaces inline/file CA material and enables verification.
+`--insecure-skip-tls-verify` or `=true` explicitly clears CA material and disables
+verification; `=false` forces verification using the selected CA/system trust.
+Explicit CA and insecure=true cannot be combined. TLS server-name/proxy settings
+stay with the selected cluster. Relative override paths are captured against the
+launch directory; native kubeconfig paths retain their source-file directory.
+Missing/invalid files surface as a safe connection state before resource calls.
+Insecure transport remains visible even when the header is hidden.
+
+`--as` replaces the complete stored impersonation identity: previous groups,
+UID and extras are discarded. Repeat `--as-group` to choose groups for that
+subject, retaining order and duplicates (maximum 64). Without `--as`, loaded
+kubeconfig impersonation, including UID and bounded extras, is preserved.
+The API server enforces impersonation and resource permissions; 401 and 403
+remain distinct. Impersonation does not change the credentials used to authorize
+the request itself. Headers and the private kubectl connection carry the same
+effective identity.
+
+Diagnostics never load these credentials or print tokens/private keys. Supplying
+connection options to local inspection commands is refused. Credential strings
+are bounded and reject controls; a command-line token is visible to the caller's
+shell/history/process tooling, so an existing kubeconfig/token helper is preferable
+for regular use. No token is persisted in Kubetrol preferences.
 
 Exit codes: 0 success/inspection/normal terminal quit; 1 internal failure; 2 invalid
 input or noninteractive launch; 3 local file/log failure; 4 recognized unavailable

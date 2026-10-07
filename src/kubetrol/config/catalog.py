@@ -1,6 +1,5 @@
 """Bounded read-only kubeconfig catalogue with first-file-wins merge semantics."""
 
-import copy
 import os
 import stat
 from collections.abc import Mapping
@@ -12,6 +11,7 @@ import yaml
 from yaml.events import AliasEvent, CollectionEndEvent, CollectionStartEvent
 from yaml.nodes import MappingNode
 
+from kubetrol.domain.connection_overrides import ConnectionOverrides
 from kubetrol.domain.connections import (
     ConnectionProblem,
     ConnectionRequest,
@@ -109,27 +109,29 @@ class KubeCatalog:
     def names(self) -> tuple[str, ...]:
         return tuple(sorted(self.contexts))
 
-    def select(self, name: str) -> ContextConfig:
+    def select(self, name: str, overrides: ConnectionOverrides | None = None) -> ContextConfig:
         if name not in self.contexts:
             raise AppError("Selected context is not present in the loaded kubeconfig.")
         context = self.contexts[name]
-        cluster = text(context.data.get("cluster"))
+        overrides = overrides or ConnectionOverrides()
+        cluster = overrides.cluster or text(context.data.get("cluster"))
         if cluster not in self.clusters:
             raise AppError("Selected context references a missing cluster.")
-        user = context.data.get("user")
+        user = overrides.user or context.data.get("user")
         if user is not None and text(user) not in self.users:
             raise ConnectionProblem(
                 ConnectionState.AUTH_ERROR,
                 "Selected context references unavailable credentials. Check its user entry.",
             )
         namespace = namespace_name(text(context.data.get("namespace", "default")))
+        cluster_data, user_data = overrides.apply(
+            self.clusters[cluster].data, self.users[user].data if user is not None else {}
+        )
         return ContextConfig(
             name,
             namespace,
-            Entry(copy.deepcopy(self.clusters[cluster].data), self.clusters[cluster].directory),
-            Entry(copy.deepcopy(self.users[user].data), self.users[user].directory)
-            if user is not None
-            else Entry({}, context.directory),
+            Entry(cluster_data, self.clusters[cluster].directory),
+            Entry(user_data, self.users[user].directory if user is not None else context.directory),
         )
 
 

@@ -4,8 +4,9 @@ usage: kubetrol [-h] [--version] [--config CONFIG] [--kubeconfig KUBECONFIG] [--
                 [--readonly] [--write] [--command INITIAL_COMMAND] [--headless] [--logoless]
                 [--crumbsless] [--splashless] [--invert] [--screen-dump-dir SCREEN_DUMP_DIR]
                 [--cluster CLUSTER] [--user USER] [--as AS_USER] [--as-group AS_GROUP]
-                [--insecure-skip-tls-verify] [--certificate-authority CERTIFICATE_AUTHORITY]
-                [--client-key CLIENT_KEY] [--client-certificate CLIENT_CERTIFICATE] [--token TOKEN]
+                [--insecure-skip-tls-verify [INSECURE]]
+                [--certificate-authority CERTIFICATE_AUTHORITY] [--client-key CLIENT_KEY]
+                [--client-certificate CLIENT_CERTIFICATE] [--token TOKEN]
                 {help,version,info,config} ...
 
 A Kubernetes terminal UI built with Python and Textual.
@@ -34,7 +35,7 @@ options:
   --log-level, --logLevel, -l LOG_LEVEL
                         DEBUG, INFO, WARNING, ERROR, or CRITICAL
   --refresh, -r REFRESH_SECONDS
-                        refresh seconds (0.1-3600); info/check only until C03 #24
+                        periodic table refresh seconds (0.1-3600); watch changes remain live
   --readonly            block mutations, shell, attach and plugins
   --write               override the configured read-only preference for this session
   --command, -c INITIAL_COMMAND
@@ -49,18 +50,20 @@ Recognized options awaiting their owning feature (exit 4):
   --invert              unavailable: theme inversion (U01 #56)
   --screen-dump-dir SCREEN_DUMP_DIR
                         unavailable: screen exports (O06 #73)
-  --cluster CLUSTER     unavailable: connection overrides (F05 #19 / C08 #47)
-  --user USER           unavailable: connection overrides (F05 #19 / C08 #47)
-  --as AS_USER          unavailable: impersonation transport (F05 #19 / C08 #47)
-  --as-group AS_GROUP   unavailable: impersonation transport (F05 #19 / C08 #47)
-  --insecure-skip-tls-verify
-                        unavailable: TLS transport (F05 #19 / C08 #47)
+
+Session connection overrides:
+  --cluster CLUSTER     kubeconfig cluster alias for this invocation
+  --user USER           kubeconfig auth-info alias for this invocation
+  --as AS_USER          user/service account to impersonate; server permission required
+  --as-group AS_GROUP   impersonation group; repeat to retain multiple groups
+  --insecure-skip-tls-verify [INSECURE]
+                        skip TLS verification explicitly; accepts =true or =false
   --certificate-authority CERTIFICATE_AUTHORITY
-                        unavailable: TLS transport (F05 #19 / C08 #47)
+                        CA certificate file; enables TLS verification
   --client-key CLIENT_KEY
-                        unavailable: TLS transport (F05 #19 / C08 #47)
+                        client private key file; requires --client-certificate
   --client-certificate CLIENT_CERTIFICATE
-                        unavailable: TLS transport (F05 #19 / C08 #47)
-  --token TOKEN         unavailable: credential overrides (F05 #19 / C08 #47)
+                        client certificate file; requires --client-key
+  --token TOKEN         bearer token override; never included in diagnostics
 
 Live pod table preview: commands, completion, filters, logs and native container shells.

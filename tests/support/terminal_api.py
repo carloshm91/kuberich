@@ -31,6 +31,11 @@ def config(path: Path, server: str, user: dict) -> Path:
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         assert self.headers.get("Authorization") == "Bearer synthetic-pty"
+        if self.server.impersonation is not None:
+            subject, groups = self.server.impersonation
+            assert self.headers.get("Impersonate-User") == subject
+            assert self.headers.get_all("Impersonate-Group") == list(groups)
+            self.server.identity_verified.set()
         parsed = urlsplit(self.path)
         query = parse_qs(parsed.query)
         if parsed.path.endswith("/log"):
@@ -192,3 +197,5 @@ class Server(ThreadingHTTPServer):
         self.namespace_requested = threading.Event()
         self.namespace_gate = threading.Event()
         self.namespace_gate.set()
+        self.impersonation = None
+        self.identity_verified = threading.Event()

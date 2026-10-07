@@ -97,7 +97,11 @@ legacy `auth-provider` and basic username/password authentication are explicitly
 unavailable with an authentication message. Log in outside the UI where supported,
 or use a supported credential mechanism. EKS/AKS/GKE helper and actual provider
 qualification remain C06/C07/C08; generic synthetic exec tests do not certify them.
-CLI cluster/user/token/TLS/impersonation overrides remain gated by F05/C08.
+CLI cluster/user/token/TLS/impersonation overrides are implemented by F05 #19;
+see the [effective launch connection](k9s-cli.md#effective-invocation-connection).
+They apply to this invocation, including context changes, reads, watches, logs
+and the private captured kubectl shell connection. Provider qualification remains
+C06/C07/C08.
 
 ## Connection states and bounds
 

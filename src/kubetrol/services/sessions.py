@@ -36,7 +36,7 @@ class SessionService:
                 ConnectionState.CONNECTING, "Connecting to the selected context.", identity
             )
             try:
-                selected = self.catalog.select(context)
+                selected = self.catalog.select(context, self.request.overrides)
                 namespace = self.scopes.get(
                     context,
                     None

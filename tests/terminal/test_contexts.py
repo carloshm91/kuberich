@@ -8,9 +8,71 @@ import time
 from pathlib import Path
 
 import pytest
+import yaml
 
 from tests.support.terminal_api import Server, config
 from tests.terminal.pty_support import TerminalSession
+
+
+def verify_connection_overrides(tmp_path, launch):
+    server = Server()
+    server.impersonation = ("owned-viewer", ("one", "two"))
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    path = config(tmp_path / "owned-config", "http://127.0.0.1:1", {"exec": {}})
+    data = yaml.safe_load(path.read_text())
+    data["clusters"].append(
+        {"name": "alternate", "cluster": {"server": f"http://127.0.0.1:{server.server_port}"}}
+    )
+    data["users"].append({"name": "alternate", "user": {"token": "wrong-old-token"}})
+    path.write_text(yaml.safe_dump(data))
+    original = path.read_bytes()
+    try:
+        with TerminalSession(
+            [
+                *launch,
+                "--kubeconfig",
+                str(path),
+                "--cluster",
+                "alternate",
+                "--user",
+                "alternate",
+                "--token",
+                "synthetic-pty",
+                "--as",
+                "owned-viewer",
+                "--as-group",
+                "one",
+                "--as-group",
+                "two",
+                "--refresh",
+                "0.2",
+            ],
+            tmp_path,
+        ) as terminal:
+            terminal.wait_for_screen("1 pods")
+            terminal.wait_for_screen("alternate (as owned-viewer)")
+            assert server.identity_verified.is_set()
+            marker = terminal.send(b":ctx\r")
+            terminal.wait_for_screen("contexts[1]", since=marker)
+            terminal.send(b"\r")
+            terminal.wait_for_screen("1 pods", absent=("contexts[",))
+            marker = terminal.send(b":ns team\r")
+            terminal.wait_for_screen("Namespace: team", since=marker)
+            terminal.send(b"q")
+            terminal.finish()
+            terminal.save_evidence("connection-overrides")
+            assert (
+                b"synthetic-pty" not in terminal.transcript
+                and b"wrong-old-token" not in terminal.transcript
+            )
+        assert path.read_bytes() == original
+    finally:
+        server.stopping.set()
+        server.shutdown()
+        thread.join(timeout=2)
+        server.server_close()
+        assert not thread.is_alive()
 
 
 @pytest.mark.parametrize("authentication", ["token", "exec-null-env"])
@@ -173,6 +235,10 @@ def test_quiet_watch_renewals_keep_the_real_cli_live_without_retry_hints(tmp_pat
         thread.join(timeout=2)
         server.server_close()
         assert not thread.is_alive()
+
+
+def test_real_cli_connection_overrides_keep_scope_and_identity_across_navigation(tmp_path):
+    verify_connection_overrides(tmp_path, [sys.executable, "-m", "kubetrol"])
 
 
 def test_quitting_during_exec_helper_reaps_process_and_restores_tty(tmp_path: Path) -> None:

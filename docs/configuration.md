@@ -57,7 +57,7 @@ The file is always read; log flags do not bypass a broken config.
 | --- | --- | --- | --- |
 | `shell` | `["sh"]` | Not available | Not available; configure YAML |
 | `theme` | `k9s` | `KUBETROL_THEME` | Not yet available |
-| `refresh_seconds` | `2.0` | `KUBETROL_REFRESH` | `--refresh`, `-r` for info/check; terminal use unavailable until C03 |
+| `refresh_seconds` | `2.0` | `KUBETROL_REFRESH` | `--refresh`, `-r`; periodic table ages/local repaint, independent of live watches |
 | `read_only` | `false` | `KUBETROL_READONLY` | `--readonly` / `--write` (mutually exclusive) |
 | `log_level` | `WARNING` | `KUBETROL_LOG_LEVEL` | `--log-level`, `--logLevel`, `-l` |
 | `log_file` | `null` (platform path) | `KUBETROL_LOG_FILE` | `--log-file`, `--logFile` |

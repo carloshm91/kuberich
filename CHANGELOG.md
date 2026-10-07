@@ -34,6 +34,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Invocation-scoped cluster/user aliases, token and CA/client certificate overrides,
+  repeated impersonation groups and the same captured identity in API streams and
+  delegated container shells. Effective identity is visible in the header.
+- Effective `--refresh`/`-r` table repaint interval, retaining live watches and
+  cursor/filter state without periodic API polling.
 - Rectangular dedicated command bar, with compact side borders in short terminals.
 - Local context table through `:ctx`/`c`/F2 with cluster, auth-info and namespace;
   filtering and browsing preserve the resource workspace and kubeconfig.

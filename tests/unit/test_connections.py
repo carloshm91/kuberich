@@ -40,6 +40,7 @@ def test_namespace_scope_rejects_invalid_labels(value: str) -> None:
     [
         {"kubeconfig": ""},
         {"context": "\x1b"},
+        {"overrides": {"token": "unvalidated"}},
         {"namespace": "bad!"},
         {"all_namespaces": 1},
         {"timeout": True},

@@ -34,6 +34,8 @@ geometry and keyboard/paste encoding. Namespace UID/lifecycle values in
 layout receives Pilot and real-terminal checks.
 Captured container specification/status decisions in `domain/containers.py`
 join the critical 100% line/branch inventory in #129.
+F05 invocation overrides and bounded impersonation decisions in
+`domain/connection_overrides.py` join the critical inventory in #19.
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
 from transport and widget glue so exhaustive tests are practical. The critical
@@ -208,7 +210,7 @@ bounded slow-consumer and cancellation tests. The required kind check exercises
 a real write between LIST and WATCH plus create/update/delete/recreation and owned
 watch/fixture cleanup. UI resource subscriptions remain C04/B02; C03 does not
 establish a visible live pod table or maximum-workload performance.
-Provider qualification, refresh and effectful integrations remain pending; a parsed flag is not
+Provider qualification and later effectful integrations remain pending; a parsed flag is not
 compatibility evidence. [Test isolation](security-primitives.md) describes the qualified
 fixture path and limitations. The README must
 never show an unmeasured coverage badge or imply that planned checks already run.
@@ -249,3 +251,14 @@ Its matching kubectl 1.36.4 is downloaded into the runner's temporary directory
 and verified against a pinned SHA-256; no global kubectl is replaced. The owned
 cluster is deleted on success/failure and sanitized terminal/cluster evidence is
 retained. Hosted/macOS results remain unavailable under the billing restriction.
+
+F05 #19 adds actual HTTP/TLS tests for alias selection, credential replacement,
+repeated impersonation headers, loaded UID/extras, stream consistency, server
+denial and private shell snapshots. Pilot checks effective identity and timed age
+updates while filtering, with unchanged request count/session generation. Source
+and freshly installed CLI PTYs exercise overrides across context/namespace
+navigation and terminal restoration. The owned kind shell check also requires
+explicit CA/client certificate files, forced TLS verification, alternate aliases,
+successful impersonated exec, impersonated exec denial, and token replacement of
+the original client certificate identity. These checks establish the initial
+launch contract, not cloud provider or later mutation/plugin qualification.

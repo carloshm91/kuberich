@@ -94,6 +94,24 @@ client or language decision rather than hiding the limitation.
 
 ## Authentication and delegated tools
 
+F05 #19 captures a frozen `ConnectionOverrides` in the invocation request. CLI
+credential paths become absolute against the launch directory without reading
+them. Catalogue selection resolves explicit cluster/auth-info aliases and derives
+owned mappings while retaining the selected entries' file provenance. Explicit
+token or client-certificate overrides replace other credential mechanisms;
+helpers belonging to the replaced mechanism never execute.
+
+The owned HTTP transport preserves repeated impersonation headers for JSON reads,
+watches and logs. Delegated kubectl receives the same validated subject/groups,
+UID/extras and prepared TLS/token configuration in its private connection snapshot.
+The workspace header shows effective aliases and impersonated identity; the
+context catalogue table continues to describe stored entries.
+
+An app-owned Textual timer uses the effective refresh interval for table ages
+and local projection repaint. Watch observations remain immediate and retain
+their independent server renewal deadlines; refresh never starts periodic API
+polling or credential renewal. App shutdown owns timer and task cancellation.
+
 Treat kubeconfig as trusted local configuration: its exec credential helpers can
 run local code. Never fetch and execute a kubeconfig from a cluster resource.
 EKS uses the configured AWS exec helper; AKS uses the configured Azure kubelogin

@@ -7,6 +7,7 @@ import pytest
 import yaml
 
 from kubetrol.config.catalog import KubeCatalog, load_catalog, regular_bytes
+from kubetrol.domain.connection_overrides import ConnectionOverrides
 from kubetrol.domain.connections import ConnectionProblem, ConnectionRequest
 from kubetrol.errors import AppError
 
@@ -181,3 +182,40 @@ def test_unreadable_descriptor_has_an_owned_local_io_error(
     with pytest.raises(AppError, match="Cannot read") as error:
         load_catalog(ConnectionRequest(kubeconfig=str(path)), {})
     assert error.value.code == 3 and "opaque-private" not in str(error.value)
+
+
+def test_alias_overrides_select_merged_entries_without_rewriting_context(tmp_path):
+    first_dir, second_dir = tmp_path / "one", tmp_path / "two"
+    first_dir.mkdir()
+    second_dir.mkdir()
+    first = fixture(
+        first_dir / "config",
+        contexts=[
+            {
+                "name": "one",
+                "context": {"cluster": "missing", "user": "missing", "namespace": "team"},
+            }
+        ],
+    )
+    second = fixture(second_dir / "config", "two")
+    before = (first.read_bytes(), second.read_bytes())
+    catalog = load_catalog(ConnectionRequest(), {"KUBECONFIG": f"{first}{os.pathsep}{second}"})
+    selected = catalog.select(
+        "one", ConnectionOverrides(cluster="two", user="two", token="override")
+    )
+    assert selected.namespace == "team" and selected.name == "one"
+    assert selected.cluster.directory == selected.user.directory == second_dir
+    assert selected.user.data == {"token": "override"}
+    selected.cluster.data["server"] = "changed"
+    assert catalog.select("two").cluster.data["server"] == "http://127.0.0.1:12345"
+    assert catalog.select("two").user.data == {"token": "synthetic"}
+    assert (first.read_bytes(), second.read_bytes()) == before
+
+
+@pytest.mark.parametrize(
+    "overrides", [ConnectionOverrides(cluster="missing"), ConnectionOverrides(user="missing")]
+)
+def test_missing_override_alias_never_falls_back_to_context(tmp_path, overrides):
+    catalog = load_catalog(ConnectionRequest(kubeconfig=str(fixture(tmp_path / "config"))), {})
+    with pytest.raises((AppError, ConnectionProblem)):
+        catalog.select("one", overrides)

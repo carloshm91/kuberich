@@ -7,16 +7,18 @@ import platform
 import sys
 from collections.abc import Sequence
 from importlib.metadata import version
+from pathlib import Path
 from typing import NoReturn
 
 from platformdirs import user_data_path
 
-from kubetrol.config.launch import PENDING_OPTIONS, require_available
+from kubetrol.config.launch import CONNECTION_OPTIONS, PENDING_OPTIONS, require_available
 from kubetrol.config.paths import config_location, log_location
 from kubetrol.config.schema import ConfigDocument, resolve_settings
 from kubetrol.config.store import read_config, write_config
 from kubetrol.diagnostics.logging import diagnostic_logging
 from kubetrol.diagnostics.redaction import sanitize_text
+from kubetrol.domain.connection_overrides import ConnectionOverrides
 from kubetrol.domain.connections import ConnectionRequest, request_duration
 from kubetrol.errors import AppError, ExitCode
 from kubetrol.security.arguments import validate_argument
@@ -38,6 +40,12 @@ def _argument(value: str) -> str:
         return validate_argument(value)
     except AppError:
         raise argparse.ArgumentTypeError("Invalid option value.") from None
+
+
+def _boolean(value: str) -> bool:
+    if value.casefold() not in {"true", "false"}:
+        raise argparse.ArgumentTypeError("Expected true or false.")
+    return value.casefold() == "true"
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -91,7 +99,7 @@ def _parser() -> argparse.ArgumentParser:
         "-r",
         dest="refresh_seconds",
         type=float,
-        help="refresh seconds (0.1-3600); info/check only until C03 #24",
+        help="periodic table refresh seconds (0.1-3600); watch changes remain live",
     )
     parser.add_argument(
         "--readonly",
@@ -139,9 +147,31 @@ def _parser() -> argparse.ArgumentParser:
                 *option.flags,
                 dest=option.destination,
                 type=_argument,
-                action="append" if option.repeated else "store",
+                action="store",
                 help=f"unavailable: {option.owner}",
             )
+    transport = parser.add_argument_group("Session connection overrides")
+    for option in CONNECTION_OPTIONS:
+        transport.add_argument(
+            *option.flags,
+            dest=option.destination,
+            **(
+                {"nargs": "?", "const": True, "default": None, "type": _boolean}
+                if option.boolean
+                else {"type": _argument, "action": "append" if option.repeated else "store"}
+            ),
+            help={
+                "cluster": "kubeconfig cluster alias for this invocation",
+                "user": "kubeconfig auth-info alias for this invocation",
+                "as_user": "user/service account to impersonate; server permission required",
+                "as_group": "impersonation group; repeat to retain multiple groups",
+                "insecure": "skip TLS verification explicitly; accepts =true or =false",
+                "certificate_authority": "CA certificate file; enables TLS verification",
+                "client_key": "client private key file; requires --client-certificate",
+                "client_certificate": "client certificate file; requires --client-key",
+                "token": "bearer token override; never included in diagnostics",
+            }[option.destination],
+        )
     commands = parser.add_subparsers(dest="subcommand")
     commands.add_parser(
         "help", help="show launch help without loading configuration", allow_abbrev=False
@@ -169,27 +199,38 @@ def _parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     """Keep filesystem/debug details away from terminal output and return stable codes."""
     parser = _parser()
-    arguments = parser.parse_args(argv)
+    # Bare bool flags must not consume an inspection subcommand. Explicit bool
+    # values use =true/=false; leave the process argument list untouched.
+    launch_arguments = argv if argv is not None else sys.argv[1:]
+    arguments = parser.parse_args(
+        [
+            "--insecure-skip-tls-verify=true" if value == "--insecure-skip-tls-verify" else value
+            for value in launch_arguments
+        ]
+    )
     try:
         values = vars(arguments)
         require_available(values)
         runtime = {
             key: values[key]
             for key in (
-                "log_file",
-                "log_level",
-                "refresh_seconds",
-                "read_only",
-                "write",
-                "initial_command",
-                "headless",
-                "logoless",
-                "crumbsless",
-                "kubeconfig",
-                "context",
-                "namespace",
-                "all_namespaces",
-                "request_timeout",
+                *(
+                    "log_file",
+                    "log_level",
+                    "refresh_seconds",
+                    "read_only",
+                    "write",
+                    "initial_command",
+                    "headless",
+                    "logoless",
+                    "crumbsless",
+                    "kubeconfig",
+                    "context",
+                    "namespace",
+                    "all_namespaces",
+                    "request_timeout",
+                ),
+                *(option.destination for option in CONNECTION_OPTIONS),
             )
             if values[key] is not None
         }
@@ -207,7 +248,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             raise AppError("Command and presentation flags apply only to terminal launch.")
         if arguments.subcommand is not None and any(
             key in runtime
-            for key in ("kubeconfig", "context", "namespace", "all_namespaces", "request_timeout")
+            for key in (
+                "kubeconfig",
+                "context",
+                "namespace",
+                "all_namespaces",
+                "request_timeout",
+                *(option.destination for option in CONNECTION_OPTIONS),
+            )
         ):
             raise AppError(
                 "Connection flags apply only to terminal launch; diagnostics never load credentials."
@@ -220,6 +268,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             request_duration(arguments.request_timeout)
             if arguments.request_timeout is not None
             else 10.0,
+            ConnectionOverrides(
+                cluster=arguments.cluster,
+                user=arguments.user,
+                token=arguments.token,
+                certificate_authority=arguments.certificate_authority,
+                client_certificate=arguments.client_certificate,
+                client_key=arguments.client_key,
+                insecure=arguments.insecure,
+                as_user=arguments.as_user,
+                as_groups=tuple(arguments.as_group or ()),
+            ).capture_paths(Path.cwd()),
         )
         location = config_location(arguments.config, os.environ)
         if arguments.subcommand == "config" and arguments.operation == "init":
@@ -251,11 +310,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         if initial in {Command.UNAVAILABLE, Command.SHELL}:
             raise AppError(
                 "--command requires an available startup view; shell actions need a selected pod. Available: po, ctx, ns, status, retry, help, quit.",
-                ExitCode.UNAVAILABLE,
-            )
-        if arguments.subcommand is None and arguments.refresh_seconds is not None:
-            raise AppError(
-                "--refresh is unavailable for terminal launch; requires live synchronization (C03 #24). Use info/config check to validate it.",
                 ExitCode.UNAVAILABLE,
             )
         log_file = log_location(

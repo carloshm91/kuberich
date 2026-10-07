@@ -54,7 +54,7 @@ See [workspace behavior](resource-workspace.md) and
 | Installed CLI | F01, then F02 quality gates | Run help/version from an installed development wheel |
 | Local preferences and diagnostics | F03 | Run `info`/`config check`, create defaults and inspect sanitized local logs |
 | First terminal window | F01 → F02 → F03 → B01 | Launch the Textual shell, navigate, open help, resize and quit; show an honest unconnected state |
-| Launch contract | F05 stage 1 | Try help/version subcommands, visibility flags, initial help and read-only command guards; pending features fail explicitly |
+| Launch contract | F05 | Help/version, visibility flags, policy, effective refresh and connection overrides; later features fail explicitly |
 | Context session | C01 | Connect, select contexts/namespaces, retry and observe distinct connection errors |
 | Resource read backend | C02 | Verify real discovery and paginated snapshots on an owned disposable cluster; the UI table is still empty |
 | Resource synchronization backend | C03 | Verify live UID state, reconnect and cancellation; UI subscription/table integration follows |
@@ -126,8 +126,26 @@ it. Press `q` from the table to return to your shell. You can separately try
 and scope bar with the default launch.
 
 `--context`, kubeconfig, namespace and timeout selection are now implemented by
-C01; see the next checkpoint. F05 remains open until its connection
-and execution integrations are qualified. See the [full launch contract](k9s-cli.md).
+C01; see the next checkpoint. F05 #19 now adds effective connection overrides
+and periodic table refresh. See the [full launch contract](k9s-cli.md).
+
+### F05 connection checkpoint
+
+The following launch form was exercised with owned fake APIs, actual source and
+installed CLI terminals, and a disposable kind cluster. Replace the example
+aliases/files/namespace with your own explicit selection:
+
+```sh
+uv sync --locked --group dev
+KUBETROL_THEME=k9s uv run kubetrol --context YOUR_CONTEXT --refresh 2
+```
+
+For the first feedback pass, open `:ctx`, return with Escape, open `:ns`, select
+a namespace, then open a pod and its container logs. The selection/filter should
+remain stable as table ages update. Connection overrides are optional; when
+needed, cluster/user aliases, certificate paths and impersonation are documented
+in the [connection contract](k9s-cli.md#effective-invocation-connection).
+Cloud provider qualification and later resource/action views remain separate.
 
 Cloud authentication and real-terminal checks run early. A successful mocked UI
 is useful feedback, but it does not certify that EKS/AKS credentials, exec,
