@@ -28,6 +28,15 @@ implementation; do not claim to switch models without actual environment support
 
 ## Delivery workflow
 
+- The maintainer authorized continuous private implementation, local verification
+  and autonomous squash merges: finish each issue/PR and proceed to the next
+  unblocked task without waiting for intermediate manual trials or feedback.
+  Keep progress updates and docs/first-preview.md current, but do not ask the
+  maintainer to test between tasks. They will test and provide feedback later.
+- Real cloud/provider trials are deferred to the maintainer's later installed
+  preview tests. Implement and verify local contracts and owned disposable-cluster
+  behavior now, record limits honestly, and retain opt-in certification in Q05 #87.
+  This does not authorize using the maintainer's active context for automated tests.
 - Keep the repository and GitHub roadmap private until the maintainer explicitly
   authorizes making them public. Open-source intent, a merged PR, or an estimated
   launch date does not authorize a visibility change.

@@ -62,11 +62,12 @@
       "tasks": [
         "C06",
         "C07",
-        "C08"
+        "C08",
+        "Q05"
       ],
       "source": "internal/client/client.go",
       "status": "planned",
-      "difference": "C01 qualifies static/exec-token mechanisms. C06 adds local AWS-shaped exec contracts, captured API/kubectl identity settings, cache-revision refresh and fixed safe diagnostics. Actual EKS/AKS/GKE, interactive helpers, legacy providers and exec certificate rotation remain C06/C07/C08; no real-cloud compatibility claim.",
+      "difference": "C01 qualifies static/exec-token mechanisms. C06 delivers local AWS-shaped exec contracts, captured API/kubectl identity settings, cache-revision refresh and fixed safe diagnostics. The maintainer deferred actual EKS certification to opt-in Q05 #87 trials. AKS/GKE contracts, interactive helpers, legacy providers and exec certificate rotation remain C07/C08; no real-cloud compatibility claim.",
       "partial_evidence": [
         "docs/context-sessions.md",
         "tests/contract/test_sessions.py",
