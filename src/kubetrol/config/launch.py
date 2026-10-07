@@ -19,6 +19,9 @@ PENDING_OPTIONS = (
     PendingOption(("--splashless",), "splashless", "startup splash (U01 #56)", boolean=True),
     PendingOption(("--invert",), "invert", "theme inversion (U01 #56)", boolean=True),
     PendingOption(("--screen-dump-dir",), "screen_dump_dir", "screen exports (O06 #73)"),
+)
+
+CONNECTION_OPTIONS = (
     PendingOption(("--cluster",), "cluster", "connection overrides (F05 #19 / C08 #47)"),
     PendingOption(("--user",), "user", "connection overrides (F05 #19 / C08 #47)"),
     PendingOption(("--as",), "as_user", "impersonation transport (F05 #19 / C08 #47)"),

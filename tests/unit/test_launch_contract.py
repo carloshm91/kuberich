@@ -19,13 +19,6 @@ from kubetrol.ui.presentation import Presentation
         (["--splashless"], "--splashless", "U01 #56"),
         (["--invert"], "--invert", "U01 #56"),
         (["--screen-dump-dir", "fixture"], "--screen-dump-dir", "O06 #73"),
-        (["--cluster", "fixture"], "--cluster", "F05 #19"),
-        (["--user", "fixture"], "--user", "F05 #19"),
-        (["--as", "fixture"], "--as", "F05 #19"),
-        (["--insecure-skip-tls-verify"], "--insecure-skip-tls-verify", "F05 #19"),
-        (["--certificate-authority", "fixture"], "--certificate-authority", "F05 #19"),
-        (["--client-key", "fixture", "--client-certificate", "fixture"], "--client-key", "F05 #19"),
-        (["--token", "opaque-secret"], "--token", "F05 #19"),
     ],
 )
 def test_pending_flags_name_the_missing_behavior_without_any_io(
@@ -49,7 +42,7 @@ def test_pending_flags_name_the_missing_behavior_without_any_io(
     assert list(tmp_path.iterdir()) == []
 
 
-def test_pending_identity_options_do_not_read_selected_files_even_for_info(
+def test_identity_options_do_not_read_selected_files_for_info(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -59,20 +52,27 @@ def test_pending_identity_options_do_not_read_selected_files_even_for_info(
     assert cli.main(["--kubeconfig", str(kubeconfig), "info"]) == 2
     assert kubeconfig.read_text() == contents
     assert "opaque-secret" not in capsys.readouterr().err
-    assert cli.main(["--certificate-authority", str(tmp_path / "missing")]) == 4
-    assert "unavailable" in capsys.readouterr().err
+    assert cli.main(["--certificate-authority", str(tmp_path / "missing"), "info"]) == 2
+    assert "only to terminal" in capsys.readouterr().err
 
 
-def test_repeated_impersonation_groups_are_captured_in_order_then_refused_safely(
+def test_repeated_impersonation_groups_are_captured_in_order_for_launch(
+    monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     arguments = ["--as", "fixture", "--as-group", "group one", "--as-group", "group-two"]
     parsed = cli._parser().parse_args(arguments)
     assert parsed.as_group == ["group one", "group-two"]
-    assert cli.main(arguments) == 4
+    captured = []
+    monkeypatch.setattr(
+        cli, "run_terminal", lambda *args, **kwargs: captured.append(kwargs["connection"])
+    )
+    assert cli.main(arguments) == 0
     output = capsys.readouterr()
     assert "group one" not in output.err and "group-two" not in output.err
-    assert "impersonation" in output.err
+    assert output.err == "" and output.out == ""
+    assert captured[0].overrides.as_user == "fixture"
+    assert captured[0].overrides.as_groups == ("group one", "group-two")
 
 
 @pytest.mark.parametrize(
@@ -83,6 +83,14 @@ def test_repeated_impersonation_groups_are_captured_in_order_then_refused_safely
         (["--as-group", "opaque-group"], "requires --as"),
         (["--client-key", "opaque-path"], "supplied together"),
         (["--client-certificate", "opaque-path"], "supplied together"),
+        (
+            ["--token", "opaque-secret", "--client-key", "key", "--client-certificate", "cert"],
+            "mutually exclusive",
+        ),
+        (
+            ["--certificate-authority", "opaque-path", "--insecure-skip-tls-verify"],
+            "mutually exclusive",
+        ),
     ],
 )
 def test_invalid_combinations_have_owned_specific_errors(
@@ -162,7 +170,7 @@ def test_terminal_options_are_not_silently_ignored_by_diagnostics(
 
 
 @pytest.mark.parametrize("flag", ["--refresh", "-r"])
-def test_refresh_precedence_can_be_checked_but_cannot_pretend_to_refresh_the_ui(
+def test_refresh_precedence_is_shared_by_diagnostics_and_terminal(
     flag: str,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -176,9 +184,14 @@ def test_refresh_precedence_can_be_checked_but_cannot_pretend_to_refresh_the_ui(
     assert json.loads(capsys.readouterr().out)["preferences"]["refresh_seconds"] == 3.5
     assert cli.main([flag, "3.5", "config", "check"]) == 0
     capsys.readouterr()
-    assert cli.main([flag, "3.5"]) == 4
-    assert "C03 #24" in capsys.readouterr().err
-    assert not (tmp_path / "logs").exists()
+    captured = []
+    monkeypatch.setattr(
+        cli, "run_terminal", lambda settings, *args, **kwargs: captured.append(settings)
+    )
+    assert cli.main([flag, "3.5"]) == 0
+    assert captured[0].refresh_seconds == 3.5
+    assert capsys.readouterr().err == ""
+    assert (tmp_path / "logs").exists()
 
 
 @pytest.mark.parametrize("value", ["0", "3601", "nan", "inf", "-1"])
@@ -198,6 +211,7 @@ def test_refresh_range_and_finiteness_are_validated(
         ["--context=bad\nvalue"],
         ["--as-group", ""],
         ["--command", "x" * 8193],
+        ["--insecure-skip-tls-verify=opaque-secret"],
     ],
 )
 def test_syntax_or_hostile_values_fail_without_echoing_data(
@@ -330,9 +344,20 @@ def test_launch_receives_effective_policy_presentation_and_initial_command(
         ["-n", "team"],
         ["-A"],
         ["--request-timeout", "2s"],
+        ["--cluster", "chosen"],
+        ["--user", "chosen"],
+        ["--as", "chosen"],
+        ["--as", "chosen", "--as-group", "group"],
+        ["--token", "chosen"],
+        ["--certificate-authority", "chosen"],
+        ["--client-certificate", "chosen", "--client-key", "chosen"],
+        ["--insecure-skip-tls-verify"],
+        ["--insecure-skip-tls-verify=false"],
     ],
 )
-@pytest.mark.parametrize("subcommand", [["info"], ["config", "check"], ["help"]])
+@pytest.mark.parametrize(
+    "subcommand", [["info"], ["config", "check"], ["config", "init"], ["help"], ["version"]]
+)
 def test_connection_flags_never_load_credentials_in_inspection(
     arguments, subcommand, monkeypatch, capsys
 ):
@@ -381,3 +406,67 @@ def test_launch_passes_context_scope_and_timeout_without_loading_credentials(mon
     assert request.kubeconfig == "owned" and request.timeout == 1.5
     assert cli.main(["-A"]) == 0
     assert captured[1].all_namespaces
+
+
+@pytest.mark.parametrize(
+    "arguments,expected",
+    [
+        ([], None),
+        (["--insecure-skip-tls-verify"], True),
+        (["--insecure-skip-tls-verify=TRUE"], True),
+        (["--insecure-skip-tls-verify=false"], False),
+    ],
+)
+def test_launch_captures_tls_boolean_and_last_identity_alias(arguments, expected, monkeypatch):
+    captured = []
+    monkeypatch.setattr(
+        cli, "run_terminal", lambda *args, **kwargs: captured.append(kwargs["connection"])
+    )
+    assert (
+        cli.main(
+            [
+                "--cluster",
+                "first",
+                "--cluster",
+                "last",
+                "--user",
+                "auth",
+                "--token",
+                "synthetic-token",
+                *arguments,
+            ]
+        )
+        == 0
+    )
+    overrides = captured[0].overrides
+    assert overrides.cluster == "last" and overrides.user == "auth"
+    assert overrides.insecure is expected and overrides.token == "synthetic-token"
+    assert "synthetic-token" not in repr(captured[0])
+
+
+def test_cli_certificate_paths_are_captured_from_launch_directory_without_reading(
+    monkeypatch, tmp_path
+):
+    captured = []
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        cli, "run_terminal", lambda *args, **kwargs: captured.append(kwargs["connection"])
+    )
+    assert (
+        cli.main(
+            [
+                "--certificate-authority",
+                "absent-ca",
+                "--client-key",
+                "absent-key",
+                "--client-certificate",
+                "absent-cert",
+            ]
+        )
+        == 0
+    )
+    overrides = captured[0].overrides
+    assert overrides.certificate_authority == str(tmp_path / "absent-ca")
+    assert overrides.client_key == str(tmp_path / "absent-key")
+    assert overrides.client_certificate == str(tmp_path / "absent-cert")
+    assert not any(path.name.startswith("absent") for path in tmp_path.iterdir())

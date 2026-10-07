@@ -38,6 +38,9 @@ completion inline, while resource frames keep their position across these views.
 See [context sessions](docs/context-sessions.md) for supported credentials,
 connection states and limits. Local diagnostics, read-only command guards,
 header/logo/scope visibility and initial view/scope/help commands remain available.
+Invocation connection overrides apply consistently to API streams and captured
+shells; `--refresh` controls periodic table repaint while watches remain live.
+See the [launch contract](docs/k9s-cli.md) for aliases, precedence and limits.
 All audited flags are recognized; unimplemented options identify their owning task.
 
 The first release, **0.0.1**, will provide a usable resource browser, live pod

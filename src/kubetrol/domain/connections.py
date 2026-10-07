@@ -1,9 +1,10 @@
 """Connection requests and safe session observations, independent of SDK/widgets."""
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
 
+from kubetrol.domain.connection_overrides import ConnectionOverrides
 from kubetrol.domain.targets import SessionIdentity
 from kubetrol.errors import AppError
 from kubetrol.security.arguments import validate_argument
@@ -32,8 +33,11 @@ class ConnectionRequest:
     namespace: str | None = None
     all_namespaces: bool = False
     timeout: float = 10.0
+    overrides: ConnectionOverrides = field(default_factory=ConnectionOverrides)
 
     def __post_init__(self) -> None:
+        if not isinstance(self.overrides, ConnectionOverrides):
+            raise AppError("Connection overrides must be a validated immutable value.")
         for value in (self.kubeconfig, self.context):
             if value is not None:
                 validate_argument(value)

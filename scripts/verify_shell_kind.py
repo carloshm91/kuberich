@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import base64
 import json
 import os
 import subprocess
@@ -88,6 +89,37 @@ async def prepare(path: Path, context: str, namespace: str) -> tuple[dict, str]:
                 ],
             },
         )
+        await api.create_namespaced_service_account(
+            namespace, {"metadata": {"name": "shell-operator"}}
+        )
+        await rbac.create_namespaced_role(
+            namespace,
+            {
+                "metadata": {"name": "shell-operator"},
+                "rules": [
+                    {
+                        "apiGroups": [""],
+                        "resources": ["pods", "pods/log"],
+                        "verbs": ["get", "list", "watch"],
+                    },
+                    {"apiGroups": [""], "resources": ["pods/exec"], "verbs": ["create"]},
+                ],
+            },
+        )
+        await rbac.create_namespaced_role_binding(
+            namespace,
+            {
+                "metadata": {"name": "shell-operator"},
+                "roleRef": {
+                    "apiGroup": "rbac.authorization.k8s.io",
+                    "kind": "Role",
+                    "name": "shell-operator",
+                },
+                "subjects": [
+                    {"kind": "ServiceAccount", "name": "shell-operator", "namespace": namespace}
+                ],
+            },
+        )
         token = await api.create_namespaced_service_account_token(
             "shell-reader",
             namespace,
@@ -99,7 +131,14 @@ async def prepare(path: Path, context: str, namespace: str) -> tuple[dict, str]:
 
 
 def trial(
-    path: Path, context: str, namespace: str, directory: Path, *, scenario: str, kubectl: Path
+    path: Path,
+    context: str,
+    namespace: str,
+    directory: Path,
+    *,
+    scenario: str,
+    kubectl: Path,
+    launch_overrides: tuple[str, ...] = (),
 ) -> None:
     directory.mkdir()
     preferences = {"schema_version": 1}
@@ -125,6 +164,7 @@ def trial(
         context,
         "--namespace",
         namespace,
+        *launch_overrides,
     ]
     before = path.read_bytes()
     attempts = 2 if scenario == "success" else 1
@@ -147,7 +187,7 @@ def trial(
                 terminal.wait_for_screen("Pod: kubetrol-shell-test/owned-shell-pod")
                 terminal.wait_for_screen("Container: app-b")
                 assert b"\x1b[?1049l" not in terminal.transcript[marker:]
-                if scenario in {"denied", "missing-shell"}:
+                if scenario in {"denied", "token-denied", "impersonation-denied", "missing-shell"}:
                     terminal.wait_for(b"kubectl exec failed", since=marker, timeout=30)
                     terminal.wait_for(b"pods/exec", since=marker)
                     assert b"OWNED-SHELL> " not in terminal.transcript[marker:]
@@ -171,8 +211,9 @@ def trial(
                     terminal.wait_for_screen("- /tmp/owned-shell-trial 1/1", row=22)
                     marker = terminal.send(b"iOWNED_REMOTE_EDIT")
                     terminal.wait_for_screen("OWNED_REMOTE_EDIT")
+                    terminal.wait_for_screen("I /tmp/owned-shell-trial", row=22)
                     marker = terminal.send(b"\x1b")
-                    terminal.wait_for_screen("- /tmp/owned-shell-trial")
+                    terminal.wait_for_screen("- /tmp/owned-shell-trial", row=22)
                     marker = terminal.send(b":wq\r")
                     assert b"\x1b[?1049l" not in terminal.transcript[marker:]
                     terminal.wait_for_screen("OWNED-SHELL> ")
@@ -211,7 +252,7 @@ def main() -> None:
         subprocess.check_output([str(kubectl), "version", "--client", "-o", "json"])
     )["clientVersion"]["gitVersion"]
     assert version == "v1.36.4", "Use the matching verified kubectl 1.36.4 binary for this trial."
-    name = "kubetrol-test-" + uuid4().hex[:12]
+    owned_cluster_name = "kubetrol-test-" + uuid4().hex[:12]
     namespace = "kubetrol-shell-test"
     with TemporaryDirectory(prefix="kubetrol-shell-kind-") as folder:
         directory = Path(folder)
@@ -225,7 +266,7 @@ def main() -> None:
                     "create",
                     "cluster",
                     "--name",
-                    name,
+                    owned_cluster_name,
                     "--kubeconfig",
                     str(path),
                     "--image",
@@ -238,7 +279,7 @@ def main() -> None:
                 timeout=300,
             )
             data = yaml.safe_load(path.read_text())
-            context = "kind-" + name
+            context = "kind-" + owned_cluster_name
             assert data["current-context"] == context
             data["contexts"].append(
                 {"name": "kubetrol-test-Alias", "context": dict(data["contexts"][0]["context"])}
@@ -257,6 +298,83 @@ def main() -> None:
                     kubectl=kubectl,
                 )
                 print("Real shell trial passed: " + scenario, flush=True)
+            captured = yaml.safe_load(path.read_text())
+            captured["clusters"].append(
+                {
+                    "name": "owned-override-cluster",
+                    "cluster": dict(captured["clusters"][0]["cluster"]),
+                }
+            )
+            captured["users"].append(
+                {"name": "owned-override-user", "user": dict(captured["users"][0]["user"])}
+            )
+            path.write_text(yaml.safe_dump(captured))
+            material_paths = {}
+            for material_name, source in [
+                ("certificate-authority", captured["clusters"][0]["cluster"]),
+                ("client-certificate", captured["users"][0]["user"]),
+                ("client-key", captured["users"][0]["user"]),
+            ]:
+                material_path = directory / material_name
+                material_path.write_bytes(
+                    base64.b64decode(source[material_name + "-data"], validate=True)
+                )
+                material_path.chmod(0o600)
+                material_paths[material_name] = str(material_path)
+            overrides = (
+                "--cluster",
+                "owned-override-cluster",
+                "--user",
+                "owned-override-user",
+                "--refresh",
+                "0.2",
+                "--insecure-skip-tls-verify=false",
+                "--certificate-authority",
+                material_paths["certificate-authority"],
+                "--client-certificate",
+                material_paths["client-certificate"],
+                "--client-key",
+                material_paths["client-key"],
+                "--as",
+                f"system:serviceaccount:{namespace}:shell-operator",
+                "--as-group",
+                "system:authenticated",
+                "--as-group",
+                "system:serviceaccounts",
+            )
+            trial(
+                path,
+                context,
+                namespace,
+                directory / "overrides",
+                scenario="overrides",
+                kubectl=kubectl,
+                launch_overrides=overrides,
+            )
+            print("Real TLS/alias/impersonated shell overrides passed.", flush=True)
+            trial(
+                path,
+                context,
+                namespace,
+                directory / "impersonation-denied",
+                scenario="impersonation-denied",
+                kubectl=kubectl,
+                launch_overrides=(
+                    "--as",
+                    f"system:serviceaccount:{namespace}:shell-reader",
+                    "--as-group",
+                    "system:authenticated",
+                ),
+            )
+            trial(
+                path,
+                context,
+                namespace,
+                directory / "token-denied",
+                scenario="token-denied",
+                kubectl=kubectl,
+                launch_overrides=("--token", token),
+            )
             limited = yaml.safe_load(path.read_text())
             limited["users"] = [{"name": "shell-reader", "user": {"token": token}}]
             for value in limited["contexts"]:
@@ -283,7 +401,7 @@ def main() -> None:
                         "kubectl": version,
                         "node_image": NODE_IMAGE,
                         "shell_image": SHELL_IMAGE,
-                        "owned_cluster": name,
+                        "owned_cluster": owned_cluster_name,
                         "resource": resource,
                         "real_two_container_selection": True,
                         "embedded_shell_and_persistent_captured_heading": True,
@@ -295,6 +413,9 @@ def main() -> None:
                         "missing_shell_actionable": True,
                         "real_rbac_exec_denial": True,
                         "terminal_restored": True,
+                        "explicit_cluster_user_tls_overrides": True,
+                        "explicit_token_replaces_client_certificates": True,
+                        "impersonated_shell_and_actual_rbac_denial": True,
                     },
                     indent=2,
                 )
@@ -306,12 +427,16 @@ def main() -> None:
             )
         finally:
             subprocess.run(
-                [arguments.kind, "delete", "cluster", "--name", name],
+                [arguments.kind, "delete", "cluster", "--name", owned_cluster_name],
                 env=environment,
                 check=True,
                 timeout=90,
             )
-            print("Owned disposable cluster deleted.", flush=True)
+            remaining = subprocess.check_output(
+                [arguments.kind, "get", "clusters"], text=True
+            ).splitlines()
+            assert owned_cluster_name not in remaining, "The owned cluster must be deleted."
+            print("Owned disposable cluster deleted and absence verified.", flush=True)
 
 
 if __name__ == "__main__":

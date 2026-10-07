@@ -198,6 +198,7 @@ class KubetrolApp(App[None]):
         self.commands = CommandService(AccessPolicy(settings.read_only))
         self.processes = ProcessRunner(self.commands.policy)
         self._shell = settings.shell
+        self._refresh_seconds = settings.refresh_seconds
         self._process_environment = dict(os.environ)
         self._process_directory = Path.cwd()
         self.register_theme(K9S_THEME)
@@ -246,6 +247,14 @@ class KubetrolApp(App[None]):
         entry = self.sessions.catalog.contexts.get(view.context or "")
         context = entry.data if entry is not None else {}
         cluster, user = context.get("cluster"), context.get("user")
+        overrides = self.sessions.request.overrides
+        cluster, user = overrides.cluster or cluster, overrides.user or user
+        selected = self.sessions.client
+        subject = (
+            selected.context.user.data.get("as") if selected is not None else overrides.as_user
+        )
+        if isinstance(subject, str):
+            user = f"{user or '—'} (as {subject})"
         return (
             view.context or "—",
             cluster if isinstance(cluster, str) else "—",
@@ -375,8 +384,7 @@ class KubetrolApp(App[None]):
         self.resources.setup()
         self.namespace_table.setup()
         self.context_table.setup()
-        self.set_interval(1, self.resources.refresh_ages)
-        self.set_interval(1, self.namespace_table.refresh_ages)
+        self.set_interval(self._refresh_seconds, self._refresh_tables)
         self.query_one("#resource-view", Vertical).border_title = "Resources · no connection"
         self.screen.set_class(self.size.width < 70, "compact")
         self.screen.set_class(self.size.height < 16, "short")
@@ -422,6 +430,11 @@ class KubetrolApp(App[None]):
         self.header.update_identity()
         self._update_trail()
         self._set_status("Connecting · F2 contexts · F4 retry · Ctrl+Q quit")
+
+    def _refresh_tables(self) -> None:
+        self.resources.refresh_ages()
+        self.namespace_table.refresh_ages()
+        self._render_ready.set()
 
     async def _observe_view(self, subscription: ViewSubscription) -> None:
         try:

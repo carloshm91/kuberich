@@ -210,7 +210,8 @@ def test_installed_terminal_launch_restores_tty_outside_the_checkout(
         (["version", "--short"], 0),
         (["--readonly", "info"], 0),
         (["--context", "fixture"], 2),
-        (["--token", "opaque-secret"], 4),
+        (["--token", "opaque-secret"], 2),
+        (["--invert"], 4),
         (["--readonly", "-c", "shell"], 2),
     ],
 )
@@ -228,11 +229,20 @@ def test_installed_launch_contract_outside_checkout(
     elif arguments == ["--readonly", "info"]:
         assert json.loads(output.stdout)["preferences"]["read_only"]
     elif expected == 4:
-        assert "unavailable" in output.stderr and "F05 #19" in output.stderr
-    elif arguments == ["--context", "fixture"]:
+        assert "unavailable" in output.stderr and "U01 #56" in output.stderr
+    elif arguments in (["--context", "fixture"], ["--token", "opaque-secret"]):
         assert "interactive terminal" in output.stderr
     elif expected == 2:
         assert "Read-only mode blocks" in output.stderr
+
+
+def test_installed_connection_overrides_in_real_terminal(installed_wheel):
+    from tests.terminal.test_contexts import verify_connection_overrides
+
+    binary_dir, directory = installed_wheel
+    verify_connection_overrides(
+        directory, [str(binary_dir / "kubetrol")], evidence="installed-connection-overrides"
+    )
 
 
 def test_installed_initial_help_and_visibility_options_restore_tty(
