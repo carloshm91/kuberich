@@ -7,6 +7,21 @@ short-lived branches that have since been deleted.
 Current delivery continues without waiting for intermediate manual trials. The
 maintainer will test the installed product and provide feedback later.
 
+## Terminal reliability: Q02 #33
+
+The same development command remains `uv run kubetrol`. The default shell stays
+inside the interface. This checkpoint adds actual SSH/tmux checks and repairs
+external shutdown, malformed shell sequences and text retention on resize.
+SSH loss closes the application and its child outside tmux; a tmux session can
+be reattached with the same embedded shell still running. Cancelling a shell
+before its pod preflight completes returns to containers without launching it.
+
+The tested terminal command and prerequisites are in
+[terminal compatibility](terminal-compatibility.md), with final qualification in
+[Q02 acceptance](acceptance/terminal-qualification.md). No intermediate manual
+trial is required; macOS and physical clipboard certification remain explicit
+public-release/environment checks.
+
 ## Azure helper contracts and explicit login: C07 #22
 
 The workspace now has `:login` for the declared Azure kubelogin helper. Existing

@@ -1,14 +1,20 @@
 """Pinned Pyte adapter; remote terminal protocol never reaches the host driver."""
 
 import codecs
+import re
 import unicodedata
 from collections.abc import Callable
 from typing import cast
 
 import pyte
+from pyte.modes import DECOM
 from pyte.screens import Screen
 
 from kubetrol.domain.terminal import terminal_size
+
+# Controls has already bounded/framed every escape. Dispatch each frame separately
+# so a rejected Pyte parameter list cannot discard the later text in that read.
+_FRAMES = re.compile(r"\x1b(?:\[[0-9;? >]*[@-~]|[()%#].|.)|[^\x1b]+", re.DOTALL)
 
 
 class _Controls:
@@ -70,6 +76,36 @@ class _Screen(Screen):
 
     def write_process_input(self, data: str) -> None:
         self.reply(data.encode("ascii"))
+
+    def report_device_status(self, mode: int, *, private: bool = False) -> None:
+        if mode == 6:
+            row = self.cursor.y + 1
+            if DECOM in self.mode and self.margins is not None:
+                row -= self.margins.top
+            prefix = "\x1b[?" if private else "\x1b["
+            self.write_process_input(f"{prefix}{row};{self.cursor.x + 1}R")
+        elif not private:
+            super().report_device_status(mode)
+
+    def resize(self, lines: int | None = None, columns: int | None = None) -> None:
+        height = lines or self.lines
+        width = columns or self.columns
+        if height < self.lines:
+            # Trim the bottom first. Scroll only far enough to retain the live
+            # cursor when it would fall below the new viewport.
+            shift = max(0, self.cursor.y - height + 1)
+            retained = {
+                row - shift: cells
+                for row, cells in self.buffer.items()
+                if shift <= row < shift + height
+            }
+            self.buffer.clear()
+            self.buffer.update(retained)
+            self.cursor.y -= shift
+            self.lines = height
+            self.set_margins()
+            self.dirty.update(range(height))
+        super().resize(lines=height, columns=width)
 
     def save_cursor(self) -> None:
         # DEC defines one saved cursor; an unbounded stack is unnecessary here.
@@ -157,12 +193,15 @@ class TerminalModel:
         width, height = terminal_size(width, height)
         for screen in (self.normal, self.secondary):
             screen.resize(lines=height, columns=width)
+            screen.ensure_hbounds()
+            screen.ensure_vbounds()
 
     def feed(self, data: bytes) -> None:
         value = self.controls.feed(self.decoder.decode(data))
-        try:
-            self.stream.feed(value)
-        except (ValueError, IndexError, TypeError):
-            # Malformed/unsupported parameters or arity cannot abort the Textual application.
-            # Pyte resets its parser after a dispatch error; retained cells remain valid.
-            return
+        for frame in _FRAMES.finditer(value):
+            try:
+                self.stream.feed(frame.group())
+            except (ValueError, IndexError, TypeError):
+                # Pyte resets its parser after a dispatch error. Continue with
+                # the next frame instead of losing the rest of this PTY read.
+                continue

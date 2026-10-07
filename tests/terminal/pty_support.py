@@ -15,8 +15,12 @@ import termios
 import time
 from pathlib import Path
 from types import TracebackType
+from typing import TYPE_CHECKING
 
 import pyte
+
+if TYPE_CHECKING:
+    from tests.support.transports import TerminalTransport
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -50,7 +54,13 @@ def encode_mode(mode: list[object]) -> list[object]:
 
 class TerminalSession:
     def __init__(
-        self, command: list[str], directory: Path, *, size: tuple[int, int] = (100, 30)
+        self,
+        command: list[str],
+        directory: Path,
+        *,
+        size: tuple[int, int] = (100, 30),
+        transport: "TerminalTransport | None" = None,
+        environment: dict[str, str] | None = None,
     ) -> None:
         self.master, self.slave = pty.openpty()
         self.original_mode = termios.tcgetattr(self.slave)
@@ -66,6 +76,8 @@ class TerminalSession:
         preferences = directory / "preferences.yaml"
         if not preferences.exists():
             preferences.write_text("schema_version: 1\n", encoding="utf-8")
+        self.transport = transport
+        overrides = environment or {}
         environment = {
             name: value
             for name, value in os.environ.items()
@@ -80,8 +92,11 @@ class TerminalSession:
         environment["KUBETROL_LOG_FILE"] = str(directory / "kubetrol.log")
         environment["KUBETROL_LOG_LEVEL"] = "DEBUG"
         environment["KUBECONFIG"] = str(directory / "never-use-a-real-cluster")
+        environment.update(overrides)
 
         try:
+            if transport is not None:
+                command, environment = transport.wrap(command, directory, environment)
             self.process = subprocess.Popen(
                 [sys.executable, "-c", _SESSION_OWNER, str(completion_write), *command],
                 cwd=directory,
@@ -167,6 +182,13 @@ class TerminalSession:
             assert time.monotonic() < deadline, f"Missing visible {text!r}: {self.screen.display!r}"
 
     def resize(self, width: int, height: int) -> int:
+        # Consume bytes already emitted for the old geometry before changing
+        # the observer's screen. Otherwise delayed PTY/SSH output is replayed
+        # against dimensions it was never rendered for.
+        for _ in range(16):
+            if not select.select([self.master], [], [], 0)[0]:
+                break
+            self._read(0)
         marker = len(self.transcript)
         self.sizes.append((width, height))
         self.screen.resize(lines=height, columns=width)
@@ -185,14 +207,27 @@ class TerminalSession:
             self._read(0)
         assert self.process.returncode == 0, self.transcript[-3000:].decode(errors="replace")
         assert self.completion is not None, "Missing actual application exit/restoration evidence"
-        assert self.completion["exit"] == expected, self.transcript[-3000:].decode(errors="replace")
+        disconnected = self.transport is not None and self.transport.disconnected
+        outer_expected = (
+            255
+            if disconnected
+            else 0
+            if self.transport is not None and self.transport.tmux
+            else expected
+        )
+        assert self.completion["exit"] == outer_expected, self.transcript[-3000:].decode(
+            errors="replace"
+        )
         assert self.completion["before"] == encode_mode(self.original_mode)
         assert self.completion["after"] == self.completion["before"], "TTY attributes not restored"
         assert b"\x1b[?1049h" in self.transcript
-        assert self.mode_restored(1049), "Alternate screen was not closed"
-        assert self.mode_restored(25, enabled=True), "Cursor was not restored"
-        for mode in (1000, 1003, 1004, 1006, 2004):
-            assert self.mode_restored(mode), f"Terminal reporting mode {mode} was not disabled"
+        if not disconnected:
+            assert self.mode_restored(1049), "Alternate screen was not closed"
+            assert self.mode_restored(25, enabled=True), "Cursor was not restored"
+            for mode in (1000, 1003, 1004, 1006, 2004):
+                assert self.mode_restored(mode), f"Terminal reporting mode {mode} was not disabled"
+        if self.transport is not None:
+            self.transport.verify(expected)
 
     def mode_restored(self, mode: int, *, enabled: bool = False) -> bool:
         restored = f"\x1b[?{mode}{'h' if enabled else 'l'}".encode()
@@ -211,6 +246,7 @@ class TerminalSession:
                     "sizes": self.sizes,
                     "terminal_mode_restored": self.completion["before"] == self.completion["after"],
                     "terminal_modes": self.completion,
+                    "transport": self.transport.record if self.transport else None,
                     "alternate_screen_closed": self.mode_restored(1049),
                     "cursor_restored": self.mode_restored(25, enabled=True),
                     "reporting_modes_disabled": {
@@ -230,6 +266,24 @@ class TerminalSession:
         trace: TracebackType | None,
     ) -> None:
         try:
+            if kind is not None:
+                output = ROOT / "artifacts/terminal"
+                output.mkdir(parents=True, exist_ok=True)
+                name = f"failure-{time.time_ns()}"
+                (output / f"{name}.ansi").write_bytes(self.transcript)
+                (output / f"{name}.json").write_text(
+                    json.dumps(
+                        {
+                            "result": "failed",
+                            "error_type": kind.__name__,
+                            "sizes": self.sizes,
+                            "screen": self.screen.display,
+                            "terminal_completion": self.completion,
+                        },
+                        indent=2,
+                    )
+                    + "\n"
+                )
             if self.process.poll() is None:
                 os.killpg(self.process.pid, signal.SIGTERM)
                 try:

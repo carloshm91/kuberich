@@ -1,7 +1,6 @@
 """An embedded interactive terminal; Textual retains ownership of the host screen."""
 
 import asyncio
-import signal
 from functools import lru_cache
 
 from rich.segment import Segment
@@ -19,7 +18,7 @@ from kubetrol.adapters.pty import PtyEndpoint
 from kubetrol.domain.connections import ConnectionProblem
 from kubetrol.domain.shell import shell_result
 from kubetrol.domain.terminal import terminal_key, terminal_paste
-from kubetrol.errors import AppError, ExecutableUnavailable, ExitCode
+from kubetrol.errors import AppError, ExecutableUnavailable
 from kubetrol.security.controls import escape_controls
 from kubetrol.security.presentation import safe_text
 from kubetrol.services.processes import ProcessRunner
@@ -114,7 +113,6 @@ class ShellScreen(ModalScreen[str]):
         self.terminal = TerminalWidget()
         self._session_task: asyncio.Task[None] | None = None
         self.message: str | None = None
-        self._previous_sigterm: signal._HANDLER | None = None
         self._shell_unmounting = False
         self._shell_closing = False
 
@@ -136,8 +134,6 @@ class ShellScreen(ModalScreen[str]):
             )
 
     def on_mount(self) -> None:
-        self._previous_sigterm = signal.getsignal(signal.SIGTERM)
-        signal.signal(signal.SIGTERM, lambda *_: self.app.exit(return_code=ExitCode.TERMINATED))
         self._session_task = asyncio.create_task(self._run())
         self._session_task.add_done_callback(self._finished)
         if self._shell_closing:
@@ -218,5 +214,3 @@ class ShellScreen(ModalScreen[str]):
         self.close_shell()
         if self._session_task is not None:
             await asyncio.gather(self._session_task, return_exceptions=True)
-        if self._previous_sigterm is not None:
-            signal.signal(signal.SIGTERM, self._previous_sigterm)

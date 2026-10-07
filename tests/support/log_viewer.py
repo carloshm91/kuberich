@@ -3,10 +3,13 @@
 import threading
 
 from tests.support.terminal_api import Server, config
+from tests.support.transports import TerminalTransport
 from tests.terminal.pty_support import TerminalSession
 
 
-def terminal_logs(command, directory, *, evidence, error_exit=False):
+def terminal_logs(
+    command, directory, *, evidence, error_exit=False, transport: TerminalTransport | None = None
+):
     server = Server()
     server.pod_table.set()
     server.quiet_watches.set()
@@ -20,7 +23,7 @@ def terminal_logs(command, directory, *, evidence, error_exit=False):
     before = path.read_bytes()
     try:
         with TerminalSession(
-            [*command, "--kubeconfig", str(path), "--readonly"], directory
+            [*command, "--kubeconfig", str(path), "--readonly"], directory, transport=transport
         ) as terminal:
             terminal.wait_for(b"80 pods")
             if not error_exit:

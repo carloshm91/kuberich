@@ -5,10 +5,15 @@ import os
 import signal
 from pathlib import Path
 
+import pytest
+
+from tests.support.transports import TerminalTransport
 from tests.terminal.pty_support import TerminalSession
 
 CHILD = """
 import os, signal, sys, termios, tty
+from pathlib import Path
+Path('handoff-child.pid').write_text(str(os.getpid()))
 print('HANDOFF START', flush=True)
 # An actual terminal read waits for the parent to give this group foreground
 # ownership (SIGTTIN/SIGCONT). Starting the interpreter alone is not that boundary.
@@ -29,6 +34,7 @@ def terminate(signum, frame):
     raise SystemExit(0)
 signal.signal(signal.SIGTERM, terminate)
 print('HANDOFF READY', flush=True)
+print('HANDOFF STDERR READY', file=sys.stderr, flush=True)
 line = sys.stdin.readline().strip()
 print('CHILD INPUT ' + line, flush=True)
 tty.setraw(0)
@@ -85,12 +91,21 @@ raise SystemExit(app.return_code or 0)
 """
 
 
-def terminal_handoff_trial(python: str, directory: Path, scenario: str, *, name: str) -> None:
+def terminal_handoff_trial(
+    python: str,
+    directory: Path,
+    scenario: str,
+    *,
+    name: str,
+    transport: TerminalTransport | None = None,
+) -> None:
     (directory / "owned-child.py").write_text(CHILD)
     script = directory / "owned-handoff.py"
     script.write_text(APP)
     attempts = 2 if scenario in {"success", "failure", "spawn_error"} else 1
-    with TerminalSession([python, str(script), scenario], directory) as terminal:
+    with TerminalSession(
+        [python, str(script), scenario], directory, transport=transport
+    ) as terminal:
         terminal.wait_for(b"Disconnected")
         for attempt in range(attempts):
             marker = terminal.send(b"h")
@@ -101,11 +116,18 @@ def terminal_handoff_trial(python: str, directory: Path, scenario: str, *, name:
             terminal.wait_for(b"HANDOFF START", since=marker)
             terminal.send(b"start\n")
             terminal.wait_for(b"HANDOFF READY", since=marker)
-            if scenario == "parent_shutdown":
+            terminal.wait_for(b"HANDOFF STDERR READY", since=marker)
+            if scenario in {"parent_shutdown", "hangup", "lost_ssh"}:
                 parent = int((directory / "owned-parent.pid").read_text())
-                os.kill(parent, signal.SIGTERM)
-                terminal.finish(expected=143)
+                if scenario == "lost_ssh":
+                    assert transport is not None
+                    transport.disconnect()
+                else:
+                    os.kill(parent, signal.SIGHUP if scenario == "hangup" else signal.SIGTERM)
+                terminal.finish(expected=143 if scenario == "parent_shutdown" else 129)
                 terminal.save_evidence(name)
+                with pytest.raises(ProcessLookupError):
+                    os.kill(int((directory / "handoff-child.pid").read_text()), 0)
                 return
             if scenario == "cancel":
                 parent = int((directory / "owned-parent.pid").read_text())
@@ -123,10 +145,14 @@ def terminal_handoff_trial(python: str, directory: Path, scenario: str, *, name:
             status = b"FAILED" if scenario == "failure" else b"SUCCEEDED"
             terminal.wait_for(b"RETURN " + status, since=marker)
             marker = terminal.resize(100, 30)
+            terminal.wait_for_screen("Stay in pods", row=28, since=marker)
             terminal.send(b"\x1b[24~")
-            terminal.wait_for(b"READY 100 30", since=marker)
+            terminal.wait_for_screen("READY 100 30", since=marker)
         terminal.send(b"\x11")
         terminal.finish()
         terminal.save_evidence(name)
     evidence = Path(__file__).resolve().parents[2] / "artifacts/terminal" / f"{name}.json"
     assert json.loads(evidence.read_text())["terminal_mode_restored"]
+    if scenario not in {"read_only"}:
+        with pytest.raises(ProcessLookupError):
+            os.kill(int((directory / "handoff-child.pid").read_text()), 0)

@@ -215,6 +215,11 @@ class WorkspaceHeader(Horizontal):
         self.call_after_refresh(self.render_shortcuts)
 
     def render_shortcuts(self) -> None:
+        # Screen refresh callbacks can outlive a popped view. Textual's mounted
+        # flag records that mounting happened; attachment/running state owns
+        # the current DOM lifetime.
+        if not self.is_attached or not self.is_running:
+            return
         actions = self.query_one(ViewActions)
         actions.shortcuts = self.shortcuts
         actions.render_shortcuts()

@@ -370,7 +370,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         print("kubetrol: interrupted.", file=sys.stderr)
         return ExitCode.INTERRUPTED
     except AppError as error:
-        print(f"kubetrol: {sanitize_text(str(error))}", file=sys.stderr)
+        if error.code != ExitCode.HANGUP:
+            print(f"kubetrol: {sanitize_text(str(error))}", file=sys.stderr)
         return error.code
     except Exception:
         print(

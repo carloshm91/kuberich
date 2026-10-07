@@ -8,6 +8,7 @@ class ExitCode(IntEnum):
     INVALID_INPUT = 2
     LOCAL_IO = 3
     UNAVAILABLE = 4
+    HANGUP = 129
     INTERRUPTED = 130
     TERMINATED = 143
 

@@ -5,13 +5,17 @@ import os
 import signal
 import sys
 import threading
+from contextlib import ExitStack
 from pathlib import Path
 
+import pytest
+
 from tests.support.terminal_api import Server, config
+from tests.support.transports import TerminalTransport
 from tests.terminal.pty_support import TerminalSession
 
-FAKE = """
-import curses, json, os, signal, stat, sys, termios, tty
+FAKE = r"""
+import curses, json, os, select, signal, stat, sys, termios, time, tty
 from pathlib import Path
 directory=Path(__file__).resolve().parent.parent
 scenario=(directory/'scenario').read_text()
@@ -25,8 +29,9 @@ assert data['users'][0]['user']['token']=='synthetic-pty'
 assert args[1:8]==['--context=kubetrol-test-pty','--namespace=default','exec','--stdin','--tty','--container=worker','owned-pty-pod-079']
 assert args[8:]==['--','sh']
 with (directory/'exec-arguments.jsonl').open('a') as output:
-    output.write(json.dumps(args)+'\\n')
+    output.write(json.dumps(args)+'\n')
 (directory/'caller-pid').write_text(str(os.getppid()))
+(directory/'child-pid').write_text(str(os.getpid()))
 signal.signal(signal.SIGINT,signal.SIG_DFL)
 print('SHELL CHILD START',flush=True)
 assert sys.stdin.readline().strip()=='start'
@@ -54,8 +59,36 @@ if scenario=='fullscreen':
 def resize(signum,frame):
     size=os.get_terminal_size(0)
     # A resize may interrupt stdout's buffered READY write; avoid reentrant IO.
-    os.write(1,('SHELL CHILD SIZE '+str(size.columns)+' '+str(size.lines)+'\\n').encode())
+    os.write(1,('SHELL CHILD SIZE '+str(size.columns)+' '+str(size.lines)+'\n').encode())
 signal.signal(signal.SIGWINCH,resize)
+if scenario=='protocol':
+    tty.setraw(0)
+    os.write(1,b'\x1b[H\x1b[1;2;3H\x1b[1;2;3r\x1b[?6n\x1b[?5nPROTOCOL RECOVERED\r\n')
+    deadline=time.monotonic()+5
+    reply=bytearray()
+    while not reply.endswith(b'R'):
+        assert time.monotonic()<deadline,'cursor query deadline'
+        if select.select([0],[],[],.1)[0]:
+            reply.extend(os.read(0,64))
+    assert bytes(reply)==b'\x1b[?1;1R',bytes(reply)
+    os.write(1,b'\x1b]52;c;cHJpdmF0ZS1jbGlwYm9hcmQ=\x07\x1b]0;protocol-private-title\x1b\\')
+    os.write(1,'PROTOCOL NORMAL café 你好🙂\r\n'.encode())
+    os.write(2,b'PROTOCOL STDERR [red]literal[/red]\r\n')
+    def line():
+        value=bytearray()
+        while True:
+            data=os.read(0,1)
+            if data in (b'\r',b'\n'):
+                return value.decode()
+            assert data and len(value)<100
+            value.extend(data)
+    assert line()=='alternate'
+    os.write(1,b'\x1b[?1049h\x1b[H\x1b[2JPROTOCOL ALTERNATE\r\n')
+    assert line()=='normal'
+    os.write(1,b'\x1b[?1049l\r\nPROTOCOL RETURNED\r\n')
+    assert line()=='exit'
+    (directory/'protocol-result.json').write_text(json.dumps({'cursor_reply':bytes(reply).hex(),'normal_alternate_return':True,'unicode':True,'stdout_stderr':True}))
+    raise SystemExit(0)
 print('SHELL CHILD READY',flush=True)
 line=sys.stdin.readline().strip()
 print('SHELL INPUT '+line,flush=True)
@@ -64,13 +97,22 @@ raise SystemExit(127 if scenario=='shell_missing' else 1 if scenario=='failure' 
 """
 
 
-def terminal_shell(command: list[str], directory: Path, scenario: str, *, evidence: str) -> None:
+def terminal_shell(
+    command: list[str],
+    directory: Path,
+    scenario: str,
+    *,
+    evidence: str,
+    transport: TerminalTransport | None = None,
+) -> None:
     server = Server()
     server.pod_table.set()
     server.quiet_watches.set()
     server.shell_containers = ("worker",)
     if scenario == "deleted":
         server.pod_get_status = 404
+    if scenario == "early_close":
+        server.pod_gate.clear()
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     path = config(
@@ -93,20 +135,33 @@ def terminal_shell(command: list[str], directory: Path, scenario: str, *, eviden
     flags = ["--kubeconfig", str(path), "--context", "kubetrol-test-pty"]
     if scenario == "readonly":
         flags.append("--readonly")
+    invocation = [sys.executable, str(wrapper), *command, *flags]
     try:
-        with TerminalSession(
-            [sys.executable, str(wrapper), *command, *flags], directory
-        ) as terminal:
+        with ExitStack() as stack:
+            terminal = stack.enter_context(
+                TerminalSession(invocation, directory, transport=transport)
+            )
             terminal.wait_for(b"80 pods")
             marker = terminal.send(b"\x1b[1;5F")
             terminal.wait_for(b"owned-pty-pod-079", since=marker)
             marker = terminal.send(b"\r")
-            terminal.wait_for(b"Containers", since=marker)
-            terminal.wait_for(b"worker", since=marker)
+            terminal.wait_for_screen("Containers", since=marker)
+            terminal.wait_for_screen("worker", since=marker)
             terminal.send(b"\x1b[B")
-            attempts = 2 if scenario in {"success", "failure"} else 1
-            for _ in range(attempts):
+            attempts = 2 if scenario in {"success", "failure", "early_close"} else 1
+            for attempt in range(attempts):
                 marker = terminal.send(b"s")
+                if scenario == "early_close" and attempt == 0:
+                    # Keep draining the PTY before waiting on the API gate;
+                    # otherwise SSH output backpressure can stall the fixture.
+                    terminal.wait_for_screen("Kubetrol · Container shell")
+                    assert server.pod_requested.wait(5), "Shell preflight did not reach its gate"
+                    terminal.send(b"pending input\x1d")
+                    terminal.wait_for_screen("Shell closed")
+                    terminal.wait_for_screen("Containers")
+                    assert not (directory / "exec-arguments.jsonl").exists()
+                    server.pod_gate.set()
+                    continue
                 if scenario in {"missing", "readonly", "deleted"}:
                     expected = {
                         "missing": b"Install kubectl",
@@ -130,7 +185,28 @@ def terminal_shell(command: list[str], directory: Path, scenario: str, *, eviden
                 assert b"\x1b[?1049l" not in entering
                 assert b"\x1b[3J" not in entering
                 terminal.send(b"start\n")
-                if scenario == "fullscreen":
+                if scenario == "protocol":
+                    terminal.wait_for_screen("PROTOCOL RECOVERED")
+                    terminal.wait_for_screen("PROTOCOL NORMAL café 你好🙂")
+                    terminal.wait_for_screen("PROTOCOL STDERR [red]literal[/red]")
+                    terminal.send(b"alternate\n")
+                    terminal.wait_for_screen("PROTOCOL ALTERNATE")
+                    for width, height in ((40, 12), (140, 44), (60, 18), (90, 28)):
+                        terminal.resize(width, height)
+                    terminal.wait_for_screen("SHELL CHILD SIZE 88 22")
+                    terminal.resize(100, 30)
+                    terminal.wait_for_screen("SHELL CHILD SIZE 98 24")
+                    terminal.wait_for_screen("Kubetrol · Container shell")
+                    terminal.send(b"normal\n")
+                    terminal.wait_for_screen("PROTOCOL RETURNED")
+                    terminal.wait_for_screen("PROTOCOL NORMAL café 你好🙂")
+                    terminal.send(b"exit\n")
+                    terminal.wait_for_screen("Shell closed")
+                    assert b"\x1b]52" not in terminal.transcript
+                    assert b"protocol-private-title" not in terminal.transcript
+                    result = json.loads((directory / "protocol-result.json").read_text())
+                    assert result["cursor_reply"] == b"\x1b[?1;1R".hex()
+                elif scenario == "fullscreen":
                     terminal.wait_for_screen("OWNED FULLSCREEN READY")
                     terminal.resize(80, 25)
                     terminal.wait_for_screen("FULLSCREEN SIZE 78 19")
@@ -141,9 +217,28 @@ def terminal_shell(command: list[str], directory: Path, scenario: str, *, eviden
                     terminal.wait_for_screen("SHELL CHILD READY")
                     marker = terminal.resize(80, 25)
                     terminal.wait_for_screen("SHELL CHILD SIZE 78 19")
-                    if scenario == "terminate":
-                        os.kill(int((directory / "caller-pid").read_text()), signal.SIGTERM)
-                        terminal.finish(expected=143)
+                    if scenario == "lost_ssh_tmux":
+                        assert transport is not None and transport.tmux is not None
+                        child = int((directory / "child-pid").read_text())
+                        transport.disconnect()
+                        terminal.finish()
+                        terminal.save_evidence(evidence + "-detached")
+                        terminal = stack.enter_context(
+                            TerminalSession(invocation, directory, transport=transport)
+                        )
+                        terminal.wait_for_screen("SHELL CHILD READY")
+                        assert int((directory / "child-pid").read_text()) == child
+                        os.kill(child, 0)
+                    if scenario in {"terminate", "hangup", "lost_ssh"}:
+                        if scenario == "lost_ssh":
+                            assert transport is not None
+                            transport.disconnect()
+                        else:
+                            os.kill(
+                                int((directory / "caller-pid").read_text()),
+                                signal.SIGHUP if scenario == "hangup" else signal.SIGTERM,
+                            )
+                        terminal.finish(expected=143 if scenario == "terminate" else 129)
                         break
                     if scenario == "quit":
                         terminal.send(b"\x11")
@@ -159,7 +254,7 @@ def terminal_shell(command: list[str], directory: Path, scenario: str, *, eviden
                         terminal.send(b"owned selected worker\n")
                         terminal.wait_for(
                             b"Shell closed"
-                            if scenario == "success"
+                            if scenario in {"success", "early_close", "lost_ssh_tmux"}
                             else b"preferences"
                             if scenario == "shell_missing"
                             else b"pods/exec",
@@ -173,15 +268,18 @@ def terminal_shell(command: list[str], directory: Path, scenario: str, *, eviden
                             else b"Shell closed",
                             since=marker,
                         )
-                terminal.resize(100, 30)
+                marker = terminal.resize(100, 30)
+                terminal.wait_for_screen(
+                    "Esc → Pods", row=28, since=marker, absent=("Container shell",)
+                )
                 terminal.send(b"\x1b[1;5H\x1b[1;5F")
-            if scenario not in {"terminate", "quit"}:
+            if scenario not in {"terminate", "quit", "hangup", "lost_ssh"}:
                 marker = terminal.send(b"\x1b")
-                terminal.wait_for(b"Sort NAME", since=marker)
+                terminal.wait_for_screen("Sort NAME", since=marker)
                 marker = terminal.send(b":shell\r" if scenario != "readonly" else b"\r")
-                terminal.wait_for(b"Containers", since=marker)
+                terminal.wait_for_screen("Containers", since=marker)
                 marker = terminal.send(b"\x1b")
-                terminal.wait_for(b"Sort NAME", since=marker)
+                terminal.wait_for_screen("Sort NAME", since=marker)
                 terminal.send(b"\x11")
                 terminal.finish()
             terminal.save_evidence(evidence)
@@ -190,13 +288,16 @@ def terminal_shell(command: list[str], directory: Path, scenario: str, *, eviden
         captured = directory / "exec-arguments.jsonl"
         if scenario not in {"missing", "readonly", "deleted"}:
             values = [json.loads(line) for line in captured.read_text().splitlines()]
-            assert len(values) == attempts and all(
+            assert len(values) == (1 if scenario == "early_close" else attempts) and all(
                 "--container=worker" in value for value in values
             )
             assert all(not Path(value[0].split("=", 1)[1]).exists() for value in values)
+            with pytest.raises(ProcessLookupError):
+                os.kill(int((directory / "child-pid").read_text()), 0)
         else:
             assert not captured.exists()
     finally:
+        server.pod_gate.set()
         server.stopping.set()
         server.shutdown()
         thread.join(timeout=2)

@@ -18,6 +18,7 @@ from tests.support.azure_handoff import azure_terminal_trial
 from tests.support.handoff import terminal_handoff_trial
 from tests.support.navigation import terminal_navigation
 from tests.support.shell import terminal_shell
+from tests.support.transports import TerminalTransport
 from tests.terminal.pty_support import TerminalSession
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -110,6 +111,31 @@ def test_installed_selected_container_shell_uses_real_cli(installed_wheel) -> No
     terminal_shell(
         [str(binary_dir / "kubetrol")], directory, "success", evidence="installed-container-shell"
     )
+
+
+@pytest.mark.parametrize("kind", ["ssh", "ssh_tmux"])
+def test_installed_wheel_embedded_protocol_over_real_transport(installed_wheel, tmp_path, kind):
+    binary_dir, _ = installed_wheel
+    with TerminalTransport(tmp_path / "transport", kind) as transport:
+        terminal_shell(
+            [str(binary_dir / "kubetrol")],
+            tmp_path,
+            "protocol",
+            evidence=f"installed-{kind}-embedded-protocol",
+            transport=transport,
+        )
+
+
+def test_installed_wheel_native_handoff_over_ssh(installed_wheel, tmp_path):
+    binary_dir, _ = installed_wheel
+    with TerminalTransport(tmp_path / "transport", "ssh") as transport:
+        terminal_handoff_trial(
+            str(binary_dir / "python"),
+            tmp_path,
+            "success",
+            name="installed-ssh-native",
+            transport=transport,
+        )
 
 
 def test_source_distribution_can_build_a_wheel(

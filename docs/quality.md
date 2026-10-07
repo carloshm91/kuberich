@@ -43,6 +43,14 @@ behavior; real EKS evidence remains a separate explicit test-context requirement
 C07 extends that same critical module with Azure mode/prompt/error and bounded
 bearer decisions. Native provider handoff also receives actual PTY and fresh-wheel
 checks for private stdout, declared stdin, Ctrl+C/cancel/SIGTERM and restoration.
+Q02 adds mandatory owned loopback SSH, isolated tmux and SSH-to-tmux trials for
+workspace/log navigation, native handoff and embedded shells. The suite requires
+OpenSSH client/keygen/server and tmux; missing prerequisites fail explicitly.
+Linux runners install openssh-server/tmux and prepare `/run/sshd`; macOS runners
+install tmux and require their existing `/usr/sbin/sshd`. No developer system
+daemon or user configuration is changed. See
+[terminal compatibility](terminal-compatibility.md) for commands, ownership,
+lost-connection evidence and outstanding macOS/manual qualification.
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
 from transport and widget glue so exhaustive tests are practical. The critical

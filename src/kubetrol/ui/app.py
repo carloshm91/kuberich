@@ -15,11 +15,13 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.events import DescendantFocus, Event, Key, Paste, Resize
+from textual.geometry import Size
 from textual.screen import ModalScreen
 from textual.widgets import Button, DataTable, Input, Static
 
 from kubetrol.adapters.credentials import CredentialLogin, ExecToken, auth_problem
 from kubetrol.adapters.kubernetes import KubernetesSession
+from kubetrol.adapters.terminal import current_terminal_size
 from kubetrol.config.catalog import KubeCatalog
 from kubetrol.config.schema import Settings
 from kubetrol.domain.connections import (
@@ -78,6 +80,7 @@ from kubetrol.ui.namespaces import NamespaceTable
 from kubetrol.ui.pods import PodTable, Viewport
 from kubetrol.ui.presentation import DEFAULT_PRESENTATION, Presentation
 from kubetrol.ui.scopes import ConnectionScreen
+from kubetrol.ui.shutdown import TerminalSignals
 from kubetrol.ui.terminal import ShellScreen
 
 DISCONNECTED_STATUS = "Disconnected · No resource data"
@@ -202,6 +205,7 @@ class KubetrolApp(App[None]):
         self._restore_state: tuple[int, NavigationState] | None = None
         self.commands = CommandService(AccessPolicy(settings.read_only))
         self.processes = ProcessRunner(self.commands.policy)
+        self._terminal_signals = TerminalSignals(self)
         self._shell = settings.shell
         self._refresh_seconds = settings.refresh_seconds
         self._process_environment = dict(os.environ)
@@ -385,6 +389,8 @@ class KubetrolApp(App[None]):
         yield self.status
 
     def on_mount(self) -> None:
+        if not self.is_headless and not self.is_web:
+            self._terminal_signals.install()
         self.query_one("#all-namespaces").display = False
         self.resources.setup()
         self.namespace_table.setup()
@@ -624,15 +630,18 @@ class KubetrolApp(App[None]):
         )
 
     async def on_unmount(self) -> None:
-        await self.processes.close()
-        await self.workspace.close()
-        if self._view_task is not None:
-            await asyncio.gather(self._view_task, return_exceptions=True)
-        if self._render_task is not None:
-            self._render_task.cancel()
-            await asyncio.gather(self._render_task, return_exceptions=True)
-        await self._pod_projection.project(None)
-        await self._namespace_projection.project(None)
+        try:
+            await self.processes.close()
+            await self.workspace.close()
+            if self._view_task is not None:
+                await asyncio.gather(self._view_task, return_exceptions=True)
+            if self._render_task is not None:
+                self._render_task.cancel()
+                await asyncio.gather(self._render_task, return_exceptions=True)
+            await self._pod_projection.project(None)
+            await self._namespace_projection.project(None)
+        finally:
+            self._terminal_signals.restore()
 
     @on(DataTable.RowSelected, "#namespaces")
     def namespace_selected(self, event: DataTable.RowSelected) -> None:
@@ -940,6 +949,13 @@ class KubetrolApp(App[None]):
         return credentials.accept(result.stdout, command)
 
     def on_resize(self, event: Resize) -> None:
+        if not self.is_headless and not self.is_web:
+            size = current_terminal_size()
+            if size is not None:
+                # Nested POSIX signal callbacks may enqueue an older snapshot
+                # after a newer one. Normalize the public event before Textual's
+                # base handler updates layout/owned child geometry.
+                event.size = event.virtual_size = event.container_size = Size(*size)
         self.header.layout_header()
         self.screen_stack[0].set_class(event.size.width < 70, "compact")
         self.screen_stack[0].set_class(event.size.height < 16, "short")

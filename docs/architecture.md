@@ -27,6 +27,36 @@ updated decision record in this document. The product is a new implementation.
 
 ## Product boundary
 
+### Terminal qualification and shutdown: Q02 #33
+
+The mounted native application owns SIGHUP/SIGTERM handlers and restores previous
+handlers on shutdown. Headless/Web test applications do not install them. Native
+handoff temporarily owns these signals so cancellation reaps the foreground child
+and suspension resumes before the app exit request. The first signal selects the
+exit status. A revoked SSH TTY cannot be restored; the adapter recognizes that
+specific loss without hiding live-terminal restoration failures. Captured revoked
+output is discarded at hangup so buffered finalization retains the selected code.
+
+The application emulator processes bounded complete control frames independently.
+A malformed supported CSI cannot discard following text or cursor queries in the
+same PTY packet. Private/standard cursor reports use the active buffer and origin
+mode. Shrinking rendered buffers preserves the live cursor and trims unused bottom
+rows before shifting occupied rows; both buffer cursors remain inside the viewport.
+This is a maintained adapter over pinned Pyte, not a claim of full xterm emulation.
+
+Deferred header refresh checks current attachment and message-pump lifetime,
+because Textual's mounted flag remains true after a view is detached. A queued
+resize refresh cannot query children of an already removed view.
+Native resize handling normalizes the public event against the current TTY
+dimensions before Textual's base layout handler. Nested signal callbacks can
+enqueue an older snapshot after a newer one; it cannot retarget the current
+workspace or embedded child geometry. Headless/Web retain their supplied sizes;
+unavailable or zero physical dimensions leave the event unchanged.
+
+Qualification uses actual inner and outer PTYs, an owned loopback SSH daemon and
+an isolated tmux server. Real lost-SSH tests distinguish revoked-terminal cleanup
+from tmux preservation/reattachment. See [terminal compatibility](terminal-compatibility.md).
+
 Kubetrol is a local, keyboard-driven Kubernetes terminal application. It also
 runs inside a terminal reached over SSH. There is no application server,
 database, hosted control plane, telemetry service, or Textual Web deployment.

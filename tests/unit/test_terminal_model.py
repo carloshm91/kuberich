@@ -147,7 +147,7 @@ def test_reset_c1_controls_and_cursor_visibility():
     assert model.screen.display[0].strip() == "" and not model.screen.cursor.hidden
 
 
-@pytest.mark.parametrize("sequence", [b"\x1b[1;2;3H", b"\x1b[?6n", b"\x1b[1;2;3f"])
+@pytest.mark.parametrize("sequence", [b"\x1b[1;2;3H", b"\x1b[1;2;3f"])
 def test_malformed_or_unsupported_csi_cannot_abort_the_terminal(sequence):
     replies = []
     model = TerminalModel(20, 4, replies.append)
@@ -156,3 +156,55 @@ def test_malformed_or_unsupported_csi_cannot_abort_the_terminal(sequence):
     model.feed(b"\rAFTER")
     assert model.screen.display[0].startswith("AFTER")
     assert not replies
+
+
+@pytest.mark.parametrize("chunk_size", [1, 7, 4096])
+def test_malformed_csi_preserves_later_text_and_queries_in_the_same_read(chunk_size):
+    replies = []
+    model = TerminalModel(40, 6, replies.append)
+    payload = b"\x1b[1;2;3H\x1b[1;2;3r\x1b[?6n\x1b[?5n\rRETAINED IN SAME READ"
+    for offset in range(0, len(payload), chunk_size):
+        model.feed(payload[offset : offset + chunk_size])
+    assert model.screen.display[0].startswith("RETAINED IN SAME READ")
+    assert replies == [b"\x1b[?1;1R"]
+
+
+def test_private_cursor_reports_honor_origin_and_the_active_alternate_buffer():
+    replies = []
+    model = TerminalModel(20, 6, replies.append)
+    model.feed(b"\x1b[2;4r\x1b[?6h\x1b[2;3H\x1b[?6n")
+    model.feed(b"\x1b[?1049h\x1b[3;8H\x1b[?6n")
+    model.resize(30, 8)
+    model.feed(b"\x1b[?6n\x1b[?1049l\x1b[?6n")
+    assert replies == [b"\x1b[?2;3R", b"\x1b[?3;8R", b"\x1b[?3;8R", b"\x1b[?3;3R"]
+
+
+def test_cursor_reports_remain_inside_geometry_after_shrinking_both_buffers():
+    replies = []
+    model = TerminalModel(20, 6, replies.append)
+    model.feed(b"\x1b[6;20H\x1b[?1049h\x1b[6;20H")
+    model.resize(4, 2)
+    model.feed(b"\x1b[6n\x1b[?1049l\x1b[?6n")
+    assert replies == [b"\x1b[2;4R", b"\x1b[?2;4R"]
+
+
+def test_shrinking_empty_bottom_rows_retains_normal_prompt_and_alternate_text():
+    model = TerminalModel(30, 12, lambda _: None)
+    model.feed("prompt café 你好\r\n".encode())
+    assert model.screen.display[0].startswith("prompt café 你好")
+    model.feed(b"\x1b[?1049hEDITOR\r\n")
+    assert model.screen.display[0].startswith("EDITOR")
+    model.resize(20, 4)
+    assert model.screen.display[0].startswith("EDITOR")
+    model.feed(b"\x1b[?1049l")
+    assert model.screen.display[0].startswith("prompt café 你好")
+    assert model.screen.cursor.y == 1
+
+
+def test_shrinking_scrolls_only_enough_to_keep_the_last_output_and_live_cursor():
+    model = TerminalModel(20, 12, lambda _: None)
+    model.feed(b"".join(f"line-{number}\r\n".encode() for number in range(11)))
+    assert model.screen.display[10].startswith("line-10")
+    model.resize(20, 4)
+    assert [row.rstrip() for row in model.screen.display] == ["line-8", "line-9", "line-10", ""]
+    assert model.screen.cursor.y == 3
