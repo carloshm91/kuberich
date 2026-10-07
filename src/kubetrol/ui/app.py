@@ -18,6 +18,7 @@ from textual.events import DescendantFocus, Event, Key, Paste, Resize
 from textual.screen import ModalScreen
 from textual.widgets import Button, DataTable, Input, Static
 
+from kubetrol.adapters.credentials import CredentialLogin, ExecToken, auth_problem
 from kubetrol.adapters.kubernetes import KubernetesSession
 from kubetrol.config.catalog import KubeCatalog
 from kubetrol.config.schema import Settings
@@ -25,6 +26,7 @@ from kubetrol.domain.connections import (
     DEFAULT_CONNECTION,
     ConnectionRequest,
 )
+from kubetrol.domain.credential_helpers import helper_start_failure
 from kubetrol.domain.logs import log_containers
 from kubetrol.domain.navigation import (
     ContextRow,
@@ -32,10 +34,11 @@ from kubetrol.domain.navigation import (
     NavigationHistory,
     NavigationState,
 )
+from kubetrol.domain.processes import ProcessStatus
 from kubetrol.domain.resources import ApiResource, ResourceRecord
 from kubetrol.domain.targets import ResourceTarget
 from kubetrol.domain.views import USABLE_CONNECTIONS, ResourceSelection, ViewObservation, ViewStatus
-from kubetrol.errors import AppError
+from kubetrol.errors import AppError, ExecutableUnavailable
 from kubetrol.security.arguments import validate_argument
 from kubetrol.security.presentation import safe_text
 from kubetrol.services.access import AccessPolicy, Action
@@ -68,6 +71,7 @@ from kubetrol.ui.chrome import (
 from kubetrol.ui.commands import CommandInput, NavigationInput
 from kubetrol.ui.containers import ContainerScreen
 from kubetrol.ui.contexts import ContextTable
+from kubetrol.ui.handoff import terminal_handoff
 from kubetrol.ui.inspection import InspectionScreen, Page
 from kubetrol.ui.logs import LogScreen
 from kubetrol.ui.namespaces import NamespaceTable
@@ -96,6 +100,7 @@ class HelpScreen(ModalScreen[None]):
                         "c / F2            Contexts (:ctx)\n"
                         "n / F3            Namespaces (:ns)\n"
                         "r / F4            Retry connection (:retry)\n"
+                        ":login            Explicit Azure authentication and reconnect\n"
                         "i / F5            Connection status (:status)\n"
                         "Letter shortcuts work outside text inputs.\n"
                         "PageUp / PageDown Scroll help\n"
@@ -108,7 +113,7 @@ class HelpScreen(ModalScreen[None]):
                         "q / Ctrl+Q        Quit (q outside inputs)\n"
                         "Ctrl+C            Quit\n\n"
                         "Commands: po/pod/pods [NS or *], ctx [NAME], ns [NAME or *], "
-                        "status, retry, back, forward, shell/exec, help, quit.\n"
+                        "status, retry, login, back, forward, shell/exec, help, quit.\n"
                         "Filter: plain case-insensitive text; re:PATTERN for regex. "
                         "Searches namespace, name, readiness, status and restarts. "
                         "Invalid or timed-out regex shows all pods and an error.\n\n"
@@ -413,7 +418,12 @@ class KubetrolApp(App[None]):
             self.exit()
 
     def _start_connection(
-        self, context: str, *, scope: NamespaceChoice | None = None, remember: bool = True
+        self,
+        context: str,
+        *,
+        scope: NamespaceChoice | None = None,
+        remember: bool = True,
+        authenticate: CredentialLogin | None = None,
     ) -> None:
         try:
             validate_argument(context)
@@ -425,7 +435,9 @@ class KubetrolApp(App[None]):
         if context != self.workspace.store.observation.context:
             self._namespace_parent = self._namespace_state = None
             self._namespace_route = False
-        self._connection_task = self.workspace.connect(context, scope=scope)
+        self._connection_task = self.workspace.connect(
+            context, scope=scope, authenticate=authenticate
+        )
         self._clear_rows()
         self.header.update_identity()
         self._update_trail()
@@ -900,6 +912,33 @@ class KubetrolApp(App[None]):
         else:
             self.action_contexts()
 
+    def action_login(self) -> None:
+        context = (
+            self.workspace.store.observation.context
+            or self.sessions.request.context
+            or self.sessions.catalog.current
+        )
+        if context is None:
+            self.action_contexts()
+        else:
+            self._start_connection(context, authenticate=self._credential_login)
+
+    async def _credential_login(self, credentials: ExecToken) -> str:
+        command = credentials.invocation(interactive=True)
+        try:
+            result = await terminal_handoff(self, self.processes, command, timeout=300)
+        except ExecutableUnavailable:
+            raise auth_problem(helper_start_failure(command.argv, missing=True)) from None
+        except AppError:
+            raise auth_problem(
+                "Azure login requires a usable native terminal and executable. Complete the configured provider login externally, then retry."
+            ) from None
+        if result.status is not ProcessStatus.SUCCEEDED:
+            raise auth_problem(
+                "Azure login did not complete. Retry :login or complete the configured provider login externally, then retry the connection."
+            )
+        return credentials.accept(result.stdout, command)
+
     def on_resize(self, event: Resize) -> None:
         self.header.layout_header()
         self.screen_stack[0].set_class(event.size.width < 70, "compact")
@@ -1003,6 +1042,8 @@ class KubetrolApp(App[None]):
             self.action_connection_details()
         elif command is Command.RETRY:
             self.action_retry()
+        elif command is Command.LOGIN:
+            self.action_login()
         elif command is Command.BACK:
             self.action_history_back()
         elif command is Command.FORWARD:

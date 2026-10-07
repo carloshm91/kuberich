@@ -3,6 +3,7 @@
 import asyncio
 from dataclasses import replace
 
+from kubetrol.adapters.credentials import CredentialLogin
 from kubetrol.adapters.kubernetes import KubernetesSession
 from kubetrol.config.catalog import KubeCatalog
 from kubetrol.domain.connections import (
@@ -26,7 +27,9 @@ class SessionService:
         self.scopes: dict[str, str | None] = {}
         self.lock = asyncio.Lock()
 
-    async def connect(self, context: str) -> SessionObservation:
+    async def connect(
+        self, context: str, *, authenticate: CredentialLogin | None = None
+    ) -> SessionObservation:
         async with self.lock:
             await self.close()
             self.generation += 1
@@ -44,7 +47,10 @@ class SessionService:
                     else self.request.namespace or selected.namespace,
                 )
                 self.client = KubernetesSession(selected, self.request.timeout)
-                await self.client.open()
+                if authenticate is None:
+                    await self.client.open()
+                else:
+                    await self.client.open(authenticate=authenticate)
                 namespaces = await self.client.namespaces()
                 self.observation = SessionObservation(
                     ConnectionState.CONNECTED,

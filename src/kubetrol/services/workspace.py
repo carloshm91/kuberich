@@ -4,6 +4,7 @@ import asyncio
 from collections.abc import AsyncIterator, Callable
 from dataclasses import dataclass, replace
 
+from kubetrol.adapters.credentials import CredentialLogin
 from kubetrol.adapters.kubernetes import KubernetesSession
 from kubetrol.domain.connections import ConnectionProblem, ConnectionState, namespace_name
 from kubetrol.domain.navigation import NamespaceChoice
@@ -67,6 +68,7 @@ class _Selection:
     reconnect: bool = False
     change_namespace: bool = False
     namespace: str | None = None
+    authenticate: CredentialLogin | None = None
 
 
 def _cancel_once(task: asyncio.Task[None] | None) -> None:
@@ -135,7 +137,13 @@ class WorkspaceService:
             self.task = asyncio.create_task(self._drive(), name="kubetrol-workspace")
         return self.task
 
-    def connect(self, context: str, *, scope: NamespaceChoice | None = None) -> asyncio.Task[None]:
+    def connect(
+        self,
+        context: str,
+        *,
+        scope: NamespaceChoice | None = None,
+        authenticate: CredentialLogin | None = None,
+    ) -> asyncio.Task[None]:
         self._require_open()
         validate_argument(context)
         revision = self.store.begin(context)
@@ -147,6 +155,7 @@ class WorkspaceService:
                 reconnect=True,
                 change_namespace=scope is not None,
                 namespace=scope.namespace if scope is not None else None,
+                authenticate=authenticate,
             )
         )
 
@@ -207,7 +216,18 @@ class WorkspaceService:
                 await self._operation
             except asyncio.CancelledError:
                 # Only the replaceable operation is cancelled; this owner drains it.
-                pass
+                if (
+                    selection.authenticate is not None
+                    and self._desired is None
+                    and not self._closed
+                ):
+                    self.sessions.observation = replace(
+                        self.sessions.observation,
+                        state=ConnectionState.AUTH_ERROR,
+                        message="Azure login was cancelled. Use :login to try again, or r to retry the connection.",
+                    )
+                    self.store.connected(selection.revision, self.sessions.observation)
+                    self._publish()
             except Exception as error:
                 self._unexpected(selection.revision, error)
             finally:
@@ -228,7 +248,13 @@ class WorkspaceService:
         try:
             if selection.reconnect:
                 self._discovery = None
-                observation = await self.sessions.connect(selection.context)
+                observation = (
+                    await self.sessions.connect(selection.context)
+                    if selection.authenticate is None
+                    else await self.sessions.connect(
+                        selection.context, authenticate=selection.authenticate
+                    )
+                )
             else:
                 observation = self.sessions.observation
             if selection.revision != self.store.observation.revision:

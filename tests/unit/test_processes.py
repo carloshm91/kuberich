@@ -57,10 +57,22 @@ def command(tmp_path, **changes):
         (ProcessPurpose.ATTACH, Action.ATTACH),
         (ProcessPurpose.EDITOR, Action.MUTATE),
         (ProcessPurpose.PLUGIN, Action.PLUGIN),
+        (ProcessPurpose.AUTHENTICATE, Action.READ),
     ],
 )
 def test_purpose_has_explicit_effect_policy(purpose, action):
     assert purpose.action is action
+
+
+def test_authentication_retains_the_exec_contracts_256_args_plus_executable(tmp_path):
+    value = command(
+        tmp_path, argv=("helper", *(["literal"] * 256)), purpose=ProcessPurpose.AUTHENTICATE
+    )
+    assert len(value.argv) == 257
+    with pytest.raises(AppError, match="argument count"):
+        command(
+            tmp_path, argv=("helper", *(["literal"] * 257)), purpose=ProcessPurpose.AUTHENTICATE
+        )
 
 
 def test_snapshots_argv_environment_and_target_before_await(tmp_path):
@@ -98,6 +110,7 @@ def test_snapshots_argv_environment_and_target_before_await(tmp_path):
         {"directory": Path("relative")},
         {"directory": "/tmp"},
         {"target": "pod"},
+        {"terminal_input": "true"},
         {"environment": (("duplicate", "1"), ("duplicate", "2"))},
         {"environment": tuple((f"VAR{i}", "x") for i in range(4097))},
         {"environment": (("bad=name", "x"),)},

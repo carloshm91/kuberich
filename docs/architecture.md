@@ -272,8 +272,8 @@ pool with bounded streaming reads, disabled redirects/decompression and explicit
 proxy configuration. It replaces the pool before requests to disable ambient
 netrc/proxy identity, using a narrow SDK `rest_client.pool_manager` boundary.
 Transport tests qualify this boundary and must be rerun on SDK upgrades.
-Generic exec tokens are implemented; interactive provider login and exec
-certificate rotation remain explicitly unavailable for C08 qualification.
+Generic exec tokens are implemented. C07 adds explicit native Azure helper login;
+generic interactive providers and exec certificate rotation remain C08 qualification.
 
 C06 #21 captures inherited helper environment per session, preserves declared
 AWS args/env and pins delegated AWS variables/HOME, helper executable and working
@@ -282,6 +282,16 @@ from invalidating a newer refresh, even for identical token bytes. Pure fixed
 provider diagnostics remain independent of process/UI glue. The optional EKS
 smoke requires an explicit authorized test kubeconfig/context/namespace; actual
 cloud qualification remains pending. See [EKS contracts](eks-authentication.md).
+
+C07 #22 separates exec invocation and private response acceptance so explicit
+Azure login uses the same adapter/session configuration. `:login` is carried as
+an owned connection operation through workspace/session services; replacement and
+exit cancel/drain it before another context. The existing process runner captures
+stdout for authentication while the native terminal receives provider stderr;
+stdin follows the declared exec mode. UI suspension is explicit and bounded.
+A cancelled current login publishes a retryable auth state; replacement discards
+that result. SPN certificate inputs remain native bearer exchange; generic exec
+TLS credential rotation remains C08. See [AKS contracts](aks-authentication.md).
 
 The UI owns its connection task chain. Context replacement cancels/awaits the
 previous task before opening the next client, rejects late observations and

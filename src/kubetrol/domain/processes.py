@@ -24,6 +24,7 @@ class ProcessPurpose(Enum):
     ATTACH = auto()
     EDITOR = auto()
     PLUGIN = auto()
+    AUTHENTICATE = auto()
 
     @property
     def action(self) -> Action:
@@ -32,6 +33,7 @@ class ProcessPurpose(Enum):
             ProcessPurpose.ATTACH: Action.ATTACH,
             ProcessPurpose.EDITOR: Action.MUTATE,
             ProcessPurpose.PLUGIN: Action.PLUGIN,
+            ProcessPurpose.AUTHENTICATE: Action.READ,
         }[self]
 
 
@@ -67,17 +69,21 @@ class ProcessCommand:
     mode: ProcessMode
     purpose: ProcessPurpose
     target: ResourceTarget | None = None
+    terminal_input: bool = True
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "argv", freeze_arguments(self.argv))
-        if len(self.argv) > 256:
-            raise AppError("Commands support at most 256 arguments.")
+        limit = 257 if self.purpose is ProcessPurpose.AUTHENTICATE else 256
+        if len(self.argv) > limit:
+            raise AppError("Commands exceed their argument count limit.")
         if not isinstance(self.mode, ProcessMode) or not isinstance(self.purpose, ProcessPurpose):
             raise AppError("Commands require an explicit process mode and purpose.")
         if not isinstance(self.directory, Path) or not self.directory.is_absolute():
             raise AppError("Commands require an absolute captured working directory.")
         if self.target is not None and not isinstance(self.target, ResourceTarget):
             raise AppError("Commands require a valid captured target.")
+        if type(self.terminal_input) is not bool:
+            raise AppError("Terminal input availability must be true or false.")
         environment = tuple((key, value) for key, value in self.environment)
         if len(environment) > 4096 or len({key for key, _ in environment}) != len(environment):
             raise AppError("Process environment must have bounded, unique names.")

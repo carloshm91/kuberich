@@ -14,6 +14,7 @@ from pathlib import Path
 
 import pytest
 
+from tests.support.azure_handoff import azure_terminal_trial
 from tests.support.handoff import terminal_handoff_trial
 from tests.support.navigation import terminal_navigation
 from tests.support.shell import terminal_shell
@@ -94,6 +95,13 @@ def test_installed_terminal_handoff_uses_packaged_services(installed_wheel) -> N
     binary_dir, directory = installed_wheel
     terminal_handoff_trial(
         str(binary_dir / "python"), directory, "success", name="installed-handoff"
+    )
+
+
+def test_installed_azure_login_keeps_credentials_private_and_restores_tty(installed_wheel):
+    binary_dir, directory = installed_wheel
+    azure_terminal_trial(
+        str(binary_dir / "python"), directory, "success", name="installed-azure-login"
     )
 
 

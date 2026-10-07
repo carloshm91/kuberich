@@ -17,7 +17,7 @@ from urllib.parse import urlsplit
 import aiohttp
 from kubernetes_asyncio import client
 
-from kubetrol.adapters.credentials import ExecToken, auth_problem
+from kubetrol.adapters.credentials import CredentialLogin, ExecToken, auth_problem
 from kubetrol.config.catalog import ContextConfig, Entry, mapping, regular_bytes, text
 from kubetrol.domain.connection_overrides import IMPERSONATION_FIELDS, impersonation_headers
 from kubetrol.domain.connections import (
@@ -184,7 +184,9 @@ class KubernetesSession:
                 user[destination] = value
         if self.credentials is not None:
             helper = copy.deepcopy(self.credentials.entry.data)
-            if self.credentials.eks and self.credentials.command is not None:
+            if (
+                self.credentials.eks or self.credentials.azure
+            ) and self.credentials.command is not None:
                 helper["command"] = self.credentials.command
             command = text(helper["command"])
             if "/" in command and not Path(command).is_absolute():
@@ -213,7 +215,7 @@ class KubernetesSession:
             ],
         }
 
-    async def open(self) -> None:
+    async def open(self, *, authenticate: CredentialLogin | None = None) -> None:
         preparation = asyncio.create_task(
             asyncio.to_thread(_prepare, self.context, Path(self.directory.name))
         )
@@ -235,7 +237,16 @@ class KubernetesSession:
                     info,
                     self.timeout,
                 )
-                configuration.api_key["BearerToken"] = "Bearer " + await self.credentials.token()
+                token = (
+                    await self.credentials.token()
+                    if authenticate is None
+                    else await authenticate(self.credentials)
+                )
+                configuration.api_key["BearerToken"] = "Bearer " + token
+            elif authenticate is not None:
+                raise auth_problem(
+                    "The selected user has no exec helper to authenticate with :login."
+                )
             self.api = client.ApiClient(configuration=configuration)
             # Qualify this pinned SDK boundary in transport tests. Preserve the
             # SDK-created TLS connector but refuse ambient netrc/proxy identity.

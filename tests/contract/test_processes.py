@@ -143,7 +143,9 @@ async def test_natural_parent_exit_cleans_descendants_holding_output_pipes(tmp_p
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("mode", list(ProcessMode))
-@pytest.mark.parametrize("purpose", list(ProcessPurpose))
+@pytest.mark.parametrize(
+    "purpose", [value for value in ProcessPurpose if value is not ProcessPurpose.AUTHENTICATE]
+)
 async def test_read_only_blocks_every_process_before_executable_resolution(
     tmp_path, monkeypatch, mode, purpose
 ):
@@ -155,6 +157,63 @@ async def test_read_only_blocks_every_process_before_executable_resolution(
     with pytest.raises(AppError, match="Read-only"):
         runner.require(command(tmp_path, mode=mode, purpose=purpose), mode, None)
     await runner.close()
+
+
+@pytest.mark.asyncio
+async def test_authentication_is_allowed_in_read_only_and_output_is_captured(tmp_path):
+    async with ProcessRunner(AccessPolicy(True)) as runner:
+        result = await runner.capture(
+            command(tmp_path, "print('synthetic-credential')", purpose=ProcessPurpose.AUTHENTICATE)
+        )
+        assert (
+            result.status is ProcessStatus.SUCCEEDED
+            and result.stdout.strip() == b"synthetic-credential"
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("scenario", ["success", "timeout", "overflow"])
+async def test_authentication_foreground_keeps_stdout_private_and_bounded(tmp_path, scenario):
+    import pty
+
+    master, slave = pty.openpty()
+    try:
+        async with ProcessRunner(AccessPolicy(True), output_limit=1024) as runner:
+            code = "import sys; print('provider-prompt',file=sys.stderr,flush=True); " + (
+                "print('synthetic-credential')"
+                if scenario == "success"
+                else "import time;time.sleep(30)"
+                if scenario == "timeout"
+                else "print('x'*2048)"
+            )
+            spec = command(
+                tmp_path,
+                code,
+                mode=ProcessMode.FOREGROUND,
+                purpose=ProcessPurpose.AUTHENTICATE,
+                terminal_input=False,
+            )
+            result = await runner.foreground(
+                spec,
+                descriptor=slave,
+                claim=lambda group: None,
+                timeout=0.5 if scenario == "timeout" else 5,
+            )
+            assert (
+                result.status
+                is {
+                    "success": ProcessStatus.SUCCEEDED,
+                    "timeout": ProcessStatus.TIMED_OUT,
+                    "overflow": ProcessStatus.OUTPUT_LIMIT,
+                }[scenario]
+            )
+            assert os.read(master, 1024) == b"provider-prompt\r\n"
+            if scenario == "success":
+                assert result.stdout.strip() == b"synthetic-credential"
+            assert runner.active_count == 0
+    finally:
+        os.close(master)
+        os.close(slave)
 
 
 @pytest.mark.asyncio

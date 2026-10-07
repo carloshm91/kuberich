@@ -67,10 +67,11 @@ async def fake_api(
     handler: Callable[[web.Request], Awaitable[web.StreamResponse]],
     *,
     tls: ssl.SSLContext | None = None,
+    max_field_size: int = 8190,
 ) -> AsyncIterator[str]:
     app = web.Application()
     app.router.add_get("/api/v1/namespaces", handler)
-    runner = web.AppRunner(app, shutdown_timeout=0.1)
+    runner = web.AppRunner(app, shutdown_timeout=0.1, max_field_size=max_field_size)
     await runner.setup()
     site = web.TCPSite(runner, "127.0.0.1", 0, ssl_context=tls)
     await site.start()

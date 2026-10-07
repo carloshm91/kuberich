@@ -67,7 +67,7 @@
       ],
       "source": "internal/client/client.go",
       "status": "planned",
-      "difference": "C01 qualifies static/exec-token mechanisms. C06 delivers local AWS-shaped exec contracts, captured API/kubectl identity settings, cache-revision refresh and fixed safe diagnostics. The maintainer deferred actual EKS certification to opt-in Q05 #87 trials. AKS/GKE contracts, interactive helpers, legacy providers and exec certificate rotation remain C07/C08; no real-cloud compatibility claim.",
+      "difference": "C06/C07 deliver local AWS/Azure-shaped exec contracts, captured API/kubectl identity, revision-aware refresh, fixed safe diagnostics and explicit native Azure login. Actual cloud certification is deferred to opt-in Q05 #87. GKE/OIDC/legacy providers and generic exec TLS certificate rotation remain C08; no complete or real-cloud compatibility claim.",
       "partial_evidence": [
         "docs/context-sessions.md",
         "tests/contract/test_sessions.py",
@@ -81,7 +81,14 @@
         "tests/ui/test_eks_sessions.py",
         "tests/unit/test_credential_helpers.py",
         "scripts/verify_eks_auth.py",
-        "scripts/verify_shell_kind.py"
+        "scripts/verify_shell_kind.py",
+        "docs/aks-authentication.md",
+        "docs/acceptance/aks-authentication.md",
+        "tests/contract/test_azure_credentials.py",
+        "tests/contract/test_aks_verifier.py",
+        "tests/ui/test_azure_sessions.py",
+        "tests/terminal/test_azure_login.py",
+        "scripts/verify_aks_auth.py"
       ]
     },
     {

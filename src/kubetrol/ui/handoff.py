@@ -21,6 +21,7 @@ async def terminal_handoff(
     command: ProcessCommand,
     *,
     guard: TargetGuard | None = None,
+    timeout: float | None = None,
 ) -> ProcessResult:
     runner.require(command, ProcessMode.FOREGROUND, guard)
     if app.is_headless or app.is_web or sys.__stdin__ is None:
@@ -51,11 +52,16 @@ async def terminal_handoff(
                                     os.get_terminal_size(terminal.descriptor).columns,
                                 )
                             )
+                        elif command.purpose is ProcessPurpose.AUTHENTICATE:
+                            terminal.present(
+                                "Kubetrol · configured Azure authentication\r\nCtrl+C cancels login and returns to the workspace.\r\n\r\n"
+                            )
                         result = await runner.foreground(
                             command,
                             descriptor=terminal.descriptor,
                             claim=terminal.claim,
                             guard=guard,
+                            timeout=timeout,
                         )
                 except BaseException as error:
                     # Textual 8.2.8 resumes after yield, without a finally block.

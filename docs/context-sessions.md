@@ -85,8 +85,9 @@ This compatibility fix does not qualify every provider/login combination.
 Kubeconfig is trusted local configuration: configured helpers run with your user
 privileges, including in application read-only mode. Never launch with an
 untrusted kubeconfig. Helpers are authentication tools, separate from future
-operator-invoked plugins. Their output, raw SDK errors and response bodies are
-never printed or logged.
+operator-invoked plugins. Their credential stdout, raw SDK errors and response bodies are never printed
+or logged. Explicit C07 `:login` sends the native Azure provider prompt/stderr
+to the terminal during the handoff; it is not retained in diagnostics.
 
 TLS verification is on by default. A native kubeconfig
 `insecure-skip-tls-verify: true` or an HTTP endpoint displays **Insecure transport**
@@ -94,11 +95,12 @@ in the status, including with hidden headers. `tls-server-name` is honored.
 Native `proxy-url` is explicit and tested with an owned local HTTP proxy; ambient proxy/netrc configuration is not used by
 the API session. Proxy/provider combinations remain qualification work in C08.
 
-Exec certificate rotation, helpers requiring stdin (`interactiveMode: Always`),
-legacy `auth-provider` and basic username/password authentication are explicitly
-unavailable with an authentication message. Log in outside the UI where supported,
-or use a supported credential mechanism. EKS/AKS/GKE helper and actual provider
-qualification remain C06/C07/C08; generic synthetic exec tests do not certify them.
+Generic exec certificate rotation, legacy `auth-provider` and basic credentials
+remain explicitly unavailable. C07 adds native Azure `:login` with declared stdin
+behavior, private stdout capture and safe retry; other interactive helpers remain
+C08. C06/C07 deliver locally qualified AWS/Azure contracts. Actual EKS/AKS/GKE
+certification remains opt-in Q05 #87; synthetic tests do not certify cloud tenants.
+See [EKS](eks-authentication.md) and [AKS](aks-authentication.md) limits.
 CLI cluster/user/token/TLS/impersonation overrides are implemented by F05 #19;
 see the [effective launch connection](k9s-cli.md#effective-invocation-connection).
 They apply to this invocation, including context changes, reads, watches, logs

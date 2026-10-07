@@ -194,6 +194,7 @@ def trial(
                     "impersonation-denied",
                     "missing-shell",
                     "eks-denied",
+                    "aks-denied",
                 }:
                     terminal.wait_for(b"kubectl exec failed", since=marker, timeout=30)
                     terminal.wait_for(b"pods/exec", since=marker)
@@ -458,6 +459,64 @@ def main() -> None:
                 "Synthetic EKS helper, actual kubectl reads and exec RBAC denial passed on owned kind.",
                 flush=True,
             )
+            # AKS uses the same real API/token identity, with declared Azure
+            # helper arguments/env. No Entra login or tenant request is made.
+            azure_helper = eks_directory / "kubelogin"
+            azure_helper.write_text(
+                f"#!{sys.executable}\nimport json,os,sys\nfrom pathlib import Path\n"
+                "from datetime import datetime,timedelta,timezone\n"
+                "assert sys.argv[1:]==['get-token','--server-id','synthetic-kind','--login','workloadidentity']\n"
+                "assert os.environ['AZURE_TENANT_ID']=='synthetic-kind-tenant'\n"
+                "assert os.environ['AZURE_FEDERATED_TOKEN_FILE']=='synthetic-declared-jwt'\n"
+                "info=json.loads(os.environ['KUBERNETES_EXEC_INFO'])\n"
+                "assert info['spec']['interactive'] is False\n"
+                f"token=Path({str(token_path)!r}).read_text()\n"
+                "print(json.dumps({'kind':'ExecCredential','apiVersion':info['apiVersion'],'status':{'token':token,'expirationTimestamp':(datetime.now(timezone.utc)+timedelta(minutes=14)).isoformat()}}))\n"
+            )
+            azure_helper.chmod(0o700)
+            aks = yaml.safe_load(restricted.read_text())
+            aks["users"][0]["user"] = {
+                "exec": {
+                    "apiVersion": "client.authentication.k8s.io/v1",
+                    "interactiveMode": "Never",
+                    "command": str(azure_helper),
+                    "args": [
+                        "get-token",
+                        "--server-id",
+                        "synthetic-kind",
+                        "--login",
+                        "workloadidentity",
+                    ],
+                    "env": [
+                        {"name": "AZURE_TENANT_ID", "value": "synthetic-kind-tenant"},
+                        {"name": "AZURE_FEDERATED_TOKEN_FILE", "value": "synthetic-declared-jwt"},
+                    ],
+                }
+            }
+            aks_path = eks_directory / "owned-azure-config"
+            aks_path.write_text(yaml.safe_dump(aks))
+            aks_path.chmod(0o600)
+            aks_evidence = asyncio.run(
+                verify_eks_auth(
+                    ConnectionRequest(
+                        kubeconfig=str(aks_path), context=context, namespace=namespace, timeout=30
+                    ),
+                    kubectl,
+                    provider="aks",
+                )
+            )
+            trial(
+                aks_path,
+                context,
+                namespace,
+                directory / "aks-denied",
+                scenario="aks-denied",
+                kubectl=kubectl,
+            )
+            print(
+                "Synthetic Azure helper, actual kubectl reads and exec RBAC denial passed on owned kind.",
+                flush=True,
+            )
             output = Path(arguments.evidence)
             output.parent.mkdir(parents=True, exist_ok=True)
             output.write_text(
@@ -487,6 +546,9 @@ def main() -> None:
                         "synthetic_eks_exec_contract_on_real_kind": eks_evidence,
                         "synthetic_eks_real_kubectl_exec_denial": True,
                         "real_aws_eks_qualified": False,
+                        "synthetic_aks_exec_contract_on_real_kind": aks_evidence,
+                        "synthetic_aks_real_kubectl_exec_denial": True,
+                        "real_azure_aks_qualified": False,
                     },
                     indent=2,
                 )

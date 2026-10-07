@@ -5,7 +5,7 @@ import json
 import os
 import shutil
 import signal
-from collections.abc import Mapping
+from collections.abc import Awaitable, Callable, Mapping
 from contextlib import suppress
 from datetime import UTC, datetime
 from pathlib import Path
@@ -14,10 +14,16 @@ from typing import Any
 from kubetrol.config.catalog import Entry, mapping, text
 from kubetrol.domain.connections import ConnectionProblem, ConnectionState
 from kubetrol.domain.credential_helpers import (
+    AZURE_LOGIN_REQUIRED,
+    azure_login_mode,
+    azure_prompt,
+    bearer_token,
     helper_failure,
     helper_start_failure,
+    is_azure_helper,
     is_eks_helper,
 )
+from kubetrol.domain.processes import ProcessCommand, ProcessMode, ProcessPurpose
 from kubetrol.errors import AppError
 
 
@@ -25,12 +31,14 @@ def auth_problem(message: str) -> ConnectionProblem:
     return ConnectionProblem(ConnectionState.AUTH_ERROR, message)
 
 
-async def _drain(stream: asyncio.StreamReader, limit: int) -> bytes:
+async def _drain(stream: asyncio.StreamReader, limit: int, *, azure: bool = False) -> bytes:
     output = bytearray()
     while chunk := await stream.read(16384):
         output.extend(chunk)
         if len(output) > limit:
             raise auth_problem("Credential helper output exceeds its size limit.")
+        if azure and azure_prompt(output):
+            raise auth_problem(AZURE_LOGIN_REQUIRED)
     return bytes(output)
 
 
@@ -64,7 +72,7 @@ async def _execute(
     assert process.stdout is not None and process.stderr is not None
     readers = [
         asyncio.create_task(_drain(process.stdout, 1024 * 1024)),
-        asyncio.create_task(_drain(process.stderr, 65536)),
+        asyncio.create_task(_drain(process.stderr, 65536, azure=is_azure_helper(argv))),
     ]
     try:
         async with asyncio.timeout(timeout):
@@ -100,6 +108,7 @@ class ExecToken:
         self.revision = 0
         self.environment = dict(os.environ)
         self.eks = False
+        self.azure = False
         self.command: str | None = None
 
     def invalidate(self, rejected_revision: int | None = None) -> None:
@@ -110,16 +119,132 @@ class ExecToken:
 
     def delegated_environment(self, inherited: Mapping[str, str]) -> dict[str, str]:
         environment = dict(inherited)
-        if self.eks:
+        if self.eks or self.azure:
+            prefixes = ("AWS_",) if self.eks else ("AZURE_", "AAD_", "ARM_", "AZURESUBSCRIPTION_")
+            names = {"HOME", "PATH", "KUBECACHEDIR"} if self.azure else {"HOME"}
             for name in tuple(environment):
-                if name.startswith("AWS_") or name == "HOME":
+                if name.startswith(prefixes) or name in names:
                     del environment[name]
             environment.update(
                 (name, value)
                 for name, value in self.environment.items()
-                if name.startswith("AWS_") or name == "HOME"
+                if name.startswith(prefixes) or name in names
             )
         return environment
+
+    def invocation(self, *, interactive: bool = False) -> ProcessCommand:
+        try:
+            spec = mapping(self.entry.data)
+            version = text(spec.get("apiVersion"))
+            if version not in {
+                "client.authentication.k8s.io/v1",
+                "client.authentication.k8s.io/v1beta1",
+            }:
+                raise auth_problem("Unsupported exec credential API version. Use v1 or v1beta1.")
+            mode = spec.get("interactiveMode", None if version.endswith("/v1") else "IfAvailable")
+            if mode not in {"Never", "IfAvailable", "Always"}:
+                raise auth_problem(
+                    "Exec v1 requires interactiveMode: Never, IfAvailable, or Always."
+                )
+            command = text(spec.get("command"))
+            if "/" in command and not Path(command).is_absolute():
+                command = str(self.entry.directory / command)
+            args = spec.get("args", [])
+            if args is None:
+                args = []
+            if not isinstance(args, list) or len(args) > 256:
+                raise auth_problem("Credential helper args must be a list of at most 256 strings.")
+            argv = [command, *(text(arg) for arg in args)]
+            environment = dict(self.environment)
+            variables = spec.get("env", [])
+            if variables is None:
+                variables = []
+            if not isinstance(variables, list) or len(variables) > 256:
+                raise auth_problem("Credential helper env must be a list of at most 256 entries.")
+            for value in variables:
+                variable = mapping(value)
+                name = text(variable.get("name"))
+                if "=" in name:
+                    raise auth_problem("Credential helper environment names cannot contain '='.")
+                value = variable.get("value")
+                environment[name] = "" if value == "" else text(value)
+            self.eks, self.azure = is_eks_helper(argv), is_azure_helper(argv)
+            if interactive and not self.azure:
+                raise auth_problem(
+                    "Explicit :login currently requires a declared Azure kubelogin get-token helper."
+                )
+            if not interactive and mode == "Always":
+                raise auth_problem(
+                    AZURE_LOGIN_REQUIRED
+                    if self.azure
+                    else "This helper requires terminal input. Log in externally; interactive authentication awaits C08 #47."
+                )
+            if (
+                self.azure
+                and not interactive
+                and azure_login_mode(argv, environment) == "interactive"
+            ):
+                raise auth_problem(AZURE_LOGIN_REQUIRED)
+            provide = spec.get("provideClusterInfo", False)
+            if type(provide) is not bool:
+                raise auth_problem("provideClusterInfo must be true or false.")
+            available = interactive and mode != "Never"
+            info: dict[str, Any] = {"interactive": available}
+            if provide:
+                info["cluster"] = self.cluster
+            environment["KUBERNETES_EXEC_INFO"] = json.dumps(
+                {"apiVersion": version, "kind": "ExecCredential", "spec": info}
+            )
+            if (self.eks or self.azure) and "/" not in command:
+                search_path = os.pathsep.join(
+                    str(self.entry.directory / path) if not Path(path).is_absolute() else path
+                    for path in environment.get("PATH", os.defpath).split(os.pathsep)
+                )
+                argv[0] = shutil.which(command, path=search_path) or command
+            return ProcessCommand(
+                tuple(argv),
+                tuple(environment.items()),
+                self.entry.directory,
+                ProcessMode.FOREGROUND if interactive else ProcessMode.CAPTURE,
+                ProcessPurpose.AUTHENTICATE,
+                terminal_input=available,
+            )
+        except (AppError, ValueError, UnicodeError, RecursionError):
+            raise auth_problem(
+                "Invalid credential helper configuration or response. Check its ExecCredential contract."
+            ) from None
+
+    def accept(self, output: bytes, command: ProcessCommand) -> str:
+        try:
+            version = json.loads(dict(command.environment)["KUBERNETES_EXEC_INFO"])["apiVersion"]
+            response = mapping(json.loads(output))
+            if response.get("kind") != "ExecCredential" or response.get("apiVersion") != version:
+                raise auth_problem(
+                    "Credential helper returned a mismatched ExecCredential kind/version."
+                )
+            status = mapping(response.get("status"))
+            if "clientCertificateData" in status or "clientKeyData" in status:
+                raise auth_problem(
+                    "Exec certificate credentials require rotation qualification (C08 #47). Use static certificates or an exec token."
+                )
+            token = bearer_token(status.get("token"))
+            expiration = status.get("expirationTimestamp")
+            expires = (
+                datetime.fromisoformat(text(expiration).replace("Z", "+00:00"))
+                if expiration is not None
+                else None
+            )
+            if expires is not None and (expires.tzinfo is None or expires <= datetime.now(UTC)):
+                raise auth_problem(
+                    "Credential helper returned expired or timezone-less credentials."
+                )
+            self.cached, self.expiration, self.command = token, expires, command.argv[0]
+            self.revision += 1
+            return token
+        except (AppError, ValueError, UnicodeError, RecursionError):
+            raise auth_problem(
+                "Invalid credential helper configuration or response. Check its ExecCredential contract."
+            ) from None
 
     async def token(self) -> str:
         async with self.lock:
@@ -127,100 +252,11 @@ class ExecToken:
                 self.expiration is None or self.expiration > datetime.now(UTC)
             ):
                 return self.cached
-            try:
-                spec = mapping(self.entry.data)
-                version = text(spec.get("apiVersion"))
-                if version not in {
-                    "client.authentication.k8s.io/v1",
-                    "client.authentication.k8s.io/v1beta1",
-                }:
-                    raise auth_problem(
-                        "Unsupported exec credential API version. Use v1 or v1beta1."
-                    )
-                mode = spec.get(
-                    "interactiveMode", None if version.endswith("/v1") else "IfAvailable"
-                )
-                if mode not in {"Never", "IfAvailable", "Always"}:
-                    raise auth_problem(
-                        "Exec v1 requires interactiveMode: Never, IfAvailable, or Always."
-                    )
-                if mode == "Always":
-                    raise auth_problem(
-                        "This helper requires terminal input. Log in externally; interactive authentication awaits C08 #47."
-                    )
-                command = text(spec.get("command"))
-                if "/" in command and not Path(command).is_absolute():
-                    command = str(self.entry.directory / command)
-                args = spec.get("args", [])
-                if args is None:
-                    args = []
-                if not isinstance(args, list) or len(args) > 256:
-                    raise auth_problem(
-                        "Credential helper args must be a list of at most 256 strings."
-                    )
-                argv = [command, *(text(arg) for arg in args)]
-                environment = dict(self.environment)
-                variables = spec.get("env", [])
-                if variables is None:
-                    variables = []
-                if not isinstance(variables, list) or len(variables) > 256:
-                    raise auth_problem(
-                        "Credential helper env must be a list of at most 256 entries."
-                    )
-                for value in variables:
-                    variable = mapping(value)
-                    name = text(variable.get("name"))
-                    if "=" in name:
-                        raise auth_problem(
-                            "Credential helper environment names cannot contain '='."
-                        )
-                    value = variable.get("value")
-                    environment[name] = "" if value == "" else text(value)
-                provide = spec.get("provideClusterInfo", False)
-                if type(provide) is not bool:
-                    raise auth_problem("provideClusterInfo must be true or false.")
-                info: dict[str, Any] = {"interactive": False}
-                if provide:
-                    info["cluster"] = self.cluster
-                environment["KUBERNETES_EXEC_INFO"] = json.dumps(
-                    {"apiVersion": version, "kind": "ExecCredential", "spec": info}
-                )
-                self.eks = is_eks_helper(argv)
-                if self.eks and "/" not in command:
-                    search_path = os.pathsep.join(
-                        str(self.entry.directory / path) if not Path(path).is_absolute() else path
-                        for path in environment.get("PATH", os.defpath).split(os.pathsep)
-                    )
-                    argv[0] = shutil.which(command, path=search_path) or command
-                output = await _execute(argv, environment, self.entry.directory, self.timeout)
-                response = mapping(json.loads(output))
-                if (
-                    response.get("kind") != "ExecCredential"
-                    or response.get("apiVersion") != version
-                ):
-                    raise auth_problem(
-                        "Credential helper returned a mismatched ExecCredential kind/version."
-                    )
-                status = mapping(response.get("status"))
-                if "clientCertificateData" in status or "clientKeyData" in status:
-                    raise auth_problem(
-                        "Exec certificate credentials require rotation qualification (C08 #47). Use static certificates or an exec token."
-                    )
-                token = text(status.get("token"))
-                expiration = status.get("expirationTimestamp")
-                expires = (
-                    datetime.fromisoformat(text(expiration).replace("Z", "+00:00"))
-                    if expiration is not None
-                    else None
-                )
-                if expires is not None and (expires.tzinfo is None or expires <= datetime.now(UTC)):
-                    raise auth_problem(
-                        "Credential helper returned expired or timezone-less credentials."
-                    )
-                self.cached, self.expiration, self.command = token, expires, argv[0]
-                self.revision += 1
-                return token
-            except (AppError, ValueError, UnicodeError, RecursionError):
-                raise auth_problem(
-                    "Invalid credential helper configuration or response. Check its ExecCredential contract."
-                ) from None
+            command = self.invocation()
+            output = await _execute(
+                list(command.argv), dict(command.environment), command.directory, self.timeout
+            )
+            return self.accept(output, command)
+
+
+CredentialLogin = Callable[[ExecToken], Awaitable[str]]
