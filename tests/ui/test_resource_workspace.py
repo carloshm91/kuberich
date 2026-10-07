@@ -281,6 +281,26 @@ async def test_initial_namespaces_history_and_connecting_scope_guard_preserve_ro
 
 
 @pytest.mark.asyncio
+async def test_shortcuts_reflow_when_logo_width_settles_without_another_header_resize():
+    app = make_app()
+    async with app.run_test(size=(100, 30)) as pilot:
+        brand = app.header.query_one("#brand", Static)
+        brand.styles.width = 10
+        await pilot.resize_terminal(120, 30)
+        await pilot.pause()
+        header_region = app.header.region
+        actions = app.header.query_one("#view-actions", Static)
+        assert actions.content_region.width == 61
+        # Model the logo width settling after the header's resize was processed.
+        brand.styles.width = 22
+        await pilot.pause()
+        assert app.header.region == header_region and actions.content_region.width == 49
+        hints = str(actions.content)
+        assert "<n / :ns> Namespaces" in hints and "<?> Help" in hints
+        assert all(len(line) <= actions.content_region.width for line in hints.splitlines())
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("theme", ["k9s", "textual-light"])
 async def test_theme_no_color_hostile_aliases_and_input_keys_remain_literal_and_work(
     tmp_path, monkeypatch, theme

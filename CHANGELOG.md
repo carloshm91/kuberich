@@ -5,8 +5,14 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ## Unreleased
 
+### Changed
+
+- Use an original `ktrol` ASCII logo in the upper-right shared workspace header,
+  with a compact wordmark below 120 columns and the existing hidden-header options.
+
 ### Fixed
 
+- Reflow header shortcuts when the logo changes width during terminal resizing.
 - Keep frame margins, header columns and interaction/footer rows stable across
   pod, namespace, container and log navigation, focus changes and mouse clicks.
 - Render the selected command completion inline in the dedicated `:` bar,

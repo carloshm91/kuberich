@@ -10,7 +10,8 @@ Screen {
 #build-info { color: $text-muted; }
 #app-header { width: 1fr; height: 6; }
 #view-actions { width: 1fr; height: 6; color: $text-muted; text-overflow: ellipsis; }
-#brand { width: 10; height: 3; color: $accent; text-style: bold; }
+#brand { width: 22; height: 5; color: $accent; text-style: bold; }
+.header-logo-compact #brand { width: 10; height: 3; text-align: right; }
 .header-compact #scope-bar { width: 1fr; height: 4; }
 .header-compact #app-header { width: 1fr; height: 4; }
 .header-compact #view-actions { height: 4; }

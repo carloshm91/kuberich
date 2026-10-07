@@ -25,7 +25,9 @@ IDENTIFIERS = (
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("name,size", [("normal", (100, 30)), ("compact", (40, 12))])
+@pytest.mark.parametrize(
+    "name,size", [("normal", (100, 30)), ("wide", (120, 30)), ("compact", (40, 12))]
+)
 async def test_layout_and_rendered_evidence(
     name: str, size: tuple[int, int], monkeypatch: pytest.MonkeyPatch
 ) -> None:

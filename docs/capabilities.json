@@ -296,7 +296,7 @@
       ],
       "source": "internal/view/help.go",
       "status": "planned",
-      "difference": "Implemented pod, namespace, container and log shortcuts appear in the shared responsive header (#125); help retains secondary keys in short terminals. Per-view custom hotkeys and other resource actions remain planned. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks.",
+      "difference": "Implemented pod, namespace, container and log shortcuts appear in the shared responsive header (#125); help retains secondary keys in short terminals. Per-view custom hotkeys and other resource actions remain planned. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Preview #132 refines the responsive header brand to an original ktrol ASCII logo; project/CLI naming and presentation controls are retained.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_launch_options.py",
@@ -308,7 +308,9 @@
         "docs/resource-workspace.md",
         "docs/acceptance/resource-workspace.md",
         "tests/ui/test_resource_workspace.py",
-        "docs/acceptance/stable-workspace.md"
+        "docs/acceptance/stable-workspace.md",
+        "tests/ui/test_layout_snapshots.py",
+        "docs/acceptance/header-logo.md"
       ]
     },
     {
@@ -375,11 +377,13 @@
       ],
       "source": "internal/view/cow.go",
       "status": "planned",
-      "difference": "Preview #125 displays the actual installed application version in the shared header. A real optional cached/offline-safe release check remains U01 #56; no newer-release state is fabricated.",
+      "difference": "Preview #125 displays the actual installed application version in the shared header. A real optional cached/offline-safe release check remains U01 #56; no newer-release state is fabricated. Preview #132 supplies an original ktrol header logo with a compact wordmark; broader about/theme/update work remains open.",
       "partial_evidence": [
         "docs/resource-workspace.md",
         "docs/acceptance/resource-workspace.md",
-        "tests/ui/test_resource_workspace.py"
+        "tests/ui/test_resource_workspace.py",
+        "tests/ui/test_layout_snapshots.py",
+        "docs/acceptance/header-logo.md"
       ]
     },
     {

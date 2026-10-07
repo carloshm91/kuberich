@@ -6,7 +6,28 @@ resource-workspace trial below; earlier sections record previous checkpoints and
 short-lived branches that have since been deleted.
 Do not wait for every epic or the complete 1.0.0 parity audit to get feedback.
 
-## Bordered commands, context table and container details: #129 — current trial
+## Responsive header logo: #132 — current trial
+
+From the latest main checkout in an interactive terminal:
+
+```sh
+git pull --ff-only
+uv sync --locked --group dev
+KUBETROL_THEME=k9s uv run kubetrol
+```
+
+At 120+ columns and 16+ rows, the upper-right header displays the original
+five-row `ktrol` ASCII logo. At 70–119 columns it uses a small `ktrol` wordmark
+to preserve shortcut space; narrower/shorter terminals hide it. Resize, then
+visit `:ctx`, `:ns`, pods, containers and logs: header geometry stays consistent
+at the same terminal size. `--logoless` and `--headless` still hide the logo.
+The project, package and command remain `kubetrol`, with version `0.0.1.dev0`.
+
+The navigation trial below remains applicable. Tab/click focus feedback is
+tracked separately in #61; this branding change does not resolve it.
+See [actual renders and measured qualification](acceptance/header-logo.md).
+
+## Bordered commands, context table and container details: #129
 
 From the latest main checkout in an interactive terminal:
 

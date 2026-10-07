@@ -29,20 +29,22 @@ async def test_presentation_options_hide_the_requested_widgets_and_keep_controls
     app = KubetrolApp(
         Settings(read_only=True), logging.Logger("ui-launch"), presentation=presentation
     )
-    async with app.run_test(size=(100, 30)) as pilot:
+    async with app.run_test(size=(140, 30)) as pilot:
         await pilot.pause()
         assert not app.query_one(f"#{hidden}").display
         assert app.resources.region.height > 0
         assert str(app.status.content).startswith("Read-only")
         screenshot = app.export_screenshot(title="Kubetrol launch presentation")
         if presentation.headless or presentation.logoless:
-            assert ">kubetrol<" not in screenshot
+            assert app.query_one("#brand").region.height == 0
         if presentation.crumbsless:
             assert "Context:" not in screenshot and "Namespace:" not in screenshot
         output = Path(__file__).resolve().parents[2] / "artifacts/ui"
         output.mkdir(parents=True, exist_ok=True)
         identity = f"{int(presentation.headless)}{int(presentation.logoless)}{int(presentation.crumbsless)}"
         (output / f"launch-{identity}.svg").write_text(screenshot)
+        await pilot.resize_terminal(100, 30)
+        assert not app.query_one(f"#{hidden}").display
         await pilot.resize_terminal(40, 12)
         assert not app.query_one(f"#{hidden}").display
         assert app.command_input.region.bottom <= 12
