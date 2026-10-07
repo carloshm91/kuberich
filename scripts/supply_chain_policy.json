@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "approved_license_expressions": [
+    "Apache-2.0", "Apache-2.0 AND MIT", "Apache-2.0 AND CNRI-Python",
+    "BSD-2-Clause", "BSD-3-Clause", "LGPL-3.0-only", "MIT", "MPL-2.0",
+    "PSF-2.0", "PSF-2.0 AND Python-2.0"
+  ],
+  "legacy_licenses": {
+    "aiosignal": {
+      "version": "1.4.0", "declared": "Apache 2.0", "expression": "Apache-2.0",
+      "source": "https://github.com/aio-libs/aiosignal/blob/v1.4.0/LICENSE"
+    },
+    "multidict": {
+      "version": "6.9.1", "declared": "Apache License 2.0", "expression": "Apache-2.0",
+      "source": "https://github.com/aio-libs/multidict"
+    },
+    "python-dateutil": {
+      "version": "2.9.0.post0", "declared": "Dual License", "expression": "BSD-3-Clause",
+      "source": "https://github.com/dateutil/dateutil/blob/2.9.0.post0/LICENSE"
+    }
+  },
+  "vulnerability_exceptions": []
+}

@@ -45,7 +45,7 @@ jobs:
         run: |
           uv run ruff check .
           uv run ruff format --check .
-          uv run mypy --strict src/kubetrol scripts/check_coverage.py scripts/check_quality_gate.py
+          uv run mypy --strict src/kubetrol scripts/check_coverage.py scripts/check_quality_gate.py scripts/check_supply_chain.py scripts/supply_chain.py scripts/dependency_inventory.py
       - name: Run behavioral, gate-regression and clean-distribution checks
         run: uv run pytest --cov=kubetrol --cov-branch --cov-report=term-missing --cov-report=xml --cov-report=json
       - name: Verify context sessions, resource views and watches on an owned disposable cluster
@@ -75,6 +75,8 @@ jobs:
         run: |
           uv build
           uv run twine check dist/*
+      - name: Verify audited installed runtimes and artifact-linked security evidence
+        run: uv run python -m scripts.check_supply_chain --verify
       - name: Retain coverage evidence and candidate artifacts
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -88,6 +90,7 @@ jobs:
             artifacts/ui/*
             artifacts/terminal/*
             artifacts/packaging/*
+            artifacts/security/*
             artifacts/cluster/*
           if-no-files-found: error
           retention-days: 7

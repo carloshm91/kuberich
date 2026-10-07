@@ -93,6 +93,13 @@ private files remain outside distribution payloads. Required checks verify whole
 payloads and rebuild equivalence, then run actual uv tool and pip-backed pipx
 installations outside the checkout with owned state and process-group cleanup.
 
+Q04 supply-chain tooling remains under `scripts/`, outside the installed app.
+It installs the same wheel in owned locked/fresh environments, inventories metadata
+without importing dependencies, and links complete audits/SBOMs/original notices
+to candidate artifacts and reviewed inputs. CI verifies that evidence against its
+final build. These unsigned sidecars precede D02's publishing/attestation boundary;
+they neither access Kubernetes nor publish a package.
+
 B03 adds `regex` for local filtering because matching supports an actual timeout
 and releases the GIL for immutable strings. A thread alone cannot stop an
 unbounded standard-library regex match. Queries remain bounded and matching uses

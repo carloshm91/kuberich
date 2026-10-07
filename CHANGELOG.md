@@ -5,6 +5,10 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ## Unreleased
 
+- Audit locked and freshly installed runtimes, validate artifact-linked CycloneDX
+  SBOMs and original license notices, and reject incomplete security evidence,
+  floating CI actions and undocumented or expired vulnerability exceptions.
+
 ### Changed
 
 - Restrict wheel/source artifacts to runtime/build assets, metadata, license and

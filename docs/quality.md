@@ -67,6 +67,14 @@ module list is maintained in `tool.kubetrol.coverage.critical_modules` in
 pyproject.toml and changes with code review. Each listed file must exist, contain
 executable code, and independently meet 100% lines and applicable branches.
 
+Q04 #35 audits isolated locked/fresh installed runtimes, validates CycloneDX 1.6
+SBOMs, retains original license notices and verifies artifact/lock/policy digests.
+The packaging suite retains actual reports under `artifacts/security`; after the
+final build, CI runs `python -m scripts.check_supply_chain --verify` against those
+exact distribution bytes. Every finding requires a reviewed, exact, expiring
+exception; missing/skipped evidence and scanner errors fail. See
+[dependency security](dependency-security.md) for commands, scope and limits.
+
 Configure coverage over the entire src/kubetrol package, including modules not
 imported by tests. Do not include tests in the denominator. Do not omit entire
 UI, client, or subprocess modules. A combined coverage.py percentage is not the

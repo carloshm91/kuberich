@@ -7,6 +7,16 @@ short-lived branches that have since been deleted.
 Current delivery continues without waiting for intermediate manual trials. The
 maintainer will test the installed product and provide feedback later.
 
+## Dependency security checkpoint: Q04 #35
+
+The terminal behavior remains the installed pod/log/shell preview below. Q04 adds
+automated installed-runtime audits, original license notices and artifact-linked
+SBOM evidence; it adds no new resource action. Its exact local preview command is
+`uv run --locked --python 3.12 pytest tests/quality/test_supply_chain_policy.py tests/contract/test_hostile_boundaries.py tests/packaging/test_supply_chain.py`.
+See [dependency security](dependency-security.md) for the full build/verify flow.
+There is still no published package or release; hosted/macOS qualification remains
+the public-release gate.
+
 ## Installed artifact qualification: D01 #34
 
 The development launch remains `uv run kubetrol`. Local wheel/source builds now
