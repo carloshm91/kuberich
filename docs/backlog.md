@@ -24,6 +24,11 @@ maintainer will test and provide feedback later. Provider trials are deferred to
 that installed preview: C06/C07 deliver measured local/owned-cluster contracts,
 with opt-in real certification retained in Q05 #87 and explicit evidence limits.
 Publication/visibility approvals and public-release gates remain separate.
+Private CI follow-up [#109](https://github.com/carloshm91/kubetrol/issues/109)
+delivers the development matrix before further product work; its observed
+after-change hosted timing remains pending while Actions cannot start. Once its
+implementation is merged, that external evidence and #40's release approvals
+do not block the next unblocked private implementation task, B05 #41.
 The paragraphs below preserve the earlier implementation-order refinements.
 
 After C01 and its preview correction (#102), prioritize the path to the first
