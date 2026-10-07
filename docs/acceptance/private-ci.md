@@ -64,8 +64,27 @@ jobs, failed latest attempts and unavailable artifacts. Workflow contracts retai
 the required PR event, stable aggregate, full suite, independent floors, actual
 kind rehearsals and immutable release-artifact path.
 
-Fresh check counts and exact source identity are recorded in the implementing
-PR. Runtime source is unchanged; its previous independently measured line,
+Fresh Linux checks passed: Python 3.12 ran all 437 quality/packaging/source-PTY
+cases in 602.63 seconds. Python 3.13/3.14 each passed the 436-case quality/packaging
+suite, then all 43 affected installer/distribution/source-PTY cases after the
+navigation probe adjustment (264.16/263.46 seconds). These total 437 unique cases
+per interpreter across the applicable runs, not 479 different cases. Ruff,
+formatting, strict typing over 85 files, plan/link validation, actionlint 1.7.12,
+build, Twine and fresh locked/unlocked runtime security verification passed.
+
+Verification code was frozen at `b9956d6c42cfc1341de8de1b3c46f8ad2953a53d`;
+the adjusted test helper was frozen at `7806f7c`. Final scripts/workflow trees
+remain `641b3f93d9bf8b1a79a04a2284fceba253c70ef1` /
+`ec584e67572666def55c6362187156145c43b9db`; the adjusted tests tree is
+`df3b4add491b55cae4ea87b58d8735b7585ecef8`.
+The fresh distribution audit covers 27 runtime dependencies per scope without
+exceptions, binds all 15 policy inputs, and retains its actual original source
+SHA `b9956d6` in provenance. Later documentation/test-only commits are not
+relabeled as the artifact source. Runtime source remains
+`8469c8625227551ed4acb34c2e499c1b91a51af1`; its previously measured coverage is
+6,419/6,451 lines (99.5040%), 1,891/1,936 branches (97.6756%), with all 29 critical
+modules at 100% of applicable lines/branches. The independent checker passed
+against that unchanged inventory. This previous line,
 branch and critical-module evidence remains historical evidence rather than
 a newly measured application suite. Changed executable production lines: N/A.
 
@@ -75,8 +94,8 @@ context API was deliberately gated, then that gate timed out. Its log and failed
 terminal capture are retained. The isolated unchanged case passed; the shared
 probe now confirms visible `:ns` entry before Enter, retaining the rejection,
 API-gate and terminal-restoration assertions. Fast typeahead in ordinary commands
-is still exercised. Fresh verification of this adjusted probe is required before
-merge; the original failed run is not reported as successful.
+is still exercised. Fresh verification of the adjusted probe passed as recorded
+above; the original failed run is not reported as successful.
 
 Hosted jobs still cannot start because of the quota/billing restriction. #109
 stays open for an actual after-change hosted observation and, when accessible,
