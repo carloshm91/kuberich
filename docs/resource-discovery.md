@@ -91,7 +91,7 @@ With Docker running and the workflow's verified kind v0.33.0 binary:
 
 ```sh
 uv sync --locked --group dev
-uv run python scripts/verify_contexts_kind.py --kind /path/to/verified-kind
+uv run python -m scripts.verify_contexts_kind --kind /path/to/verified-kind
 ```
 
 This command creates its own uniquely named kind cluster and temporary kubeconfig,

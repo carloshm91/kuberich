@@ -7,6 +7,17 @@ short-lived branches that have since been deleted.
 Current delivery continues without waiting for intermediate manual trials. The
 maintainer will test the installed product and provide feedback later.
 
+## Disposable-cluster checkpoint: Q01 #38
+
+The preview remains usable. Integration scripts verify their generated API
+endpoint against the actual owned Docker node before fixture writes and clean up
+on graceful cancellation, failure and success. Tested command:
+`uv run python -m scripts.verify_kind_lifecycle --kind /tmp/kubetrol-tools/kind --evidence /tmp/kubetrol-38-evidence/kind-lifecycle.json`.
+It proves real setup cancellation, ready cancellation and injected body failure.
+See [integration qualification](integration-testing.md) for tools and commands.
+No additional resource view is claimed.
+
+
 ## Homebrew preparation checkpoint: D03 #37
 
 The app UI and development version are unchanged. A canonical local RC now

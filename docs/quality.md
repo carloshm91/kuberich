@@ -57,8 +57,9 @@ sdist-to-wheel equivalence and actual isolated uv tool/pip-backed pipx installs.
 Each interpreter runs installed CLI/navigation/shell trials outside the checkout.
 Installer evidence is retained under `artifacts/packaging`; installed dependencies
 are measured independently of the development lock. Tool subprocesses own their
-process group and reap children on timeout. Application jobs allow 30 minutes
-for the measured full suite, cold pip-backed installs and owned cluster checks.
+process group and reap children on timeout. Application jobs allow 45 minutes
+for the measured full suite, cold pip-backed installs and owned cluster checks,
+including the setup/body cancellation qualification added in Q01 #38.
 
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
@@ -184,6 +185,12 @@ paid/persistent runners, repository visibility and publication remain separate
 maintainer decisions.
 
 ## Test layers
+
+Q01 #38 consolidates the [owned Kubernetes/fault suite](integration-testing.md).
+Required Linux/Python 3.12 CI verifies disposable endpoint/node identity before
+writes and real SIGTERM cleanup during setup and after readiness. Release-time
+qualification repeats contracts and actual-kind trials three times with separate
+artifacts. These repetitions do not replace Q03 performance benchmarks.
 
 ### Behavior coverage for every feature
 

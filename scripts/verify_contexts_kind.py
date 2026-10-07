@@ -4,11 +4,8 @@ import argparse
 import asyncio
 import json
 import logging
-import os
-import subprocess
 from datetime import timedelta
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from uuid import uuid4
 
 import yaml
@@ -33,10 +30,7 @@ from kubetrol.ui.app import KubetrolApp
 from kubetrol.ui.containers import ContainerScreen
 from kubetrol.ui.inspection import InspectionScreen
 from kubetrol.ui.logs import LogScreen
-
-NODE_IMAGE = (
-    "kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed"
-)
+from scripts.owned_kind import NODE_IMAGE, owned_cluster
 
 
 async def verify_pod_table(reader, resource, catalog, path, context):
@@ -687,49 +681,23 @@ def main() -> None:
     parser.add_argument("--kind", required=True, help="verified kind v0.33.0 binary")
     parser.add_argument("--evidence", default="artifacts/cluster/context-sessions.json")
     arguments = parser.parse_args()
-    name = "kubetrol-test-" + uuid4().hex[:12]
-    with TemporaryDirectory(prefix="kubetrol-kind-") as directory:
-        path = Path(directory) / "owned-kubeconfig"
-        environment = {**os.environ, "KUBECONFIG": str(path)}
-        command = [
-            arguments.kind,
-            "create",
-            "cluster",
-            "--name",
-            name,
-            "--kubeconfig",
-            str(path),
-            "--image",
-            NODE_IMAGE,
-            "--wait",
-            "180s",
-        ]
-        try:
-            print("Creating owned disposable kind cluster.", flush=True)
-            subprocess.run(command, env=environment, check=True, timeout=300)
-            # Local kind output is never read through the ambient default path.
-            data = yaml.safe_load(path.read_text())
-            context = "kind-" + name
-            assert data["current-context"] == context
-            evidence = asyncio.run(verify(path, context))
-            output = Path(arguments.evidence)
-            output.parent.mkdir(parents=True, exist_ok=True)
-            output.write_text(
-                json.dumps({"kind": "0.33.0", "node_image": NODE_IMAGE, **evidence}, indent=2)
-                + "\n"
+    with owned_cluster(arguments.kind) as cluster:
+        evidence = asyncio.run(verify(cluster.path, cluster.context))
+        output = Path(arguments.evidence)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(
+            json.dumps(
+                {
+                    "kind": "0.33.0",
+                    "node_image": NODE_IMAGE,
+                    "prewrite_owned_endpoint_verified": True,
+                    **evidence,
+                },
+                indent=2,
             )
-            print(
-                "Real API, discovery, snapshots, list/watch changes, TLS, scope and cleanup passed.",
-                flush=True,
-            )
-        finally:
-            subprocess.run(
-                [arguments.kind, "delete", "cluster", "--name", name],
-                env=environment,
-                check=True,
-                timeout=90,
-            )
-            print("Owned disposable cluster deleted.", flush=True)
+            + "\n"
+        )
+        print("Real API, discovery, snapshots, list/watch, TLS and scope passed.", flush=True)
 
 
 if __name__ == "__main__":
