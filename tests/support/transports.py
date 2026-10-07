@@ -13,6 +13,7 @@ import sys
 import time
 from contextlib import suppress
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from types import TracebackType
 
 # A remote/pane session owner records attributes while its TTY still exists.
@@ -88,6 +89,7 @@ class TerminalTransport:
         assert self.directory.stat().st_uid == os.getuid()
         self.directory.chmod(0o700)
         self.socket = directory / "tmux.socket"
+        self.socket_directory: TemporaryDirectory[str] | None = None
         self.server: subprocess.Popen[bytes] | None = None
         self.server_log = None
         self.started = False
@@ -97,6 +99,11 @@ class TerminalTransport:
         self.tmux = self._tool("tmux") if "tmux" in kind else None
         if self.tmux is not None:
             self.versions["tmux"] = self._run([self.tmux, "-V"]).stdout.decode().strip()
+            # Darwin pytest roots can exceed the Unix-domain socket path limit.
+            # Own a separate short private directory rather than truncating or
+            # sharing a socket with another fixture/user server.
+            self.socket_directory = TemporaryDirectory(prefix="ktrl-tmux-", dir="/tmp")
+            self.socket = Path(self.socket_directory.name) / "socket"
         if "ssh" in kind:
             self.ssh = self._tool("ssh")
             version = self._run([self.ssh, "-V"])
@@ -340,6 +347,8 @@ class TerminalTransport:
                 self.server.wait(timeout=5)
         if self.server_log is not None:
             self.server_log.close()
+        if self.socket_directory is not None:
+            self.socket_directory.cleanup()
 
     def __exit__(
         self,

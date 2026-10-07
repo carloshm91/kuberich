@@ -53,6 +53,9 @@ user startup files and user SSH/tmux configuration. `StrictModes no` applies onl
 to this generated-key daemon because temporary-directory parents are writable;
 the fixture directory is mode 0700 and private keys are mode 0600. It never
 reconfigures a system SSH service or contacts a cluster outside its owned fixture.
+tmux uses its own short mode-0700 temporary socket directory, so long macOS-style
+test paths do not exceed Unix socket limits. Actual long-path trials exercise
+this independently of unavailable macOS execution.
 Loss tests terminate only a connection whose ancestry reaches that owned daemon.
 An observing session owner forwards terminal signals to the actual application;
 it does not immunize the application by inheriting ignored SIGHUP handlers.

@@ -12,6 +12,25 @@ from tests.support.transports import TerminalTransport
 from tests.terminal.pty_support import TerminalSession
 
 
+@pytest.mark.parametrize("kind", ["tmux", "ssh_tmux"])
+def test_tmux_transport_owns_a_short_socket_under_long_temporary_paths(tmp_path, kind):
+    long = tmp_path / ("a" * 80) / ("b" * 80)
+    long.mkdir(parents=True)
+    with (
+        TerminalTransport(long / "transport", kind) as transport,
+        TerminalSession(
+            [sys.executable, "-m", "kubetrol"], tmp_path, transport=transport
+        ) as terminal,
+    ):
+        assert len(str(transport.socket).encode()) < 90
+        socket_directory = transport.socket.parent
+        terminal.wait_for_screen("Disconnected")
+        terminal.send(b"\x11")
+        terminal.finish()
+        terminal.save_evidence(f"transport-{kind}-long-path")
+    assert not socket_directory.exists()
+
+
 @pytest.mark.parametrize("kind", ["ssh", "tmux", "ssh_tmux"])
 def test_log_scroll_search_pause_focus_and_return_over_real_transport(tmp_path, kind):
     with TerminalTransport(tmp_path / "transport", kind) as transport:
