@@ -7,7 +7,7 @@ import sys
 import pytest
 
 from scripts import release
-from scripts.check_supply_chain import INPUT_FILES, generate, write_json
+from scripts.check_supply_chain import write_json
 from scripts.release import metadata, prepare, verify_bundle
 from scripts.supply_chain import digest
 from tests.support.distribution import PROJECT, ROOT, run
@@ -172,95 +172,14 @@ def test_partial_pypi_staging_preserves_the_exact_missing_file_bytes(
         assert not (tmp_path / "bad").exists()
 
 
-def test_actual_canonical_rc_build_audit_bundle_and_installed_version(tmp_path):
-    source = tmp_path / "source"
-    shutil.copytree(ROOT / "src", source / "src", ignore=shutil.ignore_patterns("__pycache__"))
-    files = {
-        *INPUT_FILES,
-        "README.md",
-        "CHANGELOG.md",
-        "LICENSE",
-        ".gitignore",
-        "scripts/__init__.py",
-    }
-    for name in files:
-        path = source / name
-        path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(ROOT / name, path)
+def test_actual_canonical_rc_build_audit_bundle_and_installed_version(canonical_release):
+    source, bundle, sha = canonical_release
+    assert verify_bundle(bundle, sha, "0.0.1rc1", root=source)["tag"] == "v0.0.1-rc.1"
     project = source / "pyproject.toml"
-    project.write_text(
-        project.read_text().replace(f'version = "{PROJECT["version"]}"', 'version = "0.0.1rc1"', 1)
-    )
-    lock = source / "uv.lock"
-    entry = f'name = "kubetrol"\nversion = "{PROJECT["version"]}"'
-    assert lock.read_text().count(entry) == 1
-    lock.write_text(lock.read_text().replace(entry, 'name = "kubetrol"\nversion = "0.0.1rc1"', 1))
-    checked = run(
-        ["uv", "lock", "--locked", "--offline", "--python", sys.executable], source, 60, check=False
-    )
-    assert checked.returncode == 0, checked.stdout + checked.stderr
-    run(["git", "init", "--initial-branch=main"], source)
-    run(["git", "add", "src", *sorted(files)], source)
-    run(
-        [
-            "git",
-            "-c",
-            "user.name=Release Fixture",
-            "-c",
-            "user.email=fixture@example.invalid",
-            "commit",
-            "-s",
-            "-m",
-            "test: owned unpublished release candidate",
-        ],
-        source,
-    )
-    sha = run(["git", "rev-parse", "HEAD"], source).stdout.strip()
-    run(["uv", "build", "--python", sys.executable], source, 120)
-    generate(source / "artifacts/security", source / "dist", root=source)
-    bundle = tmp_path / "release-candidate"
-    prepared = prepare(source, bundle, sha, "0.0.1rc1", root=source)
-    assert prepared["tag"] == "v0.0.1-rc.1" and prepared["candidate_only"] is False
-    verify_bundle(bundle, sha, "0.0.1rc1", root=source)
-    outside = tmp_path / "outside"
-    outside.mkdir()
-    installed = tmp_path / "installed"
-    run(["uv", "venv", "--python", sys.executable, str(installed)], outside, 60)
-    wheel = next((bundle / "dist").glob("*.whl"))
-    run(
-        [
-            "uv",
-            "pip",
-            "install",
-            "--python",
-            str(installed / "bin/python"),
-            "--only-binary",
-            ":all:",
-            str(wheel),
-        ],
-        outside,
-        120,
-    )
-    assert (
-        run([str(installed / "bin/kubetrol"), "--version"], outside).stdout == "kubetrol 0.0.1rc1\n"
-    )
-    result = run([str(installed / "bin/kubetrol"), "--help"], outside)
-    assert "--context" in result.stdout and "--readonly" in result.stdout
-    manifest = json.loads((bundle / "release.json").read_text())
-    assert all(digest(bundle / name) == value for name, value in manifest["files"].items())
-    project.write_text(project.read_text() + "\n# dirty release input\n")
-    with pytest.raises(ValueError, match="clean committed"):
-        verify_bundle(bundle, sha, "0.0.1rc1", root=source)
-    retained = ROOT / "artifacts/releases"
-    retained.mkdir(parents=True, exist_ok=True)
-    write_json(
-        retained / "local-rc.json",
-        {
-            "version": "0.0.1rc1",
-            "commit": sha,
-            "artifacts": {path.name: digest(path) for path in (bundle / "dist").iterdir()},
-            "installed_outside_checkout": True,
-            "publications": 0,
-            "index": "local fixture",
-        },
-    )
+    original = project.read_text()
+    try:
+        project.write_text(original + "\n# dirty release input\n")
+        with pytest.raises(ValueError, match="clean committed"):
+            verify_bundle(bundle, sha, "0.0.1rc1", root=source)
+    finally:
+        project.write_text(original)

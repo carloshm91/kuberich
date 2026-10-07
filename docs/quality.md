@@ -82,6 +82,11 @@ dispatch pipeline still requires real green hosted Linux/macOS qualification,
 protected main and approved environments; private local checks never bypass it.
 See [release pipeline](release-pipeline.md) for the owner setup and retry contract.
 
+D03 adds strict types for `scripts/homebrew.py`, owned HTTP/Git update transactions
+and canonical-RC formula tests sharing the actual audited RC build. Its local tap
+qualification uses real brew style/audit/install/test/upgrade/uninstall; the prepared
+tap CI requires Linux/macOS online checks. See [Homebrew delivery](homebrew.md).
+
 Configure coverage over the entire src/kubetrol package, including modules not
 imported by tests. Do not include tests in the denominator. Do not omit entire
 UI, client, or subprocess modules. A combined coverage.py percentage is not the

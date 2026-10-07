@@ -7,6 +7,9 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Verified Homebrew source formula generation, isolated candidate installation
+  and immutable reviewed update-PR automation.
+
 - Prepare exact local release candidates and a maintainer-reviewed OIDC pipeline
   that consumes tested artifacts without rebuilding, enforces real main/matrix/
   milestone qualification, and recovers partial uploads without replacing bytes.

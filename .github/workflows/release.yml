@@ -164,3 +164,9 @@ jobs:
         run: >-
           uv run --locked python -m scripts.release github-assets
           --commit "$RELEASE_COMMIT" --version "$RELEASE_VERSION" --index pypi
+      - name: Propose the immutable Homebrew formula update for review
+        if: ${{ inputs.index == 'pypi' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: uv run --locked python -m scripts.homebrew publish --bundle release-candidate
