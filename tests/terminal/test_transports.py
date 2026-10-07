@@ -51,13 +51,17 @@ def test_real_transport_workspace_resize_unicode_focus_and_quit(tmp_path, kind):
         ) as terminal,
     ):
         terminal.wait_for_screen("Disconnected")
+        # Mount's title is replaced by the first asynchronous view projection.
+        # Observe that settled view before resizing.
+        terminal.wait_for_screen("pods(all)[0]")
         marker = terminal.send(b"?")
         terminal.wait_for_screen("Keyboard help", since=marker)
         marker = terminal.send(b"\x1b")
-        terminal.wait_for_screen("Resources", since=marker, absent=("Keyboard help",))
+        terminal.wait_for_screen("pods(all)[0]", since=marker, absent=("Keyboard help",))
         for width, height in ((40, 12), (120, 40), (60, 18), (100, 30)):
             terminal.resize(width, height)
-        terminal.wait_for_screen("Resources")
+        terminal.wait_for_screen("Stay in pods", row=28)
+        terminal.wait_for_screen("pods(all)[0]")
         marker = terminal.send(b"/\x1b[200~" + "café 你好🙂".encode() + b"\x1b[201~")
         terminal.wait_for("café 你好🙂".encode(), since=marker)
         marker = terminal.send(b"\r")
