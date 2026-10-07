@@ -310,15 +310,17 @@ def main() -> None:
             )
             path.write_text(yaml.safe_dump(captured))
             material_paths = {}
-            for name, source in [
+            for material_name, source in [
                 ("certificate-authority", captured["clusters"][0]["cluster"]),
                 ("client-certificate", captured["users"][0]["user"]),
                 ("client-key", captured["users"][0]["user"]),
             ]:
-                material_path = directory / name
-                material_path.write_bytes(base64.b64decode(source[name + "-data"], validate=True))
+                material_path = directory / material_name
+                material_path.write_bytes(
+                    base64.b64decode(source[material_name + "-data"], validate=True)
+                )
                 material_path.chmod(0o600)
-                material_paths[name] = str(material_path)
+                material_paths[material_name] = str(material_path)
             overrides = (
                 "--cluster",
                 "owned-override-cluster",
