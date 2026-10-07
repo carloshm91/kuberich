@@ -262,7 +262,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. SSH/tmux and broader terminal qualification remain B07/Q02. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -278,7 +278,11 @@
         "https://github.com/carloshm91/kubetrol/issues/129",
         "docs/acceptance/context-container-workspace.md",
         "tests/ui/test_context_workspace.py",
-        "tests/unit/test_container_rows.py"
+        "tests/unit/test_container_rows.py",
+        "docs/terminal-compatibility.md",
+        "docs/acceptance/terminal-qualification.md",
+        "tests/terminal/test_transports.py",
+        "tests/terminal/test_shutdown.py"
       ]
     },
     {
@@ -357,13 +361,17 @@
       ],
       "source": "internal/view/clipboard.go",
       "status": "planned",
-      "difference": "B04 and S02 copy redacted inspection/log text using Textual OSC52. Native clipboard and SSH/tmux qualification remain B07/Q02.",
+      "difference": "B04 and S02 copy redacted inspection/log text using Textual OSC52. Native clipboard and physical host clipboard receipt remain B07 #61. Q02 #33 exercises redacted log-copy controls over SSH/tmux, but does not certify the host clipboard receiving OSC52; native clipboard and physical-emulator/manual checks remain B07 #61.",
       "partial_evidence": [
         "docs/resource-inspection.md",
         "docs/log-viewer.md",
         "tests/ui/test_inspection.py",
         "tests/ui/test_logs.py",
-        "tests/terminal/test_logs.py"
+        "tests/terminal/test_logs.py",
+        "docs/terminal-compatibility.md",
+        "docs/acceptance/terminal-qualification.md",
+        "tests/terminal/test_transports.py",
+        "tests/terminal/test_shutdown.py"
       ]
     },
     {
@@ -578,7 +586,7 @@
       ],
       "source": "internal/view/exec.go",
       "status": "planned",
-      "difference": "S03/S04 provide captured, chosen-container native kubectl exec with a literal configured shell, private prepared-session connection, guarded launch and retained view on return. #119 adds a clean full-terminal entry and bounded captured-target heading. Actual Linux PTY, installed CLI and disposable-kind evidence is available. Remote SSH/tmux/macOS qualification remains Q02/full platform CI; this does not establish the full capability family. #121 replaces the default native shell route with an embedded Textual PTY/emulator and a persistent target frame; terminal compatibility/platform qualification still remains open.",
+      "difference": "S03/S04 provide captured, chosen-container native kubectl exec with a literal configured shell, private prepared-session connection, guarded launch and retained view on return. #119 adds a clean full-terminal entry and bounded captured-target heading. Actual Linux PTY, installed CLI and disposable-kind evidence is available. Q02 supplies Linux SSH/tmux evidence while macOS qualification remains full platform CI; this does not establish the full capability family. #121 replaces the default native shell route with an embedded Textual PTY/emulator and a persistent target frame; broader terminal compatibility/platform qualification remains separate. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux native and embedded shells, private/malformed protocol and buffer-resize recovery, pending-preflight cancellation, child/config cleanup after lost SSH and same-shell tmux reattachment. macOS/platform qualification remains the public-release gate; broader terminal history/protocols remain #123/#124.",
       "partial_evidence": [
         "docs/process-handoff.md",
         "docs/acceptance/S03.md",
@@ -599,7 +607,11 @@
         "tests/unit/test_terminal_model.py",
         "tests/contract/test_pty.py",
         "tests/ui/test_embedded_terminal.py",
-        "https://github.com/carloshm91/kubetrol/issues/121"
+        "https://github.com/carloshm91/kubetrol/issues/121",
+        "docs/terminal-compatibility.md",
+        "docs/acceptance/terminal-qualification.md",
+        "tests/terminal/test_transports.py",
+        "tests/terminal/test_shutdown.py"
       ]
     },
     {

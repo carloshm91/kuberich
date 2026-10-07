@@ -192,6 +192,18 @@ def test_interrupt_returns_130_without_traceback(
     assert capsys.readouterr().err == "kubetrol: interrupted.\n"
 
 
+def test_disconnected_terminal_returns_129_without_writing_to_closed_stderr(monkeypatch, capsys):
+    from kubetrol.errors import AppError, ExitCode
+
+    def disconnected(*args, **kwargs):
+        raise AppError("Terminal disconnected.", ExitCode.HANGUP)
+
+    monkeypatch.setattr(cli, "run_terminal", disconnected)
+    assert main([]) == 129
+    output = capsys.readouterr()
+    assert not output.out and not output.err
+
+
 def test_info_omits_sensitive_shell_arguments_and_retains_only_safe_preferences(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:

@@ -35,8 +35,10 @@ def run_terminal(
         connection=connection,
     )
     app.run()
+    if app.return_code == ExitCode.HANGUP:
+        raise AppError("Terminal disconnected.", ExitCode.HANGUP)
     if app.return_code == ExitCode.TERMINATED:
-        raise AppError("Shell handoff terminated; terminal restored.", ExitCode.TERMINATED)
+        raise AppError("Terminal session terminated; terminal restored.", ExitCode.TERMINATED)
     if app.return_code:
         raise AppError(
             "Terminal interface failed; check the local diagnostic log.", ExitCode.FAILURE

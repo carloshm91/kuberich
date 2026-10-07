@@ -12,6 +12,12 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Fixed
 
+- Restore owned terminal sessions after external SIGHUP/SIGTERM, reap native and
+  embedded children on SSH loss, and preserve hangup status when the remote TTY
+  is revoked. tmux sessions remain available for reattachment.
+- Recover following text and private cursor queries after malformed CSI in the
+  same shell packet; retain rendered normal/alternate text and bounded cursors
+  while shrinking the terminal.
 - Distinguish recognized AWS helper login/role failures from API 401/403 without
   exposing provider output; share expiring-token refreshes and ignore delayed
   401 invalidation of newer cache revisions, including identical token bytes.
@@ -45,6 +51,9 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Required isolated SSH/tmux terminal and fresh-wheel trials for resize, Unicode,
+  color fallback, log navigation, native handoff, embedded protocols, cancellation
+  during shell preparation, signal restoration and real connection loss.
 - Native Azure kubelogin contracts and explicit `:login`, with mode-aware terminal
   stdin, private credential stdout, safe provider hints, captured delegated Azure
   identity and retry after cancellation. Actual Entra/AKS certification remains

@@ -78,6 +78,7 @@ from kubetrol.ui.namespaces import NamespaceTable
 from kubetrol.ui.pods import PodTable, Viewport
 from kubetrol.ui.presentation import DEFAULT_PRESENTATION, Presentation
 from kubetrol.ui.scopes import ConnectionScreen
+from kubetrol.ui.shutdown import TerminalSignals
 from kubetrol.ui.terminal import ShellScreen
 
 DISCONNECTED_STATUS = "Disconnected · No resource data"
@@ -202,6 +203,7 @@ class KubetrolApp(App[None]):
         self._restore_state: tuple[int, NavigationState] | None = None
         self.commands = CommandService(AccessPolicy(settings.read_only))
         self.processes = ProcessRunner(self.commands.policy)
+        self._terminal_signals = TerminalSignals(self)
         self._shell = settings.shell
         self._refresh_seconds = settings.refresh_seconds
         self._process_environment = dict(os.environ)
@@ -385,6 +387,8 @@ class KubetrolApp(App[None]):
         yield self.status
 
     def on_mount(self) -> None:
+        if not self.is_headless and not self.is_web:
+            self._terminal_signals.install()
         self.query_one("#all-namespaces").display = False
         self.resources.setup()
         self.namespace_table.setup()
@@ -624,15 +628,18 @@ class KubetrolApp(App[None]):
         )
 
     async def on_unmount(self) -> None:
-        await self.processes.close()
-        await self.workspace.close()
-        if self._view_task is not None:
-            await asyncio.gather(self._view_task, return_exceptions=True)
-        if self._render_task is not None:
-            self._render_task.cancel()
-            await asyncio.gather(self._render_task, return_exceptions=True)
-        await self._pod_projection.project(None)
-        await self._namespace_projection.project(None)
+        try:
+            await self.processes.close()
+            await self.workspace.close()
+            if self._view_task is not None:
+                await asyncio.gather(self._view_task, return_exceptions=True)
+            if self._render_task is not None:
+                self._render_task.cancel()
+                await asyncio.gather(self._render_task, return_exceptions=True)
+            await self._pod_projection.project(None)
+            await self._namespace_projection.project(None)
+        finally:
+            self._terminal_signals.restore()
 
     @on(DataTable.RowSelected, "#namespaces")
     def namespace_selected(self, event: DataTable.RowSelected) -> None:

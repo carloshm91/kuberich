@@ -4,6 +4,7 @@ import json
 import queue
 import threading
 import time
+from contextlib import suppress
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
@@ -125,6 +126,10 @@ class Handler(BaseHTTPRequestHandler):
                     )
                 )
         elif "/pods/" in parsed.path:
+            self.server.pod_requested.set()
+            if not self.server.pod_gate.wait(10):
+                self.send_error(503, "Owned pod gate timed out")
+                return
             if self.server.pod_get_status != 200:
                 self.send_error(self.server.pod_get_status, "Owned pod preflight failure")
                 return
@@ -175,7 +180,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        with suppress(BrokenPipeError, ConnectionResetError):
+            self.wfile.write(body)
 
     def log_message(self, *args):
         pass
@@ -194,6 +200,9 @@ class Server(ThreadingHTTPServer):
         self.pod_table = threading.Event()
         self.shell_containers: tuple[str, ...] = ()
         self.pod_get_status = 200
+        self.pod_requested = threading.Event()
+        self.pod_gate = threading.Event()
+        self.pod_gate.set()
         self.namespace_requested = threading.Event()
         self.namespace_gate = threading.Event()
         self.namespace_gate.set()

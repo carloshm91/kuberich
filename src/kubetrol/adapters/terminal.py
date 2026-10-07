@@ -1,5 +1,6 @@
 """POSIX foreground process-group and terminal-attribute lease."""
 
+import errno
 import os
 import signal
 import termios
@@ -8,6 +9,48 @@ from types import TracebackType
 from typing import Any
 
 from kubetrol.errors import AppError
+
+
+def _revoked(descriptor: int) -> bool:
+    try:
+        termios.tcgetattr(descriptor)
+    except termios.error as error:
+        if error.args[0] in (errno.EIO, errno.ENXIO, errno.ENOTTY):
+            return True
+        raise
+    return False
+
+
+class RevokedTerminalOutput:
+    """Discard shutdown writes only to the same, demonstrably revoked TTY.
+
+    A disconnected SSH PTY cannot receive restoration bytes. Leaving buffered
+    output attached to it also makes CPython replace the requested exit code
+    with 120 during interpreter finalization. Live terminals and non-TTY
+    streams must keep their original descriptors.
+    """
+
+    def __init__(self, descriptors: tuple[int, ...] = (1, 2)) -> None:
+        self.terminals = {
+            descriptor: os.fstat(descriptor) for descriptor in descriptors if os.isatty(descriptor)
+        }
+
+    def discard_revoked(self) -> None:
+        for descriptor, original in self.terminals.items():
+            try:
+                current = os.fstat(descriptor)
+            except OSError as error:
+                if error.errno == errno.EBADF:
+                    continue
+                raise
+            if (current.st_dev, current.st_ino) != (original.st_dev, original.st_ino):
+                continue
+            if _revoked(descriptor):
+                sink = os.open(os.devnull, os.O_WRONLY)
+                try:
+                    os.dup2(sink, descriptor)
+                finally:
+                    os.close(sink)
 
 
 def _foreground(descriptor: int, group: int) -> None:
@@ -60,6 +103,13 @@ class TerminalLease:
         trace: TracebackType | None,
     ) -> None:
         try:
-            _foreground(self.descriptor, self.group)
-        finally:
-            termios.tcsetattr(self.descriptor, termios.TCSANOW, self.attributes)
+            try:
+                _foreground(self.descriptor, self.group)
+            finally:
+                termios.tcsetattr(self.descriptor, termios.TCSANOW, self.attributes)
+        except (OSError, termios.error):
+            # A lost SSH terminal has no attributes or foreground group left
+            # to restore. Preserve cancellation after reaping the child, while
+            # still surfacing restoration failures on a live terminal.
+            if not _revoked(self.descriptor):
+                raise

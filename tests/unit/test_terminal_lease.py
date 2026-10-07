@@ -1,5 +1,6 @@
 """The TTY lease restores attributes and the signal mask, including failures."""
 
+import errno
 import os
 import pty
 import signal
@@ -66,6 +67,101 @@ def test_job_control_failure_restores_the_signal_mask(monkeypatch):
     with pytest.raises(OSError):
         terminal._foreground(0, os.getpgrp())
     assert signal.pthread_sigmask(signal.SIG_BLOCK, set()) == previous
+
+
+def test_restoration_failure_on_a_live_terminal_is_not_suppressed(monkeypatch):
+    master, slave = pty.openpty()
+    monkeypatch.setattr(os, "tcgetpgrp", lambda _: os.getpgrp())
+    monkeypatch.setattr(os, "tcsetpgrp", lambda *_: (_ for _ in ()).throw(OSError("fixture")))
+    try:
+        with pytest.raises(OSError, match="fixture"), terminal.TerminalLease(slave):
+            pass
+    finally:
+        os.close(master)
+        os.close(slave)
+
+
+def test_a_revoked_terminal_does_not_replace_the_original_cancellation(monkeypatch):
+    master, slave = pty.openpty()
+    monkeypatch.setattr(os, "tcgetpgrp", lambda _: os.getpgrp())
+    monkeypatch.setattr(
+        os, "tcsetpgrp", lambda *_: (_ for _ in ()).throw(OSError(errno.EIO, "gone"))
+    )
+    try:
+        with pytest.raises(RuntimeError, match="cancelled"), terminal.TerminalLease(slave):
+            os.close(master)
+            master = None
+            raise RuntimeError("cancelled")
+    finally:
+        if master is not None:
+            os.close(master)
+        os.close(slave)
+
+
+def test_only_a_captured_revoked_tty_is_redirected(tmp_path):
+    master, slave = pty.openpty()
+    file = (tmp_path / "unrelated").open("wb")
+    try:
+        owner = terminal.RevokedTerminalOutput((slave, file.fileno()))
+        before = os.fstat(slave)
+        owner.discard_revoked()
+        assert os.fstat(slave) == before
+        os.close(master)
+        master = None
+        owner.discard_revoked()
+        assert not os.isatty(slave)
+        assert os.write(slave, b"final buffered shutdown bytes") == 29
+        os.write(file.fileno(), b"preserved")
+        owner.discard_revoked()
+        assert (tmp_path / "unrelated").read_bytes() == b"preserved"
+    finally:
+        if master is not None:
+            os.close(master)
+        os.close(slave)
+        file.close()
+
+
+@pytest.mark.parametrize("closed", [False, True])
+def test_output_descriptor_closed_or_replaced_after_capture_is_left_alone(tmp_path, closed):
+    master, slave = pty.openpty()
+    try:
+        owner = terminal.RevokedTerminalOutput((slave,))
+        if not closed:
+            with (tmp_path / "replacement").open("wb") as replacement:
+                os.dup2(replacement.fileno(), slave)
+                owner.discard_revoked()
+                os.write(slave, b"kept")
+            assert (tmp_path / "replacement").read_bytes() == b"kept"
+        else:
+            os.close(slave)
+            owner.discard_revoked()
+    finally:
+        os.close(master)
+        if not closed:
+            os.close(slave)
+
+
+def test_unexpected_tty_inspection_errors_are_not_hidden(monkeypatch):
+    def unavailable(descriptor):
+        raise termios.error(errno.EINVAL, "unexpected")
+
+    monkeypatch.setattr(termios, "tcgetattr", unavailable)
+    with pytest.raises(termios.error, match="unexpected"):
+        terminal._revoked(27)
+
+
+def test_unexpected_output_descriptor_errors_are_not_hidden(monkeypatch):
+    master, slave = pty.openpty()
+    try:
+        owner = terminal.RevokedTerminalOutput((slave,))
+        monkeypatch.setattr(
+            os, "fstat", lambda _: (_ for _ in ()).throw(OSError(errno.EPERM, "denied"))
+        )
+        with pytest.raises(OSError, match="denied"):
+            owner.discard_revoked()
+    finally:
+        os.close(master)
+        os.close(slave)
 
 
 def test_screen_presentation_drains_partial_writes_without_erasing_scrollback(monkeypatch):
