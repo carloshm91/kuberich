@@ -2,12 +2,10 @@
 
 import configparser
 import json
-import os
 import shutil
 import subprocess
 import sys
 import tarfile
-import tomllib
 import zipfile
 from email.parser import BytesParser
 from pathlib import Path
@@ -15,63 +13,12 @@ from pathlib import Path
 import pytest
 
 from tests.support.azure_handoff import azure_terminal_trial
+from tests.support.distribution import PROJECT, run
 from tests.support.handoff import terminal_handoff_trial
 from tests.support.navigation import terminal_navigation
 from tests.support.shell import terminal_shell
 from tests.support.transports import TerminalTransport
 from tests.terminal.pty_support import TerminalSession
-
-ROOT = Path(__file__).resolve().parents[2]
-PROJECT = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]
-
-
-def run(
-    command: list[str], directory: Path, timeout: int = 120, *, check: bool = True
-) -> subprocess.CompletedProcess[str]:
-    """Run tools with an explicit directory and without ambient source import paths."""
-    environment = os.environ.copy()
-    for name in os.environ:
-        if name.startswith("KUBETROL_"):
-            environment.pop(name)
-    environment.pop("PYTHONPATH", None)
-    environment.pop("VIRTUAL_ENV", None)
-    environment["KUBECONFIG"] = str(directory / "no-cluster-config")
-    environment["KUBETROL_CONFIG"] = str(directory / "preferences.yaml")
-    environment["KUBETROL_LOG_FILE"] = str(directory / "kubetrol.log")
-    return subprocess.run(
-        command,
-        cwd=directory,
-        env=environment,
-        capture_output=True,
-        text=True,
-        check=check,
-        timeout=timeout,
-    )
-
-
-@pytest.fixture(scope="session")
-def artifacts(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, Path]:
-    uv = shutil.which("uv")
-    assert uv is not None, "Install uv to run the distribution checks."
-    output = tmp_path_factory.mktemp("artifacts")
-    run([uv, "build", "--out-dir", str(output)], ROOT)
-    return next(output.glob("*.whl")), next(output.glob("*.tar.gz"))
-
-
-@pytest.fixture(scope="session")
-def installed_wheel(
-    artifacts: tuple[Path, Path], tmp_path_factory: pytest.TempPathFactory
-) -> tuple[Path, Path]:
-    uv = shutil.which("uv")
-    assert uv is not None
-    directory = tmp_path_factory.mktemp("installed-wheel")
-    (directory / "preferences.yaml").write_text("schema_version: 1\n", encoding="utf-8")
-    venv = directory / "venv"
-    run([uv, "venv", "--python", sys.executable, str(venv)], directory)
-    binary_dir = venv / ("Scripts" if sys.platform == "win32" else "bin")
-    python = binary_dir / ("python.exe" if sys.platform == "win32" else "python")
-    run([uv, "pip", "install", "--python", str(python), str(artifacts[0])], directory, 180)
-    return binary_dir, directory
 
 
 def test_wheel_metadata_entry_point_and_assets(artifacts: tuple[Path, Path]) -> None:
