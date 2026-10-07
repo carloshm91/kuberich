@@ -62,6 +62,8 @@ Actual PTY output and separate inner/outer termios observations are retained in
 entry point outside the checkout. Product fixes have regression witnesses for
 external shutdown, private cursor queries, malformed CSI recovery and retained
 normal/alternate buffer text after shrinking a rendered terminal.
+Additional failing witnesses cover deferred header callbacks after view removal
+and a stale queued resize event overriding the actual native TTY dimensions.
 
 Linux results and tool versions are recorded in the issue-linked acceptance
 report. macOS jobs and physical terminal-emulator/manual clipboard checks remain

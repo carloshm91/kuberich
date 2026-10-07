@@ -44,6 +44,15 @@ mode. Shrinking rendered buffers preserves the live cursor and trims unused bott
 rows before shifting occupied rows; both buffer cursors remain inside the viewport.
 This is a maintained adapter over pinned Pyte, not a claim of full xterm emulation.
 
+Deferred header refresh checks current attachment and message-pump lifetime,
+because Textual's mounted flag remains true after a view is detached. A queued
+resize refresh cannot query children of an already removed view.
+Native resize handling normalizes the public event against the current TTY
+dimensions before Textual's base layout handler. Nested signal callbacks can
+enqueue an older snapshot after a newer one; it cannot retarget the current
+workspace or embedded child geometry. Headless/Web retain their supplied sizes;
+unavailable or zero physical dimensions leave the event unchanged.
+
 Qualification uses actual inner and outer PTYs, an owned loopback SSH daemon and
 an isolated tmux server. Real lost-SSH tests distinguish revoked-terminal cleanup
 from tmux preservation/reattachment. See [terminal compatibility](terminal-compatibility.md).

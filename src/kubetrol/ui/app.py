@@ -15,11 +15,13 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.events import DescendantFocus, Event, Key, Paste, Resize
+from textual.geometry import Size
 from textual.screen import ModalScreen
 from textual.widgets import Button, DataTable, Input, Static
 
 from kubetrol.adapters.credentials import CredentialLogin, ExecToken, auth_problem
 from kubetrol.adapters.kubernetes import KubernetesSession
+from kubetrol.adapters.terminal import current_terminal_size
 from kubetrol.config.catalog import KubeCatalog
 from kubetrol.config.schema import Settings
 from kubetrol.domain.connections import (
@@ -947,6 +949,13 @@ class KubetrolApp(App[None]):
         return credentials.accept(result.stdout, command)
 
     def on_resize(self, event: Resize) -> None:
+        if not self.is_headless and not self.is_web:
+            size = current_terminal_size()
+            if size is not None:
+                # Nested POSIX signal callbacks may enqueue an older snapshot
+                # after a newer one. Normalize the public event before Textual's
+                # base handler updates layout/owned child geometry.
+                event.size = event.virtual_size = event.container_size = Size(*size)
         self.header.layout_header()
         self.screen_stack[0].set_class(event.size.width < 70, "compact")
         self.screen_stack[0].set_class(event.size.height < 16, "short")

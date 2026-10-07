@@ -20,6 +20,8 @@ No manual terminal or macOS result is claimed.
 | Installed entry points outside the checkout | `tests/packaging/test_distribution.py`, native SSH and embedded SSH/SSH-tmux |
 | Revoked output ownership and live-terminal restoration errors | `tests/unit/test_terminal_lease.py`; actual SSH loss supplies end-to-end evidence |
 | Same-packet malformed recovery, origin/private cursor replies, rendered buffer shrink | `tests/unit/test_terminal_model.py` plus real embedded protocol cases |
+| Deferred header callback after view removal | `tests/ui/test_header_lifecycle.py`; real resized log returns over tmux/SSH-tmux |
+| Older queued resize cannot override current physical dimensions | `tests/terminal/test_resize_order.py`; protocol resize storms over real local/SSH/tmux terminals |
 
 See [terminal compatibility](../terminal-compatibility.md) for exact commands,
 fixture prerequisites, supported behavior and lost-terminal limits. Remote TTY

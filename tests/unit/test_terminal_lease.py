@@ -13,6 +13,22 @@ from kubetrol.adapters import terminal
 from kubetrol.errors import AppError
 
 
+@pytest.mark.parametrize("dimensions", [(90, 28), (0, 28), (90, 0)])
+def test_live_native_size_requires_positive_geometry(monkeypatch, dimensions):
+    monkeypatch.setattr(os, "get_terminal_size", lambda _: os.terminal_size(dimensions))
+    assert terminal.current_terminal_size() == (
+        dimensions if all(value > 0 for value in dimensions) else None
+    )
+
+
+def test_unavailable_native_size_is_not_reported_as_a_new_layout(monkeypatch):
+    def lost(descriptor):
+        raise OSError("owned revoked terminal")
+
+    monkeypatch.setattr(os, "get_terminal_size", lost)
+    assert terminal.current_terminal_size() is None
+
+
 def test_non_terminal_refused(tmp_path):
     with (
         (tmp_path / "file").open("w") as stream,

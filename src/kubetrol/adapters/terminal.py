@@ -11,6 +11,15 @@ from typing import Any
 from kubetrol.errors import AppError
 
 
+def current_terminal_size() -> tuple[int, int] | None:
+    """Read the live native TTY instead of trusting a queued resize snapshot."""
+    try:
+        size = os.get_terminal_size(0)
+    except OSError:
+        return None
+    return (size.columns, size.lines) if size.columns > 0 and size.lines > 0 else None
+
+
 def _revoked(descriptor: int) -> bool:
     try:
         termios.tcgetattr(descriptor)

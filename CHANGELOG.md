@@ -18,6 +18,10 @@ Release entries are written in release PRs and linked to their Git tags.
 - Recover following text and private cursor queries after malformed CSI in the
   same shell packet; retain rendered normal/alternate text and bounded cursors
   while shrinking the terminal.
+- Ignore deferred shortcut rendering after its header view has been removed,
+  avoiding a terminal failure when resize and view return overlap.
+- Resolve native resize events against the current physical TTY so a delayed
+  older event cannot leave the interface and embedded child at the wrong size.
 - Distinguish recognized AWS helper login/role failures from API 401/403 without
   exposing provider output; share expiring-token refreshes and ignore delayed
   401 invalidation of newer cache revisions, including identical token bytes.

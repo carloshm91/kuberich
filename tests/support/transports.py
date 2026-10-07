@@ -1,5 +1,6 @@
 """Owned loopback SSH and isolated tmux transports for actual terminal trials."""
 
+import errno
 import json
 import os
 import pwd
@@ -289,7 +290,7 @@ class TerminalTransport:
         assert record["exit"] == expected, record
         assert record["foreground"], "Application did not own the inner terminal"
         if self.disconnected and record["after"] is None:
-            assert record["tty_unavailable_errno"] in (5, 25), record
+            assert record["tty_unavailable_errno"] in (errno.EIO, errno.ENXIO, errno.ENOTTY), record
         else:
             assert record["before"] == record["after"], "Inner terminal attributes not restored"
         self.record = {
