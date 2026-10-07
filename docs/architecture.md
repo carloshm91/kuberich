@@ -86,6 +86,13 @@ source distributions; `uv build` delegates to it. This retains standard Python
 packaging and the Hatchling approach shown in Textual's packaging guide without
 requiring contributors to manage two environment tools.
 
+D01 selects runtime modules, TCSS and typing assets explicitly in both artifacts.
+The sdist includes the metadata/build inputs, README, changelog, license and
+Hatchling-required Git ignore file; development tests/scripts/lock and undeclared
+private files remain outside distribution payloads. Required checks verify whole
+payloads and rebuild equivalence, then run actual uv tool and pip-backed pipx
+installations outside the checkout with owned state and process-group cleanup.
+
 B03 adds `regex` for local filtering because matching supports an actual timeout
 and releases the GIL for immutable strings. A thread alone cannot stop an
 unbounded standard-library regex match. Queries remain bounded and matching uses

@@ -7,6 +7,25 @@ short-lived branches that have since been deleted.
 Current delivery continues without waiting for intermediate manual trials. The
 maintainer will test the installed product and provide feedback later.
 
+## Installed artifact qualification: D01 #34
+
+The development launch remains `uv run kubetrol`. Local wheel/source builds now
+exclude tests, development scripts, caches and undeclared private files while
+retaining the complete application, styles, metadata and license.
+Required packaging checks install both formats with real isolated `uv tool`
+and pip-backed `pipx`, then exercise their exposed CLI and terminal outside the
+checkout. They own and remove their tool installations.
+
+The tested qualification command is:
+
+```sh
+uv run --locked --python 3.12 pytest tests/packaging
+```
+
+See [distribution](distribution.md) and [D01 acceptance](acceptance/distribution-artifacts.md)
+for measured status. Public PyPI/Homebrew installation and version `0.0.1`
+remain the separate release gate; no intermediate manual trial is required.
+
 ## Terminal reliability: Q02 #33
 
 The same development command remains `uv run kubetrol`. The default shell stays

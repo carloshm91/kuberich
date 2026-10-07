@@ -73,10 +73,12 @@ uv build
 uv run twine check dist/*
 ```
 
-The packaging tests build a wheel and source distribution, rebuild the source
-distribution, and run installed entry points in a fresh virtual environment
-outside the checkout. They require uv on PATH and package-index access to install
-dependencies. The CLI itself requires no cluster or network connection.
+The packaging tests check complete wheel/source contents and rebuild equivalence,
+then run installed entry points in fresh virtual environments and real isolated
+uv tool/pipx installations outside the checkout. pipx comes from the locked dev
+group. They require uv on PATH and package-index access for dependencies; tool
+state/configuration is confined to owned temporary directories. Installed CLI
+help/version require no cluster. Real UI checks use owned APIs and PTYs.
 
 The coverage script independently checks lines and branches, the complete
 production inventory, and the maintained critical-module list. diff-cover checks

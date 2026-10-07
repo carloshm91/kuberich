@@ -30,6 +30,44 @@ pipx install kubetrol
 These commands are intentionally documented as future release contracts. The
 README switches to active installation instructions only after verification.
 
+## Development artifacts: D01 #34
+
+The build backend selects Python modules, Textual styles and `py.typed` explicitly.
+The wheel adds runtime metadata, its CLI entry point and MIT license. The source
+distribution adds `pyproject.toml`, README, changelog, license and Hatchling's
+required `.gitignore`. Tests, development scripts, `uv.lock`, caches, temporary
+files and undeclared credential/configuration files are excluded. The full test
+suite and development lock remain in the Git repository.
+
+Build and verify locally from the checkout:
+
+```sh
+uv sync --locked --group dev
+uv build
+uv run pytest tests/packaging
+```
+
+The required checks compare every packaged path and payload, validate version,
+Python requirements, dependencies, license, URLs and console metadata, and
+rebuild a wheel from the source archive with identical file contents. Synthetic
+private-file traps verify exclusion independently of the developer's Git ignore
+configuration.
+
+Wheel and source archives each receive actual `uv tool` and pip-backed `pipx`
+installations. Each test owns its installation, binary, cache, configuration and
+log directories; it neither changes the user's managed tools nor edits shell
+startup files. The exposed command runs from PATH outside the checkout, and an
+isolated interpreter verifies the installed module origin and bundled styles.
+Checks cover help/version, missing preferences, diagnostics, non-TTY refusal,
+actual PTY resource navigation against an owned loopback API, wheel-installed
+embedded shells, terminal restoration and uninstall cleanup.
+
+`pipx` is a locked development-test dependency, not a runtime requirement.
+Both managers use the explicit interpreter of their Linux/macOS matrix job.
+The [D01 acceptance report](acceptance/distribution-artifacts.md) records measured
+results and unavailable platform checks. Local artifact installation does not
+publish packages or create a release.
+
 ## Supported targets
 
 Source and Homebrew installations initially target Linux and macOS on x86_64

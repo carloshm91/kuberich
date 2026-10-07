@@ -7,6 +7,9 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Restrict wheel/source artifacts to runtime/build assets, metadata, license and
+  release notes. Development tests/scripts/lock, caches and undeclared private
+  configuration/credential files stay outside the distribution.
 - Use an original `ktrol` ASCII logo in the upper-right shared workspace header,
   with a compact wordmark below 120 columns and the existing hidden-header options.
 
