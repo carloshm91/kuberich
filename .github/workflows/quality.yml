@@ -12,7 +12,7 @@ jobs:
   application:
     name: Application (${{ matrix.os }}, Python ${{ matrix.python }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -45,7 +45,7 @@ jobs:
         run: |
           uv run ruff check .
           uv run ruff format --check .
-          uv run mypy --strict src/kubetrol scripts/check_coverage.py scripts/check_quality_gate.py scripts/check_supply_chain.py scripts/supply_chain.py scripts/dependency_inventory.py scripts/release.py scripts/release_policy.py scripts/homebrew.py
+          uv run mypy --strict src/kubetrol scripts/check_coverage.py scripts/check_quality_gate.py scripts/check_supply_chain.py scripts/supply_chain.py scripts/dependency_inventory.py scripts/release.py scripts/release_policy.py scripts/homebrew.py scripts/owned_kind.py scripts/verify_kind_lifecycle.py
       - name: Run behavioral, gate-regression and clean-distribution checks
         run: uv run pytest --cov=kubetrol --cov-branch --cov-report=term-missing --cov-report=xml --cov-report=json
       - name: Verify context sessions, resource views and watches on an owned disposable cluster
@@ -54,7 +54,10 @@ jobs:
           curl --fail --location --retry 3 --max-time 60 https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64 --output "$RUNNER_TEMP/kubetrol-kind"
           printf '%s  %s\n' 'aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d' "$RUNNER_TEMP/kubetrol-kind" | sha256sum --check
           chmod 700 "$RUNNER_TEMP/kubetrol-kind"
-          uv run python scripts/verify_contexts_kind.py --kind "$RUNNER_TEMP/kubetrol-kind"
+          uv run python -m scripts.verify_contexts_kind --kind "$RUNNER_TEMP/kubetrol-kind"
+      - name: Require real-kind cleanup on setup/body cancellation and injected failure
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.12' }}
+        run: uv run python -m scripts.verify_kind_lifecycle --kind "$RUNNER_TEMP/kubetrol-kind"
       - name: Verify actual selected-container shells on an owned disposable cluster
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.12' }}
         run: |

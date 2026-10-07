@@ -27,6 +27,12 @@ updated decision record in this document. The product is a new implementation.
 
 ## Product boundary
 
+Q01 #38 shares an explicit local-kind lifecycle between cluster verifiers.
+Generated configuration must match the owned Docker node and published API port
+before fixture writes. Process deadlines and scoped signals own cleanup; deletion
+rechecks identity and never uses the caller's default kubeconfig. This tooling
+remains outside the installed application.
+
 ### Terminal qualification and shutdown: Q02 #33
 
 The mounted native application owns SIGHUP/SIGTERM handlers and restores previous

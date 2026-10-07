@@ -7,6 +7,9 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Verify disposable kind node/API identity before fixture writes and clean owned
+  clusters on SIGINT/SIGTERM, including setup cancellation and repeated signals.
+
 - Verified Homebrew source formula generation, isolated candidate installation
   and immutable reviewed update-PR automation.
 

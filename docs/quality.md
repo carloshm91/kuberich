@@ -185,6 +185,12 @@ maintainer decisions.
 
 ## Test layers
 
+Q01 #38 consolidates the [owned Kubernetes/fault suite](integration-testing.md).
+Required Linux/Python 3.12 CI verifies disposable endpoint/node identity before
+writes and real SIGTERM cleanup during setup and after readiness. Release-time
+qualification repeats contracts and actual-kind trials three times with separate
+artifacts. These repetitions do not replace Q03 performance benchmarks.
+
 ### Behavior coverage for every feature
 
 The maintainer requested deeper scenario coverage while continuing incremental
