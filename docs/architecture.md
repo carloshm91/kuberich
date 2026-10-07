@@ -108,6 +108,12 @@ main quality artifacts without rebuilding; OIDC/write/attestation privileges are
 confined to the reviewed publication job. Local development candidates cannot
 publish. No local merge exception authorizes a release.
 
+D03 source formula generation stays outside the installed application. It verifies
+audited bundles, pins recursive runtime sources and isolates their installation.
+Only the approved production release job can propose a formula update. Cross-repo
+write access is limited to the tap; update branches are immutable and require
+review rather than automatic merging.
+
 B03 adds `regex` for local filtering because matching supports an actual timeout
 and releases the GIL for immutable strings. A thread alone cannot stop an
 unbounded standard-library regex match. Queries remain bounded and matching uses

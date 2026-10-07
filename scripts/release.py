@@ -160,6 +160,7 @@ def require_source(root: Path, sha: str) -> None:
     paths = [
         "src",
         "scripts",
+        "packaging",
         ".github/workflows",
         "pyproject.toml",
         "uv.lock",

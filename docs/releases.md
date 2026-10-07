@@ -66,6 +66,9 @@ Git tags are vX.Y.Z-rc.N; the release workflow validates normalized equivalence.
    Publishing. Publish a GitHub Release with notes, artifacts, and checksums.
 7. Update the Homebrew formula from the published immutable artifact and SHA-256,
    run its CI/audit/install test, and merge the tap PR. Verify install and upgrade.
+   [D03 tooling](homebrew.md) proposes the PR inside the approved production job.
+   Initialize the reviewed scaffold and limited credential before dispatch; the
+   maintainer reviews and merges after tap checks.
 8. Close the release gate and milestone only after all required channels work.
    Record the release links. Start the next Unreleased changelog section by PR.
 

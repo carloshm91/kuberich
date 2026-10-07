@@ -1,0 +1,44 @@
+name: Homebrew candidate
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: homebrew-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  formula:
+    name: Formula (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    env:
+      HOMEBREW_NO_ANALYTICS: '1'
+      HOMEBREW_NO_INSTALL_CLEANUP: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Locate the runner Homebrew installation
+        run: |
+          if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+            eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          fi
+          brew --version
+          echo "$(brew --prefix)/bin" >> "$GITHUB_PATH"
+      - name: Install this checkout as the tap and require all formula checks
+        run: |
+          export PATH="$(brew --prefix)/bin:$PATH"
+          tap="$(brew --repository)/Library/Taps/carloshm91/homebrew-tap"
+          mkdir -p "$(dirname "$tap")"
+          ln -s "$GITHUB_WORKSPACE" "$tap"
+          brew style carloshm91/tap/kubetrol
+          brew audit --strict --online carloshm91/tap/kubetrol
+          brew install --build-from-source carloshm91/tap/kubetrol
+          brew test carloshm91/tap/kubetrol
+          brew uninstall carloshm91/tap/kubetrol

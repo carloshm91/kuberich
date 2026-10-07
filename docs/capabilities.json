@@ -970,7 +970,7 @@
       ],
       "source": "README.md",
       "status": "planned",
-      "difference": "D01 qualifies local Python wheel/sdist contents and isolated uv tool/pip-backed pipx installs. D02 adds maintainer-dispatched immutable candidate/publishing automation and measured local RC/HTTP/Git tests; live OIDC/TestPyPI/protection and public channel qualification remain D04. Homebrew remains D03; standalone downloads remain D05; macOS execution remains a public-release gate.",
+      "difference": "D01 qualifies local Python wheel/sdist contents and isolated uv tool/pip-backed pipx installs. D02 adds maintainer-dispatched immutable candidate/publishing automation and measured local RC/HTTP/Git tests; live OIDC/TestPyPI/protection and public channel qualification remain D04. D03 adds verified canonical-RC source formulas, actual Linux Homebrew installation and immutable update-PR automation; public tap creation, live cross-repo/public upgrade and macOS qualification remain D04; standalone downloads remain D05; macOS execution remains a public-release gate.",
       "partial_evidence": [
         "docs/distribution.md",
         "docs/acceptance/distribution-artifacts.md",
@@ -981,7 +981,12 @@
         "scripts/release_policy.py",
         "tests/quality/test_release_policy.py",
         "tests/quality/test_release_transport.py",
-        "tests/packaging/test_release_candidate.py"
+        "tests/packaging/test_release_candidate.py",
+        "docs/homebrew.md",
+        "scripts/homebrew.py",
+        "packaging/homebrew/.github/workflows/verify.yml",
+        "tests/quality/test_homebrew.py",
+        "tests/packaging/test_homebrew_formula.py"
       ]
     },
     {

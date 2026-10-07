@@ -7,6 +7,16 @@ short-lived branches that have since been deleted.
 Current delivery continues without waiting for intermediate manual trials. The
 maintainer will test the installed product and provide feedback later.
 
+## Homebrew preparation checkpoint: D03 #37
+
+The app UI and development version are unchanged. A canonical local RC now
+produces a verified source formula and tap scaffold. Actual installation is
+qualified in an owned Linux container; public tap creation and macOS/online checks
+remain D04. The tested local check is
+`uv run pytest -q tests/quality/test_homebrew.py tests/quality/test_release_transport.py`.
+See [Homebrew delivery](homebrew.md) for candidate commands and limits. No new
+intermediate manual trial is required.
+
 ## Release pipeline checkpoint: D02 #36
 
 The installed pod/log/embedded-shell UI is unchanged. Release preparation now

@@ -133,8 +133,8 @@ class ReleaseServer:
 
 
 @contextmanager
-def release_server(directory):
-    fixture = ReleaseServer(directory)
+def release_server(directory, factory=ReleaseServer):
+    fixture = factory(directory)
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):
