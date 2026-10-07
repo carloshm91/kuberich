@@ -14,11 +14,9 @@ from kubernetes_asyncio import client
 from kubetrol.adapters.kubernetes import KubernetesSession
 from kubetrol.config.catalog import load_catalog
 from kubetrol.domain.connections import ConnectionRequest
-from scripts.owned_kind import NODE_IMAGE, owned_cluster, run_owned
+from scripts.owned_kind import NODE_IMAGE, SHELL_IMAGE, owned_cluster, run_owned
 from scripts.verify_eks_auth import verify as verify_eks_auth
 from tests.terminal.pty_support import TerminalSession
-
-SHELL_IMAGE = "alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b"
 
 
 async def prepare(path: Path, context: str, namespace: str) -> tuple[dict, str]:

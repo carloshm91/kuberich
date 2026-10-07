@@ -1,5 +1,15 @@
 # First things to try
 
+## Current installation and trial guide: W01 #39
+
+Use the [current quickstart](quickstart.md) for one ordered trial of the installed
+preview. Checkout launch example:
+`uv run kubetrol --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly`.
+For a deliberately selected test scope, `--write` enables embedded shells even
+when the preferences are read-only. Public 0.0.1/PyPI/Homebrew publication remains
+pending #40; the source checkout reports `0.0.1.dev0`. Earlier sections below
+preserve historical checkpoints.
+
 The installable CLI, local preferences and first terminal window are available
 from the development checkout, including the live pod table, container logs and embedded shells. Use the latest
 resource-workspace trial below; earlier sections record previous checkpoints and may name

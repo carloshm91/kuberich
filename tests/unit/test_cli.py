@@ -20,6 +20,7 @@ def test_help_describes_available_behavior(flag: str, capsys: pytest.CaptureFixt
     assert "usage: kubetrol" in output.out
     assert "--version" in output.out
     assert "Live pod table preview" in output.out
+    assert "embedded container shells" in output.out
     assert output.err == ""
 
 
