@@ -39,6 +39,11 @@ release job rebuilds it. Preparation verifies archive metadata and produces an
 exclusive bundle with SHA256SUMS, exact version/commit and every retained byte.
 The read-only job uploads that verified candidate. Dry-run stops there.
 
+The requested commit must equal the dispatch event's `GITHUB_SHA`. Checking out
+an older ancestor does not change the event identity used by the default signed
+provenance predicate. This equality keeps that provenance bound to the source
+which produced the candidate.
+
 Publication begins only after environment review. Its separate job owns
 `contents: write`, `id-token: write`, and `attestations: write`; the validation
 job has only contents/actions reads. Fork PRs cannot dispatch the workflow.
@@ -89,6 +94,12 @@ its main/repository/workflow identity and successful validation job, downloads i
 original immutable candidate and verifies all bytes again. A failed publisher
 does not invalidate the already verified candidate. Audit evidence expires after
 24 hours; artifact retention alone does not extend qualification.
+
+A new dispatch can reuse that candidate only while main still points at its
+source commit. If main has advanced, rerun only the failed jobs of the original
+dispatch (`gh run rerun RUN_ID --failed`); its event SHA and successful validation
+artifact remain the original ones. Do not rerun successful validation jobs or
+rebuild the release to work around this check.
 
 Existing PyPI filenames must have the same SHA-256, be unyanked and belong to the
 same version. Existing tags must be annotated and point at the same commit.

@@ -158,6 +158,7 @@ def test_bounded_api_refuses_redirects_and_does_not_disclose_error_body(tmp_path
         ("GITHUB_ACTOR", "contributor"),
         ("GITHUB_REF", "refs/heads/feature"),
         ("GITHUB_REPOSITORY", "fork/kubetrol"),
+        ("GITHUB_SHA", "b" * 40),
         ("GITHUB_WORKFLOW_REF", "carloshm91/kubetrol/.github/workflows/other.yml@refs/heads/main"),
     ],
 )
@@ -167,11 +168,12 @@ def test_only_owner_main_dispatch_can_reach_publication_checks(monkeypatch, key,
         "GITHUB_EVENT_NAME": "workflow_dispatch",
         "GITHUB_REF": "refs/heads/main",
         "GITHUB_ACTOR": "carloshm91",
+        "GITHUB_SHA": SHA,
         "GITHUB_WORKFLOW_REF": f"{REPOSITORY}/.github/workflows/release.yml@refs/heads/main",
     }
     for name, content in variables.items():
         monkeypatch.setenv(name, content)
-    dispatch_identity()
+    dispatch_identity(SHA)
     monkeypatch.setenv(key, value)
     with pytest.raises(ValueError):
-        dispatch_identity()
+        dispatch_identity(SHA)

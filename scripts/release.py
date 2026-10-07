@@ -18,7 +18,14 @@ from typing import Any
 
 from packaging.version import Version
 
-from scripts.check_supply_chain import ROOT, artifact_inventory, read_json, verify, write_json
+from scripts.check_supply_chain import (
+    INPUT_FILES,
+    ROOT,
+    artifact_inventory,
+    read_json,
+    verify,
+    write_json,
+)
 from scripts.release_policy import (
     OWNER,
     RELEASE_WORKFLOW,
@@ -160,6 +167,7 @@ def require_source(root: Path, sha: str) -> None:
         "CHANGELOG.md",
         "LICENSE",
         ".gitignore",
+        *INPUT_FILES,
     ]
     changed = subprocess.check_output(
         ["git", "-C", str(root), "status", "--porcelain", "--untracked-files=all", "--", *paths],
@@ -360,12 +368,13 @@ def github_assets(api: GitHub, directory: Path, sha: str, version: str) -> list[
     return missing
 
 
-def dispatch_identity() -> None:
+def dispatch_identity(sha: str) -> None:
     expected = {
         "GITHUB_REPOSITORY": REPOSITORY,
         "GITHUB_EVENT_NAME": "workflow_dispatch",
         "GITHUB_REF": "refs/heads/main",
         "GITHUB_ACTOR": OWNER,
+        "GITHUB_SHA": sha,
     }
     if any(os.environ.get(key) != value for key, value in expected.items()):
         raise ValueError("Publishing checks require a maintainer dispatch from main")
@@ -421,7 +430,7 @@ def main() -> int:
             raise ValueError("Local candidates cannot publish or create tags")
         api = GitHub(os.environ.get("GH_TOKEN", ""))
         if args.operation == "preflight":
-            dispatch_identity()
+            dispatch_identity(args.commit)
             result = preflight(api, args.commit, args.version, args.index)
             result["download_run_id"] = result["quality_run_id"]
             if args.reuse_run:
@@ -443,7 +452,7 @@ def main() -> int:
             if args.operation == "verify":
                 result = {"verified": True, "candidate_only": args.candidate}
             else:
-                dispatch_identity()
+                dispatch_identity(args.commit)
                 preflight(api, args.commit, args.version, args.index)
                 if args.operation == "tag":
                     if args.index != "pypi":
