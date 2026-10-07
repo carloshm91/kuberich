@@ -32,6 +32,17 @@ def aws_environment(tmp_path, monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_declared_empty_aws_environment_values_are_passed_literally(
+    tmp_path, aws_environment
+):
+    entry = aws_entry(tmp_path)
+    entry["exec"]["env"].append({"name": "AWS_PAGER", "value": ""})
+    credentials = ExecToken(Entry(entry["exec"], tmp_path), {}, 5)
+    assert await credentials.token() == TOKEN
+    assert calls(tmp_path)[0]["pager"] == ""
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("version", [VERSION, "client.authentication.k8s.io/v1beta1"])
 @pytest.mark.parametrize("mode", ["Never", "IfAvailable"])
 async def test_aws_args_env_api_versions_and_expiry_refresh_are_preserved(

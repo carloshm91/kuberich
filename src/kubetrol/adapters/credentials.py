@@ -174,7 +174,8 @@ class ExecToken:
                         raise auth_problem(
                             "Credential helper environment names cannot contain '='."
                         )
-                    environment[name] = text(variable.get("value"))
+                    value = variable.get("value")
+                    environment[name] = "" if value == "" else text(value)
                 provide = spec.get("provideClusterInfo", False)
                 if type(provide) is not bool:
                     raise auth_problem("provideClusterInfo must be true or false.")

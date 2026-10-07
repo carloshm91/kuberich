@@ -6,7 +6,11 @@ Implemented local provider contracts: declared AWS exec arguments/environment,
 version negotiation, session-local refresh/cache revisions, fixed private-safe
 failure hints and captured AWS identity settings in delegated kubectl.
 The explicit read-only smoke is prepared for an authorized maintainer test context.
-**Real AWS/EKS qualification is pending; #21 remains open.**
+**Real AWS/EKS qualification is pending.** The maintainer explicitly deferred
+their real-cluster trial until an installable preview and authorized continuing
+private development with measured local/disposable-cluster evidence. C06 delivers
+the provider contracts under that clarification; Q05 #87 retains optional real
+provider certification. No EKS/SSO/role matrix certification is claimed.
 
 Evidence sources:
 

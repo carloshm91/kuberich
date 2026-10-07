@@ -6,7 +6,7 @@ resource-workspace trial below; earlier sections record previous checkpoints and
 short-lived branches that have since been deleted.
 Do not wait for every epic or the complete 1.0.0 parity audit to get feedback.
 
-## EKS helper contracts: C06 #21 — qualification in progress
+## EKS helper contracts: C06 #21
 
 The EKS work preserves the existing workspace, logs and embedded shell trial below.
 Local contracts now distinguish recognized AWS login/role errors and serialize
@@ -19,9 +19,10 @@ The exact local contract check is:
 uv run pytest tests/contract/test_eks_credentials.py tests/contract/test_eks_verifier.py tests/ui/test_eks_sessions.py tests/unit/test_credential_helpers.py
 ```
 
-These are synthetic/loopback tests. Actual EKS qualification is pending an
-explicitly supplied test context, so #21 remains open. The optional real read-only
-command and its limits are in [EKS authentication](eks-authentication.md).
+These are synthetic/loopback tests. The maintainer deferred their real-cluster
+trial until the installed preview; actual EKS certification remains pending Q05 #87.
+The optional real read-only command and its limits are in
+[EKS authentication](eks-authentication.md).
 
 ## Responsive header logo: #132
 

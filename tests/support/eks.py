@@ -18,6 +18,7 @@ def aws_entry(directory, *, version=VERSION, command=None, mode="Never"):
         "info=json.loads(os.environ['KUBERNETES_EXEC_INFO'])\n"
         "assert info['spec']['interactive'] is False\nassert sys.stdin.read() == ''\n"
         "record={'args':sys.argv[1:], 'profile':os.environ.get('AWS_PROFILE'), "
+        "'pager':os.environ.get('AWS_PAGER'), "
         "'config':os.environ.get('AWS_CONFIG_FILE'), 'home':os.environ.get('HOME'), "
         "'version':info['apiVersion']}\n"
         "with Path('calls').open('a') as stream: stream.write(json.dumps(record)+'\\n')\n"

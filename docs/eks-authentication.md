@@ -4,13 +4,16 @@ Kubetrol uses the `aws eks get-token` exec entry already declared in your truste
 local kubeconfig. The AWS CLI owns its credential chain, profiles, role assumption,
 SSO cache and refresh; Kubetrol does not embed AWS credentials or create clusters.
 The local contracts below are implemented. **Actual AWS/EKS qualification is
-pending a maintainer-provided test context; #21 remains open.**
+pending.** The maintainer deferred real-cloud trials to their later installed-preview
+test and authorized continuing with measured local/owned-kind evidence. C06 #21
+delivers these contracts; optional provider certification remains tracked in Q05 #87.
 
 ## Supported local contracts
 
 - Honor declared arguments/environment and `client.authentication.k8s.io/v1`
   or `v1beta1`. Version v1 requires `interactiveMode`; Never and IfAvailable
   receive closed stdin and `KUBERNETES_EXEC_INFO.spec.interactive=false`.
+  Empty environment values such as `AWS_PAGER=""` remain literal empty strings.
 - Cache tokens per context until their expiration, rejection or session closure.
   Concurrent refresh requests share the helper lock. Delayed 401 responses from
   an older cache revision cannot invalidate a newer revision, even when AWS
