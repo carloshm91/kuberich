@@ -47,16 +47,17 @@ def successful_jobs(jobs: list[dict[str, Any]], expected: set[str]) -> None:
 
 
 def qualified_run(run: dict[str, Any], sha: str, path: str) -> None:
+    event = "workflow_dispatch" if path == QUALITY_WORKFLOW else "push"
     if (
         run.get("head_sha") != sha
         or run.get("path") != path
         or run.get("head_branch") != "main"
-        or run.get("event") != "push"
+        or run.get("event") != event
         or run.get("status") != "completed"
         or run.get("conclusion") != "success"
         or run.get("head_repository", {}).get("full_name") != REPOSITORY
     ):
-        raise ValueError("Require a successful main push run from the exact repository/commit")
+        raise ValueError(f"Require a successful main {event} run from the exact repository/commit")
 
 
 def protection(main: dict[str, Any], environment: dict[str, Any]) -> None:
@@ -150,8 +151,9 @@ def release_preflight(api: API, sha: str, version: str, index: str) -> dict[str,
         ("quality.yml", APPLICATION_JOBS),
         ("repository.yml", {"Repository checks"}),
     ):
+        event = "workflow_dispatch" if filename == "quality.yml" else "push"
         runs = api(
-            f"{prefix}/actions/workflows/{filename}/runs?head_sha={sha}&event=push&per_page=100"
+            f"{prefix}/actions/workflows/{filename}/runs?head_sha={sha}&event={event}&per_page=100"
         )
         matching = [run for run in runs["workflow_runs"] if run.get("head_sha") == sha]
         if not matching:

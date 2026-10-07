@@ -1,23 +1,34 @@
 name: Application quality
-on:
+'on':
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: quality-${{ github.ref }}
+  group: quality-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  plan:
+    name: Verification plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Select the complete matrix for this event
+        id: plan
+        run: python3 -m scripts.ci_policy
   application:
+    needs: plan
     name: Application (${{ matrix.os }}, Python ${{ matrix.python }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     strategy:
       fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-        python: ['3.12', '3.13', '3.14']
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -45,7 +56,7 @@ jobs:
         run: |
           uv run ruff check .
           uv run ruff format --check .
-          uv run mypy --strict src/kubetrol scripts/check_coverage.py scripts/check_quality_gate.py scripts/check_supply_chain.py scripts/supply_chain.py scripts/dependency_inventory.py scripts/release.py scripts/release_policy.py scripts/homebrew.py scripts/owned_kind.py scripts/verify_kind_lifecycle.py scripts/verify_quickstart.py
+          uv run mypy --strict src/kubetrol scripts/check_coverage.py scripts/check_quality_gate.py scripts/ci_policy.py scripts/check_supply_chain.py scripts/supply_chain.py scripts/dependency_inventory.py scripts/release.py scripts/release_policy.py scripts/homebrew.py scripts/owned_kind.py scripts/verify_kind_lifecycle.py scripts/verify_quickstart.py
       - name: Run behavioral, gate-regression and clean-distribution checks
         run: uv run pytest --cov=kubetrol --cov-branch --cov-report=term-missing --cov-report=xml --cov-report=json
       - name: Verify context sessions, resource views and watches on an owned disposable cluster
@@ -72,6 +83,10 @@ jobs:
         env:
           KUBETROL_COVERAGE_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
+          if [ -z "$KUBETROL_COVERAGE_BASE" ]; then
+            test "$GITHUB_EVENT_NAME" = workflow_dispatch
+            KUBETROL_COVERAGE_BASE=$(git rev-parse HEAD^)
+          fi
           git rev-parse --verify "$KUBETROL_COVERAGE_BASE^{commit}"
           uv run diff-cover coverage.xml --compare-branch "$KUBETROL_COVERAGE_BASE" --fail-under 90 --ignore-staged --ignore-unstaged --total-percent-float --format json:diff-coverage.json
       - name: Build and validate artifact metadata
@@ -105,7 +120,7 @@ jobs:
   quality-gate:
     name: Quality gate
     if: ${{ always() }}
-    needs: application
+    needs: [plan, application]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -113,4 +128,4 @@ jobs:
       - name: Require every application matrix job to succeed
         env:
           KUBETROL_JOB_RESULTS: ${{ toJSON(needs) }}
-        run: python3 scripts/check_quality_gate.py
+        run: python3 -m scripts.check_quality_gate

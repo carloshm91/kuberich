@@ -1,5 +1,12 @@
 # First things to try
 
+## Private CI checkpoint: #109
+
+The installed preview and launch command below are unchanged. Private development
+uses all Linux Python minors plus one macOS baseline per PR; full six-environment
+qualification is mandatory before release. Actual hosted after-change timing
+remains pending while Actions cannot start. See [the usage audit](acceptance/private-ci.md).
+
 ## Current installation and trial guide: W01 #39
 
 Use the [current quickstart](quickstart.md) for one ordered trial of the installed

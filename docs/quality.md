@@ -137,9 +137,40 @@ artifacts, not published release packages.
 ## GitHub merge checks
 
 The stable required check names are **Quality gate**, **Repository checks**, and
-**DCO**. Quality gate uses `always()` and requires the complete application matrix
-to succeed; failure, cancellation, skip, missing dependencies, and invalid
-results cannot pass. There are no path filters or allowed matrix failures.
+**DCO**. Quality gate uses `always()` and requires both the verification planner
+and the complete event-specific application matrix to succeed. It independently
+validates the planner's output for the actual event/ref; failure, cancellation,
+skip, missing dependencies, invalid results and incomplete plans cannot pass.
+There are no path filters or allowed matrix failures.
+
+### Private development matrix: #109
+
+| Event | Required application jobs |
+| --- | --- |
+| Every pull request, including documentation | Linux: Python 3.12/3.13/3.14; macOS baseline: Python 3.12 |
+| Every main push | Linux: Python 3.12/3.13/3.14 |
+| Manual Application quality dispatch on main | Linux and macOS: Python 3.12/3.13/3.14 |
+
+Each selected job still runs the complete behavioral/terminal/packaging suite,
+independent coverage gates, build and supply-chain verification. Linux 3.12 keeps
+all four actual disposable-cluster rehearsals. The macOS baseline is a development
+check, not qualification of macOS 3.13/3.14. The planner refuses unknown events
+and non-main push/dispatch refs. PR checks stay on `pull_request`; a manual
+dispatch never substitutes for the required PR checks. Concurrency groups include
+the event so a main push cannot cancel a manual release qualification.
+
+Before a release, dispatch Application quality on the intended main commit and
+require all six successful jobs and its retained artifacts. Publication preflight
+requires the latest completed successful **manual** quality run for the exact
+commit and its main-push Repository checks; a routine three/four-job run cannot
+qualify publication. A later failed qualification attempt blocks an older success.
+No automatic schedule, extra paid runner, billing change or publication is added.
+
+The [CI usage audit](acceptance/private-ci.md) distinguishes measured historical
+job time from projected work reductions, inaccessible account billing and the
+unavailable after-change hosted measurement. Resume the configured development
+checks when Actions can start, then record an actual before/after comparison in
+#109. Full supported-platform qualification remains mandatory in #40.
 
 While this repository is private on its current GitHub plan, GitHub rejects
 branch-protection access with HTTP 403 and requires GitHub Pro. CI still executes
@@ -177,8 +208,8 @@ the PR/issue. Record which hosted jobs did not run; Linux evidence does not
 establish a new macOS result. Failed local checks still block delivery.
 
 Keep the hosted workflows and their true failure status; never manufacture a
-passing check or report blocked jobs as passed. Restore full platform CI when
-the restriction is resolved, and qualify the full supported matrix before the
+passing check or report blocked jobs as passed. Resume the configured event-specific
+CI when the restriction is resolved, and qualify the full supported matrix before the
 first public release. [Follow-up #109](https://github.com/carloshm91/kubetrol/issues/109)
 tracks a less costly development matrix and trigger policy. Account budgets,
 paid/persistent runners, repository visibility and publication remain separate

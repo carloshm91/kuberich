@@ -52,13 +52,16 @@ Git tags are vX.Y.Z-rc.N; the release workflow validates normalized equivalence.
    and verification of the public installation channels.
 2. Open a release PR that updates project.version, uv.lock if affected, the
    changelog, installation documentation, and migration notes. Link the gate issue.
-3. Run the complete quality, integration, terminal, dependency, and clean-install
-   matrix. Merge the release PR through protected main.
+3. Run the required PR checks and merge the release PR through protected main.
+   Dispatch Application quality on that exact main commit to run the complete
+   Linux/macOS Python 3.12/3.13/3.14 quality, integration, terminal, dependency and
+   clean-install matrix. Require every job to pass; routine PR/main matrices do
+   not qualify a release. Retain the successful manual run and its artifact IDs.
 4. The maintainer dispatches the release workflow with the intended version and
    exact main commit. It validates version/tag agreement, that commit's checks,
    milestone readiness, and that the tag/version has not already been published.
 5. Consume the artifacts already built and tested by that exact commit's successful
-   main quality run. Verify metadata, packaged assets, checksums, clean installs,
+   manual main quality run. Verify metadata, packaged assets, checksums, clean installs,
    audits and provenance. Retain those tested bytes without rebuilding them in
    the release workflow.
 6. After the release environment is approved by the maintainer, create the
