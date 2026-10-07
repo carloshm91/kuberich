@@ -507,6 +507,10 @@ existing 10×3 reservation for a compact wordmark below that width. The breakpoi
 preserves two shortcut columns where the full logo first appears. Narrow/short
 and launch-presentation visibility rules are retained, without a new dependency
 or external lookup. This is a visual abbreviation, not a project/CLI rename.
+`ViewActions` reflows its hints on its own non-bubbling
+[Resize event](https://textual.textualize.io/events/resize/), including late logo
+width changes after the outer header has settled. Root view changes still replace
+the current shortcuts through the shared header.
 
 ## Stable workspace and inline input: #127
 

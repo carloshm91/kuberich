@@ -132,6 +132,36 @@ class WorkspaceFrame(Vertical):
     """
 
 
+class ViewActions(Static):
+    """Reflow shortcuts when their own panel changes size, including logo changes."""
+
+    def __init__(self, shortcuts: tuple[tuple[str, str], ...]) -> None:
+        super().__init__("", id="view-actions", markup=False)
+        self.shortcuts = shortcuts
+
+    def on_resize(self) -> None:
+        self.render_shortcuts()
+
+    def render_shortcuts(self) -> None:
+        width = max(1, self.content_region.width)
+        columns = max(1, width // 24)
+        rows = max(1, self.content_region.height)
+        output = Text()
+        for row in range(min(rows, 6)):
+            if row:
+                output.append("\n")
+            for column in range(columns):
+                index = column * rows + row
+                if index < len(self.shortcuts):
+                    key, label = self.shortcuts[index]
+                    cell = safe_text(f"<{key}> {label}")
+                    cell.stylize(self.app.get_css_variables()["secondary"], 0, len(key) + 2)
+                    cell.truncate(max(1, width // columns - 1), overflow="ellipsis")
+                    cell.pad_right(max(0, width // columns - len(cell)))
+                    output.append_text(cell)
+        self.update(output)
+
+
 class WorkspaceHeader(Horizontal):
     """Responsive shared header; identity comes from the owned workspace."""
 
@@ -146,7 +176,7 @@ class WorkspaceHeader(Horizontal):
                 yield Static("", id=name, markup=False)
             yield Static(self.chrome.build, id="build-info", markup=False)
         with Horizontal(id="app-header"):
-            yield Static("", id="view-actions", markup=False)
+            yield ViewActions(self.shortcuts)
             yield Static("ktrol", id="brand", markup=False)
 
     def on_mount(self) -> None:
@@ -185,24 +215,9 @@ class WorkspaceHeader(Horizontal):
         self.call_after_refresh(self.render_shortcuts)
 
     def render_shortcuts(self) -> None:
-        widget = self.query_one("#view-actions", Static)
-        width = max(1, widget.content_region.width)
-        columns = max(1, width // 24)
-        rows = max(1, widget.content_region.height)
-        output = Text()
-        for row in range(min(rows, 6)):
-            if row:
-                output.append("\n")
-            for column in range(columns):
-                index = column * rows + row
-                if index < len(self.shortcuts):
-                    key, label = self.shortcuts[index]
-                    cell = safe_text(f"<{key}> {label}")
-                    cell.stylize(self.app.get_css_variables()["secondary"], 0, len(key) + 2)
-                    cell.truncate(max(1, width // columns - 1), overflow="ellipsis")
-                    cell.pad_right(max(0, width // columns - len(cell)))
-                    output.append_text(cell)
-        widget.update(output)
+        actions = self.query_one(ViewActions)
+        actions.shortcuts = self.shortcuts
+        actions.render_shortcuts()
 
 
 class Breadcrumbs(Static):

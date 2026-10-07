@@ -12,6 +12,7 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Fixed
 
+- Reflow header shortcuts when the logo changes width during terminal resizing.
 - Keep frame margins, header columns and interaction/footer rows stable across
   pod, namespace, container and log navigation, focus changes and mouse clicks.
 - Render the selected command completion inline in the dedicated `:` bar,

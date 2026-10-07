@@ -69,12 +69,12 @@ and captured container status/specification columns before remaining F05 work.
 It is independently unblocked after #127. Live container refresh, metrics and
 ephemeral debugging remain separate work; the release process remains #36/#40.
 
-## Epics
-
 Maintainer refinement [#132](https://github.com/carloshm91/kubetrol/issues/132)
 prioritizes an original responsive `ktrol` header logo after #19, before provider
 qualification. It is independently unblocked; the CLI remains `kubetrol` and
 the broader U01 theme/update-notice requirements stay separate.
+
+## Epics
 
 | Issue | Outcome | Completion milestone |
 | --- | --- | --- |
