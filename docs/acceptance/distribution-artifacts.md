@@ -67,7 +67,7 @@ the corrected policy; negative evidence is kept separately from successful gates
 
 Fresh installs resolved Textual 8.2.8, kubernetes-asyncio 36.1.0, Pyte 0.8.2,
 aiohttp 3.14.4, platformdirs 4.12.3, PyYAML 6.0.3 and regex 2026.9.29 on all
-three interpreters. The development lock uses aiohttp 3.13.3. These measured
+three interpreters. The development lock uses aiohttp 3.14.3. These measured
 fresh-install resolutions qualify the tested package; a dependency range does
 not promise that future index resolutions will return identical versions.
 

@@ -80,3 +80,5 @@ the implemented log viewer remain O06 #73.
 - [CycloneDX environment inventory](https://cyclonedx-bom-tool.readthedocs.io/en/latest/usage.html)
 - [CycloneDX 1.6 schema](https://github.com/CycloneDX/specification/blob/master/schema/bom-1.6.schema.json)
 - [Requests negative-control advisory](https://github.com/advisories/GHSA-x84v-xcm2-53pg)
+
+Measured candidate results: [Q04 acceptance](acceptance/dependency-security.md).
