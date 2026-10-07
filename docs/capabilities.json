@@ -62,17 +62,26 @@
       "tasks": [
         "C06",
         "C07",
-        "C08"
+        "C08",
+        "Q05"
       ],
       "source": "internal/client/client.go",
       "status": "planned",
-      "difference": "C01 qualifies static token/token-file, static embedded/file certificates and synthetic noninteractive exec-token contracts. EKS/AKS/GKE, interactive helpers, legacy providers and exec certificate rotation remain C06/C07/C08; no real-cloud compatibility claim.",
+      "difference": "C01 qualifies static/exec-token mechanisms. C06 delivers local AWS-shaped exec contracts, captured API/kubectl identity settings, cache-revision refresh and fixed safe diagnostics. The maintainer deferred actual EKS certification to opt-in Q05 #87 trials. AKS/GKE contracts, interactive helpers, legacy providers and exec certificate rotation remain C07/C08; no real-cloud compatibility claim.",
       "partial_evidence": [
         "docs/context-sessions.md",
         "tests/contract/test_sessions.py",
         "tests/contract/test_credentials.py",
         "tests/ui/test_sessions.py",
-        "scripts/verify_contexts_kind.py"
+        "scripts/verify_contexts_kind.py",
+        "docs/eks-authentication.md",
+        "docs/acceptance/eks-authentication.md",
+        "tests/contract/test_eks_credentials.py",
+        "tests/contract/test_eks_verifier.py",
+        "tests/ui/test_eks_sessions.py",
+        "tests/unit/test_credential_helpers.py",
+        "scripts/verify_eks_auth.py",
+        "scripts/verify_shell_kind.py"
       ]
     },
     {

@@ -184,6 +184,8 @@ class KubernetesSession:
                 user[destination] = value
         if self.credentials is not None:
             helper = copy.deepcopy(self.credentials.entry.data)
+            if self.credentials.eks and self.credentials.command is not None:
+                helper["command"] = self.credentials.command
             command = text(helper["command"])
             if "/" in command and not Path(command).is_absolute():
                 helper["command"] = str(self.credentials.entry.directory / command)
@@ -270,6 +272,7 @@ class KubernetesSession:
         while True:
             if credentials is not None:
                 configuration.api_key["BearerToken"] = "Bearer " + await credentials.token()
+            revision = credentials.revision if credentials is not None else None
             headers = [("Accept", accept), ("Accept-Encoding", "identity"), *self.impersonation]
             token = configuration.api_key.get("BearerToken")
             if token:
@@ -291,7 +294,7 @@ class KubernetesSession:
                 )
             async with response:
                 if response.status == 401 and credentials is not None and not refreshed:
-                    credentials.invalidate()
+                    credentials.invalidate(revision)
                     refreshed = True
                     continue
                 if response.status != 200:
@@ -482,4 +485,8 @@ class KubernetesSession:
                 await self.api.close()
                 self.api = None
         finally:
+            if self.credentials is not None:
+                self.credentials.invalidate()
+                self.credentials = None
+            self.configuration = None
             self.directory.cleanup()

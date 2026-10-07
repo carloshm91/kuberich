@@ -2,8 +2,10 @@
 
 C01 connects for bounded namespace discovery. C02/C03 provide resource reads/watches,
 and C04's [active view](resource-views.md) synchronizes pods for the selected scope
-with live/stale/error status and a collection count. The table still has no pod
-rows; logs and container exec are upcoming.
+with live/stale/error status and a collection count. The current workspace has
+live pod rows, details, container logs and embedded shells. Earlier sections
+describe the C01 authentication boundary; see [the current trial](first-preview.md)
+for navigation and [EKS contracts](eks-authentication.md) for provider qualification.
 Connection errors remain in the UI so you can choose another context or retry.
 
 ## Start and select

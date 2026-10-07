@@ -36,6 +36,10 @@ Captured container specification/status decisions in `domain/containers.py`
 join the critical 100% line/branch inventory in #129.
 F05 invocation overrides and bounded impersonation decisions in
 `domain/connection_overrides.py` join the critical inventory in #19.
+Fixed provider diagnostic decisions in `domain/credential_helpers.py` join the
+critical 100% line/branch inventory in C06 #21. Synthetic provider contracts,
+responsive Pilot navigation and the owned-kind AWS-shaped helper qualify local
+behavior; real EKS evidence remains a separate explicit test-context requirement.
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
 from transport and widget glue so exhaustive tests are practical. The critical
@@ -140,6 +144,36 @@ paid/persistent runners, repository visibility and publication remain separate
 maintainer decisions.
 
 ## Test layers
+
+### Behavior coverage for every feature
+
+The maintainer requested deeper scenario coverage while continuing incremental
+delivery. Each feature PR must map its acceptance criteria to applicable tests
+and identify any remaining manual/platform/provider qualification. Test quantity
+and code coverage alone do not establish completeness. Use the following scenario
+families where they apply, and link unresolved gaps to the implementing issue:
+
+- Resource views: discovered/supported endpoints, typed columns, empty collections,
+  denied/absent APIs, pagination, watch renewal/410/reconnect, context generations,
+  UID replacement, retained selection/filter/scroll, untrusted text and navigation.
+- Mutations including scale: read-only guards, exact captured target and confirmation,
+  input/limits, denied access, conflicts and validation failures, cancellation,
+  ambiguous transport outcomes and no blind retries. Exercise actual effects only
+  on owned disposable fixtures, then verify resulting API state.
+- Logs/processes/port-forward: bounded streams, startup/EOF/failure, concurrent
+  ownership, repeated start/stop, interruption, resize, exit and process/listener
+  cleanup. Demonstrate terminal restoration and real forwarding where applicable.
+- Credentials: declared args/env/profiles/roles, expiration and concurrent refresh,
+  malformed/private output, authorization versus login failure, context replacement
+  and cancellation. Keep local contracts distinct from opt-in real-cloud trials.
+- Installation/release: clean built artifacts, supported Python/OS combinations,
+  installed CLI behavior, upgrade/rollback and the actual promised install channels.
+
+Use controlled failure injection and negative controls for important regressions
+so a test demonstrates the incorrect behavior would fail. Add release-time soak
+scenarios under Q01 #38; do not replace behavioral assertions with implementation
+mirrors or arbitrary repetitions. The existing independent 90% floors and 100%
+critical-module gates remain mandatory, and maximum practical coverage is the target.
 
 - Unit: domain rules, typed sorting, quantities, validation, redaction, command
   arguments, transition logic, and retries with a controllable clock.

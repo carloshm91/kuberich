@@ -3,7 +3,9 @@
 import asyncio
 import json
 import os
+import shutil
 import signal
+from collections.abc import Mapping
 from contextlib import suppress
 from datetime import UTC, datetime
 from pathlib import Path
@@ -11,6 +13,11 @@ from typing import Any
 
 from kubetrol.config.catalog import Entry, mapping, text
 from kubetrol.domain.connections import ConnectionProblem, ConnectionState
+from kubetrol.domain.credential_helpers import (
+    helper_failure,
+    helper_start_failure,
+    is_eks_helper,
+)
 from kubetrol.errors import AppError
 
 
@@ -50,9 +57,9 @@ async def _execute(
                 os.killpg(process.pid, signal.SIGKILL)
             await process.wait()
             raise
-    except OSError:
+    except OSError as error:
         raise auth_problem(
-            "Cannot start credential helper. Check its installation and permissions."
+            helper_start_failure(argv, missing=isinstance(error, FileNotFoundError))
         ) from None
     assert process.stdout is not None and process.stderr is not None
     readers = [
@@ -61,9 +68,9 @@ async def _execute(
     ]
     try:
         async with asyncio.timeout(timeout):
-            stdout, _ = await asyncio.gather(*readers)
+            stdout, stderr = await asyncio.gather(*readers)
             if await process.wait() != 0:
-                raise auth_problem("Credential helper failed. Complete provider login and retry.")
+                raise auth_problem(helper_failure(argv, stderr))
             return stdout
     except TimeoutError:
         raise auth_problem(
@@ -90,9 +97,29 @@ class ExecToken:
         self.cached: str | None = None
         self.expiration: datetime | None = None
         self.lock = asyncio.Lock()
+        self.revision = 0
+        self.environment = dict(os.environ)
+        self.eks = False
+        self.command: str | None = None
 
-    def invalidate(self) -> None:
-        self.cached = None
+    def invalidate(self, rejected_revision: int | None = None) -> None:
+        # A delayed 401 for an older request must not erase an already refreshed
+        # token. This synchronous comparison contains no scheduling boundary.
+        if rejected_revision is None or self.revision == rejected_revision:
+            self.cached = None
+
+    def delegated_environment(self, inherited: Mapping[str, str]) -> dict[str, str]:
+        environment = dict(inherited)
+        if self.eks:
+            for name in tuple(environment):
+                if name.startswith("AWS_") or name == "HOME":
+                    del environment[name]
+            environment.update(
+                (name, value)
+                for name, value in self.environment.items()
+                if name.startswith("AWS_") or name == "HOME"
+            )
+        return environment
 
     async def token(self) -> str:
         async with self.lock:
@@ -132,7 +159,7 @@ class ExecToken:
                         "Credential helper args must be a list of at most 256 strings."
                     )
                 argv = [command, *(text(arg) for arg in args)]
-                environment = dict(os.environ)
+                environment = dict(self.environment)
                 variables = spec.get("env", [])
                 if variables is None:
                     variables = []
@@ -147,7 +174,8 @@ class ExecToken:
                         raise auth_problem(
                             "Credential helper environment names cannot contain '='."
                         )
-                    environment[name] = text(variable.get("value"))
+                    value = variable.get("value")
+                    environment[name] = "" if value == "" else text(value)
                 provide = spec.get("provideClusterInfo", False)
                 if type(provide) is not bool:
                     raise auth_problem("provideClusterInfo must be true or false.")
@@ -157,6 +185,13 @@ class ExecToken:
                 environment["KUBERNETES_EXEC_INFO"] = json.dumps(
                     {"apiVersion": version, "kind": "ExecCredential", "spec": info}
                 )
+                self.eks = is_eks_helper(argv)
+                if self.eks and "/" not in command:
+                    search_path = os.pathsep.join(
+                        str(self.entry.directory / path) if not Path(path).is_absolute() else path
+                        for path in environment.get("PATH", os.defpath).split(os.pathsep)
+                    )
+                    argv[0] = shutil.which(command, path=search_path) or command
                 output = await _execute(argv, environment, self.entry.directory, self.timeout)
                 response = mapping(json.loads(output))
                 if (
@@ -182,7 +217,8 @@ class ExecToken:
                     raise auth_problem(
                         "Credential helper returned expired or timezone-less credentials."
                     )
-                self.cached, self.expiration = token, expires
+                self.cached, self.expiration, self.command = token, expires, argv[0]
+                self.revision += 1
                 return token
             except (AppError, ValueError, UnicodeError, RecursionError):
                 raise auth_problem(

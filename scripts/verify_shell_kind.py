@@ -17,6 +17,7 @@ from kubernetes_asyncio import client
 from kubetrol.adapters.kubernetes import KubernetesSession
 from kubetrol.config.catalog import load_catalog
 from kubetrol.domain.connections import ConnectionRequest
+from scripts.verify_eks_auth import verify as verify_eks_auth
 from tests.terminal.pty_support import TerminalSession
 
 NODE_IMAGE = (
@@ -187,7 +188,13 @@ def trial(
                 terminal.wait_for_screen("Pod: kubetrol-shell-test/owned-shell-pod")
                 terminal.wait_for_screen("Container: app-b")
                 assert b"\x1b[?1049l" not in terminal.transcript[marker:]
-                if scenario in {"denied", "token-denied", "impersonation-denied", "missing-shell"}:
+                if scenario in {
+                    "denied",
+                    "token-denied",
+                    "impersonation-denied",
+                    "missing-shell",
+                    "eks-denied",
+                }:
                     terminal.wait_for(b"kubectl exec failed", since=marker, timeout=30)
                     terminal.wait_for(b"pods/exec", since=marker)
                     assert b"OWNED-SHELL> " not in terminal.transcript[marker:]
@@ -390,6 +397,67 @@ def main() -> None:
                 scenario="denied",
                 kubectl=kubectl,
             )
+            # EKS-shaped exec contract against a real API and real kubectl.
+            # The helper is a local synthetic shim using this owned kind token;
+            # none of these observations establish real AWS/EKS qualification.
+            eks_directory = directory / "eks-contract"
+            eks_directory.mkdir(mode=0o700)
+            token_path = eks_directory / "owned-token"
+            token_path.write_text(token)
+            token_path.chmod(0o600)
+            helper = eks_directory / "aws"
+            helper.write_text(
+                f"#!{sys.executable}\nimport json,os,sys\nfrom pathlib import Path\n"
+                "from datetime import datetime,timedelta,timezone\n"
+                "assert sys.argv[1:]==['eks','get-token','--cluster-name','synthetic-kind','--output','json','--role-arn','synthetic-role']\n"
+                "assert os.environ['AWS_PROFILE']=='synthetic-kind-profile'\n"
+                "info=json.loads(os.environ['KUBERNETES_EXEC_INFO'])\n"
+                "assert info['spec']['interactive'] is False\n"
+                f"token=Path({str(token_path)!r}).read_text()\n"
+                "print(json.dumps({'kind':'ExecCredential','apiVersion':info['apiVersion'],'status':{'token':token,'expirationTimestamp':(datetime.now(timezone.utc)+timedelta(minutes=14)).isoformat()}}))\n"
+            )
+            helper.chmod(0o700)
+            eks = yaml.safe_load(restricted.read_text())
+            eks["users"][0]["user"] = {
+                "exec": {
+                    "apiVersion": "client.authentication.k8s.io/v1beta1",
+                    "command": str(helper),
+                    "args": [
+                        "eks",
+                        "get-token",
+                        "--cluster-name",
+                        "synthetic-kind",
+                        "--output",
+                        "json",
+                        "--role-arn",
+                        "synthetic-role",
+                    ],
+                    "env": [{"name": "AWS_PROFILE", "value": "synthetic-kind-profile"}],
+                }
+            }
+            eks_path = eks_directory / "owned-config"
+            eks_path.write_text(yaml.safe_dump(eks))
+            eks_path.chmod(0o600)
+            eks_evidence = asyncio.run(
+                verify_eks_auth(
+                    ConnectionRequest(
+                        kubeconfig=str(eks_path), context=context, namespace=namespace, timeout=30
+                    ),
+                    kubectl,
+                )
+            )
+            trial(
+                eks_path,
+                context,
+                namespace,
+                directory / "eks-denied",
+                scenario="eks-denied",
+                kubectl=kubectl,
+            )
+            print(
+                "Synthetic EKS helper, actual kubectl reads and exec RBAC denial passed on owned kind.",
+                flush=True,
+            )
             output = Path(arguments.evidence)
             output.parent.mkdir(parents=True, exist_ok=True)
             output.write_text(
@@ -416,6 +484,9 @@ def main() -> None:
                         "explicit_cluster_user_tls_overrides": True,
                         "explicit_token_replaces_client_certificates": True,
                         "impersonated_shell_and_actual_rbac_denial": True,
+                        "synthetic_eks_exec_contract_on_real_kind": eks_evidence,
+                        "synthetic_eks_real_kubectl_exec_denial": True,
+                        "real_aws_eks_qualified": False,
                     },
                     indent=2,
                 )

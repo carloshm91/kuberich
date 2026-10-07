@@ -73,8 +73,13 @@ class ShellService:
         if target.session.context != self.client.context.name:
             raise AppError("Shell requires the captured client's context.")
         path = Path(self.client.directory.name) / f"exec-{uuid4().hex}.json"
+        environment, directory = self.environment, self.directory
+        credentials = self.client.credentials
+        if credentials is not None and credentials.eks:
+            environment = credentials.delegated_environment(environment)
+            directory = credentials.entry.directory
         command = kubectl_exec_command(
-            target, (path,), self.shell, environment=self.environment, directory=self.directory
+            target, (path,), self.shell, environment=environment, directory=directory
         )
         try:
             configuration = json.dumps(self.client.delegated_config(), allow_nan=False)

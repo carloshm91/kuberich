@@ -17,6 +17,15 @@ from parser tests alone. See [current CLI behavior](k9s-cli.md).
 
 ## Current maintainer priority
 
+The current instruction is continuous private delivery: verify and squash-merge
+each completed implementation PR, then proceed to the next unblocked task without
+waiting for intermediate manual trials. Keep checkpoints documented; the
+maintainer will test and provide feedback later. Provider trials are deferred to
+that installed preview: C06/C07 deliver measured local/owned-cluster contracts,
+with opt-in real certification retained in Q05 #87 and explicit evidence limits.
+Publication/visibility approvals and public-release gates remain separate.
+The paragraphs below preserve the earlier implementation-order refinements.
+
 After C01 and its preview correction (#102), prioritize the path to the first
 pod view: **C02 → C03 → C04 → B02 → B03**. This delivery order takes precedence
 over the remaining v0.0.1 table order below, preserves every prerequisite, and
