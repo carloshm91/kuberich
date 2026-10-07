@@ -252,7 +252,7 @@ def main() -> None:
         subprocess.check_output([str(kubectl), "version", "--client", "-o", "json"])
     )["clientVersion"]["gitVersion"]
     assert version == "v1.36.4", "Use the matching verified kubectl 1.36.4 binary for this trial."
-    name = "kubetrol-test-" + uuid4().hex[:12]
+    owned_cluster_name = "kubetrol-test-" + uuid4().hex[:12]
     namespace = "kubetrol-shell-test"
     with TemporaryDirectory(prefix="kubetrol-shell-kind-") as folder:
         directory = Path(folder)
@@ -266,7 +266,7 @@ def main() -> None:
                     "create",
                     "cluster",
                     "--name",
-                    name,
+                    owned_cluster_name,
                     "--kubeconfig",
                     str(path),
                     "--image",
@@ -279,7 +279,7 @@ def main() -> None:
                 timeout=300,
             )
             data = yaml.safe_load(path.read_text())
-            context = "kind-" + name
+            context = "kind-" + owned_cluster_name
             assert data["current-context"] == context
             data["contexts"].append(
                 {"name": "kubetrol-test-Alias", "context": dict(data["contexts"][0]["context"])}
@@ -401,7 +401,7 @@ def main() -> None:
                         "kubectl": version,
                         "node_image": NODE_IMAGE,
                         "shell_image": SHELL_IMAGE,
-                        "owned_cluster": name,
+                        "owned_cluster": owned_cluster_name,
                         "resource": resource,
                         "real_two_container_selection": True,
                         "embedded_shell_and_persistent_captured_heading": True,
@@ -427,12 +427,16 @@ def main() -> None:
             )
         finally:
             subprocess.run(
-                [arguments.kind, "delete", "cluster", "--name", name],
+                [arguments.kind, "delete", "cluster", "--name", owned_cluster_name],
                 env=environment,
                 check=True,
                 timeout=90,
             )
-            print("Owned disposable cluster deleted.", flush=True)
+            remaining = subprocess.check_output(
+                [arguments.kind, "get", "clusters"], text=True
+            ).splitlines()
+            assert owned_cluster_name not in remaining, "The owned cluster must be deleted."
+            print("Owned disposable cluster deleted and absence verified.", flush=True)
 
 
 if __name__ == "__main__":
