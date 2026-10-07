@@ -7,6 +7,16 @@ short-lived branches that have since been deleted.
 Current delivery continues without waiting for intermediate manual trials. The
 maintainer will test the installed product and provide feedback later.
 
+## Release pipeline checkpoint: D02 #36
+
+The installed pod/log/embedded-shell UI is unchanged. Release preparation now
+verifies an exact candidate bundle, source identity and original artifact bytes;
+publication is a separately reviewed workflow and is not available under the
+current private/billing/protection restrictions. The exact local test command is
+`uv run --locked --python 3.12 pytest tests/quality/test_release_policy.py tests/quality/test_release_transport.py tests/packaging/test_release_candidate.py`.
+See [release pipeline](release-pipeline.md) for local-only candidate commands,
+owner setup, complete matrix requirements and recovery. No tag/package is published.
+
 ## Dependency security checkpoint: Q04 #35
 
 The terminal behavior remains the installed pod/log/shell preview below. Q04 adds

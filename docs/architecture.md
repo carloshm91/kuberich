@@ -100,6 +100,14 @@ to candidate artifacts and reviewed inputs. CI verifies that evidence against it
 final build. These unsigned sidecars precede D02's publishing/attestation boundary;
 they neither access Kubernetes nor publish a package.
 
+D02 release tooling also remains outside the runtime. Pure `release_policy.py`
+decisions validate versions, actual checks/protections, source ownership and
+immutable retry identities. `release.py` owns bounded HTTP/filesystem operations
+and exact artifact bundles. A maintainer-dispatched workflow consumes approved
+main quality artifacts without rebuilding; OIDC/write/attestation privileges are
+confined to the reviewed publication job. Local development candidates cannot
+publish. No local merge exception authorizes a release.
+
 B03 adds `regex` for local filtering because matching supports an actual timeout
 and releases the GIL for immutable strings. A thread alone cannot stop an
 unbounded standard-library regex match. Queries remain bounded and matching uses

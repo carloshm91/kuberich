@@ -5,6 +5,12 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ## Unreleased
 
+### Added
+
+- Prepare exact local release candidates and a maintainer-reviewed OIDC pipeline
+  that consumes tested artifacts without rebuilding, enforces real main/matrix/
+  milestone qualification, and recovers partial uploads without replacing bytes.
+
 - Audit locked and freshly installed runtimes, validate artifact-linked CycloneDX
   SBOMs and original license notices, and reject incomplete security evidence,
   floating CI actions and undocumented or expired vulnerability exceptions.
