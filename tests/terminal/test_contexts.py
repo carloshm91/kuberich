@@ -14,7 +14,7 @@ from tests.support.terminal_api import Server, config
 from tests.terminal.pty_support import TerminalSession
 
 
-def verify_connection_overrides(tmp_path, launch):
+def verify_connection_overrides(tmp_path, launch, *, evidence="source-connection-overrides"):
     server = Server()
     server.impersonation = ("owned-viewer", ("one", "two"))
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -61,7 +61,7 @@ def verify_connection_overrides(tmp_path, launch):
             terminal.wait_for_screen("Namespace: team", since=marker)
             terminal.send(b"q")
             terminal.finish()
-            terminal.save_evidence("connection-overrides")
+            terminal.save_evidence(evidence)
             assert (
                 b"synthetic-pty" not in terminal.transcript
                 and b"wrong-old-token" not in terminal.transcript

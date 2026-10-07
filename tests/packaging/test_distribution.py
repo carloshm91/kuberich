@@ -240,7 +240,9 @@ def test_installed_connection_overrides_in_real_terminal(installed_wheel):
     from tests.terminal.test_contexts import verify_connection_overrides
 
     binary_dir, directory = installed_wheel
-    verify_connection_overrides(directory, [str(binary_dir / "kubetrol")])
+    verify_connection_overrides(
+        directory, [str(binary_dir / "kubetrol")], evidence="installed-connection-overrides"
+    )
 
 
 def test_installed_initial_help_and_visibility_options_restore_tty(
