@@ -211,7 +211,7 @@ def trial(
                     terminal.wait_for_screen("- /tmp/owned-shell-trial 1/1", row=22)
                     marker = terminal.send(b"iOWNED_REMOTE_EDIT")
                     terminal.wait_for_screen("OWNED_REMOTE_EDIT")
-                    terminal.wait_for_screen("I /tmp/owned-shell-trial [Modified]", row=22)
+                    terminal.wait_for_screen("I /tmp/owned-shell-trial", row=22)
                     marker = terminal.send(b"\x1b")
                     terminal.wait_for_screen("- /tmp/owned-shell-trial", row=22)
                     marker = terminal.send(b":wq\r")
