@@ -42,6 +42,8 @@ async def test_scoped_namespace_and_pod_commands_leave_context_filter_on_context
             )
             assert app.filter_input.value == ""
             await wait_for(lambda: app.resources.row_count == 1)
+            await pilot.pause()
+            assert app.breadcrumbs.destination == "Stay in pods"
             assert app.sessions.observation.namespace == (
                 None if command.endswith("*") else "default"
             )

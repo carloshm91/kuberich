@@ -275,7 +275,7 @@ class KubetrolApp(App[None]):
             else "Pods"
             if self._resource_name == "namespaces"
             else self._context_parent.resource.title()
-            if self._context_parent is not None
+            if self._resource_name == "contexts" and self._context_parent is not None
             else "Pods"
             if self._resource_name == "contexts"
             else "Stay in pods"
