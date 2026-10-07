@@ -309,7 +309,8 @@
         "docs/acceptance/resource-workspace.md",
         "tests/ui/test_resource_workspace.py",
         "docs/acceptance/stable-workspace.md",
-        "tests/ui/test_layout_snapshots.py"
+        "tests/ui/test_layout_snapshots.py",
+        "docs/acceptance/header-logo.md"
       ]
     },
     {
@@ -381,7 +382,8 @@
         "docs/resource-workspace.md",
         "docs/acceptance/resource-workspace.md",
         "tests/ui/test_resource_workspace.py",
-        "tests/ui/test_layout_snapshots.py"
+        "tests/ui/test_layout_snapshots.py",
+        "docs/acceptance/header-logo.md"
       ]
     },
     {

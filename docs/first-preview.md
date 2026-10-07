@@ -25,6 +25,7 @@ The project, package and command remain `kubetrol`, with version `0.0.1.dev0`.
 
 The navigation trial below remains applicable. Tab/click focus feedback is
 tracked separately in #61; this branding change does not resolve it.
+See [actual renders and measured qualification](acceptance/header-logo.md).
 
 ## Bordered commands, context table and container details: #129
 
