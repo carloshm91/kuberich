@@ -5,6 +5,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ## Unreleased
 
+### Changed
+
+- Use an original `ktrol` ASCII logo in the upper-right shared workspace header,
+  with a compact wordmark below 120 columns and the existing hidden-header options.
+
 ### Fixed
 
 - Keep frame margins, header columns and interaction/footer rows stable across

@@ -103,6 +103,11 @@ cluster/user aliases and the logo. Below 16 rows the three-row context/namespace
 state header preserves room for resources/inputs. Container hints and log controls
 remain available; help contains secondary shortcuts. NO_COLOR retains textual cues.
 
+The upper-right brand is an original five-row `ktrol` ASCII logo from 120 columns,
+or a compact wordmark at 70–119 columns. Resizing changes only the mark's reserved
+width, keeping the shared view geometry consistent at each terminal size.
+The project, installed version label and CLI remain Kubetrol/`kubetrol`.
+
 `--headless` hides the shortcut/logo header, `--logoless` hides its brand and
 `--crumbsless` hides identity/navigation bars. Log `z` hides the header/route and
 frame, preserving search, controls and stream ownership.

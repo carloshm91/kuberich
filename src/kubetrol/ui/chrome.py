@@ -13,6 +13,12 @@ from textual.widgets import Static
 from kubetrol.security.presentation import safe_text
 from kubetrol.ui.presentation import DEFAULT_PRESENTATION, Presentation
 
+KTROL_LOGO = r""" _    _             _
+| | _| |_ _ __ ___ | |
+| |/ / __| '__/ _ \| |
+|   <| |_| | | (_) | |
+|_|\_\\__|_|  \___/|_|"""
+
 K9S_THEME = Theme(
     name="k9s",
     primary="#5fd7ff",
@@ -141,7 +147,7 @@ class WorkspaceHeader(Horizontal):
             yield Static(self.chrome.build, id="build-info", markup=False)
         with Horizontal(id="app-header"):
             yield Static("", id="view-actions", markup=False)
-            yield Static("┌────────┐\n│kubetrol│\n└────────┘", id="brand", markup=False)
+            yield Static("ktrol", id="brand", markup=False)
 
     def on_mount(self) -> None:
         self.update_identity()
@@ -164,14 +170,18 @@ class WorkspaceHeader(Horizontal):
     def layout_header(self) -> None:
         short = self.app.size.height < 16
         compact = self.app.size.width < 70
+        compact_logo = self.app.size.width < 120
         self.set_class(short, "header-short")
         self.set_class(compact, "header-compact")
+        self.set_class(compact_logo, "header-logo-compact")
         self.screen.set_class(short, "short")
         self.screen.set_class(compact, "compact")
         self.styles.height = 3 if short else 4 if compact else 6
         self.query_one("#scope-bar").display = not self.chrome.presentation.crumbsless
         self.query_one("#app-header").display = not short and not self.chrome.presentation.headless
-        self.query_one("#brand").display = not compact and not self.chrome.presentation.logoless
+        brand = self.query_one("#brand", Static)
+        brand.display = not compact and not self.chrome.presentation.logoless
+        brand.update("ktrol" if compact_logo else KTROL_LOGO)
         self.call_after_refresh(self.render_shortcuts)
 
     def render_shortcuts(self) -> None:

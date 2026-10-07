@@ -71,6 +71,11 @@ ephemeral debugging remain separate work; the release process remains #36/#40.
 
 ## Epics
 
+Maintainer refinement [#132](https://github.com/carloshm91/kubetrol/issues/132)
+prioritizes an original responsive `ktrol` header logo after #19, before provider
+qualification. It is independently unblocked; the CLI remains `kubetrol` and
+the broader U01 theme/update-notice requirements stay separate.
+
 | Issue | Outcome | Completion milestone |
 | --- | --- | --- |
 | [E01 #1](https://github.com/carloshm91/kubetrol/issues/1) | Project foundation and enforced quality | v0.0.1 |

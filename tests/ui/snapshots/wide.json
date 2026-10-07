@@ -1,0 +1,70 @@
+{
+  "size": [
+    120,
+    30
+  ],
+  "compact": false,
+  "short": false,
+  "regions": {
+    "brand": [
+      97,
+      0,
+      22,
+      5
+    ],
+    "context": [
+      1,
+      0,
+      47,
+      1
+    ],
+    "namespace": [
+      1,
+      3,
+      47,
+      1
+    ],
+    "connection": [
+      1,
+      4,
+      47,
+      1
+    ],
+    "resource-view": [
+      1,
+      10,
+      118,
+      18
+    ],
+    "resources": [
+      2,
+      11,
+      116,
+      2
+    ],
+    "empty-title": [
+      3,
+      17,
+      114,
+      1
+    ],
+    "filter": [
+      3,
+      6,
+      116,
+      1
+    ],
+    "command": [
+      4,
+      8,
+      114,
+      1
+    ],
+    "status": [
+      1,
+      29,
+      118,
+      1
+    ]
+  }
+}

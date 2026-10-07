@@ -501,6 +501,13 @@ Container/log screens retain existing lifetime/target services with shared heade
 and trails. Embedded shells keep independent remote-key routing and target frame.
 See [workspace controls and limits](resource-workspace.md).
 
+Preview refinement #132 replaces the boxed brand with an original literal ASCII
+`ktrol` logo. The shared header reserves 22×5 cells from 120 columns and uses the
+existing 10×3 reservation for a compact wordmark below that width. The breakpoint
+preserves two shortcut columns where the full logo first appears. Narrow/short
+and launch-presentation visibility rules are retained, without a new dependency
+or external lookup. This is a visual abbreviation, not a project/CLI rename.
+
 ## Stable workspace and inline input: #127
 
 `WorkspaceBars` reserves two interaction rows and `WorkspaceFrame` owns the same
