@@ -268,15 +268,18 @@ def terminal_shell(
                             else b"Shell closed",
                             since=marker,
                         )
-                terminal.resize(100, 30)
+                marker = terminal.resize(100, 30)
+                terminal.wait_for_screen(
+                    "Esc → Pods", row=28, since=marker, absent=("Container shell",)
+                )
                 terminal.send(b"\x1b[1;5H\x1b[1;5F")
             if scenario not in {"terminate", "quit", "hangup", "lost_ssh"}:
                 marker = terminal.send(b"\x1b")
-                terminal.wait_for(b"Sort NAME", since=marker)
+                terminal.wait_for_screen("Sort NAME", since=marker)
                 marker = terminal.send(b":shell\r" if scenario != "readonly" else b"\r")
-                terminal.wait_for(b"Containers", since=marker)
+                terminal.wait_for_screen("Containers", since=marker)
                 marker = terminal.send(b"\x1b")
-                terminal.wait_for(b"Sort NAME", since=marker)
+                terminal.wait_for_screen("Sort NAME", since=marker)
                 terminal.send(b"\x11")
                 terminal.finish()
             terminal.save_evidence(evidence)

@@ -182,6 +182,13 @@ class TerminalSession:
             assert time.monotonic() < deadline, f"Missing visible {text!r}: {self.screen.display!r}"
 
     def resize(self, width: int, height: int) -> int:
+        # Consume bytes already emitted for the old geometry before changing
+        # the observer's screen. Otherwise delayed PTY/SSH output is replayed
+        # against dimensions it was never rendered for.
+        for _ in range(16):
+            if not select.select([self.master], [], [], 0)[0]:
+                break
+            self._read(0)
         marker = len(self.transcript)
         self.sizes.append((width, height))
         self.screen.resize(lines=height, columns=width)
@@ -259,6 +266,24 @@ class TerminalSession:
         trace: TracebackType | None,
     ) -> None:
         try:
+            if kind is not None:
+                output = ROOT / "artifacts/terminal"
+                output.mkdir(parents=True, exist_ok=True)
+                name = f"failure-{time.time_ns()}"
+                (output / f"{name}.ansi").write_bytes(self.transcript)
+                (output / f"{name}.json").write_text(
+                    json.dumps(
+                        {
+                            "result": "failed",
+                            "error_type": kind.__name__,
+                            "sizes": self.sizes,
+                            "screen": self.screen.display,
+                            "terminal_completion": self.completion,
+                        },
+                        indent=2,
+                    )
+                    + "\n"
+                )
             if self.process.poll() is None:
                 os.killpg(self.process.pid, signal.SIGTERM)
                 try:
