@@ -4,6 +4,7 @@ import asyncio
 import os
 import signal
 from contextlib import contextmanager
+from dataclasses import replace
 
 import pytest
 
@@ -201,7 +202,7 @@ async def test_shell_screen_precedes_child_and_presentation_failure_restores_app
             if presentation_failure:
                 raise AppError("owned screen failure")
 
-    async def foreground(command, *, descriptor, claim, guard):
+    async def foreground(command, *, descriptor, claim, guard, timeout=None):
         assert command is spec and descriptor == 27
         app.events.append("child started")
         return ProcessResult(ProcessStatus.SUCCEEDED, 0)
@@ -227,3 +228,43 @@ async def test_shell_screen_precedes_child_and_presentation_failure_restores_app
         assert signal.getsignal(signal.SIGTERM) == previous
     finally:
         await runner.close()
+
+
+@pytest.mark.asyncio
+async def test_authentication_handoff_presents_fixed_frame_and_passes_deadline(
+    tmp_path, monkeypatch
+):
+    app = NativeApp()
+    async with ProcessRunner(AccessPolicy(True)) as runner:
+        spec = replace(command(tmp_path), purpose=ProcessPurpose.AUTHENTICATE)
+
+        class Lease:
+            descriptor = 27
+
+            def __init__(self, fd):
+                pass
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                app.events.append("restored")
+
+            def claim(self, group):
+                pass
+
+            def present(self, heading):
+                assert "configured Azure authentication" in heading and "Ctrl+C" in heading
+                assert "owned" not in heading
+                app.events.append("presented")
+
+        async def foreground(command, *, descriptor, claim, guard, timeout):
+            assert command is spec and descriptor == 27 and timeout == 300
+            app.events.append("started")
+            return ProcessResult(ProcessStatus.SUCCEEDED, 0, b"private-synthetic-response")
+
+        monkeypatch.setattr(handoff, "TerminalLease", Lease)
+        monkeypatch.setattr(runner, "foreground", foreground)
+        result = await handoff.terminal_handoff(app, runner, spec, timeout=300)
+        assert result.stdout == b"private-synthetic-response"
+        assert app.events == ["suspended", "presented", "started", "restored", "resumed"]

@@ -75,7 +75,7 @@ class ShellService:
         path = Path(self.client.directory.name) / f"exec-{uuid4().hex}.json"
         environment, directory = self.environment, self.directory
         credentials = self.client.credentials
-        if credentials is not None and credentials.eks:
+        if credentials is not None and (credentials.eks or credentials.azure):
             environment = credentials.delegated_environment(environment)
             directory = credentials.entry.directory
         command = kubectl_exec_command(

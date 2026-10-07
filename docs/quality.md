@@ -40,6 +40,9 @@ Fixed provider diagnostic decisions in `domain/credential_helpers.py` join the
 critical 100% line/branch inventory in C06 #21. Synthetic provider contracts,
 responsive Pilot navigation and the owned-kind AWS-shaped helper qualify local
 behavior; real EKS evidence remains a separate explicit test-context requirement.
+C07 extends that same critical module with Azure mode/prompt/error and bounded
+bearer decisions. Native provider handoff also receives actual PTY and fresh-wheel
+checks for private stdout, declared stdin, Ctrl+C/cancel/SIGTERM and restoration.
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
 from transport and widget glue so exhaustive tests are practical. The critical

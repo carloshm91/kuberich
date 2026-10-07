@@ -16,7 +16,7 @@ Release entries are written in release PRs and linked to their Git tags.
   exposing provider output; share expiring-token refreshes and ignore delayed
   401 invalidation of newer cache revisions, including identical token bytes.
 - Preserve a session's captured AWS environment, working directory and helper
-  executable in delegated shells. Real EKS qualification remains pending C06 #21.
+  executable in delegated shells. Actual EKS qualification remains deferred to Q05 #87.
 - Reflow header shortcuts when the logo changes width during terminal resizing.
 - Keep frame margins, header columns and interaction/footer rows stable across
   pod, namespace, container and log navigation, focus changes and mouse clicks.
@@ -45,6 +45,12 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Native Azure kubelogin contracts and explicit `:login`, with mode-aware terminal
+  stdin, private credential stdout, safe provider hints, captured delegated Azure
+  identity and retry after cancellation. Actual Entra/AKS certification remains
+  opt-in Q05 #87; generic exec TLS certificate rotation remains C08 #47.
+- Exec token validation independent of argument length, allowing bounded large
+  JWTs without accepting header controls or whitespace.
 - Invocation-scoped cluster/user aliases, token and CA/client certificate overrides,
   repeated impersonation groups and the same captured identity in API streams and
   delegated container shells. Effective identity is visible in the header.

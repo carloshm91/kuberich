@@ -16,6 +16,7 @@ from kubetrol.adapters.pty import PtyEndpoint
 from kubetrol.domain.processes import (
     ProcessCommand,
     ProcessMode,
+    ProcessPurpose,
     ProcessResult,
     ProcessStatus,
     exit_status,
@@ -251,8 +252,12 @@ class ProcessRunner:
                 *argv,
                 env=dict(command.environment),
                 cwd=command.directory,
-                stdin=terminal_fd if foreground else asyncio.subprocess.DEVNULL,
-                stdout=terminal_fd if foreground else asyncio.subprocess.PIPE,
+                stdin=terminal_fd
+                if foreground and command.terminal_input
+                else asyncio.subprocess.DEVNULL,
+                stdout=terminal_fd
+                if foreground and command.purpose is not ProcessPurpose.AUTHENTICATE
+                else asyncio.subprocess.PIPE,
                 stderr=terminal_fd if foreground else asyncio.subprocess.PIPE,
                 start_new_session=embedded or not foreground,
                 process_group=0 if foreground and not embedded else None,
@@ -331,11 +336,12 @@ class ProcessRunner:
         descriptor: int,
         claim: Callable[[int], None],
         guard: TargetGuard | None = None,
+        timeout: float | None = None,
     ) -> ProcessResult:
         self.require(command, ProcessMode.FOREGROUND, guard)
         if not os.isatty(descriptor):
             raise AppError("Foreground processes require a real interactive terminal.")
-        session = await self._start(command, ProcessMode.FOREGROUND, None, guard, descriptor)
+        session = await self._start(command, ProcessMode.FOREGROUND, timeout, guard, descriptor)
         try:
             if not session.output.exited.done():
                 claim(session.pid)

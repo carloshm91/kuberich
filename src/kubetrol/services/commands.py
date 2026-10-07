@@ -17,6 +17,7 @@ class Command(Enum):
     NAMESPACES = auto()
     STATUS = auto()
     RETRY = auto()
+    LOGIN = auto()
     BACK = auto()
     FORWARD = auto()
     SHELL = auto()
@@ -38,6 +39,7 @@ ALIASES = {
     **dict.fromkeys(("ns", "namespace", "namespaces"), Command.NAMESPACES),
     "status": Command.STATUS,
     "retry": Command.RETRY,
+    "login": Command.LOGIN,
     "back": Command.BACK,
     "forward": Command.FORWARD,
     "shell": Command.SHELL,

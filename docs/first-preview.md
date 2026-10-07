@@ -4,7 +4,26 @@ The installable CLI, local preferences and first terminal window are available
 from the development checkout, including the live pod table, container logs and embedded shells. Use the latest
 resource-workspace trial below; earlier sections record previous checkpoints and may name
 short-lived branches that have since been deleted.
-Do not wait for every epic or the complete 1.0.0 parity audit to get feedback.
+Current delivery continues without waiting for intermediate manual trials. The
+maintainer will test the installed product and provide feedback later.
+
+## Azure helper contracts and explicit login: C07 #22
+
+The workspace now has `:login` for the declared Azure kubelogin helper. Existing
+sessions remain usable through normal `uv run kubetrol`; device/browser login can
+use the native terminal explicitly, restore the UI and reconnect. Read-only mode
+permits authentication while still blocking cluster actions. Tokens are captured
+privately; native prompts use stderr, and stdin follows Never/IfAvailable/Always.
+
+The tested local check is:
+
+```sh
+uv run pytest tests/contract/test_azure_credentials.py tests/contract/test_aks_verifier.py tests/ui/test_azure_sessions.py tests/terminal/test_azure_login.py tests/unit/test_credential_helpers.py
+```
+
+These tests use synthetic providers and owned APIs/PTYS. Actual AKS/Entra trials
+remain deferred to Q05 #87; no intermediate manual trial is required to continue.
+See [AKS behavior](aks-authentication.md) and [acceptance](acceptance/aks-authentication.md).
 
 ## EKS helper contracts: C06 #21
 

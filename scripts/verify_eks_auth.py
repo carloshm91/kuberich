@@ -12,7 +12,7 @@ from kubetrol.adapters.credentials import _execute
 from kubetrol.adapters.kubernetes import KubernetesSession
 from kubetrol.config.catalog import load_catalog, mapping, text
 from kubetrol.domain.connections import ConnectionProblem, ConnectionRequest
-from kubetrol.domain.credential_helpers import is_eks_helper
+from kubetrol.domain.credential_helpers import is_azure_helper, is_eks_helper
 from kubetrol.errors import AppError
 from kubetrol.services.shell import _ConnectionFile
 
@@ -25,7 +25,9 @@ def pod_list(payload: object) -> None:
         raise AppError("The read-only check exceeded its one-pod response bound.")
 
 
-async def verify(request: ConnectionRequest, kubectl: Path) -> dict[str, object]:
+async def verify(
+    request: ConnectionRequest, kubectl: Path, *, provider: str = "eks"
+) -> dict[str, object]:
     if request.kubeconfig is None or request.context is None or request.namespace is None:
         raise AppError(
             "Supply an explicit test kubeconfig, context and namespace; no ambient fallback."
@@ -34,8 +36,14 @@ async def verify(request: ConnectionRequest, kubectl: Path) -> dict[str, object]
     selected = catalog.select(request.context)
     spec = mapping(selected.user.data.get("exec"))
     args = spec.get("args", [])
-    if not isinstance(args, list) or not is_eks_helper([text(spec.get("command")), *args]):
-        raise AppError("The selected test user must declare aws eks get-token.")
+    if provider not in {"eks", "aks"}:
+        raise AppError("Select an explicitly supported test provider.")
+    recognize = is_eks_helper if provider == "eks" else is_azure_helper
+    if not isinstance(args, list) or not recognize([text(spec.get("command")), *args]):
+        raise AppError(
+            "The selected test user must declare "
+            + ("aws eks get-token." if provider == "eks" else "Azure kubelogin get-token.")
+        )
     session = KubernetesSession(selected, request.timeout)
     connection_file = _ConnectionFile(Path(session.directory.name) / "read-only-kubectl.json")
     path = f"/api/v1/namespaces/{request.namespace}/pods"
@@ -45,7 +53,7 @@ async def verify(request: ConnectionRequest, kubectl: Path) -> dict[str, object]
         assert credentials is not None
         pod_list(await session.get_json(path, params={"limit": "1"}, max_bytes=1024 * 1024))
         if credentials.expiration is None:
-            raise AppError("EKS qualification requires an ExecCredential expirationTimestamp.")
+            raise AppError("Provider qualification requires an ExecCredential expirationTimestamp.")
         revision = credentials.revision
         # Force the client's cache deadline, not AWS credentials or SSO files.
         # This avoids waiting fourteen minutes and is recorded as a forced
@@ -93,7 +101,9 @@ async def verify(request: ConnectionRequest, kubectl: Path) -> dict[str, object]
             "api_pod_read": True,
             "forced_expiry_concurrent_refresh": True,
             "delegated_kubectl_pod_read": True,
-            "natural_expiry_or_sso_role_matrix_qualified": False,
+            "natural_expiry_or_sso_role_matrix_qualified"
+            if provider == "eks"
+            else "natural_expiry_or_entra_login_matrix_qualified": False,
             "python": sys.version.split()[0],
             "platform": sys.platform,
         }
