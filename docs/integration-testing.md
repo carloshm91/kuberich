@@ -81,3 +81,5 @@ a documented schedule is not a claim those repetitions ran.
 Sources: [kind explicit kubeconfig/provider](https://kind.sigs.k8s.io/docs/user/quick-start/),
 [Docker context precedence](https://docs.docker.com/reference/cli/docker/),
 [Python process groups](https://docs.python.org/3.12/library/subprocess.html).
+
+Measured commits, counts and limitations: [Q01 acceptance](acceptance/integration-suite.md).
