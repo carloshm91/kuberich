@@ -19,6 +19,88 @@ from tests.ui.test_logs import app_for, ns
 
 
 @pytest.mark.asyncio
+async def test_container_columns_render_matched_status_and_literal_redacted_specification(
+    tmp_path, monkeypatch
+):
+    monkeypatch.delenv("NO_COLOR", raising=False)
+    value = pod("api")
+    value["spec"]["containers"] = [
+        {
+            "name": "app",
+            "image": "example/api:v1",
+            "readinessProbe": {},
+            "resources": {
+                "requests": {"cpu": "250m", "memory": "64Mi"},
+                "limits": {"cpu": "1", "memory": "128Mi"},
+            },
+            "ports": [{"name": "http", "containerPort": 8080}],
+        },
+        {"name": "worker", "image": "[red]literal[/red] password=private-fixture-value"},
+    ]
+    value["status"]["containerStatuses"].insert(
+        0,
+        {
+            "name": "worker",
+            "ready": False,
+            "restartCount": 2,
+            "state": {"waiting": {"reason": "CrashLoopBackOff"}},
+        },
+    )
+
+    async def handler(request):
+        if "watch" in request.query:
+            return await stable_watch(request)
+        return web.json_response(collection(value))
+
+    async with workspace_api(ns, handler) as url:
+        app = app_for(tmp_path, url)
+        async with app.run_test(size=(180, 30)) as pilot:
+            await wait_for(lambda: app.resources.row_count == 1)
+            await pilot.press("enter")
+            containers = app.screen
+            assert isinstance(containers, ContainerScreen)
+            assert [column.label.plain for column in containers.table.columns.values()] == [
+                "NAME",
+                "TYPE",
+                "READY",
+                "STATE",
+                "RESTARTS",
+                "IMAGE",
+                "PROBES(R:L:S)",
+                "CPU REQ/LIM",
+                "MEM REQ/LIM",
+                "PORTS",
+            ]
+            assert [cell.plain for cell in containers.table.get_row("app")] == [
+                "app",
+                "App",
+                "true",
+                "Running",
+                "0",
+                "example/api:v1",
+                "on:off:off",
+                "250m/1",
+                "64Mi/128Mi",
+                "http:8080/TCP",
+            ]
+            worker = containers.table.get_row("worker")
+            assert worker[3].plain == "CrashLoopBackOff" and worker[4].plain == "2"
+            assert "[red]literal[/red]" in worker[5].plain and not worker[5].spans
+            assert "private-fixture-value" not in worker[5].plain
+            await pilot.resize_terminal(40, 12)
+            await pilot.press("right", "end")
+            await pilot.pause()
+            assert containers.table.scroll_x > 0
+            await pilot.press("home")
+            await pilot.resize_terminal(180, 30)
+            await pilot.pause()
+            out = Path("artifacts/ui").resolve()
+            out.mkdir(parents=True, exist_ok=True)
+            app.save_screenshot(filename="workspace-container-details.svg", path=str(out))
+            await pilot.press("escape")
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("multiple", [False, True])
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
 async def test_enter_pod_containers_selected_logs_and_back_preserves_both_viewports(

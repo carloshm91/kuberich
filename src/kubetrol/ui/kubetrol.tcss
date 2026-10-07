@@ -18,8 +18,8 @@ Screen {
 .header-short #scope-bar { width: 1fr; height: 3; }
 .header-short #cluster, .header-short #user, .header-short #build-info { display: none; }
 
-#resources, #namespaces { height: auto; min-height: 2; max-height: 100%; background: $background; }
-#resources.populated, #namespaces.populated { height: 1fr; }
+#resources, #namespaces, #contexts { height: auto; min-height: 2; max-height: 100%; background: $background; }
+#resources.populated, #namespaces.populated, #contexts.populated { height: 1fr; }
 #all-namespaces { height: 1; width: 1fr; border: none; background: $background; color: $accent; }
 
 #empty-state { height: 1fr; align: center middle; padding: 0 1; }
@@ -27,6 +27,11 @@ Screen {
 #empty-title { text-style: bold; color: $text; }
 #empty-description, #empty-hint { margin-top: 1; color: $text-muted; }
 .input-bar { height: 1; margin: 0; background: $panel; }
+.short WorkspaceBars { height: 2; }
+#command-bar { height: 3; border: solid $primary; }
+.short #command-bar { height: 1; border-top: none; border-bottom: none; }
+#log-search-bar { height: 3; border: solid $primary; }
+.short #log-search-bar { height: 1; border-top: none; border-bottom: none; }
 .input-label { width: 2; height: 1; color: $accent; text-style: bold; }
 Input { width: 1fr; height: 1; border: none; padding: 0; background: $panel; }
 Input:focus { border: none; background: $primary 15%; }

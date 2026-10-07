@@ -34,6 +34,12 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Rectangular dedicated command bar, with compact side borders in short terminals.
+- Local context table through `:ctx`/`c`/F2 with cluster, auth-info and namespace;
+  filtering and browsing preserve the resource workspace and kubeconfig.
+- Container image, readiness, state/reason, restart count, configured probes,
+  CPU/memory requests/limits and ports from the captured pod snapshot.
+
 - K9s-inspired black/cyan/yellow workspace and a default `k9s` theme, with
   context/cluster/user/version header, top inputs, view shortcuts and Escape trails.
 - Live namespace NAME/STATUS/AGE table via `:ns` / `n`, Enter-to-pods and `0` for

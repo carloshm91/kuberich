@@ -1,5 +1,14 @@
 # Versioning and releases
 
+## Current development stage
+
+The installed version is `0.0.1.dev0`; merges collect entries under Unreleased
+and do not create GitHub Releases or tags. The workflow below is the required
+release procedure. Implementing its publishing automation remains D02 #36;
+qualifying and publishing the first usable `0.0.1` remains D04 #40.
+The header shows installed package metadata. Automatic new-release notices remain
+U01 #56, rather than an inferred claim that this checkout is a published release.
+
 ## Publication approval
 
 Keep the repository and GitHub roadmap private until the maintainer explicitly

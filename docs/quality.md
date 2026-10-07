@@ -32,6 +32,8 @@ plus shell target validation and sanitized return decisions, plus bounded termin
 geometry and keyboard/paste encoding. Namespace UID/lifecycle values in
 `domain/namespaces.py` join the critical inventory in #125; shared workspace
 layout receives Pilot and real-terminal checks.
+Captured container specification/status decisions in `domain/containers.py`
+join the critical 100% line/branch inventory in #129.
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
 from transport and widget glue so exhaustive tests are practical. The critical

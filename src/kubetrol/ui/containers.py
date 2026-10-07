@@ -11,8 +11,7 @@ from textual.events import ScreenResume
 from textual.screen import ModalScreen
 from textual.widgets import Button, DataTable, Static
 
-from kubetrol.domain.logs import log_containers
-from kubetrol.domain.resources import resource_object
+from kubetrol.domain.containers import CONTAINER_COLUMNS, container_rows
 from kubetrol.errors import AppError
 from kubetrol.security.presentation import safe_text
 from kubetrol.services.logs import LogStream
@@ -49,7 +48,8 @@ class ContainerScreen(ModalScreen[None]):
     DEFAULT_CSS = """
     ContainerScreen { layout: vertical; background: $background; }
     #container-title, #container-hints, #container-status { height: 1; text-overflow: ellipsis; }
-    #container-title { color: $accent; }
+    #container-title { color: $accent; height: 3; border: solid $primary; }
+    ContainerScreen.short #container-title { height: 1; border-top: none; border-bottom: none; }
     #container-feedback { height: auto; min-height: 1; max-height: 3; }
     ContainerScreen.short #container-feedback { max-height: 1; }
     #container-status { height: auto; text-overflow: fold; }
@@ -73,18 +73,15 @@ class ContainerScreen(ModalScreen[None]):
         self.stream = stream
         self.shell, self.processes = shell, processes
         self.chrome, self.trail = chrome, (*trail, "containers")
-        self.names = log_containers(manifest)
+        self.rows = container_rows(manifest)
+        self.names = tuple(row.name for row in self.rows)
         if not self.names:
             raise AppError("The selected pod has no regular/init containers.")
-        spec = resource_object(manifest.get("spec"))
-        # log_containers already validates these bounded lists and unique names.
-        self.kinds = {
-            value["name"]: "Sidecar" if value.get("restartPolicy") == "Always" else "Init"
-            for value in spec.get("initContainers") or []
-        }
         self.table = ContainerTable(id="containers", cursor_type="row", zebra_stripes=True)
         self.status = Static(
-            "Container names from the selected pod snapshot.", markup=False, id="container-status"
+            "Pod snapshot · CPU/MEM are requests/limits; live usage is not collected.",
+            markup=False,
+            id="container-status",
         )
 
     def compose(self) -> ComposeResult:
@@ -123,9 +120,9 @@ class ContainerScreen(ModalScreen[None]):
         self.query_one("#container-dialog", Vertical).border_title = safe_text(
             f"containers({target.namespace}/{target.name})[{len(self.names)}]"
         )
-        self.table.add_columns("Container", "Type")
-        for name in self.names:
-            self.table.add_row(safe_text(name), safe_text(self.kinds.get(name, "App")), key=name)
+        self.table.add_columns(*CONTAINER_COLUMNS)
+        for row in self.rows:
+            self.table.add_row(*(safe_text(cell) for cell in row.cells()), key=row.name)
         self.validate_target()
 
     def on_screen_resume(self, event: ScreenResume) -> None:

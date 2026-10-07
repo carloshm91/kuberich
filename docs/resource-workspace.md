@@ -20,10 +20,13 @@ to typed text, in muted italic styling; it never opens a dropdown over resources
 Tab accepts it and Up/Down cycles the bounded local candidates. Plain Enter
 submits literal input; Enter after deliberate cycling accepts that candidate.
 Typing makes no API requests; suggestions still use the session name catalogue.
+The command row sits inside its own rectangular border. Below 16 terminal rows,
+it keeps side borders so the table retains usable height; all views reserve the
+same four ordinary/two compact interaction rows.
 
 The bottom trail identifies the current view and Escape action. Escape first
 leaves an input, then clears an active filter, then returns to the parent view.
-Pods, namespaces, containers and logs share the same frame margins, header
+Pods, contexts, namespaces, containers and logs share the same frame margins, header
 columns and reserved interaction/footer rows at a fixed terminal size. Clicking
 controls or changing focus does not move that frame. View actions change while
 their header columns retain a fixed row count. Container/log views retain captured
@@ -58,6 +61,40 @@ status. Recreated namespaces have distinct UID selection.
 
 Inspection uses existing captured-UID details/YAML/events services. Logs and
 shells require a pod; namespace mutations remain planned.
+
+## Local contexts
+
+Bare `:ctx`, `:context`, `:contexts`, `c` or F2 shows a workspace table with
+NAME/CLUSTER/AUTHINFO/NAMESPACE and `*` for the selected session. These entries
+come from the loaded kubeconfig catalogue, not a Kubernetes resource endpoint.
+Aliases are rendered as redacted literal text; no credential bodies or API URLs
+are displayed. `/` filters these columns with the existing bounded literal/
+regex semantics. Browsing makes no authentication request and rewrites no file.
+
+Enter connects to the exact selected name, including case/spaces, and opens pods.
+Switching keeps the existing owned cancellation and generation checks.
+Escape first clears the filter, then restores the preceding pod/namespace view
+and its filter/viewport. Back/forward also retains the context table state.
+Direct `:ctx NAME` still connects immediately; context tables have no resource
+YAML/details/events because their rows are local configuration.
+Scoped `:ns NAME`, `:ns *` and `:po NAME` from contexts open pods with their own
+filter; they preserve the context query/cursor for returning to the catalogue.
+
+## Container details
+
+Enter on a pod shows NAME, TYPE (App/Init/Sidecar), READY, STATE, RESTARTS, IMAGE,
+PROBES(R:L:S), CPU REQ/LIM, MEM REQ/LIM and PORTS. Status is joined by container
+name, not list position. Missing readiness/restart data is `—`, absent state is
+Unknown, and waiting/termination reasons such as CrashLoopBackOff/OOMKilled remain
+visible. Configured probes use readiness:liveness:startup order and on/off labels.
+Ports include declared name/number/protocol, with a bounded list and `…` when longer.
+
+CPU/MEM are specification requests/limits in Kubernetes quantity notation, with
+`—` for undeclared quantities. They are not live usage. Values come from the
+captured pod snapshot; reopen to refresh. Horizontal arrows/Home/End reveal wide
+columns. Enter/l logs and s/x shell retain the captured UID/container and parent
+cursor/scroll state. Live container refresh, ephemeral debug containers and usage
+metrics remain #41/#78/#68.
 
 ## Sizes and remaining work
 

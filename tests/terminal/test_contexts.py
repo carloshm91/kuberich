@@ -59,9 +59,11 @@ def test_connected_cli_context_namespace_retry_and_terminal_restoration(
             terminal.wait_for(b"1 pods")
             assert b"synthetic-pty" not in terminal.transcript
             marker = terminal.send(b":ctx\r")
-            terminal.wait_for(b"Choose context", since=marker)
+            terminal.wait_for_screen("contexts[1]", since=marker)
+            terminal.wait_for_screen("AUTHINFO", since=marker)
+            assert any("NAME" in line and "CLUSTER" in line for line in terminal.screen.display)
             marker = terminal.send(b"\x1b")
-            terminal.wait_for_screen("pods(", since=marker, absent=("Choose context",))
+            terminal.wait_for_screen("pods(", since=marker, absent=("contexts[",))
             for key in (b"n", b"\x1bOR", b"\x1b[13~"):
                 marker = terminal.send(key)
                 terminal.wait_for_screen("namespaces(all)[2]")

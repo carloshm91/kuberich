@@ -6,6 +6,7 @@ from dataclasses import replace
 
 import pytest
 
+from kubetrol.domain.navigation import ContextRow
 from kubetrol.domain.pods import pod_row
 from kubetrol.services import filtering
 from tests.support.pods import pod, record
@@ -106,3 +107,11 @@ async def test_worker_failure_is_observed_even_during_cancellation(monkeypatch):
         release.set()
     with pytest.raises(asyncio.CancelledError):
         await task
+
+
+@pytest.mark.parametrize(
+    "query", ["Production", "eks-west", "cloud-user", "billing", "re:^Production"]
+)
+def test_context_filter_searches_configuration_aliases_and_namespace(query):
+    row = ContextRow("Production", "eks-west", "cloud-user", "billing")
+    assert filtering.filter_rows((row,), query, "contexts").rows == (row,)

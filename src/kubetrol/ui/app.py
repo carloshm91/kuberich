@@ -26,7 +26,12 @@ from kubetrol.domain.connections import (
     ConnectionRequest,
 )
 from kubetrol.domain.logs import log_containers
-from kubetrol.domain.navigation import NamespaceChoice, NavigationHistory, NavigationState
+from kubetrol.domain.navigation import (
+    ContextRow,
+    NamespaceChoice,
+    NavigationHistory,
+    NavigationState,
+)
 from kubetrol.domain.resources import ApiResource, ResourceRecord
 from kubetrol.domain.targets import ResourceTarget
 from kubetrol.domain.views import USABLE_CONNECTIONS, ResourceSelection, ViewObservation, ViewStatus
@@ -50,6 +55,7 @@ from kubetrol.services.sessions import SessionService
 from kubetrol.services.shell import ShellService
 from kubetrol.services.workspace import ViewSubscription, WorkspaceService
 from kubetrol.ui.chrome import (
+    CTX_SHORTCUTS,
     K9S_THEME,
     NS_SHORTCUTS,
     POD_SHORTCUTS,
@@ -61,12 +67,13 @@ from kubetrol.ui.chrome import (
 )
 from kubetrol.ui.commands import CommandInput, NavigationInput
 from kubetrol.ui.containers import ContainerScreen
+from kubetrol.ui.contexts import ContextTable
 from kubetrol.ui.inspection import InspectionScreen, Page
 from kubetrol.ui.logs import LogScreen
 from kubetrol.ui.namespaces import NamespaceTable
 from kubetrol.ui.pods import PodTable, Viewport
 from kubetrol.ui.presentation import DEFAULT_PRESENTATION, Presentation
-from kubetrol.ui.scopes import ConnectionScreen, ScopeScreen
+from kubetrol.ui.scopes import ConnectionScreen
 from kubetrol.ui.terminal import ShellScreen
 
 DISCONNECTED_STATUS = "Disconnected · No resource data"
@@ -201,7 +208,11 @@ class KubetrolApp(App[None]):
         self.resources = PodTable()
         self.namespace_table = NamespaceTable()
         self.namespace_table.display = False
+        self.context_table = ContextTable()
+        self.context_table.display = False
         self._resource_name = "pods"
+        self._context_parent: NavigationState | None = None
+        self._context_state: NavigationState | None = None
         self._namespace_parent: NavigationState | None = None
         self._namespace_state: NavigationState | None = None
         self._namespace_route = False
@@ -225,7 +236,9 @@ class KubetrolApp(App[None]):
         self.status = Static(DISCONNECTED_STATUS, id="status", markup=False)
 
     @property
-    def _active_table(self) -> PodTable | NamespaceTable:
+    def _active_table(self) -> PodTable | NamespaceTable | ContextTable:
+        if self._resource_name == "contexts":
+            return self.context_table
         return self.namespace_table if self._resource_name == "namespaces" else self.resources
 
     def _header_identity(self) -> tuple[str, str, str, str, str]:
@@ -261,6 +274,10 @@ class KubetrolApp(App[None]):
             if self._namespace_route and self._resource_name == "pods"
             else "Pods"
             if self._resource_name == "namespaces"
+            else self._context_parent.resource.title()
+            if self._resource_name == "contexts" and self._context_parent is not None
+            else "Pods"
+            if self._resource_name == "contexts"
             else "Stay in pods"
         )
         self.breadcrumbs.destination = destination
@@ -337,6 +354,7 @@ class KubetrolApp(App[None]):
             yield Button("0  All namespaces", id="all-namespaces", compact=True)
             yield self.resources
             yield self.namespace_table
+            yield self.context_table
             with Vertical(id="empty-state"):
                 yield Static("No cluster connection", id="empty-title", markup=False)
                 yield Static(
@@ -356,6 +374,7 @@ class KubetrolApp(App[None]):
         self.query_one("#all-namespaces").display = False
         self.resources.setup()
         self.namespace_table.setup()
+        self.context_table.setup()
         self.set_interval(1, self.resources.refresh_ages)
         self.set_interval(1, self.namespace_table.refresh_ages)
         self.query_one("#resource-view", Vertical).border_title = "Resources · no connection"
@@ -454,6 +473,17 @@ class KubetrolApp(App[None]):
                     applied = await self.namespace_table.apply_rows(
                         ns_result.rows, view.revision, current
                     )
+                elif kind == "contexts":
+                    await self._pod_projection.project(None)
+                    await self._namespace_projection.project(None)
+                    context_rows = self._context_rows(view.context)
+                    ctx_result = await apply_filter(context_rows, query, "contexts")
+                    count, filtered, problem = (
+                        len(context_rows),
+                        len(ctx_result.rows),
+                        ctx_result.problem,
+                    )
+                    applied = await self.context_table.apply_rows(ctx_result.rows, current)
                 else:
                     await self._namespace_projection.project(None)
                     rows = await self._pod_projection.project(view.snapshot)
@@ -463,13 +493,16 @@ class KubetrolApp(App[None]):
                 if applied:
                     self._show_view(view)
                     if query:
+                        detail = (
+                            "Local kubeconfig catalogue" if kind == "contexts" else view.message
+                        )
                         self._set_status(
-                            problem or f"Filter active · {filtered}/{count} {kind} · {view.message}"
+                            problem or f"Filter active · {filtered}/{count} {kind} · {detail}"
                         )
                         if (
                             count
                             and not filtered
-                            and view.status is ViewStatus.LIVE
+                            and (view.status is ViewStatus.LIVE or kind == "contexts")
                             and problem is None
                         ):
                             self.query_one("#empty-title", Static).update(
@@ -481,7 +514,7 @@ class KubetrolApp(App[None]):
                     if (
                         self._restore_state is not None
                         and self._restore_state[0] == view.revision
-                        and view.snapshot is not None
+                        and (view.snapshot is not None or kind == "contexts")
                     ):
                         state = self._restore_state[1]
                         self._active_table.restore_viewport(
@@ -492,9 +525,39 @@ class KubetrolApp(App[None]):
         except Exception as error:
             self._handle_exception(error)
 
+    def _context_rows(self, selected: str | None) -> tuple[ContextRow, ...]:
+        rows = []
+        for name, entry in self.sessions.catalog.contexts.items():
+            cluster, user, namespace = (
+                entry.data.get(key) for key in ("cluster", "user", "namespace")
+            )
+            rows.append(
+                ContextRow(
+                    name,
+                    cluster if isinstance(cluster, str) else "—",
+                    user if isinstance(user, str) else "—",
+                    namespace if isinstance(namespace, str) else "default",
+                    name == selected,
+                )
+            )
+        return tuple(rows)
+
     def _show_view(self, view: ViewObservation) -> None:
         observation = view.connection
         self.header.update_identity()
+        if self._resource_name == "contexts":
+            self.query_one("#resource-view", Vertical).border_title = safe_text(
+                f"contexts[{self.context_table.row_count}]"
+            )
+            self.query_one("#empty-state").display = not bool(self.context_table.row_count)
+            self.context_table.set_class(bool(self.context_table.row_count), "populated")
+            self.query_one("#empty-title", Static).update("No contexts match this filter")
+            self.query_one("#empty-description", Static).update(
+                "Escape in the table clears the filter."
+            )
+            self._show_sort()
+            self._set_status("Local kubeconfig contexts · Enter connect · Esc previous view")
+            return
         usable = observation.state in USABLE_CONNECTIONS
         self.query_one("#empty-title", Static).update(
             "Stale resource data"
@@ -530,6 +593,8 @@ class KubetrolApp(App[None]):
         self.query_one("#resource-view", Vertical).border_subtitle = (
             self.resources.sort_summary
             if self._resource_name == "pods"
+            else "Name ↑ · Enter connect · * selected session"
+            if self._resource_name == "contexts"
             else "Name ↑ · Enter use namespace · 0 all"
         )
 
@@ -640,9 +705,15 @@ class KubetrolApp(App[None]):
     ):
         if isinstance(self.screen, ModalScreen):
             return None
+        if self._resource_name == "contexts":
+            self._set_status(
+                "Contexts are local configuration. Enter connects to the selected context."
+            )
+            return None
         view = self.workspace.store.observation
         scope, snapshot, client = view.scope, view.snapshot, self.sessions.client
-        uid = uid if uid is not None else self._active_table.selected_uid
+        table = self.namespace_table if self._resource_name == "namespaces" else self.resources
+        uid = uid if uid is not None else table.selected_uid
         if scope is None or snapshot is None or client is None or uid is None:
             self._set_status("Select a connected resource before opening a viewer.")
             return None
@@ -675,9 +746,25 @@ class KubetrolApp(App[None]):
         if not self.sessions.catalog.names:
             self._set_status("No contexts found. Configure KUBECONFIG or use --kubeconfig.")
         elif not isinstance(self.screen, ModalScreen):
-            self.push_screen(
-                ScopeScreen("Choose context", self.sessions.catalog.names), self._context_selected
+            if self._resource_name == "contexts":
+                self.set_focus(self.context_table)
+                return
+            self._context_parent = self._capture_view()
+            self._remember_view()
+            self._display_resource("contexts")
+            self.filter_input.value = (
+                self._context_state.query if self._context_state is not None else ""
             )
+            if self._context_state is not None:
+                self._restore_state = self.workspace.store.observation.revision, self._context_state
+            self.command_input.reset_choice()
+            self._render_ready.set()
+
+    @on(DataTable.RowSelected, "#contexts")
+    def context_selected(self, event: DataTable.RowSelected) -> None:
+        event.stop()
+        if self._resource_name == "contexts":
+            self._context_selected(event.row_key.value)
 
     def action_connection_details(self) -> None:
         if not isinstance(self.screen, ModalScreen):
@@ -685,11 +772,23 @@ class KubetrolApp(App[None]):
 
     def _context_selected(self, value: str | None) -> None:
         if value is not None:
-            self._start_connection(value)
+            self._context_state = (
+                self._capture_view() if self._resource_name == "contexts" else self._context_state
+            )
+            self._remember_view()
+            self.workspace.selection = ResourceSelection("pods")
+            self._display_resource("pods")
+            self.filter_input.value = ""
+            self._start_connection(value, remember=False)
 
     def _clear_rows(self) -> None:
         self._restore_state = None
-        self._active_table.reset(self.workspace.store.observation.revision)
+        if self._resource_name == "contexts":
+            self.command_input.reset_choice()
+            self._render_ready.set()
+            return
+        table = self.namespace_table if self._resource_name == "namespaces" else self.resources
+        table.reset(self.workspace.store.observation.revision)
         self._active_table.remove_class("populated")
         self.query_one("#empty-state").display = True
         self.query_one("#empty-title", Static).update("Loading resources")
@@ -706,9 +805,16 @@ class KubetrolApp(App[None]):
         self._resource_name = resource
         namespaces = resource == "namespaces"
         self.namespace_table.display = namespaces
-        self.resources.display = not namespaces
+        self.context_table.display = resource == "contexts"
+        self.resources.display = resource == "pods"
         self.query_one("#all-namespaces").display = namespaces
-        self.header.shortcuts = NS_SHORTCUTS if namespaces else POD_SHORTCUTS
+        self.header.shortcuts = (
+            CTX_SHORTCUTS
+            if resource == "contexts"
+            else NS_SHORTCUTS
+            if namespaces
+            else POD_SHORTCUTS
+        )
         self.header.render_shortcuts()
         if focus and len(self.screen_stack) == 1:
             self.set_focus(self._active_table)
@@ -716,6 +822,8 @@ class KubetrolApp(App[None]):
 
     def _select_resource(self, resource: str, *, restore: NavigationState | None = None) -> None:
         current = self._capture_view()
+        if self._resource_name == "contexts":
+            self._context_state = current
         if resource == self._resource_name:
             self.set_focus(self._active_table)
             return
@@ -729,7 +837,7 @@ class KubetrolApp(App[None]):
             if current.resource == "namespaces":
                 self._namespace_state = current
                 self._namespace_route = True
-            else:
+            elif current.resource == "pods":
                 self._namespace_parent = current
         self._display_resource(resource)
         self._clear_rows()
@@ -744,6 +852,9 @@ class KubetrolApp(App[None]):
                 choice = NamespaceChoice(None if value == "*" else value)
                 current = self._capture_view()
                 was_namespace_view = self._resource_name == "namespaces"
+                was_context_view = self._resource_name == "contexts"
+                if was_context_view:
+                    self._context_state = current
                 self.workspace.select_resource(ResourceSelection("pods"))
                 self._connection_task = self.workspace.select_namespace(choice.namespace)
                 if was_namespace_view:
@@ -752,10 +863,13 @@ class KubetrolApp(App[None]):
                 if current is not None:
                     self.history.visit(current)
                 self._display_resource(
-                    "pods", focus=was_namespace_view or not isinstance(self.focused, Input)
+                    "pods",
+                    focus=was_namespace_view
+                    or was_context_view
+                    or not isinstance(self.focused, Input),
                 )
                 self._clear_rows()
-                if was_namespace_view:
+                if was_namespace_view or was_context_view:
                     self.filter_input.value = ""
                 self.header.update_identity()
                 self._set_status(self._workspace_status())
@@ -817,6 +931,13 @@ class KubetrolApp(App[None]):
             self.filter_input.value = ""
             self._set_status(self._workspace_status())
             self._update_trail()
+        elif self._resource_name == "contexts":
+            self._context_state = self._capture_view()
+            if self._context_parent is not None:
+                self._restore_navigation(self._context_parent)
+            else:
+                self._display_resource(self.workspace.selection.name)
+                self._render_ready.set()
         elif self._resource_name == "pods" and self._namespace_route:
             self.action_namespaces()
         elif self._resource_name == "namespaces":
@@ -849,7 +970,7 @@ class KubetrolApp(App[None]):
     def _apply_command(self, command: ResolvedCommand) -> None:
         if isinstance(command, ScopedCommand):
             if command.command is Command.CONTEXTS:
-                self._start_connection(command.argument)
+                self._context_selected(command.argument)
             else:
                 self._namespace_selected(command.argument)
             return
@@ -897,11 +1018,13 @@ class KubetrolApp(App[None]):
 
     def _capture_view(self) -> NavigationState | None:
         view = self.workspace.store.observation
-        if view.context is None or view.connection.state not in USABLE_CONNECTIONS:
+        if self._resource_name != "contexts" and (
+            view.context is None or view.connection.state not in USABLE_CONNECTIONS
+        ):
             return None
         viewport = self._active_table.capture_viewport()
         return NavigationState(
-            view.context,
+            view.context or "",
             view.connection.namespace,
             self.filter_input.value,
             self.resources.sort_column,
@@ -933,6 +1056,14 @@ class KubetrolApp(App[None]):
         self._restore_navigation(state)
 
     def _restore_navigation(self, state: NavigationState) -> None:
+        if state.resource == "contexts":
+            if self._resource_name != "contexts":
+                self._context_parent = self._capture_view()
+            self._display_resource("contexts")
+            self.filter_input.value = state.query
+            self._restore_state = self.workspace.store.observation.revision, state
+            self._render_ready.set()
+            return
         scope = NamespaceChoice(state.namespace)
         current = self.workspace.store.observation
         if state.context == current.context and current.connection.state in USABLE_CONNECTIONS:

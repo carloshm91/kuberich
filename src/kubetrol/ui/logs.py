@@ -147,7 +147,8 @@ class LogScreen(ModalScreen[None]):
     #log-targets Button, #log-controls Button { height: 1; min-width: 5; width: 1fr; border: none; }
     #log-status, #log-hints { color: $text-muted; text-overflow: ellipsis; }
     #log-status { margin: 0 1; }
-    #log-search-bar { height: 1; }
+    #log-search-bar { height: 3; border: solid $primary; }
+    LogScreen.short #log-search-bar { height: 1; border-top: none; border-bottom: none; }
     """
 
     def __init__(

@@ -4,6 +4,7 @@ import pytest
 
 from kubetrol.domain.navigation import (
     MAX_HISTORY,
+    ContextRow,
     NamespaceChoice,
     NavigationHistory,
     NavigationState,
@@ -11,6 +12,12 @@ from kubetrol.domain.navigation import (
 from kubetrol.errors import AppError
 from kubetrol.services.access import AccessPolicy
 from kubetrol.services.commands import ALIASES, Command, CommandService, ScopedCommand, suggestions
+
+
+@pytest.mark.parametrize("current, marker", [(False, ""), (True, "*")])
+def test_local_context_row_is_exact_case_preserving_configuration(current, marker):
+    row = ContextRow("Team Production", "Cluster", "auth", "team", current)
+    assert row.cells() == (marker, "Team Production", "Cluster", "auth", "team")
 
 
 @pytest.mark.parametrize("alias,command", ALIASES.items())

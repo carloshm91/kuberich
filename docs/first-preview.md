@@ -6,7 +6,7 @@ resource-workspace trial below; earlier sections record previous checkpoints and
 short-lived branches that have since been deleted.
 Do not wait for every epic or the complete 1.0.0 parity audit to get feedback.
 
-## Stable workspace and inline command bar: #127 — current trial
+## Bordered commands, context table and container details: #129 — current trial
 
 From the latest main checkout in an interactive terminal:
 
@@ -23,19 +23,31 @@ if needed.
 1. Check context/cluster/user aliases and installed `0.0.1.dev0` above the table.
    Press `:` and type `c`: `context` appears as a suggested suffix on that
    same bar, without a dropdown. Down cycles candidates; Tab accepts one.
-   Press Escape, then `/` to try the separate filter row.
-2. Enter `:ns` for the live namespace table. Filter with `/`, select with arrows
+   The command bar has a rectangular border. At heights under 16 rows it keeps
+   side borders to leave usable table space. Press Escape, then `/` to try the
+   separate filter row; focus does not move the outer frame.
+2. Enter `:ctx` (or press `c`) for the normal context table. `/` filters names,
+   cluster/auth-info aliases and default namespaces locally. Escape first clears
+   the filter, then returns to the preceding resource view. Enter connects to
+   the highlighted context and opens pods. Browsing does not change kubeconfig.
+   From a filtered context table, `:ns YOUR_NAMESPACE` opens pods with a clear
+   query; pressing `c` afterward restores the local context filter.
+3. Enter `:ns` for the live namespace table. Filter with `/`, select with arrows
    or `j/k`, then Enter for pods. Escape first clears a filter, then follows
    the bottom route back to namespaces. `0` opens all namespaces.
-3. Enter a pod, then Enter a container for logs. Check that the outer frame and header columns stay in place while the
+4. Enter a pod to inspect its container image, ready/state/restarts, probes,
+   requests/limits and ports; scroll horizontally with arrows if needed.
+   These values are from the captured pod snapshot; reopen to refresh them.
+   Missing status shows `—`/Unknown. CPU/MEM columns show configured requests/
+   limits, not live consumption. Enter a container for logs. Check that the outer frame and header columns stay in place while the
    available shortcuts change. Click Pause and the search input; resize and return
    to the original size. Escape follows the bottom route.
-4. In containers, `s` opens the existing embedded shell. `exit` or Ctrl+] returns
+5. In containers, `s` opens the existing embedded shell. `exit` or Ctrl+] returns
    to that container; Ctrl+C interrupts the remote program and Ctrl+Q quits.
 
 Update notices, cluster metrics and custom/live themes remain planned.
 See [workspace behavior](resource-workspace.md) and
-[qualification evidence](acceptance/stable-workspace.md).
+[qualification evidence](acceptance/context-container-workspace.md).
 
 | Checkpoint | Required work | What can actually be tried |
 | --- | --- | --- |

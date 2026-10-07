@@ -31,6 +31,13 @@ def terminal_navigation(command, directory, *, evidence, initial_scope=False):
         with TerminalSession(arguments, directory) as terminal:
             terminal.wait_for(b"owned-pty-pod-000")
             terminal.wait_for(b"80 pods")
+            marker = terminal.send(b":ctx\r")
+            terminal.wait_for_screen("contexts[1]", since=marker)
+            terminal.wait_for_screen("AUTHINFO", since=marker)
+            assert any("NAME" in line and "CLUSTER" in line for line in terminal.screen.display)
+            marker = terminal.send(b"\r")
+            terminal.wait_for_screen("pods(", since=marker, absent=("contexts[",))
+            terminal.wait_for(b"80 pods", since=marker)
             if initial_scope:
                 terminal.wait_for_screen("Namespace: team")
             marker = terminal.send(b":p")

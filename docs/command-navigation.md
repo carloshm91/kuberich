@@ -13,7 +13,7 @@ read-only policy handle `--command` / `-c` at launch. Arguments preserve casing.
 | --- | --- |
 | `po`, `pod`, `pods` | Focus the available pod view |
 | `po NAMESPACE`, `po *` | Select a pod namespace or all namespaces |
-| `ctx`, `context`, `contexts` | Open the context picker |
+| `ctx`, `context`, `contexts` | Open the local context workspace table |
 | `ctx NAME` | Connect directly to that context |
 | `ns`, `namespace`, `namespaces` | Open the live namespace workspace table |
 | `ns NAME`, `ns *` | Select that namespace or all namespaces |

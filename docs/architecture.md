@@ -1,5 +1,27 @@
 # Architecture decisions
 
+## Preview refinement #129
+
+Contexts are local kubeconfig catalogue entries, not Kubernetes API resources.
+The root `ContextTable` uses exact context names as identity and the shared
+workspace frame, filtering and history; it makes no selection-time API/helper
+call until Enter. It leaves the owned active resource session running while
+browsing, and switching context delegates to the existing awaited replacement
+and generation guards. Escape restores the preceding resource state.
+
+The dedicated command bar uses a rectangular border; all implemented workspace
+views reserve four interaction rows in ordinary terminals and two below 16 rows.
+The compact bar keeps side edges to preserve usable 40×12 tables. Input focus
+never changes these dimensions. Inline suggestions and embedded shell routing
+remain unchanged.
+
+Critical `domain/containers.py` derives regular/init/sidecar rows from captured
+pod specification and name-matched status. Missing readiness/restarts remain
+unknown; states retain Kubernetes waiting/termination reasons. Columns describe
+image, configured probes, CPU/memory requests/limits and bounded declared ports.
+These are snapshot values; opening the pod again refreshes them. Live container
+refresh, ephemeral containers and metrics remain #41/#78/#68.
+
 Status: accepted planning baseline, 2026-10-04. Changes require an issue and an
 updated decision record in this document. The product is a new implementation.
 
