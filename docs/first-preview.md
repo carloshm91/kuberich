@@ -30,6 +30,8 @@ if needed.
    cluster/auth-info aliases and default namespaces locally. Escape first clears
    the filter, then returns to the preceding resource view. Enter connects to
    the highlighted context and opens pods. Browsing does not change kubeconfig.
+   From a filtered context table, `:ns YOUR_NAMESPACE` opens pods with a clear
+   query; pressing `c` afterward restores the local context filter.
 3. Enter `:ns` for the live namespace table. Filter with `/`, select with arrows
    or `j/k`, then Enter for pods. Escape first clears a filter, then follows
    the bottom route back to namespaces. `0` opens all namespaces.

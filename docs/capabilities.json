@@ -173,7 +173,8 @@
         "https://github.com/carloshm91/kubetrol/issues/129",
         "docs/acceptance/context-container-workspace.md",
         "tests/ui/test_context_workspace.py",
-        "tests/unit/test_container_rows.py"
+        "tests/unit/test_container_rows.py",
+        "tests/ui/test_context_scope_commands.py"
       ]
     },
     {
@@ -213,7 +214,8 @@
         "https://github.com/carloshm91/kubetrol/issues/129",
         "docs/acceptance/context-container-workspace.md",
         "tests/ui/test_context_workspace.py",
-        "tests/unit/test_container_rows.py"
+        "tests/unit/test_container_rows.py",
+        "tests/ui/test_context_scope_commands.py"
       ]
     },
     {
