@@ -22,12 +22,15 @@ while the pod preflight is still pending.
 Losing SSH without a multiplexer revokes the remote terminal. KubeRich closes its
 tasks and child processes, then exits 129; the SSH client normally returns 255.
 The local SSH terminal can be restored, but a revoked remote TTY cannot receive
-escape sequences or have its attributes read or restored. Evidence records this
-as unavailable, rather than claiming remote restoration. Only captured output
+escape sequences. Its attributes may be unavailable; Darwin can retain readable
+attributes while rejecting output. Evidence preserves the actual observation
+instead of claiming remote restoration. Only captured output
 descriptors still identifying that revoked TTY are redirected to `/dev/null`
 during hangup. Live terminals, replaced descriptors and file/pipe output remain
 untouched. This prevents failed buffered shutdown writes from changing the
-process exit code to 120.
+process exit code to 120. A zero-byte write verifies output when the driver still
+returns attributes; it emits no terminal input or output. The probe temporarily
+blocks SIGTTOU, restores the previous mask, and surfaces unexpected errors.
 
 Inside tmux, losing SSH detaches the client and keeps the application and an open
 embedded shell running. Reattaching to the same session restores the workspace;

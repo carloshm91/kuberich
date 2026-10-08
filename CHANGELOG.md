@@ -67,6 +67,8 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Fixed
 
+- Preserve SSH hangup status on macOS when terminal attributes remain readable
+  after the driver has stopped accepting output; probe without emitting bytes.
 - Restore owned terminal sessions after external SIGHUP/SIGTERM, reap native and
   embedded children on SSH loss, and preserve hangup status when the remote TTY
   is revoked. tmux sessions remain available for reattachment.

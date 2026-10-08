@@ -165,7 +165,8 @@ def test_closing_a_real_master_is_classified_by_the_slave_driver():
         master = None
         try:
             termios.tcgetattr(slave)
-        except termios.error as error:
+            os.write(slave, b"")
+        except (termios.error, OSError) as error:
             assert error.args[0] in (errno.EIO, errno.ENXIO, errno.ENOTTY)
             unavailable = True
         else:
@@ -176,6 +177,53 @@ def test_closing_a_real_master_is_classified_by_the_slave_driver():
     finally:
         if master is not None:
             os.close(master)
+        os.close(slave)
+
+
+@pytest.mark.parametrize("code", [errno.EIO, errno.ENXIO, errno.ENOTTY])
+def test_output_failure_with_readable_attributes_discards_only_the_captured_tty(monkeypatch, code):
+    master, slave = pty.openpty()
+    write = os.write
+    previous = signal.pthread_sigmask(signal.SIG_BLOCK, set())
+    probes = []
+
+    def unavailable(descriptor, data):
+        if descriptor == slave and os.isatty(slave):
+            probes.append(data)
+            assert signal.SIGTTOU in signal.pthread_sigmask(signal.SIG_BLOCK, set())
+            raise OSError(code, "owned hung-up output")
+        return write(descriptor, data)
+
+    try:
+        original = termios.tcgetattr(slave)
+        owner = terminal.RevokedTerminalOutput((slave,))
+        monkeypatch.setattr(os, "write", unavailable)
+        assert termios.tcgetattr(slave) == original
+        owner.discard_revoked()
+        assert probes == [b""]
+        assert not os.isatty(slave)
+        assert os.write(slave, b"buffered shutdown output") == 24
+        assert signal.pthread_sigmask(signal.SIG_BLOCK, set()) == previous
+    finally:
+        os.close(master)
+        os.close(slave)
+
+
+def test_unexpected_output_probe_errors_restore_the_mask_and_preserve_the_descriptor(monkeypatch):
+    master, slave = pty.openpty()
+    previous = signal.pthread_sigmask(signal.SIG_BLOCK, set())
+    try:
+        owner = terminal.RevokedTerminalOutput((slave,))
+        original = os.fstat(slave)
+        monkeypatch.setattr(
+            os, "write", lambda *_: (_ for _ in ()).throw(OSError(errno.EPERM, "owned failure"))
+        )
+        with pytest.raises(OSError, match="owned failure"):
+            owner.discard_revoked()
+        assert os.fstat(slave) == original
+        assert signal.pthread_sigmask(signal.SIG_BLOCK, set()) == previous
+    finally:
+        os.close(master)
         os.close(slave)
 
 

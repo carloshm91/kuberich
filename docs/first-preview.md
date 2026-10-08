@@ -4,7 +4,8 @@
 
 The public source repository can execute standard Linux/macOS Actions again.
 Required macOS execution exposed terminal-observer/driver assumptions; #157
-repairs them without changing application behavior or skipping platform tests.
+repairs the observer and preserves hangup status when Darwin still returns TTY
+attributes but rejects output. No platform tests are skipped.
 The exact focused verification command is
 `uv run --locked pytest -q tests/terminal/test_observer.py tests/unit/test_terminal_lease.py tests/contract/test_mutation_faults.py`.
 See [acceptance evidence](acceptance/macos-terminal-verification.md) and the linked

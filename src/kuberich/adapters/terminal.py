@@ -30,6 +30,24 @@ def _revoked(descriptor: int) -> bool:
     return False
 
 
+def _revoked_output(descriptor: int) -> bool:
+    if _revoked(descriptor):
+        return True
+    # Darwin can still return attributes after hangup while rejecting writes.
+    # Probe the captured output without emitting bytes or stopping a background
+    # process group with SIGTTOU; unexpected driver errors remain visible.
+    previous = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGTTOU})
+    try:
+        os.write(descriptor, b"")
+    except OSError as error:
+        if error.errno in (errno.EIO, errno.ENXIO, errno.ENOTTY):
+            return True
+        raise
+    finally:
+        signal.pthread_sigmask(signal.SIG_SETMASK, previous)
+    return False
+
+
 class RevokedTerminalOutput:
     """Discard shutdown writes only to the same, demonstrably revoked TTY.
 
@@ -54,7 +72,7 @@ class RevokedTerminalOutput:
                 raise
             if (current.st_dev, current.st_ino) != (original.st_dev, original.st_ino):
                 continue
-            if _revoked(descriptor):
+            if _revoked_output(descriptor):
                 sink = os.open(os.devnull, os.O_WRONLY)
                 try:
                     os.dup2(sink, descriptor)

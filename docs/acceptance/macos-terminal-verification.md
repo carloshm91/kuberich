@@ -9,10 +9,20 @@ Both completed macOS 3.12 and 3.14 logs establish 57 failures and 2,934 passes;
 Linux 3.13 and 3.14 succeeded. These failed attempts remain part of the record.
 They are not replaced by local Linux evidence or a waived gate.
 
-The changes affect the test observer, restoration oracle and connection fixture,
-plus repository diff verification. Application source, requirements, version and
-packaging payload are unchanged. Changed executable application coverage is N/A;
-complete hosted application coverage and all critical gates remain mandatory.
+The first correction affected the test observer, restoration oracle and connection
+fixture, plus repository diff verification. Its actual PR attempt at
+`85f199e5d24d53d92d21a839b003c5e54223c0bb`
+reduced macOS/Python 3.12 failures from 57 to **5**, with **3,010 passes**.
+Linux/Python 3.13 and 3.14 each passed 3,015 cases, and repository/DCO checks
+passed. That failed macOS attempt remains recorded in
+[run 37854767711](https://github.com/carloshm91/kuberich/actions/runs/37854767711).
+
+The follow-up changes production shutdown detection: Darwin can retain readable
+termios attributes after hangup while rejecting output. Probe only captured,
+unchanged TTY output with a zero-byte write, preserve the signal mask, and discard
+only recognized driver failures so buffered interpreter cleanup preserves exit
+129. Requirements/version are unchanged. Full independent and changed-line
+application coverage, native checks and all critical gates remain mandatory.
 
 ## Regression witnesses
 
@@ -34,6 +44,13 @@ complete hosted application coverage and all critical gates remain mandatory.
 - Full-history repository checkout fixes the shallow root-commit comparison.
   PR and main whitespace checks use their actual event base, including synthetic
   merge commits, with root-commit handling retained for the initial event.
+- Actual readable-attribute/write-failure witnesses verify no bytes are emitted,
+  only the captured TTY is redirected, and SIGTTOU's prior mask is restored.
+  Unexpected write errors surface and preserve the descriptor.
+- The selection-event witness waits for the initial projection's final viewport
+  restore before moving the cursor, retaining its stale-event UID assertion.
+  Embedded-shell fixture exceptions are retained even when the workspace repaint
+  removes the traceback; they do not change the fixture's result or waive a failure.
 
 ## Measured local evidence and completion boundary
 
