@@ -9,8 +9,12 @@ The automated command is
 `uv run python -m scripts.verify_workloads_kind --kind /tmp/kubetrol-tools/kind --evidence /tmp/kubetrol-45-evidence/kind.json`.
 Actual Deployment and StatefulSet/DaemonSet rollback, narrow RBAC, HPA and failure/
 cancellation checks passed on an owned cluster, which was deleted.
-[Acceptance evidence](acceptance/workloads.md) records pending full interpreter/
-artifact qualification. Private work proceeds without intermediate maintainer trials;
+[Acceptance evidence](acceptance/workloads.md) records 2,952 passing cases on each
+Linux Python 3.12/3.13/3.14 interpreter, over 99% production lines and 97%
+branches, and all 34 critical modules at 100%. Native source/fresh-wheel terminals,
+builds and locked/fresh dependency audits also passed; native macOS and the full
+hosted release matrix remain outstanding.
+Private work proceeds without intermediate maintainer trials;
 public installation/release remains separately gated.
 
 ## Manifest edit checkpoint: M02 #44
