@@ -8,8 +8,8 @@ version = "0.0.1.dev0"
 description = "A Kubernetes terminal UI built with Python and Textual"
 readme = "README.md"
 requires-python = ">=3.12,<3.15"
-license = "MIT"
-license-files = ["LICENSE"]
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
 authors = [{ name = "Carlos Herrera", email = "carloshm91@gmail.com" }]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
@@ -78,6 +78,7 @@ include = [
     "/pyproject.toml",
     "/README.md",
     "/LICENSE",
+    "/NOTICE",
     "/CHANGELOG.md",
 ]
 exclude = ["**/__pycache__/**", "*.pyc", "*.pyo"]

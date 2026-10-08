@@ -97,7 +97,7 @@ class Kuberich < Formula
   homepage "https://github.com/{REPOSITORY}"
   url {ruby(url)}
   sha256 {ruby(digest(archive))}
-  license "MIT"
+  license "Apache-2.0"
 
   depends_on "kubernetes-cli"
   depends_on "libyaml"

@@ -25,9 +25,11 @@ issue and an updated roadmap.
 
 ## Public launch preparation
 
-The repository and GitHub roadmap remain private until the maintainer explicitly
-approves the visibility change. Prepare a simple landing page and initial
-documentation before that decision. The landing page should explain the product
+The maintainer approved opening the Apache-2.0 source repository in #155 on
+2026-10-08. The separate GitHub project remains private. The first public product
+release remains 1.0.0; intermediate milestones are engineering checkpoints.
+Prepare a simple landing page and initial documentation before that product
+launch. The landing page should explain the product
 and show its actual terminal interface; initial documentation should cover
 verified installation, a quick start, supported features, and known limitations.
 This launch material does not wait for the expanded documentation milestone.

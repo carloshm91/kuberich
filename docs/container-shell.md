@@ -113,7 +113,7 @@ visible to its operator and is not stored in application diagnostic logs.
 
 [Pyte 0.8.2](https://github.com/selectel/pyte/tree/0.8.2) is an unmodified,
 dynamically imported LGPLv3 dependency, pinned in pyproject.toml and
-uv.lock. KubeRich's own adapter/widget code is original MIT code; no upstream
+uv.lock. KubeRich's own adapter/widget code is original Apache-2.0 code; no upstream
 widget source is copied. Pyte's license and replacement/source availability must
 be preserved in future standalone distributions; Q04 owns the complete license
 and SBOM release checks.

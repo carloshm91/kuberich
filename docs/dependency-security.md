@@ -49,7 +49,7 @@ python-dateutil's original notice states that its BSD license covers all its cod
 the generated notices preserve both license sections.
 
 Pyte 0.8.2 remains an unmodified, dynamically imported LGPL-3.0-only dependency.
-KubeRich's own code remains MIT. Preserve Pyte's original license, authors and
+KubeRich's own code is Apache-2.0 (see licensing.md). Preserve Pyte's original license, authors and
 corresponding source when bundling a standalone distribution, and preserve users'
 ability to replace the library as required by its license. The candidate manifest
 records the pinned Pyte source archive URL and SHA-256 from uv.lock. wcwidth and

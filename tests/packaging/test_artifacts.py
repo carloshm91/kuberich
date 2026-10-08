@@ -54,8 +54,8 @@ def assert_metadata(payload: bytes) -> None:
     assert metadata["Name"] == PROJECT["name"]
     assert metadata["Version"] == PROJECT["version"]
     assert SpecifierSet(metadata["Requires-Python"]) == SpecifierSet(PROJECT["requires-python"])
-    assert metadata["License-Expression"] == "MIT"
-    assert metadata.get_all("License-File") == ["LICENSE"]
+    assert metadata["License-Expression"] == "Apache-2.0"
+    assert metadata.get_all("License-File") == ["LICENSE", "NOTICE"]
     assert set(metadata.get_all("Classifier")) == set(PROJECT["classifiers"])
     declared = {
         (canonicalize_name(req.name), str(req.specifier), str(req.marker))
@@ -80,12 +80,20 @@ def test_complete_wheel_payload_and_runtime_metadata(artifacts):
     prefix = f"kuberich-{PROJECT['version']}.dist-info"
     metadata_files = {
         f"{prefix}/{name}"
-        for name in ("METADATA", "WHEEL", "RECORD", "entry_points.txt", "licenses/LICENSE")
+        for name in (
+            "METADATA",
+            "WHEEL",
+            "RECORD",
+            "entry_points.txt",
+            "licenses/LICENSE",
+            "licenses/NOTICE",
+        )
     }
     package = package_payload()
     assert payload.keys() == package.keys() | metadata_files
     assert {name: payload[name] for name in package} == package
     assert payload[f"{prefix}/licenses/LICENSE"] == (ROOT / "LICENSE").read_bytes()
+    assert payload[f"{prefix}/licenses/NOTICE"] == (ROOT / "NOTICE").read_bytes()
     assert_metadata(payload[f"{prefix}/METADATA"])
     entries = configparser.ConfigParser()
     entries.read_string(payload[f"{prefix}/entry_points.txt"].decode())
@@ -105,7 +113,14 @@ def test_complete_sdist_payload_without_development_or_private_files(artifacts):
     expected.update(
         {
             name: (ROOT / name).read_bytes()
-            for name in ("pyproject.toml", "README.md", "LICENSE", "CHANGELOG.md", ".gitignore")
+            for name in (
+                "pyproject.toml",
+                "README.md",
+                "LICENSE",
+                "NOTICE",
+                "CHANGELOG.md",
+                ".gitignore",
+            )
         }
     )
     assert payload.keys() == expected.keys() | {"PKG-INFO"}
@@ -128,7 +143,7 @@ def test_sdist_rebuild_produces_identical_wheel_payload(artifacts, tmp_path):
 def test_build_rejects_untracked_credentials_caches_and_development_files(tmp_path):
     source = tmp_path / "source"
     shutil.copytree(ROOT / "src", source / "src", ignore=shutil.ignore_patterns("__pycache__"))
-    for name in ("pyproject.toml", "README.md", "LICENSE", "CHANGELOG.md", ".gitignore"):
+    for name in ("pyproject.toml", "README.md", "LICENSE", "NOTICE", "CHANGELOG.md", ".gitignore"):
         shutil.copy2(ROOT / name, source / name)
     sentinel = b"synthetic-packaging-private-token"
     for name in (

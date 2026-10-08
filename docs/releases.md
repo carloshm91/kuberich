@@ -1,5 +1,23 @@
 # Versioning and releases
 
+## Source opening and first product release
+
+On 2026-10-08 the maintainer approved Apache-2.0 and opening the source repository
+in [#155](https://github.com/carloshm91/kuberich/issues/155). This is separate from
+publishing an installable product: the first public product release is **1.0.0**,
+after the planned capabilities and compatibility qualification. Intermediate 0.x
+milestones are engineering checkpoints. The installed development version remains
+`0.0.1.dev0`; opening the repository does not bump it or create a release/tag.
+Website/DNS, package indexes and a public Homebrew tap still require their own
+approved tasks.
+
+This decision supersedes the earlier public 0.0.1 sequence below. The release
+gates #40/#51/#65/#75/#82/#86 retain their exact-artifact and installation/platform
+qualification duties; public product publication moves to #89. Follow-up
+[#154](https://github.com/carloshm91/kuberich/issues/154) reconciles the full planning
+map, live gates and release tooling before those gates execute. Opening source
+does not qualify a public product release or remove its checks.
+
 ## Current development stage
 
 The installed version is `0.0.1.dev0`; merges collect entries under Unreleased
@@ -18,9 +36,9 @@ Neither preparation task authorizes publishing or changing repository ownership.
 
 ## Publication approval
 
-Keep the repository and GitHub roadmap private until the maintainer explicitly
-approves making them public. Prepare the simple landing page and initial user
-documentation described in [the roadmap](roadmap.md) before the public launch.
+The source repository's visibility change is approved in #155; the separate
+GitHub project remains private. Prepare the simple landing page and initial user
+documentation described in [the roadmap](roadmap.md) before the product launch.
 An open-source license, merged implementation task, or proposed release date
 does not authorize publication. Prepare tested artifacts and the proposed public
 pages for review, then obtain explicit approval for visibility changes, website
@@ -28,8 +46,10 @@ publication, and public distribution channels, including PyPI and a Homebrew tap
 
 ## Version rules
 
-The first usable public application release is **0.0.1**. Repository preparation
+The first public application release is **1.0.0**. Repository preparation
 does not create a release tag. A merged task does not automatically bump a version.
+The 0.x examples below describe private engineering qualification and historical
+planning, not approved public publication.
 
 | Change | Version example |
 | --- | --- |

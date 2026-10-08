@@ -167,6 +167,7 @@ def require_source(root: Path, sha: str) -> None:
         "README.md",
         "CHANGELOG.md",
         "LICENSE",
+        "NOTICE",
         ".gitignore",
         *INPUT_FILES,
     ]
