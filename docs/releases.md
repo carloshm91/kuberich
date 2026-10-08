@@ -102,7 +102,7 @@ cannot undo downloads already made.
 ## Prerequisites tracked in issues
 
 Before each canonical RC publication, run the exact candidate's contract suite
-and all five owned-cluster rehearsals three times, retaining per-run fault/cleanup
+and all six owned-cluster rehearsals three times, retaining per-run fault/cleanup
 evidence as described in [integration qualification](integration-testing.md).
 
 - PyPI/TestPyPI project ownership and pending Trusted Publisher configuration for

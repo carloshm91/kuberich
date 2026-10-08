@@ -25,6 +25,8 @@ class Command(Enum):
     SHELL = auto()
     PORT_FORWARD = auto()
     PORT_FORWARDS = auto()
+    ANNOTATE = auto()
+    WRITES = auto()
     UNAVAILABLE = auto()
 
 
@@ -33,6 +35,7 @@ _ACTIONS = {
     "attach": Action.ATTACH,
     "plugin": Action.PLUGIN,
     "portforward": Action.PORT_FORWARD,
+    "annotate": Action.MUTATE,
     **dict.fromkeys(("delete", "edit", "scale", "rollout", "apply", "patch"), Action.MUTATE),
 }
 
@@ -52,6 +55,8 @@ ALIASES = {
     "pf": Command.PORT_FORWARDS,
     "portforwards": Command.PORT_FORWARDS,
     "portforward": Command.PORT_FORWARD,
+    "annotate": Command.ANNOTATE,
+    "writes": Command.WRITES,
 }
 
 

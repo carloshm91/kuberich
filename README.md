@@ -34,6 +34,10 @@ use the selected context, pod and container, with a configurable shell and retur
 to the retained table. [Managed pod/Service TCP forwards](docs/port-forwards.md)
 provide validated mappings, observed listeners, an owned session list and deliberate
 stop, with cleanup on context changes and exit.
+[Guarded annotation changes](docs/mutations.md) add explicit captured confirmation,
+atomic UID/version conditions, common read-only enforcement and public outcome
+history through `:annotate` / `:writes`. Editing, scale/rollout and deletion remain
+their separate implementation tasks.
 The [resource workspace](docs/resource-workspace.md) adds a built-in `k9s` theme,
 top inputs and view-specific shortcuts, identity/version headers, Escape trails,
 and a live namespace table with Enter/Escape navigation. The command bar suggests

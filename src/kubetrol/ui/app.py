@@ -59,9 +59,10 @@ from kubetrol.services.commands import (
 from kubetrol.services.filtering import apply_filter
 from kubetrol.services.inspection import InspectionService
 from kubetrol.services.logs import LogStream
+from kubetrol.services.mutations import MutationManager, MutationService
 from kubetrol.services.pods import NamespaceProjection, PodProjection, StandardProjection
 from kubetrol.services.port_forwards import ForwardManager, ForwardService
-from kubetrol.services.processes import ProcessRunner
+from kubetrol.services.processes import ProcessRunner, _finish_owned
 from kubetrol.services.sessions import SessionService
 from kubetrol.services.shell import ShellService
 from kubetrol.services.workspace import ViewSubscription, WorkspaceService
@@ -84,6 +85,7 @@ from kubetrol.ui.contexts import ContextTable
 from kubetrol.ui.handoff import terminal_handoff
 from kubetrol.ui.inspection import InspectionScreen, Page
 from kubetrol.ui.logs import LogScreen
+from kubetrol.ui.mutations import AnnotationScreen, MutationHistoryScreen
 from kubetrol.ui.namespaces import NamespaceTable
 from kubetrol.ui.pods import PodTable, Viewport
 from kubetrol.ui.port_forwards import ForwardPrompt, ForwardScreen
@@ -127,7 +129,7 @@ class HelpScreen(ModalScreen[None]):
                         "Ctrl+C            Quit\n\n"
                         "Commands: po/pod/pods [NS or *], ctx [NAME], ns [NAME or *], "
                         "status, retry, login, back, forward, shell/exec, pf/portforwards, "
-                        "portforward, help, quit.\n"
+                        "portforward, annotate, writes, help, quit.\n"
                         "Resources: deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, "
                         "no, pvc, pv, sc. Namespaced resources accept [NS or *].\n"
                         "Filter: plain case-insensitive text; re:PATTERN for regex. "
@@ -223,7 +225,8 @@ class KubetrolApp(App[None]):
         self.commands = CommandService(AccessPolicy(settings.read_only))
         self.processes = ProcessRunner(self.commands.policy)
         self.forwards = ForwardManager(self.processes, changed=self._forward_changed)
-        self.sessions.before_close = self.forwards.stop_for_client
+        self.mutations = MutationManager()
+        self.sessions.before_close = self._close_client_operations
         self._terminal_signals = TerminalSignals(self)
         self._shell = settings.shell
         self._refresh_seconds = settings.refresh_seconds
@@ -701,8 +704,25 @@ class KubetrolApp(App[None]):
             else self.standard_table.sort_summary
         )
 
+    async def _close_client_operations(self, client: KubernetesSession) -> None:
+        closing = asyncio.gather(
+            self.mutations.stop_for_client(client),
+            self.forwards.stop_for_client(client),
+            *(
+                screen.stop_owned()
+                for screen in tuple(self.screen_stack)
+                if isinstance(screen, AnnotationScreen) and screen.source.client is client
+            ),
+        )
+        try:
+            await asyncio.shield(closing)
+        except asyncio.CancelledError:
+            await _finish_owned(closing)
+            raise
+
     async def on_unmount(self) -> None:
         try:
+            await self.mutations.close()
             await self.forwards.close()
             await self.processes.close()
             await self.workspace.close()
@@ -778,6 +798,29 @@ class KubetrolApp(App[None]):
             self.push_screen(
                 ForwardScreen(self.forwards, self.chrome, self.breadcrumbs.trail, selected=selected)
             )
+
+    def action_annotate(self) -> None:
+        try:
+            self.commands.policy.require(Action.MUTATE)
+        except AppError as error:
+            self._set_status(str(error))
+            return
+        selection = self._capture_target()
+        if selection is not None:
+            client, resource, _, target, current = selection
+            source = MutationService(client, resource, target, self.commands.policy, current)
+            try:
+                source.require_current()
+            except AppError:
+                self._set_status(
+                    "This captured resource API cannot be modified here. Select a patchable resource."
+                )
+                return
+            self.push_screen(AnnotationScreen(source, self.mutations))
+
+    def action_writes(self) -> None:
+        if not isinstance(self.screen, ModalScreen):
+            self.push_screen(MutationHistoryScreen(self.mutations))
 
     def _forward_started(self, identity: UUID | None) -> None:
         if identity is not None:
@@ -1236,6 +1279,10 @@ class KubetrolApp(App[None]):
             self.action_port_forward()
         elif command is Command.PORT_FORWARDS:
             self.action_port_forwards()
+        elif command is Command.ANNOTATE:
+            self.action_annotate()
+        elif command is Command.WRITES:
+            self.action_writes()
         else:
             self._set_status(self._workspace_status())
 

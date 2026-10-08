@@ -56,7 +56,7 @@ jobs:
         run: |
           uv run ruff check .
           uv run ruff format --check .
-          uv run mypy --strict src/kubetrol scripts/check_coverage.py scripts/check_quality_gate.py scripts/ci_policy.py scripts/check_supply_chain.py scripts/supply_chain.py scripts/dependency_inventory.py scripts/release.py scripts/release_policy.py scripts/homebrew.py scripts/owned_kind.py scripts/verify_kind_lifecycle.py scripts/verify_quickstart.py scripts/standard_kind.py scripts/verify_port_forwards_kind.py
+          uv run mypy --strict src/kubetrol scripts/check_coverage.py scripts/check_quality_gate.py scripts/ci_policy.py scripts/check_supply_chain.py scripts/supply_chain.py scripts/dependency_inventory.py scripts/release.py scripts/release_policy.py scripts/homebrew.py scripts/owned_kind.py scripts/verify_kind_lifecycle.py scripts/verify_quickstart.py scripts/standard_kind.py scripts/verify_port_forwards_kind.py scripts/verify_mutations_kind.py
       - name: Run behavioral, gate-regression and clean-distribution checks
         run: uv run pytest --cov=kubetrol --cov-branch --cov-report=term-missing --cov-report=xml --cov-report=json
       - name: Verify context sessions, resource views and watches on an owned disposable cluster
@@ -80,6 +80,9 @@ jobs:
       - name: Verify actual owned pod and Service port-forward lifecycles
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_port_forwards_kind --kind "$RUNNER_TEMP/kubetrol-kind" --kubectl "$RUNNER_TEMP/kubetrol-shell/bin/kubectl"
+      - name: Verify guarded writes and actual RBAC on an owned disposable cluster
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.12' }}
+        run: uv run python -m scripts.verify_mutations_kind --kind "$RUNNER_TEMP/kubetrol-kind"
       - name: Enforce independent production and critical-module coverage
         run: uv run python scripts/check_coverage.py coverage.json
       - name: Enforce changed executable-line coverage against the merge base
