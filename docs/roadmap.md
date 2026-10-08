@@ -32,9 +32,16 @@ and show its actual terminal interface; initial documentation should cover
 verified installation, a quick start, supported features, and known limitations.
 This launch material does not wait for the expanded documentation milestone.
 
-The proposed address structure is a root domain for the landing page and its
-`docs` subdomain for documentation, for example `kubetrol.com` and
-`docs.kubetrol.com`. These addresses are proposals, not ownership or hosting
+The preferred name candidate is **KubeRich**, with `kuberich` as the proposed CLI
+and distribution name. [The focused migration and name review #149](https://github.com/carloshm91/kubetrol/issues/149)
+records pronunciation, namespace observations, existing commercial uses and the
+unverified trademark-search boundary. The current private checkout still uses
+Kubetrol; a reviewed and tested migration precedes the public release.
+
+The proposed address structure is `kuberich.com` for the landing page and
+`docs.kuberich.com` for documentation. [Initial launch material #150](https://github.com/carloshm91/kubetrol/issues/150)
+is prepared privately before #40; expanded versioned documentation remains
+#90/#91 after the installable product. These addresses are proposals, not ownership or hosting
 claims. The maintainer chooses the domain and approves any purchase, DNS change,
 hosting publication, or repository visibility change. There is no automatic
 publication deadline.

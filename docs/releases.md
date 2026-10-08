@@ -10,6 +10,10 @@ platform/protection qualification, and publishing the first usable `0.0.1`, rema
 D04 #40.
 The header shows installed package metadata. Automatic new-release notices remain
 U01 #56, rather than an inferred claim that this checkout is a published release.
+The preferred KubeRich identity is reviewed in #149; the current package remains
+`kubetrol` until its focused migration is verified. #149 and initial landing/docs
+preparation #150 are explicit prerequisites for the first public launch in #40.
+Neither preparation task authorizes publishing or changing repository ownership.
 
 ## Publication approval
 
