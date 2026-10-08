@@ -14,6 +14,10 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Prepare a responsive private landing and source-generated initial user guides,
+  actual local UI captures, browser/accessibility checks and reviewed hosting steps.
+  Website/DNS and package publication remain separate approved launch actions.
+
 - Review and confirm workload scale/restart/explicit revision rollback; monitor
   actual rollout progress with HPA, paused/OnDelete, narrow RBAC and UID/version guards.
 

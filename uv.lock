@@ -951,23 +951,6 @@ wheels = [
 ]
 
 [[package]]
-name = "kubernetes-asyncio"
-version = "36.1.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "aiohttp" },
-    { name = "certifi" },
-    { name = "python-dateutil" },
-    { name = "pyyaml" },
-    { name = "six" },
-    { name = "urllib3" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/60/45/9e15f4268454636aee32d92ddeaa7128c71100308644bc79685292c1efcc/kubernetes_asyncio-36.1.0.tar.gz", hash = "sha256:6d979d82e5ebe490bea298e7843732a2336173236bae28e200434889443d4443", size = 1426205, upload-time = "2026-06-04T19:42:45.669Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/b2/dc/695601e3a6f08ca3d6035d300a944974c17084050591faec6e1de39e4a4e/kubernetes_asyncio-36.1.0-py3-none-any.whl", hash = "sha256:6d25915d1abff24fceda551a502208d986f674d72586297aa58bc7d55e7feaf3", size = 3044531, upload-time = "2026-06-04T19:42:43.84Z" },
-]
-
-[[package]]
 name = "kuberich"
 version = "0.0.1.dev0"
 source = { editable = "." }
@@ -987,6 +970,7 @@ dev = [
     { name = "cryptography" },
     { name = "cyclonedx-bom" },
     { name = "diff-cover" },
+    { name = "markdown-it-py" },
     { name = "mypy" },
     { name = "pip-audit" },
     { name = "pipx" },
@@ -1016,6 +1000,7 @@ dev = [
     { name = "cryptography", specifier = ">=50.0.2,<51" },
     { name = "cyclonedx-bom", specifier = ">=7.5.0,<8" },
     { name = "diff-cover", specifier = ">=10.6.0,<11" },
+    { name = "markdown-it-py", specifier = ">=4.2.0,<5" },
     { name = "mypy", specifier = ">=2.4.0,<3" },
     { name = "pip-audit", specifier = ">=2.10.1,<3" },
     { name = "pipx", specifier = ">=1.17.11,<2" },
@@ -1026,6 +1011,23 @@ dev = [
     { name = "twine", specifier = ">=7.0.0,<8" },
     { name = "types-pyyaml", specifier = ">=6.0.12,<7" },
     { name = "types-regex", specifier = ">=2026.9.29.20261005,<2027" },
+]
+
+[[package]]
+name = "kubernetes-asyncio"
+version = "36.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiohttp" },
+    { name = "certifi" },
+    { name = "python-dateutil" },
+    { name = "pyyaml" },
+    { name = "six" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/60/45/9e15f4268454636aee32d92ddeaa7128c71100308644bc79685292c1efcc/kubernetes_asyncio-36.1.0.tar.gz", hash = "sha256:6d979d82e5ebe490bea298e7843732a2336173236bae28e200434889443d4443", size = 1426205, upload-time = "2026-06-04T19:42:45.669Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b2/dc/695601e3a6f08ca3d6035d300a944974c17084050591faec6e1de39e4a4e/kubernetes_asyncio-36.1.0-py3-none-any.whl", hash = "sha256:6d25915d1abff24fceda551a502208d986f674d72586297aa58bc7d55e7feaf3", size = 3044531, upload-time = "2026-06-04T19:42:43.84Z" },
 ]
 
 [[package]]

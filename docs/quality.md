@@ -18,6 +18,14 @@ or reliable installation.
 | Artifacts | Build, metadata validation, and clean-environment installation pass |
 | Dependencies | No unresolved actionable high/critical vulnerability without a documented, time-bounded mitigation reviewed in the PR |
 
+The initial launch site in #150 also runs build/link/digest checks, strict builder
+types and real Chrome keyboard/accessibility/copy/no-JavaScript checks under
+Repository checks. Its Node 20+/Chrome and locked Playwright/axe tools are developer
+verification prerequisites, outside the application/runtime dependency contract.
+Generated local evidence and node_modules are not repository planning sources.
+Site-only delivery reports changed executable application coverage as N/A;
+it preserves every application coverage gate and the latest qualified source tree.
+
 The current critical modules are the CLI/module entry points, preference schema
 validation/precedence, diagnostic redaction, control escaping, literal text
 presentation, argument validation/capture, client/UID target identity checks,

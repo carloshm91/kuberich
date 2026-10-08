@@ -44,10 +44,11 @@ Kubernetes may omit zero status counters; a completely missing workload status
 remains unknown. `j/k` and `g/G` navigate; Alt+Left/Right restores the prior view,
 including scope, filter, sorting and viewport.
 
-Shell and logs remain pod/container actions. Editing, scaling, rollout, deletion,
-port forwarding, owner drill-down and generic CRD columns have separate tickets.
-This release of the view registry does not establish those behaviors or full K9s
-parity. Endpoints remains available when served, although modern clusters should
+Shell and logs remain pod/container actions. [Manifest editing](editing.md),
+[workload scale/rollout](workloads.md) and [port forwarding](port-forwards.md) now
+have their own implemented contracts. Deletion, owner drill-down and generic CRD
+columns remain separate tickets. These views do not establish full K9s parity.
+Endpoints remains available when served, although modern clusters should
 also support the later EndpointSlice view tracked in the networking backlog.
 
 An absent API, denied LIST/WATCH/GET, expired resource version and a successful

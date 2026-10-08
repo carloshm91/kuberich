@@ -12,10 +12,41 @@ jobs:
   repository:
     name: Repository checks
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Validate plan, dependency graph, audit mappings and documentation links
         run: python3 scripts/validate_plan.py
       - name: Check whitespace
         run: git diff-tree --root --check HEAD
+      - name: Install locked static-site tools
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: '0.10.4'
+          python-version: '3.12'
+          enable-cache: true
+      - name: Build and validate both static-site surfaces
+        run: |
+          uv sync --locked --group dev
+          uv run mypy --strict scripts/build_site.py scripts/check_site.py
+          uv run python -m scripts.build_site
+          uv run python -m scripts.check_site
+      - name: Verify website keyboard, accessibility and browser behavior
+        run: |
+          mkdir -p artifacts/site-qa
+          cp website/qa/package.json website/qa/package-lock.json artifacts/site-qa/
+          npm ci --prefix artifacts/site-qa --ignore-scripts
+          npm audit --prefix artifacts/site-qa --audit-level=low --json > artifacts/site-qa/npm-audit.json
+          node scripts/verify_site_browser.mjs
+      - name: Retain static build and browser evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: initial-site
+          path: |
+            artifacts/site
+            artifacts/site-qa/*.png
+            artifacts/site-qa/browser-report.json
+            artifacts/site-qa/npm-audit.json
+          if-no-files-found: error
+          retention-days: 7

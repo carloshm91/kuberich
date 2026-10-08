@@ -17,6 +17,13 @@ from parser tests alone. See [current CLI behavior](k9s-cli.md).
 
 ## Current maintainer priority
 
+The confirmed KubeRich/domain decision prioritizes identity migration #149 and
+private initial landing/docs preparation #150 before launch gate #40. The latter
+can implement local design/content before the final candidate; its exact candidate,
+hosting/publication and DNS criteria remain separate release-time gates. Those
+external gates do not stop subsequent unblocked private product implementation.
+These two launch refinements are outside the original 79-task inventory.
+
 The current instruction is continuous private delivery: verify and squash-merge
 each completed implementation PR, then proceed to the next unblocked task without
 waiting for intermediate manual trials. Keep checkpoints documented; the

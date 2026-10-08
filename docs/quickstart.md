@@ -5,8 +5,10 @@ command completion, local filters, 15 [standard resource tables](standard-resour
 resource details/YAML/events, container logs and
 embedded container shells. The checkout reports `0.0.1.dev0`; private candidate
 tests can report `0.0.1rc1`. **0.0.1 has not been publicly published yet.**
-Deployment scaling/editing, generic CRD tables, metrics, attach,
-ephemeral debugging, file transfer and user plugins remain separate tickets.
+Guarded annotations, manifest editing, workload scale/restart/rollback and managed
+pod/Service port forwarding are also available. Generic CRD tables, metrics,
+deletion, attach, ephemeral debugging, file transfer and user plugins remain
+separate tickets.
 This preview does not claim complete K9s parity or real EKS/AKS certification.
 
 ## Run the private checkout
