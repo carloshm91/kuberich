@@ -7,6 +7,9 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Edit selected manifests with a trusted native editor, private owned drafts,
+  redacted preview, strict server dry-run, separate Apply and version/UID refusal.
+
 - Guarded annotation changes with captured one-use confirmation, atomic UID/version
   conditions, common read-only policy and bounded public write-outcome history.
 

@@ -14,6 +14,7 @@ import pytest
 
 from tests.support.azure_handoff import azure_terminal_trial
 from tests.support.distribution import PROJECT, run
+from tests.support.editing_terminal import terminal_editing
 from tests.support.forward_terminal import terminal_forward
 from tests.support.handoff import terminal_handoff_trial
 from tests.support.mutation_terminal import terminal_mutation
@@ -55,6 +56,17 @@ def test_installed_mutation_confirmation_and_terminal_restoration(installed_whee
         else [str(binary / "python"), "-m", "kubetrol"]
     )
     terminal_mutation(command, directory, f"installed-mutation-{entry_point}")
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+def test_installed_manifest_editor_and_terminal_restoration(installed_wheel, entry_point):
+    binary, directory = installed_wheel
+    command = (
+        [str(binary / "kubetrol")]
+        if entry_point == "console"
+        else [str(binary / "python"), "-m", "kubetrol"]
+    )
+    terminal_editing(command, directory, f"installed-editor-{entry_point}")
 
 
 def test_wheel_metadata_entry_point_and_assets(artifacts: tuple[Path, Path]) -> None:

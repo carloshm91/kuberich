@@ -26,6 +26,7 @@ class Command(Enum):
     PORT_FORWARD = auto()
     PORT_FORWARDS = auto()
     ANNOTATE = auto()
+    EDIT = auto()
     WRITES = auto()
     UNAVAILABLE = auto()
 
@@ -56,6 +57,7 @@ ALIASES = {
     "portforwards": Command.PORT_FORWARDS,
     "portforward": Command.PORT_FORWARD,
     "annotate": Command.ANNOTATE,
+    "edit": Command.EDIT,
     "writes": Command.WRITES,
 }
 

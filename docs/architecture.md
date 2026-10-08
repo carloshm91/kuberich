@@ -300,8 +300,18 @@ The adapter sends one PATCH without redirect, 401 refresh/replay or blind retry.
 Requests and decoding are drained before client cleanup; bounded public history
 retains uncertain results without manifests/values/credentials. `:annotate` is the
 first concrete action, with Review/Cancel as the default and separate Confirm.
-The broad resource editor/scale/delete actions remain #44/#45/#46. See
-[guarded changes](mutations.md).
+See [guarded changes](mutations.md).
+
+M02 #44 keeps bounded YAML parsing, identity checks and structural differences in
+critical `domain/editing.py`. The filesystem adapter owns private drafts and
+drains creation/read/cleanup threads under repeated cancellation. EditingService
+retains the original snapshot/version, captures trusted editor argv, invalidates
+old proofs and requires the exact intent to pass strict server dry-run before
+confirmation. The form discloses local full-manifest access, shows a separately
+redacted diff and defaults to Cancel. Native handoff reuses the shared process
+owner. Preparation/file cleanup completes before form return or captured client
+close; already confirmed requests retain mutation-manager ownership. Secret
+manifest access remains C04 #55. Scale/delete remain #45/#46. See [editing](editing.md).
 
 Mutations go through services that capture identity, enforce read-only mode,
 present the target and consequences, handle permissions/conflicts, and return a

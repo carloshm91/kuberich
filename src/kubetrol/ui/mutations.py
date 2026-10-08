@@ -175,7 +175,8 @@ class AnnotationScreen(ModalScreen[None]):
         self._writing = False
 
     @on(Button.Pressed, "#annotation-cancel")
-    def cancel(self) -> None:
+    async def cancel(self) -> None:
+        await self.stop_owned()
         self.dismiss()
 
     async def stop_owned(self) -> None:
