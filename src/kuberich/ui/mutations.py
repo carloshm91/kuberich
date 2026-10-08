@@ -4,6 +4,7 @@ import asyncio
 from typing import ClassVar
 from uuid import UUID
 
+from rich.text import Text
 from textual import on
 from textual.app import ComposeResult
 from textual.binding import Binding, BindingType
@@ -13,12 +14,30 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Static
 
 from kuberich.domain.connections import ConnectionProblem
-from kuberich.domain.mutations import MutationIntent
+from kuberich.domain.mutations import MutationIntent, MutationResult
 from kuberich.errors import AppError
 from kuberich.security.presentation import safe_text
 from kuberich.services.mutations import MutationManager, MutationService
 from kuberich.services.processes import _finish_owned
 from kuberich.ui.port_forwards import ForwardInput
+
+
+def result_text(result: MutationResult) -> Text:
+    """Bound each item independently so large batches do not hide later outcomes."""
+    content = safe_text(
+        result.message.split("\n", 1)[0] if result.items else result.message, multiline=True
+    )
+    for target, item in result.items:
+        content.append_text(
+            safe_text(
+                f"\n{target.namespace or '(cluster)'}/{target.name} · UID {target.uid}\n"
+                + item.state.value
+                + ": "
+                + item.message,
+                multiline=True,
+            )
+        )
+    return content
 
 
 class AnnotationScreen(ModalScreen[None]):
@@ -219,26 +238,28 @@ class MutationHistoryScreen(ModalScreen[None]):
         self.set_interval(0.2, self.refresh_records)
 
     def refresh_records(self) -> None:
-        lines = []
+        content = Text()
         for record in reversed(self.manager.records):
             target = record.target
             state = (
                 record.result.state.value if record.result is not None else "Sending / revalidating"
             )
-            message = (
-                record.result.message
+            content.append_text(
+                safe_text(
+                    f"{target.session.context} · {target.namespace or '(cluster)'} · {target.resource}/{target.name}\nUID {target.uid}\n{state}: ",
+                    multiline=True,
+                )
+            )
+            content.append_text(
+                result_text(record.result)
                 if record.result is not None
-                else "Waiting for one request outcome."
+                else Text("Waiting for one request outcome.")
             )
-            lines.append(
-                f"{target.session.context} · {target.namespace or '(cluster)'} · {target.resource}/{target.name}\nUID {target.uid}\n{state}: {message}\n"
-                + "\n".join(record.effects)
-            )
+            for effect in record.effects:
+                content.append_text(safe_text("\n" + effect, multiline=True))
+            content.append("\n\n")
         self.query_one("#write-history-content", Static).update(
-            safe_text(
-                "\n\n".join(lines) if lines else "No writes in this application session.",
-                multiline=True,
-            )
+            content if content else Text("No writes in this application session.")
         )
 
     @on(Button.Pressed, "#write-history-back")

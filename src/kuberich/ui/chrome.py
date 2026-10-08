@@ -89,12 +89,18 @@ RESOURCE_SHORTCUTS = (
 
 def workload_shortcuts(resource: str, read_only: bool) -> tuple[tuple[str, str], ...]:
     actions = []
+    if not read_only and resource in {"jobs", "cronjobs"}:
+        if resource == "cronjobs":
+            actions.append((":trigger", "Run Job now"))
+        actions.extend(((":suspend", "Suspend"), (":resume", "Resume")))
     if not read_only and resource in {"deployments", "statefulsets", "replicasets"}:
         actions.append((":scale", "Scale replicas"))
     if resource in {"deployments", "statefulsets", "daemonsets"}:
         if not read_only:
             actions.extend(((":restart", "Restart"), (":rollback", "Rollback revision")))
         actions.append((":rollout", "Rollout status"))
+    if not read_only:
+        actions.append((":delete", "Review deletion"))
     return (*actions, *RESOURCE_SHORTCUTS)[:12]
 
 

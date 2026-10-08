@@ -144,6 +144,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
         "scripts.verify_mutations_kind",
         "scripts.verify_editing_kind",
         "scripts.verify_workloads_kind",
+        "scripts.verify_operations_kind",
         "scripts.verify_quickstart",
         "uv build",
         "twine check",

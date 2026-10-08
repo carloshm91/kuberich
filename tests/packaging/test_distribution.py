@@ -20,6 +20,8 @@ from tests.support.forward_terminal import terminal_forward
 from tests.support.handoff import terminal_handoff_trial
 from tests.support.mutation_terminal import terminal_mutation
 from tests.support.navigation import terminal_navigation
+from tests.support.operation_terminal import terminal_operation
+from tests.support.operations import operation_api
 from tests.support.shell import terminal_shell
 from tests.support.standard_terminal import terminal_standard_views
 from tests.support.transports import TerminalTransport
@@ -84,6 +86,31 @@ async def test_installed_workload_confirmation_and_restoration(installed_wheel, 
     async with workload_api() as (url, api):
         await asyncio.to_thread(
             terminal_workload, command, directory, "installed-workload-" + entry_point, url, api
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+@pytest.mark.parametrize("alias,action", [("cj", "trigger"), ("cm", "delete")])
+async def test_installed_resource_operation_confirmation(
+    installed_wheel, entry_point, alias, action
+):
+    binary, directory = installed_wheel
+    command = (
+        [str(binary / "kuberich")]
+        if entry_point == "console"
+        else [str(binary / "python"), "-m", "kuberich"]
+    )
+    async with operation_api(alias) as (url, api):
+        await asyncio.to_thread(
+            terminal_operation,
+            command,
+            directory,
+            f"installed-operation-{entry_point}-{action}",
+            url,
+            api,
+            action,
+            alias,
         )
 
 

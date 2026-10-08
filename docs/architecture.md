@@ -314,6 +314,22 @@ initial-scope decision that excluded terminal emulation.
 
 ## Actions, configuration, and trust
 
+M04 #46 adds immutable DELETE/create intents in critical `domain/operations.py`.
+Deletion captures explicit propagation/grace and UID/version preconditions;
+Job suspension reuses conditional JSON Patch. Manual Job creation freezes a
+template and unique request name, reports identity and never retries. Source GET
+and Job POST are separate requests, with that race disclosed. Public HTTP
+middleware translates retryable disconnects so aiohttp cannot silently replay
+DELETE. Receipts are bounded and decoded through an owned awaited thread.
+`ResourceOperationService` binds one-use proofs to action/client/target/version;
+post-delete observation distinguishes acceptance, finalizers, absence and
+replacement. `BatchDeleteService` owns at most 100 explicitly captured targets,
+executes sequentially and preserves per-item partial/unsent/uncertain outcomes
+through the existing bounded mutation manager. Its UI defaults to Cancel,
+requires the exact reviewed delete count, and drains readers/result waiters before
+client cleanup. No collection DELETE or finalizer removal is supported.
+See [resource operations](resource-operations.md).
+
 M01 #43 implements conditional JSON Patch through the owned per-context transport.
 Immutable request bytes carry UID/version tests; one-use confirmation binds their
 exact identity and captured API path. Services enforce the shared write policy
@@ -333,7 +349,8 @@ confirmation. The form discloses local full-manifest access, shows a separately
 redacted diff and defaults to Cancel. Native handoff reuses the shared process
 owner. Preparation/file cleanup completes before form return or captured client
 close; already confirmed requests retain mutation-manager ownership. Secret
-manifest access remains C04 #55. Scale/delete remain #45/#46. See [editing](editing.md).
+manifest access remains C04 #55. Scale and deletion use their separate reviewed
+forms in #45/#46. See [editing](editing.md).
 
 Mutations go through services that capture identity, enforce read-only mode,
 present the target and consequences, handle permissions/conflicts, and return a

@@ -18,6 +18,10 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Delete captured resources and explicitly selected batches with UID/version,
+  propagation/grace and count confirmation; retain independent and pending outcomes.
+  Trigger manual Jobs and suspend/resume Jobs/CronJobs with guarded review.
+
 - Prepare a responsive private landing and source-generated initial user guides,
   actual local UI captures, browser/accessibility checks and reviewed hosting steps.
   Website/DNS and package publication remain separate approved launch actions.

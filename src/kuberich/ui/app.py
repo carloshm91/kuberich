@@ -37,6 +37,7 @@ from kuberich.domain.navigation import (
     NavigationHistory,
     NavigationState,
 )
+from kuberich.domain.operations import MAX_BATCH, ResourceAction
 from kuberich.domain.pods import PodColumn
 from kuberich.domain.port_forwards import suggested_port
 from kuberich.domain.processes import ProcessStatus
@@ -62,6 +63,7 @@ from kuberich.services.filtering import apply_filter
 from kuberich.services.inspection import InspectionService
 from kuberich.services.logs import LogStream
 from kuberich.services.mutations import MutationManager, MutationService
+from kuberich.services.operations import ResourceOperationService
 from kuberich.services.pods import NamespaceProjection, PodProjection, StandardProjection
 from kuberich.services.port_forwards import ForwardManager, ForwardService
 from kuberich.services.processes import ProcessRunner, _finish_owned
@@ -91,6 +93,7 @@ from kuberich.ui.inspection import InspectionScreen, Page
 from kuberich.ui.logs import LogScreen
 from kuberich.ui.mutations import AnnotationScreen, MutationHistoryScreen
 from kuberich.ui.namespaces import NamespaceTable
+from kuberich.ui.operations import ResourceOperationScreen
 from kuberich.ui.pods import PodTable, Viewport
 from kuberich.ui.port_forwards import ForwardPrompt, ForwardScreen
 from kuberich.ui.presentation import DEFAULT_PRESENTATION, Presentation
@@ -134,7 +137,8 @@ class HelpScreen(ModalScreen[None]):
                         "Ctrl+C            Quit\n\n"
                         "Commands: po/pod/pods [NS or *], ctx [NAME], ns [NAME or *], "
                         "status, retry, login, back, forward, shell/exec, pf/portforwards, "
-                        "portforward, annotate, edit (Shift+E), scale, restart, rollback, rollout, writes, help, quit.\n"
+                        "portforward, annotate, edit (Shift+E), scale, restart, rollback, rollout, "
+                        "delete, deletebatch, trigger, suspend, resume, writes, help, quit.\n"
                         "Resources: deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, "
                         "no, pvc, pv, sc. Namespaced resources accept [NS or *].\n"
                         "Filter: plain case-insensitive text; re:PATTERN for regex. "
@@ -720,6 +724,12 @@ class KubeRichApp(App[None]):
                 if isinstance(screen, (AnnotationScreen, EditingScreen, WorkloadScreen))
                 and screen.source.client is client
             ),
+            *(
+                screen.stop_owned()
+                for screen in tuple(self.screen_stack)
+                if isinstance(screen, ResourceOperationScreen)
+                and screen.sources[0].client is client
+            ),
         )
         try:
             await asyncio.shield(closing)
@@ -828,6 +838,42 @@ class KubeRichApp(App[None]):
     def action_writes(self) -> None:
         if not isinstance(self.screen, ModalScreen):
             self.push_screen(MutationHistoryScreen(self.mutations))
+
+    def action_resource_operation(self, action: ResourceAction, *, batch: bool = False) -> None:
+        try:
+            self.commands.policy.require(Action.MUTATE)
+        except AppError as error:
+            self._set_status(str(error))
+            return
+        selection = self._capture_target()
+        if selection is None:
+            return
+        selections = [selection]
+        if batch:
+            uids = tuple(key.value for key in self._active_table.rows)
+            if len(uids) > MAX_BATCH:
+                self._set_status(
+                    "Filter this view to at most 100 rows before choosing a delete batch."
+                )
+                return
+            selections = []
+            for uid in uids:
+                captured = self._capture_target(uid)
+                if captured is None:
+                    return
+                selections.append(captured)
+        sources = []
+        try:
+            for client, resource, _, target, current in selections:
+                source = ResourceOperationService(
+                    client, resource, target, self.commands.policy, current, action
+                )
+                source.require_current()
+                sources.append(source)
+        except AppError as error:
+            self._set_status(str(error))
+            return
+        self.push_screen(ResourceOperationScreen(tuple(sources), self.mutations, batch=batch))
 
     def action_workload(self, operation: WorkloadAction, argument: str = "") -> None:
         try:
@@ -1245,7 +1291,9 @@ class KubeRichApp(App[None]):
     async def action_back(self) -> None:
         if isinstance(self.screen, (InspectionScreen, LogScreen)):
             self.screen.back()
-        elif isinstance(self.screen, (AnnotationScreen, EditingScreen, WorkloadScreen)):
+        elif isinstance(
+            self.screen, (AnnotationScreen, EditingScreen, WorkloadScreen, ResourceOperationScreen)
+        ):
             screen = self.screen
             await screen.stop_owned()
             screen.dismiss()
@@ -1354,6 +1402,23 @@ class KubeRichApp(App[None]):
             self.action_writes()
         elif command is Command.EDIT:
             self.action_edit()
+        elif command in {
+            Command.DELETE,
+            Command.DELETE_BATCH,
+            Command.TRIGGER,
+            Command.SUSPEND,
+            Command.RESUME,
+        }:
+            self.action_resource_operation(
+                {
+                    Command.DELETE: ResourceAction.DELETE,
+                    Command.DELETE_BATCH: ResourceAction.DELETE,
+                    Command.TRIGGER: ResourceAction.TRIGGER,
+                    Command.SUSPEND: ResourceAction.SUSPEND,
+                    Command.RESUME: ResourceAction.RESUME,
+                }[command],
+                batch=command is Command.DELETE_BATCH,
+            )
         elif command in {Command.SCALE, Command.RESTART, Command.ROLLBACK, Command.ROLLOUT}:
             self.action_workload(
                 {

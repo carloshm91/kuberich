@@ -32,6 +32,11 @@ class Command(Enum):
     RESTART = auto()
     ROLLBACK = auto()
     ROLLOUT = auto()
+    DELETE = auto()
+    DELETE_BATCH = auto()
+    TRIGGER = auto()
+    SUSPEND = auto()
+    RESUME = auto()
     UNAVAILABLE = auto()
 
 
@@ -42,7 +47,20 @@ _ACTIONS = {
     "portforward": Action.PORT_FORWARD,
     "annotate": Action.MUTATE,
     **dict.fromkeys(
-        ("delete", "edit", "scale", "restart", "rollback", "apply", "patch"), Action.MUTATE
+        (
+            "delete",
+            "deletebatch",
+            "trigger",
+            "suspend",
+            "resume",
+            "edit",
+            "scale",
+            "restart",
+            "rollback",
+            "apply",
+            "patch",
+        ),
+        Action.MUTATE,
     ),
 }
 
@@ -69,6 +87,11 @@ ALIASES = {
     "restart": Command.RESTART,
     "rollback": Command.ROLLBACK,
     "rollout": Command.ROLLOUT,
+    "delete": Command.DELETE,
+    "deletebatch": Command.DELETE_BATCH,
+    "trigger": Command.TRIGGER,
+    "suspend": Command.SUSPEND,
+    "resume": Command.RESUME,
 }
 
 

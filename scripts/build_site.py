@@ -55,6 +55,7 @@ GUIDES = (
     Guide("mutations.md", "Guarded changes", "Change deliberately"),
     Guide("editing.md", "Manifest editing", "Change deliberately"),
     Guide("workloads.md", "Scale & rollout", "Change deliberately"),
+    Guide("resource-operations.md", "Delete & Jobs", "Change deliberately"),
     Guide("eks-authentication.md", "AWS / EKS", "Authentication"),
     Guide("aks-authentication.md", "Azure / AKS", "Authentication"),
 )

@@ -44,7 +44,8 @@ API writes are not a sandbox or a replacement for server RBAC/admission.
 [Manifest editing](editing.md) in M02 #44 uses these guards after explicit local
 disclosure, redacted preview and strict non-persisting server dry-run.
 [Workload operations](workloads.md) add guarded scale/restart/rollback and independent
-monitoring; delete/Job actions remain #46. No complete operations-parity claim follows
+monitoring; [resource operations](resource-operations.md) add deliberate deletion,
+independent batch outcomes and Job/CronJob actions. No complete operations-parity claim follows
 from these actions.
 Annotation keys use Kubernetes qualified names; the combined annotations are
 bounded to 256 KiB and this form limits a value to 65,536 characters.
