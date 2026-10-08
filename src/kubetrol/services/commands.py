@@ -23,6 +23,8 @@ class Command(Enum):
     BACK = auto()
     FORWARD = auto()
     SHELL = auto()
+    PORT_FORWARD = auto()
+    PORT_FORWARDS = auto()
     UNAVAILABLE = auto()
 
 
@@ -30,6 +32,7 @@ _ACTIONS = {
     **dict.fromkeys(("exec", "shell", "ssh"), Action.EXEC),
     "attach": Action.ATTACH,
     "plugin": Action.PLUGIN,
+    "portforward": Action.PORT_FORWARD,
     **dict.fromkeys(("delete", "edit", "scale", "rollout", "apply", "patch"), Action.MUTATE),
 }
 
@@ -46,6 +49,9 @@ ALIASES = {
     "forward": Command.FORWARD,
     "shell": Command.SHELL,
     "exec": Command.SHELL,
+    "pf": Command.PORT_FORWARDS,
+    "portforwards": Command.PORT_FORWARDS,
+    "portforward": Command.PORT_FORWARD,
 }
 
 
@@ -88,7 +94,12 @@ def suggestions(
     candidates = sorted(
         set(head + value for value in values),
         # Preserve familiar :c → context and existing local command completions.
-        key=lambda value: (not separator and value not in ALIASES, value.casefold(), value),
+        key=lambda value: (
+            not separator and value not in ALIASES,
+            not separator and ALIASES.get(value) in {Command.PORT_FORWARDS, Command.PORT_FORWARD},
+            value.casefold(),
+            value,
+        ),
     )
     return tuple(
         value

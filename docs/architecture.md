@@ -36,6 +36,17 @@ secret payloads. Inspection reuses captured UID/client/scope checks. Navigation
 history carries a column key and restores it within the selected resource's
 columns. Mutations and generic CRD/server columns remain later tasks.
 
+S05 #42 captures immutable forward intent, a per-connection client and UID.
+`ForwardManager` owns eight live controllers and at most 32 public history records.
+Each controller owns private delegation, a ProcessRunner group, readiness parsing
+and periodic UID reads. `SessionService.before_close` drains that client's forwards
+before SDK/TLS-directory removal; namespace generations keep the same connection.
+Shared shell/forward delegation freezes effective config/helper environment and
+stages mode-0600 files with awaited cancellation cleanup. ProcessSession output
+drain replenishes consumed capacity without clearing an existing overflow.
+Numeric TCP, loopback defaults and explicit non-loopback opt-in are current scope;
+FastForward/named ports remain #62. See [port forwarding](port-forwards.md).
+
 Q01 #38 shares an explicit local-kind lifecycle between cluster verifiers.
 Generated configuration must match the owned Docker node and published API port
 before fixture writes. Process deadlines and scoped signals own cleanup; deletion

@@ -22,6 +22,7 @@ class ProcessMode(Enum):
 class ProcessPurpose(Enum):
     EXEC = auto()
     ATTACH = auto()
+    PORT_FORWARD = auto()
     EDITOR = auto()
     PLUGIN = auto()
     AUTHENTICATE = auto()
@@ -31,6 +32,7 @@ class ProcessPurpose(Enum):
         return {
             ProcessPurpose.EXEC: Action.EXEC,
             ProcessPurpose.ATTACH: Action.ATTACH,
+            ProcessPurpose.PORT_FORWARD: Action.PORT_FORWARD,
             ProcessPurpose.EDITOR: Action.MUTATE,
             ProcessPurpose.PLUGIN: Action.PLUGIN,
             ProcessPurpose.AUTHENTICATE: Action.READ,

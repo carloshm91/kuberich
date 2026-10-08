@@ -25,7 +25,7 @@ def test_aliases_share_one_readonly_initial_and_interactive_parser(alias, comman
     text = " :" + alias.upper() + " "
     assert CommandService(AccessPolicy(False)).resolve(text) is command
     service = CommandService(AccessPolicy(True))
-    if command is Command.SHELL:
+    if command in {Command.SHELL, Command.PORT_FORWARD}:
         with pytest.raises(AppError, match="Read-only"):
             service.resolve(text)
     else:

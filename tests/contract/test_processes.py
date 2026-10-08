@@ -473,3 +473,53 @@ async def test_cancelled_monitor_keeps_its_cleanup_owner(tmp_path):
         session.task.cancel()
         result = await session.wait()
         assert result.status is ProcessStatus.CANCELLED
+
+
+@pytest.mark.asyncio
+async def test_background_stream_drain_replenishes_only_consumed_capacity(tmp_path):
+    code = """
+import os,time
+from pathlib import Path
+for index in range(3):
+    os.write(1,b'12345678'); os.write(2,b'abcdefgh')
+    Path(f'mark-{index}').write_text('ready')
+    while not Path(f'ack-{index}').exists(): time.sleep(.005)
+"""
+    script = tmp_path / "owned-stream.py"
+    script.write_text(code)
+    async with ProcessRunner(AccessPolicy(False), output_limit=16) as runner:
+        session = await runner.background(
+            replace(
+                command(tmp_path, mode=ProcessMode.BACKGROUND), argv=(sys.executable, str(script))
+            )
+        )
+        for index in range(3):
+            async with asyncio.timeout(3):
+                while not (tmp_path / f"mark-{index}").exists() or session.output.remaining:
+                    await asyncio.sleep(0.005)
+            assert session.running
+            assert session.drain_output() == (b"12345678", b"abcdefgh")
+            assert session.drain_output() == (b"", b"")
+            (tmp_path / f"ack-{index}").write_text("continue")
+        result = await session.wait()
+        assert not session.running and result.status is ProcessStatus.SUCCEEDED
+        assert result.stdout == result.stderr == b""
+
+
+@pytest.mark.asyncio
+async def test_output_drain_cannot_undo_an_existing_overflow(tmp_path):
+    async with ProcessRunner(AccessPolicy(False), output_limit=16) as runner:
+        session = await runner.background(
+            command(
+                tmp_path,
+                "import os,time; os.write(1,b'x'*100); time.sleep(60)",
+                mode=ProcessMode.BACKGROUND,
+            )
+        )
+        async with asyncio.timeout(3):
+            while not session.output.overflow.done():
+                await asyncio.sleep(0.005)
+        assert not session.running
+        assert session.drain_output() == (b"x" * 16, b"")
+        assert not session.running
+        assert (await session.wait()).status is ProcessStatus.OUTPUT_LIMIT

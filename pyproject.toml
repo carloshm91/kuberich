@@ -127,6 +127,7 @@ critical_modules = [
     "src/kubetrol/security/arguments.py",
     "src/kubetrol/domain/targets.py",
     "src/kubetrol/domain/processes.py",
+    "src/kubetrol/domain/port_forwards.py",
     "src/kubetrol/domain/shell.py",
     "src/kubetrol/domain/terminal.py",
     "src/kubetrol/config/launch.py",

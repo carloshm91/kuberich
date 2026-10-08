@@ -455,3 +455,42 @@ async def test_selected_namespace_is_remembered_when_returning_to_context(tmp_pa
             assert (await sessions.connect("kubetrol-test-one")).namespace == "default"
         finally:
             await sessions.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("outcome", ["success", "failure", "cancel"])
+async def test_owned_process_close_hook_precedes_sdk_and_private_directory_cleanup(
+    tmp_path, outcome
+):
+    async def handler(request):
+        return namespaces("default")
+
+    async with fake_api(handler) as url:
+        sessions = SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
+        await sessions.connect("kubetrol-test-one")
+        captured = sessions.client
+        directory = Path(captured.directory.name)
+        started, release = asyncio.Event(), asyncio.Event()
+
+        async def before_close(client):
+            assert client is captured and directory.exists() and client.api is not None
+            started.set()
+            if outcome == "cancel":
+                await release.wait()
+            if outcome == "failure":
+                raise AppError("owned close-hook failure")
+
+        sessions.before_close = before_close
+        closing = asyncio.create_task(sessions.close())
+        await started.wait()
+        if outcome == "failure":
+            with pytest.raises(AppError, match="close-hook"):
+                await closing
+        elif outcome == "cancel":
+            closing.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await closing
+        else:
+            await closing
+        assert sessions.client is None and not directory.exists()
+        await sessions.close()

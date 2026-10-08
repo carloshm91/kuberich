@@ -7,6 +7,9 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Managed pod/Service TCP forwards with dynamic or explicit local ports,
+  observed readiness, IPv4/IPv6 bind intent, session listing/stop and owned cleanup.
+
 - Live discovered workload, batch, network, configuration, node and storage
   tables with typed sorting, scoped commands, retained navigation and redacted details.
 

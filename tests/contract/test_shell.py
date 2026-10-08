@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 from aiohttp import web
 
-import kubetrol.services.shell as module
+import kubetrol.services.delegation as module
 from kubetrol.domain.connections import ConnectionProblem
 from kubetrol.domain.processes import ProcessMode
 from kubetrol.domain.targets import ResourceTarget, SessionIdentity
@@ -164,14 +164,14 @@ async def test_scope_and_readonly_guards_reject_without_retargeting(tmp_path, fa
         if failure == "foreign-directory":
             request = replace(request, path=tmp_path / "must-not-write")
         if failure == "stale-after-write":
-            original = module._ConnectionFile.write
+            original = module.ConnectionFile.write
 
             def write(owner, configuration):
                 nonlocal current
                 original(owner, configuration)
                 current = False
 
-            monkeypatch.setattr(module._ConnectionFile, "write", write)
+            monkeypatch.setattr(module.ConnectionFile, "write", write)
         with pytest.raises(AppError):
             async with shell.stage(request):
                 pytest.fail("must not yield")
@@ -199,14 +199,14 @@ async def test_file_failures_are_safe_and_do_not_remove_unowned_files(
                 os.close(descriptor)
                 raise OSError("private-path-error")
 
-            monkeypatch.setattr(module._ConnectionFile, "write", write)
+            monkeypatch.setattr(module.ConnectionFile, "write", write)
         if failure == "cleanup":
 
             def remove(owner):
                 owner.path.unlink()
                 raise OSError("private-path-error")
 
-            monkeypatch.setattr(module._ConnectionFile, "remove", remove)
+            monkeypatch.setattr(module.ConnectionFile, "remove", remove)
         with pytest.raises(AppError, match="private kubectl connection") as error:
             async with shell.stage(request):
                 assert failure == "cleanup"
@@ -221,7 +221,7 @@ async def test_file_failures_are_safe_and_do_not_remove_unowned_files(
 @pytest.mark.parametrize("phase", ["write", "cleanup", "body"])
 async def test_cancelled_preparation_and_cleanup_are_drained(tmp_path, phase, monkeypatch):
     started, release = threading.Event(), threading.Event()
-    original = getattr(module._ConnectionFile, "write" if phase == "write" else "remove")
+    original = getattr(module.ConnectionFile, "write" if phase == "write" else "remove")
     if phase != "body":
 
         def delayed(owner, *args):
@@ -230,7 +230,7 @@ async def test_cancelled_preparation_and_cleanup_are_drained(tmp_path, phase, mo
             original(owner, *args)
 
         monkeypatch.setattr(
-            module._ConnectionFile, "write" if phase == "write" else "remove", delayed
+            module.ConnectionFile, "write" if phase == "write" else "remove", delayed
         )
     entered = asyncio.Event()
 

@@ -14,6 +14,7 @@ import pytest
 
 from tests.support.azure_handoff import azure_terminal_trial
 from tests.support.distribution import PROJECT, run
+from tests.support.forward_terminal import terminal_forward
 from tests.support.handoff import terminal_handoff_trial
 from tests.support.navigation import terminal_navigation
 from tests.support.shell import terminal_shell
@@ -31,6 +32,17 @@ def test_installed_standard_resource_views_outside_checkout(installed_wheel, ent
         else [str(binary / "python"), "-m", "kubetrol"]
     )
     terminal_standard_views(command, directory, f"installed-standard-{entry_point}")
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+def test_installed_port_forward_owns_children_and_restores_terminal(installed_wheel, entry_point):
+    binary, directory = installed_wheel
+    command = (
+        [str(binary / "kubetrol")]
+        if entry_point == "console"
+        else [str(binary / "python"), "-m", "kubetrol"]
+    )
+    terminal_forward(command, directory, f"installed-forward-{entry_point}")
 
 
 def test_wheel_metadata_entry_point_and_assets(artifacts: tuple[Path, Path]) -> None:

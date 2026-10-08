@@ -31,7 +31,9 @@ redacted copying. The [container log viewer](docs/log-viewer.md) provides curren
 previous output, container selection, Vim navigation, search, follow/pause,
 bounded retention and redacted copy/save. [Embedded container shells](docs/container-shell.md)
 use the selected context, pod and container, with a configurable shell and return
-to the retained table.
+to the retained table. [Managed pod/Service TCP forwards](docs/port-forwards.md)
+provide validated mappings, observed listeners, an owned session list and deliberate
+stop, with cleanup on context changes and exit.
 The [resource workspace](docs/resource-workspace.md) adds a built-in `k9s` theme,
 top inputs and view-specific shortcuts, identity/version headers, Escape trails,
 and a live namespace table with Enter/Escape navigation. The command bar suggests
@@ -72,7 +74,7 @@ helpers are trusted local programs and may run automatically for authentication.
 Help/version/info/config inspection never connects or executes helpers.
 Try `uv run kubetrol --readonly --headless --command help` to start with help
 and a compact header. Read-only command decisions use a shared service guard;
-read-only blocks container shells before preparation. Workload changes and
+read-only blocks container shells and starting forwards before preparation. Workload changes and
 plugins remain upcoming.
 `uv run python -m kubetrol` is also supported.
 `info` and `config check` create no files. `config init` optionally creates default
