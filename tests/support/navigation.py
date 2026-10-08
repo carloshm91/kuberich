@@ -91,6 +91,9 @@ def terminal_navigation(command, directory, *, evidence, initial_scope=False):
             terminal.wait_for_screen(f"pods({scope})[80] · live", since=marker)
             marker = terminal.send(b":ns\r")
             terminal.wait_for_screen("namespaces(all)[2]", since=marker)
+            # Textual may paint the frame title before DataTable's header. Wait
+            # for the actual header before inspecting a fully received screen.
+            terminal.wait_for_screen("STATUS", since=marker)
             assert any(
                 "NAME" in line and "STATUS" in line and "AGE" in line
                 for line in terminal.screen.display
