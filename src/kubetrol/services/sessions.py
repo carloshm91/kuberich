@@ -1,6 +1,7 @@
 """Context/scope ownership and safe connection states without widget dependencies."""
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from dataclasses import replace
 
 from kubetrol.adapters.credentials import CredentialLogin
@@ -26,6 +27,7 @@ class SessionService:
         self.generation = 0
         self.scopes: dict[str, str | None] = {}
         self.lock = asyncio.Lock()
+        self.before_close: Callable[[KubernetesSession], Awaitable[None]] | None = None
 
     async def connect(
         self, context: str, *, authenticate: CredentialLogin | None = None
@@ -101,5 +103,10 @@ class SessionService:
 
     async def close(self) -> None:
         if self.client is not None:
-            await self.client.close()
-            self.client = None
+            client = self.client
+            try:
+                if self.before_close is not None:
+                    await self.before_close(client)
+            finally:
+                await client.close()
+                self.client = None

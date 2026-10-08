@@ -38,6 +38,12 @@ Standard resource summary, quantity and ordering decisions in
 `domain/registry.py` join that inventory in B05 #41. Every advertised family
 receives parameterized column contracts, actual HTTP/Pilot LIST/WATCH/GET tests
 and owned-kind watch updates/individual reads through `scripts.standard_kind`.
+S05 #42 adds bounded numeric TCP intent, bind validation, scoped argv, target
+UID/phase and observed readiness decisions in `domain/port_forwards.py` to the
+critical inventory. Real child/socket, Pilot, source/fresh-install PTYs and
+`scripts.verify_port_forwards_kind` qualify forwarding, cancellation and cleanup.
+The Linux/Python 3.12 job requires real owned Pod/Service HTTP transport; pinned
+images/binaries and the shared kind owner protect caller configuration.
 F05 invocation overrides and bounded impersonation decisions in
 `domain/connection_overrides.py` join the critical inventory in #19.
 Fixed provider diagnostic decisions in `domain/credential_helpers.py` join the

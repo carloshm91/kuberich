@@ -675,7 +675,14 @@
       ],
       "source": "internal/view/pf.go",
       "status": "planned",
-      "difference": ""
+      "difference": "S05 #42 implements owned pod/Service numeric TCP mappings, default loopback and deliberate IPv4/IPv6 bind intent, actual readiness, session listing/stop and resource/context/exit cleanup. Named ports/FastForward/transport remain S08 #62; external forwards are not discovered.",
+      "partial_evidence": [
+        "docs/acceptance/port-forwards.md",
+        "tests/contract/test_port_forwards.py",
+        "tests/ui/test_port_forwards.py",
+        "tests/terminal/test_port_forwards.py",
+        "scripts/verify_port_forwards_kind.py"
+      ]
     },
     {
       "id": "SES04",

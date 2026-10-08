@@ -113,6 +113,32 @@ class ProcessSession:
     def pid(self) -> int:
         return self.transport.get_pid()
 
+    @property
+    def running(self) -> bool:
+        return not any(
+            future.done()
+            for future in (
+                self.output.exited,
+                self.output.overflow,
+                self.output.failed,
+                self.stopping,
+                self.task,
+            )
+        )
+
+    def drain_output(self) -> tuple[bytes, bytes]:
+        """Consume queued output atomically; consumed bytes leave the final result.
+
+        Capture users retain the cumulative output limit unless they explicitly
+        drain. Streaming owners may replenish capacity, but cannot undo an
+        overflow already detected by the protocol or retain unbounded history.
+        """
+        stdout, stderr = (bytes(self.output.buffers[fd]) for fd in (1, 2))
+        self.output.buffers[1].clear()
+        self.output.buffers[2].clear()
+        self.output.remaining += len(stdout) + len(stderr)
+        return stdout, stderr
+
     async def _cleanup(self) -> None:
         # The leader may have exited while descendants still own its pipes.
         _signal_group(self.pid, signal.SIGCONT)

@@ -140,6 +140,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
         "scripts.verify_contexts_kind",
         "scripts.verify_kind_lifecycle",
         "scripts.verify_shell_kind",
+        "scripts.verify_port_forwards_kind",
         "scripts.verify_quickstart",
         "uv build",
         "twine check",

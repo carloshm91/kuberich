@@ -1,13 +1,9 @@
 """Captured container exec with private connection material and owned preparation."""
 
-import asyncio
-import json
-import os
 from collections.abc import AsyncIterator, Callable, Mapping
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, replace
 from pathlib import Path
-from uuid import uuid4
 
 from kubetrol.adapters.kubernetes import KubernetesSession
 from kubetrol.config.schema import shell_arguments
@@ -18,8 +14,8 @@ from kubetrol.domain.shell import verify_shell_target
 from kubetrol.domain.targets import ResourceTarget
 from kubetrol.errors import AppError
 from kubetrol.services.access import AccessPolicy, Action
+from kubetrol.services.delegation import capture_delegation, stage_connection
 from kubetrol.services.logs import PODS
-from kubetrol.services.processes import _finish_owned
 
 
 @dataclass(frozen=True, slots=True, repr=False)
@@ -27,22 +23,6 @@ class ShellRequest:
     command: ProcessCommand
     path: Path
     configuration: str
-
-
-class _ConnectionFile:
-    def __init__(self, path: Path) -> None:
-        self.path = path
-        self.created = False
-
-    def write(self, configuration: str) -> None:
-        descriptor = os.open(self.path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-        self.created = True
-        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
-            stream.write(configuration)
-
-    def remove(self) -> None:
-        if self.created:
-            self.path.unlink(missing_ok=True)
 
 
 class ShellService:
@@ -72,22 +52,15 @@ class ShellService:
         target = replace(self.target, container=container)
         if target.session.context != self.client.context.name:
             raise AppError("Shell requires the captured client's context.")
-        path = Path(self.client.directory.name) / f"exec-{uuid4().hex}.json"
-        environment, directory = self.environment, self.directory
-        credentials = self.client.credentials
-        if credentials is not None and (credentials.eks or credentials.azure):
-            environment = credentials.delegated_environment(environment)
-            directory = credentials.entry.directory
+        material = capture_delegation(self.client, self.environment, self.directory, prefix="exec")
         command = kubectl_exec_command(
-            target, (path,), self.shell, environment=environment, directory=directory
+            target,
+            (material.path,),
+            self.shell,
+            environment=dict(material.environment),
+            directory=material.directory,
         )
-        try:
-            configuration = json.dumps(self.client.delegated_config(), allow_nan=False)
-        except (TypeError, ValueError):
-            raise AppError(
-                "Selected connection cannot be delegated to kubectl. Check kubeconfig extension/credential fields."
-            ) from None
-        return ShellRequest(command, path, configuration)
+        return ShellRequest(command, material.path, material.configuration)
 
     @asynccontextmanager
     async def stage(self, request: ShellRequest) -> AsyncIterator[ProcessCommand]:
@@ -116,30 +89,6 @@ class ShellService:
             raise
         self.require_current()
         verify_shell_target(target, resource_record(PODS, payload, target.namespace))
-        connection_file = _ConnectionFile(request.path)
-        writing = asyncio.create_task(
-            asyncio.to_thread(connection_file.write, request.configuration)
-        )
-        try:
-            try:
-                await asyncio.shield(writing)
-            except asyncio.CancelledError:
-                await _finish_owned(asyncio.gather(writing, return_exceptions=True))
-                raise
-            except OSError:
-                raise AppError(
-                    "Cannot prepare private kubectl connection. Check local file permissions."
-                ) from None
+        async with stage_connection(request.path, request.configuration):
             self.require_current()
             yield request.command
-        finally:
-            cleanup = asyncio.create_task(asyncio.to_thread(connection_file.remove))
-            try:
-                await asyncio.shield(cleanup)
-            except asyncio.CancelledError:
-                await _finish_owned(cleanup)
-                raise
-            except OSError:
-                raise AppError(
-                    "Cannot remove the private kubectl connection. Check local file permissions."
-                ) from None

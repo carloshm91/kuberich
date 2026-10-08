@@ -8,6 +8,7 @@ from contextlib import suppress
 from importlib.metadata import version
 from pathlib import Path
 from typing import ClassVar
+from uuid import UUID
 
 from rich.text import Text
 from textual import on
@@ -37,6 +38,7 @@ from kubetrol.domain.navigation import (
     NavigationState,
 )
 from kubetrol.domain.pods import PodColumn
+from kubetrol.domain.port_forwards import suggested_port
 from kubetrol.domain.processes import ProcessStatus
 from kubetrol.domain.registry import RESOURCE_ALIASES, resource_selection
 from kubetrol.domain.resources import ApiResource, ResourceRecord
@@ -58,6 +60,7 @@ from kubetrol.services.filtering import apply_filter
 from kubetrol.services.inspection import InspectionService
 from kubetrol.services.logs import LogStream
 from kubetrol.services.pods import NamespaceProjection, PodProjection, StandardProjection
+from kubetrol.services.port_forwards import ForwardManager, ForwardService
 from kubetrol.services.processes import ProcessRunner
 from kubetrol.services.sessions import SessionService
 from kubetrol.services.shell import ShellService
@@ -68,6 +71,7 @@ from kubetrol.ui.chrome import (
     NS_SHORTCUTS,
     POD_SHORTCUTS,
     RESOURCE_SHORTCUTS,
+    SERVICE_SHORTCUTS,
     Breadcrumbs,
     WorkspaceBars,
     WorkspaceChrome,
@@ -82,6 +86,7 @@ from kubetrol.ui.inspection import InspectionScreen, Page
 from kubetrol.ui.logs import LogScreen
 from kubetrol.ui.namespaces import NamespaceTable
 from kubetrol.ui.pods import PodTable, Viewport
+from kubetrol.ui.port_forwards import ForwardPrompt, ForwardScreen
 from kubetrol.ui.presentation import DEFAULT_PRESENTATION, Presentation
 from kubetrol.ui.scopes import ConnectionScreen
 from kubetrol.ui.shutdown import TerminalSignals
@@ -121,7 +126,8 @@ class HelpScreen(ModalScreen[None]):
                         "q / Ctrl+Q        Quit (q outside inputs)\n"
                         "Ctrl+C            Quit\n\n"
                         "Commands: po/pod/pods [NS or *], ctx [NAME], ns [NAME or *], "
-                        "status, retry, login, back, forward, shell/exec, help, quit.\n"
+                        "status, retry, login, back, forward, shell/exec, pf/portforwards, "
+                        "portforward, help, quit.\n"
                         "Resources: deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, "
                         "no, pvc, pv, sc. Namespaced resources accept [NS or *].\n"
                         "Filter: plain case-insensitive text; re:PATTERN for regex. "
@@ -133,6 +139,9 @@ class HelpScreen(ModalScreen[None]):
                         "Logs: g/G first/last, j/k, / search, p pause, f follow, ? controls.\n"
                         "Enter             Pod containers → container logs\n"
                         "x / :shell        Choose a pod's container for its shell\n"
+                        "Shift+F           Start pod/Service TCP port-forward\n"
+                        ":pf               List owned forwards; s stops selected\n"
+                        "Forwards survive view/namespace changes; context/retry/exit stops them.\n"
                         "Containers: s/x shell, Enter/l logs, Esc pods.\nShell: Ctrl+] return, Ctrl+C interrupt, Ctrl+Q quit.\n"
                         "d                 Resource details\n"
                         "y / e             YAML / related events\n"
@@ -167,6 +176,7 @@ class KubetrolApp(App[None]):
         Binding("e", "inspect_events", "Events"),
         Binding("l", "logs", "Logs"),
         Binding("x", "shell", "Shell"),
+        Binding("F", "port_forward", "Port forward", key_display="Shift+F"),
         Binding("c", "contexts", "Contexts"),
         Binding("n", "namespaces", "Namespaces"),
         Binding("r", "retry", "Retry", show=False),
@@ -212,6 +222,8 @@ class KubetrolApp(App[None]):
         self._restore_state: tuple[int, NavigationState] | None = None
         self.commands = CommandService(AccessPolicy(settings.read_only))
         self.processes = ProcessRunner(self.commands.policy)
+        self.forwards = ForwardManager(self.processes, changed=self._forward_changed)
+        self.sessions.before_close = self.forwards.stop_for_client
         self._terminal_signals = TerminalSignals(self)
         self._shell = settings.shell
         self._refresh_seconds = settings.refresh_seconds
@@ -289,6 +301,8 @@ class KubetrolApp(App[None]):
         )
 
     def _update_trail(self) -> None:
+        if not self.screen_stack:
+            return
         trail = (
             ("namespaces", "pods")
             if self._namespace_route and self._resource_name == "pods"
@@ -325,7 +339,13 @@ class KubetrolApp(App[None]):
         insecure = (
             "Insecure transport · " if self.workspace.store.observation.connection.insecure else ""
         )
-        self.status.update(safe_text(prefix + insecure + message))
+        forwards = (
+            f" · Forwards: {self.forwards.active_count}" if self.forwards.active_count else ""
+        )
+        self.status.update(safe_text(prefix + insecure + message + forwards))
+
+    def _forward_changed(self) -> None:
+        self._render_ready.set()
 
     async def on_event(self, event: Event) -> None:
         if (
@@ -352,13 +372,13 @@ class KubetrolApp(App[None]):
         input_key = (
             isinstance(event, Key)
             and not event.is_forwarded
-            and isinstance(focused, NavigationInput)
+            and isinstance(focused, Input)
             and event.key not in {"ctrl+q", "ctrl+c"}
         )
         await super().on_event(event)
-        if input_key and isinstance(focused, NavigationInput):
+        if input_key and isinstance(focused, Input):
             # Forwarded printable keys use the widget's queue. Drain that key before
-            # the app decides a subsequent Tab/Enter against the input's value.
+            # a subsequent editing binding or Enter reads the input's value.
             completion: asyncio.Future[None] = asyncio.get_running_loop().create_future()
             self._input_completion = completion
 
@@ -683,6 +703,7 @@ class KubetrolApp(App[None]):
 
     async def on_unmount(self) -> None:
         try:
+            await self.forwards.close()
             await self.processes.close()
             await self.workspace.close()
             if self._view_task is not None:
@@ -751,6 +772,54 @@ class KubetrolApp(App[None]):
             self._set_status(str(error))
             return
         self._open_logs(containers_first=True)
+
+    def action_port_forwards(self, selected: UUID | None = None) -> None:
+        if not isinstance(self.screen, ModalScreen):
+            self.push_screen(
+                ForwardScreen(self.forwards, self.chrome, self.breadcrumbs.trail, selected=selected)
+            )
+
+    def _forward_started(self, identity: UUID | None) -> None:
+        if identity is not None:
+            self.action_port_forwards(identity)
+
+    def action_port_forward(self) -> None:
+        try:
+            self.commands.policy.require(Action.PORT_FORWARD)
+        except AppError as error:
+            self._set_status(str(error))
+            return
+        selection = self._capture_target()
+        if selection is None:
+            return
+        client, _, record, target, selected = selection
+
+        def current_connection() -> bool:
+            identity = self.sessions.observation.identity
+            return (
+                self.sessions.client is client
+                and identity is not None
+                and identity.connection_id == target.session.connection_id
+            )
+
+        source = ForwardService(
+            client,
+            target,
+            self.commands.policy,
+            current_connection,
+            environment=self._process_environment,
+            directory=self._process_directory,
+        )
+        try:
+            source.require_current()
+        except AppError as error:
+            self._set_status(str(error))
+            return
+        remote = suggested_port(target.resource, record.manifest)
+        self.push_screen(
+            ForwardPrompt(self.forwards, source, selected, initial=f"0:{remote}"),
+            self._forward_started,
+        )
 
     def _open_logs(self, *, containers_first: bool = False, uid: str | None = None) -> None:
         selection = self._capture_target(uid)
@@ -918,6 +987,8 @@ class KubetrolApp(App[None]):
             if namespaces
             else POD_SHORTCUTS
             if resource == "pods"
+            else SERVICE_SHORTCUTS
+            if resource == "services"
             else RESOURCE_SHORTCUTS
         )
         self.header.render_shortcuts()
@@ -1040,6 +1111,8 @@ class KubetrolApp(App[None]):
         self.screen_stack[0].set_class(event.size.height < 16, "short")
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        if action == "port_forward" and self._resource_name not in {"pods", "services"}:
+            return False
         if action in {"logs", "shell"} and self._resource_name != "pods":
             return False
         if action in {
@@ -1052,6 +1125,7 @@ class KubetrolApp(App[None]):
             "inspect_events",
             "logs",
             "shell",
+            "port_forward",
         }:
             return not isinstance(self.screen, ModalScreen) and not isinstance(self.focused, Input)
         return True
@@ -1158,6 +1232,10 @@ class KubetrolApp(App[None]):
             self._set_status(self._workspace_status())
         elif command is Command.SHELL:
             self.action_shell()
+        elif command is Command.PORT_FORWARD:
+            self.action_port_forward()
+        elif command is Command.PORT_FORWARDS:
+            self.action_port_forwards()
         else:
             self._set_status(self._workspace_status())
 

@@ -1,5 +1,16 @@
 # First things to try
 
+## Port-forward checkpoint: S05 #42
+
+The preview adds [managed pod/Service TCP forwarding](port-forwards.md): Shift+F
+on a selected pod/Service opens mappings; `:pf` lists and `s` stops selected.
+Forwards survive namespace changes and stop on context/retry/exit. The automated
+owned-cluster command is `uv run python -m scripts.verify_port_forwards_kind --kind /tmp/kubetrol-tools/kind --kubectl /tmp/kubetrol-tools/shell/bin/kubectl --evidence /tmp/kubetrol-42-evidence/kind.json`.
+Actual Pod/Service HTTP and cleanup passed on a newly owned disposable cluster;
+see [acceptance evidence](acceptance/port-forwards.md). Source/package publication
+and full hosted/macOS release qualification remain separate gates. Continuous
+private implementation proceeds without requiring intermediate manual trials.
+
 ## Standard resource checkpoint: B05 #41
 
 The preview adds 15 [standard resource tables](standard-resources.md). An initial
