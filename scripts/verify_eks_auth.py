@@ -14,7 +14,7 @@ from kubetrol.config.catalog import load_catalog, mapping, text
 from kubetrol.domain.connections import ConnectionProblem, ConnectionRequest
 from kubetrol.domain.credential_helpers import is_azure_helper, is_eks_helper
 from kubetrol.errors import AppError
-from kubetrol.services.shell import _ConnectionFile
+from kubetrol.services.delegation import ConnectionFile
 
 
 def pod_list(payload: object) -> None:
@@ -45,7 +45,7 @@ async def verify(
             + ("aws eks get-token." if provider == "eks" else "Azure kubelogin get-token.")
         )
     session = KubernetesSession(selected, request.timeout)
-    connection_file = _ConnectionFile(Path(session.directory.name) / "read-only-kubectl.json")
+    connection_file = ConnectionFile(Path(session.directory.name) / "read-only-kubectl.json")
     path = f"/api/v1/namespaces/{request.namespace}/pods"
     try:
         await session.open()
