@@ -57,6 +57,10 @@ async def test_start_filter_stop_return_and_context_cleanup_keep_listener_owners
                 and screen._shown[str(ready.identity)].target.namespace == "team"
             )
             assert not screen.query_one("#forward-list-stop", Button).disabled
+            await pilot.pause()
+            if size == (40, 12):
+                assert screen.table.region.height >= 3
+                assert "kubetrol-test-one" in screen.table.render_line(1).text
             screen.action_filter()
             await pilot.press(*"missing")
             await wait_for(lambda: screen.table.row_count == 0)

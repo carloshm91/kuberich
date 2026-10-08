@@ -68,6 +68,7 @@ def terminal_forward(command, directory, evidence):
                 assert peer.recv(128) == b"owned-response:owned-terminal-payload"
             terminal.resize(40, 12)
             terminal.wait_for_screen("Port forwards")
+            terminal.wait_for_screen("kubetrol-test-one", row=7)
             terminal.resize(100, 30)
             terminal.send(b"s")
             terminal.wait_for_screen("Stopped by operator.")

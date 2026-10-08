@@ -139,6 +139,7 @@ class ForwardScreen(ModalScreen[None]):
     #forward-list-buttons Button { height: 1; border: none; min-width: 12; }
     #forward-sessions { height: 1fr; }
     #forward-list-status { height: auto; max-height: 2; margin: 0 1; }
+    ForwardScreen.short #forward-list-status { height: 1; text-overflow: ellipsis; }
     """
 
     def __init__(
