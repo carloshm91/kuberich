@@ -1,5 +1,18 @@
 # First things to try
 
+## Standard resource checkpoint: B05 #41
+
+The preview adds 15 [standard resource tables](standard-resources.md). An initial
+scoped launch is `uv run kubetrol --context YOUR_CONTEXT --readonly --command 'deploy YOUR_NAMESPACE'`.
+Use `:deploy`, `:svc`, `:job`, `:cm`, `:sec`, `:no`, `:pvc`, `:pv` or `:sc`;
+Enter opens details and `y` opens redacted YAML. This checkpoint's automated
+owned-cluster command is
+`uv run python -m scripts.verify_contexts_kind --kind /tmp/kubetrol-tools/kind --evidence /tmp/kubetrol-41-evidence/kind-frozen.json`.
+It passed with real LIST/WATCH/GET for every advertised family and removed its
+disposable cluster. See [acceptance evidence](acceptance/standard-resources.md).
+Scaling/editing and publication remain separate tasks. No intermediate manual
+trial is required; continuous private implementation proceeds after verification.
+
 ## Private CI checkpoint: #109
 
 The installed preview and launch command below are unchanged. Private development

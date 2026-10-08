@@ -1,10 +1,11 @@
 # First installation and trial
 
 The usable development preview has live pods, namespace/context tables, inline
-command completion, local filters, pod details/YAML/events, container logs and
+command completion, local filters, 15 [standard resource tables](standard-resources.md),
+resource details/YAML/events, container logs and
 embedded container shells. The checkout reports `0.0.1.dev0`; private candidate
 tests can report `0.0.1rc1`. **0.0.1 has not been publicly published yet.**
-Deployment scaling/editing, other generic resource tables, metrics, attach,
+Deployment scaling/editing, generic CRD tables, metrics, attach,
 ephemeral debugging, file transfer and user plugins remain separate tickets.
 This preview does not claim complete K9s parity or real EKS/AKS certification.
 

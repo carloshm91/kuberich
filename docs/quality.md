@@ -34,6 +34,10 @@ geometry and keyboard/paste encoding. Namespace UID/lifecycle values in
 layout receives Pilot and real-terminal checks.
 Captured container specification/status decisions in `domain/containers.py`
 join the critical 100% line/branch inventory in #129.
+Standard resource summary, quantity and ordering decisions in
+`domain/registry.py` join that inventory in B05 #41. Every advertised family
+receives parameterized column contracts, actual HTTP/Pilot LIST/WATCH/GET tests
+and owned-kind watch updates/individual reads through `scripts.standard_kind`.
 F05 invocation overrides and bounded impersonation decisions in
 `domain/connection_overrides.py` join the critical inventory in #19.
 Fixed provider diagnostic decisions in `domain/credential_helpers.py` join the

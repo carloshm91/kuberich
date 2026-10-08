@@ -60,7 +60,8 @@ async def test_completion_commands_multiple_choices_tab_focus_and_literal_small_
     async with app.run_test(size=size) as pilot:
         await pilot.press("colon", "c")
         await pilot.pause()
-        assert app.command_input.choices == ("context", "contexts", "ctx")
+        assert app.command_input.choices[:3] == ("context", "contexts", "ctx")
+        assert "cm" in app.command_input.choices
         assert app.command_input.value == "c"
         assert app.command_input.inline_completion == "context"
         assert "context" in app.command_input.render_line(0).text
@@ -430,7 +431,7 @@ async def test_narrow_completions_keep_selected_choice_visible_and_cursor_edits_
         await pilot.press("right")
         assert app.command_input.inline_completion
         await pilot.press("up", "tab")
-        assert app.command_input.value == "ctx"
+        assert app.command_input.value == "cronjob"
 
 
 @pytest.mark.asyncio

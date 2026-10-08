@@ -4,8 +4,8 @@ C04 connects the context, discovery and list/watch services to the terminal.
 It synchronizes **pods** in the selected namespace and displays loading, live,
 stale or failed status and the collection count. B02 #26 now renders the
 [live pod table](pod-table.md), including health, sorting and stable selection.
-Commands and Tab completion
-remain B03 #27. No new launch flags are enabled here.
+Commands and Tab completion are implemented in B03 #27. B05 #41 adds the
+[standard resource tables](standard-resources.md) to this same ownership model.
 
 ## Ownership and scope
 
@@ -68,8 +68,8 @@ hot retries. `i` / `:status` opens the full synchronization message, and `r` /
 `:retry` reopens the currently requested context. Read-only and insecure-transport
 indicators remain visible in the status.
 
-The center explains that table rows arrive in the next preview; it does not mean
-the cluster has no pods. A real successful empty snapshot shows `Live · 0 pods`.
+The center distinguishes loading and unavailable data from an empty collection.
+A real successful empty pod snapshot shows `Live · 0 pods`.
 `:ctx` chooses a context and `:ns` chooses a namespace. Those are keyboard hints;
 automatic watch renewal never chooses a different context. Context/namespace
 footer labels are written out rather than abbreviated.

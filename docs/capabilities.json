@@ -146,12 +146,19 @@
       ],
       "source": "internal/dao/registry.go",
       "status": "planned",
-      "difference": "C02 implements discovery, backend aliases and consistent scoped snapshots. Dynamic/CRD columns and UI resource integration remain planned in the existing tasks; this does not establish full CORE01 parity.",
+      "difference": "C02 discovery and B05 standard UI commands use discovered groups/versions with scoped LIST/WATCH/GET. Dynamic/CRD server columns remain B06/C05; full CORE01 parity is not claimed.",
       "partial_evidence": [
         "docs/resource-discovery.md",
         "tests/unit/test_resources.py",
         "tests/contract/test_resources.py",
-        "scripts/verify_contexts_kind.py"
+        "scripts/verify_contexts_kind.py",
+        "docs/standard-resources.md",
+        "docs/acceptance/standard-resources.md",
+        "tests/unit/test_registry.py",
+        "tests/ui/test_standard_resources.py",
+        "tests/ui/test_standard_table.py",
+        "tests/terminal/test_standard_resources.py",
+        "scripts/standard_kind.py"
       ]
     },
     {
@@ -421,7 +428,7 @@
       ],
       "source": "internal/view/registrar.go",
       "status": "planned",
-      "difference": "Live UID-based pod tables and captured regular/init container navigation are implemented. Preview #125 adds the real Namespace LIST/WATCH table with lifecycle/age, filtering, all-scope action and Enter/Escape restoration. Live container status, ephemeral containers and the remaining resource tables remain planned. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage.",
+      "difference": "Live UID-based pod tables and captured regular/init container navigation are implemented. Preview #125 adds the real Namespace LIST/WATCH table with lifecycle/age, filtering, all-scope action and Enter/Escape restoration. B05 adds the standard resource tables. Live container status and ephemeral containers remain #61 and #78. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage.",
       "partial_evidence": [
         "docs/pod-table.md",
         "tests/unit/test_pods.py",
@@ -465,7 +472,16 @@
       ],
       "source": "internal/client/gvrs.go",
       "status": "planned",
-      "difference": "Discover served API groups/versions rather than copying stale upstream GVR constants."
+      "difference": "B05 implements Deployment, ReplicaSet, StatefulSet, DaemonSet, Job and CronJob tables with typed columns and inspection. ReplicationControllers, mutations and workload drill-down remain separate backlog work.",
+      "partial_evidence": [
+        "docs/standard-resources.md",
+        "docs/acceptance/standard-resources.md",
+        "tests/unit/test_registry.py",
+        "tests/ui/test_standard_resources.py",
+        "tests/ui/test_standard_table.py",
+        "tests/terminal/test_standard_resources.py",
+        "scripts/standard_kind.py"
+      ]
     },
     {
       "id": "RES03",
@@ -477,7 +493,16 @@
       ],
       "source": "internal/client/gvrs.go",
       "status": "planned",
-      "difference": ""
+      "difference": "B05 implements Services, Endpoints and Ingress tables and inspection. EndpointSlices and NetworkPolicies remain the networking/generic-resource backlog.",
+      "partial_evidence": [
+        "docs/standard-resources.md",
+        "docs/acceptance/standard-resources.md",
+        "tests/unit/test_registry.py",
+        "tests/ui/test_standard_resources.py",
+        "tests/ui/test_standard_table.py",
+        "tests/terminal/test_standard_resources.py",
+        "scripts/standard_kind.py"
+      ]
     },
     {
       "id": "RES04",
@@ -489,7 +514,16 @@
       ],
       "source": "internal/client/gvrs.go",
       "status": "planned",
-      "difference": ""
+      "difference": "B05 implements Nodes, PVs, PVCs and StorageClasses with typed capacities, scope and inspection. Scheduling, HPA/PDB/quota/limits remain later tasks.",
+      "partial_evidence": [
+        "docs/standard-resources.md",
+        "docs/acceptance/standard-resources.md",
+        "tests/unit/test_registry.py",
+        "tests/ui/test_standard_resources.py",
+        "tests/ui/test_standard_table.py",
+        "tests/terminal/test_standard_resources.py",
+        "scripts/standard_kind.py"
+      ]
     },
     {
       "id": "RES05",
@@ -501,7 +535,16 @@
       ],
       "source": "internal/view/registrar.go",
       "status": "planned",
-      "difference": ""
+      "difference": "B05 implements ConfigMap and Secret type/key-count tables; payloads never enter row/filter text and ordinary details stay redacted. ServiceAccounts/RBAC views remain later tasks.",
+      "partial_evidence": [
+        "docs/standard-resources.md",
+        "docs/acceptance/standard-resources.md",
+        "tests/unit/test_registry.py",
+        "tests/ui/test_standard_resources.py",
+        "tests/ui/test_standard_table.py",
+        "tests/terminal/test_standard_resources.py",
+        "scripts/standard_kind.py"
+      ]
     },
     {
       "id": "RES06",
@@ -692,7 +735,16 @@
       ],
       "source": "internal/view/restart_extender.go",
       "status": "planned",
-      "difference": ""
+      "difference": "B05 provides workload browsing and individual inspection. Scale/restart/rollback and owner drill-down are not implemented by B05; M03 remains required.",
+      "partial_evidence": [
+        "docs/standard-resources.md",
+        "docs/acceptance/standard-resources.md",
+        "tests/unit/test_registry.py",
+        "tests/ui/test_standard_resources.py",
+        "tests/ui/test_standard_table.py",
+        "tests/terminal/test_standard_resources.py",
+        "scripts/standard_kind.py"
+      ]
     },
     {
       "id": "OPS04",

@@ -18,7 +18,8 @@ It opens a terminal workspace with isolated context sessions, namespace discover
 and selection, filter/command inputs, help, themes and responsive layouts. It
 supports kubeconfig/context/namespace/timeout flags, static token and certificate
 authentication and noninteractive exec tokens. The [active view](docs/resource-views.md)
-now synchronizes pods for the selected scope and shows live counts, stale states
+now synchronizes pods and [15 standard resource families](docs/standard-resources.md)
+for the selected scope and shows live counts, stale states
 and errors using discovery, paginated snapshots and recoverable watches.
 The [live pod table](docs/pod-table.md) now displays readiness, health reasons,
 restarts and age, with typed sorting, scrolling and selection preserved through

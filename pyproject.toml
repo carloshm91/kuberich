@@ -138,6 +138,7 @@ critical_modules = [
     "src/kubetrol/domain/watches.py",
     "src/kubetrol/domain/views.py",
     "src/kubetrol/domain/pods.py",
+    "src/kubetrol/domain/registry.py",
     "src/kubetrol/domain/namespaces.py",
     "src/kubetrol/domain/containers.py",
     "src/kubetrol/domain/connection_overrides.py",

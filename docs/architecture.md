@@ -20,12 +20,21 @@ pod specification and name-matched status. Missing readiness/restarts remain
 unknown; states retain Kubernetes waiting/termination reasons. Columns describe
 image, configured probes, CPU/memory requests/limits and bounded declared ports.
 These are snapshot values; opening the pod again refreshes them. Live container
-refresh, ephemeral containers and metrics remain #41/#78/#68.
+refresh, ephemeral containers and metrics remain #61/#78/#68.
 
 Status: accepted planning baseline, 2026-10-04. Changes require an issue and an
 updated decision record in this document. The product is a new implementation.
 
 ## Product boundary
+
+B05 #41 uses immutable `domain/registry.py` definitions for 15 standard resource
+families and one `ui/standard.py` table. Commands capture the registry's API group;
+the existing per-client discovery selects the served version and actual endpoint.
+The shared owned projection accepts both group and resource identity. Summaries
+carry bounded display strings and typed sort values, excluding configuration and
+secret payloads. Inspection reuses captured UID/client/scope checks. Navigation
+history carries a column key and restores it within the selected resource's
+columns. Mutations and generic CRD/server columns remain later tasks.
 
 Q01 #38 shares an explicit local-kind lifecycle between cluster verifiers.
 Generated configuration must match the owned Docker node and published API port
@@ -497,8 +506,8 @@ and awaits log ownership before returning to containers, then pods.
 The workspace observer validates both visible and covered container/log screens.
 Stale targets disable container selection; the log service still verifies the
 captured pod UID and declared container before and after opening the API stream.
-The container list is a snapshot; reopening refreshes it. Live container status,
-ephemeral containers and broader resource drill-down remain B05/A03.
+The container list is a snapshot; reopening refreshes it. Live container status
+and broader resource drill-down remain #61; ephemeral containers remain #78.
 
 This uses public [Textual DataTable](https://textual.textualize.io/widgets/data_table/)
 row events/actions and [Input](https://textual.textualize.io/widgets/input/) submissions.

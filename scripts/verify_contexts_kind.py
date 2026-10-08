@@ -31,6 +31,7 @@ from kubetrol.ui.containers import ContainerScreen
 from kubetrol.ui.inspection import InspectionScreen
 from kubetrol.ui.logs import LogScreen
 from scripts.owned_kind import NODE_IMAGE, owned_cluster
+from scripts.standard_kind import verify_standard_resources
 
 
 async def verify_pod_table(reader, resource, catalog, path, context):
@@ -644,6 +645,7 @@ async def verify(path: Path, context: str) -> dict[str, object]:
         )
         workspace_evidence = await verify_workspace(catalog, path, context)
         pod_evidence = await verify_pod_table(reader, pods, catalog, path, context)
+        standard_evidence = await verify_standard_resources(reader, catalog, path, context)
         assert path.read_bytes() == before
         active = sessions.client.api
     finally:
@@ -673,6 +675,7 @@ async def verify(path: Path, context: str) -> dict[str, object]:
         **quiet_evidence,
         **workspace_evidence,
         **pod_evidence,
+        **standard_evidence,
     }
 
 

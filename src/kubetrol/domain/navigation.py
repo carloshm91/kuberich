@@ -34,7 +34,7 @@ class NavigationState:
     context: str
     namespace: str | None
     query: str = ""
-    column: PodColumn = PodColumn.NAME
+    column: str = PodColumn.NAME
     descending: bool = False
     selected: str | None = None
     index: int = 0

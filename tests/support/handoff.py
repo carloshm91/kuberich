@@ -13,8 +13,9 @@ from tests.terminal.pty_support import TerminalSession
 CHILD = """
 import os, signal, sys, termios, tty
 from pathlib import Path
+session = sys.argv[2]
 Path('handoff-child.pid').write_text(str(os.getpid()))
-print('HANDOFF START', flush=True)
+print('HANDOFF START #' + session, flush=True)
 # An actual terminal read waits for the parent to give this group foreground
 # ownership (SIGTTIN/SIGCONT). Starting the interpreter alone is not that boundary.
 assert sys.stdin.readline().strip() == 'start'
@@ -27,16 +28,16 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 def resize(signum, frame):
     size = os.get_terminal_size(0)
     # A signal can interrupt buffered stdout while its lock is held.
-    os.write(1, ('CHILD RESIZED ' + str(size.columns) + ' ' + str(size.lines) + '\\n').encode())
+    os.write(1, ('CHILD RESIZED ' + str(size.columns) + ' ' + str(size.lines) + ' #' + session + '\\n').encode())
 signal.signal(signal.SIGWINCH, resize)
 def terminate(signum, frame):
     tty.setraw(0)
     raise SystemExit(0)
 signal.signal(signal.SIGTERM, terminate)
-print('HANDOFF READY', flush=True)
-print('HANDOFF STDERR READY', file=sys.stderr, flush=True)
+print('HANDOFF READY #' + session, flush=True)
+print('HANDOFF STDERR READY #' + session, file=sys.stderr, flush=True)
 line = sys.stdin.readline().strip()
-print('CHILD INPUT ' + line, flush=True)
+print('CHILD INPUT ' + line + ' #' + session, flush=True)
 tty.setraw(0)
 raise SystemExit(7 if sys.argv[1] == 'failure' else 0)
 """
@@ -58,15 +59,22 @@ class HandoffApp(KubetrolApp):
     def __init__(self):
         super().__init__(Settings(read_only=scenario == 'read_only'), logging.getLogger('owned-handoff'))
         self.attempt = 0
+        self.probes = 0
         self.owner = None
     def action_handoff(self):
         self.run_worker(self.handoff(), group='owned-handoff', exclusive=True)
     def action_probe(self):
-        self.call_after_refresh(lambda: self._set_status('READY ' + str(self.size.width) + ' ' + str(self.size.height)))
+        self.probes += 1
+        # The resource renderer owns the status row and may repaint it after a
+        # resize. Keep the input witness in a stable, otherwise unused title.
+        # A distinct counter proves each probe was actually handled again.
+        self.call_after_refresh(lambda: setattr(self.query_one('#command-bar'),
+            'border_title', 'READY ' + str(self.size.width) + ' ' + str(self.size.height)
+            + ' #' + str(self.probes)))
     async def handoff(self):
         self.owner = asyncio.current_task()
         self.attempt += 1
-        argv = [sys.executable, str(directory/'owned-child.py'), scenario]
+        argv = [sys.executable, str(directory/'owned-child.py'), scenario, str(self.attempt)]
         if scenario == 'spawn_error' and self.attempt == 1:
             argv = [str(directory/'missing-executable')]
         spec = capture_command(argv, environment=dict(os.environ), directory=directory,
@@ -74,11 +82,11 @@ class HandoffApp(KubetrolApp):
         try:
             result = await terminal_handoff(self, self.processes, spec)
         except asyncio.CancelledError:
-            self._set_status('RETURN CANCELLED')
+            self._set_status('RETURN CANCELLED #' + str(self.attempt))
         except AppError:
-            self._set_status('RETURN ERROR')
+            self._set_status('RETURN ERROR #' + str(self.attempt))
         else:
-            self._set_status('RETURN ' + result.status.name)
+            self._set_status('RETURN ' + result.status.name + ' #' + str(self.attempt))
 
 app = HandoffApp()
 (directory/'owned-parent.pid').write_text(str(os.getpid()))
@@ -107,16 +115,18 @@ def terminal_handoff_trial(
         [python, str(script), scenario], directory, transport=transport
     ) as terminal:
         terminal.wait_for(b"Disconnected")
+        probes = 0
         for attempt in range(attempts):
+            identity = f" #{attempt + 1}".encode()
             marker = terminal.send(b"h")
             if scenario == "read_only" or (scenario == "spawn_error" and attempt == 0):
-                terminal.wait_for(b"RETURN ERROR", since=marker)
+                terminal.wait_for(b"RETURN ERROR" + identity, since=marker)
                 assert b"HANDOFF READY" not in terminal.transcript[marker:]
                 continue
-            terminal.wait_for(b"HANDOFF START", since=marker)
+            terminal.wait_for(b"HANDOFF START" + identity, since=marker)
             terminal.send(b"start\n")
-            terminal.wait_for(b"HANDOFF READY", since=marker)
-            terminal.wait_for(b"HANDOFF STDERR READY", since=marker)
+            terminal.wait_for(b"HANDOFF READY" + identity, since=marker)
+            terminal.wait_for(b"HANDOFF STDERR READY" + identity, since=marker)
             if scenario in {"parent_shutdown", "hangup", "lost_ssh"}:
                 parent = int((directory / "owned-parent.pid").read_text())
                 if scenario == "lost_ssh":
@@ -132,22 +142,23 @@ def terminal_handoff_trial(
             if scenario == "cancel":
                 parent = int((directory / "owned-parent.pid").read_text())
                 os.kill(parent, signal.SIGUSR1)
-                terminal.wait_for(b"RETURN CANCELLED", since=marker)
+                terminal.wait_for(b"RETURN CANCELLED" + identity, since=marker)
                 continue
             if scenario == "ctrl_c":
                 terminal.send(b"\x03")
-                terminal.wait_for(b"RETURN SIGNALLED", since=marker)
+                terminal.wait_for(b"RETURN SIGNALLED" + identity, since=marker)
                 continue
             marker = terminal.resize(80, 25)
-            terminal.wait_for(b"CHILD RESIZED 80 25", since=marker)
+            terminal.wait_for(b"CHILD RESIZED 80 25" + identity, since=marker)
             marker = terminal.send(b"owned keyboard input\n")
-            terminal.wait_for(b"CHILD INPUT owned keyboard input", since=marker)
+            terminal.wait_for(b"CHILD INPUT owned keyboard input" + identity, since=marker)
             status = b"FAILED" if scenario == "failure" else b"SUCCEEDED"
-            terminal.wait_for(b"RETURN " + status, since=marker)
+            terminal.wait_for(b"RETURN " + status + identity, since=marker)
             marker = terminal.resize(100, 30)
             terminal.wait_for_screen("Stay in pods", row=28, since=marker)
             terminal.send(b"\x1b[24~")
-            terminal.wait_for_screen("READY 100 30", since=marker)
+            probes += 1
+            terminal.wait_for_screen(f"READY 100 30 #{probes}", since=marker)
         terminal.send(b"\x11")
         terminal.finish()
         terminal.save_evidence(name)

@@ -7,6 +7,9 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Live discovered workload, batch, network, configuration, node and storage
+  tables with typed sorting, scoped commands, retained navigation and redacted details.
+
 - Verify disposable kind node/API identity before fixture writes and clean owned
   clusters on SIGINT/SIGTERM, including setup cancellation and repeated signals.
 

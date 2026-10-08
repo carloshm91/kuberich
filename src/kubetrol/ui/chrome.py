@@ -71,6 +71,19 @@ NS_SHORTCUTS = (
     ("Esc", "Pods"),
     ("?", "Help"),
 )
+RESOURCE_SHORTCUTS = (
+    ("Enter / d", "Details"),
+    ("y", "YAML"),
+    ("e", "Events"),
+    ("s/S", "Sort"),
+    ("j/k", "Down / up"),
+    ("g/G", "First / last"),
+    ("n / :ns", "Namespaces"),
+    ("c / :ctx", "Contexts"),
+    ("/", "Filter"),
+    (":", "Command"),
+    ("?", "Help"),
+)
 CTX_SHORTCUTS = (
     ("Enter", "Connect"),
     ("j/k", "Down / up"),
