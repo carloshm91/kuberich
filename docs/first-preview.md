@@ -23,6 +23,9 @@ Actual source/installed terminals, uv/pipx alias install/uninstall and all eight
 owned Kubernetes rehearsals passed. Native macOS/full hosted release qualification
 remain pending. The exact installed rehearsal command was
 `uv run python -m scripts.verify_quickstart --wheel /tmp/kuberich-149-evidence/frozen-dist/kuberich-0.0.1.dev0-py3-none-any.whl --kind /tmp/kubetrol-tools/kind --kubectl /tmp/kubetrol-tools/shell/bin/kubectl --evidence /tmp/kuberich-149-evidence/kind-quickstart.json`.
+The temporary binaries and wheel in that earlier command were removed by an
+environment restart after qualification. Regenerated packages/audits are retained
+locally under `artifacts/identity-149`; the acceptance report records this limit.
 Continuous private delivery does not require an intermediate maintainer trial.
 Public installation, website/DNS and visibility changes remain separately
 authorized launch steps.

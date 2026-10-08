@@ -74,11 +74,13 @@ Final local development artifacts (not published):
 
 The initial focused run caught an obsolete help snapshot (326 other cases passed).
 Initial matrix attempts caught obsolete single-entry-point and old-ASCII-logo
-assertions; they were interrupted and retained. Corrected native terminal checks
-passed 10 cases on each interpreter before the final complete green matrix.
+assertions; they were interrupted and their findings recorded. Corrected native
+terminal checks passed 10 cases on each interpreter before the final complete
+green matrix.
 An extra strict audit included two legacy untyped integration drivers outside the
-existing CI type-check list and reported 61 diagnostics. Its output is retained;
-the required typed runtime/tooling command is unchanged in scope and passes.
+existing CI type-check list and reported 61 diagnostics. Its original output was
+temporary; the measured audit result is recorded. The required typed runtime/
+tooling command is unchanged in scope and passes.
 
 DCO passed on the signed issue branch. Hosted Actions could not start because of
 the account billing restriction; the private local-verification exception applies.
@@ -88,4 +90,16 @@ trials in #87; owned-kind synthetic credential contracts do not certify EKS/AKS.
 No public artifact, tag, release, website/DNS or organization change was made.
 
 Historical acceptance reports retain their original artifact names, source trees
-and measurements. Raw local evidence: `/tmp/kuberich-149-evidence`.
+and measurements. An environment restart after the final matrix removed the
+original `/tmp/kuberich-149-evidence` directory and its detached worktrees. The
+complete passing results, measured percentages and qualified source/test trees
+were recorded in this committed report before the restart; original raw matrix
+and cluster logs are now unavailable. No replacement raw coverage data was
+fabricated.
+
+Post-restart verification confirmed the same production/test trees and private
+repository/PR identity. Fresh build/Twine and locked/fresh audits were rerun in
+`artifacts/identity-149` (ignored local evidence within the workspace). Both rebuilt
+artifact hashes exactly match those above. Full public-release qualification will
+produce fresh retained platform evidence; these recorded private results do not
+replace that gate.
