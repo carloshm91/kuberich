@@ -1040,6 +1040,8 @@ class KubetrolApp(App[None]):
         self.screen_stack[0].set_class(event.size.height < 16, "short")
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        if action in {"logs", "shell"} and self._resource_name != "pods":
+            return False
         if action in {
             "focus_filter",
             "focus_command",

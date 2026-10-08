@@ -92,9 +92,8 @@ async def test_every_resource_has_discovered_list_watch_detail_and_correct_hints
             assert app.standard_table.capture_viewport() == before
             assert app.focused is app.standard_table
             await pilot.press("l")
-            assert len(app.screen_stack) == 1 and "Select a namespaced pod" in str(
-                app.status.content
-            )
+            assert len(app.screen_stack) == 1 and app.check_action("logs", ()) is False
+            assert app.check_action("shell", ()) is False
         assert app.sessions.client is None and app._render_task.done() and app._view_task.done()
 
 
