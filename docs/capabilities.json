@@ -428,7 +428,7 @@
       ],
       "source": "internal/view/registrar.go",
       "status": "planned",
-      "difference": "Live UID-based pod tables and captured regular/init container navigation are implemented. Preview #125 adds the real Namespace LIST/WATCH table with lifecycle/age, filtering, all-scope action and Enter/Escape restoration. B05 adds the standard resource tables. Live container status and ephemeral containers remain planned in later tasks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage.",
+      "difference": "Live UID-based pod tables and captured regular/init container navigation are implemented. Preview #125 adds the real Namespace LIST/WATCH table with lifecycle/age, filtering, all-scope action and Enter/Escape restoration. B05 adds the standard resource tables. Live container status and ephemeral containers remain #61 and #78. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage.",
       "partial_evidence": [
         "docs/pod-table.md",
         "tests/unit/test_pods.py",

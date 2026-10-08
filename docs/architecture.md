@@ -20,7 +20,7 @@ pod specification and name-matched status. Missing readiness/restarts remain
 unknown; states retain Kubernetes waiting/termination reasons. Columns describe
 image, configured probes, CPU/memory requests/limits and bounded declared ports.
 These are snapshot values; opening the pod again refreshes them. Live container
-refresh, ephemeral containers and metrics remain #41/#78/#68.
+refresh, ephemeral containers and metrics remain #61/#78/#68.
 
 Status: accepted planning baseline, 2026-10-04. Changes require an issue and an
 updated decision record in this document. The product is a new implementation.
@@ -506,8 +506,8 @@ and awaits log ownership before returning to containers, then pods.
 The workspace observer validates both visible and covered container/log screens.
 Stale targets disable container selection; the log service still verifies the
 captured pod UID and declared container before and after opening the API stream.
-The container list is a snapshot; reopening refreshes it. Live container status,
-ephemeral containers and broader resource drill-down remain B05/A03.
+The container list is a snapshot; reopening refreshes it. Live container status
+and broader resource drill-down remain #61; ephemeral containers remain #78.
 
 This uses public [Textual DataTable](https://textual.textualize.io/widgets/data_table/)
 row events/actions and [Input](https://textual.textualize.io/widgets/input/) submissions.

@@ -28,7 +28,8 @@ Private CI follow-up [#109](https://github.com/carloshm91/kubetrol/issues/109)
 delivers the development matrix before further product work; its observed
 after-change hosted timing remains pending while Actions cannot start. Once its
 implementation is merged, that external evidence and #40's release approvals
-do not block the next unblocked private implementation task, B05 #41.
+do not block private product implementation: B05 #41, then S05 #42 and
+the next unblocked task in the v0.1.0 order below.
 The paragraphs below preserve the earlier implementation-order refinements.
 
 After C01 and its preview correction (#102), prioritize the path to the first
