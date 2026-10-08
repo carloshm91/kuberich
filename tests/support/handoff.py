@@ -114,6 +114,7 @@ def terminal_handoff_trial(
         [python, str(script), scenario], directory, transport=transport
     ) as terminal:
         terminal.wait_for(b"Disconnected")
+        probes = 0
         for attempt in range(attempts):
             marker = terminal.send(b"h")
             if scenario == "read_only" or (scenario == "spawn_error" and attempt == 0):
@@ -154,7 +155,8 @@ def terminal_handoff_trial(
             marker = terminal.resize(100, 30)
             terminal.wait_for_screen("Stay in pods", row=28, since=marker)
             terminal.send(b"\x1b[24~")
-            terminal.wait_for_screen(f"READY 100 30 #{attempt + 1}", since=marker)
+            probes += 1
+            terminal.wait_for_screen(f"READY 100 30 #{probes}", since=marker)
         terminal.send(b"\x11")
         terminal.finish()
         terminal.save_evidence(name)
