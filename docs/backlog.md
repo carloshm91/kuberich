@@ -258,3 +258,14 @@ See [coverage policy](quality.md), [release procedure](releases.md), and
 command completion and adds pod → container → log Enter navigation in v0.0.1.
 It is a focused follow-up to B03/B04/S02, before the next exec checkpoint.
 GitHub records its current status and measured acceptance evidence.
+
+## Brand and public launch preparation
+
+[#149](https://github.com/carloshm91/kubetrol/issues/149) records the independent
+KubeRich name review and the focused private repository/package/CLI/configuration
+migration. Current checkout commands remain `kubetrol` until that work is verified.
+[#150](https://github.com/carloshm91/kubetrol/issues/150) prepares the initial
+landing page and documentation before public launch. Both are v0.0.1 release
+prerequisites under #40; versioned documentation remains #90/#91. GitHub tracks
+their acceptance criteria and current status. Neither ticket authorizes visibility,
+domain/DNS, hosting publication, ownership transfer or public distribution changes.
