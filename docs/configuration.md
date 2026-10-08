@@ -67,7 +67,8 @@ own editor and run `config check` afterward. There is no automatic rewrite on lo
 ## Paths and precedence
 
 The config path is chosen from `--config`, then `KUBERICH_CONFIG`, then
-[platformdirs](https://platformdirs.readthedocs.io/en/latest/api.html). An absent
+`KUBETROL_CONFIG`, then the platform default with the legacy fallback described
+above. Defaults follow [platformdirs](https://platformdirs.readthedocs.io/en/latest/api.html). An absent
 default file uses the defaults below. An explicitly selected missing file fails
 with exit 3; use `config init` to create it. Empty/comment-only files also use
 defaults. Paths expand `~`, support spaces and reject control characters.

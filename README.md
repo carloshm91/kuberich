@@ -81,8 +81,8 @@ helpers are trusted local programs and may run automatically for authentication.
 Help/version/info/config inspection never connects or executes helpers.
 Try `uv run kuberich --readonly --headless --command help` to start with help
 and a compact header. Read-only command decisions use a shared service guard;
-read-only blocks container shells and starting forwards before preparation. Workload changes and
-plugins remain upcoming.
+read-only blocks container shells, starting forwards and workload changes before
+preparation. Plugins remain upcoming.
 `uv run python -m kuberich` is also supported.
 `info` and `config check` create no files. `config init` optionally creates default
 preferences without overwriting an existing file. See
