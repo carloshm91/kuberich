@@ -706,7 +706,13 @@ class KubetrolApp(App[None]):
 
     async def _close_client_operations(self, client: KubernetesSession) -> None:
         closing = asyncio.gather(
-            self.mutations.stop_for_client(client), self.forwards.stop_for_client(client)
+            self.mutations.stop_for_client(client),
+            self.forwards.stop_for_client(client),
+            *(
+                screen.stop_owned()
+                for screen in tuple(self.screen_stack)
+                if isinstance(screen, AnnotationScreen) and screen.source.client is client
+            ),
         )
         try:
             await asyncio.shield(closing)

@@ -35,7 +35,9 @@ There is no automatic retry, including on throttling or server failure.
 
 Leaving the form retains an already started bounded operation; use `:writes` to
 see its outcome. Changing the captured client or exiting cancels and drains owned
-requests/decoding before SDK cleanup, preserving an honest uncertain outcome when
+requests/decoding before SDK cleanup, including a Review read still in progress.
+Concurrent cleanup requests cancel that reader once and await its owned decoding.
+This preserves an honest uncertain outcome for a write when
 necessary. Eight concurrent operations and 32 recent records bound ownership.
 API writes are not a sandbox or a replacement for server RBAC/admission.
 

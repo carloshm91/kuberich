@@ -1,10 +1,14 @@
 """Actual owned writes through captured confirmation, focus and responsive forms."""
 
+import asyncio
+import json
 import logging
+import threading
 
 import pytest
 from textual.widgets import Button, Input, Static
 
+from kubetrol.adapters import kubernetes
 from kubetrol.config.schema import Settings
 from kubetrol.domain.mutations import MutationState
 from kubetrol.domain.registry import RESOURCE_ALIASES
@@ -14,6 +18,87 @@ from kubetrol.ui.mutations import AnnotationScreen, MutationHistoryScreen
 from tests.support.connections import catalog_fixture
 from tests.support.mutations import mutation_api
 from tests.support.workspace import wait_for
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("closing", ["retry", "exit", "escape"])
+async def test_preparation_is_drained_before_client_cleanup(tmp_path, monkeypatch, closing):
+    entered, released, finished = threading.Event(), threading.Event(), threading.Event()
+    ready, finish_trial, closed = asyncio.Event(), asyncio.Event(), asyncio.Event()
+    decode = kubernetes._decode
+    state = {}
+
+    def held_decode(data):
+        if json.loads(data).get("kind") == "ConfigMap":
+            entered.set()
+            try:
+                assert released.wait(10)
+                return decode(data)
+            finally:
+                finished.set()
+        return decode(data)
+
+    async with mutation_api() as (url, api):
+        app = app_fixture(tmp_path, url)
+
+        async def trial():
+            async with app.run_test() as pilot:
+                await wait_for(lambda: app.standard_table.row_count == 1)
+                app.action_annotate()
+                await wait_for(lambda: isinstance(app.screen, AnnotationScreen))
+                await pilot.pause()
+                screen = app.screen
+                screen.query_one("#annotation-key", Input).value = "example.io/drain"
+                await pilot.pause()
+                monkeypatch.setattr(kubernetes, "_decode", held_decode)
+                old = app.sessions.client
+                close = old.close
+
+                async def checked_close():
+                    assert finished.is_set() and screen._operation_task.done()
+                    closed.set()
+                    await close()
+
+                monkeypatch.setattr(old, "close", checked_close)
+                state.update(screen=screen, old=old, pilot=pilot)
+                screen.review()
+                await wait_for(entered.is_set)
+                ready.set()
+                await finish_trial.wait()
+
+        owner = asyncio.create_task(trial())
+        pressing = None
+        try:
+            await wait_for(ready.is_set)
+            screen, old, pilot = state["screen"], state["old"], state["pilot"]
+            if closing == "exit":
+                finish_trial.set()
+            else:
+                pressing = asyncio.create_task(
+                    pilot.press("f4" if closing == "retry" else "escape")
+                )
+            await wait_for(lambda: screen._operation_task.cancelling())
+            another_drain = asyncio.create_task(screen.stop_owned())
+            await asyncio.sleep(0)
+            assert screen._operation_task.cancelling() == 1
+            assert not closed.is_set() and old.configuration is not None
+            assert not finished.is_set() and not api.requests
+            released.set()
+            await another_drain
+            assert finished.is_set() and screen._operation_task.done()
+            if pressing is not None:
+                await pressing
+            if closing == "retry":
+                await wait_for(lambda: app.sessions.client is not old)
+            elif closing == "escape":
+                await wait_for(lambda: len(app.screen_stack) == 1)
+        finally:
+            released.set()
+            finish_trial.set()
+            if pressing is not None:
+                await pressing
+            await owner
+        assert closed.is_set() and not api.requests
 
 
 def app_fixture(tmp_path, url, *, read_only=False):

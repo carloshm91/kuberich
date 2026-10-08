@@ -178,10 +178,15 @@ class AnnotationScreen(ModalScreen[None]):
     def cancel(self) -> None:
         self.dismiss()
 
-    async def on_unmount(self) -> None:
+    async def stop_owned(self) -> None:
+        """Drain preparation/result waiters before their captured client closes."""
         if self._operation_task is not None:
-            self._operation_task.cancel()
+            if not self._operation_task.done() and not self._operation_task.cancelling():
+                self._operation_task.cancel()
             await _finish_owned(asyncio.gather(self._operation_task, return_exceptions=True))
+
+    async def on_unmount(self) -> None:
+        await self.stop_owned()
 
 
 class MutationHistoryScreen(ModalScreen[None]):
