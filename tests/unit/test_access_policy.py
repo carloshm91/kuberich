@@ -7,7 +7,7 @@ import pytest
 
 from kubetrol.errors import AppError
 from kubetrol.services.access import AccessPolicy, Action
-from kubetrol.services.commands import Command, CommandService
+from kubetrol.services.commands import Command, CommandService, ScopedCommand
 
 
 @pytest.mark.parametrize("action", list(Action))
@@ -53,8 +53,9 @@ def test_readonly_cannot_be_changed_mid_action() -> None:
         "plugin local",
         "delete pod",
         "edit pod",
-        "scale deploy",
-        "rollout deploy",
+        "scale 3",
+        "restart",
+        "rollback 1",
         "apply file",
         "patch pod",
     ],
@@ -62,8 +63,13 @@ def test_readonly_cannot_be_changed_mid_action() -> None:
 def test_command_service_guard_is_independent_of_widgets(text: str) -> None:
     with pytest.raises(AppError, match="Read-only mode blocks"):
         CommandService(AccessPolicy(True)).resolve(text)
-    expected = Command.SHELL if text == "shell" else Command.UNAVAILABLE
-    assert CommandService(AccessPolicy(False)).resolve(text) is expected
+    expected = {
+        "shell": Command.SHELL,
+        "restart": Command.RESTART,
+        "scale 3": ScopedCommand(Command.SCALE, "3"),
+        "rollback 1": ScopedCommand(Command.ROLLBACK, "1"),
+    }.get(text, Command.UNAVAILABLE)
+    assert CommandService(AccessPolicy(False)).resolve(text) == expected
 
 
 @pytest.mark.parametrize(
@@ -80,7 +86,18 @@ def test_command_service_guard_is_independent_of_widgets(text: str) -> None:
         ("help extra", Command.UNAVAILABLE),
         ("pods", Command.PODS),
         (":login", Command.LOGIN),
+        ("rollout", Command.ROLLOUT),
+        (":ROLLOUT", Command.ROLLOUT),
+        ("rollout deploy", Command.UNAVAILABLE),
     ],
 )
 def test_available_commands_work_in_readonly_mode(text: str, expected: Command) -> None:
     assert CommandService(AccessPolicy(True)).resolve(text) is expected
+
+
+@pytest.mark.parametrize("argument", ["deploy", "-1", "1.5"])
+def test_scale_invalid_input_is_rejected_before_any_widget_or_request(argument: str) -> None:
+    with pytest.raises(AppError, match="Read-only mode blocks"):
+        CommandService(AccessPolicy(True)).resolve("scale " + argument)
+    with pytest.raises(AppError, match="ASCII integer"):
+        CommandService(AccessPolicy(False)).resolve("scale " + argument)
