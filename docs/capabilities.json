@@ -704,7 +704,7 @@
       ],
       "source": "internal/view/actions.go",
       "status": "planned",
-      "difference": "F04/F05 enforce immutable target identity and read-only policy in CLI, UI, process and shell services; actual shell RBAC denial has owned-cluster evidence. Attach, mutation and plugins remain unavailable until their guarded services ship. Application read-only is not a security boundary.",
+      "difference": "F04/F05/M01 enforce captured identity and common read-only policy in CLI, UI, shell/forward and mutation services. Guarded annotation changes have one-use confirmation, atomic UID/version tests and actual patch RBAC evidence. Editing, scale/delete, attach and plugin actions retain their owning tasks. Application read-only is not a security boundary.",
       "partial_evidence": [
         "docs/k9s-cli.md",
         "tests/unit/test_access_policy.py",
@@ -713,7 +713,13 @@
         "tests/contract/test_connection_overrides.py",
         "tests/unit/test_connection_overrides.py",
         "scripts/verify_shell_kind.py",
-        "docs/acceptance/connection-overrides.md"
+        "docs/acceptance/connection-overrides.md",
+        "docs/mutations.md",
+        "docs/acceptance/mutations.md",
+        "tests/unit/test_mutations.py",
+        "tests/contract/test_mutations.py",
+        "tests/contract/test_mutation_faults.py",
+        "scripts/verify_mutations_kind.py"
       ]
     },
     {

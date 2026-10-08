@@ -16,6 +16,7 @@ provider helpers do not establish real cloud-provider certification.
 | Unicode logs, previous-log errors, denied reads, abrupt disconnect and retention | `tests/contract/test_logs.py`; actual CoreDNS logs |
 | Exec scope, missing shell, fullscreen program, resize/interrupt and restricted RBAC | `tests/contract/test_shell.py`, real PTYs and shell verifier |
 | Pod/Service TCP payloads, readiness, target loss, context/exit cleanup and private files | `tests/contract/test_port_forwards.py`, Pilot/PTY and port-forward verifier |
+| Guarded annotation writes, stale UID/version tests and actual patch RBAC denial | mutation contracts/Pilot/PTY and mutation verifier |
 | Expiring/rejected credentials, concurrent refresh and helper faults | provider/session contracts; synthetic helpers with real kind tokens |
 | Unsafe node/config refusal, setup failure, repeated cancellation and process timeout | `tests/quality/test_owned_kind.py`; real lifecycle verifier |
 
@@ -56,6 +57,7 @@ uv run python -m scripts.verify_contexts_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_kind_lifecycle --kind /absolute/path/to/kind
 uv run python -m scripts.verify_shell_kind --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
 uv run python -m scripts.verify_port_forwards_kind --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
+uv run python -m scripts.verify_mutations_kind --kind /absolute/path/to/kind
 uv build
 uv run python -m scripts.verify_quickstart --wheel dist/kubetrol-0.0.1.dev0-py3-none-any.whl --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
 ```
@@ -68,15 +70,15 @@ not overlap another process creating/removing clusters.
 
 ## Release-time repetition
 
-Required PR/main CI runs the complete suite and all five real rehearsals once
-(contexts, lifecycle faults, shell, port forwards and installed quickstart).
+Required PR/main CI runs the complete suite and all six real rehearsals once
+(contexts, lifecycle faults, shell, port forwards, mutations and installed quickstart).
 Before each canonical RC publication, and after client/runtime or lifecycle
-changes, repeat the contract suite and all five real rehearsals three consecutive
+changes, repeat the contract suite and all six real rehearsals three consecutive
 times on the exact candidate checkout. A failure blocks qualification; retain
 its evidence and diagnose before repetition.
 
 Use `--evidence artifacts/cluster/rc-N-contexts.json`, `rc-N-lifecycle.json`,
-`rc-N-shell.json`, `rc-N-port-forwards.json` and `rc-N-quickstart.json`, for
+`rc-N-shell.json`, `rc-N-port-forwards.json`, `rc-N-mutations.json` and `rc-N-quickstart.json`, for
 N=1,2,3. Use that candidate's exact wheel filename for the quickstart. Preserve
 per-run logs, duration, exit status,
 candidate SHA, tool versions/digests, configuration invariance and node inventory.

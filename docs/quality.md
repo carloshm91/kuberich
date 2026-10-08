@@ -44,6 +44,11 @@ critical inventory. Real child/socket, Pilot, source/fresh-install PTYs and
 `scripts.verify_port_forwards_kind` qualify forwarding, cancellation and cleanup.
 The Linux/Python 3.12 job requires real owned Pod/Service HTTP transport; pinned
 images/binaries and the shared kind owner protect caller configuration.
+M01 #43 adds immutable mutation intent, patch/precondition, annotation and outcome
+decisions in `domain/mutations.py` to the 100% critical inventory. Actual HTTP/TLS
+faults, repeated cancellation, Pilot and source/fresh-install PTYs qualify guards
+and confirmation; `scripts.verify_mutations_kind` is required on Linux/Python 3.12
+for actual writes, stale UID/version refusal and server RBAC on an owned cluster.
 F05 invocation overrides and bounded impersonation decisions in
 `domain/connection_overrides.py` join the critical inventory in #19.
 Fixed provider diagnostic decisions in `domain/credential_helpers.py` join the
@@ -163,7 +168,7 @@ There are no path filters or allowed matrix failures.
 
 Each selected job still runs the complete behavioral/terminal/packaging suite,
 independent coverage gates, build and supply-chain verification. Linux 3.12 keeps
-all five actual disposable-cluster rehearsals. The macOS baseline is a development
+all six actual disposable-cluster rehearsals. The macOS baseline is a development
 check, not qualification of macOS 3.13/3.14. The planner refuses unknown events
 and non-main push/dispatch refs. PR checks stay on `pull_request`; a manual
 dispatch never substitutes for the required PR checks. Concurrency groups include

@@ -292,6 +292,17 @@ initial-scope decision that excluded terminal emulation.
 
 ## Actions, configuration, and trust
 
+M01 #43 implements conditional JSON Patch through the owned per-context transport.
+Immutable request bytes carry UID/version tests; one-use confirmation binds their
+exact identity and captured API path. Services enforce the shared write policy
+before reads and before sending, revalidate the object and return typed outcomes.
+The adapter sends one PATCH without redirect, 401 refresh/replay or blind retry.
+Requests and decoding are drained before client cleanup; bounded public history
+retains uncertain results without manifests/values/credentials. `:annotate` is the
+first concrete action, with Review/Cancel as the default and separate Confirm.
+The broad resource editor/scale/delete actions remain #44/#45/#46. See
+[guarded changes](mutations.md).
+
 Mutations go through services that capture identity, enforce read-only mode,
 present the target and consequences, handle permissions/conflicts, and return a
 typed outcome. Never retry an uncertain non-idempotent mutation blindly.

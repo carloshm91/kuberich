@@ -1,5 +1,17 @@
 # First things to try
 
+## Guarded write checkpoint: M01 #43
+
+The preview adds [explicit annotation changes](mutations.md): `:annotate` prepares
+an identified change, Review shows context/namespace/name/UID/version/effect, and
+deliberate Confirm sends one guarded patch. `:writes` retains public outcomes;
+`--readonly` blocks modifications. Editing, scaling and deletion remain separate
+tasks. The automated command is `uv run python -m scripts.verify_mutations_kind --kind /tmp/kubetrol-tools/kind --evidence /tmp/kubetrol-43-evidence/kind.json`.
+Actual writes, stale UID/version refusal and real RBAC denial passed on an owned
+disposable cluster, which was deleted. See [acceptance evidence](acceptance/mutations.md)
+for final qualification status. Continuous private delivery does not require a
+manual maintainer trial at this checkpoint.
+
 ## Port-forward checkpoint: S05 #42
 
 The preview adds [managed pod/Service TCP forwarding](port-forwards.md): Shift+F

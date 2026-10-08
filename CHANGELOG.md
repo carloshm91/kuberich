@@ -7,6 +7,9 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Guarded annotation changes with captured one-use confirmation, atomic UID/version
+  conditions, common read-only policy and bounded public write-outcome history.
+
 - Managed pod/Service TCP forwards with dynamic or explicit local ports,
   observed readiness, IPv4/IPv6 bind intent, session listing/stop and owned cleanup.
 

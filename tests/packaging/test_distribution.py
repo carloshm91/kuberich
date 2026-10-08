@@ -16,6 +16,7 @@ from tests.support.azure_handoff import azure_terminal_trial
 from tests.support.distribution import PROJECT, run
 from tests.support.forward_terminal import terminal_forward
 from tests.support.handoff import terminal_handoff_trial
+from tests.support.mutation_terminal import terminal_mutation
 from tests.support.navigation import terminal_navigation
 from tests.support.shell import terminal_shell
 from tests.support.standard_terminal import terminal_standard_views
@@ -43,6 +44,17 @@ def test_installed_port_forward_owns_children_and_restores_terminal(installed_wh
         else [str(binary / "python"), "-m", "kubetrol"]
     )
     terminal_forward(command, directory, f"installed-forward-{entry_point}")
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+def test_installed_mutation_confirmation_and_terminal_restoration(installed_wheel, entry_point):
+    binary, directory = installed_wheel
+    command = (
+        [str(binary / "kubetrol")]
+        if entry_point == "console"
+        else [str(binary / "python"), "-m", "kubetrol"]
+    )
+    terminal_mutation(command, directory, f"installed-mutation-{entry_point}")
 
 
 def test_wheel_metadata_entry_point_and_assets(artifacts: tuple[Path, Path]) -> None:
@@ -218,6 +230,7 @@ def test_installed_terminal_launch_restores_tty_outside_the_checkout(
         (["--token", "opaque-secret"], 2),
         (["--invert"], 4),
         (["--readonly", "-c", "shell"], 2),
+        (["--readonly", "-c", "annotate"], 2),
     ],
 )
 def test_installed_launch_contract_outside_checkout(
