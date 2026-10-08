@@ -163,7 +163,7 @@ There are no path filters or allowed matrix failures.
 
 Each selected job still runs the complete behavioral/terminal/packaging suite,
 independent coverage gates, build and supply-chain verification. Linux 3.12 keeps
-all four actual disposable-cluster rehearsals. The macOS baseline is a development
+all five actual disposable-cluster rehearsals. The macOS baseline is a development
 check, not qualification of macOS 3.13/3.14. The planner refuses unknown events
 and non-main push/dispatch refs. PR checks stay on `pull_request`; a manual
 dispatch never substitutes for the required PR checks. Concurrency groups include

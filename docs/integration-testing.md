@@ -15,6 +15,7 @@ provider helpers do not establish real cloud-provider certification.
 | Rapid scope switches and rejection of late responses | `tests/contract/test_workspace.py`; Pilot and context verifier |
 | Unicode logs, previous-log errors, denied reads, abrupt disconnect and retention | `tests/contract/test_logs.py`; actual CoreDNS logs |
 | Exec scope, missing shell, fullscreen program, resize/interrupt and restricted RBAC | `tests/contract/test_shell.py`, real PTYs and shell verifier |
+| Pod/Service TCP payloads, readiness, target loss, context/exit cleanup and private files | `tests/contract/test_port_forwards.py`, Pilot/PTY and port-forward verifier |
 | Expiring/rejected credentials, concurrent refresh and helper faults | provider/session contracts; synthetic helpers with real kind tokens |
 | Unsafe node/config refusal, setup failure, repeated cancellation and process timeout | `tests/quality/test_owned_kind.py`; real lifecycle verifier |
 
@@ -23,7 +24,7 @@ belongs to Q03 #86; repeated bounded contracts do not establish a benchmark.
 
 ## Ownership before writes
 
-Both Kubernetes verifiers use `scripts.owned_kind`. It freezes a local Docker
+The Kubernetes verifiers use `scripts.owned_kind`. It freezes a local Docker
 Unix-socket destination, removes conflicting context/TLS overrides and forces
 the Docker provider. It refuses an existing generated name, creates an explicit
 temporary kubeconfig and pins the node image by digest.
@@ -54,6 +55,9 @@ uv run pytest -q tests/quality/test_owned_kind.py tests/contract
 uv run python -m scripts.verify_contexts_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_kind_lifecycle --kind /absolute/path/to/kind
 uv run python -m scripts.verify_shell_kind --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
+uv run python -m scripts.verify_port_forwards_kind --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
+uv build
+uv run python -m scripts.verify_quickstart --wheel dist/kubetrol-0.0.1.dev0-py3-none-any.whl --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
 ```
 
 The lifecycle controller sends actual SIGTERM during node creation and after
@@ -64,14 +68,17 @@ not overlap another process creating/removing clusters.
 
 ## Release-time repetition
 
-Required PR/main CI runs the complete suite and all three real verifiers once.
+Required PR/main CI runs the complete suite and all five real rehearsals once
+(contexts, lifecycle faults, shell, port forwards and installed quickstart).
 Before each canonical RC publication, and after client/runtime or lifecycle
-changes, repeat the contract suite and all three real verifiers three consecutive
+changes, repeat the contract suite and all five real rehearsals three consecutive
 times on the exact candidate checkout. A failure blocks qualification; retain
 its evidence and diagnose before repetition.
 
-Use `--evidence artifacts/cluster/rc-N-contexts.json`, `rc-N-lifecycle.json` and
-`rc-N-shell.json`, for N=1,2,3. Preserve per-run logs, duration, exit status,
+Use `--evidence artifacts/cluster/rc-N-contexts.json`, `rc-N-lifecycle.json`,
+`rc-N-shell.json`, `rc-N-port-forwards.json` and `rc-N-quickstart.json`, for
+N=1,2,3. Use that candidate's exact wheel filename for the quickstart. Preserve
+per-run logs, duration, exit status,
 candidate SHA, tool versions/digests, configuration invariance and node inventory.
 Archive `artifacts/ui`, `artifacts/terminal` and `artifacts/cluster` after each run
 so repeated screenshots do not overwrite earlier evidence. Hosted quality retains
