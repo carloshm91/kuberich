@@ -7,8 +7,11 @@ explicit local disclosure, native editor, redacted diff, strict server dry-run
 and separate guarded Apply. Cancel has default focus; `--readonly` blocks edits.
 The automated command is `uv run python -m scripts.verify_editing_kind --kind /tmp/kubetrol-tools/kind --evidence /tmp/kubetrol-44-evidence/kind.json`.
 All 12 real API checks passed on an owned disposable Kubernetes cluster, which
-was deleted. [Acceptance evidence](acceptance/editing.md) distinguishes those
-measured trials from complete interpreter/release qualification still running.
+was deleted. [Acceptance evidence](acceptance/editing.md) records 2,836 tests
+passing on each Linux Python 3.12/3.13/3.14 interpreter, independent coverage gates
+above 99% lines and 97% branches, and all 33 critical modules at 100%. Actual
+foreground-editor and fresh-wheel terminal trials also passed. Native macOS and
+full hosted release qualification remain outstanding.
 Secret manifest disclosure, scale/rollout and deletion retain their separate
 tasks. Continuous private work does not require an intermediate maintainer trial.
 

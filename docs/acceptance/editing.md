@@ -15,12 +15,45 @@ confirmation; the shared owner revalidates and retains public/uncertain outcomes
 A concurrent version or replacement UID requires a fresh edit; no overwrite,
 automatic merge or replay is offered. Secret full-manifest access remains #55.
 
-## Qualification in progress
+## Final Linux qualification
 
-Final frozen commit and complete Linux interpreter measurements are added after
-the suite completes. Focused verification already exercised all 114 executable
-lines and 40 branches of critical `domain/editing.py`. This is the 33rd critical
-deterministic module, with no production exclusions or reduced gates.
+Production was frozen at `95286b8345ee685f4069e99aef728499acc5af5a`; its `src`
+tree is `12015e1e54428cae3b6859c541300c28dfcd01b1`. The final test-only correction
+is `21882704d587180e421eafc300182c4d5b059603`, with the same production tree and
+tests tree `4b502d0fac79de9fc14a2ef271f0a56afd9e383d`. All complete final suites
+passed on that exact production and test tree:
+
+| Linux interpreter | Tests | Duration | Production lines | Production branches |
+| --- | --- | --- | --- | --- |
+| CPython 3.12.12 | 2,836 passed | 1,986.73 s | 8,297/8,351 (99.3534%) | 2,335/2,396 (97.4541%) |
+| CPython 3.13.12 | 2,836 passed | 1,438.14 s | 8,295/8,351 (99.3294%) | 2,333/2,396 (97.3706%) |
+| CPython 3.14.3 | 2,836 passed | 1,037.02 s | 8,147/8,202 (99.3294%) | 2,334/2,396 (97.4124%) |
+
+Each independent gate includes all 87 production modules, with no exclusions.
+All 33 designated critical modules passed 100% line and branch gates, including
+all 114 executable lines and 40 branches of `domain/editing.py`. All four new
+editor modules reached 100% lines and branches in each full suite. Changed-line
+coverage passed at 428/431 (99.3039%) against
+`a54ef97f891005acb565bc426be8b78554e0bdfd` on every interpreter.
+
+The complete command uses the selected interpreter explicitly:
+
+```sh
+uv sync --locked --python 3.12 --group dev
+uv run --locked --python 3.12 pytest --cov=kubetrol --cov-branch --cov-report=xml:/tmp/kubetrol-44-evidence/py312-final.xml --cov-report=json:/tmp/kubetrol-44-evidence/py312-final.json
+uv run --locked --python 3.12 python scripts/check_coverage.py /tmp/kubetrol-44-evidence/py312-final.json
+uv run --locked --python 3.12 diff-cover /tmp/kubetrol-44-evidence/py312-final.xml --compare-branch a54ef97f891005acb565bc426be8b78554e0bdfd --fail-under 90 --ignore-staged --ignore-unstaged --total-percent-float --format json:/tmp/kubetrol-44-evidence/py312-final-diff.json
+```
+
+The corresponding 3.13/3.14 commands use `py313`/`py314` evidence filenames.
+Ruff passed, formatting checked 341 Python files, strict mypy checked 103 files,
+and plan, whitespace and actionlint checks passed. Actionlint's optional external
+ShellCheck/Pyflakes integrations were disabled; their execution is not claimed.
+The frozen wheel/sdist passed build and Twine validation. Separate locked and
+fresh installed-runtime supply-chain audits each inventoried 27 dependencies,
+with no known advisories or exceptions; provenance verification passed.
+Final delivery artifacts are rebuilt and audited after the documentation commit,
+with their exact identity recorded in the PR.
 
 Contracts use actual files and owned HTTP/TLS to verify dry-run versus persistence,
 captured token/impersonation, exact bodies, RBAC/error responses, UID/version/scope
@@ -58,7 +91,14 @@ binding before focus changes; rapid native input passed. Form close initially
 painted the table before asynchronous unmount file cleanup. Cancel/Escape now
 wait for owned cleanup before dismissing; pending annotation forms use the same
 ordering. Intermediate failed trials remain in raw evidence and are not final
-qualification. Full matrix and exact delivery artifact results are pending.
+qualification. The original complete suites passed 2,836 cases on Python 3.12
+and 3.14. Python 3.13 caught a native tmux observer race: the probe key sampled
+80×25 before the actual resize arrived, leaving a stale witness even after
+the display reached 100×30. The test now repaints the same key counter after
+that real resize. The original failed control is retained; ten focused corrected
+repetitions and all 59 handoff/transport/package cases passed on both Python
+3.13 and 3.14. All three complete suites passed on that final test tree;
+the correction does not change production code or relax restoration assertions.
 
 Native macOS and hosted release qualification remain unavailable under the
 account Actions block. Arbitrary external editor backups/history, secure erasure,
