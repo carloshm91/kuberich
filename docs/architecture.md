@@ -27,6 +27,14 @@ updated decision record in this document. The product is a new implementation.
 
 ## Product boundary
 
+M03 #45 extends conditional patches with one whitelisted `/scale` subresource
+for apps workloads, restricted to one integer replica effect. Scale receipts use
+autoscaling/v1 identity. `WorkloadService` revalidates workload/history and HPA
+ownership; retained templates restore without replicas/strategy. Its separate
+read-only monitor polls actual generation/replica/revision state. `WorkloadScreen`
+owns and drains preparation/result waiters/monitor before captured SDK cleanup;
+confirmed writes remain owned by the bounded mutation manager.
+
 B05 #41 uses immutable `domain/registry.py` definitions for 15 standard resource
 families and one `ui/standard.py` table. Commands capture the registry's API group;
 the existing per-client discovery selects the served version and actual endpoint.

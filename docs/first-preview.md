@@ -1,5 +1,18 @@
 # First things to try
 
+## Workload operations checkpoint: M03 #45
+
+[Selected workload operations](workloads.md) add `:scale`, `:restart` and explicit
+`:rollback` with Review/default Cancel/separate Confirm. `:rollout` reads actual
+progress and works in read-only mode; Cancel does not claim a server undo.
+The automated command is
+`uv run python -m scripts.verify_workloads_kind --kind /tmp/kubetrol-tools/kind --evidence /tmp/kubetrol-45-evidence/kind.json`.
+Actual Deployment and StatefulSet/DaemonSet rollback, narrow RBAC, HPA and failure/
+cancellation checks passed on an owned cluster, which was deleted.
+[Acceptance evidence](acceptance/workloads.md) records pending full interpreter/
+artifact qualification. Private work proceeds without intermediate maintainer trials;
+public installation/release remains separately gated.
+
 ## Manifest edit checkpoint: M02 #44
 
 The preview adds [selected manifest editing](editing.md) through `:edit` / Shift+E:

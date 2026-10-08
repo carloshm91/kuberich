@@ -472,7 +472,7 @@
       ],
       "source": "internal/client/gvrs.go",
       "status": "planned",
-      "difference": "B05 implements Deployment, ReplicaSet, StatefulSet, DaemonSet, Job and CronJob tables with typed columns and inspection. ReplicationControllers, mutations and workload drill-down remain separate backlog work.",
+      "difference": "B05 provides typed workload tables and inspection; M03 adds documented apps workload operations. ReplicationController/generic browsing and owner drill-down remain B06 #53/O03 #70.",
       "partial_evidence": [
         "docs/standard-resources.md",
         "docs/acceptance/standard-resources.md",
@@ -756,7 +756,7 @@
       ],
       "source": "internal/view/restart_extender.go",
       "status": "planned",
-      "difference": "B05 provides workload browsing and individual inspection. Scale/restart/rollback and owner drill-down are not implemented by B05; M03 remains required.",
+      "difference": "M03 implements reviewed scale/restart/explicit revision rollback and actual rollout monitoring for documented apps workloads. Owner/ReplicaSet drill-down remains O03 #70; full hosted/macOS qualification remains outstanding.",
       "partial_evidence": [
         "docs/standard-resources.md",
         "docs/acceptance/standard-resources.md",
@@ -764,7 +764,14 @@
         "tests/ui/test_standard_resources.py",
         "tests/ui/test_standard_table.py",
         "tests/terminal/test_standard_resources.py",
-        "scripts/standard_kind.py"
+        "scripts/standard_kind.py",
+        "docs/workloads.md",
+        "docs/acceptance/workloads.md",
+        "tests/unit/test_workloads.py",
+        "tests/contract/test_workloads.py",
+        "tests/ui/test_workloads.py",
+        "tests/terminal/test_workloads.py",
+        "scripts/verify_workloads_kind.py"
       ]
     },
     {

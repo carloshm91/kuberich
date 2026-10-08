@@ -23,7 +23,7 @@ from kubetrol.domain.connections import ConnectionRequest, request_duration
 from kubetrol.errors import AppError, ExitCode
 from kubetrol.security.arguments import validate_argument
 from kubetrol.services.access import AccessPolicy
-from kubetrol.services.commands import Command, CommandService
+from kubetrol.services.commands import Command, CommandService, ScopedCommand
 from kubetrol.ui.launch import run_terminal
 from kubetrol.ui.presentation import Presentation
 
@@ -307,9 +307,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         initial = CommandService(AccessPolicy(settings.read_only)).resolve(
             arguments.initial_command or ""
         )
-        if initial in {Command.UNAVAILABLE, Command.SHELL, Command.ANNOTATE, Command.EDIT}:
+        action = initial.command if isinstance(initial, ScopedCommand) else initial
+        if action in {
+            Command.UNAVAILABLE,
+            Command.SHELL,
+            Command.ANNOTATE,
+            Command.EDIT,
+            Command.SCALE,
+            Command.RESTART,
+            Command.ROLLBACK,
+            Command.ROLLOUT,
+        }:
             raise AppError(
-                "--command requires an available startup view; edit/annotation/shell actions need an interactive resource selection. Available: po, ctx, ns, deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, no, pvc, pv, sc, status, retry, help, quit.",
+                "--command requires an available startup view; resource actions need an interactive resource selection. Available: po, ctx, ns, deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, no, pvc, pv, sc, status, retry, help, quit.",
                 ExitCode.UNAVAILABLE,
             )
         log_file = log_location(

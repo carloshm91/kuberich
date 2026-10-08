@@ -32,7 +32,9 @@ def decode_patch(body: bytes) -> list[dict[str, Any]]:
         raise AppError("Mutation JSON must contain bounded patch operations.") from None
 
 
-def mutation_path(resource: ApiResource, target: ResourceTarget) -> str:
+def mutation_path(
+    resource: ApiResource, target: ResourceTarget, subresource: str | None = None
+) -> str:
     if resource.group:
         api_segment(resource.group)
     api_segment(resource.version)
@@ -43,10 +45,20 @@ def mutation_path(resource: ApiResource, target: ResourceTarget) -> str:
         or target.container is not None
         or type(resource.namespaced) is not bool
         or resource.namespaced != (target.namespace is not None)
-        or not {"get", "patch"} <= resource.verbs
+        or "get" not in resource.verbs
+        or (subresource is None and "patch" not in resource.verbs)
     ):
         raise AppError("Mutation requires an explicitly scoped, readable and patchable target.")
-    return resource.path(target.namespace) + "/" + api_segment(target.name)
+    path = resource.path(target.namespace) + "/" + api_segment(target.name)
+    if subresource is not None:
+        if (
+            subresource != "scale"
+            or resource.group != "apps"
+            or resource.name not in {"deployments", "replicasets", "statefulsets"}
+        ):
+            raise AppError("Only the supported workload scale subresource is allowed.")
+        path += "/scale"
+    return path
 
 
 def _change_path(value: object) -> str:
@@ -74,9 +86,10 @@ class MutationIntent:
     resource_version: str
     body: bytes = field(repr=False)
     identity: UUID = field(default_factory=uuid4)
+    subresource: str | None = None
 
     def __post_init__(self) -> None:
-        mutation_path(self.resource, self.target)
+        mutation_path(self.resource, self.target, self.subresource)
         validate_argument(self.resource_version)
         if len(self.resource_version) > 1024 or not isinstance(self.identity, UUID):
             raise AppError("Mutation version/identity is invalid.")
@@ -88,6 +101,14 @@ class MutationIntent:
         if operations[:2] != expected:
             raise AppError("Mutation requires server-side UID and version tests first.")
         for item in operations[2:]:
+            if self.subresource is not None and (
+                len(operations) != 3
+                or item.get("path") != "/spec/replicas"
+                or item.get("op") not in {"add", "replace"}
+                or type(item.get("value")) is not int
+                or not 0 <= item["value"] <= 2147483647
+            ):
+                raise AppError("Scale can change only a validated replica count.")
             operation = item.get("op")
             if operation not in {"add", "replace", "remove"}:
                 raise AppError("Unsupported mutation patch operation.")
@@ -98,7 +119,7 @@ class MutationIntent:
 
     @property
     def path(self) -> str:
-        return mutation_path(self.resource, self.target)
+        return mutation_path(self.resource, self.target, self.subresource)
 
     @property
     def effects(self) -> tuple[str, ...]:
@@ -111,6 +132,8 @@ def patch_intent(
     target: ResourceTarget,
     record: ResourceRecord,
     changes: list[dict[str, Any]],
+    *,
+    subresource: str | None = None,
 ) -> MutationIntent:
     target.require_current(target.session, uid=record.uid or "")
     if (
@@ -130,7 +153,7 @@ def patch_intent(
         ).encode("utf-8")
     except (ValueError, TypeError, UnicodeError, RecursionError):
         raise AppError("Mutation values must be finite, bounded JSON.") from None
-    return MutationIntent(target, resource, record.resource_version, body)
+    return MutationIntent(target, resource, record.resource_version, body, subresource=subresource)
 
 
 def annotation_key(value: str) -> str:

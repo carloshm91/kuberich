@@ -60,6 +60,7 @@ uv run python -m scripts.verify_shell_kind --kind /absolute/path/to/kind --kubec
 uv run python -m scripts.verify_port_forwards_kind --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
 uv run python -m scripts.verify_mutations_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_editing_kind --kind /absolute/path/to/kind
+uv run python -m scripts.verify_workloads_kind --kind /absolute/path/to/kind
 uv build
 uv run python -m scripts.verify_quickstart --wheel dist/kubetrol-0.0.1.dev0-py3-none-any.whl --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
 ```
@@ -72,15 +73,15 @@ not overlap another process creating/removing clusters.
 
 ## Release-time repetition
 
-Required PR/main CI runs the complete suite and all seven real rehearsals once
-(contexts, lifecycle faults, shell, port forwards, mutations, editing and installed quickstart).
+Required PR/main CI runs the complete suite and all eight real rehearsals once
+(contexts, lifecycle faults, shell, port forwards, mutations, editing, workloads and installed quickstart).
 Before each canonical RC publication, and after client/runtime or lifecycle
-changes, repeat the contract suite and all seven real rehearsals three consecutive
+changes, repeat the contract suite and all eight real rehearsals three consecutive
 times on the exact candidate checkout. A failure blocks qualification; retain
 its evidence and diagnose before repetition.
 
 Use `--evidence artifacts/cluster/rc-N-contexts.json`, `rc-N-lifecycle.json`,
-`rc-N-shell.json`, `rc-N-port-forwards.json`, `rc-N-mutations.json`, `rc-N-editing.json` and `rc-N-quickstart.json`, for
+`rc-N-shell.json`, `rc-N-port-forwards.json`, `rc-N-mutations.json`, `rc-N-editing.json`, `rc-N-workloads.json` and `rc-N-quickstart.json`, for
 N=1,2,3. Use that candidate's exact wheel filename for the quickstart. Preserve
 per-run logs, duration, exit status,
 candidate SHA, tool versions/digests, configuration invariance and node inventory.
