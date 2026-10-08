@@ -59,7 +59,7 @@ Before an approved deployment:
    are documented in [custom domains](https://developers.cloudflare.com/pages/configuration/custom-domains/).
 5. Wait for active custom domains/certificates, then verify HTTPS, both homepages,
    local assets, direct guide URLs, 404 behavior, redirects and the `_headers`
-   policy at the actual hosts. The local server checks the declared headers;
+   policy at the actual hosts. The browser rehearsal serves the declared headers;
    that does not establish provider enforcement or successful TLS provisioning.
 6. Record the real publication and public-install verification separately. Keep
    #150 open until the exact release-candidate quickstart and approved publication
