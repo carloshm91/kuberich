@@ -5,7 +5,7 @@ opens that table, including single-container pods. Choose a regular/init contain
 with arrows or `j/k`, then press `s` or `x` to launch its configured shell.
 Enter/`l` still opens logs. Pod `s` continues to change the sort column.
 
-Kubetrol opens a full-screen **embedded terminal inside Textual**. Its frame keeps
+KubeRich opens a full-screen **embedded terminal inside Textual**. Its frame keeps
 context, namespace/pod and container visible while an owned PTY runs
 [kubectl exec](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_exec/).
 The actual shell prompt, ANSI colors, cursor movement and alternate-screen
@@ -13,8 +13,8 @@ programs are rendered by an emulator. Textual stays active throughout the sessio
 
 - `exit` or Ctrl+D returns to the retained container selection.
 - Ctrl+] closes the owned exec session and returns to containers.
-- Ctrl+C reaches the shell/program; it does not quit Kubetrol here.
-- Ctrl+Q quits Kubetrol and cleans up the exec process.
+- Ctrl+C reaches the shell/program; it does not quit KubeRich here.
+- Ctrl+Q quits KubeRich and cleans up the exec process.
 - Escape, Tab, arrows, `q`, `:` and `/` reach the remote program while this screen is open.
 - After returning, Escape goes from containers to the retained pod table.
 
@@ -31,7 +31,7 @@ helpers remain trusted local programs. The selected account needs pod reads
 and pods/exec permission; the Kubernetes server makes the authorization decision.
 Read-only mode blocks shells before file preparation or executable lookup.
 
-The default image command is `sh`. To choose another shell, edit Kubetrol
+The default image command is `sh`. To choose another shell, edit KubeRich
 preferences and restart:
 
 ```yaml
@@ -52,7 +52,7 @@ container, shell argv, environment and working directory before awaiting work.
 A GET verifies that the pod still has the captured UID and container, and that
 it is not deleting or completed. Scope invalidation blocks launch. A replacement
 between that check and kubectl's server request remains a Kubernetes race:
-exec-by-name has no atomic pod-UID precondition. Kubetrol does not claim otherwise.
+exec-by-name has no atomic pod-UID precondition. KubeRich does not claim otherwise.
 
 Kubectl uses a private snapshot of the prepared session's endpoint, TLS material
 and credential mechanism, with explicit context/namespace/pod/container flags.
@@ -99,8 +99,8 @@ qualification remains C06/C07/C08. Attach, file transfer, node/ephemeral shells
 remain separate work. This checkpoint supports shell keys, bounded Unicode paste,
 ANSI/256/true colors, cursor reports and alternate screens. It does not implement
 mouse reporting, terminal graphics, advanced keyboard protocols or retained
-scrollback/search; these are tracked in [#123](https://github.com/carloshm91/kubetrol/issues/123) and
-[#124](https://github.com/carloshm91/kubetrol/issues/124), with platform qualification
+scrollback/search; these are tracked in [#123](https://github.com/carloshm91/kuberich/issues/123) and
+[#124](https://github.com/carloshm91/kuberich/issues/124), with platform qualification
 in Q02. There is no
 promise that every terminal program is compatible or that K9s parity is complete.
 
@@ -113,7 +113,7 @@ visible to its operator and is not stored in application diagnostic logs.
 
 [Pyte 0.8.2](https://github.com/selectel/pyte/tree/0.8.2) is an unmodified,
 dynamically imported LGPLv3 dependency, pinned in pyproject.toml and
-uv.lock. Kubetrol's own adapter/widget code is original MIT code; no upstream
+uv.lock. KubeRich's own adapter/widget code is original MIT code; no upstream
 widget source is copied. Pyte's license and replacement/source availability must
 be preserved in future standalone distributions; Q04 owns the complete license
 and SBOM release checks.

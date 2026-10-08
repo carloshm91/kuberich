@@ -6,7 +6,7 @@ from dataclasses import replace
 import pytest
 import yaml
 
-from kubetrol.domain.editing import (
+from kuberich.domain.editing import (
     MAX_EDIT_BYTES,
     edit_preview,
     editable_manifest,
@@ -15,10 +15,10 @@ from kubetrol.domain.editing import (
     manifest_text,
     parse_manifest,
 )
-from kubetrol.domain.mutations import decode_patch
-from kubetrol.domain.resources import ApiResource, resource_record
-from kubetrol.domain.targets import ResourceTarget, SessionIdentity
-from kubetrol.errors import AppError
+from kuberich.domain.mutations import decode_patch
+from kuberich.domain.resources import ApiResource, resource_record
+from kuberich.domain.targets import ResourceTarget, SessionIdentity
+from kuberich.errors import AppError
 
 
 def snapshot():
@@ -41,7 +41,7 @@ def snapshot():
     }
     record = resource_record(resource, value, "team")
     target = ResourceTarget(
-        SessionIdentity("kubetrol-test-one", 1),
+        SessionIdentity("kuberich-test-one", 1),
         "",
         "configmaps",
         "team",
@@ -57,7 +57,7 @@ def snapshot():
         ({}, ("vi",)),
         ({"EDITOR": "nano -w"}, ("nano", "-w")),
         ({"VISUAL": "vim -n", "EDITOR": "nano"}, ("vim", "-n")),
-        ({"KUBETROL_EDITOR": '"/a path/vim" -n', "VISUAL": "nano"}, ("/a path/vim", "-n")),
+        ({"KUBERICH_EDITOR": '"/a path/vim" -n', "VISUAL": "nano"}, ("/a path/vim", "-n")),
         ({"EDITOR": 'vim "$(literal)" "$HOME" "a;b"'}, ("vim", "$(literal)", "$HOME", "a;b")),
     ],
 )
@@ -112,7 +112,7 @@ def test_dates_strings_values_safe_loader_isolation_and_semantic_noop():
     assert "managedFields" in record.manifest["metadata"] and "status" in record.manifest
     data = manifest_text(record, target)
     parsed = parse_manifest(data)
-    assert parsed == baseline and "# Context: kubetrol-test-one" in data.decode()
+    assert parsed == baseline and "# Context: kuberich-test-one" in data.decode()
     assert parse_manifest(b"date: 2026-01-01")["date"] == "2026-01-01"
     assert isinstance(yaml.safe_load("date: 2026-01-01")["date"], __import__("datetime").date)
     assert edited_intent(resource, target, record, b"# changed comments\n" + data) is None

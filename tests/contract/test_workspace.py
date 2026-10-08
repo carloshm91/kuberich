@@ -8,21 +8,21 @@ from pathlib import Path
 import pytest
 from aiohttp import web
 
-from kubetrol.config.catalog import Entry, KubeCatalog
-from kubetrol.domain.connections import (
+from kuberich.config.catalog import Entry, KubeCatalog
+from kuberich.domain.connections import (
     ConnectionRequest,
     ConnectionState,
     HttpProblem,
 )
-from kubetrol.domain.resources import ResourceSnapshot, resource_record
-from kubetrol.domain.views import ResourceSelection, ViewObservation, ViewStatus
-from kubetrol.domain.watches import SyncStatus, SyncUpdate
-from kubetrol.errors import AppError
-from kubetrol.services import workspace as module
-from kubetrol.services.resources import ResourceReader
-from kubetrol.services.sessions import SessionService
-from kubetrol.services.watches import ListWatch
-from kubetrol.services.workspace import MAX_SUBSCRIPTIONS, WorkspaceService
+from kuberich.domain.resources import ResourceSnapshot, resource_record
+from kuberich.domain.views import ResourceSelection, ViewObservation, ViewStatus
+from kuberich.domain.watches import SyncStatus, SyncUpdate
+from kuberich.errors import AppError
+from kuberich.services import workspace as module
+from kuberich.services.resources import ResourceReader
+from kuberich.services.sessions import SessionService
+from kuberich.services.watches import ListWatch
+from kuberich.services.workspace import MAX_SUBSCRIPTIONS, WorkspaceService
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.resources import collection, item, pod_resource
 from tests.support.watches import bookmark, error_event, frame
@@ -64,12 +64,12 @@ async def test_real_scopes_alias_resource_switch_and_context_replacement_use_onl
     async with workspace_api(namespace_handler, resources) as url:
         catalog = catalog_fixture(tmp_path, url)
         catalog.users["second"] = Entry({"token": "second-synthetic"}, tmp_path)
-        catalog.contexts["kubetrol-test-Two"].data["user"] = "second"
+        catalog.contexts["kuberich-test-Two"].data["user"] = "second"
         before = (tmp_path / "fixture-config").read_bytes()
         owner = WorkspaceService(SessionService(catalog, ConnectionRequest()))
         subscription = owner.subscribe()
         try:
-            await owner.connect("kubetrol-test-one")
+            await owner.connect("kuberich-test-one")
             await wait_for(lambda: owner.store.observation.status is ViewStatus.LIVE)
             first = owner.store.observation
             api = owner.sessions.client.api
@@ -92,7 +92,7 @@ async def test_real_scopes_alias_resource_switch_and_context_replacement_use_onl
             assert owner.store.observation.scope.namespace is None
             assert owner.store.observation.scope.resource.name == "pods"
             old_watch = owner._watch
-            await owner.connect("kubetrol-test-Two")
+            await owner.connect("kuberich-test-Two")
             await wait_for(lambda: owner.store.observation.status is ViewStatus.LIVE)
             last = owner.store.observation
             assert (
@@ -143,7 +143,7 @@ async def test_rapid_switches_coalesce_and_cancel_once_while_old_watch_finishes_
             SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
         )
         try:
-            await owner.connect("kubetrol-test-one")
+            await owner.connect("kuberich-test-one")
             await started.wait()
             old_watch = owner._watch
             first_driver = owner.select_namespace("default")
@@ -202,15 +202,15 @@ async def test_old_discovery_ignoring_cancellation_is_not_cached_or_bound_to_new
             SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
         )
         try:
-            first = owner.connect("kubetrol-test-one")
+            first = owner.connect("kuberich-test-one")
             await started.wait()
             api = owner.sessions.client.api
-            assert owner.connect("kubetrol-test-Two") is first
+            assert owner.connect("kuberich-test-Two") is first
             release.set()
             await first
             await wait_for(lambda: owner.store.observation.status is ViewStatus.LIVE)
             assert api.rest_client.pool_manager.closed
-            assert owner.store.observation.context == "kubetrol-test-Two"
+            assert owner.store.observation.context == "kuberich-test-Two"
             assert owner._discovery[0] is owner.sessions.client is calls[1]
             assert len(calls) == 2
         finally:
@@ -244,7 +244,7 @@ async def test_switch_cancels_real_paginated_read_before_a_late_second_page(tmp_
             SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
         )
         try:
-            await owner.connect("kubetrol-test-one")
+            await owner.connect("kuberich-test-one")
             await started.wait()
             old = owner._watch
             transition = owner.select_namespace("default")
@@ -291,14 +291,14 @@ async def test_context_switch_cancels_reconnect_backoff_and_clears_old_stale_sna
             SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
         )
         try:
-            await owner.connect("kubetrol-test-one")
+            await owner.connect("kuberich-test-one")
             await started.wait()
             stale = owner.store.observation
             assert stale.status is ViewStatus.STALE and stale.snapshot
             assert (
                 "Stale resource data" in stale.message and "opaque-sensitive" not in stale.message
             )
-            transition = owner.connect("kubetrol-test-Two")
+            transition = owner.connect("kuberich-test-Two")
             assert owner.store.observation.snapshot is None
             await transition
             await wait_for(lambda: owner.store.observation.status is ViewStatus.LIVE)
@@ -340,7 +340,7 @@ async def test_real_410_discards_current_snapshot_and_recovery_replaces_it(tmp_p
             SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
         )
         try:
-            await owner.connect("kubetrol-test-one")
+            await owner.connect("kuberich-test-one")
             await relisting.wait()
             assert owner.store.observation.status is ViewStatus.RELISTING
             assert owner.store.observation.snapshot is None
@@ -375,7 +375,7 @@ async def test_denied_watch_surfaces_failure_without_hot_retries_or_fake_empty_s
             SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
         )
         try:
-            await owner.connect("kubetrol-test-one")
+            await owner.connect("kuberich-test-one")
             await wait_for(lambda: owner.store.observation.status is ViewStatus.FAILED)
             assert isinstance(owner.store.observation.problem, HttpProblem)
             assert owner.store.observation.problem.status == status
@@ -444,7 +444,7 @@ async def test_slow_subscriber_coalesces_pending_updates_and_releases_superseded
 async def test_repeated_cancellation_during_client_preparation_and_cancelled_close_wait_for_worker(
     tmp_path, monkeypatch
 ):
-    from kubetrol.adapters import kubernetes
+    from kuberich.adapters import kubernetes
 
     started, release, finished = threading.Event(), threading.Event(), threading.Event()
     original = kubernetes._prepare
@@ -466,11 +466,11 @@ async def test_repeated_cancellation_during_client_preparation_and_cancelled_clo
         owner = WorkspaceService(
             SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
         )
-        task = owner.connect("kubetrol-test-one")
+        task = owner.connect("kuberich-test-one")
         await asyncio.to_thread(started.wait, 5)
         directory = Path(owner.sessions.client.directory.name)
         for _ in range(10):
-            assert owner.connect("kubetrol-test-Two") is task
+            assert owner.connect("kuberich-test-Two") is task
             await asyncio.sleep(0)
         closing = asyncio.create_task(owner.close())
         await asyncio.sleep(0)
@@ -496,7 +496,7 @@ async def test_repeated_open_close_leaves_no_owned_tasks_or_sessions(tmp_path):
             owner = WorkspaceService(
                 SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
             )
-            await owner.connect("kubetrol-test-one")
+            await owner.connect("kuberich-test-one")
             await wait_for(lambda owner=owner: owner.store.observation.status is ViewStatus.LIVE)
             identity = owner.store.observation.scope.session.connection_id
             assert identity not in identities
@@ -510,7 +510,7 @@ async def test_repeated_open_close_leaves_no_owned_tasks_or_sessions(tmp_path):
             assert not [
                 task
                 for task in asyncio.all_tasks()
-                if task.get_name() in {"kubetrol-workspace", "kubetrol-resource-watch"}
+                if task.get_name() in {"kuberich-workspace", "kuberich-resource-watch"}
             ]
 
 
@@ -535,14 +535,14 @@ async def test_late_callbacks_cannot_publish_after_namespace_or_client_replaceme
             SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
         )
         try:
-            await owner.connect("kubetrol-test-one")
+            await owner.connect("kuberich-test-one")
             await wait_for(lambda: len(callbacks) == 1)
             await owner.select_namespace("default")
             await wait_for(lambda: len(callbacks) == 2)
             current = owner.store.observation
             await callbacks[0][0](SyncUpdate(SyncStatus.LIVE, callbacks[0][1]))
             assert owner.store.observation is current
-            await owner.connect("kubetrol-test-Two")
+            await owner.connect("kuberich-test-Two")
             await wait_for(lambda: len(callbacks) == 3)
             current = owner.store.observation
             await callbacks[1][0](SyncUpdate(SyncStatus.LIVE, callbacks[1][1]))
@@ -564,7 +564,7 @@ async def test_unknown_resource_failure_can_recover_using_the_same_client_discov
             SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
         )
         try:
-            await owner.connect("kubetrol-test-one")
+            await owner.connect("kuberich-test-one")
             await wait_for(lambda: owner.store.observation.status is ViewStatus.LIVE)
             cache = owner._discovery
             await owner.select_resource(ResourceSelection("absent"))
@@ -602,13 +602,13 @@ async def test_discovery_denial_is_distinct_from_connection_and_retry_uses_a_fre
             SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
         )
         try:
-            await owner.connect("kubetrol-test-one")
+            await owner.connect("kuberich-test-one")
             failed = owner.store.observation
             assert failed.connection.state is ConnectionState.CONNECTED
             assert failed.status is ViewStatus.FAILED and failed.problem.status == 403
             assert owner._watch is None and owner._discovery is None
             api = owner.sessions.client.api
-            await owner.connect("kubetrol-test-one")
+            await owner.connect("kuberich-test-one")
             await wait_for(lambda: owner.store.observation.status is ViewStatus.LIVE)
             assert calls[0] is not calls[1] and api.rest_client.pool_manager.closed
         finally:
@@ -632,7 +632,7 @@ async def test_namespace_list_denial_does_not_prevent_an_allowed_manual_scope(tm
             SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
         )
         try:
-            await owner.connect("kubetrol-test-one")
+            await owner.connect("kuberich-test-one")
             await wait_for(lambda: owner.store.observation.status is ViewStatus.FAILED)
             assert owner.store.observation.connection.state is ConnectionState.LIMITED
             await owner.select_namespace("allowed")
@@ -652,7 +652,7 @@ async def test_authentication_failure_remains_visible_without_resource_tasks(tmp
             SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
         )
         try:
-            await owner.connect("kubetrol-test-one")
+            await owner.connect("kuberich-test-one")
             assert owner.store.observation.connection.state is ConnectionState.AUTH_ERROR
             assert owner.store.observation.status is ViewStatus.FAILED
             assert owner.sessions.client is None and owner._watch is None
@@ -681,7 +681,7 @@ async def test_watch_protocol_or_unexpected_failure_is_owned_and_propagates_prog
             SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
         )
         try:
-            await owner.connect("kubetrol-test-one")
+            await owner.connect("kuberich-test-one")
             await wait_for(lambda: owner._watch.done())
             if isinstance(failure, RuntimeError):
                 with pytest.raises(RuntimeError, match="opaque-sensitive"):

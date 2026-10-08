@@ -46,15 +46,15 @@ APP = """
 import asyncio, logging, os, signal, sys
 from pathlib import Path
 from textual.binding import Binding
-from kubetrol.config.schema import Settings
-from kubetrol.domain.processes import capture_command, ProcessMode, ProcessPurpose
-from kubetrol.errors import AppError
-from kubetrol.ui.app import KubetrolApp
-from kubetrol.ui.handoff import terminal_handoff
+from kuberich.config.schema import Settings
+from kuberich.domain.processes import capture_command, ProcessMode, ProcessPurpose
+from kuberich.errors import AppError
+from kuberich.ui.app import KubeRichApp
+from kuberich.ui.handoff import terminal_handoff
 
 scenario = sys.argv[1]
 directory = Path.cwd()
-class HandoffApp(KubetrolApp):
+class HandoffApp(KubeRichApp):
     BINDINGS = [Binding('h', 'handoff', 'Handoff'), Binding('f12', 'probe', 'Probe', priority=True)]
     def __init__(self):
         super().__init__(Settings(read_only=scenario == 'read_only'), logging.getLogger('owned-handoff'))

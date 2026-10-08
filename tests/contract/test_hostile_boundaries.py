@@ -6,12 +6,12 @@ import sys
 
 import pytest
 
-from kubetrol.domain.processes import ProcessMode, ProcessPurpose, capture_command
-from kubetrol.errors import AppError
-from kubetrol.security.presentation import safe_text
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.log_export import save_logs
-from kubetrol.services.processes import ProcessRunner
+from kuberich.domain.processes import ProcessMode, ProcessPurpose, capture_command
+from kuberich.errors import AppError
+from kuberich.security.presentation import safe_text
+from kuberich.services.access import AccessPolicy
+from kuberich.services.log_export import save_logs
+from kuberich.services.processes import ProcessRunner
 
 
 @pytest.mark.asyncio
@@ -76,4 +76,4 @@ async def test_export_does_not_replace_raced_files_hardlinks_dangling_links_or_d
     with pytest.raises(AppError):
         await save_logs(str(destination), "overwrite attempted")
     assert destination.read_text() == "created by another writer"
-    assert not list(tmp_path.glob(".kubetrol-log-*"))
+    assert not list(tmp_path.glob(".kuberich-log-*"))

@@ -58,7 +58,9 @@ def run(command: list[str], work: Path, log: Path, *, allowed: tuple[int, ...] =
     environment = {
         key: value
         for key, value in os.environ.items()
-        if not key.startswith(("UV_", "PIP_", "PYTHON", "KUBETROL_", "TEXTUAL", "PIP_AUDIT_"))
+        if not key.startswith(
+            ("UV_", "PIP_", "PYTHON", "KUBERICH_", "KUBETROL_", "TEXTUAL", "PIP_AUDIT_")
+        )
         and key != "VIRTUAL_ENV"
     }
     environment.update(
@@ -126,8 +128,8 @@ def selected_requirements(text: str, python: str) -> dict[str, str]:
 
 def notices_text(licenses: dict[str, Any]) -> str:
     sections = [
-        "Kubetrol third-party runtime notices\n",
-        "These dependencies are separately installed, not relicensed by Kubetrol.\n",
+        "KubeRich third-party runtime notices\n",
+        "These dependencies are separately installed, not relicensed by KubeRich.\n",
         "Pyte 0.8.2 is unmodified, dynamically imported LGPL-3.0-only code.\n",
         "Preserve its license and corresponding source/replacement rights in standalone delivery.\n",
     ]
@@ -148,12 +150,12 @@ def attach_artifacts(
     root["hashes"] = [{"alg": "SHA-256", "content": wheel}]
     root.setdefault("properties", []).extend(
         [
-            {"name": f"kubetrol:artifact:{name}:sha256", "value": value}
+            {"name": f"kuberich:artifact:{name}:sha256", "value": value}
             for name, value in sorted(artifacts.items())
         ]
         + [
-            {"name": "kubetrol:uv-lock:sha256", "value": lock_digest},
-            {"name": "kubetrol:runtime-selection", "value": scope},
+            {"name": "kuberich:uv-lock:sha256", "value": lock_digest},
+            {"name": "kuberich:runtime-selection", "value": scope},
         ]
     )
 
@@ -167,7 +169,7 @@ def check_attachment(
 ) -> None:
     root = bom["metadata"]["component"]
     if (
-        root.get("name") != "kubetrol"
+        root.get("name") != "kuberich"
         or root.get("version") != project["version"]
         or root.get("type") != "application"
     ):
@@ -175,8 +177,8 @@ def check_attachment(
     wheel = next(value for name, value in artifacts.items() if name.endswith(".whl"))
     if root.get("hashes") != [{"alg": "SHA-256", "content": wheel}]:
         raise ValueError("SBOM wheel digest mismatch")
-    expected = {f"kubetrol:artifact:{name}:sha256": value for name, value in artifacts.items()}
-    expected.update({"kubetrol:uv-lock:sha256": lock_digest, "kubetrol:runtime-selection": scope})
+    expected = {f"kuberich:artifact:{name}:sha256": value for name, value in artifacts.items()}
+    expected.update({"kuberich:uv-lock:sha256": lock_digest, "kuberich:runtime-selection": scope})
     properties = {item["name"]: item["value"] for item in root.get("properties", [])}
     if any(properties.get(key) != value for key, value in expected.items()):
         raise ValueError("SBOM artifact/lock linkage mismatch")
@@ -269,7 +271,7 @@ def generate(output: Path, dist: Path, root: Path = ROOT) -> dict[str, Any]:
     wheel = dist / next(name for name in artifacts if name.endswith(".whl"))
     log = output / "commands.log"
     audit_codes = {}
-    with tempfile.TemporaryDirectory(prefix="kubetrol-supply-chain-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="kuberich-supply-chain-") as temporary:
         work = Path(temporary)
         run(
             [
@@ -314,7 +316,7 @@ def generate(output: Path, dist: Path, root: Path = ROOT) -> dict[str, Any]:
                 command.append("--no-deps")
             run([*command, str(wheel)], work, log)
             run(["uv", "pip", "check", "--python", str(python)], work, log)
-            run([str(python), "-I", "-m", "kubetrol", "--version"], work, log)
+            run([str(python), "-I", "-m", "kuberich", "--version"], work, log)
             inventory_file = output / f"{scope}-inventory.json"
             run(
                 [

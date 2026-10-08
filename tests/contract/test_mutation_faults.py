@@ -8,12 +8,12 @@ from dataclasses import replace
 
 import pytest
 
-from kubetrol.adapters.kubernetes import KubernetesSession
-from kubetrol.adapters.mutations import conditional_patch
-from kubetrol.domain.mutations import MutationState, annotation_intent
-from kubetrol.errors import AppError
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.mutations import MutationManager, MutationService
+from kuberich.adapters.kubernetes import KubernetesSession
+from kuberich.adapters.mutations import conditional_patch
+from kuberich.domain.mutations import MutationState, annotation_intent
+from kuberich.errors import AppError
+from kuberich.services.access import AccessPolicy
+from kuberich.services.mutations import MutationManager, MutationService
 from tests.contract.test_mutations import source_fixture
 from tests.support.connections import catalog_fixture
 from tests.unit.test_mutations import selection
@@ -56,7 +56,7 @@ async def test_known_read_timeout_and_cancellation_do_not_send_write(tmp_path):
 
 @pytest.mark.asyncio
 async def test_closed_connection_and_repeated_receipt_cancellation_are_owned(tmp_path, monkeypatch):
-    from kubetrol.adapters import mutations
+    from kuberich.adapters import mutations
 
     async with source_fixture(tmp_path) as (source, api, _):
         intent = await source.prepare_annotation("key", "value")
@@ -142,7 +142,7 @@ async def test_anonymous_owned_transport_and_known_connection_refusal(tmp_path):
         unused.bind(("127.0.0.1", 0))  # Own the numeric port without accepting connections.
         url = f"http://127.0.0.1:{unused.getsockname()[1]}"
         client = KubernetesSession(
-            catalog_fixture(tmp_path, url, user={}).select("kubetrol-test-one"), 0.2
+            catalog_fixture(tmp_path, url, user={}).select("kuberich-test-one"), 0.2
         )
         await client.open()
         resource, target, record = selection()

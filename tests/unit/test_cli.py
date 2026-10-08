@@ -7,7 +7,7 @@ from importlib.metadata import version
 
 import pytest
 
-from kubetrol.cli import main
+from kuberich.cli import main
 
 
 @pytest.mark.parametrize("flag", ["--help", "-h"])
@@ -17,7 +17,7 @@ def test_help_describes_available_behavior(flag: str, capsys: pytest.CaptureFixt
 
     assert exit_info.value.code == 0
     output = capsys.readouterr()
-    assert "usage: kubetrol" in output.out
+    assert "usage: kuberich" in output.out
     assert "--version" in output.out
     assert "Live pod table preview" in output.out
     assert "embedded container shells" in output.out
@@ -30,7 +30,7 @@ def test_version_uses_installed_distribution_metadata(capsys: pytest.CaptureFixt
 
     assert exit_info.value.code == 0
     output = capsys.readouterr()
-    assert output.out == f"kubetrol {version('kubetrol')}\n"
+    assert output.out == f"kuberich {version('kuberich')}\n"
     assert output.err == ""
 
 
@@ -45,7 +45,7 @@ def test_no_arguments_requires_a_real_terminal(capsys: pytest.CaptureFixture[str
 def test_entry_point_reads_process_arguments(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    monkeypatch.setattr(sys, "argv", ["kubetrol"])
+    monkeypatch.setattr(sys, "argv", ["kuberich"])
 
     assert main() == 2
     assert "requires an interactive terminal" in capsys.readouterr().err
@@ -67,9 +67,9 @@ def test_unsupported_arguments_fail_explicitly(
 def test_importing_module_does_not_execute_cli(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    monkeypatch.setattr(sys, "argv", ["kubetrol", "unsupported"])
+    monkeypatch.setattr(sys, "argv", ["kuberich", "unsupported"])
 
-    importlib.import_module("kubetrol.__main__")
+    importlib.import_module("kuberich.__main__")
 
     output = capsys.readouterr()
     assert output.out == output.err == ""
@@ -78,11 +78,11 @@ def test_importing_module_does_not_execute_cli(
 def test_python_module_entry_point(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    monkeypatch.setattr(sys, "argv", ["kubetrol", "--version"])
-    monkeypatch.delitem(sys.modules, "kubetrol.__main__", raising=False)
+    monkeypatch.setattr(sys, "argv", ["kuberich", "--version"])
+    monkeypatch.delitem(sys.modules, "kuberich.__main__", raising=False)
 
     with pytest.raises(SystemExit) as exit_info:
-        runpy.run_module("kubetrol", run_name="__main__")
+        runpy.run_module("kuberich", run_name="__main__")
 
     assert exit_info.value.code == 0
-    assert capsys.readouterr().out == f"kubetrol {version('kubetrol')}\n"
+    assert capsys.readouterr().out == f"kuberich {version('kuberich')}\n"

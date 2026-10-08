@@ -4,11 +4,11 @@ from dataclasses import replace
 
 import pytest
 
-from kubetrol.domain.namespaces import namespace_row
-from kubetrol.domain.resources import api_resource, resource_record
-from kubetrol.errors import AppError
-from kubetrol.services.filtering import apply_filter, filter_rows
-from kubetrol.services.pods import NamespaceProjection
+from kuberich.domain.namespaces import namespace_row
+from kuberich.domain.resources import api_resource, resource_record
+from kuberich.errors import AppError
+from kuberich.services.filtering import apply_filter, filter_rows
+from kuberich.services.pods import NamespaceProjection
 from tests.support.pods import NOW
 from tests.support.resources import descriptor
 

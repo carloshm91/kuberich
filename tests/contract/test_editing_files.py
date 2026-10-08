@@ -8,10 +8,10 @@ from pathlib import Path
 
 import pytest
 
-from kubetrol.adapters.editing import ManifestFile, file_worker
-from kubetrol.domain.editing import MAX_EDIT_BYTES
-from kubetrol.errors import AppError
-from kubetrol.services.editing import EditingService
+from kuberich.adapters.editing import ManifestFile, file_worker
+from kuberich.domain.editing import MAX_EDIT_BYTES
+from kuberich.errors import AppError
+from kuberich.services.editing import EditingService
 from tests.contract.test_editing import source_fixture
 from tests.support.workspace import wait_for
 
@@ -151,7 +151,7 @@ async def test_preparation_and_cleanup_failures_have_safe_owned_errors(tmp_path,
             raise OSError("sensitive-file-error")
 
         with monkeypatch.context() as patch:
-            patch.setattr("kubetrol.services.editing.ManifestFile", fail)
+            patch.setattr("kuberich.services.editing.ManifestFile", fail)
             with pytest.raises(AppError) as error:
                 await source.open()
             assert "sensitive" not in str(error.value)

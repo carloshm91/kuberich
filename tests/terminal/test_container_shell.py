@@ -30,7 +30,7 @@ from tests.support.shell import terminal_shell
 )
 def test_embedded_selected_container_shell(tmp_path, entry, scenario):
     command = (
-        [sys.executable, "-m", "kubetrol"] if entry == "module" else [shutil.which("kubetrol")]
+        [sys.executable, "-m", "kuberich"] if entry == "module" else [shutil.which("kuberich")]
     )
     assert command[0]
     terminal_shell(command, tmp_path, scenario, evidence=f"container-shell-{entry}-{scenario}")

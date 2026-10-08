@@ -1,6 +1,6 @@
 # Contributing
 
-Kubetrol is an independent MIT-licensed Python project. Contributions, bug
+KubeRich is an independent MIT-licensed Python project. Contributions, bug
 reports, and practical terminal UX feedback are welcome.
 
 ## One issue at a time
@@ -66,8 +66,8 @@ and the following commands. Python 3.12 through 3.14 is the qualified range:
 uv sync --locked --group dev
 uv run ruff check .
 uv run ruff format --check .
-uv run mypy --strict src/kubetrol scripts/check_coverage.py scripts/check_quality_gate.py
-uv run pytest --cov=kubetrol --cov-branch --cov-report=xml --cov-report=json
+uv run mypy --strict src/kuberich scripts/check_coverage.py scripts/check_quality_gate.py
+uv run pytest --cov=kuberich --cov-branch --cov-report=xml --cov-report=json
 uv run python scripts/check_coverage.py coverage.json
 uv run diff-cover coverage.xml --compare-branch origin/main --fail-under 90 --total-percent-float
 uv build

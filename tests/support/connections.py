@@ -15,22 +15,22 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
-from kubetrol.config.catalog import KubeCatalog, load_catalog
-from kubetrol.domain.connections import ConnectionRequest
+from kuberich.config.catalog import KubeCatalog, load_catalog
+from kuberich.domain.connections import ConnectionRequest
 
 
 def catalog_fixture(
     directory: Path, server: str, user: dict | None = None, cluster: dict | None = None
 ) -> KubeCatalog:
     data = {
-        "current-context": "kubetrol-test-one",
+        "current-context": "kuberich-test-one",
         "contexts": [
             {
-                "name": "kubetrol-test-one",
+                "name": "kuberich-test-one",
                 "context": {"cluster": "owned", "user": "owned", "namespace": "team"},
             },
             {
-                "name": "kubetrol-test-Two",
+                "name": "kuberich-test-Two",
                 "context": {"cluster": "owned", "user": "owned", "namespace": "default"},
             },
         ],
@@ -84,7 +84,7 @@ async def fake_api(
 
 def certificate(directory: Path, *, client_auth: bool = False) -> tuple[ssl.SSLContext, dict]:
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "kubetrol-test-local")])
+    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "kuberich-test-local")])
     now = datetime.now(UTC)
     cert = (
         x509.CertificateBuilder()

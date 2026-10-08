@@ -9,10 +9,10 @@ import logging
 from textual.binding import Binding
 from textual.events import Resize
 from textual.geometry import Size
-from kubetrol.config.schema import Settings
-from kubetrol.ui.app import KubetrolApp
+from kuberich.config.schema import Settings
+from kuberich.ui.app import KubeRichApp
 
-class ResizeApp(KubetrolApp):
+class ResizeApp(KubeRichApp):
     BINDINGS=[Binding('f12','late_resize','Late resize',priority=True)]
     injected=False
     def action_late_resize(self):

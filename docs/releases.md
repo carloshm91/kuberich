@@ -10,8 +10,9 @@ platform/protection qualification, and publishing the first usable `0.0.1`, rema
 D04 #40.
 The header shows installed package metadata. Automatic new-release notices remain
 U01 #56, rather than an inferred claim that this checkout is a published release.
-The preferred KubeRich identity is reviewed in #149; the current package remains
-`kubetrol` until its focused migration is verified. #149 and initial landing/docs
+The KubeRich package/CLI identity and compatibility migration are reviewed in
+#149. The version remains `0.0.1.dev0`; this private pre-publication rename does
+not create a tag or release. #149 and initial landing/docs
 preparation #150 are explicit prerequisites for the first public launch in #40.
 Neither preparation task authorizes publishing or changing repository ownership.
 
@@ -110,7 +111,7 @@ and all eight owned-cluster rehearsals three times, retaining per-run fault/clea
 evidence as described in [integration qualification](integration-testing.md).
 
 - PyPI/TestPyPI project ownership and pending Trusted Publisher configuration for
-  carloshm91/kubetrol, the exact workflow filename, and its release environment.
+  carloshm91/kuberich, the exact workflow filename, and its release environment.
 - A public carloshm91/homebrew-tap repository and a narrowly scoped mechanism
   for proposing formula updates across repositories.
 - Protected main, release-environment rules, immutable release tags, artifact

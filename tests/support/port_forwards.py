@@ -4,9 +4,9 @@ import os
 import sys
 from pathlib import Path
 
-from kubetrol.domain.targets import ResourceTarget, SessionIdentity
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.port_forwards import ForwardService
+from kuberich.domain.targets import ResourceTarget, SessionIdentity
+from kuberich.services.access import AccessPolicy
+from kuberich.services.port_forwards import ForwardService
 
 PROGRAM = r"""
 import json, os, select, socket, sys, time
@@ -15,7 +15,7 @@ arguments=sys.argv[1:]
 path=Path(arguments[0].split('=',1)[1])
 assert path.stat().st_mode & 0o777 == 0o600
 config=json.loads(path.read_text())
-assert config['current-context']=='kubetrol-test-one'
+assert config['current-context']=='kuberich-test-one'
 assert config['clusters'][0]['cluster']['server'].startswith('http://127.0.0.1:')
 assert os.environ['KUBECONFIG']==str(path)
 Path('forward-child.pid').write_text(str(os.getpid()))

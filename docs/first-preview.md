@@ -1,5 +1,27 @@
 # First things to try
 
+## KubeRich identity checkpoint: #149
+
+The maintainer chose **KubeRich** and confirmed purchasing `kuberich.com`.
+Canonical checkout commands are:
+
+```sh
+uv sync --locked --group dev
+uv run kuberich --version
+uv run kuberich --help
+uv run kuberich
+```
+
+The `kubetrol` console alias still launches the same application. Existing
+preferences are read in place, and `kuberich config migrate` explicitly creates
+the new file while retaining the original. See [configuration compatibility](configuration.md).
+Focused local tests and installed-wheel alias/migration checks passed; complete
+interpreter/package/cluster qualification is in progress. Continuous private
+delivery does not require an intermediate maintainer trial. Public installation,
+website/DNS and visibility changes remain separately authorized launch steps.
+
+Earlier checkpoints below preserve original tested commands and artifact names.
+
 ## Workload operations checkpoint: M03 #45
 
 [Selected workload operations](workloads.md) add `:scale`, `:restart` and explicit

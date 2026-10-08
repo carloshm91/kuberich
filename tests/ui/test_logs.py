@@ -9,11 +9,11 @@ from aiohttp import web
 from textual.events import MouseScrollUp
 from textual.widgets import Input, OptionList
 
-from kubetrol.config.schema import Settings
-from kubetrol.domain.log_view import WINDOWS
-from kubetrol.ui.app import KubetrolApp
-from kubetrol.ui.logs import LogScreen
-from kubetrol.ui.scopes import ScopeScreen
+from kuberich.config.schema import Settings
+from kuberich.domain.log_view import WINDOWS
+from kuberich.ui.app import KubeRichApp
+from kuberich.ui.logs import LogScreen
+from kuberich.ui.scopes import ScopeScreen
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
 from tests.support.resources import collection
@@ -26,7 +26,7 @@ async def ns(request):
 
 
 def app_for(tmp_path, url):
-    return KubetrolApp(
+    return KubeRichApp(
         Settings(read_only=True),
         logging.Logger("logs", level=100),
         catalog=catalog_fixture(tmp_path, url),
@@ -422,9 +422,9 @@ async def test_quiet_open_and_empty_snapshot_show_distinct_states_and_close(tmp_
 async def test_unexpected_failure_uses_app_cleanup_and_drains_viewer_tasks(
     tmp_path, monkeypatch, stage
 ):
-    from kubetrol.services.logs import LogStream
-    from kubetrol.ui import logs
-    from kubetrol.ui.log_body import LogBody
+    from kuberich.services.logs import LogStream
+    from kuberich.ui import logs
+    from kuberich.ui.log_body import LogBody
 
     async def broken(*args, **kwargs):
         raise RuntimeError("owned-log-failure")

@@ -6,7 +6,7 @@ from contextlib import suppress
 from http.server import ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 
-from kubetrol.domain.registry import RESOURCE_ALIASES
+from kuberich.domain.registry import RESOURCE_ALIASES
 from tests.support.standard import manifest, roots
 from tests.support.standard_terminal import Handler
 from tests.support.terminal_api import config

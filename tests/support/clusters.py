@@ -58,7 +58,7 @@ class DisposableContext:
             path = self.kubeconfig.resolve(strict=True)
             if not directory.is_dir() or not path.is_relative_to(directory) or not path.is_file():
                 raise ValueError
-            if not self.context.startswith(("kubetrol-test-", "kind-kubetrol-test-")):
+            if not self.context.startswith(("kuberich-test-", "kind-kuberich-test-")):
                 raise ValueError
             url = urlsplit(self.server)
             if (

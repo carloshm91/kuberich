@@ -7,10 +7,10 @@ import pytest
 from aiohttp import web
 from textual.widgets import DataTable, Static
 
-from kubetrol.errors import AppError
-from kubetrol.ui.containers import ContainerScreen
-from kubetrol.ui.logs import LogScreen
-from kubetrol.ui.scopes import ScopeScreen
+from kuberich.errors import AppError
+from kuberich.ui.containers import ContainerScreen
+from kuberich.ui.logs import LogScreen
+from kuberich.ui.scopes import ScopeScreen
 from tests.support.pods import pod
 from tests.support.resources import collection
 from tests.support.watches import frame

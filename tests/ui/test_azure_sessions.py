@@ -8,13 +8,13 @@ from pathlib import Path
 import pytest
 from textual.widgets import Static
 
-from kubetrol.config.catalog import KubeCatalog
-from kubetrol.config.schema import Settings
-from kubetrol.domain.connections import ConnectionState
-from kubetrol.domain.processes import ProcessResult, ProcessStatus
-from kubetrol.errors import AppError, ExecutableUnavailable
-from kubetrol.ui.app import KubetrolApp
-from kubetrol.ui.scopes import ConnectionScreen
+from kuberich.config.catalog import KubeCatalog
+from kuberich.config.schema import Settings
+from kuberich.domain.connections import ConnectionState
+from kuberich.domain.processes import ProcessResult, ProcessStatus
+from kuberich.errors import AppError, ExecutableUnavailable
+from kuberich.ui.app import KubeRichApp
+from kuberich.ui.scopes import ConnectionScreen
 from tests.support.azure import TOKEN, VERSION, azure_control, azure_entry
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.workspace import wait_for, workspace_api
@@ -29,7 +29,7 @@ async def test_device_prompt_exposes_safe_login_hint_and_headless_refuses_handof
         return namespaces("team")
 
     async with workspace_api(handler) as url:
-        app = KubetrolApp(
+        app = KubeRichApp(
             Settings(),
             logging.Logger("azure-contract"),
             catalog=catalog_fixture(tmp_path, url, entry),
@@ -80,14 +80,14 @@ async def test_explicit_login_reuses_normal_session_contract_and_safe_outcomes(
             ).encode(),
         )
 
-    monkeypatch.setattr("kubetrol.ui.app.terminal_handoff", handoff)
+    monkeypatch.setattr("kuberich.ui.app.terminal_handoff", handoff)
 
     async def handler(request):
         assert request.headers["Authorization"] == "Bearer " + TOKEN
         return namespaces("team")
 
     async with workspace_api(handler) as url:
-        app = KubetrolApp(
+        app = KubeRichApp(
             Settings(read_only=True),
             logging.Logger("azure-contract"),
             catalog=catalog_fixture(tmp_path, url, entry),
@@ -128,7 +128,7 @@ async def test_context_replacement_cancels_login_and_rejects_late_credentials(
                 ).encode(),
             )
 
-    monkeypatch.setattr("kubetrol.ui.app.terminal_handoff", handoff)
+    monkeypatch.setattr("kuberich.ui.app.terminal_handoff", handoff)
     entry = azure_entry(tmp_path, mode="Always")
 
     async def handler(request):
@@ -137,19 +137,19 @@ async def test_context_replacement_cancels_login_and_rejects_late_credentials(
     async with workspace_api(handler) as url:
         catalog = catalog_fixture(tmp_path, url, entry)
         # The second context is an independently qualified static fixture user.
-        catalog.contexts["kubetrol-test-Two"].data["user"] = "other"
+        catalog.contexts["kuberich-test-Two"].data["user"] = "other"
         catalog.users["other"] = type(catalog.users["owned"])(
             {"token": "static-synthetic"}, tmp_path
         )
-        app = KubetrolApp(Settings(), logging.Logger("azure-contract"), catalog=catalog)
+        app = KubeRichApp(Settings(), logging.Logger("azure-contract"), catalog=catalog)
         async with app.run_test() as pilot:
             await app._connection_task
             app.action_login()
             await started.wait()
-            app._start_connection("kubetrol-test-Two")
+            app._start_connection("kuberich-test-Two")
             await app._connection_task
             assert cancelled.is_set()
-            assert app.sessions.observation.identity.context == "kubetrol-test-Two"
+            assert app.sessions.observation.identity.context == "kuberich-test-Two"
             assert (
                 app.sessions.client.configuration.api_key["BearerToken"]
                 == "Bearer static-synthetic"
@@ -159,7 +159,7 @@ async def test_context_replacement_cancels_login_and_rejects_late_credentials(
 
 @pytest.mark.asyncio
 async def test_login_without_a_context_uses_local_catalogue_navigation():
-    app = KubetrolApp(Settings(), logging.Logger("azure-contract"), catalog=KubeCatalog())
+    app = KubeRichApp(Settings(), logging.Logger("azure-contract"), catalog=KubeCatalog())
     async with app.run_test() as pilot:
         await pilot.press("colon", *"login", "enter")
         assert app.sessions.client is None and app._connection_task is None
@@ -173,9 +173,9 @@ async def test_current_login_cancellation_exposes_retry_instead_of_remaining_con
     async def handoff(*args, **kwargs):
         raise asyncio.CancelledError
 
-    monkeypatch.setattr("kubetrol.ui.app.terminal_handoff", handoff)
+    monkeypatch.setattr("kuberich.ui.app.terminal_handoff", handoff)
     entry = azure_entry(tmp_path, mode="Always")
-    app = KubetrolApp(
+    app = KubeRichApp(
         Settings(),
         logging.Logger("azure-contract"),
         catalog=catalog_fixture(tmp_path, "http://127.0.0.1:1", entry),

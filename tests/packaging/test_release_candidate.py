@@ -149,17 +149,17 @@ def test_partial_pypi_staging_preserves_the_exact_missing_file_bytes(
     with release_server(tmp_path / "service") as server:
         names = sorted(expected)
         value = {
-            "info": {"name": "kubetrol", "version": "0.0.1"},
+            "info": {"name": "kuberich", "version": "0.0.1"},
             "urls": [
                 {"filename": names[0], "digests": {"sha256": expected[names[0]]}, "yanked": False}
             ],
         }
-        server.reads["/pypi/kubetrol/0.0.1/json"] = value
+        server.reads["/pypi/kuberich/0.0.1/json"] = value
         real_request = release.request
 
         def local_request(url):
-            assert url == "https://test.pypi.org/pypi/kubetrol/0.0.1/json"
-            return real_request(server.url + "pypi/kubetrol/0.0.1/json")
+            assert url == "https://test.pypi.org/pypi/kuberich/0.0.1/json"
+            return real_request(server.url + "pypi/kuberich/0.0.1/json")
 
         monkeypatch.setattr(release, "request", local_request)
         output = tmp_path / "missing"

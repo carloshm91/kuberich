@@ -2,7 +2,7 @@
 
 Repository guidance in AGENTS.md is the shared engineering contract. Skills
 provide focused assistance; contributors do not need Codex to build or use
-Kubetrol. Installing a skill does not connect an external service, grant cluster
+KubeRich. Installing a skill does not connect an external service, grant cluster
 access, or authorize unrelated actions.
 
 ## Installed in the planning environment

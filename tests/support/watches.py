@@ -3,7 +3,7 @@
 import asyncio
 import json
 
-from kubetrol.domain.resources import ResourceSnapshot, resource_record
+from kuberich.domain.resources import ResourceSnapshot, resource_record
 from tests.support.resources import item, pod_resource
 
 

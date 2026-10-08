@@ -6,11 +6,11 @@ from dataclasses import replace
 import pytest
 from aiohttp import web
 
-from kubetrol.domain.connections import HttpProblem
-from kubetrol.domain.targets import ResourceTarget, SessionIdentity
-from kubetrol.errors import AppError
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.inspection import InspectionService, read_error
+from kuberich.domain.connections import HttpProblem
+from kuberich.domain.targets import ResourceTarget, SessionIdentity
+from kuberich.errors import AppError
+from kuberich.services.access import AccessPolicy
+from kuberich.services.inspection import InspectionService, read_error
 from tests.support.pods import pod
 from tests.support.resources import collection, pod_resource, reader_fixture
 from tests.unit.test_inspection import event
@@ -156,7 +156,7 @@ async def test_cancellation_drains_serializer_thread_and_stale_result_is_discard
 ):
     import threading
 
-    from kubetrol.services import inspection
+    from kuberich.services import inspection
     from tests.support.workspace import wait_for
 
     started, release, ended = (threading.Event() for _ in range(3))

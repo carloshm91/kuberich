@@ -7,11 +7,11 @@ import sys
 
 import pytest
 
-from kubetrol.adapters.pty import PtyEndpoint
-from kubetrol.domain.processes import ProcessMode, ProcessPurpose, ProcessStatus, capture_command
-from kubetrol.errors import AppError
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.processes import ProcessRunner
+from kuberich.adapters.pty import PtyEndpoint
+from kuberich.domain.processes import ProcessMode, ProcessPurpose, ProcessStatus, capture_command
+from kuberich.errors import AppError
+from kuberich.services.access import AccessPolicy
+from kuberich.services.processes import ProcessRunner
 from tests.contract.test_processes import command
 
 

@@ -29,7 +29,7 @@ name: Approved immutable release
 permissions:
   contents: read
 concurrency:
-  group: kubetrol-release
+  group: kuberich-release
   cancel-in-progress: false
 env:
   RELEASE_COMMIT: ${{ inputs.commit }}
@@ -39,7 +39,7 @@ env:
 jobs:
   validate:
     name: Validate release
-    if: ${{ github.repository == 'carloshm91/kubetrol' && github.ref == 'refs/heads/main' && github.actor == 'carloshm91' }}
+    if: ${{ github.repository == 'carloshm91/kuberich' && github.ref == 'refs/heads/main' && github.actor == 'carloshm91' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

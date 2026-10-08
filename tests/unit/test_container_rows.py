@@ -4,8 +4,8 @@ from copy import deepcopy
 
 import pytest
 
-from kubetrol.domain.containers import CONTAINER_COLUMNS, container_rows
-from kubetrol.errors import AppError
+from kuberich.domain.containers import CONTAINER_COLUMNS, container_rows
+from kuberich.errors import AppError
 
 
 def test_name_matched_app_init_and_sidecar_data_are_distinct_and_do_not_invent_metrics():

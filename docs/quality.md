@@ -90,7 +90,7 @@ including the setup/body cancellation qualification added in Q01 #38.
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
 from transport and widget glue so exhaustive tests are practical. The critical
-module list is maintained in `tool.kubetrol.coverage.critical_modules` in
+module list is maintained in `tool.kuberich.coverage.critical_modules` in
 pyproject.toml and changes with code review. Each listed file must exist, contain
 executable code, and independently meet 100% lines and applicable branches.
 
@@ -114,7 +114,7 @@ and canonical-RC formula tests sharing the actual audited RC build. Its local ta
 qualification uses real brew style/audit/install/test/upgrade/uninstall; the prepared
 tap CI requires Linux/macOS online checks. See [Homebrew delivery](homebrew.md).
 
-Configure coverage over the entire src/kubetrol package, including modules not
+Configure coverage over the entire src/kuberich package, including modules not
 imported by tests. Do not include tests in the denominator. Do not omit entire
 UI, client, or subprocess modules. A combined coverage.py percentage is not the
 independent line/branch gate: parse coverage JSON totals for each metric. Zero
@@ -133,13 +133,13 @@ change; do not bypass the current checks with a pragma or command-line filter.
 ## Running the gates
 
 ```sh
-uv run pytest --cov=kubetrol --cov-branch --cov-report=xml --cov-report=json
+uv run pytest --cov=kuberich --cov-branch --cov-report=xml --cov-report=json
 uv run python scripts/check_coverage.py coverage.json
 uv run diff-cover coverage.xml --compare-branch origin/main --fail-under 90 --total-percent-float
 ```
 
 `scripts/check_coverage.py` compares coverage.json's file inventory to every
-Python file under src/kubetrol, including unimported namespace-package modules.
+Python file under src/kuberich, including unimported namespace-package modules.
 It rejects missing/extra files, inconsistent totals, missing branch evidence,
 empty production source, and configuration that hides code. Floors use integer
 counts rather than rounded display percentages. Tests and development scripts
@@ -213,7 +213,7 @@ actual returned configuration. The maintainer accepted this temporary manual
 workflow by merging PR #96 and authorizing continued private development on
 2026-10-04. F02 is complete under that documented scope adjustment; automatic
 enforcement must be enabled and verified before the first public release in
-[D04 #40](https://github.com/carloshm91/kubetrol/issues/40). Repository visibility
+[D04 #40](https://github.com/carloshm91/kuberich/issues/40). Repository visibility
 changes still require the maintainer's explicit approval.
 See [GitHub's protected-branch availability](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
 
@@ -236,7 +236,7 @@ establish a new macOS result. Failed local checks still block delivery.
 Keep the hosted workflows and their true failure status; never manufacture a
 passing check or report blocked jobs as passed. Resume the configured event-specific
 CI when the restriction is resolved, and qualify the full supported matrix before the
-first public release. [Follow-up #109](https://github.com/carloshm91/kubetrol/issues/109)
+first public release. [Follow-up #109](https://github.com/carloshm91/kuberich/issues/109)
 tracks a less costly development matrix and trigger policy. Account budgets,
 paid/persistent runners, repository visibility and publication remain separate
 maintainer decisions.

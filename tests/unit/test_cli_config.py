@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from kubetrol import cli
-from kubetrol.cli import main
-from kubetrol.config.schema import Settings
-from kubetrol.config.store import read_config
+from kuberich import cli
+from kuberich.cli import main
+from kuberich.config.schema import Settings
+from kuberich.config.store import read_config
 
 
 def test_info_reports_defaults_without_creating_files_or_reading_kubeconfig(
@@ -22,9 +22,9 @@ def test_info_reports_defaults_without_creating_files_or_reading_kubeconfig(
     assert main(["info"]) == 0
     output = capsys.readouterr()
     information = json.loads(output.out)
-    assert information["version"] == cli.version("kubetrol")
+    assert information["version"] == cli.version("kuberich")
     assert information["config_file"] == str(tmp_path / "config/config.yaml")
-    assert information["log_file"] == str(tmp_path / "logs/kubetrol.log")
+    assert information["log_file"] == str(tmp_path / "logs/kuberich.log")
     assert information["preferences"]["theme"] == "k9s"
     assert not information["cluster_connected"] and information["terminal_ui_available"]
     assert not information["config_exists"] and not information["migration_pending"]
@@ -98,9 +98,9 @@ def test_cli_log_aliases_override_file_and_environment(
 ) -> None:
     path = tmp_path / "config.yaml"
     path.write_text("schema_version: 1\nlog_level: ERROR\nlog_file: file.log\n")
-    monkeypatch.setenv("KUBETROL_CONFIG", str(path))
-    monkeypatch.setenv("KUBETROL_LOG_LEVEL", "INFO")
-    monkeypatch.setenv("KUBETROL_LOG_FILE", str(tmp_path / "env.log"))
+    monkeypatch.setenv("KUBERICH_CONFIG", str(path))
+    monkeypatch.setenv("KUBERICH_LOG_LEVEL", "INFO")
+    monkeypatch.setenv("KUBERICH_LOG_FILE", str(tmp_path / "env.log"))
     selected = tmp_path / "cli.log"
     monkeypatch.setattr(cli, "run_terminal", lambda settings, logger, **kwargs: None)
     assert main(["--logFile", str(selected), "-l", "DEBUG"]) == 0
@@ -116,7 +116,7 @@ def test_environment_relative_log_path_uses_working_directory_even_if_identical_
     path.parent.mkdir()
     path.write_text("schema_version: 1\nlog_file: same.log\n")
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("KUBETROL_LOG_FILE", "same.log")
+    monkeypatch.setenv("KUBERICH_LOG_FILE", "same.log")
     assert main(["--config", str(path), "info"]) == 0
     assert json.loads(capsys.readouterr().out)["log_file"] == str(tmp_path / "same.log")
 
@@ -158,11 +158,11 @@ def test_unexpected_runtime_failure_has_safe_console_message_and_debug_locations
     def broken_launch(*args: object, **kwargs: object) -> None:
         raise RuntimeError("opaque-sensitive-runtime-data")
 
-    monkeypatch.setenv("KUBETROL_LOG_LEVEL", "DEBUG")
+    monkeypatch.setenv("KUBERICH_LOG_LEVEL", "DEBUG")
     monkeypatch.setattr(cli, "run_terminal", broken_launch)
     assert main([]) == 1
     assert "unexpected local failure" in capsys.readouterr().err
-    contents = (tmp_path / "logs/kubetrol.log").read_text()
+    contents = (tmp_path / "logs/kuberich.log").read_text()
     assert "exception=RuntimeError" in contents
     assert "opaque-sensitive-runtime-data" not in contents
 
@@ -173,7 +173,7 @@ def test_logging_failure_returns_io_code_without_raw_fallback(
     def failed(*args: object, **kwargs: object) -> None:
         raise OSError("opaque-log-secret")
 
-    monkeypatch.setenv("KUBETROL_LOG_LEVEL", "DEBUG")
+    monkeypatch.setenv("KUBERICH_LOG_LEVEL", "DEBUG")
     monkeypatch.setattr(logging.Formatter, "formatTime", failed)
     assert main([]) == 3
     output = capsys.readouterr()
@@ -189,11 +189,11 @@ def test_interrupt_returns_130_without_traceback(
 
     monkeypatch.setattr(cli, "read_config", interrupted)
     assert main(["config", "check"]) == 130
-    assert capsys.readouterr().err == "kubetrol: interrupted.\n"
+    assert capsys.readouterr().err == "kuberich: interrupted.\n"
 
 
 def test_disconnected_terminal_returns_129_without_writing_to_closed_stderr(monkeypatch, capsys):
-    from kubetrol.errors import AppError, ExitCode
+    from kuberich.errors import AppError, ExitCode
 
     def disconnected(*args, **kwargs):
         raise AppError("Terminal disconnected.", ExitCode.HANGUP)

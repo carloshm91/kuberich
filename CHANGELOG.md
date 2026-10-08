@@ -5,6 +5,13 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ## Unreleased
 
+### Changed
+
+- Rename the private product/package/import/CLI to KubeRich / `kuberich`.
+  Retain the `kubetrol` console alias and legacy preference environment variables;
+  read existing preferences in place and provide explicit non-overwriting migration.
+  Update UI identity and installation/release tooling without a version bump.
+
 ### Added
 
 - Review and confirm workload scale/restart/explicit revision rollback; monitor
@@ -203,7 +210,7 @@ Release entries are written in release PRs and linked to their Git tags.
   redaction and debug locations without exception values or console tracebacks.
 - Project roadmap, architecture, quality requirements, and release methodology.
 - Contribution and security policies, issue templates, and a structured backlog.
-- Installable Python development package with `kubetrol --help`, `--version`,
+- Installable Python development package with `kuberich --help`, `--version`,
   module invocation and a default terminal launch.
 - Locked Textual/Kubernetes dependencies, developer tooling, and clean-artifact
   installation tests for Python 3.12 through 3.14 on Linux and macOS.

@@ -41,7 +41,7 @@ def repository(tmp_path: Path) -> tuple[Path, str]:
 
 def candidate(directory: Path, covered: int, lines: int, change_code: bool = True) -> None:
     if change_code:
-        source = directory / "src/kubetrol/new.py"
+        source = directory / "src/kuberich/new.py"
         source.parent.mkdir(parents=True)
         source.write_text("".join(f"VALUE_{line} = {line}\n" for line in range(1, lines + 1)))
         run(["git", "add", "src"], directory)
@@ -53,8 +53,8 @@ def candidate(directory: Path, covered: int, lines: int, change_code: bool = Tru
         f'<line number="{line}" hits="{int(line <= covered)}"/>' for line in range(1, lines + 1)
     )
     (directory / "coverage.xml").write_text(
-        "<coverage><sources><source>src/kubetrol</source></sources><packages>"
-        '<package name="kubetrol"><classes><class filename="new.py"><lines>'
+        "<coverage><sources><source>src/kuberich</source></sources><packages>"
+        '<package name="kuberich"><classes><class filename="new.py"><lines>'
         f"{entries}</lines></class></classes></package></packages></coverage>"
     )
 

@@ -32,9 +32,9 @@ from tests.terminal.pty_support import TerminalSession
 def test_installed_standard_resource_views_outside_checkout(installed_wheel, entry_point):
     binary, directory = installed_wheel
     command = (
-        [str(binary / "kubetrol")]
+        [str(binary / "kuberich")]
         if entry_point == "console"
-        else [str(binary / "python"), "-m", "kubetrol"]
+        else [str(binary / "python"), "-m", "kuberich"]
     )
     terminal_standard_views(command, directory, f"installed-standard-{entry_point}")
 
@@ -43,9 +43,9 @@ def test_installed_standard_resource_views_outside_checkout(installed_wheel, ent
 def test_installed_port_forward_owns_children_and_restores_terminal(installed_wheel, entry_point):
     binary, directory = installed_wheel
     command = (
-        [str(binary / "kubetrol")]
+        [str(binary / "kuberich")]
         if entry_point == "console"
-        else [str(binary / "python"), "-m", "kubetrol"]
+        else [str(binary / "python"), "-m", "kuberich"]
     )
     terminal_forward(command, directory, f"installed-forward-{entry_point}")
 
@@ -54,9 +54,9 @@ def test_installed_port_forward_owns_children_and_restores_terminal(installed_wh
 def test_installed_mutation_confirmation_and_terminal_restoration(installed_wheel, entry_point):
     binary, directory = installed_wheel
     command = (
-        [str(binary / "kubetrol")]
+        [str(binary / "kuberich")]
         if entry_point == "console"
-        else [str(binary / "python"), "-m", "kubetrol"]
+        else [str(binary / "python"), "-m", "kuberich"]
     )
     terminal_mutation(command, directory, f"installed-mutation-{entry_point}")
 
@@ -65,9 +65,9 @@ def test_installed_mutation_confirmation_and_terminal_restoration(installed_whee
 def test_installed_manifest_editor_and_terminal_restoration(installed_wheel, entry_point):
     binary, directory = installed_wheel
     command = (
-        [str(binary / "kubetrol")]
+        [str(binary / "kuberich")]
         if entry_point == "console"
-        else [str(binary / "python"), "-m", "kubetrol"]
+        else [str(binary / "python"), "-m", "kuberich"]
     )
     terminal_editing(command, directory, f"installed-editor-{entry_point}")
 
@@ -77,9 +77,9 @@ def test_installed_manifest_editor_and_terminal_restoration(installed_wheel, ent
 async def test_installed_workload_confirmation_and_restoration(installed_wheel, entry_point):
     binary, directory = installed_wheel
     command = (
-        [str(binary / "kubetrol")]
+        [str(binary / "kuberich")]
         if entry_point == "console"
-        else [str(binary / "python"), "-m", "kubetrol"]
+        else [str(binary / "python"), "-m", "kuberich"]
     )
     async with workload_api() as (url, api):
         await asyncio.to_thread(
@@ -90,19 +90,85 @@ async def test_installed_workload_confirmation_and_restoration(installed_wheel, 
 def test_wheel_metadata_entry_point_and_assets(artifacts: tuple[Path, Path]) -> None:
     with zipfile.ZipFile(artifacts[0]) as archive:
         names = archive.namelist()
-        assert "kubetrol/py.typed" in names
-        assert "kubetrol/ui/kubetrol.tcss" in names
+        assert "kuberich/py.typed" in names
+        assert "kuberich/ui/kuberich.tcss" in names
         metadata_name = next(name for name in names if name.endswith(".dist-info/METADATA"))
         metadata = BytesParser().parsebytes(archive.read(metadata_name))
-        assert metadata["Name"] == "kubetrol"
+        assert metadata["Name"] == "kuberich"
         assert metadata["Version"] == PROJECT["version"]
         assert metadata["License-Expression"] == "MIT"
         assert any(name.endswith(".dist-info/licenses/LICENSE") for name in names)
         entry_name = next(name for name in names if name.endswith(".dist-info/entry_points.txt"))
         entry_points = configparser.ConfigParser()
         entry_points.read_string(archive.read(entry_name).decode())
-        assert entry_points["console_scripts"]["kubetrol"] == "kubetrol.cli:main"
+        assert entry_points["console_scripts"]["kuberich"] == "kuberich.cli:main"
+        assert entry_points["console_scripts"]["kubetrol"] == "kuberich.cli:main"
         assert not any(name.startswith(("tests/", ".venv/", ".github/")) for name in names)
+
+
+def test_installed_legacy_console_alias_uses_current_metadata(installed_wheel) -> None:
+    binary, directory = installed_wheel
+    for executable in ("kuberich", "kubetrol"):
+        result = run([str(binary / executable), "--version"], directory, 10)
+        assert result.stdout == f"kuberich {PROJECT['version']}\n"
+        result = run([str(binary / executable), "--help"], directory, 10)
+        assert "usage: kuberich" in result.stdout and "--context" in result.stdout
+
+
+@pytest.mark.parametrize("executable", ["kuberich", "kubetrol"])
+def test_installed_default_preferences_migrate_without_losing_legacy_state(
+    installed_wheel, tmp_path: Path, executable: str
+) -> None:
+    binary, _ = installed_wheel
+    home = tmp_path / "owned-home"
+    home.mkdir()
+    environment = {
+        "HOME": str(home),
+        "XDG_CONFIG_HOME": str(home / "config"),
+        "XDG_DATA_HOME": str(home / "data"),
+        "XDG_STATE_HOME": str(home / "state"),
+        "XDG_CACHE_HOME": str(home / "cache"),
+    }
+    unset = ("KUBERICH_CONFIG", "KUBERICH_LOG_FILE")
+    result = run(
+        [
+            str(binary / "python"),
+            "-c",
+            "import json; from platformdirs import user_config_path; "
+            "print(json.dumps([str(user_config_path(name, appauthor=False) / 'config.yaml') "
+            "for name in ('kubetrol', 'kuberich')]))",
+        ],
+        tmp_path,
+        10,
+        environment=environment,
+        unset_environment=unset,
+    )
+    source, destination = (Path(value) for value in json.loads(result.stdout))
+    assert source.is_relative_to(home) and destination.is_relative_to(home)
+    source.parent.mkdir(parents=True)
+    original = b"readonly: true\nrefresh: 3.5\nopaque-private-field: owned-private-value\n"
+    source.write_bytes(original)
+    command = [str(binary / executable)]
+    before = run([*command, "info"], tmp_path, 10, environment=environment, unset_environment=unset)
+    data = json.loads(before.stdout)
+    assert data["config_file"] == str(source) and data["migration_pending"]
+    assert "owned-private-value" not in before.stdout + before.stderr
+    assert not destination.exists()
+    migrated = run(
+        [*command, "config", "migrate"],
+        tmp_path,
+        10,
+        environment=environment,
+        unset_environment=unset,
+    )
+    assert "Original Kubetrol preferences were retained" in migrated.stdout
+    assert source.read_bytes() == original
+    assert "opaque-private-field: owned-private-value" in destination.read_text()
+    after = run([*command, "info"], tmp_path, 10, environment=environment, unset_environment=unset)
+    data = json.loads(after.stdout)
+    assert data["config_file"] == str(destination) and not data["migration_pending"]
+    assert data["preferences"]["read_only"] and data["preferences"]["refresh_seconds"] == 3.5
+    assert "owned-private-value" not in after.stdout + after.stderr
 
 
 def test_installed_terminal_handoff_uses_packaged_services(installed_wheel) -> None:
@@ -122,7 +188,7 @@ def test_installed_azure_login_keeps_credentials_private_and_restores_tty(instal
 def test_installed_selected_container_shell_uses_real_cli(installed_wheel) -> None:
     binary_dir, directory = installed_wheel
     terminal_shell(
-        [str(binary_dir / "kubetrol")], directory, "success", evidence="installed-container-shell"
+        [str(binary_dir / "kuberich")], directory, "success", evidence="installed-container-shell"
     )
 
 
@@ -131,7 +197,7 @@ def test_installed_wheel_embedded_protocol_over_real_transport(installed_wheel, 
     binary_dir, _ = installed_wheel
     with TerminalTransport(tmp_path / "transport", kind) as transport:
         terminal_shell(
-            [str(binary_dir / "kubetrol")],
+            [str(binary_dir / "kuberich")],
             tmp_path,
             "protocol",
             evidence=f"installed-{kind}-embedded-protocol",
@@ -158,9 +224,9 @@ def test_source_distribution_can_build_a_wheel(
     assert uv is not None
     with tarfile.open(artifacts[1]) as archive:
         archive.extractall(tmp_path, filter="data")
-    source = next(tmp_path.glob("kubetrol-*"))
-    assert (source / "src/kubetrol/py.typed").is_file()
-    assert (source / "src/kubetrol/ui/kubetrol.tcss").is_file()
+    source = next(tmp_path.glob("kuberich-*"))
+    assert (source / "src/kuberich/py.typed").is_file()
+    assert (source / "src/kuberich/ui/kuberich.tcss").is_file()
     assert (source / "LICENSE").is_file()
     rebuilt = tmp_path / "rebuilt"
     run([uv, "build", "--wheel", "--out-dir", str(rebuilt)], source)
@@ -174,12 +240,12 @@ def test_installed_entry_points_work_without_source_or_cluster(
 ) -> None:
     binary_dir, directory = installed_wheel
     if entry_point == "console":
-        command = [str(binary_dir / ("kubetrol.exe" if sys.platform == "win32" else "kubetrol"))]
+        command = [str(binary_dir / ("kuberich.exe" if sys.platform == "win32" else "kuberich"))]
     else:
         command = [
             str(binary_dir / ("python.exe" if sys.platform == "win32" else "python")),
             "-m",
-            "kubetrol",
+            "kuberich",
         ]
     if argument is not None:
         command.append(argument)
@@ -192,9 +258,9 @@ def test_installed_entry_points_work_without_source_or_cluster(
         return
     assert output.stderr == ""
     if argument == "--version":
-        assert output.stdout == f"kubetrol {PROJECT['version']}\n"
+        assert output.stdout == f"kuberich {PROJECT['version']}\n"
     elif argument == "--help":
-        assert "usage: kubetrol" in output.stdout
+        assert "usage: kuberich" in output.stdout
     elif argument == "info":
         information = json.loads(output.stdout)
         assert information["config_file"] == str(directory / "preferences.yaml")
@@ -210,8 +276,8 @@ def test_installed_package_has_assets_and_runtime_dependencies(
     code = (
         "import importlib.metadata as m, importlib.resources as r, json; "
         "import textual, kubernetes_asyncio, platformdirs, yaml; "
-        "print(json.dumps({'version': m.version('kubetrol'), "
-        "'typed': r.files('kubetrol').joinpath('py.typed').is_file(), "
+        "print(json.dumps({'version': m.version('kuberich'), "
+        "'typed': r.files('kuberich').joinpath('py.typed').is_file(), "
         "'textual': m.version('textual'), 'kubernetes_asyncio': m.version('kubernetes-asyncio')}))"
     )
     result = json.loads(run([str(python), "-c", code], directory, 10).stdout)
@@ -224,7 +290,7 @@ def test_installed_config_init_check_and_refusal_to_overwrite(
     installed_wheel: tuple[Path, Path], tmp_path: Path
 ) -> None:
     binary_dir, directory = installed_wheel
-    command = [str(binary_dir / "kubetrol"), "--config", str(tmp_path / "preferences.yaml")]
+    command = [str(binary_dir / "kuberich"), "--config", str(tmp_path / "preferences.yaml")]
     assert "Created default" in run([*command, "config", "init"], directory, 10).stdout
     assert "valid" in run([*command, "config", "check"], directory, 10).stdout
     with pytest.raises(subprocess.CalledProcessError) as error:
@@ -239,9 +305,9 @@ def test_installed_terminal_launch_restores_tty_outside_the_checkout(
 ) -> None:
     binary_dir, directory = installed_wheel
     command = (
-        [str(binary_dir / "kubetrol")]
+        [str(binary_dir / "kuberich")]
         if entry_point == "console"
-        else [str(binary_dir / "python"), "-m", "kubetrol"]
+        else [str(binary_dir / "python"), "-m", "kuberich"]
     )
     with TerminalSession(command, directory) as terminal:
         terminal.wait_for(b"Disconnected")
@@ -269,7 +335,7 @@ def test_installed_launch_contract_outside_checkout(
     expected: int,
 ) -> None:
     binary_dir, directory = installed_wheel
-    output = run([str(binary_dir / "kubetrol"), *arguments], directory, 10, check=False)
+    output = run([str(binary_dir / "kuberich"), *arguments], directory, 10, check=False)
     assert output.returncode == expected
     assert "opaque-secret" not in output.stdout + output.stderr
     if arguments == ["version", "--short"]:
@@ -289,7 +355,7 @@ def test_installed_connection_overrides_in_real_terminal(installed_wheel):
 
     binary_dir, directory = installed_wheel
     verify_connection_overrides(
-        directory, [str(binary_dir / "kubetrol")], evidence="installed-connection-overrides"
+        directory, [str(binary_dir / "kuberich")], evidence="installed-connection-overrides"
     )
 
 
@@ -297,7 +363,7 @@ def test_installed_initial_help_and_visibility_options_restore_tty(
     installed_wheel: tuple[Path, Path],
 ) -> None:
     binary_dir, directory = installed_wheel
-    command = [str(binary_dir / "kubetrol"), "--logoless", "--crumbsless", "--command", "help"]
+    command = [str(binary_dir / "kuberich"), "--logoless", "--crumbsless", "--command", "help"]
     with TerminalSession(command, directory) as terminal:
         terminal.wait_for(b"Keyboard help")
         terminal.send(b"\x11")
@@ -309,9 +375,9 @@ def test_installed_initial_help_and_visibility_options_restore_tty(
 def test_installed_navigation_and_initial_namespace_outside_checkout(installed_wheel, entry_point):
     binary_dir, directory = installed_wheel
     command = (
-        [str(binary_dir / "kubetrol")]
+        [str(binary_dir / "kuberich")]
         if entry_point == "console"
-        else [str(binary_dir / "python"), "-m", "kubetrol"]
+        else [str(binary_dir / "python"), "-m", "kuberich"]
     )
     terminal_navigation(
         command, directory, evidence=f"installed-navigation-{entry_point}", initial_scope=True
@@ -342,7 +408,7 @@ def test_installed_wheel_connects_to_owned_api_and_changes_namespace(
     before = path.read_bytes()
     try:
         with TerminalSession(
-            [str(binary_dir / "kubetrol"), "--kubeconfig", str(path), "--request-timeout", "250ms"],
+            [str(binary_dir / "kuberich"), "--kubeconfig", str(path), "--request-timeout", "250ms"],
             directory,
         ) as terminal:
             terminal.wait_for(b"Live")
@@ -379,9 +445,9 @@ def test_installed_resource_inspection_outside_checkout(installed_wheel, entry_p
 
     binary_dir, directory = installed_wheel
     command = (
-        [str(binary_dir / "kubetrol")]
+        [str(binary_dir / "kuberich")]
         if entry_point == "console"
-        else [str(binary_dir / "python"), "-m", "kubetrol"]
+        else [str(binary_dir / "python"), "-m", "kuberich"]
     )
     terminal_inspection(command, directory, evidence=f"installed-inspection-{entry_point}")
 
@@ -392,8 +458,8 @@ def test_installed_log_viewer_outside_checkout(installed_wheel, entry_point):
 
     binary_dir, directory = installed_wheel
     command = (
-        [str(binary_dir / "kubetrol")]
+        [str(binary_dir / "kuberich")]
         if entry_point == "console"
-        else [str(binary_dir / "python"), "-m", "kubetrol"]
+        else [str(binary_dir / "python"), "-m", "kuberich"]
     )
     terminal_logs(command, directory, evidence=f"installed-log-viewer-{entry_point}")

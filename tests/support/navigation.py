@@ -68,7 +68,7 @@ def terminal_navigation(command, directory, *, evidence, initial_scope=False):
             terminal.wait_for_screen("Namespace: team" if initial_scope else "Namespace: default")
             terminal.wait_for(b"80 pods", since=marker)
             marker = terminal.send(b":ctx kub")
-            terminal.wait_for_screen("kubetrol-test-pty", since=marker)
+            terminal.wait_for_screen("kuberich-test-pty", since=marker)
             server.namespace_requested.clear()
             server.namespace_gate.clear()
             marker = terminal.send(b"\t\r")

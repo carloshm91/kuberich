@@ -6,9 +6,9 @@ from pathlib import Path
 
 from aiohttp import web
 
-from kubetrol.adapters.kubernetes import KubernetesSession
-from kubetrol.domain.resources import ApiResource, api_resource
-from kubetrol.services.resources import ResourceReader
+from kuberich.adapters.kubernetes import KubernetesSession
+from kuberich.domain.resources import ApiResource, api_resource
+from kuberich.services.resources import ResourceReader
 from tests.support.connections import catalog_fixture
 
 
@@ -102,7 +102,7 @@ async def reader_fixture(
     address = runner.addresses[0]
     session = KubernetesSession(
         catalog_fixture(directory, f"http://127.0.0.1:{address[1]}", user).select(
-            "kubetrol-test-one"
+            "kuberich-test-one"
         ),
         timeout,
     )

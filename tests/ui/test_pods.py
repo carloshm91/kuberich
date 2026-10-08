@@ -11,11 +11,11 @@ import pytest
 from aiohttp import web
 from textual.events import Paste
 
-from kubetrol.config.schema import Settings
-from kubetrol.domain.pods import PodColumn, pod_row
-from kubetrol.domain.views import ViewStatus
-from kubetrol.ui.app import KubetrolApp
-from kubetrol.ui.pods import PodCell
+from kuberich.config.schema import Settings
+from kuberich.domain.pods import PodColumn, pod_row
+from kuberich.domain.views import ViewStatus
+from kuberich.ui.app import KubeRichApp
+from kuberich.ui.pods import PodCell
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import NOW, pod, record
 from tests.support.resources import collection
@@ -33,7 +33,7 @@ def rows(count=80):
 
 
 def make_app():
-    return KubetrolApp(Settings(), logging.Logger("pod-table", level=100))
+    return KubeRichApp(Settings(), logging.Logger("pod-table", level=100))
 
 
 def visible_rows(app):
@@ -135,7 +135,7 @@ async def test_header_click_sort_cycle_and_live_age_updates(monkeypatch):
     app = make_app()
     baseline = rows(3)
     clock = [NOW]
-    monkeypatch.setattr("kubetrol.ui.pods.utc_now", lambda: clock[0])
+    monkeypatch.setattr("kuberich.ui.pods.utc_now", lambda: clock[0])
     async with app.run_test(size=(100, 30)) as pilot:
         table = app.resources
         await table.apply_rows(baseline, 1, lambda: True)
@@ -223,7 +223,7 @@ async def test_http_watch_changes_reach_cells_and_scope_replacement_clears_old_u
         return response
 
     async with workspace_api(namespace_handler, resource_handler) as url:
-        app = KubetrolApp(
+        app = KubeRichApp(
             Settings(), logging.Logger("live-pod-rows"), catalog=catalog_fixture(tmp_path, url)
         )
         async with app.run_test(size=(100, 30)) as pilot:
@@ -278,7 +278,7 @@ async def test_namespace_switch_remains_responsive_and_rejects_a_blocked_old_pro
         return web.json_response(collection(pod("owned", namespace=scope, uid=f"owned-{scope}")))
 
     async with workspace_api(namespace_handler, resource_handler) as url:
-        app = KubetrolApp(
+        app = KubeRichApp(
             Settings(), logging.Logger("blocked-projection"), catalog=catalog_fixture(tmp_path, url)
         )
         project = app._pod_projection._project

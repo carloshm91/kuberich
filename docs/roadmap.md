@@ -1,6 +1,6 @@
 # Product roadmap
 
-Kubetrol is an independent terminal application inspired by K9s, built with
+KubeRich is an independent terminal application inspired by K9s, built with
 Python and Textual. The plan covers a broad Kubernetes operator workflow;
 feature parity is tracked by delivered behavior, never inferred from a keybinding
 or a placeholder screen.
@@ -32,18 +32,21 @@ and show its actual terminal interface; initial documentation should cover
 verified installation, a quick start, supported features, and known limitations.
 This launch material does not wait for the expanded documentation milestone.
 
-The preferred name candidate is **KubeRich**, with `kuberich` as the proposed CLI
-and distribution name. [The focused migration and name review #149](https://github.com/carloshm91/kubetrol/issues/149)
+The chosen name is **KubeRich**, with `kuberich` as the CLI and distribution
+name. The maintainer confirmed purchasing `kuberich.com` on 2026-10-08.
+[The focused migration and name review #149](https://github.com/carloshm91/kuberich/issues/149)
 records pronunciation, namespace observations, existing commercial uses and the
-unverified trademark-search boundary. The current private checkout still uses
-Kubetrol; a reviewed and tested migration precedes the public release.
+unverified trademark-search boundary; the maintainer does not require trademark
+investigation as a migration prerequisite. A reviewed and tested private identity
+migration precedes the public release.
 
 The proposed address structure is `kuberich.com` for the landing page and
-`docs.kuberich.com` for documentation. [Initial launch material #150](https://github.com/carloshm91/kubetrol/issues/150)
+`docs.kuberich.com` for documentation. [Initial launch material #150](https://github.com/carloshm91/kuberich/issues/150)
 is prepared privately before #40; expanded versioned documentation remains
-#90/#91 after the installable product. These addresses are proposals, not ownership or hosting
-claims. The maintainer chooses the domain and approves any purchase, DNS change,
-hosting publication, or repository visibility change. There is no automatic
+#90/#91 after the installable product. Domain ownership is maintainer-confirmed;
+the website and documentation hosting are not published or verified yet. DNS
+changes, hosting publication and repository visibility changes require explicit
+maintainer authorization. There is no automatic
 publication deadline.
 
 ## Delivery policy

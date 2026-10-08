@@ -2,7 +2,7 @@
 
 F04 provides shared helpers and test isolation. It does not connect a cluster,
 execute a plugin, or implement mutation authorization. The terminal preview
-opens disconnected when no context is selected; C01 otherwise connects an owned session. See the [threat model](kubetrol-threat-model.md)
+opens disconnected when no context is selected; C01 otherwise connects an owned session. See the [threat model](kuberich-threat-model.md)
 for boundaries, existing controls and the remaining issue owners.
 
 ## Local execution model
@@ -40,7 +40,7 @@ Upstream evidence was checked against K9s v0.51.0, commit
   Foreground work suspends the UI; pod shells use `kubectl exec` with context and
   configured kubeconfig flags ([run/execute/sshIn](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/exec.go)).
 
-Kubetrol adopts this trust boundary with its own implementation. Kubernetes
+KubeRich adopts this trust boundary with its own implementation. Kubernetes
 authorization, literal safe rendering, secret handling, immutable target checks
 and test-cluster isolation remain separate requirements. A same-privilege plugin
 can access files that the launching user can access; configuration trust is the
@@ -49,14 +49,14 @@ boundary, not the Python language or terminal framework.
 ## Presenting untrusted text
 
 Resource names, annotations, logs, kubeconfig labels and captured tool output
-displayed inside Kubetrol must pass through `security.presentation.safe_text`.
+displayed inside KubeRich must pass through `security.presentation.safe_text`.
 It returns a literal Rich `Text`,
 which can be passed directly to Textual widgets and table cells. Rich markup
 such as `[link=...]` remains visible text without adding styles or hyperlinks.
 Do not pass its `.plain` value back through a markup parser.
 
 ```python
-from kubetrol.security.presentation import safe_text
+from kuberich.security.presentation import safe_text
 
 table.add_row(safe_text(namespace), safe_text(resource_name))
 log_widget.write(safe_text(log_chunk, multiline=True))
@@ -154,8 +154,8 @@ before reading credentials or invoking helpers, even with no explicit arguments.
 
 Tests that need Kubernetes configuration use
 `tests.support.clusters.load_disposable_config(DisposableContext(...))`. The
-fixture must own a temporary directory/file, use an explicit `kubetrol-test-` or
-`kind-kubetrol-test-` context, contain exactly one matching context and cluster,
+fixture must own a temporary directory/file, use an explicit `kuberich-test-` or
+`kind-kuberich-test-` context, contain exactly one matching context and cluster,
 and bind a numeric loopback endpoint with an explicit port. Remote URLs, userinfo,
 proxy endpoints, paths/query/fragment redirects, external CA/key files and
 credential helpers are rejected before the SDK sees the file. Parsing rejects

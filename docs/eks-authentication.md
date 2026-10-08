@@ -1,8 +1,8 @@
 # EKS authentication: C06 #21
 
-Kubetrol uses the `aws eks get-token` exec entry already declared in your trusted
+KubeRich uses the `aws eks get-token` exec entry already declared in your trusted
 local kubeconfig. The AWS CLI owns its credential chain, profiles, role assumption,
-SSO cache and refresh; Kubetrol does not embed AWS credentials or create clusters.
+SSO cache and refresh; KubeRich does not embed AWS credentials or create clusters.
 The local contracts below are implemented. **Actual AWS/EKS qualification is
 pending.** The maintainer deferred real-cloud trials to their later installed-preview
 test and authorized continuing with measured local/owned-kind evidence. C06 #21
@@ -33,13 +33,13 @@ delivers these contracts; optional provider certification remains tracked in Q05
   for a declared `aws ... eks get-token` executable; wrappers retain generic
   helper errors. Kubernetes 401 and 403 remain separate API outcomes.
 
-Complete SSO login outside Kubetrol using the profile from your exec entry:
+Complete SSO login outside KubeRich using the profile from your exec entry:
 
 ```sh
 aws sso login --profile YOUR_PROFILE
 ```
 
-Then retry with `r` or `:retry`. Kubetrol does not open a browser automatically or
+Then retry with `r` or `:retry`. KubeRich does not open a browser automatically or
 rewrite your kubeconfig/AWS files. The AWS CLI may renew its own cached credentials
 as part of the configured helper. InteractiveMode Always and exec certificate
 rotation remain C08 #47; this ticket does not implement interactive cloud login.

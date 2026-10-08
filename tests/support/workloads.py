@@ -6,8 +6,8 @@ from contextlib import asynccontextmanager
 
 from aiohttp import web
 
-from kubetrol.domain.resources import ApiResource
-from kubetrol.domain.targets import ResourceTarget, SessionIdentity
+from kuberich.domain.resources import ApiResource
+from kuberich.domain.targets import ResourceTarget, SessionIdentity
 from tests.support.standard import roots
 from tests.support.workspace import stable_watch
 
@@ -21,7 +21,7 @@ def selection(family="deployments"):
     }[family]
     resource = ApiResource("apps", "v1", family, kind, True, frozenset({"get", "patch"}))
     target = ResourceTarget(
-        SessionIdentity("kubetrol-test-one", 1), "apps", family, "team", "owned-one", "owned-uid"
+        SessionIdentity("kuberich-test-one", 1), "apps", family, "team", "owned-one", "owned-uid"
     )
     value = {
         "apiVersion": "apps/v1",

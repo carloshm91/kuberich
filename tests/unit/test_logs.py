@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 
-from kubetrol.domain.logs import (
+from kuberich.domain.logs import (
     MAX_CHUNK,
     MAX_LINE,
     LogBuffer,
@@ -13,7 +13,7 @@ from kubetrol.domain.logs import (
     LogOptions,
     log_containers,
 )
-from kubetrol.errors import AppError
+from kuberich.errors import AppError
 
 
 def test_log_query_parameters_selected_container_time_windows_and_exact_booleans():

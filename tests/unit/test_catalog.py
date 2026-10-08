@@ -6,10 +6,10 @@ from pathlib import Path
 import pytest
 import yaml
 
-from kubetrol.config.catalog import KubeCatalog, load_catalog, regular_bytes
-from kubetrol.domain.connection_overrides import ConnectionOverrides
-from kubetrol.domain.connections import ConnectionProblem, ConnectionRequest
-from kubetrol.errors import AppError
+from kuberich.config.catalog import KubeCatalog, load_catalog, regular_bytes
+from kuberich.domain.connection_overrides import ConnectionOverrides
+from kuberich.domain.connections import ConnectionProblem, ConnectionRequest
+from kuberich.errors import AppError
 
 
 def fixture(path: Path, name: str = "one", **extra: object) -> Path:

@@ -9,11 +9,11 @@ import pytest
 from aiohttp import web
 from textual.widgets import Static
 
-from kubetrol.config.schema import Settings
-from kubetrol.domain.connections import ConnectionRequest
-from kubetrol.domain.views import ViewStatus
-from kubetrol.ui.app import KubetrolApp
-from kubetrol.ui.scopes import ConnectionScreen
+from kuberich.config.schema import Settings
+from kuberich.domain.connections import ConnectionRequest
+from kuberich.domain.views import ViewStatus
+from kuberich.ui.app import KubeRichApp
+from kuberich.ui.scopes import ConnectionScreen
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.resources import collection, item
 from tests.support.workspace import stable_watch, wait_for, workspace_api
@@ -37,7 +37,7 @@ async def test_visible_stale_recovery_status_details_and_namespace_change(tmp_pa
         return web.json_response(collection(item(namespace=namespace)))
 
     async with workspace_api(handler, resources) as url:
-        app = KubetrolApp(
+        app = KubeRichApp(
             Settings(read_only=True), logging.Logger("view"), catalog=catalog_fixture(tmp_path, url)
         )
         async with app.run_test(size=size) as pilot:
@@ -82,7 +82,7 @@ async def test_ui_rejects_a_delayed_old_subscription_observation(tmp_path):
         return namespaces("team", "default")
 
     async with workspace_api(handler) as url:
-        app = KubetrolApp(
+        app = KubeRichApp(
             Settings(), logging.Logger("late-view"), catalog=catalog_fixture(tmp_path, url)
         )
         async with app.run_test() as pilot:
@@ -92,7 +92,7 @@ async def test_ui_rejects_a_delayed_old_subscription_observation(tmp_path):
             subscription = next(iter(app.workspace._subscriptions))
             subscription.offer(replace(current, revision=current.revision - 1, context="obsolete"))
             await pilot.pause()
-            assert str(app.query_one("#context", Static).content) == "Context: kubetrol-test-one"
+            assert str(app.query_one("#context", Static).content) == "Context: kuberich-test-one"
             assert app.workspace.store.observation is current
             await pilot.press("ctrl+q")
 
@@ -108,7 +108,7 @@ async def test_unexpected_subscription_render_error_reaches_sanitized_hook_and_c
         raise RuntimeError("opaque-render-value")
 
     async with workspace_api(handler) as url:
-        app = KubetrolApp(
+        app = KubeRichApp(
             Settings(), logging.Logger("render-failure"), catalog=catalog_fixture(tmp_path, url)
         )
         monkeypatch.setattr(app, "_show_view", broken)
@@ -132,7 +132,7 @@ async def test_denied_pod_list_is_an_error_then_manual_allowed_namespace_recover
         return web.json_response(collection(item(namespace="allowed")))
 
     async with workspace_api(handler, resources) as url:
-        app = KubetrolApp(
+        app = KubeRichApp(
             Settings(), logging.Logger("denied-pods"), catalog=catalog_fixture(tmp_path, url)
         )
         async with app.run_test() as pilot:
@@ -176,7 +176,7 @@ async def test_quiet_renewal_preserves_live_preview_copy_and_selected_context(
         return response
 
     async with workspace_api(handler, resources) as url:
-        app = KubetrolApp(
+        app = KubeRichApp(
             Settings(),
             logging.Logger("quiet-preview"),
             catalog=catalog_fixture(tmp_path, url),
@@ -201,7 +201,7 @@ async def test_quiet_renewal_preserves_live_preview_copy_and_selected_context(
             description = str(app.query_one("#empty-description", Static).content)
             assert "No pods were returned" in description
             assert ":ctx contexts" in description
-            assert str(app.query_one("#context", Static).content) == "Context: kubetrol-test-one"
+            assert str(app.query_one("#context", Static).content) == "Context: kuberich-test-one"
             assert f"Live · {count} pods" in str(app.status.content)
             assert len(set(versions)) == 1
             assert displayed and all(

@@ -16,9 +16,9 @@ ROOT = Path(__file__).resolve().parents[2]
 def run_gate(results: str | None) -> subprocess.CompletedProcess[str]:
     environment = os.environ.copy()
     environment.update(GITHUB_EVENT_NAME="pull_request", GITHUB_REF="refs/pull/143/merge")
-    environment.pop("KUBETROL_JOB_RESULTS", None)
+    environment.pop("KUBERICH_JOB_RESULTS", None)
     if results is not None:
-        environment["KUBETROL_JOB_RESULTS"] = results
+        environment["KUBERICH_JOB_RESULTS"] = results
     return subprocess.run(
         [sys.executable, "-m", "scripts.check_quality_gate"],
         cwd=ROOT,

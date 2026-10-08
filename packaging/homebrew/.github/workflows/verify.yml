@@ -37,8 +37,8 @@ jobs:
           tap="$(brew --repository)/Library/Taps/carloshm91/homebrew-tap"
           mkdir -p "$(dirname "$tap")"
           ln -s "$GITHUB_WORKSPACE" "$tap"
-          brew style carloshm91/tap/kubetrol
-          brew audit --strict --online carloshm91/tap/kubetrol
-          brew install --build-from-source carloshm91/tap/kubetrol
-          brew test carloshm91/tap/kubetrol
-          brew uninstall carloshm91/tap/kubetrol
+          brew style carloshm91/tap/kuberich
+          brew audit --strict --online carloshm91/tap/kuberich
+          brew install --build-from-source carloshm91/tap/kuberich
+          brew test carloshm91/tap/kuberich
+          brew uninstall carloshm91/tap/kuberich

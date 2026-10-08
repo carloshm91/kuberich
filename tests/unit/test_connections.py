@@ -4,8 +4,8 @@ from dataclasses import replace
 
 import pytest
 
-from kubetrol.domain.connections import ConnectionRequest, namespace_name, request_duration
-from kubetrol.errors import AppError
+from kuberich.domain.connections import ConnectionRequest, namespace_name, request_duration
+from kuberich.errors import AppError
 
 
 @pytest.mark.parametrize(

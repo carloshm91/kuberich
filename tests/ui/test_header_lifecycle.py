@@ -3,7 +3,7 @@
 import pytest
 from textual.app import App, ComposeResult
 
-from kubetrol.ui.chrome import POD_SHORTCUTS, WorkspaceChrome, WorkspaceHeader
+from kuberich.ui.chrome import POD_SHORTCUTS, WorkspaceChrome, WorkspaceHeader
 
 
 @pytest.mark.asyncio

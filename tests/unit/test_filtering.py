@@ -6,9 +6,9 @@ from dataclasses import replace
 
 import pytest
 
-from kubetrol.domain.navigation import ContextRow
-from kubetrol.domain.pods import pod_row
-from kubetrol.services import filtering
+from kuberich.domain.navigation import ContextRow
+from kuberich.domain.pods import pod_row
+from kuberich.services import filtering
 from tests.support.pods import pod, record
 
 

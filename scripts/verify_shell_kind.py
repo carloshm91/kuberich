@@ -11,9 +11,9 @@ from pathlib import Path
 import yaml
 from kubernetes_asyncio import client
 
-from kubetrol.adapters.kubernetes import KubernetesSession
-from kubetrol.config.catalog import load_catalog
-from kubetrol.domain.connections import ConnectionRequest
+from kuberich.adapters.kubernetes import KubernetesSession
+from kuberich.config.catalog import load_catalog
+from kuberich.domain.connections import ConnectionRequest
 from scripts.owned_kind import NODE_IMAGE, SHELL_IMAGE, owned_cluster, run_owned
 from scripts.verify_eks_auth import verify as verify_eks_auth
 from tests.terminal.pty_support import TerminalSession
@@ -39,7 +39,7 @@ async def prepare(path: Path, context: str, namespace: str) -> tuple[dict, str]:
                             "image": SHELL_IMAGE,
                             "command": ["/bin/sh", "-c", "while true; do sleep 60; done"],
                             "env": [
-                                {"name": "KUBETROL_OWNED_CONTAINER", "value": name},
+                                {"name": "KUBERICH_OWNED_CONTAINER", "value": name},
                                 {"name": "PS1", "value": "OWNED-SHELL> "},
                             ],
                         }
@@ -151,7 +151,7 @@ def trial(
         str(kubectl),
         sys.executable,
         "-m",
-        "kubetrol",
+        "kuberich",
         "--kubeconfig",
         str(path),
         "--context",
@@ -176,9 +176,9 @@ def trial(
             terminal.send(b"\x1b[B")
             for attempt in range(attempts):
                 marker = terminal.send(b"s")
-                terminal.wait_for_screen("Kubetrol · Container shell", timeout=30)
-                terminal.wait_for_screen("Context: kubetrol-test-Alias")
-                terminal.wait_for_screen("Pod: kubetrol-shell-test/owned-shell-pod")
+                terminal.wait_for_screen("KubeRich · Container shell", timeout=30)
+                terminal.wait_for_screen("Context: kuberich-test-Alias")
+                terminal.wait_for_screen("Pod: kuberich-shell-test/owned-shell-pod")
                 terminal.wait_for_screen("Container: app-b")
                 assert b"\x1b[?1049l" not in terminal.transcript[marker:]
                 if scenario in {
@@ -194,7 +194,7 @@ def trial(
                     assert b"OWNED-SHELL> " not in terminal.transcript[marker:]
                     break
                 terminal.wait_for_screen("OWNED-SHELL> ", timeout=30)
-                marker = terminal.send(b"printf 'REMOTE_%s\\n' \"$KUBETROL_OWNED_CONTAINER\"\n")
+                marker = terminal.send(b"printf 'REMOTE_%s\\n' \"$KUBERICH_OWNED_CONTAINER\"\n")
                 terminal.wait_for_screen("REMOTE_app-b")
                 marker = terminal.resize(80, 25)
                 terminal.wait_for_screen("╰" + "─" * 78 + "╯")
@@ -224,7 +224,7 @@ def trial(
                     terminal.wait_for_screen("SLEEP_READY")
                     terminal.send(b"\x03")
                     terminal.wait_for_screen("OWNED-SHELL> ")
-                    marker = terminal.send(b"printf 'AFTER_%s\\n' \"$KUBETROL_OWNED_CONTAINER\"\n")
+                    marker = terminal.send(b"printf 'AFTER_%s\\n' \"$KUBERICH_OWNED_CONTAINER\"\n")
                     terminal.wait_for_screen("AFTER_app-b")
                 marker = terminal.send(b"exit\n")
                 terminal.wait_for(b"Shell closed", since=marker)
@@ -253,15 +253,15 @@ def main() -> None:
         run_owned([str(kubectl), "version", "--client", "-o", "json"], os.environ)
     )["clientVersion"]["gitVersion"]
     assert version == "v1.36.4", "Use the matching verified kubectl 1.36.4 binary for this trial."
-    namespace = "kubetrol-shell-test"
+    namespace = "kuberich-shell-test"
     with owned_cluster(arguments.kind) as cluster:
         owned_cluster_name = cluster.name
         directory, path = cluster.directory, cluster.path
         data = yaml.safe_load(path.read_text())
         data["contexts"].append(
-            {"name": "kubetrol-test-Alias", "context": dict(data["contexts"][0]["context"])}
+            {"name": "kuberich-test-Alias", "context": dict(data["contexts"][0]["context"])}
         )
-        context = "kubetrol-test-Alias"
+        context = "kuberich-test-Alias"
         path.write_text(yaml.safe_dump(data))
         print("Preparing owned two-container shell and limited-RBAC fixtures.", flush=True)
         resource, token = asyncio.run(prepare(path, context, namespace))

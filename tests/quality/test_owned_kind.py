@@ -20,7 +20,7 @@ from scripts.owned_kind import (
 )
 
 
-def node(name="kubetrol-test-owned"):
+def node(name="kuberich-test-owned"):
     return {
         "Id": "owned-node-id",
         "Config": {
@@ -31,7 +31,7 @@ def node(name="kubetrol-test-owned"):
     }
 
 
-def config(name="kubetrol-test-owned"):
+def config(name="kuberich-test-owned"):
     identity = "kind-" + name
     return {
         "current-context": identity,
@@ -121,7 +121,7 @@ def test_prewrite_config_requires_actual_owned_node_identity(tmp_path, fault):
     path = tmp_path / "generated"
     path.write_text(yaml.safe_dump(data))
     with pytest.raises(ValueError):
-        verify_config(path, "kubetrol-test-owned", nodes)
+        verify_config(path, "kuberich-test-owned", nodes)
 
 
 @pytest.fixture

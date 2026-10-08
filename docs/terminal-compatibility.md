@@ -1,6 +1,6 @@
 # Terminal compatibility
 
-Kubetrol runs in a local terminal, over SSH, or inside tmux. Its default container
+KubeRich runs in a local terminal, over SSH, or inside tmux. Its default container
 shell stays inside the Textual interface. Explicit native tools, including Azure
 login, temporarily receive the terminal and return to the workspace.
 
@@ -19,7 +19,7 @@ restore foreground ownership and terminal attributes before returning. Embedded
 shells own a separate PTY and reap their child when closed, including cancellation
 while the pod preflight is still pending.
 
-Losing SSH without a multiplexer revokes the remote terminal. Kubetrol closes its
+Losing SSH without a multiplexer revokes the remote terminal. KubeRich closes its
 tasks and child processes, then exits 129; the SSH client normally returns 255.
 The local SSH terminal can be restored, but a revoked remote TTY cannot receive
 escape sequences or have its attributes read or restored. Evidence records this
@@ -37,7 +37,7 @@ normal shell return and application shutdown still close owned resources.
 
 Development tests require `ssh`, `ssh-keygen`, `sshd` and `tmux`, in addition to
 the locked Python development environment. These are test prerequisites, not
-dependencies for an ordinary local Kubetrol installation. Missing tools fail the
+dependencies for an ordinary local KubeRich installation. Missing tools fail the
 required suite explicitly. Hosted runners install them before testing.
 
 ```sh

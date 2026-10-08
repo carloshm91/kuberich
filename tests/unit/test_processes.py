@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from kubetrol.domain.processes import (
+from kuberich.domain.processes import (
     ProcessCommand,
     ProcessMode,
     ProcessPurpose,
@@ -19,9 +19,9 @@ from kubetrol.domain.processes import (
     kubectl_exec_command,
     process_timeout,
 )
-from kubetrol.domain.targets import ResourceTarget, SessionIdentity
-from kubetrol.errors import AppError
-from kubetrol.services.access import Action
+from kuberich.domain.targets import ResourceTarget, SessionIdentity
+from kuberich.errors import AppError
+from kuberich.services.access import Action
 
 
 def target(**changes):

@@ -23,7 +23,7 @@ read-only policy handle `--command` / `-c` at launch. Arguments preserve casing.
 | `help`, `?` | Show actual keyboard actions and limits |
 | `quit`, `q`, `exit` | Exit and restore the terminal |
 
-For example, `uv run kubetrol --context YOUR_CONTEXT --command 'po YOUR_NAMESPACE'`
+For example, `uv run kuberich --context YOUR_CONTEXT --command 'po YOUR_NAMESPACE'`
 connects once and starts the requested pod scope without first watching another
 namespace. `--command 'ctx NAME'` selects that context before authentication.
 Unsupported commands report unavailable; they never display a substitute table.

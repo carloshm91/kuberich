@@ -6,9 +6,9 @@ import threading
 
 import pytest
 
-from kubetrol.domain.logs import MAX_BYTES, MAX_LINES
-from kubetrol.errors import AppError
-from kubetrol.services.log_export import save_logs
+from kuberich.domain.logs import MAX_BYTES, MAX_LINES
+from kuberich.errors import AppError
+from kuberich.services.log_export import save_logs
 
 
 @pytest.mark.asyncio
@@ -23,7 +23,7 @@ async def test_private_complete_export_refuses_existing_files_symlinks_and_bad_p
         with pytest.raises(AppError, match="new file"):
             await save_logs(str(path), "replacement")
     assert destination.read_text().startswith("literal")
-    assert not list(tmp_path.glob(".kubetrol-log-*"))
+    assert not list(tmp_path.glob(".kuberich-log-*"))
     for path, text in (("", "x"), ("path", "x" * (MAX_BYTES + MAX_LINES + 1))):
         with pytest.raises(AppError, match="bounded"):
             await save_logs(path, text)
@@ -60,5 +60,5 @@ async def test_cancellation_drains_owned_worker_and_retrieves_late_failure(
     release.set()
     with pytest.raises(asyncio.CancelledError):
         await task
-    assert finished.is_set() and not list(tmp_path.glob(".kubetrol-log-*"))
+    assert finished.is_set() and not list(tmp_path.glob(".kuberich-log-*"))
     assert (tmp_path / "saved").exists() == (not failed)

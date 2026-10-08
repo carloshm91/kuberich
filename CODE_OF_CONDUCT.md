@@ -13,4 +13,4 @@ reports fairly and may remove content or restrict participation when needed.
 Reports and personal information will be handled as confidentially as practical.
 
 This policy applies to the repository, issues, pull requests, project discussions,
-and spaces where someone represents Kubetrol.
+and spaces where someone represents KubeRich.

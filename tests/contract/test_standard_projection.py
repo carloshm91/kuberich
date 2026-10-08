@@ -4,9 +4,9 @@ from dataclasses import replace
 
 import pytest
 
-from kubetrol.domain.registry import STANDARD_RESOURCES
-from kubetrol.domain.resources import ResourceSnapshot
-from kubetrol.services.pods import StandardProjection
+from kuberich.domain.registry import STANDARD_RESOURCES
+from kuberich.domain.resources import ResourceSnapshot
+from kuberich.services.pods import StandardProjection
 from tests.support.standard import api, row_record
 
 

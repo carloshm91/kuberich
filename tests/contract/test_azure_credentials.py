@@ -8,10 +8,10 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from aiohttp import web
 
-from kubetrol.adapters.credentials import ExecToken
-from kubetrol.config.catalog import Entry
-from kubetrol.domain.connections import ConnectionProblem, ConnectionRequest, ConnectionState
-from kubetrol.services.sessions import SessionService
+from kuberich.adapters.credentials import ExecToken
+from kuberich.config.catalog import Entry
+from kuberich.domain.connections import ConnectionProblem, ConnectionRequest, ConnectionState
+from kuberich.services.sessions import SessionService
 from tests.contract.test_shell import service
 from tests.support.azure import TOKEN, VERSION, azure_calls, azure_control, azure_entry
 from tests.support.connections import catalog_fixture, fake_api, namespaces
@@ -175,7 +175,7 @@ async def test_provider_failures_have_safe_distinct_session_status(tmp_path, fai
         catalog_fixture(tmp_path, "http://127.0.0.1:1", entry), ConnectionRequest()
     )
     try:
-        observation = await sessions.connect("kubetrol-test-one")
+        observation = await sessions.connect("kuberich-test-one")
         assert observation.state is ConnectionState.AUTH_ERROR and hint in observation.message
         assert all(value not in observation.message for value in ("private-", "\x1b", TOKEN))
         assert sessions.client is None
@@ -196,7 +196,7 @@ async def test_large_group_jwt_reaches_actual_http_request_without_truncation(tm
     async with fake_api(handler, max_field_size=65536 + 64) as url:
         sessions = SessionService(catalog_fixture(tmp_path, url, entry), ConnectionRequest())
         try:
-            assert (await sessions.connect("kubetrol-test-one")).state is ConnectionState.CONNECTED
+            assert (await sessions.connect("kuberich-test-one")).state is ConnectionState.CONNECTED
         finally:
             await sessions.close()
 
@@ -212,7 +212,7 @@ async def test_api_credentials_rejection_and_rbac_are_not_provider_failures(tmp_
     async with fake_api(handler) as url:
         sessions = SessionService(catalog_fixture(tmp_path, url, entry), ConnectionRequest())
         try:
-            observation = await sessions.connect("kubetrol-test-one")
+            observation = await sessions.connect("kuberich-test-one")
             assert observation.state is (
                 ConnectionState.AUTH_ERROR if status == 401 else ConnectionState.LIMITED
             )
@@ -295,7 +295,7 @@ async def test_explicit_login_refuses_static_credentials_and_non_azure_helpers(t
     sessions = SessionService(catalog_fixture(tmp_path, "http://127.0.0.1:1"), ConnectionRequest())
     try:
         assert (
-            await sessions.connect("kubetrol-test-one", authenticate=authenticate)
+            await sessions.connect("kuberich-test-one", authenticate=authenticate)
         ).state is ConnectionState.AUTH_ERROR
         assert "no exec helper" in sessions.observation.message
     finally:

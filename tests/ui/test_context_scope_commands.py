@@ -3,7 +3,7 @@
 import pytest
 from aiohttp import web
 
-from kubetrol.domain.views import ViewStatus
+from kuberich.domain.views import ViewStatus
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
 from tests.support.resources import collection

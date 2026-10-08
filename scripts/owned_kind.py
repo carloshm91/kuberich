@@ -170,7 +170,7 @@ def owned_cluster(kind: str, *, docker: str = "docker") -> Iterator[OwnedCluster
     environment = capture_docker(docker)
     if not run_owned([kind, "version"], environment).startswith("kind v0.33.0 "):
         raise ValueError("Use verified kind v0.33.0.")
-    name = "kubetrol-test-" + uuid4().hex
+    name = "kuberich-test-" + uuid4().hex
 
     def inspect() -> list[dict[str, Any]]:
         ids = run_owned(
@@ -197,7 +197,7 @@ def owned_cluster(kind: str, *, docker: str = "docker") -> Iterator[OwnedCluster
     def cancel(signum: int, frame: FrameType | None) -> None:
         raise SystemExit(128 + signum)
 
-    with TemporaryDirectory(prefix="kubetrol-owned-kind-") as temporary:
+    with TemporaryDirectory(prefix="kuberich-owned-kind-") as temporary:
         directory = Path(temporary)
         path = directory / "owned-kubeconfig"
         environment["KUBECONFIG"] = str(path)

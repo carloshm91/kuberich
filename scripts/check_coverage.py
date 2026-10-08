@@ -75,8 +75,8 @@ def read_policy(root: Path) -> list[str]:
     coverage = tools["coverage"]
     run = coverage["run"]
     report = coverage["report"]
-    if run.get("branch") is not True or run.get("source") != ["kubetrol"]:
-        raise GateError("measure branches over the entire kubetrol package")
+    if run.get("branch") is not True or run.get("source") != ["kuberich"]:
+        raise GateError("measure branches over the entire kuberich package")
     if report.get("include_namespace_packages") is not True:
         raise GateError("include unimported namespace-package modules")
     for section in (run, report):
@@ -88,7 +88,7 @@ def read_policy(root: Path) -> list[str]:
     for key in ("exclude_also", "partial_also", "ignore_errors", "skip_empty", "skip_covered"):
         if report.get(key):
             raise GateError(f"{key} would hide production evidence")
-    critical = tools["kubetrol"]["coverage"]["critical_modules"]
+    critical = tools["kuberich"]["coverage"]["critical_modules"]
     if (
         not isinstance(critical, list)
         or not critical
@@ -106,7 +106,7 @@ def evaluate(root: Path, report_path: Path) -> list[str]:
         raise GateError("coverage evidence must include branches")
     expected = {
         path.relative_to(root).as_posix()
-        for path in (root / "src/kubetrol").rglob("*.py")
+        for path in (root / "src/kuberich").rglob("*.py")
         if path.is_file()
     }
     if not expected:

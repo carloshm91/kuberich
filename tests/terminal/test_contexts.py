@@ -115,7 +115,7 @@ def test_connected_cli_context_namespace_retry_and_terminal_restoration(
     original = path.read_bytes()
     try:
         with TerminalSession(
-            [sys.executable, "-m", "kubetrol", "--kubeconfig", str(path)], tmp_path
+            [sys.executable, "-m", "kuberich", "--kubeconfig", str(path)], tmp_path
         ) as terminal:
             terminal.wait_for(b"Live")
             terminal.wait_for(b"1 pods")
@@ -162,7 +162,7 @@ def test_stale_live_recovery_scope_switch_and_quit_restore_real_terminal(tmp_pat
     before = path.read_bytes()
     try:
         with TerminalSession(
-            [sys.executable, "-m", "kubetrol", "--kubeconfig", str(path)], tmp_path
+            [sys.executable, "-m", "kuberich", "--kubeconfig", str(path)], tmp_path
         ) as terminal:
             terminal.wait_for(b"Stale resource data")
             assert b"synthetic-pty" not in terminal.transcript
@@ -203,7 +203,7 @@ def test_quiet_watch_renewals_keep_the_real_cli_live_without_retry_hints(tmp_pat
             [
                 sys.executable,
                 "-m",
-                "kubetrol",
+                "kuberich",
                 "--kubeconfig",
                 str(path),
                 "--request-timeout",
@@ -238,7 +238,7 @@ def test_quiet_watch_renewals_keep_the_real_cli_live_without_retry_hints(tmp_pat
 
 
 def test_real_cli_connection_overrides_keep_scope_and_identity_across_navigation(tmp_path):
-    verify_connection_overrides(tmp_path, [sys.executable, "-m", "kubetrol"])
+    verify_connection_overrides(tmp_path, [sys.executable, "-m", "kuberich"])
 
 
 def test_quitting_during_exec_helper_reaps_process_and_restores_tty(tmp_path: Path) -> None:
@@ -262,7 +262,7 @@ def test_quitting_during_exec_helper_reaps_process_and_restores_tty(tmp_path: Pa
         },
     )
     with TerminalSession(
-        [sys.executable, "-m", "kubetrol", "--kubeconfig", str(path)], tmp_path
+        [sys.executable, "-m", "kuberich", "--kubeconfig", str(path)], tmp_path
     ) as terminal:
         terminal.wait_for(b"Connecting")
         deadline = time.monotonic() + 3

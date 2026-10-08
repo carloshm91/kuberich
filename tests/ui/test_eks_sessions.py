@@ -8,10 +8,10 @@ from pathlib import Path
 import pytest
 from textual.widgets import Static
 
-from kubetrol.config.schema import Settings
-from kubetrol.domain.connections import ConnectionState
-from kubetrol.ui.app import KubetrolApp
-from kubetrol.ui.scopes import ConnectionScreen
+from kuberich.config.schema import Settings
+from kuberich.domain.connections import ConnectionState
+from kuberich.ui.app import KubeRichApp
+from kuberich.ui.scopes import ConnectionScreen
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.eks import aws_entry, control
 from tests.support.workspace import wait_for, workspace_api
@@ -34,7 +34,7 @@ async def test_aws_wait_and_sso_errors_preserve_navigation_and_cleanup(tmp_path,
         return namespaces("team")
 
     async with workspace_api(handler) as url:
-        app = KubetrolApp(
+        app = KubeRichApp(
             Settings(),
             logging.Logger("eks-local-contract"),
             catalog=catalog_fixture(tmp_path, url, entry),

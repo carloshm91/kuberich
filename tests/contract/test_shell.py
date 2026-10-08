@@ -13,14 +13,14 @@ from pathlib import Path
 import pytest
 from aiohttp import web
 
-import kubetrol.services.delegation as module
-from kubetrol.domain.connections import ConnectionProblem
-from kubetrol.domain.processes import ProcessMode
-from kubetrol.domain.targets import ResourceTarget, SessionIdentity
-from kubetrol.errors import AppError
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.processes import ProcessRunner
-from kubetrol.services.shell import ShellService
+import kuberich.services.delegation as module
+from kuberich.domain.connections import ConnectionProblem
+from kuberich.domain.processes import ProcessMode
+from kuberich.domain.targets import ResourceTarget, SessionIdentity
+from kuberich.errors import AppError
+from kuberich.services.access import AccessPolicy
+from kuberich.services.processes import ProcessRunner
+from kuberich.services.shell import ShellService
 from tests.support.pods import pod
 from tests.support.resources import reader_fixture
 
@@ -52,7 +52,7 @@ async def test_fake_kubectl_receives_literal_scope_private_snapshot_and_configur
 
     executable = tmp_path / "kubectl"
     executable.write_text(
-        f'#!{sys.executable}\nimport json,sys,os,stat\nfrom pathlib import Path\np=Path(sys.argv[1].split("=",1)[1])\nassert stat.S_IMODE(p.stat().st_mode)==0o600\nc=json.loads(p.read_text())\nassert c["current-context"]=="kubetrol-test-one"\nassert c["users"][0]["user"]["token"]=="synthetic"\nprint(json.dumps(sys.argv[1:]))\n'
+        f'#!{sys.executable}\nimport json,sys,os,stat\nfrom pathlib import Path\np=Path(sys.argv[1].split("=",1)[1])\nassert stat.S_IMODE(p.stat().st_mode)==0o600\nc=json.loads(p.read_text())\nassert c["current-context"]=="kuberich-test-one"\nassert c["users"][0]["user"]["token"]=="synthetic"\nprint(json.dumps(sys.argv[1:]))\n'
     )
     executable.chmod(0o700)
     environment = {**os.environ, "PATH": str(tmp_path), "KUBECONFIG": "ambient-wrong-config"}
@@ -73,7 +73,7 @@ async def test_fake_kubectl_receives_literal_scope_private_snapshot_and_configur
             arguments = json.loads(result.stdout)
             assert arguments == [
                 f"--kubeconfig={request.path}",
-                "--context=kubetrol-test-one",
+                "--context=kuberich-test-one",
                 "--namespace=team",
                 "exec",
                 "--stdin",

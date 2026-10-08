@@ -7,12 +7,12 @@ import aiohttp
 import pytest
 from aiohttp import web
 
-from kubetrol.domain.connections import ConnectionProblem, ConnectionState
-from kubetrol.domain.logs import LogBuffer, LogOptions
-from kubetrol.domain.targets import ResourceTarget, SessionIdentity
-from kubetrol.errors import AppError
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.logs import LogStream
+from kuberich.domain.connections import ConnectionProblem, ConnectionState
+from kuberich.domain.logs import LogBuffer, LogOptions
+from kuberich.domain.targets import ResourceTarget, SessionIdentity
+from kuberich.errors import AppError
+from kuberich.services.access import AccessPolicy
+from kuberich.services.logs import LogStream
 from tests.support.pods import pod
 from tests.support.resources import reader_fixture
 from tests.support.workspace import wait_for

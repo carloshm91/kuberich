@@ -59,8 +59,8 @@ attestations use pinned `actions/attest`; PyPA publish attestations are enabled.
 
 ## Owner setup before the first dispatch
 
-The maintainer must enroll/confirm the `kubetrol` project or pending publisher
-separately on **PyPI and TestPyPI**, using owner `carloshm91`, repository `kubetrol`,
+The maintainer must enroll/confirm the `kuberich` project or pending publisher
+separately on **PyPI and TestPyPI**, using owner `carloshm91`, repository `kuberich`,
 workflow `release.yml`, and the corresponding exact environment name above.
 GitHub login does not prove index ownership or reserve the name. Use OIDC;
 this workflow has no PyPI password/API-token secret or long-lived publisher key.

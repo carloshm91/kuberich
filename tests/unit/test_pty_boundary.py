@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from kubetrol.adapters import pty as module
-from kubetrol.adapters import pty_child
-from kubetrol.errors import AppError
+from kuberich.adapters import pty as module
+from kuberich.adapters import pty_child
+from kuberich.errors import AppError
 
 
 @pytest.mark.asyncio

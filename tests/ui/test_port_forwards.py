@@ -7,12 +7,12 @@ from pathlib import Path
 import pytest
 from textual.widgets import Button, Input, Static
 
-from kubetrol.config.schema import Settings
-from kubetrol.domain.port_forwards import ForwardState
-from kubetrol.domain.registry import RESOURCE_ALIASES
-from kubetrol.services.commands import ResourceCommand
-from kubetrol.ui.app import KubetrolApp
-from kubetrol.ui.port_forwards import ForwardPrompt, ForwardScreen
+from kuberich.config.schema import Settings
+from kuberich.domain.port_forwards import ForwardState
+from kuberich.domain.registry import RESOURCE_ALIASES
+from kuberich.services.commands import ResourceCommand
+from kuberich.ui.app import KubeRichApp
+from kuberich.ui.port_forwards import ForwardPrompt, ForwardScreen
 from tests.support.connections import catalog_fixture
 from tests.support.port_forwards import executable
 from tests.support.standard import standard_api
@@ -23,7 +23,7 @@ from tests.support.workspace import wait_for
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
 async def test_start_filter_stop_return_and_context_cleanup_keep_listener_ownership(tmp_path, size):
     async with standard_api(tmp_path) as (url, _reads):
-        app = KubetrolApp(
+        app = KubeRichApp(
             Settings(),
             logging.getLogger("owned-forward-ui"),
             catalog=catalog_fixture(tmp_path, url),
@@ -60,7 +60,7 @@ async def test_start_filter_stop_return_and_context_cleanup_keep_listener_owners
             await pilot.pause()
             if size == (40, 12):
                 assert screen.table.region.height >= 3
-                assert "kubetrol-test-one" in screen.table.render_line(1).text
+                assert "kuberich-test-one" in screen.table.render_line(1).text
             screen.action_filter()
             await pilot.press(*"missing")
             await wait_for(lambda: screen.table.row_count == 0)
@@ -108,7 +108,7 @@ async def test_start_filter_stop_return_and_context_cleanup_keep_listener_owners
 
 @pytest.mark.asyncio
 async def test_readonly_listing_and_input_routing_are_safe(tmp_path):
-    app = KubetrolApp(
+    app = KubeRichApp(
         Settings(read_only=True),
         logging.getLogger("owned-forward-readonly"),
         catalog=catalog_fixture(tmp_path, "http://127.0.0.1:1"),
@@ -134,7 +134,7 @@ async def test_readonly_listing_and_input_routing_are_safe(tmp_path):
 @pytest.mark.asyncio
 async def test_cancel_stale_selection_and_non_loopback_intent_do_not_start_work(tmp_path):
     async with standard_api(tmp_path) as (url, _reads):
-        app = KubetrolApp(
+        app = KubeRichApp(
             Settings(),
             logging.getLogger("owned-forward-intent"),
             catalog=catalog_fixture(tmp_path, url),
@@ -172,11 +172,11 @@ async def test_session_updates_preserve_selected_row_and_both_scroll_axes(tmp_pa
     from dataclasses import replace
     from uuid import uuid4
 
-    from kubetrol.domain.port_forwards import parse_mappings
-    from kubetrol.domain.targets import ResourceTarget, SessionIdentity
-    from kubetrol.services.port_forwards import ForwardInfo
+    from kuberich.domain.port_forwards import parse_mappings
+    from kuberich.domain.targets import ResourceTarget, SessionIdentity
+    from kuberich.services.port_forwards import ForwardInfo
 
-    app = KubetrolApp(
+    app = KubeRichApp(
         Settings(),
         logging.getLogger("owned-forward-table"),
         catalog=catalog_fixture(tmp_path, "http://127.0.0.1:1"),

@@ -6,7 +6,7 @@ from contextlib import suppress
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
 
-from kubetrol.domain.registry import STANDARD_RESOURCES
+from kuberich.domain.registry import STANDARD_RESOURCES
 from tests.support.standard import api, manifest, roots
 
 

@@ -4,10 +4,10 @@ from dataclasses import replace
 
 import pytest
 
-from kubetrol.domain import watches
-from kubetrol.domain.connections import ConnectionProblem, ConnectionState, HttpProblem
-from kubetrol.domain.resources import ResourceSnapshot, api_resource, resource_record
-from kubetrol.domain.watches import (
+from kuberich.domain import watches
+from kuberich.domain.connections import ConnectionProblem, ConnectionState, HttpProblem
+from kuberich.domain.resources import ResourceSnapshot, api_resource, resource_record
+from kuberich.domain.watches import (
     EventType,
     Recovery,
     WatchEvent,
@@ -16,7 +16,7 @@ from kubetrol.domain.watches import (
     retry_delay,
     watch_event,
 )
-from kubetrol.errors import AppError
+from kuberich.errors import AppError
 from tests.support.resources import descriptor, item, pod_resource
 from tests.support.watches import bookmark, error_event, event, snapshot
 

@@ -8,11 +8,11 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from aiohttp import web
 
-from kubetrol.adapters.credentials import ExecToken
-from kubetrol.config.catalog import Entry
-from kubetrol.domain.connections import ConnectionRequest, ConnectionState
-from kubetrol.errors import AppError
-from kubetrol.services.sessions import SessionService
+from kuberich.adapters.credentials import ExecToken
+from kuberich.config.catalog import Entry
+from kuberich.domain.connections import ConnectionRequest, ConnectionState
+from kuberich.errors import AppError
+from kuberich.services.sessions import SessionService
 from tests.contract.test_shell import service
 from tests.support.connections import catalog_fixture, fake_api, namespaces
 from tests.support.eks import ROLE, TOKEN, VERSION, aws_entry, calls, control
@@ -99,7 +99,7 @@ async def test_aws_failures_reach_safe_session_status(tmp_path, aws_environment,
         catalog_fixture(tmp_path, "http://127.0.0.1:12345", entry), ConnectionRequest()
     )
     try:
-        observation = await sessions.connect("kubetrol-test-one")
+        observation = await sessions.connect("kuberich-test-one")
         assert observation.state is ConnectionState.AUTH_ERROR
         assert hint in observation.message
         assert all(value not in observation.message for value in ("private-", "\x1b", ROLE))
@@ -134,7 +134,7 @@ async def test_delayed_concurrent_401s_do_not_discard_a_new_revision_of_the_same
     async with fake_api(handler) as url:
         sessions = SessionService(catalog_fixture(tmp_path, url, entry), ConnectionRequest())
         try:
-            assert (await sessions.connect("kubetrol-test-one")).state is ConnectionState.CONNECTED
+            assert (await sessions.connect("kuberich-test-one")).state is ConnectionState.CONNECTED
             reject = True
             async with asyncio.timeout(10):
                 assert (
@@ -160,7 +160,7 @@ async def test_api_rejection_is_distinct_from_an_aws_login_failure(
     async with fake_api(handler) as url:
         sessions = SessionService(catalog_fixture(tmp_path, url, entry), ConnectionRequest())
         try:
-            observation = await sessions.connect("kubetrol-test-one")
+            observation = await sessions.connect("kuberich-test-one")
             assert observation.state is (
                 ConnectionState.AUTH_ERROR if status == 401 else ConnectionState.LIMITED
             )

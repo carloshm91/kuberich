@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from kubetrol.config.schema import Settings
-from kubetrol.services.commands import Command
-from kubetrol.ui.app import HelpScreen, KubetrolApp
-from kubetrol.ui.presentation import Presentation
+from kuberich.config.schema import Settings
+from kuberich.services.commands import Command
+from kuberich.ui.app import HelpScreen, KubeRichApp
+from kuberich.ui.presentation import Presentation
 
 
 @pytest.mark.asyncio
@@ -26,7 +26,7 @@ async def test_presentation_options_hide_the_requested_widgets_and_keep_controls
     presentation: Presentation,
     hidden: str,
 ) -> None:
-    app = KubetrolApp(
+    app = KubeRichApp(
         Settings(read_only=True), logging.Logger("ui-launch"), presentation=presentation
     )
     async with app.run_test(size=(140, 30)) as pilot:
@@ -34,7 +34,7 @@ async def test_presentation_options_hide_the_requested_widgets_and_keep_controls
         assert not app.query_one(f"#{hidden}").display
         assert app.resources.region.height > 0
         assert str(app.status.content).startswith("Read-only")
-        screenshot = app.export_screenshot(title="Kubetrol launch presentation")
+        screenshot = app.export_screenshot(title="KubeRich launch presentation")
         if presentation.headless or presentation.logoless:
             assert app.query_one("#brand").region.height == 0
         if presentation.crumbsless:
@@ -60,7 +60,7 @@ async def test_presentation_options_hide_the_requested_widgets_and_keep_controls
 
 @pytest.mark.asyncio
 async def test_initial_help_opens_and_returns_to_the_real_workspace() -> None:
-    app = KubetrolApp(Settings(), logging.Logger("ui-launch"), initial_command=Command.HELP)
+    app = KubeRichApp(Settings(), logging.Logger("ui-launch"), initial_command=Command.HELP)
     async with app.run_test() as pilot:
         assert isinstance(app.screen, HelpScreen)
         await pilot.press("escape")
@@ -69,7 +69,7 @@ async def test_initial_help_opens_and_returns_to_the_real_workspace() -> None:
 
 @pytest.mark.asyncio
 async def test_initial_quit_exits_successfully() -> None:
-    app = KubetrolApp(Settings(), logging.Logger("ui-launch"), initial_command=Command.QUIT)
+    app = KubeRichApp(Settings(), logging.Logger("ui-launch"), initial_command=Command.QUIT)
     async with app.run_test():
         pass
     assert app.return_code == 0 and not app.is_running
@@ -106,7 +106,7 @@ async def test_long_refresh_interval_keeps_watch_updates_immediate(tmp_path):
         return response
 
     async with workspace_api(probe, resources) as url:
-        app = KubetrolApp(
+        app = KubeRichApp(
             Settings(refresh_seconds=3600),
             logging.Logger("independent-watch"),
             catalog=catalog_fixture(tmp_path, url),
@@ -126,9 +126,9 @@ async def test_effective_identity_and_refresh_update_ages_without_polling_or_los
 ):
     from aiohttp import web
 
-    from kubetrol.domain.connection_overrides import ConnectionOverrides
-    from kubetrol.domain.connections import ConnectionRequest
-    from kubetrol.ui import pods
+    from kuberich.domain.connection_overrides import ConnectionOverrides
+    from kuberich.domain.connections import ConnectionRequest
+    from kuberich.ui import pods
     from tests.support.connections import catalog_fixture, namespaces
     from tests.support.pods import NOW, pod
     from tests.support.resources import collection
@@ -151,7 +151,7 @@ async def test_effective_identity_and_refresh_update_ages_without_polling_or_los
         )
 
     async with workspace_api(probe, resources) as url:
-        app = KubetrolApp(
+        app = KubeRichApp(
             Settings(refresh_seconds=0.1),
             logging.Logger("override-preview"),
             catalog=catalog_fixture(tmp_path, url),

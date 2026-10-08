@@ -8,11 +8,11 @@ from aiohttp import web
 from textual.app import App, ComposeResult
 from textual.widgets import Static
 
-from kubetrol.config.catalog import Entry
-from kubetrol.domain.connections import ConnectionState
-from kubetrol.domain.navigation import ContextRow
-from kubetrol.services.commands import Command
-from kubetrol.ui.contexts import ContextTable
+from kuberich.config.catalog import Entry
+from kuberich.domain.connections import ConnectionState
+from kuberich.domain.navigation import ContextRow
+from kuberich.services.commands import Command
+from kuberich.ui.contexts import ContextTable
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
 from tests.support.resources import collection
@@ -59,7 +59,7 @@ async def test_contexts_share_frame_filter_locally_return_and_connect_exact_row(
                 assert app._resource_name == "contexts" and len(app.screen_stack) == 1
                 assert app.focused is app.context_table and app.filter_input.value == ""
                 assert app.query_one("#resource-view").region == frame
-                assert app.context_table.get_row("kubetrol-test-one")[0].plain == "*"
+                assert app.context_table.get_row("kuberich-test-one")[0].plain == "*"
                 assert tuple(cell.plain for cell in app.context_table.get_row("Team-00")[1:]) == (
                     "Team-00",
                     "owned",

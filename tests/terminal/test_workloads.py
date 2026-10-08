@@ -15,7 +15,7 @@ async def test_native_workload_confirmation(tmp_path, action):
     async with workload_api() as (url, api):
         await asyncio.to_thread(
             terminal_workload,
-            [sys.executable, "-m", "kubetrol"],
+            [sys.executable, "-m", "kuberich"],
             tmp_path,
             "workload-" + action.replace(" ", "-"),
             url,

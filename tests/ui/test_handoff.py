@@ -8,18 +8,18 @@ from dataclasses import replace
 
 import pytest
 
-from kubetrol.domain.processes import (
+from kuberich.domain.processes import (
     ProcessMode,
     ProcessPurpose,
     ProcessResult,
     ProcessStatus,
     capture_command,
 )
-from kubetrol.domain.targets import ResourceTarget, SessionIdentity
-from kubetrol.errors import AppError
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.processes import ProcessRunner
-from kubetrol.ui import handoff
+from kuberich.domain.targets import ResourceTarget, SessionIdentity
+from kuberich.errors import AppError
+from kuberich.services.access import AccessPolicy
+from kuberich.services.processes import ProcessRunner
+from kuberich.ui import handoff
 
 
 class NativeApp:

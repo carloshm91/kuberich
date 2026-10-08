@@ -17,32 +17,32 @@ Use Linux or macOS, Python 3.12–3.14 and uv. The maintainer's shortest path:
 git switch main
 git pull --ff-only
 uv sync --locked --group dev --python 3.12
-uv run kubetrol --version
-uv run kubetrol --help
-uv run kubetrol config check
-uv run kubetrol info
+uv run kuberich --version
+uv run kuberich --help
+uv run kuberich config check
+uv run kuberich info
 ```
 
 Version/help/config/info need no cluster. The UI needs an interactive terminal;
 redirecting its input/output is not a way to launch it. `--config` selects
-Kubetrol preferences; `--kubeconfig` selects Kubernetes credentials/configuration.
+KubeRich preferences; `--kubeconfig` selects Kubernetes credentials/configuration.
 
 Choose an explicitly permitted context/namespace. To list local context names:
 
 ```sh
 kubectl config get-contexts -o name
-uv run kubetrol --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly
+uv run kuberich --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly
 ```
 
 For a separate trusted kubeconfig, use its absolute path consistently:
 
 ```sh
 kubectl --kubeconfig /absolute/path/to/kubeconfig config get-contexts -o name
-uv run kubetrol --kubeconfig /absolute/path/to/kubeconfig --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly
+uv run kuberich --kubeconfig /absolute/path/to/kubeconfig --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly
 ```
 
 Replace the uppercase names. No `kubectl config use-context` is required.
-Kubetrol preserves the source kubeconfig and captures each connection separately.
+KubeRich preserves the source kubeconfig and captures each connection separately.
 `--readonly` blocks shells and effectful commands; the server still decides which
 reads your identity may perform.
 
@@ -80,7 +80,7 @@ or your configured shell. Exit the read-only preview, then deliberately enable
 shell actions for this invocation:
 
 ```sh
-uv run kubetrol --kubeconfig /absolute/path/to/test-kubeconfig --context YOUR_TEST_CONTEXT --namespace YOUR_TEST_NAMESPACE --write
+uv run kuberich --kubeconfig /absolute/path/to/test-kubeconfig --context YOUR_TEST_CONTEXT --namespace YOUR_TEST_NAMESPACE --write
 ```
 
 `--write` overrides a read-only preference without changing its file. Select the
@@ -90,7 +90,7 @@ It uses **kubectl exec**, not SSH into the pod or node.
 
 Inside it, `pwd` or `printf 'hello\n'` are enough for a basic trial. `exit` or
 Ctrl+D returns to containers; Ctrl+] closes the owned session locally. Ctrl+C
-interrupts the remote program; Ctrl+Q quits Kubetrol. Escape, Tab, arrows, `:`,
+interrupts the remote program; Ctrl+Q quits KubeRich. Escape, Tab, arrows, `:`,
 `/` and `q` are delivered to the remote program while the shell is open.
 After returning, Escape goes back to pods. Distroless/completed containers or an
 image without a shell need a suitable image; ephemeral debugging is not available
@@ -99,7 +99,7 @@ yet. [Shell requirements and limits](container-shell.md).
 ## EKS and AKS prerequisites
 
 Use the same trusted kubeconfig, user, helper PATH and provider login that work
-with explicit-context kubectl. Kubetrol invokes the declared exec helper; it
+with explicit-context kubectl. KubeRich invokes the declared exec helper; it
 does not provision clusters or manage a separate credential database.
 
 - EKS: AWS CLI with the configured profile/role/session. If the profile uses SSO,
@@ -107,7 +107,7 @@ does not provision clusters or manage a separate credential database.
 - AKS: Azure kubelogin for its declared login mode; `azurecli` additionally needs
   Azure CLI and the intended `az login` session. An Azure helper requiring
   interaction can use the explicit `:login` action; it runs the declared helper.
-  Kubetrol does not infer a different tenant/login mode or convert the kubeconfig.
+  KubeRich does not infer a different tenant/login mode or convert the kubeconfig.
 
 The local adapter/process contracts are verified with owned helpers and kind.
 Actual AWS/EKS and Microsoft Entra/AKS trials are deferred to #87. Read
@@ -119,12 +119,12 @@ versions/modes, refresh behavior and certification limits.
 For a trusted wheel supplied by the maintainer, run outside the checkout:
 
 ```sh
-uv tool install --python 3.12 /absolute/path/to/kubetrol-VERSION-py3-none-any.whl
-kubetrol --version
-kubetrol --help
-kubetrol config check
-kubetrol info
-kubetrol --kubeconfig /absolute/path/to/kubeconfig --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly
+uv tool install --python 3.12 /absolute/path/to/kuberich-VERSION-py3-none-any.whl
+kuberich --version
+kuberich --help
+kuberich config check
+kuberich info
+kuberich --kubeconfig /absolute/path/to/kubeconfig --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly
 ```
 
 Use the actual filename/version. If uv reports its tool bin directory missing
@@ -134,7 +134,7 @@ changes the maintainer's shell configuration or existing tool installation.
 `pipx install --python python3.12 /absolute/path/to/WHEEL.whl` is the alternative
 already qualified by packaging checks. Do not install the same CLI with both.
 
-Uninstall with `uv tool uninstall kubetrol` or, for pipx, `pipx uninstall kubetrol`.
+Uninstall with `uv tool uninstall kuberich` or, for pipx, `pipx uninstall kuberich`.
 Preferences/logs remain separate from the installed application. Running through
 the checkout does not create a uv tool installation to uninstall.
 
@@ -147,7 +147,7 @@ Standalone Linux/macOS binaries remain 0.1.0 work.
 
 | Symptom | Next check |
 | --- | --- |
-| kubectl works but Kubetrol does not | Compare the exact `--kubeconfig`, `--context`, `--namespace`, user, helper PATH and provider session; run `:status`, then `:retry` |
+| kubectl works but KubeRich does not | Compare the exact `--kubeconfig`, `--context`, `--namespace`, user, helper PATH and provider session; run `:status`, then `:retry` |
 | Authentication failure / expired provider login | Complete the declared AWS/Azure login, then retry; never paste tokens or kubeconfig contents into reports |
 | Permission denied / 403 | Check the same identity's resource/namespace permission; denied namespace listing can still allow `:ns EXACT_NAME` |
 | No matching pods | Clear `/` filtering and confirm the namespace; a denied/stale view is not an empty healthy list |

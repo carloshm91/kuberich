@@ -6,7 +6,7 @@ from dataclasses import replace
 
 import pytest
 
-from kubetrol.services.pods import PodProjection
+from kuberich.services.pods import PodProjection
 from tests.support.pods import pod, snapshot
 from tests.support.workspace import wait_for
 

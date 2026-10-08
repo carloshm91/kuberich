@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from kubetrol.config.schema import ConfigDocument, Settings
-from kubetrol.config.store import MAX_CONFIG_BYTES, read_config, write_config
-from kubetrol.errors import AppError, ExitCode
+from kuberich.config.schema import ConfigDocument, Settings
+from kuberich.config.store import MAX_CONFIG_BYTES, read_config, write_config
+from kuberich.errors import AppError, ExitCode
 
 
 def test_missing_file_defaults_are_read_only(tmp_path: Path) -> None:
@@ -42,7 +42,7 @@ def test_migration_and_unknown_fields_round_trip_through_atomic_save(tmp_path: P
     assert restored.unknown == {"plugin": {"name": "value", "future": [1, 2]}}
     assert not restored.migrated
     assert stat.S_IMODE(path.stat().st_mode) == 0o600
-    assert not list(path.parent.glob(".kubetrol-*.tmp"))
+    assert not list(path.parent.glob(".kuberich-*.tmp"))
 
 
 def test_initial_write_creates_private_directory_and_refuses_overwrite(tmp_path: Path) -> None:
@@ -145,7 +145,7 @@ def test_interrupted_replace_preserves_previous_file_and_cleans_temporary(
     with pytest.raises(expected):
         write_config(path, ConfigDocument(Settings(theme="changed")), overwrite=True)
     assert path.read_bytes() == original
-    assert not list(tmp_path.glob(".kubetrol-*.tmp"))
+    assert not list(tmp_path.glob(".kuberich-*.tmp"))
 
 
 def test_failed_file_sync_never_commits(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -158,7 +158,7 @@ def test_failed_file_sync_never_commits(tmp_path: Path, monkeypatch: pytest.Monk
     with pytest.raises(AppError, match="Cannot save"):
         write_config(path, ConfigDocument())
     assert not path.exists()
-    assert not list(tmp_path.glob(".kubetrol-*.tmp"))
+    assert not list(tmp_path.glob(".kuberich-*.tmp"))
 
 
 def test_directory_sync_failure_reports_error_after_atomic_commit(
@@ -176,7 +176,7 @@ def test_directory_sync_failure_reports_error_after_atomic_commit(
     with pytest.raises(AppError, match="Preferences were saved"):
         write_config(path, ConfigDocument())
     assert read_config(path) == ConfigDocument()
-    assert not list(tmp_path.glob(".kubetrol-*.tmp"))
+    assert not list(tmp_path.glob(".kuberich-*.tmp"))
 
 
 def test_create_race_does_not_overwrite_the_other_writer(
@@ -193,7 +193,7 @@ def test_create_race_does_not_overwrite_the_other_writer(
     with pytest.raises(AppError, match="Cannot save"):
         write_config(path, ConfigDocument())
     assert path.read_text() == "theme: race-winner\n"
-    assert not list(tmp_path.glob(".kubetrol-*.tmp"))
+    assert not list(tmp_path.glob(".kuberich-*.tmp"))
 
 
 def test_symbolic_link_and_kubeconfig_writes_are_refused(tmp_path: Path) -> None:
@@ -228,6 +228,6 @@ def test_temporary_stream_failure_closes_descriptor_and_removes_file(
     monkeypatch.setattr(os, "fdopen", failed)
     with pytest.raises(AppError, match="Cannot save"):
         write_config(tmp_path / "config.yaml", ConfigDocument())
-    assert not list(tmp_path.glob(".kubetrol-*.tmp"))
+    assert not list(tmp_path.glob(".kuberich-*.tmp"))
     with pytest.raises(OSError):
         os.fstat(captured[0])

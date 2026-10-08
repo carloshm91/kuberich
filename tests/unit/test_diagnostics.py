@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from kubetrol.diagnostics.logging import (
+from kuberich.diagnostics.logging import (
     LOG_BACKUPS,
     LOG_HEADER,
     MAX_LOG_BYTES,
@@ -17,8 +17,8 @@ from kubetrol.diagnostics.logging import (
     SanitizedFormatter,
     diagnostic_logging,
 )
-from kubetrol.diagnostics.redaction import sanitize_text
-from kubetrol.errors import AppError, ExitCode
+from kuberich.diagnostics.redaction import sanitize_text
+from kuberich.errors import AppError, ExitCode
 
 
 @pytest.mark.parametrize(
@@ -74,7 +74,7 @@ def test_logger_has_no_console_handler_does_not_mutate_root_and_closes(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     root_handlers = logging.getLogger().handlers.copy()
-    path = tmp_path / "logs" / "kubetrol.log"
+    path = tmp_path / "logs" / "kuberich.log"
     with diagnostic_logging(path, "DEBUG") as logger:
         handler = logger.handlers[0]
         logger.warning("token=%s", "sensitive-fixture")
@@ -125,11 +125,11 @@ def test_formatter_handles_empty_exception_tuple_and_bounds_multibyte_records() 
 def test_rotation_bounds_files_and_retains_recent_messages_with_private_permissions(
     tmp_path: Path,
 ) -> None:
-    path = tmp_path / "kubetrol.log"
+    path = tmp_path / "kuberich.log"
     with diagnostic_logging(path, "INFO") as logger:
         for index in range(700):
             logger.info("message-%s %s token=secret-fixture", index, "x" * 8000)
-    logs = sorted(item for item in tmp_path.glob("kubetrol.log*") if item.suffix != ".lock")
+    logs = sorted(item for item in tmp_path.glob("kuberich.log*") if item.suffix != ".lock")
     assert len(logs) == LOG_BACKUPS + 1
     assert "message-699" in path.read_text()
     assert "message-0 " not in "".join(item.read_text() for item in logs)
@@ -161,8 +161,8 @@ def test_rotation_reopens_existing_owned_archives(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize("kind", ["foreign", "symlink", "fifo"])
 def test_foreign_or_special_archives_are_never_rotated(tmp_path: Path, kind: str) -> None:
-    path = tmp_path / "kubetrol.log"
-    archive = tmp_path / "kubetrol.log.1"
+    path = tmp_path / "kuberich.log"
+    archive = tmp_path / "kuberich.log.1"
     original = "current-context: protected-fixture\n"
     other = tmp_path / "kubeconfig"
     other.write_text(original)
@@ -180,10 +180,10 @@ def test_foreign_or_special_archives_are_never_rotated(tmp_path: Path, kind: str
 
 
 def test_only_one_process_can_own_a_log_path_and_lock_is_released(tmp_path: Path) -> None:
-    path = tmp_path / "kubetrol.log"
+    path = tmp_path / "kuberich.log"
     with diagnostic_logging(path, "INFO"):
         with (
-            pytest.raises(AppError, match="another Kubetrol process"),
+            pytest.raises(AppError, match="another KubeRich process"),
             diagnostic_logging(path, "INFO"),
         ):
             pytest.fail("Second owner was accepted")
@@ -196,11 +196,11 @@ def test_only_one_process_can_own_a_log_path_and_lock_is_released(tmp_path: Path
 
 
 def test_foreign_lock_file_is_not_modified(tmp_path: Path) -> None:
-    lock = tmp_path / "kubetrol.log.lock"
+    lock = tmp_path / "kuberich.log.lock"
     lock.write_text("current-context: keep\n")
     with (
         pytest.raises(AppError, match="Cannot open"),
-        diagnostic_logging(tmp_path / "kubetrol.log", "INFO"),
+        diagnostic_logging(tmp_path / "kuberich.log", "INFO"),
     ):
         pytest.fail("Foreign lock was accepted")
     assert lock.read_text() == "current-context: keep\n"
@@ -211,8 +211,8 @@ def test_log_lock_excludes_a_real_second_process_and_allows_reuse(tmp_path: Path
     code = (
         "import sys\n"
         "from pathlib import Path\n"
-        "from kubetrol.diagnostics.logging import diagnostic_logging\n"
-        "from kubetrol.errors import AppError\n"
+        "from kuberich.diagnostics.logging import diagnostic_logging\n"
+        "from kuberich.errors import AppError\n"
         "try:\n"
         "    with diagnostic_logging(Path(sys.argv[1]), 'INFO') as logger:\n"
         "        logger.info('child process acquired lock')\n"
@@ -229,7 +229,7 @@ def test_log_lock_excludes_a_real_second_process_and_allows_reuse(tmp_path: Path
             timeout=10,
         )
     assert denied.returncode == 3
-    assert "another Kubetrol process" in denied.stderr
+    assert "another KubeRich process" in denied.stderr
     allowed = subprocess.run(
         [sys.executable, "-c", code, str(path)],
         cwd=tmp_path,

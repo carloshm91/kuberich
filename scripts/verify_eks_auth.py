@@ -8,13 +8,13 @@ import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from kubetrol.adapters.credentials import _execute
-from kubetrol.adapters.kubernetes import KubernetesSession
-from kubetrol.config.catalog import load_catalog, mapping, text
-from kubetrol.domain.connections import ConnectionProblem, ConnectionRequest
-from kubetrol.domain.credential_helpers import is_azure_helper, is_eks_helper
-from kubetrol.errors import AppError
-from kubetrol.services.delegation import ConnectionFile
+from kuberich.adapters.credentials import _execute
+from kuberich.adapters.kubernetes import KubernetesSession
+from kuberich.config.catalog import load_catalog, mapping, text
+from kuberich.domain.connections import ConnectionProblem, ConnectionRequest
+from kuberich.domain.credential_helpers import is_azure_helper, is_eks_helper
+from kuberich.errors import AppError
+from kuberich.services.delegation import ConnectionFile
 
 
 def pod_list(payload: object) -> None:

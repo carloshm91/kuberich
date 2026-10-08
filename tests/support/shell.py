@@ -23,10 +23,10 @@ args=sys.argv[1:]
 path=Path(args[0].split('=',1)[1])
 assert stat.S_IMODE(path.stat().st_mode)==0o600
 data=json.loads(path.read_text())
-assert data['current-context']=='kubetrol-test-pty'
+assert data['current-context']=='kuberich-test-pty'
 assert data['clusters'][0]['cluster']['server'].startswith('http://127.0.0.1:')
 assert data['users'][0]['user']['token']=='synthetic-pty'
-assert args[1:8]==['--context=kubetrol-test-pty','--namespace=default','exec','--stdin','--tty','--container=worker','owned-pty-pod-079']
+assert args[1:8]==['--context=kuberich-test-pty','--namespace=default','exec','--stdin','--tty','--container=worker','owned-pty-pod-079']
 assert args[8:]==['--','sh']
 with (directory/'exec-arguments.jsonl').open('a') as output:
     output.write(json.dumps(args)+'\n')
@@ -132,7 +132,7 @@ def terminal_shell(
     wrapper.write_text(
         "import os,sys\nfrom pathlib import Path\nos.environ['PATH']=str(Path.cwd()/'bin')\nos.execv(sys.argv[1],sys.argv[1:])\n"
     )
-    flags = ["--kubeconfig", str(path), "--context", "kubetrol-test-pty"]
+    flags = ["--kubeconfig", str(path), "--context", "kuberich-test-pty"]
     if scenario == "readonly":
         flags.append("--readonly")
     invocation = [sys.executable, str(wrapper), *command, *flags]
@@ -154,7 +154,7 @@ def terminal_shell(
                 if scenario == "early_close" and attempt == 0:
                     # Keep draining the PTY before waiting on the API gate;
                     # otherwise SSH output backpressure can stall the fixture.
-                    terminal.wait_for_screen("Kubetrol · Container shell")
+                    terminal.wait_for_screen("KubeRich · Container shell")
                     assert server.pod_requested.wait(5), "Shell preflight did not reach its gate"
                     terminal.send(b"pending input\x1d")
                     terminal.wait_for_screen("Shell closed")
@@ -172,13 +172,13 @@ def terminal_shell(
                     assert b"SHELL CHILD START" not in terminal.transcript[marker:]
                     if scenario in {"readonly", "deleted"}:
                         assert (
-                            b"Kubetrol shell | exit to return" not in terminal.transcript[marker:]
+                            b"KubeRich shell | exit to return" not in terminal.transcript[marker:]
                         )
                     break
                 terminal.wait_for_screen("SHELL CHILD START")
                 entering = terminal.transcript[marker:]
-                terminal.wait_for_screen("Kubetrol · Container shell")
-                terminal.wait_for_screen("Context: kubetrol-test-pty")
+                terminal.wait_for_screen("KubeRich · Container shell")
+                terminal.wait_for_screen("Context: kuberich-test-pty")
                 terminal.wait_for_screen("Pod: default/owned-pty-pod-079")
                 terminal.wait_for_screen("Container: worker")
                 terminal.wait_for_screen("SHELL CHILD START")
@@ -196,7 +196,7 @@ def terminal_shell(
                     terminal.wait_for_screen("SHELL CHILD SIZE 88 22")
                     terminal.resize(100, 30)
                     terminal.wait_for_screen("SHELL CHILD SIZE 98 24")
-                    terminal.wait_for_screen("Kubetrol · Container shell")
+                    terminal.wait_for_screen("KubeRich · Container shell")
                     terminal.send(b"normal\n")
                     terminal.wait_for_screen("PROTOCOL RETURNED")
                     terminal.wait_for_screen("PROTOCOL NORMAL café 你好🙂")

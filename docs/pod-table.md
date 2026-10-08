@@ -6,7 +6,7 @@ shows all namespaces. Startup flags also work:
 
 ```sh
 uv sync --locked --group dev
-uv run kubetrol --context YOUR_CONTEXT -n YOUR_NAMESPACE
+uv run kuberich --context YOUR_CONTEXT -n YOUR_NAMESPACE
 ```
 
 This uses your trusted local kubeconfig and credential helpers. The table performs

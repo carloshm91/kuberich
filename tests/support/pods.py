@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime
 
-from kubetrol.domain.resources import ResourceSnapshot, resource_record
+from kuberich.domain.resources import ResourceSnapshot, resource_record
 from tests.support.resources import item, pod_resource
 
 NOW = datetime(2026, 10, 5, 5, tzinfo=UTC)

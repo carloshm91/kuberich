@@ -19,7 +19,7 @@ def owned_context(tmp_path: Path) -> DisposableContext:
     root = tmp_path / "owned-cluster"
     root.mkdir()
     fixture = DisposableContext(
-        root, root / "kubeconfig", "kubetrol-test-owned", "http://127.0.0.1:64321"
+        root, root / "kubeconfig", "kuberich-test-owned", "http://127.0.0.1:64321"
     )
     data = {
         "apiVersion": "v1",
@@ -145,7 +145,7 @@ def test_external_ca_files_and_proxy_endpoints_are_rejected(
 @pytest.mark.parametrize(
     "contents",
     [
-        b"current-context: kubetrol-test-owned\ncurrent-context: production\n",
+        b"current-context: kuberich-test-owned\ncurrent-context: production\n",
         b"contexts: &contexts [fixture]\nclusters: *contexts\n",
         b"!unsafe fixture",
         b"\xff",
@@ -208,7 +208,7 @@ def test_fixture_paths_cannot_escape_the_owned_directory_or_use_special_files(
 
 
 def test_new_catalog_reader_rejects_files_outside_owned_test_directory(tmp_path: Path) -> None:
-    from kubetrol.config import catalog
+    from kuberich.config import catalog
 
     with pytest.raises(AssertionError, match="owned temporary files"):
         catalog.regular_bytes(tmp_path.parent / "unowned-kubeconfig")
@@ -237,7 +237,7 @@ async def test_new_adapter_guard_rejects_remote_identity_or_proxy(
 
 @pytest.mark.asyncio
 async def test_new_helper_guard_rejects_unowned_working_directory(tmp_path: Path) -> None:
-    from kubetrol.adapters import credentials
+    from kuberich.adapters import credentials
 
     with pytest.raises(AssertionError, match="owned temporary working directory"):
         await credentials._execute(["never-start"], {}, tmp_path.parent, 1)

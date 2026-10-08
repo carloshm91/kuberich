@@ -9,14 +9,14 @@ from typing import Any
 
 from kubernetes_asyncio import client
 
-from kubetrol.config.catalog import load_catalog
-from kubetrol.domain.connections import ConnectionRequest
-from kubetrol.domain.port_forwards import ForwardState, parse_mappings
-from kubetrol.domain.targets import ResourceTarget
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.port_forwards import ForwardInfo, ForwardManager, ForwardService
-from kubetrol.services.processes import ProcessRunner
-from kubetrol.services.sessions import SessionService
+from kuberich.config.catalog import load_catalog
+from kuberich.domain.connections import ConnectionRequest
+from kuberich.domain.port_forwards import ForwardState, parse_mappings
+from kuberich.domain.targets import ResourceTarget
+from kuberich.services.access import AccessPolicy
+from kuberich.services.port_forwards import ForwardInfo, ForwardManager, ForwardService
+from kuberich.services.processes import ProcessRunner
+from kuberich.services.sessions import SessionService
 from scripts.owned_kind import NODE_IMAGE, OwnedCluster, owned_cluster, run_owned
 
 FORWARD_IMAGE = (
@@ -67,7 +67,7 @@ async def gone(info: ForwardInfo) -> None:
 
 
 async def verify(cluster: OwnedCluster, kubectl: Path) -> dict[str, Any]:
-    namespace = "kubetrol-owned-forward"
+    namespace = "kuberich-owned-forward"
     request = ConnectionRequest(
         kubeconfig=str(cluster.path), context=cluster.context, namespace=namespace, timeout=15
     )

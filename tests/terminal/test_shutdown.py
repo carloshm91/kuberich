@@ -12,7 +12,7 @@ from tests.terminal.pty_support import TerminalSession
 @pytest.mark.parametrize("signum,code", [(signal.SIGHUP, 129), (signal.SIGTERM, 143)])
 def test_external_signal_restores_workspace_terminal(tmp_path, signum, code):
     script = (
-        "import os\nfrom pathlib import Path\nfrom kubetrol.cli import main\n"
+        "import os\nfrom pathlib import Path\nfrom kuberich.cli import main\n"
         "Path('application.pid').write_text(str(os.getpid()))\n"
         "raise SystemExit(main())\n"
     )

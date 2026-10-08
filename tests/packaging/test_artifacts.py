@@ -16,7 +16,7 @@ from tests.support.distribution import PROJECT, ROOT, run
 
 
 def package_payload(root: Path = ROOT) -> dict[str, bytes]:
-    package = root / "src/kubetrol"
+    package = root / "src/kuberich"
     return {
         path.relative_to(root / "src").as_posix(): path.read_bytes()
         for path in package.rglob("*")
@@ -34,7 +34,7 @@ def wheel_payload(path: Path) -> dict[str, bytes]:
 
 
 def sdist_payload(path: Path) -> dict[str, bytes]:
-    expected_root = f"kubetrol-{PROJECT['version']}"
+    expected_root = f"kuberich-{PROJECT['version']}"
     with tarfile.open(path) as archive:
         members = archive.getmembers()
         assert len(members) == len({member.name for member in members})
@@ -77,7 +77,7 @@ def assert_metadata(payload: bytes) -> None:
 
 def test_complete_wheel_payload_and_runtime_metadata(artifacts):
     payload = wheel_payload(artifacts[0])
-    prefix = f"kubetrol-{PROJECT['version']}.dist-info"
+    prefix = f"kuberich-{PROJECT['version']}.dist-info"
     metadata_files = {
         f"{prefix}/{name}"
         for name in ("METADATA", "WHEEL", "RECORD", "entry_points.txt", "licenses/LICENSE")
@@ -89,7 +89,7 @@ def test_complete_wheel_payload_and_runtime_metadata(artifacts):
     assert_metadata(payload[f"{prefix}/METADATA"])
     entries = configparser.ConfigParser()
     entries.read_string(payload[f"{prefix}/entry_points.txt"].decode())
-    assert dict(entries["console_scripts"]) == {"kubetrol": "kubetrol.cli:main"}
+    assert dict(entries["console_scripts"]) == {"kuberich": "kuberich.cli:main"}
     assert list(entries) == ["DEFAULT", "console_scripts"]
     wheel = BytesParser().parsebytes(payload[f"{prefix}/WHEEL"])
     assert wheel["Root-Is-Purelib"] == "true"
@@ -113,7 +113,7 @@ def test_complete_sdist_payload_without_development_or_private_files(artifacts):
 def test_sdist_rebuild_produces_identical_wheel_payload(artifacts, tmp_path):
     with tarfile.open(artifacts[1]) as archive:
         archive.extractall(tmp_path, filter="data")
-    source = next(tmp_path.glob("kubetrol-*"))
+    source = next(tmp_path.glob("kuberich-*"))
     uv = shutil.which("uv")
     assert uv is not None
     output = tmp_path / "rebuilt"
@@ -136,12 +136,12 @@ def test_build_rejects_untracked_credentials_caches_and_development_files(tmp_pa
         "scripts/trap.py",
         "tmp/user.log",
         ".venv/cache.py",
-        "src/kubetrol/credential.key",
-        "src/kubetrol/kubeconfig.yaml",
-        "src/kubetrol/.env",
-        "src/kubetrol/debug.log",
-        "src/kubetrol/__pycache__/cache.py",
-        "src/kubetrol/__pycache__/cache.pyc",
+        "src/kuberich/credential.key",
+        "src/kuberich/kubeconfig.yaml",
+        "src/kuberich/.env",
+        "src/kuberich/debug.log",
+        "src/kuberich/__pycache__/cache.py",
+        "src/kuberich/__pycache__/cache.pyc",
     ):
         path = source / name
         path.parent.mkdir(parents=True, exist_ok=True)

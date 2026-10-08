@@ -61,7 +61,7 @@ def test_actual_http_main_qualification_is_readonly_and_source_version_matches(t
         server.reads = {"/" + path: value for path, value in trusted_api().items()}
         server.reads[f"/repos/{REPOSITORY}/contents/pyproject.toml?ref={SHA}"] = {
             "content": base64.b64encode(
-                b'[project]\nname="kubetrol"\nversion="0.0.1rc1"\n'
+                b'[project]\nname="kuberich"\nversion="0.0.1rc1"\n'
             ).decode()
         }
         files = {
@@ -193,9 +193,9 @@ def test_bounded_api_refuses_redirects_and_does_not_disclose_error_body(tmp_path
         ("GITHUB_EVENT_NAME", "pull_request"),
         ("GITHUB_ACTOR", "contributor"),
         ("GITHUB_REF", "refs/heads/feature"),
-        ("GITHUB_REPOSITORY", "fork/kubetrol"),
+        ("GITHUB_REPOSITORY", "fork/kuberich"),
         ("GITHUB_SHA", "b" * 40),
-        ("GITHUB_WORKFLOW_REF", "carloshm91/kubetrol/.github/workflows/other.yml@refs/heads/main"),
+        ("GITHUB_WORKFLOW_REF", "carloshm91/kuberich/.github/workflows/other.yml@refs/heads/main"),
     ],
 )
 def test_only_owner_main_dispatch_can_reach_publication_checks(monkeypatch, key, value):

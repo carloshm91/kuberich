@@ -1,6 +1,6 @@
 # Terminal preview
 
-Run `uv run kubetrol` or `uv run python -m kubetrol` in an interactive terminal.
+Run `uv run kuberich` or `uv run python -m kuberich` in an interactive terminal.
 The current development build opens the workspace directly, without a splash
 delay. It loads a local kubeconfig catalogue before the UI, then authenticates and
 discovers namespaces in an owned background session. Without a selected context

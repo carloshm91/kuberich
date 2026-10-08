@@ -6,7 +6,7 @@ from decimal import Decimal
 
 import pytest
 
-from kubetrol.domain.registry import (
+from kuberich.domain.registry import (
     RESOURCE_ALIASES,
     STANDARD_RESOURCES,
     order_resources,
@@ -14,10 +14,10 @@ from kubetrol.domain.registry import (
     resource_row,
     resource_selection,
 )
-from kubetrol.errors import AppError
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.commands import CommandService, ResourceCommand, suggestions
-from kubetrol.services.filtering import filter_rows
+from kuberich.errors import AppError
+from kuberich.services.access import AccessPolicy
+from kuberich.services.commands import CommandService, ResourceCommand, suggestions
+from kuberich.services.filtering import filter_rows
 from tests.support.standard import api, row_record
 
 EXPECTED = (
@@ -302,7 +302,7 @@ def test_timestamp_sort_uses_instant_not_timezone_spelling():
 def test_initial_cli_passes_the_real_resource_command_to_launcher(
     tmp_path, monkeypatch, definition
 ):
-    from kubetrol import cli
+    from kuberich import cli
 
     captured = []
     monkeypatch.setattr(

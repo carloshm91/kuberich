@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 from aiohttp import web
 
-from kubetrol.domain.connections import ConnectionRequest
-from kubetrol.errors import AppError
+from kuberich.domain.connections import ConnectionRequest
+from kuberich.errors import AppError
 from scripts.verify_eks_auth import verify
 from tests.support.azure import azure_calls, azure_entry
 from tests.support.connections import catalog_fixture
@@ -34,7 +34,7 @@ async def test_aks_verifier_refuses_wrong_or_unknown_provider(tmp_path, provider
         await verify(
             ConnectionRequest(
                 kubeconfig=str(tmp_path / "fixture-config"),
-                context="kubetrol-test-one",
+                context="kuberich-test-one",
                 namespace="team",
             ),
             tmp_path / "kubectl",
@@ -63,7 +63,7 @@ async def test_aks_verifier_forced_refresh_reads_and_private_file_cleanup(tmp_pa
         result = await verify(
             ConnectionRequest(
                 kubeconfig=str(tmp_path / "fixture-config"),
-                context="kubetrol-test-one",
+                context="kuberich-test-one",
                 namespace="team",
             ),
             kubectl,

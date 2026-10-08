@@ -7,10 +7,10 @@ from pathlib import Path
 
 import pytest
 
-from kubetrol import cli
-from kubetrol.config.schema import Settings
-from kubetrol.services.commands import Command
-from kubetrol.ui.presentation import Presentation
+from kuberich import cli
+from kuberich.config.schema import Settings
+from kuberich.services.commands import Command
+from kuberich.ui.presentation import Presentation
 
 
 @pytest.mark.parametrize(
@@ -121,15 +121,15 @@ def test_inspection_commands_do_not_load_broken_preferences_or_credentials(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    monkeypatch.setenv("KUBETROL_CONFIG", "/nonexistent/opaque-secret")
-    monkeypatch.setenv("KUBETROL_READONLY", "invalid")
+    monkeypatch.setenv("KUBERICH_CONFIG", "/nonexistent/opaque-secret")
+    monkeypatch.setenv("KUBERICH_READONLY", "invalid")
     assert cli.main(arguments) == 0
     output = capsys.readouterr()
     assert output.err == "" and "opaque-secret" not in output.out
     if arguments == ["help"]:
         assert output.out == cli._parser().format_help()
     else:
-        expected = version("kubetrol") if len(arguments) > 1 else f"kubetrol {version('kubetrol')}"
+        expected = version("kuberich") if len(arguments) > 1 else f"kuberich {version('kuberich')}"
         assert output.out == expected + "\n"
 
 
@@ -187,8 +187,8 @@ def test_refresh_precedence_is_shared_by_diagnostics_and_terminal(
 ) -> None:
     path = tmp_path / "preferences.yaml"
     path.write_text("schema_version: 1\nrefresh_seconds: 7\n")
-    monkeypatch.setenv("KUBETROL_CONFIG", str(path))
-    monkeypatch.setenv("KUBETROL_REFRESH", "5")
+    monkeypatch.setenv("KUBERICH_CONFIG", str(path))
+    monkeypatch.setenv("KUBERICH_REFRESH", "5")
     assert cli.main([flag, "3.5", "info"]) == 0
     assert json.loads(capsys.readouterr().out)["preferences"]["refresh_seconds"] == 3.5
     assert cli.main([flag, "3.5", "config", "check"]) == 0
@@ -251,8 +251,8 @@ def test_explicit_readonly_choice_overrides_environment_and_file_without_persist
     path = tmp_path / "preferences.yaml"
     contents = f"schema_version: 1\nread_only: {str(file_readonly).lower()}\n"
     path.write_text(contents)
-    monkeypatch.setenv("KUBETROL_CONFIG", str(path))
-    monkeypatch.setenv("KUBETROL_READONLY", env_readonly)
+    monkeypatch.setenv("KUBERICH_CONFIG", str(path))
+    monkeypatch.setenv("KUBERICH_READONLY", env_readonly)
     assert cli.main([flag, "info"]) == 0
     assert json.loads(capsys.readouterr().out)["preferences"]["read_only"] is expected
     assert path.read_text() == contents

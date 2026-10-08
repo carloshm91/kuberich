@@ -14,10 +14,10 @@ APP = """
 import asyncio, json, logging, os, signal, sys
 from pathlib import Path
 from aiohttp import web
-from kubetrol.config.catalog import load_catalog
-from kubetrol.config.schema import Settings
-from kubetrol.domain.connections import ConnectionRequest
-from kubetrol.ui.app import KubetrolApp
+from kuberich.config.catalog import load_catalog
+from kuberich.config.schema import Settings
+from kuberich.domain.connections import ConnectionRequest
+from kuberich.ui.app import KubeRichApp
 
 directory=Path.cwd()
 scenario=sys.argv[1]
@@ -32,7 +32,7 @@ async def handler(request):
         return response
     return web.json_response(roots.get(request.path, roots['collection']))
 
-class LoginApp(KubetrolApp):
+class LoginApp(KubeRichApp):
     async def _credential_login(self, credentials):
         self.login_owner=asyncio.current_task()
         return await super()._credential_login(credentials)
@@ -83,12 +83,12 @@ def azure_terminal_trial(python: str, parent: Path, scenario: str, *, name: str)
     (directory / "azure-config").write_text(
         json.dumps(
             {
-                "current-context": "kubetrol-test-azure",
+                "current-context": "kuberich-test-azure",
                 "clusters": [{"name": "owned", "cluster": {"server": "http://127.0.0.1:1"}}],
                 "users": [{"name": "owned", "user": user}],
                 "contexts": [
                     {
-                        "name": "kubetrol-test-azure",
+                        "name": "kuberich-test-azure",
                         "context": {"cluster": "owned", "user": "owned", "namespace": "team"},
                     }
                 ],

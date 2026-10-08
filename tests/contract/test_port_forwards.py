@@ -11,11 +11,11 @@ from uuid import uuid4
 import pytest
 from aiohttp import web
 
-from kubetrol.domain.port_forwards import ForwardState, parse_mappings
-from kubetrol.errors import AppError
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.port_forwards import ForwardManager
-from kubetrol.services.processes import ProcessRunner
+from kuberich.domain.port_forwards import ForwardState, parse_mappings
+from kuberich.errors import AppError
+from kuberich.services.access import AccessPolicy
+from kuberich.services.port_forwards import ForwardManager
+from kuberich.services.processes import ProcessRunner
 from tests.support.port_forwards import manifest, source
 from tests.support.resources import reader_fixture
 
@@ -67,7 +67,7 @@ async def test_actual_owned_tcp_listener_scope_readiness_and_deliberate_stop(
         writer.close()
         await writer.wait_closed()
         argv = json.loads((tmp_path / "forward-argv.json").read_text())
-        assert argv[1:3] == ["--context=kubetrol-test-one", "--namespace=team"]
+        assert argv[1:3] == ["--context=kuberich-test-one", "--namespace=team"]
         assert argv[-2:] == [f"{'pod' if resource == 'pods' else 'service'}/web", "0:80"]
         assert reads[:2] == [f"/api/v1/namespaces/team/{resource}/web"] * 2
         path = Path(argv[0].split("=", 1)[1])
@@ -268,7 +268,7 @@ async def test_repeated_cancellation_drains_private_file_creation_and_cleanup(
 ):
     import threading
 
-    from kubetrol.services.delegation import ConnectionFile
+    from kuberich.services.delegation import ConnectionFile
 
     started, release = threading.Event(), threading.Event()
     original = ConnectionFile.write
@@ -317,7 +317,7 @@ async def test_repeated_cancellation_drains_private_file_creation_and_cleanup(
 async def test_cancel_during_collision_probe_drains_the_owned_thread(tmp_path, monkeypatch):
     import threading
 
-    from kubetrol.services import port_forwards
+    from kuberich.services import port_forwards
 
     started, release = threading.Event(), threading.Event()
 
@@ -349,7 +349,7 @@ async def test_cancel_during_collision_probe_drains_the_owned_thread(tmp_path, m
 
 @pytest.mark.asyncio
 async def test_unexpected_preparation_failure_still_cleans_private_material(tmp_path, monkeypatch):
-    from kubetrol.services.delegation import ConnectionFile
+    from kuberich.services.delegation import ConnectionFile
 
     original = ConnectionFile.write
 
@@ -380,7 +380,7 @@ async def test_unexpected_preparation_failure_still_cleans_private_material(tmp_
 
 
 def test_delegated_purpose_cannot_use_an_unrecognized_private_file_prefix(tmp_path):
-    from kubetrol.services.delegation import capture_delegation
+    from kuberich.services.delegation import capture_delegation
 
     with pytest.raises(AppError, match="Unsupported"):
         capture_delegation(None, {}, tmp_path, prefix="other")

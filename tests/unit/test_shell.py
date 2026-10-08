@@ -5,22 +5,22 @@ from dataclasses import replace
 import pytest
 from kubernetes_asyncio import client
 
-from kubetrol.adapters.credentials import ExecToken
-from kubetrol.adapters.kubernetes import KubernetesSession
-from kubetrol.config.catalog import ContextConfig, Entry
-from kubetrol.config.schema import (
+from kuberich.adapters.credentials import ExecToken
+from kuberich.adapters.kubernetes import KubernetesSession
+from kuberich.config.catalog import ContextConfig, Entry
+from kuberich.config.schema import (
     ConfigDocument,
     Settings,
     parse_document,
     resolve_settings,
     settings_from,
 )
-from kubetrol.domain.processes import ProcessResult, ProcessStatus
-from kubetrol.domain.shell import shell_banner, shell_result, verify_shell_target
-from kubetrol.domain.targets import ResourceTarget, SessionIdentity
-from kubetrol.errors import AppError
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.commands import Command, CommandService
+from kuberich.domain.processes import ProcessResult, ProcessStatus
+from kuberich.domain.shell import shell_banner, shell_result, verify_shell_target
+from kuberich.domain.targets import ResourceTarget, SessionIdentity
+from kuberich.errors import AppError
+from kuberich.services.access import AccessPolicy
+from kuberich.services.commands import Command, CommandService
 from tests.support.pods import pod, record
 
 
@@ -52,7 +52,7 @@ def test_shell_heading_is_literal_and_redacts_credentials_in_context_names():
     heading = shell_banner(value, 100)
     assert "[red]" in heading and "sensitive-owned-value" not in heading
     assert "Pod: team/api" in heading and "Container: app" in heading
-    assert heading.startswith("Kubetrol shell | exit to return\nContext: ")
+    assert heading.startswith("KubeRich shell | exit to return\nContext: ")
 
 
 @pytest.mark.parametrize(

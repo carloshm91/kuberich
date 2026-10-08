@@ -9,7 +9,7 @@ from tests.support.release_server import release_server
 from tests.support.tap_server import TapServer
 
 SHA = "a" * 40
-TEXT = '# Source version: 0.0.1\nclass Kubetrol < Formula\n  url "file:///owned/kubetrol-0.0.1.tar.gz"\nend\n'
+TEXT = '# Source version: 0.0.1\nclass Kuberich < Formula\n  url "file:///owned/kuberich-0.0.1.tar.gz"\nend\n'
 
 
 @pytest.mark.parametrize(
@@ -78,7 +78,7 @@ def test_actual_update_git_objects_and_retry_never_change_main_or_duplicate_pr(t
         with pytest.raises(ValueError, match="HTTP 503"):
             propose(api, TEXT, SHA, "0.0.1")
         assert server.command("rev-parse", "refs/heads/main").strip() == server.sha
-        branch = "refs/heads/release/kubetrol-0.0.1-" + SHA[:12]
+        branch = "refs/heads/release/kuberich-0.0.1-" + SHA[:12]
         original = server.command("rev-parse", branch).strip()
         assert server.command("show", branch + ":" + FORMULA) == TEXT
         before = len(server.posts)
@@ -116,7 +116,7 @@ def test_published_formula_cannot_be_downgraded_or_changed_at_same_version(tmp_p
     with release_server(tmp_path, factory=TapServer) as server:
         api = TapGitHub("synthetic-tap-token", server.url)
         propose(api, TEXT, SHA, "0.0.1")
-        branch = "refs/heads/release/kubetrol-0.0.1-" + SHA[:12]
+        branch = "refs/heads/release/kuberich-0.0.1-" + SHA[:12]
         server.command("update-ref", "refs/heads/main", server.command("rev-parse", branch).strip())
         before = len(server.posts)
         assert propose(api, TEXT, SHA, "0.0.1") == "unchanged"

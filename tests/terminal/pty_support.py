@@ -81,16 +81,16 @@ class TerminalSession:
         environment = {
             name: value
             for name, value in os.environ.items()
-            if not name.startswith(("KUBETROL_", "TEXTUAL"))
+            if not name.startswith(("KUBERICH_", "KUBETROL_", "TEXTUAL"))
         }
         environment.pop("PYTHONPATH", None)
         environment.pop("NO_COLOR", None)
         environment.pop("COLUMNS", None)
         environment.pop("LINES", None)
         environment["TERM"] = "xterm-256color"
-        environment["KUBETROL_CONFIG"] = str(preferences)
-        environment["KUBETROL_LOG_FILE"] = str(directory / "kubetrol.log")
-        environment["KUBETROL_LOG_LEVEL"] = "DEBUG"
+        environment["KUBERICH_CONFIG"] = str(preferences)
+        environment["KUBERICH_LOG_FILE"] = str(directory / "kuberich.log")
+        environment["KUBERICH_LOG_LEVEL"] = "DEBUG"
         environment["KUBECONFIG"] = str(directory / "never-use-a-real-cluster")
         environment.update(overrides)
 

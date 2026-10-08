@@ -37,7 +37,7 @@ attestation; standalone dependency redistribution remains D05 #49.
 `scripts/supply_chain_policy.json` is reviewed with the code. There are currently
 no vulnerability exceptions. Every reported vulnerability blocks unless a single
 matching exception specifies its normalized package, exact version, CVE/GHSA/PYSEC,
-Kubetrol issue, accountable GitHub owner, mitigation rationale and an expiry within
+KubeRich issue, accountable GitHub owner, mitigation rationale and an expiry within
 90 days. Missing fields, wildcard versions, blanket ignores, expired exceptions
 and ambiguous alias matches are rejected. Production exceptions require review
 in their tracked issue and PR; passing a synthetic waiver test grants no waiver.
@@ -49,7 +49,7 @@ python-dateutil's original notice states that its BSD license covers all its cod
 the generated notices preserve both license sections.
 
 Pyte 0.8.2 remains an unmodified, dynamically imported LGPL-3.0-only dependency.
-Kubetrol's own code remains MIT. Preserve Pyte's original license, authors and
+KubeRich's own code remains MIT. Preserve Pyte's original license, authors and
 corresponding source when bundling a standalone distribution, and preserve users'
 ability to replace the library as required by its license. The candidate manifest
 records the pinned Pyte source archive URL and SHA-256 from uv.lock. wcwidth and
@@ -60,10 +60,10 @@ composition. A future bundler must qualify its concrete redistribution method.
 ## Runtime security boundaries
 
 The full deterministic inventory remains the 29 modules listed under
-`tool.kubetrol.coverage.critical_modules`. Each must independently reach 100% lines
+`tool.kuberich.coverage.critical_modules`. Each must independently reach 100% lines
 and branches; gate scripts and their negative controls are development code and
 do not inflate application coverage. See [quality](quality.md),
-[security primitives](security-primitives.md) and [the threat model](kubetrol-threat-model.md).
+[security primitives](security-primitives.md) and [the threat model](kuberich-threat-model.md).
 
 Actual child-process tests demonstrate that selected values containing shell
 substitutions, quotes, semicolons and option-looking text remain literal argv.

@@ -6,4 +6,4 @@ from tests.support.mutation_terminal import terminal_mutation
 
 
 def test_actual_terminal_explicit_confirmation(tmp_path):
-    terminal_mutation([sys.executable, "-m", "kubetrol"], tmp_path, "mutations")
+    terminal_mutation([sys.executable, "-m", "kuberich"], tmp_path, "mutations")

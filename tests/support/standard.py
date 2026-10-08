@@ -4,8 +4,8 @@ from contextlib import asynccontextmanager
 
 from aiohttp import web
 
-from kubetrol.domain.registry import STANDARD_RESOURCES
-from kubetrol.domain.resources import api_resource, resource_record
+from kuberich.domain.registry import STANDARD_RESOURCES
+from kuberich.domain.resources import api_resource, resource_record
 from tests.support.connections import namespaces
 from tests.support.resources import descriptor, item, legacy_roots, reader_fixture
 from tests.support.workspace import stable_watch
