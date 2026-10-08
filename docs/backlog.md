@@ -17,6 +17,16 @@ from parser tests alone. See [current CLI behavior](k9s-cli.md).
 
 ## Current maintainer priority
 
+Public Actions execution revealed required native macOS failures on the current
+main. Focused prerequisite [#157](https://github.com/carloshm91/kuberich/issues/157)
+repairs terminal verification and repository diff checks before #46 delivery.
+Keep #46's implementation/evidence on its issue branch while this prerequisite
+receives its own checks and PR; do not merge a failing macOS matrix.
+After #157 and #46, #154 reconciles the maintainer's current order: product
+features first, dedicated final compatibility/performance/installation next,
+then website/docs delivery through GitHub and Cloudflare Pages. Per-feature
+verification continues throughout; publication remains a later release action.
+
 On 2026-10-08 the maintainer interrupted #46 to approve Apache-2.0 licensing
 and opening the source repository in #155. Complete that focused task, then
 resume #46's frozen implementation and qualification. Public source development

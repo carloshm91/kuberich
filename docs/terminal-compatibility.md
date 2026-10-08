@@ -68,6 +68,16 @@ normal/alternate buffer text after shrinking a rendered terminal.
 Additional failing witnesses cover deferred header callbacks after view removal
 and a stale queued resize event overriding the actual native TTY dimensions.
 
+Follow-up #157 makes the test observer accept private device-status queries
+without injecting artificial input into the application. Actual terminal bytes
+still determine the observed screen. Raw termios values remain in the evidence;
+only Darwin's kernel-maintained `PENDIN` bit is normalized when comparing
+restoration. Darwin sets that bit when returning to canonical mode and preserves
+it across attribute updates. Every other flag, both speeds and every control
+character remain exact comparisons; negative controls reject their changes.
+See [Apple's tty implementation](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/tty.c)
+and [#157 qualification](acceptance/macos-terminal-verification.md).
+
 Linux results and tool versions are recorded in the issue-linked acceptance
 report. macOS jobs and physical terminal-emulator/manual clipboard checks remain
 unavailable or unperformed unless that report supplies actual results. Linux

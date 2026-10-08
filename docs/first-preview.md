@@ -1,5 +1,17 @@
 # First things to try
 
+## Public hosted verification checkpoint: #157
+
+The public source repository can execute standard Linux/macOS Actions again.
+Required macOS execution exposed terminal-observer/driver assumptions; #157
+repairs them without changing application behavior or skipping platform tests.
+The exact focused verification command is
+`uv run --locked pytest -q tests/terminal/test_observer.py tests/unit/test_terminal_lease.py tests/contract/test_mutation_faults.py`.
+See [acceptance evidence](acceptance/macos-terminal-verification.md) and the linked
+issue/PR for delivered-head hosted results. #46 remains on its issue branch until
+this prerequisite and its own checks pass. The first public product release
+remains 1.0.0; source opening does not publish package or website artifacts.
+
 ## Apache-2.0 and public source checkpoint: #155
 
 The maintainer approved opening `carloshm91/kuberich` under Apache-2.0 on

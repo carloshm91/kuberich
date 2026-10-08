@@ -1,7 +1,6 @@
 """Confirmation tampering, helper refresh, pre-send faults and repeated cancellation."""
 
 import asyncio
-import socket
 import sys
 import threading
 from dataclasses import replace
@@ -15,7 +14,8 @@ from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
 from kuberich.services.mutations import MutationManager, MutationService
 from tests.contract.test_mutations import source_fixture
-from tests.support.connections import catalog_fixture
+from tests.support.connections import catalog_fixture, certificate
+from tests.support.mutations import mutation_api
 from tests.unit.test_mutations import selection
 
 
@@ -133,16 +133,17 @@ async def test_bounded_history_active_limit_and_unprepared_source(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_anonymous_owned_transport_and_known_connection_refusal(tmp_path):
+async def test_anonymous_owned_transport_and_known_tls_refusal(tmp_path):
     async with source_fixture(tmp_path, user={}) as (source, api, _):
         intent = await source.prepare_annotation("key", "value")
         assert (await source.execute(source.confirm(intent))).state is MutationState.SUCCEEDED
         assert "Authorization" not in dict(api.requests[0][1])
-    with socket.socket() as unused:
-        unused.bind(("127.0.0.1", 0))  # Own the numeric port without accepting connections.
-        url = f"http://127.0.0.1:{unused.getsockname()[1]}"
+    tls, _ = certificate(tmp_path)
+    async with mutation_api(tls=tls) as (url, api):
+        # A real private CA is deliberately absent from this second client.
+        # A merely bound TCP port can drop SYNs on Darwin instead of refusing.
         client = KubernetesSession(
-            catalog_fixture(tmp_path, url, user={}).select("kuberich-test-one"), 0.2
+            catalog_fixture(tmp_path, url, user={}).select("kuberich-test-one"), 2
         )
         await client.open()
         resource, target, record = selection()
@@ -152,6 +153,7 @@ async def test_anonymous_owned_transport_and_known_connection_refusal(tmp_path):
             assert (
                 await conditional_patch(client, intent, source.require_current)
             ).state is MutationState.UNREACHABLE
+            assert api.requests == []
         finally:
             await client.close()
 
