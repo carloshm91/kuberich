@@ -71,6 +71,13 @@ class HandoffApp(KubetrolApp):
         self.call_after_refresh(lambda: setattr(self.query_one('#command-bar'),
             'border_title', 'READY ' + str(self.size.width) + ' ' + str(self.size.height)
             + ' #' + str(self.probes)))
+    def on_resize(self, event):
+        # A tmux resize can reach the app after the probe key. Keep the same
+        # key counter and repaint its geometry witness after that actual event.
+        if self.probes:
+            self.call_after_refresh(lambda: setattr(self.query_one('#command-bar'),
+                'border_title', 'READY ' + str(self.size.width) + ' ' + str(self.size.height)
+                + ' #' + str(self.probes)))
     async def handoff(self):
         self.owner = asyncio.current_task()
         self.attempt += 1

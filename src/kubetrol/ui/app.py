@@ -56,6 +56,7 @@ from kubetrol.services.commands import (
     ScopedCommand,
     suggestions,
 )
+from kubetrol.services.editing import EditingService
 from kubetrol.services.filtering import apply_filter
 from kubetrol.services.inspection import InspectionService
 from kubetrol.services.logs import LogStream
@@ -82,6 +83,7 @@ from kubetrol.ui.chrome import (
 from kubetrol.ui.commands import CommandInput, NavigationInput
 from kubetrol.ui.containers import ContainerScreen
 from kubetrol.ui.contexts import ContextTable
+from kubetrol.ui.editing import EditingScreen
 from kubetrol.ui.handoff import terminal_handoff
 from kubetrol.ui.inspection import InspectionScreen, Page
 from kubetrol.ui.logs import LogScreen
@@ -129,7 +131,7 @@ class HelpScreen(ModalScreen[None]):
                         "Ctrl+C            Quit\n\n"
                         "Commands: po/pod/pods [NS or *], ctx [NAME], ns [NAME or *], "
                         "status, retry, login, back, forward, shell/exec, pf/portforwards, "
-                        "portforward, annotate, writes, help, quit.\n"
+                        "portforward, annotate, edit (Shift+E), writes, help, quit.\n"
                         "Resources: deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, "
                         "no, pvc, pv, sc. Namespaced resources accept [NS or *].\n"
                         "Filter: plain case-insensitive text; re:PATTERN for regex. "
@@ -176,6 +178,7 @@ class KubetrolApp(App[None]):
         Binding("y", "inspect_yaml", "YAML"),
         Binding("d", "inspect_details", "Details"),
         Binding("e", "inspect_events", "Events"),
+        Binding("E", "edit", "Edit", key_display="Shift+E"),
         Binding("l", "logs", "Logs"),
         Binding("x", "shell", "Shell"),
         Binding("F", "port_forward", "Port forward", key_display="Shift+F"),
@@ -711,7 +714,8 @@ class KubetrolApp(App[None]):
             *(
                 screen.stop_owned()
                 for screen in tuple(self.screen_stack)
-                if isinstance(screen, AnnotationScreen) and screen.source.client is client
+                if isinstance(screen, (AnnotationScreen, EditingScreen))
+                and screen.source.client is client
             ),
         )
         try:
@@ -821,6 +825,31 @@ class KubetrolApp(App[None]):
     def action_writes(self) -> None:
         if not isinstance(self.screen, ModalScreen):
             self.push_screen(MutationHistoryScreen(self.mutations))
+
+    def action_edit(self) -> None:
+        try:
+            self.commands.policy.require(Action.MUTATE)
+        except AppError as error:
+            self._set_status(str(error))
+            return
+        selection = self._capture_target()
+        if selection is not None:
+            client, resource, _, target, current = selection
+            source = EditingService(client, resource, target, self.commands.policy, current)
+            try:
+                source.require_current()
+            except AppError:
+                self._set_status("Select a readable, patchable resource before editing.")
+                return
+            self.push_screen(
+                EditingScreen(
+                    source,
+                    self.mutations,
+                    self.processes,
+                    self._process_environment,
+                    self._process_directory,
+                )
+            )
 
     def _forward_started(self, identity: UUID | None) -> None:
         if identity is not None:
@@ -1166,6 +1195,7 @@ class KubetrolApp(App[None]):
             "inspect_yaml",
             "inspect_details",
             "inspect_events",
+            "edit",
             "logs",
             "shell",
             "port_forward",
@@ -1187,6 +1217,10 @@ class KubetrolApp(App[None]):
     async def action_back(self) -> None:
         if isinstance(self.screen, (InspectionScreen, LogScreen)):
             self.screen.back()
+        elif isinstance(self.screen, (AnnotationScreen, EditingScreen)):
+            screen = self.screen
+            await screen.stop_owned()
+            screen.dismiss()
         elif isinstance(self.screen, ModalScreen):
             self.screen.dismiss()
         elif isinstance(self.focused, Input):
@@ -1283,6 +1317,8 @@ class KubetrolApp(App[None]):
             self.action_annotate()
         elif command is Command.WRITES:
             self.action_writes()
+        elif command is Command.EDIT:
+            self.action_edit()
         else:
             self._set_status(self._workspace_status())
 

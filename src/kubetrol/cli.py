@@ -307,9 +307,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         initial = CommandService(AccessPolicy(settings.read_only)).resolve(
             arguments.initial_command or ""
         )
-        if initial in {Command.UNAVAILABLE, Command.SHELL}:
+        if initial in {Command.UNAVAILABLE, Command.SHELL, Command.ANNOTATE, Command.EDIT}:
             raise AppError(
-                "--command requires an available startup view; shell actions need a selected pod. Available: po, ctx, ns, deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, no, pvc, pv, sc, status, retry, help, quit.",
+                "--command requires an available startup view; edit/annotation/shell actions need an interactive resource selection. Available: po, ctx, ns, deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, no, pvc, pv, sc, status, retry, help, quit.",
                 ExitCode.UNAVAILABLE,
             )
         log_file = log_location(

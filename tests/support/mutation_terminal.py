@@ -4,7 +4,7 @@ import json
 import threading
 from contextlib import suppress
 from http.server import ThreadingHTTPServer
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 from kubetrol.domain.registry import RESOURCE_ALIASES
 from tests.support.standard import manifest, roots
@@ -46,7 +46,9 @@ class MutationHandler(Handler):
             super().do_GET()
 
     def do_PATCH(self):
-        assert self.path == "/api/v1/namespaces/team/configmaps/owned-one"
+        path = urlsplit(self.path)
+        assert path.path == "/api/v1/namespaces/team/configmaps/owned-one"
+        assert parse_qs(path.query) == {"fieldValidation": ["Strict"]}
         assert self.headers["Authorization"] == "Bearer synthetic-pty"
         assert self.headers["Content-Type"] == "application/json-patch+json"
         body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))

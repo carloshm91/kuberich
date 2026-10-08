@@ -41,8 +41,10 @@ This preserves an honest uncertain outcome for a write when
 necessary. Eight concurrent operations and 32 recent records bound ownership.
 API writes are not a sandbox or a replacement for server RBAC/admission.
 
-Native manifest editing, dry-run, scale/rollout and delete/Job actions remain
-#44/#45/#46. No complete operations-parity claim follows from this foundation.
+[Manifest editing](editing.md) in M02 #44 uses these guards after explicit local
+disclosure, redacted preview and strict non-persisting server dry-run. Scale/rollout
+and delete/Job actions remain #45/#46. No complete operations-parity claim follows
+from these actions.
 Annotation keys use Kubernetes qualified names; the combined annotations are
 bounded to 256 KiB and this form limits a value to 65,536 characters.
 

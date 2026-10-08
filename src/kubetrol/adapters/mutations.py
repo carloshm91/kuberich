@@ -13,7 +13,11 @@ from kubetrol.errors import AppError
 
 
 async def conditional_patch(
-    client: KubernetesSession, intent: MutationIntent, authorize: Callable[[], None]
+    client: KubernetesSession,
+    intent: MutationIntent,
+    authorize: Callable[[], None],
+    *,
+    dry_run: bool = False,
 ) -> MutationResult:
     """No redirects, 401 refresh/replay, HTTP retries or raw server error exposure.
 
@@ -45,6 +49,7 @@ async def conditional_patch(
                 str(configuration.host) + intent.path,
                 headers=headers,
                 data=intent.body,
+                params={"fieldValidation": "Strict", **({"dryRun": "All"} if dry_run else {})},
                 proxy=configuration.proxy,
                 server_hostname=configuration.tls_server_name,
                 allow_redirects=False,
@@ -52,7 +57,17 @@ async def conditional_patch(
             ) as response:
                 if response.status != 200:
                     # Do not read arbitrary Status bodies into errors/history.
-                    return status_result(response.status)
+                    result = status_result(response.status)
+                    return (
+                        MutationResult(
+                            MutationState.REJECTED
+                            if result.state is MutationState.UNCERTAIN
+                            else result.state,
+                            "Server validation refused; no apply was sent.",
+                        )
+                        if dry_run
+                        else result
+                    )
                 data = bytearray()
                 async for chunk in response.content.iter_chunked(16384):
                     data.extend(chunk)
@@ -71,19 +86,26 @@ async def conditional_patch(
                 await finishing
                 raise
             return MutationResult(
-                MutationState.SUCCEEDED, "API confirmed the guarded patch. No retry was made."
+                MutationState.SUCCEEDED,
+                "Server dry-run passed; nothing was persisted. Confirm separately to apply."
+                if dry_run
+                else "API confirmed the guarded patch. No retry was made.",
             )
     except asyncio.CancelledError:
         return MutationResult(
-            MutationState.UNCERTAIN if started else MutationState.CANCELLED,
-            "Write interrupted after request start. Inspect the current object; do not repeat blindly."
+            MutationState.UNCERTAIN if started and not dry_run else MutationState.CANCELLED,
+            "Validation cancelled; no apply was sent."
+            if dry_run
+            else "Write interrupted after request start. Inspect the current object; do not repeat blindly."
             if started
             else "Cancelled before the write request started.",
         )
     except TimeoutError:
         return MutationResult(
-            MutationState.UNCERTAIN if started else MutationState.TIMEOUT,
-            "Write response timed out. Inspect the current object; do not repeat blindly."
+            MutationState.UNCERTAIN if started and not dry_run else MutationState.TIMEOUT,
+            "Validation timed out; no apply was sent."
+            if dry_run
+            else "Write response timed out. Inspect the current object; do not repeat blindly."
             if started
             else "Timed out before the write request started.",
         )
@@ -101,8 +123,10 @@ async def conditional_patch(
         TypeError,
     ):
         return MutationResult(
-            MutationState.UNCERTAIN if started else MutationState.REJECTED,
-            "The write result could not be validated. Inspect the current object; do not repeat blindly."
+            MutationState.UNCERTAIN if started and not dry_run else MutationState.REJECTED,
+            "Validation response could not be verified; no apply was sent."
+            if dry_run
+            else "The write result could not be validated. Inspect the current object; do not repeat blindly."
             if started
             else "Write preparation was refused; no request was started.",
         )

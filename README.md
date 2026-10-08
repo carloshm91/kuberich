@@ -36,7 +36,9 @@ provide validated mappings, observed listeners, an owned session list and delibe
 stop, with cleanup on context changes and exit.
 [Guarded annotation changes](docs/mutations.md) add explicit captured confirmation,
 atomic UID/version conditions, common read-only enforcement and public outcome
-history through `:annotate` / `:writes`. Editing, scale/rollout and deletion remain
+history through `:annotate` / `:writes`. [Manifest editing](docs/editing.md) adds
+an explicitly disclosed native editor, redacted diff, strict server dry-run and
+separate guarded Apply through `:edit` / Shift+E. Scale/rollout and deletion remain
 their separate implementation tasks.
 The [resource workspace](docs/resource-workspace.md) adds a built-in `k9s` theme,
 top inputs and view-specific shortcuts, identity/version headers, Escape trails,

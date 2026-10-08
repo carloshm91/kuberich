@@ -731,12 +731,20 @@
       ],
       "source": "internal/view/live_view.go",
       "status": "planned",
-      "difference": "S03 implements captured editor argv/file boundaries and the shared process/terminal lifecycle. Manifest editing, preview/conflict handling and cluster writes remain M02.",
+      "difference": "M02/S03 implement selected native editor handoff, deliberately disclosed private full-manifest drafts, bounded YAML/identity checks, separately redacted diff, strict server dry-run and separately confirmed atomic UID/version edits. Cancellation/no-op do not patch; conflicts require a fresh edit. Secret full-manifest disclosure remains C04 #55; public/platform qualification remains pending.",
       "partial_evidence": [
         "docs/process-handoff.md",
         "docs/acceptance/S03.md",
         "tests/unit/test_processes.py",
-        "tests/terminal/test_handoff.py"
+        "tests/terminal/test_handoff.py",
+        "docs/editing.md",
+        "docs/acceptance/editing.md",
+        "tests/unit/test_editing.py",
+        "tests/contract/test_editing.py",
+        "tests/contract/test_editing_files.py",
+        "tests/ui/test_editing.py",
+        "tests/terminal/test_editing.py",
+        "scripts/verify_editing_kind.py"
       ]
     },
     {
