@@ -234,6 +234,9 @@ def terminal_shell(
                             TerminalSession(invocation, directory, transport=transport)
                         )
                         terminal.wait_for_screen("SHELL CHILD READY")
+                        # This is a new observer with its own transcript. Require
+                        # a fresh child resize witness before sending input.
+                        terminal.wait_for_screen("SHELL CHILD SIZE 98 24")
                         assert int((directory / "child-pid").read_text()) == child
                         os.kill(child, 0)
                     if scenario in {"terminate", "hangup", "lost_ssh"}:
@@ -258,7 +261,7 @@ def terminal_shell(
                         terminal.send(b"\x03")
                         terminal.wait_for(b"Shell interrupted", since=marker)
                     else:
-                        terminal.send(b"owned selected worker\n")
+                        marker = terminal.send(b"owned selected worker\n")
                         terminal.wait_for(
                             b"Shell closed"
                             if scenario in {"success", "early_close", "lost_ssh_tmux"}

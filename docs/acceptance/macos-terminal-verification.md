@@ -24,6 +24,23 @@ only recognized driver failures so buffered interpreter cleanup preserves exit
 129. Requirements/version are unchanged. Full independent and changed-line
 application coverage, native checks and all critical gates remain mandatory.
 
+The next native attempt at `fe332d387f3ce1b4d20bde74d3b47a1890a57dd3`
+passed **3,018 cases**, including actual workspace/native/embedded SSH-loss exit
+129 and the selection-event witness. Its only failure remained tmux reattachment:
+the actual transcript already contained successful `Shell closed`, but the wait
+reused the first observer's byte offset against the new observer's transcript.
+The correction captures the marker from the new send and requires a fresh child
+resize witness after reconnecting. Same child PID, shell input, return, terminal
+restoration and cleanup remain required. Original results remain in
+[run 37857763042](https://github.com/carloshm91/kuberich/actions/runs/37857763042).
+Its Linux/Python 3.12 suite passed all 3,019 cases, coverage and the seven
+pre-install owned-cluster checks, but the installed quickstart exposed another
+transient-title assumption: the namespace table had already loaded all six rows
+and replaced `Namespaces` with `namespaces(all)[6]`. The rehearsal now observes
+the stable table before filtering and still requires the actual filtered row,
+namespace selection, pods, logs and shell behavior. No application navigation or
+release gate changes to accommodate the fixture.
+
 ## Regression witnesses
 
 - Fragmented standard/private device-status queries preserve following visible

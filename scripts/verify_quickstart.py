@@ -40,7 +40,9 @@ def terminal_trial(
             terminal.wait_for_screen(POD, since=marker)
             terminal.wait_for_screen(ALIAS)
             marker = terminal.send(b":ns\r")
-            terminal.wait_for_screen("Namespaces", since=marker)
+            # The initial title is replaced as soon as the resource projection
+            # arrives. Observe the actual stable table, not that transient title.
+            terminal.wait_for_screen("namespaces(all)", since=marker)
             marker = terminal.send(b"/kuberich-quickstart\r")
             # The same name is already in the header. Observe the actual filtered
             # table row before Enter, rather than a pre-list header projection.
