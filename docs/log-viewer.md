@@ -105,7 +105,7 @@ From updated main after this issue is merged:
 
 ```sh
 uv sync --locked --group dev
-uv run kubetrol
+uv run kuberich
 ```
 
 Use `:ctx`, `:ns YOUR_NAMESPACE`, select a pod and press `l`. Choose its container,

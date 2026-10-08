@@ -1,5 +1,19 @@
 # Architecture decisions
 
+## KubeRich identity migration: #149
+
+The maintainer selected KubeRich and confirmed acquiring kuberich.com. The
+canonical distribution/import/CLI is `kuberich`; one `kubetrol` console alias
+delegates to the same CLI without duplicating production code. Existing default
+preferences are read only as a fallback when the new default location is absent.
+Canonical application environment variables take precedence over legacy aliases.
+Explicit `config migrate` reuses the bounded loader and atomic non-overwriting
+writer, preserves unknown fields/source bytes and rebases relative log paths.
+Known legacy diagnostic headers remain accepted without broadening arbitrary
+file/symlink acceptance. This startup/local-command work precedes Textual and
+never loads cluster credentials. Historical acceptance evidence retains its
+original artifact names and measurements. Public publication is separately gated.
+
 ## Preview refinement #129
 
 Contexts are local kubeconfig catalogue entries, not Kubernetes API resources.
@@ -91,7 +105,7 @@ Qualification uses actual inner and outer PTYs, an owned loopback SSH daemon and
 an isolated tmux server. Real lost-SSH tests distinguish revoked-terminal cleanup
 from tmux preservation/reattachment. See [terminal compatibility](terminal-compatibility.md).
 
-Kubetrol is a local, keyboard-driven Kubernetes terminal application. It also
+KubeRich is a local, keyboard-driven Kubernetes terminal application. It also
 runs inside a terminal reached over SSH. There is no application server,
 database, hosted control plane, telemetry service, or Textual Web deployment.
 The later documentation website is separate from the product.
@@ -108,7 +122,7 @@ target CPython 3.12, 3.13, and 3.14. See distribution.md for qualification rules
 | Interactive exec and editor handoff | Explicit kubectl/editor subprocesses with Textual suspension |
 | Port forwarding | Managed kubectl subprocess with an owned lifecycle |
 | Python packaging | src layout, Hatchling, pyproject.toml, uv and a committed uv.lock |
-| CLI entry point | Standard-library argparse; command and import package named kubetrol |
+| CLI entry point | Standard-library argparse; command and import package named kuberich |
 | Configuration | Versioned YAML schema, validated dataclasses, platformdirs paths |
 | Verification | pytest, pytest-asyncio, pytest-cov/coverage.py, Ruff, strict mypy |
 | Local regex filters | regex VERSION1 with a total match timeout, owned background work and stale-result guards |
@@ -173,7 +187,7 @@ An alternative client requires a demonstrated gap and a decision update.
 
 This is a product decision, not a promise that every upstream behavior is supplied
 by the UI framework. Textual supplies widgets, layout, reactive UI, workers and
-test tooling; Kubetrol must implement Kubernetes semantics, streaming, permissions,
+test tooling; KubeRich must implement Kubernetes semantics, streaming, permissions,
 plugins and release engineering. An owned PTY and terminal emulator support the
 embedded shell design. Pilot tests are complemented by real PTY tests.
 
@@ -235,7 +249,7 @@ CLI -> Textual UI -> application services -> Kubernetes/process adapters
                          +--------------------------+
 ```
 
-Use src/kubetrol/{ui,services,domain,adapters,config}, with tests grouped into
+Use src/kuberich/{ui,services,domain,adapters,config}, with tests grouped into
 unit, contract, ui, integration, terminal, and packaging. Keep this structure
 small initially; create modules when real behavior needs them.
 
@@ -354,7 +368,7 @@ These helpers do not authorize writes or make a local staleness check atomic:
 future services must enforce read-only policy, bind the captured client and use
 appropriate API preconditions. Tests trap ambient SDK loaders and permit only a
 qualified owned loopback fixture. See [security integration contracts](security-primitives.md)
-and the [focused threat model](kubetrol-threat-model.md).
+and the [focused threat model](kuberich-threat-model.md).
 
 The maintainer validated the K9s-style local execution model for F04 on
 2026-10-04: configured authentication helpers may run automatically for login
@@ -582,7 +596,7 @@ exec route and actual Kubernetes exec qualification remain S04. See the
 shell argv before awaits. It GETs that exact pod, rejects mismatched/replaced or
 finished/deleting targets, and rechecks the current view before terminal handoff.
 Read-only policy precedes capture, file work and executable lookup. The server
-authorizes pods/exec; Kubetrol never retries an exec automatically.
+authorizes pods/exec; KubeRich never retries an exec automatically.
 
 `KubernetesSession.delegated_config()` snapshots the already prepared endpoint,
 TLS material and credential mechanism. Kubectl receives only that session via an
@@ -639,12 +653,13 @@ Container/log screens retain existing lifetime/target services with shared heade
 and trails. Embedded shells keep independent remote-key routing and target frame.
 See [workspace controls and limits](resource-workspace.md).
 
-Preview refinement #132 replaces the boxed brand with an original literal ASCII
-`ktrol` logo. The shared header reserves 22×5 cells from 120 columns and uses the
+Preview refinement #132 replaced the boxed brand with an original literal ASCII
+logo. Identity migration #149 updates it to KubeRich while the shared header
+reserves 22×5 cells from 120 columns and uses the
 existing 10×3 reservation for a compact wordmark below that width. The breakpoint
 preserves two shortcut columns where the full logo first appears. Narrow/short
 and launch-presentation visibility rules are retained, without a new dependency
-or external lookup. This is a visual abbreviation, not a project/CLI rename.
+or external lookup. The identity migration retains the same workspace geometry.
 `ViewActions` reflows its hints on its own non-bubbling
 [Resize event](https://textual.textualize.io/events/resize/), including late logo
 width changes after the outer header has settled. Root view changes still replace

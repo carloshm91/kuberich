@@ -8,14 +8,14 @@ from dataclasses import replace
 
 import pytest
 
-from kubetrol.adapters.kubernetes import KubernetesSession
-from kubetrol.domain.mutations import MutationState
-from kubetrol.domain.resources import ApiResource
-from kubetrol.domain.targets import ResourceTarget, SessionIdentity
-from kubetrol.errors import AppError
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.editing import EditingService
-from kubetrol.services.mutations import MutationManager
+from kuberich.adapters.kubernetes import KubernetesSession
+from kuberich.domain.mutations import MutationState
+from kuberich.domain.resources import ApiResource
+from kuberich.domain.targets import ResourceTarget, SessionIdentity
+from kuberich.errors import AppError
+from kuberich.services.access import AccessPolicy
+from kuberich.services.editing import EditingService
+from kuberich.services.mutations import MutationManager
 from tests.support.connections import catalog_fixture, certificate
 from tests.support.editing import editing_api
 
@@ -34,12 +34,12 @@ async def source_fixture(tmp_path, *, read_only=False, tls=False, timeout=2):
                     "as-groups": ["owned-edit-group"],
                 },
                 cluster,
-            ).select("kubetrol-test-one"),
+            ).select("kuberich-test-one"),
             timeout,
         )
         await client.open()
         target = ResourceTarget(
-            SessionIdentity("kubetrol-test-one", 1),
+            SessionIdentity("kuberich-test-one", 1),
             "",
             "configmaps",
             "team",

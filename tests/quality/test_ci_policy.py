@@ -86,7 +86,7 @@ def test_plan_cli_and_aggregate_use_the_same_actual_event(tmp_path):
     assert process.returncode == 0, process.stderr
     key, value = output.read_text().strip().split("=", 1)
     assert key == "matrix" and json.loads(value) == matrix("workflow_dispatch", "refs/heads/main")
-    environment["KUBETROL_JOB_RESULTS"] = json.dumps(
+    environment["KUBERICH_JOB_RESULTS"] = json.dumps(
         {
             "plan": {"result": "success", "outputs": {"matrix": value}},
             "application": {"result": "success"},
@@ -132,7 +132,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert "if" not in application and "continue-on-error" not in application
     commands = "\n".join(step.get("run", "") for step in application["steps"])
     for required in (
-        "pytest --cov=kubetrol --cov-branch",
+        "pytest --cov=kuberich --cov-branch",
         "scripts/check_coverage.py coverage.json",
         "diff-cover coverage.xml",
         "--fail-under 90",

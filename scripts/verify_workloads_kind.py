@@ -9,23 +9,23 @@ from typing import Any
 
 from kubernetes_asyncio import client
 
-from kubetrol.adapters.kubernetes import KubernetesSession
-from kubetrol.config.catalog import load_catalog
-from kubetrol.domain.connection_overrides import ConnectionOverrides
-from kubetrol.domain.connections import ConnectionRequest
-from kubetrol.domain.mutations import MutationState
-from kubetrol.domain.targets import ResourceTarget
-from kubetrol.domain.workloads import WorkloadAction
-from kubetrol.errors import AppError
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.resources import ResourceReader
-from kubetrol.services.sessions import SessionService
-from kubetrol.services.workloads import WorkloadService
+from kuberich.adapters.kubernetes import KubernetesSession
+from kuberich.config.catalog import load_catalog
+from kuberich.domain.connection_overrides import ConnectionOverrides
+from kuberich.domain.connections import ConnectionRequest
+from kuberich.domain.mutations import MutationState
+from kuberich.domain.targets import ResourceTarget
+from kuberich.domain.workloads import WorkloadAction
+from kuberich.errors import AppError
+from kuberich.services.access import AccessPolicy
+from kuberich.services.resources import ResourceReader
+from kuberich.services.sessions import SessionService
+from kuberich.services.workloads import WorkloadService
 from scripts.owned_kind import NODE_IMAGE, SHELL_IMAGE, OwnedCluster, owned_cluster
 
 
 async def verify(cluster: OwnedCluster) -> dict[str, Any]:
-    namespace = "kubetrol-owned-workload"
+    namespace = "kuberich-owned-workload"
     request = ConnectionRequest(
         kubeconfig=str(cluster.path), context=cluster.context, namespace=namespace, timeout=15
     )
@@ -131,7 +131,7 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
         checks.append("actual-hpa-conflict-refusal")
 
         rbac = client.RbacAuthorizationV1Api(connection.api)
-        reader = "kubetrol-owned-scale-user"
+        reader = "kuberich-owned-scale-user"
         role = client.V1Role(
             metadata=client.V1ObjectMeta(name="owned-scale"),
             rules=[

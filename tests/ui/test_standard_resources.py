@@ -7,12 +7,12 @@ from pathlib import Path
 import pytest
 from aiohttp import web
 
-from kubetrol.config.schema import Settings
-from kubetrol.domain.registry import RESOURCE_ALIASES, STANDARD_RESOURCES
-from kubetrol.domain.views import ViewStatus
-from kubetrol.services.commands import ResourceCommand
-from kubetrol.ui.app import KubetrolApp
-from kubetrol.ui.inspection import InspectionScreen
+from kuberich.config.schema import Settings
+from kuberich.domain.registry import RESOURCE_ALIASES, STANDARD_RESOURCES
+from kuberich.domain.views import ViewStatus
+from kuberich.services.commands import ResourceCommand
+from kuberich.ui.app import KubeRichApp
+from kuberich.ui.inspection import InspectionScreen
 from tests.support.connections import catalog_fixture
 from tests.support.standard import api, manifest, standard_api
 from tests.support.watches import frame
@@ -21,7 +21,7 @@ from tests.support.workspace import wait_for
 
 def app_for(tmp_path, url, initial=None):
     options = {"initial_command": initial} if initial is not None else {}
-    return KubetrolApp(
+    return KubeRichApp(
         Settings(read_only=True),
         logging.Logger("standard-views", level=100),
         catalog=catalog_fixture(tmp_path, url),

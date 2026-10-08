@@ -2,7 +2,7 @@
 
 import pytest
 
-from kubetrol.domain.credential_helpers import (
+from kuberich.domain.credential_helpers import (
     azure_login_mode,
     azure_prompt,
     bearer_token,

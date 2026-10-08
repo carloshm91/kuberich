@@ -87,14 +87,14 @@ def test_real_rc_owned_http_publication_guards(canonical_release, tmp_path, monk
             urls[0]["yanked"] = True
         if fault == "github_asset":
             assets[0]["digest"] = "sha256:" + "f" * 64
-        upstream.reads[f"/pypi/kubetrol/{version}/json"] = {
-            "info": {"name": "kubetrol", "version": version},
+        upstream.reads[f"/pypi/kuberich/{version}/json"] = {
+            "info": {"name": "kuberich", "version": version},
             "urls": urls,
         }
 
         def local_index(url, *arguments, **keywords):
-            if url == f"https://pypi.org/pypi/kubetrol/{version}/json":
-                return request(upstream.url + f"pypi/kubetrol/{version}/json")
+            if url == f"https://pypi.org/pypi/kuberich/{version}/json":
+                return request(upstream.url + f"pypi/kuberich/{version}/json")
             assert url.startswith(tap.url)
             return request(url, *arguments, **keywords)
 
@@ -107,7 +107,7 @@ def test_real_rc_owned_http_publication_guards(canonical_release, tmp_path, monk
             assert not tap.posts
         else:
             assert publish(bundle, source, api, target).endswith("/pull/1")
-            branch = f"release/kubetrol-{version}-{sha[:12]}"
+            branch = f"release/kuberich-{version}-{sha[:12]}"
             installed_text = tap.command("show", branch + ":" + FORMULA)
             assert f"# Source commit: {sha}" in installed_text and "file://" not in installed_text
             assert "Signed-off-by: Carlos Herrera <carloshm91@gmail.com>" in tap.command(

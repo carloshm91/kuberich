@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from kubetrol.domain.connection_overrides import ConnectionOverrides, impersonation_headers
-from kubetrol.errors import AppError
+from kuberich.domain.connection_overrides import ConnectionOverrides, impersonation_headers
+from kuberich.errors import AppError
 
 
 @pytest.mark.parametrize("field", ["cluster", "user", "token", "certificate_authority", "as_user"])

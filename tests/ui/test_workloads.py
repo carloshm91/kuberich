@@ -6,19 +6,19 @@ import logging
 import pytest
 from textual.widgets import Button, Input, Static
 
-from kubetrol.config.schema import Settings
-from kubetrol.domain.mutations import MutationState
-from kubetrol.domain.registry import RESOURCE_ALIASES
-from kubetrol.services.commands import ResourceCommand
-from kubetrol.ui.app import KubetrolApp
-from kubetrol.ui.workloads import WorkloadScreen
+from kuberich.config.schema import Settings
+from kuberich.domain.mutations import MutationState
+from kuberich.domain.registry import RESOURCE_ALIASES
+from kuberich.services.commands import ResourceCommand
+from kuberich.ui.app import KubeRichApp
+from kuberich.ui.workloads import WorkloadScreen
 from tests.support.connections import catalog_fixture
 from tests.support.workloads import workload_api
 from tests.support.workspace import wait_for
 
 
 def app_fixture(tmp_path, url, *, readonly=False):
-    return KubetrolApp(
+    return KubeRichApp(
         Settings(read_only=readonly),
         logging.getLogger("owned-workloads-ui"),
         catalog=catalog_fixture(tmp_path, url),

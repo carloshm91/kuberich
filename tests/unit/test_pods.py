@@ -5,8 +5,8 @@ from datetime import timedelta
 
 import pytest
 
-from kubetrol.domain.pods import PodColumn, age, order, pod_row
-from kubetrol.errors import AppError
+from kuberich.domain.pods import PodColumn, age, order, pod_row
+from kuberich.errors import AppError
 from tests.support.pods import NOW, pod, record
 from tests.support.resources import item
 

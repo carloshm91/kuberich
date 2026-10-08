@@ -185,7 +185,7 @@ def trusted_run(path=".github/workflows/quality.yml"):
         ("event", "push"),
         ("status", "queued"),
         ("conclusion", "skipped"),
-        ("head_repository", {"full_name": "fork/kubetrol"}),
+        ("head_repository", {"full_name": "fork/kuberich"}),
     ],
 )
 def test_qualification_cannot_come_from_fork_wrong_workflow_or_commit(key, value):
@@ -288,7 +288,7 @@ def test_incomplete_or_ambiguous_release_qualification_is_rejected(mutation):
     if mutation == "private":
         data[prefix]["private"] = True
     elif mutation == "repository":
-        data[prefix]["full_name"] = "fork/kubetrol"
+        data[prefix]["full_name"] = "fork/kuberich"
     elif mutation == "protection":
         data[f"{prefix}/branches/main/protection"] = None
     elif mutation == "ancestor":
@@ -302,7 +302,7 @@ def test_incomplete_or_ambiguous_release_qualification_is_rejected(mutation):
         elif mutation == "pull_duplicate":
             pulls.append(deepcopy(pulls[0]))
         elif mutation == "pull_fork":
-            pulls[0]["head"]["repo"]["full_name"] = "fork/kubetrol"
+            pulls[0]["head"]["repo"]["full_name"] = "fork/kuberich"
         else:
             pulls[0]["merged_at"] = None
     elif mutation == "tree":
@@ -324,7 +324,7 @@ def test_incomplete_or_ambiguous_release_qualification_is_rejected(mutation):
         if mutation == "run_missing":
             runs.clear()
         elif mutation == "run_fork":
-            runs[0]["head_repository"]["full_name"] = "fork/kubetrol"
+            runs[0]["head_repository"]["full_name"] = "fork/kuberich"
         else:
             runs.append(dict(runs[0], run_attempt=2, conclusion="failure"))
     elif mutation.startswith("job_"):
@@ -383,7 +383,7 @@ def test_workflow_has_readonly_dry_run_serialization_and_owner_protected_oidc():
     assert list(workflow["on"]) == ["workflow_dispatch"]
     inputs = workflow["on"]["workflow_dispatch"]["inputs"]
     assert inputs["dry_run"]["default"] is True
-    assert workflow["concurrency"] == {"group": "kubetrol-release", "cancel-in-progress": False}
+    assert workflow["concurrency"] == {"group": "kuberich-release", "cancel-in-progress": False}
     assert workflow["permissions"] == {"contents": "read"}
     validate, publish = workflow["jobs"]["validate"], workflow["jobs"]["publish"]
     assert validate["permissions"] == {"contents": "read", "actions": "read"}

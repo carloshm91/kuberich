@@ -6,7 +6,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Kubetrol version or commit
+      label: KubeRich version or commit
     validations:
       required: true
   - type: textarea

@@ -4,12 +4,12 @@ from dataclasses import replace
 
 import pytest
 
-from kubetrol.domain.connections import ConnectionProblem, ConnectionState, SessionObservation
-from kubetrol.domain.resources import api_resource
-from kubetrol.domain.targets import SessionIdentity
-from kubetrol.domain.views import ResourceScope, ResourceSelection, ViewStatus, ViewStore
-from kubetrol.domain.watches import SyncStatus, SyncUpdate
-from kubetrol.errors import AppError
+from kuberich.domain.connections import ConnectionProblem, ConnectionState, SessionObservation
+from kuberich.domain.resources import api_resource
+from kuberich.domain.targets import SessionIdentity
+from kuberich.domain.views import ResourceScope, ResourceSelection, ViewStatus, ViewStore
+from kuberich.domain.watches import SyncStatus, SyncUpdate
+from kuberich.errors import AppError
 from tests.support.resources import descriptor, item
 from tests.support.watches import snapshot
 
@@ -190,7 +190,7 @@ def test_connection_and_discovery_failures_remain_distinct_and_can_keep_last_sna
 
 
 def test_published_http_failure_copies_only_safe_fields_without_transport_frames():
-    from kubetrol.domain.connections import HttpProblem
+    from kuberich.domain.connections import HttpProblem
 
     store, revision, scope = bound_view()
     try:

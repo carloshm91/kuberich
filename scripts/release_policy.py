@@ -6,7 +6,7 @@ from typing import Any
 
 from packaging.version import Version
 
-REPOSITORY = "carloshm91/kubetrol"
+REPOSITORY = "carloshm91/kuberich"
 OWNER = "carloshm91"
 QUALITY_WORKFLOW = ".github/workflows/quality.yml"
 RELEASE_WORKFLOW = ".github/workflows/release.yml"

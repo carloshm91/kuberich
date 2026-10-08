@@ -10,10 +10,10 @@ import pytest
 from aiohttp import web
 from textual.events import Key, Paste
 
-from kubetrol.config.schema import Settings
-from kubetrol.ui.app import KubetrolApp
-from kubetrol.ui.containers import ContainerScreen
-from kubetrol.ui.terminal import ShellScreen, _color
+from kuberich.config.schema import Settings
+from kuberich.ui.app import KubeRichApp
+from kuberich.ui.containers import ContainerScreen
+from kuberich.ui.terminal import ShellScreen, _color
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
 from tests.support.resources import collection
@@ -64,7 +64,7 @@ async def test_real_embedded_shell_keys_frame_paste_resize_and_owned_return(tmp_
     binary.chmod(0o700)
     path = tmp_path / "input"
     async with workspace_api(ns, handler) as url:
-        app = KubetrolApp(
+        app = KubeRichApp(
             Settings(),
             logging.Logger("embedded", level=100),
             catalog=catalog_fixture(tmp_path, url),
@@ -85,7 +85,7 @@ async def test_real_embedded_shell_keys_frame_paste_resize_and_owned_return(tmp_
             screen = app.screen
             credential_directory = Path(app.sessions.client.directory.name)
             assert screen.terminal.has_focus and len(app.screen_stack) == 3
-            assert "kubetrol-test-one" in str(screen.query_one("#shell-context").content)
+            assert "kuberich-test-one" in str(screen.query_one("#shell-context").content)
             assert "api" in str(screen.query_one("#shell-target").content)
             output = Path("artifacts/ui").resolve()
             output.mkdir(parents=True, exist_ok=True)
@@ -120,7 +120,7 @@ async def test_real_embedded_shell_keys_frame_paste_resize_and_owned_return(tmp_
             elif ending == "exit":
                 await pilot.press(*"exit", "enter")
             elif ending == "stale":
-                app.workspace.connect("kubetrol-test-two")
+                app.workspace.connect("kuberich-test-two")
                 screen.validate_target()
             elif ending == "uid":
                 await updates.put({"type": "DELETED", "object": value})
@@ -164,7 +164,7 @@ async def test_immediate_close_after_mount_returns_without_starting_process(tmp_
         return web.json_response(collection(value) if request.path.endswith("/pods") else value)
 
     async with workspace_api(ns, handler) as url:
-        app = KubetrolApp(
+        app = KubeRichApp(
             Settings(), logging.Logger("early"), catalog=catalog_fixture(tmp_path, url)
         )
         async with app.run_test() as pilot:
@@ -196,7 +196,7 @@ async def test_close_before_mount_prevents_preparation_and_process_launch(tmp_pa
         return web.json_response(collection(value) if request.path.endswith("/pods") else value)
 
     async with workspace_api(ns, handler) as url:
-        app = KubetrolApp(
+        app = KubeRichApp(
             Settings(), logging.Logger("before-mount"), catalog=catalog_fixture(tmp_path, url)
         )
         async with app.run_test() as pilot:

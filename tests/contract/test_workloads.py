@@ -6,13 +6,13 @@ from dataclasses import replace
 
 import pytest
 
-from kubetrol.adapters.kubernetes import KubernetesSession
-from kubetrol.domain.mutations import MutationState
-from kubetrol.domain.workloads import WorkloadAction
-from kubetrol.errors import AppError
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.mutations import MutationManager
-from kubetrol.services.workloads import WorkloadService
+from kuberich.adapters.kubernetes import KubernetesSession
+from kuberich.domain.mutations import MutationState
+from kuberich.domain.workloads import WorkloadAction
+from kuberich.errors import AppError
+from kuberich.services.access import AccessPolicy
+from kuberich.services.mutations import MutationManager
+from kuberich.services.workloads import WorkloadService
 from tests.support.connections import catalog_fixture, certificate
 from tests.support.workloads import workload_api
 
@@ -24,7 +24,7 @@ async def source_fixture(tmp_path, *, family="deployments", readonly=False, tls=
         client = KubernetesSession(
             catalog_fixture(
                 tmp_path, url, {"token": "synthetic-workload", "as": "owned-reader"}, cluster
-            ).select("kubetrol-test-one"),
+            ).select("kuberich-test-one"),
             2,
         )
         await client.open()

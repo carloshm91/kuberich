@@ -20,15 +20,15 @@ import importlib.resources as resources
 import json
 from pathlib import Path
 import sys
-import kubetrol
-package=resources.files('kubetrol')
+import kuberich
+package=resources.files('kuberich')
 print(json.dumps({
-    'version':metadata.version('kubetrol'),
+    'version':metadata.version('kuberich'),
     'python':list(sys.version_info[:2]),
     'prefix':sys.prefix,
-    'module':str(Path(kubetrol.__file__).resolve()),
+    'module':str(Path(kuberich.__file__).resolve()),
     'typed':package.joinpath('py.typed').is_file(),
-    'css':package.joinpath('ui/kubetrol.tcss').read_text(),
+    'css':package.joinpath('ui/kuberich.tcss').read_text(),
     'dependencies':{name:metadata.version(name) for name in ('textual','kubernetes-asyncio','pyte','aiohttp','platformdirs','pyyaml','regex')},
 }))
 """
@@ -44,7 +44,7 @@ def test_real_isolated_tool_install_and_execution(artifacts, tmp_path, installer
     if installer == "uv":
         manager = [uv, "tool"]
         install = [*manager, "install", "--python", sys.executable, str(package)]
-        venv = Path(environment["UV_TOOL_DIR"]) / "kubetrol"
+        venv = Path(environment["UV_TOOL_DIR"]) / "kuberich"
         binary = Path(environment["UV_TOOL_BIN_DIR"])
     else:
         manager = [sys.executable, "-m", "pipx"]
@@ -57,7 +57,7 @@ def test_real_isolated_tool_install_and_execution(artifacts, tmp_path, installer
             sys.executable,
             str(package),
         ]
-        venv = Path(environment["PIPX_HOME"]) / "venvs/kubetrol"
+        venv = Path(environment["PIPX_HOME"]) / "venvs/kuberich"
         binary = Path(environment["PIPX_BIN_DIR"])
     version_command = [uv, "--version"] if installer == "uv" else [*manager, "--version"]
     installer_version = run(version_command, tmp_path).stdout.strip()
@@ -69,11 +69,11 @@ def test_real_isolated_tool_install_and_execution(artifacts, tmp_path, installer
         output = run(install, tmp_path, 240)
         records.append({"command": install, "exit": output.returncode})
         installed = True
-        command = binary / "kubetrol"
+        command = binary / "kuberich"
         python = venv / "bin/python"
         assert command.is_file() and python.is_file()
         environment["PATH"] = str(binary) + os.pathsep + os.environ["PATH"]
-        assert shutil.which("kubetrol", path=environment["PATH"]) == str(command)
+        assert shutil.which("kuberich", path=environment["PATH"]) == str(command)
         probe = json.loads(run([str(python), "-I", "-c", PROBE], tmp_path).stdout)
         assert probe["version"] == PROJECT["version"]
         assert probe["python"] == list(sys.version_info[:2])
@@ -81,29 +81,29 @@ def test_real_isolated_tool_install_and_execution(artifacts, tmp_path, installer
         assert Path(probe["module"]).is_relative_to(venv)
         assert not Path(probe["module"]).is_relative_to(ROOT)
         assert (
-            probe["typed"] and probe["css"] == (ROOT / "src/kubetrol/ui/kubetrol.tcss").read_text()
+            probe["typed"] and probe["css"] == (ROOT / "src/kuberich/ui/kuberich.tcss").read_text()
         )
         assert all(probe["dependencies"].values())
         for argv in (
-            ["kubetrol", "--help"],
-            ["kubetrol", "--version"],
-            [str(python), "-I", "-m", "kubetrol", "--version"],
+            ["kuberich", "--help"],
+            ["kuberich", "--version"],
+            [str(python), "-I", "-m", "kuberich", "--version"],
         ):
             result = run(argv, tmp_path, 15, environment=environment)
             assert result.stderr == ""
             assert (
-                "usage: kubetrol" in result.stdout
+                "usage: kuberich" in result.stdout
                 if argv[-1] == "--help"
-                else result.stdout == f"kubetrol {PROJECT['version']}\n"
+                else result.stdout == f"kuberich {PROJECT['version']}\n"
             )
             records.append({"command": argv, "exit": result.returncode})
-        missing = run(["kubetrol", "info"], tmp_path, check=False, environment=environment)
+        missing = run(["kuberich", "info"], tmp_path, check=False, environment=environment)
         assert missing.returncode == 3 and missing.stdout == ""
         (tmp_path / "preferences.yaml").write_text("schema_version: 1\n")
-        info = json.loads(run(["kubetrol", "info"], tmp_path, environment=environment).stdout)
+        info = json.loads(run(["kuberich", "info"], tmp_path, environment=environment).stdout)
         assert info["terminal_ui_available"] and not info["cluster_connected"]
-        assert info["config_file"] == environment["KUBETROL_CONFIG"]
-        result = run(["kubetrol"], tmp_path, 15, check=False, environment=environment)
+        assert info["config_file"] == environment["KUBERICH_CONFIG"]
+        result = run(["kuberich"], tmp_path, 15, check=False, environment=environment)
         assert result.returncode == 2 and result.stdout == ""
         assert "interactive terminal" in result.stderr
         terminal_navigation(
@@ -126,12 +126,12 @@ def test_real_isolated_tool_install_and_execution(artifacts, tmp_path, installer
             "actual_embedded_shell": artifact == "wheel",
         }
     finally:
-        result = run([*manager, "uninstall", "kubetrol"], tmp_path, 60, check=False)
+        result = run([*manager, "uninstall", "kuberich"], tmp_path, 60, check=False)
         if installed:
             assert result.returncode == 0, result.stderr
-            assert not (binary / "kubetrol").exists() and not venv.exists()
+            assert not (binary / "kuberich").exists() and not venv.exists()
             records.append(
-                {"command": [*manager, "uninstall", "kubetrol"], "exit": result.returncode}
+                {"command": [*manager, "uninstall", "kuberich"], "exit": result.returncode}
             )
     record["uninstalled"] = True
     output = ROOT / "artifacts/packaging"

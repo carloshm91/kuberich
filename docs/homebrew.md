@@ -23,11 +23,11 @@ Link the generated directory into an owned Homebrew environment as the local
 `carloshm91/tap`, then require these real checks:
 
 ```sh
-brew style carloshm91/tap/kubetrol
-brew audit --strict carloshm91/tap/kubetrol
-brew install --build-from-source carloshm91/tap/kubetrol
-brew test carloshm91/tap/kubetrol
-brew uninstall carloshm91/tap/kubetrol
+brew style carloshm91/tap/kuberich
+brew audit --strict carloshm91/tap/kuberich
+brew install --build-from-source carloshm91/tap/kuberich
+brew test carloshm91/tap/kuberich
+brew uninstall carloshm91/tap/kuberich
 ```
 
 These are candidate checks, not currently available public installation commands.
@@ -51,7 +51,7 @@ public `carloshm91/homebrew-tap`, with main.
 Before D04, initialize the tap from `packaging/homebrew` and configure
 `HOMEBREW_TAP_TOKEN` in the protected release environment. Prefer a short-lived
 GitHub App installation token. A fine-grained credential must be limited to that
-tap's contents/pull requests. The updater only changes `Formula/kubetrol.rb`; it
+tap's contents/pull requests. The updater only changes `Formula/kuberich.rb`; it
 needs no workflow-write permission or PyPI token. Require Linux/macOS formula
 checks, DCO and maintainer review on the tap before merging.
 

@@ -19,9 +19,9 @@ from scripts.owned_kind import SHELL_IMAGE, owned_cluster, run_owned
 from tests.support.distribution import clean_environment
 from tests.terminal.pty_support import TerminalSession
 
-CONTEXT = "kubetrol-quickstart"
-ALIAS = "kubetrol-quickstart-Alias"
-NAMESPACE = "kubetrol-quickstart"
+CONTEXT = "kuberich-quickstart"
+ALIAS = "kuberich-quickstart-Alias"
+NAMESPACE = "kuberich-quickstart"
 POD = "quickstart-pod"
 
 
@@ -41,7 +41,7 @@ def terminal_trial(
             terminal.wait_for_screen(ALIAS)
             marker = terminal.send(b":ns\r")
             terminal.wait_for_screen("Namespaces", since=marker)
-            marker = terminal.send(b"/kubetrol-quickstart\r")
+            marker = terminal.send(b"/kuberich-quickstart\r")
             # The same name is already in the header. Observe the actual filtered
             # table row before Enter, rather than a pre-list header projection.
             terminal.wait_for_screen(NAMESPACE, row=13, since=marker)
@@ -68,7 +68,7 @@ def terminal_trial(
         terminal.wait_for_screen("sidecar", since=marker)
         if readonly:
             marker = terminal.send(b"\r")
-            terminal.wait_for_screen("KUBETROL_PREVIEW_LOG", since=marker, timeout=30)
+            terminal.wait_for_screen("KUBERICH_PREVIEW_LOG", since=marker, timeout=30)
             marker = terminal.send(b"\x1b")
             terminal.wait_for_screen("Containers", since=marker)
             terminal.wait_for_screen("sidecar", since=marker)
@@ -76,7 +76,7 @@ def terminal_trial(
             terminal.wait_for_screen("Read-only mode blocks", since=marker)
         else:
             marker = terminal.send(b"s")
-            terminal.wait_for_screen("Kubetrol · Container shell", since=marker)
+            terminal.wait_for_screen("KubeRich · Container shell", since=marker)
             terminal.wait_for_screen("PREVIEW> ", timeout=30)
             marker = terminal.send(b"printf 'QUICKSTART_%s\\n' OK\n")
             terminal.wait_for_screen("QUICKSTART_OK", since=marker)
@@ -104,8 +104,8 @@ def verify(wheel: Path, kind: str, kubectl: Path, evidence: Path) -> None:
         metadata = BytesParser().parsebytes(
             archive.read(next(n for n in archive.namelist() if n.endswith(".dist-info/METADATA")))
         )
-    if metadata["Name"] != "kubetrol" or not metadata["Version"]:
-        raise ValueError("Use an actual Kubetrol wheel.")
+    if metadata["Name"] != "kuberich" or not metadata["Version"]:
+        raise ValueError("Use an actual KubeRich wheel.")
     version = str(metadata["Version"])
     digest = hashlib.sha256(wheel.read_bytes()).hexdigest()
     previous = {s: signal.getsignal(s) for s in (signal.SIGINT, signal.SIGTERM)}
@@ -117,7 +117,7 @@ def verify(wheel: Path, kind: str, kubectl: Path, evidence: Path) -> None:
     for signum in previous:
         signal.signal(signum, cancel)
     try:
-        with TemporaryDirectory(prefix="kubetrol-quickstart-") as temporary:
+        with TemporaryDirectory(prefix="kuberich-quickstart-") as temporary:
             directory = Path(temporary)
             outside = directory / "outside"
             outside.mkdir()
@@ -134,10 +134,10 @@ def verify(wheel: Path, kind: str, kubectl: Path, evidence: Path) -> None:
                 environment,
                 timeout=180,
             )
-            executable = Path(environment["UV_TOOL_BIN_DIR"]) / "kubetrol"
+            executable = Path(environment["UV_TOOL_BIN_DIR"]) / "kuberich"
             if (
                 run_owned([str(executable), "--version"], environment)
-                != "kubetrol " + version + "\n"
+                != "kuberich " + version + "\n"
             ):
                 raise ValueError("Installed version differs from the candidate.")
             help_text = run_owned([str(executable), "--help"], environment)
@@ -179,7 +179,7 @@ def verify(wheel: Path, kind: str, kubectl: Path, evidence: Path) -> None:
                                 "command": [
                                     "/bin/sh",
                                     "-c",
-                                    "echo KUBETROL_PREVIEW_LOG; while true; do sleep 60; done",
+                                    "echo KUBERICH_PREVIEW_LOG; while true; do sleep 60; done",
                                 ],
                                 "env": [{"name": "PS1", "value": "PREVIEW> "}],
                             }
@@ -219,7 +219,7 @@ def verify(wheel: Path, kind: str, kubectl: Path, evidence: Path) -> None:
                         environment,
                         readonly=readonly,
                     )
-            run_owned([uv, "tool", "uninstall", "kubetrol"], environment)
+            run_owned([uv, "tool", "uninstall", "kuberich"], environment)
             if executable.exists() or preferences.read_bytes() != before:
                 raise ValueError("Uninstall did not preserve preferences/remove the executable.")
             evidence.parent.mkdir(parents=True, exist_ok=True)

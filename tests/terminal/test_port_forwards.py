@@ -6,4 +6,4 @@ from tests.support.forward_terminal import terminal_forward
 
 
 def test_actual_terminal_forward_ownership(tmp_path):
-    terminal_forward([sys.executable, "-m", "kubetrol"], tmp_path, "port-forwards")
+    terminal_forward([sys.executable, "-m", "kuberich"], tmp_path, "port-forwards")

@@ -10,10 +10,10 @@ from pathlib import Path
 import pytest
 from aiohttp import web
 
-from kubetrol.adapters.credentials import ExecToken
-from kubetrol.config.catalog import Entry
-from kubetrol.domain.connections import ConnectionProblem, ConnectionRequest, ConnectionState
-from kubetrol.services.sessions import SessionService
+from kuberich.adapters.credentials import ExecToken
+from kuberich.config.catalog import Entry
+from kuberich.domain.connections import ConnectionProblem, ConnectionRequest, ConnectionState
+from kuberich.services.sessions import SessionService
 from tests.support.connections import catalog_fixture, fake_api, namespaces
 
 VERSION = "client.authentication.k8s.io/v1"
@@ -51,7 +51,7 @@ from pathlib import Path
 info = json.loads(os.environ['KUBERNETES_EXEC_INFO'])
 assert info['spec']['interactive'] is False
 assert info['spec']['cluster']['server'] == 'https://127.0.0.1:12345'
-assert os.environ['KUBETROL_TEST_VALUE'] == 'literal;$(never-executed)'
+assert os.environ['KUBERICH_TEST_VALUE'] == 'literal;$(never-executed)'
 assert sys.stdin.read() == ''
 assert sys.argv[1] == 'argument;$(never-executed)'
 path = Path('calls')
@@ -61,7 +61,7 @@ path.write_text(path.read_text() + 'x' if path.exists() else 'x')
         tmp_path,
         source,
         args=["helper.py", "argument;$(never-executed)"],
-        env=[{"name": "KUBETROL_TEST_VALUE", "value": "literal;$(never-executed)"}],
+        env=[{"name": "KUBERICH_TEST_VALUE", "value": "literal;$(never-executed)"}],
         provideClusterInfo=True,
     )
     assert await asyncio.gather(credentials.token(), credentials.token()) == [
@@ -76,7 +76,7 @@ path.write_text(path.read_text() + 'x' if path.exists() else 'x')
         tmp_path,
         source,
         args=["helper.py", "argument;$(never-executed)"],
-        env=[{"name": "KUBETROL_TEST_VALUE", "value": "literal;$(never-executed)"}],
+        env=[{"name": "KUBERICH_TEST_VALUE", "value": "literal;$(never-executed)"}],
         provideClusterInfo=True,
     )
     await other.token()
@@ -160,7 +160,7 @@ async def test_doctl_shaped_exec_with_null_env_connects_without_rewriting_config
         before = (tmp_path / "fixture-config").read_bytes()
         sessions = SessionService(catalog, ConnectionRequest())
         try:
-            observation = await sessions.connect("kubetrol-test-one")
+            observation = await sessions.connect("kuberich-test-one")
             assert observation.state is ConnectionState.CONNECTED
             assert observation.namespaces == ("default", "team")
             assert (tmp_path / "fixture-config").read_bytes() == before
@@ -205,7 +205,7 @@ async def test_invalid_helper_responses_do_not_expose_output(tmp_path: Path, val
         ({"env": "bad"}, "env"),
         ({"env": [{"name": "invalid=name", "value": "secret"}]}, "names"),
         ({"provideClusterInfo": "true"}, "true or false"),
-        ({"command": "/definitely-missing/kubetrol-helper"}, "Cannot start"),
+        ({"command": "/definitely-missing/kuberich-helper"}, "Cannot start"),
     ],
 )
 async def test_invalid_helper_contract_fails_before_launch(
@@ -318,7 +318,7 @@ async def test_exec_401_refresh_retries_once_and_keeps_new_token(tmp_path: Path)
     async with fake_api(handler) as url:
         sessions = SessionService(catalog_fixture(tmp_path, url, user), ConnectionRequest())
         try:
-            observation = await sessions.connect("kubetrol-test-one")
+            observation = await sessions.connect("kuberich-test-one")
             assert observation.state is ConnectionState.CONNECTED
             assert seen == ["Bearer 1", "Bearer 2"]
             await sessions.client.namespaces()

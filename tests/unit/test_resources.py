@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from kubetrol.domain.resources import (
+from kuberich.domain.resources import (
     Discovery,
     DiscoveryIssue,
     api_resource,
@@ -16,7 +16,7 @@ from kubetrol.domain.resources import (
     split_api_version,
     string_list,
 )
-from kubetrol.errors import AppError
+from kuberich.errors import AppError
 from tests.support.resources import aggregated_resource, descriptor, item, pod_resource
 
 

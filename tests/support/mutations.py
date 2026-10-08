@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 
 from aiohttp import web
 
-from kubetrol.domain.registry import RESOURCE_ALIASES
+from kuberich.domain.registry import RESOURCE_ALIASES
 from tests.support.standard import manifest, roots
 from tests.support.workspace import stable_watch
 

@@ -8,8 +8,8 @@ import kubernetes_asyncio.config as sdk_config
 import pytest
 from kubernetes_asyncio import client
 
-from kubetrol.adapters import credentials, kubernetes
-from kubetrol.config import catalog
+from kuberich.adapters import credentials, kubernetes
+from kuberich.config import catalog
 from tests.support.clusters import reject_ambient_credentials
 
 _CLIENT = client.ApiClient

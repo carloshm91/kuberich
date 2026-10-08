@@ -4,13 +4,13 @@ from pathlib import Path
 
 import pytest
 
-from kubetrol.config.paths import config_location, log_location, preference_path
-from kubetrol.config.schema import Settings
-from kubetrol.errors import AppError
+from kuberich.config.paths import config_location, log_location, preference_path
+from kuberich.config.schema import Settings
+from kuberich.errors import AppError
 
 
 def test_config_selection_prefers_cli_then_environment_then_platform(tmp_path: Path) -> None:
-    environment = {"KUBETROL_CONFIG": str(tmp_path / "env.yaml"), "KUBECONFIG": "never-read"}
+    environment = {"KUBERICH_CONFIG": str(tmp_path / "env.yaml"), "KUBECONFIG": "never-read"}
     cli = config_location(str(tmp_path / "cli.yaml"), environment)
     assert cli.path == tmp_path / "cli.yaml" and cli.explicit
     env = config_location(None, environment)
@@ -25,7 +25,7 @@ def test_tilde_spaces_and_relative_paths_resolve_without_creating_files(
 ) -> None:
     monkeypatch.chdir(tmp_path)
     assert preference_path("relative path/config.yaml") == tmp_path / "relative path/config.yaml"
-    assert preference_path("~/kubetrol") == Path.home() / "kubetrol"
+    assert preference_path("~/kuberich") == Path.home() / "kuberich"
     assert not (tmp_path / "relative path").exists()
 
 
@@ -56,4 +56,4 @@ def test_file_log_paths_use_config_directory_and_overrides_use_working_directory
     assert log_location(relative, config, from_file=False) == tmp_path / "logs/local.log"
     absolute = Settings(log_file=str(tmp_path / "absolute.log"))
     assert log_location(absolute, config, from_file=True) == tmp_path / "absolute.log"
-    assert log_location(Settings(), config, from_file=True) == tmp_path / "logs/kubetrol.log"
+    assert log_location(Settings(), config, from_file=True) == tmp_path / "logs/kuberich.log"

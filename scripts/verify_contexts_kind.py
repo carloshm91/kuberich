@@ -11,25 +11,25 @@ from uuid import uuid4
 import yaml
 from kubernetes_asyncio.client import CoreV1Api, V1Namespace, V1ObjectMeta
 
-from kubetrol.config.catalog import load_catalog
-from kubetrol.config.schema import Settings
-from kubetrol.domain.connections import ConnectionProblem, ConnectionRequest, ConnectionState
-from kubetrol.domain.logs import LogBuffer, LogOptions
-from kubetrol.domain.pods import pod_row, utc_now
-from kubetrol.domain.resources import resource_record
-from kubetrol.domain.targets import ResourceTarget
-from kubetrol.domain.views import ResourceSelection, ViewStatus
-from kubetrol.domain.watches import EventType, SyncStatus, SyncUpdate
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.logs import LogStream
-from kubetrol.services.resources import ResourceReader
-from kubetrol.services.sessions import SessionService
-from kubetrol.services.watches import ListWatch
-from kubetrol.services.workspace import WorkspaceService
-from kubetrol.ui.app import KubetrolApp
-from kubetrol.ui.containers import ContainerScreen
-from kubetrol.ui.inspection import InspectionScreen
-from kubetrol.ui.logs import LogScreen
+from kuberich.config.catalog import load_catalog
+from kuberich.config.schema import Settings
+from kuberich.domain.connections import ConnectionProblem, ConnectionRequest, ConnectionState
+from kuberich.domain.logs import LogBuffer, LogOptions
+from kuberich.domain.pods import pod_row, utc_now
+from kuberich.domain.resources import resource_record
+from kuberich.domain.targets import ResourceTarget
+from kuberich.domain.views import ResourceSelection, ViewStatus
+from kuberich.domain.watches import EventType, SyncStatus, SyncUpdate
+from kuberich.services.access import AccessPolicy
+from kuberich.services.logs import LogStream
+from kuberich.services.resources import ResourceReader
+from kuberich.services.sessions import SessionService
+from kuberich.services.watches import ListWatch
+from kuberich.services.workspace import WorkspaceService
+from kuberich.ui.app import KubeRichApp
+from kuberich.ui.containers import ContainerScreen
+from kuberich.ui.inspection import InspectionScreen
+from kuberich.ui.logs import LogScreen
 from scripts.owned_kind import NODE_IMAGE, owned_cluster
 from scripts.standard_kind import verify_standard_resources
 
@@ -50,7 +50,7 @@ async def verify_pod_table(reader, resource, catalog, path, context):
         assert cells[3] == entry["cells"][2]
         assert row.restarts == int(str(entry["cells"][3]).split()[0])
         assert row.created_at is not None and cells[-1] != "—"
-    app = KubetrolApp(
+    app = KubeRichApp(
         Settings(read_only=True),
         logging.Logger("owned-kind-pod-table"),
         catalog=catalog,
@@ -111,7 +111,7 @@ async def verify_pod_table(reader, resource, catalog, path, context):
         owned_event = await api.create_namespaced_event(
             "kube-system",
             {
-                "metadata": {"generateName": "kubetrol-test-inspection-"},
+                "metadata": {"generateName": "kuberich-test-inspection-"},
                 "involvedObject": {
                     "name": selected_record.name,
                     "namespace": "kube-system",
@@ -123,7 +123,7 @@ async def verify_pod_table(reader, resource, catalog, path, context):
                 "message": "owned disposable inspection fixture",
                 "type": "Warning",
                 "count": 1,
-                "source": {"component": "kubetrol-test"},
+                "source": {"component": "kuberich-test"},
             },
         )
         await pilot.press("y")
@@ -246,7 +246,7 @@ async def verify_pod_table(reader, resource, catalog, path, context):
         )
         assert app.namespace_table.get_row(namespace_record.uid)[1].plain == "Active"
         owned_namespace = await api.create_namespace(
-            V1Namespace(metadata=V1ObjectMeta(name="kubetrol-ui-" + uuid4().hex[:12]))
+            V1Namespace(metadata=V1ObjectMeta(name="kuberich-ui-" + uuid4().hex[:12]))
         )
         async with asyncio.timeout(30):
             while owned_namespace.metadata.uid not in app.namespace_table.rows:
@@ -308,7 +308,7 @@ async def verify_pod_table(reader, resource, catalog, path, context):
 async def verify_watch(reader: ResourceReader, resource) -> dict[str, object]:
     """Mutate only fixtures inside this script's newly created local kind cluster."""
     api = CoreV1Api(reader.session.api)
-    namespace = "kubetrol-watch-" + uuid4().hex[:12]
+    namespace = "kuberich-watch-" + uuid4().hex[:12]
     created_namespace = await api.create_namespace(
         V1Namespace(metadata=V1ObjectMeta(name=namespace))
     )
@@ -455,7 +455,7 @@ async def verify_workspace(catalog, path: Path, context: str) -> dict[str, objec
     assert not [
         task
         for task in asyncio.all_tasks()
-        if task.get_name() in {"kubetrol-workspace", "kubetrol-resource-watch"}
+        if task.get_name() in {"kuberich-workspace", "kuberich-resource-watch"}
     ]
     return {
         "real_workspace_scope_switch": True,
@@ -471,7 +471,7 @@ async def verify_workspace(catalog, path: Path, context: str) -> dict[str, objec
 async def verify_quiet_renewal(reader, resource, catalog, path, context) -> dict[str, object]:
     """Renew a quiet read in a namespace created only inside the owned cluster."""
     api = CoreV1Api(reader.session.api)
-    namespace = "kubetrol-quiet-" + uuid4().hex[:12]
+    namespace = "kuberich-quiet-" + uuid4().hex[:12]
     created = await api.create_namespace(V1Namespace(metadata=V1ObjectMeta(name=namespace)))
     sessions = SessionService(
         catalog,

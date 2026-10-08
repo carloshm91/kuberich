@@ -20,7 +20,7 @@ def clean_environment(directory: Path) -> dict[str, str]:
     environment = {
         name: value
         for name, value in os.environ.items()
-        if not name.startswith(("KUBETROL_", "TEXTUAL", "UV_", "PIPX_", "PIP_"))
+        if not name.startswith(("KUBERICH_", "KUBETROL_", "TEXTUAL", "UV_", "PIPX_", "PIP_"))
         and name not in {"PYTHONPATH", "PYTHONHOME", "VIRTUAL_ENV"}
     }
     state = directory / "installer-state"
@@ -45,8 +45,8 @@ def clean_environment(directory: Path) -> dict[str, str]:
             "PIPX_DEFAULT_BACKEND": "pip",
             "PIPX_DEFAULT_PYTHON": sys.executable,
             "KUBECONFIG": str(directory / "no-cluster-config"),
-            "KUBETROL_CONFIG": str(directory / "preferences.yaml"),
-            "KUBETROL_LOG_FILE": str(directory / "kubetrol.log"),
+            "KUBERICH_CONFIG": str(directory / "preferences.yaml"),
+            "KUBERICH_LOG_FILE": str(directory / "kuberich.log"),
         }
     )
     return environment
@@ -59,10 +59,13 @@ def run(
     *,
     check: bool = True,
     environment: dict[str, str] | None = None,
+    unset_environment: tuple[str, ...] = (),
 ) -> subprocess.CompletedProcess[str]:
     """Own the installer process group, including timeout/failure cleanup."""
     settings = clean_environment(directory)
     settings.update(environment or {})
+    for name in unset_environment:
+        settings.pop(name, None)
     process = subprocess.Popen(
         command,
         cwd=directory,

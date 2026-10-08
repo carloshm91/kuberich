@@ -10,5 +10,5 @@ from tests.support.editing_terminal import terminal_editing
 @pytest.mark.parametrize("scenario", ["success", "noop", "failure", "malformed", "ctrl_c"])
 def test_actual_editor_and_terminal_restoration(tmp_path, scenario):
     terminal_editing(
-        [sys.executable, "-m", "kubetrol"], tmp_path, "editor-" + scenario, scenario=scenario
+        [sys.executable, "-m", "kuberich"], tmp_path, "editor-" + scenario, scenario=scenario
     )

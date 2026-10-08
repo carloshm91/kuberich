@@ -1,13 +1,13 @@
-# Kubetrol
+# KubeRich
 
 A keyboard-driven Kubernetes terminal UI, built with Python and Textual.
 
 Inspired by [K9s](https://k9scli.io/). Built by Python enthusiasts.
 
-Kubetrol aims to make browsing resources, investigating failures, following logs,
+KubeRich aims to make browsing resources, investigating failures, following logs,
 and managing workloads comfortable from your terminal, including over SSH.
 It is an independent project and is not affiliated with K9s.
-All Kubetrol capabilities will be open source under MIT, with no paid feature tiers.
+All KubeRich capabilities will be open source under MIT, with no paid feature tiers.
 
 ## Project status
 
@@ -65,12 +65,12 @@ With [uv](https://docs.astral.sh/uv/getting-started/installation/) and Python
 
 ```sh
 uv sync --locked --group dev
-uv run kubetrol --help
-uv run kubetrol --version
-uv run kubetrol version --short
-uv run kubetrol info
-uv run kubetrol config check
-uv run kubetrol
+uv run kuberich --help
+uv run kuberich --version
+uv run kuberich version --short
+uv run kuberich info
+uv run kuberich config check
+uv run kuberich
 ```
 
 The last command opens the terminal window in an interactive terminal. Press
@@ -79,11 +79,11 @@ anywhere. Launch reads your selected/default local kubeconfig and connects to it
 current context. Without configuration it opens disconnected. Configured credential
 helpers are trusted local programs and may run automatically for authentication.
 Help/version/info/config inspection never connects or executes helpers.
-Try `uv run kubetrol --readonly --headless --command help` to start with help
+Try `uv run kuberich --readonly --headless --command help` to start with help
 and a compact header. Read-only command decisions use a shared service guard;
-read-only blocks container shells and starting forwards before preparation. Workload changes and
-plugins remain upcoming.
-`uv run python -m kubetrol` is also supported.
+read-only blocks container shells, starting forwards and workload changes before
+preparation. Plugins remain upcoming.
+`uv run python -m kuberich` is also supported.
 `info` and `config check` create no files. `config init` optionally creates default
 preferences without overwriting an existing file. See
 [configuration and diagnostics](docs/configuration.md) for paths, precedence,
@@ -114,7 +114,7 @@ usable preview, actual controls and public-release limits.
 - [Commands, completion, filters and history](docs/command-navigation.md)
 - [Architecture decisions](docs/architecture.md)
 - [Security helpers and test isolation](docs/security-primitives.md)
-- [Focused threat model](docs/kubetrol-threat-model.md)
+- [Focused threat model](docs/kuberich-threat-model.md)
 - [Contribution workflow](CONTRIBUTING.md)
 - [Testing and coverage policy](docs/quality.md)
 - [Versioning, tags, and release procedure](docs/releases.md)
@@ -129,10 +129,10 @@ and the current private-repository branch-protection limitation.
 
 ## Community
 
-Use [GitHub issues](https://github.com/carloshm91/kubetrol/issues) for bugs and
+Use [GitHub issues](https://github.com/carloshm91/kuberich/issues) for bugs and
 feature proposals. Please read [CONTRIBUTING.md](CONTRIBUTING.md),
 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), and [SECURITY.md](SECURITY.md).
 
 ## License
 
-[MIT](LICENSE). Copyright (c) 2026 Carlos Herrera and Kubetrol contributors.
+[MIT](LICENSE). Copyright (c) 2026 Carlos Herrera and KubeRich contributors.

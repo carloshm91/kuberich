@@ -28,7 +28,7 @@ cluster-scoped; a namespace argument is rejected. They preserve the session's
 namespace choice for the next namespaced view. Initial commands work too:
 
 ```sh
-uv run kubetrol --context YOUR_CONTEXT --readonly --command 'deploy YOUR_NAMESPACE'
+uv run kuberich --context YOUR_CONTEXT --readonly --command 'deploy YOUR_NAMESPACE'
 ```
 
 Only run that command against a context you intend to read. `:c` still offers

@@ -10,18 +10,18 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 GATE = ROOT / "scripts/check_coverage.py"
-CRITICAL = "src/kubetrol/critical.py"
-FEATURE = "src/kubetrol/feature.py"
+CRITICAL = "src/kuberich/critical.py"
+FEATURE = "src/kuberich/feature.py"
 POLICY = """
 [tool.coverage.run]
 branch = true
-source = ["kubetrol"]
+source = ["kuberich"]
 [tool.coverage.report]
 include_namespace_packages = true
 exclude_lines = []
 partial_branches = []
-[tool.kubetrol.coverage]
-critical_modules = ["src/kubetrol/critical.py"]
+[tool.kuberich.coverage]
+critical_modules = ["src/kuberich/critical.py"]
 """
 
 
@@ -119,12 +119,12 @@ def test_no_branches_are_reported_as_not_applicable(project: Path) -> None:
 
 def test_omitted_unimported_namespace_module_fails_inventory(project: Path) -> None:
     write_report(project, summary(10, 10), summary(10, 10))
-    missing = project / "src/kubetrol/domain/unimported.py"
+    missing = project / "src/kuberich/domain/unimported.py"
     missing.parent.mkdir()
     missing.write_text("VALUE = 1\n")
     result = run_gate(project)
     assert result.returncode == 1
-    assert "src/kubetrol/domain/unimported.py" in result.stderr
+    assert "src/kuberich/domain/unimported.py" in result.stderr
     assert "inventory mismatch" in result.stderr
 
 
@@ -140,18 +140,18 @@ def test_test_code_cannot_inflate_the_denominator(project: Path) -> None:
 @pytest.mark.parametrize(
     ("original", "replacement"),
     [
-        ('source = ["kubetrol"]', 'source = ["kubetrol.cli"]'),
+        ('source = ["kuberich"]', 'source = ["kuberich.cli"]'),
         ("branch = true", "branch = false"),
         ("include_namespace_packages = true", "include_namespace_packages = false"),
-        ('source = ["kubetrol"]', 'source = ["kubetrol"]\nomit = ["*/domain/*"]'),
+        ('source = ["kuberich"]', 'source = ["kuberich"]\nomit = ["*/domain/*"]'),
         ("exclude_lines = []", 'exclude_lines = [".*"]'),
         ("partial_branches = []", 'partial_branches = [".*"]'),
         ("exclude_lines = []", 'exclude_lines = []\nexclude_also = [".*"]'),
         ("partial_branches = []", "partial_branches = []\nskip_covered = true"),
-        ('critical_modules = ["src/kubetrol/critical.py"]', "critical_modules = []"),
+        ('critical_modules = ["src/kuberich/critical.py"]', "critical_modules = []"),
         (
-            'critical_modules = ["src/kubetrol/critical.py"]',
-            'critical_modules = ["src/kubetrol/deleted.py"]',
+            'critical_modules = ["src/kuberich/critical.py"]',
+            'critical_modules = ["src/kuberich/deleted.py"]',
         ),
     ],
 )
@@ -194,14 +194,14 @@ def test_empty_production_code_is_not_a_coverage_claim(project: Path) -> None:
 def test_real_coverage_includes_an_unimported_namespace_module(tmp_path: Path) -> None:
     # Exercise coverage.py itself, not just a hand-written summary fixture.
     (tmp_path / "pyproject.toml").write_text(POLICY)
-    package = tmp_path / "src/kubetrol"
+    package = tmp_path / "src/kuberich"
     package.mkdir(parents=True)
     (package / "__init__.py").write_text("")
     (package / "critical.py").write_text("VALUE = 1\n")
     nested = package / "domain"
     nested.mkdir()
     (nested / "unimported.py").write_text("UNTESTED = 1\n")
-    (tmp_path / "runner.py").write_text("import kubetrol.critical\n")
+    (tmp_path / "runner.py").write_text("import kuberich.critical\n")
     environment = os.environ.copy()
     environment.pop("COVERAGE_RCFILE", None)
     environment.pop("COVERAGE_PROCESS_START", None)

@@ -4,7 +4,7 @@ from dataclasses import replace
 
 import pytest
 
-from kubetrol.domain.mutations import (
+from kuberich.domain.mutations import (
     MutationState,
     annotation_intent,
     annotation_key,
@@ -13,9 +13,9 @@ from kubetrol.domain.mutations import (
     patch_intent,
     status_result,
 )
-from kubetrol.domain.resources import ApiResource, resource_record
-from kubetrol.domain.targets import ResourceTarget, SessionIdentity
-from kubetrol.errors import AppError
+from kuberich.domain.resources import ApiResource, resource_record
+from kuberich.domain.targets import ResourceTarget, SessionIdentity
+from kuberich.errors import AppError
 
 
 def selection(*, namespaced=True):
@@ -23,7 +23,7 @@ def selection(*, namespaced=True):
         "", "v1", "configmaps", "ConfigMap", namespaced, frozenset({"get", "patch"})
     )
     target = ResourceTarget(
-        SessionIdentity("kubetrol-test-one", 1),
+        SessionIdentity("kuberich-test-one", 1),
         "",
         "configmaps",
         "team" if namespaced else None,

@@ -3,7 +3,7 @@ requires = ["hatchling==1.32.4"]
 build-backend = "hatchling.build"
 
 [project]
-name = "kubetrol"
+name = "kuberich"
 version = "0.0.1.dev0"
 description = "A Kubernetes terminal UI built with Python and Textual"
 readme = "README.md"
@@ -33,13 +33,14 @@ dependencies = [
 ]
 
 [project.scripts]
-kubetrol = "kubetrol.cli:main"
+kuberich = "kuberich.cli:main"
+kubetrol = "kuberich.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/carloshm91/kubetrol"
-Repository = "https://github.com/carloshm91/kubetrol"
-Issues = "https://github.com/carloshm91/kubetrol/issues"
-Changelog = "https://github.com/carloshm91/kubetrol/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/carloshm91/kuberich"
+Repository = "https://github.com/carloshm91/kuberich"
+Issues = "https://github.com/carloshm91/kuberich/issues"
+Changelog = "https://github.com/carloshm91/kuberich/blob/main/CHANGELOG.md"
 
 [dependency-groups]
 dev = [
@@ -62,17 +63,17 @@ dev = [
 [tool.hatch.build.targets.wheel]
 sources = ["src"]
 include = [
-    "/src/kubetrol/**/*.py",
-    "/src/kubetrol/**/*.tcss",
-    "/src/kubetrol/py.typed",
+    "/src/kuberich/**/*.py",
+    "/src/kuberich/**/*.tcss",
+    "/src/kuberich/py.typed",
 ]
 exclude = ["**/__pycache__/**", "*.pyc", "*.pyo"]
 
 [tool.hatch.build.targets.sdist]
 include = [
-    "/src/kubetrol/**/*.py",
-    "/src/kubetrol/**/*.tcss",
-    "/src/kubetrol/py.typed",
+    "/src/kuberich/**/*.py",
+    "/src/kuberich/**/*.tcss",
+    "/src/kuberich/py.typed",
     "/pyproject.toml",
     "/README.md",
     "/LICENSE",
@@ -90,7 +91,7 @@ select = ["E4", "E7", "E9", "F", "I", "UP", "B", "SIM", "RUF"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["src/kubetrol"]
+files = ["src/kuberich"]
 mypy_path = ["scripts/typing"]
 
 [tool.pytest.ini_options]
@@ -101,7 +102,7 @@ asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
 branch = true
-source = ["kubetrol"]
+source = ["kuberich"]
 relative_files = true
 
 [tool.coverage.report]
@@ -115,41 +116,41 @@ partial_branches = []
 [tool.coverage.json]
 show_contexts = true
 
-[tool.kubetrol.coverage]
+[tool.kuberich.coverage]
 # Extend this reviewed list when deterministic security/state decisions are added.
 critical_modules = [
-    "src/kubetrol/cli.py",
-    "src/kubetrol/__main__.py",
-    "src/kubetrol/config/schema.py",
-    "src/kubetrol/diagnostics/redaction.py",
-    "src/kubetrol/security/controls.py",
-    "src/kubetrol/security/presentation.py",
-    "src/kubetrol/security/arguments.py",
-    "src/kubetrol/domain/targets.py",
-    "src/kubetrol/domain/processes.py",
-    "src/kubetrol/domain/port_forwards.py",
-    "src/kubetrol/domain/mutations.py",
-    "src/kubetrol/domain/editing.py",
-    "src/kubetrol/domain/workloads.py",
-    "src/kubetrol/domain/shell.py",
-    "src/kubetrol/domain/terminal.py",
-    "src/kubetrol/config/launch.py",
-    "src/kubetrol/services/access.py",
-    "src/kubetrol/services/commands.py",
-    "src/kubetrol/config/catalog.py",
-    "src/kubetrol/domain/connections.py",
-    "src/kubetrol/domain/resources.py",
-    "src/kubetrol/domain/watches.py",
-    "src/kubetrol/domain/views.py",
-    "src/kubetrol/domain/pods.py",
-    "src/kubetrol/domain/registry.py",
-    "src/kubetrol/domain/namespaces.py",
-    "src/kubetrol/domain/containers.py",
-    "src/kubetrol/domain/connection_overrides.py",
-    "src/kubetrol/domain/credential_helpers.py",
-    "src/kubetrol/domain/navigation.py",
-    "src/kubetrol/domain/inspection.py",
-    "src/kubetrol/domain/logs.py",
-    "src/kubetrol/domain/log_view.py",
-    "src/kubetrol/services/sessions.py",
+    "src/kuberich/cli.py",
+    "src/kuberich/__main__.py",
+    "src/kuberich/config/schema.py",
+    "src/kuberich/diagnostics/redaction.py",
+    "src/kuberich/security/controls.py",
+    "src/kuberich/security/presentation.py",
+    "src/kuberich/security/arguments.py",
+    "src/kuberich/domain/targets.py",
+    "src/kuberich/domain/processes.py",
+    "src/kuberich/domain/port_forwards.py",
+    "src/kuberich/domain/mutations.py",
+    "src/kuberich/domain/editing.py",
+    "src/kuberich/domain/workloads.py",
+    "src/kuberich/domain/shell.py",
+    "src/kuberich/domain/terminal.py",
+    "src/kuberich/config/launch.py",
+    "src/kuberich/services/access.py",
+    "src/kuberich/services/commands.py",
+    "src/kuberich/config/catalog.py",
+    "src/kuberich/domain/connections.py",
+    "src/kuberich/domain/resources.py",
+    "src/kuberich/domain/watches.py",
+    "src/kuberich/domain/views.py",
+    "src/kuberich/domain/pods.py",
+    "src/kuberich/domain/registry.py",
+    "src/kuberich/domain/namespaces.py",
+    "src/kuberich/domain/containers.py",
+    "src/kuberich/domain/connection_overrides.py",
+    "src/kuberich/domain/credential_helpers.py",
+    "src/kuberich/domain/navigation.py",
+    "src/kuberich/domain/inspection.py",
+    "src/kuberich/domain/logs.py",
+    "src/kuberich/domain/log_view.py",
+    "src/kuberich/services/sessions.py",
 ]

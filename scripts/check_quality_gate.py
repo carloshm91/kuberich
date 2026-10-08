@@ -11,7 +11,7 @@ REQUIRED_JOBS = {"plan", "application"}
 
 def main() -> int:
     try:
-        results = json.loads(os.environ["KUBETROL_JOB_RESULTS"])
+        results = json.loads(os.environ["KUBERICH_JOB_RESULTS"])
         if not isinstance(results, dict) or results.keys() != REQUIRED_JOBS:
             raise ValueError("the complete required job set must be present")
         for name, job in results.items():

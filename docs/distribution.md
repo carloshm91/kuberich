@@ -8,23 +8,31 @@
 | Homebrew project tap | 0.0.1 | Python formula using virtualenv_install_with_resources and hashed resources |
 | GitHub standalone executables | 0.1.0 | Platform-built PyInstaller bundles with checksums and provenance |
 
-The CLI and import package are named kubetrol. PyPI name availability must be
+The CLI and import package are named kuberich. PyPI name availability must be
 rechecked when the pending publisher is configured; a 404 lookup is not ownership.
 If the name cannot be acquired, resolve the naming issue before any public
 release instead of silently changing the advertised package.
 
+The private preview was previously named Kubetrol. Checkout upgrades use
+`uv sync --locked --group dev`, then `uv run kuberich`; the local directory name
+does not determine the CLI name. A pre-existing isolated `uv tool`/`pipx`
+installation of the old distribution must be uninstalled before installing
+the new local candidate, because both expose the retained `kubetrol` alias.
+Uninstalling a tool does not delete its preference files. Public installation
+still waits for the qualified release; see [preference compatibility](configuration.md).
+
 The planned Homebrew command after publication is:
 
 ```sh
-brew install carloshm91/tap/kubetrol
+brew install carloshm91/tap/kuberich
 ```
 
 The planned Python commands after publication are:
 
 ```sh
-uv tool install kubetrol
+uv tool install kuberich
 # Alternative:
-pipx install kubetrol
+pipx install kuberich
 ```
 
 These commands are intentionally documented as future release contracts. The

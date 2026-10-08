@@ -71,9 +71,9 @@ def canonical_release(tmp_path_factory):
         project.read_text().replace(f'version = "{PROJECT["version"]}"', 'version = "0.0.1rc1"', 1)
     )
     lock = source / "uv.lock"
-    entry = f'name = "kubetrol"\nversion = "{PROJECT["version"]}"'
+    entry = f'name = "kuberich"\nversion = "{PROJECT["version"]}"'
     assert lock.read_text().count(entry) == 1
-    lock.write_text(lock.read_text().replace(entry, 'name = "kubetrol"\nversion = "0.0.1rc1"', 1))
+    lock.write_text(lock.read_text().replace(entry, 'name = "kuberich"\nversion = "0.0.1rc1"', 1))
     checked = run(
         ["uv", "lock", "--locked", "--offline", "--python", sys.executable], source, 60, check=False
     )
@@ -121,9 +121,9 @@ def canonical_release(tmp_path_factory):
         120,
     )
     assert (
-        run([str(installed / "bin/kubetrol"), "--version"], outside).stdout == "kubetrol 0.0.1rc1\n"
+        run([str(installed / "bin/kuberich"), "--version"], outside).stdout == "kuberich 0.0.1rc1\n"
     )
-    result = run([str(installed / "bin/kubetrol"), "--help"], outside)
+    result = run([str(installed / "bin/kuberich"), "--help"], outside)
     assert "--context" in result.stdout and "--readonly" in result.stdout
     manifest = json.loads((bundle / "release.json").read_text())
     assert all(digest(bundle / name) == value for name, value in manifest["files"].items())

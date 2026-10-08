@@ -1,6 +1,6 @@
 # AKS authentication
 
-Kubetrol runs the Azure `kubelogin get-token` exec entry declared in the selected
+KubeRich runs the Azure `kubelogin get-token` exec entry declared in the selected
 trusted kubeconfig. It does not implement Azure login protocols, store a second
 identity database, convert the kubeconfig, select another tenant or provision AKS.
 
@@ -41,14 +41,14 @@ stdout credential JSON is captured with the existing 1 MiB bound and is never
 printed. `Never` retains closed stdin; `IfAvailable` and `Always` receive terminal
 stdin and `spec.interactive=true`. The handoff has a five-minute application
 limit; a declared provider timeout may be shorter. Ctrl+C cancels the child.
-After success Kubetrol validates the response and reconnects through the ordinary
+After success KubeRich validates the response and reconnects through the ordinary
 per-context API path. Failure/cancellation restores the UI and offers retry.
 Shutdown or a context replacement owns process cleanup and rejects old results.
 
 This route is allowed in application read-only mode because authentication is
 needed for reads. It requires a native POSIX terminal; headless/non-TTY/Web surfaces
 refuse it. The configured local helper controls its own interactive stderr output;
-Kubetrol does not record that output in diagnostics. Do not configure a provider
+KubeRich does not record that output in diagnostics. Do not configure a provider
 verbosity that prints secrets. For `azurecli`, establish the intended `az login`
 session externally; `:login` runs the declared kubelogin entry, not an inferred
 `az login` command or a different login mode.

@@ -8,22 +8,22 @@ from typing import Any
 
 from kubernetes_asyncio import client
 
-from kubetrol.adapters.kubernetes import KubernetesSession
-from kubetrol.adapters.mutations import conditional_patch
-from kubetrol.config.catalog import load_catalog
-from kubetrol.domain.connection_overrides import ConnectionOverrides
-from kubetrol.domain.connections import ConnectionRequest
-from kubetrol.domain.mutations import MutationState
-from kubetrol.domain.targets import ResourceTarget
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.mutations import MutationManager, MutationService
-from kubetrol.services.resources import ResourceReader
-from kubetrol.services.sessions import SessionService
+from kuberich.adapters.kubernetes import KubernetesSession
+from kuberich.adapters.mutations import conditional_patch
+from kuberich.config.catalog import load_catalog
+from kuberich.domain.connection_overrides import ConnectionOverrides
+from kuberich.domain.connections import ConnectionRequest
+from kuberich.domain.mutations import MutationState
+from kuberich.domain.targets import ResourceTarget
+from kuberich.services.access import AccessPolicy
+from kuberich.services.mutations import MutationManager, MutationService
+from kuberich.services.resources import ResourceReader
+from kuberich.services.sessions import SessionService
 from scripts.owned_kind import NODE_IMAGE, OwnedCluster, owned_cluster
 
 
 async def verify(cluster: OwnedCluster) -> dict[str, Any]:
-    namespace = "kubetrol-owned-mutation"
+    namespace = "kuberich-owned-mutation"
     request = ConnectionRequest(
         kubeconfig=str(cluster.path), context=cluster.context, namespace=namespace, timeout=15
     )
@@ -99,7 +99,7 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
         assert (await source.execute(source.confirm(stale_uid))).state is MutationState.STALE
 
         rbac = client.RbacAuthorizationV1Api(connection.api)
-        reader = "kubetrol-owned-patch-reader"
+        reader = "kuberich-owned-patch-reader"
         await rbac.create_namespaced_role(
             namespace,
             client.V1Role(

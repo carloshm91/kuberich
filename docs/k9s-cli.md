@@ -10,14 +10,14 @@ audited flags, with explicit unavailable errors for behavior that has not shippe
 Recognizing a flag does not establish Kubernetes or K9s compatibility.
 See the development checkpoint below, [local preferences](configuration.md) and
 [terminal controls](terminal-preview.md).
-No Kubetrol application is publicly released yet.
+No KubeRich application is publicly released yet.
 
-Every explicitly registered launch flag is represented below. Kubetrol keeps the
+Every explicitly registered launch flag is represented below. KubeRich keeps the
 familiar spelling as a compatibility alias; kebab-case aliases may also be
 provided. No option may be accepted and ignored. Presentation/export features
 scheduled later report that limitation until their owning task is implemented.
 
-| K9s flag | Kubetrol behavior / owner |
+| K9s flag | KubeRich behavior / owner |
 | --- | --- |
 | `--refresh`, `-r` | Validated refresh interval; F05/C03 |
 | `--logLevel`, `-l` | Sanitized diagnostic severity; F03/F05 |
@@ -134,7 +134,7 @@ Diagnostics never load these credentials or print tokens/private keys. Supplying
 connection options to local inspection commands is refused. Credential strings
 are bounded and reject controls; a command-line token is visible to the caller's
 shell/history/process tooling, so an existing kubeconfig/token helper is preferable
-for regular use. No token is persisted in Kubetrol preferences.
+for regular use. No token is persisted in KubeRich preferences.
 
 Exit codes: 0 success/inspection/normal terminal quit; 1 internal failure; 2 invalid
 input or noninteractive launch; 3 local file/log failure; 4 recognized unavailable
@@ -150,21 +150,21 @@ in B03/B07/U02, including resource singular/plural/short names, `ctx`, `ns`, `ca
 
 ## Effective configuration
 
-Explicit CLI arguments override Kubetrol environment settings, context-specific
+Explicit CLI arguments override KubeRich environment settings, context-specific
 settings, global settings and defaults, in that order. Kubeconfig selection uses
 an explicit file first, otherwise the platform's KUBECONFIG list, otherwise the
 standard user file. The loader must preserve kubeconfig merging rules and resolve
 relative paths against the originating file. Ambiguous combinations such as
 `--readonly --write` and `--namespace ... --all-namespaces` produce a clear error.
 
-Use Kubetrol-prefixed environment names for application settings; document their
+Use KubeRich-prefixed environment names for application settings; document their
 mapping from audited K9s names. Keep standard Kubernetes, AWS, Azure, Helm and
 terminal environment contracts. The source inventory includes configuration
 schema fields and environment identifiers; compatibility differences belong in
 U06 and must never be silent. User config remains separate from K9s config unless
 an explicit validated import is requested.
 
-Ordinary context selection only changes Kubetrol's session. Explicit context
+Ordinary context selection only changes KubeRich's session. Explicit context
 rename/delete is a separate M08 operation with preview, backup and atomic writes.
 The effective identity must be the same for list/watch, logs, exec, forwarding
 and Helm, even when flags override kubeconfig defaults.
@@ -178,7 +178,7 @@ and Helm, even when flags override kubeconfig defaults.
 | GKE | Configured `gke-gcloud-auth-plugin` | C08 exec and environment contracts; opt-in provider smoke |
 | Generic clusters | Token/token-file, embedded/file certs, exec/OIDC helper, proxies and TLS overrides | C01/C08 fake-API/TLS/credential fixtures and version matrix |
 
-Kubetrol does not issue cloud credentials or create clusters. It respects existing
+KubeRich does not issue cloud credentials or create clusters. It respects existing
 local credential helpers. Missing tools and expired sessions are actionable
 errors; browser/device authentication cannot block the UI indefinitely. Test exec
 v1/v1beta1, expirationTimestamp, certificate responses, interactiveMode,

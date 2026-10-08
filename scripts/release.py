@@ -54,7 +54,7 @@ def request(
     token: str = "",
     content_type: str = "application/json",
 ) -> Any:
-    headers = {"Accept": "application/json", "User-Agent": "kubetrol-release/1"}
+    headers = {"Accept": "application/json", "User-Agent": "kuberich-release/1"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
     if data is not None:
@@ -112,8 +112,8 @@ class GitHub:
 
 def metadata(distribution: Path, version: str) -> None:
     if set(artifact_inventory(distribution)) != {
-        f"kubetrol-{version}-py3-none-any.whl",
-        f"kubetrol-{version}.tar.gz",
+        f"kuberich-{version}-py3-none-any.whl",
+        f"kuberich-{version}.tar.gz",
     }:
         raise ValueError("Distribution filenames must match the canonical version")
     for path in (distribution / name for name in artifact_inventory(distribution)):
@@ -139,7 +139,7 @@ def metadata(distribution: Path, version: str) -> None:
                     raise ValueError("Source metadata is missing")
                 content = file.read()
         parsed = BytesParser().parsebytes(content)
-        if parsed["Name"] != "kubetrol" or parsed["Version"] != version:
+        if parsed["Name"] != "kuberich" or parsed["Version"] != version:
             raise ValueError("Distribution name/version does not match the release request")
 
 
@@ -269,10 +269,10 @@ def published_files(version: str, index: str) -> dict[str, str]:
     if index not in {"pypi", "testpypi"}:
         raise ValueError("Unsupported publication index")
     host = "pypi.org" if index == "pypi" else "test.pypi.org"
-    result = request(f"https://{host}/pypi/kubetrol/{version}/json")
+    result = request(f"https://{host}/pypi/kuberich/{version}/json")
     existing = {}
     if result is not None:
-        if result["info"]["name"] != "kubetrol" or result["info"]["version"] != version:
+        if result["info"]["name"] != "kuberich" or result["info"]["version"] != version:
             raise ValueError("PyPI release identity mismatch")
         for item in result["urls"]:
             if item["filename"] in existing or item.get("yanked") is not False:
@@ -310,7 +310,7 @@ def immutable_tag(api: GitHub, sha: str, version: str) -> None:
         "POST",
         {
             "tag": tag,
-            "message": f"Kubetrol {version}\n",
+            "message": f"KubeRich {version}\n",
             "object": sha,
             "type": "commit",
         },
@@ -330,7 +330,7 @@ def github_assets(api: GitHub, directory: Path, sha: str, version: str) -> list[
             {
                 "tag_name": tag,
                 "target_commitish": sha,
-                "name": f"Kubetrol {version}",
+                "name": f"KubeRich {version}",
                 "draft": True,
                 "prerelease": Version(version).is_prerelease,
                 "generate_release_notes": True,
@@ -389,7 +389,7 @@ def preflight(api: GitHub, sha: str, version: str, index: str) -> dict[str, Any]
     result = release_preflight(api, sha, version, index)
     contents = api(f"repos/{REPOSITORY}/contents/pyproject.toml?ref={sha}")
     project = tomllib.loads(base64.b64decode(contents["content"]).decode())["project"]
-    if project.get("name") != "kubetrol" or project.get("version") != version:
+    if project.get("name") != "kuberich" or project.get("version") != version:
         raise ValueError("Requested source metadata version differs")
     values = {}
     for filename in ("backlog.json", "github-issues.json"):

@@ -7,9 +7,9 @@ from uuid import UUID
 
 import pytest
 
-from kubetrol.domain.targets import ResourceTarget, SessionIdentity
-from kubetrol.errors import AppError
-from kubetrol.security.arguments import MAX_ARGUMENT_CHARACTERS, freeze_arguments, validate_argument
+from kuberich.domain.targets import ResourceTarget, SessionIdentity
+from kuberich.errors import AppError
+from kuberich.security.arguments import MAX_ARGUMENT_CHARACTERS, freeze_arguments, validate_argument
 
 SESSION = SessionIdentity("fixture-context", 1, UUID(int=1))
 

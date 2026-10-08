@@ -9,8 +9,8 @@ from contextlib import nullcontext
 
 import pytest
 
-from kubetrol.adapters import terminal
-from kubetrol.errors import AppError
+from kuberich.adapters import terminal
+from kuberich.errors import AppError
 
 
 @pytest.mark.parametrize("dimensions", [(90, 28), (0, 28), (90, 0)])

@@ -27,7 +27,7 @@ def verify(kind: str, output: Path) -> None:
     environment = capture_docker()
     before = inventory(environment)
     records = []
-    with TemporaryDirectory(prefix="kubetrol-kind-cancellation-") as temporary:
+    with TemporaryDirectory(prefix="kuberich-kind-cancellation-") as temporary:
         directory = Path(temporary)
         sentinel = directory / "caller-kubeconfig"
         sentinel.write_bytes(b"owned caller sentinel; never read as Kubernetes credentials\n")
@@ -60,7 +60,7 @@ def verify(kind: str, output: Path) -> None:
                 try:
                     while process.poll() is None:
                         matches = re.findall(
-                            r"Creating owned disposable kind cluster: (kubetrol-test-[a-f0-9]{32})",
+                            r"Creating owned disposable kind cluster: (kuberich-test-[a-f0-9]{32})",
                             log.read_text(),
                         )
                         name = matches[0] if matches else None

@@ -1,22 +1,56 @@
 # Local preferences and diagnostics
 
-This development build provides `info`, `config init`, `config check`, and local
+This development build provides `info`, `config init`, `config check`, `config migrate`, and local
 diagnostic logging, alongside the [terminal preview](terminal-preview.md).
 Preference inspection does not connect to Kubernetes. The UI applies built-in themes and displays
 read-only mode in both header/status and shared command decisions. The native shell service applies the shared read-only guard before preparation.
 
+## Compatibility with the private Kubetrol preview
+
+KubeRich uses `kuberich` for its package, Python imports and canonical command.
+The `kubetrol` console command remains an alias to the same entry point for the
+initial preview. Its help/version identify KubeRich. The old Python module and
+distribution are not duplicate packages; use `python -m kuberich` for module
+launch. Removing the alias requires a later minor release and migration notes.
+
+Default preference selection is CLI `--config`, then `KUBERICH_CONFIG`, then
+`KUBETROL_CONFIG`, then the platform's KubeRich file. If no KubeRich file exists,
+the old platform Kubetrol `config.yaml` is read in place. An existing or broken
+symlink/directory/invalid KubeRich file never silently falls back to old settings.
+Each `KUBERICH_*` preference variable wins over its corresponding `KUBETROL_*`
+alias; CLI overrides still have highest precedence. Explicit files never fall
+back to another location. Environment-provided relative log paths retain the
+launch directory rather than the preference directory.
+
+`info` reports the file actually read, whether migration is pending and the new
+target, without writing either file. `config check` and ordinary loading also
+leave preferences unchanged. `config init` refuses to replace existing legacy
+preferences. Use `config migrate` with default paths and without runtime overrides
+to create a mode-0600 KubeRich file atomically. It retains the original, unknown
+fields, read-only policy and effective settings; relative file-provided log
+destinations are made absolute to preserve their target. Existing legacy log/lock
+headers and archives remain accepted for explicitly configured log destinations.
+Default new logs use KubeRich's new platform directory.
+
+An existing destination is never replaced, including a competing creation during
+the commit. Repeating a completed migration validates the current file and makes
+no change. Explicit `--config` or configuration environment paths cannot be
+relocated implicitly by this command. It does not move kubeconfig, credentials,
+diagnostic logs or tool installations.
+
 ## Commands
 
 ```sh
-uv run kubetrol info
-uv run kubetrol config check
-uv run kubetrol config init
-uv run kubetrol --config /path/to/preferences.yaml config check
-uv run kubetrol --log-level DEBUG --log-file /path/to/kubetrol.log
+uv run kuberich info
+uv run kuberich config check
+uv run kuberich config init
+uv run kuberich config migrate
+uv run kuberich --config /path/to/preferences.yaml config check
+uv run kuberich --log-level DEBUG --log-file /path/to/kuberich.log
 ```
 
 Place global flags before a command. `--logLevel`/`-l` and `--logFile` are aliases
-for `--log-level` and `--log-file`. `--config` selects **Kubetrol preferences**;
+for `--log-level` and `--log-file`. `--config` selects **KubeRich preferences**;
 `--kubeconfig` selects Kubernetes connection configuration for a terminal launch.
 
 `info` prints JSON with installed versions, local config/data/log paths, validated
@@ -32,22 +66,23 @@ own editor and run `config check` afterward. There is no automatic rewrite on lo
 
 ## Paths and precedence
 
-The config path is chosen from `--config`, then `KUBETROL_CONFIG`, then
-[platformdirs](https://platformdirs.readthedocs.io/en/latest/api.html). An absent
+The config path is chosen from `--config`, then `KUBERICH_CONFIG`, then
+`KUBETROL_CONFIG`, then the platform default with the legacy fallback described
+above. Defaults follow [platformdirs](https://platformdirs.readthedocs.io/en/latest/api.html). An absent
 default file uses the defaults below. An explicitly selected missing file fails
 with exit 3; use `config init` to create it. Empty/comment-only files also use
 defaults. Paths expand `~`, support spaces and reject control characters.
 
 | Platform | Default preferences | Default diagnostic log |
 | --- | --- | --- |
-| Linux | `$XDG_CONFIG_HOME/kubetrol/config.yaml` or `~/.config/kubetrol/config.yaml` | `$XDG_STATE_HOME/kubetrol/log/kubetrol.log` or `~/.local/state/kubetrol/log/kubetrol.log` |
-| macOS | `~/Library/Application Support/kubetrol/config.yaml` | `~/Library/Logs/kubetrol/kubetrol.log` |
+| Linux | `$XDG_CONFIG_HOME/kuberich/config.yaml` or `~/.config/kuberich/config.yaml` | `$XDG_STATE_HOME/kuberich/log/kuberich.log` or `~/.local/state/kuberich/log/kuberich.log` |
+| macOS | `~/Library/Application Support/kuberich/config.yaml` | `~/Library/Logs/kuberich/kuberich.log` |
 
 `info` reports the actual paths on your machine. Preference operations never
 load Kubernetes credentials or change kubeconfig or its `current-context`. Files recognized as
 kubeconfig are rejected as preferences. Startup never writes preference files.
 
-Preference precedence is **explicit runtime CLI override → `KUBETROL_*`
+Preference precedence is **explicit runtime CLI override → `KUBERICH_*`
 environment → selected YAML → defaults**. Each layer is validated; a malformed
 file/environment value fails even if a higher layer would override it. This
 prevents an invalid lower layer from silently resurfacing on the next invocation.
@@ -56,11 +91,11 @@ The file is always read; log flags do not bypass a broken config.
 | YAML field | Default | Environment | Runtime CLI |
 | --- | --- | --- | --- |
 | `shell` | `["sh"]` | Not available | Not available; configure YAML |
-| `theme` | `k9s` | `KUBETROL_THEME` | Not yet available |
-| `refresh_seconds` | `2.0` | `KUBETROL_REFRESH` | `--refresh`, `-r`; periodic table ages/local repaint, independent of live watches |
-| `read_only` | `false` | `KUBETROL_READONLY` | `--readonly` / `--write` (mutually exclusive) |
-| `log_level` | `WARNING` | `KUBETROL_LOG_LEVEL` | `--log-level`, `--logLevel`, `-l` |
-| `log_file` | `null` (platform path) | `KUBETROL_LOG_FILE` | `--log-file`, `--logFile` |
+| `theme` | `k9s` | `KUBERICH_THEME` | Not yet available |
+| `refresh_seconds` | `2.0` | `KUBERICH_REFRESH` | `--refresh`, `-r`; periodic table ages/local repaint, independent of live watches |
+| `read_only` | `false` | `KUBERICH_READONLY` | `--readonly` / `--write` (mutually exclusive) |
+| `log_level` | `WARNING` | `KUBERICH_LOG_LEVEL` | `--log-level`, `--logLevel`, `-l` |
+| `log_file` | `null` (platform path) | `KUBERICH_LOG_FILE` | `--log-file`, `--logFile` |
 
 Environment read-only values are `true`/`false`, case insensitive. Levels accept
 DEBUG, INFO, WARNING, ERROR or CRITICAL, case insensitive, and are normalized to
@@ -132,7 +167,7 @@ approximately 1 MiB with three archives. Each formatted record is bounded to
 8 KiB in UTF-8; total log storage is bounded by four times (1 MiB + 8 KiB), plus
 the small lock file. Open files and locks are released on normal exit or failure.
 
-Nonempty destinations and existing archives must have Kubetrol's diagnostic
+Nonempty destinations and existing archives must have KubeRich's diagnostic
 header. Foreign files, symlinks and nonregular files are refused rather than
 modified. This includes a mistakenly selected kubeconfig. An empty regular file
 is accepted. These checks prevent mistaken destinations; they are not a sandbox

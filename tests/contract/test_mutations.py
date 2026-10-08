@@ -5,13 +5,13 @@ from uuid import uuid4
 
 import pytest
 
-from kubetrol.adapters.kubernetes import KubernetesSession
-from kubetrol.domain.mutations import MutationState
-from kubetrol.domain.resources import ApiResource
-from kubetrol.domain.targets import ResourceTarget, SessionIdentity
-from kubetrol.errors import AppError
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.mutations import Confirmation, MutationManager, MutationService
+from kuberich.adapters.kubernetes import KubernetesSession
+from kuberich.domain.mutations import MutationState
+from kuberich.domain.resources import ApiResource
+from kuberich.domain.targets import ResourceTarget, SessionIdentity
+from kuberich.errors import AppError
+from kuberich.services.access import AccessPolicy
+from kuberich.services.mutations import Confirmation, MutationManager, MutationService
 from tests.support.connections import catalog_fixture, certificate
 from tests.support.mutations import mutation_api
 
@@ -21,12 +21,12 @@ async def source_fixture(tmp_path, *, timeout=2, tls=False, user=None, read_only
     context, cluster = certificate(tmp_path) if tls else (None, None)
     async with mutation_api(tls=context) as (url, fixture):
         client = KubernetesSession(
-            catalog_fixture(tmp_path, url, user, cluster).select("kubetrol-test-one"), timeout
+            catalog_fixture(tmp_path, url, user, cluster).select("kuberich-test-one"), timeout
         )
         await client.open()
         current = [True]
         target = ResourceTarget(
-            SessionIdentity("kubetrol-test-one", 1),
+            SessionIdentity("kuberich-test-one", 1),
             "",
             "configmaps",
             "team",

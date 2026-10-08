@@ -1,4 +1,4 @@
-usage: kubetrol [-h] [--version] [--config CONFIG] [--kubeconfig KUBECONFIG] [--context CONTEXT]
+usage: kuberich [-h] [--version] [--config CONFIG] [--kubeconfig KUBECONFIG] [--context CONTEXT]
                 [--namespace NAMESPACE] [--all-namespaces] [--request-timeout REQUEST_TIMEOUT]
                 [--log-file LOG_FILE] [--log-level LOG_LEVEL] [--refresh REFRESH_SECONDS]
                 [--readonly] [--write] [--command INITIAL_COMMAND] [--headless] [--logoless]
@@ -16,12 +16,12 @@ positional arguments:
     help                show launch help without loading configuration
     version             show installed version without loading configuration
     info                show safe local paths, preferences and installed versions
-    config              initialize or validate local preferences
+    config              initialize, validate or migrate local preferences
 
 options:
   -h, --help            show this help message and exit
   --version             show program's version number and exit
-  --config CONFIG       Kubetrol preferences YAML (separate from kubeconfig)
+  --config CONFIG       KubeRich preferences YAML (separate from kubeconfig)
   --kubeconfig KUBECONFIG
                         single kubeconfig file (otherwise KUBECONFIG or ~/.kube/config)
   --context CONTEXT     context to connect (otherwise current-context)

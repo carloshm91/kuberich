@@ -7,9 +7,9 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from kubetrol.config.schema import Settings
-from kubetrol.domain.registry import RESOURCE_ALIASES, resource_row
-from kubetrol.ui.app import KubetrolApp
+from kuberich.config.schema import Settings
+from kuberich.domain.registry import RESOURCE_ALIASES, resource_row
+from kuberich.ui.app import KubeRichApp
 from tests.support.standard import row_record
 
 
@@ -31,7 +31,7 @@ def rows(count=80):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
 async def test_uid_scroll_sort_changes_deletion_and_replacement(size, monkeypatch):
-    app = KubetrolApp(Settings(), logging.Logger("shared-table", level=100))
+    app = KubeRichApp(Settings(), logging.Logger("shared-table", level=100))
     async with app.run_test(size=size) as pilot:
         table = app.standard_table
         app._display_resource("deployments")
@@ -84,7 +84,7 @@ async def test_uid_scroll_sort_changes_deletion_and_replacement(size, monkeypatc
 
 @pytest.mark.asyncio
 async def test_bounded_batch_aborts_previous_generation_and_age_refresh(monkeypatch):
-    app = KubetrolApp(Settings(), logging.Logger("shared-table", level=100))
+    app = KubeRichApp(Settings(), logging.Logger("shared-table", level=100))
     async with app.run_test() as pilot:
         table = app.standard_table
         app._display_resource("deployments")
@@ -103,7 +103,7 @@ async def test_bounded_batch_aborts_previous_generation_and_age_refresh(monkeypa
         assert await table.apply_rows(rows(2), 2, lambda: True)
         assert table.row_count == 2 and table.selected_uid == rows(2)[0].uid
         clock = datetime(2026, 10, 1, tzinfo=UTC)
-        monkeypatch.setattr("kubetrol.ui.standard.utc_now", lambda: clock)
+        monkeypatch.setattr("kuberich.ui.standard.utc_now", lambda: clock)
         table.refresh_ages()
         assert str(table.get_cell(table.selected_uid, "age")) == "0s"
         clock += timedelta(seconds=61)

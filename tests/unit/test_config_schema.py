@@ -4,14 +4,14 @@ from typing import Any
 
 import pytest
 
-from kubetrol.config.schema import (
+from kuberich.config.schema import (
     ConfigDocument,
     Settings,
     parse_document,
     resolve_settings,
     settings_from,
 )
-from kubetrol.errors import AppError
+from kuberich.errors import AppError
 
 
 def test_defaults_and_unknown_fields_survive_a_round_trip() -> None:
@@ -113,11 +113,11 @@ def test_refresh_boundary_is_inclusive(seconds: float) -> None:
 def test_every_environment_preference_is_applied_before_cli_overrides() -> None:
     document = parse_document({"schema_version": 1, "theme": "file-theme", "refresh_seconds": 10})
     environment = {
-        "KUBETROL_THEME": "env-theme",
-        "KUBETROL_REFRESH": "3.5",
-        "KUBETROL_READONLY": "TRUE",
-        "KUBETROL_LOG_LEVEL": "DEBUG",
-        "KUBETROL_LOG_FILE": "env.log",
+        "KUBERICH_THEME": "env-theme",
+        "KUBERICH_REFRESH": "3.5",
+        "KUBERICH_READONLY": "TRUE",
+        "KUBERICH_LOG_LEVEL": "DEBUG",
+        "KUBERICH_LOG_FILE": "env.log",
         "AWS_SECRET_ACCESS_KEY": "ignored",
     }
     settings = resolve_settings(
@@ -125,17 +125,17 @@ def test_every_environment_preference_is_applied_before_cli_overrides() -> None:
     )
     assert settings == Settings("cli-theme", 3.5, True, "DEBUG", "cli.log")
     assert document.settings.theme == "file-theme"
-    assert resolve_settings(ConfigDocument(), {"KUBETROL_READONLY": "false"}, {}).read_only is False
+    assert resolve_settings(ConfigDocument(), {"KUBERICH_READONLY": "false"}, {}).read_only is False
 
 
 @pytest.mark.parametrize(
     "variable,value,message",
     [
-        ("KUBETROL_REFRESH", "Bearer secret", "must be a number"),
-        ("KUBETROL_READONLY", "yes", "must be true or false"),
-        ("KUBETROL_THEME", "", "theme must"),
-        ("KUBETROL_LOG_LEVEL", "token=secret", "log_level must"),
-        ("KUBETROL_LOG_FILE", "", "log_file must"),
+        ("KUBERICH_REFRESH", "Bearer secret", "must be a number"),
+        ("KUBERICH_READONLY", "yes", "must be true or false"),
+        ("KUBERICH_THEME", "", "theme must"),
+        ("KUBERICH_LOG_LEVEL", "token=secret", "log_level must"),
+        ("KUBERICH_LOG_FILE", "", "log_file must"),
     ],
 )
 def test_invalid_environment_does_not_echo_values(variable: str, value: str, message: str) -> None:
@@ -146,7 +146,7 @@ def test_invalid_environment_does_not_echo_values(variable: str, value: str, mes
 
 def test_invalid_environment_is_not_masked_by_a_valid_cli_override() -> None:
     with pytest.raises(AppError, match="log_level"):
-        resolve_settings(ConfigDocument(), {"KUBETROL_LOG_LEVEL": "invalid"}, {"log_level": "INFO"})
+        resolve_settings(ConfigDocument(), {"KUBERICH_LOG_LEVEL": "invalid"}, {"log_level": "INFO"})
 
 
 def test_unknown_override_is_rejected() -> None:
@@ -157,5 +157,5 @@ def test_unknown_override_is_rejected() -> None:
 def test_file_environment_and_cli_levels_accept_common_lowercase_spelling() -> None:
     document = parse_document({"schema_version": 1, "log_level": "warning"})
     assert document.settings.log_level == "WARNING"
-    settings = resolve_settings(document, {"KUBETROL_LOG_LEVEL": "debug"}, {"log_level": "info"})
+    settings = resolve_settings(document, {"KUBERICH_LOG_LEVEL": "debug"}, {"log_level": "info"})
     assert settings.log_level == "INFO"

@@ -80,7 +80,7 @@ From an interactive terminal in the development checkout:
 
 ```sh
 uv sync --locked --group dev
-uv run kubetrol
+uv run kuberich
 ```
 
 Use `:ctx` to choose a configured context, then `:ns NAME`. Look for `Live` and

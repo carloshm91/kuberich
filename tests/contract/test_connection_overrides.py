@@ -8,13 +8,13 @@ from pathlib import Path
 import pytest
 from aiohttp import web
 
-from kubetrol.config.catalog import Entry
-from kubetrol.domain.connection_overrides import ConnectionOverrides
-from kubetrol.domain.connections import ConnectionRequest, ConnectionState
-from kubetrol.domain.targets import ResourceTarget
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.sessions import SessionService
-from kubetrol.services.shell import ShellService
+from kuberich.config.catalog import Entry
+from kuberich.domain.connection_overrides import ConnectionOverrides
+from kuberich.domain.connections import ConnectionRequest, ConnectionState
+from kuberich.domain.targets import ResourceTarget
+from kuberich.services.access import AccessPolicy
+from kuberich.services.sessions import SessionService
+from kuberich.services.shell import ShellService
 from tests.support.connections import catalog_fixture, certificate, fake_api, namespaces
 from tests.support.pods import pod
 from tests.support.workspace import workspace_api
@@ -61,7 +61,7 @@ async def test_alternate_cluster_user_and_impersonation_reach_reads_streams_and_
         )
         sessions = SessionService(catalog, ConnectionRequest(overrides=overrides))
         try:
-            observation = await sessions.connect("kubetrol-test-one")
+            observation = await sessions.connect("kuberich-test-one")
             assert observation.state is ConnectionState.CONNECTED
             client = sessions.client
             assert (await client.get_json("/api/v1/namespaces/team/pods/api", params={}))[
@@ -104,7 +104,7 @@ async def test_alternate_cluster_user_and_impersonation_reach_reads_streams_and_
                 )
             assert not captured.path.exists()
             catalog.users["alternate"].data["token"] = "alternate-token"
-            second = await sessions.connect("kubetrol-test-Two")
+            second = await sessions.connect("kuberich-test-Two")
             assert second.state is ConnectionState.CONNECTED
             assert (
                 client.api is None
@@ -144,7 +144,7 @@ async def test_explicit_token_suppresses_configured_helper_without_running_it(tm
             catalog, ConnectionRequest(overrides=ConnectionOverrides(token="explicit-token"))
         )
         try:
-            assert (await sessions.connect("kubetrol-test-one")).state is ConnectionState.CONNECTED
+            assert (await sessions.connect("kuberich-test-one")).state is ConnectionState.CONNECTED
             assert sessions.client.credentials is None
             delegated = sessions.client.delegated_config()["users"][0]["user"]
             assert delegated == {
@@ -152,7 +152,7 @@ async def test_explicit_token_suppresses_configured_helper_without_running_it(tm
                 "as": "original",
                 "as-groups": ["original-group"],
             }
-            assert "exec" in catalog.select("kubetrol-test-one").user.data
+            assert "exec" in catalog.select("kuberich-test-one").user.data
             assert not marker.exists()
         finally:
             await sessions.close()
@@ -173,7 +173,7 @@ async def test_impersonation_denial_keeps_safe_status_and_original_config(tmp_pa
             ConnectionRequest(overrides=ConnectionOverrides(as_user="denied-subject")),
         )
         try:
-            observation = await sessions.connect("kubetrol-test-one")
+            observation = await sessions.connect("kuberich-test-one")
             assert observation.state is state and "opaque-private-token" not in observation.message
             assert (sessions.client is not None) is (status == 403)
         finally:
@@ -198,7 +198,7 @@ async def test_loaded_impersonation_uid_and_repeated_extras_survive_delegation(t
     async with fake_api(handler) as url:
         sessions = SessionService(catalog_fixture(tmp_path, url, user), ConnectionRequest())
         try:
-            assert (await sessions.connect("kubetrol-test-one")).state is ConnectionState.CONNECTED
+            assert (await sessions.connect("kuberich-test-one")).state is ConnectionState.CONNECTED
             assert sessions.client.delegated_config()["users"][0]["user"] == user
         finally:
             await sessions.close()
@@ -245,7 +245,7 @@ async def test_tls_overrides_replace_captured_material_and_keep_verification_exp
             catalog_fixture(tmp_path, url, user, cluster), ConnectionRequest(overrides=overrides)
         )
         try:
-            observation = await sessions.connect("kubetrol-test-one")
+            observation = await sessions.connect("kuberich-test-one")
             assert observation.state is (
                 ConnectionState.TLS_ERROR if mode == "verify" else ConnectionState.CONNECTED
             )

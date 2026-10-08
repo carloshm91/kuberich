@@ -6,15 +6,15 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from kubetrol.config.catalog import KubeCatalog
-from kubetrol.config.schema import Settings
-from kubetrol.domain.connections import ConnectionRequest
-from kubetrol.domain.registry import STANDARD_RESOURCES
-from kubetrol.domain.views import ViewStatus
-from kubetrol.services.commands import ResourceCommand
-from kubetrol.services.resources import ResourceReader
-from kubetrol.ui.app import KubetrolApp
-from kubetrol.ui.inspection import InspectionScreen
+from kuberich.config.catalog import KubeCatalog
+from kuberich.config.schema import Settings
+from kuberich.domain.connections import ConnectionRequest
+from kuberich.domain.registry import STANDARD_RESOURCES
+from kuberich.domain.views import ViewStatus
+from kuberich.services.commands import ResourceCommand
+from kuberich.services.resources import ResourceReader
+from kuberich.ui.app import KubeRichApp
+from kuberich.ui.inspection import InspectionScreen
 from scripts.owned_kind import SHELL_IMAGE
 
 
@@ -40,7 +40,7 @@ def fixtures(namespace: str, volume: str, storage: str) -> tuple[dict[str, Any],
                 "selector": selector,
                 "template": {
                     **template,
-                    "spec": {**template["spec"], "nodeSelector": {"kubetrol-test-absent": "true"}},
+                    "spec": {**template["spec"], "nodeSelector": {"kuberich-test-absent": "true"}},
                 },
             }
         },
@@ -93,7 +93,7 @@ def fixtures(namespace: str, volume: str, storage: str) -> tuple[dict[str, Any],
                 "accessModes": ["ReadWriteOnce"],
                 "storageClassName": "",
                 "persistentVolumeReclaimPolicy": "Retain",
-                "hostPath": {"path": "/tmp/kubetrol-owned-standard"},
+                "hostPath": {"path": "/tmp/kuberich-owned-standard"},
                 "claimRef": {"namespace": namespace, "name": "owned"},
             }
         },
@@ -109,7 +109,7 @@ def fixtures(namespace: str, volume: str, storage: str) -> tuple[dict[str, Any],
 async def verify_standard_resources(
     reader: ResourceReader, catalog: KubeCatalog, path: Path, context: str
 ) -> dict[str, object]:
-    namespace = "kubetrol-test-standard-" + uuid4().hex[:10]
+    namespace = "kuberich-test-standard-" + uuid4().hex[:10]
     volume, storage = namespace + "-pv", namespace + "-sc"
     sdk = reader.session.api
     assert sdk is not None
@@ -163,7 +163,7 @@ async def verify_standard_resources(
         )
         targets[definition.name] = (name, created["metadata"]["uid"])
 
-    app = KubetrolApp(
+    app = KubeRichApp(
         Settings(read_only=True),
         logging.Logger("owned-standard-views"),
         catalog=catalog,
@@ -195,14 +195,14 @@ async def verify_standard_resources(
             await write(
                 endpoint,
                 "PATCH",
-                {"metadata": {"annotations": {"kubetrol-owned-standard": "watched"}}},
+                {"metadata": {"annotations": {"kuberich-owned-standard": "watched"}}},
             )
             async with asyncio.timeout(30):
                 while app.workspace.store.observation.snapshot is None or not any(
                     item.uid == uid
                     and item.manifest["metadata"]
                     .get("annotations", {})
-                    .get("kubetrol-owned-standard")
+                    .get("kuberich-owned-standard")
                     == "watched"
                     for item in app.workspace.store.observation.snapshot.items
                 ):

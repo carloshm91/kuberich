@@ -8,7 +8,7 @@ from http.server import ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
 
-from kubetrol.domain.registry import RESOURCE_ALIASES
+from kuberich.domain.registry import RESOURCE_ALIASES
 from tests.support.editing import apply_patch
 from tests.support.mutation_terminal import MutationHandler
 from tests.support.standard import manifest
@@ -76,7 +76,7 @@ def terminal_editing(command, directory, evidence, *, scenario="success"):
     helper = directory / "owned-editor.py"
     helper.write_text(EDITOR)
     marker = directory / "owned-editor-path"
-    environment = {"KUBETROL_EDITOR": shlex.join([sys.executable, str(helper), str(marker)])}
+    environment = {"KUBERICH_EDITOR": shlex.join([sys.executable, str(helper), str(marker)])}
     try:
         with TerminalSession(
             [*command, "--kubeconfig", str(kubeconfig), "--command", "cm team"],

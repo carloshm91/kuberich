@@ -7,11 +7,11 @@ from pathlib import Path
 import pytest
 from aiohttp import web
 
-from kubetrol.adapters import kubernetes
-from kubetrol.domain.connections import ConnectionProblem, ConnectionState, HttpProblem
-from kubetrol.domain.resources import api_resource
-from kubetrol.errors import AppError
-from kubetrol.services import resources
+from kuberich.adapters import kubernetes
+from kuberich.domain.connections import ConnectionProblem, ConnectionState, HttpProblem
+from kuberich.domain.resources import api_resource
+from kuberich.errors import AppError
+from kuberich.services import resources
 from tests.support.resources import (
     aggregated,
     aggregated_group,

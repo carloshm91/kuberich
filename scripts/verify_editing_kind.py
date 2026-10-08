@@ -9,24 +9,24 @@ from typing import Any
 
 from kubernetes_asyncio import client
 
-from kubetrol.adapters.kubernetes import KubernetesSession
-from kubetrol.config.catalog import load_catalog
-from kubetrol.domain.connection_overrides import ConnectionOverrides
-from kubetrol.domain.connections import ConnectionRequest
-from kubetrol.domain.editing import editable_manifest
-from kubetrol.domain.mutations import MutationState
-from kubetrol.domain.targets import ResourceTarget
-from kubetrol.errors import AppError
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.editing import EditingService
-from kubetrol.services.mutations import MutationManager
-from kubetrol.services.resources import ResourceReader
-from kubetrol.services.sessions import SessionService
+from kuberich.adapters.kubernetes import KubernetesSession
+from kuberich.config.catalog import load_catalog
+from kuberich.domain.connection_overrides import ConnectionOverrides
+from kuberich.domain.connections import ConnectionRequest
+from kuberich.domain.editing import editable_manifest
+from kuberich.domain.mutations import MutationState
+from kuberich.domain.targets import ResourceTarget
+from kuberich.errors import AppError
+from kuberich.services.access import AccessPolicy
+from kuberich.services.editing import EditingService
+from kuberich.services.mutations import MutationManager
+from kuberich.services.resources import ResourceReader
+from kuberich.services.sessions import SessionService
 from scripts.owned_kind import NODE_IMAGE, OwnedCluster, owned_cluster
 
 
 async def verify(cluster: OwnedCluster) -> dict[str, Any]:
-    namespace = "kubetrol-owned-editor"
+    namespace = "kuberich-owned-editor"
     request = ConnectionRequest(
         kubeconfig=str(cluster.path), context=cluster.context, namespace=namespace, timeout=15
     )

@@ -41,7 +41,7 @@ def package_map(inventory: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
 def runtime_packages(inventory: dict[str, Any], project: dict[str, Any]) -> dict[str, str]:
     packages = package_map(inventory)
-    root = packages.pop("kubetrol", None)
+    root = packages.pop("kuberich", None)
     if root is None or root["version"] != project["version"]:
         raise ValueError("The built application must be installed")
     environment = {key: str(value) for key, value in default_environment().items()}
@@ -117,7 +117,7 @@ def check_policy(policy: dict[str, Any], today: date) -> list[dict[str, str]]:
         ):
             raise ValueError("Exceptions require one specific vulnerability")
         if not re.fullmatch(
-            r"https://github.com/carloshm91/kubetrol/issues/[1-9]\d*", exception["issue"]
+            r"https://github.com/carloshm91/kuberich/issues/[1-9]\d*", exception["issue"]
         ):
             raise ValueError("Exception needs its tracked repository issue")
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]{0,38}", exception["owner"]):
@@ -188,7 +188,7 @@ def license_inventory(
     inventory: dict[str, Any], bom: dict[str, Any], policy: dict[str, Any]
 ) -> dict[str, dict[str, Any]]:
     packages = package_map(inventory)
-    packages.pop("kubetrol")
+    packages.pop("kuberich")
     components = {}
     for component in bom.get("components", []):
         name = str(canonicalize_name(component["name"]))

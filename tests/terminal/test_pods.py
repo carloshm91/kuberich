@@ -22,7 +22,7 @@ def test_live_pod_navigation_update_sort_scope_and_resize_restore_terminal(tmp_p
     before = path.read_bytes()
     try:
         with TerminalSession(
-            [sys.executable, "-m", "kubetrol", "--kubeconfig", str(path)], tmp_path
+            [sys.executable, "-m", "kuberich", "--kubeconfig", str(path)], tmp_path
         ) as terminal:
             terminal.wait_for(b"owned-pty-pod-000")
             terminal.wait_for(b"80 pods")

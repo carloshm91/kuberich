@@ -4,7 +4,7 @@ import signal
 
 import pytest
 
-from kubetrol.ui.shutdown import TERMINAL_SIGNALS, TerminalSignals
+from kuberich.ui.shutdown import TERMINAL_SIGNALS, TerminalSignals
 
 
 class App:

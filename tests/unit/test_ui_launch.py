@@ -6,9 +6,9 @@ import sys
 
 import pytest
 
-from kubetrol.config.schema import Settings
-from kubetrol.errors import AppError
-from kubetrol.ui import launch
+from kuberich.config.schema import Settings
+from kuberich.errors import AppError
+from kuberich.ui import launch
 
 
 class _Terminal(io.StringIO):
@@ -41,7 +41,7 @@ def test_terminal_return_code_is_propagated_safely(
 
     monkeypatch.setattr(sys, "stdin", _Terminal())
     monkeypatch.setattr(sys, "stdout", _Terminal())
-    monkeypatch.setattr(launch, "KubetrolApp", _App)
+    monkeypatch.setattr(launch, "KubeRichApp", _App)
     if result == 129:
         with pytest.raises(AppError, match="Terminal disconnected") as error:
             launch.run_terminal(Settings(), logging.Logger("fixture"))

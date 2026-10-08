@@ -6,9 +6,9 @@ from datetime import UTC, datetime
 
 import pytest
 
-from kubetrol.domain.mutations import MutationIntent, decode_patch, mutation_path, patch_intent
-from kubetrol.domain.resources import resource_record
-from kubetrol.domain.workloads import (
+from kuberich.domain.mutations import MutationIntent, decode_patch, mutation_path, patch_intent
+from kuberich.domain.resources import resource_record
+from kuberich.domain.workloads import (
     WorkloadAction,
     applicable,
     controlled_by,
@@ -18,8 +18,8 @@ from kubetrol.domain.workloads import (
     revision_template,
     rollout_progress,
 )
-from kubetrol.errors import AppError
-from kubetrol.ui.chrome import workload_shortcuts
+from kuberich.errors import AppError
+from kuberich.ui.chrome import workload_shortcuts
 from tests.support.workloads import selection
 
 

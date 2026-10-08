@@ -62,7 +62,7 @@ uv run python -m scripts.verify_mutations_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_editing_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_workloads_kind --kind /absolute/path/to/kind
 uv build
-uv run python -m scripts.verify_quickstart --wheel dist/kubetrol-0.0.1.dev0-py3-none-any.whl --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
+uv run python -m scripts.verify_quickstart --wheel dist/kuberich-0.0.1.dev0-py3-none-any.whl --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
 ```
 
 The lifecycle controller sends actual SIGTERM during node creation and after

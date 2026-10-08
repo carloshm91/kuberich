@@ -40,7 +40,7 @@ def exception(**changes):
         "package": "requests",
         "version": "2.19.1",
         "vulnerability": "CVE-2018-18074",
-        "issue": "https://github.com/carloshm91/kubetrol/issues/35",
+        "issue": "https://github.com/carloshm91/kuberich/issues/35",
         "owner": "carloshm91",
         "rationale": "Synthetic fixture only; production does not use this vulnerable version.",
         "expires": (TODAY + timedelta(days=7)).isoformat(),
@@ -70,7 +70,7 @@ def test_known_requests_credential_disclosure_fixture_is_rejected():
         {"vulnerability": "*"},
         {"vulnerability": "all"},
         {"issue": "https://example.invalid/1"},
-        {"issue": "https://github.com/carloshm91/kubetrol/issues/0"},
+        {"issue": "https://github.com/carloshm91/kuberich/issues/0"},
         {"owner": ""},
         {"owner": "someone@example.invalid"},
         {"rationale": "ignore"},
@@ -175,7 +175,7 @@ def test_runtime_closure_includes_extras_cycles_and_only_active_markers():
     inventory = {
         "python": "3.12.12",
         "packages": [
-            {"name": "kubetrol", "version": "0.1", "requires": ["a[x]>=1"]},
+            {"name": "kuberich", "version": "0.1", "requires": ["a[x]>=1"]},
             {
                 "name": "a",
                 "version": "1",
@@ -230,12 +230,12 @@ def test_current_actions_are_pinned_and_missing_inventory_is_rejected(tmp_path):
 
 
 def test_cyclonedx_schema_and_digest_linkage_are_independently_required():
-    artifacts = {"kubetrol.whl": "a" * 64, "kubetrol.tar.gz": "b" * 64}
+    artifacts = {"kuberich.whl": "a" * 64, "kuberich.tar.gz": "b" * 64}
     bom = {
         "bomFormat": "CycloneDX",
         "specVersion": "1.6",
         "version": 1,
-        "metadata": {"component": {"type": "application", "name": "kubetrol", "version": "0.1"}},
+        "metadata": {"component": {"type": "application", "name": "kuberich", "version": "0.1"}},
     }
     validate_sbom(bom)
     from scripts.check_supply_chain import attach_artifacts

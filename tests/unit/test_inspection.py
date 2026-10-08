@@ -5,17 +5,17 @@ import copy
 import pytest
 import yaml
 
-from kubetrol.domain.inspection import (
+from kuberich.domain.inspection import (
     REDACTED,
     document,
     inspection_documents,
     redacted,
     text_matches,
 )
-from kubetrol.domain.resources import resource_record
-from kubetrol.domain.targets import ResourceTarget, SessionIdentity
-from kubetrol.errors import AppError
-from kubetrol.services.inspection import EVENTS
+from kuberich.domain.resources import resource_record
+from kuberich.domain.targets import ResourceTarget, SessionIdentity
+from kuberich.errors import AppError
+from kuberich.services.inspection import EVENTS
 from tests.support.pods import pod
 
 

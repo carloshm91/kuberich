@@ -1,7 +1,7 @@
-# Kubetrol Homebrew tap
+# KubeRich Homebrew tap
 
-This is the prepared tap scaffold. Kubetrol's release tooling generates
-`Formula/kubetrol.rb` from the published immutable sdist and its audited locked
+This is the prepared tap scaffold. KubeRich's release tooling generates
+`Formula/kuberich.rb` from the published immutable sdist and its audited locked
 runtime resources. The formula installs dependencies into a private virtual
 environment and tests actual CLI behavior and required UI assets.
 

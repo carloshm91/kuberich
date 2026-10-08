@@ -8,13 +8,13 @@ import threading
 import pytest
 from textual.widgets import Button, Input, Static
 
-from kubetrol.adapters import kubernetes
-from kubetrol.config.schema import Settings
-from kubetrol.domain.mutations import MutationState
-from kubetrol.domain.registry import RESOURCE_ALIASES
-from kubetrol.services.commands import ResourceCommand
-from kubetrol.ui.app import KubetrolApp
-from kubetrol.ui.mutations import AnnotationScreen, MutationHistoryScreen
+from kuberich.adapters import kubernetes
+from kuberich.config.schema import Settings
+from kuberich.domain.mutations import MutationState
+from kuberich.domain.registry import RESOURCE_ALIASES
+from kuberich.services.commands import ResourceCommand
+from kuberich.ui.app import KubeRichApp
+from kuberich.ui.mutations import AnnotationScreen, MutationHistoryScreen
 from tests.support.connections import catalog_fixture
 from tests.support.mutations import mutation_api
 from tests.support.workspace import wait_for
@@ -102,7 +102,7 @@ async def test_preparation_is_drained_before_client_cleanup(tmp_path, monkeypatc
 
 
 def app_fixture(tmp_path, url, *, read_only=False):
-    return KubetrolApp(
+    return KubeRichApp(
         Settings(read_only=read_only),
         logging.getLogger("owned-mutation-ui"),
         catalog=catalog_fixture(tmp_path, url),
@@ -134,7 +134,7 @@ async def test_review_enter_cancel_confirm_and_public_history(tmp_path, size):
             assert app.focused is screen.query_one("#annotation-cancel", Button)
             target = str(screen.query_one("#annotation-target", Static).content)
             preview = str(screen.query_one("#annotation-preview", Static).content)
-            assert "Context: kubetrol-test-one" in target and "Namespace: team" in target
+            assert "Context: kuberich-test-one" in target and "Namespace: team" in target
             assert "configmaps/owned-one" in target and "UID:" in target
             assert (
                 "opaque/version-7" in preview

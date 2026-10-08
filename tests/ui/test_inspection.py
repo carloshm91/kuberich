@@ -7,10 +7,10 @@ from pathlib import Path
 import pytest
 from aiohttp import web
 
-from kubetrol.config.schema import Settings
-from kubetrol.domain.views import ViewStatus
-from kubetrol.ui.app import KubetrolApp
-from kubetrol.ui.inspection import InspectionScreen
+from kuberich.config.schema import Settings
+from kuberich.domain.views import ViewStatus
+from kuberich.ui.app import KubeRichApp
+from kuberich.ui.inspection import InspectionScreen
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
 from tests.support.resources import collection
@@ -34,7 +34,7 @@ async def ns(request):
 
 
 def app_for(tmp_path, url):
-    return KubetrolApp(
+    return KubeRichApp(
         Settings(read_only=True),
         logging.Logger("inspection", level=100),
         catalog=catalog_fixture(tmp_path, url),
@@ -227,7 +227,7 @@ async def test_close_or_scope_switch_cancels_pending_read_and_no_late_data(tmp_p
 
 @pytest.mark.asyncio
 async def test_disconnected_view_has_clear_selection_message_and_no_modal():
-    app = KubetrolApp(Settings(), logging.Logger("none", level=100))
+    app = KubeRichApp(Settings(), logging.Logger("none", level=100))
     async with app.run_test() as pilot:
         await pilot.press("d")
         assert (
@@ -264,7 +264,7 @@ async def test_resource_permission_error_and_early_copy_do_not_use_table_manifes
 async def test_unexpected_inspection_failure_propagates_through_safe_app_cleanup(
     tmp_path, monkeypatch
 ):
-    from kubetrol.services.inspection import InspectionService
+    from kuberich.services.inspection import InspectionService
 
     async def broken(self):
         raise RuntimeError("owned-inspection-error")
@@ -291,7 +291,7 @@ async def test_unexpected_inspection_failure_propagates_through_safe_app_cleanup
 async def test_scope_invalidation_then_close_drains_the_same_serializer_once(tmp_path, monkeypatch):
     import threading
 
-    from kubetrol.services import inspection
+    from kuberich.services import inspection
 
     started, release, ended = (threading.Event() for _ in range(3))
     unmounting = asyncio.Event()

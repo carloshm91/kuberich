@@ -1,5 +1,5 @@
 {
-  "repository": "carloshm91/kubetrol",
+  "repository": "carloshm91/kuberich",
   "project": {
     "number": 3,
     "url": "https://github.com/users/carloshm91/projects/3"
@@ -7,367 +7,367 @@
   "issues": {
     "E01": {
       "number": 1,
-      "url": "https://github.com/carloshm91/kubetrol/issues/1"
+      "url": "https://github.com/carloshm91/kuberich/issues/1"
     },
     "E02": {
       "number": 2,
-      "url": "https://github.com/carloshm91/kubetrol/issues/2"
+      "url": "https://github.com/carloshm91/kuberich/issues/2"
     },
     "E03": {
       "number": 3,
-      "url": "https://github.com/carloshm91/kubetrol/issues/3"
+      "url": "https://github.com/carloshm91/kuberich/issues/3"
     },
     "E04": {
       "number": 4,
-      "url": "https://github.com/carloshm91/kubetrol/issues/4"
+      "url": "https://github.com/carloshm91/kuberich/issues/4"
     },
     "E05": {
       "number": 5,
-      "url": "https://github.com/carloshm91/kubetrol/issues/5"
+      "url": "https://github.com/carloshm91/kuberich/issues/5"
     },
     "E06": {
       "number": 6,
-      "url": "https://github.com/carloshm91/kubetrol/issues/6"
+      "url": "https://github.com/carloshm91/kuberich/issues/6"
     },
     "E07": {
       "number": 7,
-      "url": "https://github.com/carloshm91/kubetrol/issues/7"
+      "url": "https://github.com/carloshm91/kuberich/issues/7"
     },
     "E08": {
       "number": 8,
-      "url": "https://github.com/carloshm91/kubetrol/issues/8"
+      "url": "https://github.com/carloshm91/kuberich/issues/8"
     },
     "E09": {
       "number": 9,
-      "url": "https://github.com/carloshm91/kubetrol/issues/9"
+      "url": "https://github.com/carloshm91/kuberich/issues/9"
     },
     "E10": {
       "number": 10,
-      "url": "https://github.com/carloshm91/kubetrol/issues/10"
+      "url": "https://github.com/carloshm91/kuberich/issues/10"
     },
     "E11": {
       "number": 11,
-      "url": "https://github.com/carloshm91/kubetrol/issues/11"
+      "url": "https://github.com/carloshm91/kuberich/issues/11"
     },
     "E12": {
       "number": 12,
-      "url": "https://github.com/carloshm91/kubetrol/issues/12"
+      "url": "https://github.com/carloshm91/kuberich/issues/12"
     },
     "F00": {
       "number": 13,
-      "url": "https://github.com/carloshm91/kubetrol/issues/13"
+      "url": "https://github.com/carloshm91/kuberich/issues/13"
     },
     "F01": {
       "number": 14,
-      "url": "https://github.com/carloshm91/kubetrol/issues/14"
+      "url": "https://github.com/carloshm91/kuberich/issues/14"
     },
     "F02": {
       "number": 15,
-      "url": "https://github.com/carloshm91/kubetrol/issues/15"
+      "url": "https://github.com/carloshm91/kuberich/issues/15"
     },
     "F03": {
       "number": 16,
-      "url": "https://github.com/carloshm91/kubetrol/issues/16"
+      "url": "https://github.com/carloshm91/kuberich/issues/16"
     },
     "B01": {
       "number": 17,
-      "url": "https://github.com/carloshm91/kubetrol/issues/17"
+      "url": "https://github.com/carloshm91/kuberich/issues/17"
     },
     "F04": {
       "number": 18,
-      "url": "https://github.com/carloshm91/kubetrol/issues/18"
+      "url": "https://github.com/carloshm91/kuberich/issues/18"
     },
     "F05": {
       "number": 19,
-      "url": "https://github.com/carloshm91/kubetrol/issues/19"
+      "url": "https://github.com/carloshm91/kuberich/issues/19"
     },
     "C01": {
       "number": 20,
-      "url": "https://github.com/carloshm91/kubetrol/issues/20"
+      "url": "https://github.com/carloshm91/kuberich/issues/20"
     },
     "C06": {
       "number": 21,
-      "url": "https://github.com/carloshm91/kubetrol/issues/21"
+      "url": "https://github.com/carloshm91/kuberich/issues/21"
     },
     "C07": {
       "number": 22,
-      "url": "https://github.com/carloshm91/kubetrol/issues/22"
+      "url": "https://github.com/carloshm91/kuberich/issues/22"
     },
     "C02": {
       "number": 23,
-      "url": "https://github.com/carloshm91/kubetrol/issues/23"
+      "url": "https://github.com/carloshm91/kuberich/issues/23"
     },
     "C03": {
       "number": 24,
-      "url": "https://github.com/carloshm91/kubetrol/issues/24"
+      "url": "https://github.com/carloshm91/kuberich/issues/24"
     },
     "C04": {
       "number": 25,
-      "url": "https://github.com/carloshm91/kubetrol/issues/25"
+      "url": "https://github.com/carloshm91/kuberich/issues/25"
     },
     "B02": {
       "number": 26,
-      "url": "https://github.com/carloshm91/kubetrol/issues/26"
+      "url": "https://github.com/carloshm91/kuberich/issues/26"
     },
     "B03": {
       "number": 27,
-      "url": "https://github.com/carloshm91/kubetrol/issues/27"
+      "url": "https://github.com/carloshm91/kuberich/issues/27"
     },
     "B04": {
       "number": 28,
-      "url": "https://github.com/carloshm91/kubetrol/issues/28"
+      "url": "https://github.com/carloshm91/kuberich/issues/28"
     },
     "S01": {
       "number": 29,
-      "url": "https://github.com/carloshm91/kubetrol/issues/29"
+      "url": "https://github.com/carloshm91/kuberich/issues/29"
     },
     "S02": {
       "number": 30,
-      "url": "https://github.com/carloshm91/kubetrol/issues/30"
+      "url": "https://github.com/carloshm91/kuberich/issues/30"
     },
     "S03": {
       "number": 31,
-      "url": "https://github.com/carloshm91/kubetrol/issues/31"
+      "url": "https://github.com/carloshm91/kuberich/issues/31"
     },
     "S04": {
       "number": 32,
-      "url": "https://github.com/carloshm91/kubetrol/issues/32"
+      "url": "https://github.com/carloshm91/kuberich/issues/32"
     },
     "Q02": {
       "number": 33,
-      "url": "https://github.com/carloshm91/kubetrol/issues/33"
+      "url": "https://github.com/carloshm91/kuberich/issues/33"
     },
     "D01": {
       "number": 34,
-      "url": "https://github.com/carloshm91/kubetrol/issues/34"
+      "url": "https://github.com/carloshm91/kuberich/issues/34"
     },
     "Q04": {
       "number": 35,
-      "url": "https://github.com/carloshm91/kubetrol/issues/35"
+      "url": "https://github.com/carloshm91/kuberich/issues/35"
     },
     "D02": {
       "number": 36,
-      "url": "https://github.com/carloshm91/kubetrol/issues/36"
+      "url": "https://github.com/carloshm91/kuberich/issues/36"
     },
     "D03": {
       "number": 37,
-      "url": "https://github.com/carloshm91/kubetrol/issues/37"
+      "url": "https://github.com/carloshm91/kuberich/issues/37"
     },
     "Q01": {
       "number": 38,
-      "url": "https://github.com/carloshm91/kubetrol/issues/38"
+      "url": "https://github.com/carloshm91/kuberich/issues/38"
     },
     "W01": {
       "number": 39,
-      "url": "https://github.com/carloshm91/kubetrol/issues/39"
+      "url": "https://github.com/carloshm91/kuberich/issues/39"
     },
     "D04": {
       "number": 40,
-      "url": "https://github.com/carloshm91/kubetrol/issues/40"
+      "url": "https://github.com/carloshm91/kuberich/issues/40"
     },
     "B05": {
       "number": 41,
-      "url": "https://github.com/carloshm91/kubetrol/issues/41"
+      "url": "https://github.com/carloshm91/kuberich/issues/41"
     },
     "S05": {
       "number": 42,
-      "url": "https://github.com/carloshm91/kubetrol/issues/42"
+      "url": "https://github.com/carloshm91/kuberich/issues/42"
     },
     "M01": {
       "number": 43,
-      "url": "https://github.com/carloshm91/kubetrol/issues/43"
+      "url": "https://github.com/carloshm91/kuberich/issues/43"
     },
     "M02": {
       "number": 44,
-      "url": "https://github.com/carloshm91/kubetrol/issues/44"
+      "url": "https://github.com/carloshm91/kuberich/issues/44"
     },
     "M03": {
       "number": 45,
-      "url": "https://github.com/carloshm91/kubetrol/issues/45"
+      "url": "https://github.com/carloshm91/kuberich/issues/45"
     },
     "M04": {
       "number": 46,
-      "url": "https://github.com/carloshm91/kubetrol/issues/46"
+      "url": "https://github.com/carloshm91/kuberich/issues/46"
     },
     "C08": {
       "number": 47,
-      "url": "https://github.com/carloshm91/kubetrol/issues/47"
+      "url": "https://github.com/carloshm91/kuberich/issues/47"
     },
     "S07": {
       "number": 48,
-      "url": "https://github.com/carloshm91/kubetrol/issues/48"
+      "url": "https://github.com/carloshm91/kuberich/issues/48"
     },
     "D05": {
       "number": 49,
-      "url": "https://github.com/carloshm91/kubetrol/issues/49"
+      "url": "https://github.com/carloshm91/kuberich/issues/49"
     },
     "Q03": {
       "number": 50,
-      "url": "https://github.com/carloshm91/kubetrol/issues/50"
+      "url": "https://github.com/carloshm91/kuberich/issues/50"
     },
     "D06": {
       "number": 51,
-      "url": "https://github.com/carloshm91/kubetrol/issues/51"
+      "url": "https://github.com/carloshm91/kuberich/issues/51"
     },
     "C05": {
       "number": 52,
-      "url": "https://github.com/carloshm91/kubetrol/issues/52"
+      "url": "https://github.com/carloshm91/kuberich/issues/52"
     },
     "B06": {
       "number": 53,
-      "url": "https://github.com/carloshm91/kubetrol/issues/53"
+      "url": "https://github.com/carloshm91/kuberich/issues/53"
     },
     "S06": {
       "number": 54,
-      "url": "https://github.com/carloshm91/kubetrol/issues/54"
+      "url": "https://github.com/carloshm91/kuberich/issues/54"
     },
     "M05": {
       "number": 55,
-      "url": "https://github.com/carloshm91/kubetrol/issues/55"
+      "url": "https://github.com/carloshm91/kuberich/issues/55"
     },
     "U01": {
       "number": 56,
-      "url": "https://github.com/carloshm91/kubetrol/issues/56"
+      "url": "https://github.com/carloshm91/kuberich/issues/56"
     },
     "U02": {
       "number": 57,
-      "url": "https://github.com/carloshm91/kubetrol/issues/57"
+      "url": "https://github.com/carloshm91/kuberich/issues/57"
     },
     "U03": {
       "number": 58,
-      "url": "https://github.com/carloshm91/kubetrol/issues/58"
+      "url": "https://github.com/carloshm91/kuberich/issues/58"
     },
     "U04": {
       "number": 59,
-      "url": "https://github.com/carloshm91/kubetrol/issues/59"
+      "url": "https://github.com/carloshm91/kuberich/issues/59"
     },
     "U05": {
       "number": 60,
-      "url": "https://github.com/carloshm91/kubetrol/issues/60"
+      "url": "https://github.com/carloshm91/kuberich/issues/60"
     },
     "B07": {
       "number": 61,
-      "url": "https://github.com/carloshm91/kubetrol/issues/61"
+      "url": "https://github.com/carloshm91/kuberich/issues/61"
     },
     "S08": {
       "number": 62,
-      "url": "https://github.com/carloshm91/kubetrol/issues/62"
+      "url": "https://github.com/carloshm91/kuberich/issues/62"
     },
     "M08": {
       "number": 63,
-      "url": "https://github.com/carloshm91/kubetrol/issues/63"
+      "url": "https://github.com/carloshm91/kuberich/issues/63"
     },
     "U06": {
       "number": 64,
-      "url": "https://github.com/carloshm91/kubetrol/issues/64"
+      "url": "https://github.com/carloshm91/kuberich/issues/64"
     },
     "D07": {
       "number": 65,
-      "url": "https://github.com/carloshm91/kubetrol/issues/65"
+      "url": "https://github.com/carloshm91/kuberich/issues/65"
     },
     "M06": {
       "number": 66,
-      "url": "https://github.com/carloshm91/kubetrol/issues/66"
+      "url": "https://github.com/carloshm91/kuberich/issues/66"
     },
     "M07": {
       "number": 67,
-      "url": "https://github.com/carloshm91/kubetrol/issues/67"
+      "url": "https://github.com/carloshm91/kuberich/issues/67"
     },
     "O01": {
       "number": 68,
-      "url": "https://github.com/carloshm91/kubetrol/issues/68"
+      "url": "https://github.com/carloshm91/kuberich/issues/68"
     },
     "O02": {
       "number": 69,
-      "url": "https://github.com/carloshm91/kubetrol/issues/69"
+      "url": "https://github.com/carloshm91/kuberich/issues/69"
     },
     "O03": {
       "number": 70,
-      "url": "https://github.com/carloshm91/kubetrol/issues/70"
+      "url": "https://github.com/carloshm91/kuberich/issues/70"
     },
     "O04": {
       "number": 71,
-      "url": "https://github.com/carloshm91/kubetrol/issues/71"
+      "url": "https://github.com/carloshm91/kuberich/issues/71"
     },
     "O05": {
       "number": 72,
-      "url": "https://github.com/carloshm91/kubetrol/issues/72"
+      "url": "https://github.com/carloshm91/kuberich/issues/72"
     },
     "O06": {
       "number": 73,
-      "url": "https://github.com/carloshm91/kubetrol/issues/73"
+      "url": "https://github.com/carloshm91/kuberich/issues/73"
     },
     "O07": {
       "number": 74,
-      "url": "https://github.com/carloshm91/kubetrol/issues/74"
+      "url": "https://github.com/carloshm91/kuberich/issues/74"
     },
     "D08": {
       "number": 75,
-      "url": "https://github.com/carloshm91/kubetrol/issues/75"
+      "url": "https://github.com/carloshm91/kuberich/issues/75"
     },
     "A01": {
       "number": 76,
-      "url": "https://github.com/carloshm91/kubetrol/issues/76"
+      "url": "https://github.com/carloshm91/kuberich/issues/76"
     },
     "A02": {
       "number": 77,
-      "url": "https://github.com/carloshm91/kubetrol/issues/77"
+      "url": "https://github.com/carloshm91/kuberich/issues/77"
     },
     "A03": {
       "number": 78,
-      "url": "https://github.com/carloshm91/kubetrol/issues/78"
+      "url": "https://github.com/carloshm91/kuberich/issues/78"
     },
     "A04": {
       "number": 79,
-      "url": "https://github.com/carloshm91/kubetrol/issues/79"
+      "url": "https://github.com/carloshm91/kuberich/issues/79"
     },
     "A05": {
       "number": 80,
-      "url": "https://github.com/carloshm91/kubetrol/issues/80"
+      "url": "https://github.com/carloshm91/kuberich/issues/80"
     },
     "Q07": {
       "number": 81,
-      "url": "https://github.com/carloshm91/kubetrol/issues/81"
+      "url": "https://github.com/carloshm91/kuberich/issues/81"
     },
     "D09": {
       "number": 82,
-      "url": "https://github.com/carloshm91/kubetrol/issues/82"
+      "url": "https://github.com/carloshm91/kuberich/issues/82"
     },
     "D12": {
       "number": 83,
-      "url": "https://github.com/carloshm91/kubetrol/issues/83"
+      "url": "https://github.com/carloshm91/kuberich/issues/83"
     },
     "D13": {
       "number": 84,
-      "url": "https://github.com/carloshm91/kubetrol/issues/84"
+      "url": "https://github.com/carloshm91/kuberich/issues/84"
     },
     "D14": {
       "number": 85,
-      "url": "https://github.com/carloshm91/kubetrol/issues/85"
+      "url": "https://github.com/carloshm91/kuberich/issues/85"
     },
     "D11": {
       "number": 86,
-      "url": "https://github.com/carloshm91/kubetrol/issues/86"
+      "url": "https://github.com/carloshm91/kuberich/issues/86"
     },
     "Q05": {
       "number": 87,
-      "url": "https://github.com/carloshm91/kubetrol/issues/87"
+      "url": "https://github.com/carloshm91/kuberich/issues/87"
     },
     "Q06": {
       "number": 88,
-      "url": "https://github.com/carloshm91/kubetrol/issues/88"
+      "url": "https://github.com/carloshm91/kuberich/issues/88"
     },
     "D10": {
       "number": 89,
-      "url": "https://github.com/carloshm91/kubetrol/issues/89"
+      "url": "https://github.com/carloshm91/kuberich/issues/89"
     },
     "W02": {
       "number": 90,
-      "url": "https://github.com/carloshm91/kubetrol/issues/90"
+      "url": "https://github.com/carloshm91/kuberich/issues/90"
     },
     "W03": {
       "number": 91,
-      "url": "https://github.com/carloshm91/kubetrol/issues/91"
+      "url": "https://github.com/carloshm91/kuberich/issues/91"
     }
   }
 }

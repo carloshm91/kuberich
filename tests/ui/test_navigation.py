@@ -10,14 +10,14 @@ from aiohttp import web
 from textual.events import Paste
 from textual.widgets import Static
 
-from kubetrol.config.catalog import Entry
-from kubetrol.config.schema import Settings
-from kubetrol.domain.pods import PodColumn
-from kubetrol.domain.views import ViewStatus
-from kubetrol.services import filtering
-from kubetrol.services.commands import Command, ScopedCommand
-from kubetrol.ui.app import HelpScreen, KubetrolApp
-from kubetrol.ui.commands import NavigationInput
+from kuberich.config.catalog import Entry
+from kuberich.config.schema import Settings
+from kuberich.domain.pods import PodColumn
+from kuberich.domain.views import ViewStatus
+from kuberich.services import filtering
+from kuberich.services.commands import Command, ScopedCommand
+from kuberich.ui.app import HelpScreen, KubeRichApp
+from kuberich.ui.commands import NavigationInput
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
 from tests.support.resources import collection
@@ -25,7 +25,7 @@ from tests.support.workspace import stable_watch, wait_for, workspace_api
 
 
 def make_app(catalog=None, initial=Command.EMPTY):
-    return KubetrolApp(
+    return KubeRichApp(
         Settings(read_only=True),
         logging.Logger("navigation", level=100),
         catalog=catalog,
@@ -137,7 +137,7 @@ async def test_cached_scope_completions_filter_errors_and_history_restore_withou
     async with workspace_api(namespace_handler, resources) as url:
         catalog = catalog_fixture(tmp_path, url)
         catalog.contexts["[red]Production[/red]"] = Entry(
-            dict(catalog.contexts["kubetrol-test-one"].data), tmp_path
+            dict(catalog.contexts["kuberich-test-one"].data), tmp_path
         )
         app = make_app(catalog)
         async with app.run_test(size=size) as pilot:
@@ -239,7 +239,7 @@ async def test_namespace_suggestions_are_invalidated_before_a_new_context_can_au
             app.command_input.value = "ns old"
             await pilot.pause()
             assert app.command_input.choices == ("ns old-only",)
-            app._start_connection("kubetrol-test-Two")
+            app._start_connection("kuberich-test-Two")
             await pilot.pause()
             assert not app.command_input.choices and not app.command_input.inline_completion
             await pilot.press("tab")
@@ -253,7 +253,7 @@ async def test_namespace_suggestions_are_invalidated_before_a_new_context_can_au
     [
         ScopedCommand(Command.NAMESPACES, "default"),
         ScopedCommand(Command.PODS, "*"),
-        ScopedCommand(Command.CONTEXTS, "kubetrol-test-Two"),
+        ScopedCommand(Command.CONTEXTS, "kuberich-test-Two"),
     ],
 )
 async def test_scoped_initial_commands_connect_once_directly_to_the_requested_scope(
@@ -285,7 +285,7 @@ async def test_scoped_initial_commands_connect_once_directly_to_the_requested_sc
             )
             assert app.workspace.store.observation.scope.namespace == wanted
             assert app.workspace.store.observation.context == (
-                initial.argument if initial.command is Command.CONTEXTS else "kubetrol-test-one"
+                initial.argument if initial.command is Command.CONTEXTS else "kuberich-test-one"
             )
             if wanted is None:
                 assert all("/namespaces/" not in path for path in scopes)
@@ -538,7 +538,7 @@ async def test_history_returns_from_a_failed_context_and_new_navigation_discards
             await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.FAILED)
             await pilot.press("alt+left")
             await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
-            assert app.workspace.store.observation.context == "kubetrol-test-one"
+            assert app.workspace.store.observation.context == "kuberich-test-one"
             assert app.history.following
             await pilot.press("colon")
             await paste_command(app, pilot, "ns default")
@@ -662,12 +662,12 @@ async def test_arrow_enter_accepts_case_preserved_context_name(tmp_path):
             await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
             before = app.sessions.observation.identity
             await pilot.press("colon")
-            await paste_command(app, pilot, "ctx kubetrol-test-")
+            await paste_command(app, pilot, "ctx kuberich-test-")
             await pilot.press("down", "enter")
             await wait_for(
                 lambda: (
                     app.workspace.store.observation.status is ViewStatus.LIVE
-                    and app.workspace.store.observation.context == "kubetrol-test-Two"
+                    and app.workspace.store.observation.context == "kuberich-test-Two"
                 )
             )
             assert app.sessions.observation.identity != before

@@ -2,16 +2,16 @@
 
 import pytest
 
-from kubetrol.domain.navigation import (
+from kuberich.domain.navigation import (
     MAX_HISTORY,
     ContextRow,
     NamespaceChoice,
     NavigationHistory,
     NavigationState,
 )
-from kubetrol.errors import AppError
-from kubetrol.services.access import AccessPolicy
-from kubetrol.services.commands import ALIASES, Command, CommandService, ScopedCommand, suggestions
+from kuberich.errors import AppError
+from kuberich.services.access import AccessPolicy
+from kuberich.services.commands import ALIASES, Command, CommandService, ScopedCommand, suggestions
 
 
 @pytest.mark.parametrize("current, marker", [(False, ""), (True, "*")])

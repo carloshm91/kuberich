@@ -1,1 +1,1 @@
-"""Behavioral and artifact qualification for Kubetrol."""
+"""Behavioral and artifact qualification for KubeRich."""

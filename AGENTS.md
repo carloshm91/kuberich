@@ -1,4 +1,4 @@
-# Working on Kubetrol
+# Working on KubeRich
 
 Read the selected GitHub issue, CONTRIBUTING.md, docs/architecture.md,
 docs/quality.md, and the relevant release milestone before implementation.
@@ -20,8 +20,8 @@ implementation; do not claim to switch models without actual environment support
 - Textual Web and a hosted backend are out of scope. Prepare a simple landing
   page and initial documentation before the public launch; the expanded,
   versioned documentation website remains a separate later milestone.
-- Repository: carloshm91/kubetrol. SSH remote:
-  git@github.com:carloshm91/kubetrol.git.
+- Repository: carloshm91/kuberich. SSH remote:
+  git@github.com:carloshm91/kuberich.git.
 - Use repository-local author email carloshm91@gmail.com for the maintainer's
   commits. Do not change global Git identity or overwrite another contributor's
   identity. Never include credentials or kubeconfig contents in commits.

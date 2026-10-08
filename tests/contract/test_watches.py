@@ -11,13 +11,13 @@ from pathlib import Path
 import pytest
 from aiohttp import web
 
-from kubetrol.adapters.kubernetes import KubernetesSession
-from kubetrol.domain.connections import ConnectionProblem, ConnectionState, HttpProblem
-from kubetrol.domain.resources import api_resource
-from kubetrol.domain.watches import EventType, SyncStatus
-from kubetrol.errors import AppError
-from kubetrol.services import watches
-from kubetrol.services.watches import ListWatch
+from kuberich.adapters.kubernetes import KubernetesSession
+from kuberich.domain.connections import ConnectionProblem, ConnectionState, HttpProblem
+from kuberich.domain.resources import api_resource
+from kuberich.domain.watches import EventType, SyncStatus
+from kuberich.errors import AppError
+from kuberich.services import watches
+from kuberich.services.watches import ListWatch
 from tests.support.connections import catalog_fixture, certificate, fake_api
 from tests.support.resources import collection, descriptor, item, pod_resource, reader_fixture
 from tests.support.watches import Clock, bookmark, error_event, event, frame
@@ -325,7 +325,7 @@ async def test_invalid_frames_stop_without_showing_empty_success(
 async def test_live_state_bound_failure_is_explicit(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from kubetrol.domain import watches as domain
+    from kuberich.domain import watches as domain
 
     monkeypatch.setattr(domain, "MAX_RESOURCE_ITEMS", 1)
     updates = []
@@ -700,7 +700,7 @@ async def test_watch_tls_verification_failure_is_terminal(tmp_path: Path) -> Non
         return web.Response(body=b"")
 
     async with fake_api(handler, tls=tls) as url:
-        session = KubernetesSession(catalog_fixture(tmp_path, url).select("kubetrol-test-one"), 1)
+        session = KubernetesSession(catalog_fixture(tmp_path, url).select("kuberich-test-one"), 1)
         try:
             await session.open()
             async with aclosing(session.watch_json("/api/v1/namespaces", "opaque")) as stream:
@@ -717,7 +717,7 @@ async def test_unreachable_watch_has_a_safe_retryable_error(tmp_path: Path) -> N
         return web.Response(body=b"")
 
     async with fake_api(handler) as url:
-        session = KubernetesSession(catalog_fixture(tmp_path, url).select("kubetrol-test-one"), 1)
+        session = KubernetesSession(catalog_fixture(tmp_path, url).select("kuberich-test-one"), 1)
         await session.open()
     try:
         async with aclosing(session.watch_json("/api/v1/namespaces", "opaque")) as stream:

@@ -2,9 +2,9 @@
 
 import pytest
 
-from kubetrol.adapters.emulator import TerminalModel, _Router
-from kubetrol.domain.terminal import terminal_key, terminal_paste, terminal_size
-from kubetrol.errors import AppError
+from kuberich.adapters.emulator import TerminalModel, _Router
+from kuberich.domain.terminal import terminal_key, terminal_paste, terminal_size
+from kuberich.errors import AppError
 
 
 @pytest.mark.parametrize(

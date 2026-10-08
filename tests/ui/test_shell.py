@@ -10,14 +10,14 @@ import pytest
 from aiohttp import web
 from textual.containers import VerticalScroll
 
-from kubetrol.config.schema import Settings
-from kubetrol.domain.connections import ConnectionProblem, ConnectionState
-from kubetrol.domain.processes import ProcessResult, ProcessStatus
-from kubetrol.errors import AppError, ExecutableUnavailable
-from kubetrol.services.processes import ProcessRunner
-from kubetrol.ui.app import KubetrolApp
-from kubetrol.ui.containers import ContainerScreen
-from kubetrol.ui.logs import LogScreen
+from kuberich.config.schema import Settings
+from kuberich.domain.connections import ConnectionProblem, ConnectionState
+from kuberich.domain.processes import ProcessResult, ProcessStatus
+from kuberich.errors import AppError, ExecutableUnavailable
+from kuberich.services.processes import ProcessRunner
+from kuberich.ui.app import KubeRichApp
+from kuberich.ui.containers import ContainerScreen
+from kuberich.ui.logs import LogScreen
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
 from tests.support.resources import collection
@@ -57,7 +57,7 @@ async def ns(request):
 
 
 def app_for(tmp_path, url, *, readonly=False):
-    return KubetrolApp(
+    return KubeRichApp(
         Settings(read_only=readonly, shell=("/bin/bash", "-l")),
         logging.Logger("shell", level=100),
         catalog=catalog_fixture(tmp_path, url),
@@ -81,7 +81,7 @@ async def test_selected_container_configured_shell_repeat_and_both_retained_view
     async def handoff(command, *, guard):
         guard()
         file = Path(command.argv[1].split("=", 1)[1])
-        assert json.loads(file.read_text())["current-context"] == "kubetrol-test-one"
+        assert json.loads(file.read_text())["current-context"] == "kuberich-test-one"
         executed.append((command, file))
         await asyncio.sleep(0)
         return ProcessResult(ProcessStatus.SUCCEEDED, 0)
@@ -307,7 +307,7 @@ async def test_missing_controller_and_delayed_parent_actions_are_noops(tmp_path)
 
 @pytest.mark.asyncio
 async def test_shell_without_a_connected_selection_is_actionable():
-    app = KubetrolApp(Settings(), logging.Logger("empty-shell"))
+    app = KubeRichApp(Settings(), logging.Logger("empty-shell"))
     async with app.run_test() as pilot:
         await pilot.press("x")
         assert "Select a connected resource" in str(app.status.content)

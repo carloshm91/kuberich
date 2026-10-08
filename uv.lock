@@ -968,7 +968,7 @@ wheels = [
 ]
 
 [[package]]
-name = "kubetrol"
+name = "kuberich"
 version = "0.0.1.dev0"
 source = { editable = "." }
 dependencies = [

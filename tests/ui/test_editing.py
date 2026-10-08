@@ -8,15 +8,15 @@ import threading
 import pytest
 from textual.widgets import Button, Checkbox, Static
 
-from kubetrol.adapters import kubernetes
-from kubetrol.adapters.editing import ManifestFile
-from kubetrol.config.schema import Settings
-from kubetrol.domain.mutations import MutationState
-from kubetrol.domain.processes import ProcessResult, ProcessStatus
-from kubetrol.domain.registry import RESOURCE_ALIASES
-from kubetrol.services.commands import ResourceCommand
-from kubetrol.ui.app import KubetrolApp
-from kubetrol.ui.editing import EditingScreen
+from kuberich.adapters import kubernetes
+from kuberich.adapters.editing import ManifestFile
+from kuberich.config.schema import Settings
+from kuberich.domain.mutations import MutationState
+from kuberich.domain.processes import ProcessResult, ProcessStatus
+from kuberich.domain.registry import RESOURCE_ALIASES
+from kuberich.services.commands import ResourceCommand
+from kuberich.ui.app import KubeRichApp
+from kuberich.ui.editing import EditingScreen
 from tests.support.connections import catalog_fixture
 from tests.support.editing import editing_api
 from tests.support.workspace import wait_for
@@ -55,7 +55,7 @@ async def test_pending_preparation_drains_before_client_or_screen_cleanup(
     async def forbidden_editor(*args, **kwargs):
         pytest.fail("Cancelled preparation launched an editor")
 
-    monkeypatch.setattr("kubetrol.ui.editing.terminal_handoff", forbidden_editor)
+    monkeypatch.setattr("kuberich.ui.editing.terminal_handoff", forbidden_editor)
     async with editing_api() as (url, api):
         app = app_fixture(tmp_path, url)
 
@@ -67,7 +67,7 @@ async def test_pending_preparation_drains_before_client_or_screen_cleanup(
                 if stage == "read":
                     monkeypatch.setattr(kubernetes, "_decode", held_decode)
                 else:
-                    monkeypatch.setattr("kubetrol.services.editing.ManifestFile", held_create)
+                    monkeypatch.setattr("kuberich.services.editing.ManifestFile", held_create)
                 old, close = app.sessions.client, app.sessions.client.close
 
                 async def checked_close():
@@ -123,7 +123,7 @@ async def test_pending_preparation_drains_before_client_or_screen_cleanup(
 
 
 def app_fixture(tmp_path, url, *, read_only=False):
-    return KubetrolApp(
+    return KubeRichApp(
         Settings(read_only=read_only),
         logging.getLogger("owned-edit-ui"),
         catalog=catalog_fixture(tmp_path, url),
@@ -159,7 +159,7 @@ async def test_editor_disclosure_diff_validation_cancel_and_separate_apply(
         source.file.path.write_text(json.dumps(value))
         return ProcessResult(ProcessStatus.SUCCEEDED, 0, b"", b"")
 
-    monkeypatch.setattr("kubetrol.ui.editing.terminal_handoff", editor)
+    monkeypatch.setattr("kuberich.ui.editing.terminal_handoff", editor)
     async with editing_api() as (url, api):
         app = app_fixture(tmp_path, url)
         async with app.run_test(size=size) as pilot:
@@ -234,7 +234,7 @@ async def test_editor_cancellation_failures_noops_denial_and_conflicts_are_safe(
             b"",
         )
 
-    monkeypatch.setattr("kubetrol.ui.editing.terminal_handoff", editor)
+    monkeypatch.setattr("kuberich.ui.editing.terminal_handoff", editor)
     async with editing_api() as (url, api):
         app = app_fixture(tmp_path, url)
         async with app.run_test() as pilot:

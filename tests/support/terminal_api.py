@@ -18,9 +18,9 @@ from tests.support.watches import bookmark, frame
 
 def config(path: Path, server: str, user: dict) -> Path:
     data = {
-        "current-context": "kubetrol-test-pty",
+        "current-context": "kuberich-test-pty",
         "contexts": [
-            {"name": "kubetrol-test-pty", "context": {"cluster": "owned", "user": "owned"}}
+            {"name": "kuberich-test-pty", "context": {"cluster": "owned", "user": "owned"}}
         ],
         "clusters": [{"name": "owned", "cluster": {"server": server}}],
         "users": [{"name": "owned", "user": user}],

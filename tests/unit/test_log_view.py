@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from kubetrol.domain.log_view import (
+from kuberich.domain.log_view import (
     MAX_COPY_BYTES,
     WINDOWS,
     LogEntry,
@@ -12,8 +12,8 @@ from kubetrol.domain.log_view import (
     parse_start_time,
     window_options,
 )
-from kubetrol.domain.logs import LogLine
-from kubetrol.errors import AppError
+from kuberich.domain.logs import LogLine
+from kuberich.errors import AppError
 
 
 def test_timestamps_toggle_only_recognized_server_prefixes():

@@ -8,8 +8,8 @@ from pathlib import Path
 import pytest
 from aiohttp import web
 
-from kubetrol.domain.connections import ConnectionRequest
-from kubetrol.errors import AppError
+from kuberich.domain.connections import ConnectionRequest
+from kuberich.errors import AppError
 from scripts.verify_eks_auth import verify
 from tests.support.connections import catalog_fixture
 from tests.support.eks import aws_entry, calls
@@ -32,7 +32,7 @@ async def test_verifier_refuses_non_eks_helpers_without_running_them(tmp_path):
         await verify(
             ConnectionRequest(
                 kubeconfig=str(tmp_path / "fixture-config"),
-                context="kubetrol-test-one",
+                context="kuberich-test-one",
                 namespace="team",
             ),
             tmp_path / "kubectl",
@@ -57,7 +57,7 @@ async def test_local_verifier_checks_api_refresh_and_delegation_with_cleanup(
         "path=Path(sys.argv[1].split('=',1)[1])\n"
         "assert stat.S_IMODE(path.stat().st_mode)==0o600\n"
         f"Path({str(private)!r}).write_text(str(path))\n"
-        "assert '--context=kubetrol-test-one' in sys.argv\n"
+        "assert '--context=kuberich-test-one' in sys.argv\n"
         "assert '--namespace=team' in sys.argv\n"
         "assert sys.argv[-2:] == ['--raw', '/api/v1/namespaces/team/pods?limit=1']\n"
         "spec=json.loads(path.read_text())['users'][0]['user']['exec']\n"
@@ -78,7 +78,7 @@ async def test_local_verifier_checks_api_refresh_and_delegation_with_cleanup(
         before = (tmp_path / "fixture-config").read_bytes()
         request = ConnectionRequest(
             kubeconfig=str(tmp_path / "fixture-config"),
-            context="kubetrol-test-one",
+            context="kuberich-test-one",
             namespace="team",
         )
         if failure is None:

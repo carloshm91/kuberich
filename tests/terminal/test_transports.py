@@ -19,7 +19,7 @@ def test_tmux_transport_owns_a_short_socket_under_long_temporary_paths(tmp_path,
     with (
         TerminalTransport(long / "transport", kind) as transport,
         TerminalSession(
-            [sys.executable, "-m", "kubetrol"], tmp_path, transport=transport
+            [sys.executable, "-m", "kuberich"], tmp_path, transport=transport
         ) as terminal,
     ):
         assert len(str(transport.socket).encode()) < 90
@@ -35,7 +35,7 @@ def test_tmux_transport_owns_a_short_socket_under_long_temporary_paths(tmp_path,
 def test_log_scroll_search_pause_focus_and_return_over_real_transport(tmp_path, kind):
     with TerminalTransport(tmp_path / "transport", kind) as transport:
         terminal_logs(
-            [sys.executable, "-m", "kubetrol"],
+            [sys.executable, "-m", "kuberich"],
             tmp_path,
             evidence=f"transport-{kind}-logs",
             transport=transport,
@@ -47,7 +47,7 @@ def test_real_transport_workspace_resize_unicode_focus_and_quit(tmp_path, kind):
     with (
         TerminalTransport(tmp_path / "transport", kind) as transport,
         TerminalSession(
-            [sys.executable, "-m", "kubetrol"], tmp_path, transport=transport
+            [sys.executable, "-m", "kuberich"], tmp_path, transport=transport
         ) as terminal,
     ):
         terminal.wait_for_screen("Disconnected")
@@ -93,7 +93,7 @@ def test_real_transport_native_handoff(tmp_path, kind, scenario):
 def test_real_transport_embedded_container_shell(tmp_path, kind, scenario):
     with TerminalTransport(tmp_path / "transport", kind) as transport:
         terminal_shell(
-            [sys.executable, "-m", "kubetrol"],
+            [sys.executable, "-m", "kuberich"],
             tmp_path,
             scenario,
             evidence=f"transport-{kind}-embedded-{scenario}",
@@ -105,7 +105,7 @@ def test_lost_ssh_connection_reaps_workspace_and_restores_the_local_terminal(tmp
     with (
         TerminalTransport(tmp_path / "transport", "ssh") as transport,
         TerminalSession(
-            [sys.executable, "-m", "kubetrol"], tmp_path, transport=transport
+            [sys.executable, "-m", "kuberich"], tmp_path, transport=transport
         ) as terminal,
     ):
         terminal.wait_for_screen("Disconnected")
@@ -128,7 +128,7 @@ def test_lost_ssh_connection_during_native_handoff_reaps_foreground_child(tmp_pa
 def test_lost_ssh_connection_during_embedded_shell_reaps_child_and_private_config(tmp_path):
     with TerminalTransport(tmp_path / "transport", "ssh") as transport:
         terminal_shell(
-            [sys.executable, "-m", "kubetrol"],
+            [sys.executable, "-m", "kuberich"],
             tmp_path,
             "lost_ssh",
             evidence="transport-ssh-lost-embedded",
@@ -139,7 +139,7 @@ def test_lost_ssh_connection_during_embedded_shell_reaps_child_and_private_confi
 def test_tmux_preserves_embedded_shell_after_ssh_loss_and_reattaches(tmp_path):
     with TerminalTransport(tmp_path / "transport", "ssh_tmux") as transport:
         terminal_shell(
-            [sys.executable, "-m", "kubetrol"],
+            [sys.executable, "-m", "kuberich"],
             tmp_path,
             "lost_ssh_tmux",
             evidence="transport-ssh-tmux-reattached-embedded",
@@ -156,7 +156,7 @@ def test_terminal_color_fallback_remains_readable_and_accepts_keyboard(tmp_path,
     with (
         TerminalTransport(tmp_path / "transport", kind) as transport,
         TerminalSession(
-            [sys.executable, "-m", "kubetrol"],
+            [sys.executable, "-m", "kuberich"],
             tmp_path,
             transport=transport,
             environment=environment,
@@ -176,7 +176,7 @@ def test_terminal_color_fallback_remains_readable_and_accepts_keyboard(tmp_path,
 def test_tmux_preserves_workspace_after_ssh_loss_and_reattaches_to_the_same_app(tmp_path):
     with TerminalTransport(tmp_path / "transport", "ssh_tmux") as transport:
         with TerminalSession(
-            [sys.executable, "-m", "kubetrol"], tmp_path, transport=transport
+            [sys.executable, "-m", "kuberich"], tmp_path, transport=transport
         ) as terminal:
             terminal.wait_for_screen("Disconnected")
             terminal.send(b"?")
@@ -185,7 +185,7 @@ def test_tmux_preserves_workspace_after_ssh_loss_and_reattaches_to_the_same_app(
             terminal.finish()
             terminal.save_evidence("transport-ssh-tmux-detached")
         with TerminalSession(
-            [sys.executable, "-m", "kubetrol"], tmp_path, transport=transport
+            [sys.executable, "-m", "kuberich"], tmp_path, transport=transport
         ) as terminal:
             terminal.wait_for_screen("Keyboard help")
             terminal.send(b"\x1b")

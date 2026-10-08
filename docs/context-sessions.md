@@ -11,9 +11,9 @@ Connection errors remain in the UI so you can choose another context or retry.
 ## Start and select
 
 ```sh
-uv run kubetrol
-uv run kubetrol --context my-context --namespace my-namespace
-uv run kubetrol --kubeconfig /path/to/config --context my-context -A --request-timeout 15s
+uv run kuberich
+uv run kuberich --context my-context --namespace my-namespace
+uv run kuberich --kubeconfig /path/to/config --context my-context -A --request-timeout 15s
 ```
 
 An explicit `--kubeconfig` reads a single file. Otherwise `KUBECONFIG` is split
@@ -41,7 +41,7 @@ falling back to another context.
 Letter shortcuts work outside text inputs; typing in the filter or command field
 keeps those letters. Press Escape to return to the resource table. If the terminal
 intercepts a function key, use the letter or type the colon command and Enter.
-Kubetrol cannot receive a key consumed by an outer terminal or tmux binding.
+KubeRich cannot receive a key consumed by an outer terminal or tmux binding.
 
 Selectors support arrows, PageUp/PageDown, mouse and Esc/Back. Names are rendered
 as literal text. Selecting a namespace records a scope; it does not grant RBAC

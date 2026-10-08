@@ -10,14 +10,14 @@ from textual.app import App, ComposeResult
 from textual.events import Paste
 from textual.widgets import Input, Static
 
-from kubetrol.domain.namespaces import namespace_row
-from kubetrol.domain.resources import resource_record
-from kubetrol.domain.views import ViewStatus
-from kubetrol.services.commands import Command
-from kubetrol.ui.chrome import WorkspaceHeader
-from kubetrol.ui.containers import ContainerScreen
-from kubetrol.ui.logs import LogScreen
-from kubetrol.ui.namespaces import NamespaceTable
+from kuberich.domain.namespaces import namespace_row
+from kuberich.domain.resources import resource_record
+from kuberich.domain.views import ViewStatus
+from kuberich.services.commands import Command
+from kuberich.ui.chrome import WorkspaceHeader
+from kuberich.ui.containers import ContainerScreen
+from kuberich.ui.logs import LogScreen
+from kuberich.ui.namespaces import NamespaceTable
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
 from tests.support.resources import collection
@@ -268,13 +268,13 @@ async def test_initial_namespaces_history_and_connecting_scope_guard_preserve_ro
             await pilot.press("alt+right")
             await wait_for(lambda: app._resource_name == "pods" and app.resources.row_count == 1)
             app.action_namespaces()
-            app._start_connection("kubetrol-test-Two")
+            app._start_connection("kuberich-test-Two")
             app._submit_command("po")
             assert app._resource_name == "namespaces"
             app._namespace_selected("default")
             await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
             await pilot.pause()
-            assert app.workspace.store.observation.context == "kubetrol-test-Two"
+            assert app.workspace.store.observation.context == "kuberich-test-Two"
             assert not app._namespace_route and app._namespace_state is None
             assert len(app.screen_stack) == 1
             assert app.command_input.region.y < app.query_one("#resource-view").region.y
@@ -395,12 +395,12 @@ async def test_delayed_namespace_list_cannot_repopulate_table_after_context_swit
             app.action_namespaces()
             await asyncio.wait_for(started.wait(), 5)
             app._select_resource("pods")
-            app._start_connection("kubetrol-test-Two")
+            app._start_connection("kuberich-test-Two")
             release.set()
             await wait_for(
                 lambda: (
                     app.resources.row_count == 1
-                    and app.workspace.store.observation.context == "kubetrol-test-Two"
+                    and app.workspace.store.observation.context == "kuberich-test-Two"
                 )
             )
             await pilot.pause()

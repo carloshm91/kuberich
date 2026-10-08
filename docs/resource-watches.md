@@ -103,7 +103,7 @@ qualify normalization, UID/recreation/replay rules, memory bounds and retry
 decisions; the domain watch module has a critical 100% line/branch coverage gate.
 Actual HTTP tests cover chunks, EOF, 410, denied reads, malformed data, token
 refresh, backoff, slow consumers and cancellation, including worker cleanup.
-[Preview correction #107](https://github.com/carloshm91/kubetrol/issues/107)
+[Preview correction #107](https://github.com/carloshm91/kuberich/issues/107)
 adds quiet renewal without bookmarks, checkpoint continuity, delayed headers,
 and timeout/backoff recovery; Pilot, source/installed CLI PTYs and kind verify
 that normal renewals keep the visible state live.

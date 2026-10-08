@@ -6,8 +6,8 @@ import json
 import sys
 from pathlib import Path
 
-from kubetrol.domain.connections import ConnectionProblem, ConnectionRequest
-from kubetrol.errors import AppError
+from kuberich.domain.connections import ConnectionProblem, ConnectionRequest
+from kuberich.errors import AppError
 from scripts.verify_eks_auth import verify
 
 

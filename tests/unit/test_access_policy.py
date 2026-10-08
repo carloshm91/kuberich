@@ -5,9 +5,9 @@ from typing import Any
 
 import pytest
 
-from kubetrol.errors import AppError
-from kubetrol.services.access import AccessPolicy, Action
-from kubetrol.services.commands import Command, CommandService, ScopedCommand
+from kuberich.errors import AppError
+from kuberich.services.access import AccessPolicy, Action
+from kuberich.services.commands import Command, CommandService, ScopedCommand
 
 
 @pytest.mark.parametrize("action", list(Action))

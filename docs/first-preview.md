@@ -1,5 +1,37 @@
 # First things to try
 
+## KubeRich identity checkpoint: #149
+
+The maintainer chose **KubeRich** and confirmed purchasing `kuberich.com`.
+Canonical checkout commands are:
+
+```sh
+uv sync --locked --group dev
+uv run kuberich --version
+uv run kuberich --help
+uv run kuberich
+```
+
+The `kubetrol` console alias still launches the same application. Existing
+preferences are read in place, and `kuberich config migrate` explicitly creates
+the new file while retaining the original. See [configuration compatibility](configuration.md).
+The repository is now `carloshm91/kuberich` and remains private; its old URLs and
+SSH address redirect to the preserved repository. [Acceptance evidence](acceptance/identity-migration.md)
+records 2,977 passing cases on each Linux Python 3.12/3.13/3.14 interpreter,
+above 99% lines and 97% branches, and 100% critical/changed-line coverage.
+Actual source/installed terminals, uv/pipx alias install/uninstall and all eight
+owned Kubernetes rehearsals passed. Native macOS/full hosted release qualification
+remain pending. The exact installed rehearsal command was
+`uv run python -m scripts.verify_quickstart --wheel /tmp/kuberich-149-evidence/frozen-dist/kuberich-0.0.1.dev0-py3-none-any.whl --kind /tmp/kubetrol-tools/kind --kubectl /tmp/kubetrol-tools/shell/bin/kubectl --evidence /tmp/kuberich-149-evidence/kind-quickstart.json`.
+The temporary binaries and wheel in that earlier command were removed by an
+environment restart after qualification. Regenerated packages/audits are retained
+locally under `artifacts/identity-149`; the acceptance report records this limit.
+Continuous private delivery does not require an intermediate maintainer trial.
+Public installation, website/DNS and visibility changes remain separately
+authorized launch steps.
+
+Earlier checkpoints below preserve original tested commands and artifact names.
+
 ## Workload operations checkpoint: M03 #45
 
 [Selected workload operations](workloads.md) add `:scale`, `:restart` and explicit

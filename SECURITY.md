@@ -9,7 +9,7 @@ the version, affected behavior, and a minimal sanitized reproduction. Do not
 post credentials, kubeconfigs, cluster endpoints, or exploit details publicly
 before coordinated disclosure. Maintainer response times are best effort.
 
-Kubetrol uses the current user's Kubernetes credentials and permissions. It is
+KubeRich uses the current user's Kubernetes credentials and permissions. It is
 not a separate security boundary around the cluster. It will verify TLS by
 default, represent permission failures explicitly, and identify the target
 context/namespace/resource before modifying operations.
@@ -31,7 +31,7 @@ bounded noninteractive exec-token helpers, and literal-text/control helpers,
 diagnostic redaction, immutable target/argument captures and ambient SDK loader
 traps in tests. Integration responsibilities and known limitations are documented
 in [security primitives](docs/security-primitives.md) and the
-[threat model](docs/kubetrol-threat-model.md). Pattern redaction does not
+[threat model](docs/kuberich-threat-model.md). Pattern redaction does not
 recognize every opaque secret; adapters must avoid collecting raw credentials
 and construct allowlisted error summaries.
 

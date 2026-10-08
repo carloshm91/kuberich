@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "repository": "carloshm91/kubetrol",
+  "repository": "carloshm91/kuberich",
   "planning_date": "2026-10-04",
   "milestones": [
     {
@@ -146,9 +146,9 @@
       "requires": [
         "F00"
       ],
-      "scope": "Create the src/kubetrol package, Hatchling build metadata, argparse entry point, uv lockfile, and supported Python matrix.",
+      "scope": "Create the src/kuberich package, Hatchling build metadata, argparse entry point, uv lockfile, and supported Python matrix.",
       "acceptance": [
-        "Project/import/CLI names are kubetrol; pyproject.toml owns the version; --help and --version work from an installed wheel.",
+        "Project/import/CLI names are kuberich; pyproject.toml owns the version; --help and --version work from an installed wheel.",
         "Released Textual and kubernetes_asyncio dependencies are pinned by uv.lock; the declared Python range matches tested versions.",
         "Dev commands and package assets are configured; the initial CLI reports its actual limited capability without fake cluster data."
       ],
@@ -617,7 +617,7 @@
         "Users can preview/select themes and save global/context preferences with predictable precedence.",
         "Color is not the only indicator of status; low-color and narrow-terminal fallbacks remain readable.",
         "Invalid theme values recover with an actionable error and preserve working settings.",
-        "Provide original Kubetrol about/branding content and an opt-in version notice; startup works offline and no external check is required."
+        "Provide original KubeRich about/branding content and an opt-in version notice; startup works offline and no external check is required."
       ],
       "verification": "Test theme precedence, invalid files, live switching, contrast/status cues, and representative terminal snapshots.",
       "priority": "P1"
@@ -1133,7 +1133,7 @@
       "scope": "Produce installable artifacts from the committed source and verify their contents in clean environments.",
       "acceptance": [
         "Wheel/sdist contain required assets, metadata/license and correct version; no credentials/tests/cache leaks.",
-        "uv tool and pipx installations expose kubetrol and run help/version without a cluster; sdist builds successfully.",
+        "uv tool and pipx installations expose kuberich and run help/version without a cluster; sdist builds successfully.",
         "Test supported Python versions/platforms using installed artifacts, not an import from the checkout."
       ],
       "verification": "Build/metadata checks, clean venv wheel/sdist installation and executable smoke matrix; compare expected packaged assets.",

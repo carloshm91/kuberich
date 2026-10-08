@@ -9,14 +9,14 @@ from textual.containers import VerticalScroll
 from textual.events import Paste
 from textual.widgets import Static
 
-from kubetrol.config.schema import Settings
-from kubetrol.diagnostics.logging import diagnostic_logging
-from kubetrol.errors import AppError
-from kubetrol.ui.app import DISCONNECTED_STATUS, HelpScreen, KubetrolApp
+from kuberich.config.schema import Settings
+from kuberich.diagnostics.logging import diagnostic_logging
+from kuberich.errors import AppError
+from kuberich.ui.app import DISCONNECTED_STATUS, HelpScreen, KubeRichApp
 
 
-def make_app(settings: Settings | None = None) -> KubetrolApp:
-    return KubetrolApp(settings or Settings(), logging.Logger("ui-test", level=100))
+def make_app(settings: Settings | None = None) -> KubeRichApp:
+    return KubeRichApp(settings or Settings(), logging.Logger("ui-test", level=100))
 
 
 @pytest.mark.asyncio
@@ -228,7 +228,7 @@ async def test_monochrome_mode_and_unicode_filter_remain_navigable(
 
 @pytest.mark.asyncio
 async def test_unhandled_error_reaches_tests_and_log_omits_exception_values(tmp_path: Path) -> None:
-    class BrokenApp(KubetrolApp):
+    class BrokenApp(KubeRichApp):
         def on_mount(self) -> None:
             super().on_mount()
             raise RuntimeError("opaque-sensitive-ui-value")
@@ -248,7 +248,7 @@ async def test_unhandled_error_reaches_tests_and_log_omits_exception_values(tmp_
 async def test_error_cleanup_survives_unavailable_diagnostic_log(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    class BrokenApp(KubetrolApp):
+    class BrokenApp(KubeRichApp):
         def on_mount(self) -> None:
             raise RuntimeError("fixture-error")
 

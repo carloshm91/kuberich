@@ -7,9 +7,9 @@ import pytest
 from aiohttp import web
 from kubernetes_asyncio.client import Configuration
 
-from kubetrol.domain.connections import ConnectionRequest, ConnectionState
-from kubetrol.errors import AppError
-from kubetrol.services.sessions import SessionService
+from kuberich.domain.connections import ConnectionRequest, ConnectionState
+from kuberich.errors import AppError
+from kuberich.services.sessions import SessionService
 from tests.support.connections import catalog_fixture, certificate, fake_api, namespaces
 
 
@@ -32,7 +32,7 @@ async def test_context_and_scope_changes_close_old_clients_without_changing_conf
         original = (tmp_path / "fixture-config").read_bytes()
         sessions = SessionService(catalog, ConnectionRequest())
         try:
-            first = await sessions.connect("kubetrol-test-one")
+            first = await sessions.connect("kuberich-test-one")
             assert first.state is ConnectionState.CONNECTED and first.namespace == "team"
             assert first.namespaces == ("default", "team") and first.insecure
             assert sessions.client and sessions.client.api
@@ -43,7 +43,7 @@ async def test_context_and_scope_changes_close_old_clients_without_changing_conf
             assert changed.identity.connection_id == first.identity.connection_id
             assert changed.identity.generation > first.identity.generation
             assert sessions.select_namespace(None).namespace is None
-            second = await sessions.connect("kubetrol-test-Two")
+            second = await sessions.connect("kuberich-test-Two")
             assert second.identity.connection_id != first.identity.connection_id
             assert second.namespace == "default"
             assert old_api.rest_client.pool_manager.closed and not old_directory.exists()
@@ -81,7 +81,7 @@ async def test_permission_auth_and_api_errors_are_distinct_without_raw_body(
             catalog_fixture(tmp_path, url), ConnectionRequest(namespace="allowed")
         )
         try:
-            observation = await sessions.connect("kubetrol-test-one")
+            observation = await sessions.connect("kuberich-test-one")
             assert observation.state is state
             assert "opaque-private" not in observation.message
             if state is ConnectionState.LIMITED:
@@ -106,10 +106,10 @@ async def test_delayed_api_timeout_and_cancel_close_owned_client(tmp_path: Path)
 
     async with fake_api(handler) as url:
         sessions = SessionService(catalog_fixture(tmp_path, url), ConnectionRequest(timeout=0.1))
-        timed_out = await sessions.connect("kubetrol-test-one")
+        timed_out = await sessions.connect("kuberich-test-one")
         assert timed_out.state is ConnectionState.TIMEOUT and sessions.client is None
         started.clear()
-        task = asyncio.create_task(sessions.connect("kubetrol-test-one"))
+        task = asyncio.create_task(sessions.connect("kuberich-test-one"))
         await started.wait()
         api = sessions.client.api
         task.cancel()
@@ -126,7 +126,7 @@ async def test_unreachable_endpoint_does_not_use_old_identity(tmp_path: Path) ->
     async with fake_api(handler) as url:
         catalog = catalog_fixture(tmp_path, url)
     sessions = SessionService(catalog, ConnectionRequest())
-    observation = await sessions.connect("kubetrol-test-one")
+    observation = await sessions.connect("kuberich-test-one")
     assert observation.state is ConnectionState.UNREACHABLE and sessions.client is None
     invalid = await sessions.connect("absent")
     assert (
@@ -156,7 +156,7 @@ async def test_tls_is_verified_by_default_and_explicit_insecure_is_visible(
             catalog_fixture(tmp_path, url, cluster=cluster), ConnectionRequest()
         )
         try:
-            observation = await sessions.connect("kubetrol-test-one")
+            observation = await sessions.connect("kuberich-test-one")
             assert observation.state is (
                 ConnectionState.CONNECTED if trusted or insecure else ConnectionState.TLS_ERROR
             )
@@ -191,7 +191,7 @@ async def test_client_certificate_pair_and_relative_ca_files(
             catalog_fixture(tmp_path, url, user, cluster), ConnectionRequest()
         )
         try:
-            observation = await sessions.connect("kubetrol-test-one")
+            observation = await sessions.connect("kuberich-test-one")
             assert observation.state is ConnectionState.CONNECTED
             directory = Path(sessions.client.directory.name)
             assert directory.stat().st_mode & 0o777 == 0o700
@@ -218,7 +218,7 @@ async def test_namespace_pagination_is_bounded_and_complete(tmp_path: Path) -> N
             catalog_fixture(tmp_path, url), ConnectionRequest(all_namespaces=True)
         )
         try:
-            observation = await sessions.connect("kubetrol-test-one")
+            observation = await sessions.connect("kuberich-test-one")
             assert observation.namespaces == ("default", "team") and observation.namespace is None
             assert tokens == ["", "opaque-token"]
             with pytest.raises(AppError):
@@ -248,7 +248,7 @@ async def test_invalid_or_excessive_response_is_not_an_empty_cluster(
 
     async with fake_api(handler) as url:
         sessions = SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
-        observation = await sessions.connect("kubetrol-test-one")
+        observation = await sessions.connect("kuberich-test-one")
         assert observation.state is ConnectionState.API_ERROR and sessions.client is None
 
 
@@ -281,7 +281,7 @@ async def test_invalid_config_and_missing_auth_are_actionable_and_cleaned(
         sessions = SessionService(
             catalog_fixture(tmp_path, url, user, cluster), ConnectionRequest()
         )
-        observation = await sessions.connect("kubetrol-test-one")
+        observation = await sessions.connect("kuberich-test-one")
         assert observation.state is state
         assert sessions.client is None
         assert "synthetic" not in observation.message
@@ -300,7 +300,7 @@ async def test_anonymous_and_relative_token_file_credentials(tmp_path: Path, use
     async with fake_api(handler) as url:
         sessions = SessionService(catalog_fixture(tmp_path, url, user), ConnectionRequest())
         try:
-            assert (await sessions.connect("kubetrol-test-one")).state is ConnectionState.CONNECTED
+            assert (await sessions.connect("kuberich-test-one")).state is ConnectionState.CONNECTED
             assert seen == (["Bearer synthetic-token-file"] if user else [None])
         finally:
             await sessions.close()
@@ -321,7 +321,7 @@ async def test_wrong_tls_server_name_is_rejected(tmp_path: Path) -> None:
         sessions = SessionService(
             catalog_fixture(tmp_path, url, cluster=cluster), ConnectionRequest()
         )
-        observation = await sessions.connect("kubetrol-test-one")
+        observation = await sessions.connect("kuberich-test-one")
         assert observation.state is ConnectionState.TLS_ERROR and sessions.client is None
 
 
@@ -343,7 +343,7 @@ async def test_namespace_count_and_page_limits_do_not_loop_or_truncate_silently(
 
     async with fake_api(handler) as url:
         sessions = SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
-        observation = await sessions.connect("kubetrol-test-one")
+        observation = await sessions.connect("kuberich-test-one")
         assert observation.state is ConnectionState.API_ERROR and sessions.client is None
         assert calls == {"items": 1, "total": 2, "pages": 32}[mode]
 
@@ -354,7 +354,7 @@ async def test_cancel_during_owned_filesystem_preparation_waits_for_thread(
 ) -> None:
     import threading
 
-    from kubetrol.adapters import kubernetes
+    from kuberich.adapters import kubernetes
 
     started, release, finished = threading.Event(), threading.Event(), threading.Event()
     original = kubernetes._prepare
@@ -374,7 +374,7 @@ async def test_cancel_during_owned_filesystem_preparation_waits_for_thread(
 
     async with fake_api(handler) as url:
         sessions = SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
-        task = asyncio.create_task(sessions.connect("kubetrol-test-one"))
+        task = asyncio.create_task(sessions.connect("kuberich-test-one"))
         await asyncio.to_thread(started.wait, 2)
         directory = Path(sessions.client.directory.name)
         task.cancel()
@@ -433,7 +433,7 @@ async def test_explicit_owned_proxy_and_exec_extension_are_honored(
             catalog_fixture(tmp_path, server, user, cluster), ConnectionRequest()
         )
         try:
-            observation = await sessions.connect("kubetrol-test-one")
+            observation = await sessions.connect("kuberich-test-one")
             assert observation.state is ConnectionState.CONNECTED
             assert observation.namespaces == ("proxied",)
             assert direct == [] and proxied == ["Bearer synthetic-proxy"]
@@ -449,10 +449,10 @@ async def test_selected_namespace_is_remembered_when_returning_to_context(tmp_pa
     async with fake_api(handler) as url:
         sessions = SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
         try:
-            await sessions.connect("kubetrol-test-one")
+            await sessions.connect("kuberich-test-one")
             sessions.select_namespace("default")
-            await sessions.connect("kubetrol-test-Two")
-            assert (await sessions.connect("kubetrol-test-one")).namespace == "default"
+            await sessions.connect("kuberich-test-Two")
+            assert (await sessions.connect("kuberich-test-one")).namespace == "default"
         finally:
             await sessions.close()
 
@@ -467,7 +467,7 @@ async def test_owned_process_close_hook_precedes_sdk_and_private_directory_clean
 
     async with fake_api(handler) as url:
         sessions = SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
-        await sessions.connect("kubetrol-test-one")
+        await sessions.connect("kuberich-test-one")
         captured = sessions.client
         directory = Path(captured.directory.name)
         started, release = asyncio.Event(), asyncio.Event()

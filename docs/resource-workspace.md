@@ -1,6 +1,6 @@
 # Resource workspace
 
-Preview feedback [#125](https://github.com/carloshm91/kubetrol/issues/125) adopts
+Preview feedback [#125](https://github.com/carloshm91/kuberich/issues/125) adopts
 the layout and keyboard workflow in the maintainer's K9s screenshots, using
 original Python/Textual code. Local reference images are not distributed.
 
@@ -9,7 +9,7 @@ yellow metadata labels/navigation, blue shortcut keys and white headings.
 Explicit Textual themes remain supported. Select it for one invocation:
 
 ```sh
-KUBETROL_THEME=k9s uv run kubetrol
+KUBERICH_THEME=k9s uv run kuberich
 ```
 
 The top header shows context, cluster/user **aliases**, namespace, connection
@@ -103,22 +103,22 @@ cluster/user aliases and the logo. Below 16 rows the three-row context/namespace
 state header preserves room for resources/inputs. Container hints and log controls
 remain available; help contains secondary shortcuts. NO_COLOR retains textual cues.
 
-The upper-right brand is an original five-row `ktrol` ASCII logo from 120 columns,
+The upper-right brand is an original five-row KubeRich ASCII logo from 120 columns,
 or a compact wordmark at 70–119 columns. Resizing changes only the mark's reserved
 width, keeping the shared view geometry consistent at each terminal size.
-The project, installed version label and CLI remain Kubetrol/`kubetrol`.
+The project, installed version label and CLI remain KubeRich/`kuberich`.
 
 `--headless` hides the shortcut/logo header, `--logoless` hides its brand and
 `--crumbsless` hides identity/navigation bars. Log `z` hides the header/route and
 frame, preserving search, controls and stream ownership.
 
 The header shows the actual installed development version. Optional real release
-notices and custom/live/context themes remain [U01 #56](https://github.com/carloshm91/kubetrol/issues/56).
-Kubernetes-version/CPU/memory presentation belongs to [O01 #68](https://github.com/carloshm91/kubetrol/issues/68)
-and [O02 #69](https://github.com/carloshm91/kubetrol/issues/69).
+notices and custom/live/context themes remain [U01 #56](https://github.com/carloshm91/kuberich/issues/56).
+Kubernetes-version/CPU/memory presentation belongs to [O01 #68](https://github.com/carloshm91/kuberich/issues/68)
+and [O02 #69](https://github.com/carloshm91/kuberich/issues/69).
 Stable geometry and inline completion are the focused correction
-[#127](https://github.com/carloshm91/kubetrol/issues/127). Broader navigation/clipboard
-qualification remains [B07 #61](https://github.com/carloshm91/kubetrol/issues/61). This preview does not
+[#127](https://github.com/carloshm91/kuberich/issues/127). Broader navigation/clipboard
+qualification remains [B07 #61](https://github.com/carloshm91/kuberich/issues/61). This preview does not
 establish full K9s parity.
 
 Behavior references: [K9s commands](https://k9scli.io/topics/commands/),

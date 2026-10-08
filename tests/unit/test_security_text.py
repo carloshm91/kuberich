@@ -5,9 +5,9 @@ import io
 import pytest
 from rich.console import Console
 
-from kubetrol.diagnostics.redaction import sanitize_text
-from kubetrol.security.controls import escape_controls
-from kubetrol.security.presentation import MAX_DISPLAY_CHARACTERS, safe_text
+from kuberich.diagnostics.redaction import sanitize_text
+from kuberich.security.controls import escape_controls
+from kuberich.security.presentation import MAX_DISPLAY_CHARACTERS, safe_text
 
 
 @pytest.mark.parametrize(

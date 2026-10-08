@@ -9,14 +9,14 @@ initial focus; `--readonly` refuses the action before a file or editor is opened
    the full manifest, including potentially sensitive values such as ConfigMap
    data. Secret manifests remain unavailable until their explicit reveal policy
    in C04 #55. The displayed diff is redacted separately from the real patch.
-2. Choose Editor. Kubetrol reads the identified object and creates a private
+2. Choose Editor. KubeRich reads the identified object and creates a private
    temporary directory (0700) and initial file (0600). The editor uses the native
    terminal and returns to the form. Its argument list comes from
-   `KUBETROL_EDITOR`, then `VISUAL`, then `EDITOR`, with `vi` as the default.
+   `KUBERICH_EDITOR`, then `VISUAL`, then `EDITOR`, with `vi` as the default.
    Quoted arguments are supported; shell expansion and pipelines are literal.
 3. Review the diff and captured resourceVersion. Formatting-only edits send no
    PATCH. Failed or interrupted editors and invalid YAML cannot enable Apply.
-4. Choose Validate. Kubetrol checks the captured object and sends the exact
+4. Choose Validate. KubeRich checks the captured object and sends the exact
    conditional JSON Patch with `dryRun=All` and `fieldValidation=Strict`.
    Successful validation does not save the object. Cancel again has focus.
 5. Choose Apply separately. The exact validated change receives a one-use
@@ -25,7 +25,7 @@ initial focus; `--readonly` refuses the action before a file or editor is opened
 
 Reopening Editor or validating again invalidates previous confirmation. A version
 conflict requires closing the draft and opening a fresh edit of the current
-object; Kubetrol does not overwrite, automatically merge or retry the old change.
+object; KubeRich does not overwrite, automatically merge or retry the old change.
 A dropped or invalid Apply response can mean the write applied: inspect the
 current object before another change. See [guarded changes](mutations.md).
 

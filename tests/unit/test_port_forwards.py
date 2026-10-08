@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from kubetrol.domain.port_forwards import (
+from kuberich.domain.port_forwards import (
     BoundPort,
     PortMapping,
     Readiness,
@@ -18,10 +18,10 @@ from kubetrol.domain.port_forwards import (
     validate_mappings,
     verify_forward_target,
 )
-from kubetrol.domain.processes import ProcessMode, ProcessPurpose
-from kubetrol.domain.resources import ApiResource, resource_record
-from kubetrol.domain.targets import ResourceTarget, SessionIdentity
-from kubetrol.errors import AppError
+from kuberich.domain.processes import ProcessMode, ProcessPurpose
+from kuberich.domain.resources import ApiResource, resource_record
+from kuberich.domain.targets import ResourceTarget, SessionIdentity
+from kuberich.errors import AppError
 
 
 @pytest.mark.parametrize(
