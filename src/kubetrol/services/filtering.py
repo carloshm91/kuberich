@@ -9,17 +9,20 @@ import regex
 from kubetrol.domain.namespaces import NamespaceRow
 from kubetrol.domain.navigation import ContextRow
 from kubetrol.domain.pods import PodRow
+from kubetrol.domain.registry import ResourceRow
 
 REGEX_SECONDS = 0.05
 
 
 @dataclass(frozen=True)
-class FilterResult[T: PodRow | NamespaceRow | ContextRow]:
+class FilterResult[T: PodRow | NamespaceRow | ContextRow | ResourceRow]:
     rows: tuple[T, ...]
     problem: str | None = None
 
 
-def search_text(row: PodRow | NamespaceRow | ContextRow) -> str:
+def search_text(row: PodRow | NamespaceRow | ContextRow | ResourceRow) -> str:
+    if isinstance(row, ResourceRow):
+        return " ".join(value.text for value in row.values[:-1])
     if isinstance(row, ContextRow):
         return " ".join(row.cells()[1:])
     if isinstance(row, NamespaceRow):
@@ -27,7 +30,7 @@ def search_text(row: PodRow | NamespaceRow | ContextRow) -> str:
     return f"{row.namespace} {row.name} {row.ready}/{row.containers} {row.status} {row.restarts}"
 
 
-def filter_rows[T: PodRow | NamespaceRow | ContextRow](
+def filter_rows[T: PodRow | NamespaceRow | ContextRow | ResourceRow](
     rows: tuple[T, ...], query: str, kind: str = "pods"
 ) -> FilterResult[T]:
     if not query:
@@ -59,7 +62,7 @@ def filter_rows[T: PodRow | NamespaceRow | ContextRow](
     return FilterResult(tuple(matches))
 
 
-async def apply_filter[T: PodRow | NamespaceRow | ContextRow](
+async def apply_filter[T: PodRow | NamespaceRow | ContextRow | ResourceRow](
     rows: tuple[T, ...], query: str, kind: str = "pods"
 ) -> FilterResult[T]:
     if not query:

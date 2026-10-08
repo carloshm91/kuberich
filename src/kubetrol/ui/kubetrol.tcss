@@ -19,8 +19,8 @@ Screen {
 .header-short #scope-bar { width: 1fr; height: 3; }
 .header-short #cluster, .header-short #user, .header-short #build-info { display: none; }
 
-#resources, #namespaces, #contexts { height: auto; min-height: 2; max-height: 100%; background: $background; }
-#resources.populated, #namespaces.populated, #contexts.populated { height: 1fr; }
+#resources, #namespaces, #contexts, #standard-resources { height: auto; min-height: 2; max-height: 100%; background: $background; }
+#resources.populated, #namespaces.populated, #contexts.populated, #standard-resources.populated { height: 1fr; }
 #all-namespaces { height: 1; width: 1fr; border: none; background: $background; color: $accent; }
 
 #empty-state { height: 1fr; align: center middle; padding: 0 1; }

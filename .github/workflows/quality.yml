@@ -56,7 +56,7 @@ jobs:
         run: |
           uv run ruff check .
           uv run ruff format --check .
-          uv run mypy --strict src/kubetrol scripts/check_coverage.py scripts/check_quality_gate.py scripts/ci_policy.py scripts/check_supply_chain.py scripts/supply_chain.py scripts/dependency_inventory.py scripts/release.py scripts/release_policy.py scripts/homebrew.py scripts/owned_kind.py scripts/verify_kind_lifecycle.py scripts/verify_quickstart.py
+          uv run mypy --strict src/kubetrol scripts/check_coverage.py scripts/check_quality_gate.py scripts/ci_policy.py scripts/check_supply_chain.py scripts/supply_chain.py scripts/dependency_inventory.py scripts/release.py scripts/release_policy.py scripts/homebrew.py scripts/owned_kind.py scripts/verify_kind_lifecycle.py scripts/verify_quickstart.py scripts/standard_kind.py
       - name: Run behavioral, gate-regression and clean-distribution checks
         run: uv run pytest --cov=kubetrol --cov-branch --cov-report=term-missing --cov-report=xml --cov-report=json
       - name: Verify context sessions, resource views and watches on an owned disposable cluster

@@ -5,12 +5,16 @@ from collections.abc import Callable
 
 from kubetrol.domain.namespaces import NamespaceRow, namespace_row
 from kubetrol.domain.pods import PodRow, pod_row
+from kubetrol.domain.registry import ResourceDefinition, ResourceRow, resource_row
 from kubetrol.domain.resources import ResourceRecord, ResourceSnapshot
 
 
-class ResourceProjection[T: PodRow | NamespaceRow]:
-    def __init__(self, resource: str, project: Callable[[ResourceRecord], T]) -> None:
+class ResourceProjection[T: PodRow | NamespaceRow | ResourceRow]:
+    def __init__(
+        self, resource: str, project: Callable[[ResourceRecord], T], group: str = ""
+    ) -> None:
         self._resource, self._project_record = resource, project
+        self._group = group
         self._cache: dict[str, tuple[ResourceRecord, T]] = {}
 
     def _project(self, snapshot: ResourceSnapshot) -> tuple[T, ...]:
@@ -27,7 +31,11 @@ class ResourceProjection[T: PodRow | NamespaceRow]:
         return tuple(value[1] for value in cache.values())
 
     async def project(self, snapshot: ResourceSnapshot | None) -> tuple[T, ...]:
-        if snapshot is None or snapshot.resource.group or snapshot.resource.name != self._resource:
+        if (
+            snapshot is None
+            or snapshot.resource.group != self._group
+            or snapshot.resource.name != self._resource
+        ):
             self._cache.clear()
             return ()
         worker = asyncio.create_task(asyncio.to_thread(self._project, snapshot))
@@ -57,3 +65,10 @@ class PodProjection(ResourceProjection[PodRow]):
 class NamespaceProjection(ResourceProjection[NamespaceRow]):
     def __init__(self) -> None:
         super().__init__("namespaces", namespace_row)
+
+
+class StandardProjection(ResourceProjection[ResourceRow]):
+    def __init__(self, definition: ResourceDefinition) -> None:
+        super().__init__(
+            definition.name, lambda record: resource_row(record, definition), definition.group
+        )

@@ -17,8 +17,20 @@ from tests.support.distribution import PROJECT, run
 from tests.support.handoff import terminal_handoff_trial
 from tests.support.navigation import terminal_navigation
 from tests.support.shell import terminal_shell
+from tests.support.standard_terminal import terminal_standard_views
 from tests.support.transports import TerminalTransport
 from tests.terminal.pty_support import TerminalSession
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+def test_installed_standard_resource_views_outside_checkout(installed_wheel, entry_point):
+    binary, directory = installed_wheel
+    command = (
+        [str(binary / "kubetrol")]
+        if entry_point == "console"
+        else [str(binary / "python"), "-m", "kubetrol"]
+    )
+    terminal_standard_views(command, directory, f"installed-standard-{entry_point}")
 
 
 def test_wheel_metadata_entry_point_and_assets(artifacts: tuple[Path, Path]) -> None:

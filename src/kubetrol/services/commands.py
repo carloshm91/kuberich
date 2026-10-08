@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from enum import Enum, auto
 
 from kubetrol.domain.connections import namespace_name
+from kubetrol.domain.registry import RESOURCE_ALIASES, ResourceDefinition
+from kubetrol.errors import AppError
 from kubetrol.security.arguments import validate_argument
 from kubetrol.services.access import AccessPolicy, Action
 
@@ -53,7 +55,13 @@ class ScopedCommand:
     argument: str
 
 
-ResolvedCommand = Command | ScopedCommand
+@dataclass(frozen=True)
+class ResourceCommand:
+    definition: ResourceDefinition
+    scope: str | None = None
+
+
+ResolvedCommand = Command | ScopedCommand | ResourceCommand
 
 
 def suggestions(
@@ -63,20 +71,24 @@ def suggestions(
     text = text.removeprefix(":")
     verb, separator, prefix = text.partition(" ")
     if not separator:
-        values = tuple(sorted(ALIASES))
+        values = tuple(sorted(set(ALIASES) | set(RESOURCE_ALIASES)))
         head = ""
         prefix = verb
     else:
         command = ALIASES.get(verb.lower())
         if command is Command.CONTEXTS:
             values = contexts
-        elif command in {Command.NAMESPACES, Command.PODS}:
+        elif command in {Command.NAMESPACES, Command.PODS} or (
+            verb.lower() in RESOURCE_ALIASES and RESOURCE_ALIASES[verb.lower()].namespaced
+        ):
             values = namespaces
         else:
             return ()
         head = verb + " "
     candidates = sorted(
-        set(head + value for value in values), key=lambda value: (value.casefold(), value)
+        set(head + value for value in values),
+        # Preserve familiar :c → context and existing local command completions.
+        key=lambda value: (not separator and value not in ALIASES, value.casefold(), value),
     )
     return tuple(
         value
@@ -98,6 +110,15 @@ class CommandService:
         parts = text.split(maxsplit=1)
         verb = parts[0].lower()
         self.policy.require(_ACTIONS.get(verb, Action.READ))
+        definition = RESOURCE_ALIASES.get(verb)
+        if definition is not None:
+            if len(parts) == 1:
+                return ResourceCommand(definition)
+            if not definition.namespaced:
+                raise AppError("This resource is cluster-scoped; omit the namespace argument.")
+            if parts[1] != "*":
+                namespace_name(parts[1])
+            return ResourceCommand(definition, parts[1])
         command = ALIASES.get(verb, Command.UNAVAILABLE)
         if len(parts) == 1:
             return command

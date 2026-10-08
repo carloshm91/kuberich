@@ -52,7 +52,16 @@ def test_context_case_and_spaces_are_preserved_and_invalid_arguments_are_rejecte
 
 
 def test_completions_are_literal_bounded_case_preserving_and_deduplicated():
-    assert suggestions("c", (), ()) == ("context", "contexts", "ctx")
+    assert suggestions("c", (), ()) == (
+        "context",
+        "contexts",
+        "ctx",
+        "cj",
+        "cm",
+        "configmap",
+        "configmaps",
+        "cronjob",
+    )
     assert suggestions("ct", (), ()) == ("ctx",)
     assert suggestions(":ctx p", ("Production", "prod[red]", "Production"), ()) == (
         "ctx prod[red]",

@@ -309,7 +309,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         if initial in {Command.UNAVAILABLE, Command.SHELL}:
             raise AppError(
-                "--command requires an available startup view; shell actions need a selected pod. Available: po, ctx, ns, status, retry, help, quit.",
+                "--command requires an available startup view; shell actions need a selected pod. Available: po, ctx, ns, deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, no, pvc, pv, sc, status, retry, help, quit.",
                 ExitCode.UNAVAILABLE,
             )
         log_file = log_location(

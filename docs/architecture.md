@@ -27,6 +27,15 @@ updated decision record in this document. The product is a new implementation.
 
 ## Product boundary
 
+B05 #41 uses immutable `domain/registry.py` definitions for 15 standard resource
+families and one `ui/standard.py` table. Commands capture the registry's API group;
+the existing per-client discovery selects the served version and actual endpoint.
+The shared owned projection accepts both group and resource identity. Summaries
+carry bounded display strings and typed sort values, excluding configuration and
+secret payloads. Inspection reuses captured UID/client/scope checks. Navigation
+history carries a column key and restores it within the selected resource's
+columns. Mutations and generic CRD/server columns remain later tasks.
+
 Q01 #38 shares an explicit local-kind lifecycle between cluster verifiers.
 Generated configuration must match the owned Docker node and published API port
 before fixture writes. Process deadlines and scoped signals own cleanup; deletion
