@@ -58,6 +58,9 @@ updates, filtering, resource details, container logs, and interactive exec.
 Linux and macOS are the initial supported operating systems. Textual Web is
 outside the product scope.
 
+The initial [landing page and user documentation](docs/website.md) can be built
+and reviewed locally. Hosting, DNS and public release remain separate launch steps.
+
 ## Try the development CLI
 
 With [uv](https://docs.astral.sh/uv/getting-started/installation/) and Python

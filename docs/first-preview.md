@@ -1,5 +1,17 @@
 # First things to try
 
+## Initial private website checkpoint: #150
+
+The initial landing and sixteen user guides now build locally from the maintained
+repository documentation. Both the landing with `/docs/` and a separate root docs
+host are prepared. The actual tested command is `uv run python -m scripts.build_site`;
+`uv run python -m scripts.check_site` validates the generated output.
+Local preview is `uv run python -m http.server 8715 --bind 127.0.0.1 --directory artifacts/site/www`.
+Read [site instructions](website.md) and [acceptance evidence](acceptance/initial-website.md)
+for measured checks and pending candidate/publication limits. Nothing has been
+published; DNS and private repository visibility are unchanged. Continuous private
+work does not require an intermediate maintainer trial.
+
 ## KubeRich identity checkpoint: #149
 
 The maintainer chose **KubeRich** and confirmed purchasing `kuberich.com`.
