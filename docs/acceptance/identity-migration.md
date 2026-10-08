@@ -25,6 +25,12 @@ and existing signal/terminal ownership tests remain in the full suite.
 
 The initial focused run caught an obsolete help snapshot (326 other cases passed).
 Both reviewed argparse snapshots now describe the added migration command. An
+initial matrix attempt caught an obsolete single-entry-point artifact assertion;
+the next caught a real-terminal assertion expecting the old ASCII logo. Both
+were interrupted, retained as controls, and corrected without changing the
+production source. Final full reruns use explicit canonical/alias metadata and
+the displayed KubeRich logo.
+An
 extra strict audit included two legacy untyped integration drivers outside the
 existing CI type-check list and reported 61 diagnostics. Its output is retained;
 the required typed runtime/tooling command is unchanged in scope and passes.

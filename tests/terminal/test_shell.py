@@ -17,7 +17,7 @@ def test_real_terminal_navigation_resize_and_quit(tmp_path: Path, exit_key: byte
         marker = terminal.send(b"\x1b")
         terminal.wait_for(b"No cluster connection", since=marker)
         marker = terminal.resize(120, 30)
-        terminal.wait_for_screen("| |/ / __| '__/ _ \\| |", since=marker)
+        terminal.wait_for_screen("/ //_/_  KubeRich", since=marker)
         terminal.wait_for_screen("<n / :ns> Namespaces")
         terminal.wait_for_screen("<?> Help")
         marker = terminal.resize(50, 16)
