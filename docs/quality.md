@@ -55,6 +55,11 @@ Actual private files, held workers/reads, loopback HTTP/TLS, Pilot and source/fr
 wheel PTYs qualify editor failure/cancellation, default Cancel and distinct
 dry-run/Apply. `scripts.verify_editing_kind` is required on Linux/Python 3.12 for
 actual strict dry-run, guarded edits, conflict/replacement refusal and patch RBAC.
+M03 #45 adds workload applicability, counts, restart/history and observed rollout
+decisions in `domain/workloads.py` to the critical 100% inventory. HTTP/TLS,
+Pilot and source/fresh-wheel terminal contracts complement required Linux/Python
+3.12 `scripts.verify_workloads_kind` Deployment and ControllerRevision operations,
+HPA, scale-only RBAC, failed progress and monitoring cancellation.
 F05 invocation overrides and bounded impersonation decisions in
 `domain/connection_overrides.py` join the critical inventory in #19.
 Fixed provider diagnostic decisions in `domain/credential_helpers.py` join the
@@ -174,7 +179,7 @@ There are no path filters or allowed matrix failures.
 
 Each selected job still runs the complete behavioral/terminal/packaging suite,
 independent coverage gates, build and supply-chain verification. Linux 3.12 keeps
-all seven actual disposable-cluster rehearsals. The macOS baseline is a development
+all eight actual disposable-cluster rehearsals. The macOS baseline is a development
 check, not qualification of macOS 3.13/3.14. The planner refuses unknown events
 and non-main push/dispatch refs. PR checks stay on `pull_request`; a manual
 dispatch never substitutes for the required PR checks. Concurrency groups include

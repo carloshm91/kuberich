@@ -85,6 +85,19 @@ RESOURCE_SHORTCUTS = (
     ("?", "Help"),
     (":pf", "Forward sessions"),
 )
+
+
+def workload_shortcuts(resource: str, read_only: bool) -> tuple[tuple[str, str], ...]:
+    actions = []
+    if not read_only and resource in {"deployments", "statefulsets", "replicasets"}:
+        actions.append((":scale", "Scale replicas"))
+    if resource in {"deployments", "statefulsets", "daemonsets"}:
+        if not read_only:
+            actions.extend(((":restart", "Restart"), (":rollback", "Rollback revision")))
+        actions.append((":rollout", "Rollout status"))
+    return (*actions, *RESOURCE_SHORTCUTS)[:12]
+
+
 SERVICE_SHORTCUTS = (
     ("Enter / d", "Details"),
     ("y/e", "YAML / Events"),

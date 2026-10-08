@@ -1,5 +1,6 @@
 """Check real built artifacts and entry points outside the source checkout."""
 
+import asyncio
 import configparser
 import json
 import shutil
@@ -22,6 +23,8 @@ from tests.support.navigation import terminal_navigation
 from tests.support.shell import terminal_shell
 from tests.support.standard_terminal import terminal_standard_views
 from tests.support.transports import TerminalTransport
+from tests.support.workload_terminal import terminal_workload
+from tests.support.workloads import workload_api
 from tests.terminal.pty_support import TerminalSession
 
 
@@ -67,6 +70,21 @@ def test_installed_manifest_editor_and_terminal_restoration(installed_wheel, ent
         else [str(binary / "python"), "-m", "kubetrol"]
     )
     terminal_editing(command, directory, f"installed-editor-{entry_point}")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+async def test_installed_workload_confirmation_and_restoration(installed_wheel, entry_point):
+    binary, directory = installed_wheel
+    command = (
+        [str(binary / "kubetrol")]
+        if entry_point == "console"
+        else [str(binary / "python"), "-m", "kubetrol"]
+    )
+    async with workload_api() as (url, api):
+        await asyncio.to_thread(
+            terminal_workload, command, directory, "installed-workload-" + entry_point, url, api
+        )
 
 
 def test_wheel_metadata_entry_point_and_assets(artifacts: tuple[Path, Path]) -> None:

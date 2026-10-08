@@ -28,6 +28,10 @@ class Command(Enum):
     ANNOTATE = auto()
     EDIT = auto()
     WRITES = auto()
+    SCALE = auto()
+    RESTART = auto()
+    ROLLBACK = auto()
+    ROLLOUT = auto()
     UNAVAILABLE = auto()
 
 
@@ -37,7 +41,9 @@ _ACTIONS = {
     "plugin": Action.PLUGIN,
     "portforward": Action.PORT_FORWARD,
     "annotate": Action.MUTATE,
-    **dict.fromkeys(("delete", "edit", "scale", "rollout", "apply", "patch"), Action.MUTATE),
+    **dict.fromkeys(
+        ("delete", "edit", "scale", "restart", "rollback", "apply", "patch"), Action.MUTATE
+    ),
 }
 
 ALIASES = {
@@ -59,6 +65,10 @@ ALIASES = {
     "annotate": Command.ANNOTATE,
     "edit": Command.EDIT,
     "writes": Command.WRITES,
+    "scale": Command.SCALE,
+    "restart": Command.RESTART,
+    "rollback": Command.ROLLBACK,
+    "rollout": Command.ROLLOUT,
 }
 
 
@@ -140,11 +150,21 @@ class CommandService:
         command = ALIASES.get(verb, Command.UNAVAILABLE)
         if len(parts) == 1:
             return command
-        if command not in {Command.CONTEXTS, Command.NAMESPACES, Command.PODS}:
+        if command not in {
+            Command.CONTEXTS,
+            Command.NAMESPACES,
+            Command.PODS,
+            Command.SCALE,
+            Command.ROLLBACK,
+        }:
             return Command.UNAVAILABLE
         argument = parts[1]
         if command is Command.CONTEXTS:
             validate_argument(argument)
+        elif command in {Command.SCALE, Command.ROLLBACK}:
+            from kubetrol.domain.workloads import replica_count
+
+            replica_count(argument)
         elif argument != "*":
             namespace_name(argument)
         return ScopedCommand(command, argument)

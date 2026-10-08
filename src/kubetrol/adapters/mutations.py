@@ -8,7 +8,7 @@ import aiohttp
 
 from kubetrol.adapters.kubernetes import KubernetesSession, _decode
 from kubetrol.domain.mutations import MutationIntent, MutationResult, MutationState, status_result
-from kubetrol.domain.resources import resource_record
+from kubetrol.domain.resources import ApiResource, resource_record
 from kubetrol.errors import AppError
 
 
@@ -133,7 +133,12 @@ async def conditional_patch(
 
 
 def _receipt(data: bytes, intent: MutationIntent) -> None:
-    record = resource_record(intent.resource, _decode(data), intent.target.namespace)
+    resource = (
+        ApiResource("autoscaling", "v1", "scales", "Scale", True, frozenset({"get", "patch"}))
+        if intent.subresource == "scale"
+        else intent.resource
+    )
+    record = resource_record(resource, _decode(data), intent.target.namespace)
     intent.target.require_current(intent.target.session, uid=record.uid or "")
     if record.name != intent.target.name or not record.resource_version:
         raise AppError("Patch response does not match the captured resource.")

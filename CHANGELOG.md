@@ -7,6 +7,9 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Review and confirm workload scale/restart/explicit revision rollback; monitor
+  actual rollout progress with HPA, paused/OnDelete, narrow RBAC and UID/version guards.
+
 - Edit selected manifests with a trusted native editor, private owned drafts,
   redacted preview, strict server dry-run, separate Apply and version/UID refusal.
 

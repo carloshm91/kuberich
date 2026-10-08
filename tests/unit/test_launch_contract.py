@@ -13,7 +13,9 @@ from kubetrol.services.commands import Command
 from kubetrol.ui.presentation import Presentation
 
 
-@pytest.mark.parametrize("action", ["edit", "annotate"])
+@pytest.mark.parametrize(
+    "action", ["edit", "annotate", "scale", "scale 2", "restart", "rollback 1", "rollout"]
+)
 def test_selected_resource_actions_are_refused_at_startup(action, monkeypatch, capsys):
     monkeypatch.setattr(cli, "run_terminal", lambda *a, **k: pytest.fail("Started unscoped action"))
     assert cli.main(["--command", action]) == 4

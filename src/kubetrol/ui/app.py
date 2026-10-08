@@ -44,6 +44,7 @@ from kubetrol.domain.registry import RESOURCE_ALIASES, resource_selection
 from kubetrol.domain.resources import ApiResource, ResourceRecord
 from kubetrol.domain.targets import ResourceTarget
 from kubetrol.domain.views import USABLE_CONNECTIONS, ResourceSelection, ViewObservation, ViewStatus
+from kubetrol.domain.workloads import WorkloadAction, applicable
 from kubetrol.errors import AppError, ExecutableUnavailable
 from kubetrol.security.arguments import validate_argument
 from kubetrol.security.presentation import safe_text
@@ -66,19 +67,20 @@ from kubetrol.services.port_forwards import ForwardManager, ForwardService
 from kubetrol.services.processes import ProcessRunner, _finish_owned
 from kubetrol.services.sessions import SessionService
 from kubetrol.services.shell import ShellService
+from kubetrol.services.workloads import WorkloadService
 from kubetrol.services.workspace import ViewSubscription, WorkspaceService
 from kubetrol.ui.chrome import (
     CTX_SHORTCUTS,
     K9S_THEME,
     NS_SHORTCUTS,
     POD_SHORTCUTS,
-    RESOURCE_SHORTCUTS,
     SERVICE_SHORTCUTS,
     Breadcrumbs,
     WorkspaceBars,
     WorkspaceChrome,
     WorkspaceFrame,
     WorkspaceHeader,
+    workload_shortcuts,
 )
 from kubetrol.ui.commands import CommandInput, NavigationInput
 from kubetrol.ui.containers import ContainerScreen
@@ -96,6 +98,7 @@ from kubetrol.ui.scopes import ConnectionScreen
 from kubetrol.ui.shutdown import TerminalSignals
 from kubetrol.ui.standard import StandardTable
 from kubetrol.ui.terminal import ShellScreen
+from kubetrol.ui.workloads import WorkloadScreen
 
 DISCONNECTED_STATUS = "Disconnected · No resource data"
 
@@ -131,7 +134,7 @@ class HelpScreen(ModalScreen[None]):
                         "Ctrl+C            Quit\n\n"
                         "Commands: po/pod/pods [NS or *], ctx [NAME], ns [NAME or *], "
                         "status, retry, login, back, forward, shell/exec, pf/portforwards, "
-                        "portforward, annotate, edit (Shift+E), writes, help, quit.\n"
+                        "portforward, annotate, edit (Shift+E), scale, restart, rollback, rollout, writes, help, quit.\n"
                         "Resources: deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, "
                         "no, pvc, pv, sc. Namespaced resources accept [NS or *].\n"
                         "Filter: plain case-insensitive text; re:PATTERN for regex. "
@@ -714,7 +717,7 @@ class KubetrolApp(App[None]):
             *(
                 screen.stop_owned()
                 for screen in tuple(self.screen_stack)
-                if isinstance(screen, (AnnotationScreen, EditingScreen))
+                if isinstance(screen, (AnnotationScreen, EditingScreen, WorkloadScreen))
                 and screen.source.client is client
             ),
         )
@@ -825,6 +828,31 @@ class KubetrolApp(App[None]):
     def action_writes(self) -> None:
         if not isinstance(self.screen, ModalScreen):
             self.push_screen(MutationHistoryScreen(self.mutations))
+
+    def action_workload(self, operation: WorkloadAction, argument: str = "") -> None:
+        try:
+            self.commands.policy.require(
+                Action.READ if operation is WorkloadAction.STATUS else Action.MUTATE
+            )
+        except AppError as error:
+            self._set_status(str(error))
+            return
+        selection = self._capture_target()
+        if selection is not None:
+            client, resource, _, target, current = selection
+            try:
+                applicable(resource, operation)
+            except AppError as error:
+                self._set_status(str(error))
+                return
+            self.push_screen(
+                WorkloadScreen(
+                    WorkloadService(client, resource, target, self.commands.policy, current),
+                    self.mutations,
+                    operation,
+                    argument,
+                )
+            )
 
     def action_edit(self) -> None:
         try:
@@ -1061,7 +1089,7 @@ class KubetrolApp(App[None]):
             if resource == "pods"
             else SERVICE_SHORTCUTS
             if resource == "services"
-            else RESOURCE_SHORTCUTS
+            else workload_shortcuts(resource, self.commands.policy.read_only)
         )
         self.header.render_shortcuts()
         if focus and len(self.screen_stack) == 1:
@@ -1217,7 +1245,7 @@ class KubetrolApp(App[None]):
     async def action_back(self) -> None:
         if isinstance(self.screen, (InspectionScreen, LogScreen)):
             self.screen.back()
-        elif isinstance(self.screen, (AnnotationScreen, EditingScreen)):
+        elif isinstance(self.screen, (AnnotationScreen, EditingScreen, WorkloadScreen)):
             screen = self.screen
             await screen.stop_owned()
             screen.dismiss()
@@ -1277,7 +1305,14 @@ class KubetrolApp(App[None]):
             self._select_resource(command.definition.name, scope=scope)
             return
         if isinstance(command, ScopedCommand):
-            if command.command is Command.CONTEXTS:
+            if command.command in {Command.SCALE, Command.ROLLBACK}:
+                self.action_workload(
+                    WorkloadAction.SCALE
+                    if command.command is Command.SCALE
+                    else WorkloadAction.ROLLBACK,
+                    command.argument,
+                )
+            elif command.command is Command.CONTEXTS:
                 self._context_selected(command.argument)
             else:
                 self._namespace_selected(command.argument)
@@ -1319,6 +1354,15 @@ class KubetrolApp(App[None]):
             self.action_writes()
         elif command is Command.EDIT:
             self.action_edit()
+        elif command in {Command.SCALE, Command.RESTART, Command.ROLLBACK, Command.ROLLOUT}:
+            self.action_workload(
+                {
+                    Command.SCALE: WorkloadAction.SCALE,
+                    Command.RESTART: WorkloadAction.RESTART,
+                    Command.ROLLBACK: WorkloadAction.ROLLBACK,
+                    Command.ROLLOUT: WorkloadAction.STATUS,
+                }[command]
+            )
         else:
             self._set_status(self._workspace_status())
 

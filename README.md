@@ -38,8 +38,9 @@ stop, with cleanup on context changes and exit.
 atomic UID/version conditions, common read-only enforcement and public outcome
 history through `:annotate` / `:writes`. [Manifest editing](docs/editing.md) adds
 an explicitly disclosed native editor, redacted diff, strict server dry-run and
-separate guarded Apply through `:edit` / Shift+E. Scale/rollout and deletion remain
-their separate implementation tasks.
+separate guarded Apply through `:edit` / Shift+E. [Workload operations](docs/workloads.md)
+add reviewed scale/restart/explicit rollback and actual rollout monitoring.
+Deletion and Job/CronJob operations retain their separate task.
 The [resource workspace](docs/resource-workspace.md) adds a built-in `k9s` theme,
 top inputs and view-specific shortcuts, identity/version headers, Escape trails,
 and a live namespace table with Enter/Escape navigation. The command bar suggests
