@@ -94,6 +94,15 @@ def terminal_navigation(command, directory, *, evidence, initial_scope=False):
             # Textual may paint the frame title before DataTable's header. Wait
             # for the actual header before inspecting a fully received screen.
             terminal.wait_for_screen("STATUS", since=marker)
+            # PTY reads can end after one header cell. Observe the complete
+            # header row before asserting its columns, without relaxing them.
+            deadline = time.monotonic() + 10
+            while not any(
+                "NAME" in line and "STATUS" in line and "AGE" in line
+                for line in terminal.screen.display
+            ):
+                terminal._read()
+                assert time.monotonic() < deadline, "Namespace header did not finish rendering"
             assert any(
                 "NAME" in line and "STATUS" in line and "AGE" in line
                 for line in terminal.screen.display
