@@ -1,7 +1,12 @@
 # Contributing
 
-KubeRich is an independent MIT-licensed Python project. Contributions, bug
+KubeRich is an independent Apache-2.0-licensed Python project. Contributions, bug
 reports, and practical terminal UX feedback are welcome.
+
+Contributors retain copyright in their own contributions. Unless explicitly
+agreed otherwise, contributions submitted for inclusion are under Apache-2.0;
+the DCO sign-off below certifies your right to contribute. See
+[licensing and attribution](docs/licensing.md).
 
 ## One issue at a time
 

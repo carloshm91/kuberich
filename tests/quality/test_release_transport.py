@@ -23,11 +23,12 @@ from tests.support.release_server import release_server
 
 
 @pytest.mark.parametrize(
-    "name", ["docs/backlog.json", "docs/github-issues.json", "packaging/homebrew/README.md"]
+    "name",
+    ["docs/backlog.json", "docs/github-issues.json", "packaging/homebrew/README.md", "NOTICE"],
 )
 def test_exact_source_rejects_dirty_pinned_release_plan(tmp_path, name):
     path = tmp_path / name
-    path.parent.mkdir(parents=True)
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("{}\n")
 
     def git(*arguments):

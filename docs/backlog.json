@@ -129,7 +129,7 @@
       "epic": "E01",
       "milestone": "v0.0.1",
       "requires": [],
-      "scope": "Prepare the public MIT repository, planning documents, issue hierarchy, project, author identity, and protected contribution workflow before application implementation.",
+      "scope": "Prepare the public Apache-2.0 repository, planning documents, issue hierarchy, project, author identity, and protected contribution workflow before application implementation.",
       "acceptance": [
         "README states the planning stage and briefly credits K9s; architecture, quality, release, and distribution decisions are checked in.",
         "Every planned task has an epic, milestone, priority, acceptance criteria, verification, and explicit blockers; the dependency graph is acyclic.",
@@ -1320,7 +1320,7 @@
       "scope": "Recover a verifiable official feature catalog for the historically advertised K9sAlpha offering without accessing private or proprietary materials without permission.",
       "acceptance": [
         "The official v0.24.7 release establishes Alpha existence but not a complete feature list; capture official links, versions and dates for any further evidence.",
-        "Map every substantiated additional behavior to an MIT implementation ticket and acceptance tests; do not reproduce proprietary source/assets.",
+        "Map every substantiated additional behavior to an Apache-2.0 implementation ticket and acceptance tests; do not reproduce proprietary source/assets.",
         "If authoritative material remains unavailable, publish the precise unresolved evidence gap and keep parity unclaimed; closing the investigation does not certify unknown features."
       ],
       "verification": "Review cited first-party materials and audit all resulting matrix rows. Investigation outcome may be evidence-unavailable, but must be explicit.",

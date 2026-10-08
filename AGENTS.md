@@ -28,7 +28,7 @@ implementation; do not claim to switch models without actual environment support
 
 ## Delivery workflow
 
-- The maintainer authorized continuous private implementation, local verification
+- The maintainer authorized continuous implementation, local verification
   and autonomous squash merges: finish each issue/PR and proceed to the next
   unblocked task without waiting for intermediate manual trials or feedback.
   Keep progress updates and docs/first-preview.md current, but do not ask the
@@ -37,9 +37,12 @@ implementation; do not claim to switch models without actual environment support
   preview tests. Implement and verify local contracts and owned disposable-cluster
   behavior now, record limits honestly, and retain opt-in certification in Q05 #87.
   This does not authorize using the maintainer's active context for automated tests.
-- Keep the repository and GitHub roadmap private until the maintainer explicitly
-  authorizes making them public. Open-source intent, a merged PR, or an estimated
-  launch date does not authorize a visibility change.
+- On 2026-10-08 the maintainer explicitly authorized opening carloshm91/kuberich
+  with Apache-2.0 in #155. This authorization covers the source repository and
+  its repository issues/history, not the separate GitHub project, hosting or
+  distribution channels. Do not request the same visibility permission again.
+- The first public product release remains 1.0.0. Intermediate milestones are
+  engineering checkpoints, not instructions to publish 0.x artifacts or tags.
 - Ask before changing repository/project visibility, publishing a website,
   creating a public distribution repository, or publishing package artifacts.
   Prepare and verify the concrete result first, then request approval for the

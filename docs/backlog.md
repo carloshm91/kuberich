@@ -17,6 +17,13 @@ from parser tests alone. See [current CLI behavior](k9s-cli.md).
 
 ## Current maintainer priority
 
+On 2026-10-08 the maintainer interrupted #46 to approve Apache-2.0 licensing
+and opening the source repository in #155. Complete that focused task, then
+resume #46's frozen implementation and qualification. Public source development
+precedes the first public product release, which remains 1.0.0. Follow-up #154
+reconciles intermediate qualification gates; package/site/DNS/tap publication
+and project visibility remain separate decisions.
+
 The confirmed KubeRich/domain decision prioritizes identity migration #149 and
 private initial landing/docs preparation #150 before launch gate #40. The latter
 can implement local design/content before the final candidate; its exact candidate,

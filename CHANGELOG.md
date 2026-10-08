@@ -7,6 +7,10 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- License KubeRich under Apache-2.0 and include contributor attribution NOTICE
+  in Python artifacts. Align source Homebrew metadata and contribution guidance;
+  earlier MIT grants and third-party licenses remain unchanged.
+
 - Rename the private product/package/import/CLI to KubeRich / `kuberich`.
   Retain the `kubetrol` console alias and legacy preference environment variables;
   read existing preferences in place and provide explicit non-overwriting migration.

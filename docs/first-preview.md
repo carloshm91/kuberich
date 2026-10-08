@@ -1,5 +1,18 @@
 # First things to try
 
+## Apache-2.0 and public source checkpoint: #155
+
+The maintainer approved opening `carloshm91/kuberich` under Apache-2.0 on
+2026-10-08. LICENSE and NOTICE retain Carlos Herrera/contributor attribution;
+wheels/source distributions carry both, and Homebrew declares the same license.
+Use the checkout with `uv sync --locked --group dev`, then
+`uv run kuberich --version` and `uv run kuberich --help`. See
+[licensing](licensing.md) for the actual derivative/commercial permissions and
+[acceptance evidence](acceptance/apache-public-source.md) for measured checks.
+No package release, public tap, website deployment or DNS change accompanies
+this source-opening checkpoint. The first public product release remains 1.0.0.
+Earlier private checkpoint descriptions below retain their historical context.
+
 ## Initial private website checkpoint: #150
 
 The initial landing and sixteen user guides now build locally from the maintained

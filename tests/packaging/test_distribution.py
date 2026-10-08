@@ -96,8 +96,9 @@ def test_wheel_metadata_entry_point_and_assets(artifacts: tuple[Path, Path]) -> 
         metadata = BytesParser().parsebytes(archive.read(metadata_name))
         assert metadata["Name"] == "kuberich"
         assert metadata["Version"] == PROJECT["version"]
-        assert metadata["License-Expression"] == "MIT"
+        assert metadata["License-Expression"] == "Apache-2.0"
         assert any(name.endswith(".dist-info/licenses/LICENSE") for name in names)
+        assert any(name.endswith(".dist-info/licenses/NOTICE") for name in names)
         entry_name = next(name for name in names if name.endswith(".dist-info/entry_points.txt"))
         entry_points = configparser.ConfigParser()
         entry_points.read_string(archive.read(entry_name).decode())

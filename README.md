@@ -7,7 +7,7 @@ Inspired by [K9s](https://k9scli.io/). Built by Python enthusiasts.
 KubeRich aims to make browsing resources, investigating failures, following logs,
 and managing workloads comfortable from your terminal, including over SSH.
 It is an independent project and is not affiliated with K9s.
-All KubeRich capabilities will be open source under MIT, with no paid feature tiers.
+All KubeRich capabilities will be open source under Apache-2.0, with no paid feature tiers.
 
 ## Project status
 
@@ -53,8 +53,9 @@ shells; `--refresh` controls periodic table repaint while watches remain live.
 See the [launch contract](docs/k9s-cli.md) for aliases, precedence and limits.
 All audited flags are recognized; unimplemented options identify their owning task.
 
-The first release, **0.0.1**, will provide a usable resource browser, live pod
-updates, filtering, resource details, container logs, and interactive exec.
+The first public product release will be **1.0.0**, after the planned capabilities
+and compatibility checks are qualified. Source development is available before
+that release; intermediate milestones are engineering checkpoints.
 Linux and macOS are the initial supported operating systems. Textual Web is
 outside the product scope.
 
@@ -138,4 +139,6 @@ feature proposals. Please read [CONTRIBUTING.md](CONTRIBUTING.md),
 
 ## License
 
-[MIT](LICENSE). Copyright (c) 2026 Carlos Herrera and KubeRich contributors.
+[Apache-2.0](LICENSE). Copyright (c) 2026 Carlos Herrera and KubeRich contributors.
+See [NOTICE](NOTICE) and the [licensing guide](docs/licensing.md) for attribution,
+derivative permissions and earlier MIT-licensed copies.

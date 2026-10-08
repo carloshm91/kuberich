@@ -41,7 +41,7 @@ README switches to active installation instructions only after verification.
 ## Development artifacts: D01 #34
 
 The build backend selects Python modules, Textual styles and `py.typed` explicitly.
-The wheel adds runtime metadata, its CLI entry point and MIT license. The source
+The wheel adds runtime metadata, its CLI entry point, Apache-2.0 license and attribution NOTICE. The source
 distribution adds `pyproject.toml`, README, changelog, license and Hatchling's
 required `.gitignore`. Tests, development scripts, `uv.lock`, caches, temporary
 files and undeclared credential/configuration files are excluded. The full test

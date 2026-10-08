@@ -251,6 +251,13 @@ maintainer decisions.
 
 ## Test layers
 
+The maintainer approved opening the source repository in #155 on 2026-10-08.
+Its measured licensing/package checks do not qualify a public product release.
+Once visibility changes, recheck actual hosted workflow execution and resume
+the configured matrix when the account restriction is resolved; do not assume
+a visibility change clears every possible billing restriction. Keep the real
+hosted status and the full platform/public-release requirements above.
+
 Q01 #38 consolidates the [owned Kubernetes/fault suite](integration-testing.md).
 Required Linux/Python 3.12 CI verifies disposable endpoint/node identity before
 writes and real SIGTERM cleanup during setup and after readiness. Release-time

@@ -56,6 +56,7 @@ def canonical_release(tmp_path_factory):
         "README.md",
         "CHANGELOG.md",
         "LICENSE",
+        "NOTICE",
         ".gitignore",
         "scripts/__init__.py",
         "scripts/homebrew.py",
