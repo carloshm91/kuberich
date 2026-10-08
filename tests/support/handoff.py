@@ -58,11 +58,18 @@ class HandoffApp(KubetrolApp):
     def __init__(self):
         super().__init__(Settings(read_only=scenario == 'read_only'), logging.getLogger('owned-handoff'))
         self.attempt = 0
+        self.probes = 0
         self.owner = None
     def action_handoff(self):
         self.run_worker(self.handoff(), group='owned-handoff', exclusive=True)
     def action_probe(self):
-        self.call_after_refresh(lambda: self._set_status('READY ' + str(self.size.width) + ' ' + str(self.size.height)))
+        self.probes += 1
+        # The resource renderer owns the status row and may repaint it after a
+        # resize. Keep the input witness in a stable, otherwise unused title.
+        # A distinct counter proves each probe was actually handled again.
+        self.call_after_refresh(lambda: setattr(self.query_one('#command-bar'),
+            'border_title', 'READY ' + str(self.size.width) + ' ' + str(self.size.height)
+            + ' #' + str(self.probes)))
     async def handoff(self):
         self.owner = asyncio.current_task()
         self.attempt += 1
@@ -147,7 +154,7 @@ def terminal_handoff_trial(
             marker = terminal.resize(100, 30)
             terminal.wait_for_screen("Stay in pods", row=28, since=marker)
             terminal.send(b"\x1b[24~")
-            terminal.wait_for_screen("READY 100 30", since=marker)
+            terminal.wait_for_screen(f"READY 100 30 #{attempt + 1}", since=marker)
         terminal.send(b"\x11")
         terminal.finish()
         terminal.save_evidence(name)
