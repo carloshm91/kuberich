@@ -68,12 +68,12 @@ try {
   for (const image of await page.locator("img").all()) await image.scrollIntoViewIfNeeded();
   await page.waitForFunction(() => [...document.querySelectorAll("img")].every(image => image.complete && image.naturalWidth > 0));
   assert.equal(await page.locator("img").evaluateAll(images => images.every(image => image.complete && image.naturalWidth > 0)), true);
-  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
   await page.keyboard.press("Tab");
   assert.equal(await page.locator(":focus").textContent(), "Skip to content");
   await page.keyboard.press("Enter");
   assert.equal(await page.locator(":focus").getAttribute("id"), "main");
-  await page.evaluate(() => document.activeElement.blur());
+  await page.evaluate(() => { document.activeElement.blur(); window.scrollTo({ top: 0, behavior: "instant" }); });
   await page.screenshot({ path: path.join(evidence, "landing-desktop.png"), fullPage: true });
   await page.screenshot({ path: path.join(evidence, "landing-desktop-viewport.png") });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -89,7 +89,7 @@ try {
   await page.goto(`${origin}/www/`, { waitUntil: "networkidle" });
   for (const image of await page.locator("img").all()) await image.scrollIntoViewIfNeeded();
   await page.waitForFunction(() => [...document.querySelectorAll("img")].every(image => image.complete && image.naturalWidth > 0));
-  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
   await page.evaluate(await fs.readFile(axe, "utf8"));
   const mobile = await page.evaluate(async () => window.axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21aa"] } }));
   assert.equal(mobile.violations.length, 0, JSON.stringify(mobile.violations));
@@ -110,7 +110,7 @@ try {
   const mobileDocs = await page.evaluate(async () => window.axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21aa"] } }));
   assert.equal(mobileDocs.violations.length, 0, JSON.stringify(mobileDocs.violations));
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
-  await page.evaluate(() => { document.activeElement.blur(); window.scrollTo(0, 0); });
+  await page.evaluate(() => { document.activeElement.blur(); window.scrollTo({ top: 0, behavior: "instant" }); });
   await page.screenshot({ path: path.join(evidence, "docs-mobile.png"), fullPage: true });
   await page.screenshot({ path: path.join(evidence, "docs-mobile-viewport.png") });
   await page.setViewportSize({ width: 1440, height: 1000 });
