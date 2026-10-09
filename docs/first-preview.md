@@ -1,5 +1,22 @@
 # First things to try
 
+## First product release policy checkpoint: #154
+
+The first public product remains **1.0.0**. Intermediate 0.x milestones are
+engineering checkpoints; product features continue before dedicated final
+platform/performance/install qualification. All their actual prerequisites and
+quality evidence remain required before #89. The installed development version
+is still `0.0.1.dev0`; this checkpoint adds no tag or package/site publication.
+
+The exact tested command is
+`uv run --locked --python 3.12 pytest -q tests/quality/test_release_policy.py tests/quality/test_release_transport.py tests/quality/test_homebrew.py`:
+145 passed, including real HTTP/Git witnesses for rejected 0.x publication and
+transitive readiness. `python scripts/validate_plan.py` checks the execution map
+against tooling policy. See [acceptance evidence](acceptance/first-product-release-policy.md)
+and the live issue/PR for final native/platform/package results.
+Initial website deployment is prepared for GitHub Actions → Cloudflare Pages in
+#89 after final-candidate verification; expanded docs remain #90/#91 afterward.
+
 ## Resource operations checkpoint: M04 #46
 
 [Resource operations](resource-operations.md) add selected deletion through
@@ -30,8 +47,8 @@ The exact focused verification command is
 visible feedback after deliberately delayed result delivery, including compact
 terminal confirmation and redacted history.
 See [acceptance evidence](acceptance/macos-terminal-verification.md) and the linked
-issue/PR for delivered-head hosted results. #46 remains on its issue branch until
-this prerequisite and its own checks pass. The first public product release
+issue/PR for delivered-head hosted results. #157 and #46 are now merged after
+their required hosted checks passed. The first public product release
 remains 1.0.0; source opening does not publish package or website artifacts.
 
 ## Apache-2.0 and public source checkpoint: #155

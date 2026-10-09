@@ -7,6 +7,10 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Reserve first product publication for 1.0.0 after feature and final qualification.
+  Reject public 0.x tags/assets/tap updates, require transitive release readiness,
+  and keep intermediate checkpoints and website publication ownership explicit.
+
 - License KubeRich under Apache-2.0 and include contributor attribution NOTICE
   in Python artifacts. Align source Homebrew metadata and contribution guidance;
   earlier MIT grants and third-party licenses remain unchanged.

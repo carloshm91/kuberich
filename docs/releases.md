@@ -1,147 +1,132 @@
 # Versioning and releases
 
-## Source opening and first product release
+## Current development and source opening
 
-On 2026-10-08 the maintainer approved Apache-2.0 and opening the source repository
-in [#155](https://github.com/carloshm91/kuberich/issues/155). This is separate from
-publishing an installable product: the first public product release is **1.0.0**,
-after the planned capabilities and compatibility qualification. Intermediate 0.x
-milestones are engineering checkpoints. The installed development version remains
-`0.0.1.dev0`; opening the repository does not bump it or create a release/tag.
-Website/DNS, package indexes and a public Homebrew tap still require their own
-approved tasks.
+The Apache-2.0 source repository is public by the maintainer's approval in
+[#155](https://github.com/carloshm91/kuberich/issues/155). The separate GitHub
+project remains private. Source opening did not publish packages, a tap, a
+website, tags or GitHub Releases. Installed development metadata remains
+`0.0.1.dev0`; merges collect entries under Unreleased.
 
-This decision supersedes the earlier public 0.0.1 sequence below. The release
-gates #40/#51/#65/#75/#82/#86 retain their exact-artifact and installation/platform
-qualification duties; public product publication moves to #89. Follow-up
-[#154](https://github.com/carloshm91/kuberich/issues/154) reconciles the full planning
-map, live gates and release tooling before those gates execute. Opening source
-does not qualify a public product release or remove its checks.
+The first public product release is **1.0.0**, after the planned features and
+final compatibility, performance, installation and capability qualification.
+D04 #40, D06 #51, D07 #65, D08 #75, D09 #82 and D11 #86 are internal engineering
+checkpoints. Their original dependencies and exact-artifact, native-platform,
+terminal, install and security requirements remain. Deferring those checks does
+not complete them. None publishes a public 0.x version.
 
-## Current development stage
-
-The installed version is `0.0.1.dev0`; merges collect entries under Unreleased
-and do not create GitHub Releases or tags. The workflow below is the required
-release procedure. D02 #36 implements the
-[approved immutable pipeline](release-pipeline.md); live TestPyPI/OIDC and full
-platform/protection qualification, and publishing the first usable `0.0.1`, remain
-D04 #40.
-The header shows installed package metadata. Automatic new-release notices remain
-U01 #56, rather than an inferred claim that this checkout is a published release.
-The KubeRich package/CLI identity and compatibility migration are reviewed in
-#149. The version remains `0.0.1.dev0`; this private pre-publication rename does
-not create a tag or release. #149 and initial landing/docs
-preparation #150 are explicit prerequisites for the first public launch in #40.
-Neither preparation task authorizes publishing or changing repository ownership.
-
-## Publication approval
-
-The source repository's visibility change is approved in #155; the separate
-GitHub project remains private. Prepare the simple landing page and initial user
-documentation described in [the roadmap](roadmap.md) before the product launch.
-An open-source license, merged implementation task, or proposed release date
-does not authorize publication. Prepare tested artifacts and the proposed public
-pages for review, then obtain explicit approval for visibility changes, website
-publication, and public distribution channels, including PyPI and a Homebrew tap.
+[D10 #89](https://github.com/carloshm91/kuberich/issues/89) owns first-product
+publication, public channel ownership/activation, enforced main/environment
+protection and initial website/DNS verification. Delivered identity #149 and
+local site preparation #150 are preparation evidence; the site must be regenerated
+and qualified against the final candidate before its approved publication.
+Expanded versioned documentation remains W02 #90 / W03 #91 after the product.
 
 ## Version rules
 
-The first public application release is **1.0.0**. Repository preparation
-does not create a release tag. A merged task does not automatically bump a version.
-The 0.x examples below describe private engineering qualification and historical
-planning, not approved public publication.
-
-| Change | Version example |
+| Change | Public version example |
 | --- | --- |
-| First usable, qualified preview | 0.0.1 |
-| Bug/security fixes without a new capability | 0.0.1 -> 0.0.2 |
-| New capability milestone | 0.0.x -> 0.1.0 -> 0.2.0 |
-| Incompatible change before 1.0 | Next minor, with migration notes |
-| Qualified stable contract | 1.0.0 |
-| Incompatible change after 1.0 | Next major |
+| First fully qualified product | 1.0.0 |
+| Compatible bug or security fix | 1.0.0 → 1.0.1 |
+| Compatible new capability | 1.0.0 → 1.1.0 |
+| Incompatible public contract change | 1.0.0 → 2.0.0 |
+| Explicitly approved candidate for a qualified target | 1.0.0rc1; tag v1.0.0-rc.1 |
 
-After 1.0 follow Semantic Versioning. Pre-1.0 releases remain usable and tested,
-but CLI/config/plugin compatibility can change only with the documented minor
-release process. Preserve existing configuration with tested migrations.
+Follow Semantic Versioning. A PR does not automatically bump a version.
+`pyproject.toml`'s `project.version` is the sole version source; the CLI reads
+installed package metadata. Stable tags are `vX.Y.Z`; canonical package release
+candidates are `X.Y.ZrcN` and their tags are `vX.Y.Z-rc.N`.
 
-pyproject.toml's project.version is the sole release-version source. The CLI
-reads installed package metadata. Do not maintain competing version constants.
-Stable tags are vX.Y.Z. Release-candidate package versions are X.Y.ZrcN and their
-Git tags are vX.Y.Z-rc.N; the release workflow validates normalized equivalence.
+Publication tooling rejects every release base below 1.0.0, including 0.x release
+candidates. This applies to production, TestPyPI, tags, GitHub assets and tap
+update proposals. Offline preparation can still verify historical canonical
+candidates; development bundles are explicitly local-only and have no tag.
+A public 1.0.0rcN is optional and requires explicit approval after all target
+requirements are qualified; it does not replace the agreed first stable 1.0.0.
+
+## Publication approval
+
+Prepare the concrete, tested artifacts, public channel changes and website for
+review before requesting approval. The source-opening approval, an open-source
+license or a merged implementation PR does not authorize package, website,
+public tap/registry or DNS publication. Do not purchase domains or change DNS
+without the owner's explicit authorization. The maintainer has purchased
+`kuberich.com`; hosting and DNS activation are still separate work.
 
 ## Release sequence
 
-1. Close implementation tasks after their candidate-level checks pass. Open the
-   release gate and complete its pre-publication checklist, recording limitations
-   and the qualified support matrix. The gate stays open through publication
-   and verification of the public installation channels.
-2. Open a release PR that updates project.version, uv.lock if affected, the
-   changelog, installation documentation, and migration notes. Link the gate issue.
-3. Run the required PR checks and merge the release PR through protected main.
-   Dispatch Application quality on that exact main commit to run the complete
-   Linux/macOS Python 3.12/3.13/3.14 quality, integration, terminal, dependency and
-   clean-install matrix. Require every job to pass; routine PR/main matrices do
-   not qualify a release. Retain the successful manual run and its artifact IDs.
-4. The maintainer dispatches the release workflow with the intended version and
-   exact main commit. It validates version/tag agreement, that commit's checks,
-   milestone readiness, and that the tag/version has not already been published.
-5. Consume the artifacts already built and tested by that exact commit's successful
-   manual main quality run. Verify metadata, packaged assets, checksums, clean installs,
-   audits and provenance. Retain those tested bytes without rebuilding them in
-   the release workflow.
-6. After the release environment is approved by the maintainer, create the
-   annotated tag and publish those same artifacts to PyPI using OIDC Trusted
-   Publishing. Publish a GitHub Release with notes, artifacts, and checksums.
-7. Update the Homebrew formula from the published immutable artifact and SHA-256,
-   run its CI/audit/install test, and merge the tap PR. Verify install and upgrade.
-   [D03 tooling](homebrew.md) proposes the PR inside the approved production job.
-   Initialize the reviewed scaffold and limited credential before dispatch; the
-   maintainer reviews and merges after tap checks.
-8. Close the release gate and milestone only after all required channels work.
-   Record the release links. Start the next Unreleased changelog section by PR.
+1. Finish product behavior, then the dedicated qualification phase in
+   [the backlog](backlog.md). Keep unresolved native/provider evidence explicit;
+   opt-in real-provider certification follows Q05 #87's agreed scope.
+2. Complete the pre-publication checklist in #89: all transitive implementation
+   and engineering prerequisites, Q05/Q06, identity/site preparation and tracked
+   launch refinements must be closed with real evidence. The publication gate
+   itself stays open through public channel verification.
+3. Open a release PR for version/lock changes, changelog, migrations and verified
+   installation documentation. Merge through protected main with the preserved
+   maintainer sign-off and successful required checks.
+4. Dispatch Application quality on that exact main commit. Require every native
+   Linux/macOS CPython 3.12/3.13/3.14 job, independent coverage, critical modules,
+   audits, installed artifacts, owned-cluster and terminal checks. Routine
+   development matrices do not qualify a release. Retain run/artifact IDs.
+5. Run that exact candidate's contracts and all owned-cluster rehearsals three
+   consecutive times with fault and cleanup records, as described in
+   [integration qualification](integration-testing.md). Include Q03's separate
+   performance evidence. Qualify promised standalone/platform outputs too.
+6. The maintainer dispatches the release workflow with the exact current main
+   commit, canonical version and destination. Read-only validation checks actual
+   protection, DCO/origin, live issue readiness and qualified runs. It consumes
+   already tested artifacts; it does not rebuild them. Dry-run is the default.
+7. After explicit publication approval and protected environment review, publish
+   those immutable bytes through PyPI OIDC Trusted Publishing, create the
+   annotated production tag and verified GitHub Release/assets/provenance.
+   TestPyPI creates no production tag or GitHub Release.
+8. Activate the approved Homebrew tap and other promised channels, verify their
+   exact artifacts and public install/upgrade/uninstall behavior. Tap automation
+   proposes a checked formula PR; the maintainer reviews and merges it after
+   native tap checks.
+9. Regenerate and browser/quickstart-verify the initial site from the final
+   candidate, then deploy the approved immutable static bytes from GitHub Actions
+   to Cloudflare Pages. Verify actual domains, HTTPS, headers, links, deployment
+   IDs and rollback association; see [website delivery](website.md).
+10. Close #89 only after every promised public channel and site is verified.
+    Record real links and start the next Unreleased section by PR.
 
-One release workflow owns this sequence. Do not depend on a tag created by the
-workflow's GITHUB_TOKEN to trigger a second workflow. Serialize release runs;
-grant write/id-token permissions only to the jobs that need them. Fork PRs get
-neither publishing privileges nor cluster credentials. Pin third-party actions
-to commit SHAs and update them through reviewed dependency PRs.
+One serialized release workflow owns artifact publication. Do not depend on a
+tag created with `GITHUB_TOKEN` to trigger another workflow. Grant publishing
+and identity-token permissions only to the approved job. Fork PRs receive no
+publication privileges or cluster credentials. Pin third-party actions to SHAs.
 
-A channel implementation task (such as D03) can finish with a tested local release
-candidate and update automation. Its first live publication and public install
-verification belong to the release gate. This avoids requiring an already-published
-package before the first release is allowed to publish.
+A distribution implementation task can finish with local, tested candidates and
+update automation. Its public ownership, first publication and public install
+verification belong to #89, avoiding a circular dependency on an unpublished
+package. A qualification checkpoint closes only after its actual scoped checks.
 
 ## Failure and recovery
 
-Never move or delete a published release tag, replace a published wheel, or
-silently rebuild published bytes. If a retry follows a partial upload, compare
-the existing artifacts and checksums and publish only missing identical outputs.
-If code or packaging must change, issue a new patch release.
+Never move or delete a published tag, replace a published wheel, or silently
+rebuild published bytes. After a partial upload, verify existing digests and
+publish only missing identical outputs. Retain original artifact/provenance
+identity; expired or changed evidence requires new qualification.
 
-For a defective release, document the incident, yank the affected PyPI release
-when appropriate, mark the GitHub Release clearly, and point installation guidance
-to a known-good version. Keep provenance/history. Release a tested patch and
-verify Homebrew upgrades; do not claim a full rollback if an external channel
-cannot undo downloads already made.
+If code or packaging changes, qualify a new patch. Document defective releases,
+yank PyPI releases when appropriate, clearly mark GitHub Releases and point users
+to a known-good version. Preserve history and verify Homebrew upgrades. Downloads
+already made cannot be undone by an external-channel rollback.
 
-## Prerequisites tracked in issues
+## Owner prerequisites
 
-Before each canonical RC publication, run the exact candidate's contract suite
-and all nine owned-cluster rehearsals three times, retaining per-run fault/cleanup
-evidence as described in [integration qualification](integration-testing.md).
+- Confirm PyPI/TestPyPI project ownership and exact pending publisher workflow and
+  release environment. GitHub authentication does not prove index ownership;
+  a name lookup returning 404 does not reserve it.
+- Approve a dedicated public tap and limited cross-repository update credential,
+  plus any promised registry/channel accounts.
+- Enable and verify enforced main and publication environments, exact required
+  checks, immutable tag policy and retained artifacts.
+- Approve scoped Cloudflare deployment credentials/projects and concrete DNS
+  changes after local site and final-candidate qualification.
 
-- PyPI/TestPyPI project ownership and pending Trusted Publisher configuration for
-  carloshm91/kuberich, the exact workflow filename, and its release environment.
-- A public carloshm91/homebrew-tap repository and a narrowly scoped mechanism
-  for proposing formula updates across repositories.
-- Protected main, release-environment rules, immutable release tags, artifact
-  retention, and checks that validate the released commit.
+Do not advertise installation channels as available before actual verification.
 
-PyPI account enrollment is a maintainer action; GitHub authentication does not
-prove PyPI ownership. A name lookup returning 404 does not reserve the name.
-Do not print installation commands as available until publication is verified.
-
-## Sources
-
-- [Semantic Versioning](https://semver.org/)
-- [PyPA publishing from GitHub Actions](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/)
+Sources: [Semantic Versioning](https://semver.org/),
+[PyPA publishing from GitHub Actions](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/).

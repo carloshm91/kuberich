@@ -18,7 +18,9 @@ APPLICATION_JOBS = {
 SHA = re.compile(r"[0-9a-f]{40}")
 HASH = re.compile(r"[0-9a-f]{64}")
 API = Callable[[str], Any]
-RELEASE_GATES = {"D04", "D06", "D07", "D08", "D09", "D10", "D11"}
+FIRST_PUBLIC_VERSION = "1.0.0"
+RELEASE_GATES = {"D10"}
+QUALIFICATION_GATES = {"D04", "D06", "D07", "D08", "D09", "D11"}
 
 
 def release_tag(value: str) -> str:
@@ -37,6 +39,14 @@ def release_tag(value: str) -> str:
 def require_sha(value: str) -> None:
     if not SHA.fullmatch(value):
         raise ValueError("Use the full 40-character commit SHA")
+
+
+def publication_tag(value: str) -> str:
+    """Keep local candidate versions distinct from approved public releases."""
+    tag = release_tag(value)
+    if Version(value).release < Version(FIRST_PUBLIC_VERSION).release:
+        raise ValueError("Public publication requires 1.0.0 or a later release base")
+    return tag
 
 
 def successful_jobs(jobs: list[dict[str, Any]], expected: set[str]) -> None:
@@ -106,7 +116,7 @@ def missing_files(expected: dict[str, str], existing: dict[str, str]) -> list[st
 
 def release_preflight(api: API, sha: str, version: str, index: str) -> dict[str, Any]:
     require_sha(sha)
-    tag = release_tag(version)
+    tag = publication_tag(version)
     if index not in {"pypi", "testpypi"}:
         raise ValueError("Unsupported publication index")
     prefix = f"repos/{REPOSITORY}"
@@ -209,10 +219,12 @@ def reuse_artifact(api: API, sha: str, version: str, run_id: int) -> int:
 
 
 def milestone_readiness(api: API, version: str, plan: dict[str, Any], index: dict[str, Any]) -> int:
-    release_tag(version)
+    publication_tag(version)
     target = Version(".".join(map(str, Version(version).release)))
     milestones = [
-        item["title"] for item in plan["milestones"] if Version(item["title"][1:]) <= target
+        item["title"]
+        for item in plan["milestones"]
+        if item["title"].startswith("v") and Version(item["title"][1:]) <= target
     ]
     if not milestones:
         raise ValueError("No reviewed release milestone exists for this version")
@@ -225,8 +237,20 @@ def milestone_readiness(api: API, version: str, plan: dict[str, Any], index: dic
     if len(gates) != 1:
         raise ValueError("Release milestone needs one explicit reviewed release gate")
     gate = gates[0]
-    for identifier in gate["requires"]:
-        number = int(index["issues"][identifier]["number"])
+    tasks = {task["id"]: task for task in plan["tasks"]}
+    prerequisites: set[str] = set()
+    pending = list(gate["requires"])
+    while pending:
+        identifier = pending.pop()
+        if identifier in prerequisites:
+            continue
+        prerequisites.add(identifier)
+        pending.extend(tasks.get(identifier, {}).get("requires", []))
+    numbers = dict.fromkeys(
+        [int(index["issues"][identifier]["number"]) for identifier in sorted(prerequisites)]
+        + plan.get("delivery", {}).get("publication_extra_issues", [])
+    )
+    for number in numbers:
         issue = api(f"repos/{REPOSITORY}/issues/{number}")
         if (
             issue.get("number") != number

@@ -72,3 +72,10 @@ its committed digest alone does not reconstruct missing original evidence.
 
 See [hosting and release gates](../docs/website.md) and
 [measured acceptance](../docs/acceptance/initial-website.md).
+
+## Publication ownership
+
+Local preparation #150 is delivered. Final-candidate regeneration, actual public
+quickstart and protected GitHub Actions → Cloudflare Pages deployment are #89,
+after product features and dedicated qualification. Package/site/DNS publication
+needs approval of the concrete result. See [the deployment procedure](../docs/website.md).

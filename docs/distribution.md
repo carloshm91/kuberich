@@ -4,9 +4,9 @@
 
 | Channel | First required release | Method |
 | --- | --- | --- |
-| PyPI | 0.0.1 | Wheel and source distribution; isolated installation using uv or pipx |
-| Homebrew project tap | 0.0.1 | Python formula using virtualenv_install_with_resources and hashed resources |
-| GitHub standalone executables | 0.1.0 | Platform-built PyInstaller bundles with checksums and provenance |
+| PyPI | 1.0.0 (#89) | Wheel and source distribution; isolated installation using uv or pipx |
+| Homebrew project tap | 1.0.0 (#89) | Python formula using virtualenv_install_with_resources and hashed resources |
+| GitHub standalone executables | 1.0.0 (#89), after D05 qualification | Platform-built PyInstaller bundles with checksums and provenance |
 
 The CLI and import package are named kuberich. PyPI name availability must be
 rechecked when the pending publisher is configured; a 404 lookup is not ownership.
@@ -96,8 +96,9 @@ kubectl. The Homebrew formula declares its Kubernetes CLI dependency.
 
 ## Homebrew implementation
 
-Create a dedicated public carloshm91/homebrew-tap repository in the distribution
-task. Install from the released source artifact with a recorded SHA-256 and
+Prepare the dedicated carloshm91/homebrew-tap scaffold in the distribution task.
+Creating the public tap and activating the channel require concrete approval in
+D10 #89. Install from the released source artifact with a recorded SHA-256 and
 explicit dependency resources using Homebrew's Python formula conventions.
 Run brew audit, formula tests, clean installation, version/help checks, and an
 upgrade smoke test on the advertised platforms. Update by PR after the upstream

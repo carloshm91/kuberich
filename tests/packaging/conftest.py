@@ -69,12 +69,12 @@ def canonical_release(tmp_path_factory):
         shutil.copyfile(ROOT / name, path)
     project = source / "pyproject.toml"
     project.write_text(
-        project.read_text().replace(f'version = "{PROJECT["version"]}"', 'version = "0.0.1rc1"', 1)
+        project.read_text().replace(f'version = "{PROJECT["version"]}"', 'version = "1.0.0rc1"', 1)
     )
     lock = source / "uv.lock"
     entry = f'name = "kuberich"\nversion = "{PROJECT["version"]}"'
     assert lock.read_text().count(entry) == 1
-    lock.write_text(lock.read_text().replace(entry, 'name = "kuberich"\nversion = "0.0.1rc1"', 1))
+    lock.write_text(lock.read_text().replace(entry, 'name = "kuberich"\nversion = "1.0.0rc1"', 1))
     checked = run(
         ["uv", "lock", "--locked", "--offline", "--python", sys.executable], source, 60, check=False
     )
@@ -99,9 +99,9 @@ def canonical_release(tmp_path_factory):
     run(["uv", "build", "--python", sys.executable], source, 120)
     generate(source / "artifacts/security", source / "dist", root=source)
     bundle = tmp_path / "release-candidate"
-    prepared = prepare(source, bundle, sha, "0.0.1rc1", root=source)
-    assert prepared["tag"] == "v0.0.1-rc.1" and prepared["candidate_only"] is False
-    verify_bundle(bundle, sha, "0.0.1rc1", root=source)
+    prepared = prepare(source, bundle, sha, "1.0.0rc1", root=source)
+    assert prepared["tag"] == "v1.0.0-rc.1" and prepared["candidate_only"] is False
+    verify_bundle(bundle, sha, "1.0.0rc1", root=source)
     outside = tmp_path / "outside"
     outside.mkdir()
     installed = tmp_path / "installed"
@@ -122,7 +122,7 @@ def canonical_release(tmp_path_factory):
         120,
     )
     assert (
-        run([str(installed / "bin/kuberich"), "--version"], outside).stdout == "kuberich 0.0.1rc1\n"
+        run([str(installed / "bin/kuberich"), "--version"], outside).stdout == "kuberich 1.0.0rc1\n"
     )
     result = run([str(installed / "bin/kuberich"), "--help"], outside)
     assert "--context" in result.stdout and "--readonly" in result.stdout
@@ -133,7 +133,7 @@ def canonical_release(tmp_path_factory):
     write_json(
         retained / "local-rc.json",
         {
-            "version": "0.0.1rc1",
+            "version": "1.0.0rc1",
             "commit": sha,
             "artifacts": {path.name: digest(path) for path in (bundle / "dist").iterdir()},
             "installed_outside_checkout": True,

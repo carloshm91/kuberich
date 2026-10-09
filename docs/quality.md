@@ -228,11 +228,18 @@ actual returned configuration. The maintainer accepted this temporary manual
 workflow by merging PR #96 and authorizing continued private development on
 2026-10-04. F02 is complete under that documented scope adjustment; automatic
 enforcement must be enabled and verified before the first public release in
-[D04 #40](https://github.com/carloshm91/kuberich/issues/40). Repository visibility
+[D10 #89](https://github.com/carloshm91/kuberich/issues/89). Repository visibility
 changes still require the maintainer's explicit approval.
 See [GitHub's protected-branch availability](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
 
 ## Temporary private-development workflow when Actions is unavailable
+
+Historical condition: the source repository opened under #155 on 2026-10-08.
+Hosted development checks resumed, including native macOS qualification in #157
+and the #46 candidate. Use actual required hosted results for current merges;
+the temporary exception below applies only while its stated blocker exists.
+Full release/protection qualification remains #89.
+
 
 On 2026-10-04, during PR #108, GitHub refused to start hosted jobs after the
 maintainer exhausted the account's 2,000 included Actions minutes. The maintainer
@@ -260,9 +267,8 @@ maintainer decisions.
 
 The maintainer approved opening the source repository in #155 on 2026-10-08.
 Its measured licensing/package checks do not qualify a public product release.
-Once visibility changes, recheck actual hosted workflow execution and resume
-the configured matrix when the account restriction is resolved; do not assume
-a visibility change clears every possible billing restriction. Keep the real
+Actual standard-runner development workflows resumed after source opening.
+Require their configured matrix for current PRs; preserve honest platform counts. Keep the real
 hosted status and the full platform/public-release requirements above.
 
 Q01 #38 consolidates the [owned Kubernetes/fault suite](integration-testing.md).

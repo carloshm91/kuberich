@@ -1,5 +1,6 @@
 """Publication decisions reject incomplete qualification and ambiguous retries."""
 
+import json
 from copy import deepcopy
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from scripts.release_policy import (
     milestone_readiness,
     missing_files,
     protection,
+    publication_tag,
     qualified_run,
     release_preflight,
     release_tag,
@@ -29,8 +31,10 @@ ROOT = Path(__file__).resolve().parents[2]
     "version,tag",
     [
         ("0.0.1", "v0.0.1"),
-        ("12.34.56", "v12.34.56"),
         ("0.0.1rc1", "v0.0.1-rc.1"),
+        ("1.0.0", "v1.0.0"),
+        ("12.34.56", "v12.34.56"),
+        ("1.0.0rc1", "v1.0.0-rc.1"),
         ("1.2.3rc24", "v1.2.3-rc.24"),
     ],
 )
@@ -42,7 +46,7 @@ def test_release_version_tag_contract(version, tag):
     "version",
     [
         "0.0.1.dev0",
-        "v0.0.1",
+        "v1.0.0",
         "1.2",
         "1.2.3.post1",
         "1.2.3+local",
@@ -243,11 +247,11 @@ def trusted_api():
 @pytest.mark.parametrize("index,environment", [("pypi", "release"), ("testpypi", "release-test")])
 def test_complete_main_qualification_selects_exact_artifact(index, environment):
     values = trusted_api()
-    result = release_preflight(values.__getitem__, SHA, "0.0.1rc1", index)
+    result = release_preflight(values.__getitem__, SHA, "1.0.0rc1", index)
     assert result == {
         "commit": SHA,
-        "version": "0.0.1rc1",
-        "tag": "v0.0.1-rc.1",
+        "version": "1.0.0rc1",
+        "tag": "v1.0.0-rc.1",
         "index": index,
         "environment": environment,
         "quality_run_id": 12,
@@ -342,7 +346,7 @@ def test_incomplete_or_ambiguous_release_qualification_is_rejected(mutation):
         else:
             artifacts.append(deepcopy(artifacts[0]))
     with pytest.raises(ValueError):
-        release_preflight(data.__getitem__, SHA, "0.0.1", "pypi")
+        release_preflight(data.__getitem__, SHA, "1.0.0", "pypi")
 
 
 def test_retry_uses_only_original_qualified_dispatch_artifact():
@@ -354,15 +358,15 @@ def test_retry_uses_only_original_qualified_dispatch_artifact():
             "jobs": [{"name": "Validate release", "conclusion": "success"}]
         },
         f"{prefix}/actions/runs/25/artifacts?per_page=100": {
-            "artifacts": [{"id": 55, "name": f"release-candidate-{SHA}-0.0.1", "expired": False}]
+            "artifacts": [{"id": 55, "name": f"release-candidate-{SHA}-1.0.0", "expired": False}]
         },
     }
-    assert reuse_artifact(data.__getitem__, SHA, "0.0.1", 25) == 55
+    assert reuse_artifact(data.__getitem__, SHA, "1.0.0", 25) == 55
     run["event"] = "pull_request"
     with pytest.raises(ValueError):
-        reuse_artifact(data.__getitem__, SHA, "0.0.1", 25)
+        reuse_artifact(data.__getitem__, SHA, "1.0.0", 25)
     with pytest.raises(ValueError):
-        reuse_artifact(data.__getitem__, SHA, "0.0.1", 0)
+        reuse_artifact(data.__getitem__, SHA, "1.0.0", 0)
 
 
 def test_retries_only_stage_missing_identical_files_and_never_overwrite():
@@ -407,13 +411,13 @@ def test_workflow_has_readonly_dry_run_serialization_and_owner_protected_oidc():
     assert not {"password", "user"} & publisher["with"].keys()
 
 
-@pytest.mark.parametrize("version", ["0.0.1", "0.0.1rc1", "0.0.2"])
+@pytest.mark.parametrize("version", ["1.0.0", "1.0.0rc1", "1.0.1"])
 def test_release_and_patch_require_closed_milestone_prerequisites(version):
     plan = {
-        "milestones": [{"title": "v0.0.1"}, {"title": "v0.1.0"}],
-        "tasks": [{"id": "D04", "milestone": "v0.0.1", "requires": ["F01"]}],
+        "milestones": [{"title": "v1.0.0"}, {"title": "v1.1.0"}],
+        "tasks": [{"id": "D10", "milestone": "v1.0.0", "requires": ["F01"]}],
     }
-    index = {"issues": {"F01": {"number": 14}, "D04": {"number": 40}}}
+    index = {"issues": {"F01": {"number": 14}, "D10": {"number": 89}}}
     issue = {"number": 14, "state": "closed"}
     calls = []
 
@@ -421,7 +425,7 @@ def test_release_and_patch_require_closed_milestone_prerequisites(version):
         calls.append(path)
         return issue
 
-    assert milestone_readiness(api, version, plan, index) == 40
+    assert milestone_readiness(api, version, plan, index) == 89
     assert calls == [f"repos/{REPOSITORY}/issues/14"]
     issue["state"] = "open"
     with pytest.raises(ValueError, match="#14"):
@@ -433,10 +437,10 @@ def test_release_and_patch_require_closed_milestone_prerequisites(version):
 )
 def test_missing_or_ambiguous_release_readiness_cannot_pass(mutation):
     plan = {
-        "milestones": [{"title": "v0.0.1"}],
-        "tasks": [{"id": "D04", "milestone": "v0.0.1", "requires": ["F01"]}],
+        "milestones": [{"title": "v1.0.0"}],
+        "tasks": [{"id": "D10", "milestone": "v1.0.0", "requires": ["F01"]}],
     }
-    index = {"issues": {"F01": {"number": 14}, "D04": {"number": 40}}}
+    index = {"issues": {"F01": {"number": 14}, "D10": {"number": 89}}}
     issue = {"number": 14, "state": "closed"}
     if mutation == "no_milestone":
         plan["milestones"] = []
@@ -449,7 +453,7 @@ def test_missing_or_ambiguous_release_readiness_cannot_pass(mutation):
     else:
         issue["pull_request"] = {}
     with pytest.raises(ValueError):
-        milestone_readiness(lambda _: issue, "0.0.1", plan, index)
+        milestone_readiness(lambda _: issue, "1.0.0", plan, index)
 
 
 @pytest.mark.parametrize("missing", ["macos-latest", "Python 3.13", "Python 3.14"])
@@ -458,4 +462,38 @@ def test_routine_development_matrix_does_not_qualify_publication(missing):
     path = f"repos/{REPOSITORY}/actions/runs/12/jobs?filter=latest&per_page=100"
     data[path]["jobs"] = [job for job in data[path]["jobs"] if missing not in job["name"]]
     with pytest.raises(ValueError, match="Required job"):
-        release_preflight(data.__getitem__, SHA, "0.0.1", "pypi")
+        release_preflight(data.__getitem__, SHA, "1.0.0", "pypi")
+
+
+@pytest.mark.parametrize("version", ["1.0.0", "1.0.0rc1", "1.0.1", "2.0.0"])
+def test_publication_supports_approved_stable_bases_and_their_rc(version):
+    assert publication_tag(version) == release_tag(version)
+
+
+@pytest.mark.parametrize("version", ["0.0.1", "0.0.1rc1", "0.5.0", "0.99.99rc9"])
+def test_engineering_versions_refuse_preflight_before_any_external_request(version):
+    calls = []
+    with pytest.raises(ValueError, match=r"requires 1\.0\.0"):
+        release_preflight(calls.append, SHA, version, "pypi")
+    assert calls == []
+
+
+@pytest.mark.parametrize("incomplete", [None, 124, 47, 40, 154])
+def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomplete):
+    plan = json.loads((ROOT / "docs/backlog.json").read_text())
+    index = json.loads((ROOT / "docs/github-issues.json").read_text())
+    calls = []
+
+    def api(path):
+        number = int(path.rsplit("/", 1)[1])
+        calls.append(number)
+        return {"number": number, "state": "open" if number == incomplete else "closed"}
+
+    if incomplete is None:
+        assert milestone_readiness(api, "1.0.0", plan, index) == 89
+        assert {40, 47, 51, 65, 75, 82, 86, 87, 88, 124, 149, 150, 154, 155, 157} <= set(calls)
+        assert {89, 90, 91}.isdisjoint(calls)
+        assert len(calls) == len(set(calls))
+    else:
+        with pytest.raises(ValueError, match=f"#{incomplete}"):
+            milestone_readiness(api, "1.0.0", plan, index)

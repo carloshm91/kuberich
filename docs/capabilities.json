@@ -1065,11 +1065,12 @@
         "D01",
         "D02",
         "D03",
-        "D05"
+        "D05",
+        "D10"
       ],
       "source": "README.md",
       "status": "planned",
-      "difference": "D01 qualifies local Python wheel/sdist contents and isolated uv tool/pip-backed pipx installs. D02 adds maintainer-dispatched immutable candidate/publishing automation and measured local RC/HTTP/Git tests; live OIDC/TestPyPI/protection and public channel qualification remain D04. D03 adds verified canonical-RC source formulas, actual Linux Homebrew installation and immutable update-PR automation; public tap creation, live cross-repo/public upgrade and macOS qualification remain D04; standalone downloads remain D05; macOS execution remains a public-release gate.",
+      "difference": "D01 qualifies local wheel/sdist and isolated uv tool/pip-backed pipx installs. D02 adds immutable release automation and local RC/HTTP/Git tests; D03 adds checked formulas and local Homebrew/install update automation. D04/D06/D07/D08/D09/D11 retain native/exact-artifact engineering qualification. D05 standalone outputs remain pending. First public 1.0.0 channel ownership, OIDC/protection, tap/registry activation and public upgrade/install verification belong to D10 #89.",
       "partial_evidence": [
         "docs/distribution.md",
         "docs/acceptance/distribution-artifacts.md",
