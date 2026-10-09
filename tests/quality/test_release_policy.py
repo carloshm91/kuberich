@@ -157,11 +157,23 @@ def test_unenforced_main_or_environment_cannot_publish(change):
 )
 def test_required_jobs_must_actually_succeed(conclusion):
     with pytest.raises(ValueError):
-        successful_jobs([{"name": "gate", "conclusion": conclusion}], {"gate"})
+        successful_jobs(
+            [dict(successful_job("gate"), conclusion=conclusion)], {"gate": "ubuntu-24.04"}
+        )
     with pytest.raises(ValueError):
-        successful_jobs([], {"gate"})
+        successful_jobs([], {"gate": "ubuntu-24.04"})
     with pytest.raises(ValueError):
-        successful_jobs([{"name": "gate", "conclusion": "success"}] * 2, {"gate"})
+        successful_jobs([successful_job("gate")] * 2, {"gate": "ubuntu-24.04"})
+
+
+def successful_job(name, runner="ubuntu-24.04"):
+    return {"name": name, "status": "completed", "conclusion": "success", "labels": [runner]}
+
+
+@pytest.mark.parametrize("status", [None, "queued", "in_progress"])
+def test_success_conclusion_without_completed_job_cannot_qualify(status):
+    with pytest.raises(ValueError, match="Required job did not succeed"):
+        successful_jobs([dict(successful_job("gate"), status=status)], {"gate": "ubuntu-24.04"})
 
 
 def trusted_run(path=".github/workflows/quality.yml"):
@@ -233,13 +245,13 @@ def trusted_api():
             "workflow_runs": [dict(trusted_run(".github/workflows/repository.yml"), id=13)]
         },
         f"{prefix}/actions/runs/12/jobs?filter=latest&per_page=100": {
-            "jobs": [{"name": name, "conclusion": "success"} for name in APPLICATION_JOBS]
+            "jobs": [successful_job(name, runner) for name, runner in APPLICATION_JOBS.items()]
         },
         f"{prefix}/actions/runs/13/jobs?filter=latest&per_page=100": {
-            "jobs": [{"name": "Repository checks", "conclusion": "success"}]
+            "jobs": [successful_job("Repository checks")]
         },
         f"{prefix}/actions/runs/12/artifacts?per_page=100": {
-            "artifacts": [{"name": "quality-ubuntu-latest-python-3.12", "id": 18, "expired": False}]
+            "artifacts": [{"name": "quality-ubuntu-24.04-python-3.12", "id": 18, "expired": False}]
         },
     }
 
@@ -257,6 +269,64 @@ def test_complete_main_qualification_selects_exact_artifact(index, environment):
         "quality_run_id": 12,
         "artifact_id": 18,
     }
+
+
+@pytest.mark.parametrize(
+    "run_id,job_name",
+    [
+        (12, "Verification plan"),
+        (12, "Quality gate"),
+        (12, "Application (ubuntu-24.04, Python 3.12)"),
+        (12, "Application (ubuntu-24.04, Python 3.13)"),
+        (12, "Application (ubuntu-24.04, Python 3.14)"),
+        (12, "Application (macos-latest, Python 3.12)"),
+        (12, "Application (macos-latest, Python 3.13)"),
+        (12, "Application (macos-latest, Python 3.14)"),
+        (13, "Repository checks"),
+    ],
+)
+@pytest.mark.parametrize(
+    "labels",
+    [
+        None,
+        [],
+        "ubuntu-24.04",
+        ["ubuntu-latest"],
+        ["ubuntu-26.04"],
+        ["self-hosted", "ubuntu-24.04"],
+    ],
+)
+def test_successful_named_jobs_on_missing_or_mismatched_runner_cannot_qualify(
+    run_id, job_name, labels
+):
+    data = trusted_api()
+    jobs = data[f"repos/{REPOSITORY}/actions/runs/{run_id}/jobs?filter=latest&per_page=100"]["jobs"]
+    next(job for job in jobs if job["name"] == job_name)["labels"] = labels
+    with pytest.raises(ValueError, match="different runner"):
+        release_preflight(data.__getitem__, SHA, "1.0.0", "pypi")
+
+
+def test_successful_linux_job_name_with_macos_label_cannot_qualify():
+    data = trusted_api()
+    jobs = data[f"repos/{REPOSITORY}/actions/runs/12/jobs?filter=latest&per_page=100"]["jobs"]
+    next(job for job in jobs if "ubuntu-24.04" in job["name"])["labels"] = ["macos-latest"]
+    with pytest.raises(ValueError, match="different runner"):
+        release_preflight(data.__getitem__, SHA, "1.0.0", "pypi")
+
+
+@pytest.mark.parametrize("stale_runner", ["ubuntu-latest", "ubuntu-26.04"])
+def test_old_linux_job_and_artifact_names_cannot_qualify(stale_runner):
+    data = trusted_api()
+    jobs = data[f"repos/{REPOSITORY}/actions/runs/12/jobs?filter=latest&per_page=100"]["jobs"]
+    for job in jobs:
+        job["name"] = job["name"].replace("ubuntu-24.04", stale_runner)
+    with pytest.raises(ValueError, match="Required job did not succeed"):
+        release_preflight(data.__getitem__, SHA, "1.0.0", "pypi")
+    data = trusted_api()
+    artifact = data[f"repos/{REPOSITORY}/actions/runs/12/artifacts?per_page=100"]["artifacts"][0]
+    artifact["name"] = f"quality-{stale_runner}-python-3.12"
+    with pytest.raises(ValueError, match="retained qualified Linux"):
+        release_preflight(data.__getitem__, SHA, "1.0.0", "pypi")
 
 
 @pytest.mark.parametrize(
@@ -355,13 +425,18 @@ def test_retry_uses_only_original_qualified_dispatch_artifact():
     data = {
         f"{prefix}/actions/runs/25": run,
         f"{prefix}/actions/runs/25/jobs?filter=latest&per_page=100": {
-            "jobs": [{"name": "Validate release", "conclusion": "success"}]
+            "jobs": [successful_job("Validate release")]
         },
         f"{prefix}/actions/runs/25/artifacts?per_page=100": {
             "artifacts": [{"id": 55, "name": f"release-candidate-{SHA}-1.0.0", "expired": False}]
         },
     }
     assert reuse_artifact(data.__getitem__, SHA, "1.0.0", 25) == 55
+    job = data[f"{prefix}/actions/runs/25/jobs?filter=latest&per_page=100"]["jobs"][0]
+    job["labels"] = ["ubuntu-latest"]
+    with pytest.raises(ValueError, match="different runner"):
+        reuse_artifact(data.__getitem__, SHA, "1.0.0", 25)
+    job["labels"] = ["ubuntu-24.04"]
     run["event"] = "pull_request"
     with pytest.raises(ValueError):
         reuse_artifact(data.__getitem__, SHA, "1.0.0", 25)

@@ -6,6 +6,8 @@ import sys
 from pathlib import Path
 
 PYTHONS = ("3.12", "3.13", "3.14")
+LINUX_RUNNER = "ubuntu-24.04"
+MACOS_RUNNER = "macos-latest"
 
 
 def matrix(event: str, ref: str) -> dict[str, list[dict[str, str]]]:
@@ -17,11 +19,11 @@ def matrix(event: str, ref: str) -> dict[str, list[dict[str, str]]]:
             raise ValueError("Main verification requires refs/heads/main")
     else:
         raise ValueError("Unsupported quality event")
-    jobs = [{"os": "ubuntu-latest", "python": python} for python in PYTHONS]
+    jobs = [{"os": LINUX_RUNNER, "python": python} for python in PYTHONS]
     if event == "pull_request":
-        jobs.append({"os": "macos-latest", "python": "3.12"})
+        jobs.append({"os": MACOS_RUNNER, "python": "3.12"})
     elif event == "workflow_dispatch":
-        jobs.extend({"os": "macos-latest", "python": python} for python in PYTHONS)
+        jobs.extend({"os": MACOS_RUNNER, "python": python} for python in PYTHONS)
     return {"include": jobs}
 
 

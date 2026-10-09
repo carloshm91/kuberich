@@ -249,6 +249,26 @@ commit and its main-push Repository checks; a routine three/four-job run cannot
 qualify publication. A later failed qualification attempt blocks an older success.
 No automatic schedule, extra paid runner, billing change or publication is added.
 
+### Linux host selection: #168
+
+Every Linux job in the repository, application, release and website workflows
+selects `ubuntu-24.04`, including the planner, aggregate gate, terminal-tool
+setup and all Linux/Python 3.12 owned-cluster rehearsals. Python 3.12/3.13/3.14,
+the macOS baseline and the six-environment release matrix are unchanged.
+The retained artifact is `quality-ubuntu-24.04-python-3.12` for release input.
+Preflight requires completed successful jobs whose requested runner labels match
+their expected host, including the planner, aggregate and Repository checks;
+candidate retry validation also requires the pinned Linux host.
+
+GitHub's [announced latest-label migration](https://github.com/actions/runner-images/issues/14748)
+begins on 2026-10-19. Selecting Ubuntu 24.04 makes an OS upgrade deliberate; it
+does not freeze the hosted image revision, kernel or apt packages. Record actual
+image/tool versions with each hosted qualification. Preserve original
+`ubuntu-latest` receipts and require separate future Ubuntu 26.04 qualification
+before changing this contract. Local policy/site checks do not establish a new
+hosted/native result; [acceptance evidence](acceptance/ubuntu-runner-pin.md)
+records the pinned candidate's measured status.
+
 The [CI usage audit](acceptance/private-ci.md) distinguishes measured historical
 job time from projected work reductions, inaccessible account billing and the
 unavailable after-change hosted measurement. Resume the configured development

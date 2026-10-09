@@ -7,6 +7,10 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Pin every Linux CI host to Ubuntu 24.04 while retaining all interpreter/native,
+  coverage and owned-cluster checks. Reject stale runner/job/artifact identities
+  during release qualification and candidate retries.
+
 - Refine the landing and initial docs with a shared flat presentation and mobile
   guide navigation. Generate CLI/resource/capability references from maintained
   contracts, reject stale source receipts, and rebuild both unpublished surfaces

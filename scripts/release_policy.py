@@ -6,15 +6,16 @@ from typing import Any
 
 from packaging.version import Version
 
+from scripts.ci_policy import LINUX_RUNNER, matrix
+
 REPOSITORY = "carloshm91/kuberich"
 OWNER = "carloshm91"
 QUALITY_WORKFLOW = ".github/workflows/quality.yml"
 RELEASE_WORKFLOW = ".github/workflows/release.yml"
 APPLICATION_JOBS = {
-    f"Application ({system}, Python {python})"
-    for system in ("ubuntu-latest", "macos-latest")
-    for python in ("3.12", "3.13", "3.14")
-} | {"Quality gate"}
+    f"Application ({job['os']}, Python {job['python']})": job["os"]
+    for job in matrix("workflow_dispatch", "refs/heads/main")["include"]
+} | {"Verification plan": LINUX_RUNNER, "Quality gate": LINUX_RUNNER}
 SHA = re.compile(r"[0-9a-f]{40}")
 HASH = re.compile(r"[0-9a-f]{64}")
 API = Callable[[str], Any]
@@ -49,11 +50,17 @@ def publication_tag(value: str) -> str:
     return tag
 
 
-def successful_jobs(jobs: list[dict[str, Any]], expected: set[str]) -> None:
-    for name in expected:
+def successful_jobs(jobs: list[dict[str, Any]], expected: dict[str, str]) -> None:
+    for name, runner in expected.items():
         matching = [job for job in jobs if job.get("name") == name]
-        if len(matching) != 1 or matching[0].get("conclusion") != "success":
+        if (
+            len(matching) != 1
+            or matching[0].get("status") != "completed"
+            or matching[0].get("conclusion") != "success"
+        ):
             raise ValueError(f"Required job did not succeed: {name}")
+        if matching[0].get("labels") != [runner]:
+            raise ValueError(f"Required job used a different runner: {name}; require {runner}")
 
 
 def qualified_run(run: dict[str, Any], sha: str, path: str) -> None:
@@ -159,7 +166,7 @@ def release_preflight(api: API, sha: str, version: str, index: str) -> dict[str,
     chosen = {}
     for filename, expected in (
         ("quality.yml", APPLICATION_JOBS),
-        ("repository.yml", {"Repository checks"}),
+        ("repository.yml", {"Repository checks": LINUX_RUNNER}),
     ):
         event = "workflow_dispatch" if filename == "quality.yml" else "push"
         runs = api(
@@ -178,7 +185,7 @@ def release_preflight(api: API, sha: str, version: str, index: str) -> dict[str,
     run_id = int(chosen["quality.yml"]["id"])
     artifacts = api(f"{prefix}/actions/runs/{run_id}/artifacts?per_page=100")["artifacts"]
     matches = [
-        item for item in artifacts if item.get("name") == "quality-ubuntu-latest-python-3.12"
+        item for item in artifacts if item.get("name") == f"quality-{LINUX_RUNNER}-python-3.12"
     ]
     if len(matches) != 1 or matches[0].get("expired") is not False:
         raise ValueError("Require the retained qualified Linux 3.12 artifact")
@@ -207,7 +214,7 @@ def reuse_artifact(api: API, sha: str, version: str, run_id: int) -> int:
     ):
         raise ValueError("Retry must use a completed in-repository main release dispatch")
     jobs = api(f"{prefix}/actions/runs/{run_id}/jobs?filter=latest&per_page=100")["jobs"]
-    successful_jobs(jobs, {"Validate release"})
+    successful_jobs(jobs, {"Validate release": LINUX_RUNNER})
     matches = [
         artifact
         for artifact in api(f"{prefix}/actions/runs/{run_id}/artifacts?per_page=100")["artifacts"]

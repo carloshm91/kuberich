@@ -40,7 +40,7 @@ jobs:
   validate:
     name: Validate release
     if: ${{ github.repository == 'carloshm91/kuberich' && github.ref == 'refs/heads/main' && github.actor == 'carloshm91' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: read
@@ -99,7 +99,7 @@ jobs:
     if: ${{ !inputs.dry_run }}
     environment:
       name: ${{ needs.validate.outputs.environment }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
       contents: write

@@ -93,6 +93,30 @@ def test_actual_http_main_qualification_is_readonly_and_source_version_matches(t
         assert server.posts == []
 
 
+@pytest.mark.parametrize("mismatch", ["runner", "artifact"])
+def test_actual_http_qualification_refuses_stale_linux_evidence_without_writes(tmp_path, mismatch):
+    with release_server(tmp_path) as server:
+        server.reads = {"/" + path: value for path, value in trusted_api().items()}
+        api = GitHub("synthetic-token", server.url)
+        assert release_preflight(api, SHA, "1.0.0", "pypi")["artifact_id"] == 18
+        if mismatch == "runner":
+            jobs = server.reads[
+                f"/repos/{REPOSITORY}/actions/runs/12/jobs?filter=latest&per_page=100"
+            ]["jobs"]
+            next(job for job in jobs if "ubuntu-24.04" in job["name"])["labels"] = ["ubuntu-latest"]
+            message = "different runner"
+        else:
+            artifacts = server.reads[f"/repos/{REPOSITORY}/actions/runs/12/artifacts?per_page=100"][
+                "artifacts"
+            ]
+            artifacts[0]["name"] = "quality-ubuntu-latest-python-3.12"
+            message = "retained qualified Linux"
+        with pytest.raises(ValueError, match=message):
+            release_preflight(api, SHA, "1.0.0", "pypi")
+        assert all(method == "GET" for method, _, _ in server.requests)
+        assert server.posts == []
+
+
 def test_real_annotated_git_tag_is_immutable_and_identical_retry_does_not_write(tmp_path):
     with release_server(tmp_path) as server:
         api = GitHub("synthetic-token", server.url)
