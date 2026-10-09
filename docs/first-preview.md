@@ -74,8 +74,22 @@ and successful instrumented full replay with nonqualifying 176.11-ms timing.
 All drained; the actual merge verified the 109-module parent/replay arc union.
 The final Python 3.12 affected cohort passed all 258 cases in 290.09 seconds,
 including source/fresh-installed terminals and the three-mode contract at a
-115.74-ms runtime maximum. Signed-source and full native qualification remain
-pending; these local results do not qualify a release.
+115.74-ms runtime maximum. Its signed `b9ecbf3` replacement subsequently failed
+required Linux 3.12 at 160.96 ms during warmed resource navigation, despite the
+other three native environments passing. That source is unqualified and the
+failed original receipts remain retained. A narrow table-rendering correction
+now resolves the inherited style once per synchronous frame, preserving themes,
+nested renders and visible output. Its ordinary Python 3.12 runtime/table cohort
+passed four cases in 97.73 seconds: 112.73-ms positive/two rounds, a deliberate
+201.31-ms negative heartbeat failure, and successful functional coverage replay.
+The unchanged GC, warm-up, history and 150-ms bounds remain required. Fresh signed
+source and full native qualification are still pending; local results do not
+qualify a release. The broader affected cohort then passed 353 cases in 546.32 s,
+including existing Pod/standard/custom table navigation and source/fresh-installed
+terminals. Its runtime maximum was 103.87 ms across both full-history rounds;
+the deliberate negative failed exactly at 205.98 ms, and the functional replay
+completed with nonqualifying timing. The original logo-settle reflow regression
+also passed separately. These remain local, precommit results.
 See
 [controls and limits](log-viewer.md#all-container-and-workload-logs-s06-54)
 and [acceptance evidence](acceptance/aggregated-logs.md). Embedded-shell

@@ -171,6 +171,10 @@ cache through public paging, preserves its resize anchor, and checks current
 identity and actual rendered text after a fresh Head 1000 window. Its receipt is
 `artifacts/ui/log-layout-cache.json`. These additional caches are separate from
 the text-retention byte bound; sustained-load/RSS qualification remains Q03.
+Pod, standard/custom and aggregate source-picker tables resolve their inherited
+Rich style once per synchronous visual frame. Pilot checks exact reference
+segments/cell widths, selected/scrolling rows, theme/hidden changes, nested renders
+and recovery after a render exception; no style persists into a later frame.
 Required Linux 3.12 `scripts.verify_aggregate_logs_kind` verifies actual
 Deployment→ReplicaSet→Pod and CronJob→Job→Pod membership, matching-label rejection,
 regular/init/ephemeral sources, starting→logs without replay, Pod replacement and

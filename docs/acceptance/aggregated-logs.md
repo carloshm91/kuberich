@@ -416,6 +416,65 @@ the signed frozen candidate.
 No GC,
 heartbeat, history or job-deadline limit is changed by this correction.
 
+The signed replacement `b9ecbf3eec95ab311423b0c43e5682077b513478` then
+failed its actual required run 38000521236. Actions tested PR merge checkout
+`fa22e75696f93c4088a14d488782ed0f65afd707`, with the same candidate tree.
+Repository/browser, DCO and three native environments passed, but Linux 3.12
+and the aggregate application gate failed:
+
+| Environment | Job | Passed / failed | Suite duration | Runtime maximum |
+| --- | --- | --- | --- | --- |
+| Linux 3.12 | 114057237827 | 4,083 / 1 | 1,881.63 s | 160.96 ms |
+| Linux 3.13 | 114057238018 | 4,084 / 0 | 1,483.58 s | 88.76 ms |
+| Linux 3.14 | 114057237840 | 4,084 / 0 | 977.03 s | 38.69 ms |
+| macOS 3.12 | 114057237787 | 4,084 / 0 | 2,101.67 s | 118.32 ms |
+
+The failed positive child was uninstrumented with default GC and no trace/profile
+callback. Its warm-two resource route measured 160.96-ms wall and 158.89-ms main
+CPU, overlapping a 95.44-ms generation-two collection while a table recomputed
+its inherited style. Four warm cycles ran but no full-history round completed.
+The fail-closed wrapper stopped before negative/replay or the Linux kind checks.
+The final child cleanup still recorded app stopped and registry/log/watch counts
+zero; the earlier heartbeat's after-close field was null because the assertion
+failed. Original artifact 11650435293 and all other native outcomes remain retained.
+The three successful environments and their coverage cannot qualify this source.
+
+An independent unchanged-source heap census found genuine Strip/FIFO cache growth
+through the four public warm cycles; closed-screen weak references disappeared
+after application cleanup and diagnostic collection. The unused prepared history
+contributed roughly 10,000 tracked roots during warm-up. That fixture and the
+runtime caches remain unchanged. The narrow production correction captures the
+inherited table style once within a synchronous `render_lines` frame, shares it
+with nested rendering, and restores it in `finally`. Pod, standard/custom and
+aggregate source-picker tables use this widget-local helper; subsequent themes
+and visibility/layout changes recompute their style normally.
+An ignored actual-table prototype preserved exact styled segments/cell lengths
+in 48 cases and reduced full inherited-style calculations from 680 to 48. This
+is allocation evidence, not a platform latency qualification. The ordinary
+Python 3.12 required trio plus three actual table-rendering cases passed four
+cases in 97.73 s: positive 112.73 ms/two full rounds, deliberate negative 201.31 ms
+with the exact intended heartbeat failure, and successful instrumented replay
+with nonqualifying 203.78-ms timing. All children drained and retained the original
+warm-up, GC, 150-ms, 5,000/5,001 bounds and controls. The real replay-only merge
+verified all 109 module arc unions. New visual helper coverage is 25/25 lines
+and 2/2 applicable branches. These are uncommitted local correction receipts;
+fresh frozen native qualification remains required.
+
+The broader ordinary Python 3.12 affected cohort passed 353 cases in 546.32 s.
+It includes existing Pod/standard/custom table sorting, scrolling, navigation,
+details and render contracts, prior aggregate/log/receipt controls, source PTYs
+and fresh-installed aggregate/standard console/module trials. Its untraced
+runtime child reached 103.87 ms with two full rounds and complete drain; the
+deliberate negative failed the exact heartbeat at 205.98 ms. The successful
+functional replay retained every non-time behavior assertion, with nonqualifying
+178.10-ms timing. The real helper verified the complete 109-module parent/replay
+arc union, and the three critical log decisions plus the visual helper remained
+100% lines/applicable branches. The original logo-settle reflow regression also
+passed separately in 1.15 s. Originals are retained under
+`artifacts/aggregated-logs-54/frame-cohort312-evidence/`; execution used the b9ec
+checkout with these uncommitted source bytes. They do not establish full/native
+qualification of the next signed candidate.
+
 ## Qualification limits
 
 The source remains a local implementation candidate until its signed frozen PR

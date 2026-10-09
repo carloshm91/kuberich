@@ -18,9 +18,10 @@ from kuberich.domain.registry import (
     order_resources,
 )
 from kuberich.ui.pods import PodCell, Viewport
+from kuberich.ui.presentation import FrameTable
 
 
-class StandardTable(DataTable[PodCell]):
+class StandardTable(FrameTable[PodCell]):
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("j", "cursor_down", "Down", show=False),
         Binding("k", "cursor_up", "Up", show=False),

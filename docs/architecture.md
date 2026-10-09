@@ -691,6 +691,12 @@ captured pod UID and declared container before and after opening the API stream.
 The container list is a snapshot; reopening refreshes it. Live container status
 and broader resource drill-down remain #61; ephemeral containers remain #78.
 
+`ui/presentation.FrameTable` captures the inherited Rich style once for a
+synchronous `render_lines` call in Pod, standard/custom and aggregate source-picker
+tables. Nested renders share that immutable frame style; `finally` restores the
+enclosing value, so failures or later theme, visibility and layout changes cannot
+retain stale colors. It retains DataTable's rows, cursor, events and rendering.
+
 This uses public [Textual DataTable](https://textual.textualize.io/widgets/data_table/)
 row events/actions and [Input](https://textual.textualize.io/widgets/input/) submissions.
 

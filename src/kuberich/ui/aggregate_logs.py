@@ -31,6 +31,7 @@ from kuberich.services.processes import _finish_owned
 from kuberich.services.resources import parse_owned
 from kuberich.ui.chrome import WorkspaceChrome
 from kuberich.ui.logs import LogHelpScreen, LogScreen
+from kuberich.ui.presentation import FrameTable
 from kuberich.ui.scopes import ScopeScreen
 
 
@@ -53,7 +54,7 @@ class LogSourcesScreen(ModalScreen[None]):
     def __init__(self, owner: AggregateLogs, changed: Callable[[], None]) -> None:
         super().__init__()
         self.owner, self.changed = owner, changed
-        self.table: DataTable[object] = DataTable(
+        self.table: DataTable[object] = FrameTable(
             id="aggregate-sources", cursor_type="row", zebra_stripes=True
         )
         self.table.add_column("ID")
