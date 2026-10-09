@@ -100,7 +100,7 @@ def canonical_release(tmp_path_factory):
     generate(source / "artifacts/security", source / "dist", root=source)
     bundle = tmp_path / "release-candidate"
     prepared = prepare(source, bundle, sha, "1.0.0rc1", root=source)
-    assert prepared["tag"] == "v0.0.1-rc.1" and prepared["candidate_only"] is False
+    assert prepared["tag"] == "v1.0.0-rc.1" and prepared["candidate_only"] is False
     verify_bundle(bundle, sha, "1.0.0rc1", root=source)
     outside = tmp_path / "outside"
     outside.mkdir()
