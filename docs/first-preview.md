@@ -10,7 +10,7 @@ generic custom-resource terminal commands and presentation remain B06 #53.
 
 Exact tested command:
 `uv run --locked --python 3.12 pytest tests/unit/test_resources.py tests/unit/test_tables.py tests/unit/test_views.py tests/unit/test_watches.py tests/contract/test_resources.py tests/contract/test_watches.py tests/contract/test_workspace.py tests/contract/test_custom_resources.py tests/contract/test_custom_workspace.py -q --cov=kuberich --cov-branch`.
-The expanded cohort passed 396 cases; each of the four involved critical domains
+The expanded cohort passed 397 cases; each of the four involved critical domains
 measured 100% lines/branches. The owned-cluster command is
 `uv run --locked --python 3.12 python -m scripts.verify_custom_resources_kind --kind artifacts/operations-46/tools/kind`.
 It verifies actual CRDs, Table events, version/removal refresh and RBAC. Its

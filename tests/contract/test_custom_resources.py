@@ -163,6 +163,29 @@ async def test_get_validates_advertised_verb_name_identity_and_memory(tmp_path, 
 
 
 @pytest.mark.asyncio
+async def test_get_encodes_literal_name_without_query_or_fragment_injection(tmp_path):
+    name = "literal?# @\u00e9"
+    requests = []
+
+    async def handler(request):
+        requests.append((request.path, request.raw_path, dict(request.query)))
+        return web.json_response(server_table(custom_item(name)))
+
+    async with reader_fixture(tmp_path, handler) as base:
+        record = await ResourceReader(base.session, tables=True).get(
+            custom_resource(), name, "team"
+        )
+        assert record.name == name
+        assert requests == [
+            (
+                custom_resource().path("team") + "/" + name,
+                custom_resource().path("team") + "/literal%3F%23%20@%C3%A9?includeObject=Object",
+                {"includeObject": "Object"},
+            )
+        ]
+
+
+@pytest.mark.asyncio
 async def test_get_timeout_does_not_wait_for_unbounded_server_body(tmp_path):
     ended = asyncio.Event()
 

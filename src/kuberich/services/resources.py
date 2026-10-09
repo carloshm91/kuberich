@@ -5,6 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from functools import partial
 from typing import Any
+from urllib.parse import quote
 
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, HttpProblem
@@ -198,7 +199,7 @@ class ResourceReader:
     ) -> ResourceRecord:
         if "get" not in resource.verbs:
             raise AppError("This discovered resource does not advertise get support.")
-        path = resource.path(namespace) + "/" + resource_name(name)
+        path = resource.path(namespace) + "/" + quote(resource_name(name), safe="")
         decoder = TableDecoder(resource, namespace)
         try:
             async with asyncio.timeout(self.session.timeout):

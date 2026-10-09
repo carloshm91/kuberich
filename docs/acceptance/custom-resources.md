@@ -31,11 +31,11 @@ On actual Linux/Python 3.12.12:
 uv run --locked --python 3.12 pytest tests/unit/test_resources.py tests/unit/test_tables.py tests/unit/test_views.py tests/unit/test_watches.py tests/contract/test_resources.py tests/contract/test_watches.py tests/contract/test_workspace.py tests/contract/test_custom_resources.py tests/contract/test_custom_workspace.py -q --cov=kuberich --cov-branch --cov-report=json:artifacts/custom-resource-52/focused-coverage.json
 ```
 
-The expanded cohort passed **396 cases in 27.95 seconds**. Focused critical
+The expanded cohort passed **397 cases in 26.48 seconds**. Focused critical
 receipts are resources **201/201 lines, 68/68 branches**, Table **102/102,
 36/36**, views **112/112, 38/38** and watches **156/156, 62/62**. These focused
-results are not whole-production or platform qualification. The HTTP/workspace
-subset passed **47 cases in 2.37 seconds**.
+results are not whole-production or platform qualification. The final HTTP
+subset passed **46 cases in 2.23 seconds**, including literal URL name encoding.
 
 The actual loopback contracts cover paged/full-object Table reads, cluster and
 namespace scope, 406/415 and invalid metadata fallback, raw representations,
@@ -46,7 +46,9 @@ cover install/remove/preference/context changes and partial forbidden discovery.
 
 Initial fixture errors supplied the wrong List apiVersion and an unsupported
 helper keyword; correcting those fixtures preserved real structural validation.
-They are retained as failures, not counted as passes. An initial real-cluster
+They are retained as failures, not counted as passes. A superseded whole local
+run was deliberately interrupted after 897 passes to qualify literal GET URL
+encoding; that incomplete run does not qualify the final head. An initial real-cluster
 verifier used a merge body with the SDK's default JSON Patch representation;
 the corrected verifier supplies actual JSON Patch operations. Cluster deletion
 was verified on both failed and successful attempts.
