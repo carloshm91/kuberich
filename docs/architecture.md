@@ -48,6 +48,11 @@ without blocking the event loop or sending another termination signal. Only
 ESRCH confirms disappearance; a live group or persistent denial still fails
 cleanup. Normal descendant termination and cancellation ownership remain intact.
 
+A second required macOS run exposed a workspace repaint overwriting the rejected
+`:ns` message during connection setup. The UI retains this notice for the exact
+current immutable view; age-only repaints preserve it, and a new connection/view
+observation clears it so later progress or failure remains visible.
+
 C05 #52 resolves one preferred group/resource family across served versions,
 with explicit group qualification for ambiguous aliases. Opt-in Table reads
 keep immutable bounded printer metadata separate from full resource manifests;

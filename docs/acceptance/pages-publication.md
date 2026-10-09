@@ -54,6 +54,17 @@ covered (100%). Ruff/formatting and strict types over 108 files passed. This
 focused run does not replace the full hosted coverage gates; final native
 evidence is recorded on the live issue.
 
+The second native macOS run passed the process regression but failed an installed
+pipx navigation probe: an age-only repaint erased the rejected `:ns` feedback
+while namespace discovery was gated. A local owned-API/Pilot regression reproduced
+that overwrite before the fix (1 failed in 1.50 seconds). The UI now preserves
+this notice for the exact pending view and clears it when the connection changes.
+The original installed/source PTY and pipx/uv installation trials remain required;
+their visible feedback assertion is retained. The navigation/installer/process
+cohort passed 103 cases in 204.03 seconds, including real source terminal and
+all four isolated uv/pipx wheel/sdist installs. All 28 changed executable
+production lines were covered (100%); lint/formatting and strict types passed.
+
 ## Actual provider acceptance
 
 The workflow retains `checked-site`, `website-browser-evidence` and

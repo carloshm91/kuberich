@@ -109,6 +109,44 @@ async def test_disconnected_namespace_candidates_are_absent_and_help_matches_act
 
 
 @pytest.mark.asyncio
+async def test_namespace_rejection_survives_same_view_repaint_until_connection_changes(tmp_path):
+    requested, release = asyncio.Event(), asyncio.Event()
+
+    async def namespace_handler(request):
+        requested.set()
+        await release.wait()
+        return namespaces("team")
+
+    async def resources(request):
+        if "watch" in request.query:
+            return await stable_watch(request)
+        return web.json_response(collection(pod("api", namespace="team", uid="api")))
+
+    async with workspace_api(namespace_handler, resources) as url:
+        app = make_app(catalog_fixture(tmp_path, url))
+        async with app.run_test() as pilot:
+            try:
+                await asyncio.wait_for(requested.wait(), 5)
+                await pilot.press("colon", "n", "s", "enter")
+                assert "Connect to a context before selecting" in str(app.status.content)
+                app._refresh_tables()
+                await pilot.pause()
+                assert "Connect to a context before selecting" in str(app.status.content)
+                release.set()
+                await wait_for(
+                    lambda: (
+                        app.workspace.store.observation.status is ViewStatus.LIVE
+                        and app.resources.row_count == 1
+                    )
+                )
+                await pilot.pause()
+                assert "Connect to a context before selecting" not in str(app.status.content)
+                assert "Live" in str(app.status.content)
+            finally:
+                release.set()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
 async def test_cached_scope_completions_filter_errors_and_history_restore_without_keystroke_io(
     tmp_path, size, monkeypatch

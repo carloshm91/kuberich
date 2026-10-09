@@ -5,11 +5,6 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ## Unreleased
 
-### Fixed
-
-- Verify disappearance after macOS reports a permission error for an exiting
-  subprocess group. Preserve real permission failures and owned child cleanup.
-
 ### Changed
 
 - Refine the landing and initial docs with a shared flat presentation and mobile
@@ -109,6 +104,11 @@ Release entries are written in release PRs and linked to their Git tags.
   with a compact wordmark below 120 columns and the existing hidden-header options.
 
 ### Fixed
+
+- Verify disappearance after macOS reports a permission error for an exiting
+  subprocess group. Preserve real permission failures and owned child cleanup.
+- Preserve rejected namespace-command feedback through repaints of the same
+  connecting view; show new connection progress or errors when its state changes.
 
 - Preserve SSH hangup status on macOS when terminal attributes remain readable
   after the driver has stopped accepting output; probe without emitting bytes.

@@ -266,6 +266,7 @@ class KubeRichApp(App[None]):
         self._namespace_parent: NavigationState | None = None
         self._namespace_state: NavigationState | None = None
         self._namespace_route = False
+        self._selection_notice: tuple[ViewObservation, str] | None = None
         self._pod_projection = PodProjection()
         self._namespace_projection = NamespaceProjection()
         self.chrome = WorkspaceChrome(
@@ -706,7 +707,14 @@ class KubeRichApp(App[None]):
         self.query_one("#empty-state").display = not bool(self._active_table.row_count)
         self._active_table.set_class(bool(self._active_table.row_count), "populated")
         self._show_sort()
-        self._set_status(view.message)
+        message = view.message
+        if self._selection_notice is not None:
+            notice_view, notice = self._selection_notice
+            if notice_view is view:
+                message = notice
+            else:
+                self._selection_notice = None
+        self._set_status(message)
 
     @on(PodTable.SortChanged)
     @on(StandardTable.SortChanged)
@@ -1153,7 +1161,9 @@ class KubeRichApp(App[None]):
     def action_namespaces(self) -> None:
         observation = self.workspace.store.observation.connection
         if observation.state not in USABLE_CONNECTIONS:
-            self._set_status("Connect to a context before selecting a namespace.")
+            message = "Connect to a context before selecting a namespace."
+            self._selection_notice = self.workspace.store.observation, message
+            self._set_status(message)
         elif not isinstance(self.screen, ModalScreen):
             self._select_resource("namespaces", restore=self._namespace_state)
 
