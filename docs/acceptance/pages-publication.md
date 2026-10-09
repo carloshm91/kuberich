@@ -63,7 +63,10 @@ The original installed/source PTY and pipx/uv installation trials remain require
 their visible feedback assertion is retained. The navigation/installer/process
 cohort passed 103 cases in 204.03 seconds, including real source terminal and
 all four isolated uv/pipx wheel/sdist installs. All 28 changed executable
-production lines were covered (100%); lint/formatting and strict types passed.
+production lines in that revision were covered (100%); lint/formatting and strict
+types passed. An additional navigation/process cohort covering active-filter
+repaints passed 98 cases in 81.01 seconds. Its final 29-line executable diff
+measured 96.55%; full hosted gates remain required.
 
 ## Actual provider acceptance
 

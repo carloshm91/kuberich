@@ -109,7 +109,10 @@ async def test_disconnected_namespace_candidates_are_absent_and_help_matches_act
 
 
 @pytest.mark.asyncio
-async def test_namespace_rejection_survives_same_view_repaint_until_connection_changes(tmp_path):
+@pytest.mark.parametrize("query", ["", "api"])
+async def test_namespace_rejection_survives_same_view_repaint_until_connection_changes(
+    tmp_path, query
+):
     requested, release = asyncio.Event(), asyncio.Event()
 
     async def namespace_handler(request):
@@ -127,6 +130,8 @@ async def test_namespace_rejection_survives_same_view_repaint_until_connection_c
         async with app.run_test() as pilot:
             try:
                 await asyncio.wait_for(requested.wait(), 5)
+                app.filter_input.value = query
+                await pilot.pause()
                 await pilot.press("colon", "n", "s", "enter")
                 assert "Connect to a context before selecting" in str(app.status.content)
                 app._refresh_tables()
