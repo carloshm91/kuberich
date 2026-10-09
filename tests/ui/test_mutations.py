@@ -126,9 +126,19 @@ async def prepare(app, pilot):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
-async def test_review_enter_cancel_confirm_and_public_history(tmp_path, size):
+async def test_review_enter_cancel_confirm_and_public_history(tmp_path, size, monkeypatch):
     async with mutation_api() as (url, api):
         app = app_fixture(tmp_path, url)
+        result_ready, show_result = asyncio.Event(), asyncio.Event()
+        original_wait = app.mutations.wait
+
+        async def delayed_feedback(identity):
+            result = await original_wait(identity)
+            result_ready.set()
+            await show_result.wait()
+            return result
+
+        monkeypatch.setattr(app.mutations, "wait", delayed_feedback)
         async with app.run_test(size=size) as pilot:
             screen = await prepare(app, pilot)
             assert app.focused is screen.query_one("#annotation-cancel", Button)
@@ -146,11 +156,15 @@ async def test_review_enter_cancel_confirm_and_public_history(tmp_path, size):
             assert not api.requests
             screen = await prepare(app, pilot)
             screen.confirm()
-            await wait_for(
-                lambda: bool(app.mutations.records) and app.mutations.records[-1].result is not None
-            )
+            await wait_for(result_ready.is_set)
             assert app.mutations.records[-1].result.state is MutationState.SUCCEEDED
             assert len(api.requests) == 1
+            # Publishing the owned outcome precedes the screen's independent waiter.
+            assert "Sending" in str(screen.query_one("#annotation-feedback", Static).content)
+            show_result.set()
+            await wait_for(
+                lambda: "Succeeded" in str(screen.query_one("#annotation-feedback", Static).content)
+            )
             assert "Succeeded" in str(screen.query_one("#annotation-feedback", Static).content)
             await pilot.press("escape")
             await wait_for(lambda: len(app.screen_stack) == 1)

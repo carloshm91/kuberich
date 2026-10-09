@@ -41,6 +41,19 @@ the stable table before filtering and still requires the actual filtered row,
 namespace selection, pods, logs and shell behavior. No application navigation or
 release gate changes to accommodate the fixture.
 
+The subsequent native attempt at
+`0773b39fc1512ec3dc0e3b05d12e2da2844fc375` passed **3,018 cases**, including
+all SSH/tmux/installed-terminal checks. Its sole failure was an annotation UI
+witness: the owned mutation record already reported success while the screen's
+independent result waiter had not yet updated the feedback. That attempt is
+retained in [run 37861030236](https://github.com/carloshm91/kuberich/actions/runs/37861030236).
+The corrected witness deliberately holds feedback after the actual result,
+asserts one successful write with the sending message still visible, releases
+delivery and waits for visible success before checking history. Both compact
+and ordinary terminal sizes retain default Cancel, explicit Confirm, redacted
+history and drained shutdown assertions. No application behavior or timing
+budget changes to make this verification pass.
+
 ## Regression witnesses
 
 - Fragmented standard/private device-status queries preserve following visible
@@ -72,7 +85,7 @@ release gate changes to accommodate the fixture.
 ## Measured local evidence and completion boundary
 
 On Linux/Python 3.12.12, the final focused command
-`uv run --locked pytest -q tests/terminal/test_observer.py tests/unit/test_terminal_lease.py tests/contract/test_mutation_faults.py`
+`uv run --locked --python 3.12 pytest -q tests/terminal/test_observer.py tests/unit/test_terminal_lease.py tests/contract/test_mutation_faults.py`
 passed **50 cases**. The actual SSH/tmux/SSH-to-tmux log navigation trial passed
 all three variants with the passive observer. The shallow Git reproduction
 returned status 2 at the exact main commit, then status 0 after complete history

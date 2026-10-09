@@ -7,7 +7,10 @@ Required macOS execution exposed terminal-observer/driver assumptions; #157
 repairs the observer and preserves hangup status when Darwin still returns TTY
 attributes but rejects output. No platform tests are skipped.
 The exact focused verification command is
-`uv run --locked pytest -q tests/terminal/test_observer.py tests/unit/test_terminal_lease.py tests/contract/test_mutation_faults.py`.
+`uv run --locked --python 3.12 pytest -q tests/terminal/test_observer.py tests/unit/test_terminal_lease.py tests/contract/test_mutation_faults.py`.
+`uv run --locked --python 3.12 pytest -q tests/ui/test_mutations.py` also verifies
+visible feedback after deliberately delayed result delivery, including compact
+terminal confirmation and redacted history.
 See [acceptance evidence](acceptance/macos-terminal-verification.md) and the linked
 issue/PR for delivered-head hosted results. #46 remains on its issue branch until
 this prerequisite and its own checks pass. The first public product release
