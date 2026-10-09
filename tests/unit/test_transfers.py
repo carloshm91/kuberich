@@ -227,6 +227,13 @@ def pax_record(key, value):
 def test_pax_metadata_accepts_bounded_ordinary_fields_and_multiple_records():
     validate_pax_records(b"")
     validate_pax_records(pax_record(b"path", b"root/caf\xc3\xa9") + pax_record(b"mtime", b"123.4"))
+    validate_pax_records(pax_record(b"size", b"0") + pax_record(b"size", b"536870912"))
+
+
+@pytest.mark.parametrize("size", [b"bad", b"", b"-1", b"1.5", b"9" * 11, b"536870913"])
+def test_pax_payload_size_cannot_be_coerced_or_exceed_the_transfer_bound(size):
+    with pytest.raises(AppError, match="extended payload size"):
+        validate_pax_records(pax_record(b"size", size))
 
 
 @pytest.mark.parametrize(

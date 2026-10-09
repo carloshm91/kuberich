@@ -46,8 +46,8 @@ Actual Linux/Python 3.12.12, before whole-candidate qualification:
   in **41.19 seconds**, covering EOF, failure 23, interruption 130, detach,
   local close, SIGTERM 143 and quit, with child/config cleanup and outer restoration.
 - Source/fresh-installed-wheel copy passed **four** actual native-terminal cases.
-- Boundary/filesystem/transport/Pilot cohort passed **157** cases in **46.35 seconds**.
-  Its focused critical `domain/transfers.py` receipt is **84/84 lines and 30/30
+- Corrected boundary/filesystem/transport/Pilot cohort passed **168** cases in **58.51 seconds**.
+  Its focused critical `domain/transfers.py` receipt is **86/86 lines and 32/32
   branches**; attach's focused receipt is **48/48 lines and 30/30 branches**.
   These are focused receipts, not whole-production coverage.
 - Cleanup/command regression cohort passed **47** cases in **20.60 seconds**,
@@ -62,10 +62,16 @@ Actual Linux/Python 3.12.12, before whole-candidate qualification:
 The exact boundary command is:
 
 ```sh
-uv run --locked --python 3.12 pytest tests/unit/test_transfers.py tests/contract/test_transfer_files.py tests/contract/test_transfers.py tests/ui/test_transfers.py -q --cov=kuberich --cov-branch --cov-report=json:artifacts/container-transfer-48/copy-boundary-final.json
+uv run --locked --python 3.12 pytest tests/unit/test_transfers.py tests/contract/test_transfer_files.py tests/contract/test_transfers.py tests/ui/test_transfers.py -q --cov=kuberich --cov-branch --cov-report=json:artifacts/container-transfer-48/copy-boundary-corrected.json
 ```
 
-Earlier failed/superseded receipts are retained and are not counted as passes.
+The additional review exposed Python tarfile coercing malformed PAX sizes to
+zero. A real crafted archive reproduced silent empty-file acceptance; validated
+decimal/size bounds now reject it before parsing. The corrected cohort includes
+that filesystem negative control, numeric edge cases and concurrent-review
+ownership. Its transfer form also measures 114/114 lines and 14/14 branches.
+Earlier failed/superseded receipts and the interrupted superseded full suite are
+retained and are not counted as passes.
 
 ## Actual owned-cluster evidence
 
@@ -81,8 +87,8 @@ replacement, missing tar, read-only refusal, interrupted download retaining the
 local destination, observed partial upload with no retry, native attach/detach/
 reattach/restoration, unchanged source configuration and private-state cleanup.
 The owned cluster was deleted and absence verified. No maintainer/cloud context
-was used. This rehearsal preceded the final archive metadata/implicit-directory
-refinement; a frozen-head rerun and required hosted verifier remain necessary.
+was used. The metadata/implicit-directory refinement passed a frozen-head rerun. The later
+PAX-size correction requires a fresh frozen-head rerun and required hosted verifier.
 
 Receipts under `artifacts/container-transfer-48` are ignored private test artifacts;
 GitHub retains final-head hosted artifacts. Failed fixture setup exposed an exec

@@ -65,9 +65,13 @@ def validate_pax_records(data: bytes) -> None:
         end = offset + int(digits)
         if end > len(data) or end <= space + 1 or data[end - 1] != 10:
             raise AppError("Archive has truncated or malformed extended metadata.")
-        key, equals, _ = data[space + 1 : end - 1].partition(b"=")
+        key, equals, value = data[space + 1 : end - 1].partition(b"=")
         if not equals or key not in PAX_FIELDS:
             raise AppError("Archive has unsupported or sparse extended metadata.")
+        if key == b"size" and (
+            not value.isdigit() or len(value) > 10 or int(value) > MAX_TRANSFER_BYTES
+        ):
+            raise AppError("Archive has invalid or excessive extended payload size.")
         offset = end
 
 

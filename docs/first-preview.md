@@ -10,7 +10,7 @@ blocks attach/uploads and permits an explicit protected download.
 
 Exact tested command:
 `uv run --locked --python 3.12 pytest tests/unit/test_transfers.py tests/contract/test_transfer_files.py tests/contract/test_transfers.py tests/ui/test_transfers.py -q --cov=kuberich --cov-branch`:
-157 cases passed before the additional UI refusal/race cases. Source and fresh
+168 cases passed, including UI refusal/race and malformed PAX-size cases. Source and fresh
 installed-wheel native attach passed 14 cases; native copy passed four cases.
 The owned-cluster command is
 `uv run --locked --python 3.12 python -m scripts.verify_transfers_kind --kind artifacts/operations-46/tools/kind --kubectl artifacts/operations-46/tools/kubectl`.

@@ -417,3 +417,21 @@ def test_implicit_directories_and_sparse_or_excessive_metadata_are_bounded_befor
     finally:
         destination.close()
     assert not (tmp_path / "chosen").exists() and not list(tmp_path.glob(".kuberich-copy-*"))
+
+
+def test_malformed_pax_size_cannot_silently_publish_an_empty_file(tmp_path):
+    source = tmp_path / "archive"
+    with tarfile.open(source, "w", format=tarfile.PAX_FORMAT) as output:
+        entry = tarfile.TarInfo("root")
+        entry.size = 4
+        entry.pax_headers = {"size": "invalid"}
+        output.addfile(entry, io.BytesIO(bytes(4)))
+    chosen = tmp_path / "chosen"
+    chosen.write_bytes(b"original")
+    destination = DownloadDestination(chosen, True)
+    try:
+        with pytest.raises(AppError, match="extended payload size"):
+            destination.extract(source, "root")
+    finally:
+        destination.close()
+    assert chosen.read_bytes() == b"original" and not list(tmp_path.glob(".kuberich-copy-*"))
