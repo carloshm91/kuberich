@@ -631,6 +631,37 @@ requested file work is drained even if the viewer closes. Captured pod/client
 invalidation clears the viewer and prevents later display/copy/save, including
 while a child prompt is open. See [the viewer contract](log-viewer.md).
 
+## S06 aggregate log ownership
+
+`domain/aggregate_logs.py` owns controller-chain membership, per-container start
+evidence, stable source identity and independently bounded source/aggregate
+retention. Controller UID indexes avoid Pod×intermediate scans. Spec/Pod phase
+alone does not open a reader: each regular/init/ephemeral container requires
+running/terminated log evidence, with valid last-terminated fallback for waiting
+containers and independently selected Previous history. `domain/log_json.py` bounds JSON decode and
+post-decode redaction at the shared decoder boundary, preserving useful safe
+fields and scalar types before any emitted line.
+
+`services/aggregate_logs.py` owns one captured client/GVR/parent UID, Pod
+LIST/WATCH, optional ReplicaSet/Job LIST/WATCH, admission controller and at most
+eight `LogStream` readers. Each reader validates Pod UID/container and source
+generation. Shared decoder chunk/final framing runs through the existing owned
+parser worker and drains before cancellation returns. A pre-open current-log 400 can retry only after changed start
+evidence; opened/ended streams do not auto-replay. Explicit picker admission is
+independent of display filtering. Current metadata caps at 256 sources and
+refuses excess; recent removed status caps at 64. Per-source history caps at
+500 lines/256 KiB and aggregate history at 5,000 lines/4 MiB, accounting for both
+plain/JSON presentation. Arrival IDs establish order; timestamps do not.
+
+`ui/aggregate_logs.py` reuses the log viewer controls and owns serialized worker
+formatting/export. It patches source rows by identity, retains an expired selected
+row safely and invalidates layout caches when mode/timestamps change. The app
+retains at most one aggregate screen in an ownership registry until cleanup
+finishes, even after dismissal removes it from the visible stack.
+`SessionService.before_close` drains this registry before client/TLS cleanup.
+All watches/readers/render/copy/save work is cancelled and awaited on leave or
+context replacement. See [aggregate controls and limits](log-viewer.md#all-container-and-workload-logs-s06-54).
+
 ## Enter navigation feedback: #115
 
 Command arrow selection is deliberate completion intent. The Input key action

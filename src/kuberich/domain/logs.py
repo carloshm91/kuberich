@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
-from kuberich.diagnostics.redaction import sanitize_text
+from kuberich.domain.log_json import sanitize_log_line
 from kuberich.domain.resources import api_segment, resource_object
 from kuberich.errors import AppError
 
@@ -108,7 +108,7 @@ class LogDecoder:
 
     def _line(self) -> LogLine:
         raw = self.pending.removesuffix("\r")
-        text = "[REDACTED KEY]" if self.private_key else sanitize_text(raw)
+        text = "[REDACTED KEY]" if self.private_key else sanitize_log_line(raw)
         if self.key_end:
             self.private_key = False
         self.key_end = False

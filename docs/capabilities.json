@@ -626,9 +626,9 @@
         "S06"
       ],
       "source": "internal/view/logs_extender.go",
-      "status": "planned",
-      "difference": "S01/S02 implement captured-UID current/previous regular/init logs and a container selector. Aggregated all-container/workload output remains S06.",
-      "partial_evidence": [
+      "status": "implemented",
+      "difference": "Captured-UID current/previous regular/init/ephemeral logs plus all-container/workload output. Exact same-namespace controller chains determine membership; eight concurrent readers, 256 current sources, 64 recent removed statuses, per-source and aggregate retention bounds. Explicit source admission/filtering, sanitized plain/JSON export, container-start enrollment and drained ownership; no automatic replay or synchronized-clock ordering.",
+      "evidence": [
         "docs/container-log-transport.md",
         "docs/log-viewer.md",
         "tests/unit/test_logs.py",
@@ -636,7 +636,13 @@
         "tests/ui/test_logs.py",
         "tests/terminal/test_logs.py",
         "scripts/verify_contexts_kind.py",
-        "docs/acceptance/S02.md"
+        "docs/acceptance/S02.md",
+        "docs/acceptance/aggregated-logs.md",
+        "tests/unit/test_aggregate_logs.py",
+        "tests/contract/test_aggregate_logs.py",
+        "tests/ui/test_aggregate_logs.py",
+        "tests/terminal/test_aggregate_logs.py",
+        "scripts/verify_aggregate_logs_kind.py"
       ]
     },
     {

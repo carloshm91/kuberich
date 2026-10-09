@@ -168,12 +168,41 @@ The generic column domain measured **67/67 lines and 20/20 branches**; the share
 registry measured **143/143 and 32/32**. Ruff/format, strict consumer types,
 wheel/sdist metadata, plan and both local site build/link checks pass.
 
-Ruff, formatting and strict application/verifier types pass. The final source
-is undergoing the full suite, independently enforced production line/branch,
-changed-line and 41-module critical gates, artifact checks and all four required
-Linux/macOS hosted jobs. The final measured receipt belongs to
-[#53](https://github.com/carloshm91/kuberich/issues/53), the live status source;
-focused receipts alone do not close it.
+The corrected frozen head `a6cc4ad9704083142f554af7501f856d97d252b2` completed
+all eight required checks. PR #170 was signed-squash merged as
+`57af8ae6a5540a3fb9baf5b8cd4282d3914ef900`; actual Actions PR merge checkout
+`274037f0281996897bbbffde4594d8365ba6bd51` and both source commits have identical
+tree `42f0478690e65f8c21378e80ecb3b4ded191007f`.
+[Application run 37959023794](https://github.com/carloshm91/kuberich/actions/runs/37959023794)
+passed 3,919 cases in each native environment:
+
+| Environment | Job ID | Test seconds | Production lines | Branches | Changed lines |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Ubuntu 24.04 / 3.12 | 113916856387 | 1671.07 | 10977/11069 | 3179/3272 | 329/337 |
+| Ubuntu 24.04 / 3.13 | 113916856331 | 1391.22 | 10978/11069 | 3179/3272 | 329/337 |
+| Ubuntu 24.04 / 3.14 | 113916856373 | 979.94 | 10797/10889 | 3176/3272 | 327/335 |
+| macOS / 3.12 | 113916856444 | 1722.16 | 10978/11069 | 3179/3272 | 329/337 |
+
+Every environment included all 105 production Python files and all 41 critical
+modules at 100% lines/applicable branches. Independent minima were 99.1551%
+lines, 97.0660% branches and 97.61% changed executable lines. Provenance/input/
+report/distribution hashes and all 107 tracked package payloads in wheel and
+sdist matched source. Actual uv/pipx wheel/sdist install/uninstall receipts and
+source/fresh-installed generic PTY exit/resize/mode restoration were checked.
+All nine generic-kind checks passed; the caller kubeconfig remained unchanged
+and the owned cluster was deleted. Independent frozen focused review passed
+42 cases in 34.54 seconds.
+
+[Repository run 37959023779](https://github.com/carloshm91/kuberich/actions/runs/37959023779)
+verified all 63 site payload hashes and 136 source digests. All 49 desktop and
+49 mobile pages had zero accessibility violations, errors or external requests;
+keyboard/copy/no-JavaScript gates passed. Root retained independent qualified
+and merge receipts under ignored `artifacts/generic53-root`; the owned collector
+retained all four artifacts/logs under `artifacts/custom-browser-53/final-hosted`.
+The authoritative final receipt and three checked acceptance boxes are on
+[#53](https://github.com/carloshm91/kuberich/issues/53), now closed/completed.
+The earlier green `98412c8` and failed `d201033` receipts remain diagnostic and
+do not qualify this corrected source.
 
 `uv build` and `uv run twine check dist/*` passed for the wheel/source artifacts.
 Both local documentation surfaces rebuilt and passed digest/link checks; actual

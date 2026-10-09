@@ -1,5 +1,36 @@
 # First things to try
 
+## Aggregate logs checkpoint: S06 #54
+
+Ordinary Pod/workload rows now open all-container logs with Shift+L or `:logsall`.
+Lines retain namespace/Pod/container/UID identity; `c` selects at most eight
+readers, `s` filters retained output without opening readers, and `J` selects
+plain/JSON. Existing log navigation, windows, previous-instance, timestamps,
+pause/follow, copy/save and Pod Enter→containers→selected logs remain available.
+Workload membership follows controller UID chains; newly started regular/init/
+ephemeral containers enroll without replaying ended streams. Generic routes
+retain their read-only inspection contract.
+
+Exact tested command:
+`env COVERAGE_FILE=artifacts/aggregated-logs-54/final-focused.coverage uv run pytest -q tests/unit/test_aggregate_logs.py tests/unit/test_logs.py tests/contract/test_aggregate_logs.py tests/contract/test_logs.py tests/ui/test_aggregate_logs.py tests/ui/test_logs.py tests/terminal/test_aggregate_logs.py tests/packaging/test_distribution.py::test_installed_aggregate_logs_and_terminal_restore tests/quality/test_ci_policy.py --cov=kuberich --cov-branch`:
+200 cases passed in 168.18 seconds, including source/fresh-installed real PTYs,
+full retained-history heartbeat, JSON/clipboard/save, UID churn and context cleanup.
+The separate 1,996-case pure suite passed in 41.13 seconds. Aggregate decisions
+measure 207/207 lines and 68/68 branches. The latest decoder-boundary correction
+passed 120 cases in 4.51 seconds, with JSON decisions 49/49 lines and 18/18
+branches. A separate footer/lifecycle correction cohort passed 125 cases in
+72.61 seconds, including all three source/fresh-installed aggregate PTYs.
+`uv run python -m scripts.verify_aggregate_logs_kind --kind /PATH/TO/OWNED/kind`
+passed eleven actual checks, including Pending/init→app and waiting CrashLoop
+current/Previous enrollment without reopen, Deployment/CronJob ownership,
+ephemeral sources, Pod replacement and drained
+cleanup; its unique disposable cluster was deleted. These are local draft
+receipts: final frozen source/platform/coverage/install qualification remains
+required. See [controls and limits](log-viewer.md#all-container-and-workload-logs-s06-54)
+and [acceptance evidence](acceptance/aggregated-logs.md). Embedded-shell
+scrollback/search/copy qualification remains open in #123; no provider trial or
+publication is part of this checkpoint.
+
 ## Generic resource browser checkpoint: B06 #53
 
 The terminal now browses discovered CRDs and other live APIs with qualified
@@ -23,7 +54,7 @@ The date-order correction passed 167 cases in 67.02 seconds with
 Equal timestamp/offset rows retain order after unrelated cached watch updates;
 mixed timestamp/duration columns use documented groups. Earlier `98412c8` hosted
 green checks are superseded by this demonstrated correction. Its replacement
-requires the full hosted gates again.
+passed the full required hosted gates.
 The rebased unit/session/process/navigation/context cohort passed 2,150 cases.
 The source native command
 `uv run pytest tests/terminal/test_custom_resources.py -q --tb=short`
@@ -31,8 +62,17 @@ passed one case in 3.18 seconds with terminal restoration and redacted output.
 The actual cluster command is
 `uv run python -m scripts.verify_custom_resources_kind --kind artifacts/custom-browser-53/tools/kind --evidence artifacts/custom-browser-53/kind-recreated.json`:
 all nine checks passed, including real generic UI/live/removal/recreation recovery, and the
-owned disposable cluster was deleted. Full source/platform/coverage/artifact
-qualification remains in progress on the issue branch. See
+owned disposable cluster was deleted. PR #170 merged as
+`57af8ae6a5540a3fb9baf5b8cd4282d3914ef900`; #53 is completed. The corrected head
+`a6cc4ad9704083142f554af7501f856d97d252b2` and actual tested PR merge checkout
+`274037f0281996897bbbffde4594d8365ba6bd51` have the same tree as that merge.
+[Application run 37959023794](https://github.com/carloshm91/kuberich/actions/runs/37959023794)
+passed 3,919 cases in each of the four native jobs, with all 41 critical modules
+at 100%, minimum 99.1551% production lines, 97.0660% branches and 97.61% changed
+lines. All eight required checks succeeded. Independent artifact/provenance,
+wheel/sdist payload, actual uv/pipx installs, source/installed PTYs, ten then-
+required cluster rehearsals plus lifecycle/quickstart and both browser surfaces
+were verified. See
 [the guide](standard-resources.md#generic-discovered-resources-b06-53) and
 [acceptance evidence](acceptance/generic-resource-browser.md).
 

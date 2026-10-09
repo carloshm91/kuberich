@@ -126,6 +126,18 @@ fresh-wheel native terminals cover initial discovery, columns, inspection,
 scope/refresh and restoration. The existing required Linux 3.12
 `scripts.verify_custom_resources_kind` now also exercises the actual generic
 browser against both CRD scopes, live changes and removal/core recovery.
+S06 adds `domain/aggregate_logs.py` and `domain/log_json.py` to the 100% critical
+inventory. Pure decisions cover exact controller-chain ownership, container-start
+evidence, independently bounded retention and post-parse JSON redaction.
+Owned HTTP/Pilot cases cover interleaving, Pending/init/ephemeral startup,
+pre-open 400 evidence changes, manual admission, same-name UID churn, expired
+selection, source/status bounds, noise/slow-source heartbeat and detached-export
+cleanup before context-client close. Source and fresh-installed console/module
+PTYs exercise actual controls, resize, exit and terminal restoration.
+Required Linux 3.12 `scripts.verify_aggregate_logs_kind` verifies actual
+Deployment→ReplicaSet→Pod and CronJob→Job→Pod membership, matching-label rejection,
+regular/init/ephemeral sources, starting→logs without replay, Pod replacement and
+drained UI/backend ownership. Its receipt is `artifacts/cluster/aggregate-logs-kind.json`.
 C08 adds bounded credential-response validation and captured proxy/TLS decisions
 in `domain/exec_credentials.py` and `domain/proxies.py` to the 100% critical
 inventory. Real token-file/certificate renewal, HTTP CONNECT and SOCKS5 contracts
@@ -148,9 +160,13 @@ sdist-to-wheel equivalence and actual isolated uv tool/pip-backed pipx installs.
 Each interpreter runs installed CLI/navigation/shell trials outside the checkout.
 Installer evidence is retained under `artifacts/packaging`; installed dependencies
 are measured independently of the development lock. Tool subprocesses own their
-process group and reap children on timeout. Application jobs allow 45 minutes
+process group and reap children on timeout. Application jobs allow 60 minutes
 for the measured full suite, cold pip-backed installs and owned cluster checks,
-including the setup/body cancellation qualification added in Q01 #38.
+including the setup/body cancellation qualification added in Q01 #38. Main
+run 37964239155's Linux 3.12 job took 39 minutes 11 seconds before S06's extra
+rehearsal, native installs and churn/lifecycle cases; the former 45-minute budget
+left 5 minutes 49 seconds for that work and host/setup variation. S06 raises
+only the job deadline; every check remains required.
 
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
@@ -244,7 +260,7 @@ There are no path filters or allowed matrix failures.
 
 Each selected job still runs the complete behavioral/terminal/packaging suite,
 independent coverage gates, build and supply-chain verification. Linux 3.12 keeps
-all eleven actual disposable-cluster rehearsals. The macOS baseline is a development
+all twelve actual disposable-cluster rehearsals. The macOS baseline is a development
 check, not qualification of macOS 3.13/3.14. The planner refuses unknown events
 and non-main push/dispatch refs. PR checks stay on `pull_request`; a manual
 dispatch never substitutes for the required PR checks. Concurrency groups include

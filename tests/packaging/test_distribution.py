@@ -13,6 +13,7 @@ from pathlib import Path
 
 import pytest
 
+from tests.support.aggregate_terminal import terminal_aggregate_logs
 from tests.support.azure_handoff import azure_terminal_trial
 from tests.support.connections import fake_api
 from tests.support.credential_handoff import credential_terminal_trial, encrypted_key_terminal_trial
@@ -31,6 +32,17 @@ from tests.support.transports import TerminalTransport
 from tests.support.workload_terminal import terminal_workload
 from tests.support.workloads import workload_api
 from tests.terminal.pty_support import TerminalSession
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+def test_installed_aggregate_logs_and_terminal_restore(installed_wheel, entry_point):
+    binary_dir, directory = installed_wheel
+    command = (
+        [str(binary_dir / "kuberich")]
+        if entry_point == "console"
+        else [str(binary_dir / "python"), "-m", "kuberich"]
+    )
+    terminal_aggregate_logs(command, directory, f"installed-aggregate-logs-{entry_point}")
 
 
 @pytest.mark.parametrize("entry_point", ["console", "module"])

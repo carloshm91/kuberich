@@ -176,6 +176,10 @@ class Handler(BaseHTTPRequestHandler):
                 value["spec"]["containers"].extend(
                     {"name": name, "image": "synthetic"} for name in self.server.shell_containers
                 )
+                value["status"]["containerStatuses"].extend(
+                    {"name": name, "state": {"running": {}}, "restartCount": 0}
+                    for name in self.server.shell_containers
+                )
         body = json.dumps(payload).encode()
         self.send_response(200)
         self.send_header("Content-Length", str(len(body)))

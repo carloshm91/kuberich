@@ -2,6 +2,7 @@
 
 from collections.abc import Awaitable, Callable
 from contextlib import aclosing
+from functools import partial
 
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, HttpProblem
@@ -10,8 +11,19 @@ from kuberich.domain.resources import ApiResource, api_segment, resource_record
 from kuberich.domain.targets import ResourceTarget
 from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy, Action
+from kuberich.services.resources import parse_owned
 
 PODS = ApiResource("", "v1", "pods", "Pod", True, frozenset({"get"}))
+
+
+class ContainerNotStarted(ConnectionProblem):
+    """A current-container 400 before opening; aggregate admission waits for new start evidence."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            ConnectionState.API_ERROR,
+            "Container logs unavailable (400); the selected instance may not have started.",
+        )
 
 
 class LogStream:
@@ -72,12 +84,12 @@ class LogStream:
                         if opened is not None:
                             opened()
                         continue
-                    for line in decoder.feed(chunk):
+                    for line in await parse_owned(partial(decoder.feed, chunk)):
                         self.require_current()
                         await sink(line)
                         count += 1
                 self.require_current()
-                for line in decoder.feed(b"", final=True):
+                for line in await parse_owned(partial(decoder.feed, b"", final=True)):
                     self.require_current()
                     await sink(line)
                     count += 1
@@ -93,11 +105,11 @@ class LogStream:
                     "Pod or container logs unavailable (404); the pod may have been deleted.",
                 ) from None
             if error.status == 400:
+                if not options.previous:
+                    raise ContainerNotStarted() from None
                 raise ConnectionProblem(
                     ConnectionState.API_ERROR,
-                    "Previous container logs unavailable (400); no previous instance may exist."
-                    if options.previous
-                    else "Container logs unavailable (400); the selected instance may not have started.",
+                    "Previous container logs unavailable (400); no previous instance may exist.",
                 ) from None
             raise
         return count
