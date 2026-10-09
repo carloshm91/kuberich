@@ -16,7 +16,7 @@ from packaging.version import Version
 
 from scripts.check_supply_chain import ROOT, read_json, selected_requirements
 from scripts.release import GitHub, dispatch_identity, request, verify_bundle
-from scripts.release_policy import HASH, REPOSITORY, release_tag, require_sha
+from scripts.release_policy import HASH, REPOSITORY, publication_tag, release_tag, require_sha
 from scripts.supply_chain import digest
 
 TAP = "carloshm91/homebrew-tap"
@@ -161,7 +161,7 @@ class TapGitHub:
 def propose(api: TapGitHub, text: str, sha: str, version: str) -> str:
     """Create an immutable update branch/PR; never merge or replace a ref."""
     require_sha(sha)
-    release_tag(version)
+    publication_tag(version)
     declared = re.search(r"^# Source version: ([^\n]+)$", text, re.M)
     if declared is None or declared[1] != version:
         raise ValueError("Formula source version differs from the update request")
@@ -240,6 +240,7 @@ def propose(api: TapGitHub, text: str, sha: str, version: str) -> str:
 def publish(bundle: Path, root: Path, source_api: GitHub, tap_api: TapGitHub) -> str:
     manifest = read_json(bundle / "release.json")
     sha, version = manifest["commit"], manifest["version"]
+    publication_tag(version)
     dispatch_identity(sha)
     verify_bundle(bundle, sha, version, root=root)
     repo = source_api(f"repos/{REPOSITORY}")

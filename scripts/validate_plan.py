@@ -1,10 +1,18 @@
 """Validate repository planning artifacts; no application coverage is claimed."""
 
+import ast
 import json
 import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+policy = {
+    node.targets[0].id: ast.literal_eval(node.value)
+    for node in ast.parse((ROOT / "scripts/release_policy.py").read_text()).body
+    if isinstance(node, ast.Assign)
+    and isinstance(node.targets[0], ast.Name)
+    and node.targets[0].id in {"FIRST_PUBLIC_VERSION", "QUALIFICATION_GATES", "RELEASE_GATES"}
+}
 plan = json.loads((ROOT / "docs/backlog.json").read_text())
 capabilities = json.loads((ROOT / "docs/capabilities.json").read_text())
 inventory = json.loads((ROOT / "docs/k9s-source-inventory.json").read_text())
@@ -42,6 +50,30 @@ assert len(plan["dependency_order"]) == len(tasks)
 positions = {ident: index for index, ident in enumerate(plan["dependency_order"])}
 for ident, task in tasks.items():
     assert all(positions[dep] < positions[ident] for dep in task["requires"]), ident
+delivery = plan["delivery"]
+assert delivery["first_public_version"] == policy["FIRST_PUBLIC_VERSION"]
+assert {delivery["publication_gate"]} == policy["RELEASE_GATES"]
+assert set(delivery["qualification_gates"]) == policy["QUALIFICATION_GATES"]
+assert delivery["feature_first"] is True
+assert delivery["source_opening_issue"] == 155 and delivery["project_visibility"] == "private"
+execution = (
+    delivery["feature_order"]
+    + delivery["final_qualification_order"]
+    + [delivery["publication_gate"]]
+    + delivery["expanded_docs_order"]
+)
+assert len(execution) == len(tasks) and set(execution) == tasks.keys()
+execution_positions = {ident: index for index, ident in enumerate(execution)}
+for ident, task in tasks.items():
+    assert all(execution_positions[dep] < execution_positions[ident] for dep in task["requires"]), (
+        ident
+    )
+assert policy["QUALIFICATION_GATES"] <= set(delivery["final_qualification_order"])
+extras = delivery["publication_extra_issues"]
+assert len(extras) == len(set(extras)) and all(
+    type(number) is int and number > 0 for number in extras
+)
+assert {124, 149, 150, 154, 155, 157} <= set(extras)
 for epic in epics.values():
     children = [task for task in tasks.values() if task["epic"] == epic["id"]]
     assert children, epic["id"]

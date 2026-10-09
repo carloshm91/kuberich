@@ -1,7 +1,7 @@
 # Homebrew source delivery
 
 D03 #37 prepares a source tap, verified formula generator and immutable update-PR
-automation. No public tap/package exists yet. D04 #40 must qualify macOS, approve
+automation. No public tap/package exists yet. D10 #89 must qualify macOS, approve
 public tap creation, publish the immutable artifacts and verify public installation.
 
 ## Local candidate
@@ -48,7 +48,7 @@ version/name and both channels' exact distribution hashes. The public source URL
 comes from that verified index response. The target must be the owner-approved
 public `carloshm91/homebrew-tap`, with main.
 
-Before D04, initialize the tap from `packaging/homebrew` and configure
+Before the approved D10 publication, initialize the tap from `packaging/homebrew` and configure
 `HOMEBREW_TAP_TOKEN` in the protected release environment. Prefer a short-lived
 GitHub App installation token. A fine-grained credential must be limited to that
 tap's contents/pull requests. The updater only changes `Formula/kuberich.rb`; it
@@ -60,7 +60,7 @@ It never merges, force-pushes or deletes refs. Existing published versions canno
 be downgraded or replaced. Retries verify existing branch bytes and reuse the PR;
 a partial failure does not rebuild or replace the branch. A mismatched branch
 requires investigation. First live cross-repository PR, online audit, macOS install
-and public version-to-version upgrades remain D04. Owned HTTP/Git fixtures and a
+and public version-to-version upgrades remain D10 #89. Owned HTTP/Git fixtures and a
 local RC do not establish public channel ownership.
 
 Sources: [Homebrew Python formulae](https://docs.brew.sh/Language-Specific-Formulae),

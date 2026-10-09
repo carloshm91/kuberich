@@ -5,27 +5,27 @@
   "milestones": [
     {
       "title": "v0.0.1",
-      "description": "First usable terminal preview: live pods, navigation, details, logs, exec, enforced quality, and verified PyPI/Homebrew installation."
+      "description": "Internal engineering checkpoint; no public 0.x tag, package or channel publication. First usable terminal preview: live pods, navigation, details, logs, exec, enforced quality, and verified PyPI/Homebrew installation."
     },
     {
       "title": "v0.1.0",
-      "description": "Standard resource families, safe workload mutations, editing, port forwarding, standalone executables, and performance qualification."
+      "description": "Internal engineering checkpoint; no public 0.x tag, package or channel publication. Standard resource families, safe workload mutations, editing, port forwarding, standalone executables, and performance qualification."
     },
     {
       "title": "v0.2.0",
-      "description": "Generic CRDs, multi-container logs, themes, configurable navigation/views, and external command plugins."
+      "description": "Internal engineering checkpoint; no public 0.x tag, package or channel publication. Generic CRDs, multi-container logs, themes, configurable navigation/views, and external command plugins."
     },
     {
       "title": "v0.3.0",
-      "description": "Resource metrics, cluster overview, relationships, RBAC analysis, guided troubleshooting, and sanitized exports."
+      "description": "Internal engineering checkpoint; no public 0.x tag, package or channel publication. Resource metrics, cluster overview, relationships, RBAC analysis, guided troubleshooting, and sanitized exports."
     },
     {
       "title": "v0.4.0",
-      "description": "Node operations, ephemeral debugging, HTTP benchmarks, and policy/quota exploration."
+      "description": "Internal engineering checkpoint; no public 0.x tag, package or channel publication. Node operations, ephemeral debugging, HTTP benchmarks, and policy/quota exploration."
     },
     {
       "title": "v0.5.0",
-      "description": "Extended delivery: Windows/PowerShell qualification, shell completion, OCI terminal image, and distribution-channel recipes."
+      "description": "Internal engineering checkpoint; no public 0.x tag, package or channel publication. Extended delivery: Windows/PowerShell qualification, shell completion, OCI terminal image, and distribution-channel recipes."
     },
     {
       "title": "v1.0.0",
@@ -33,7 +33,7 @@
     },
     {
       "title": "Later: documentation website",
-      "description": "Versioned MkDocs documentation on GitHub Pages after the v0.1.0 terminal product is usable and installable."
+      "description": "Expanded versioned MkDocs documentation after the first 1.0.0 product launch, deployed from GitHub Actions to Cloudflare Pages."
     }
   ],
   "epics": [
@@ -133,7 +133,7 @@
       "acceptance": [
         "README states the planning stage and briefly credits K9s; architecture, quality, release, and distribution decisions are checked in.",
         "Every planned task has an epic, milestone, priority, acceptance criteria, verification, and explicit blockers; the dependency graph is acyclic.",
-        "Git author email is repository-local, initial docs pass checks, main is protected, and the repository/project are accessible publicly."
+        "Git author email is repository-local, initial docs pass checks, main is protected, and the source repository is public under #155 while the separate project remains private."
       ],
       "verification": "Verify GitHub state, documentation links, planning data, CI, SSH push, and repository-local Git identity. No application release is created.",
       "priority": "P0"
@@ -1177,7 +1177,7 @@
     },
     {
       "id": "D05",
-      "title": "Ship qualified standalone Linux and macOS executables",
+      "title": "Build and qualify standalone Linux and macOS executables",
       "epic": "E09",
       "milestone": "v0.1.0",
       "requires": [
@@ -1188,7 +1188,7 @@
       "acceptance": [
         "Build on each supported OS/architecture; record minimum glibc/macOS versions and include Textual assets, certificates and dependency notices.",
         "Run on clean hosts without Python; basic browsing works while optional external-tool requirements remain explicit.",
-        "Publish checksums/provenance and document macOS signing/notarization status accurately; never instruct users to disable platform security globally."
+        "Retain checksums/provenance for the exact local candidate and document macOS signing/notarization status accurately; never instruct users to disable platform security globally. Public artifact publication remains D10 #89."
       ],
       "verification": "Clean-host CLI/UI smoke and disposable-cluster checks, archive layout validation and external credential-plugin/exec discovery tests.",
       "priority": "P1"
@@ -1354,10 +1354,10 @@
       "epic": "E11",
       "milestone": "Later: documentation website",
       "requires": [
-        "D06",
+        "D10",
         "W01"
       ],
-      "scope": "Create a searchable documentation site from validated user/developer docs after 0.1.0.",
+      "scope": "Create a searchable documentation site from validated user/developer docs after the first qualified 1.0.0 product release.",
       "acceptance": [
         "Organize installation, concepts, CLI, resources, customization/plugins, troubleshooting, security and contributing with version labels.",
         "Examples match installed behavior, navigation works on mobile and keyboard, and no unreleased feature is documented as available.",
@@ -1374,7 +1374,7 @@
       "requires": [
         "W02"
       ],
-      "scope": "Publish the approved documentation build with GitHub Pages and scoped Actions permissions.",
+      "scope": "Publish the approved documentation build with Cloudflare Pages via GitHub Actions and scoped Actions permissions.",
       "acceptance": [
         "Use a protected deployment environment and immutable build artifact; PR previews cannot publish production.",
         "Link website from README and releases only after its public URL works; custom domain is optional and requires domain-owner setup.",
@@ -1441,7 +1441,7 @@
     },
     {
       "id": "D04",
-      "title": "Publish and verify the first usable 0.0.1 release",
+      "title": "Qualify the core terminal engineering checkpoint",
       "epic": "E09",
       "milestone": "v0.0.1",
       "requires": [
@@ -1473,19 +1473,19 @@
         "Q04",
         "W01"
       ],
-      "scope": "Execute docs/releases.md only after the milestone behavior and required quality gates are complete.",
+      "scope": "After product features, qualify the exact candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Public publication belongs to D10 #89; this checkpoint creates no public 0.x artifacts or tags.",
       "acceptance": [
-        "Activate and verify automatic main-branch protection for Quality gate, Repository checks and DCO with strict up-to-date checks and admin enforcement before public release; repository/project visibility and publication require explicit maintainer authorization.",
-        "All milestone acceptance criteria have real evidence, line and branch coverage independently reach 90%, and critical deterministic modules reach 100%.",
-        "Run the declared installed-artifact, terminal, security and disposable-cluster checks on the exact release candidate; the maintainer approves publication in the release environment.",
-        "Publish immutable tag/artifacts/changelog, verify every promised installation channel and quickstart, update the capability matrix and notify the maintainer of usable behavior."
+        "Every scoped acceptance criterion has actual evidence; independent line/branch and changed-line coverage meet 90%, and designated deterministic critical modules meet 100%.",
+        "Run the complete supported Linux/macOS Python matrix, owned API/terminal/cluster behavior and audited exact wheel/sdist; D05 standalone and extended-platform outputs are qualified where required by this checkpoint.",
+        "Verify clean local installs, upgrade/uninstall, caller configuration invariance, hashes and provenance using the tested bytes. Retain unavailable platform/provider evidence as incomplete; deferring publication does not complete qualification.",
+        "Record measured results and capability status. Public PyPI/TestPyPI ownership/OIDC, main/environment protection, tap/registry activation, immutable public tags/artifacts, website/DNS and public-channel trials remain D10 #89."
       ],
-      "verification": "Attach CI, coverage, artifact digests, installation transcripts and manual trial evidence; close the milestone only after public installation verification.",
+      "verification": "Attach exact source/artifact pins, all supported platform results, independent coverage, owned-cluster/PTY/install/audit evidence. Close only after scoped engineering qualification; no public publication occurs here.",
       "priority": "P0"
     },
     {
       "id": "D06",
-      "title": "Publish and verify the workload-operations release",
+      "title": "Qualify the workload operations engineering checkpoint",
       "epic": "E09",
       "milestone": "v0.1.0",
       "requires": [
@@ -1501,18 +1501,19 @@
         "Q03",
         "D04"
       ],
-      "scope": "Execute docs/releases.md only after the milestone behavior and required quality gates are complete.",
+      "scope": "After product features, qualify the exact candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Public publication belongs to D10 #89; this checkpoint creates no public 0.x artifacts or tags.",
       "acceptance": [
-        "All milestone acceptance criteria have real evidence, line and branch coverage independently reach 90%, and critical deterministic modules reach 100%.",
-        "Run the declared installed-artifact, terminal, security and disposable-cluster checks on the exact release candidate; the maintainer approves publication in the release environment.",
-        "Publish immutable tag/artifacts/changelog, verify every promised installation channel and quickstart, update the capability matrix and notify the maintainer of usable behavior."
+        "Every scoped acceptance criterion has actual evidence; independent line/branch and changed-line coverage meet 90%, and designated deterministic critical modules meet 100%.",
+        "Run the complete supported Linux/macOS Python matrix, owned API/terminal/cluster behavior and audited exact wheel/sdist; D05 standalone and extended-platform outputs are qualified where required by this checkpoint.",
+        "Verify clean local installs, upgrade/uninstall, caller configuration invariance, hashes and provenance using the tested bytes. Retain unavailable platform/provider evidence as incomplete; deferring publication does not complete qualification.",
+        "Record measured results and capability status. Public PyPI/TestPyPI ownership/OIDC, main/environment protection, tap/registry activation, immutable public tags/artifacts, website/DNS and public-channel trials remain D10 #89."
       ],
-      "verification": "Attach CI, coverage, artifact digests, installation transcripts and manual trial evidence; close the milestone only after public installation verification.",
+      "verification": "Attach exact source/artifact pins, all supported platform results, independent coverage, owned-cluster/PTY/install/audit evidence. Close only after scoped engineering qualification; no public publication occurs here.",
       "priority": "P0"
     },
     {
       "id": "D07",
-      "title": "Publish and verify the extensibility release",
+      "title": "Qualify the extensibility engineering checkpoint",
       "epic": "E09",
       "milestone": "v0.2.0",
       "requires": [
@@ -1531,18 +1532,19 @@
         "U06",
         "D06"
       ],
-      "scope": "Execute docs/releases.md only after the milestone behavior and required quality gates are complete.",
+      "scope": "After product features, qualify the exact candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Public publication belongs to D10 #89; this checkpoint creates no public 0.x artifacts or tags.",
       "acceptance": [
-        "All milestone acceptance criteria have real evidence, line and branch coverage independently reach 90%, and critical deterministic modules reach 100%.",
-        "Run the declared installed-artifact, terminal, security and disposable-cluster checks on the exact release candidate; the maintainer approves publication in the release environment.",
-        "Publish immutable tag/artifacts/changelog, verify every promised installation channel and quickstart, update the capability matrix and notify the maintainer of usable behavior."
+        "Every scoped acceptance criterion has actual evidence; independent line/branch and changed-line coverage meet 90%, and designated deterministic critical modules meet 100%.",
+        "Run the complete supported Linux/macOS Python matrix, owned API/terminal/cluster behavior and audited exact wheel/sdist; D05 standalone and extended-platform outputs are qualified where required by this checkpoint.",
+        "Verify clean local installs, upgrade/uninstall, caller configuration invariance, hashes and provenance using the tested bytes. Retain unavailable platform/provider evidence as incomplete; deferring publication does not complete qualification.",
+        "Record measured results and capability status. Public PyPI/TestPyPI ownership/OIDC, main/environment protection, tap/registry activation, immutable public tags/artifacts, website/DNS and public-channel trials remain D10 #89."
       ],
-      "verification": "Attach CI, coverage, artifact digests, installation transcripts and manual trial evidence; close the milestone only after public installation verification.",
+      "verification": "Attach exact source/artifact pins, all supported platform results, independent coverage, owned-cluster/PTY/install/audit evidence. Close only after scoped engineering qualification; no public publication occurs here.",
       "priority": "P0"
     },
     {
       "id": "D08",
-      "title": "Publish and verify the observability release",
+      "title": "Qualify the observability engineering checkpoint",
       "epic": "E09",
       "milestone": "v0.3.0",
       "requires": [
@@ -1557,18 +1559,19 @@
         "O07",
         "D07"
       ],
-      "scope": "Execute docs/releases.md only after the milestone behavior and required quality gates are complete.",
+      "scope": "After product features, qualify the exact candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Public publication belongs to D10 #89; this checkpoint creates no public 0.x artifacts or tags.",
       "acceptance": [
-        "All milestone acceptance criteria have real evidence, line and branch coverage independently reach 90%, and critical deterministic modules reach 100%.",
-        "Run the declared installed-artifact, terminal, security and disposable-cluster checks on the exact release candidate; the maintainer approves publication in the release environment.",
-        "Publish immutable tag/artifacts/changelog, verify every promised installation channel and quickstart, update the capability matrix and notify the maintainer of usable behavior."
+        "Every scoped acceptance criterion has actual evidence; independent line/branch and changed-line coverage meet 90%, and designated deterministic critical modules meet 100%.",
+        "Run the complete supported Linux/macOS Python matrix, owned API/terminal/cluster behavior and audited exact wheel/sdist; D05 standalone and extended-platform outputs are qualified where required by this checkpoint.",
+        "Verify clean local installs, upgrade/uninstall, caller configuration invariance, hashes and provenance using the tested bytes. Retain unavailable platform/provider evidence as incomplete; deferring publication does not complete qualification.",
+        "Record measured results and capability status. Public PyPI/TestPyPI ownership/OIDC, main/environment protection, tap/registry activation, immutable public tags/artifacts, website/DNS and public-channel trials remain D10 #89."
       ],
-      "verification": "Attach CI, coverage, artifact digests, installation transcripts and manual trial evidence; close the milestone only after public installation verification.",
+      "verification": "Attach exact source/artifact pins, all supported platform results, independent coverage, owned-cluster/PTY/install/audit evidence. Close only after scoped engineering qualification; no public publication occurs here.",
       "priority": "P0"
     },
     {
       "id": "D09",
-      "title": "Publish and verify the advanced-operations release",
+      "title": "Qualify the advanced operations engineering checkpoint",
       "epic": "E09",
       "milestone": "v0.4.0",
       "requires": [
@@ -1580,18 +1583,19 @@
         "Q07",
         "D08"
       ],
-      "scope": "Execute docs/releases.md only after the milestone behavior and required quality gates are complete.",
+      "scope": "After product features, qualify the exact candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Public publication belongs to D10 #89; this checkpoint creates no public 0.x artifacts or tags.",
       "acceptance": [
-        "All milestone acceptance criteria have real evidence, line and branch coverage independently reach 90%, and critical deterministic modules reach 100%.",
-        "Run the declared installed-artifact, terminal, security and disposable-cluster checks on the exact release candidate; the maintainer approves publication in the release environment.",
-        "Publish immutable tag/artifacts/changelog, verify every promised installation channel and quickstart, update the capability matrix and notify the maintainer of usable behavior."
+        "Every scoped acceptance criterion has actual evidence; independent line/branch and changed-line coverage meet 90%, and designated deterministic critical modules meet 100%.",
+        "Run the complete supported Linux/macOS Python matrix, owned API/terminal/cluster behavior and audited exact wheel/sdist; D05 standalone and extended-platform outputs are qualified where required by this checkpoint.",
+        "Verify clean local installs, upgrade/uninstall, caller configuration invariance, hashes and provenance using the tested bytes. Retain unavailable platform/provider evidence as incomplete; deferring publication does not complete qualification.",
+        "Record measured results and capability status. Public PyPI/TestPyPI ownership/OIDC, main/environment protection, tap/registry activation, immutable public tags/artifacts, website/DNS and public-channel trials remain D10 #89."
       ],
-      "verification": "Attach CI, coverage, artifact digests, installation transcripts and manual trial evidence; close the milestone only after public installation verification.",
+      "verification": "Attach exact source/artifact pins, all supported platform results, independent coverage, owned-cluster/PTY/install/audit evidence. Close only after scoped engineering qualification; no public publication occurs here.",
       "priority": "P0"
     },
     {
       "id": "D11",
-      "title": "Publish and verify the extended-platform release",
+      "title": "Qualify the extended platform engineering checkpoint",
       "epic": "E09",
       "milestone": "v0.5.0",
       "requires": [
@@ -1600,18 +1604,19 @@
         "D14",
         "D09"
       ],
-      "scope": "Execute docs/releases.md only after the milestone behavior and required quality gates are complete.",
+      "scope": "After product features, qualify the exact candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Public publication belongs to D10 #89; this checkpoint creates no public 0.x artifacts or tags.",
       "acceptance": [
-        "All milestone acceptance criteria have real evidence, line and branch coverage independently reach 90%, and critical deterministic modules reach 100%.",
-        "Run the declared installed-artifact, terminal, security and disposable-cluster checks on the exact release candidate; the maintainer approves publication in the release environment.",
-        "Publish immutable tag/artifacts/changelog, verify every promised installation channel and quickstart, update the capability matrix and notify the maintainer of usable behavior."
+        "Every scoped acceptance criterion has actual evidence; independent line/branch and changed-line coverage meet 90%, and designated deterministic critical modules meet 100%.",
+        "Run the complete supported Linux/macOS Python matrix, owned API/terminal/cluster behavior and audited exact wheel/sdist; D05 standalone and extended-platform outputs are qualified where required by this checkpoint.",
+        "Verify clean local installs, upgrade/uninstall, caller configuration invariance, hashes and provenance using the tested bytes. Retain unavailable platform/provider evidence as incomplete; deferring publication does not complete qualification.",
+        "Record measured results and capability status. Public PyPI/TestPyPI ownership/OIDC, main/environment protection, tap/registry activation, immutable public tags/artifacts, website/DNS and public-channel trials remain D10 #89."
       ],
-      "verification": "Attach CI, coverage, artifact digests, installation transcripts and manual trial evidence; close the milestone only after public installation verification.",
+      "verification": "Attach exact source/artifact pins, all supported platform results, independent coverage, owned-cluster/PTY/install/audit evidence. Close only after scoped engineering qualification; no public publication occurs here.",
       "priority": "P0"
     },
     {
       "id": "D10",
-      "title": "Publish the qualified stable 1.0.0 release",
+      "title": "Publish and verify the first qualified 1.0.0 product release",
       "epic": "E09",
       "milestone": "v1.0.0",
       "requires": [
@@ -1619,13 +1624,15 @@
         "Q06",
         "D11"
       ],
-      "scope": "Execute docs/releases.md only after the milestone behavior and required quality gates are complete.",
+      "scope": "Own the first public product launch after all engineering checkpoints, Q05 compatibility and Q06 capability audit. Preserve actual prerequisites and carry #150 final-candidate site requirements. Source opening #155 does not authorize package/site/tap/DNS publication.",
       "acceptance": [
-        "All milestone acceptance criteria have real evidence, line and branch coverage independently reach 90%, and critical deterministic modules reach 100%.",
-        "Run the declared installed-artifact, terminal, security and disposable-cluster checks on the exact release candidate; the maintainer approves publication in the release environment.",
-        "Publish immutable tag/artifacts/changelog, verify every promised installation channel and quickstart, update the capability matrix and notify the maintainer of usable behavior."
+        "All required features and intermediate engineering gates have measured evidence; the exact candidate passes independent coverage, full supported native matrix, performance, security, installed artifacts and three consecutive owned-cluster/fault rehearsals.",
+        "Enable and verify strict protected main with Quality gate, Repository checks and DCO, admin enforcement, protected publication environments, exact PyPI/TestPyPI ownership/OIDC and approved public tap/channel ownership. The separate GitHub project remains private.",
+        "Prepare the immutable 1.0.0 candidate (canonical 1.0.0rcN only if explicitly approved), changelog/migrations, provenance and actual install commands. Obtain explicit maintainer approval for the concrete tag/artifact/channel/site/DNS publication. Never publish a 0.x engineering checkpoint.",
+        "Rebuild and browser/accessibility/quickstart-verify the initial landing and guides from the exact candidate. Prepare GitHub Actions deployment of the reviewed static bytes to Cloudflare Pages at kuberich.com and docs.kuberich.com, with protected credentials, manifest/deployment association and rollback.",
+        "After approval, publish the tested immutable bytes; verify every promised public installation/upgrade/uninstall channel, HTTPS/domains/headers/links and published quickstart. Close only after real public verification; expanded/versioned docs remain W02/W03."
       ],
-      "verification": "Attach CI, coverage, artifact digests, installation transcripts and manual trial evidence; close the milestone only after public installation verification.",
+      "verification": "Require exact full supported matrix, performance/compatibility/audit records, source/artifact/site digests, owned-cluster repetitions and clean installed candidate behavior before approval. Then retain actual public tag/release/package/tap/deployment IDs, installed channel transcripts, TLS/header checks and rollback evidence.",
       "priority": "P0"
     }
   ],
@@ -1709,5 +1716,113 @@
     "D10",
     "W02",
     "W03"
-  ]
+  ],
+  "delivery": {
+    "first_public_version": "1.0.0",
+    "publication_gate": "D10",
+    "source_opening_issue": 155,
+    "project_visibility": "private",
+    "qualification_gates": [
+      "D04",
+      "D06",
+      "D07",
+      "D08",
+      "D09",
+      "D11"
+    ],
+    "feature_first": true,
+    "feature_order": [
+      "F00",
+      "F01",
+      "F02",
+      "F03",
+      "B01",
+      "F04",
+      "C01",
+      "F05",
+      "C06",
+      "C07",
+      "C02",
+      "C03",
+      "C04",
+      "B02",
+      "B03",
+      "B04",
+      "S01",
+      "S02",
+      "S03",
+      "S04",
+      "Q02",
+      "D01",
+      "Q04",
+      "D02",
+      "D03",
+      "Q01",
+      "W01",
+      "B05",
+      "S05",
+      "M01",
+      "M02",
+      "M03",
+      "M04",
+      "C08",
+      "S07",
+      "C05",
+      "B06",
+      "S06",
+      "M05",
+      "U01",
+      "U02",
+      "U03",
+      "U04",
+      "U05",
+      "B07",
+      "S08",
+      "M08",
+      "U06",
+      "M06",
+      "M07",
+      "O01",
+      "O02",
+      "O03",
+      "O04",
+      "O05",
+      "O06",
+      "O07",
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "Q07"
+    ],
+    "final_qualification_order": [
+      "D05",
+      "D12",
+      "D13",
+      "D14",
+      "Q03",
+      "D04",
+      "D06",
+      "D07",
+      "D08",
+      "D09",
+      "D11",
+      "Q05",
+      "Q06"
+    ],
+    "expanded_docs_order": [
+      "W02",
+      "W03"
+    ],
+    "publication_extra_issues": [
+      124,
+      149,
+      150,
+      154,
+      155,
+      157
+    ],
+    "website_hosting": "GitHub Actions to Cloudflare Pages"
+  }
 }

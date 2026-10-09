@@ -32,6 +32,7 @@ from scripts.release_policy import (
     REPOSITORY,
     milestone_readiness,
     missing_files,
+    publication_tag,
     release_preflight,
     release_tag,
     require_sha,
@@ -292,7 +293,7 @@ def pypi_remaining(directory: Path, version: str, index: str, output: Path) -> l
 
 def immutable_tag(api: GitHub, sha: str, version: str) -> None:
     require_sha(sha)
-    tag = release_tag(version)
+    tag = publication_tag(version)
     prefix = f"repos/{REPOSITORY}"
     existing = api(f"{prefix}/git/ref/tags/{tag}")
     if existing is not None:
@@ -321,7 +322,7 @@ def immutable_tag(api: GitHub, sha: str, version: str) -> None:
 
 
 def github_assets(api: GitHub, directory: Path, sha: str, version: str) -> list[str]:
-    tag = release_tag(version)
+    tag = publication_tag(version)
     prefix = f"repos/{REPOSITORY}"
     release = api(f"{prefix}/releases/tags/{tag}")
     if release is None:

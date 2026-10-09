@@ -9,19 +9,21 @@ or a placeholder screen.
 
 | Milestone | Usable outcome |
 | --- | --- |
-| v0.0.1 | Installable preview: contexts/namespaces, live pods, filters, details, logs, exec, PyPI and Homebrew |
+| v0.0.1 | Internal core checkpoint: contexts/namespaces, live pods, filters, details, logs, exec and local distribution candidates |
 | v0.1.0 | Workload operations: standard resource families, edit/diff, scale/restart/rollback, delete/jobs, port-forward, standalone binaries |
 | v0.2.0 | Extensibility: generic CRDs, configurable views/keys/themes, external plugins, multi-container logs, explicit secret handling |
 | v0.3.0 | Observability: metrics, cluster overview, resource relationships, RBAC analysis, guided troubleshooting, sanitized exports, Helm, local manifests and image scans |
 | v0.4.0 | Advanced operations: node shell, cordon/drain, ephemeral debugging, service benchmarks, policy/quota exploration |
 | v0.5.0 | Extended delivery: Windows, shell completion, OCI image and tested distribution recipes |
-| v1.0.0 | Qualified stability: supported API/terminal/platform matrix, compatibility contracts, migration tests, full capability audit |
-| Later: documentation website | Expanded, versioned MkDocs documentation after the 0.1.0 product release |
+| v1.0.0 | First public product: all feature checkpoints, supported API/terminal/platform matrix, compatibility, performance, install and full capability qualification |
+| Later: documentation website | Expanded, versioned MkDocs documentation after the first 1.0.0 product release |
 
-Patch releases such as 0.0.2 and 0.1.1 repair released behavior as needed. They
-are created for actual fixes, not prefilled with speculative work. Feature
-milestones have no invented delivery dates. Scope changes require a documented
-issue and an updated roadmap.
+The 0.x labels are internal engineering checkpoints, not public releases.
+Features come first; final platform/performance/install qualification follows,
+then #89 owns first-product publication. Compatible fixes after launch use patch
+versions such as 1.0.1; compatible capabilities use minor versions such as 1.1.0.
+No delivery dates or speculative patch releases are invented. Scope changes
+require an issue and the reviewed planning map.
 
 ## Public launch preparation
 
@@ -39,12 +41,12 @@ name. The maintainer confirmed purchasing `kuberich.com` on 2026-10-08.
 [The focused migration and name review #149](https://github.com/carloshm91/kuberich/issues/149)
 records pronunciation, namespace observations, existing commercial uses and the
 unverified trademark-search boundary; the maintainer does not require trademark
-investigation as a migration prerequisite. A reviewed and tested private identity
-migration precedes the public release.
+investigation as a migration prerequisite. The reviewed identity migration #149 is delivered; source opening #155 is
+complete. Product publication remains separately qualified.
 
 The proposed address structure is `kuberich.com` for the landing page and
 `docs.kuberich.com` for documentation. [Initial launch material #150](https://github.com/carloshm91/kuberich/issues/150)
-is prepared privately before #40; expanded versioned documentation remains
+is prepared locally before #89; expanded versioned documentation remains
 #90/#91 after the installable product. Domain ownership is maintainer-confirmed;
 the website and documentation hosting are not published or verified yet. DNS
 changes, hosting publication and repository visibility changes require explicit
@@ -54,9 +56,9 @@ publication deadline.
 ## Delivery policy
 
 The [backlog](backlog.md) lists epics, implementation tasks, blockers, and the
-recommended order. Work on one implementation task at a time. Finish quality
-gates before dependent features. A release gate verifies all required tasks
-in its milestone and all installation channels promised for that release.
+recommended order. Work on one implementation task at a time. Preserve every feature dependency and required PR check. Complete the dedicated
+final engineering qualification before #89; deferral does not complete a gate.
+Publication verifies all transitive features and promised public channels.
 
 The initial planning/preparation task can be closed when the repository,
 documentation, GitHub backlog, project, and protections are in place. That does
@@ -89,13 +91,13 @@ The table below is an overview, not the full feature list.
 ## Deliberate boundaries
 
 No Textual Web, hosted backend, mandatory account, telemetry, or AI service is
-required for the product. The shell experience is terminal handoff; an embedded
-terminal emulator is a separate future proposal. Windows binaries, distribution
+required for the product. The shell supports an embedded terminal and an explicit native-terminal handoff. Windows binaries, distribution
 repositories such as apt/rpm, and Homebrew/core submission are
 tracked in v0.5.0 after the initial supported channels are reliable. No future work is advertised
 as an implemented capability.
 
-## Next step
+## Execution order
 
-Complete planning, then start F01 with GPT-6.1 Sol and implement the package
-bootstrap. Continue through the issue dependency order with one task in progress.
+Follow the feature-first order in [backlog.json](backlog.json), including tracked
+preview refinements. The product implementation is already in progress; select
+the next unblocked issue rather than restarting completed bootstrap work.

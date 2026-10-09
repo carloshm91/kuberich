@@ -98,7 +98,7 @@ def test_altered_release_bundle_cannot_pass_verification(release_candidate, tmp_
         wheel.symlink_to(tmp_path / "outside.whl")
     elif mutation in {"source", "version", "candidate"}:
         key = {"source": "commit", "version": "version", "candidate": "candidate_only"}[mutation]
-        manifest[key] = {"source": "d" * 40, "version": "0.0.1", "candidate": False}[mutation]
+        manifest[key] = {"source": "d" * 40, "version": "1.0.0", "candidate": False}[mutation]
         write_json(bundle / "release.json", manifest)
     else:
         (bundle / "artifacts/security/locked-NOTICES.txt").write_text("rewritten notice")
@@ -133,7 +133,7 @@ def test_actual_artifact_names_and_metadata_reject_wrong_version(artifacts, tmp_
         shutil.copyfile(path, tmp_path / path.name)
     metadata(tmp_path, PROJECT["version"])
     with pytest.raises(ValueError):
-        metadata(tmp_path, "0.0.1")
+        metadata(tmp_path, "1.0.0")
 
 
 def test_partial_pypi_staging_preserves_the_exact_missing_file_bytes(
@@ -143,43 +143,43 @@ def test_partial_pypi_staging_preserves_the_exact_missing_file_bytes(
     (bundle / "dist").mkdir(parents=True)
     expected = {}
     for path in artifacts:
-        name = path.name.replace(PROJECT["version"], "0.0.1")
+        name = path.name.replace(PROJECT["version"], "1.0.0")
         shutil.copyfile(path, bundle / "dist" / name)
         expected[name] = digest(path)
     with release_server(tmp_path / "service") as server:
         names = sorted(expected)
         value = {
-            "info": {"name": "kuberich", "version": "0.0.1"},
+            "info": {"name": "kuberich", "version": "1.0.0"},
             "urls": [
                 {"filename": names[0], "digests": {"sha256": expected[names[0]]}, "yanked": False}
             ],
         }
-        server.reads["/pypi/kuberich/0.0.1/json"] = value
+        server.reads["/pypi/kuberich/1.0.0/json"] = value
         real_request = release.request
 
         def local_request(url):
-            assert url == "https://test.pypi.org/pypi/kuberich/0.0.1/json"
-            return real_request(server.url + "pypi/kuberich/0.0.1/json")
+            assert url == "https://test.pypi.org/pypi/kuberich/1.0.0/json"
+            return real_request(server.url + "pypi/kuberich/1.0.0/json")
 
         monkeypatch.setattr(release, "request", local_request)
         output = tmp_path / "missing"
-        assert release.pypi_remaining(bundle, "0.0.1", "testpypi", output) == [names[1]]
+        assert release.pypi_remaining(bundle, "1.0.0", "testpypi", output) == [names[1]]
         assert digest(output / names[1]) == expected[names[1]]
         assert server.posts == []
         value["urls"][0]["digests"]["sha256"] = "f" * 64
         with pytest.raises(ValueError):
-            release.pypi_remaining(bundle, "0.0.1", "testpypi", tmp_path / "bad")
+            release.pypi_remaining(bundle, "1.0.0", "testpypi", tmp_path / "bad")
         assert not (tmp_path / "bad").exists()
 
 
 def test_actual_canonical_rc_build_audit_bundle_and_installed_version(canonical_release):
     source, bundle, sha = canonical_release
-    assert verify_bundle(bundle, sha, "0.0.1rc1", root=source)["tag"] == "v0.0.1-rc.1"
+    assert verify_bundle(bundle, sha, "1.0.0rc1", root=source)["tag"] == "v1.0.0-rc.1"
     project = source / "pyproject.toml"
     original = project.read_text()
     try:
         project.write_text(original + "\n# dirty release input\n")
         with pytest.raises(ValueError, match="clean committed"):
-            verify_bundle(bundle, sha, "0.0.1rc1", root=source)
+            verify_bundle(bundle, sha, "1.0.0rc1", root=source)
     finally:
         project.write_text(original)

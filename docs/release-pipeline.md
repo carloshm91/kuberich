@@ -2,15 +2,17 @@
 
 D02 #36 implements `.github/workflows/release.yml` and
 `python -m scripts.release`. This is distribution automation, not a published
-version. Development still reports `0.0.1.dev0`. Publication, TestPyPI enrollment,
-visibility changes and the first live release remain D04 #40.
+version. Development still reports `0.0.1.dev0`. The source repository is public under #155. TestPyPI enrollment, public channel
+activation, enforced protection and first 1.0.0 publication remain D10 #89.
 
 ## Qualification and approval
 
 The maintainer dispatches the workflow from `main`, with a complete commit SHA,
 canonical `X.Y.Z` or `X.Y.ZrcN`, destination and `dry_run` (default **true**).
 Tags normalize to `vX.Y.Z` or `vX.Y.Z-rc.N`. Development/post/local/alpha/beta
-versions and noncanonical spellings fail. One global release concurrency group
+versions and noncanonical spellings fail. Release bases below 1.0.0, including
+0.x RCs, fail before external publication requests. Offline canonical candidate
+verification remains available. One global release concurrency group
 queues dispatches; it never cancels an in-progress release.
 
 Before preparing or publishing, require all of the following:
@@ -25,8 +27,8 @@ Before preparing or publishing, require all of the following:
   the workflow never calls an environment-approval API.
 - A merged in-repository PR with the same Git tree, successful DCO from its actual
   GitHub App, and the preserved maintainer sign-off on the squash commit.
-- All implementation prerequisites of the pinned source plan's applicable release
-  milestone are closed in GitHub. The release gate itself stays open until public
+- All transitive implementation prerequisites and tracked additional launch issues
+  from the pinned source plan are closed in GitHub. The release gate itself stays open until public
   channel verification finishes; a patch uses its established milestone baseline.
 - Successful latest main-dispatch quality and main-push repository runs for that exact commit,
   including **every Linux/macOS Python 3.12/3.13/3.14 job**, not a green aggregate
@@ -65,12 +67,12 @@ workflow `release.yml`, and the corresponding exact environment name above.
 GitHub login does not prove index ownership or reserve the name. Use OIDC;
 this workflow has no PyPI password/API-token secret or long-lived publisher key.
 
-The current private GitHub plan cannot enforce main protection (403), the
-existing `release` environment has no required reviewers, and hosted checks
-cannot start because of billing/spending. Therefore current hosted dry-run and
-publication validation must refuse. The local-merge exception never overrides
-release qualification. Live TestPyPI, OIDC/attestation, full-platform CI,
-protection configuration and public installation evidence remain #40.
+The source repository is now public and hosted development checks run again.
+First-publication readiness still requires observing and enforcing the actual
+main/environment rules, index ownership, OIDC/attestation, full release matrix
+and public installation evidence under #89. Neither source opening nor the old
+temporary local-merge exception bypasses those checks. The workflow must refuse
+when any live condition is missing; development CI is not release qualification.
 
 ## Local candidate without publication
 
@@ -112,7 +114,7 @@ accept changed content. If an expired/missing candidate or changed sidecar canno
 be recovered safely, qualify a new patch rather than moving a tag or replacing
 published bytes. Follow [release recovery](releases.md#failure-and-recovery) for
 incidents/yanks. Publication success is confirmed by external channel checks in
-#40, not inferred from local tests.
+#89, not inferred from local tests.
 
 Sources: [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/using-a-publisher/),
 [pending publishers](https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/),

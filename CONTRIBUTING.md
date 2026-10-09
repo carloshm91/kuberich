@@ -114,8 +114,9 @@ commit trailer, separate from cryptographic commit signing. Preserve the trailer
 in the squash commit and do not sign off on behalf of another contributor.
 
 Version changes happen in release PRs. Patches repair behavior; minor versions
-add capabilities. Before 1.0, incompatible changes also require a minor version
-and migration notes. See [the exact release procedure](docs/releases.md).
+add capabilities. The first public product is 1.0.0; intermediate 0.x labels are engineering
+checkpoints and are not published. Incompatible public changes require a major
+version and migration notes. See [the exact release procedure](docs/releases.md).
 
 ## Safety and attribution
 

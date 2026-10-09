@@ -1,6 +1,6 @@
 # Initial landing page and launch documentation
 
-#150 prepares the first static product website privately. The proposed public
+#150 delivered local preparation of the initial static product website. The proposed public
 addresses are **kuberich.com** and **docs.kuberich.com**; the maintainer confirmed
 buying the domain. Neither address is claimed to host this site yet.
 Repository visibility, hosting and DNS remain unchanged by this implementation.
@@ -31,25 +31,33 @@ instructions are in [website/README](../website/README.md).
 
 ## Proposed hosting: Cloudflare Pages
 
-Use two Direct Upload projects: a proposed `kuberich-site` for
-`artifacts/site/www`, and `kuberich-docs` for `artifacts/site/docs`. Uploading the
-reviewed static bytes keeps the private Git repository disconnected from the
-host. Project names are proposals, not reserved resources. The dashboard supports
-uploading a built directory, as described in [Direct Upload](https://developers.cloudflare.com/pages/get-started/direct-upload/).
-Account/plan selection and actual upload remain owner decisions; no deployment
-credential or hosting account was created.
+Use two proposed Direct Upload projects: `kuberich-site` for
+`artifacts/site/www` and `kuberich-docs` for `artifacts/site/docs`. GitHub Actions
+will deploy the reviewed prebuilt directories with Wrangler after feature and
+final release qualification. Direct Upload supports this CI workflow;
+see [Cloudflare's GitHub Actions procedure](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/).
+Project names are proposals, not reserved resources. No project, deployment,
+credential or DNS record is created by #154.
+
+Prepare a protected maintainer-reviewed deployment environment, a pinned Wrangler
+version/action, `CLOUDFLARE_ACCOUNT_ID` and a limited Pages Edit API token held in
+that environment's secrets. Ordinary/fork PRs build/check only and cannot deploy
+production. Deploy the immutable checked site artifact rather than rebuilding
+inside the publishing job. Record the source commit, application candidate, build
+manifest and provider deployment IDs together. Implement and verify this concrete
+workflow in #89; an empty placeholder workflow does not qualify deployment.
 
 Before an approved deployment:
 
-1. Freeze and qualify the exact release candidate through #40. Regenerate the
+1. Freeze and qualify the exact release candidate through #89. Regenerate the
    guides and installed version from that source. Replace preview availability
    text only with actual verified publication/install results; remove noindex
    only as part of the separately approved public launch.
 2. Rebuild/check/browser-verify the exact website bytes, retain the manifest,
    screenshots and artifact digests, and obtain explicit website/visibility/DNS
    approval from the maintainer for the concrete result.
-3. After approval, create the two proposed Direct Upload projects and upload each
-   exact output directory. Even provider preview URLs are a publication step.
+3. After approval, create the two proposed Direct Upload projects and dispatch
+   the protected GitHub Actions job to deploy each exact output directory. Even provider preview URLs are a publication step.
    Record the actual deployment/project IDs and URL-to-manifest association.
 4. Associate kuberich.com with the landing project and docs.kuberich.com with the
    docs project in Pages before adding DNS records. For the apex, Pages requires
@@ -61,9 +69,9 @@ Before an approved deployment:
    local assets, direct guide URLs, 404 behavior, redirects and the `_headers`
    policy at the actual hosts. The browser rehearsal serves the declared headers;
    that does not establish provider enforcement or successful TLS provisioning.
-6. Record the real publication and public-install verification separately. Keep
-   #150 open until the exact release-candidate quickstart and approved publication
-   acceptance are evidenced. Expanded/versioned docs remain #90/#91.
+6. Record actual publication and public-install verification under #89. #150
+   closed its local preparation scope; its final-candidate quickstart and public
+   acceptance moved to #89. Expanded/versioned docs remain #90/#91.
 
 No DNS records are precomputed from a guessed project URL. No registrar transfer
 is needed just to use a separately approved DNS provider.
