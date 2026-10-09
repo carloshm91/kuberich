@@ -48,8 +48,11 @@ measured 100% lines/branches. The owned-cluster command is
 `uv run --locked --python 3.12 python -m scripts.verify_custom_resources_kind --kind artifacts/operations-46/tools/kind`.
 It verifies actual CRDs, Table events, version/removal refresh and RBAC. Its
 receipt labels representation injections and confirms cluster deletion.
-Whole-candidate/platform checks remain merge requirements, recorded in the
-[acceptance evidence](acceptance/custom-resources.md) and live issue.
+PR #165 merged after all eight required checks passed. Each Linux
+3.12/3.13/3.14 and macOS 3.12 job passed 3,739 tests with all 40 then-critical
+modules at 100% lines/branches. The local whole suite passed 3,739 tests in
+2,523.05 seconds. See [acceptance evidence](acceptance/custom-resources.md) and
+the [final measured receipt](https://github.com/carloshm91/kuberich/issues/52#issuecomment-6079451913).
 
 ## Attachment and file-transfer checkpoint: S07 #48
 

@@ -118,6 +118,12 @@ server columns/full objects, versions, alias collisions, install/remove refresh
 and actual restricted RBAC. Its receipt labels forced legacy/plain-JSON
 representations supplied by an owned loopback gateway; status denials are actual
 cluster responses. Visible generic custom-resource UI remains B06 #53.
+B06's implementation adds typed generic row/column decisions in `domain/custom.py`
+to the critical inventory. Its initial focused projection/widget cases qualify
+header/schema replacement, literal labels, unknown values, redaction and retained
+UID selection. These are foundation receipts, not completed generic navigation
+or whole-candidate qualification; the issue remains open until its owned worker,
+command/history, inspection, native and real-cluster integration passes.
 C08 adds bounded credential-response validation and captured proxy/TLS decisions
 in `domain/exec_credentials.py` and `domain/proxies.py` to the 100% critical
 inventory. Real token-file/certificate renewal, HTTP CONNECT and SOCKS5 contracts
