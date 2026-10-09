@@ -21,6 +21,9 @@ read-only policy handle `--command` / `-c` at launch. Arguments preserve casing.
 | `attach` | Choose a running container; `a` connects to its existing main process |
 | `upload`, `download` | Choose a container; `u`/`d` opens explicit copy review |
 | `status`, `retry` | Open connection details / reconnect |
+| `resource NAME[.GROUP][/VERSION] [NAMESPACE or *]` | Browse a discovered API family or an explicit served version |
+| `refresh` | Renew discovery and the selected resource watch on the current client |
+| `columns`, `columns cN ...`, `columns default`, `columns none` | Inspect/configure transient generic server columns |
 | `back`, `forward` | Restore the previous / next navigation state |
 | `help`, `?` | Show actual keyboard actions and limits |
 | `quit`, `q`, `exit` | Exit and restore the terminal |
@@ -52,7 +55,8 @@ remaining input width is visible. Empty input retains its placeholder. Suggestio
 never resize the bar or cover resources. Right moves the editing cursor rather
 than accepting a completion.
 
-Candidates come from local command aliases, the loaded kubeconfig catalogue and
+Candidates come from local command aliases, the current client's discovered
+resource catalogue, the loaded kubeconfig catalogue and
 the active session's namespace cache. Typing, selecting and accepting suggestions
 does not authenticate or make API requests. A context switch immediately drops
 the old namespace candidates. When namespace listing is denied, only the known

@@ -5,6 +5,7 @@ from enum import Enum, auto
 
 from kuberich.domain.connections import namespace_name
 from kuberich.domain.registry import RESOURCE_ALIASES, ResourceDefinition
+from kuberich.domain.resources import Discovery, api_segment
 from kuberich.errors import AppError
 from kuberich.security.arguments import validate_argument
 from kuberich.services.access import AccessPolicy, Action
@@ -40,6 +41,8 @@ class Command(Enum):
     TRIGGER = auto()
     SUSPEND = auto()
     RESUME = auto()
+    REFRESH = auto()
+    COLUMNS = auto()
     UNAVAILABLE = auto()
 
 
@@ -99,6 +102,8 @@ ALIASES = {
     "trigger": Command.TRIGGER,
     "suspend": Command.SUSPEND,
     "resume": Command.RESUME,
+    "refresh": Command.REFRESH,
+    "columns": Command.COLUMNS,
 }
 
 
@@ -114,17 +119,81 @@ class ResourceCommand:
     scope: str | None = None
 
 
-ResolvedCommand = Command | ScopedCommand | ResourceCommand
+@dataclass(frozen=True)
+class GenericResourceCommand:
+    name: str
+    group: str | None = None
+    version: str | None = None
+    scope: str | None = None
+
+
+def generic_command(text: str, discovery: Discovery | None = None) -> GenericResourceCommand:
+    """resource[.group][/version] [namespace or *], with explicit GVR identity."""
+    parts = text.split()
+    if not 1 <= len(parts) <= 2:
+        raise AppError("Use :resource NAME[.GROUP][/VERSION] [NAMESPACE or *].")
+    name_group, slash, version = parts[0].partition("/")
+    name, dot, group = name_group.partition(".")
+    api_segment(name)
+    if dot:
+        api_segment(group)
+    if slash:
+        api_segment(version)
+    scope = parts[1] if len(parts) == 2 else None
+    if scope is not None and scope != "*":
+        namespace_name(scope)
+    command = GenericResourceCommand(
+        name, ("" if group == "core" else group) if dot else None, version if slash else None, scope
+    )
+    if discovery is not None:
+        resource = discovery.resolve(command.name, group=command.group, version=command.version)
+        if scope is not None and not resource.namespaced:
+            raise AppError("This resource is cluster-scoped; omit the namespace argument.")
+        command = GenericResourceCommand(resource.name, resource.group, command.version, scope)
+    return command
+
+
+ResolvedCommand = Command | ScopedCommand | ResourceCommand | GenericResourceCommand
+
+
+def resource_candidates(discovery: Discovery | None) -> tuple[str, ...]:
+    if discovery is None:
+        return ()
+    candidates = set()
+    canonical: dict[str, set[tuple[str, str]]] = {}
+    aliases: dict[str, set[tuple[str, str]]] = {}
+    for resource in discovery.resources:
+        qualified = resource.name + "." + (resource.group or "core")
+        candidates.add(qualified)
+        candidates.add(qualified + "/" + resource.version)
+        family = resource.group, resource.name
+        canonical.setdefault(resource.name, set()).add(family)
+        for alias in resource.aliases:
+            aliases.setdefault(alias, set()).add(family)
+    for name in canonical.keys() | aliases.keys():
+        if len(canonical.get(name) or aliases[name]) == 1:
+            candidates.add(name)
+    return tuple(sorted(candidates))
 
 
 def suggestions(
-    text: str, contexts: tuple[str, ...], namespaces: tuple[str, ...]
+    text: str,
+    contexts: tuple[str, ...],
+    namespaces: tuple[str, ...],
+    discovery: Discovery | None = None,
 ) -> tuple[str, ...]:
     """Literal local candidates only; no regex, credentials or transport work."""
     text = text.removeprefix(":")
     verb, separator, prefix = text.partition(" ")
     if not separator:
-        values = tuple(sorted(set(ALIASES) | set(RESOURCE_ALIASES)))
+        values = tuple(
+            sorted(
+                set(ALIASES)
+                | set(RESOURCE_ALIASES)
+                | set(resource_candidates(discovery))
+                | {"resource"}
+            )
+        )
         head = ""
         prefix = verb
     else:
@@ -135,6 +204,19 @@ def suggestions(
             verb.lower() in RESOURCE_ALIASES and RESOURCE_ALIASES[verb.lower()].namespaced
         ):
             values = namespaces
+        elif verb == "resource":
+            values = resource_candidates(discovery)
+        elif discovery is not None:
+            try:
+                resolved = generic_command(verb, discovery)
+                resource = discovery.resolve(
+                    resolved.name, group=resolved.group, version=resolved.version
+                )
+            except AppError:
+                return ()
+            if not resource.namespaced:
+                return ()
+            values = namespaces
         else:
             return ()
         head = verb + " "
@@ -142,7 +224,7 @@ def suggestions(
         set(head + value for value in values),
         # Preserve familiar :c → context and existing local command completions.
         key=lambda value: (
-            not separator and value not in ALIASES,
+            not separator and (value not in ALIASES or value == "columns"),
             not separator and ALIASES.get(value) in {Command.PORT_FORWARDS, Command.PORT_FORWARD},
             value.casefold(),
             value,
@@ -161,13 +243,23 @@ def suggestions(
 class CommandService:
     policy: AccessPolicy
 
-    def resolve(self, text: str) -> ResolvedCommand:
+    def resolve(self, text: str, discovery: Discovery | None = None) -> ResolvedCommand:
         text = text.strip().removeprefix(":").strip()
         if not text:
             return Command.EMPTY
         parts = text.split(maxsplit=1)
         verb = parts[0].lower()
         self.policy.require(_ACTIONS.get(verb, Action.READ))
+        if verb == "resource":
+            return generic_command(parts[1] if len(parts) == 2 else "", discovery)
+        if verb == "columns" and len(parts) == 2:
+            return ScopedCommand(Command.COLUMNS, parts[1])
+        if (
+            verb not in ALIASES
+            and verb not in RESOURCE_ALIASES
+            and (discovery is not None or "." in verb or "/" in verb)
+        ):
+            return generic_command(text, discovery)
         definition = RESOURCE_ALIASES.get(verb)
         if definition is not None:
             if len(parts) == 1:

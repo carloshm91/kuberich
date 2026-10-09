@@ -173,7 +173,7 @@
       ],
       "source": "internal/dao/registry.go",
       "status": "planned",
-      "difference": "C05 resolves preferred GVR/scope and aliases, supplies full-object generic LIST/WATCH/GET with bounded Table metadata and scoped JSON fallback, and refreshes installed/removed APIs on the owned client. B06 generic UI commands/columns and U02/U06 custom configuration/jumps remain pending; full parity is not claimed.",
+      "difference": "C05/B06 provide discovery-qualified aliases and explicit versions, live generic tables with typed server columns or metadata fallback, bounded session-local column selection, captured YAML/details, scope/history routing and owned discovery/removal refresh. Generic mutations, persistent custom preferences/hotkeys and reactive jump chains retain M05/U02/U06; full parity is not claimed.",
       "partial_evidence": [
         "docs/resource-discovery.md",
         "tests/unit/test_resources.py",
@@ -190,7 +190,14 @@
         "tests/unit/test_tables.py",
         "tests/contract/test_custom_resources.py",
         "tests/contract/test_custom_workspace.py",
-        "scripts/verify_custom_resources_kind.py"
+        "scripts/verify_custom_resources_kind.py",
+        "docs/acceptance/generic-resource-browser.md",
+        "tests/unit/test_custom_layout.py",
+        "tests/unit/test_generic_commands.py",
+        "tests/contract/test_custom_projection.py",
+        "tests/ui/test_custom_resources.py",
+        "tests/ui/test_custom_table.py",
+        "tests/terminal/test_custom_resources.py"
       ]
     },
     {
@@ -301,7 +308,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40×12 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -330,18 +337,22 @@
       "tasks": [
         "B02",
         "B07",
-        "U02"
+        "U02",
+        "B06"
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 implements numeric restart/readiness and chronological age sorting, stable ties, reverse/header sorting and retained UID selection. Custom/wide/movable columns, error filters and selection ranges remain B07/U02.",
+      "difference": "B02/B05/B06 provide typed sorting, stable UID selection and generic server-column choice/order including optional wide-priority fields, bounded to this session. Persistent/movable views, errors-only filters and selection ranges remain B07/U02.",
       "partial_evidence": [
         "docs/pod-table.md",
         "tests/unit/test_pods.py",
         "tests/ui/test_pods.py",
         "tests/contract/test_pod_projection.py",
         "tests/terminal/test_pods.py",
-        "scripts/verify_contexts_kind.py"
+        "scripts/verify_contexts_kind.py",
+        "docs/standard-resources.md",
+        "tests/unit/test_custom_layout.py",
+        "tests/ui/test_custom_resources.py"
       ]
     },
     {
@@ -589,14 +600,21 @@
       ],
       "source": "internal/view/custom_jump.go",
       "status": "planned",
-      "difference": "C05 resolves preferred GVR/scope and aliases, supplies full-object generic LIST/WATCH/GET with bounded Table metadata and scoped JSON fallback, and refreshes installed/removed APIs on the owned client. B06 generic UI commands/columns and U02/U06 custom configuration/jumps remain pending; full parity is not claimed.",
+      "difference": "C05/B06 provide discovery-qualified aliases and explicit versions, live generic tables with typed server columns or metadata fallback, bounded session-local column selection, captured YAML/details, scope/history routing and owned discovery/removal refresh. Generic mutations, persistent custom preferences/hotkeys and reactive jump chains retain M05/U02/U06; full parity is not claimed.",
       "partial_evidence": [
         "docs/resource-discovery.md",
         "docs/acceptance/custom-resources.md",
         "tests/unit/test_tables.py",
         "tests/contract/test_custom_resources.py",
         "tests/contract/test_custom_workspace.py",
-        "scripts/verify_custom_resources_kind.py"
+        "scripts/verify_custom_resources_kind.py",
+        "docs/acceptance/generic-resource-browser.md",
+        "tests/unit/test_custom_layout.py",
+        "tests/unit/test_generic_commands.py",
+        "tests/contract/test_custom_projection.py",
+        "tests/ui/test_custom_resources.py",
+        "tests/ui/test_custom_table.py",
+        "tests/terminal/test_custom_resources.py"
       ]
     },
     {

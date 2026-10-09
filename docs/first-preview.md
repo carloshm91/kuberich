@@ -1,5 +1,32 @@
 # First things to try
 
+## Generic resource browser checkpoint: B06 #53
+
+The terminal now browses discovered CRDs and other live APIs with qualified
+`resource.group/version` commands, unique aliases, typed server columns and
+metadata fallback. `:columns` lists transient server keys; `:columns c2 c3`,
+`default` and `none` select the layout without saving preferences. `:refresh`
+renews discovery/watch on the current client. Enter/`d`, `y` and `e` open captured
+details, redacted YAML and related events; generic actions remain read-only.
+
+For your later installed preview, select an intentional context/resource:
+`kuberich --context YOUR_CONTEXT --readonly --command 'resource widgets.example.test/v1beta1 YOUR_NAMESPACE'`.
+This template is not a claim that those placeholder resources exist.
+
+Exact tested local command:
+`uv run pytest tests/ui/test_custom_resources.py tests/contract/test_custom_projection.py tests/unit/test_generic_commands.py -q --tb=short --cov=kuberich --cov-branch --cov-report=json:artifacts/custom-browser-53/final-focused-coverage.json`:
+23 cases passed in 35.05 seconds, including schema/version/scope/history,
+malformed printer fallback, context/GVR/column races and reconnect recovery.
+The source native command
+`uv run pytest tests/terminal/test_custom_resources.py -q --tb=short`
+passed one case in 3.18 seconds with terminal restoration and redacted output.
+The actual cluster command is
+`uv run python -m scripts.verify_custom_resources_kind --kind artifacts/custom-browser-53/tools/kind --evidence artifacts/custom-browser-53/kind-final.json`:
+all nine checks passed, including real generic UI/live/removal recovery, and the
+owned disposable cluster was deleted. Full source/platform/coverage/artifact
+qualification remains in progress on the issue branch. See
+[the guide](standard-resources.md#generic-discovered-resources-b06-53) and
+[acceptance evidence](acceptance/generic-resource-browser.md).
 ## Development website publication checkpoint: #166
 
 The maintainer authorized publishing the current landing and initial guides on

@@ -5,6 +5,7 @@ import logging
 import os
 from collections.abc import Callable
 from contextlib import suppress
+from functools import partial
 from importlib.metadata import version
 from pathlib import Path
 from typing import ClassVar
@@ -30,8 +31,10 @@ from kuberich.domain.connections import (
     ConnectionRequest,
 )
 from kuberich.domain.credential_helpers import helper_start_failure
+from kuberich.domain.custom import CustomLayout
 from kuberich.domain.logs import log_containers
 from kuberich.domain.navigation import (
+    MAX_HISTORY,
     ContextRow,
     NamespaceChoice,
     NavigationHistory,
@@ -54,6 +57,7 @@ from kuberich.services.attach import AttachService
 from kuberich.services.commands import (
     Command,
     CommandService,
+    GenericResourceCommand,
     ResolvedCommand,
     ResourceCommand,
     ScopedCommand,
@@ -65,7 +69,12 @@ from kuberich.services.inspection import InspectionService
 from kuberich.services.logs import LogStream
 from kuberich.services.mutations import MutationManager, MutationService
 from kuberich.services.operations import ResourceOperationService
-from kuberich.services.pods import NamespaceProjection, PodProjection, StandardProjection
+from kuberich.services.pods import (
+    CustomProjection,
+    NamespaceProjection,
+    PodProjection,
+    StandardProjection,
+)
 from kuberich.services.port_forwards import ForwardManager, ForwardService
 from kuberich.services.processes import ProcessRunner, _finish_owned
 from kuberich.services.sessions import SessionService
@@ -78,6 +87,7 @@ from kuberich.ui.chrome import (
     K9S_THEME,
     NS_SHORTCUTS,
     POD_SHORTCUTS,
+    RESOURCE_SHORTCUTS,
     SERVICE_SHORTCUTS,
     Breadcrumbs,
     WorkspaceBars,
@@ -89,6 +99,7 @@ from kuberich.ui.chrome import (
 from kuberich.ui.commands import CommandInput, NavigationInput
 from kuberich.ui.containers import ContainerScreen
 from kuberich.ui.contexts import ContextTable
+from kuberich.ui.custom import CustomTable
 from kuberich.ui.editing import EditingScreen
 from kuberich.ui.handoff import terminal_handoff
 from kuberich.ui.inspection import InspectionScreen, Page
@@ -144,6 +155,11 @@ class HelpScreen(ModalScreen[None]):
                         "delete, deletebatch, trigger, suspend, resume, writes, help, quit.\n"
                         "Resources: deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, "
                         "no, pvc, pv, sc. Namespaced resources accept [NS or *].\n"
+                        "Discovered: :resource NAME[.GROUP][/VERSION] [NS or *]. "
+                        "Unique discovered aliases work directly; ambiguous names require a group.\n"
+                        ":refresh renews discovery on the current client. "
+                        ":columns shows server keys; :columns cN ... / default / none.\n"
+                        "Generic resources are read-only; columns are session-local.\n"
                         "Filter: plain case-insensitive text; re:PATTERN for regex. "
                         "Searches namespace, name, readiness, status and restarts. "
                         "Invalid or timed-out regex shows all pods and an error.\n\n"
@@ -260,6 +276,13 @@ class KubeRichApp(App[None]):
         self.standard_table = StandardTable()
         self.standard_table.display = False
         self._standard_projection = StandardProjection(self.standard_table.definition)
+        self.custom_table = CustomTable()
+        self.custom_table.display = False
+        self._custom_projection: CustomProjection | None = None
+        self._custom_layouts: dict[tuple[str, str, str, str], CustomLayout] = {}
+        self._generic_selection: ResourceSelection | None = None
+        self._pending_generic: GenericResourceCommand | None = None
+        self._column_notice: str | None = None
         self._resource_name = "pods"
         self._context_parent: NavigationState | None = None
         self._context_state: NavigationState | None = None
@@ -292,6 +315,8 @@ class KubeRichApp(App[None]):
             return self.context_table
         if self._resource_name == "namespaces":
             return self.namespace_table
+        if self.custom_table.display:
+            return self.custom_table
         return self.resources if self._resource_name == "pods" else self.standard_table
 
     def _header_identity(self) -> tuple[str, str, str, str, str]:
@@ -431,6 +456,7 @@ class KubeRichApp(App[None]):
             yield self.namespace_table
             yield self.context_table
             yield self.standard_table
+            yield self.custom_table
             with Vertical(id="empty-state"):
                 yield Static("No cluster connection", id="empty-title", markup=False)
                 yield Static(
@@ -480,10 +506,12 @@ class KubeRichApp(App[None]):
                 self._display_resource(initial.definition.name)
                 if initial.scope is not None:
                     scope = NamespaceChoice(None if initial.scope == "*" else initial.scope)
+            if isinstance(initial, GenericResourceCommand):
+                self._pending_generic = initial
             if context is not None:
                 self._start_connection(context, scope=scope)
             if (
-                not isinstance(initial, (ScopedCommand, ResourceCommand))
+                not isinstance(initial, (ScopedCommand, ResourceCommand, GenericResourceCommand))
                 and initial is not Command.NAMESPACES
             ):
                 self._apply_command(initial)
@@ -508,6 +536,7 @@ class KubeRichApp(App[None]):
         if context != self.workspace.store.observation.context:
             self._namespace_parent = self._namespace_state = None
             self._namespace_route = False
+            self._custom_layouts.clear()
         self._connection_task = self.workspace.connect(
             context, scope=scope, authenticate=authenticate
         )
@@ -520,6 +549,7 @@ class KubeRichApp(App[None]):
         self.resources.refresh_ages()
         self.namespace_table.refresh_ages()
         self.standard_table.refresh_ages()
+        self.custom_table.refresh_ages()
         self._render_ready.set()
 
     async def _observe_view(self, subscription: ViewSubscription) -> None:
@@ -533,6 +563,9 @@ class KubeRichApp(App[None]):
                 ):
                     self._render_ready.set()
                     self.command_input.refresh_choices()
+                    if self._pending_generic is not None and self.workspace.discovery is not None:
+                        pending, self._pending_generic = self._pending_generic, None
+                        self._apply_generic(pending)
                     for header in self.query(WorkspaceHeader):
                         header.update_identity()
                     for screen in tuple(self.screen_stack):
@@ -555,13 +588,17 @@ class KubeRichApp(App[None]):
                 kind = self._resource_name
 
                 def current(
-                    view: ViewObservation = view, query: str = query, kind: str = kind
+                    view: ViewObservation = view,
+                    query: str = query,
+                    kind: str = kind,
+                    layout: CustomLayout | None = None,
                 ) -> bool:
                     return (
                         self.is_running
                         and view is self.workspace.store.observation
                         and query == self.filter_input.value
                         and kind == self._resource_name
+                        and (layout is None or layout == self.custom_table.resource_layout)
                     )
 
                 if kind == "namespaces":
@@ -592,6 +629,40 @@ class KubeRichApp(App[None]):
                     result = await apply_filter(rows, query)
                     count, filtered, problem = len(rows), len(result.rows), result.problem
                     applied = await self.resources.apply_rows(result.rows, view.revision, current)
+                elif self.custom_table.display:
+                    await self._pod_projection.project(None)
+                    await self._namespace_projection.project(None)
+                    await self._standard_projection.project(None)
+                    snapshot = view.snapshot
+                    layout = self.custom_table.resource_layout
+                    if snapshot is not None:
+                        key = (
+                            view.context or "",
+                            snapshot.resource.group,
+                            snapshot.resource.version,
+                            snapshot.resource.name,
+                        )
+                        layout = self._custom_layouts.get(key)
+                        if layout is None or layout.headers != snapshot.columns:
+                            layout = CustomLayout.build(snapshot.resource, snapshot.columns)
+                        self._remember_layout(key, layout)
+                        if self.custom_table.resource_layout != layout:
+                            self.custom_table.configure_layout(layout, view.revision)
+                            self._custom_projection = CustomProjection(layout)
+                    custom_rows = (
+                        await self._custom_projection.project(snapshot)
+                        if self._custom_projection is not None
+                        else ()
+                    )
+                    custom_result = await apply_filter(custom_rows, query, kind)
+                    count, filtered, problem = (
+                        len(custom_rows),
+                        len(custom_result.rows),
+                        custom_result.problem,
+                    )
+                    applied = await self.custom_table.apply_rows(
+                        custom_result.rows, view.revision, partial(current, layout=layout)
+                    )
                 else:
                     await self._pod_projection.project(None)
                     await self._namespace_projection.project(None)
@@ -632,10 +703,21 @@ class KubeRichApp(App[None]):
                         and (view.snapshot is not None or kind == "contexts")
                     ):
                         state = self._restore_state[1]
+                        if self.custom_table.display:
+                            compatible = (
+                                self.custom_table.resource_layout is not None
+                                and self.custom_table.resource_layout.headers == state.headers
+                            )
+                            self.custom_table.restore_sort(
+                                state.column if compatible else "name",
+                                state.descending if compatible else False,
+                            )
                         self._active_table.restore_viewport(
                             Viewport(state.selected, state.index, state.x, state.y, state.top)
                         )
                         self._restore_state = None
+                    if self._column_notice is not None:
+                        self._set_status(self._column_notice)
                     self._update_trail()
         except Exception as error:
             self._handle_exception(error)
@@ -704,7 +786,13 @@ class KubeRichApp(App[None]):
             else observation.namespace or "all"
         )
         self.query_one("#resource-view", Vertical).border_title = safe_text(
-            f"{self._resource_name}({scope})[{self._active_table.row_count}] · {view.status.name.lower()}"
+            f"{self._resource_name}({scope})[{self._active_table.row_count}]"
+            + (
+                f" · {view.scope.resource.api_version}"
+                if self.custom_table.display and view.scope is not None
+                else ""
+            )
+            + f" · {view.status.name.lower()}"
         )
         self.query_one("#empty-state").display = not bool(self._active_table.row_count)
         self._active_table.set_class(bool(self._active_table.row_count), "populated")
@@ -730,6 +818,8 @@ class KubeRichApp(App[None]):
             if self._resource_name == "contexts"
             else "Name ↑ · Enter use namespace · 0 all"
             if self._resource_name == "namespaces"
+            else self.custom_table.sort_summary
+            if self.custom_table.display
             else self.standard_table.sort_summary
         )
 
@@ -772,6 +862,8 @@ class KubeRichApp(App[None]):
             await self._pod_projection.project(None)
             await self._namespace_projection.project(None)
             await self._standard_projection.project(None)
+            if self._custom_projection is not None:
+                await self._custom_projection.project(None)
         finally:
             self._terminal_signals.restore()
 
@@ -796,6 +888,7 @@ class KubeRichApp(App[None]):
         self._open_logs(containers_first=True, uid=event.row_key.value)
 
     @on(DataTable.RowSelected, "#standard-resources")
+    @on(DataTable.RowSelected, "#custom-resources")
     def standard_selected(self, event: DataTable.RowSelected) -> None:
         event.stop()
         self._inspect("details")
@@ -1149,13 +1242,8 @@ class KubeRichApp(App[None]):
             self.command_input.reset_choice()
             self._render_ready.set()
             return
-        table = (
-            self.namespace_table
-            if self._resource_name == "namespaces"
-            else self.resources
-            if self._resource_name == "pods"
-            else self.standard_table
-        )
+        table = self._active_table
+        assert not isinstance(table, ContextTable)
         table.reset(self.workspace.store.observation.revision)
         self._active_table.remove_class("populated")
         self.query_one("#empty-state").display = True
@@ -1171,13 +1259,18 @@ class KubeRichApp(App[None]):
         elif not isinstance(self.screen, ModalScreen):
             self._select_resource("namespaces", restore=self._namespace_state)
 
-    def _display_resource(self, resource: str, *, focus: bool = True) -> None:
+    def _display_resource(
+        self, resource: str, *, focus: bool = True, generic: ResourceSelection | None = None
+    ) -> None:
         self._resource_name = resource
+        self._generic_selection = generic
+        self._column_notice = None
         namespaces = resource == "namespaces"
         self.namespace_table.display = namespaces
         self.context_table.display = resource == "contexts"
         self.resources.display = resource == "pods"
-        self.standard_table.display = resource in RESOURCE_ALIASES
+        self.standard_table.display = generic is None and resource in RESOURCE_ALIASES
+        self.custom_table.display = generic is not None
         if self.standard_table.display:
             definition = RESOURCE_ALIASES[resource]
             if self.standard_table.definition != definition:
@@ -1189,6 +1282,8 @@ class KubeRichApp(App[None]):
             if resource == "contexts"
             else NS_SHORTCUTS
             if namespaces
+            else RESOURCE_SHORTCUTS
+            if generic is not None
             else POD_SHORTCUTS
             if resource == "pods"
             else SERVICE_SHORTCUTS
@@ -1206,15 +1301,18 @@ class KubeRichApp(App[None]):
         *,
         restore: NavigationState | None = None,
         scope: NamespaceChoice | None = None,
+        generic: ResourceSelection | None = None,
     ) -> None:
         current = self._capture_view()
         if self._resource_name == "contexts":
             self._context_state = current
-        if resource == self._resource_name and scope is None:
+        if resource == self._resource_name and generic == self._generic_selection and scope is None:
             self.set_focus(self._active_table)
             return
         try:
-            self._connection_task = self.workspace.select_resource(resource_selection(resource))
+            self._connection_task = self.workspace.select_resource(
+                generic or resource_selection(resource)
+            )
             if scope is not None:
                 self._connection_task = self.workspace.select_namespace(scope.namespace)
         except AppError as error:
@@ -1227,7 +1325,7 @@ class KubeRichApp(App[None]):
                 self._namespace_route = True
             elif resource == "namespaces":
                 self._namespace_parent = current
-        self._display_resource(resource)
+        self._display_resource(resource, generic=generic)
         self._clear_rows()
         self.filter_input.value = restore.query if restore is not None else ""
         if restore is not None:
@@ -1243,7 +1341,14 @@ class KubeRichApp(App[None]):
                 was_context_view = self._resource_name == "contexts"
                 if was_context_view:
                     self._context_state = current
-                self.workspace.select_resource(ResourceSelection("pods"))
+                generic = (
+                    self._generic_selection
+                    if self.custom_table.display
+                    else self._namespace_parent.generic
+                    if was_namespace_view and self._namespace_parent is not None
+                    else None
+                )
+                self.workspace.select_resource(generic or ResourceSelection("pods"))
                 self._connection_task = self.workspace.select_namespace(choice.namespace)
                 if was_namespace_view:
                     self._namespace_state = current
@@ -1251,7 +1356,10 @@ class KubeRichApp(App[None]):
                 if current is not None:
                     self.history.visit(current)
                 self._display_resource(
-                    "pods",
+                    (generic.name + "." + (generic.group or "core"))
+                    if generic is not None
+                    else "pods",
+                    generic=generic,
                     focus=was_namespace_view
                     or was_context_view
                     or not isinstance(self.focused, Input),
@@ -1274,6 +1382,105 @@ class KubeRichApp(App[None]):
             self._start_connection(context)
         else:
             self.action_contexts()
+
+    def _remember_layout(self, key: tuple[str, str, str, str], layout: CustomLayout) -> None:
+        self._custom_layouts.pop(key, None)
+        self._custom_layouts[key] = layout
+        while len(self._custom_layouts) > MAX_HISTORY:
+            del self._custom_layouts[next(iter(self._custom_layouts))]
+
+    def _apply_generic(self, command: GenericResourceCommand) -> None:
+        try:
+            discovery = self.workspace.discovery
+            if discovery is None:
+                raise AppError("Wait for the current resource catalogue or use :refresh.")
+            resource = discovery.resolve(command.name, group=command.group, version=command.version)
+            if command.scope is not None and not resource.namespaced:
+                raise AppError("This resource is cluster-scoped; omit the namespace argument.")
+            selection = ResourceSelection(
+                resource.name, resource.group, command.version, server_columns=True
+            )
+            scope = (
+                NamespaceChoice(None if command.scope == "*" else command.scope)
+                if command.scope is not None
+                else None
+            )
+            self._select_resource(
+                resource.name + "." + (resource.group or "core"),
+                scope=scope,
+                generic=selection,
+            )
+            if self._generic_selection == selection:
+                key = (
+                    self.workspace.store.observation.context or "",
+                    resource.group,
+                    resource.version,
+                    resource.name,
+                )
+                layout = self._custom_layouts.get(key) or CustomLayout.build(resource, ())
+                self.custom_table.configure_layout(
+                    layout, self.workspace.store.observation.revision
+                )
+                self._custom_projection = CustomProjection(layout)
+        except AppError as error:
+            self._set_status(str(error))
+
+    def _refresh_discovery(self) -> None:
+        state = self._capture_view()
+        try:
+            self._connection_task = self.workspace.refresh_discovery()
+        except AppError as error:
+            self._set_status(str(error))
+            return
+        self._clear_rows()
+        if state is not None:
+            self._restore_state = self.workspace.store.observation.revision, state
+        self._column_notice = None
+        self.command_input.refresh_choices()
+        self._render_ready.set()
+
+    def _configure_columns(self, argument: str = "") -> None:
+        layout = self.custom_table.resource_layout if self.custom_table.display else None
+        if layout is None:
+            self._set_status("Select a discovered resource before configuring server columns.")
+            return
+        try:
+            if not argument:
+                available = ", ".join(
+                    f"c{i + 1}={safe_text(column.name).plain}"
+                    for i, column in enumerate(layout.headers)
+                    if column.format != "name" and column.name.casefold() != "age"
+                )
+                self._column_notice = (
+                    "Columns: "
+                    + (available or "metadata only")
+                    + " · :columns default / none / cN ..."
+                )
+            else:
+                configured = (
+                    CustomLayout.build(layout.resource, layout.headers)
+                    if argument == "default"
+                    else layout.configure(() if argument == "none" else tuple(argument.split()))
+                )
+                self.custom_table.configure_layout(
+                    configured, self.workspace.store.observation.revision
+                )
+                self._custom_projection = CustomProjection(configured)
+                view = self.workspace.store.observation
+                self._remember_layout(
+                    (
+                        view.context or "",
+                        configured.resource.group,
+                        configured.resource.version,
+                        configured.resource.name,
+                    ),
+                    configured,
+                )
+                self._column_notice = "Custom columns updated for this session."
+                self._render_ready.set()
+        except AppError as error:
+            self._column_notice = str(error)
+        self._set_status(self._column_notice or self._workspace_status())
 
     def action_login(self) -> None:
         context = (
@@ -1315,6 +1522,8 @@ class KubeRichApp(App[None]):
         self.screen_stack[0].set_class(event.size.height < 16, "short")
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        if self.custom_table.display and action == "edit":
+            return False
         if action == "port_forward" and self._resource_name not in {"pods", "services"}:
             return False
         if (
@@ -1378,9 +1587,15 @@ class KubeRichApp(App[None]):
             if self._context_parent is not None:
                 self._restore_navigation(self._context_parent)
             else:
-                self._display_resource(self.workspace.selection.name)
+                selection = self.workspace.selection
+                self._display_resource(
+                    selection.name + "." + (selection.group or "core")
+                    if selection.server_columns
+                    else selection.name,
+                    generic=selection if selection.server_columns else None,
+                )
                 self._render_ready.set()
-        elif self._resource_name == "pods" and self._namespace_route:
+        elif (self._resource_name == "pods" or self.custom_table.display) and self._namespace_route:
             self.action_namespaces()
         elif self._resource_name == "namespaces":
             self._namespace_route = False
@@ -1402,14 +1617,20 @@ class KubeRichApp(App[None]):
         self._submit_command(event.value)
 
     def _submit_command(self, value: str) -> None:
+        self._column_notice = None
         try:
-            command = self.commands.resolve(value)
+            command = self.commands.resolve(value, self.workspace.discovery)
         except AppError as error:
+            if self.custom_table.display:
+                self._column_notice = str(error)
             self._set_status(str(error))
             return
         self._apply_command(command)
 
     def _apply_command(self, command: ResolvedCommand) -> None:
+        if isinstance(command, GenericResourceCommand):
+            self._apply_generic(command)
+            return
         if isinstance(command, ResourceCommand):
             scope = (
                 NamespaceChoice(None if command.scope == "*" else command.scope)
@@ -1418,8 +1639,26 @@ class KubeRichApp(App[None]):
             )
             self._select_resource(command.definition.name, scope=scope)
             return
+        action_command = command.command if isinstance(command, ScopedCommand) else command
+        if self.custom_table.display and action_command in {
+            Command.ANNOTATE,
+            Command.EDIT,
+            Command.DELETE,
+            Command.DELETE_BATCH,
+            Command.TRIGGER,
+            Command.SUSPEND,
+            Command.RESUME,
+            Command.SCALE,
+            Command.RESTART,
+            Command.ROLLBACK,
+        }:
+            self._column_notice = "Generic resources are read-only in this checkpoint."
+            self._set_status(self._column_notice)
+            return
         if isinstance(command, ScopedCommand):
-            if command.command in {Command.SCALE, Command.ROLLBACK}:
+            if command.command is Command.COLUMNS:
+                self._configure_columns(command.argument)
+            elif command.command in {Command.SCALE, Command.ROLLBACK}:
                 self.action_workload(
                     WorkloadAction.SCALE
                     if command.command is Command.SCALE
@@ -1447,6 +1686,10 @@ class KubeRichApp(App[None]):
             self.action_connection_details()
         elif command is Command.RETRY:
             self.action_retry()
+        elif command is Command.REFRESH:
+            self._refresh_discovery()
+        elif command is Command.COLUMNS:
+            self._configure_columns()
         elif command is Command.LOGIN:
             self.action_login()
         elif command is Command.BACK:
@@ -1511,7 +1754,9 @@ class KubeRichApp(App[None]):
         return ("*", *sorted(set(connection.namespaces) | set(current)))
 
     def _suggestions(self, value: str) -> tuple[str, ...]:
-        return suggestions(value, self.sessions.catalog.names, self._namespace_choices())
+        return suggestions(
+            value, self.sessions.catalog.names, self._namespace_choices(), self.workspace.discovery
+        )
 
     @on(Input.Changed, "#command")
     def command_changed(self) -> None:
@@ -1528,11 +1773,11 @@ class KubeRichApp(App[None]):
             view.context or "",
             view.connection.namespace,
             self.filter_input.value,
-            self.standard_table.sort_column
-            if self.standard_table.display
+            self._active_table.sort_column
+            if isinstance(self._active_table, StandardTable)
             else self.resources.sort_column,
-            self.standard_table.descending
-            if self.standard_table.display
+            self._active_table.descending
+            if isinstance(self._active_table, StandardTable)
             else self.resources.descending,
             viewport.selected,
             viewport.index,
@@ -1540,6 +1785,10 @@ class KubeRichApp(App[None]):
             viewport.y,
             viewport.top,
             self._resource_name,
+            self._generic_selection,
+            self.custom_table.resource_layout.headers
+            if self.custom_table.display and self.custom_table.resource_layout is not None
+            else (),
         )
 
     def _remember_view(self) -> None:
@@ -1572,14 +1821,14 @@ class KubeRichApp(App[None]):
         scope = NamespaceChoice(state.namespace)
         current = self.workspace.store.observation
         if state.context == current.context and current.connection.state in USABLE_CONNECTIONS:
-            self.workspace.select_resource(resource_selection(state.resource))
+            self.workspace.select_resource(state.generic or resource_selection(state.resource))
             self._connection_task = self.workspace.select_namespace(state.namespace)
-            self._display_resource(state.resource)
+            self._display_resource(state.resource, generic=state.generic)
             self._clear_rows()
             self.header.update_identity()
         else:
-            self.workspace.selection = resource_selection(state.resource)
-            self._display_resource(state.resource)
+            self.workspace.selection = state.generic or resource_selection(state.resource)
+            self._display_resource(state.resource, generic=state.generic)
             self._start_connection(state.context, scope=scope, remember=False)
         self.filter_input.value = state.query
         if state.resource == "pods":

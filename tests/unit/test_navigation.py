@@ -73,9 +73,9 @@ def test_completions_are_literal_bounded_case_preserving_and_deduplicated():
         "ctx",
         "cj",
         "cm",
+        "columns",
         "configmap",
         "configmaps",
-        "cronjob",
     )
     assert suggestions("ct", (), ()) == ("ctx",)
     assert suggestions(":ctx p", ("Production", "prod[red]", "Production"), ()) == (
