@@ -19,6 +19,8 @@ from typing import TYPE_CHECKING
 
 import pyte
 
+from tests.support.terminal_modes import restored_modes
+
 if TYPE_CHECKING:
     from tests.support.transports import TerminalTransport
 
@@ -52,6 +54,14 @@ def encode_mode(mode: list[object]) -> list[object]:
     return [*mode[:6], [value.hex() if isinstance(value, bytes) else value for value in controls]]
 
 
+class ObserverScreen(pyte.Screen):
+    """Observe output without injecting query responses into application input."""
+
+    def report_device_status(self, mode: int, *, private: bool = False) -> None:
+        if not private:
+            super().report_device_status(mode)
+
+
 class TerminalSession:
     def __init__(
         self,
@@ -69,7 +79,7 @@ class TerminalSession:
         self.completion: dict[str, object] | None = None
         self.transcript = bytearray()
         self.sizes = [size]
-        self.screen = pyte.Screen(*size)
+        self.screen = ObserverScreen(*size)
         self.screen_stream = pyte.Stream(self.screen)
         self.screen_decoder = codecs.getincrementaldecoder("utf-8")("replace")
         fcntl.ioctl(self.slave, termios.TIOCSWINSZ, struct.pack("HHHH", size[1], size[0], 0, 0))
@@ -219,7 +229,9 @@ class TerminalSession:
             errors="replace"
         )
         assert self.completion["before"] == encode_mode(self.original_mode)
-        assert self.completion["after"] == self.completion["before"], "TTY attributes not restored"
+        assert restored_modes(self.completion["before"], self.completion["after"]), (
+            "TTY attributes not restored"
+        )
         assert b"\x1b[?1049h" in self.transcript
         if not disconnected:
             assert self.mode_restored(1049), "Alternate screen was not closed"
@@ -244,7 +256,12 @@ class TerminalSession:
                 {
                     "exit": self.completion["exit"],
                     "sizes": self.sizes,
-                    "terminal_mode_restored": self.completion["before"] == self.completion["after"],
+                    "terminal_mode_restored": restored_modes(
+                        self.completion["before"], self.completion["after"]
+                    ),
+                    "kernel_flag_normalization": "Darwin PENDIN"
+                    if sys.platform == "darwin"
+                    else None,
                     "terminal_modes": self.completion,
                     "transport": self.transport.record if self.transport else None,
                     "alternate_screen_closed": self.mode_restored(1049),

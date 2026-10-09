@@ -11,6 +11,7 @@ import pytest
 
 from kuberich.adapters import terminal
 from kuberich.errors import AppError
+from tests.support.terminal_modes import restored_modes
 
 
 @pytest.mark.parametrize("dimensions", [(90, 28), (0, 28), (90, 0)])
@@ -66,7 +67,7 @@ def test_lease_restores_real_terminal_attributes_after_child_changes(monkeypatch
             termios.tcsetattr(slave, termios.TCSANOW, changed)
             if failure:
                 raise RuntimeError("fixture")
-        assert termios.tcgetattr(slave) == original
+        assert restored_modes(original, termios.tcgetattr(slave))
         assert groups == [123, os.getpgrp()]
     finally:
         os.close(master)
@@ -97,12 +98,21 @@ def test_restoration_failure_on_a_live_terminal_is_not_suppressed(monkeypatch):
         os.close(slave)
 
 
-def test_a_revoked_terminal_does_not_replace_the_original_cancellation(monkeypatch):
+@pytest.mark.parametrize("code", [errno.EIO, errno.ENXIO, errno.ENOTTY])
+def test_a_revoked_terminal_does_not_replace_the_original_cancellation(monkeypatch, code):
     master, slave = pty.openpty()
     monkeypatch.setattr(os, "tcgetpgrp", lambda _: os.getpgrp())
     monkeypatch.setattr(
         os, "tcsetpgrp", lambda *_: (_ for _ in ()).throw(OSError(errno.EIO, "gone"))
     )
+    captured = termios.tcgetattr
+
+    def inspect(descriptor):
+        if descriptor == slave and master is None:
+            raise termios.error(code, "owned revoked terminal")
+        return captured(descriptor)
+
+    monkeypatch.setattr(termios, "tcgetattr", inspect)
     try:
         with pytest.raises(RuntimeError, match="cancelled"), terminal.TerminalLease(slave):
             os.close(master)
@@ -114,9 +124,18 @@ def test_a_revoked_terminal_does_not_replace_the_original_cancellation(monkeypat
         os.close(slave)
 
 
-def test_only_a_captured_revoked_tty_is_redirected(tmp_path):
+@pytest.mark.parametrize("code", [errno.EIO, errno.ENXIO, errno.ENOTTY])
+def test_only_a_captured_revoked_tty_is_redirected(tmp_path, monkeypatch, code):
     master, slave = pty.openpty()
     file = (tmp_path / "unrelated").open("wb")
+    captured = termios.tcgetattr
+
+    def inspect(descriptor):
+        if descriptor == slave and master is None:
+            raise termios.error(code, "owned revoked terminal")
+        return captured(descriptor)
+
+    monkeypatch.setattr(termios, "tcgetattr", inspect)
     try:
         owner = terminal.RevokedTerminalOutput((slave, file.fileno()))
         before = os.fstat(slave)
@@ -135,6 +154,77 @@ def test_only_a_captured_revoked_tty_is_redirected(tmp_path):
             os.close(master)
         os.close(slave)
         file.close()
+
+
+def test_closing_a_real_master_is_classified_by_the_slave_driver():
+    master, slave = pty.openpty()
+    try:
+        owner = terminal.RevokedTerminalOutput((slave,))
+        identity = os.fstat(slave)
+        os.close(master)
+        master = None
+        try:
+            termios.tcgetattr(slave)
+            os.write(slave, b"")
+        except (termios.error, OSError) as error:
+            assert error.args[0] in (errno.EIO, errno.ENXIO, errno.ENOTTY)
+            unavailable = True
+        else:
+            # Darwin can retain readable attributes on this unclaimed PTY.
+            unavailable = False
+        owner.discard_revoked()
+        assert (os.fstat(slave) != identity) is unavailable
+    finally:
+        if master is not None:
+            os.close(master)
+        os.close(slave)
+
+
+@pytest.mark.parametrize("code", [errno.EIO, errno.ENXIO, errno.ENOTTY])
+def test_output_failure_with_readable_attributes_discards_only_the_captured_tty(monkeypatch, code):
+    master, slave = pty.openpty()
+    write = os.write
+    previous = signal.pthread_sigmask(signal.SIG_BLOCK, set())
+    probes = []
+
+    def unavailable(descriptor, data):
+        if descriptor == slave and os.isatty(slave):
+            probes.append(data)
+            assert signal.SIGTTOU in signal.pthread_sigmask(signal.SIG_BLOCK, set())
+            raise OSError(code, "owned hung-up output")
+        return write(descriptor, data)
+
+    try:
+        original = termios.tcgetattr(slave)
+        owner = terminal.RevokedTerminalOutput((slave,))
+        monkeypatch.setattr(os, "write", unavailable)
+        assert termios.tcgetattr(slave) == original
+        owner.discard_revoked()
+        assert probes == [b""]
+        assert not os.isatty(slave)
+        assert os.write(slave, b"buffered shutdown output") == 24
+        assert signal.pthread_sigmask(signal.SIG_BLOCK, set()) == previous
+    finally:
+        os.close(master)
+        os.close(slave)
+
+
+def test_unexpected_output_probe_errors_restore_the_mask_and_preserve_the_descriptor(monkeypatch):
+    master, slave = pty.openpty()
+    previous = signal.pthread_sigmask(signal.SIG_BLOCK, set())
+    try:
+        owner = terminal.RevokedTerminalOutput((slave,))
+        original = os.fstat(slave)
+        monkeypatch.setattr(
+            os, "write", lambda *_: (_ for _ in ()).throw(OSError(errno.EPERM, "owned failure"))
+        )
+        with pytest.raises(OSError, match="owned failure"):
+            owner.discard_revoked()
+        assert os.fstat(slave) == original
+        assert signal.pthread_sigmask(signal.SIG_BLOCK, set()) == previous
+    finally:
+        os.close(master)
+        os.close(slave)
 
 
 @pytest.mark.parametrize("closed", [False, True])

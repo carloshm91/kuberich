@@ -15,10 +15,19 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
       - name: Validate plan, dependency graph, audit mappings and documentation links
         run: python3 scripts/validate_plan.py
       - name: Check whitespace
-        run: git diff-tree --root --check HEAD
+        env:
+          KUBERICH_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          if [ -n "$KUBERICH_DIFF_BASE" ] && [ "$KUBERICH_DIFF_BASE" != '0000000000000000000000000000000000000000' ]; then
+            git diff --check "$KUBERICH_DIFF_BASE" HEAD
+          else
+            git diff-tree --root --check HEAD
+          fi
       - name: Install locked static-site tools
         uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:

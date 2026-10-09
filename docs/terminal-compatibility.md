@@ -22,12 +22,15 @@ while the pod preflight is still pending.
 Losing SSH without a multiplexer revokes the remote terminal. KubeRich closes its
 tasks and child processes, then exits 129; the SSH client normally returns 255.
 The local SSH terminal can be restored, but a revoked remote TTY cannot receive
-escape sequences or have its attributes read or restored. Evidence records this
-as unavailable, rather than claiming remote restoration. Only captured output
+escape sequences. Its attributes may be unavailable; Darwin can retain readable
+attributes while rejecting output. Evidence preserves the actual observation
+instead of claiming remote restoration. Only captured output
 descriptors still identifying that revoked TTY are redirected to `/dev/null`
 during hangup. Live terminals, replaced descriptors and file/pipe output remain
 untouched. This prevents failed buffered shutdown writes from changing the
-process exit code to 120.
+process exit code to 120. A zero-byte write verifies output when the driver still
+returns attributes; it emits no terminal input or output. The probe temporarily
+blocks SIGTTOU, restores the previous mask, and surfaces unexpected errors.
 
 Inside tmux, losing SSH detaches the client and keeps the application and an open
 embedded shell running. Reattaching to the same session restores the workspace;
@@ -67,6 +70,16 @@ external shutdown, private cursor queries, malformed CSI recovery and retained
 normal/alternate buffer text after shrinking a rendered terminal.
 Additional failing witnesses cover deferred header callbacks after view removal
 and a stale queued resize event overriding the actual native TTY dimensions.
+
+Follow-up #157 makes the test observer accept private device-status queries
+without injecting artificial input into the application. Actual terminal bytes
+still determine the observed screen. Raw termios values remain in the evidence;
+only Darwin's kernel-maintained `PENDIN` bit is normalized when comparing
+restoration. Darwin sets that bit when returning to canonical mode and preserves
+it across attribute updates. Every other flag, both speeds and every control
+character remain exact comparisons; negative controls reject their changes.
+See [Apple's tty implementation](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/tty.c)
+and [#157 qualification](acceptance/macos-terminal-verification.md).
 
 Linux results and tool versions are recorded in the issue-linked acceptance
 report. macOS jobs and physical terminal-emulator/manual clipboard checks remain

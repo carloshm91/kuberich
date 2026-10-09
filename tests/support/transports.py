@@ -17,6 +17,8 @@ from tempfile import TemporaryDirectory
 from types import TracebackType
 from typing import BinaryIO
 
+from tests.support.terminal_modes import restored_modes
+
 # A remote/pane session owner records attributes while its TTY still exists.
 # A caught HUP keeps the observer alive; exec resets that caught handler in the
 # application, so it does not silently immunize the application against HUP.
@@ -300,11 +302,14 @@ class TerminalTransport:
         if self.disconnected and record["after"] is None:
             assert record["tty_unavailable_errno"] in (errno.EIO, errno.ENXIO, errno.ENOTTY), record
         else:
-            assert record["before"] == record["after"], "Inner terminal attributes not restored"
+            assert restored_modes(record["before"], record["after"]), (
+                "Inner terminal attributes not restored"
+            )
         self.record = {
             "kind": self.kind,
             "versions": self.versions,
             "connection_lost": self.disconnected,
+            "kernel_flag_normalization": "Darwin PENDIN" if sys.platform == "darwin" else None,
             **record,
         }
 

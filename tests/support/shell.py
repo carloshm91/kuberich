@@ -15,9 +15,16 @@ from tests.support.transports import TerminalTransport
 from tests.terminal.pty_support import TerminalSession
 
 FAKE = r"""
-import curses, json, os, select, signal, stat, sys, termios, time, tty
+import curses, json, os, select, signal, stat, sys, termios, time, traceback, tty
 from pathlib import Path
 directory=Path(__file__).resolve().parent.parent
+def record_failure(kind,value,trace):
+    (directory/'child-error.json').write_text(json.dumps({
+        'kind':kind.__name__,'message':str(value)[:512],
+        'frames':[{'file':Path(frame.filename).name,'line':frame.lineno}
+                  for frame in traceback.extract_tb(trace)]}))
+    sys.__excepthook__(kind,value,trace)
+sys.excepthook=record_failure
 scenario=(directory/'scenario').read_text()
 args=sys.argv[1:]
 path=Path(args[0].split('=',1)[1])
@@ -227,6 +234,9 @@ def terminal_shell(
                             TerminalSession(invocation, directory, transport=transport)
                         )
                         terminal.wait_for_screen("SHELL CHILD READY")
+                        # This is a new observer with its own transcript. Require
+                        # a fresh child resize witness before sending input.
+                        terminal.wait_for_screen("SHELL CHILD SIZE 98 24")
                         assert int((directory / "child-pid").read_text()) == child
                         os.kill(child, 0)
                     if scenario in {"terminate", "hangup", "lost_ssh"}:
@@ -251,7 +261,7 @@ def terminal_shell(
                         terminal.send(b"\x03")
                         terminal.wait_for(b"Shell interrupted", since=marker)
                     else:
-                        terminal.send(b"owned selected worker\n")
+                        marker = terminal.send(b"owned selected worker\n")
                         terminal.wait_for(
                             b"Shell closed"
                             if scenario in {"success", "early_close", "lost_ssh_tmux"}
@@ -297,6 +307,13 @@ def terminal_shell(
         else:
             assert not captured.exists()
     finally:
+        child_error = directory / "child-error.json"
+        if child_error.exists():
+            # Retain the owned fixture's actual failure even when repainting the
+            # restored workspace has removed its traceback from the screen.
+            retained = Path("artifacts/terminal")
+            retained.mkdir(parents=True, exist_ok=True)
+            (retained / f"{evidence}-child-error.json").write_bytes(child_error.read_bytes())
         server.pod_gate.set()
         server.stopping.set()
         server.shutdown()

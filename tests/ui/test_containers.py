@@ -321,6 +321,9 @@ async def test_pod_enter_captures_the_selected_event_uid_before_later_cursor_mov
         app = app_for(tmp_path, url)
         async with app.run_test() as pilot:
             await wait_for(lambda: app.resources.row_count == 2)
+            # Row creation precedes apply_rows' final initial viewport restore.
+            # Wait for that owned projection before simulating later movement.
+            await pilot.pause()
             key = app.resources.coordinate_to_cell_key(app.resources.cursor_coordinate)
             event = DataTable.RowSelected(app.resources, 0, key.row_key)
             app.resources.move_cursor(row=1)
