@@ -14,6 +14,7 @@ from textual.widgets import Button, DataTable, Static
 from kuberich.domain.containers import CONTAINER_COLUMNS, container_rows
 from kuberich.errors import AppError
 from kuberich.security.presentation import safe_text
+from kuberich.services.attach import AttachService
 from kuberich.services.logs import LogStream
 from kuberich.services.processes import ProcessRunner
 from kuberich.services.shell import ShellService
@@ -44,6 +45,7 @@ class ContainerScreen(ModalScreen[None]):
         Binding("l", "logs", "Logs"),
         Binding("s", "shell", "Shell"),
         Binding("x", "shell", "Shell", show=False),
+        Binding("a", "attach", "Attach"),
     ]
     DEFAULT_CSS = """
     ContainerScreen { layout: vertical; background: $background; }
@@ -65,6 +67,7 @@ class ContainerScreen(ModalScreen[None]):
         manifest: dict[str, Any],
         *,
         shell: ShellService | None = None,
+        attach: AttachService | None = None,
         processes: ProcessRunner | None = None,
         chrome: WorkspaceChrome | None = None,
         trail: tuple[str, ...] = ("pods",),
@@ -72,11 +75,12 @@ class ContainerScreen(ModalScreen[None]):
         super().__init__()
         self.stream = stream
         self.shell, self.processes = shell, processes
+        self.attach = attach
         self.chrome, self.trail = chrome, (*trail, "containers")
         self.rows = container_rows(manifest)
         self.names = tuple(row.name for row in self.rows)
         if not self.names:
-            raise AppError("The selected pod has no regular/init containers.")
+            raise AppError("The selected pod has no regular/init/ephemeral containers.")
         self.table = ContainerTable(id="containers", cursor_type="row", zebra_stripes=True)
         self.status = Static(
             "Pod snapshot · CPU/MEM are requests/limits; live usage is not collected.",
@@ -97,7 +101,9 @@ class ContainerScreen(ModalScreen[None]):
             )
             with Horizontal():
                 yield Static(
-                    "Enter/l logs · s shell · Esc pods"
+                    "Enter/l logs · s shell · a attach · Esc pods"
+                    if self.attach is not None
+                    else "Enter/l logs · s shell · Esc pods"
                     if self.shell is not None
                     else "Enter/l logs · j/k ↑/↓ · g/G first/last · Esc pods",
                     markup=False,
@@ -146,15 +152,23 @@ class ContainerScreen(ModalScreen[None]):
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
         if action == "shell":
             return self.shell is not None and self.processes is not None
+        if action == "attach":
+            return self.attach is not None and self.processes is not None
         return True
 
     def action_shell(self) -> None:
+        self._terminal(self.shell)
+
+    def action_attach(self) -> None:
+        self._terminal(self.attach)
+
+    def _terminal(self, service: ShellService | AttachService | None) -> None:
         if self.app.screen is not self:
             return
-        if self.shell is None or self.processes is None:
+        if service is None or self.processes is None:
             return
         try:
-            request = self.shell.capture(self.names[self.table.cursor_row])
+            request = service.capture(self.names[self.table.cursor_row])
         except AppError as error:
             self.status.update(safe_text(str(error)))
             return
@@ -163,7 +177,7 @@ class ContainerScreen(ModalScreen[None]):
             self.validate_target()
             self.status.update(safe_text(message or "Shell closed."))
 
-        self.app.push_screen(ShellScreen(self.shell, self.processes, request), returned)
+        self.app.push_screen(ShellScreen(service, self.processes, request), returned)
 
     def _open(self, name: str) -> None:
         if self.app.screen is not self:

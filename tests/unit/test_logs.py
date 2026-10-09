@@ -57,7 +57,7 @@ def test_invalid_log_options_fail_without_io(values):
         LogOptions(**values)
 
 
-def test_only_regular_and_init_containers_are_available_and_duplicates_rejected():
+def test_regular_init_and_existing_ephemeral_containers_are_available_and_duplicates_rejected():
     raw = {
         "spec": {
             "containers": [{"name": "app"}],
@@ -65,11 +65,16 @@ def test_only_regular_and_init_containers_are_available_and_duplicates_rejected(
             "ephemeralContainers": [{"name": "debug"}],
         }
     }
-    assert log_containers(raw) == ("app", "init")
+    assert log_containers(raw) == ("app", "init", "debug")
     assert log_containers({"spec": {"containers": None}}) == ()
-    for values in ("invalid", [{"name": "app"}] * 129):
-        with pytest.raises(AppError, match="container list"):
-            log_containers({"spec": {"containers": values}})
+    for field in ("containers", "initContainers", "ephemeralContainers"):
+        for values in ("invalid", [{"name": "app"}] * 129):
+            with pytest.raises(AppError, match="container list"):
+                log_containers({"spec": {field: values}})
+    raw["spec"]["ephemeralContainers"][0]["name"] = "app"
+    with pytest.raises(AppError, match="Duplicate"):
+        log_containers(raw)
+    raw["spec"]["ephemeralContainers"][0]["name"] = "debug"
     raw["spec"]["initContainers"][0]["name"] = "app"
     with pytest.raises(AppError, match="Duplicate"):
         log_containers(raw)

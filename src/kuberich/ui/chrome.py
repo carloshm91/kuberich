@@ -130,6 +130,7 @@ CTX_SHORTCUTS = (
 CONTAINER_SHORTCUTS = (
     ("Enter / l", "Logs"),
     ("s / x", "Shell"),
+    ("a", "Attach"),
     ("j/k", "Down / up"),
     ("g/G", "First / last"),
     ("Esc", "Pods"),

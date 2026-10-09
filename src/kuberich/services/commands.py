@@ -23,6 +23,7 @@ class Command(Enum):
     BACK = auto()
     FORWARD = auto()
     SHELL = auto()
+    ATTACH = auto()
     PORT_FORWARD = auto()
     PORT_FORWARDS = auto()
     ANNOTATE = auto()
@@ -77,6 +78,7 @@ ALIASES = {
     "forward": Command.FORWARD,
     "shell": Command.SHELL,
     "exec": Command.SHELL,
+    "attach": Command.ATTACH,
     "pf": Command.PORT_FORWARDS,
     "portforwards": Command.PORT_FORWARDS,
     "portforward": Command.PORT_FORWARD,

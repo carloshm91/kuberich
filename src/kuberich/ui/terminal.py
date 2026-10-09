@@ -15,12 +15,15 @@ from textual.widgets import Static
 
 from kuberich.adapters.emulator import TerminalModel
 from kuberich.adapters.pty import PtyEndpoint
+from kuberich.domain.attach import attach_result
 from kuberich.domain.connections import ConnectionProblem
+from kuberich.domain.processes import ProcessPurpose
 from kuberich.domain.shell import shell_result
 from kuberich.domain.terminal import terminal_key, terminal_paste
 from kuberich.errors import AppError, ExecutableUnavailable
 from kuberich.security.controls import escape_controls
 from kuberich.security.presentation import safe_text
+from kuberich.services.attach import AttachService
 from kuberich.services.processes import ProcessRunner
 from kuberich.services.shell import ShellRequest, ShellService
 
@@ -107,9 +110,13 @@ class ShellScreen(ModalScreen[str]):
     #shell-controls { color: $text-muted; }
     """
 
-    def __init__(self, shell: ShellService, runner: ProcessRunner, request: ShellRequest) -> None:
+    def __init__(
+        self, shell: ShellService | AttachService, runner: ProcessRunner, request: ShellRequest
+    ) -> None:
         super().__init__()
         self.shell, self.runner, self.request = shell, runner, request
+        self.attach_mode = request.command.purpose is ProcessPurpose.ATTACH
+        self.detach_pending = False
         self.terminal = TerminalWidget()
         self._session_task: asyncio.Task[None] | None = None
         self.message: str | None = None
@@ -120,7 +127,13 @@ class ShellScreen(ModalScreen[str]):
         target = self.request.command.target
         assert target is not None
         with Vertical(id="shell-frame"):
-            yield Static("KubeRich · Container shell", id="shell-heading", markup=False)
+            yield Static(
+                "KubeRich · Attach to existing process"
+                if self.attach_mode
+                else "KubeRich · Container shell",
+                id="shell-heading",
+                markup=False,
+            )
             yield Static(safe_text(f"Context: {target.session.context}"), id="shell-context")
             yield Static(
                 safe_text(f"Pod: {target.namespace}/{target.name} · Container: {target.container}"),
@@ -128,7 +141,9 @@ class ShellScreen(ModalScreen[str]):
             )
             yield self.terminal
             yield Static(
-                "exit / Ctrl+D return · Ctrl+] close · Ctrl+C interrupt · Ctrl+Q quit",
+                "Ctrl+P, Ctrl+Q detach · Ctrl+] close locally · Ctrl+C affects remote process · Ctrl+Q quit"
+                if self.attach_mode
+                else "exit / Ctrl+D return · Ctrl+] close · Ctrl+C interrupt · Ctrl+Q quit",
                 id="shell-controls",
                 markup=False,
             )
@@ -142,7 +157,14 @@ class ShellScreen(ModalScreen[str]):
     def _finished(self, task: asyncio.Task[None]) -> None:
         self._session_task = None
         if self.is_mounted and not self._shell_unmounting:
-            self.dismiss(self.message or "Shell closed · Container selection retained.")
+            self.dismiss(
+                self.message
+                or (
+                    "Attach closed locally · Container selection retained."
+                    if self.attach_mode
+                    else "Shell closed · Container selection retained."
+                )
+            )
 
     def validate_target(self) -> None:
         try:
@@ -161,6 +183,7 @@ class ShellScreen(ModalScreen[str]):
     def key(self, event: Key) -> None:
         if self._shell_closing:
             return
+        self.detach_pending = self.attach_mode and event.key == "ctrl+p"
         if event.key == "ctrl+right_square_bracket":
             self.close_shell()
             return
@@ -178,6 +201,7 @@ class ShellScreen(ModalScreen[str]):
     def paste(self, event: Paste) -> None:
         if self._shell_closing:
             return
+        self.detach_pending = False
         try:
             self.terminal.write(
                 terminal_paste(event.text, bracketed=self.terminal.model.bracketed_paste)
@@ -197,11 +221,18 @@ class ShellScreen(ModalScreen[str]):
                         self.terminal.model.feed(data)
                         self.terminal.refresh()
                         await asyncio.sleep(0)
-                    self.message = shell_result(await process.wait())
+                    result = await process.wait()
+                    self.message = (
+                        attach_result(result) if self.attach_mode else shell_result(result)
+                    )
         except asyncio.CancelledError:
             pass
         except ExecutableUnavailable:
-            self.message = "kubectl is unavailable. Install kubectl on PATH, then press s to retry."
+            self.message = (
+                "kubectl is unavailable. Install kubectl on PATH, then press a to retry attach."
+                if self.attach_mode
+                else "kubectl is unavailable. Install kubectl on PATH, then press s to retry."
+            )
         except (AppError, ConnectionProblem) as error:
             self.message = str(error)
         except Exception as error:

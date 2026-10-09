@@ -8,6 +8,27 @@ from kuberich.domain.containers import CONTAINER_COLUMNS, container_rows
 from kuberich.errors import AppError
 
 
+def test_existing_ephemeral_container_has_its_own_name_matched_status():
+    manifest = {
+        "spec": {
+            "containers": [{"name": "app"}],
+            "ephemeralContainers": [{"name": "debug", "image": "owned/debug:v1"}],
+        },
+        "status": {
+            "containerStatuses": [{"name": "app", "ready": True}],
+            "ephemeralContainerStatuses": [
+                {"name": "other", "state": {"terminated": {}}},
+                {"name": "debug", "state": {"running": {}}, "restartCount": 0},
+            ],
+        },
+    }
+    app, debug = container_rows(manifest)
+    assert app.kind == "App" and app.ready == "true"
+    assert debug.kind == "Ephemeral" and debug.state == "Running"
+    assert debug.image == "owned/debug:v1" and debug.ready == "—" and debug.restarts == "0"
+    assert debug.cpu == "—/—" and debug.memory == "—/—" and debug.probes == "off:off:off"
+
+
 def test_name_matched_app_init_and_sidecar_data_are_distinct_and_do_not_invent_metrics():
     manifest = {
         "spec": {

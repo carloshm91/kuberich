@@ -50,6 +50,7 @@ from kuberich.errors import AppError, ExecutableUnavailable
 from kuberich.security.arguments import validate_argument
 from kuberich.security.presentation import safe_text
 from kuberich.services.access import AccessPolicy, Action
+from kuberich.services.attach import AttachService
 from kuberich.services.commands import (
     Command,
     CommandService,
@@ -368,7 +369,9 @@ class KubeRichApp(App[None]):
             and not event.is_forwarded
         ):
             if isinstance(event, Key):
-                if event.key == "ctrl+q":
+                if event.key == "ctrl+q" and not (
+                    self.screen.attach_mode and self.screen.detach_pending
+                ):
                     self.exit()
                 else:
                     self.screen.key(event)
@@ -810,6 +813,14 @@ class KubeRichApp(App[None]):
             return
         self._open_logs(containers_first=True)
 
+    def action_attach(self) -> None:
+        try:
+            self.commands.policy.require(Action.ATTACH)
+        except AppError as error:
+            self._set_status(str(error))
+            return
+        self._open_logs(containers_first=True)
+
     def action_port_forwards(self, selected: UUID | None = None) -> None:
         if not isinstance(self.screen, ModalScreen):
             self.push_screen(
@@ -977,7 +988,7 @@ class KubeRichApp(App[None]):
                 raise AppError("Select a namespaced pod to open container logs.")
             containers = log_containers(record.manifest)
             if not containers:
-                raise AppError("The selected pod has no regular/init containers.")
+                raise AppError("The selected pod has no regular/init/ephemeral containers.")
         except AppError as error:
             self._set_status(str(error))
             return
@@ -996,6 +1007,14 @@ class KubeRichApp(App[None]):
                     directory=self._process_directory,
                 ),
                 processes=self.processes,
+                attach=AttachService(
+                    client,
+                    target,
+                    self.commands.policy,
+                    current,
+                    environment=self._process_environment,
+                    directory=self._process_directory,
+                ),
                 chrome=self.chrome,
                 trail=self.breadcrumbs.trail,
             )
@@ -1259,7 +1278,7 @@ class KubeRichApp(App[None]):
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
         if action == "port_forward" and self._resource_name not in {"pods", "services"}:
             return False
-        if action in {"logs", "shell"} and self._resource_name != "pods":
+        if action in {"logs", "shell", "attach"} and self._resource_name != "pods":
             return False
         if action in {
             "focus_filter",
@@ -1272,6 +1291,7 @@ class KubeRichApp(App[None]):
             "edit",
             "logs",
             "shell",
+            "attach",
             "port_forward",
         }:
             return not isinstance(self.screen, ModalScreen) and not isinstance(self.focused, Input)
@@ -1392,6 +1412,8 @@ class KubeRichApp(App[None]):
             self._set_status(self._workspace_status())
         elif command is Command.SHELL:
             self.action_shell()
+        elif command is Command.ATTACH:
+            self.action_attach()
         elif command is Command.PORT_FORWARD:
             self.action_port_forward()
         elif command is Command.PORT_FORWARDS:
