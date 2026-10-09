@@ -1,5 +1,22 @@
 # First things to try
 
+## Flat website and reference checkpoint: #162
+
+The local landing and initial docs share a light flat design, real UI captures,
+keyboard navigation and a compact mobile guide menu. Eighteen authored guides
+and three source-generated references build for both proposed hosts. CLI flags,
+resource aliases/columns and capability status come from maintained declarations;
+behavioral guides still need updates with each implementation PR.
+
+Exact tested commands: `uv run python -m scripts.build_site`,
+`uv run python -m scripts.check_site`,
+`uv run pytest tests/quality/test_site.py -q`, and
+`node scripts/verify_site_browser.mjs` after the documented locked QA install.
+See [acceptance evidence](acceptance/flat-website.md) and
+[local preview instructions](../website/README.md). The source version remains
+`0.0.1.dev0`; public packages, website hosting and DNS are not activated. #89 owns
+final-candidate qualification and separately approved publication.
+
 ## Credential interoperability checkpoint: C08 #47
 
 Generic `:login` now honors Never/IfAvailable/Always; token files refresh, and exec

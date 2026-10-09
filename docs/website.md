@@ -7,10 +7,31 @@ Repository visibility, hosting and DNS remain unchanged by this implementation.
 
 The landing page introduces the actual workspace, captured local UI, 15 standard
 resource families, logs, embedded exec, forwarding and guarded changes. It leads
-to a read-only first launch. Sixteen initial guides reuse the repository sources
+to a read-only first launch. Eighteen initial guides reuse the repository sources
 for installation, navigation, configuration, inspection, logs, shells, forwarding,
 editing/workloads and EKS/AKS prerequisites. Current public distribution is absent;
 the page states that directly rather than supplying invented install/download links.
+
+## Flat presentation and generated references: #162
+
+The maintainer authorized independent website preparation alongside product work.
+The landing and guides now share a restrained light background, ink typography,
+blue links and native keyboard navigation. Real terminal captures keep their
+reviewed provenance. Mobile documentation uses an expandable guide menu, with
+usable native navigation when JavaScript is disabled. Source visibility is public;
+packages and both website surfaces remain unpublished.
+
+Three generated references read the actual launch parser, standard-resource
+registry and maintained capability inventory. Planned/partial audit differences
+remain explicit. Source version is read from `pyproject.toml`; source receipts
+cover imported application modules and reject stale builds. This automation
+updates declarations, not authored behavioral prose. Each implementation PR must
+update its user guide and limits; enrollment and build conventions are documented
+in [website/README](../website/README.md#keep-documentation-current-in-each-product-pr).
+Repository checks rebuild and browser-verify both surfaces on every PR/main push.
+The same generator prepares exact release-candidate documentation under #89.
+
+See [flat-site acceptance](acceptance/flat-website.md) for measured local evidence.
 
 ## Local reviewable result
 
@@ -49,7 +70,7 @@ workflow in #89; an empty placeholder workflow does not qualify deployment.
 
 Before an approved deployment:
 
-1. Freeze and qualify the exact release candidate through #89. Regenerate the
+1. Complete website refinement #162, then freeze and qualify the exact release candidate through #89. Regenerate the
    guides and installed version from that source. Replace preview availability
    text only with actual verified publication/install results; remove noindex
    only as part of the separately approved public launch.

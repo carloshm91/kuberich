@@ -16,6 +16,8 @@ from urllib.parse import urlsplit
 from markdown_it import MarkdownIt
 from markdown_it.token import Token
 
+from scripts.site_reference import generated_guides
+
 ROOT = Path(__file__).resolve().parents[1]
 GENERATOR = "kuberich-initial-site-v1"
 MARKER = "build-manifest.json"
@@ -61,6 +63,12 @@ GUIDES = (
     Guide("kubeconfig-interoperability.md", "GKE, OIDC, certificates & proxies", "Authentication"),
 )
 
+REFERENCES = (
+    Guide("cli-reference.md", "Command-line options", "Reference"),
+    Guide("resource-reference.md", "Resource registry", "Reference"),
+    Guide("capability-reference.md", "Capability progress", "Reference"),
+)
+
 
 def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -101,7 +109,7 @@ def heading_ids(tokens: list[Token]) -> list[tuple[str, str]]:
 
 
 def rewrite_links(tokens: list[Token], source: Path, root: Path) -> None:
-    selected = {guide.source: guide.filename for guide in GUIDES}
+    selected = {guide.source: guide.filename for guide in (*GUIDES, *REFERENCES)}
     for token in tokens:
         if token.children:
             rewrite_links(token.children, source, root)
@@ -124,26 +132,29 @@ def rewrite_links(tokens: list[Token], source: Path, root: Path) -> None:
 
 
 def navigation(current: str) -> str:
-    parts = ['<nav class="docs-nav" aria-label="Documentation"><h2>Overview</h2>']
+    parts = [
+        '<details class="docs-menu" open><summary>Browse documentation</summary>'
+        '<nav class="docs-nav" aria-label="Documentation"><h2>Overview</h2>'
+    ]
     active = ' aria-current="page"' if current == "index.html" else ""
     parts.append(f'<a href="index.html"{active}>Start here</a>')
     group = ""
-    for guide in GUIDES:
+    for guide in (*GUIDES, *REFERENCES):
         if guide.group != group:
             group = guide.group
             parts.append(f"<h2>{escape(group)}</h2>")
         active = ' aria-current="page"' if guide.filename == current else ""
         parts.append(f'<a href="{guide.filename}"{active}>{escape(guide.title)}</a>')
-    parts.append("</nav>")
+    parts.append("</nav></details>")
     return "".join(parts)
 
 
 def preview_banner(version: str) -> str:
     return (
         '<aside class="preview-banner" aria-label="Preview status">'
-        f"<p><strong>Private preview · {escape(version)}</strong> — supplied local wheels and "
-        "checkout only. Public PyPI/Homebrew are not available. Linux is locally verified; "
-        "native macOS/full hosted qualification and real-cloud trials remain pending.</p></aside>"
+        f"<p><strong>Development preview · {escape(version)}</strong>. "
+        "Public PyPI/Homebrew packages are not available. Use the source checkout or a trusted "
+        "local wheel. Full release qualification and real-cloud trials remain pending.</p></aside>"
     )
 
 
@@ -154,7 +165,7 @@ def page_frame(
     home = "https://kuberich.com" if standalone else ("../index.html" if docs else "index.html")
     values = {
         "title": escape(title),
-        "description": "KubeRich: a Python terminal workspace for Kubernetes. Private preview.",
+        "description": "KubeRich: a Python terminal workspace for Kubernetes. Development preview.",
         "prefix": prefix,
         "home": home,
         "docs": "index.html" if docs or standalone else "docs/index.html",
@@ -165,25 +176,38 @@ def page_frame(
     return Template((root / "website/frame.html").read_text()).substitute(values)
 
 
-def guide_html(root: Path, guide: Guide, version: str, *, standalone: bool) -> str:
+def guide_html(
+    root: Path, guide: Guide, version: str, *, standalone: bool, generated: str | None = None
+) -> str:
     source = root / "docs" / guide.source
     md = MarkdownIt("commonmark", {"html": False}).enable("table")
-    tokens = md.parse(user_content(source.read_text()))
+    tokens = md.parse(generated if generated is not None else user_content(source.read_text()))
     sections = heading_ids(tokens)
+    for token in tokens:
+        if token.type == "table_open":
+            # Wide references scroll locally on mobile and must accept keyboard focus.
+            token.attrSet("tabindex", "0")
     rewrite_links(tokens, source, root)
     toc = (
         '<nav class="doc-toc" aria-label="On this page">'
         + "".join(f'<a href="#{identifier}">{escape(title)}</a>' for identifier, title in sections)
         + "</nav>"
     )
-    rendered = md.renderer.render(tokens, md.options, {})
+    rendered = md.renderer.render(tokens, md.options, {}).replace("<pre>", '<pre tabindex="0">')
     content = (
         f'<main id="main" tabindex="-1" class="docs-shell">{navigation(guide.filename)}'
         '<article class="doc-body">'
         f'{preview_banner(version)}<p class="eyebrow">{escape(guide.group).upper()}</p>'
-        f'{toc}{rendered}<div class="source-link">Generated from the maintained '
-        f'<a href="{REPOSITORY}/blob/main/docs/{guide.source}">source guide '
-        "on GitHub (private)</a>.</div></article></main>"
+        f"{rendered.split('</h1>', 1)[0]}</h1>{toc}{rendered.split('</h1>', 1)[1]}"
+        '<div class="source-link">'
+        + (
+            f'Generated from <a href="{REPOSITORY}/blob/main/scripts/site_reference.py">'
+            "application declarations and the maintained capability inventory</a>."
+            if generated is not None
+            else f'Built from the maintained <a href="{REPOSITORY}/blob/main/docs/{guide.source}">'
+            "source guide on GitHub</a>."
+        )
+        + "</div></article></main>"
     )
     return page_frame(root, content, guide.title, version, docs=True, standalone=standalone)
 
@@ -192,13 +216,13 @@ def docs_index(root: Path, version: str, *, standalone: bool) -> str:
     links = "".join(
         f'<li><a href="{guide.filename}">{escape(guide.title)}</a> '
         f'<span class="muted">/ {escape(guide.group)}</span></li>'
-        for guide in GUIDES
+        for guide in (*GUIDES, *REFERENCES)
     )
     content = (
         f'<main id="main" tabindex="-1" class="docs-shell">{navigation("index.html")}'
         f'<article class="doc-body">{preview_banner(version)}<p class="eyebrow">DOCUMENTATION</p>'
-        '<h1>Your first look at KubeRich.</h1><p class="index-summary">Install a supplied local '
-        "wheel, select an intended context, and explore in read-only mode. These guides describe "
+        '<h1>Get to know your workspace.</h1><p class="index-summary">Install a supplied local '
+        "wheel or use a source checkout, select an intended context, and explore in read-only mode. These guides describe "
         "the implemented preview, its prerequisites and its limits.</p>"
         '<p>Start with <a href="quickstart.html">installation and first launch</a>. '
         "Use the same trusted kubeconfig and provider helper session that work with kubectl. "
@@ -230,11 +254,23 @@ def prepare_output(output: Path, root: Path) -> None:
     output.mkdir(parents=True, exist_ok=True)
 
 
-def build(output: Path, root: Path = ROOT) -> dict[str, object]:
-    inputs = [root / "pyproject.toml", root / "scripts/build_site.py"]
+def source_inputs(root: Path) -> list[Path]:
+    inputs = [
+        root / "pyproject.toml",
+        root / "scripts/build_site.py",
+        root / "scripts/site_reference.py",
+        root / "docs/capabilities.json",
+    ]
+    # Imported parser/registry dependencies are part of the receipt, including future modules.
+    inputs += sorted((root / "src/kuberich").rglob("*.py"))
     inputs += sorted((root / "website").glob("*.html"))
     inputs += sorted((root / "website/assets").glob("*"))
     inputs += [root / "docs" / guide.source for guide in GUIDES]
+    return inputs
+
+
+def build(output: Path, root: Path = ROOT) -> dict[str, object]:
+    inputs = source_inputs(root)
     for path in inputs:
         if not path.is_file() or path.is_symlink():
             raise ValueError(f"Missing or unsafe site input: {path.relative_to(root)}")
@@ -244,6 +280,7 @@ def build(output: Path, root: Path = ROOT) -> dict[str, object]:
         if digest(root / "website/assets" / name) != record["sha256"]:
             raise ValueError("Screenshot digest differs from reviewed media inventory")
     version = str(tomllib.loads((root / "pyproject.toml").read_text())["project"]["version"])
+    references = generated_guides(root, version)
     prepare_output(output, root)
     for surface in ("www", "docs"):
         destination = output / surface
@@ -256,9 +293,15 @@ def build(output: Path, root: Path = ROOT) -> dict[str, object]:
         docs_dir = destination if standalone else destination / "docs"
         docs_dir.mkdir(exist_ok=True)
         (docs_dir / "index.html").write_text(docs_index(root, version, standalone=standalone))
-        for guide in GUIDES:
+        for guide in (*GUIDES, *REFERENCES):
             (docs_dir / guide.filename).write_text(
-                guide_html(root, guide, version, standalone=standalone)
+                guide_html(
+                    root,
+                    guide,
+                    version,
+                    standalone=standalone,
+                    generated=references.get(guide.source),
+                )
             )
     landing = Template((root / "website/landing.html").read_text()).substitute(version=version)
     (output / "www/index.html").write_text(

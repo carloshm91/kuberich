@@ -21,3 +21,13 @@ for (const pre of document.querySelectorAll(".doc-body pre")) {
   });
   pre.append(button);
 }
+
+// Native details remains expanded with JavaScript disabled. On small screens,
+// collapse the long guide list so the requested article is immediately available.
+const docsMenu = document.querySelector(".docs-menu");
+if (docsMenu) {
+  const narrow = window.matchMedia("(max-width: 760px)");
+  const syncMenu = () => { docsMenu.open = !narrow.matches; };
+  syncMenu();
+  narrow.addEventListener("change", syncMenu);
+}

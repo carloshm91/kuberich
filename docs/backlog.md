@@ -37,9 +37,17 @@ public product release at **1.0.0**; development metadata remains `0.0.1.dev0`.
 3. D10 #89 owns first-product publication, protected main/environments,
    PyPI/TestPyPI ownership/OIDC, public tap/registries, immutable artifacts/tags,
    public installed-channel trials, and #150's exact-candidate initial site.
-   Prepare and verify website/docs after product and final qualification, then
+   Final-candidate website/docs verification follows product and final qualification;
    deploy approved reviewed bytes from GitHub Actions to Cloudflare Pages.
 4. Expanded/versioned MkDocs and its deployment remain later W02 #90 / W03 #91.
+
+On 2026-10-09 the maintainer explicitly authorized independent Astra website work
+alongside the single active product issue. [#162](https://github.com/carloshm91/kuberich/issues/162)
+refines the local landing/docs and generated references in an isolated branch.
+This narrow preparation exception supersedes the earlier website sequence; it
+adds no deployment or DNS authorization. #162 is a tracked readiness prerequisite
+for #89 through `delivery.publication_extra_issues`. The product issue sequence,
+full required checks and separately approved final publication remain unchanged.
 
 D04 #40, D06 #51, D07 #65, D08 #75, D09 #82 and D11 #86 are engineering
 qualification checkpoints. Their local installs, complete platform matrix,
