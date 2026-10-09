@@ -16,10 +16,12 @@ identity. They cover missing/conflicting projects, failed auth, refused API
 redirects, stale public bytes, bounded retries and first/second upload failures.
 Synthetic provider responses are not claimed as real Cloudflare qualification.
 
-Ruff, formatting, plan validation and strict mypy passed. Source plus site/deploy
-scripts passed strict types over 107 files. No application production code changes;
-changed executable application coverage is N/A. All required PR application and
-independent coverage gates remain mandatory.
+Ruff, formatting, plan validation and strict mypy passed. The initial site-only
+source plus site/deploy scripts passed strict types over 107 files; its executable
+application coverage diff was N/A. The first hosted macOS run subsequently exposed
+the existing subprocess group exit race described below. The correction changes
+application code, so final changed-line coverage must be measured. All required PR
+application and independent coverage gates remain mandatory.
 
 `uv run python -m scripts.build_site` and `uv run python -m scripts.check_site`
 verified 49 HTML pages, 1,722 local links/assets and 64 total build files.
@@ -32,6 +34,25 @@ Node dependencies were installed from locks with scripts disabled. The Wrangler
 
 Local receipts are retained in `artifacts/pages-publication`, `artifacts/site`
 and `artifacts/site-qa`. They do not establish provider publication or TLS.
+
+## Required macOS subprocess prerequisite
+
+The first PR run failed the stderr-limit download contract while sending SIGCONT
+to an exiting owned group. Apple's [XNU signal implementation](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/kern_sig.c)
+can find a group but filter out its zombie members and return EPERM. Cleanup now
+probes a denied Darwin group with signal zero after up to five nonblocking 10 ms waits, accepting only
+ESRCH as confirmation that the group disappeared. Live-group and persistent
+permission errors still propagate; non-Darwin permission errors remain immediate.
+No real permission failure is silently treated as successful cleanup.
+
+Regressions exercise disappearance after transient denials, persistent/live
+negative controls and actual owned-child exit/reaping. Existing real-descendant,
+timeout, repeated-cancellation, PTY, attach, forwarding and transfer contracts
+remain required. The local process/transfer/attach/forward/PTY cohort passed
+163 cases in 23.15 seconds. All 17 changed executable production lines were
+covered (100%). Ruff/formatting and strict types over 108 files passed. This
+focused run does not replace the full hosted coverage gates; final native
+evidence is recorded on the live issue.
 
 ## Actual provider acceptance
 

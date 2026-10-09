@@ -5,6 +5,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ## Unreleased
 
+### Fixed
+
+- Verify disappearance after macOS reports a permission error for an exiting
+  subprocess group. Preserve real permission failures and owned child cleanup.
+
 ### Changed
 
 - Refine the landing and initial docs with a shared flat presentation and mobile

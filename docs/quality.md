@@ -35,6 +35,12 @@ the credential-bearing upload step. Publication requires actual HTTPS file/heade
 404 verification and retains complete or partial receipts. This development-site
 exception does not waive application gates or qualify the final product release.
 
+Its first macOS run exposed a subprocess group exit race, addressed as a narrow
+publication prerequisite. That application correction requires measured changed
+line coverage and full native checks; #166 is consequently not a site-only diff.
+Process regressions retain real-child reaping and descendant cancellation, and
+negative controls reject live or persistently denied Darwin groups.
+
 The current critical modules are the CLI/module entry points, preference schema
 validation/precedence, diagnostic redaction, control escaping, literal text
 presentation, argument validation/capture, client/UID target identity checks,

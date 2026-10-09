@@ -55,12 +55,29 @@ def _executable(command: ProcessCommand) -> str:
     return resolved
 
 
-def _signal_group(pid: int, value: signal.Signals) -> bool:
+async def _signal_group(pid: int, value: signal.Signals) -> bool:
     try:
         os.killpg(pid, value)
         return True
     except ProcessLookupError:
         return False
+    except PermissionError:
+        if sys.platform != "darwin":
+            raise
+        # XNU can find a group but exclude all its exiting/zombie members from
+        # signal delivery, returning EPERM before the group disappears. Probe
+        # without sending another signal; only ESRCH establishes its removal.
+        # A live group or a persistent denial must still fail cleanup.
+        for _ in range(5):
+            await asyncio.sleep(0.01)
+            try:
+                os.killpg(pid, 0)
+            except ProcessLookupError:
+                return False
+            except PermissionError:
+                continue
+            raise
+        raise
 
 
 class _Output(asyncio.SubprocessProtocol):
@@ -141,10 +158,10 @@ class ProcessSession:
 
     async def _cleanup(self) -> None:
         # The leader may have exited while descendants still own its pipes.
-        _signal_group(self.pid, signal.SIGCONT)
-        if _signal_group(self.pid, signal.SIGTERM):
+        await _signal_group(self.pid, signal.SIGCONT)
+        if await _signal_group(self.pid, signal.SIGTERM):
             await asyncio.sleep(self.grace)
-        _signal_group(self.pid, signal.SIGKILL)
+        await _signal_group(self.pid, signal.SIGKILL)
         await asyncio.shield(self.output.exited)
         try:
             await asyncio.wait_for(asyncio.shield(self.output.disconnected), 1)
