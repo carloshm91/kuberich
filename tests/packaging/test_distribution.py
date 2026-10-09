@@ -16,6 +16,7 @@ import pytest
 from tests.support.azure_handoff import azure_terminal_trial
 from tests.support.connections import fake_api
 from tests.support.credential_handoff import credential_terminal_trial, encrypted_key_terminal_trial
+from tests.support.custom_terminal import terminal_custom_views
 from tests.support.distribution import PROJECT, run
 from tests.support.editing_terminal import terminal_editing
 from tests.support.forward_terminal import terminal_forward
@@ -41,6 +42,7 @@ def test_installed_standard_resource_views_outside_checkout(installed_wheel, ent
         else [str(binary / "python"), "-m", "kuberich"]
     )
     terminal_standard_views(command, directory, f"installed-standard-{entry_point}")
+    terminal_custom_views(command, directory, f"installed-custom-{entry_point}")
 
 
 @pytest.mark.parametrize("entry_point", ["console", "module"])

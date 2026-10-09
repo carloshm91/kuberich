@@ -4,6 +4,8 @@ from dataclasses import dataclass
 
 from kuberich.domain.connections import namespace_name
 from kuberich.domain.pods import PodColumn
+from kuberich.domain.resources import ServerColumn
+from kuberich.domain.views import ResourceSelection
 
 MAX_HISTORY = 32
 
@@ -42,6 +44,8 @@ class NavigationState:
     y: float = 0
     top: str | None = None
     resource: str = "pods"
+    generic: ResourceSelection | None = None
+    headers: tuple[ServerColumn, ...] = ()
 
 
 class NavigationHistory:

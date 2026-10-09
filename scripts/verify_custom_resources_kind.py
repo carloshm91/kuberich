@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import json
+import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -14,15 +15,19 @@ from kubernetes_asyncio import client
 
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.config.catalog import load_catalog
+from kuberich.config.schema import Settings
 from kuberich.domain.connection_overrides import ConnectionOverrides
 from kuberich.domain.connections import ConnectionRequest, HttpProblem
 from kuberich.domain.views import ViewStatus
 from kuberich.domain.watches import EventType, SyncStatus, SyncUpdate
 from kuberich.errors import AppError
+from kuberich.services.commands import GenericResourceCommand
 from kuberich.services.resources import ResourceReader
 from kuberich.services.sessions import SessionService
 from kuberich.services.watches import ListWatch
 from kuberich.services.workspace import WorkspaceService
+from kuberich.ui.app import KubeRichApp
+from kuberich.ui.inspection import InspectionScreen
 from scripts.owned_kind import NODE_IMAGE, OwnedCluster, owned_cluster
 
 GROUP = "owned.kuberich.test"
@@ -137,6 +142,209 @@ async def representation_gateway(
             config.unlink()
     finally:
         await runner.cleanup()
+
+
+async def verify_browser(
+    cluster: OwnedCluster,
+    extensions: client.ApiextensionsV1Api,
+    custom: client.CustomObjectsApi,
+) -> None:
+    request = ConnectionRequest(
+        kubeconfig=str(cluster.path), context=cluster.context, namespace=NAMESPACE, timeout=15
+    )
+    app = KubeRichApp(
+        Settings(read_only=True),
+        logging.Logger("owned-custom-browser", level=100),
+        catalog=load_catalog(request, {}),
+        connection=request,
+        initial_command=GenericResourceCommand("widgets", GROUP, "v1beta1", NAMESPACE),
+    )
+
+    async def loaded() -> bool:
+        view = app.workspace.store.observation
+        return view.status is ViewStatus.LIVE and app.custom_table.row_count == 3
+
+    async with app.run_test(size=(100, 30)) as pilot:
+        await wait_for(loaded)
+        await pilot.pause()
+        table = app.custom_table
+        assert tuple(key.value for key in table.columns) == ("namespace", "name", "c2", "c3", "age")
+        assert GROUP + "/v1beta1" in str(app.query_one("#resource-view").border_title)
+        table.set_sort("c2")
+        await pilot.press("G")
+        selected = table.selected_uid
+        app._submit_command("columns c2")
+        await pilot.pause()
+        assert "c3" not in table.columns and table.selected_uid == selected
+        app._submit_command("columns c99")
+        await pilot.pause()
+        assert "retained" in str(app.status.content) and "c3" not in table.columns
+        app.action_inspect_yaml()
+
+        async def inspected() -> bool:
+            return isinstance(app.screen, InspectionScreen) and app.screen.result is not None
+
+        await wait_for(inspected)
+        assert isinstance(app.screen, InspectionScreen)
+        assert (
+            "kind: Widget" in app.screen.viewer.text
+            and GROUP + "/v1beta1" in app.screen.viewer.text
+        )
+        await pilot.press("escape")
+        app._submit_command("wdg")
+        assert "ambiguous" in str(app.status.content)
+        app._submit_command("gadgets." + OTHER_GROUP)
+
+        async def cluster_loaded() -> bool:
+            view = app.workspace.store.observation
+            return (
+                view.status is ViewStatus.LIVE
+                and view.scope is not None
+                and view.scope.resource.name == "gadgets"
+                and table.row_count == 1
+            )
+
+        await wait_for(cluster_loaded)
+        assert (
+            app.workspace.store.observation.scope is not None
+            and app.workspace.store.observation.scope.namespace is None
+        )
+        await pilot.press("alt+left")
+        await wait_for(loaded)
+        await pilot.pause()
+        assert (
+            app.workspace.selection.version == "v1beta1"
+            and table.selected_uid == selected
+            and "c3" not in table.columns
+        )
+        app._submit_command("widgets." + GROUP + " *")
+        await wait_for(loaded)
+        assert (
+            app.workspace.store.observation.scope is not None
+            and app.workspace.store.observation.scope.namespace is None
+        )
+        app._submit_command("widgets." + GROUP + "/v1beta1 " + NAMESPACE)
+        await wait_for(loaded)
+        connection = app.sessions.client
+        app._submit_command("refresh")
+        await wait_for(loaded)
+        assert app.sessions.client is connection
+        await custom.patch_namespaced_custom_object(
+            GROUP,
+            "v1beta1",
+            NAMESPACE,
+            "widgets",
+            "owned-0",
+            [{"op": "replace", "path": "/spec/level", "value": 20}],
+        )
+
+        async def observed() -> bool:
+            return any(
+                row.name == "owned-0" and row.values[2].sort == 20 for row in table._rows.values()
+            )
+
+        await wait_for(observed)
+        headers = table.resource_layout.headers if table.resource_layout is not None else ()
+        await extensions.delete_custom_resource_definition("widgets." + GROUP)
+
+        async def removed() -> bool:
+            app._submit_command("refresh")
+            if app._connection_task is not None:
+                await app._connection_task
+            return app.workspace.discovery is not None and not any(
+                resource.group == GROUP for resource in app.workspace.discovery.resources
+            )
+
+        await wait_for(removed)
+        assert app.workspace.store.observation.status is ViewStatus.FAILED and table.row_count == 0
+
+        async def absent() -> bool:
+            try:
+                await extensions.read_custom_resource_definition("widgets." + GROUP)
+            except client.ApiException as problem:
+                if problem.status == 404:
+                    return True
+                raise
+            return False
+
+        await wait_for(absent)
+        await extensions.create_custom_resource_definition(
+            cast(
+                client.V1CustomResourceDefinition,
+                definition(GROUP, "widgets", "Secret", namespaced=False),
+            )
+        )
+
+        async def reestablished() -> bool:
+            value = await extensions.read_custom_resource_definition("widgets." + GROUP)
+            return any(
+                condition.type == "Established" and condition.status == "True"
+                for condition in value.status.conditions or []
+            )
+
+        await wait_for(reestablished)
+        replacement = await custom.create_cluster_custom_object(
+            GROUP,
+            "v1beta1",
+            "widgets",
+            {
+                "apiVersion": GROUP + "/v1beta1",
+                "kind": "Secret",
+                "metadata": {"name": "replacement"},
+                "spec": {"level": 999, "enabled": True},
+            },
+        )
+
+        async def rediscovered() -> bool:
+            app._submit_command("refresh")
+            if app._connection_task is not None:
+                await app._connection_task
+            return app.workspace.discovery is not None and any(
+                resource.group == GROUP and resource.kind == "Secret"
+                for resource in app.workspace.discovery.resources
+            )
+
+        await wait_for(rediscovered)
+
+        async def recreated_loaded() -> bool:
+            view = app.workspace.store.observation
+            return (
+                view.status is ViewStatus.LIVE
+                and view.scope is not None
+                and view.scope.resource.kind == "Secret"
+                and view.scope.namespace is None
+                and table.row_count == 1
+            )
+
+        await wait_for(recreated_loaded)
+        await pilot.pause()
+        assert table.resource_layout is not None and table.resource_layout.headers == headers
+        assert tuple(key.value for key in table.columns) == ("name", "c2", "c3", "age")
+        uid = replacement["metadata"]["uid"]
+        assert uid != selected and table.selected_uid == uid
+        assert table.get_cell(uid, "c2").text == "[REDACTED]"
+        assert table.get_cell(uid, "c3").text == "[REDACTED]"
+        assert app.sessions.client is connection
+        app.action_inspect_yaml()
+        await wait_for(inspected)
+        assert isinstance(app.screen, InspectionScreen)
+        assert "kind: Secret" in app.screen.viewer.text and uid in app.screen.viewer.text
+        await pilot.press("escape")
+        await extensions.delete_custom_resource_definition("widgets." + GROUP)
+        await wait_for(removed)
+        app._submit_command("po")
+
+        async def core_loaded() -> bool:
+            view = app.workspace.store.observation
+            return (
+                view.status is ViewStatus.LIVE
+                and view.scope is not None
+                and view.scope.resource.name == "pods"
+            )
+
+        await wait_for(core_loaded)
+        assert app.sessions.client is connection
+    assert app.sessions.client is None
 
 
 async def verify(cluster: OwnedCluster) -> dict[str, Any]:
@@ -399,7 +607,11 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
 
         await workspace.select_discovered("pods", group="")
         await wait_for(live)
-        await extensions.delete_custom_resource_definition("widgets." + GROUP)
+        await verify_browser(cluster, extensions, custom)
+        checks.append(
+            "actual-pilot-generic-columns-sort-inspection-version-scopes-history-refresh-removal-"
+            "and-same-gvr-recreation-scope-kind-uid-redaction"
+        )
 
         async def removed() -> bool:
             await workspace.refresh_discovery()

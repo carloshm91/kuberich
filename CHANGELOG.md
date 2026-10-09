@@ -35,12 +35,16 @@ Release entries are written in release PRs and linked to their Git tags.
   website surfaces, preserving checked artifact bytes and verifying live HTTPS
   digests, response headers and 404s. Retain source/deployment and partial-failure
   receipts. Application packages and custom-domain/DNS setup remain separate.
+- Browse dynamically discovered resource families and explicit served versions
+  through qualified commands and completion. Show typed server columns with
+  metadata fallback, session-local column selection, captured YAML/details,
+  stable history and discovery refresh/removal recovery. Keep generic mutation
+  and persistent view preferences under their later owners.
 
 - Resolve preferred custom-resource versions and ambiguous aliases from live
   discovery. Read arbitrary discovered types through bounded LIST/WATCH/GET,
   retaining server Table columns and full manifests with scoped JSON fallback.
-  Refresh installed/removed APIs without replacing the context client. Generic
-  custom-resource terminal navigation remains the next B06 implementation.
+  Refresh installed/removed APIs without replacing the context client.
 
 - Attach to a captured running regular/init/ephemeral container inside the terminal
   workspace, with detach, faithful return status and retained selection.

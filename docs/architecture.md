@@ -62,7 +62,14 @@ RBAC and transport errors retain their original classification. Parsing workers
 drain even under repeated cancellation before transport ownership ends.
 Workspace refresh replaces discovery/watch state on its existing client and
 retains pending namespace intent. Client generation changes hide the previous
-catalogue. B06 #53 separately owns generic UI commands/columns and navigation.
+catalogue. B06 #53 adds discovery-qualified commands and immutable generic layouts
+to the shared workspace. One owned background projection preserves each row's
+schema; renewed headers do not reinterpret positional cells. Bounded transient
+layouts use context/GVR keys and reset on schema replacement. History captures
+the requested preferred/explicit version plus printer headers so an old sort
+cannot target a different column after restoration. Generic actions remain
+read-only until their mutation owner. Initial explicit resource commands wait
+for owned discovery; built-in aliases keep their existing routes.
 
 S07 #48 freezes attach/copy targets and connection material on the event loop,
 then owns filesystem work in shielded workers that finish before cleanup.

@@ -47,8 +47,8 @@ including scope, filter, sorting and viewport.
 Shell and logs remain pod/container actions. [Manifest editing](editing.md),
 [workload scale/rollout](workloads.md) and [port forwarding](port-forwards.md) now
 have their own implemented contracts. [Deletion and Job operations](resource-operations.md)
-use captured confirmation and retained results. Owner drill-down and generic CRD
-columns remain separate tickets. These views do not establish full K9s parity.
+use captured confirmation and retained results. Owner drill-down remains O03 #70.
+These views do not establish full K9s parity.
 Endpoints remains available when served, although modern clusters should
 also support the later EndpointSlice view tracked in the networking backlog.
 
@@ -61,6 +61,70 @@ different API group or silently substitutes an empty list.
 `ui/standard.py` renders all these families in one table. Ordinary details use
 the existing [inspection policy](resource-inspection.md). Discovery, watch and
 context-generation behavior remain in the existing services.
+
+## Generic discovered resources: B06 #53
+
+Browse other discovered APIs, including CRDs, with an unambiguous plural,
+singular or short name: `:wdg TEAM` or `:widgets *`. Qualify a family as
+`:widgets.example.test`; append `/v1beta1` to select that exact served version.
+An omitted version follows discovery's preferred version, including after
+`:refresh`. The title shows the actual API group/version and selected scope.
+Explicit cluster-scoped namespace arguments are rejected. Built-in command
+and standard-resource aliases retain their familiar meaning; `:resource NAME`
+selects a discovered alias that overlaps one. `.core` explicitly selects the
+core API group, for example `:resource pods.core/v1`.
+Explicit `:resource pods` and `:resource namespaces` also use the generic read-only
+table. Their `.core` display/completion identifier represents the API's actual
+empty group; `:po` and `:ns` return to the familiar built-in workspaces.
+
+For initial generic navigation, use an explicit resource command:
+
+```sh
+uv run kuberich --context YOUR_CONTEXT --readonly --command 'resource widgets.example.test/v1beta1 YOUR_NAMESPACE'
+```
+
+The application connects and discovers APIs before resolving this initial
+command. Unknown or ambiguous families keep the available view and report the
+error; no endpoint or version is guessed. Completion offers qualified names and
+served versions, hiding ambiguous discovered short names. `:refresh` renews
+discovery and the owned LIST/WATCH without reloading credentials or replacing
+the connected client. Removed APIs remain a failure state; use `:po` or another
+available resource command to recover. `r`/`:retry` still reconnects.
+
+Server Table columns appear alongside metadata-backed namespace, name and age.
+Numeric, boolean and date columns sort by their types; unknown values sort last.
+Date columns order absolute timestamps newest first and elapsed printer durations
+shortest first. A column containing both representations groups timestamps before
+durations; reverse sorting reverses both groups while retaining unknowns last.
+Equal timestamps retain name/UID order across unrelated object updates.
+When Table conversion or malformed printer metadata is unavailable, the view
+uses the stable metadata columns and retains full objects for inspection.
+Each retained row carries its own printer schema. A renewed schema leaves
+incompatible old cells unknown until their objects update, retaining selection
+without interpreting old values under a different header.
+
+`:columns` lists the server's positional keys, such as `c2=Level` and
+`c3=Enabled`; the server's identity/age columns are omitted. Use
+`:columns c3 c2` to choose and order fields, including optional wide-priority
+fields. `:columns none` shows metadata only and `:columns default` restores the
+server's ordinary columns. Invalid or duplicate keys retain the previous view.
+Layouts are transient, bounded to 32 context/GVR entries, and reset when the
+server schema or resource descriptor changes, or when switching context.
+Persistent preferences/hotkeys remain U02 #57.
+
+Enter/`d`, `y` and `e` reuse captured-UID details, redacted YAML and related events.
+Unknown manifest fields remain in YAML. `/` searches displayed fields;
+Alt+Left/Right and the context/namespace workspaces retain resource identity,
+version, filter, compatible sort and viewport. Direct `:ns TEAM` preserves an
+active generic resource. Generic browser actions are read-only in this
+checkpoint. Return to `:po` for pod/container logs, exec, attach, copy and selected
+port forwarding; custom editing remains M05 #55, and reactive jump chains U06 #64.
+Server headers and strings are displayed literally, sensitive column names and
+credential-shaped cells are redacted, and opaque Secret/ConfigMap server cells
+are hidden. Arbitrary custom fields are not guaranteed to be confidential;
+inspect only resources appropriate for your context and access.
+
+See [generic browser acceptance](acceptance/generic-resource-browser.md).
 
 See [acceptance evidence](acceptance/standard-resources.md) and the
 [quickstart](quickstart.md). Field semantics follow the official

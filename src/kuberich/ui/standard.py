@@ -33,8 +33,8 @@ class StandardTable(DataTable[PodCell]):
     class SortChanged(Message):
         pass
 
-    def __init__(self) -> None:
-        super().__init__(id="standard-resources", cursor_type="row", zebra_stripes=True)
+    def __init__(self, *, id: str = "standard-resources") -> None:
+        super().__init__(id=id, cursor_type="row", zebra_stripes=True)
         self._rows: dict[str, ResourceRow] = {}
         self._revision = -1
         self._restoration = 0

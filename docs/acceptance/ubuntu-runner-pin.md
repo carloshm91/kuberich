@@ -74,18 +74,29 @@ no site publication was performed.
 Application source tree remains `d87d8acef7728caffdcfc7c037767b1003427be2` from
 base `b92dbe4`. Changed executable application coverage is N/A for this policy-only
 diff; application coverage/platform gates still run in every selected hosted
-native job. Final commit/hosted evidence will be retained in the issue/PR.
+native job. The final measured receipt is retained in the issue/PR.
 
 ## Hosted qualification and limits
 
 The candidate was rebased onto main `0cfa7153bd8617c3ece3f5641d5b7e539b497ae4`
 after #166's source PR #167 merged with all exact-head checks passing. That main
-has the same Git tree as the original `b92dbe4` base. Pinned-host PR/native gates
-and the migration-warning check remain pending until the new hosted jobs finish.
-Local policy checks do not establish hosted native or Ubuntu 26.04 qualification.
-The PR/issue must retain final-head required-check results and artifacts before
-squash merge. No release, package, tag, DNS, visibility or website publication
-is performed by this task.
+has the same Git tree as the original `b92dbe4` base. PR #169 squash-merged as
+`f8d3673424214238b4a2722dc37d6bae4ccaf8eb`, tree-identical to qualified signed head
+`7c9b732bfaa365ef8e2be8943979fd0593bfc074`. All eight required checks passed.
+[Application run 37946446619](https://github.com/carloshm91/kuberich/actions/runs/37946446619)
+passed **3,858 cases** in each Linux 3.12/3.13/3.14 and macOS 3.12 job. Production
+coverage measured at least **99.205% lines / 97.182% branches**; all **40 critical
+modules** remain at 100% lines/branches. Changed executable coverage is N/A.
+Linux 3.12 also completed every owned-kind and installed-guide rehearsal.
+
+Completed job metadata used `ubuntu-24.04` for every Linux/plan/gate job and
+`macos-latest` for the native baseline.
+[Repository run 37946446964](https://github.com/carloshm91/kuberich/actions/runs/37946446964)
+used Ubuntu 24.04.5/image `20261004.327.1`, with zero check annotations and no
+Ubuntu-26 migration notice in its full log. This establishes pinned hosted native
+acceptance, not Ubuntu 26.04 qualification. No release, package, tag, DNS,
+visibility or website publication was performed by #168; #166's separate live
+hosting receipt remains [documented here](pages-publication.md).
 
 Selecting Ubuntu 24.04 pins the OS release, not GitHub's hosted image revision,
 kernel or apt packages. Retain actual image/tool versions in new qualification

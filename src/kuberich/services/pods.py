@@ -3,6 +3,7 @@
 import asyncio
 from collections.abc import Callable
 
+from kuberich.domain.custom import CustomLayout
 from kuberich.domain.namespaces import NamespaceRow, namespace_row
 from kuberich.domain.pods import PodRow, pod_row
 from kuberich.domain.registry import ResourceDefinition, ResourceRow, resource_row
@@ -11,10 +12,16 @@ from kuberich.domain.resources import ResourceRecord, ResourceSnapshot
 
 class ResourceProjection[T: PodRow | NamespaceRow | ResourceRow]:
     def __init__(
-        self, resource: str, project: Callable[[ResourceRecord], T], group: str = ""
+        self,
+        resource: str,
+        project: Callable[[ResourceRecord], T],
+        group: str = "",
+        *,
+        version: str | None = None,
     ) -> None:
         self._resource, self._project_record = resource, project
         self._group = group
+        self._version = version
         self._cache: dict[str, tuple[ResourceRecord, T]] = {}
 
     def _project(self, snapshot: ResourceSnapshot) -> tuple[T, ...]:
@@ -35,6 +42,7 @@ class ResourceProjection[T: PodRow | NamespaceRow | ResourceRow]:
             snapshot is None
             or snapshot.resource.group != self._group
             or snapshot.resource.name != self._resource
+            or (self._version is not None and snapshot.resource.version != self._version)
         ):
             self._cache.clear()
             return ()
@@ -71,4 +79,11 @@ class StandardProjection(ResourceProjection[ResourceRow]):
     def __init__(self, definition: ResourceDefinition) -> None:
         super().__init__(
             definition.name, lambda record: resource_row(record, definition), definition.group
+        )
+
+
+class CustomProjection(ResourceProjection[ResourceRow]):
+    def __init__(self, layout: CustomLayout) -> None:
+        super().__init__(
+            layout.resource.name, layout.row, layout.resource.group, version=layout.resource.version
         )
