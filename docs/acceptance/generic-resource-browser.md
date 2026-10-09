@@ -24,6 +24,10 @@ across passive fallback-table renders until another command.
 Typed container/selected-forward commands cannot open effectful pod screens from
 an explicit generic core-Pod route. The same commands retain their existing
 contracts after returning to the built-in `:po` workspace.
+Date sort keys are independent of row observation time. Equal timestamps and
+equivalent timezone offsets retain their metadata tie order through unrelated
+watch updates with cached rows. Absolute timestamps and elapsed printer durations
+are separate deterministic groups; reversal reverses both, with unknowns last.
 
 ## Local behavior receipts
 
@@ -136,6 +140,33 @@ kubeconfig; caller configuration bytes remain unchanged. Cluster deletion and
 absence were verified. No maintainer or cloud context is used.
 
 ## Candidate qualification and limits
+
+The `98412c8` hosted candidate passed all required native jobs in
+[application run 37953846272](https://github.com/carloshm91/kuberich/actions/runs/37953846272)
+and its repository checks in
+[run 37953846262](https://github.com/carloshm91/kuberich/actions/runs/37953846262).
+Those results are superseded. Review reproduced equal RFC dates receiving
+different sort keys and reversing order after only an annotation/resourceVersion
+update while an unchanged row remained cached. Two owned deterministic probes
+failed in **0.79 seconds** before correction; the earlier head will not merge.
+
+The correction uses stable absolute timestamp keys and explicit elapsed-duration
+groups. Pure domain/registry/projection checks passed **150 cases in 5.82 seconds**.
+The first expanded attempts exposed a test teardown with a queued sort notice;
+the test now waits for that notice before exit. The new actual HTTP/Pilot
+mixed-date update/cursor case passed **one case in 6.99 seconds**. These focused
+receipts supplement the mandatory replacement-head qualification below.
+
+The final corrected source/domain/registry/projection/Pilot/native cohort passed
+**167 cases in 67.02 seconds**:
+
+```sh
+env COVERAGE_FILE=artifacts/custom-browser-53/date-frozen.coverage uv run pytest tests/unit/test_custom_layout.py tests/unit/test_registry.py tests/contract/test_custom_projection.py tests/ui/test_custom_resources.py tests/terminal/test_custom_resources.py -q --tb=short --cov=kuberich --cov-branch --cov-report=json:artifacts/custom-browser-53/date-frozen-coverage.json
+```
+
+The generic column domain measured **67/67 lines and 20/20 branches**; the shared
+registry measured **143/143 and 32/32**. Ruff/format, strict consumer types,
+wheel/sdist metadata, plan and both local site build/link checks pass.
 
 Ruff, formatting and strict application/verifier types pass. The final source
 is undergoing the full suite, independently enforced production line/branch,

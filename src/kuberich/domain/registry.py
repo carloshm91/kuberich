@@ -11,7 +11,7 @@ from kuberich.domain.resources import ResourceRecord
 from kuberich.domain.views import ResourceSelection
 from kuberich.errors import AppError
 
-SortValue = str | int | float | Decimal
+SortValue = str | int | float | Decimal | tuple[int, float]
 
 
 @dataclass(frozen=True)

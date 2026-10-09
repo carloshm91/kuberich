@@ -130,6 +130,53 @@ async def test_server_columns_scope_typed_sort_filter_inspection_and_history(tmp
 
 
 @pytest.mark.asyncio
+async def test_mixed_date_column_keeps_equal_timestamp_order_and_cursor_after_watch(tmp_path):
+    dates = {
+        "ten": "2026-10-09T00:00:00Z",
+        "two": "45m",
+        "missing": "2026-10-09T02:00:00+02:00",
+    }
+    async with custom_api(CustomAPI(dates=dates)) as (url, owner):
+        app = app_for(tmp_path, url)
+        async with app.run_test() as pilot:
+            await loaded(app)
+            table = app.custom_table
+            table.set_sort("c2")
+            assert [r.key.value for r in table.ordered_rows] == [
+                "owned-missing",
+                "owned-ten",
+                "owned-two",
+            ]
+            table.move_cursor(row=1)
+            await pilot.pause()
+            before = table.capture_viewport()
+            path = "/apis/" + GROUP + "/v1/namespaces/team/widgets"
+            await wait_for(lambda: path in owner.streams)
+            await owner.update(path)
+            await wait_for(
+                lambda: any(
+                    record.uid == "owned-ten" and record.resource_version == "schema-change"
+                    for record in app.workspace.store.observation.snapshot.items
+                )
+            )
+            await pilot.pause()
+            assert [r.key.value for r in table.ordered_rows] == [
+                "owned-missing",
+                "owned-ten",
+                "owned-two",
+            ]
+            assert table.capture_viewport() == before
+            table.set_sort("c2")
+            await pilot.pause()
+            assert [r.key.value for r in table.ordered_rows] == [
+                "owned-two",
+                "owned-missing",
+                "owned-ten",
+            ]
+            assert table.selected_uid == "owned-ten"
+
+
+@pytest.mark.asyncio
 async def test_schema_refresh_preference_removal_alias_ambiguity_and_core_recovery(tmp_path):
     async with custom_api(CustomAPI(ambiguous=True)) as (url, owner):
         app = app_for(tmp_path, url)

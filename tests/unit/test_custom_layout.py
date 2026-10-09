@@ -1,7 +1,7 @@
 """Generic projection boundaries before the B06 widget integration."""
 
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -11,6 +11,23 @@ from kuberich.domain.registry import order_resources
 from kuberich.domain.resources import ServerColumn, ServerRow, resource_record
 from kuberich.errors import AppError
 from tests.support.tables import custom_item, custom_resource
+
+
+def observed_clock(monkeypatch):
+    moment = datetime(2026, 10, 9, 12, tzinfo=UTC)
+
+    class Clock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return moment
+
+    monkeypatch.setattr("kuberich.domain.pods.datetime", Clock)
+
+    def advance():
+        nonlocal moment
+        moment += timedelta(seconds=20)
+
+    return advance
 
 
 def captured(headers, cells, *, name="one", namespace="team"):
@@ -53,12 +70,12 @@ def test_generic_layout_owns_identity_fallback_and_explicit_wide_selection():
         ("integer", 12, "12", 12),
         ("number", 2.5, "2.5", 2.5),
         ("string", "[bold]Alpha", "[bold]Alpha", "[bold]alpha"),
-        ("date", "2h3m", "2h3m", 7380),
+        ("date", "2h3m", "2h3m", (1, 7380)),
         (
             "date",
             "2026-10-09T00:00:00Z",
             "2026-10-09T00:00:00Z",
-            43200,
+            (0, -datetime(2026, 10, 9, tzinfo=UTC).timestamp()),
         ),
         ("date", "2026-10-09", "2026-10-09", None),
         ("date", "invalid", "invalid", None),
@@ -75,12 +92,52 @@ def test_generic_layout_owns_identity_fallback_and_explicit_wide_selection():
 )
 def test_column_values_preserve_types_and_safe_unknowns(kind, cell, text, sort):
     headers = (ServerColumn("Field", kind),)
-    value = (
-        CustomLayout.build(custom_resource(), headers)
-        .row(captured(headers, (cell,)), now=datetime(2026, 10, 9, 12, tzinfo=UTC))
-        .values[2]
-    )
+    value = CustomLayout.build(custom_resource(), headers).row(captured(headers, (cell,))).values[2]
     assert value.text == text and value.sort == sort
+
+
+def test_equal_dates_use_stable_timezone_normalized_keys(monkeypatch):
+    advance = observed_clock(monkeypatch)
+    headers = (ServerColumn("Observed", "date"),)
+    layout = CustomLayout.build(custom_resource(), headers)
+    first = layout.row(captured(headers, ("2026-10-09T00:00:00Z",), name="b"))
+    advance()
+    rows = (
+        first,
+        layout.row(captured(headers, ("2026-10-09T02:00:00+02:00",), name="a")),
+    )
+    assert rows[0].values[2].sort == rows[1].values[2].sort
+    for descending in (False, True):
+        assert [r.name for r in order_resources(rows, 2, descending)] == ["a", "b"]
+
+
+def test_date_sort_groups_absolute_dates_and_elapsed_durations_without_comparing_origins():
+    headers = (ServerColumn("Observed", "date"),)
+    layout = CustomLayout.build(custom_resource(), headers)
+    rows = tuple(
+        layout.row(captured(headers, (stamp,), name=name))
+        for name, stamp in (
+            ("elapsed-long", "2h3m"),
+            ("unknown", "invalid"),
+            ("absolute-old", "1960-01-01T00:00:00Z"),
+            ("elapsed-short", "45m"),
+            ("absolute-new", "2026-10-09T00:00:00Z"),
+        )
+    )
+    assert [r.name for r in order_resources(rows, 2)] == [
+        "absolute-new",
+        "absolute-old",
+        "elapsed-short",
+        "elapsed-long",
+        "unknown",
+    ]
+    assert [r.name for r in order_resources(rows, 2, True)] == [
+        "elapsed-long",
+        "elapsed-short",
+        "absolute-old",
+        "absolute-new",
+        "unknown",
+    ]
 
 
 def test_schema_changes_and_plain_records_never_reinterpret_old_cells():

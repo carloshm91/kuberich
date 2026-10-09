@@ -73,12 +73,16 @@ def objects(group=GROUP, version="v1", name="widgets", namespace="team", recreat
     return result
 
 
-def table(items, *, changed=False, sensitive=False):
+def table(items, *, changed=False, sensitive=False, dates=None):
     value = server_table(*items)
     if changed:
         value["columnDefinitions"][1] = {"name": "[bold]Ready", "type": "boolean"}
+    if dates is not None:
+        value["columnDefinitions"][1] = {"name": "Observed", "type": "date"}
     for row, obj in zip(value["rows"], items, strict=True):
         row["cells"][1] = obj["spec"]["enabled"] if changed else obj["spec"]["level"]
+        if dates is not None:
+            row["cells"][1] = dates[obj["metadata"]["name"]]
         if sensitive:
             row["cells"].append("Bearer synthetic-column-secret")
     if sensitive:
@@ -98,6 +102,7 @@ class CustomAPI:
     sensitive: bool = False
     recreated: bool = False
     core_pods: bool = False
+    dates: dict | None = None
     reads: list = field(default_factory=list)
     streams: dict = field(default_factory=dict)
 
@@ -173,7 +178,7 @@ class CustomAPI:
                     "items": values,
                 }
             )
-        result = table(values, changed=self.changed, sensitive=self.sensitive)
+        result = table(values, changed=self.changed, sensitive=self.sensitive, dates=self.dates)
         if self.malformed:
             result["rows"][0]["cells"][1] = "malformed"
         return web.json_response(result)
@@ -184,8 +189,11 @@ class CustomAPI:
             parts[2], parts[3], parts[-1], parts[5] if "namespaces" in parts else "team"
         )
         items[0]["metadata"]["resourceVersion"] = "schema-change"
+        items[0]["metadata"]["annotations"] = {"owned.example.test/unrelated": "changed"}
         await self.streams[path].write(
-            frame({"type": "MODIFIED", "object": table(items[:1], changed=changed)})
+            frame(
+                {"type": "MODIFIED", "object": table(items[:1], changed=changed, dates=self.dates)}
+            )
         )
 
 

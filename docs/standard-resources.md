@@ -93,6 +93,10 @@ available resource command to recover. `r`/`:retry` still reconnects.
 
 Server Table columns appear alongside metadata-backed namespace, name and age.
 Numeric, boolean and date columns sort by their types; unknown values sort last.
+Date columns order absolute timestamps newest first and elapsed printer durations
+shortest first. A column containing both representations groups timestamps before
+durations; reverse sorting reverses both groups while retaining unknowns last.
+Equal timestamps retain name/UID order across unrelated object updates.
 When Table conversion or malformed printer metadata is unavailable, the view
 uses the stable metadata columns and retains full objects for inspection.
 Each retained row carries its own printer schema. A renewed schema leaves

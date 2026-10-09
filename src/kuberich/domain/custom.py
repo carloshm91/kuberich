@@ -7,7 +7,6 @@ from datetime import datetime
 from typing import Self
 
 from kuberich.domain.inspection import REDACTED, redacted
-from kuberich.domain.pods import utc_now
 from kuberich.domain.registry import Column, ResourceDefinition, ResourceRow, Value
 from kuberich.domain.resources import ApiResource, ResourceRecord, ServerCell, ServerColumn
 from kuberich.errors import AppError
@@ -18,19 +17,22 @@ _PART = re.compile(r"(\d+(?:\.\d+)?)([ywdhms])")
 _SECONDS = {"y": 31536000, "w": 604800, "d": 86400, "h": 3600, "m": 60, "s": 1}
 
 
-def _date(value: str, now: datetime) -> float | None:
+def _date(value: str) -> tuple[int, float] | None:
     if _DURATION.fullmatch(value):
         # Kubernetes printers emit elapsed durations; larger durations are older.
         result = sum(float(amount) * _SECONDS[unit] for amount, unit in _PART.findall(value))
-        return result if math.isfinite(result) else None
+        return (1, result) if math.isfinite(result) else None
     try:
         stamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError:
         return None
-    return (now - stamp).total_seconds() if stamp.tzinfo is not None else None
+    # Absolute dates and elapsed printer durations have no shared clock origin.
+    # Group them explicitly; RFC dates sort newest first without observation-time
+    # drift, including when unchanged rows remain in the incremental cache.
+    return (0, -stamp.timestamp()) if stamp.tzinfo is not None else None
 
 
-def _value(column: ServerColumn, cell: ServerCell, *, opaque: bool, now: datetime) -> Value:
+def _value(column: ServerColumn, cell: ServerCell, *, opaque: bool) -> Value:
     # Metadata alone cannot establish that an opaque payload is safe to show.
     if opaque or redacted(cell, key=column.name.casefold()) == REDACTED:
         return Value(REDACTED, None)
@@ -44,7 +46,7 @@ def _value(column: ServerColumn, cell: ServerCell, *, opaque: bool, now: datetim
         return Value(str(cell), cell)
     if column.type in {"string", "date"} and isinstance(cell, str):
         literal = safe_text(cell).plain
-        return Value(literal, _date(cell, now) if column.type == "date" else literal.casefold())
+        return Value(literal, _date(cell) if column.type == "date" else literal.casefold())
     return Value("—", None)
 
 
@@ -98,7 +100,7 @@ class CustomLayout:
             raise AppError("Invalid custom columns; the current view is retained.")
         return replace(self, visible=tuple(available[key] for key in keys))
 
-    def row(self, record: ResourceRecord, *, now: datetime | None = None) -> ResourceRow:
+    def row(self, record: ResourceRecord) -> ResourceRow:
         if record.uid is None:
             raise AppError("Live custom-resource rows require an API object UID.")
         server = record.server
@@ -109,7 +111,6 @@ class CustomLayout:
             and len(server.cells) == len(self.headers)
         )
         opaque = self.resource.kind in {"Secret", "ConfigMap"}
-        moment = now or utc_now()
         fields = {
             "namespace": Value(record.namespace or "—", record.namespace or ""),
             "name": Value(record.name, record.name.casefold()),
@@ -117,7 +118,7 @@ class CustomLayout:
         }
         for index in self.visible:
             fields[f"c{index + 1}"] = (
-                _value(self.headers[index], server.cells[index], opaque=opaque, now=moment)
+                _value(self.headers[index], server.cells[index], opaque=opaque)
                 if compatible and server is not None
                 else Value("—", None)
             )

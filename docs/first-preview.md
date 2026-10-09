@@ -18,6 +18,12 @@ Exact tested local command:
 35 cases passed in 72.19 seconds, including schema/version/scope/history,
 malformed printer fallback, context/GVR/column races, reconnect, same-GVR
 recreation/redaction, deferred startup feedback and explicit core read-only guards.
+The date-order correction passed 167 cases in 67.02 seconds with
+`env COVERAGE_FILE=artifacts/custom-browser-53/date-frozen.coverage uv run pytest tests/unit/test_custom_layout.py tests/unit/test_registry.py tests/contract/test_custom_projection.py tests/ui/test_custom_resources.py tests/terminal/test_custom_resources.py -q --tb=short --cov=kuberich --cov-branch --cov-report=json:artifacts/custom-browser-53/date-frozen-coverage.json`.
+Equal timestamp/offset rows retain order after unrelated cached watch updates;
+mixed timestamp/duration columns use documented groups. Earlier `98412c8` hosted
+green checks are superseded by this demonstrated correction. Its replacement
+requires the full hosted gates again.
 The rebased unit/session/process/navigation/context cohort passed 2,150 cases.
 The source native command
 `uv run pytest tests/terminal/test_custom_resources.py -q --tb=short`
