@@ -336,6 +336,12 @@ class TransferService:
             )
             if isinstance(error, (AppError, ConnectionProblem)):
                 self.last_message = f"{error} {self.last_message}"
+            if (
+                intent.direction is TransferDirection.DOWNLOAD
+                and review.inventory is not None
+                and review.inventory.directory
+            ):
+                self.last_message += " Directory publication was interrupted; inspect the destination and concurrent renames."
             raise
         finally:
             await self.close()

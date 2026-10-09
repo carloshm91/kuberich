@@ -89,6 +89,39 @@ async def test_concurrent_reviews_cannot_overwrite_owned_state_and_cancellation_
 
 
 @pytest.mark.asyncio
+async def test_directory_publication_race_preserves_foreign_files_and_reports_inspection(
+    tmp_path, monkeypatch
+):
+    async def handler(request):
+        return web.json_response(pod("api", uid="api-uid"))
+
+    async with reader_fixture(tmp_path, handler) as reader:
+        owner = service(reader, tmp_path / "tools")
+        remote = tmp_path / "tools/remote/tmp/tree"
+        remote.mkdir()
+        (remote / "a").write_bytes(b"copied")
+        chosen, moved = tmp_path / "chosen", tmp_path / "moved-owned"
+        review = await owner.prepare(
+            TransferDirection.DOWNLOAD, "app", str(chosen), "/tmp/tree", overwrite=False
+        )
+        original = os.link
+
+        def replace_after_copy(*args, **kwargs):
+            original(*args, **kwargs)
+            chosen.rename(moved)
+            chosen.mkdir()
+            (chosen / "original").write_bytes(b"retained")
+
+        monkeypatch.setattr(os, "link", replace_after_copy)
+        with pytest.raises(AppError, match="changed during publication"):
+            await owner.execute(review)
+        assert (chosen / "original").read_bytes() == b"retained"
+        assert "inspect the destination" in owner.last_message
+        assert not list(moved.iterdir()) and owner.review is None
+        assert not Path(review.temporary.name).exists() and not review.connection.path.exists()
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("direction", list(TransferDirection))
 @pytest.mark.parametrize("directory", [False, True])
 async def test_reviewed_literal_binary_file_or_tree_copies_exact_captured_paths(

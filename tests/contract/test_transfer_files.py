@@ -258,7 +258,7 @@ def test_directory_publication_failure_rolls_back_only_new_owned_destination(tmp
     )
     destination = DownloadDestination(tmp_path / "chosen", False)
     inventory = destination.extract(source, "root")
-    original = transfer_files.os.rename
+    original = transfer_files.os.link
     calls = 0
 
     def fail_after_first(*arguments, **options):
@@ -268,7 +268,7 @@ def test_directory_publication_failure_rolls_back_only_new_owned_destination(tmp
             raise OSError("owned injected destination failure")
         return original(*arguments, **options)
 
-    monkeypatch.setattr(transfer_files.os, "rename", fail_after_first)
+    monkeypatch.setattr(transfer_files.os, "link", fail_after_first)
     try:
         with pytest.raises(OSError):
             destination.publish("root", inventory)
@@ -435,3 +435,130 @@ def test_malformed_pax_size_cannot_silently_publish_an_empty_file(tmp_path):
     finally:
         destination.close()
     assert chosen.read_bytes() == b"original" and not list(tmp_path.glob(".kuberich-copy-*"))
+
+
+@pytest.mark.parametrize(
+    "race",
+    ["replacement-failure", "replacement-success", "missing", "added", "replaced-child", "cancel"],
+)
+def test_directory_rollback_preserves_concurrent_paths_and_remains_anchored_to_its_owner(
+    tmp_path, monkeypatch, race
+):
+    source = archive(
+        tmp_path / "archive",
+        [
+            ("root", tarfile.DIRTYPE, b""),
+            ("root/a", tarfile.REGTYPE, b"x"),
+            ("root/b", tarfile.REGTYPE, b"y"),
+        ],
+    )
+    chosen, moved = tmp_path / "chosen", tmp_path / "moved-owned"
+    destination = DownloadDestination(chosen, False)
+    inventory = destination.extract(source, "root")
+    original = transfer_files.os.link
+    calls = 0
+
+    def concurrently_change(*arguments, **options):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            if race != "replacement-failure":
+                original(*arguments, **options)
+            if race.startswith("replacement") or race == "missing":
+                chosen.rename(moved)
+                if race != "missing":
+                    chosen.mkdir()
+                    (chosen / "concurrent-original").write_bytes(b"keep")
+            elif race == "added":
+                (chosen / "concurrent-original").write_bytes(b"keep")
+            elif race == "replaced-child":
+                (chosen / "a").rename(chosen / "renamed-copy")
+                (chosen / "a").write_bytes(b"keep")
+            else:
+                destination.cancelled.set()
+            if race == "replacement-failure":
+                raise OSError("owned synthetic publication failure")
+            return
+        if race in {"added", "replaced-child"}:
+            raise OSError("owned synthetic publication failure")
+        return original(*arguments, **options)
+
+    monkeypatch.setattr(transfer_files.os, "link", concurrently_change)
+    try:
+        with pytest.raises((AppError, OSError)):
+            destination.publish("root", inventory)
+        assert not destination.published
+        if race.startswith("replacement") or race == "added":
+            assert (chosen / "concurrent-original").read_bytes() == b"keep"
+        elif race == "replaced-child":
+            assert (chosen / "a").read_bytes() == b"keep"
+        else:
+            assert not chosen.exists()
+        if moved.exists():
+            assert not list(moved.iterdir())
+    finally:
+        destination.close()
+
+
+@pytest.mark.parametrize("failure", ["open", "after-directory"])
+def test_failed_directory_open_or_population_removes_only_owned_partial_entries(
+    tmp_path, monkeypatch, failure
+):
+    source = archive(
+        tmp_path / "archive",
+        [
+            ("root", tarfile.DIRTYPE, b""),
+            ("root/a", tarfile.DIRTYPE, b""),
+            ("root/a/data", tarfile.REGTYPE, b"x"),
+            ("root/b", tarfile.REGTYPE, b"y"),
+        ],
+    )
+    chosen = tmp_path / "chosen"
+    destination = DownloadDestination(chosen, False)
+    inventory = destination.extract(source, "root")
+    if failure == "open":
+        original = transfer_files.os.open
+
+        def refuse_open(name, *args, **kwargs):
+            if name == "chosen":
+                raise OSError("owned synthetic directory open failure")
+            return original(name, *args, **kwargs)
+
+        monkeypatch.setattr(transfer_files.os, "open", refuse_open)
+    else:
+
+        def refuse_link(*args, **kwargs):
+            raise OSError("owned synthetic second entry failure")
+
+        monkeypatch.setattr(transfer_files.os, "link", refuse_link)
+    try:
+        with pytest.raises(OSError):
+            destination.publish("root", inventory)
+        assert not chosen.exists() and not destination.published
+    finally:
+        destination.close()
+
+
+def test_initial_stage_cleanup_failure_still_closes_the_owned_parent_descriptor(
+    tmp_path, monkeypatch
+):
+    original = transfer_files.os.open
+    parents = []
+
+    def refuse_stage(name, *args, **kwargs):
+        if isinstance(name, str) and name.startswith(".kuberich-copy-"):
+            parents.append(kwargs["dir_fd"])
+            raise OSError("owned synthetic descriptor exhaustion")
+        return original(name, *args, **kwargs)
+
+    def refuse_cleanup(*args, **kwargs):
+        raise OSError("owned synthetic cleanup failure")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(transfer_files.os, "open", refuse_stage)
+        patch.setattr(transfer_files.shutil, "rmtree", refuse_cleanup)
+        with pytest.raises(OSError, match="cleanup failure"):
+            DownloadDestination(tmp_path / "chosen", False)
+        assert len(parents) == 1
+        with pytest.raises(OSError):
+            transfer_files.os.fstat(parents[0])

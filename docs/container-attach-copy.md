@@ -88,7 +88,10 @@ root. Local operations retain no-follow directory descriptors. New file commits
 are exclusive; explicit replacement rechecks the reviewed file identity. A new
 directory is exclusively reserved and populated after complete validation; its
 publication is not a filesystem-wide atomic rename. Existing directories are
-never merged. A failed publication removes its newly owned partial directory.
+never merged. Failed publication cleans known copied entries through its owned
+directory descriptor; a concurrent replacement is retained. Concurrent additions
+or renames can leave an empty owned reservation or copied entries at changed
+paths. Inspect the destination and those changes after a directory failure.
 Concurrent local changes detected before publication require a fresh review;
 explicit replacement cannot provide a POSIX compare-and-swap against all possible
 same-user changes at the final rename boundary.

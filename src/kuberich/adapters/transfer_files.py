@@ -63,6 +63,40 @@ def _existing(parent: int, name: str) -> tuple[int, int, int, int, int] | None:
     return _identity(value)
 
 
+def _same_directory(parent: int, name: str, descriptor: int) -> bool:
+    try:
+        named = os.stat(name, dir_fd=parent, follow_symlinks=False)
+    except FileNotFoundError:
+        return False
+    owned = os.fstat(descriptor)
+    return (named.st_dev, named.st_ino) == (owned.st_dev, owned.st_ino)
+
+
+def _rollback_directory(
+    parent: int, name: str, descriptor: int, entries: dict[str, tuple[int, int]]
+) -> None:
+    if descriptor >= 0:
+        # Clean through the already owned descriptor. A replacement at the public
+        # pathname must never become the target of recursive deletion.
+        for child, expected in entries.items():
+            try:
+                entry = os.stat(child, dir_fd=descriptor, follow_symlinks=False)
+            except FileNotFoundError:
+                continue
+            if (entry.st_dev, entry.st_ino) != expected:
+                continue
+            if stat.S_ISDIR(entry.st_mode):
+                shutil.rmtree(child, dir_fd=descriptor)
+            else:
+                os.unlink(child, dir_fd=descriptor)
+        if not _same_directory(parent, name, descriptor):
+            return
+    # A failed open has moved no payload. rmdir cannot delete a nonempty foreign
+    # replacement, unlike pathname-based recursive removal.
+    with suppress(FileNotFoundError, NotADirectoryError):
+        os.rmdir(name, dir_fd=parent)
+
+
 class DownloadDestination:
     def __init__(self, path: Path, overwrite: bool) -> None:
         self.path, self.overwrite = path, overwrite
@@ -84,9 +118,11 @@ class DownloadDestination:
                 self.stage_name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=self.parent
             )
         except BaseException:
-            if created:
-                shutil.rmtree(self.stage_name, dir_fd=self.parent)
-            os.close(self.parent)
+            try:
+                if created:
+                    shutil.rmtree(self.stage_name, dir_fd=self.parent)
+            finally:
+                os.close(self.parent)
             raise
 
     def close(self) -> None:
@@ -195,6 +231,7 @@ class DownloadDestination:
             source = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=self.stage)
             destination = -1
             created = False
+            entries: dict[str, tuple[int, int]] = {}
             try:
                 os.mkdir(self.path.name, 0o700, dir_fd=self.parent)
                 created = True
@@ -202,10 +239,25 @@ class DownloadDestination:
                     self.path.name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=self.parent
                 )
                 for name in os.listdir(source):
-                    os.rename(name, name, src_dir_fd=source, dst_dir_fd=destination)
+                    if self.cancelled.is_set():
+                        raise AppError("Download directory publication cancelled.")
+                    entry = os.stat(name, dir_fd=source, follow_symlinks=False)
+                    if stat.S_ISDIR(entry.st_mode):
+                        os.rename(name, name, src_dir_fd=source, dst_dir_fd=destination)
+                    else:
+                        os.link(
+                            name,
+                            name,
+                            src_dir_fd=source,
+                            dst_dir_fd=destination,
+                            follow_symlinks=False,
+                        )
+                    entries[name] = entry.st_dev, entry.st_ino
+                if not _same_directory(self.parent, self.path.name, destination):
+                    raise AppError("Local destination directory changed during publication.")
             except BaseException:
                 if created:
-                    shutil.rmtree(self.path.name, dir_fd=self.parent)
+                    _rollback_directory(self.parent, self.path.name, destination, entries)
                 raise
             finally:
                 os.close(source)

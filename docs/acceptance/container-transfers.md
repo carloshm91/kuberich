@@ -27,7 +27,9 @@ metadata, payload/entry/depth limits and malformed/trailing data are refused.
 Implicit directories count toward the 2,048-entry bound. Files use 0600 and
 directories 0700. Existing regular-file replacement requires explicit review and
 identity recheck; directory merges are refused. New directory publication rolls
-back its owned partial destination on failure.
+back known copied entries through owned descriptors on failure. Concurrent
+replacement files are retained; renamed reservations/concurrent additions may
+require inspection rather than unsafe pathname deletion.
 
 Cancellation drains the actual owned child and file workers before cleaning
 private state/client configuration. A cancelled pending download retains the
@@ -70,7 +72,15 @@ zero. A real crafted archive reproduced silent empty-file acceptance; validated
 decimal/size bounds now reject it before parsing. The corrected cohort includes
 that filesystem negative control, numeric edge cases and concurrent-review
 ownership. Its transfer form also measures 114/114 lines and 14/14 branches.
-Earlier failed/superseded receipts and the interrupted superseded full suite are
+A second real filesystem negative control replaced a destination directory during
+publication failure: pathname cleanup deleted its concurrent replacement. Cleanup
+now stays anchored to the owned descriptor and known entry identities; regular
+children publish exclusively. Completion also rechecks directory identity, and
+changed paths produce an inspection message. The expanded boundary/Pilot/transport cohort passed **178 cases in 56.60
+seconds**, including concurrent replacements/additions/renames, failed destination
+open, publication cancellation and descriptor closure even when initial cleanup
+fails. Final whole-candidate qualification remains required below.
+Earlier failed/superseded receipts and the interrupted superseded full suites are
 retained and are not counted as passes.
 
 ## Actual owned-cluster evidence
