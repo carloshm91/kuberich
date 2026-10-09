@@ -9,15 +9,16 @@ from pathlib import Path
 import pytest
 from markdown_it import MarkdownIt
 
-from scripts.build_site import GUIDES, MARKER, ROOT, build, heading_ids
+from scripts.build_site import GUIDES, MARKER, REFERENCES, ROOT, build, heading_ids
 from scripts.check_site import verify
 
 
 def copy_source(destination: Path) -> Path:
-    for relative in ("website", "docs"):
+    for relative in ("website", "docs", "src"):
         shutil.copytree(ROOT / relative, destination / relative)
     (destination / "scripts").mkdir()
     shutil.copyfile(ROOT / "scripts/build_site.py", destination / "scripts/build_site.py")
+    shutil.copyfile(ROOT / "scripts/site_reference.py", destination / "scripts/site_reference.py")
     shutil.copyfile(ROOT / "pyproject.toml", destination / "pyproject.toml")
     return destination
 
@@ -35,15 +36,15 @@ def test_builds_both_surfaces_deterministically_and_rebuilds_owned_output(tmp_pa
     assert build(first) == build(second)
     assert build(first) == build(second)
     evidence = verify(first)
-    assert evidence["pages"] == 2 * len(GUIDES) + 5
+    assert evidence["pages"] == 2 * (len(GUIDES) + len(REFERENCES)) + 5
     assert evidence["local_links_and_assets"] > 500
     for name in ("www/docs/quickstart.html", "docs/quickstart.html"):
         html = (first / name).read_text()
         assert "uv tool install --python 3.12" in html
         assert "kuberich --kubeconfig" in html
         assert "--readonly" in html and "--write" in html
-        assert "uninstall" in html and "macOS/full hosted" in html
-        assert "PyPI/Homebrew are not available" in html
+        assert "uninstall" in html and "Full release qualification" in html
+        assert "PyPI/Homebrew packages are not available" in html
         assert "Maintainer rehearsal" not in html
 
 
@@ -62,7 +63,7 @@ def test_source_document_changes_flow_into_the_built_guide(tmp_path):
         result["sources"]["docs/quickstart.md"]
         == hashlib.sha256(quickstart.read_bytes()).hexdigest()
     )
-    verify(output)
+    verify(output, source)
 
 
 def test_duplicate_headings_have_distinct_anchors():
@@ -85,7 +86,7 @@ def test_untrusted_markdown_html_is_text_and_unsafe_urls_do_not_become_links(tmp
     assert '<script>alert("owned")</script>' not in html
     assert 'href="javascript:' not in html
     assert "&lt;script&gt;" in html
-    verify(output)
+    verify(output, source)
 
 
 @pytest.mark.parametrize("mode", ["nonempty", "unexpected", "symlink"])
@@ -159,3 +160,46 @@ def test_reviewed_screenshots_are_inert_offline_vectors_with_current_identity():
                 namespace + "image",
             }
             assert not any(key.startswith("on") for key in element.attrib)
+
+
+def test_reference_uses_selected_checkout_contracts_and_preserves_planned_status(tmp_path):
+    source = copy_source(tmp_path / "source")
+    cli = source / "src/kuberich/cli.py"
+    cli.write_text(
+        cli.read_text().replace(
+            "    return parser",
+            '    parser.add_argument("--owned-reference-probe", help="Owned reference probe")\n'
+            "    return parser",
+        )
+    )
+    registry = source / "src/kuberich/domain/registry.py"
+    registry.write_text(
+        registry.read_text().replace(
+            '"deploy deployment"',
+            '"deploy deployment owned-probe"',
+        )
+    )
+    output = tmp_path / "output"
+    build(output, source)
+    for surface in ("www/docs", "docs"):
+        assert "--owned-reference-probe" in (output / surface / "cli-reference.html").read_text()
+        assert "owned-probe" in (output / surface / "resource-reference.html").read_text()
+        progress = (output / surface / "capability-reference.html").read_text()
+        assert "Status: planned" in progress and "CLI01" in progress
+        assert "not a promise of complete parity" in progress
+    verify(output, source)
+
+
+def test_checker_rejects_source_drift_and_new_unreceipted_modules(tmp_path):
+    source = copy_source(tmp_path / "source")
+    output = tmp_path / "output"
+    build(output, source)
+    guide = source / "docs/quickstart.md"
+    original = guide.read_text()
+    guide.write_text(original + "\nChanged after the build.\n")
+    with pytest.raises(ValueError, match="source drift"):
+        verify(output, source)
+    guide.write_text(original)
+    (source / "src/kuberich/new_contract.py").write_text('"""New application declaration."""\n')
+    with pytest.raises(ValueError, match="source inventory"):
+        verify(output, source)

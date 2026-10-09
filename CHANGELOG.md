@@ -7,6 +7,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Refine the landing and initial docs with a shared flat presentation and mobile
+  guide navigation. Generate CLI/resource/capability references from maintained
+  contracts, reject stale source receipts, and rebuild both unpublished surfaces
+  on each PR. Keep unavailable features and release/provider limits explicit.
+
 - Reserve first product publication for 1.0.0 after feature and final qualification.
   Reject public 0.x tags/assets/tap updates, require transitive release readiness,
   and keep intermediate checkpoints and website publication ownership explicit.

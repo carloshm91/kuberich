@@ -7,7 +7,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-from scripts.build_site import GENERATOR, MARKER
+from scripts.build_site import GENERATOR, MARKER, ROOT, digest, source_inputs
 
 
 class Page(HTMLParser):
@@ -43,11 +43,21 @@ class Page(HTMLParser):
             self.noindex = "noindex" in str(attributes.get("content"))
 
 
-def verify(output: Path) -> dict[str, int]:
+def verify(output: Path, source: Path = ROOT) -> dict[str, int]:
     root = output.resolve()
     manifest = json.loads((root / MARKER).read_text())
     if manifest.get("generator") != GENERATOR or manifest.get("publication_performed") is not False:
         raise ValueError("Invalid private build manifest")
+    inputs = source_inputs(source)
+    if set(manifest["sources"]) != {path.relative_to(source).as_posix() for path in inputs}:
+        raise ValueError("Site source inventory changed; rebuild both surfaces")
+    for path in inputs:
+        if (
+            path.is_symlink()
+            or not path.is_file()
+            or (digest(path) != manifest["sources"][path.relative_to(source).as_posix()])
+        ):
+            raise ValueError("Site source drift; rebuild both surfaces")
     actual = {p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file()}
     if actual != set(manifest["files"]) | {MARKER}:
         raise ValueError("Uninventoried or missing output file")
@@ -95,5 +105,6 @@ def verify(output: Path) -> dict[str, int]:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=Path("artifacts/site"))
+    parser.add_argument("--source", type=Path, default=ROOT)
     args = parser.parse_args()
-    print(json.dumps(verify(args.output)))
+    print(json.dumps(verify(args.output, args.source)))

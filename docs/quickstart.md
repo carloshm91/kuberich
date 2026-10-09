@@ -3,17 +3,19 @@
 The usable development preview has live pods, namespace/context tables, inline
 command completion, local filters, 15 [standard resource tables](standard-resources.md),
 resource details/YAML/events, container logs and
-embedded container shells. The checkout reports `0.0.1.dev0`; private candidate
-tests can report `0.0.1rc1`. **0.0.1 has not been publicly published yet.**
+embedded container shells. The checkout reports `0.0.1.dev0`. **Public packages
+are not available yet; the first public product release will be 1.0.0.**
 Guarded annotations, manifest editing, workload scale/restart/rollback and managed
-pod/Service port forwarding are also available. Generic CRD tables, metrics,
-deletion, attach, ephemeral debugging, file transfer and user plugins remain
+pod/Service port forwarding, guarded deletion and Job operations are also available.
+Exec credentials, certificates and proxies have locally verified connection contracts;
+see [connection compatibility](kubeconfig-interoperability.md). Generic CRD tables,
+metrics, attach, ephemeral debugging, file transfer and user plugins remain
 separate tickets.
 This preview does not claim complete K9s parity or real EKS/AKS certification.
 
-## Run the private checkout
+## Run from source
 
-Use Linux or macOS, Python 3.12–3.14 and uv. The maintainer's shortest path:
+Use Linux or macOS, Python 3.12–3.14 and uv. In a trusted source checkout:
 
 ```sh
 git switch main

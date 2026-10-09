@@ -19,7 +19,10 @@ the DCO sign-off below certifies your right to contribute. See
    docs/<issue>-<slug>. Keep the branch focused on that task.
 4. Implement the behavior with relevant tests and user-facing documentation.
    Small prerequisite corrections belong in the same PR only if needed for it.
-   Record newly discovered independent work as a separate issue.
+   Record newly discovered independent work as a separate issue. For user-facing
+   behavior, update its authored guide and capability limits in the same PR;
+   [website source enrollment](website/README.md#keep-documentation-current-in-each-product-pr)
+   explains the automatic CLI/resource references and two-surface docs build.
 5. Open a pull request with “Closes #<issue>” when all criteria are complete
    (otherwise “Refs #<issue>” and keep remaining criteria open), acceptance evidence, test results,
    and screenshots or a terminal recording when the visible interaction changes.
