@@ -144,9 +144,14 @@ async def test_natural_parent_exit_cleans_descendants_holding_output_pipes(tmp_p
 @pytest.mark.asyncio
 @pytest.mark.parametrize("mode", list(ProcessMode))
 @pytest.mark.parametrize(
-    "purpose", [value for value in ProcessPurpose if value is not ProcessPurpose.AUTHENTICATE]
+    "purpose",
+    [
+        value
+        for value in ProcessPurpose
+        if value not in {ProcessPurpose.AUTHENTICATE, ProcessPurpose.DOWNLOAD}
+    ],
 )
-async def test_read_only_blocks_every_process_before_executable_resolution(
+async def test_read_only_blocks_every_effectful_process_before_executable_resolution(
     tmp_path, monkeypatch, mode, purpose
 ):
     def forbidden(*args):
@@ -160,14 +165,17 @@ async def test_read_only_blocks_every_process_before_executable_resolution(
 
 
 @pytest.mark.asyncio
-async def test_authentication_is_allowed_in_read_only_and_output_is_captured(tmp_path):
+@pytest.mark.parametrize("purpose", [ProcessPurpose.AUTHENTICATE, ProcessPurpose.DOWNLOAD])
+async def test_explicit_read_processes_are_allowed_in_read_only_and_output_is_captured(
+    tmp_path, purpose
+):
     async with ProcessRunner(AccessPolicy(True)) as runner:
         result = await runner.capture(
-            command(tmp_path, "print('synthetic-credential')", purpose=ProcessPurpose.AUTHENTICATE)
+            command(tmp_path, "print('synthetic-private-output')", purpose=purpose)
         )
         assert (
             result.status is ProcessStatus.SUCCEEDED
-            and result.stdout.strip() == b"synthetic-credential"
+            and result.stdout.strip() == b"synthetic-private-output"
         )
 
 

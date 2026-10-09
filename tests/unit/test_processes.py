@@ -55,9 +55,12 @@ def command(tmp_path, **changes):
     [
         (ProcessPurpose.EXEC, Action.EXEC),
         (ProcessPurpose.ATTACH, Action.ATTACH),
+        (ProcessPurpose.PORT_FORWARD, Action.PORT_FORWARD),
         (ProcessPurpose.EDITOR, Action.MUTATE),
         (ProcessPurpose.PLUGIN, Action.PLUGIN),
         (ProcessPurpose.AUTHENTICATE, Action.READ),
+        (ProcessPurpose.DOWNLOAD, Action.READ),
+        (ProcessPurpose.UPLOAD, Action.MUTATE),
     ],
 )
 def test_purpose_has_explicit_effect_policy(purpose, action):
