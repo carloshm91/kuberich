@@ -62,10 +62,11 @@ exchange or tenant policy compatibility. Actual AKS/Entra certification is defer
 to the maintainer's later opt-in trials in Q05 #87. No real tenant is contacted by
 the automated suite. Linux results do not establish macOS qualification.
 
-C08 #47 retains generic GKE/OIDC/legacy-provider transport qualification and
-`ExecCredential.status.clientCertificateData/clientKeyData` output rotation.
+C08 #47 qualifies generic GKE/OIDC-shaped helper contracts and
+`ExecCredential.status.clientCertificateData/clientKeyData` output rotation locally.
 That Kubernetes TLS mechanism is distinct from Azure service-principal certificate
-**inputs**; unsupported certificate outputs still fail explicitly. Conditional
+**inputs**. [Interoperability guidance](kubeconfig-interoperability.md) documents
+the supported output and legacy-provider migration. Conditional
 Access, browser forwarding on SSH and provider cache/keyring differences need
 actual environment evidence. See [acceptance evidence](acceptance/aks-authentication.md).
 

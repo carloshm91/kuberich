@@ -18,7 +18,7 @@ def test_real_rc_formula_has_exact_audited_sources_and_is_exclusive(canonical_re
     output = tmp_path / "tap"
     report = prepare(bundle, source, output)
     text = (output / FORMULA).read_text()
-    assert report["candidate"] and report["resources"] == 27
+    assert report["candidate"] and report["resources"] == 29
     assert f"# Source commit: {sha}" in text
     assert "system_site_packages: false" in text
     assert 'license "Apache-2.0"' in text

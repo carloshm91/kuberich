@@ -13,7 +13,7 @@ verifies metadata, source identity, audits, notices and complete bundle digests:
 uv run --locked python -m scripts.homebrew prepare --source /path/to/qualified-source --bundle /path/to/release-candidate --output /path/to/new-local-tap
 ```
 
-Output is exclusive. The formula names the verified local sdist and 27 locked
+Output is exclusive. The formula names the verified local sdist and 29 locked
 runtime sources with SHA-256. Public source URLs cannot change registry host,
 traverse paths, include credentials/query parameters or inject Ruby interpolation.
 Development versions are refused. Keep the candidate readable by the owned test

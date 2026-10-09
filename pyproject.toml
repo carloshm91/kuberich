@@ -24,6 +24,7 @@ classifiers = [
 ]
 dependencies = [
     "aiohttp>=3.13.3,<4",
+    "aiohttp-socks>=0.12,<0.13",
     "kubernetes-asyncio>=36.1.0,<37",
     "platformdirs>=4.12.3,<5",
     "pyte==0.8.2",
@@ -151,6 +152,8 @@ critical_modules = [
     "src/kuberich/domain/containers.py",
     "src/kuberich/domain/connection_overrides.py",
     "src/kuberich/domain/credential_helpers.py",
+    "src/kuberich/domain/exec_credentials.py",
+    "src/kuberich/domain/proxies.py",
     "src/kuberich/domain/navigation.py",
     "src/kuberich/domain/inspection.py",
     "src/kuberich/domain/logs.py",

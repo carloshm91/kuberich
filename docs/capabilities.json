@@ -41,7 +41,7 @@
       ],
       "source": "internal/client/config.go",
       "status": "planned",
-      "difference": "C01 and F05 implement read-only catalogue merging, explicit context/scope clients, alternate cluster/user aliases and credential/TLS overrides shared with watches, logs and captured shells. Advanced provider/proxy qualification remains C08; no complete authentication parity claim.",
+      "difference": "C01/F05/C08 implement catalogue merging, scoped clients, alternate cluster/user and invocation overrides, with captured directory, credential and proxy transport. Owned HTTP/TLS and Kubernetes prove API and private delegated identity; complete real-provider certification is not inferred.",
       "partial_evidence": [
         "docs/context-sessions.md",
         "tests/contract/test_sessions.py",
@@ -53,7 +53,16 @@
         "tests/unit/test_connection_overrides.py",
         "tests/ui/test_launch_options.py",
         "scripts/verify_shell_kind.py",
-        "docs/acceptance/connection-overrides.md"
+        "docs/acceptance/connection-overrides.md",
+        "docs/kubeconfig-interoperability.md",
+        "docs/acceptance/credential-interoperability.md",
+        "tests/unit/test_exec_credentials.py",
+        "tests/unit/test_proxies.py",
+        "tests/contract/test_generic_credentials.py",
+        "tests/contract/test_proxy_transport.py",
+        "tests/terminal/test_credential_login.py",
+        "tests/packaging/test_distribution.py",
+        "scripts/verify_credential_interop_kind.py"
       ]
     },
     {
@@ -67,7 +76,7 @@
       ],
       "source": "internal/client/client.go",
       "status": "planned",
-      "difference": "C06/C07 deliver local AWS/Azure-shaped exec contracts, captured API/kubectl identity, revision-aware refresh, fixed safe diagnostics and explicit native Azure login. Actual cloud certification is deferred to opt-in Q05 #87. GKE/OIDC/legacy providers and generic exec TLS certificate rotation remain C08; no complete or real-cloud compatibility claim.",
+      "difference": "C06/C07/C08 deliver owned AWS/Azure/GKE/OIDC-shaped exec contracts, token-file and TLS certificate renewal, captured identity and generic explicit native login. Actual cloud/issuer certification remains opt-in Q05 #87. Legacy auth-provider/basic entries are intentionally rejected with migration; no complete real-cloud compatibility claim.",
       "partial_evidence": [
         "docs/context-sessions.md",
         "tests/contract/test_sessions.py",
@@ -88,7 +97,16 @@
         "tests/contract/test_aks_verifier.py",
         "tests/ui/test_azure_sessions.py",
         "tests/terminal/test_azure_login.py",
-        "scripts/verify_aks_auth.py"
+        "scripts/verify_aks_auth.py",
+        "docs/kubeconfig-interoperability.md",
+        "docs/acceptance/credential-interoperability.md",
+        "tests/unit/test_exec_credentials.py",
+        "tests/unit/test_proxies.py",
+        "tests/contract/test_generic_credentials.py",
+        "tests/contract/test_proxy_transport.py",
+        "tests/terminal/test_credential_login.py",
+        "tests/packaging/test_distribution.py",
+        "scripts/verify_credential_interop_kind.py"
       ]
     },
     {
@@ -101,7 +119,7 @@
       ],
       "source": "cmd/root.go",
       "status": "planned",
-      "difference": "C01/F05 qualify native and CLI CA/client certificates, TLS verification overrides, deadlines and repeated impersonation across API streams and kubectl shells, including actual kind RBAC denial. Native proxy transport has owned local evidence; advanced proxy/provider combinations remain C08 and permission browser remains O04.",
+      "difference": "C01/F05/C08 qualify CA/client certificates, TLS names, request bounds, token-file/exec renewal, captured HTTP(S)/SOCKS5 proxies and repeated impersonation. Actual HTTP CONNECT kind logs/exec/forwards retain connection identity. SOCKS5/SPDY limits are documented; the permission browser remains O04.",
       "partial_evidence": [
         "docs/context-sessions.md",
         "tests/contract/test_sessions.py",
@@ -113,7 +131,16 @@
         "tests/unit/test_connection_overrides.py",
         "tests/ui/test_launch_options.py",
         "scripts/verify_shell_kind.py",
-        "docs/acceptance/connection-overrides.md"
+        "docs/acceptance/connection-overrides.md",
+        "docs/kubeconfig-interoperability.md",
+        "docs/acceptance/credential-interoperability.md",
+        "tests/unit/test_exec_credentials.py",
+        "tests/unit/test_proxies.py",
+        "tests/contract/test_generic_credentials.py",
+        "tests/contract/test_proxy_transport.py",
+        "tests/terminal/test_credential_login.py",
+        "tests/packaging/test_distribution.py",
+        "scripts/verify_credential_interop_kind.py"
       ]
     },
     {

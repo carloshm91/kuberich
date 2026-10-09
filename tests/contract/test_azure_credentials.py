@@ -259,7 +259,7 @@ async def test_api_and_delegated_helper_use_captured_azure_environment_and_path(
             name not in environment
             for name in ("AAD_LOGIN_METHOD", "ARM_CLIENT_ID", "AZURESUBSCRIPTION_CLIENT_ID")
         )
-        assert environment["KEEP_VALUE"] == "unchanged" and request.command.directory == tmp_path
+        assert "KEEP_VALUE" not in environment and request.command.directory == tmp_path
         spec = json.loads(request.configuration)["users"][0]["user"]["exec"]
         assert spec["command"] == str(tmp_path / "bin" / "kubelogin")
         assert spec["args"] == entry["exec"]["args"] and spec["env"] == entry["exec"]["env"]
@@ -288,7 +288,9 @@ async def test_cancelling_helper_reaps_process_and_next_attempt_can_connect(tmp_
 
 
 @pytest.mark.asyncio
-async def test_explicit_login_refuses_static_credentials_and_non_azure_helpers(tmp_path):
+async def test_explicit_login_refuses_static_credentials_and_allows_declared_generic_helpers(
+    tmp_path,
+):
     async def authenticate(credentials):
         return credentials.accept(b"", credentials.invocation(interactive=True))
 
@@ -305,8 +307,12 @@ async def test_explicit_login_refuses_static_credentials_and_non_azure_helpers(t
         {},
         5,
     )
-    with pytest.raises(ConnectionProblem, match="Azure kubelogin"):
-        credentials.invocation(interactive=True)
+    command = credentials.invocation(interactive=True)
+    assert command.terminal_input is False
+    assert (
+        json.loads(dict(command.environment)["KUBERNETES_EXEC_INFO"])["spec"]["interactive"]
+        is False
+    )
 
 
 @pytest.mark.asyncio

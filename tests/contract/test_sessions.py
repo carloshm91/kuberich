@@ -349,21 +349,27 @@ async def test_namespace_count_and_page_limits_do_not_loop_or_truncate_silently(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("cancellations", [1, 3])
 async def test_cancel_during_owned_filesystem_preparation_waits_for_thread(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, cancellations: int
 ) -> None:
     import threading
 
     from kuberich.adapters import kubernetes
 
     started, release, finished = threading.Event(), threading.Event(), threading.Event()
+    material_written = threading.Event()
     original = kubernetes._prepare
+    _, material = certificate(tmp_path)
 
-    def delayed(context, directory):
+    def delayed(context, directory, environment=None):
         started.set()
-        release.wait(timeout=2)
+        assert release.wait(timeout=5)
         try:
-            return original(context, directory)
+            configuration, info = original(context, directory, environment)
+            assert Path(configuration.ssl_ca_cert).is_file()
+            material_written.set()
+            return configuration, info
         finally:
             finished.set()
 
@@ -373,17 +379,32 @@ async def test_cancel_during_owned_filesystem_preparation_waits_for_thread(
         return namespaces("default")
 
     async with fake_api(handler) as url:
-        sessions = SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
+        sessions = SessionService(
+            catalog_fixture(
+                tmp_path,
+                url,
+                cluster={"certificate-authority-data": material["certificate-authority-data"]},
+            ),
+            ConnectionRequest(),
+        )
         task = asyncio.create_task(sessions.connect("kuberich-test-one"))
-        await asyncio.to_thread(started.wait, 2)
-        directory = Path(sessions.client.directory.name)
-        task.cancel()
-        await asyncio.sleep(0)
-        assert directory.exists()
-        release.set()
-        with pytest.raises(asyncio.CancelledError):
-            await task
-        assert finished.is_set() and not directory.exists() and sessions.client is None
+        try:
+            assert await asyncio.to_thread(started.wait, 3)
+            directory = Path(sessions.client.directory.name)
+            for _ in range(cancellations):
+                task.cancel()
+                await asyncio.sleep(0)
+                assert directory.exists() and not finished.is_set() and not task.done()
+            release.set()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+            assert material_written.is_set() and finished.is_set()
+            assert not directory.exists() and sessions.client is None
+        finally:
+            release.set()
+            await asyncio.gather(task, return_exceptions=True)
+            assert await asyncio.to_thread(finished.wait, 3)
+            await sessions.close()
 
 
 @pytest.mark.asyncio

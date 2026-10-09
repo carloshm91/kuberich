@@ -101,7 +101,7 @@ def azure_terminal_trial(python: str, parent: Path, scenario: str, *, name: str)
         terminal.wait_for_screen("Auth Error")
         for _ in range(2 if scenario == "success" else 1):
             marker = terminal.send(b":login\r")
-            terminal.wait_for(b"configured Azure authentication", since=marker)
+            terminal.wait_for(b"configured credential helper authentication", since=marker)
             terminal.wait_for(b"SYNTHETIC-ONLY", since=marker)
             if scenario != "never":
                 terminal.wait_for(b"AZURE LOGIN READY", since=marker)

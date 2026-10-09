@@ -17,12 +17,12 @@ from kuberich.domain.credential_helpers import (
     AZURE_LOGIN_REQUIRED,
     azure_login_mode,
     azure_prompt,
-    bearer_token,
     helper_failure,
     helper_start_failure,
     is_azure_helper,
     is_eks_helper,
 )
+from kuberich.domain.exec_credentials import parse_credentials
 from kuberich.domain.processes import ProcessCommand, ProcessMode, ProcessPurpose
 from kuberich.errors import AppError
 
@@ -103,6 +103,7 @@ class ExecToken:
         self.cluster = cluster
         self.timeout = timeout
         self.cached: str | None = None
+        self.certificate: tuple[str, str] | None = None
         self.expiration: datetime | None = None
         self.lock = asyncio.Lock()
         self.revision = 0
@@ -116,21 +117,12 @@ class ExecToken:
         # token. This synchronous comparison contains no scheduling boundary.
         if rejected_revision is None or self.revision == rejected_revision:
             self.cached = None
+            self.certificate = None
 
     def delegated_environment(self, inherited: Mapping[str, str]) -> dict[str, str]:
-        environment = dict(inherited)
-        if self.eks or self.azure:
-            prefixes = ("AWS_",) if self.eks else ("AZURE_", "AAD_", "ARM_", "AZURESUBSCRIPTION_")
-            names = {"HOME", "PATH", "KUBECACHEDIR"} if self.azure else {"HOME"}
-            for name in tuple(environment):
-                if name.startswith(prefixes) or name in names:
-                    del environment[name]
-            environment.update(
-                (name, value)
-                for name, value in self.environment.items()
-                if name.startswith(prefixes) or name in names
-            )
-        return environment
+        # Freeze inherited helper identity, including previously absent variables.
+        # The command builder pins the private KUBECONFIG independently.
+        return dict(self.environment)
 
     def invocation(self, *, interactive: bool = False) -> ProcessCommand:
         try:
@@ -169,15 +161,11 @@ class ExecToken:
                 value = variable.get("value")
                 environment[name] = "" if value == "" else text(value)
             self.eks, self.azure = is_eks_helper(argv), is_azure_helper(argv)
-            if interactive and not self.azure:
-                raise auth_problem(
-                    "Explicit :login currently requires a declared Azure kubelogin get-token helper."
-                )
             if not interactive and mode == "Always":
                 raise auth_problem(
                     AZURE_LOGIN_REQUIRED
                     if self.azure
-                    else "This helper requires terminal input. Log in externally; interactive authentication awaits C08 #47."
+                    else "This helper requires terminal input. Use explicit :login or log in externally, then retry."
                 )
             if (
                 self.azure
@@ -195,7 +183,7 @@ class ExecToken:
             environment["KUBERNETES_EXEC_INFO"] = json.dumps(
                 {"apiVersion": version, "kind": "ExecCredential", "spec": info}
             )
-            if (self.eks or self.azure) and "/" not in command:
+            if "/" not in command:
                 search_path = os.pathsep.join(
                     str(self.entry.directory / path) if not Path(path).is_absolute() else path
                     for path in environment.get("PATH", os.defpath).split(os.pathsep)
@@ -214,41 +202,22 @@ class ExecToken:
                 "Invalid credential helper configuration or response. Check its ExecCredential contract."
             ) from None
 
-    def accept(self, output: bytes, command: ProcessCommand) -> str:
+    def accept(self, output: bytes, command: ProcessCommand) -> str | None:
         try:
             version = json.loads(dict(command.environment)["KUBERNETES_EXEC_INFO"])["apiVersion"]
-            response = mapping(json.loads(output))
-            if response.get("kind") != "ExecCredential" or response.get("apiVersion") != version:
-                raise auth_problem(
-                    "Credential helper returned a mismatched ExecCredential kind/version."
-                )
-            status = mapping(response.get("status"))
-            if "clientCertificateData" in status or "clientKeyData" in status:
-                raise auth_problem(
-                    "Exec certificate credentials require rotation qualification (C08 #47). Use static certificates or an exec token."
-                )
-            token = bearer_token(status.get("token"))
-            expiration = status.get("expirationTimestamp")
-            expires = (
-                datetime.fromisoformat(text(expiration).replace("Z", "+00:00"))
-                if expiration is not None
-                else None
-            )
-            if expires is not None and (expires.tzinfo is None or expires <= datetime.now(UTC)):
-                raise auth_problem(
-                    "Credential helper returned expired or timezone-less credentials."
-                )
-            self.cached, self.expiration, self.command = token, expires, command.argv[0]
+            result = parse_credentials(output, version, datetime.now(UTC))
+            self.cached, self.certificate = result.token, result.certificate
+            self.expiration, self.command = result.expiration, command.argv[0]
             self.revision += 1
-            return token
+            return result.token
         except (AppError, ValueError, UnicodeError, RecursionError):
             raise auth_problem(
                 "Invalid credential helper configuration or response. Check its ExecCredential contract."
             ) from None
 
-    async def token(self) -> str:
+    async def token(self) -> str | None:
         async with self.lock:
-            if self.cached is not None and (
+            if (self.cached is not None or self.certificate is not None) and (
                 self.expiration is None or self.expiration > datetime.now(UTC)
             ):
                 return self.cached
@@ -259,4 +228,4 @@ class ExecToken:
             return self.accept(output, command)
 
 
-CredentialLogin = Callable[[ExecToken], Awaitable[str]]
+CredentialLogin = Callable[[ExecToken], Awaitable[str | None]]

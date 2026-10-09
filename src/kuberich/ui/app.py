@@ -123,7 +123,7 @@ class HelpScreen(ModalScreen[None]):
                         "c / F2            Contexts (:ctx)\n"
                         "n / F3            Namespaces (:ns)\n"
                         "r / F4            Retry connection (:retry)\n"
-                        ":login            Explicit Azure authentication and reconnect\n"
+                        ":login            Explicit credential helper login and reconnect\n"
                         "i / F5            Connection status (:status)\n"
                         "Letter shortcuts work outside text inputs.\n"
                         "PageUp / PageDown Scroll help\n"
@@ -1228,7 +1228,7 @@ class KubeRichApp(App[None]):
         else:
             self._start_connection(context, authenticate=self._credential_login)
 
-    async def _credential_login(self, credentials: ExecToken) -> str:
+    async def _credential_login(self, credentials: ExecToken) -> str | None:
         command = credentials.invocation(interactive=True)
         try:
             result = await terminal_handoff(self, self.processes, command, timeout=300)
@@ -1236,11 +1236,11 @@ class KubeRichApp(App[None]):
             raise auth_problem(helper_start_failure(command.argv, missing=True)) from None
         except AppError:
             raise auth_problem(
-                "Azure login requires a usable native terminal and executable. Complete the configured provider login externally, then retry."
+                "Credential login requires a usable native terminal and executable. Complete the configured provider login externally, then retry."
             ) from None
         if result.status is not ProcessStatus.SUCCEEDED:
             raise auth_problem(
-                "Azure login did not complete. Retry :login or complete the configured provider login externally, then retry the connection."
+                "Credential login did not complete. Retry :login or complete the configured provider login externally, then retry the connection."
             )
         return credentials.accept(result.stdout, command)
 

@@ -40,7 +40,7 @@ def isolated_kubernetes(
         configuration = kwargs.get("configuration")
         if configuration is None:
             raise AssertionError("Connection tests require an explicit SDK configuration.")
-        for url in (configuration.host, configuration.proxy):
+        for purpose, url in (("server", configuration.host), ("proxy", configuration.proxy)):
             if url is None:
                 continue
             endpoint = urlsplit(url)
@@ -51,9 +51,12 @@ def isolated_kubernetes(
             if (
                 not permitted
                 or endpoint.port is None
-                or endpoint.scheme not in {"http", "https"}
-                or endpoint.username is not None
-                or endpoint.password is not None
+                or endpoint.scheme
+                not in ({"http", "https", "socks5"} if purpose == "proxy" else {"http", "https"})
+                or (
+                    purpose == "server"
+                    and (endpoint.username is not None or endpoint.password is not None)
+                )
             ):
                 raise AssertionError("Connection tests require an owned numeric loopback endpoint.")
         if configuration.proxy is not None and configuration.proxy not in owned_test_proxies:

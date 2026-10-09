@@ -220,6 +220,9 @@ def test_new_catalog_reader_rejects_files_outside_owned_test_directory(tmp_path:
     [
         ("https://production.invalid:6443", None),
         ("http://127.0.0.1:64321", "https://production.invalid:6443"),
+        ("http://127.0.0.1:64321", "socks5://user:private@production.invalid:1080"),
+        ("http://127.0.0.1:64321", "socks5://127.0.0.1:1080"),
+        ("http://127.0.0.1:64321", "http://user:private@127.0.0.1:3128"),
     ],
 )
 async def test_new_adapter_guard_rejects_remote_identity_or_proxy(

@@ -1,5 +1,24 @@
 # First things to try
 
+## Credential interoperability checkpoint: C08 #47
+
+Generic `:login` now honors Never/IfAvailable/Always; token files refresh, and exec
+certificate renewal replaces TLS connections and removes old private material.
+Captured HTTP(S)/SOCKS5 proxies retain TLS names and selected helper identity.
+See [the supported contracts and migration paths](kubeconfig-interoperability.md).
+
+The exact focused command is
+`uv run --locked --python 3.12 pytest --tb=short -q tests/contract/test_proxy_transport.py tests/contract/test_generic_credentials.py tests/contract/test_workspace.py`:
+72 passed. Native generic/Azure login and handoff checks passed 24 cases; the final
+source/fresh-wheel credential and encrypted-key checks passed another 11 cases.
+The actual Kubernetes command is
+`uv run --locked --python 3.12 python -m scripts.verify_credential_interop_kind --kind artifacts/operations-46/tools/kind --kubectl artifacts/operations-46/tools/kubectl`:
+all 27 checks passed, including real TLS/proxy browsing, logs, exec, forwarding and
+owned cleanup. Full final-head coverage, installed-wheel and hosted qualification
+are merge requirements; [acceptance evidence](acceptance/credential-interoperability.md)
+and the live issue/PR retain the candidate results. Real cloud certification
+remains Q05 #87; actual Helm remains #66. No package/site/tag publication occurs.
+
 ## First product release policy checkpoint: #154
 
 The first public product remains **1.0.0**. Intermediate 0.x milestones are

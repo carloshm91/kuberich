@@ -58,6 +58,7 @@ GUIDES = (
     Guide("resource-operations.md", "Delete & Jobs", "Change deliberately"),
     Guide("eks-authentication.md", "AWS / EKS", "Authentication"),
     Guide("aks-authentication.md", "Azure / AKS", "Authentication"),
+    Guide("kubeconfig-interoperability.md", "GKE, OIDC, certificates & proxies", "Authentication"),
 )
 
 
