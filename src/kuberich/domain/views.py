@@ -22,6 +22,7 @@ class ResourceSelection:
     name: str = "pods"
     group: str = ""
     version: str | None = None
+    server_columns: bool = False
 
     def __post_init__(self) -> None:
         api_segment(self.name)
@@ -29,6 +30,8 @@ class ResourceSelection:
             api_segment(self.group)
         if self.version is not None:
             api_segment(self.version)
+        if type(self.server_columns) is not bool:
+            raise AppError("Server-column selection must be boolean.")
 
 
 @dataclass(frozen=True)

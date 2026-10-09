@@ -18,6 +18,44 @@ from kuberich.domain.resources import (
 )
 from kuberich.errors import AppError
 from tests.support.resources import aggregated_resource, descriptor, item, pod_resource
+from tests.support.tables import custom_resource
+
+
+def test_cross_group_resolution_collapses_versions_and_uses_server_preference():
+    stable = custom_resource()
+    beta = custom_resource(version="v1beta1")
+    other = custom_resource(group="other.example.test", name="gadgets")
+    discovery = Discovery((stable, beta, other, pod_resource()))
+    assert discovery.preferred_resources == (stable, other, pod_resource())
+    assert discovery.resolve("widgets") is stable
+    assert discovery.resolve("wdg", group=stable.group, version="v1beta1") is beta
+    assert discovery.resolve("po", group="") == pod_resource()
+    with pytest.raises(AppError, match="ambiguous"):
+        discovery.resolve("wdg")
+    with pytest.raises(AppError, match="not discovered"):
+        discovery.resolve("widgets", version="v2")
+    with pytest.raises(AppError, match="not discovered"):
+        discovery.resolve("missing")
+    with pytest.raises(AppError):
+        discovery.resolve("../escape")
+    with pytest.raises(AppError):
+        discovery.resolve("widgets", group="../escape")
+    with pytest.raises(AppError):
+        discovery.resolve("widgets", version="../escape")
+
+
+def test_alias_only_in_another_version_still_selects_the_preferred_family():
+    stable = api_resource("owned.example.test/v1", descriptor("widgets", kind="Widget"))
+    beta = custom_resource(version="v1beta1")
+    assert Discovery((stable, beta)).resolve("wdg") is stable
+    # A canonical plural wins over an unrelated resource's identical alias.
+    other = api_resource(
+        "other.example.test/v1",
+        {**descriptor("gadgets", kind="Gadget"), "shortNames": ["widgets"]},
+    )
+    assert Discovery((stable, other)).resolve("widgets") is stable
+    with pytest.raises(AppError, match="ambiguous"):
+        Discovery((stable, custom_resource(group="other.example.test"))).resolve("widgets")
 
 
 def test_discovered_paths_and_aliases_preserve_scope_and_served_version() -> None:

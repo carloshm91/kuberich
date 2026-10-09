@@ -101,6 +101,7 @@ class WatchState:
         self.resource = snapshot.resource
         self.namespace = snapshot.namespace
         self.resource_version = resource_text(snapshot.resource_version)
+        self._columns = snapshot.columns
         self._records: dict[str, ResourceRecord] = {}
         self._names: dict[tuple[str | None, str], str] = {}
         self._bytes = 0
@@ -118,7 +119,11 @@ class WatchState:
     @property
     def snapshot(self) -> ResourceSnapshot:
         return ResourceSnapshot(
-            self.resource, self.namespace, self.resource_version, tuple(self._records.values())
+            self.resource,
+            self.namespace,
+            self.resource_version,
+            tuple(self._records.values()),
+            self._columns,
         )
 
     def _put(self, uid: str, record: ResourceRecord) -> None:
@@ -186,6 +191,7 @@ class WatchState:
                     self._remember(event)
                     return False
                 self._put(record.uid, record)
+            self._columns = record.server.columns if record.server is not None else ()
         self.resource_version = event.resource_version
         self._remember(event)
         return True

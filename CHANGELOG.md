@@ -27,6 +27,12 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Resolve preferred custom-resource versions and ambiguous aliases from live
+  discovery. Read arbitrary discovered types through bounded LIST/WATCH/GET,
+  retaining server Table columns and full manifests with scoped JSON fallback.
+  Refresh installed/removed APIs without replacing the context client. Generic
+  custom-resource terminal navigation remains the next B06 implementation.
+
 - Attach to a captured running regular/init/ephemeral container inside the terminal
   workspace, with detach, faithful return status and retained selection.
 - Review explicit bidirectional file/directory copies with frozen upload snapshots,

@@ -1,7 +1,9 @@
 """Bounded API discovery and atomic, version-consistent collection reads."""
 
 import asyncio
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from functools import partial
 from typing import Any
 
 from kuberich.adapters.kubernetes import KubernetesSession
@@ -12,14 +14,17 @@ from kuberich.domain.resources import (
     ApiResource,
     Discovery,
     DiscoveryIssue,
+    ResourceRecord,
     ResourceSnapshot,
     api_resource,
     api_segment,
+    resource_name,
     resource_object,
     resource_record,
     resource_text,
     split_api_version,
 )
+from kuberich.domain.tables import TABLE_ACCEPT, TableDecoder, TableUnavailable, is_table
 from kuberich.errors import AppError
 
 DISCOVERY_ACCEPT = (
@@ -30,6 +35,21 @@ MAX_RESOURCES = 8192
 MAX_ITEMS = MAX_RESOURCE_ITEMS
 MAX_PAGES = 256
 MAX_SNAPSHOT_BYTES = MAX_RESOURCE_BYTES
+
+
+async def parse_owned[T](operation: Callable[[], T]) -> T:
+    """Finish an owned CPU parser even under repeated caller cancellation."""
+    task = asyncio.create_task(asyncio.to_thread(operation))
+    try:
+        return await asyncio.shield(task)
+    except asyncio.CancelledError:
+        completion = asyncio.gather(task, return_exceptions=True)
+        while not completion.done():
+            try:
+                await asyncio.shield(completion)
+            except asyncio.CancelledError:
+                continue
+        raise
 
 
 def _entries(value: Any, limit: int) -> list[Any]:
@@ -157,8 +177,70 @@ def _issue(source: str, problem: ConnectionProblem) -> DiscoveryIssue:
 class ResourceReader:
     """Uses one existing session; never loads credentials or selects a fallback."""
 
-    def __init__(self, session: KubernetesSession) -> None:
+    def __init__(self, session: KubernetesSession, *, tables: bool = False) -> None:
+        if type(tables) is not bool:
+            raise AppError("Server-column negotiation must be boolean.")
         self.session = session
+        self.tables = tables
+        self._table_failed: set[tuple[str, str, str]] = set()
+
+    def uses_tables(self, resource: ApiResource) -> bool:
+        return (
+            self.tables
+            and (resource.group, resource.version, resource.name) not in self._table_failed
+        )
+
+    def disable_tables(self, resource: ApiResource) -> None:
+        self._table_failed.add((resource.group, resource.version, resource.name))
+
+    async def get(
+        self, resource: ApiResource, name: str, namespace: str | None = None
+    ) -> ResourceRecord:
+        if "get" not in resource.verbs:
+            raise AppError("This discovered resource does not advertise get support.")
+        path = resource.path(namespace) + "/" + resource_name(name)
+        decoder = TableDecoder(resource, namespace)
+        try:
+            async with asyncio.timeout(self.session.timeout):
+                while True:
+                    try:
+                        payload = await self.session.get_json(
+                            path,
+                            accept=TABLE_ACCEPT
+                            if self.uses_tables(resource)
+                            else "application/json",
+                            params={"includeObject": "Object"}
+                            if self.uses_tables(resource)
+                            else None,
+                        )
+                    except HttpProblem as problem:
+                        if self.uses_tables(resource) and problem.status in {406, 415}:
+                            self.disable_tables(resource)
+                            continue
+                        raise
+                    if self.uses_tables(resource) and is_table(payload):
+                        try:
+                            record = (
+                                await parse_owned(partial(decoder.records, payload, single=True))
+                            )[0]
+                        except TableUnavailable:
+                            self.disable_tables(resource)
+                            continue
+                    else:
+                        if self.uses_tables(resource):
+                            self.disable_tables(resource)
+                        record = await parse_owned(
+                            partial(resource_record, resource, payload, namespace)
+                        )
+                    if record.name != name or record.size_bytes > MAX_SNAPSHOT_BYTES:
+                        raise AppError(
+                            "The resource item does not match the requested identity/bounds."
+                        )
+                    return record
+        except TimeoutError:
+            raise ConnectionProblem(ConnectionState.TIMEOUT, "Resource read timed out.") from None
+        except AppError:
+            raise ConnectionProblem(ConnectionState.API_ERROR, "Invalid resource item.") from None
 
     async def _read(
         self, path: str, *, aggregate: bool = False
@@ -241,6 +323,7 @@ class ResourceReader:
                 # never mix old pages with the server's replacement token.
                 restarted = False
                 while True:
+                    decoder = TableDecoder(resource, namespace)
                     records = []
                     identities: set[tuple[str | None, str]] = set()
                     uids: set[str] = set()
@@ -250,15 +333,35 @@ class ResourceReader:
                     total_bytes = 0
                     for page in range(MAX_PAGES):
                         try:
-                            payload = await self.session.get_json(
-                                path, params={"limit": str(page_size), "continue": token}
-                            )
+                            params = {"limit": str(page_size), "continue": token}
+                            if self.uses_tables(resource):
+                                payload = await self.session.get_json(
+                                    path,
+                                    params={**params, "includeObject": "Object"},
+                                    accept=TABLE_ACCEPT,
+                                )
+                            else:
+                                payload = await self.session.get_json(path, params=params)
                         except HttpProblem as problem:
+                            if self.uses_tables(resource) and problem.status in {406, 415}:
+                                self.disable_tables(resource)
+                                break
                             if problem.status == 410 and not restarted:
                                 restarted = True
                                 break
                             raise
-                        if payload.get("apiVersion", resource.api_version) != resource.api_version:
+                        table = self.uses_tables(resource) and is_table(payload)
+                        if self.uses_tables(resource) and not table:
+                            self.disable_tables(resource)
+                            if page:
+                                # Representation changed mid-collection. Discard
+                                # earlier Table rows and restart ordinary JSON.
+                                break
+                        if (
+                            not table
+                            and payload.get("apiVersion", resource.api_version)
+                            != resource.api_version
+                        ):
                             raise AppError("Collection API version does not match discovery.")
                         metadata = resource_object(payload.get("metadata"))
                         rv = metadata.get("resourceVersion")
@@ -270,11 +373,20 @@ class ResourceReader:
                             snapshot_version = rv
                         elif rv != snapshot_version:
                             raise AppError("Collection resourceVersion changed between pages.")
-                        values = payload.get("items")
-                        if not isinstance(values, list) or len(values) > MAX_ITEMS:
-                            raise AppError("Invalid or excessive resource collection.")
-                        for value in values:
-                            record = resource_record(resource, value, namespace)
+                        if table:
+                            try:
+                                incoming = await parse_owned(partial(decoder.records, payload))
+                            except TableUnavailable:
+                                self.disable_tables(resource)
+                                break
+                        else:
+                            values = payload.get("items")
+                            if not isinstance(values, list) or len(values) > MAX_ITEMS:
+                                raise AppError("Invalid or excessive resource collection.")
+                            incoming = tuple(
+                                resource_record(resource, value, namespace) for value in values
+                            )
+                        for record in incoming:
                             identity = record.namespace, record.name
                             if (
                                 record.uid is not None and record.uid in uids
@@ -292,7 +404,11 @@ class ResourceReader:
                             raise AppError("Invalid continuation token.")
                         if not token:
                             return ResourceSnapshot(
-                                resource, namespace, snapshot_version, tuple(records)
+                                resource,
+                                namespace,
+                                snapshot_version,
+                                tuple(records),
+                                decoder.columns or () if self.uses_tables(resource) else (),
                             )
                         resource_text(token)
                         if token in tokens:

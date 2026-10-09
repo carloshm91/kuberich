@@ -1,6 +1,24 @@
 # First things to try
 
-## Attachment and file-transfer candidate: S07 #48
+## Custom-resource backend checkpoint: C05 #52
+
+Generic discovered LIST/WATCH/GET now retains bounded server Table columns and
+full manifests, with ordinary-JSON fallback. Preferred versions and ambiguous
+cross-group aliases come from discovery; refreshing installed/removed APIs keeps
+the owned context client and namespace intent. This is backend delivery:
+generic custom-resource terminal commands and presentation remain B06 #53.
+
+Exact tested command:
+`uv run --locked --python 3.12 pytest tests/unit/test_resources.py tests/unit/test_tables.py tests/unit/test_views.py tests/unit/test_watches.py tests/contract/test_resources.py tests/contract/test_watches.py tests/contract/test_workspace.py tests/contract/test_custom_resources.py tests/contract/test_custom_workspace.py -q --cov=kuberich --cov-branch`.
+The expanded cohort passed 396 cases; each of the four involved critical domains
+measured 100% lines/branches. The owned-cluster command is
+`uv run --locked --python 3.12 python -m scripts.verify_custom_resources_kind --kind artifacts/operations-46/tools/kind`.
+It verifies actual CRDs, Table events, version/removal refresh and RBAC. Its
+receipt labels representation injections and confirms cluster deletion.
+Whole-candidate/platform checks remain merge requirements, recorded in the
+[acceptance evidence](acceptance/custom-resources.md) and live issue.
+
+## Attachment and file-transfer checkpoint: S07 #48
 
 The selected container table now offers `a` for attach to an existing process,
 `u` for upload and `d` for download. `:attach`, `:upload` and `:download` open that
@@ -17,8 +35,13 @@ The owned-cluster command is
 `uv run --locked --python 3.12 python -m scripts.verify_transfers_kind --kind artifacts/operations-46/tools/kind --kubectl artifacts/operations-46/tools/kubectl`.
 Its 13 checks exercised real binary/tree round trips, existing init/ephemeral
 containers, missing tar, interruptions and terminal return; the cluster was
-deleted. These focused receipts do not establish whole-candidate coverage or
-the new final-head Linux/macOS matrix; both remain merge requirements.
+deleted. Final-head hosted qualification passed all four required Linux
+3.12/3.13/3.14 and macOS 3.12 jobs, each with 3,635 passing cases and all 39 then
+critical modules at 100% lines/branches. Production lines were at least 99.19%,
+branches at least 97.10%, and changed lines at least 98.59%. Linux 3.12 also
+passed all ten then-required kind rehearsals and installed quickstart. PR #164
+merged; [the final receipt](https://github.com/carloshm91/kuberich/issues/48#issuecomment-6078045340)
+records the exact head, artifacts and limits.
 See [the guide](container-attach-copy.md) and
 [acceptance evidence](acceptance/container-transfers.md) for boundaries and results.
 No user trial or package/site publication is required between product tickets.
@@ -26,7 +49,7 @@ No user trial or package/site publication is required between product tickets.
 ## Flat website and reference checkpoint: #162
 
 The local landing and initial docs share a light flat design, real UI captures,
-keyboard navigation and a compact mobile guide menu. Eighteen authored guides
+keyboard navigation and a compact mobile guide menu. Nineteen authored guides
 and three source-generated references build for both proposed hosts. CLI flags,
 resource aliases/columns and capability status come from maintained declarations;
 behavioral guides still need updates with each implementation PR.

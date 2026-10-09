@@ -41,6 +41,17 @@ updated decision record in this document. The product is a new implementation.
 
 ## Product boundary
 
+C05 #52 resolves one preferred group/resource family across served versions,
+with explicit group qualification for ambiguous aliases. Opt-in Table reads
+keep immutable bounded printer metadata separate from full resource manifests;
+one decoder belongs to a paged LIST or one opened watch. Unsupported conversion
+disables negotiation for one GVR and restarts a whole collection, while identity,
+RBAC and transport errors retain their original classification. Parsing workers
+drain even under repeated cancellation before transport ownership ends.
+Workspace refresh replaces discovery/watch state on its existing client and
+retains pending namespace intent. Client generation changes hide the previous
+catalogue. B06 #53 separately owns generic UI commands/columns and navigation.
+
 S07 #48 freezes attach/copy targets and connection material on the event loop,
 then owns filesystem work in shielded workers that finish before cleanup.
 Attachment shares the existing embedded PTY/emulator and keeps its detach
