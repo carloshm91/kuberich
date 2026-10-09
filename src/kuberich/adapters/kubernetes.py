@@ -430,12 +430,9 @@ class KubernetesSession:
             asyncio.to_thread(_prepare, self.context, Path(self.directory.name), self.environment)
         )
         try:
-            try:
-                configuration, info = await asyncio.shield(preparation)
-            except asyncio.CancelledError:
-                # A cancelled await does not stop the file-reading thread.
-                await asyncio.gather(preparation, return_exceptions=True)
-                raise
+            # File work continues after an await is cancelled; drain it through
+            # repeated cancellation before close removes the owned directory.
+            configuration, info = await _finish_task(preparation)
             self.configuration = configuration
             self.impersonation = impersonation_headers(self.context.user.data)
             self.insecure = not configuration.verify_ssl or str(configuration.host).startswith(

@@ -15,6 +15,7 @@ No release/package/site publication is included.
 | Periodic token file, 401 reread, explicit fallback and no anonymous fallback | Real HTTP requests and bounded owned file reads |
 | Certificate expiry, simultaneous refresh, changed peer serial/new TLS pool, certificate-to-token transition | Actual TLS/key pairs and concurrent requests |
 | Invalid/encrypted keys, exclusive-file collision, repeated cancellation and queued session close | Real SSL/file work, preserved preexisting files and awaited cleanup |
+| Repeated cancellation during initial file preparation | Held actual CA-file work finishes before the private directory is removed |
 | Authenticated HTTP/HTTPS proxies, CONNECT, SOCKS5 and original/overridden TLS names | Actual loopback relays; separate API/proxy identity and repeated impersonation headers |
 | Proxy disconnect/timeout and wrapped TLS errors for reads/log/watch | Actual refused/delayed handshakes; fixed private diagnostics |
 | Never/IfAvailable/Always login, Ctrl+C/cancel/SIGTERM, console restoration | Native PTYs; installed-wheel checks also required before merge |

@@ -27,6 +27,7 @@ Release entries are written in release PRs and linked to their Git tags.
   CONNECT/SOCKS5 proxies, original/overridden TLS names and delegated Kubernetes
   logs, exec and port-forward connections; document GKE/OIDC migration and limits.
   Reject encrypted private keys before OpenSSL can request a terminal password.
+  Drain credential file preparation through repeated cancellation before cleanup.
 
 - Delete captured resources and explicitly selected batches with UID/version,
   propagation/grace and count confirmation; retain independent and pending outcomes.
