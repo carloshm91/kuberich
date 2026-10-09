@@ -2,7 +2,7 @@
 
 import asyncio
 import ssl
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 
 import aiohttp
 
@@ -12,11 +12,56 @@ from kuberich.domain.resources import ApiResource, resource_record
 from kuberich.errors import AppError
 
 
+async def _single_attempt(
+    request: aiohttp.ClientRequest,
+    handler: Callable[[aiohttp.ClientRequest], Awaitable[aiohttp.ClientResponse]],
+) -> aiohttp.ClientResponse:
+    """Public middleware prevents aiohttp's idempotent-method connection replay.
+
+    DELETE otherwise retries a lost persistent connection, even after the API
+    applied it. Translate only retryable disconnects to a non-replayed public
+    client error; connector failures retain their before-send classification.
+    """
+    try:
+        return await handler(request)
+    except aiohttp.ClientConnectorError:
+        raise
+    except (aiohttp.ClientOSError, aiohttp.ServerDisconnectedError):
+        raise aiohttp.ClientPayloadError(
+            "Write connection ended; outcome requires inspection."
+        ) from None
+
+
 async def conditional_patch(
     client: KubernetesSession,
     intent: MutationIntent,
     authorize: Callable[[], None],
     *,
+    dry_run: bool = False,
+) -> MutationResult:
+    return await guarded_request(
+        client,
+        authorize,
+        method="PATCH",
+        path=intent.path,
+        body=intent.body,
+        content_type="application/json-patch+json",
+        accepted=(200,),
+        receipt=lambda data: _receipt(data, intent),
+        dry_run=dry_run,
+    )
+
+
+async def guarded_request(
+    client: KubernetesSession,
+    authorize: Callable[[], None],
+    *,
+    method: str,
+    path: str,
+    body: bytes,
+    content_type: str,
+    accepted: tuple[int, ...],
+    receipt: Callable[[bytes], MutationResult | None],
     dry_run: bool = False,
 ) -> MutationResult:
     """No redirects, 401 refresh/replay, HTTP retries or raw server error exposure.
@@ -37,7 +82,7 @@ async def conditional_patch(
             headers = [
                 ("Accept", "application/json"),
                 ("Accept-Encoding", "identity"),
-                ("Content-Type", "application/json-patch+json"),
+                ("Content-Type", content_type),
                 *client.impersonation,
             ]
             if token := configuration.api_key.get("BearerToken"):
@@ -45,37 +90,38 @@ async def conditional_patch(
             authorize()
             started = True
             async with api.rest_client.pool_manager.request(
-                "PATCH",
-                str(configuration.host) + intent.path,
+                method,
+                str(configuration.host) + path,
                 headers=headers,
-                data=intent.body,
+                data=body,
                 params={"fieldValidation": "Strict", **({"dryRun": "All"} if dry_run else {})},
                 proxy=configuration.proxy,
                 server_hostname=configuration.tls_server_name,
                 allow_redirects=False,
+                middlewares=(_single_attempt,),
                 timeout=aiohttp.ClientTimeout(total=client.timeout),
             ) as response:
-                if response.status != 200:
+                if response.status not in accepted:
                     # Do not read arbitrary Status bodies into errors/history.
-                    result = status_result(response.status)
+                    refusal = status_result(response.status)
                     return (
                         MutationResult(
                             MutationState.REJECTED
-                            if result.state is MutationState.UNCERTAIN
-                            else result.state,
+                            if refusal.state is MutationState.UNCERTAIN
+                            else refusal.state,
                             "Server validation refused; no apply was sent.",
                         )
                         if dry_run
-                        else result
+                        else refusal
                     )
                 data = bytearray()
                 async for chunk in response.content.iter_chunked(16384):
                     data.extend(chunk)
                     if len(data) > 8 * 1024 * 1024:
                         raise ValueError
-            decoding = asyncio.create_task(asyncio.to_thread(_receipt, bytes(data), intent))
+            decoding = asyncio.create_task(asyncio.to_thread(receipt, bytes(data)))
             try:
-                await asyncio.shield(decoding)
+                result = await asyncio.shield(decoding)
             except asyncio.CancelledError:
                 finishing = asyncio.gather(decoding, return_exceptions=True)
                 while not finishing.done():
@@ -85,7 +131,7 @@ async def conditional_patch(
                         continue
                 await finishing
                 raise
-            return MutationResult(
+            return result or MutationResult(
                 MutationState.SUCCEEDED,
                 "Server dry-run passed; nothing was persisted. Confirm separately to apply."
                 if dry_run

@@ -46,7 +46,8 @@ including scope, filter, sorting and viewport.
 
 Shell and logs remain pod/container actions. [Manifest editing](editing.md),
 [workload scale/rollout](workloads.md) and [port forwarding](port-forwards.md) now
-have their own implemented contracts. Deletion, owner drill-down and generic CRD
+have their own implemented contracts. [Deletion and Job operations](resource-operations.md)
+use captured confirmation and retained results. Owner drill-down and generic CRD
 columns remain separate tickets. These views do not establish full K9s parity.
 Endpoints remains available when served, although modern clusters should
 also support the later EndpointSlice view tracked in the networking backlog.

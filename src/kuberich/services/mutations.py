@@ -4,6 +4,7 @@ import asyncio
 from collections import OrderedDict
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Protocol
 from uuid import UUID, uuid4
 from weakref import WeakSet
 
@@ -28,6 +29,23 @@ from kuberich.services.processes import _finish_owned
 class Confirmation:
     intent: UUID
     token: UUID
+
+
+class WriteIntent(Protocol):
+    @property
+    def effects(self) -> tuple[str, ...]: ...
+
+
+class MutationSource(Protocol):
+    client: KubernetesSession
+    target: ResourceTarget
+
+    @property
+    def intent(self) -> WriteIntent | None: ...
+
+    def require_current(self) -> None: ...
+
+    async def execute(self, confirmation: Confirmation) -> MutationResult: ...
 
 
 class MutationService:
@@ -163,7 +181,7 @@ class MutationManager:
     def records(self) -> tuple[MutationRecord, ...]:
         return tuple(self._records.values())
 
-    def start(self, source: MutationService, confirmation: Confirmation) -> UUID:
+    def start(self, source: MutationSource, confirmation: Confirmation) -> UUID:
         source.require_current()
         if self._closed or source.client in self._retired:
             raise AppError("Mutation connection is closing; no new write can start.")

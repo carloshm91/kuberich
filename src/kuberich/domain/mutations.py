@@ -207,6 +207,7 @@ def annotation_intent(
 
 class MutationState(Enum):
     SUCCEEDED = "Succeeded"
+    ACCEPTED = "Accepted; deletion pending"
     BLOCKED = "Blocked"
     STALE = "Stale target"
     DENIED = "Permission denied"
@@ -224,6 +225,7 @@ class MutationState(Enum):
 class MutationResult:
     state: MutationState
     message: str
+    items: tuple[tuple[ResourceTarget, "MutationResult"], ...] = ()
 
 
 def status_result(status: int) -> MutationResult:

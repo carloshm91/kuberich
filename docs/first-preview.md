@@ -1,5 +1,23 @@
 # First things to try
 
+## Resource operations checkpoint: M04 #46
+
+[Resource operations](resource-operations.md) add selected deletion through
+`:delete`, explicit selection/review through `:deletebatch`, and `:trigger`,
+`:suspend` and `:resume` on supported Jobs/CronJobs. Review captures identity,
+version, scope and options; Cancel is the default and Confirm is separate.
+Batch results remain independent, finalizers remain intact, and ambiguous
+transport outcomes require inspection before another write.
+
+After the native-terminal prerequisite, the rebased checkout passed 186 focused
+operation/mutation/terminal cases. The actual tested cluster command is
+`uv run --locked --python 3.12 python -m scripts.verify_operations_kind --kind artifacts/operations-46/tools/kind --evidence artifacts/operations-46/rebased-kind.json`.
+All 13 real API checks passed and the owned cluster was removed. The binary is
+the pinned local kind 0.33.0; do not substitute an active cloud context.
+See [acceptance evidence](acceptance/resource-operations.md) and #46's linked PR
+for final candidate coverage, installed-wheel and hosted Linux/macOS results.
+The first public product release remains 1.0.0.
+
 ## Public hosted verification checkpoint: #157
 
 The public source repository can execute standard Linux/macOS Actions again.

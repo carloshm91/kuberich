@@ -40,7 +40,9 @@ history through `:annotate` / `:writes`. [Manifest editing](docs/editing.md) add
 an explicitly disclosed native editor, redacted diff, strict server dry-run and
 separate guarded Apply through `:edit` / Shift+E. [Workload operations](docs/workloads.md)
 add reviewed scale/restart/explicit rollback and actual rollout monitoring.
-Deletion and Job/CronJob operations retain their separate task.
+[Resource operations](docs/resource-operations.md) add reviewed deletion and exact
+batch selection, manual Job creation and Job/CronJob suspension, with retained
+partial, finalizer-pending and uncertain outcomes.
 The [resource workspace](docs/resource-workspace.md) adds a built-in `k9s` theme,
 top inputs and view-specific shortcuts, identity/version headers, Escape trails,
 and a live namespace table with Enter/Escape navigation. The command bar suggests

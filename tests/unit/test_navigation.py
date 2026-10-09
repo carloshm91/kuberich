@@ -33,6 +33,11 @@ def test_aliases_share_one_readonly_initial_and_interactive_parser(alias, comman
         Command.SCALE,
         Command.RESTART,
         Command.ROLLBACK,
+        Command.DELETE,
+        Command.DELETE_BATCH,
+        Command.TRIGGER,
+        Command.SUSPEND,
+        Command.RESUME,
     }:
         with pytest.raises(AppError, match="Read-only"):
             service.resolve(text)

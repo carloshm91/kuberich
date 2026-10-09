@@ -68,6 +68,13 @@ decisions in `domain/workloads.py` to the critical 100% inventory. HTTP/TLS,
 Pilot and source/fresh-wheel terminal contracts complement required Linux/Python
 3.12 `scripts.verify_workloads_kind` Deployment and ControllerRevision operations,
 HPA, scale-only RBAC, failed progress and monitoring cancellation.
+M04 #46 adds deletion options, immutable create/delete requests and Job suspension
+decisions in `domain/operations.py` to the critical 100% inventory. Required
+Linux/Python 3.12 `scripts.verify_operations_kind` checks real deletion policies,
+finalizers, mixed RBAC batches, replacement/version refusal, Job/CronJob
+suspension, manual execution and duplicate prevention. HTTP/TLS disconnects
+must prove a single DELETE attempt; Pilot/source/fresh-wheel PTYs cover exact
+selection/count, default Cancel, partial results and lifecycle ownership.
 F05 invocation overrides and bounded impersonation decisions in
 `domain/connection_overrides.py` join the critical inventory in #19.
 Fixed provider diagnostic decisions in `domain/credential_helpers.py` join the

@@ -783,7 +783,16 @@
       ],
       "source": "internal/view/pod.go",
       "status": "planned",
-      "difference": "Force-delete keeps an explicit confirmation; instant unconfirmed deletion is an intentional safety difference."
+      "difference": "M04 #46 implements explicit single/batch deletion, UID/version preconditions, propagation/grace/count review and independent finalizer/partial/uncertain results. Zero grace stays explicit and never removes finalizers; instantaneous unconfirmed deletion is an intentional safety difference. Completed/error pod cleanup remains M08 #63; broader bulk actions remain with their owners.",
+      "evidence": [
+        "docs/resource-operations.md",
+        "docs/acceptance/resource-operations.md",
+        "tests/unit/test_operations.py",
+        "tests/contract/test_operations.py",
+        "tests/ui/test_operations.py",
+        "tests/terminal/test_operations.py",
+        "scripts/verify_operations_kind.py"
+      ]
     },
     {
       "id": "OPS05",
@@ -792,8 +801,18 @@
         "M04"
       ],
       "source": "internal/view/cronjob.go",
-      "status": "planned",
-      "difference": ""
+      "status": "implemented",
+      "difference": "M04 #46 implements batch/v1 Job/CronJob suspend/resume and manual CronJob-template Job creation with exact one-use names, independent manual jobs and retained identity/results. Source revalidation and Job creation are separate requests; scheduled concurrency policy does not govern a manual run. Native macOS/full hosted and real-cloud certification remain pending.",
+      "evidence": [
+        "docs/resource-operations.md",
+        "docs/acceptance/resource-operations.md",
+        "tests/unit/test_operations.py",
+        "tests/contract/test_operations.py",
+        "tests/ui/test_operations.py",
+        "tests/terminal/test_operations.py",
+        "tests/packaging/test_distribution.py",
+        "scripts/verify_operations_kind.py"
+      ]
     },
     {
       "id": "OPS06",

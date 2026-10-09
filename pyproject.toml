@@ -134,6 +134,7 @@ critical_modules = [
     "src/kuberich/domain/mutations.py",
     "src/kuberich/domain/editing.py",
     "src/kuberich/domain/workloads.py",
+    "src/kuberich/domain/operations.py",
     "src/kuberich/domain/shell.py",
     "src/kuberich/domain/terminal.py",
     "src/kuberich/config/launch.py",
