@@ -15,6 +15,24 @@ workflow preparation alone does not establish successful hosting. Public package
 custom domains/DNS and `www` remain pending. Development notices and noindex stay
 visible. See [the procedure](website.md#development-publication-166).
 
+## Linux CI host checkpoint: #168
+
+Repository, application, release and website Linux jobs now select Ubuntu 24.04.
+Every Python/native, terminal/install, coverage and owned-cluster gate remains
+selected. Release preflight rejects wrong requested host labels and stale job or
+artifact names; the Ubuntu release pin does not freeze hosted system packages.
+
+Exact tested command:
+`uv run --locked --python 3.12 pytest tests/quality/test_ci_policy.py tests/quality/test_quality_gate.py tests/quality/test_release_policy.py tests/quality/test_release_transport.py tests/quality/test_site.py tests/quality/test_pages.py -q`:
+290 passed on local Ubuntu 24.04/Python 3.12.12. Lint/format, strict application
+and policy/site types, planning, build/metadata and both site checks passed;
+`node scripts/verify_site_browser.mjs` checked all 49 pages at desktop/mobile
+sizes with no accessibility violations. Application source and version are
+unchanged. The candidate is rebased onto the merged #166 source. Pinned-host
+PR/native results and confirmation that the migration warning is absent remain
+pending until its hosted checks complete.
+See [acceptance evidence](acceptance/ubuntu-runner-pin.md) and the live issue.
+
 ## Custom-resource backend checkpoint: C05 #52
 
 Generic discovered LIST/WATCH/GET now retains bounded server Table columns and

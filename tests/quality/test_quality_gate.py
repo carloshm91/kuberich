@@ -13,9 +13,11 @@ from scripts.ci_policy import matrix
 ROOT = Path(__file__).resolve().parents[2]
 
 
-def run_gate(results: str | None) -> subprocess.CompletedProcess[str]:
+def run_gate(
+    results: str | None, event: str = "pull_request", ref: str = "refs/pull/143/merge"
+) -> subprocess.CompletedProcess[str]:
     environment = os.environ.copy()
-    environment.update(GITHUB_EVENT_NAME="pull_request", GITHUB_REF="refs/pull/143/merge")
+    environment.update(GITHUB_EVENT_NAME=event, GITHUB_REF=ref)
     environment.pop("KUBERICH_JOB_RESULTS", None)
     if results is not None:
         environment["KUBERICH_JOB_RESULTS"] = results
@@ -84,3 +86,23 @@ def test_missing_corrupted_or_incomplete_plan_cannot_pass(planned) -> None:
     result = run_gate(json.dumps(results))
     assert result.returncode == 1
     assert "Quality gate failed" in result.stderr
+
+
+@pytest.mark.parametrize(
+    "event,ref",
+    [
+        ("pull_request", "refs/pull/143/merge"),
+        ("push", "refs/heads/main"),
+        ("workflow_dispatch", "refs/heads/main"),
+    ],
+)
+@pytest.mark.parametrize("runner", ["ubuntu-latest", "ubuntu-26.04", "macos-latest"])
+def test_complete_plan_with_wrong_linux_runner_cannot_pass(event, ref, runner) -> None:
+    results = successful_results()
+    planned = matrix(event, ref)
+    results["plan"]["outputs"]["matrix"] = json.dumps(planned)
+    assert run_gate(json.dumps(results), event, ref).returncode == 0
+    planned["include"][0]["os"] = runner
+    results["plan"]["outputs"]["matrix"] = json.dumps(planned)
+    refused = run_gate(json.dumps(results), event, ref)
+    assert refused.returncode == 1 and "complete matrix" in refused.stderr

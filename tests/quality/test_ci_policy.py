@@ -24,12 +24,13 @@ ROOT = Path(__file__).resolve().parents[2]
 )
 def test_event_preserves_every_linux_minor_and_declared_mac_coverage(event, ref, mac_versions):
     jobs = matrix(event, ref)["include"]
-    assert [job["python"] for job in jobs if job["os"] == "ubuntu-latest"] == [
+    assert [job["python"] for job in jobs if job["os"] == "ubuntu-24.04"] == [
         "3.12",
         "3.13",
         "3.14",
     ]
     assert [job["python"] for job in jobs if job["os"] == "macos-latest"] == mac_versions
+    assert {job["os"] for job in jobs} <= {"ubuntu-24.04", "macos-latest"}
     assert len({(job["os"], job["python"]) for job in jobs}) == len(jobs)
 
 
@@ -157,3 +158,41 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert gate["name"] == "Quality gate" and gate["if"] == "${{ always() }}"
     assert set(gate["needs"]) == {"plan", "application"}
     assert gate["steps"][-1]["run"] == "python3 -m scripts.check_quality_gate"
+    linux_tools = next(
+        step for step in application["steps"] if "apt-get install" in step.get("run", "")
+    )
+    assert linux_tools["if"] == "${{ matrix.os == 'ubuntu-24.04' }}"
+    assert "openssh-server tmux" in linux_tools["run"]
+    cluster_steps = [
+        step for step in application["steps"] if "python -m scripts.verify" in step.get("run", "")
+    ]
+    assert len(cluster_steps) == 12
+    for step in cluster_steps:
+        assert step["if"] == "${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}"
+    upload = next(
+        step
+        for step in application["steps"]
+        if step.get("uses", "").startswith("actions/upload-artifact@")
+    )
+    assert upload["with"]["name"] == "quality-${{ matrix.os }}-python-${{ matrix.python }}"
+
+
+@pytest.mark.parametrize(
+    "filename,hosts",
+    [
+        (
+            "quality.yml",
+            {
+                "plan": "ubuntu-24.04",
+                "application": "${{ matrix.os }}",
+                "quality-gate": "ubuntu-24.04",
+            },
+        ),
+        ("repository.yml", {"repository": "ubuntu-24.04"}),
+        ("release.yml", {"validate": "ubuntu-24.04", "publish": "ubuntu-24.04"}),
+        ("pages.yml", {"prepare": "ubuntu-24.04", "publish": "ubuntu-24.04"}),
+    ],
+)
+def test_workflows_pin_every_linux_job_and_preserve_matrix_selection(filename, hosts):
+    workflow = yaml.safe_load((ROOT / ".github/workflows" / filename).read_text())
+    assert {name: job["runs-on"] for name, job in workflow["jobs"].items()} == hosts

@@ -12,7 +12,7 @@ concurrency:
 jobs:
   plan:
     name: Verification plan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
@@ -42,7 +42,7 @@ jobs:
       - name: Install the locked development environment
         run: uv sync --locked --group dev
       - name: Install real terminal transport test tools on Linux
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+        if: ${{ matrix.os == 'ubuntu-24.04' }}
         run: |
           sudo apt-get update
           sudo apt-get install --yes openssh-server tmux
@@ -60,17 +60,17 @@ jobs:
       - name: Run behavioral, gate-regression and clean-distribution checks
         run: uv run pytest --cov=kuberich --cov-branch --cov-report=term-missing --cov-report=xml --cov-report=json
       - name: Verify context sessions, resource views and watches on an owned disposable cluster
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.12' }}
+        if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: |
           curl --fail --location --retry 3 --max-time 60 https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64 --output "$RUNNER_TEMP/kuberich-kind"
           printf '%s  %s\n' 'aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d' "$RUNNER_TEMP/kuberich-kind" | sha256sum --check
           chmod 700 "$RUNNER_TEMP/kuberich-kind"
           uv run python -m scripts.verify_contexts_kind --kind "$RUNNER_TEMP/kuberich-kind"
       - name: Require real-kind cleanup on setup/body cancellation and injected failure
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.12' }}
+        if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_kind_lifecycle --kind "$RUNNER_TEMP/kuberich-kind"
       - name: Verify actual selected-container shells on an owned disposable cluster
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.12' }}
+        if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: |
           mkdir -p "$RUNNER_TEMP/kuberich-shell/bin"
           curl --fail --location --retry 3 --max-time 60 https://dl.k8s.io/release/v1.36.4/bin/linux/amd64/kubectl --output "$RUNNER_TEMP/kuberich-shell/bin/kubectl"
@@ -78,28 +78,28 @@ jobs:
           chmod 700 "$RUNNER_TEMP/kuberich-shell/bin/kubectl"
           uv run python -m scripts.verify_shell_kind --kind "$RUNNER_TEMP/kuberich-kind" --kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl"
       - name: Verify actual owned pod and Service port-forward lifecycles
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.12' }}
+        if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_port_forwards_kind --kind "$RUNNER_TEMP/kuberich-kind" --kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl"
       - name: Verify generic credentials TLS proxies logs exec and actual forwards
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.12' }}
+        if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_credential_interop_kind --kind "$RUNNER_TEMP/kuberich-kind" --kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl"
       - name: Verify guarded writes and actual RBAC on an owned disposable cluster
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.12' }}
+        if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_mutations_kind --kind "$RUNNER_TEMP/kuberich-kind"
       - name: Verify manifest editing and strict dry-run on an owned disposable cluster
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.12' }}
+        if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_editing_kind --kind "$RUNNER_TEMP/kuberich-kind"
       - name: Verify actual workload scale restart status rollback and RBAC
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.12' }}
+        if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_workloads_kind --kind "$RUNNER_TEMP/kuberich-kind"
       - name: Verify deletion partial batches finalizers and Job operations
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.12' }}
+        if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_operations_kind --kind "$RUNNER_TEMP/kuberich-kind"
       - name: Verify actual attach and safe binary tree and interrupted transfers
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.12' }}
+        if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_transfers_kind --kind "$RUNNER_TEMP/kuberich-kind" --kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl"
       - name: Verify custom-resource versions Table reads watches and restricted discovery
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.12' }}
+        if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_custom_resources_kind --kind "$RUNNER_TEMP/kuberich-kind"
       - name: Enforce independent production and critical-module coverage
         run: uv run python scripts/check_coverage.py coverage.json
@@ -120,7 +120,7 @@ jobs:
       - name: Verify audited installed runtimes and artifact-linked security evidence
         run: uv run python -m scripts.check_supply_chain --verify
       - name: Rehearse the installed first-user guide on an owned disposable cluster
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.python == '3.12' }}
+        if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_quickstart --wheel dist/*.whl --kind "$RUNNER_TEMP/kuberich-kind" --kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl"
       - name: Retain coverage evidence and candidate artifacts
         if: ${{ always() }}
@@ -145,7 +145,7 @@ jobs:
     name: Quality gate
     if: ${{ always() }}
     needs: [plan, application]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

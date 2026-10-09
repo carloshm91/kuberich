@@ -227,6 +227,13 @@ The aggregate independently checks the planned matrix and both dependency result
 Release decisions require that exact commit's latest full manual qualification,
 retaining the six-job and immutable-artifact requirements. See [quality policy](quality.md).
 
+Runner policy #168 pins all Linux workflow hosts and their setup/owned-cluster
+conditions to Ubuntu 24.04. The same planner supplies release job identities;
+qualification checks completed status, success and each job's requested host
+labels before selecting the pinned Linux artifact. This pins the OS release,
+not the hosted image revision or installed system package versions. Historical
+receipts stay unchanged; Ubuntu 26.04 qualification remains separate future work.
+
 B03 adds `regex` for local filtering because matching supports an actual timeout
 and releases the GIL for immutable strings. A thread alone cannot stop an
 unbounded standard-library regex match. Queries remain bounded and matching uses

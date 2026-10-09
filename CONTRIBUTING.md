@@ -99,6 +99,10 @@ See [quality policy](docs/quality.md) for the required check names and the curre
 private-repository branch-protection limitation.
 
 Every PR runs Linux on Python 3.12/3.13/3.14 and the macOS/Python 3.12 baseline.
+Linux jobs select `ubuntu-24.04`; macOS keeps `macos-latest`. The Ubuntu release
+pin prevents automatic OS migration, while hosted image updates and system
+package versions continue to change. Record the actual runner image/tool versions
+when qualifying a candidate; Ubuntu 26.04 needs separate future evidence.
 Main pushes repeat Linux; manual Application quality dispatches on main qualify
 all six combinations before release. Every selected environment retains the full
 suite and independent coverage gates. Do not use a manual dispatch as a substitute

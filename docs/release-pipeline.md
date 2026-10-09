@@ -33,10 +33,18 @@ Before preparing or publishing, require all of the following:
 - Successful latest main-dispatch quality and main-push repository runs for that exact commit,
   including **every Linux/macOS Python 3.12/3.13/3.14 job**, not a green aggregate
   or an older successful attempt beside a failed rerun.
+  Linux jobs must request `ubuntu-24.04`, macOS jobs `macos-latest`; completed
+  successful planner/aggregate/Repository jobs must also request `ubuntu-24.04`.
+  A matching display name with a different or missing runner label fails.
   Dispatch Application quality on main before the release workflow; routine
   three/four-environment development runs cannot satisfy this gate.
-- The retained Linux 3.12 quality artifact and complete fresh audit/SBOM/notices
+- The retained `quality-ubuntu-24.04-python-3.12` artifact and complete fresh audit/SBOM/notices
   bound to its wheel/sdist and source/lock/policy inputs.
+
+The Ubuntu release pin does not freeze hosted image revisions or system package
+versions. Historical `ubuntu-latest` evidence retains its original identity;
+an Ubuntu 26.04 upgrade needs separate future qualification before changing the
+current job/artifact contract. See [runner-pin evidence](acceptance/ubuntu-runner-pin.md).
 
 The release workflow consumes the already built/tested quality artifact. Neither
 release job rebuilds it. Preparation verifies archive metadata and produces an
@@ -95,8 +103,9 @@ unchanged while generating evidence.
 
 Set `reuse_run` to the original release-dispatch run ID. The workflow verifies
 its main/repository/workflow identity and successful validation job, downloads its
-original immutable candidate and verifies all bytes again. A failed publisher
-does not invalidate the already verified candidate. Audit evidence expires after
+original immutable candidate and verifies all bytes again. The validation job
+must be completed on the requested `ubuntu-24.04` runner.
+A failed publisher does not invalidate the already verified candidate. Audit evidence expires after
 24 hours; artifact retention alone does not extend qualification.
 
 A new dispatch can reuse that candidate only while main still points at its
