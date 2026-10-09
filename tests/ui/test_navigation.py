@@ -473,8 +473,10 @@ async def test_narrow_completions_keep_selected_choice_visible_and_cursor_edits_
         assert not app.command_input.inline_completion
         await pilot.press("right")
         assert app.command_input.inline_completion
+        last_choice = app.command_input.choices[-1]
+        assert last_choice == "configmaps"
         await pilot.press("up", "tab")
-        assert app.command_input.value == "cronjob"
+        assert app.command_input.value == last_choice
 
 
 @pytest.mark.asyncio

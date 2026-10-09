@@ -84,6 +84,15 @@ def test_unknown_ambiguous_cluster_scope_and_explicit_missing_version_do_not_gue
     assert service.resolve("unknown") is Command.UNAVAILABLE
 
 
+@pytest.mark.parametrize("discovery", [None, catalogue()])
+@pytest.mark.parametrize("text", ["[red]opaque-secret[/red]\x1b]52;c;danger\x07", "—/v1"])
+def test_untrusted_implicit_input_keeps_the_unavailable_command_contract(text, discovery):
+    service = CommandService(AccessPolicy(False))
+    assert service.resolve(text, discovery) is Command.UNAVAILABLE
+    with pytest.raises(AppError, match="Invalid"):
+        service.resolve("resource " + text, discovery)
+
+
 def test_completions_hide_ambiguous_aliases_show_qualified_versions_and_scope():
     assert resource_candidates(None) == ()
     values = resource_candidates(catalogue(ambiguous=True))

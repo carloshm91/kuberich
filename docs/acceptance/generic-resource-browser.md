@@ -16,6 +16,11 @@ the immutable layout, rejecting a pending projection after `:columns` changes.
 Context/GVR replacement rejects prior rows; Escape from the local context
 workspace during reconnect preserves the generic route even without an available
 captured parent view. Repeated worker cancellation drains before cleanup.
+Removing/recreating the same GVR with identical headers renews its descriptor,
+scope and UID identity, including opaque-kind redaction. Explicit discovered core
+commands use one generic read-only table; built-in aliases recover their usual
+workspaces. Missing/ambiguous deferred startup aliases retain failure feedback
+across passive fallback-table renders until another command.
 
 ## Local behavior receipts
 
@@ -41,9 +46,11 @@ hidden-field filtering, history, namespace/context routes, 406/malformed Table
 fallback, RBAC failures, removal/core recovery, held projection after context/GVR
 and column changes, reconnect/context/Escape, and owned repeated cancellation.
 
-The unchanged critical column domain measured **69/69 lines and 20/20 branches**
-in the focused pure/table cohort. This focused receipt does not substitute for
-whole-production coverage or final-head platform qualification.
+`env COVERAGE_FILE=artifacts/custom-browser-53/pure.coverage uv run pytest tests/unit -q --cov=kuberich --cov-branch --cov-report=json:artifacts/custom-browser-53/pure-coverage.json` passed **1,911 cases in
+40.59 seconds**, using an independent owned coverage file. The modified critical
+command service measured **163/163 lines and 60/60 branches**, navigation
+**53/53 and 6/6**, and column domain **69/69 and 20/20**. This focused receipt does
+not substitute for whole-production coverage or final-head platform qualification.
 
 The actual native source command was
 `uv run pytest tests/terminal/test_custom_resources.py -q --tb=short`:
@@ -58,10 +65,23 @@ credentials or confidential printer cells appear in output.
 Initial failures included a malformed HTTP fixture that returned a Table even
 after JSON fallback, premature assertions before asynchronous rows rendered,
 and a real passive-render notice race. Fixtures now honor representation;
-command errors remain visible across passive generic renders. A superseded whole
+command errors remain visible across passive generic renders. Superseded whole
 attempts were interrupted after 888 and 931 passing cases while freezing final
 source/help and the explicitly bound immutable-layout predicate. Those partial
 receipts are not candidate qualification.
+
+The frozen `d201033` diagnostic whole run completed **3,785 passing cases and two
+failures in 2,435.75 seconds** with
+`uv run pytest --cov=kuberich --cov-branch --cov-report=xml --cov-report=json --junitxml=artifacts/custom-browser-53/pytest.xml`.
+It exposed malformed implicit input being routed through API validation and a
+completion test assuming the old eighth `:c` candidate after `:columns` enrollment.
+Both are corrected with behavioral regressions; the visible shortcut still wraps
+and accepts the displayed public candidate. Its coverage gates passed **10,950/
+11,043 lines (99.1578%)**, **3,172/3,264 branches (97.1814%)**, all **41 critical
+modules at 100%**, and **323/333 changed executable lines (96.9970%)** against
+its original C05 `c3a204b` base. These measurements describe that failed diagnostic
+head, not final candidate qualification. Owned probes also reproduced descriptor
+recreation and missing-startup feedback defects before their corrections.
 
 ## Actual disposable cluster
 
@@ -77,6 +97,13 @@ live CRD patch, selected-CRD deletion/failure and core recovery. The existing
 checks retain real pagination, full objects, multiple served versions, watch
 events, conversion fallback and restricted discovery/resource RBAC.
 
+The correction rehearsal repeated the same verifier with
+`--evidence artifacts/custom-browser-53/kind-recreated.json`: all nine checks
+passed. The actual API clause now deletes/recreates the same widgets GVR with
+unchanged printer headers, cluster scope and kind Secret. It checks fresh API UID,
+namespace removal, opaque printer redaction, captured inspection and same-client
+recovery, then deletes the replacement API too.
+
 The receipt explicitly labels ordinary-JSON and legacy-discovery representation
 injections through an owned gateway. Denials come from the real owned cluster.
 The shared cluster owner uses a unique disposable context and private generated
@@ -91,6 +118,11 @@ changed-line and 41-module critical gates, artifact checks and all four required
 Linux/macOS hosted jobs. The final measured receipt belongs to
 [#53](https://github.com/carloshm91/kuberich/issues/53), the live status source;
 focused receipts alone do not close it.
+
+`uv build` and `uv run twine check dist/*` passed for the wheel/source artifacts.
+Both local documentation surfaces rebuilt and passed digest/link checks; actual
+Chrome qualification covered 49 pages with zero accessibility violations. These
+are local artifact/site checks, with no publication.
 
 Generic live browsing requires advertised LIST/WATCH support and stable API UIDs;
 individual inspection requires GET. Printer headers/cells are untrusted bounded

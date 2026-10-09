@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from aiohttp import web
 
 from tests.support.connections import namespaces
-from tests.support.resources import collection, descriptor, legacy_roots
+from tests.support.resources import collection, descriptor, item, legacy_roots
 from tests.support.tables import custom_item, server_table
 from tests.support.watches import frame
 from tests.support.workspace import stable_watch, workspace_api
@@ -15,7 +15,7 @@ GROUP = "owned.example.test"
 OTHER_GROUP = "other.example.test"
 
 
-def roots(installed=True, preferred="v1", ambiguous=False):
+def roots(installed=True, preferred="v1", ambiguous=False, recreated=False):
     values = legacy_roots()
     groups = ([GROUP] if installed else []) + ([OTHER_GROUP] if ambiguous else [])
     values["/apis"]["groups"] = [
@@ -35,7 +35,11 @@ def roots(installed=True, preferred="v1", ambiguous=False):
                 "groupVersion": group + "/" + version,
                 "resources": [
                     {
-                        **descriptor("widgets", kind="Widget"),
+                        **descriptor(
+                            "widgets",
+                            kind="Secret" if recreated else "Widget",
+                            namespaced=not recreated,
+                        ),
                         "singularName": "widget",
                         "shortNames": ["wdg"],
                     },
@@ -49,14 +53,20 @@ def roots(installed=True, preferred="v1", ambiguous=False):
     return values
 
 
-def objects(group=GROUP, version="v1", name="widgets", namespace="team"):
+def objects(group=GROUP, version="v1", name="widgets", namespace="team", recreated=False):
     result = []
+    opaque = recreated and name == "widgets"
     for title, number in (("ten", 10), ("two", 2), ("missing", None)):
         obj = custom_item(
-            title, namespace if name == "widgets" else None, "owned-" + title, version=version
+            title,
+            namespace if name == "widgets" and not opaque else None,
+            ("replacement-" if opaque else "owned-") + title,
+            version=version,
         )
         obj["apiVersion"] = group + "/" + version
-        obj["kind"] = "Widget" if name == "widgets" else "Gadget"
+        obj["kind"] = "Secret" if opaque else "Widget" if name == "widgets" else "Gadget"
+        if opaque:
+            obj["data"] = {"payload": "synthetic-private-replacement"}
         obj["metadata"]["creationTimestamp"] = "2026-10-01T00:00:00Z"
         obj["spec"].update(level=number, unknown={"preserved": "raw-field"})
         result.append(obj)
@@ -86,11 +96,13 @@ class CustomAPI:
     denied: bool = False
     changed: bool = False
     sensitive: bool = False
+    recreated: bool = False
+    core_pods: bool = False
     reads: list = field(default_factory=list)
     streams: dict = field(default_factory=dict)
 
     def roots(self):
-        return roots(self.installed, self.preferred, self.ambiguous)
+        return roots(self.installed, self.preferred, self.ambiguous, self.recreated)
 
     async def handler(self, request):
         self.reads.append((request.path, dict(request.query), request.headers.get("Accept")))
@@ -98,6 +110,24 @@ class CustomAPI:
             return web.json_response({"apiVersion": "v1", "kind": "EventList", "items": []})
         if request.path == "/api/v1/namespaces":
             return await stable_watch(request)
+        if request.path.startswith("/api/v1/namespaces/") and request.path.count("/") == 4:
+            name = request.path.rsplit("/", 1)[1]
+            return web.json_response(
+                {
+                    "apiVersion": "v1",
+                    "kind": "Namespace",
+                    "metadata": {
+                        "name": name,
+                        "uid": "namespace-" + name,
+                        "resourceVersion": "owned-namespace-object",
+                    },
+                }
+            )
+        if self.core_pods and "/pods" in request.path:
+            pod = {"apiVersion": "v1", "kind": "Pod", **item("core", uid="owned-core")}
+            if "watch" in request.query:
+                return await stable_watch(request)
+            return web.json_response(pod if request.path.endswith("/core") else collection(pod))
         if not request.path.startswith("/apis/"):
             return (
                 await stable_watch(request)
@@ -112,7 +142,9 @@ class CustomAPI:
         prefix = 7 if namespaced else 5
         if not self.installed or self.denied:
             return web.Response(status=403 if self.denied else 404)
-        values = objects(group, version, name, namespace or "team")
+        if self.recreated and name == "widgets" and namespaced:
+            return web.Response(status=404)
+        values = objects(group, version, name, namespace or "team", self.recreated)
         if len(parts) > prefix:
             return web.json_response(
                 next(value for value in values if value["metadata"]["name"] == parts[-1])

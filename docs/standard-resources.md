@@ -73,6 +73,9 @@ Explicit cluster-scoped namespace arguments are rejected. Built-in command
 and standard-resource aliases retain their familiar meaning; `:resource NAME`
 selects a discovered alias that overlaps one. `.core` explicitly selects the
 core API group, for example `:resource pods.core/v1`.
+Explicit `:resource pods` and `:resource namespaces` also use the generic read-only
+table. Their `.core` display/completion identifier represents the API's actual
+empty group; `:po` and `:ns` return to the familiar built-in workspaces.
 
 For initial generic navigation, use an explicit resource command:
 
@@ -102,7 +105,8 @@ without interpreting old values under a different header.
 fields. `:columns none` shows metadata only and `:columns default` restores the
 server's ordinary columns. Invalid or duplicate keys retain the previous view.
 Layouts are transient, bounded to 32 context/GVR entries, and reset when the
-server schema changes. Persistent preferences/hotkeys remain U02 #57.
+server schema or resource descriptor changes, or when switching context.
+Persistent preferences/hotkeys remain U02 #57.
 
 Enter/`d`, `y` and `e` reuse captured-UID details, redacted YAML and related events.
 Unknown manifest fields remain in YAML. `/` searches displayed fields;

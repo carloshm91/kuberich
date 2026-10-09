@@ -259,6 +259,13 @@ class CommandService:
             and verb not in RESOURCE_ALIASES
             and (discovery is not None or "." in verb or "/" in verb)
         ):
+            # Ordinary unknown input need not be a Kubernetes reference. Keep
+            # explicit :resource validation precise without routing arbitrary
+            # markup/control text through the implicit resource grammar.
+            try:
+                api_segment(verb.partition(".")[0].partition("/")[0])
+            except AppError:
+                return Command.UNAVAILABLE
             return generic_command(text, discovery)
         definition = RESOURCE_ALIASES.get(verb)
         if definition is not None:

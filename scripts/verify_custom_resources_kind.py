@@ -244,6 +244,7 @@ async def verify_browser(
             )
 
         await wait_for(observed)
+        headers = table.resource_layout.headers if table.resource_layout is not None else ()
         await extensions.delete_custom_resource_definition("widgets." + GROUP)
 
         async def removed() -> bool:
@@ -256,6 +257,81 @@ async def verify_browser(
 
         await wait_for(removed)
         assert app.workspace.store.observation.status is ViewStatus.FAILED and table.row_count == 0
+
+        async def absent() -> bool:
+            try:
+                await extensions.read_custom_resource_definition("widgets." + GROUP)
+            except client.ApiException as problem:
+                if problem.status == 404:
+                    return True
+                raise
+            return False
+
+        await wait_for(absent)
+        await extensions.create_custom_resource_definition(
+            cast(
+                client.V1CustomResourceDefinition,
+                definition(GROUP, "widgets", "Secret", namespaced=False),
+            )
+        )
+
+        async def reestablished() -> bool:
+            value = await extensions.read_custom_resource_definition("widgets." + GROUP)
+            return any(
+                condition.type == "Established" and condition.status == "True"
+                for condition in value.status.conditions or []
+            )
+
+        await wait_for(reestablished)
+        replacement = await custom.create_cluster_custom_object(
+            GROUP,
+            "v1beta1",
+            "widgets",
+            {
+                "apiVersion": GROUP + "/v1beta1",
+                "kind": "Secret",
+                "metadata": {"name": "replacement"},
+                "spec": {"level": 999, "enabled": True},
+            },
+        )
+
+        async def rediscovered() -> bool:
+            app._submit_command("refresh")
+            if app._connection_task is not None:
+                await app._connection_task
+            return app.workspace.discovery is not None and any(
+                resource.group == GROUP and resource.kind == "Secret"
+                for resource in app.workspace.discovery.resources
+            )
+
+        await wait_for(rediscovered)
+
+        async def recreated_loaded() -> bool:
+            view = app.workspace.store.observation
+            return (
+                view.status is ViewStatus.LIVE
+                and view.scope is not None
+                and view.scope.resource.kind == "Secret"
+                and view.scope.namespace is None
+                and table.row_count == 1
+            )
+
+        await wait_for(recreated_loaded)
+        await pilot.pause()
+        assert table.resource_layout is not None and table.resource_layout.headers == headers
+        assert tuple(key.value for key in table.columns) == ("name", "c2", "c3", "age")
+        uid = replacement["metadata"]["uid"]
+        assert uid != selected and table.selected_uid == uid
+        assert table.get_cell(uid, "c2").text == "[REDACTED]"
+        assert table.get_cell(uid, "c3").text == "[REDACTED]"
+        assert app.sessions.client is connection
+        app.action_inspect_yaml()
+        await wait_for(inspected)
+        assert isinstance(app.screen, InspectionScreen)
+        assert "kind: Secret" in app.screen.viewer.text and uid in app.screen.viewer.text
+        await pilot.press("escape")
+        await extensions.delete_custom_resource_definition("widgets." + GROUP)
+        await wait_for(removed)
         app._submit_command("po")
 
         async def core_loaded() -> bool:
@@ -533,7 +609,8 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
         await wait_for(live)
         await verify_browser(cluster, extensions, custom)
         checks.append(
-            "actual-pilot-generic-columns-sort-inspection-version-scopes-history-refresh-and-removal"
+            "actual-pilot-generic-columns-sort-inspection-version-scopes-history-refresh-removal-"
+            "and-same-gvr-recreation-scope-kind-uid-redaction"
         )
 
         async def removed() -> bool:

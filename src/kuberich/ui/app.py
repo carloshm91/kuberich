@@ -643,7 +643,11 @@ class KubeRichApp(App[None]):
                             snapshot.resource.name,
                         )
                         layout = self._custom_layouts.get(key)
-                        if layout is None or layout.headers != snapshot.columns:
+                        if (
+                            layout is None
+                            or layout.resource != snapshot.resource
+                            or layout.headers != snapshot.columns
+                        ):
                             layout = CustomLayout.build(snapshot.resource, snapshot.columns)
                         self._remember_layout(key, layout)
                         if self.custom_table.resource_layout != layout:
@@ -1423,7 +1427,8 @@ class KubeRichApp(App[None]):
                 )
                 self._custom_projection = CustomProjection(layout)
         except AppError as error:
-            self._set_status(str(error))
+            self._column_notice = str(error)
+            self._set_status(self._column_notice)
 
     def _refresh_discovery(self) -> None:
         state = self._capture_view()

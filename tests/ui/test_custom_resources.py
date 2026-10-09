@@ -179,6 +179,63 @@ async def test_schema_refresh_preference_removal_alias_ambiguity_and_core_recove
 
 
 @pytest.mark.asyncio
+async def test_recreated_gvr_with_identical_columns_renews_scope_kind_and_uid(tmp_path):
+    async with custom_api() as (url, owner):
+        app = app_for(tmp_path, url)
+        async with app.run_test() as pilot:
+            await loaded(app)
+            table = app.custom_table
+            headers = table.resource_layout.headers
+            selected = table.selected_uid
+            connection = app.sessions.client
+            await command(app, pilot, "columns c3")
+            await wait_for(lambda: "c2" not in table.columns)
+            owner.installed = False
+            await command(app, pilot, "refresh")
+            await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.FAILED)
+            assert table.row_count == 0
+            owner.installed, owner.recreated = True, True
+            await command(app, pilot, "refresh")
+            await loaded(app, namespace=None)
+            await pilot.pause()
+            scope = app.workspace.store.observation.scope
+            assert scope.resource.kind == "Secret" and not scope.resource.namespaced
+            assert table.resource_layout.headers == headers
+            assert tuple(key.value for key in table.columns) == ("name", "c2", "c3", "age")
+            assert table.get_cell("replacement-ten", "c2").text == "[REDACTED]"
+            assert table.get_cell("replacement-ten", "c3").text == "[REDACTED]"
+            assert table.get_cell("replacement-ten", "name").text == "ten"
+            assert table.selected_uid != selected and selected not in table.rows
+            await pilot.press("y")
+            await wait_for(
+                lambda: isinstance(app.screen, InspectionScreen) and app.screen.result is not None
+            )
+            assert "kind: Secret" in app.screen.viewer.text
+            assert "synthetic-private-replacement" not in app.screen.viewer.text
+            assert "[REDACTED]" in app.screen.viewer.text
+            await pilot.press("escape")
+            assert app.sessions.client is connection
+            assert any(path == "/apis/" + GROUP + "/v1/widgets" for path, _, _ in owner.reads)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("ambiguous", [False, True])
+async def test_deferred_unavailable_startup_reports_failure_and_recovers(tmp_path, ambiguous):
+    async with custom_api(CustomAPI(ambiguous=ambiguous)) as (url, _owner):
+        app = app_for(tmp_path, url, GenericResourceCommand("wdg" if ambiguous else "missing"))
+        async with app.run_test() as pilot:
+            await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
+            app._refresh_tables()
+            await pilot.pause()
+            assert ("ambiguous" if ambiguous else "not discovered") in str(app.status.content)
+            assert app.resources.display and not app.custom_table.display
+            await command(app, pilot, "widgets." + GROUP)
+            await loaded(app)
+            assert "not discovered" not in str(app.status.content)
+            assert "ambiguous" not in str(app.status.content)
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("mode", ["fallback", "denied", "malformed"])
 async def test_plain_json_fallback_and_rbac_keep_useful_metadata_and_navigation(tmp_path, mode):
     denied = mode == "denied"
@@ -365,3 +422,55 @@ async def test_explicit_core_group_uses_generic_layout_and_builtin_command_recov
                 )
             )
             assert not app.custom_table.display
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("name", ["pods", "namespaces"])
+async def test_explicit_core_command_owns_one_table_and_keeps_inspection_read_only(tmp_path, name):
+    async with custom_api(CustomAPI(core_pods=True)) as (url, _owner):
+        app = app_for(tmp_path, url)
+        async with app.run_test() as pilot:
+            await loaded(app)
+            await command(app, pilot, "resource " + name)
+            await loaded(
+                app,
+                name=name,
+                namespace="team" if name == "pods" else None,
+                count=1 if name == "pods" else 3,
+            )
+            await pilot.pause()
+            table = app.custom_table
+            assert app._resource_name == name + ".core"
+            assert app.workspace.store.observation.scope.resource.group == ""
+            assert table.display and app._active_table is table
+            assert not any(
+                widget.display
+                for widget in (
+                    app.resources,
+                    app.namespace_table,
+                    app.standard_table,
+                    app.context_table,
+                )
+            )
+            assert ("namespace" in table.columns) == (name == "pods")
+            selected = table.selected_uid
+            await command(app, pilot, "delete")
+            assert "Generic resources are read-only" in str(app.status.content)
+            assert len(app.screen_stack) == 1 and table.selected_uid == selected
+            assert not app.check_action("edit", ())
+            await pilot.press("y")
+            await wait_for(
+                lambda: isinstance(app.screen, InspectionScreen) and app.screen.result is not None
+            )
+            assert ("kind: Pod" if name == "pods" else "kind: Namespace") in app.screen.viewer.text
+            assert selected in app.screen.viewer.text
+            await pilot.press("escape")
+            assert app.focused is table and table.selected_uid == selected
+            await command(app, pilot, "po" if name == "pods" else "ns")
+            await wait_for(
+                lambda: (
+                    app.workspace.store.observation.status is ViewStatus.LIVE
+                    and not table.display
+                    and (app.resources.display if name == "pods" else app.namespace_table.display)
+                )
+            )
