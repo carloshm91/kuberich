@@ -1,0 +1,95 @@
+name: Website publication
+'on':
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: kuberich-pages-production
+  cancel-in-progress: false
+jobs:
+  prepare:
+    name: Verify both website surfaces
+    if: ${{ github.ref == 'refs/heads/main' && github.repository == 'carloshm91/kuberich' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: '0.10.4'
+          python-version: '3.12'
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+      - name: Build and check the exact source
+        run: |
+          uv sync --locked --group dev
+          uv run mypy --strict scripts/build_site.py scripts/check_site.py scripts/site_reference.py scripts/pages.py
+          uv run pytest tests/quality/test_site.py tests/quality/test_pages.py -q
+          uv run python -m scripts.build_site
+          uv run python -m scripts.check_site
+      - name: Verify both surfaces in real Chrome
+        run: |
+          mkdir -p artifacts/site-qa
+          cp website/qa/package.json website/qa/package-lock.json artifacts/site-qa/
+          npm ci --prefix artifacts/site-qa --ignore-scripts
+          npm audit --prefix artifacts/site-qa --audit-level=low
+          node scripts/verify_site_browser.mjs
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: checked-site
+          path: artifacts/site
+          if-no-files-found: error
+          retention-days: 30
+          include-hidden-files: true
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: website-browser-evidence
+          path: |
+            artifacts/site-qa/*.png
+            artifacts/site-qa/browser-report.json
+          if-no-files-found: error
+          retention-days: 30
+  publish:
+    name: Publish and verify Cloudflare Pages
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: '0.10.4'
+          python-version: '3.12'
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: checked-site
+          path: artifacts/site
+      - name: Install and audit pinned publication tools without credentials
+        run: |
+          uv sync --locked --group dev
+          mkdir -p artifacts/pages-tools
+          cp website/deploy/package.json website/deploy/package-lock.json artifacts/pages-tools/
+          npm ci --prefix artifacts/pages-tools --ignore-scripts
+          npm audit --prefix artifacts/pages-tools --audit-level=high
+          node artifacts/pages-tools/node_modules/wrangler/bin/wrangler.js --version
+          uv run python -m scripts.check_site
+      - name: Publish exact checked bytes and verify actual HTTPS
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          WRANGLER_SEND_METRICS: 'false'
+          CI: 'true'
+        run: uv run python -m scripts.pages
+      - name: Retain completed or partial publication evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pages-publication-receipt
+          path: artifacts/pages
+          if-no-files-found: warn
+          retention-days: 30

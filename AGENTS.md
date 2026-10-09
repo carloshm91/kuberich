@@ -43,6 +43,11 @@ implementation; do not claim to switch models without actual environment support
   distribution channels. Do not request the same visibility permission again.
 - The first public product release remains 1.0.0. Intermediate milestones are
   engineering checkpoints, not instructions to publish 0.x artifacts or tags.
+- On 2026-10-09 the maintainer explicitly authorized #166 to publish the current
+  development landing and initial docs to two Cloudflare Pages provider hosts,
+  using the protected `release` secrets. Custom domains/DNS, `www`, packages and
+  application tags remain outside this authorization. Resume the preserved
+  B06 #53 implementation after this focused deployment task.
 - Ask before changing repository/project visibility, publishing a website,
   creating a public distribution repository, or publishing package artifacts.
   Prepare and verify the concrete result first, then request approval for the

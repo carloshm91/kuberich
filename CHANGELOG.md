@@ -27,6 +27,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Prepare a protected main-only Cloudflare Pages publication of both development
+  website surfaces, preserving checked artifact bytes and verifying live HTTPS
+  digests, response headers and 404s. Retain source/deployment and partial-failure
+  receipts. Application packages and custom-domain/DNS setup remain separate.
+
 - Resolve preferred custom-resource versions and ambiguous aliases from live
   discovery. Read arbitrary discovered types through bounded LIST/WATCH/GET,
   retaining server Table columns and full manifests with scoped JSON fallback.

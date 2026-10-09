@@ -37,7 +37,7 @@ jobs:
       - name: Build and validate both static-site surfaces
         run: |
           uv sync --locked --group dev
-          uv run mypy --strict scripts/build_site.py scripts/check_site.py scripts/site_reference.py
+          uv run mypy --strict scripts/build_site.py scripts/check_site.py scripts/site_reference.py scripts/pages.py
           uv run python -m scripts.build_site
           uv run python -m scripts.check_site
       - name: Verify website keyboard, accessibility and browser behavior

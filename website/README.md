@@ -1,6 +1,6 @@
 # Initial KubeRich website
 
-This is the **local, unpublished** launch material from #150, refined in #162.
+This is the development launch material from #150, refined in #162.
 It is a static landing page, 19 authored user guides and three generated references, without a backend, account system, analytics,
 external fonts or cluster connectivity. Expanded/versioned MkDocs stays #90/#91.
 
@@ -9,7 +9,10 @@ sources instead of duplicating installation instructions. The project version
 comes from `pyproject.toml`. CLI flags/aliases/descriptions come from the actual
 argument parser, resource aliases/scopes/columns from the application registry,
 and capability status/differences from `docs/capabilities.json`. Both HTML surfaces retain explicit preview status
-and noindex directives. Nothing here registers a hosted project or changes DNS.
+and noindex directives. The builder never registers a project or changes DNS.
+The separately authorized #166 workflow publishes checked bytes to provider hosts;
+its publication receipt records actual URLs and IDs. See
+[development publication](../docs/website.md#development-publication-166).
 
 ## Build and preview
 
