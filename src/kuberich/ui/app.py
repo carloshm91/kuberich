@@ -50,6 +50,7 @@ from kuberich.errors import AppError, ExecutableUnavailable
 from kuberich.security.arguments import validate_argument
 from kuberich.security.presentation import safe_text
 from kuberich.services.access import AccessPolicy, Action
+from kuberich.services.attach import AttachService
 from kuberich.services.commands import (
     Command,
     CommandService,
@@ -69,6 +70,7 @@ from kuberich.services.port_forwards import ForwardManager, ForwardService
 from kuberich.services.processes import ProcessRunner, _finish_owned
 from kuberich.services.sessions import SessionService
 from kuberich.services.shell import ShellService
+from kuberich.services.transfers import TransferService
 from kuberich.services.workloads import WorkloadService
 from kuberich.services.workspace import ViewSubscription, WorkspaceService
 from kuberich.ui.chrome import (
@@ -101,6 +103,7 @@ from kuberich.ui.scopes import ConnectionScreen
 from kuberich.ui.shutdown import TerminalSignals
 from kuberich.ui.standard import StandardTable
 from kuberich.ui.terminal import ShellScreen
+from kuberich.ui.transfers import TransferScreen
 from kuberich.ui.workloads import WorkloadScreen
 
 DISCONNECTED_STATUS = "Disconnected · No resource data"
@@ -153,7 +156,9 @@ class HelpScreen(ModalScreen[None]):
                         "Shift+F           Start pod/Service TCP port-forward\n"
                         ":pf               List owned forwards; s stops selected\n"
                         "Forwards survive view/namespace changes; context/retry/exit stops them.\n"
-                        "Containers: s/x shell, Enter/l logs, Esc pods.\nShell: Ctrl+] return, Ctrl+C interrupt, Ctrl+Q quit.\n"
+                        "Containers: s/x shell, a attach, u upload, d download, Enter/l logs, Esc pods.\n"
+                        ":attach / :upload / :download choose a container first.\n"
+                        "Shell: Ctrl+] return, Ctrl+C interrupt, Ctrl+Q quit.\n"
                         "d                 Resource details\n"
                         "y / e             YAML / related events\n"
                         "Viewer: m managedFields, / search, n/N matches, Ctrl+Y copy.\n"
@@ -368,7 +373,9 @@ class KubeRichApp(App[None]):
             and not event.is_forwarded
         ):
             if isinstance(event, Key):
-                if event.key == "ctrl+q":
+                if event.key == "ctrl+q" and not (
+                    self.screen.attach_mode and self.screen.detach_pending
+                ):
                     self.exit()
                 else:
                     self.screen.key(event)
@@ -721,7 +728,9 @@ class KubeRichApp(App[None]):
             *(
                 screen.stop_owned()
                 for screen in tuple(self.screen_stack)
-                if isinstance(screen, (AnnotationScreen, EditingScreen, WorkloadScreen))
+                if isinstance(
+                    screen, (AnnotationScreen, EditingScreen, WorkloadScreen, TransferScreen)
+                )
                 and screen.source.client is client
             ),
             *(
@@ -808,6 +817,25 @@ class KubeRichApp(App[None]):
         except AppError as error:
             self._set_status(str(error))
             return
+        self._open_logs(containers_first=True)
+
+    def action_attach(self) -> None:
+        try:
+            self.commands.policy.require(Action.ATTACH)
+        except AppError as error:
+            self._set_status(str(error))
+            return
+        self._open_logs(containers_first=True)
+
+    def action_upload(self) -> None:
+        try:
+            self.commands.policy.require(Action.MUTATE)
+        except AppError as error:
+            self._set_status(str(error))
+            return
+        self._open_logs(containers_first=True)
+
+    def action_download(self) -> None:
         self._open_logs(containers_first=True)
 
     def action_port_forwards(self, selected: UUID | None = None) -> None:
@@ -977,7 +1005,7 @@ class KubeRichApp(App[None]):
                 raise AppError("Select a namespaced pod to open container logs.")
             containers = log_containers(record.manifest)
             if not containers:
-                raise AppError("The selected pod has no regular/init containers.")
+                raise AppError("The selected pod has no regular/init/ephemeral containers.")
         except AppError as error:
             self._set_status(str(error))
             return
@@ -996,6 +1024,22 @@ class KubeRichApp(App[None]):
                     directory=self._process_directory,
                 ),
                 processes=self.processes,
+                attach=AttachService(
+                    client,
+                    target,
+                    self.commands.policy,
+                    current,
+                    environment=self._process_environment,
+                    directory=self._process_directory,
+                ),
+                transfers=TransferService(
+                    client,
+                    target,
+                    self.commands.policy,
+                    current,
+                    environment=self._process_environment,
+                    directory=self._process_directory,
+                ),
                 chrome=self.chrome,
                 trail=self.breadcrumbs.trail,
             )
@@ -1259,7 +1303,10 @@ class KubeRichApp(App[None]):
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
         if action == "port_forward" and self._resource_name not in {"pods", "services"}:
             return False
-        if action in {"logs", "shell"} and self._resource_name != "pods":
+        if (
+            action in {"logs", "shell", "attach", "upload", "download"}
+            and self._resource_name != "pods"
+        ):
             return False
         if action in {
             "focus_filter",
@@ -1272,6 +1319,9 @@ class KubeRichApp(App[None]):
             "edit",
             "logs",
             "shell",
+            "attach",
+            "upload",
+            "download",
             "port_forward",
         }:
             return not isinstance(self.screen, ModalScreen) and not isinstance(self.focused, Input)
@@ -1291,6 +1341,8 @@ class KubeRichApp(App[None]):
     async def action_back(self) -> None:
         if isinstance(self.screen, (InspectionScreen, LogScreen)):
             self.screen.back()
+        elif isinstance(self.screen, TransferScreen):
+            await self.screen.cancel()
         elif isinstance(
             self.screen, (AnnotationScreen, EditingScreen, WorkloadScreen, ResourceOperationScreen)
         ):
@@ -1392,6 +1444,12 @@ class KubeRichApp(App[None]):
             self._set_status(self._workspace_status())
         elif command is Command.SHELL:
             self.action_shell()
+        elif command is Command.ATTACH:
+            self.action_attach()
+        elif command is Command.UPLOAD:
+            self.action_upload()
+        elif command is Command.DOWNLOAD:
+            self.action_download()
         elif command is Command.PORT_FORWARD:
             self.action_port_forward()
         elif command is Command.PORT_FORWARDS:

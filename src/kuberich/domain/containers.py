@@ -104,6 +104,7 @@ def container_rows(manifest: dict[str, Any]) -> tuple[ContainerRow, ...]:
     for field, status_field in (
         ("containers", "containerStatuses"),
         ("initContainers", "initContainerStatuses"),
+        ("ephemeralContainers", "ephemeralContainerStatuses"),
     ):
         raw = status.get(status_field)
         statuses = {
@@ -115,6 +116,8 @@ def container_rows(manifest: dict[str, Any]) -> tuple[ContainerRow, ...]:
             kind = (
                 "App"
                 if field == "containers"
+                else "Ephemeral"
+                if field == "ephemeralContainers"
                 else ("Sidecar" if item.get("restartPolicy") == "Always" else "Init")
             )
             declarations[item["name"]] = kind, item, statuses.get(item["name"], {})

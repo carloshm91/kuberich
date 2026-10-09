@@ -1,5 +1,28 @@
 # First things to try
 
+## Attachment and file-transfer candidate: S07 #48
+
+The selected container table now offers `a` for attach to an existing process,
+`u` for upload and `d` for download. `:attach`, `:upload` and `:download` open that
+table. Copy requires explicit absolute paths, a separate reviewed confirmation
+and deliberate regular-file overwrite; Cancel is the default focus. Read-only
+blocks attach/uploads and permits an explicit protected download.
+
+Exact tested command:
+`uv run --locked --python 3.12 pytest tests/unit/test_transfers.py tests/contract/test_transfer_files.py tests/contract/test_transfers.py tests/ui/test_transfers.py -q --cov=kuberich --cov-branch`:
+The expanded cohort passed 178 cases, including UI refusal/race, malformed
+PAX-size and concurrent destination replacement/cleanup cases. Source and fresh
+installed-wheel native attach passed 14 cases; native copy passed four cases.
+The owned-cluster command is
+`uv run --locked --python 3.12 python -m scripts.verify_transfers_kind --kind artifacts/operations-46/tools/kind --kubectl artifacts/operations-46/tools/kubectl`.
+Its 13 checks exercised real binary/tree round trips, existing init/ephemeral
+containers, missing tar, interruptions and terminal return; the cluster was
+deleted. These focused receipts do not establish whole-candidate coverage or
+the new final-head Linux/macOS matrix; both remain merge requirements.
+See [the guide](container-attach-copy.md) and
+[acceptance evidence](acceptance/container-transfers.md) for boundaries and results.
+No user trial or package/site publication is required between product tickets.
+
 ## Flat website and reference checkpoint: #162
 
 The local landing and initial docs share a light flat design, real UI captures,

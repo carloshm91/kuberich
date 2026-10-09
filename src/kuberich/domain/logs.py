@@ -64,7 +64,7 @@ class LogOptions:
 def log_containers(manifest: dict[str, Any]) -> tuple[str, ...]:
     spec = resource_object(manifest.get("spec"))
     names = []
-    for field in ("containers", "initContainers"):
+    for field in ("containers", "initContainers", "ephemeralContainers"):
         values = spec.get(field) or []
         if not isinstance(values, list) or len(values) > 128:
             raise AppError("Invalid or excessive log container list.")

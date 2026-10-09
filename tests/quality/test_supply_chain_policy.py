@@ -11,6 +11,7 @@ from scripts.supply_chain import (
     check_actions,
     check_audit,
     check_policy,
+    digest,
     runtime_packages,
     validate_sbom,
 )
@@ -33,6 +34,19 @@ VULNERABLE = {
         }
     ]
 }
+
+
+@pytest.mark.parametrize("kind", ["missing", "directory", "symlink"])
+def test_invalid_evidence_identifies_the_file_without_reading_it(tmp_path, kind):
+    path = tmp_path / "locked-audit.json"
+    if kind == "directory":
+        path.mkdir()
+    elif kind == "symlink":
+        target = tmp_path / "payload"
+        target.write_text("untrusted contents")
+        path.symlink_to(target)
+    with pytest.raises(ValueError, match=r"regular, non-symlink file: 'locked-audit\.json'"):
+        digest(path)
 
 
 def exception(**changes):

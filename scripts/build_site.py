@@ -53,6 +53,7 @@ GUIDES = (
     Guide("container-navigation.md", "Container selection", "Observe & connect"),
     Guide("log-viewer.md", "Container logs", "Observe & connect"),
     Guide("container-shell.md", "Embedded shells", "Observe & connect"),
+    Guide("container-attach-copy.md", "Attach & file transfer", "Observe & connect"),
     Guide("port-forwards.md", "Port forwarding", "Observe & connect"),
     Guide("mutations.md", "Guarded changes", "Change deliberately"),
     Guide("editing.md", "Manifest editing", "Change deliberately"),

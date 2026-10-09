@@ -75,6 +75,16 @@ finalizers, mixed RBAC batches, replacement/version refusal, Job/CronJob
 suspension, manual execution and duplicate prevention. HTTP/TLS disconnects
 must prove a single DELETE attempt; Pilot/source/fresh-wheel PTYs cover exact
 selection/count, default Cancel, partial results and lifecycle ownership.
+S07 #48 adds running-process attach and literal transfer/path/probe decisions in
+`domain/attach.py` and `domain/transfers.py` to the critical 100% inventory.
+Actual files, controlled HTTP/executables, held-worker and repeated-cancellation
+contracts, Pilot and source/fresh-wheel PTYs qualify private staging, default
+Cancel, overwrite, tar/archive limits and cancellation-before/after-publication.
+Required Linux/Python 3.12 `scripts.verify_transfers_kind` checks actual regular,
+init and ephemeral round trips, 8 MiB streams, directories, missing tar,
+interrupted uploads/downloads and native attach/restore on an owned cluster.
+The source kubeconfig and caller context remain unchanged.
+
 F05 invocation overrides and bounded impersonation decisions in
 `domain/connection_overrides.py` join the critical inventory in #19.
 Fixed provider diagnostic decisions in `domain/credential_helpers.py` join the
@@ -202,7 +212,7 @@ There are no path filters or allowed matrix failures.
 
 Each selected job still runs the complete behavioral/terminal/packaging suite,
 independent coverage gates, build and supply-chain verification. Linux 3.12 keeps
-all eight actual disposable-cluster rehearsals. The macOS baseline is a development
+all ten actual disposable-cluster rehearsals. The macOS baseline is a development
 check, not qualification of macOS 3.13/3.14. The planner refuses unknown events
 and non-main push/dispatch refs. PR checks stay on `pull_request`; a manual
 dispatch never substitutes for the required PR checks. Concurrency groups include

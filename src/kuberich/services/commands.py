@@ -23,6 +23,9 @@ class Command(Enum):
     BACK = auto()
     FORWARD = auto()
     SHELL = auto()
+    ATTACH = auto()
+    UPLOAD = auto()
+    DOWNLOAD = auto()
     PORT_FORWARD = auto()
     PORT_FORWARDS = auto()
     ANNOTATE = auto()
@@ -43,6 +46,7 @@ class Command(Enum):
 _ACTIONS = {
     **dict.fromkeys(("exec", "shell", "ssh"), Action.EXEC),
     "attach": Action.ATTACH,
+    "upload": Action.MUTATE,
     "plugin": Action.PLUGIN,
     "portforward": Action.PORT_FORWARD,
     "annotate": Action.MUTATE,
@@ -77,6 +81,9 @@ ALIASES = {
     "forward": Command.FORWARD,
     "shell": Command.SHELL,
     "exec": Command.SHELL,
+    "attach": Command.ATTACH,
+    "upload": Command.UPLOAD,
+    "download": Command.DOWNLOAD,
     "pf": Command.PORT_FORWARDS,
     "portforwards": Command.PORT_FORWARDS,
     "portforward": Command.PORT_FORWARD,

@@ -2,7 +2,7 @@
 
 The development terminal has live pod and namespace views. Selected pods support [inspection](resource-inspection.md),
 [logs](log-viewer.md) and [embedded shells](container-shell.md); other resource
-tables remain separate work.
+tables are described in [standard resources](standard-resources.md).
 
 ## Commands
 
@@ -18,6 +18,8 @@ read-only policy handle `--command` / `-c` at launch. Arguments preserve casing.
 | `ns`, `namespace`, `namespaces` | Open the live namespace workspace table |
 | `ns NAME`, `ns *` | Select that namespace or all namespaces |
 | `shell`, `exec` | Open the selected pod’s container picker; `s`/`x` launches its shell |
+| `attach` | Choose a running container; `a` connects to its existing main process |
+| `upload`, `download` | Choose a container; `u`/`d` opens explicit copy review |
 | `status`, `retry` | Open connection details / reconnect |
 | `back`, `forward` | Restore the previous / next navigation state |
 | `help`, `?` | Show actual keyboard actions and limits |
@@ -29,7 +31,9 @@ namespace. `--command 'ctx NAME'` selects that context before authentication.
 Unsupported commands report unavailable; they never display a substitute table.
 Inspection commands remain usable in read-only mode. Embedded shells are available
 in write mode; startup `--command shell`/`exec` is refused because a deliberately
-selected pod is required. Mutations, attach and plugins remain unavailable.
+selected pod is required. Attach and copies also require interactive selection;
+see [attach and file transfer](container-attach-copy.md). Guarded mutations have
+their own review workflows; plugins remain a later task.
 The shared policy rejects effectful commands in read-only mode.
 
 ## Completion
