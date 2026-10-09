@@ -41,8 +41,10 @@ aws sso login --profile YOUR_PROFILE
 
 Then retry with `r` or `:retry`. KubeRich does not open a browser automatically or
 rewrite your kubeconfig/AWS files. The AWS CLI may renew its own cached credentials
-as part of the configured helper. InteractiveMode Always and exec certificate
-rotation remain C08 #47; this ticket does not implement interactive cloud login.
+as part of the configured helper. C08 #47 adds explicit native `:login` for generic
+helpers with `Always`/`IfAvailable`/`Never` stdin semantics and TLS certificate
+renewal. It runs the declared helper; it does not infer an `aws sso login` command.
+See [kubeconfig interoperability](kubeconfig-interoperability.md).
 
 ## Opt-in real smoke
 

@@ -5,16 +5,19 @@ import base64
 import binascii
 import copy
 import json
+import os
 import ssl
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
 from math import ceil
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from time import monotonic
 from typing import Any, NoReturn
 from urllib.parse import urlsplit
 
 import aiohttp
+from aiohttp_socks import ProxyConnectionError, ProxyConnector, ProxyError, ProxyTimeoutError
 from kubernetes_asyncio import client
 
 from kuberich.adapters.credentials import CredentialLogin, ExecToken, auth_problem
@@ -26,6 +29,9 @@ from kuberich.domain.connections import (
     HttpProblem,
     namespace_name,
 )
+from kuberich.domain.credential_helpers import bearer_token
+from kuberich.domain.exec_credentials import encrypted_key
+from kuberich.domain.proxies import effective_proxy, tls_failure
 from kuberich.errors import AppError
 
 
@@ -83,14 +89,83 @@ def _material(entry: Entry, name: str, directory: Path) -> str | None:
         data = regular_bytes(entry.directory / text(filename))
     else:
         return None
+    if name == "client-key" and encrypted_key(data):
+        raise auth_problem(
+            "Encrypted client TLS keys are unsupported. Use an unencrypted kubeconfig key or an explicit exec helper that owns decryption."
+        )
     path = directory / name
     path.write_bytes(data)
     path.chmod(0o600)
     return str(path)
 
 
+class _ServerNameContext(ssl.SSLContext):
+    expected_name: str | None = None
+
+    def wrap_bio(
+        self,
+        incoming: ssl.MemoryBIO,
+        outgoing: ssl.MemoryBIO,
+        server_side: bool = False,
+        server_hostname: str | bytes | None = None,
+        session: ssl.SSLSession | None = None,
+    ) -> ssl.SSLObject:
+        # The pinned SOCKS connector drops request-level server_hostname.
+        # Bind the configured identity at Python's public TLS BIO boundary.
+        return super().wrap_bio(
+            incoming,
+            outgoing,
+            server_side=server_side,
+            server_hostname=None if server_side else self.expected_name or server_hostname,
+            session=session,
+        )
+
+
+def _ssl_context(
+    configuration: client.Configuration, *, bind_server_name: bool = False
+) -> ssl.SSLContext:
+    context = ssl.create_default_context(cafile=configuration.ssl_ca_cert)
+    expected_name = configuration.tls_server_name or urlsplit(str(configuration.host)).hostname
+    if bind_server_name and expected_name is not None:
+        named = _ServerNameContext(ssl.PROTOCOL_TLS_CLIENT)
+        named.expected_name = expected_name
+        named.verify_flags = context.verify_flags
+        named.options = context.options
+        named.minimum_version, named.maximum_version = (
+            context.minimum_version,
+            context.maximum_version,
+        )
+        if configuration.ssl_ca_cert is not None:
+            named.load_verify_locations(cafile=configuration.ssl_ca_cert)
+        else:
+            named.load_default_certs()
+        context = named
+    if configuration.cert_file:
+        context.load_cert_chain(configuration.cert_file, keyfile=configuration.key_file)
+    if not configuration.verify_ssl:
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+    if configuration.disable_strict_ssl_verification:
+        context.verify_flags &= ~ssl.VERIFY_X509_STRICT
+    return context
+
+
+async def _finish_task[T](task: asyncio.Task[T]) -> T:
+    try:
+        return await asyncio.shield(task)
+    except asyncio.CancelledError:
+        finishing = asyncio.gather(task, return_exceptions=True)
+        while not finishing.done():
+            try:
+                await asyncio.shield(finishing)
+            except asyncio.CancelledError:
+                continue
+        await finishing
+        raise
+
+
 def _prepare(
-    context: ContextConfig, directory: Path
+    context: ContextConfig, directory: Path, environment: dict[str, str] | None = None
 ) -> tuple[client.Configuration, dict[str, Any]]:
     configuration = client.Configuration()
     cluster, user = context.cluster.data, context.user.data
@@ -104,13 +179,14 @@ def _prepare(
     configuration.key_file = _material(context.user, "client-key", directory)
     if bool(configuration.cert_file) != bool(configuration.key_file):
         raise auth_problem("Client certificate and key must be supplied together.")
-    if "tls-server-name" in cluster:
+    if "tls-server-name" in cluster and cluster["tls-server-name"] != "":
         configuration.tls_server_name = text(cluster["tls-server-name"])
-    if "proxy-url" in cluster:
-        configuration.proxy = _endpoint(cluster["proxy-url"])
+    configuration.proxy = effective_proxy(
+        configuration.host, cluster.get("proxy-url"), environment if environment is not None else {}
+    )
     if any(key in user for key in ("auth-provider", "username", "password")):
         raise auth_problem(
-            "Legacy auth-provider/basic credentials are unqualified. Use an exec helper, token or certificate; provider qualification is C08 #47."
+            "Legacy auth-provider/basic credentials are unsupported. Regenerate GKE/AKS exec kubeconfig or configure an external OIDC exec helper; token/certificate users need no helper."
         )
     mechanisms = sum(
         (
@@ -122,19 +198,28 @@ def _prepare(
     if mechanisms > 1:
         raise auth_problem("The selected user has conflicting credential mechanisms.")
     if "token" in user:
-        configuration.api_key["BearerToken"] = "Bearer " + text(user["token"])
-    elif "tokenFile" in user:
-        configuration.api_key["BearerToken"] = "Bearer " + text(
-            regular_bytes(context.user.directory / text(user["tokenFile"])).decode("utf-8").strip()
-        )
+        configuration.api_key["BearerToken"] = "Bearer " + bearer_token(user["token"])
+    if "tokenFile" in user:
+        try:
+            configuration.api_key["BearerToken"] = "Bearer " + bearer_token(
+                regular_bytes(context.user.directory / text(user["tokenFile"]))
+                .decode("utf-8")
+                .strip()
+            )
+        except (AppError, OSError, UnicodeError, ValueError):
+            if "BearerToken" not in configuration.api_key:
+                raise auth_problem(
+                    "Cannot read tokenFile credentials. Check its path and permissions."
+                ) from None
     info: dict[str, Any] = {"server": configuration.host, "insecure-skip-tls-verify": insecure}
     if configuration.ssl_ca_cert is not None:
         info["certificate-authority-data"] = base64.b64encode(
             Path(configuration.ssl_ca_cert).read_bytes()
         ).decode("ascii")
-    for field in ("tls-server-name", "proxy-url"):
-        if field in cluster:
-            info[field] = cluster[field]
+    if configuration.tls_server_name is not None:
+        info["tls-server-name"] = configuration.tls_server_name
+    if configuration.proxy is not None:
+        info["proxy-url"] = configuration.proxy
     for extension in cluster.get("extensions", []):
         item = mapping(extension)
         if item.get("name") == "client.authentication.k8s.io/exec":
@@ -148,12 +233,137 @@ class KubernetesSession:
     def __init__(self, context: ContextConfig, timeout: float) -> None:
         self.context = context
         self.timeout = timeout
+        self.token_file = (
+            context.user.directory / text(context.user.data["tokenFile"])
+            if "tokenFile" in context.user.data
+            else None
+        )
         self.directory = TemporaryDirectory(prefix="kuberich-session-")
         self.api: client.ApiClient | None = None
         self.configuration: client.Configuration | None = None
         self.credentials: ExecToken | None = None
         self.insecure = False
         self.impersonation: tuple[tuple[str, str], ...] = ()
+        self.environment = dict(os.environ)
+        self.authentication_lock = asyncio.Lock()
+        self.credential_revision = -1
+        self.token_read_after = 0.0
+        self.certificate_files: tuple[Path, ...] = ()
+
+    @property
+    def request_proxy(self) -> str | None:
+        proxy = self.configuration.proxy if self.configuration is not None else None
+        return None if proxy and proxy.startswith("socks5:") else proxy
+
+    async def _new_pool(self, configuration: client.Configuration) -> aiohttp.ClientSession:
+        proxy = configuration.proxy
+        context = await _finish_task(
+            asyncio.create_task(
+                asyncio.to_thread(
+                    _ssl_context,
+                    configuration,
+                    bind_server_name=bool(proxy and proxy.startswith("socks5:")),
+                )
+            )
+        )
+        connector = (
+            ProxyConnector.from_url(proxy, ssl=context, limit=configuration.connection_pool_maxsize)
+            if proxy and proxy.startswith("socks5:")
+            else aiohttp.TCPConnector(ssl=context, limit=configuration.connection_pool_maxsize)
+        )
+        return aiohttp.ClientSession(
+            connector=connector, trust_env=False, auto_decompress=False, read_bufsize=16384
+        )
+
+    async def _rotate_certificate(self, pair: tuple[str, str] | None, revision: int) -> None:
+        configuration = self.configuration
+        if configuration is None:
+            raise auth_problem("The selected session closed before credential preparation.")
+        files = (
+            tuple(
+                Path(self.directory.name) / f"exec-{revision}-{name}.pem"
+                for name in ("cert", "key")
+            )
+            if pair is not None
+            else ()
+        )
+        previous = self.certificate_files
+        previous_material = configuration.cert_file, configuration.key_file
+        created: list[Path] = []
+        committed = False
+
+        def write() -> None:
+            for path, content in zip(files, pair or (), strict=True):
+                descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                created.append(path)
+                with os.fdopen(descriptor, "w") as stream:
+                    stream.write(content)
+
+        try:
+            await _finish_task(asyncio.create_task(asyncio.to_thread(write)))
+            configuration.cert_file, configuration.key_file = (
+                map(str, files) if files else (None, None)
+            )
+            if self.api is not None:
+                fresh = await self._new_pool(configuration)
+                old = self.api.rest_client.pool_manager
+                self.api.rest_client.pool_manager = fresh
+                self.certificate_files = files
+                committed = True
+                await old.close()
+            else:
+                self.certificate_files = files
+                committed = True
+        finally:
+            if not committed:
+                configuration.cert_file, configuration.key_file = previous_material
+            unused = previous if committed else created
+            for path in unused:
+                path.unlink(missing_ok=True)
+
+    async def refresh_credentials(self, *, authenticate: CredentialLogin | None = None) -> None:
+        """Refresh before transport use; never replay an effectful request."""
+        async with self.authentication_lock:
+            configuration = self.configuration
+            if configuration is None:
+                raise ConnectionProblem(
+                    ConnectionState.DISCONNECTED, "The selected session is closed."
+                )
+            if self.credentials is not None:
+                token = (
+                    await self.credentials.token()
+                    if authenticate is None
+                    else await authenticate(self.credentials)
+                )
+                if (
+                    self.credentials.certificate is not None or self.certificate_files
+                ) and self.credential_revision != self.credentials.revision:
+                    await _finish_task(
+                        asyncio.create_task(
+                            self._rotate_certificate(
+                                self.credentials.certificate, self.credentials.revision
+                            )
+                        )
+                    )
+                if token is None:
+                    configuration.api_key.pop("BearerToken", None)
+                else:
+                    configuration.api_key["BearerToken"] = "Bearer " + token
+                self.credential_revision = self.credentials.revision
+            elif self.token_file is not None and monotonic() >= self.token_read_after:
+                self.token_read_after = monotonic() + 60.0
+                try:
+                    material = await _finish_task(
+                        asyncio.create_task(asyncio.to_thread(regular_bytes, self.token_file))
+                    )
+                    configuration.api_key["BearerToken"] = "Bearer " + bearer_token(
+                        material.decode("utf-8").strip()
+                    )
+                except (AppError, OSError, ValueError, UnicodeError):
+                    if "BearerToken" not in configuration.api_key:
+                        raise auth_problem(
+                            "Cannot read tokenFile credentials. Check its path and permissions."
+                        ) from None
 
     def delegated_config(self) -> dict[str, Any]:
         """Pin kubectl to this prepared session, rather than reloading ambient files."""
@@ -179,14 +389,12 @@ class KubernetesSession:
             ("cert_file", "client-certificate"),
             ("key_file", "client-key"),
         ):
-            value = getattr(configuration, source)
+            value = getattr(configuration, source) if self.credentials is None else None
             if value is not None:
                 user[destination] = value
         if self.credentials is not None:
             helper = copy.deepcopy(self.credentials.entry.data)
-            if (
-                self.credentials.eks or self.credentials.azure
-            ) and self.credentials.command is not None:
+            if self.credentials.command is not None:
                 helper["command"] = self.credentials.command
             command = text(helper["command"])
             if "/" in command and not Path(command).is_absolute():
@@ -194,6 +402,8 @@ class KubernetesSession:
             user["exec"] = helper
         elif token := configuration.api_key.get("BearerToken"):
             user["token"] = token.removeprefix("Bearer ")
+            if self.token_file is not None:
+                user["tokenFile"] = str(self.token_file.absolute())
         for field in IMPERSONATION_FIELDS:
             if field in self.context.user.data:
                 user[field] = copy.deepcopy(self.context.user.data[field])
@@ -217,7 +427,7 @@ class KubernetesSession:
 
     async def open(self, *, authenticate: CredentialLogin | None = None) -> None:
         preparation = asyncio.create_task(
-            asyncio.to_thread(_prepare, self.context, Path(self.directory.name))
+            asyncio.to_thread(_prepare, self.context, Path(self.directory.name), self.environment)
         )
         try:
             try:
@@ -237,12 +447,8 @@ class KubernetesSession:
                     info,
                     self.timeout,
                 )
-                token = (
-                    await self.credentials.token()
-                    if authenticate is None
-                    else await authenticate(self.credentials)
-                )
-                configuration.api_key["BearerToken"] = "Bearer " + token
+                self.credentials.environment = dict(self.environment)
+                await self.refresh_credentials(authenticate=authenticate)
             elif authenticate is not None:
                 raise auth_problem(
                     "The selected user has no exec helper to authenticate with :login."
@@ -251,6 +457,10 @@ class KubernetesSession:
             # Qualify this pinned SDK boundary in transport tests. Preserve the
             # SDK-created TLS connector but refuse ambient netrc/proxy identity.
             original = self.api.rest_client.pool_manager
+            if configuration.proxy and configuration.proxy.startswith("socks5:"):
+                self.api.rest_client.pool_manager = await self._new_pool(configuration)
+                await original.close()
+                return
             connector = original.connector
             original.detach()
             self.api.rest_client.pool_manager = aiohttp.ClientSession(
@@ -281,8 +491,7 @@ class KubernetesSession:
             raise ConnectionProblem(ConnectionState.DISCONNECTED, "The selected session is closed.")
         refreshed = False
         while True:
-            if credentials is not None:
-                configuration.api_key["BearerToken"] = "Bearer " + await credentials.token()
+            await self.refresh_credentials()
             revision = credentials.revision if credentials is not None else None
             headers = [("Accept", accept), ("Accept-Encoding", "identity"), *self.impersonation]
             token = configuration.api_key.get("BearerToken")
@@ -296,7 +505,7 @@ class KubernetesSession:
                     str(configuration.host) + path,
                     headers=headers,
                     params=params,
-                    proxy=configuration.proxy,
+                    proxy=self.request_proxy,
                     server_hostname=configuration.tls_server_name,
                     allow_redirects=False,
                     timeout=aiohttp.ClientTimeout(
@@ -304,8 +513,14 @@ class KubernetesSession:
                     ),
                 )
             async with response:
-                if response.status == 401 and credentials is not None and not refreshed:
-                    credentials.invalidate(revision)
+                if (
+                    response.status == 401
+                    and (credentials is not None or self.token_file is not None)
+                    and not refreshed
+                ):
+                    if credentials is not None:
+                        credentials.invalidate(revision)
+                    self.token_read_after = 0.0
                     refreshed = True
                     continue
                 if response.status != 200:
@@ -334,7 +549,7 @@ class KubernetesSession:
                         if len(data) > max_bytes:
                             raise ValueError
                 return await _decode_owned(bytes(data))
-        except TimeoutError:
+        except (TimeoutError, ProxyTimeoutError):
             raise ConnectionProblem(
                 ConnectionState.TIMEOUT,
                 "API request timed out. Check connectivity or --request-timeout; retry with F4.",
@@ -344,10 +559,18 @@ class KubernetesSession:
                 ConnectionState.TLS_ERROR,
                 "TLS verification failed. Check the cluster CA and server name.",
             ) from None
-        except aiohttp.ClientError:
+        except (
+            aiohttp.ClientError,
+            ProxyError,
+            ProxyConnectionError,
+            OSError,
+            asyncio.IncompleteReadError,
+        ) as error:
             raise ConnectionProblem(
-                ConnectionState.UNREACHABLE,
-                "Cluster is unreachable. Check VPN, network and server address; retry with F4.",
+                ConnectionState.TLS_ERROR if tls_failure(error) else ConnectionState.UNREACHABLE,
+                "TLS verification failed. Check the cluster CA and server name."
+                if tls_failure(error)
+                else "Cluster is unreachable. Check VPN, network and server address; retry with F4.",
             ) from None
         except (AppError, ValueError, UnicodeError, RecursionError, TypeError):
             raise ConnectionProblem(
@@ -365,7 +588,7 @@ class KubernetesSession:
                 yield None
                 async for chunk in response.content.iter_chunked(8192):
                     yield chunk
-        except TimeoutError:
+        except (TimeoutError, ProxyTimeoutError):
             raise ConnectionProblem(
                 ConnectionState.TIMEOUT,
                 "Log request timed out while connecting or reading a snapshot.",
@@ -375,10 +598,18 @@ class KubernetesSession:
                 ConnectionState.TLS_ERROR,
                 "Log TLS verification failed. Check the cluster CA and server name.",
             ) from None
-        except aiohttp.ClientError:
+        except (
+            aiohttp.ClientError,
+            ProxyError,
+            ProxyConnectionError,
+            OSError,
+            asyncio.IncompleteReadError,
+        ) as error:
             raise ConnectionProblem(
-                ConnectionState.UNREACHABLE,
-                "Log stream disconnected. Reopening may repeat historical output.",
+                ConnectionState.TLS_ERROR if tls_failure(error) else ConnectionState.UNREACHABLE,
+                "Log TLS verification failed. Check the cluster CA and server name."
+                if tls_failure(error)
+                else "Log stream disconnected. Reopening may repeat historical output.",
             ) from None
 
     @property
@@ -420,7 +651,7 @@ class KubernetesSession:
                         ConnectionState.UNREACHABLE,
                         "The watch ended with an incomplete event. Reconnecting from its last version.",
                     )
-        except TimeoutError:
+        except (TimeoutError, ProxyTimeoutError):
             raise ConnectionProblem(
                 ConnectionState.TIMEOUT, "The watch request timed out."
             ) from None
@@ -429,10 +660,18 @@ class KubernetesSession:
                 ConnectionState.TLS_ERROR,
                 "Watch TLS verification failed. Check the cluster CA and server name.",
             ) from None
-        except aiohttp.ClientError:
+        except (
+            aiohttp.ClientError,
+            ProxyError,
+            ProxyConnectionError,
+            OSError,
+            asyncio.IncompleteReadError,
+        ) as error:
             raise ConnectionProblem(
-                ConnectionState.UNREACHABLE,
-                "Watch connection failed. Check network and server access.",
+                ConnectionState.TLS_ERROR if tls_failure(error) else ConnectionState.UNREACHABLE,
+                "Watch TLS verification failed. Check the cluster CA and server name."
+                if tls_failure(error)
+                else "Watch connection failed. Check network and server access.",
             ) from None
         except (AppError, ValueError, UnicodeError, RecursionError, TypeError):
             raise ConnectionProblem(
@@ -479,7 +718,7 @@ class KubernetesSession:
                 ConnectionState.API_ERROR,
                 "Namespace discovery failed. Check the API endpoint and retry (F4).",
             ) from None
-        except TimeoutError:
+        except (TimeoutError, ProxyTimeoutError):
             raise ConnectionProblem(
                 ConnectionState.TIMEOUT,
                 "Namespace discovery timed out. Check --request-timeout and retry.",
@@ -491,13 +730,14 @@ class KubernetesSession:
             ) from None
 
     async def close(self) -> None:
-        try:
-            if self.api is not None:
-                await self.api.close()
-                self.api = None
-        finally:
-            if self.credentials is not None:
-                self.credentials.invalidate()
-                self.credentials = None
-            self.configuration = None
-            self.directory.cleanup()
+        async with self.authentication_lock:
+            try:
+                if self.api is not None:
+                    await self.api.close()
+                    self.api = None
+            finally:
+                if self.credentials is not None:
+                    self.credentials.invalidate()
+                    self.credentials = None
+                self.configuration = None
+                self.directory.cleanup()

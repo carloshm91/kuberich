@@ -14,6 +14,8 @@ from pathlib import Path
 import pytest
 
 from tests.support.azure_handoff import azure_terminal_trial
+from tests.support.connections import fake_api
+from tests.support.credential_handoff import credential_terminal_trial, encrypted_key_terminal_trial
 from tests.support.distribution import PROJECT, run
 from tests.support.editing_terminal import terminal_editing
 from tests.support.forward_terminal import terminal_forward
@@ -211,6 +213,36 @@ def test_installed_azure_login_keeps_credentials_private_and_restores_tty(instal
     azure_terminal_trial(
         str(binary_dir / "python"), directory, "success", name="installed-azure-login"
     )
+
+
+@pytest.mark.parametrize("scenario", ["always", "never", "cancel"])
+def test_installed_generic_login_keeps_declared_input_mode_and_restores_tty(
+    installed_wheel, scenario
+):
+    binary_dir, directory = installed_wheel
+    credential_terminal_trial(
+        str(binary_dir / "python"), directory, scenario, name=f"installed-generic-login-{scenario}"
+    )
+
+
+@pytest.mark.asyncio
+async def test_installed_encrypted_key_refuses_without_native_password_prompt(installed_wheel):
+    binary, directory = installed_wheel
+    called = []
+
+    async def handler(request):
+        called.append(True)
+        raise AssertionError("Rejected client key cannot make an API request.")
+
+    async with fake_api(handler) as server:
+        await asyncio.to_thread(
+            encrypted_key_terminal_trial,
+            str(binary / "python"),
+            directory,
+            server,
+            name="installed-encrypted-key",
+        )
+    assert not called
 
 
 def test_installed_selected_container_shell_uses_real_cli(installed_wheel) -> None:

@@ -60,7 +60,7 @@ async def terminal_handoff(
                             )
                         elif command.purpose is ProcessPurpose.AUTHENTICATE:
                             terminal.present(
-                                "KubeRich · configured Azure authentication\r\nCtrl+C cancels login and returns to the workspace.\r\n\r\n"
+                                "KubeRich · configured credential helper authentication\r\nCtrl+C cancels login and returns to the workspace.\r\n\r\n"
                             )
                         result = await runner.foreground(
                             command,

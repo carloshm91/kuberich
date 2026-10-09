@@ -254,7 +254,9 @@ async def test_authentication_handoff_presents_fixed_frame_and_passes_deadline(
                 pass
 
             def present(self, heading):
-                assert "configured Azure authentication" in heading and "Ctrl+C" in heading
+                assert (
+                    "configured credential helper authentication" in heading and "Ctrl+C" in heading
+                )
                 assert "owned" not in heading
                 app.events.append("presented")
 

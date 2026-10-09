@@ -84,6 +84,14 @@ behavior; real EKS evidence remains a separate explicit test-context requirement
 C07 extends that same critical module with Azure mode/prompt/error and bounded
 bearer decisions. Native provider handoff also receives actual PTY and fresh-wheel
 checks for private stdout, declared stdin, Ctrl+C/cancel/SIGTERM and restoration.
+C08 adds bounded credential-response validation and captured proxy/TLS decisions
+in `domain/exec_credentials.py` and `domain/proxies.py` to the 100% critical
+inventory. Real token-file/certificate renewal, HTTP CONNECT and SOCKS5 contracts
+complement generic source/fresh-wheel native login. The required Linux/Python
+3.12 `scripts.verify_credential_interop_kind` checks merged configs, relative TLS,
+exec certificate/token helpers, logs, real kubectl exec/forwards and private-file
+cleanup through an owned HTTP proxy. Real GKE/OIDC/provider certification remains
+opt-in Q05 #87; future Helm operations remain #66.
 Q02 adds mandatory owned loopback SSH, isolated tmux and SSH-to-tmux trials for
 workspace/log navigation, native handoff and embedded shells. The suite requires
 OpenSSH client/keygen/server and tmux; missing prerequisites fail explicitly.

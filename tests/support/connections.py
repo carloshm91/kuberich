@@ -82,9 +82,15 @@ async def fake_api(
         await runner.cleanup()
 
 
-def certificate(directory: Path, *, client_auth: bool = False) -> tuple[ssl.SSLContext, dict]:
+def certificate(
+    directory: Path,
+    *,
+    client_auth: bool = False,
+    common_name: str = "kuberich-test-local",
+    dns_name: str | None = None,
+) -> tuple[ssl.SSLContext, dict]:
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "kuberich-test-local")])
+    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, common_name)])
     now = datetime.now(UTC)
     cert = (
         x509.CertificateBuilder()
@@ -96,7 +102,11 @@ def certificate(directory: Path, *, client_auth: bool = False) -> tuple[ssl.SSLC
         .not_valid_after(now + timedelta(days=1))
         .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)
         .add_extension(
-            x509.SubjectAlternativeName([x509.IPAddress(ipaddress.ip_address("127.0.0.1"))]),
+            x509.SubjectAlternativeName(
+                [x509.DNSName(dns_name)]
+                if dns_name is not None
+                else [x509.IPAddress(ipaddress.ip_address("127.0.0.1"))]
+            ),
             critical=False,
         )
         .sign(key, hashes.SHA256())

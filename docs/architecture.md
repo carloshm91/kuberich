@@ -41,6 +41,25 @@ updated decision record in this document. The product is a new implementation.
 
 ## Product boundary
 
+C08 #47 preserves source-entry directories while preparing the effective client.
+Captured proxy/environment decisions and strict ExecCredential responses live in
+pure domain modules. The session owns serialized credential refresh, periodic
+token-file reads and revision-aware TLS pool replacement; actual SSL/key loading
+and file work finish before cancellation can remove their directory. New helper
+certificates use revision-specific exclusive private files, validate before use
+and close old connections to require a new handshake. Failed preparation retains
+ownership without allowing a request under a stale certificate.
+
+The pinned aiohttp-socks connector supplies SOCKS5 transport. It drops request-level
+TLS hostname overrides, so an SSLContext binds the effective name at the public
+Python `wrap_bio` boundary. Actual positive/negative TLS, authenticated proxies,
+stream errors and cancellation qualify this adapter. HTTP(S)/NO_PROXY settings are
+captured explicitly; ambient netrc identity stays disabled. Shared delegation
+freezes the complete inherited helper environment, pins the used executable and
+stages the same private connection for exec/forward and future Helm ownership.
+Generic `:login` reuses the existing native process/terminal lifecycle. Real cloud
+exchanges, legacy auth-provider/basic support and Helm operations are not claimed.
+
 M03 #45 extends conditional patches with one whitelisted `/scale` subresource
 for apps workloads, restricted to one integer replica effect. Scale receipts use
 autoscaling/v1 identity. `WorkloadService` revalidates workload/history and HPA

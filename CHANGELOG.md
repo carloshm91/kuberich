@@ -22,6 +22,12 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Refresh token-file and exec certificate credentials with captured helper identity,
+  private TLS pool replacement and generic explicit native login. Qualify HTTP
+  CONNECT/SOCKS5 proxies, original/overridden TLS names and delegated Kubernetes
+  logs, exec and port-forward connections; document GKE/OIDC migration and limits.
+  Reject encrypted private keys before OpenSSL can request a terminal password.
+
 - Delete captured resources and explicitly selected batches with UID/version,
   propagation/grace and count confirmation; retain independent and pending outcomes.
   Trigger manual Jobs and suspend/resume Jobs/CronJobs with guarded review.

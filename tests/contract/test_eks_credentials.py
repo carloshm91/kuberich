@@ -239,9 +239,10 @@ async def test_shell_pins_aws_environment_working_directory_and_executable(
             reader.session.delegated_config()
 
 
-def test_generic_delegation_keeps_its_explicit_process_environment(tmp_path):
+def test_generic_delegation_freezes_captured_inherited_identity(tmp_path):
     credentials = ExecToken(Entry({}, tmp_path), {}, 5)
-    assert credentials.delegated_environment({"HOME": "custom", "AWS_PROFILE": "custom"}) == {
-        "HOME": "custom",
-        "AWS_PROFILE": "custom",
+    credentials.environment = {"HOME": "captured", "PATH": "captured-path"}
+    assert credentials.delegated_environment({"HOME": "changed", "AWS_PROFILE": "new-profile"}) == {
+        "HOME": "captured",
+        "PATH": "captured-path",
     }

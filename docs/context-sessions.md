@@ -62,17 +62,18 @@ awaits cleanup and restores the terminal.
 
 Supported now:
 
-- Static bearer `token` or `tokenFile`; a token file is read when the session opens.
+- Static bearer `token` or periodically refreshed `tokenFile`; the last successfully
+  read file value takes precedence over an explicit configured token.
 - Embedded or file-backed CA and client certificate/key pairs. Inline TLS data
   takes precedence over a file field. Copies live in a session-owned directory
   with mode 700 and files with mode 600; closure removes them.
-- Noninteractive exec **token** credentials using `client.authentication.k8s.io/v1`
+- Exec **token or paired TLS certificate/key** credentials using `client.authentication.k8s.io/v1`
   or `v1beta1`. Kind/version must match the configured version. v1 requires
   `interactiveMode`; beta defaults to `IfAvailable`. `Never`/`IfAvailable` receive
   `KUBERNETES_EXEC_INFO.spec.interactive=false` and closed stdin. Args and configured
   environment variables are passed literally, without a shell. `provideClusterInfo`
   supplies cluster metadata including CA data and the reserved exec extension.
-  Each session caches tokens until expiration, process closure or 401; a read
+  Each session caches credentials until expiration, process closure or 401; a read
   rejected with 401 invalidates and retries once. Helpers drain both output pipes,
   cap stdout at 1 MiB/stderr at 64 KiB, and kill/reap their owned process group on
   failure, timeout, cancellation and completion.
@@ -86,26 +87,30 @@ Kubeconfig is trusted local configuration: configured helpers run with your user
 privileges, including in application read-only mode. Never launch with an
 untrusted kubeconfig. Helpers are authentication tools, separate from future
 operator-invoked plugins. Their credential stdout, raw SDK errors and response bodies are never printed
-or logged. Explicit C07 `:login` sends the native Azure provider prompt/stderr
+or logged. Explicit `:login` sends the configured native helper's prompt/stderr
 to the terminal during the handoff; it is not retained in diagnostics.
 
 TLS verification is on by default. A native kubeconfig
 `insecure-skip-tls-verify: true` or an HTTP endpoint displays **Insecure transport**
 in the status, including with hidden headers. `tls-server-name` is honored.
-Native `proxy-url` is explicit and tested with an owned local HTTP proxy; ambient proxy/netrc configuration is not used by
-the API session. Proxy/provider combinations remain qualification work in C08.
+Native `proxy-url` supports HTTP(S)/SOCKS5. Without a nonempty explicit proxy,
+captured HTTP(S)_PROXY/NO_PROXY settings apply. Automatic netrc identity remains
+disabled. Owned real proxy/TLS contracts and Kubernetes HTTP CONNECT qualify
+local behavior; [interoperability guidance](kubeconfig-interoperability.md)
+records precedence, cleanup and SOCKS5 streaming limits.
 
-Generic exec certificate rotation, legacy `auth-provider` and basic credentials
-remain explicitly unavailable. C07 adds native Azure `:login` with declared stdin
-behavior, private stdout capture and safe retry; other interactive helpers remain
-C08. C06/C07 deliver locally qualified AWS/Azure contracts. Actual EKS/AKS/GKE
+C08 adds generic exec certificate renewal and native helper `:login`, including
+the exact declared stdin behavior, private stdout and restored terminal.
+Legacy `auth-provider` and basic credentials remain explicitly unsupported;
+the same guide describes migration to exec/token/certificate entries.
+C06/C07/C08 deliver locally qualified provider contracts. Actual EKS/AKS/GKE
 certification remains opt-in Q05 #87; synthetic tests do not certify cloud tenants.
 See [EKS](eks-authentication.md) and [AKS](aks-authentication.md) limits.
 CLI cluster/user/token/TLS/impersonation overrides are implemented by F05 #19;
 see the [effective launch connection](k9s-cli.md#effective-invocation-connection).
 They apply to this invocation, including context changes, reads, watches, logs
-and the private captured kubectl shell connection. Provider qualification remains
-C06/C07/C08.
+and the private captured kubectl shell connection. Real provider qualification
+remains Q05 #87.
 
 ## Connection states and bounds
 

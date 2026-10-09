@@ -25,12 +25,12 @@ class Delegation:
 def capture_delegation(
     client: KubernetesSession, environment: Mapping[str, str], directory: Path, *, prefix: str
 ) -> Delegation:
-    if prefix not in {"exec", "forward"}:
+    if prefix not in {"exec", "forward", "helm"}:
         raise AppError("Unsupported delegated connection purpose.")
     captured_environment = dict(environment)
     captured_directory = directory.absolute()
     credentials = client.credentials
-    if credentials is not None and (credentials.eks or credentials.azure):
+    if credentials is not None:
         captured_environment = credentials.delegated_environment(captured_environment)
         captured_directory = credentials.entry.directory
     try:

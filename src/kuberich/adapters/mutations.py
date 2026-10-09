@@ -5,6 +5,7 @@ import ssl
 from collections.abc import Awaitable, Callable
 
 import aiohttp
+from aiohttp_socks import ProxyConnectionError, ProxyError, ProxyTimeoutError
 
 from kuberich.adapters.kubernetes import KubernetesSession, _decode
 from kuberich.domain.mutations import MutationIntent, MutationResult, MutationState, status_result
@@ -74,11 +75,10 @@ async def guarded_request(
     try:
         async with asyncio.timeout(client.timeout):
             authorize()
-            api, configuration, credentials = client.api, client.configuration, client.credentials
+            api, configuration = client.api, client.configuration
             if api is None or configuration is None:
                 return MutationResult(MutationState.STALE, "The captured connection is closed.")
-            if credentials is not None:
-                configuration.api_key["BearerToken"] = "Bearer " + await credentials.token()
+            await client.refresh_credentials()
             headers = [
                 ("Accept", "application/json"),
                 ("Accept-Encoding", "identity"),
@@ -95,7 +95,7 @@ async def guarded_request(
                 headers=headers,
                 data=body,
                 params={"fieldValidation": "Strict", **({"dryRun": "All"} if dry_run else {})},
-                proxy=configuration.proxy,
+                proxy=client.request_proxy,
                 server_hostname=configuration.tls_server_name,
                 allow_redirects=False,
                 middlewares=(_single_attempt,),
@@ -155,13 +155,20 @@ async def guarded_request(
             if started
             else "Timed out before the write request started.",
         )
-    except aiohttp.ClientConnectorError:
+    except (
+        aiohttp.ClientConnectorError,
+        ProxyConnectionError,
+        ProxyError,
+        ProxyTimeoutError,
+        asyncio.IncompleteReadError,
+    ):
         return MutationResult(
             MutationState.UNREACHABLE, "Connection/TLS failed before the write could be sent."
         )
     except (
         AppError,
         aiohttp.ClientError,
+        OSError,
         ssl.SSLError,
         ValueError,
         UnicodeError,

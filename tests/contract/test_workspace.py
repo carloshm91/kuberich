@@ -449,11 +449,11 @@ async def test_repeated_cancellation_during_client_preparation_and_cancelled_clo
     started, release, finished = threading.Event(), threading.Event(), threading.Event()
     original = kubernetes._prepare
 
-    def controlled(context, directory):
+    def controlled(context, directory, environment=None):
         started.set()
         release.wait(timeout=5)
         try:
-            return original(context, directory)
+            return original(context, directory, environment)
         finally:
             finished.set()
 
@@ -467,7 +467,7 @@ async def test_repeated_cancellation_during_client_preparation_and_cancelled_clo
             SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
         )
         task = owner.connect("kuberich-test-one")
-        await asyncio.to_thread(started.wait, 5)
+        assert await asyncio.to_thread(started.wait, 5)
         directory = Path(owner.sessions.client.directory.name)
         for _ in range(10):
             assert owner.connect("kuberich-test-Two") is task

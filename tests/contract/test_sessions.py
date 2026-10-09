@@ -359,11 +359,11 @@ async def test_cancel_during_owned_filesystem_preparation_waits_for_thread(
     started, release, finished = threading.Event(), threading.Event(), threading.Event()
     original = kubernetes._prepare
 
-    def delayed(context, directory):
+    def delayed(context, directory, environment=None):
         started.set()
         release.wait(timeout=2)
         try:
-            return original(context, directory)
+            return original(context, directory, environment)
         finally:
             finished.set()
 
