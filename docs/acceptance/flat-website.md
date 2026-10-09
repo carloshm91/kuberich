@@ -69,6 +69,18 @@ there as `landing-desktop.png`, `landing-mobile.png`, `docs-desktop.png` and
 review. `artifacts/site/build-manifest.json` binds the receipts to exact input and
 output bytes. Browser results below refer to that final manifest, not a mockup.
 
+Final browser result: **47/47 desktop and 47/47 mobile pages pass with zero
+WCAG A/AA axe violations and no horizontal page overflow**. Narrow 320px
+landing/CLI/resource references also pass. Keyboard skip navigation and mobile
+menu expansion, direct reference navigation, clipboard success/denial and
+navigation without JavaScript pass; there are zero external requests or browser
+errors. Wide tables and code blocks accept keyboard focus for local scrolling;
+long reference headings wrap without truncation.
+
+- Chrome: `143.0.7499.169`; Playwright: `1.64.0`; axe: `4.14.0`.
+- Build manifest SHA-256: `e391257bb93ad81eea70e7e69093b867227ac328079da304d0910dc5b0dacc28`.
+- Browser report SHA-256: `7362959c42f589d528ebb5c9647fcf0ce2696443ac0385aa7859e32cd8747bf1`.
+
 ## Limits and release ownership
 
 Automated axe checks and keyboard behavior do not establish screen-reader or
