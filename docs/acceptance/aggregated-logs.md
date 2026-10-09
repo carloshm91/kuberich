@@ -234,7 +234,7 @@ The ordinary Python 3.13 sequential fixture then failed at 150.62 ms in a live
 layout, despite fixture isolation and the direct Strip construction. That failure
 is retained as `corrected-sequential-prelude313-*`; the 150-ms limit stayed intact.
 
-The final widget correction retains immutable styled segment tuples for every
+An intermediate widget correction retained immutable styled segment tuples for every
 retained layout and creates actual Textual Strips only for viewed rows. A separate
 128-entry LRU holds those Strips, keyed by retained line/subline and checked
 against the actual current segment identity. Invalidated or expired projections
@@ -261,6 +261,160 @@ The 15,000-line test also saturated the visible cache through public paging,
 preserved its resize anchor, pruned stale identities after Head 1000 and asserted
 the actual rendered first line. Local receipts do not replace final full native
 and whole-production qualification for the replacement commit.
+
+That signed replacement, `23d0dfb67a375daa4a172d97cd447694b615c1c2`, actually
+ran [37987629105](https://github.com/carloshm91/kuberich/actions/runs/37987629105)
+using checkout `b64152d2c4192e71c30ff78bd02d961908d7b457`, with the same source
+tree. It remains failed evidence:
+
+| Environment | Job | Passed / failed | Suite duration | Maximum heartbeat |
+| --- | --- | --- | --- | --- |
+| Linux 3.12 | 114013515372 | 4,042 / 1 | 1,792.90 s | 238.49 ms |
+| Linux 3.13 | 114013515291 | 4,042 / 1 | 1,434.20 s | 207.72 ms |
+| Linux 3.14 | 114013515366 | 4,043 / 0 | 1,145.55 s | 34.10 ms |
+| macOS 3.12 | 114013515317 | 4,043 / 0 | 1,718.45 s | 131.44 ms |
+
+Both failures were the unchanged 150-ms retained-history contract. Linux 3.12
+paused for a 232.30-ms generation-two collection during first-round mode/
+timestamp/copy; Linux 3.13 paused for 201.76 ms in second-round initial layout.
+They completed zero and one full rounds respectively; neither recorded a passing
+after-close receipt. Default runner GC thresholds remained enabled. Headers and
+all other cases passed, but neither coverage nor the two successful environments
+qualifies this source. Repository and DCO passed; the application gate failed.
+
+A pinned allocation probe found 5,000 retained Segment objects, 5,000 rendered
+descriptor objects and 20,002 tuples for a 5,000-row no-wrap layout, plus 10,000
+LogEntry/LogLine projection wrappers. Only one base style was retained. An ignored
+full-catalogue diagnosis retained all 4,043 collected pytest items and counted
+331,273 live tracked setup objects. Its selector initially ran the benchmark
+first: 64 selected cases passed in 227.04 s, with a 112.31-ms live generation-two
+collection and no preceding closed app reclaimed. That is catalogue-root
+diagnosis, not the later ordered prelude or platform qualification.
+
+The next correction uses primitive immutable text, cell-width and highlight-range
+descriptions for retained sublines. It keeps eager Rich folding, match IDs,
+wrap heights, viewport restoration and navigation generations. Actual styles,
+Segments and Strips are constructed only for viewed rows in the same 128-entry
+cache, checked against current descriptor identity. Theme-only changes invalidate
+visible styles without a new load or reader. Aggregate formatting hands the
+widget sanitized `(number, text)` pairs rather than another wrapper object pair.
+The ignored pinned-library probe passed 1,080 combinations and 15,200 styled
+segments, including wide/combining/ZWJ/VS16, wraps, highlights, widths and crops.
+Actual-widget review also passed 40 cases and 185 rendered cropped rows, including
+cross-wrap highlights and a theme-only update with no new layout. Primitive
+container tuples still have GC tracking; no zero-allocation or total-RSS claim is
+made. The ordered catalogue-retaining diagnostic then ran the benchmark last
+after navigation, resource workspace and single-log cases: 63 passed and one
+failed in 222.26 s, with 3,979 other collected items retained but deselected. Its
+second-round mode/timestamp/copy heartbeat reached 182.36 ms, overlapping a
+176.93-ms generation-two collection of 5,180 objects. Only the current running
+application survived that collection; no prior closed application was reclaimed.
+One round completed, and no passing final-drain receipt was recorded. The
+outside-measurement setup census counted 525,885 tracked objects. This failed
+diagnostic remains preserved.
+
+The subsequent plain, unwrapped, no-query path uses the same public Rich control
+sanitizer and cell-width calculation directly, avoiding transient Text objects,
+lists and span-boundary sets/generators. Wrapped or highlighted parts retain
+Rich's folding and spans; parts without spans avoid boundary expansion. Ordered
+diagnosis again failed: 63 passed and one failed in 120.85 s, at 182.63 ms with a
+175.87-ms generation-two collection, now triggered by a Pilot callback allocation.
+One full round completed, with no passing final-drain receipt. Both failed
+diagnostics remain retained. Actual raw-tab rendering also exposed Rich-generated
+base-style spans: primitive descriptions now distinguish these from highlights,
+preserving their order, cell widths and exact segmentation. Independent actual
+widget review passed 80 cases and 510 cropped rows across both input forms,
+raw controls, wrapped matches, Unicode and theme changes without a new load.
+
+Outside-heartbeat root attribution found 327,181 retained objects with the full
+4,045-item catalogue, including 24,297 Lark trees and 24,297 metadata objects
+rooted by the development-only `rfc3987_syntax` grammar. After the actual 65-case
+ordered prelude, all 62 apps were gone, but 489,434 roots remained and a normal
+collection took 168.13 ms. Textual's Strip/FIFO caches were genuine runtime roots
+and were preserved. Production UI imports independently measured 93,501 roots
+and roughly 25–27-ms collections; the grammar is absent from locked installed
+runtime dependencies. Ordinary targeted Python 3.13 pytest passed the unchanged
+two-round benchmark in 7.45 s at 63.83 ms, including a 53.88-ms live collection.
+This distinguishes development-catalogue contamination from deployed runtime
+behavior; it does not establish platform or sustained-RSS qualification.
+
+The reviewed replacement keeps the required full-suite test node and runs its
+performance body in owned positive/negative fresh processes. Four same-app public
+Pod/ReplicaSet reopen, source-picker, theme and 40/100-column cycles warm genuine
+runtime caches under the same heartbeat before two full 5,000-record rounds.
+Normal/default GC, the 150-ms limit, 5,001 combined-record bound, original controls
+and public Escape/drain remain required. The negative child injects a deliberate
+200-ms callback and must fail specifically that heartbeat assertion. Source/nonce/
+import inventories, XML, deadlines, output bounds and process/App/API cleanup are
+verified; full-suite functional/audit tests and all coverage gates remain required.
+Only the passing child's branch data is merged with the preserved parent data,
+with exact inventory/arc-union and provenance checks; negative coverage is never
+used. The required local/CI command after pytest is
+`uv run python -m scripts.merge_runtime_coverage`.
+
+The first scoped warm pair passed its outer Python 3.13 test in 61.44 s: positive
+30.15 s, 133.83-ms maximum, two full rounds and complete drain; negative 25.17 s,
+207.54-ms maximum, the exact intended heartbeat failure and complete app cleanup.
+Both retained default GC, 1,947 imported modules without the development grammar,
+and 162 source input stamps. Original XML/coverage/logs/receipts are preserved as
+local diagnostic evidence. After the complete merge helper and its rejection
+regressions were in place, a fresh ordinary Python 3.13 pair passed the outer case
+in 60.87 s: positive 120.20 ms, two complete rounds and 5,001 combined records;
+negative 206.78 ms, the intended heartbeat failure and 5,000 combined records.
+Both completed four warm cycles with default GC, 163 source stamps and drained
+App/API/process ownership. The actual post-pytest helper verified the exact arc
+union across all 109 production modules, preserved the original parent evidence
+under the positive nonce and regenerated branch JSON/XML without loading negative
+coverage. All 46 receipt/CI regressions passed, including stale/missing/tampered/
+negative-only rejection and refusal to overwrite the preserved parent archive.
+These local receipts preceded further required checks. The ordinary Python 3.12
+affected cohort then failed its required warm child: 245 passed and one failed in
+232.08 s. That positive child reached 196.94 ms during public warm navigation,
+with zero completed rounds; the fail-closed wrapper did not run a fresh negative
+child. Source/fresh-installed PTYs, layout/style and receipt regressions passed
+individually, but this cohort is not qualified. Its original child and parent
+XML/data/reports remain preserved.
+
+Precise warm subphases and bounded ignored callback profiling located synchronous
+CSS reparse/update and compositor work. A profiled traced run failed at 174.54 ms,
+with CSS refresh reaching 141.47 ms; an otherwise equivalent untraced diagnostic
+passed at 113.88 ms, CSS refresh 75.28 ms. The ordinary paired proof changed only
+coverage collection: pinned coverage 7.16.2 with active CTracer/trace callback
+failed at 177.48 ms, versus inactive coverage/no trace or profile callback passing
+at 112.49 ms in the same default-GC, four-warm-cycle, two-full-round scenario.
+Both used identical 163 input hashes and drained App/API/process ownership. This
+attributes instrumentation overhead; none of those diagnostics qualifies CI.
+
+The required replacement now owns three children: uninstrumented `positive` and
+`negative` runtime checks with unchanged 150-ms assertions, and a successful
+`coverage` replay of every warmed/full-history/non-time behavior assertion under
+branch instrumentation. Its measured timing is explicitly nonqualifying. All
+three require exact source/nonce/XML/import/version/core/trace/profile facts,
+default GC and drained ownership. Only the successful coverage replay's database
+can merge with the preserved parent; runtime children have no coverage data.
+The merge verifies the full 109-module arc union and provenance under a unique
+`coverage_nonce`; every existing coverage/native gate remains required.
+The first required Python 3.12 trio passed its outer case in 91.05 s. Runtime
+positive measured 113.04 ms with two full rounds; the deliberate negative failed
+the exact heartbeat at 204.65 ms. Both had inactive coverage and no trace/profile
+callback. The CTracer functional replay completed both rounds and every non-time
+assertion at a recorded, nonqualifying 176.11 ms. All three retained four warm
+cycles, default GC, identical 163 input stamps and drained App/API/process owners.
+The real merge verified the complete 109-module parent/replay arc union, preserving
+the parent under `coverage_nonce` without reading runtime coverage. All 58
+receipt/CI regressions passed, including incorrect instrumentation, missing replay
+and rejection of a runtime database as input. The final ordinary Python 3.12 affected
+cohort subsequently passed all 258 cases in 290.09 s, including pure/HTTP/Pilot,
+source/fresh-installed PTYs, style/cache/Head/header contracts and all 58 receipt/
+CI regressions. Its runtime positive measured 115.74 ms across two rounds;
+negative failed exactly at 206.98 ms, and the successful traced replay recorded
+nonqualifying 193.27-ms timing. The real parent/replay merge verified all 109
+module arc unions. The three critical log decisions remained 207/207 lines and
+68/68 branches, 49/49 and 18/18, and 124/124 and 46/46. These focused results are
+not the whole-package/native matrix qualification, which remains required for
+the signed frozen candidate.
+No GC,
+heartbeat, history or job-deadline limit is changed by this correction.
 
 ## Qualification limits
 

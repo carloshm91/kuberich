@@ -614,9 +614,14 @@ See [the transport contract](container-log-transport.md).
 `domain/log_view.py` owns retained line identities, marks, read windows and
 clipboard bounds. `ui/log_body.py` virtualizes retained line layouts, yields
 layout work, preserves viewport identity and separates navigation follow from
-reception pause. Immutable styled segments retain the full bounded layout;
+reception pause. Primitive immutable text/cell-width/highlight descriptions retain
+the full bounded layout;
 actual Textual Strips use a 128-entry visible cache keyed by line/subline and
-checked against the current segment identity. Invalidation clears both caches.
+checked against the current descriptor identity. Rich wrapped highlight ranges
+survive folding; style construction occurs only for viewed rows. Theme changes
+invalidate visible styles even without a new layout or incoming data.
+Invalidation clears both caches. The aggregate formatter hands the widget
+sanitized `(number, text)` pairs, avoiding another LogEntry/LogLine object pair.
 `ui/logs.py` owns one serialized read controller, batched render
 task and optional save task. Changing options cancels and awaits the old read;
 dismissal cancels tasks before widgets are removed and unmount drains them.

@@ -7,12 +7,19 @@ from pathlib import Path
 
 import pytest
 from aiohttp import web
+from rich.segment import Segment
+from rich.style import Style
+from rich.text import Text
+from textual.app import App, ComposeResult
 from textual.events import MouseScrollUp
+from textual.strip import Strip
 from textual.widgets import Input, OptionList
 
 from kuberich.config.schema import Settings
-from kuberich.domain.log_view import WINDOWS
+from kuberich.domain.log_view import WINDOWS, LogEntry
+from kuberich.domain.logs import LogLine
 from kuberich.ui.app import KubeRichApp
+from kuberich.ui.log_body import LogBody
 from kuberich.ui.logs import LogScreen
 from kuberich.ui.scopes import ScopeScreen
 from tests.support.connections import catalog_fixture, namespaces
@@ -44,9 +51,73 @@ async def open_logs(app, pilot):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("prepared", [False, True])
+async def test_log_body_raw_controls_tab_spans_and_theme_without_new_layout(prepared):
+    class BodyApp(App):
+        def compose(self) -> ComposeResult:
+            yield LogBody()
+
+    app = BodyApp()
+    async with app.run_test(size=(40, 12)) as pilot:
+        body = app.query_one(LogBody)
+        body.follow = False
+        body.styles.color = "white"
+        body.styles.background = "black"
+        body.styles.text_style = Style(bold=False, reverse=False)
+        value = "raw\x00control\x08 removal and\ttab 你好 e\u0301 b\tc"
+        entries = ((1, value),) if prepared else (LogEntry(1, LogLine(value)),)
+
+        def expected(query, wrap):
+            text = Text("  " + value, style=body.rich_style)
+            if query:
+                text.highlight_words([query], style="reverse bold", case_sensitive=True)
+            parts = (
+                text.wrap(app.console, body.scrollable_content_region.width, overflow="fold")
+                if wrap
+                else [text]
+            )
+            return tuple(
+                Strip(Segment.apply_style(part.render(app.console), body.rich_style)).crop_extend(
+                    0, body.size.width, body.rich_style
+                )
+                for part in parts
+            )
+
+        for wrap, query in ((False, ""), (True, ""), (True, "\t"), (True, "b\tc")):
+            await body.load(
+                entries,
+                wrap=wrap,
+                timestamps=True,
+                query=query,
+                marks=frozenset(),
+                valid=lambda: True,
+            )
+            await pilot.pause()
+            body.scroll_to(y=0, x=0, animate=False, immediate=True)
+            references = expected(query, wrap)
+            assert len(references) == len(body.rows[0][1])
+            for y, reference in enumerate(references):
+                assert tuple(body.render_line(y)) == tuple(reference)
+            if not query:
+                assert all(
+                    not segment.style.reverse and not segment.style.bold
+                    for y in range(len(references))
+                    for segment in body.render_line(y)
+                )
+        batches, descriptor = body.render_batches, body.rows[0][1][0]
+        body.styles.color = "cyan"
+        body.styles.background = "navy"
+        await pilot.pause()
+        assert body.render_batches == batches and body.rows[0][1][0] is descriptor
+        for y, reference in enumerate(expected("b\tc", True)):
+            assert tuple(body.render_line(y)) == tuple(reference)
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
 async def test_live_view_search_vim_modes_copy_save_resize_and_return(tmp_path, size):
     closed = asyncio.Event()
+    needle = "wrap-你好-e\u0301-" + "x" * 110
 
     async def handler(request):
         if "watch" in request.query:
@@ -57,7 +128,8 @@ async def test_live_view_search_vim_modes_copy_save_resize_and_return(tmp_path, 
             try:
                 await response.write(
                     "".join(
-                        f"2026-10-05T12:00:00Z line-{i:03} 你好 [red]literal[/red] token=hidden-log-value\n"
+                        f"2026-10-05T12:00:00Z line-{i:03} 你好 [red]literal[/red] "
+                        f"{needle if i == 0 else ''} token=hidden-log-value\n"
                         for i in range(80)
                     ).encode()
                 )
@@ -78,8 +150,7 @@ async def test_live_view_search_vim_modes_copy_save_resize_and_return(tmp_path, 
             screen = await open_logs(app, pilot)
             await wait_for(lambda: len(screen.body.rows) == 80)
             base_style = screen.body.rich_style
-            plain_segments = tuple(screen.body.rows[0][1][0])
-            assert "[red]literal[/red]" in "".join(segment.text for segment in plain_segments)
+            plain_segments = tuple(screen.body.render_line(0))
             assert all(
                 segment.style.color == base_style.color
                 and segment.style.bgcolor == base_style.bgcolor
@@ -90,6 +161,21 @@ async def test_live_view_search_vim_modes_copy_save_resize_and_return(tmp_path, 
             await pilot.pause()
             assert screen.body.follow and screen.body.scroll_y > 0
             assert screen.body.show_vertical_scrollbar
+            descriptor = screen.body.rows[-1][1][0]
+            batches, read_task = screen.body.render_batches, screen._read_task
+            app.theme = "textual-light"
+            await pilot.pause()
+            changed_style = screen.body.rich_style
+            themed_segments = tuple(screen.body.render_line(0))
+            assert changed_style != base_style
+            assert all(
+                segment.style.color == changed_style.color
+                and segment.style.bgcolor == changed_style.bgcolor
+                for segment in themed_segments
+            )
+            assert screen.body.render_batches == batches
+            assert screen.body.rows[-1][1][0] is descriptor and screen._read_task is read_task
+            base_style = changed_style
             screen.body.post_message(
                 MouseScrollUp(screen.body, 1, 1, 0, -1, 0, False, False, False)
             )
@@ -110,11 +196,20 @@ async def test_live_view_search_vim_modes_copy_save_resize_and_return(tmp_path, 
             assert screen.body.column_lock
             assert screen.query_one("#log-dialog").has_class("fullscreen")
             assert screen.body.scrollable_content_region.height >= 1
-            await pilot.press("slash", *"line-00", "enter", "n", "N")
+            await pilot.press("g")
+            plain_wrapped = tuple(
+                segment
+                for row in range(len(screen.body.rows[0][1]))
+                for segment in screen.body.render_line(row)
+            )
+            assert "[red]literal[/red]" in "".join(segment.text for segment in plain_wrapped)
+            await pilot.press("slash", *"line-00", "enter", "n", "N", "g")
             await pilot.pause()
             assert app.focused is screen.body and len(screen.body.matches) == 10
             highlighted_segments = tuple(
-                segment for strip in screen.body.rows[0][1] for segment in strip
+                segment
+                for row in range(len(screen.body.rows[0][1]))
+                for segment in screen.body.render_line(row)
             )
             assert (
                 "".join(
@@ -130,6 +225,27 @@ async def test_live_view_search_vim_modes_copy_save_resize_and_return(tmp_path, 
                 for segment in highlighted_segments
             )
             assert "Matching line" in screen.message and not screen.body.follow
+            await pilot.press("slash")
+            screen.search.value = needle
+            await pilot.press("enter", "g")
+            await pilot.pause()
+            assert screen.body.matches == [screen.history.entries[0].number]
+            highlighted_rows = [
+                tuple(
+                    segment
+                    for segment in screen.body.render_line(row)
+                    if segment.style.reverse and segment.style.bold
+                )
+                for row in range(len(screen.body.rows[0][1]))
+            ]
+            assert sum(bool(row) for row in highlighted_rows) >= 2
+            assert "".join(segment.text for row in highlighted_rows for segment in row) == needle
+            assert all(
+                segment.style.color == base_style.color
+                and segment.style.bgcolor == base_style.bgcolor
+                for row in highlighted_rows
+                for segment in row
+            )
             await pilot.press("m", "ctrl+y")
             assert screen.history.marks
             assert app.clipboard == screen.history.export()

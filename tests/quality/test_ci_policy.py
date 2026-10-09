@@ -134,6 +134,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     commands = "\n".join(step.get("run", "") for step in application["steps"])
     for required in (
         "pytest --cov=kuberich --cov-branch",
+        "scripts.merge_runtime_coverage",
         "scripts/check_coverage.py coverage.json",
         "diff-cover coverage.xml",
         "--fail-under 90",
@@ -155,6 +156,12 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
         "twine check",
     ):
         assert required in commands
+    assert (
+        commands.index("pytest --cov=kuberich --cov-branch")
+        < commands.index("python -m scripts.merge_runtime_coverage")
+        < commands.index("scripts/check_coverage.py coverage.json")
+    )
+    assert "scripts/merge_runtime_coverage.py" in commands
     assert "git rev-parse HEAD^" in commands
     assert gate["name"] == "Quality gate" and gate["if"] == "${{ always() }}"
     assert set(gate["needs"]) == {"plan", "application"}

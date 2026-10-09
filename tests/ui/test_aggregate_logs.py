@@ -4,6 +4,7 @@ import asyncio
 import gc
 import json
 import logging
+import os
 import sys
 import time
 from collections import deque
@@ -24,6 +25,12 @@ from kuberich.ui.app import KubeRichApp
 from kuberich.ui.containers import ContainerScreen
 from kuberich.ui.logs import LogScreen
 from tests.support.aggregate_logs import AggregateApi
+from tests.support.aggregate_runtime import (
+    MODE,
+    child_request,
+    finish_child,
+    require_runtime_children,
+)
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.standard import roots
 from tests.support.workspace import wait_for, workspace_api
@@ -42,7 +49,7 @@ def app_for(tmp_path, url):
 
 
 def rendered(screen):
-    return "\n".join(strip.text for _, strips in screen.body.rows for strip in strips)
+    return "\n".join(line[0] for _, lines in screen.body.rows for line in lines)
 
 
 @pytest.mark.asyncio
@@ -329,6 +336,17 @@ async def test_empty_sources_and_generic_core_route_guard(tmp_path):
 async def test_full_retained_history_format_heartbeat_clipboard_bound_save_failure_and_previous(
     tmp_path,
 ):
+    if MODE not in os.environ:
+        await require_runtime_children()
+        return
+    request = await child_request()
+    try:
+        await exercise_aggregate_runtime(tmp_path, request)
+    finally:
+        await finish_child(request)
+
+
+async def exercise_aggregate_runtime(tmp_path, request):
     # Prior run_test apps can retain large closed fixture graphs; isolate this
     # benchmark before creating its app. GC stays enabled throughout live work.
     assert gc.isenabled()
@@ -336,8 +354,9 @@ async def test_full_retained_history_format_heartbeat_clipboard_bound_save_failu
     preparation_collected = gc.collect()
     preparation_seconds = time.monotonic() - preparation_started
     api = AggregateApi(count=1)
-    async with workspace_api(ns, api.handler) as url:
+    async with workspace_api(ns, api.handler, discovery_roots=roots) as url:
         app = app_for(tmp_path, url)
+        request["_runtime_app"], request["_runtime_api"] = app, api
         async with app.run_test() as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
             await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
@@ -436,7 +455,77 @@ async def test_full_retained_history_format_heartbeat_clipboard_bound_save_failu
             heartbeat = asyncio.create_task(pulse())
             completed_rounds = 0
             after_close = None
+            warm_sizes, warm_resources = [], []
+            warm_reopens = warm_picker_cycles = warm_theme_changes = 0
+            negative_callback_executed = False
             try:
+                if request["mode"] == "negative":
+                    # Required test-only negative control: prove the heartbeat
+                    # catches an actual blocking callback on this live App.
+                    await asyncio.sleep(0.006)
+
+                    def block_ui():
+                        nonlocal negative_callback_executed
+                        negative_callback_executed = True
+                        time.sleep(0.2)
+
+                    app.call_later(block_ui)
+                for warm_number, (size, command, resource, theme) in enumerate(
+                    (
+                        ((40, 12), "rs", "replicasets", "textual-light"),
+                        ((100, 30), "po", "pods", "textual-dark"),
+                        ((40, 12), "rs", "replicasets", "textual-light"),
+                        ((100, 30), "po", "pods", "textual-dark"),
+                    ),
+                    1,
+                ):
+                    phase = f"warm {warm_number} Escape/drain"
+                    await pilot.press("escape")
+                    await wait_for(lambda: not app._aggregate_screens and api.active == 0)
+                    assert screen.closed and screen.owner.closed and not screen.owner._owned
+                    phase = f"warm {warm_number} resize"
+                    await pilot.resize_terminal(*size)
+                    phase = f"warm {warm_number} theme"
+                    app.theme = theme
+                    warm_theme_changes += 1
+                    if list(size) not in warm_sizes:
+                        warm_sizes.append(list(size))
+                    phase = f"warm {warm_number} resource route"
+                    await pilot.press("colon", *command, "enter")
+                    await wait_for(
+                        lambda resource=resource: (
+                            app.workspace.selection.name == resource
+                            and app.workspace.store.observation.status is ViewStatus.LIVE
+                        )
+                    )
+                    if resource not in warm_resources:
+                        warm_resources.append(resource)
+                    phase = f"warm {warm_number} aggregate reopen"
+                    await pilot.press("L")
+                    await wait_for(
+                        lambda: (
+                            isinstance(app.screen, AggregateLogScreen)
+                            and bool(app.screen.body.rows)
+                        )
+                    )
+                    screen = app.screen
+                    assert screen.owner.target.resource == resource
+                    warm_reopens += 1
+                    phase = f"warm {warm_number} source picker"
+                    await pilot.press("c")
+                    await wait_for(lambda: isinstance(app.screen, LogSourcesScreen))
+                    assert app.screen.table.row_count == 1
+                    phase = f"warm {warm_number} source stop"
+                    await pilot.press("space")
+                    await wait_for(lambda: api.active == 0)
+                    phase = f"warm {warm_number} source admission"
+                    await pilot.press("space")
+                    await wait_for(lambda: api.active == 1)
+                    phase = f"warm {warm_number} source picker return"
+                    await pilot.press("escape")
+                    await wait_for(lambda screen=screen: app.screen is screen)
+                    warm_picker_cycles += 1
+                current_open_count = api.requests["pod-00", "app"]
                 for iteration in (1, 2):
                     if iteration == 2:
                         # Refill after clearing the previous window, measuring
@@ -469,17 +558,27 @@ async def test_full_retained_history_format_heartbeat_clipboard_bound_save_failu
                     await wait_for(lambda: screen._save_task.done())
                     assert "Cannot save logs" in str(screen.status.content)
                     assert destination.read_text() == "keep-existing"
-                    assert gaps and max(gaps) < 0.15, list(slow_pulses)
+                    if request["mode"] != "coverage":
+                        assert gaps and max(gaps) < 0.15, (
+                            "Aggregate runtime heartbeat exceeded 150 ms",
+                            list(slow_pulses),
+                        )
                     phase = f"round {iteration} previous/current transitions"
                     await pilot.press("v")
                     await wait_for(lambda: "1 no previous" in str(screen.status.content))
                     assert not screen.aggregate.records
                     await pilot.press("v")
                     await wait_for(
-                        lambda iteration=iteration: api.requests["pod-00", "app"] == iteration + 1
+                        lambda iteration=iteration: (
+                            api.requests["pod-00", "app"] == current_open_count + iteration
+                        )
                     )
                     await wait_for(lambda: bool(screen.body.rows))
-                    assert gaps and max(gaps) < 0.15, list(slow_pulses)
+                    if request["mode"] != "coverage":
+                        assert gaps and max(gaps) < 0.15, (
+                            "Aggregate runtime heartbeat exceeded 150 ms",
+                            list(slow_pulses),
+                        )
                     completed_rounds += 1
                 phase = "leave/drain viewer"
                 await pilot.press("escape")
@@ -503,14 +602,18 @@ async def test_full_retained_history_format_heartbeat_clipboard_bound_save_failu
                     "api_watches": api.watch_active,
                     "background_watches": background_watches,
                 }
-                assert gaps and max(gaps) < 0.15, list(slow_pulses)
+                if request["mode"] != "coverage":
+                    assert gaps and max(gaps) < 0.15, (
+                        "Aggregate runtime heartbeat exceeded 150 ms",
+                        list(slow_pulses),
+                    )
             finally:
                 gc.callbacks.remove(collect)
                 heartbeat.cancel()
                 await asyncio.gather(heartbeat, return_exceptions=True)
-                evidence = Path("artifacts/ui")
+                evidence = Path(request["directory"])
                 evidence.mkdir(parents=True, exist_ok=True)
-                (evidence / "aggregate-heartbeat.json").write_text(
+                (evidence / "heartbeat.json").write_text(
                     json.dumps(
                         {
                             "fixture_preparation": {
@@ -518,6 +621,13 @@ async def test_full_retained_history_format_heartbeat_clipboard_bound_save_failu
                                 "collected": preparation_collected,
                                 "seconds": preparation_seconds,
                             },
+                            "warm_sizes": warm_sizes,
+                            "warm_resources": warm_resources,
+                            "warm_reopens": warm_reopens,
+                            "warm_picker_cycles": warm_picker_cycles,
+                            "warm_theme_changes": warm_theme_changes,
+                            "negative_callback_executed": negative_callback_executed,
+                            "timing_qualifying": request["mode"] != "coverage",
                             "gc_enabled": gc.isenabled(),
                             "gc_thresholds": gc.get_threshold(),
                             "requested_full_history_rounds": 2,

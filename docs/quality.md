@@ -134,11 +134,38 @@ pre-open 400 evidence changes, manual admission, same-name UID churn, expired
 selection, source/status bounds, noise/slow-source heartbeat and detached-export
 cleanup before context-client close. Source and fresh-installed console/module
 PTYs exercise actual controls, resize, exit and terminal restoration.
-The 5,000-row UI benchmark collects prior closed-fixture garbage only before
-creating its current app. It then measures two full-history layout/format/
-timestamp/copy/save and Current/Previous cycles in that same app, with normal GC
-enabled and the unchanged 150-ms heartbeat limit. Phase/CPU/GC diagnostics are
-retained under `artifacts/ui/aggregate-heartbeat.json`. A separate 15,000-line
+The required 5,000-row UI benchmark runs from its full-suite test node in an owned
+fresh pytest process. The full development catalogue imports a development-only
+IRI grammar through the SBOM validator: diagnosis found roughly 327,000 retained
+roots versus 93,500 from production UI imports. After prior suite apps, fixture
+preparation reached 489,434 roots and 168–211-ms collections before the benchmark
+app existed. The development grammar is absent from installed runtimes.
+The fresh process keeps normal GC and its default thresholds. It warms genuine
+runtime caches through four same-app Pod/ReplicaSet viewer reopens, source-picker
+admission cycles, theme changes and 40/100-column geometries under the heartbeat;
+it never clears library caches. It then measures two full 5,000-record layout/
+format/timestamp/copy/save and Current/Previous cycles, with the unchanged 150-ms
+limit, at most 5,000 prepared records and 5,001 retained-plus-prepared records.
+Public Escape and final application/API cleanup must drain all owned work.
+An independent child runs that same node with a deliberate 200-ms UI callback and
+must fail specifically the heartbeat assertion, then drain. Both runtime children
+require inactive coverage and no tracing/profile callback. A third mandatory
+child repeats the entire warmed two-round functional scenario under branch
+coverage, retaining every non-time behavior assertion. Its timing is explicitly
+nonqualifying: ordinary paired Python 3.12 evidence measured 177.48 ms with the
+pinned coverage 7.16.2 CTracer versus 112.49 ms without instrumentation; CSS
+reparse/update cost nearly doubled. Installed runtimes have no coverage tracer.
+The runtime children keep the original 150-ms assertions and the deliberate
+200-ms negative control. The parent requires all three results, actual coverage
+version/core and trace/profile type facts, exact source/input hashes, unique
+nonces, XML and import inventories;
+timeouts, missing/stale evidence and other failures fail closed. Each child owns
+its process group, 120-second deadline and bounded output; only the functional
+replay owns separate coverage files.
+Phase/CPU/GC diagnostics remain under `artifacts/ui/aggregate-heartbeat.json`;
+original positive, negative and instrumented replay artifacts are retained under
+`artifacts/ui/aggregate-runtime/`.
+A separate 15,000-line
 case retains 5,000 lightweight layouts, saturates the 128-entry visible Strip
 cache through public paging, preserves its resize anchor, and checks current
 identity and actual rendered text after a fresh Head 1000 window. Its receipt is
@@ -225,9 +252,21 @@ change; do not bypass the current checks with a pragma or command-line filter.
 
 ```sh
 uv run pytest --cov=kuberich --cov-branch --cov-report=xml --cov-report=json
+uv run python -m scripts.merge_runtime_coverage
 uv run python scripts/check_coverage.py coverage.json
 uv run diff-cover coverage.xml --compare-branch origin/main --fail-under 90 --total-percent-float
 ```
+
+The runtime coverage helper verifies both required runtime controls and the
+successful instrumented replay against the current source, then merges only that
+replay's branch data into the full
+parent measurement. It preserves the original parent database/reports in an
+exclusive nonce-bound directory, verifies the exact per-file arc union over the
+whole production inventory and regenerates JSON/XML before the unchanged gates.
+The runtime children generate no coverage database. Hashes and provenance
+are retained in `artifacts/ui/coverage-merge-receipt.json`; missing, stale, tampered
+or missing-replay evidence rejects the merge. The full functional/audit suite and
+every production, critical-module and changed-line floor remain mandatory.
 
 `scripts/check_coverage.py` compares coverage.json's file inventory to every
 Python file under src/kuberich, including unimported namespace-package modules.

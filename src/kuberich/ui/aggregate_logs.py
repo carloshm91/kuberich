@@ -20,7 +20,7 @@ from kuberich.domain.aggregate_logs import (
     LogSource,
 )
 from kuberich.domain.connections import ConnectionProblem
-from kuberich.domain.log_view import MAX_COPY_BYTES, LogEntry, window_options
+from kuberich.domain.log_view import MAX_COPY_BYTES, window_options
 from kuberich.domain.logs import LogLine
 from kuberich.errors import AppError
 from kuberich.security.presentation import safe_text
@@ -296,9 +296,7 @@ class AggregateLogScreen(LogScreen):
             )
             entries = await parse_owned(
                 lambda: tuple(
-                    LogEntry(
-                        record.number, LogLine(record.text(json_mode=mode, timestamps=timestamps))
-                    )
+                    (record.number, record.text(json_mode=mode, timestamps=timestamps))
                     for record in records
                     if source_filter is None or record.source.key == source_filter
                 )

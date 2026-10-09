@@ -67,9 +67,11 @@ history resets its eviction counter and keeps monotonically increasing internal
 line identities, so marks cannot accidentally select a later reused row.
 
 Rendering is coalesced at 50 ms intervals. The virtualized body caches only
-retained lightweight styled segments and renders viewport strips. At most 128
+retained primitive text, cell-width and highlight-range descriptions. Actual
+styles, segments and viewport strips are constructed on demand. At most 128
 rendered Strip entries are cached, independently of terminal height; expired
-line identities and replaced projections are pruned. It does not rebuild one giant
+line identities and replaced projections are pruned; theme changes also invalidate
+cached styles without reopening a reader. It does not rebuild one giant
 text document on every received line. Layout work yields every 16 entries and
 reception every 64 lines. Reflow/search uses an owned serialized layout operation.
 The top visible line identity and horizontal offset survive arrivals and reflow;

@@ -56,9 +56,11 @@ jobs:
         run: |
           uv run ruff check .
           uv run ruff format --check .
-          uv run mypy --strict src/kuberich scripts/check_coverage.py scripts/check_quality_gate.py scripts/ci_policy.py scripts/check_supply_chain.py scripts/supply_chain.py scripts/dependency_inventory.py scripts/release.py scripts/release_policy.py scripts/homebrew.py scripts/owned_kind.py scripts/verify_kind_lifecycle.py scripts/verify_quickstart.py scripts/standard_kind.py scripts/verify_port_forwards_kind.py scripts/verify_mutations_kind.py scripts/verify_editing_kind.py scripts/verify_workloads_kind.py scripts/verify_operations_kind.py scripts/verify_credential_interop_kind.py scripts/verify_transfers_kind.py scripts/verify_custom_resources_kind.py scripts/verify_aggregate_logs_kind.py
+          uv run mypy --strict src/kuberich scripts/check_coverage.py scripts/check_quality_gate.py scripts/ci_policy.py scripts/check_supply_chain.py scripts/supply_chain.py scripts/dependency_inventory.py scripts/release.py scripts/release_policy.py scripts/homebrew.py scripts/owned_kind.py scripts/verify_kind_lifecycle.py scripts/verify_quickstart.py scripts/standard_kind.py scripts/verify_port_forwards_kind.py scripts/verify_mutations_kind.py scripts/verify_editing_kind.py scripts/verify_workloads_kind.py scripts/verify_operations_kind.py scripts/verify_credential_interop_kind.py scripts/verify_transfers_kind.py scripts/verify_custom_resources_kind.py scripts/verify_aggregate_logs_kind.py scripts/merge_runtime_coverage.py
       - name: Run behavioral, gate-regression and clean-distribution checks
         run: uv run pytest --cov=kuberich --cov-branch --cov-report=term-missing --cov-report=xml --cov-report=json
+      - name: Verify required runtime controls and merge successful replay branch coverage
+        run: uv run python -m scripts.merge_runtime_coverage
       - name: Verify context sessions, resource views and watches on an owned disposable cluster
         if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: |

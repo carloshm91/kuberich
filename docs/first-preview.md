@@ -31,19 +31,52 @@ cases because a thirteenth shortcut clipped Help; the paired `l/L` hint corrects
 that regression without weakening the assertions. All four native jobs failed;
 Linux 3.12 and 3.13 additionally exceeded the 150-ms full-history heartbeat
 limit. Failed hosted and reproduced local sequences remain diagnostic evidence.
-Rendering now retains immutable styled segments and limits expensive visible
-Strip caches to 128 entries. It preserves complete retained layouts and public
+An intermediate layout retained styled segments and limited expensive visible
+Strip caches to 128 entries. It preserved complete retained layouts and public
 navigation. Earlier direct-Strip and fixture-isolation attempts still exceeded
-150 ms; those failed receipts remain preserved. The lightweight layout passed
+150 ms; those failed receipts remain preserved. That lightweight layout passed
 an ordinary Python 3.13 64-case sequence in 185.98 seconds at 120.06 ms, with
 normal GC and the unchanged 150-ms limit.
 The correction cohort passed sixteen layout/UI/source/fresh-installed PTY cases
-in 79.72 seconds. The latest Python 3.12 affected cohort passed 217 cases in
+in 79.72 seconds. Its Python 3.12 affected cohort passed 217 cases in
 202.47 seconds, including sequential 5,000-record/control/replay cycles and
 public Escape/drain at a 126.70-ms maximum heartbeat with normal GC enabled.
 It also checks 15,000 delivered lines, 5,000 retained layouts, paging/cache bounds,
-resize anchors and actual fresh Head-window text. Fresh
-full native qualification remains required. See
+resize anchors and actual fresh Head-window text. Its actual hosted replacement
+`23d0dfb` then failed Linux 3.12/3.13 at 238.49/207.72 ms; macOS 3.12 and Linux
+3.14 passed. That source remains superseded, not qualified. The next correction
+retains primitive text/cell-width/highlight descriptions and constructs actual
+styled segments only for viewed rows, with the same 128-entry cache. Sanitized
+aggregate projections also avoid redundant LogEntry/LogLine wrappers. Theme-only
+color changes and folded Unicode highlights pass actual rendering probes. The
+ordered full-catalogue diagnostic still failed at 182.36 ms with a 176.93-ms
+generation-two collection during second-round mode/timestamp/copy. Its failed
+receipt is preserved. The next narrow correction also avoids transient Rich
+objects and span calculations for plain unwrapped rows. Ordered diagnosis still
+failed at 182.63 ms, now at a Pilot callback allocation. Outside-measurement
+attribution found development-only IRI grammar and pytest catalogue roots absent
+from the installed runtime; all prior apps were gone. The reviewed required
+fresh-process scenario retains the 150-ms/default-GC/two-full-round contract and
+warms genuine same-app table/viewer/source-picker/theme/40+100-column caches.
+Its first local pair measured 133.83 ms for the successful scenario and 207.54 ms
+for a deliberate 200-ms callback that failed the exact heartbeat assertion; both
+drained. That initial pair merged only its successful positive branch coverage.
+The subsequent Python 3.12 cohort failed at 196.94 ms during warm
+navigation (245 passed, one failed). Ordinary paired diagnosis measured 177.48 ms
+with coverage's CTracer versus 112.49 ms uninstrumented, with identical controls
+and default GC. Required runtime positive/negative checks now run uninstrumented;
+a third mandatory full functional replay collects branch coverage, whose timing
+is marked nonqualifying. Only that successful replay merges through
+`uv run python -m scripts.merge_runtime_coverage` before unchanged coverage gates.
+The required local Python 3.12 trio passed: runtime positive
+113.04 ms/two full rounds, deliberate negative 204.65 ms/exact heartbeat failure,
+and successful instrumented full replay with nonqualifying 176.11-ms timing.
+All drained; the actual merge verified the 109-module parent/replay arc union.
+The final Python 3.12 affected cohort passed all 258 cases in 290.09 seconds,
+including source/fresh-installed terminals and the three-mode contract at a
+115.74-ms runtime maximum. Signed-source and full native qualification remain
+pending; these local results do not qualify a release.
+See
 [controls and limits](log-viewer.md#all-container-and-workload-logs-s06-54)
 and [acceptance evidence](acceptance/aggregated-logs.md). Embedded-shell
 scrollback/search/copy qualification remains open in #123; no provider trial or

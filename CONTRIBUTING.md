@@ -76,6 +76,7 @@ uv run ruff check .
 uv run ruff format --check .
 uv run mypy --strict src/kuberich scripts/check_coverage.py scripts/check_quality_gate.py
 uv run pytest --cov=kuberich --cov-branch --cov-report=xml --cov-report=json
+uv run python -m scripts.merge_runtime_coverage
 uv run python scripts/check_coverage.py coverage.json
 uv run diff-cover coverage.xml --compare-branch origin/main --fail-under 90 --total-percent-float
 uv build
