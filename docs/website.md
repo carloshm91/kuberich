@@ -50,7 +50,48 @@ Build hashes, actual local browser checks and limits appear in
 [acceptance evidence](acceptance/initial-website.md). Reproduction/tool/media
 instructions are in [website/README](../website/README.md).
 
-## Proposed hosting: Cloudflare Pages
+## Development publication: #166
+
+On 2026-10-09 the maintainer explicitly requested deploying both current surfaces
+and saved the scoped credentials in the existing protected `release` environment.
+This authorizes two Pages provider hosts before the final product release; custom
+domains/DNS and `www` are deferred. Development notices, noindex and unavailable
+public-package status stay visible. #89 still owns final-candidate regeneration,
+installed public channels and approved custom-domain launch.
+
+The manual **Website publication** workflow (`.github/workflows/pages.yml`) accepts
+only canonical main. Its unprivileged job builds, source/digest/link-checks and
+real-browser verifies both surfaces, retaining the immutable `checked-site`
+artifact and browser evidence. The `release` job downloads that exact artifact,
+rechecks it against the exact clean source and uses Wrangler 4.149.0 from its
+committed npm lock. Tool installation/audit occurs before the credential-bearing
+step. Credentials pass only through that step's environment; neither subprocess
+argv, public verification requests nor receipts include them.
+
+`scripts.pages` creates only `kuberich-site`/`kuberich-docs` when absent. Existing
+Git-integrated or non-main projects are refused, not rewritten. Authenticated API
+redirects are refused. Both projects are checked before either upload. Uploads
+explicitly target production/main and the source commit. The script checks
+deployment identity, every served file's SHA-256, the response headers and custom
+404 at both immutable deployment and production URLs. Pages consumes `_headers`;
+its effect is verified on actual responses. Propagation retries are bounded;
+failed verification fails the job.
+
+The `pages-publication-receipt` artifact retains source/manifest hashes, actual
+provider URLs, project/deployment IDs, previous production IDs and verification.
+`upload_attempted` distinguishes a possibly accepted failed upload from confirmed
+`publication_performed`. A second-surface failure preserves the first receipt;
+two-project publication is not atomic. Inspect Cloudflare before retrying an
+interrupted upload. No initial rollback is claimed before a previous good
+production deployment exists. Later recovery uses the recorded provider rollback
+target followed by live verification.
+
+Dispatch with `gh workflow run pages.yml --repo carloshm91/kuberich --ref main`
+after the issue-linked PR and all required checks pass. The protected environment
+review covers the authorized source/bytes. Ordinary PRs cannot deploy. Actual URLs
+and live acceptance are recorded in #166; proposed names do not prove hosting.
+
+## Final product hosting: Cloudflare Pages
 
 Use two proposed Direct Upload projects: `kuberich-site` for
 `artifacts/site/www` and `kuberich-docs` for `artifacts/site/docs`. GitHub Actions

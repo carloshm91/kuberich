@@ -27,6 +27,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Prepare a protected main-only Cloudflare Pages publication of both development
+  website surfaces, preserving checked artifact bytes and verifying live HTTPS
+  digests, response headers and 404s. Retain source/deployment and partial-failure
+  receipts. Application packages and custom-domain/DNS setup remain separate.
+
 - Resolve preferred custom-resource versions and ambiguous aliases from live
   discovery. Read arbitrary discovered types through bounded LIST/WATCH/GET,
   retaining server Table columns and full manifests with scoped JSON fallback.
@@ -99,6 +104,11 @@ Release entries are written in release PRs and linked to their Git tags.
   with a compact wordmark below 120 columns and the existing hidden-header options.
 
 ### Fixed
+
+- Verify disappearance after macOS reports a permission error for an exiting
+  subprocess group. Preserve real permission failures and owned child cleanup.
+- Preserve rejected namespace-command feedback through repaints of the same
+  connecting view; show new connection progress or errors when its state changes.
 
 - Preserve SSH hangup status on macOS when terminal attributes remain readable
   after the driver has stopped accepting output; probe without emitting bytes.

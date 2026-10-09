@@ -26,6 +26,21 @@ Generated local evidence and node_modules are not repository planning sources.
 Site-only delivery reports changed executable application coverage as N/A;
 it preserves every application coverage gate and the latest qualified source tree.
 
+#166 adds owned API/HTTP and actual Node subprocess regression cases for the
+Pages publication boundary, conflicting projects, credential isolation, stale
+public bytes, response policies, 404s and partial failures. Its manual main-only
+workflow builds/browser-verifies without secrets, passes the immutable checked
+artifact to the protected `release` job, and installs/audits pinned Wrangler before
+the credential-bearing upload step. Publication requires actual HTTPS file/header/
+404 verification and retains complete or partial receipts. This development-site
+exception does not waive application gates or qualify the final product release.
+
+Its first macOS run exposed a subprocess group exit race, addressed as a narrow
+publication prerequisite. That application correction requires measured changed
+line coverage and full native checks; #166 is consequently not a site-only diff.
+Process regressions retain real-child reaping and descendant cancellation, and
+negative controls reject live or persistently denied Darwin groups.
+
 The current critical modules are the CLI/module entry points, preference schema
 validation/precedence, diagnostic redaction, control escaping, literal text
 presentation, argument validation/capture, client/UID target identity checks,

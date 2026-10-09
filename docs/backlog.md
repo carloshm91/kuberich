@@ -65,6 +65,15 @@ local/owned-cluster evidence never establishes real EKS/AKS/GKE certification.
 
 ## Historical delivery refinements
 
+On 2026-10-09 the maintainer explicitly requested publishing the development
+landing and initial docs before the product release. [#166](https://github.com/carloshm91/kuberich/issues/166)
+owns a protected manual GitHub Actions deployment and actual HTTPS verification
+on two Cloudflare Pages provider hosts, temporarily preceding the committed B06
+#53 foundation. Custom domains/DNS and `www` are deferred; application artifacts,
+tags and final 1.0.0 website regeneration/qualification remain #89. Expanded and
+versioned documentation remains #90/#91. This dated exception supersedes only
+the earlier prohibition on independently publishing the development website.
+
 The dated changes below explain completed preview work. They do not supersede
 the current feature-first execution and first-product publication policy above.
 

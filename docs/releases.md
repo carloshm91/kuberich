@@ -22,6 +22,12 @@ local site preparation #150 are preparation evidence; the site must be regenerat
 and qualified against the final candidate before its approved publication.
 Expanded versioned documentation remains W02 #90 / W03 #91 after the product.
 
+The maintainer separately authorized [#166](https://github.com/carloshm91/kuberich/issues/166)
+to publish the development landing and initial guides on Cloudflare Pages provider
+hosts before 1.0.0. The site retains development notices and unavailable-package
+status. Final-candidate regeneration and public installation remain #89. Custom
+domains/DNS and `www` are deferred until their owner-approved setup.
+
 ## Version rules
 
 | Change | Public version example |

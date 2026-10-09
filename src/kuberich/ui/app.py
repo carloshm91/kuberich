@@ -266,6 +266,7 @@ class KubeRichApp(App[None]):
         self._namespace_parent: NavigationState | None = None
         self._namespace_state: NavigationState | None = None
         self._namespace_route = False
+        self._selection_notice: tuple[ViewObservation, str] | None = None
         self._pod_projection = PodProjection()
         self._namespace_projection = NamespaceProjection()
         self.chrome = WorkspaceChrome(
@@ -610,8 +611,8 @@ class KubeRichApp(App[None]):
                         detail = (
                             "Local kubeconfig catalogue" if kind == "contexts" else view.message
                         )
-                        self._set_status(
-                            problem or f"Filter active · {filtered}/{count} {kind} · {detail}"
+                        self._set_view_status(
+                            view, problem or f"Filter active · {filtered}/{count} {kind} · {detail}"
                         )
                         if (
                             count
@@ -670,7 +671,9 @@ class KubeRichApp(App[None]):
                 "Escape in the table clears the filter."
             )
             self._show_sort()
-            self._set_status("Local kubeconfig contexts · Enter connect · Esc previous view")
+            self._set_view_status(
+                view, "Local kubeconfig contexts · Enter connect · Esc previous view"
+            )
             return
         usable = observation.state in USABLE_CONNECTIONS
         self.query_one("#empty-title", Static).update(
@@ -706,7 +709,16 @@ class KubeRichApp(App[None]):
         self.query_one("#empty-state").display = not bool(self._active_table.row_count)
         self._active_table.set_class(bool(self._active_table.row_count), "populated")
         self._show_sort()
-        self._set_status(view.message)
+        self._set_view_status(view, view.message)
+
+    def _set_view_status(self, view: ViewObservation, message: str) -> None:
+        if self._selection_notice is not None:
+            notice_view, notice = self._selection_notice
+            if notice_view is view:
+                message = notice
+            else:
+                self._selection_notice = None
+        self._set_status(message)
 
     @on(PodTable.SortChanged)
     @on(StandardTable.SortChanged)
@@ -1153,7 +1165,9 @@ class KubeRichApp(App[None]):
     def action_namespaces(self) -> None:
         observation = self.workspace.store.observation.connection
         if observation.state not in USABLE_CONNECTIONS:
-            self._set_status("Connect to a context before selecting a namespace.")
+            message = "Connect to a context before selecting a namespace."
+            self._selection_notice = self.workspace.store.observation, message
+            self._set_status(message)
         elif not isinstance(self.screen, ModalScreen):
             self._select_resource("namespaces", restore=self._namespace_state)
 

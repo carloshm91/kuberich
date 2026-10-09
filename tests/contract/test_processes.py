@@ -6,6 +6,7 @@ import pty
 import signal
 import sys
 from dataclasses import replace
+from types import SimpleNamespace
 
 import pytest
 
@@ -26,6 +27,76 @@ def command(tmp_path, code="print('owned')", mode=ProcessMode.CAPTURE, **changes
         purpose=ProcessPurpose.PLUGIN,
     )
     return replace(value, **changes)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("denied_probes", [0, 3])
+async def test_darwin_empty_group_denial_requires_confirmed_disappearance(
+    monkeypatch, denied_probes
+):
+    monkeypatch.setattr(processes, "sys", SimpleNamespace(platform="darwin"))
+    calls = []
+
+    def signal_group(pid, value):
+        calls.append((pid, value))
+        if value != 0 or len(calls) <= denied_probes + 1:
+            raise PermissionError("exiting group")
+        raise ProcessLookupError("group removed")
+
+    monkeypatch.setattr(os, "killpg", signal_group)
+    assert not await processes._signal_group(12345, signal.SIGCONT)
+    assert calls == [(12345, signal.SIGCONT), *[(12345, 0)] * (denied_probes + 1)]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "platform,probe", [("linux", "denied"), ("darwin", "live"), ("darwin", "denied")]
+)
+async def test_group_permission_failure_cannot_be_reported_as_success(monkeypatch, platform, probe):
+    monkeypatch.setattr(processes, "sys", SimpleNamespace(platform=platform))
+    failure = PermissionError("real denial")
+    calls = []
+
+    def signal_group(pid, value):
+        calls.append((pid, value))
+        if value == 0 and probe == "live":
+            return
+        raise failure
+
+    monkeypatch.setattr(os, "killpg", signal_group)
+    with pytest.raises(PermissionError) as error:
+        await processes._signal_group(12345, signal.SIGTERM)
+    assert error.value is failure
+    assert calls == [
+        (12345, signal.SIGTERM),
+        *[(12345, 0)] * (0 if platform == "linux" else 1 if probe == "live" else 5),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_exited_owned_child_with_darwin_group_race_is_reaped(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        processes, "sys", SimpleNamespace(platform="darwin", executable=sys.executable)
+    )
+    original = os.killpg
+    denied = []
+
+    def exiting_group(pid, value):
+        try:
+            original(pid, value)
+        except ProcessLookupError:
+            if value != 0 and not denied:
+                denied.append(pid)
+                raise PermissionError("owned disappearing group") from None
+            raise
+
+    monkeypatch.setattr(os, "killpg", exiting_group)
+    async with ProcessRunner(AccessPolicy(False)) as runner:
+        result = await runner.capture(command(tmp_path))
+        assert result.status is ProcessStatus.SUCCEEDED and result.stdout == b"owned\n"
+        assert runner.active_count == 0 and len(denied) == 1
+        with pytest.raises(ProcessLookupError):
+            os.kill(denied[0], 0)
 
 
 @pytest.mark.asyncio

@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "description": "Pinned Cloudflare Pages publication tool; not an application dependency",
+  "dependencies": {
+    "wrangler": "4.149.0"
+  }
+}

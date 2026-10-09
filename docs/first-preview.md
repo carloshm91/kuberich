@@ -1,5 +1,20 @@
 # First things to try
 
+## Development website publication checkpoint: #166
+
+The maintainer authorized publishing the current landing and initial guides on
+two Cloudflare Pages provider hosts before the product release. The main-only
+manual `Website publication` workflow builds/browser-verifies both surfaces,
+publishes the immutable checked artifact through the protected `release` job and
+checks actual HTTPS file digests, headers and 404 routing. It retains source and
+deployment receipts, including partial failures. The exact dispatch command is
+`gh workflow run pages.yml --repo carloshm91/kuberich --ref main`.
+
+The live issue records actual publication status and measured provider URLs;
+workflow preparation alone does not establish successful hosting. Public packages,
+custom domains/DNS and `www` remain pending. Development notices and noindex stay
+visible. See [the procedure](website.md#development-publication-166).
+
 ## Custom-resource backend checkpoint: C05 #52
 
 Generic discovered LIST/WATCH/GET now retains bounded server Table columns and
