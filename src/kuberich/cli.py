@@ -330,6 +330,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         if action in {
             Command.UNAVAILABLE,
             Command.SHELL,
+            Command.ATTACH,
+            Command.UPLOAD,
+            Command.DOWNLOAD,
             Command.ANNOTATE,
             Command.EDIT,
             Command.SCALE,

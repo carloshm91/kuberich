@@ -12,12 +12,14 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, DataTable, Static
 
 from kuberich.domain.containers import CONTAINER_COLUMNS, container_rows
+from kuberich.domain.transfers import TransferDirection
 from kuberich.errors import AppError
 from kuberich.security.presentation import safe_text
 from kuberich.services.attach import AttachService
 from kuberich.services.logs import LogStream
 from kuberich.services.processes import ProcessRunner
 from kuberich.services.shell import ShellService
+from kuberich.services.transfers import TransferService
 from kuberich.ui.chrome import (
     CONTAINER_SHORTCUTS,
     Breadcrumbs,
@@ -28,6 +30,7 @@ from kuberich.ui.chrome import (
 )
 from kuberich.ui.logs import LogScreen
 from kuberich.ui.terminal import ShellScreen
+from kuberich.ui.transfers import TransferScreen
 
 
 class ContainerTable(DataTable[Text]):
@@ -46,6 +49,8 @@ class ContainerScreen(ModalScreen[None]):
         Binding("s", "shell", "Shell"),
         Binding("x", "shell", "Shell", show=False),
         Binding("a", "attach", "Attach"),
+        Binding("u", "upload", "Upload"),
+        Binding("d", "download", "Download"),
     ]
     DEFAULT_CSS = """
     ContainerScreen { layout: vertical; background: $background; }
@@ -68,6 +73,7 @@ class ContainerScreen(ModalScreen[None]):
         *,
         shell: ShellService | None = None,
         attach: AttachService | None = None,
+        transfers: TransferService | None = None,
         processes: ProcessRunner | None = None,
         chrome: WorkspaceChrome | None = None,
         trail: tuple[str, ...] = ("pods",),
@@ -76,6 +82,7 @@ class ContainerScreen(ModalScreen[None]):
         self.stream = stream
         self.shell, self.processes = shell, processes
         self.attach = attach
+        self.transfers = transfers
         self.chrome, self.trail = chrome, (*trail, "containers")
         self.rows = container_rows(manifest)
         self.names = tuple(row.name for row in self.rows)
@@ -101,7 +108,7 @@ class ContainerScreen(ModalScreen[None]):
             )
             with Horizontal():
                 yield Static(
-                    "Enter/l logs · s shell · a attach · Esc pods"
+                    "Enter/l logs · s shell · a attach · u upload · d download · Esc pods"
                     if self.attach is not None
                     else "Enter/l logs · s shell · Esc pods"
                     if self.shell is not None
@@ -154,6 +161,8 @@ class ContainerScreen(ModalScreen[None]):
             return self.shell is not None and self.processes is not None
         if action == "attach":
             return self.attach is not None and self.processes is not None
+        if action in {"upload", "download"}:
+            return self.transfers is not None
         return True
 
     def action_shell(self) -> None:
@@ -161,6 +170,29 @@ class ContainerScreen(ModalScreen[None]):
 
     def action_attach(self) -> None:
         self._terminal(self.attach)
+
+    def action_upload(self) -> None:
+        self._transfer(TransferDirection.UPLOAD)
+
+    def action_download(self) -> None:
+        self._transfer(TransferDirection.DOWNLOAD)
+
+    def _transfer(self, direction: TransferDirection) -> None:
+        if self.app.screen is not self or self.transfers is None:
+            return
+        try:
+            self.transfers.require_current(direction)
+        except AppError as error:
+            self.status.update(safe_text(str(error)))
+            return
+
+        def returned(message: str | None) -> None:
+            self.validate_target()
+            self.status.update(safe_text(message or "No transfer started."))
+
+        self.app.push_screen(
+            TransferScreen(self.transfers, self.names[self.table.cursor_row], direction), returned
+        )
 
     def _terminal(self, service: ShellService | AttachService | None) -> None:
         if self.app.screen is not self:

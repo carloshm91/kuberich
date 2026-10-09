@@ -25,7 +25,7 @@ class Delegation:
 def capture_delegation(
     client: KubernetesSession, environment: Mapping[str, str], directory: Path, *, prefix: str
 ) -> Delegation:
-    if prefix not in {"exec", "attach", "forward", "helm"}:
+    if prefix not in {"exec", "attach", "copy", "forward", "helm"}:
         raise AppError("Unsupported delegated connection purpose.")
     captured_environment = dict(environment)
     captured_directory = directory.absolute()

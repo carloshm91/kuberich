@@ -296,7 +296,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40×12 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -692,7 +692,21 @@
       ],
       "source": "internal/view/pod.go",
       "status": "planned",
-      "difference": ""
+      "difference": "S07 #48 implements captured regular/init/existing-ephemeral attach and reviewed bidirectional file/tree copies. Native attach restores terminal state and preserves process status. Read-only blocks attach/uploads; downloads use explicit destinations, bounded private archives and no-follow extraction. Uploads snapshot local input; cancelled uploads can leave remote partial or completed files without retry. UID/remote filesystem preflight and explicit local replacement retain documented race windows. Final family parity/platform certification remains the audit gate.",
+      "partial_evidence": [
+        "docs/container-attach-copy.md",
+        "docs/acceptance/container-transfers.md",
+        "tests/unit/test_attach.py",
+        "tests/unit/test_transfers.py",
+        "tests/contract/test_attach.py",
+        "tests/contract/test_transfer_files.py",
+        "tests/contract/test_transfers.py",
+        "tests/ui/test_attach.py",
+        "tests/ui/test_transfers.py",
+        "tests/terminal/test_attach.py",
+        "tests/terminal/test_transfers.py",
+        "scripts/verify_transfers_kind.py"
+      ]
     },
     {
       "id": "SES03",

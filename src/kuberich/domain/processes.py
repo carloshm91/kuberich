@@ -26,6 +26,8 @@ class ProcessPurpose(Enum):
     EDITOR = auto()
     PLUGIN = auto()
     AUTHENTICATE = auto()
+    DOWNLOAD = auto()
+    UPLOAD = auto()
 
     @property
     def action(self) -> Action:
@@ -36,6 +38,8 @@ class ProcessPurpose(Enum):
             ProcessPurpose.EDITOR: Action.MUTATE,
             ProcessPurpose.PLUGIN: Action.PLUGIN,
             ProcessPurpose.AUTHENTICATE: Action.READ,
+            ProcessPurpose.DOWNLOAD: Action.READ,
+            ProcessPurpose.UPLOAD: Action.MUTATE,
         }[self]
 
 

@@ -41,6 +41,22 @@ updated decision record in this document. The product is a new implementation.
 
 ## Product boundary
 
+S07 #48 freezes attach/copy targets and connection material on the event loop,
+then owns filesystem work in shielded workers that finish before cleanup.
+Attachment shares the existing embedded PTY/emulator and keeps its detach
+sequence distinct from global quit. Container identity includes already existing
+ephemerals; creating debug containers remains separate.
+
+Copy review freezes paths/effect and snapshot input. Upload uses explicit
+zero-retry kubectl cp; predicate classification distinguishes a remote false
+result from infrastructure/permission errors. Download owns a bounded subprocess
+mailbox/disk stream, scans tar headers before materializing metadata and extracts
+only validated regular trees into private staging. No-follow parent descriptors,
+exclusive new commits, reviewed file identities and cooperative publication
+cancellation protect local destinations. Client replacement drains the screen's
+work before credentials are removed. Remote copy/UID preflight windows and
+server-side processes after disconnect are documented limits, not atomic promises.
+
 C08 #47 preserves source-entry directories while preparing the effective client.
 Captured proxy/environment decisions and strict ExecCredential responses live in
 pure domain modules. The session owns serialized credential refresh, periodic

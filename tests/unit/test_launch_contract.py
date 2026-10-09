@@ -14,7 +14,19 @@ from kuberich.ui.presentation import Presentation
 
 
 @pytest.mark.parametrize(
-    "action", ["edit", "annotate", "scale", "scale 2", "restart", "rollback 1", "rollout"]
+    "action",
+    [
+        "edit",
+        "annotate",
+        "scale",
+        "scale 2",
+        "restart",
+        "rollback 1",
+        "rollout",
+        "attach",
+        "upload",
+        "download",
+    ],
 )
 def test_selected_resource_actions_are_refused_at_startup(action, monkeypatch, capsys):
     monkeypatch.setattr(cli, "run_terminal", lambda *a, **k: pytest.fail("Started unscoped action"))

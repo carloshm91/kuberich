@@ -1,40 +1,108 @@
 # S07 #48: attachment and transfer qualification
 
-Status: **implementation in progress** on `feat/48-container-transfer`.
-No complete issue, whole-candidate coverage or installed/platform qualification
-is claimed by these first-slice receipts. File-transfer criteria remain open.
-Measured progress is also recorded on
-[#48](https://github.com/carloshm91/kuberich/issues/48#issuecomment-6075244355).
+Status: **final candidate under verification** on `feat/48-container-transfer`.
+[Issue #48](https://github.com/carloshm91/kuberich/issues/48) retains live results.
+Whole-candidate independent coverage and every required Linux/macOS check must
+pass before completion/merge. No package, tag, site or DNS publication is included.
 
-## Attachment progress
+## Delivered behavior
 
-On actual Linux/Python 3.12.12:
+Attach captures the selected context/pod UID/namespace and regular, init or
+already existing ephemeral container, verifies running state and delegates a
+literal kubectl attach argument vector through private connection material.
+The embedded terminal preserves subprocess exit status and restores its outer
+terminal on EOF, error, interruption, detach, local close and application exit.
+Ctrl+P then Ctrl+Q detaches; Ctrl+] closes locally. Read-only refuses attach.
+
+Uploads/downloads require explicit absolute source/destination paths, measured
+upload size or explicit download bounds, reviewed overwrite and separate Confirm.
+Cancel is the default focus. Each review owns one frozen intent and captured
+connection/environment; changing fields invalidates confirmation. Uploads use a
+private, bounded snapshot and kubectl cp with zero retries/no preserve. Downloads
+stream tar into private state before validating/extracting and publishing.
+
+Local ancestors use anchored no-follow descriptors. Links/special files,
+traversal, duplicate/colliding names, sparse/unknown PAX extensions, excessive
+metadata, payload/entry/depth limits and malformed/trailing data are refused.
+Implicit directories count toward the 2,048-entry bound. Files use 0600 and
+directories 0700. Existing regular-file replacement requires explicit review and
+identity recheck; directory merges are refused. New directory publication rolls
+back its owned partial destination on failure.
+
+Cancellation drains the actual owned child and file workers before cleaning
+private state/client configuration. A cancelled pending download retains the
+local destination; a publication already committed is reported honestly.
+An interrupted upload reports uncertain remote partial/completed state and
+never retries or deletes remote paths. Read-only permits explicit downloads.
+
+## Focused local evidence
+
+Actual Linux/Python 3.12.12, before whole-candidate qualification:
 
 - 163 shell/container/log/embedded regression cases passed in 56.53 seconds.
 - 18 real loopback HTTP/private-file/executable attach contracts passed in
-  0.98 seconds: captured scope, all existing container kinds, read-only/stale
-  refusal, HTTP failures and preexisting connection-file preservation.
-- 14 Textual/actual inner-PTY cases passed in 37.20 seconds: regular/init/ephemeral
-  selection, detach/local close/quit, literal keys and retained viewport.
-- The focused deterministic `domain/attach.py` measurement covered 48/48 lines
-  and 30/30 branches. The module is enrolled in the critical 100% inventory.
-  This focused result is not whole-production coverage.
-- An explicitly owned kind cluster with the pinned node/image/kubectl exercised
-  native embedded attach to a real interactive main process, actual commands,
-  detach/return, reattachment to the still-running process and outer-terminal
-  restoration. Cluster deletion and absence were verified. The maintainer's
-  context was not used.
+  0.98 seconds. The first embedded inner-PTY cohort passed 14 cases in 37.20 seconds.
+- The final source/fresh-installed-wheel native attach cohort passed **14** cases
+  in **41.19 seconds**, covering EOF, failure 23, interruption 130, detach,
+  local close, SIGTERM 143 and quit, with child/config cleanup and outer restoration.
+- Source/fresh-installed-wheel copy passed **four** actual native-terminal cases.
+- Boundary/filesystem/transport/Pilot cohort passed **157** cases in **46.35 seconds**.
+  Its focused critical `domain/transfers.py` receipt is **84/84 lines and 30/30
+  branches**; attach's focused receipt is **48/48 lines and 30/30 branches**.
+  These are focused receipts, not whole-production coverage.
+- Cleanup/command regression cohort passed **47** cases in **20.60 seconds**,
+  including Escape, quit and actual F4 reconnection during an owned transfer.
+- Additional pending-review/changed-path and safe refusal/error UI scenarios
+  passed with the complete **11-case UI cohort** in **33.52 seconds**.
+- Actual file-worker holds verify repeated cancellation during snapshotting and
+  before/after publication; short writes are completed and disk failure retains
+  the reviewed destination. Malicious archive tests inspect real files rather
+  than mocking extraction behavior.
 
-The retained progress probe and fixed reports are under
-`artifacts/container-transfer-48`; the formal combined required verifier is still
-part of this issue. Production decisions are independent of Textual. Capture
-owns private connection staging and refusal; the existing process/PTY owner
-drains local work and cleanup on return or cancellation.
+The exact boundary command is:
 
-## Remaining acceptance
+```sh
+uv run --locked --python 3.12 pytest tests/unit/test_transfers.py tests/contract/test_transfer_files.py tests/contract/test_transfers.py tests/ui/test_transfers.py -q --cov=kuberich --cov-branch --cov-report=json:artifacts/container-transfer-48/copy-boundary-final.json
+```
 
-Actual uploads/downloads, size/destination/overwrite review, traversal/link/special
-entry refusal, interruption/partial outcomes, complete failure/cancellation cases,
-installed/native platform checks, whole-package independent coverage and the
-combined required owned-cluster verifier remain necessary before an issue-linked
-PR can close #48. No publication is included.
+Earlier failed/superseded receipts are retained and are not counted as passes.
+
+## Actual owned-cluster evidence
+
+```sh
+uv run --locked --python 3.12 python -m scripts.verify_transfers_kind --kind artifacts/operations-46/tools/kind --kubectl artifacts/operations-46/tools/kubectl
+```
+
+The latest combined rehearsal passed **13 checks** with pinned kind 0.33.0,
+Kubernetes 1.36.4 node and matching SHA-verified kubectl. It exercised real binary
+space-containing round trips for regular/init/existing-ephemeral containers,
+8 MiB streaming, a Unicode/empty directory tree, overwrite refusal/explicit
+replacement, missing tar, read-only refusal, interrupted download retaining the
+local destination, observed partial upload with no retry, native attach/detach/
+reattach/restoration, unchanged source configuration and private-state cleanup.
+The owned cluster was deleted and absence verified. No maintainer/cloud context
+was used. This rehearsal preceded the final archive metadata/implicit-directory
+refinement; a frozen-head rerun and required hosted verifier remain necessary.
+
+Receipts under `artifacts/container-transfer-48` are ignored private test artifacts;
+GitHub retains final-head hosted artifacts. Failed fixture setup exposed an exec
+exit-code ambiguity: missing test/infrastructure errors now refuse the copy
+rather than masquerading as a nonexistent remote path.
+
+## Honest limits
+
+The remote container needs tar; uploads also need silent POSIX test and an
+existing parent. Local tar is unnecessary. Selected stdin/TTY configuration
+controls attachment behavior; creating ephemeral debug containers remains #78.
+The process has a five-minute deadline, 8 MiB output mailbox, 528 MiB archive,
+512 MiB payload, 2,048 total entries, depth 32 and 64 KiB/header / 16 MiB aggregate
+extended metadata bounds.
+
+Kubernetes attach/exec has no UID precondition; remote pathname preflights are
+not atomic against container filesystem changes. A reviewed local replacement
+has a narrow POSIX check/rename race. New directory publication is not globally
+atomic. Ordinary source snapshotting detects observed changes, but cannot offer a
+filesystem-wide transaction against concurrent edits. Remote processes can
+outlive disconnection even after local kubectl has been reaped. These limits are
+explained in the [user guide](../container-attach-copy.md); provider/native release
+certification and final capability parity remain their dedicated gates.

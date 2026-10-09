@@ -27,6 +27,13 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Attach to a captured running regular/init/ephemeral container inside the terminal
+  workspace, with detach, faithful return status and retained selection.
+- Review explicit bidirectional file/directory copies with frozen upload snapshots,
+  bounded streaming downloads, inspected private tar extraction, no-follow local
+  destinations, default Cancel, explicit overwrite and honest interrupted-upload
+  outcomes. Keep uploads/attach gated in read-only mode and downloads explicit.
+
 - Refresh token-file and exec certificate credentials with captured helper identity,
   private TLS pool replacement and generic explicit native login. Qualify HTTP
   CONNECT/SOCKS5 proxies, original/overridden TLS names and delegated Kubernetes

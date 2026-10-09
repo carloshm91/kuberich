@@ -131,6 +131,7 @@ CONTAINER_SHORTCUTS = (
     ("Enter / l", "Logs"),
     ("s / x", "Shell"),
     ("a", "Attach"),
+    ("u / d", "Upload / download"),
     ("j/k", "Down / up"),
     ("g/G", "First / last"),
     ("Esc", "Pods"),
