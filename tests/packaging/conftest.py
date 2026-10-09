@@ -37,12 +37,15 @@ def security_evidence(artifacts, tmp_path_factory):
         check=False,
         environment={"PYTHONPATH": str(ROOT)},
     )
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert "Supply-chain gate passed" in result.stdout, result.stderr
+    # Keep failed generation's command log/partial reports for diagnosis too.
+    # Their absence of valid provenance still prevents qualification.
     retained = ROOT / "artifacts/security"
     retained.mkdir(parents=True, exist_ok=True)
-    for path in output.iterdir():
-        shutil.copy2(path, retained / path.name)
+    if output.is_dir():
+        for path in output.iterdir():
+            shutil.copy2(path, retained / path.name)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "Supply-chain gate passed" in result.stdout, result.stderr
     return output, distribution
 
 

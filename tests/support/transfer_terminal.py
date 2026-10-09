@@ -30,7 +30,10 @@ def terminal_transfer(command, directory, url, direction, evidence):
     ) as terminal:
         terminal.wait_for_screen("pods(team)[1]")
         terminal.send(b"\r")
-        terminal.wait_for_screen("Containers")
+        # The pod header already advertises "Containers" before navigation.
+        # Wait for the actual mounted container table before sending its keys.
+        containers = "containers(team/api)[1]"
+        terminal.wait_for_screen(containers)
         key = b"u" if direction is TransferDirection.UPLOAD else b"d"
 
         def review():
@@ -42,9 +45,7 @@ def terminal_transfer(command, directory, url, direction, evidence):
 
         review()
         terminal.send(b"\r")  # reviewed form defaults to Cancel, no child started
-        terminal.wait_for_screen(
-            "Containers", absent=(direction.value + " · review before copying",)
-        )
+        terminal.wait_for_screen(containers, absent=(direction.value + " · review before copying",))
         assert not (directory / "tools/arguments").exists()
         review()
         terminal.send(b"\x1b[Z\r")  # Confirm from default Cancel
@@ -55,7 +56,7 @@ def terminal_transfer(command, directory, url, direction, evidence):
         terminal.wait_for_screen("complete: 13 bytes")
         terminal.resize(100, 30)
         terminal.send(b"\x1b")
-        terminal.wait_for_screen("Containers", absent=("review before copying",))
+        terminal.wait_for_screen(containers, absent=("review before copying",))
         terminal.send(b"\x1b")
         terminal.wait_for_screen("pods(team)[1]", absent=("Containers ·",))
         terminal.send(b"\x11")

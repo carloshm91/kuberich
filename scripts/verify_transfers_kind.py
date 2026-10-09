@@ -354,7 +354,7 @@ def native_attach(cluster: OwnedCluster, environment: dict[str, str]) -> None:
     with TerminalSession(command, directory, environment=environment) as terminal:
         terminal.wait_for_screen("pods(" + NAMESPACE + ")[1]", timeout=45)
         terminal.send(b":attach\r")
-        terminal.wait_for_screen("Containers")
+        terminal.wait_for_screen(f"containers({NAMESPACE}/{POD})[5]")
         # Stable container declaration order keeps app first; init/debug follow.
         terminal.send(b"a")
         terminal.wait_for_screen("OWNED-ATTACH> ", timeout=30)
@@ -367,7 +367,7 @@ def native_attach(cluster: OwnedCluster, environment: dict[str, str]) -> None:
         terminal.send(b"printf 'OWNED_%s\\n' REATTACHED\n")
         terminal.wait_for_screen("OWNED_REATTACHED", timeout=20)
         terminal.send(b"\x1d")
-        terminal.wait_for_screen("Containers")
+        terminal.wait_for_screen(f"containers({NAMESPACE}/{POD})[5]")
         terminal.send(b"\x1b")
         terminal.wait_for_screen("pods(" + NAMESPACE + ")[1]")
         terminal.send(b"\x11")

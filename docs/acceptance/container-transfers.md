@@ -80,6 +80,17 @@ changed paths produce an inspection message. The expanded boundary/Pilot/transpo
 seconds**, including concurrent replacements/additions/renames, failed destination
 open, publication cancellation and descriptor closure even when initial cleanup
 fails. Final whole-candidate qualification remains required below.
+Required hosted verification then exposed ambiguous native-test readiness: the
+pod header already contained the Containers hint before the container table
+mounted. Native drivers now wait for the scoped table border. The Python 3.14
+supply-chain generator also failed without identifying the missing evidence
+file; isolated Python 3.14 generation passed, so its cause is not established.
+Failed generation now retains its command log/partial reports and reports the
+rejected filename, while the same complete-evidence gate remains mandatory.
+The corrected source/fresh-wheel native attach/copy drivers and supply-chain
+decision regressions passed **73 cases in 52.37 seconds** on actual Python 3.14.3.
+The earlier hosted Linux 3.12/3.13 jobs passed their full 3,632-case suites and
+coverage gates; that superseded run does not qualify the final corrected head.
 Earlier failed/superseded receipts and the interrupted superseded full suites are
 retained and are not counted as passes.
 
@@ -97,8 +108,9 @@ replacement, missing tar, read-only refusal, interrupted download retaining the
 local destination, observed partial upload with no retry, native attach/detach/
 reattach/restoration, unchanged source configuration and private-state cleanup.
 The owned cluster was deleted and absence verified. No maintainer/cloud context
-was used. The metadata/implicit-directory refinement passed a frozen-head rerun. The later
-PAX-size correction requires a fresh frozen-head rerun and required hosted verifier.
+was used. The PAX-size and descriptor-anchored directory refinements passed a
+frozen-head rerun and the Linux 3.12 hosted verifier. The corrected native driver
+and final candidate still require current-head qualification.
 
 Receipts under `artifacts/container-transfer-48` are ignored private test artifacts;
 GitHub retains final-head hosted artifacts. Failed fixture setup exposed an exec

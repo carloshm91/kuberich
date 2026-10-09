@@ -23,7 +23,7 @@ from packaging.version import Version
 
 def digest(path: Path) -> str:
     if path.is_symlink() or not path.is_file():
-        raise ValueError("Evidence must be a regular, non-symlink file")
+        raise ValueError(f"Evidence must be a regular, non-symlink file: {path.name!r}")
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 

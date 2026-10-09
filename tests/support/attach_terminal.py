@@ -56,7 +56,7 @@ def terminal_attach(command, directory, url, scenario, evidence):
     ) as terminal:
         terminal.wait_for_screen("pods(team)[1]")
         terminal.send(b":attach\r")
-        terminal.wait_for_screen("Containers")
+        terminal.wait_for_screen("containers(team/api)[1]")
         terminal.send(b"a")
         terminal.wait_for_screen("OWNED ATTACH READY")
         arguments = json.loads((tools / "argv").read_text())
@@ -87,7 +87,7 @@ def terminal_attach(command, directory, url, scenario, evidence):
                 if scenario == "failure"
                 else "Attach interrupted"
                 if scenario == "interrupt"
-                else "Containers"
+                else "containers(team/api)[1]"
             )
             if scenario == "eof":
                 terminal.wait_for_screen("Attach closed")
