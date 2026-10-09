@@ -20,6 +20,7 @@ def test_real_terminal_navigation_resize_and_quit(tmp_path: Path, exit_key: byte
         terminal.wait_for_screen("/ //_/_  KubeRich", since=marker)
         terminal.wait_for_screen("<n / :ns> Namespaces")
         terminal.wait_for_screen("<?> Help")
+        terminal.wait_for_screen("<l/L> Logs / aggregate")
         marker = terminal.resize(50, 16)
         terminal.wait_for(b"Namespace:", since=marker)
         terminal.send(exit_key)

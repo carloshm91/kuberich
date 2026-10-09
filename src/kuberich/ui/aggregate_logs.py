@@ -315,7 +315,7 @@ class AggregateLogScreen(LogScreen):
             return valid()
 
     def _display_changed(self) -> None:
-        self.body._cache.clear()
+        self.body.invalidate()
         super()._display_changed()
 
     def _status(self) -> None:

@@ -1,6 +1,7 @@
 """Actual HTTP log output, Pilot focus/navigation and owned stream cleanup."""
 
 import asyncio
+import json
 import logging
 from pathlib import Path
 
@@ -76,6 +77,14 @@ async def test_live_view_search_vim_modes_copy_save_resize_and_return(tmp_path, 
             before = app.resources.capture_viewport()
             screen = await open_logs(app, pilot)
             await wait_for(lambda: len(screen.body.rows) == 80)
+            base_style = screen.body.rich_style
+            plain_segments = tuple(screen.body.rows[0][1][0])
+            assert "[red]literal[/red]" in "".join(segment.text for segment in plain_segments)
+            assert all(
+                segment.style.color == base_style.color
+                and segment.style.bgcolor == base_style.bgcolor
+                for segment in plain_segments
+            )
             # Retention/layout publish before Textual's deferred viewport refresh.
             await wait_for(lambda: screen.body.follow and screen.body.scroll_y > 0)
             await pilot.pause()
@@ -104,6 +113,22 @@ async def test_live_view_search_vim_modes_copy_save_resize_and_return(tmp_path, 
             await pilot.press("slash", *"line-00", "enter", "n", "N")
             await pilot.pause()
             assert app.focused is screen.body and len(screen.body.matches) == 10
+            highlighted_segments = tuple(
+                segment for strip in screen.body.rows[0][1] for segment in strip
+            )
+            assert (
+                "".join(
+                    segment.text
+                    for segment in highlighted_segments
+                    if segment.style.reverse and segment.style.bold
+                )
+                == "line-00"
+            )
+            assert all(
+                segment.style.color == base_style.color
+                and segment.style.bgcolor == base_style.bgcolor
+                for segment in highlighted_segments
+            )
             assert "Matching line" in screen.message and not screen.body.follow
             await pilot.press("m", "ctrl+y")
             assert screen.history.marks
@@ -500,6 +525,18 @@ async def test_high_volume_batches_bound_history_layout_and_head_stops_at_oldest
             assert len(screen.body._cache) == 5000
             assert screen.body.render_batches < 100
             assert "10000 dropped" in str(screen.status.content)
+            await pilot.resize_terminal(100, 35)
+            await pilot.press("g")
+            visible_cache_peak = 0
+            for _ in range(12):
+                await pilot.press("ctrl+f")
+                visible_cache_peak = max(visible_cache_peak, len(screen.body._strips))
+                assert len(screen.body._strips) <= 128
+            assert visible_cache_peak == 128
+            anchor = screen.body.first_visible
+            await pilot.resize_terminal(40, 12)
+            await pilot.pause()
+            assert screen.body.first_visible == anchor and not screen.body.follow
             await pilot.press("g", "m", "w")
             await pilot.pause()
             assert not screen.body.follow and screen.history.marks
@@ -509,4 +546,45 @@ async def test_high_volume_batches_bound_history_layout_and_head_stops_at_oldest
             assert len(screen.history.entries) == 1000
             assert "line-00000" in screen.history.entries[0].line.text
             assert "tailLines" not in requests[-1] and requests[-1]["follow"] == "false"
+            await wait_for(
+                lambda: (
+                    len(screen.body.rows) == 1000
+                    and screen.body.rows[0][0] == screen.history.entries[0].number
+                )
+            )
+            assert screen.body._strips and len(screen.body._strips) <= 128
+            assert all(
+                number in screen.body._cache and line is screen.body._cache[number][1][offset]
+                for (number, offset), (line, _) in screen.body._strips.items()
+            )
+            await pilot.resize_terminal(100, 35)
+            await pilot.press("g")
+            await pilot.pause()
+            assert screen.body.first_visible == (screen.history.entries[0].number, 0)
+            actual = screen.body.render_line(0).text
+            assert actual.startswith("  2026-10-05T12:00:00Z line-00000 你好")
+            assert "line-14999" not in actual and "line-10000" not in actual
+            evidence = Path("artifacts/ui")
+            evidence.mkdir(parents=True, exist_ok=True)
+            (evidence / "log-layout-cache.json").write_text(
+                json.dumps(
+                    {
+                        "delivered_lines": 15000,
+                        "retained_tail_lines": 5000,
+                        "visible_strip_limit": 128,
+                        "peak_visible_strips": visible_cache_peak,
+                        "resize_anchor": anchor,
+                        "head_retained_lines": len(screen.history.entries),
+                        "head_visible_strips": len(screen.body._strips),
+                        "head_identity_current": all(
+                            number in screen.body._cache
+                            and line is screen.body._cache[number][1][offset]
+                            for (number, offset), (line, _) in screen.body._strips.items()
+                        ),
+                        "rendered_head_text": actual,
+                    },
+                    indent=2,
+                )
+                + "\n"
+            )
             await pilot.press("escape")

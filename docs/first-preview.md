@@ -26,7 +26,25 @@ current/Previous enrollment without reopen, Deployment/CronJob ownership,
 ephemeral sources, Pod replacement and drained
 cleanup; its unique disposable cluster was deleted. These are local draft
 receipts: final frozen source/platform/coverage/install qualification remains
-required. See [controls and limits](log-viewer.md#all-container-and-workload-logs-s06-54)
+required. The first frozen hosted source failed four existing header/terminal
+cases because a thirteenth shortcut clipped Help; the paired `l/L` hint corrects
+that regression without weakening the assertions. All four native jobs failed;
+Linux 3.12 and 3.13 additionally exceeded the 150-ms full-history heartbeat
+limit. Failed hosted and reproduced local sequences remain diagnostic evidence.
+Rendering now retains immutable styled segments and limits expensive visible
+Strip caches to 128 entries. It preserves complete retained layouts and public
+navigation. Earlier direct-Strip and fixture-isolation attempts still exceeded
+150 ms; those failed receipts remain preserved. The lightweight layout passed
+an ordinary Python 3.13 64-case sequence in 185.98 seconds at 120.06 ms, with
+normal GC and the unchanged 150-ms limit.
+The correction cohort passed sixteen layout/UI/source/fresh-installed PTY cases
+in 79.72 seconds. The latest Python 3.12 affected cohort passed 217 cases in
+202.47 seconds, including sequential 5,000-record/control/replay cycles and
+public Escape/drain at a 126.70-ms maximum heartbeat with normal GC enabled.
+It also checks 15,000 delivered lines, 5,000 retained layouts, paging/cache bounds,
+resize anchors and actual fresh Head-window text. Fresh
+full native qualification remains required. See
+[controls and limits](log-viewer.md#all-container-and-workload-logs-s06-54)
 and [acceptance evidence](acceptance/aggregated-logs.md). Embedded-shell
 scrollback/search/copy qualification remains open in #123; no provider trial or
 publication is part of this checkpoint.

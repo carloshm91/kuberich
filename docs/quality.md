@@ -134,6 +134,16 @@ pre-open 400 evidence changes, manual admission, same-name UID churn, expired
 selection, source/status bounds, noise/slow-source heartbeat and detached-export
 cleanup before context-client close. Source and fresh-installed console/module
 PTYs exercise actual controls, resize, exit and terminal restoration.
+The 5,000-row UI benchmark collects prior closed-fixture garbage only before
+creating its current app. It then measures two full-history layout/format/
+timestamp/copy/save and Current/Previous cycles in that same app, with normal GC
+enabled and the unchanged 150-ms heartbeat limit. Phase/CPU/GC diagnostics are
+retained under `artifacts/ui/aggregate-heartbeat.json`. A separate 15,000-line
+case retains 5,000 lightweight layouts, saturates the 128-entry visible Strip
+cache through public paging, preserves its resize anchor, and checks current
+identity and actual rendered text after a fresh Head 1000 window. Its receipt is
+`artifacts/ui/log-layout-cache.json`. These additional caches are separate from
+the text-retention byte bound; sustained-load/RSS qualification remains Q03.
 Required Linux 3.12 `scripts.verify_aggregate_logs_kind` verifies actual
 Deployment→ReplicaSet→Pod and CronJob→Job→Pod membership, matching-label rejection,
 regular/init/ephemeral sources, starting→logs without replay, Pod replacement and

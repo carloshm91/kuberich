@@ -297,6 +297,7 @@ async def test_shortcuts_reflow_when_logo_width_settles_without_another_header_r
         assert app.header.region == header_region and actions.content_region.width == 49
         hints = str(actions.content)
         assert "<n / :ns> Namespaces" in hints and "<?> Help" in hints
+        assert "<l/L> Logs / aggregate" in hints
         assert all(len(line) <= actions.content_region.width for line in hints.splitlines())
 
 

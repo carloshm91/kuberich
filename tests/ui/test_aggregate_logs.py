@@ -1,19 +1,24 @@
 """Public aggregate controls against live owned HTTP, with source identity and lifetime."""
 
 import asyncio
+import gc
 import json
 import logging
+import sys
+import time
+from collections import deque
 from copy import deepcopy
 from pathlib import Path
 
 import pytest
-from textual.widgets import Input, OptionList
+from textual.widgets import Input, OptionList, Static
 
 from kuberich.config.schema import Settings
 from kuberich.domain.aggregate_logs import AggregateHistory, LogSource
 from kuberich.domain.logs import LogDecoder
 from kuberich.domain.views import ViewStatus
 from kuberich.services.processes import _finish_owned
+from kuberich.services.resources import parse_owned
 from kuberich.ui.aggregate_logs import AggregateLogScreen, LogSourcesScreen
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.containers import ContainerScreen
@@ -184,6 +189,10 @@ async def test_source_picker_uid_recreation_expired_selection_and_manual_space(t
             await wait_for(lambda: app.resources.row_count == 1)
             app._submit_command(":rs")
             await wait_for(lambda: app.standard_table.row_count == 1)
+            await pilot.press("f1")
+            help_text = str(app.screen.query_one("#help-content", Static).content)
+            assert "Shift+L / :logsall Aggregate Pod/workload logs" in help_text
+            await pilot.press("escape")
             await pilot.press("L")
             await wait_for(lambda: isinstance(app.screen, AggregateLogScreen))
             screen = app.screen
@@ -320,58 +329,209 @@ async def test_empty_sources_and_generic_core_route_guard(tmp_path):
 async def test_full_retained_history_format_heartbeat_clipboard_bound_save_failure_and_previous(
     tmp_path,
 ):
+    # Prior run_test apps can retain large closed fixture graphs; isolate this
+    # benchmark before creating its app. GC stays enabled throughout live work.
+    assert gc.isenabled()
+    preparation_started = time.monotonic()
+    preparation_collected = gc.collect()
+    preparation_seconds = time.monotonic() - preparation_started
     api = AggregateApi(count=1)
     async with workspace_api(ns, api.handler) as url:
         app = app_for(tmp_path, url)
         async with app.run_test() as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
+            await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
+            background_watches = api.watch_active
             await pilot.press("L")
             await wait_for(
                 lambda: isinstance(app.screen, AggregateLogScreen) and bool(app.screen.body.rows)
             )
             screen = app.screen
-            history = AggregateHistory()
             line = LogDecoder().feed(("2026-10-09T12:00:00Z " + "x" * 350 + "\n").encode())[0]
-            for source in range(10):
-                identity = LogSource(
-                    "team", f"historical-{source}", f"historic-uid-{source}", "app"
+            maximum_prepared_records = maximum_combined_records = 0
+
+            def full_history(other_records=0):
+                nonlocal maximum_prepared_records, maximum_combined_records
+                history = AggregateHistory()
+                for source in range(10):
+                    identity = LogSource(
+                        "team", f"historical-{source}", f"historic-uid-{source}", "app"
+                    )
+                    for _ in range(500):
+                        history.retain(identity, source + 1, line)
+                maximum_prepared_records = max(maximum_prepared_records, len(history.records))
+                maximum_combined_records = max(
+                    maximum_combined_records, other_records + len(history.records)
                 )
-                for _ in range(500):
-                    history.retain(identity, source + 1, line)
-            screen.aggregate = screen.history = history
-            screen._display_changed()
+                return history
+
+            history = full_history()
             gaps = []
+            phase = "initial layout"
+            slow_pulses = deque(maxlen=32)
+            collections = deque(maxlen=64)
+            slow_collections = deque(maxlen=16)
+            collecting = {}
+
+            def collect(event, info):
+                now = time.monotonic()
+                collections.append({"event": event, "generation": info["generation"], "time": now})
+                if event == "start":
+                    stack = []
+                    if info["generation"] == 2:
+                        frame = sys._getframe()
+                        for _ in range(16):
+                            stack.append(
+                                {
+                                    "file": frame.f_code.co_filename,
+                                    "line": frame.f_lineno,
+                                    "function": frame.f_code.co_name,
+                                }
+                            )
+                            frame = frame.f_back
+                            if frame is None:
+                                break
+                        del frame
+                    collecting[info["generation"]] = now, phase, stack
+                else:
+                    started, at_phase, stack = collecting.pop(info["generation"], (now, phase, []))
+                    if now - started > 0.01:
+                        slow_collections.append(
+                            {
+                                "generation": info["generation"],
+                                "phase": at_phase,
+                                "start": started,
+                                "end": now,
+                                "seconds": now - started,
+                                "collected": info.get("collected", 0),
+                                "uncollectable": info.get("uncollectable", 0),
+                                "allocation_stack": stack,
+                            }
+                        )
 
             async def pulse():
                 before = asyncio.get_running_loop().time()
+                cpu_before = time.process_time()
+                main_before = time.thread_time()
                 while True:
                     await asyncio.sleep(0.005)
                     now = asyncio.get_running_loop().time()
                     gaps.append(now - before)
+                    cpu, main = time.process_time(), time.thread_time()
+                    if now - before > 0.05:
+                        slow_pulses.append(
+                            {
+                                "phase": phase,
+                                "start": before,
+                                "end": now,
+                                "wall_seconds": now - before,
+                                "cpu_seconds": cpu - cpu_before,
+                                "main_cpu_seconds": main - main_before,
+                            }
+                        )
                     before = now
+                    cpu_before, main_before = cpu, main
 
+            gc.callbacks.append(collect)
             heartbeat = asyncio.create_task(pulse())
+            completed_rounds = 0
+            after_close = None
             try:
-                await wait_for(lambda: len(screen.body.rows) == 5000)
-                baseline = api.requests.copy()
-                await pilot.press("J", "t", "ctrl+y")
-                await wait_for(lambda: "Copy exceeds 1 MiB" in str(screen.status.content))
-                assert api.requests == baseline and len(history.records) == 5000
-                destination = tmp_path / "existing.log"
-                destination.write_text("keep-existing")
-                await pilot.press("ctrl+s")
-                app.screen.query_one("#log-value", Input).value = str(destination)
-                await pilot.press("enter")
-                await wait_for(lambda: screen._save_task.done())
-                assert "Cannot save logs" in str(screen.status.content)
-                assert destination.read_text() == "keep-existing"
-                assert gaps and max(gaps) < 0.15
-                await pilot.press("v")
-                await wait_for(lambda: "1 no previous" in str(screen.status.content))
-                assert not screen.aggregate.records
-                await pilot.press("v")
-                await wait_for(lambda: api.requests["pod-00", "app"] == 2)
+                for iteration in (1, 2):
+                    if iteration == 2:
+                        # Refill after clearing the previous window, measuring
+                        # delivery without retaining two full input histories.
+                        phase = "round 2 input delivery"
+                        remaining = len(screen.aggregate.records)
+                        history = await parse_owned(
+                            lambda remaining=remaining: full_history(remaining)
+                        )
+                    phase = f"round {iteration} initial layout"
+                    screen.aggregate = screen.history = history
+                    batches = screen.body.render_batches
+                    screen._display_changed()
+                    await wait_for(
+                        lambda batches=batches: (
+                            screen.body.render_batches > batches and len(screen.body.rows) == 5000
+                        )
+                    )
+                    baseline = api.requests.copy()
+                    phase = f"round {iteration} mode/timestamp/copy"
+                    await pilot.press("J", "t", "ctrl+y")
+                    await wait_for(lambda: "Copy exceeds 1 MiB" in str(screen.status.content))
+                    assert api.requests == baseline and len(history.records) == 5000
+                    destination = tmp_path / "existing.log"
+                    destination.write_text("keep-existing")
+                    phase = f"round {iteration} save"
+                    await pilot.press("ctrl+s")
+                    app.screen.query_one("#log-value", Input).value = str(destination)
+                    await pilot.press("enter")
+                    await wait_for(lambda: screen._save_task.done())
+                    assert "Cannot save logs" in str(screen.status.content)
+                    assert destination.read_text() == "keep-existing"
+                    assert gaps and max(gaps) < 0.15, list(slow_pulses)
+                    phase = f"round {iteration} previous/current transitions"
+                    await pilot.press("v")
+                    await wait_for(lambda: "1 no previous" in str(screen.status.content))
+                    assert not screen.aggregate.records
+                    await pilot.press("v")
+                    await wait_for(
+                        lambda iteration=iteration: api.requests["pod-00", "app"] == iteration + 1
+                    )
+                    await wait_for(lambda: bool(screen.body.rows))
+                    assert gaps and max(gaps) < 0.15, list(slow_pulses)
+                    completed_rounds += 1
+                phase = "leave/drain viewer"
+                await pilot.press("escape")
+                await wait_for(lambda: not app._aggregate_screens)
+                await wait_for(lambda: api.active == 0 and api.watch_active == background_watches)
+                assert len(app.screen_stack) == 1
+                assert screen.closed and screen.owner.closed and not screen.owner._owned
+                assert all(
+                    state.task is None or state.task.done()
+                    for state in screen.owner.states.values()
+                )
+                after_close = {
+                    "viewer_closed": screen.closed,
+                    "owner_closed": screen.owner.closed,
+                    "owner_tasks": len(screen.owner._owned),
+                    "active_readers": sum(
+                        state.status == "active" for state in screen.owner.states.values()
+                    ),
+                    "registry_size": len(app._aggregate_screens),
+                    "api_log_streams": api.active,
+                    "api_watches": api.watch_active,
+                    "background_watches": background_watches,
+                }
+                assert gaps and max(gaps) < 0.15, list(slow_pulses)
             finally:
+                gc.callbacks.remove(collect)
                 heartbeat.cancel()
                 await asyncio.gather(heartbeat, return_exceptions=True)
-            await pilot.press("escape")
+                evidence = Path("artifacts/ui")
+                evidence.mkdir(parents=True, exist_ok=True)
+                (evidence / "aggregate-heartbeat.json").write_text(
+                    json.dumps(
+                        {
+                            "fixture_preparation": {
+                                "before_app_creation": True,
+                                "collected": preparation_collected,
+                                "seconds": preparation_seconds,
+                            },
+                            "gc_enabled": gc.isenabled(),
+                            "gc_thresholds": gc.get_threshold(),
+                            "requested_full_history_rounds": 2,
+                            "completed_full_history_rounds": completed_rounds,
+                            "maximum_simultaneously_prepared_records": maximum_prepared_records,
+                            "maximum_retained_plus_prepared_records": maximum_combined_records,
+                            "after_close": after_close,
+                            "max_gap_seconds": max(gaps, default=0),
+                            "limit_seconds": 0.15,
+                            "slow_pulses": list(slow_pulses),
+                            "gc": list(collections),
+                            "slow_gc": list(slow_collections),
+                        },
+                        indent=2,
+                    )
+                    + "\n"
+                )
