@@ -173,7 +173,7 @@
       ],
       "source": "internal/dao/registry.go",
       "status": "planned",
-      "difference": "C02 discovery and B05 standard UI commands use discovered groups/versions with scoped LIST/WATCH/GET. Dynamic/CRD server columns remain B06/C05; full CORE01 parity is not claimed.",
+      "difference": "C05 resolves preferred GVR/scope and aliases, supplies full-object generic LIST/WATCH/GET with bounded Table metadata and scoped JSON fallback, and refreshes installed/removed APIs on the owned client. B06 generic UI commands/columns and U02/U06 custom configuration/jumps remain pending; full parity is not claimed.",
       "partial_evidence": [
         "docs/resource-discovery.md",
         "tests/unit/test_resources.py",
@@ -185,7 +185,12 @@
         "tests/ui/test_standard_resources.py",
         "tests/ui/test_standard_table.py",
         "tests/terminal/test_standard_resources.py",
-        "scripts/standard_kind.py"
+        "scripts/standard_kind.py",
+        "docs/acceptance/custom-resources.md",
+        "tests/unit/test_tables.py",
+        "tests/contract/test_custom_resources.py",
+        "tests/contract/test_custom_workspace.py",
+        "scripts/verify_custom_resources_kind.py"
       ]
     },
     {
@@ -584,7 +589,15 @@
       ],
       "source": "internal/view/custom_jump.go",
       "status": "planned",
-      "difference": ""
+      "difference": "C05 resolves preferred GVR/scope and aliases, supplies full-object generic LIST/WATCH/GET with bounded Table metadata and scoped JSON fallback, and refreshes installed/removed APIs on the owned client. B06 generic UI commands/columns and U02/U06 custom configuration/jumps remain pending; full parity is not claimed.",
+      "partial_evidence": [
+        "docs/resource-discovery.md",
+        "docs/acceptance/custom-resources.md",
+        "tests/unit/test_tables.py",
+        "tests/contract/test_custom_resources.py",
+        "tests/contract/test_custom_workspace.py",
+        "scripts/verify_custom_resources_kind.py"
+      ]
     },
     {
       "id": "LOG01",

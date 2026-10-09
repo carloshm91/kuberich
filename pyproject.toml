@@ -146,6 +146,7 @@ critical_modules = [
     "src/kuberich/config/catalog.py",
     "src/kuberich/domain/connections.py",
     "src/kuberich/domain/resources.py",
+    "src/kuberich/domain/tables.py",
     "src/kuberich/domain/watches.py",
     "src/kuberich/domain/views.py",
     "src/kuberich/domain/pods.py",

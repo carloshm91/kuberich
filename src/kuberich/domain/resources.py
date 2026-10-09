@@ -26,6 +26,13 @@ def resource_text(value: Any) -> str:
     return validate_argument(value)
 
 
+def resource_name(value: Any) -> str:
+    name = resource_text(value)
+    if name in {".", ".."} or "/" in name or "%" in name:
+        raise AppError("Invalid resource name.")
+    return name
+
+
 def api_segment(value: Any) -> str:
     result = resource_text(value)
     if len(result) > 253 or not re.fullmatch(r"[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?", result):
@@ -134,6 +141,69 @@ class Discovery:
             return aliases[0]
         raise AppError("Resource/version was not discovered. Check discovery and permissions.")
 
+    @property
+    def preferred_resources(self) -> tuple[ApiResource, ...]:
+        """One descriptor per group/resource, in the server's preference order."""
+        preferred: dict[tuple[str, str], ApiResource] = {}
+        for resource in self.resources:
+            preferred.setdefault((resource.group, resource.name), resource)
+        return tuple(preferred.values())
+
+    def resolve(
+        self, name: str, *, group: str | None = None, version: str | None = None
+    ) -> ApiResource:
+        """Resolve an advertised family across groups without guessing endpoints.
+
+        Multiple served versions do not make an alias ambiguous. A canonical
+        plural takes precedence over aliases, and explicit versions never fall
+        back to another version. ``find`` retains its existing core-group default.
+        """
+        api_segment(name)
+        if group:
+            api_segment(group)
+        if version is not None:
+            api_segment(version)
+        available = tuple(
+            resource for resource in self.resources if group is None or resource.group == group
+        )
+        canonical = tuple(resource for resource in available if resource.name == name)
+        matching = canonical or tuple(
+            resource for resource in available if name in resource.aliases
+        )
+        families = {(resource.group, resource.name) for resource in matching}
+        if len(families) > 1:
+            raise AppError("Resource alias is ambiguous; specify its canonical name and API group.")
+        candidates = tuple(
+            resource
+            for resource in available
+            if (resource.group, resource.name) in families
+            and (version is None or resource.version == version)
+        )
+        if not candidates:
+            raise AppError("Resource/version was not discovered. Check discovery and permissions.")
+        return candidates[0]
+
+
+@dataclass(frozen=True)
+class ServerColumn:
+    name: str
+    type: str
+    format: str = ""
+    description: str = ""
+    priority: int = 0
+
+
+type ServerCell = str | int | float | bool | None
+
+
+@dataclass(frozen=True, repr=False)
+class ServerRow:
+    """Immutable presentation metadata; never part of the Kubernetes manifest."""
+
+    columns: tuple[ServerColumn, ...]
+    cells: tuple[ServerCell, ...]
+    size_bytes: int
+
 
 @dataclass(frozen=True, repr=False)
 class ResourceRecord:
@@ -143,6 +213,7 @@ class ResourceRecord:
     resource_version: str | None
     created_at: datetime | None
     _manifest: bytes = field(repr=False)
+    server: ServerRow | None = field(default=None, repr=False)
 
     @property
     def manifest(self) -> dict[str, Any]:
@@ -151,7 +222,7 @@ class ResourceRecord:
 
     @property
     def size_bytes(self) -> int:
-        return len(self._manifest)
+        return len(self._manifest) + (self.server.size_bytes if self.server is not None else 0)
 
 
 def resource_record(
@@ -164,14 +235,12 @@ def resource_record(
     ):
         raise AppError("Resource item does not match the discovered type.")
     metadata = resource_object(data.get("metadata"))
-    name = resource_text(metadata.get("name"))
+    name = resource_name(metadata.get("name"))
     uid = metadata.get("uid")
     if uid is not None:
         uid = resource_text(uid)
     elif "watch" in resource.verbs:
         raise AppError("A watchable resource item has no UID.")
-    if name in {".", ".."} or "/" in name or "%" in name:
-        raise AppError("Invalid resource name.")
     scope = metadata.get("namespace")
     if resource.namespaced:
         scope = namespace_name(resource_text(scope))
@@ -209,3 +278,4 @@ class ResourceSnapshot:
     namespace: str | None
     resource_version: str | None
     items: tuple[ResourceRecord, ...]
+    columns: tuple[ServerColumn, ...] = ()

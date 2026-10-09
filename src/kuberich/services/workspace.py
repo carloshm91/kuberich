@@ -198,6 +198,48 @@ class WorkspaceService:
             )
         )
 
+    @property
+    def discovery(self) -> Discovery | None:
+        """Only expose catalogue data belonging to the currently owned client."""
+        identity = self.sessions.observation.identity
+        if (
+            not self._closed
+            and identity is not None
+            and identity == self.store.observation.connection.identity
+            and identity.context == self.store.observation.context
+            and self._discovery is not None
+            and self._discovery[0] is self.sessions.client
+        ):
+            return self._discovery[1]
+        return None
+
+    def refresh_discovery(self) -> asyncio.Task[None]:
+        context = self._current_context()
+        self._discovery = None
+        connection = self.store.observation.connection
+        revision = self.store.begin(context, connection)
+        return self._schedule(
+            _Selection(
+                revision,
+                context,
+                self.selection,
+                change_namespace=connection.namespace != self.sessions.observation.namespace,
+                namespace=connection.namespace,
+            )
+        )
+
+    def select_discovered(
+        self, name: str, *, group: str | None = None, version: str | None = None
+    ) -> asyncio.Task[None]:
+        self._current_context()
+        discovery = self.discovery
+        if discovery is None:
+            raise AppError("Wait for the current resource catalogue or refresh discovery.")
+        resource = discovery.resolve(name, group=group, version=version)
+        return self.select_resource(
+            ResourceSelection(resource.name, resource.group, version, server_columns=True)
+        )
+
     async def _stop_watch(self) -> None:
         task = self._watch
         if task is not None:
@@ -268,7 +310,7 @@ class WorkspaceService:
                 return
             client = self.sessions.client
             assert client is not None and observation.identity is not None
-            reader = ResourceReader(client)
+            reader = ResourceReader(client, tables=selection.resource.server_columns)
             if self._discovery is None or self._discovery[0] is not client:
                 discovery = await reader.discover()
                 if selection.revision != self.store.observation.revision:

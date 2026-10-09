@@ -119,6 +119,18 @@ rather than masquerading as a nonexistent remote path.
 
 ## Honest limits
 
+Final-head qualification completed after the corrections above: PR
+[#164](https://github.com/carloshm91/kuberich/pull/164) merged at signed squash
+`7a1cb52de7fd027ee2644a24c78f3749fa8f988a`. All four required jobs at
+`83974a9482f7da5da390267c9c0fabc03a39fefb` passed **3,635 cases each**, 39
+critical modules at **100% lines and branches**, production lines at least
+**99.19%**, branches at least **97.10%** and changed lines at least **98.59%**.
+Linux 3.12 passed all ten then-required kind rehearsals and installed quickstart.
+The final live [receipt](https://github.com/carloshm91/kuberich/issues/48#issuecomment-6078045340)
+records exact per-platform counts, run IDs and archives. Earlier statements
+about pending checks describe their preceding attempts, not the merged status.
+Site readiness passed independently; no website or artifact was published.
+
 The remote container needs tar; uploads also need silent POSIX test and an
 existing parent. Local tar is unnecessary. Selected stdin/TTY configuration
 controls attachment behavior; creating ephemeral debug containers remains #78.

@@ -30,11 +30,13 @@ async def stable_watch(request: web.Request, *values: dict) -> web.StreamRespons
 async def workspace_api(
     namespace_handler: Callable[[web.Request], Awaitable[web.StreamResponse]],
     resource_handler: Callable[[web.Request], Awaitable[web.StreamResponse]] | None = None,
+    *,
+    discovery_roots: Callable[[], dict[str, dict]] | None = None,
 ) -> AsyncIterator[str]:
     async def handler(request: web.Request) -> web.StreamResponse:
         if request.path == "/api/v1/namespaces" and "watch" not in request.query:
             return await namespace_handler(request)
-        roots = legacy_roots()
+        roots = discovery_roots() if discovery_roots is not None else legacy_roots()
         if request.path in roots:
             return web.json_response(roots[request.path])
         if resource_handler is not None:

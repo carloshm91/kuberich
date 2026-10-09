@@ -8,6 +8,7 @@ from contextlib import aclosing
 
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, HttpProblem
 from kuberich.domain.resources import ApiResource
+from kuberich.domain.tables import TABLE_ACCEPT, TableDecoder, TableUnavailable
 from kuberich.domain.watches import (
     Recovery,
     SyncStatus,
@@ -19,7 +20,7 @@ from kuberich.domain.watches import (
     watch_event,
 )
 from kuberich.errors import AppError
-from kuberich.services.resources import ResourceReader
+from kuberich.services.resources import ResourceReader, parse_owned
 
 Sink = Callable[[SyncUpdate], Awaitable[None]]
 
@@ -52,13 +53,21 @@ class ListWatch:
         self.monotonic = monotonic
 
     async def _event(
-        self, resource: ApiResource, payload: object, namespace: str | None
+        self,
+        resource: ApiResource,
+        payload: object,
+        namespace: str | None,
+        decoder: TableDecoder | None = None,
     ) -> WatchEvent:
-        task = asyncio.create_task(asyncio.to_thread(watch_event, resource, payload, namespace))
         try:
-            return await asyncio.shield(task)
-        except asyncio.CancelledError:
-            await asyncio.gather(task, return_exceptions=True)
+            return await parse_owned(
+                lambda: (
+                    decoder.event(payload)
+                    if decoder is not None
+                    else watch_event(resource, payload, namespace)
+                )
+            )
+        except TableUnavailable:
             raise
         except AppError:
             raise ConnectionProblem(
@@ -74,6 +83,7 @@ class ListWatch:
         await sink(SyncUpdate(SyncStatus.LOADING))
         while True:
             opened = None
+            table = self.reader.uses_tables(resource)
             try:
                 if state is None:
                     try:
@@ -84,14 +94,22 @@ class ListWatch:
                             "Invalid Kubernetes live collection snapshot.",
                         ) from None
                     await _emit(sink, SyncUpdate(SyncStatus.SNAPSHOT, state.snapshot))
-                stream = self.reader.session.watch_json(path, state.resource_version)
+                table = self.reader.uses_tables(resource)
+                decoder = TableDecoder(resource, namespace) if table else None
+                stream = (
+                    self.reader.session.watch_json(
+                        path, state.resource_version, accept=TABLE_ACCEPT, include_object=True
+                    )
+                    if table
+                    else self.reader.session.watch_json(path, state.resource_version)
+                )
                 async with aclosing(stream):
                     async for payload in stream:
                         if payload is None:
                             opened = self.monotonic()
                             await _emit(sink, SyncUpdate(SyncStatus.LIVE, state.snapshot))
                             continue
-                        event = await self._event(resource, payload, namespace)
+                        event = await self._event(resource, payload, namespace, decoder)
                         try:
                             changed = state.apply(event)
                         except AppError:
@@ -114,7 +132,19 @@ class ListWatch:
                 )
             except _ConsumerFailure as error:
                 raise error.problem from None
+            except TableUnavailable:
+                self.reader.disable_tables(resource)
+                await sink(SyncUpdate(SyncStatus.LOADING, state.snapshot if state else None))
+                state = None
+                failures = 0
+                continue
             except ConnectionProblem as error:
+                if table and isinstance(error, HttpProblem) and error.status in {406, 415}:
+                    self.reader.disable_tables(resource)
+                    await sink(SyncUpdate(SyncStatus.LOADING, state.snapshot if state else None))
+                    state = None
+                    failures = 0
+                    continue
                 problem = error
             # Only an established healthy stream resets consecutive failures.
             # Slow failed headers, LISTs and immediate EOFs still back off.

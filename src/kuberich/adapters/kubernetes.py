@@ -615,7 +615,13 @@ class KubernetesSession:
         return ceil(min(self.timeout, 60.0))
 
     async def watch_json(
-        self, path: str, resource_version: str, *, max_bytes: int = 8 * 1024 * 1024
+        self,
+        path: str,
+        resource_version: str,
+        *,
+        max_bytes: int = 8 * 1024 * 1024,
+        accept: str = "application/json",
+        include_object: bool = False,
     ) -> AsyncGenerator[dict[str, Any] | None, None]:
         """None signals an opened stream; complete JSON lines follow, without a queue."""
         duration = self.watch_seconds
@@ -628,8 +634,10 @@ class KubernetesSession:
             "allowWatchBookmarks": "true",
             "timeoutSeconds": str(duration),
         }
+        if include_object:
+            params["includeObject"] = "Object"
         try:
-            async with self._response(path, params, "application/json", lifetime) as response:
+            async with self._response(path, params, accept, lifetime) as response:
                 yield None
                 buffer = bytearray()
                 async for chunk in response.content.iter_chunked(16384):

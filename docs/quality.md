@@ -94,6 +94,15 @@ behavior; real EKS evidence remains a separate explicit test-context requirement
 C07 extends that same critical module with Azure mode/prompt/error and bounded
 bearer decisions. Native provider handoff also receives actual PTY and fresh-wheel
 checks for private stdout, declared stdin, Ctrl+C/cancel/SIGTERM and restoration.
+C05 #52 adds immutable bounded Table decoding in `domain/tables.py` to the
+critical 100% line/branch inventory. Real HTTP contracts cover generic GET,
+paged Table/JSON fallback, per-GVR negotiation, permission/error identity,
+renewed watches and repeatedly cancelled parser workers. The required Linux
+3.12 `scripts.verify_custom_resources_kind` checks real CRDs of both scopes,
+server columns/full objects, versions, alias collisions, install/remove refresh
+and actual restricted RBAC. Its receipt labels forced legacy/plain-JSON
+representations supplied by an owned loopback gateway; status denials are actual
+cluster responses. Visible generic custom-resource UI remains B06 #53.
 C08 adds bounded credential-response validation and captured proxy/TLS decisions
 in `domain/exec_credentials.py` and `domain/proxies.py` to the 100% critical
 inventory. Real token-file/certificate renewal, HTTP CONNECT and SOCKS5 contracts
@@ -212,7 +221,7 @@ There are no path filters or allowed matrix failures.
 
 Each selected job still runs the complete behavioral/terminal/packaging suite,
 independent coverage gates, build and supply-chain verification. Linux 3.12 keeps
-all ten actual disposable-cluster rehearsals. The macOS baseline is a development
+all eleven actual disposable-cluster rehearsals. The macOS baseline is a development
 check, not qualification of macOS 3.13/3.14. The planner refuses unknown events
 and non-main push/dispatch refs. PR checks stay on `pull_request`; a manual
 dispatch never substitutes for the required PR checks. Concurrency groups include
