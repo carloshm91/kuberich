@@ -83,3 +83,32 @@ The live [issue #166](https://github.com/carloshm91/kuberich/issues/166) records
 the exact required PR checks, source identity, manual dispatch, protected review
 and actual publication result. Do not infer hosting from a prepared workflow or
 proposed project name. Provider success closes this focused delivery, not #89.
+
+On 2026-10-09, PR #167 merged as
+`0cfa7153bd8617c3ece3f5641d5b7e539b497ae4`, tree-identical to qualified `b92dbe4`.
+All eight checks passed; each required Linux/macOS suite passed **3,783 cases**,
+with production coverage at least **99.196% lines / 97.182% branches**, all 40
+critical modules and changed executable lines at 100%.
+
+[Protected run 37947497284](https://github.com/carloshm91/kuberich/actions/runs/37947497284)
+published that exact source and manifest SHA-256
+`8661dbe055181e8aa73f18438c6d7724d1f1ed4a79f09d8527835e3d367035d7`.
+
+| Surface | Verified production URL | Deployment ID | Verified served files per host |
+| --- | --- | --- | --- |
+| Landing | https://kuberich-site.pages.dev | `46cc076a-aeda-4177-956d-29d4b59a8be4` | 31 |
+| Docs | https://kuberich-docs.pages.dev | `c621695d-30a1-4d7b-a6ba-4865d8e7dac4` | 30 |
+
+The successful receipt verifies every digest, response policy and custom 404 at
+both production and immutable deployment HTTPS URLs. Independent read-only
+production verification matched the retained manifest without provider
+credentials. Chrome evidence covers all 49 pages with zero accessibility
+violations, keyboard/copy/no-JS checks and no external requests.
+
+[First run 37946218846](https://github.com/carloshm91/kuberich/actions/runs/37946218846)
+remains failed/partial: its initial landing upload succeeded and initial HTTPS
+verification failed. The original receipt remains preserved. Before the controlled
+fresh retry, independent checks verified all landing digests/headers/404 at the
+initial deployment and production hosts. The retry completed both surfaces;
+no unmeasured root cause or rollback trial is claimed. Development notices/noindex
+remain, while custom domains/DNS, www, packages and application tags stay deferred.

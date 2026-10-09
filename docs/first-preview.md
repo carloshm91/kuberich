@@ -14,19 +14,22 @@ For your later installed preview, select an intentional context/resource:
 This template is not a claim that those placeholder resources exist.
 
 Exact tested local command:
-`uv run pytest tests/ui/test_custom_resources.py tests/contract/test_custom_projection.py tests/unit/test_generic_commands.py -q --tb=short --cov=kuberich --cov-branch --cov-report=json:artifacts/custom-browser-53/final-focused-coverage.json`:
-23 cases passed in 35.05 seconds, including schema/version/scope/history,
-malformed printer fallback, context/GVR/column races and reconnect recovery.
+`env COVERAGE_FILE=artifacts/custom-browser-53/final-corrections.coverage uv run pytest tests/unit/test_generic_commands.py tests/ui/test_app.py::test_unknown_and_empty_commands_do_not_echo_input_or_break_navigation tests/ui/test_navigation.py::test_narrow_completions_keep_selected_choice_visible_and_cursor_edits_hide_them tests/ui/test_custom_resources.py tests/contract/test_custom_projection.py tests/terminal/test_custom_resources.py -q --tb=short --cov=kuberich --cov-branch --cov-report=json:artifacts/custom-browser-53/final-corrections-coverage.json`:
+35 cases passed in 72.19 seconds, including schema/version/scope/history,
+malformed printer fallback, context/GVR/column races, reconnect, same-GVR
+recreation/redaction, deferred startup feedback and explicit core read-only guards.
+The rebased unit/session/process/navigation/context cohort passed 2,150 cases.
 The source native command
 `uv run pytest tests/terminal/test_custom_resources.py -q --tb=short`
 passed one case in 3.18 seconds with terminal restoration and redacted output.
 The actual cluster command is
-`uv run python -m scripts.verify_custom_resources_kind --kind artifacts/custom-browser-53/tools/kind --evidence artifacts/custom-browser-53/kind-final.json`:
-all nine checks passed, including real generic UI/live/removal recovery, and the
+`uv run python -m scripts.verify_custom_resources_kind --kind artifacts/custom-browser-53/tools/kind --evidence artifacts/custom-browser-53/kind-recreated.json`:
+all nine checks passed, including real generic UI/live/removal/recreation recovery, and the
 owned disposable cluster was deleted. Full source/platform/coverage/artifact
 qualification remains in progress on the issue branch. See
 [the guide](standard-resources.md#generic-discovered-resources-b06-53) and
 [acceptance evidence](acceptance/generic-resource-browser.md).
+
 ## Development website publication checkpoint: #166
 
 The maintainer authorized publishing the current landing and initial guides on
@@ -37,10 +40,18 @@ checks actual HTTPS file digests, headers and 404 routing. It retains source and
 deployment receipts, including partial failures. The exact dispatch command is
 `gh workflow run pages.yml --repo carloshm91/kuberich --ref main`.
 
-The live issue records actual publication status and measured provider URLs;
-workflow preparation alone does not establish successful hosting. Public packages,
-custom domains/DNS and `www` remain pending. Development notices and noindex stay
-visible. See [the procedure](website.md#development-publication-166).
+Both provider hosts are now live:
+[landing](https://kuberich-site.pages.dev) and
+[initial documentation](https://kuberich-docs.pages.dev).
+[Run 37947497284](https://github.com/carloshm91/kuberich/actions/runs/37947497284)
+published source `0cfa7153bd8617c3ece3f5641d5b7e539b497ae4`, manifest SHA-256
+`8661dbe055181e8aa73f18438c6d7724d1f1ed4a79f09d8527835e3d367035d7`.
+The protected job verified every served file, header and 404 at production and
+immutable deployment URLs; independent production verification matched the same
+manifest. The first partial/failed run remains preserved in
+[acceptance evidence](acceptance/pages-publication.md#actual-provider-acceptance).
+Public packages, custom domains/DNS and `www` remain pending. Development notices
+and noindex stay visible. See [the procedure](website.md#development-publication-166).
 
 ## Linux CI host checkpoint: #168
 
@@ -55,9 +66,13 @@ Exact tested command:
 and policy/site types, planning, build/metadata and both site checks passed;
 `node scripts/verify_site_browser.mjs` checked all 49 pages at desktop/mobile
 sizes with no accessibility violations. Application source and version are
-unchanged. The candidate is rebased onto the merged #166 source. Pinned-host
-PR/native results and confirmation that the migration warning is absent remain
-pending until its hosted checks complete.
+unchanged by #168. PR #169 merged as
+`f8d3673424214238b4a2722dc37d6bae4ccaf8eb` after all eight checks passed.
+[The hosted application run](https://github.com/carloshm91/kuberich/actions/runs/37946446619)
+passed 3,858 cases on each Linux 3.12/3.13/3.14 and macOS 3.12 job, with all 40
+then-critical modules at 100%. Actual Linux job labels were `ubuntu-24.04`;
+[the repository run](https://github.com/carloshm91/kuberich/actions/runs/37946446964)
+had zero annotations and no Ubuntu-26 migration notice.
 See [acceptance evidence](acceptance/ubuntu-runner-pin.md) and the live issue.
 
 ## Custom-resource backend checkpoint: C05 #52
@@ -122,9 +137,10 @@ Exact tested commands: `uv run python -m scripts.build_site`,
 `uv run pytest tests/quality/test_site.py -q`, and
 `node scripts/verify_site_browser.mjs` after the documented locked QA install.
 See [acceptance evidence](acceptance/flat-website.md) and
-[local preview instructions](../website/README.md). The source version remains
-`0.0.1.dev0`; public packages, website hosting and DNS are not activated. #89 owns
-final-candidate qualification and separately approved publication.
+[local preview instructions](../website/README.md). At that preparation checkpoint,
+the source was `0.0.1.dev0` and public packages, website hosting and DNS were not
+activated. #166 subsequently delivered provider preview hosting; #89 retains
+final-candidate qualification and separately approved product/domain publication.
 
 ## Credential interoperability checkpoint: C08 #47
 
@@ -159,8 +175,9 @@ The exact tested command is
 transitive readiness. `python scripts/validate_plan.py` checks the execution map
 against tooling policy. See [acceptance evidence](acceptance/first-product-release-policy.md)
 and the live issue/PR for final native/platform/package results.
-Initial website deployment is prepared for GitHub Actions → Cloudflare Pages in
-#89 after final-candidate verification; expanded docs remain #90/#91 afterward.
+This policy originally prepared initial hosting for #89. The later explicit
+#166 authorization delivered Pages provider previews before product qualification;
+final product/domain launch remains #89 and expanded docs remain #90/#91.
 
 ## Resource operations checkpoint: M04 #46
 

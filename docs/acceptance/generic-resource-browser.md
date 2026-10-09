@@ -21,6 +21,9 @@ scope and UID identity, including opaque-kind redaction. Explicit discovered cor
 commands use one generic read-only table; built-in aliases recover their usual
 workspaces. Missing/ambiguous deferred startup aliases retain failure feedback
 across passive fallback-table renders until another command.
+Typed container/selected-forward commands cannot open effectful pod screens from
+an explicit generic core-Pod route. The same commands retain their existing
+contracts after returning to the built-in `:po` workspace.
 
 ## Local behavior receipts
 
@@ -82,6 +85,28 @@ modules at 100%**, and **323/333 changed executable lines (96.9970%)** against
 its original C05 `c3a204b` base. These measurements describe that failed diagnostic
 head, not final candidate qualification. Owned probes also reproduced descriptor
 recreation and missing-startup feedback defects before their corrections.
+
+After rebasing onto `f8d3673`, the unit/process/session/navigation/context/generic
+and source-terminal cohort passed **2,150 cases in 436.89 seconds**:
+
+```sh
+env COVERAGE_FILE=artifacts/custom-browser-53/rebased.coverage uv run pytest tests/unit tests/contract/test_custom_projection.py tests/contract/test_processes.py tests/contract/test_sessions.py tests/ui/test_app.py tests/ui/test_navigation.py tests/ui/test_custom_resources.py tests/ui/test_context_scope_commands.py tests/ui/test_context_workspace.py tests/ui/test_resource_workspace.py tests/ui/test_standard_resources.py tests/terminal/test_custom_resources.py -q --tb=short --cov=kuberich --cov-branch --cov-report=json:artifacts/custom-browser-53/rebased-coverage.json
+```
+
+Modified critical command/domain modules measured **167/167 lines and 60/60
+branches**, **69/69 and 20/20** for columns, and **53/53 and 6/6** for navigation.
+This cohort preceded the final typed-container guard. Its new real core-Pod
+negative control failed in **1.87 seconds**, reproducing an unwanted
+`ContainerScreen` opened by `:shell` despite disabled generic hotkeys. The final
+guard regression submits delete/shell/attach/upload/download/portforward through
+actual commands, retains one table and captured-UID inspection, and recovers with
+the usual built-in alias. No effectful subprocess or real context is used.
+
+The final correction/native cohort passed **35 cases in 72.19 seconds**:
+
+```sh
+env COVERAGE_FILE=artifacts/custom-browser-53/final-corrections.coverage uv run pytest tests/unit/test_generic_commands.py tests/ui/test_app.py::test_unknown_and_empty_commands_do_not_echo_input_or_break_navigation tests/ui/test_navigation.py::test_narrow_completions_keep_selected_choice_visible_and_cursor_edits_hide_them tests/ui/test_custom_resources.py tests/contract/test_custom_projection.py tests/terminal/test_custom_resources.py -q --tb=short --cov=kuberich --cov-branch --cov-report=json:artifacts/custom-browser-53/final-corrections-coverage.json
+```
 
 ## Actual disposable cluster
 

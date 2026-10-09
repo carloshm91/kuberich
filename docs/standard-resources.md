@@ -113,7 +113,8 @@ Unknown manifest fields remain in YAML. `/` searches displayed fields;
 Alt+Left/Right and the context/namespace workspaces retain resource identity,
 version, filter, compatible sort and viewport. Direct `:ns TEAM` preserves an
 active generic resource. Generic browser actions are read-only in this
-checkpoint; custom editing remains M05 #55, and reactive jump chains U06 #64.
+checkpoint. Return to `:po` for pod/container logs, exec, attach, copy and selected
+port forwarding; custom editing remains M05 #55, and reactive jump chains U06 #64.
 Server headers and strings are displayed literally, sensitive column names and
 credential-shaped cells are redacted, and opaque Secret/ConfigMap server cells
 are hidden. Arbitrary custom fields are not guaranteed to be confidential;

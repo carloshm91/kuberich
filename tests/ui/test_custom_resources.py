@@ -454,10 +454,12 @@ async def test_explicit_core_command_owns_one_table_and_keeps_inspection_read_on
             )
             assert ("namespace" in table.columns) == (name == "pods")
             selected = table.selected_uid
-            await command(app, pilot, "delete")
-            assert "Generic resources are read-only" in str(app.status.content)
-            assert len(app.screen_stack) == 1 and table.selected_uid == selected
+            for action in ("delete", "shell", "attach", "upload", "download", "portforward"):
+                await command(app, pilot, action)
+                assert "Generic resources are read-only" in str(app.status.content)
+                assert len(app.screen_stack) == 1 and table.selected_uid == selected
             assert not app.check_action("edit", ())
+            assert not app.check_action("logs", ())
             await pilot.press("y")
             await wait_for(
                 lambda: isinstance(app.screen, InspectionScreen) and app.screen.result is not None

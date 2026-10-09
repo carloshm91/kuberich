@@ -1646,6 +1646,11 @@ class KubeRichApp(App[None]):
             return
         action_command = command.command if isinstance(command, ScopedCommand) else command
         if self.custom_table.display and action_command in {
+            Command.SHELL,
+            Command.ATTACH,
+            Command.UPLOAD,
+            Command.DOWNLOAD,
+            Command.PORT_FORWARD,
             Command.ANNOTATE,
             Command.EDIT,
             Command.DELETE,
