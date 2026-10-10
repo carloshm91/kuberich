@@ -278,6 +278,13 @@ def terminal_shell(
                             else b"Shell closed",
                             since=marker,
                         )
+                if scenario == "protocol":
+                    # This scenario already returned to 100x30 before the
+                    # shell exited. A same-size SSH request need not repaint.
+                    marker = terminal.resize(80, 25)
+                    terminal.wait_for_screen(
+                        "Esc → Pods", row=23, since=marker, absent=("Container shell",)
+                    )
                 marker = terminal.resize(100, 30)
                 terminal.wait_for_screen(
                     "Esc → Pods", row=28, since=marker, absent=("Container shell",)

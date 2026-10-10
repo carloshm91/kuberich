@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import Callable
+from contextlib import suppress
 from dataclasses import replace
 from datetime import datetime
 from typing import ClassVar
@@ -107,7 +108,7 @@ class LogHelpScreen(ModalScreen[None]):
                     "C clear retained history · m mark first visible line\n"
                     "z fullscreen · Ctrl+Y copy retained text · Ctrl+S save to a new file\n"
                     "? these controls · Esc leaves an input then returns to the prior view\n\n"
-                    "Oldest lines are evicted at 5,000 lines or 4 MiB. g/G only navigate\n"
+                    "Oldest lines are evicted at 10,000 lines or 4 MiB. g/G only navigate\n"
                     "retained output. Reopening or changing a window requests history\n"
                     "again and may repeat it. No automatic stream replay.\n"
                     "Copy/save use retained, redacted, timestamped text. Copy is limited\n"
@@ -197,6 +198,7 @@ class LogScreen(ModalScreen[None]):
         self.closed, self.stale = False, False
         self._generation, self._display_generation = 0, 0
         self._change, self._dirty, self._resume = asyncio.Event(), asyncio.Event(), asyncio.Event()
+        self._display_ready = asyncio.Event()
         self._resume.set()
         self._read_task: asyncio.Task[None] | None = None
         self._controller: asyncio.Task[None] | None = None
@@ -375,8 +377,10 @@ class LogScreen(ModalScreen[None]):
         try:
             while True:
                 await self._dirty.wait()
-                await asyncio.sleep(0.05)
+                with suppress(TimeoutError):
+                    await asyncio.wait_for(self._display_ready.wait(), timeout=0.05)
                 self._dirty.clear()
+                self._display_ready.clear()
                 await self._layout()
                 self._status()
         except Exception as error:
@@ -412,6 +416,7 @@ class LogScreen(ModalScreen[None]):
     def _display_changed(self) -> None:
         self._display_generation += 1
         self._dirty.set()
+        self._display_ready.set()
         self._status()
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:

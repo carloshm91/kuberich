@@ -257,6 +257,38 @@ def test_per_source_and_aggregate_bounds_arrival_ids_marks_filter_and_recreated_
     assert history.next_number == 10
 
 
+def test_ten_thousand_historical_lines_preserve_global_and_per_source_eviction():
+    history = AggregateHistory()
+    identities = [LogSource("team", "same-name", f"uid-{index}", "app") for index in range(21)]
+    for number, source in enumerate(identities[:20], 1):
+        for _ in range(500):
+            history.retain(source, number, LogLine("retained"))
+    assert len(history.records) == 10000 and history.buffer.dropped_lines == 0
+    assert history.buffer.size_bytes == sum(history.sizes.values()) < 4 * 1024 * 1024
+    history.mark(1)
+    history.mark(9501)
+    history.mark(10000)
+    for _ in range(33):
+        history.retain(identities[20], 21, LogLine("new source"))
+    assert len(history.records) == 10000 and history.buffer.dropped_lines == 33
+    assert next(iter(history.records)) == 34 and next(reversed(history.records)) == 10033
+    assert len(history.by_source[identities[0].key]) == 467
+    history.retain(identities[19], 20, LogLine("existing source"))
+    assert len(history.records) == 10000 and history.buffer.dropped_lines == 34
+    assert len(history.by_source[identities[19].key]) == 500
+    assert 9501 not in history.records and history.marks == {10000}
+    assert history.buffer.size_bytes == sum(
+        record.size_bytes for record in history.records.values()
+    )
+    assert history.buffer.size_bytes == sum(history.sizes.values())
+    history.filter = identities[19].key
+    assert len(history.entries) == 500 and "uid-18" not in history.export()
+    assert history.clear() == 10000 and not history.records and not history.marks
+    assert history.buffer.max_lines == 10000 and history.buffer.max_bytes == 4 * 1024 * 1024
+    history.retain(identities[20], 21, LogLine("after clear"))
+    assert list(history.records) == [10035]
+
+
 def test_source_byte_and_global_byte_and_line_limits_are_independent():
     source = LogSource("team", "api", "uid", "app")
     history = AggregateHistory(source_bytes=1)

@@ -392,7 +392,7 @@ class AggregateLogScreen(LogScreen):
             LogHelpScreen(
                 "Aggregated logs: c source admission · s retained-output filter · J plain/JSON\n"
                 "8 readers, 256 current sources, 64 recent removed statuses. Space/Enter in sources selects readers; r explicitly reopens.\n"
-                "Each source: 500 lines / 256 KiB; aggregate: 5,000 lines / 4 MiB. Payloads bound to 4,096 escaped characters.\n"
+                "Each source: 500 lines / 256 KiB; aggregate: 10,000 lines / 4 MiB. Payloads bound to 4,096 escaped characters.\n"
                 "Arrival order only; server timestamps may differ or regress. Same-name Pod recreation has a new UID/source ID.\n"
                 "Filtered copy/save preserve source identity in the current plain/JSON mode, including timestamps.\n"
                 "Malformed/excessive JSON is withheld; decoded credential keys and controls are sanitized. EOF never automatically replays.\n\n"

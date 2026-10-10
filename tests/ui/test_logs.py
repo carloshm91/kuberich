@@ -436,12 +436,12 @@ async def test_pause_backpressures_new_output_and_reading_history_keeps_receivin
             await wait_for(lambda: len(screen.body.rows) == 34)
             await pilot.pause()
             assert screen.body.first_visible == anchor and not screen.body.follow
-            await values.put(b"".join(f"eviction-{i}\n".encode() for i in range(5010)))
+            await values.put(b"".join(f"eviction-{i}\n".encode() for i in range(10010)))
             await wait_for(lambda: screen.history.buffer.dropped_lines == 44)
             await wait_for(lambda: screen.body.rows and screen.body.rows[0][0] == 45)
             await pilot.pause()
             assert screen.body.first_visible == (45, 0) and not screen.body.follow
-            assert not screen.history.marks and len(screen.body._cache) == 5000
+            assert not screen.history.marks and len(screen.body._cache) == 10000
             await pilot.press("ctrl+q")
         await wait_for(closed.is_set)
         assert screen._read_task.done() and app.sessions.client is None
@@ -635,12 +635,12 @@ async def test_high_volume_batches_bound_history_layout_and_head_stops_at_oldest
             screen = await open_logs(app, pilot)
             await wait_for(lambda: screen.message == "Stream complete")
             await wait_for(
-                lambda: len(screen.body.rows) == 5000 and screen.body.rows[0][0] == 10001
+                lambda: len(screen.body.rows) == 10000 and screen.body.rows[0][0] == 5001
             )
-            assert screen.history.buffer.dropped_lines == 10000
-            assert len(screen.body._cache) == 5000
+            assert screen.history.buffer.dropped_lines == 5000
+            assert len(screen.body._cache) == 10000
             assert screen.body.render_batches < 100
-            assert "10000 dropped" in str(screen.status.content)
+            assert "5000 dropped" in str(screen.status.content)
             await pilot.resize_terminal(100, 35)
             await pilot.press("g")
             visible_cache_peak = 0
@@ -686,7 +686,7 @@ async def test_high_volume_batches_bound_history_layout_and_head_stops_at_oldest
                 json.dumps(
                     {
                         "delivered_lines": 15000,
-                        "retained_tail_lines": 5000,
+                        "retained_tail_lines": 10000,
                         "visible_strip_limit": 128,
                         "peak_visible_strips": visible_cache_peak,
                         "resize_anchor": anchor,

@@ -13,7 +13,7 @@ from kuberich.errors import AppError
 
 MAX_CHUNK = 65536
 MAX_LINE = 8192
-MAX_LINES = 5000
+MAX_LINES = 10000
 MAX_BYTES = 4 * 1024 * 1024
 _KEY_MARKER = re.compile(r"-----(BEGIN|END) [^-\n]{0,64}PRIVATE KEY-----", re.IGNORECASE)
 

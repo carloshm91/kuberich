@@ -1,13 +1,82 @@
 # First things to try
 
-## Native qualification and owned CrashLoop scenario: Refs Q03 #50
+## Current baseline and combined-load work: Refs Q03 #50
 
-Current update: the later `321e9ca` candidate also failed required real-kind
+[PR #176](https://github.com/carloshm91/kuberich/pull/176) merged as `9fa25c9`
+on 2026-10-10 after independent review of its original four-native artifacts.
+All four configured PR environments passed 4,382 cases; each measured at least
+99.09% line and 96.90% branch coverage, 100% changed production lines and all 43
+critical modules at 100%. These measured results belong to frozen PR source
+`16fce8e`, with the same tree as the squash, and its actual tested merge checkout.
+The exact full-suite and runtime-coverage commands were:
+
+```sh
+uv run pytest --cov=kuberich --cov-branch --cov-report=term-missing --cov-report=xml --cov-report=json
+uv run python -m scripts.merge_runtime_coverage
+```
+
+[Application run 38058235753](https://github.com/carloshm91/kuberich/actions/runs/38058235753)
+and [Repository run 38058235738](https://github.com/carloshm91/kuberich/actions/runs/38058235738)
+passed. Original Linux 3.12 evidence includes all 11 owned-kind aggregate scenarios,
+strict current/previous last-instance assertions and verified cluster deletion.
+Repository evidence binds 140 Git source files and 49 desktop plus 49 mobile
+browser pages. Earlier failed originals remain retained. This qualifies the
+required PR matrix; the full six-environment release qualification remains open.
+
+The next working candidate adds independently paced 10,000-Pod, 100-event/sec
+and 2,000-log-line/sec inputs, 10,000-line/4-MiB retention, deferred covered-table
+painting and bounded reusable log layouts. The reproducible observer selects the
+last of the 10,000 Pods with native Ctrl+End; repeated target checks reuse only
+the same immutable snapshot and retain every client/scope/generation guard.
+Its latest 30-second normal CLI/PTY diagnosis measured **138.680 ms p95** across
+101 actual painted-tail controls, with all 3,012 resource updates and 60,240 log
+lines sent, no source expiry and seven process-memory/descriptor samples.
+Both process owners drained normally and all 163 measured inputs were unchanged.
+The original 30-minute observation on frozen `04871e5` then completed with
+**168.227 ms p95** across 5,826 painted controls and 349 process samples. All
+180,009 resource updates and 3,600,180 log lines were sent without source expiry.
+Independent review matched all 163 inputs to Git, recomputed the distributions
+and checked the original ANSI hash, bounded source and normal terminal/process
+cleanup. The predeclared memory rule passed: the CLI's late-window RSS medians
+were 159,824–160,072 KiB, with constant descriptors and threads. Source and
+observer also passed their late-window rules. The exact tested commands were:
+
+```sh
+uv run python -m tests.support.performance_terminal --seconds 30 --output artifacts/workload50/last-pod-ctrl-end-original
+uv run python -m tests.support.performance_terminal --seconds 1800 --output artifacts/workload50/frozen-04871e5-soak-original
+```
+
+Use a fresh output directory for another observation; existing originals are
+never overwritten. Both input-response observations exceed the unchanged
+100-ms target; only the sustained original establishes the measured memory
+subset. The observer/negative-control
+cohort passed 16 cases; membership, observer and inspection behavior passed
+28 cases. The final generator/covered-view/layout/membership/observer cohort
+passed 39 cases, Ruff checked 491 formatted files and strict types passed over
+133 source files. These are scoped results for their recorded working inputs.
+The original PR #177 native suite found a measurement-helper assumption: Python
+3.13/3.14 have different ordinary GC thresholds from 3.12. The correction probes
+the same executable's isolated default and still rejects disabled or tuned GC;
+19 focused cases passed in each actual local 3.12/3.13/3.14 interpreter. The failed
+originals remain retained; corrected full native qualification, latency,
+context churn and cancelled-forward qualification remain pending under Q03.
+Pod-table `G` is still tracked by B07 #61;
+its failed setup observation and cleanup receipt are retained.
+See [working evidence and limitations](acceptance/combined-workload-progress.md).
+
+The first public target remains 0.1.0. The `kuberich` GitHub organization now
+exists; source remains `carloshm91/kuberich`, and `brew install kuberich/tap/kuberich`
+is the intended unpublished channel. No source transfer, package, tap, tag or
+release was performed. No intermediate maintainer trial is requested.
+
+## Earlier native qualification and owned CrashLoop scenario: Refs Q03 #50
+
+Earlier update: the `321e9ca` candidate also failed required real-kind
 enrollment after all four PR suites passed 4,365 cases. Two subsequent local
 fixture revisions remain unqualified. Owned status-timing evidence shows a
 waiting observation can last only about 117 ms before running. The earlier
 receipt-time window below does not lease container state across API calls;
-a successful new native candidate remains pending.
+its replacement still required qualification at that point.
 
 The working correction now selects one unchanged actual waiting LIST response
 at the membership boundary, then leaves later LIST/WATCH and every log request
@@ -15,7 +84,7 @@ ordinary. Its receipt labels that fixture control. First-instance, single-line,
 no-replay and cleanup assertions remain enforced. Its 81 focused contracts and
 all 11 real-kind scenarios passed, with unchanged caller configuration and
 verified cluster deletion. Required strict types over 133 files and static-site
-checks passed. A new frozen native candidate still needs its complete checks.
+checks passed. Its later original native qualification is recorded above.
 This does not add a user-facing feature or request another maintainer trial.
 
 The dense-log candidate passed all 4,349 cases in four native environments.

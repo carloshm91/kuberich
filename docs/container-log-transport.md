@@ -58,7 +58,7 @@ each next line, so input, cancellation and other readers do not wait through
 thousands of tiny lines in one transport chunk. Ordered output and the final
 partial line are preserved. This uses the public
 [asyncio cooperative sleep contract](https://docs.python.org/3.12/library/asyncio-task.html#sleeping).
-The supplied consumer-owned LogBuffer defaults to at most 5,000 lines AND 4 MiB
+The supplied consumer-owned LogBuffer defaults to at most 10,000 lines AND 4 MiB
 of UTF-8 text. Either bound evicts oldest lines, with a dropped-line counter;
 individual oversized lines can also be evicted. Transport-library/socket buffers
 remain separate from this application history.

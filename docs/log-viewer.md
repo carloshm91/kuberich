@@ -60,7 +60,7 @@ historical output; timestamps are not unique line identifiers.
 
 ## Retention, rendering and target ownership
 
-The consumer retains at most **5,000 lines AND 4 MiB of UTF-8 text**, with a dropped
+The consumer retains at most **10,000 lines AND 4 MiB of UTF-8 text**, with a dropped
 line counter. Either bound evicts oldest entries and their marks. g/G and search
 operate on that retained history; they cannot recover evicted output. Clearing
 history resets its eviction counter and keeps monotonically increasing internal
@@ -156,7 +156,7 @@ There is no raw-secret reveal. Recognized patterns cannot identify every sensiti
 phrase; inspect the sanitized export before sharing it.
 
 Each source retains at most **500 lines and 256 KiB**; the aggregate retains at
-most **5,000 lines and 4 MiB**. Accounting reserves the larger plain/JSON byte
+most **10,000 lines and 4 MiB**. Accounting reserves the larger plain/JSON byte
 representation, including identity prefixes and control expansion. Either bound
 evicts oldest lines and marks. Lines appear in delivery order with monotonic local
 IDs; clocks may differ, timestamps can regress and transport delays can reorder

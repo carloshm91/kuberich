@@ -16,7 +16,7 @@ from kuberich.security.presentation import safe_text
 Cell = TypeVar("Cell")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class TableCell:
     uid: str
     text: str

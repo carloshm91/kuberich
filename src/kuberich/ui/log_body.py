@@ -25,6 +25,9 @@ VISIBLE_CACHE = 128
 
 type PreparedEntry = tuple[int, str]
 type Subline = tuple[str, int, tuple[tuple[int, int, bool], ...]]
+type CachedLayout = tuple[
+    tuple[object, ...], tuple[Subline, ...], tuple[int, tuple[Subline, ...]], int
+]
 
 
 class LogBody(ScrollView, can_focus=True):
@@ -54,7 +57,9 @@ class LogBody(ScrollView, can_focus=True):
         self.rows: list[tuple[int, tuple[Subline, ...]]] = []
         self.starts: list[int] = []
         self.matches: list[int] = []
-        self._cache: dict[int, tuple[tuple[object, ...], tuple[Subline, ...]]] = {}
+        self._cache: dict[int, CachedLayout] = {}
+        self._alternates: dict[int, CachedLayout] = {}
+        self._wrapped_context: tuple[int, bool, str] | None = None
         self._strips: OrderedDict[tuple[int, int], tuple[Subline, Strip]] = OrderedDict()
         self._layout_style = Style.null()
         self.render_batches = 0
@@ -87,64 +92,80 @@ class LogBody(ScrollView, can_focus=True):
             return
         retained = {entry.number if isinstance(entry, LogEntry) else entry[0] for entry in entries}
         self._cache = {number: value for number, value in self._cache.items() if number in retained}
+        self._alternates = {
+            number: value for number, value in self._alternates.items() if number in retained
+        }
         width = max(1, self.scrollable_content_region.width)
         style = self.rich_style
         keys = (
             (width if wrap else None, timestamps, query, False),
             (width if wrap else None, timestamps, query, True),
         )
+        if wrap:
+            self._wrapped_context = width, timestamps, query
+        prime_wrap = not wrap and self._wrapped_context == (width, timestamps, query)
+        wrapped_keys = ((width, timestamps, query, False), (width, timestamps, query, True))
         rows, starts, matches = [], [], []
         height, maximum_width = 0, width
+        prepared = 0
         for index, entry in enumerate(entries):
-            number, value = (
-                (entry.number, entry.text(timestamps)) if isinstance(entry, LogEntry) else entry
-            )
+            number = entry.number if isinstance(entry, LogEntry) else entry[0]
+            value: str | None = None
             key = keys[number in marks]
             cached = self._cache.get(number)
             if cached is None or cached[0] != key:
-                prefix = "* " if number in marks else "  "
-                plain = prefix + value
-                if not wrap and not query:
-                    plain = strip_control_codes(plain)
-                    strips: tuple[Subline, ...] = ((plain, cell_len(plain), ()),)
+                alternate = self._alternates.get(number)
+                if alternate is not None and alternate[0] == key:
+                    if cached is not None:
+                        self._alternates[number] = cached
+                    cached = alternate
+                    self._cache[number] = cached
+                    strips = alternate[1]
                 else:
-                    text = Text(plain, style=style)
-                    if query:
-                        text.highlight_words([query], style="reverse bold", case_sensitive=True)
-                    parts = text.wrap(self.app.console, width, overflow="fold") if wrap else [text]
-                    rendered = []
-                    for part in parts:
-                        plain = part.plain
-                        ranges = tuple(
-                            (span.start, span.end, span.style == "reverse bold")
-                            for span in part.spans
-                        )
-                        if ranges:
-                            points = sorted(
-                                {
-                                    0,
-                                    len(plain),
-                                    *(point for start, end, _ in ranges for point in (start, end)),
-                                }
-                            )
-                            cells = sum(
-                                cell_len(plain[start:end]) for start, end in pairwise(points)
-                            )
-                        else:
-                            cells = cell_len(plain)
-                        rendered.append((plain, cells, ranges))
-                    strips = tuple(rendered)
-                self._cache[number] = key, strips
+                    value = entry.text(timestamps) if isinstance(entry, LogEntry) else entry[1]
+                    strips = self._prepare(value, number in marks, wrap, width, query, style)
+                    prepared += 1
+                    if cached is not None:
+                        self._alternates[number] = cached
+                    cached = key, strips, (number, strips), max(line[1] for line in strips)
+                    self._cache[number] = cached
             else:
                 strips = cached[1]
-            rows.append((number, strips))
+            if prime_wrap:
+                wrapped_key = wrapped_keys[number in marks]
+                alternate = self._alternates.get(number)
+                if alternate is None or alternate[0] != wrapped_key:
+                    if prepared == 16:
+                        await asyncio.sleep(0)
+                        prepared = 0
+                        if not valid():
+                            return
+                    if value is None:
+                        value = entry.text(timestamps) if isinstance(entry, LogEntry) else entry[1]
+                    prepared_strips = self._prepare(
+                        value, number in marks, True, width, query, style
+                    )
+                    self._alternates[number] = (
+                        wrapped_key,
+                        prepared_strips,
+                        (number, prepared_strips),
+                        max(line[1] for line in prepared_strips),
+                    )
+                    prepared += 1
+            rows.append(cached[2])
             starts.append(height)
             height += len(strips)
-            maximum_width = max(maximum_width, *(strip[1] for strip in strips))
-            if query and query in value:
-                matches.append(number)
-            if index % 16 == 0:
+            maximum_width = max(maximum_width, cached[3])
+            if query:
+                if value is None:
+                    value = entry.text(timestamps) if isinstance(entry, LogEntry) else entry[1]
+                if query in value:
+                    matches.append(number)
+            # New Rich layouts keep their existing sixteen-row turns. Reused
+            # immutable layouts need fewer scheduler turns for the same history.
+            if index % 128 == 0 or prepared == 16:
                 await asyncio.sleep(0)
+                prepared = 0
                 if not valid():
                     return
         if not valid():
@@ -186,9 +207,48 @@ class LogBody(ScrollView, can_focus=True):
             finally:
                 self.programmatic = False
 
+        # The current viewport bounds were synchronized by watch_virtual_size.
+        # Follow its new tail before the first paint; recheck after layout in
+        # case a scrollbar/resize changes the available viewport geometry.
+        if self.follow:
+            restore()
         self.call_after_refresh(restore)
         self.render_batches += 1
         self.refresh()
+
+    def _prepare(
+        self, value: str, marked: bool, wrap: bool, width: int, query: str, style: Style
+    ) -> tuple[Subline, ...]:
+        prefix = "* " if marked else "  "
+        plain = prefix + value
+        if not wrap and not query:
+            plain = strip_control_codes(plain)
+            strips: tuple[Subline, ...] = ((plain, cell_len(plain), ()),)
+        else:
+            text = Text(plain, style=style)
+            if query:
+                text.highlight_words([query], style="reverse bold", case_sensitive=True)
+            parts = text.wrap(self.app.console, width, overflow="fold") if wrap else [text]
+            rendered = []
+            for part in parts:
+                plain = part.plain
+                ranges = tuple(
+                    (span.start, span.end, span.style == "reverse bold") for span in part.spans
+                )
+                if ranges:
+                    points = sorted(
+                        {
+                            0,
+                            len(plain),
+                            *(point for start, end, _ in ranges for point in (start, end)),
+                        }
+                    )
+                    cells = sum(cell_len(plain[start:end]) for start, end in pairwise(points))
+                else:
+                    cells = cell_len(plain)
+                rendered.append((plain, cells, ranges))
+            strips = tuple(rendered)
+        return strips
 
     def _restore_anchor(
         self,
@@ -205,6 +265,8 @@ class LogBody(ScrollView, can_focus=True):
 
     def invalidate(self) -> None:
         self._cache.clear()
+        self._alternates.clear()
+        self._wrapped_context = None
         self._strips.clear()
 
     def clear(self) -> None:
