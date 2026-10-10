@@ -181,16 +181,37 @@ async def test_live_updates_under_viewer_uid_recreation_invalidates_and_blocks_c
             value["status"]["containerStatuses"][0]["restartCount"] = 9
             value["metadata"]["resourceVersion"] = "modified-version"
             await updates.put({"type": "MODIFIED", "object": value})
-            await wait_for(lambda: app.resources._rows["owned-api"].restarts == 9)
+            await wait_for(
+                lambda: (
+                    app.workspace.store.observation.snapshot is not None
+                    and app.workspace.store.observation.snapshot.resource_version
+                    == "modified-version"
+                )
+            )
+            snapshot = app.workspace.store.observation.snapshot
+            assert snapshot is not None
+            assert snapshot.items[0].manifest["status"]["containerStatuses"][0]["restartCount"] == 9
+            assert app.resources._rows["owned-api"].restarts != 9
             assert screen.result is not None
             value["metadata"]["resourceVersion"] = "deleted-version"
             await updates.put({"type": "DELETED", "object": value})
             await wait_for(lambda: screen.result is None)
             assert screen.viewer.text == "" and "stale" in str(screen.status.content)
             await updates.put({"type": "ADDED", "object": manifest(uid="new-api")})
-            await wait_for(lambda: app.resources.row_count == 1)
+            await wait_for(
+                lambda: (
+                    app.workspace.store.observation.snapshot is not None
+                    and any(
+                        item.uid == "new-api"
+                        for item in app.workspace.store.observation.snapshot.items
+                    )
+                )
+            )
             await pilot.press("ctrl+y")
             assert app.clipboard == "" and "stale" in str(screen.status.content)
+            await pilot.press("escape")
+            await wait_for(lambda: "new-api" in app.resources._rows)
+            assert "owned-api" not in app.resources._rows
 
 
 @pytest.mark.asyncio

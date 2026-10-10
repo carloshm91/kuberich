@@ -747,7 +747,7 @@ parser worker and drains before cancellation returns. A pre-open current-log 400
 evidence; opened/ended streams do not auto-replay. Explicit picker admission is
 independent of display filtering. Current metadata caps at 256 sources and
 refuses excess; recent removed status caps at 64. Per-source history caps at
-500 lines/256 KiB and aggregate history at 5,000 lines/4 MiB, accounting for both
+500 lines/256 KiB and aggregate history at 10,000 lines/4 MiB, accounting for both
 plain/JSON presentation. Arrival IDs establish order; timestamps do not.
 
 `ui/aggregate_logs.py` reuses the log viewer controls and owns serialized worker

@@ -7,6 +7,12 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Retain up to 10,000 log lines within the existing 4 MiB byte limit. Reuse
+  bounded wrap layouts, wake display controls promptly and defer covered
+  workspace painting while live observations and target validation continue.
+  Add a reproducible owned-loopback CLI/PTY load observer; performance
+  qualification remains open.
+
 - Give pending input, target changes and cancellation a turn during dense log
   delivery, preserving source order, consumer backpressure and bounded retention.
   Require normal-runtime backend latency controls alongside the original

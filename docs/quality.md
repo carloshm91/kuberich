@@ -197,7 +197,7 @@ Phase/CPU/GC diagnostics remain under `artifacts/ui/aggregate-heartbeat.json`;
 original positive, negative and instrumented replay artifacts are retained under
 `artifacts/ui/aggregate-runtime/`.
 A separate 15,000-line
-case retains 5,000 lightweight layouts, saturates the 128-entry visible Strip
+case retains 10,000 lightweight layouts, saturates the 128-entry visible Strip
 cache through public paging, preserves its resize anchor, and checks current
 identity and actual rendered text after a fresh Head 1000 window. Its receipt is
 `artifacts/ui/log-layout-cache.json`. These additional caches are separate from
@@ -515,6 +515,30 @@ resource rows, 100 resource events/second, and 2,000 log lines/second with a
 documented reference machine and a memory plateau during a 30-minute soak.
 These are acceptance targets, not claims about current performance. Investigate
 failures before changing the budget; preserve comparable benchmark results.
+
+Q03's repository-owned measurement command is
+`uv run python -m tests.support.performance_terminal --seconds 30 --output
+artifacts/workload50/fresh-short-run`. Use `--seconds 1800` and a different,
+fresh output directory for the sustained observation. Its Linux `/proc` observer
+records the actual CLI child and separate source/observer RSS, peak RSS, thread
+and descriptor counts every five seconds. It runs the normal CLI against a
+separate independently paced loopback source, never a maintainer context.
+The output includes source hashes, reference-machine/dependency metadata,
+raw public-key-to-painted-tail samples, ordered ANSI and cleanup/error receipts.
+An existing output directory is rejected. Run without coverage, tracing,
+profiling or competing local verification, and do not edit measured inputs.
+
+Before the first sustained invocation, declare ten minutes of warmup followed
+by four five-minute windows, each with at least 54 process samples. For each of
+the application, source and observer, the range of window RSS medians **and**
+p95s must stay within the larger of 8 MiB and 5% of the minimum median. Across
+those late samples, descriptor range is at most two (socket renewal allowance)
+and thread count stays constant. The RSS allowance accommodates allocator/page
+noise; it does not authorize raising the input-response target. Preserve every
+distribution and investigate failures. Short runs cannot pass the plateau rule.
+The observer never declares Q03 or a release qualified: the frozen-source
+latency/plateau review and separate context/forward/task lifecycle evidence
+are still required. macOS process-memory qualification remains separate.
 
 ## Current repository stage
 

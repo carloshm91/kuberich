@@ -21,5 +21,7 @@ async def test_queued_shortcut_render_after_view_removal_does_not_fail_the_app()
         await header.remove()
         assert not header.is_attached
         app.call_after_refresh(header.render_shortcuts)
+        header.update_identity()
+        app.theme = "textual-light"
         await pilot.pause()
         assert app.is_running and app.return_code is None

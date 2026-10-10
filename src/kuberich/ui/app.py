@@ -553,6 +553,8 @@ class KubeRichApp(App[None]):
         self._set_status("Connecting · F2 contexts · F4 retry · Ctrl+Q quit")
 
     def _refresh_tables(self) -> None:
+        if not self.is_running or isinstance(self.screen, ModalScreen):
+            return
         self.resources.refresh_ages()
         self.namespace_table.refresh_ages()
         self.standard_table.refresh_ages()
@@ -560,6 +562,7 @@ class KubeRichApp(App[None]):
         self._render_ready.set()
 
     async def _observe_view(self, subscription: ViewSubscription) -> None:
+        header_identity: tuple[str, str, str, str, str] | None = None
         try:
             async for observation in subscription:
                 if observation.context is None:
@@ -573,8 +576,11 @@ class KubeRichApp(App[None]):
                     if self._pending_generic is not None and self.workspace.discovery is not None:
                         pending, self._pending_generic = self._pending_generic, None
                         self._apply_generic(pending)
-                    for header in self.query(WorkspaceHeader):
-                        header.update_identity()
+                    identity = self.chrome.identity()
+                    if identity != header_identity:
+                        for header in self.query(WorkspaceHeader):
+                            header.update_identity()
+                        header_identity = identity
                     for screen in tuple(self.screen_stack):
                         if isinstance(
                             screen, (InspectionScreen, LogScreen, ContainerScreen, ShellScreen)
@@ -590,6 +596,14 @@ class KubeRichApp(App[None]):
             while True:
                 await self._render_ready.wait()
                 self._render_ready.clear()
+                if not self.is_running:
+                    return
+                # Domain subscriptions stay live while a detail view covers the
+                # workspace. Project and paint only the latest state on return.
+                while isinstance(self.screen, ModalScreen):
+                    await asyncio.sleep(0.05)
+                    if not self.is_running:
+                        return
                 view = self.workspace.store.observation
                 query = self.filter_input.value
                 kind = self._resource_name
@@ -602,6 +616,7 @@ class KubeRichApp(App[None]):
                 ) -> bool:
                     return (
                         self.is_running
+                        and not isinstance(self.screen, ModalScreen)
                         and view is self.workspace.store.observation
                         and query == self.filter_input.value
                         and kind == self._resource_name
@@ -1232,16 +1247,27 @@ class KubeRichApp(App[None]):
             record.name,
             record.uid,
         )
+        checked_snapshot = snapshot
+        present = True
+        revision = view.revision
 
         def current() -> bool:
+            nonlocal checked_snapshot, present
             observation = self.workspace.store.observation
-            return (
-                self.sessions.client is client
-                and observation.scope == scope
-                and observation.revision == view.revision
-                and observation.snapshot is not None
-                and any(item.uid == target.uid for item in observation.snapshot.items)
-            )
+            if (
+                self.sessions.client is not client
+                or observation.scope != scope
+                or observation.revision != revision
+                or observation.snapshot is None
+            ):
+                return False
+            # Every watch update owns a new immutable snapshot. Validate its
+            # membership once, including a missing UID; log lines may ask many
+            # times before the next update. Scope/client guards always run.
+            if observation.snapshot is not checked_snapshot:
+                checked_snapshot = observation.snapshot
+                present = any(item.uid == target.uid for item in checked_snapshot.items)
+            return present
 
         return client, scope.resource, record, target, current
 

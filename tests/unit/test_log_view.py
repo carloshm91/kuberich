@@ -23,6 +23,24 @@ def test_timestamps_toggle_only_recognized_server_prefixes():
     assert LogEntry(2, LogLine("ordinary text")).text(False) == "ordinary text"
 
 
+def test_ten_thousand_history_preserves_surviving_marks_ids_and_clear_limits():
+    history = LogHistory()
+    for index in range(10000):
+        history.append(LogLine(f"line-{index:05}"))
+    history.mark(1)
+    history.mark(10000)
+    for index in range(10000, 10020):
+        history.append(LogLine(f"line-{index:05}"))
+    assert len(history.entries) == 10000 and history.buffer.dropped_lines == 20
+    assert history.entries[0].number == 21 and history.entries[-1].number == 10020
+    assert history.marks == {10000}
+    assert history.export(clipboard=True).splitlines()[0] == "line-00020"
+    assert history.clear() == 10000 and not history.marks
+    assert history.buffer.max_lines == 10000 and history.buffer.max_bytes == 4 * 1024 * 1024
+    history.append(LogLine("after clear"))
+    assert history.entries[0].number == 10021 and history.next_number == 10022
+
+
 def test_all_windows_previous_head_and_aware_start_time():
     for name in WINDOWS:
         value = window_options(name, previous=False)

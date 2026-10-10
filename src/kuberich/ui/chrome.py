@@ -266,8 +266,16 @@ class WorkspaceHeader(Horizontal):
     def on_mount(self) -> None:
         self.update_identity()
         self.layout_header()
+        self.watch(self.app, "theme", self._theme_changed, init=False)
+
+    def _theme_changed(self) -> None:
+        self.update_identity()
+        self.render_shortcuts()
 
     def update_identity(self) -> None:
+        if not self.is_attached or not self.is_running:
+            return
+        accent = self.app.get_css_variables()["accent"]
         for name, value in zip(
             ("context", "cluster", "user", "namespace", "connection"),
             self.chrome.identity(),
@@ -275,7 +283,7 @@ class WorkspaceHeader(Horizontal):
         ):
             label = name.title() if name != "connection" else "State"
             text = safe_text(f"{label}: {value}")
-            text.stylize(self.app.get_css_variables()["accent"], 0, len(label) + 1)
+            text.stylize(accent, 0, len(label) + 1)
             self.query_one(f"#{name}", WorkspaceLabel).update_text(text)
 
     def on_resize(self, event: Resize) -> None:

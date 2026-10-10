@@ -135,7 +135,7 @@ def test_private_key_blocks_are_hidden_across_chunks_lines_and_discarded_long_pr
     "limits",
     [
         {"max_lines": 0},
-        {"max_lines": 5001},
+        {"max_lines": 10001},
         {"max_lines": True},
         {"max_bytes": 0},
         {"max_bytes": 4194305},
@@ -156,6 +156,26 @@ def test_ring_keeps_latest_lines_and_measures_utf8_bytes_and_drops_oversize_line
     buffer.append(LogLine("123456789"))
     assert not buffer.lines and buffer.size_bytes == 0 and buffer.dropped_lines == 4
     assert LogLine("你好").size_bytes == 6
+
+
+def test_default_ring_retains_ten_thousand_ordered_lines_then_evicts_oldest():
+    buffer = LogBuffer()
+    for index in range(10000):
+        buffer.append(LogLine(f"line-{index:05}"))
+    assert len(buffer.lines) == 10000 and buffer.dropped_lines == 0
+    assert buffer.lines[0].text == "line-00000" and buffer.lines[-1].text == "line-09999"
+    buffer.append(LogLine("new arrival"))
+    assert len(buffer.lines) == 10000 and buffer.dropped_lines == 1
+    assert buffer.lines[0].text == "line-00001" and buffer.lines[-1].text == "new arrival"
+    assert buffer.size_bytes == sum(line.size_bytes for line in buffer.lines)
+
+
+def test_default_utf8_byte_limit_remains_four_mib_with_larger_line_capacity():
+    buffer = LogBuffer()
+    for _ in range(513):
+        buffer.append(LogLine("é" * 4096))
+    assert len(buffer.lines) == 512 and buffer.dropped_lines == 1
+    assert buffer.size_bytes == buffer.max_bytes == 4 * 1024 * 1024
 
 
 def test_key_markers_in_order_do_not_reveal_a_new_key_after_a_previous_end():
