@@ -2,13 +2,15 @@
 
 ## Owned lifecycle verification in progress: Refs Q03 #50
 
-The new cleanup cohort passed four focused cases in each actual local Python
+The new cleanup cohort passed five focused cases in each actual local Python
 3.12, 3.13 and 3.14 interpreter. Each scenario has 36 measured cycles after
 warmup: context switches stop real forwarding children, slow large-watch sinks
 keep one parser operation, and repeatedly cancelled startup cleans private files
 and processes. Descriptor/thread counts stay constant, pending tasks return to
 zero and retained forwarding history stops at 32 records. An actual extra
 descriptor, thread and task verifies that the observer detects each increase.
+Its additional stalled-snapshot case forces a real 410 from the bounded local
+source and verifies ordinary ListWatch relisting and current-row recovery.
 The exact tested command was:
 
 ```sh

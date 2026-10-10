@@ -303,8 +303,9 @@ and their original sources/artifacts are retained without reruns or replacement.
 ## Repeated owned lifecycle cohort
 
 The owned HTTP/process cohort uses three warmup and 36 measured cycles for each
-of context/forward changes, slow large-watch consumers and forward startup
-cancellation. Each cycle must return to exact baseline descriptors, live threads
+of context/forward changes, slow large-watch consumers, forward startup
+cancellation and expiry/recovery after a held initial snapshot. Each cycle must
+return to exact baseline descriptors, live threads
 and pending asyncio task counts. This is resource ownership evidence, not an
 additional input-latency or RSS observation. The exact tested command was:
 
@@ -312,9 +313,11 @@ additional input-latency or RSS observation. The exact tested command was:
 uv run pytest -q tests/contract/test_performance_lifecycle.py
 ```
 
-Four cases passed in each actual local CPython 3.12.12, 3.13.12 and 3.14.3
-interpreter, in 28.29 / 22.82 / 22.88 seconds respectively. Their nine successful
-scenario originals each contain 36 measured samples: descriptor counts stayed
+The initial four-case cohort passed in each actual local CPython 3.12.12, 3.13.12
+and 3.14.3 interpreter, in 28.29 / 22.82 / 22.88 seconds respectively. The extended
+five-case cohort then passed in 47.07 / 38.30 / 38.11 seconds on those same actual
+interpreters. Its twelve successful scenario originals each contain 36 measured
+samples: descriptor counts stayed
 15 on 3.12 and 16 on 3.13/3.14, live thread counts stayed 11 and pending tasks
 stayed zero. These absolute descriptor counts include pytest's own capture;
 the invariant is the unchanged count within each process.
@@ -332,8 +335,20 @@ The first event is held at the sink; parser invocation stays at one through the
 hold. Repeated cancellation drains the watch, HTTP connection and source handler.
 Startup cycles cancel real children that have not advertised readiness, including
 repeated cancellation of the client-change cleanup owner; the process and staged
-file must be gone. A fourth case creates a real extra descriptor, thread and task,
+file must be gone. A fifth case creates a real extra descriptor, thread and task,
 checks that all three observations increase, then returns to its baseline.
+
+The additional expiry/recovery cycle stalls a genuine LIST snapshot consumer
+while the independently paced source advances beyond its old opaque version.
+The owned protocol fixture uses three resources and a three-event replay ring
+to trigger expiry quickly; the 10,000-resource performance workload and its
+1,000-event replay bound are unchanged. Normal ListWatch receives the actual
+410, emits RELISTING with no retained old snapshot, obtains a fresh LIST and
+reopens from its current version. Both original watch versions and all three
+recovered rows are checked, followed by drained HTTP/source workers, unchanged
+configuration and the same resource-count assertions. No recovery method is
+mocked or replaced. Its first focused original passed 39 total cycles in 19.57
+seconds; its source and original receipts remain retained.
 
 The first context trial failed its thread-count assertion: the native default
 executor was still populating lazily after three cycles. Its original failure

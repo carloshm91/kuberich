@@ -13,9 +13,11 @@ from pathlib import Path
 import pytest
 from aiohttp import web
 
+from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.domain.connections import ConnectionRequest
 from kuberich.domain.port_forwards import ForwardState, parse_mappings
 from kuberich.domain.views import ViewStatus
+from kuberich.domain.watches import SyncStatus
 from kuberich.services import watches
 from kuberich.services.access import AccessPolicy
 from kuberich.services.port_forwards import ForwardManager
@@ -24,6 +26,7 @@ from kuberich.services.resources import ResourceReader
 from kuberich.services.sessions import SessionService
 from kuberich.services.watches import ListWatch
 from kuberich.services.workspace import WorkspaceService
+from tests.contract.test_performance_workload import workload
 from tests.contract.test_port_forwards import state, unavailable
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.performance_terminal import require_normal_gc
@@ -87,7 +90,9 @@ def evidence(name):
         ROOT / "tests/support/watches.py",
         ROOT / "tests/support/workspace.py",
         ROOT / "tests/support/performance_terminal.py",
+        ROOT / "tests/support/performance_workload.py",
         ROOT / "tests/contract/test_port_forwards.py",
+        ROOT / "tests/contract/test_performance_workload.py",
         ROOT / "pyproject.toml",
         ROOT / "uv.lock",
     ]
@@ -364,6 +369,88 @@ async def test_repeated_startup_cancellation_reaps_children_and_private_configur
                 assert len(manager.infos) == 32
             finally:
                 await manager.close()
+
+
+@pytest.mark.asyncio
+async def test_slow_snapshot_consumer_recovers_expired_bounded_source_through_real_list_watch(
+    tmp_path,
+):
+    class Recovered(Exception):
+        pass
+
+    with evidence("expired-recovery") as report:
+        report["executor_warmup"] = await warm_native_executor()
+        baseline = None
+        for index in range(WARMUP + CYCLES):
+            # The same paced producer uses a small owned replay ring only for
+            # this protocol regression; the measured 1,000-event ring is unchanged.
+            async with workload(3, event_history=3) as (owned, http):
+                catalog = catalog_fixture(tmp_path, str(http._base_url))
+                config_before = (tmp_path / "fixture-config").read_bytes()
+                client = KubernetesSession(catalog.select("kuberich-test-one"), 5)
+                versions, statuses, problems = [], [], []
+
+                async def sink(
+                    update,
+                    owned=owned,
+                    http=http,
+                    versions=versions,
+                    statuses=statuses,
+                    problems=problems,
+                ):
+                    statuses.append(update.status.name)
+                    assert len(statuses) <= 8
+                    if update.status is SyncStatus.RELISTING:
+                        assert update.snapshot is None and update.problem.status == 410
+                        problems.append(update.problem.status)
+                    if update.status is SyncStatus.SNAPSHOT:
+                        versions.append(update.snapshot.resource_version)
+                        assert len(update.snapshot.items) == 3
+                        if len(versions) == 1:
+                            assert versions[0] == "q03/0"
+                            async with http.post("/__q03/start") as response:
+                                assert response.status == 200
+                            await wait_for(lambda owned=owned: owned.serial >= 7)
+                            async with http.post("/__q03/pause") as response:
+                                assert response.status == 200
+                            await wait_for(lambda owned=owned: all(t.done() for t in owned.workers))
+                            assert owned.events.maxlen == len(owned.events) == 3
+                    if update.status is SyncStatus.LIVE and len(versions) == 2:
+                        assert versions[1] == f"q03/{owned.serial}" and versions[1] != versions[0]
+                        assert problems == [410]
+                        raise Recovered
+
+                try:
+                    await client.open()
+                    async with asyncio.timeout(5):
+                        with pytest.raises(Recovered):
+                            await ListWatch(ResourceReader(client)).run(
+                                pod_resource(), "team", sink
+                            )
+                    assert not client.api.rest_client.pool_manager.connector._acquired
+                    await wait_for(lambda owned=owned: owned.stats["active_watches"] == 0)
+                    assert owned.stats["expired_watch"] == 1
+                    assert owned.snapshots == {}
+                    assert list(owned.watch_versions) == versions
+                    assert (tmp_path / "fixture-config").read_bytes() == config_before
+                finally:
+                    await client.close()
+                source_after = owned.receipt()
+            assert source_after["active_watches"] == source_after["active_logs"] == 0
+            assert not any(not t.done() for t in owned.workers)
+            baseline = sample(
+                report,
+                index,
+                baseline,
+                versions=versions,
+                statuses=statuses,
+                expired_watches=source_after["expired_watch"],
+                fixture_replay_capacity=3,
+                retained_replay_events=source_after["event_history"],
+                source_workers_drained=True,
+                recovered_rows=3,
+                source_kubeconfig_unchanged=True,
+            )
 
 
 @pytest.mark.asyncio
