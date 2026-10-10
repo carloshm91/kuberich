@@ -64,6 +64,24 @@ failed because dpkg recorded `/lib` while the resolved file lived under `/usr/li
 Notice discovery now checks the original source path and verified merged-/usr
 aliases, rejecting missing or ambiguous owners. The failed original remains
 retained; this does not waive notice or minimum-floor qualification.
+
+A committed-source build (`af42daa`) then succeeded in the pinned owned Ubuntu
+22.04 image. Its actual highest GLIBC symbols were 2.35. On a separate unmodified
+base image, installed-package and executable checks confirmed no system Python,
+uv, pip or kubectl. The frozen version/help/info and an actual 80-pod owned-API
+browser/container route passed, including the missing-kubectl message. A second
+clean-host trial used compiled C credential/kubectl fixtures and the container's
+real `/bin/sh`: authentication, private snapshot delivery, a shell command,
+return to the resource view, unchanged caller kubeconfig and terminal restoration
+passed. These helpers simulate the provider/exec boundaries; they are not real
+cloud-provider or real-cluster kubectl certification.
+
+An independent reader matched 126 inputs to the frozen Git commit, all 688
+archive members and 15 native files, and reviewed the original process/TTY
+receipts without rerunning behavior. This is Linux x86_64 evidence only. Full
+interpreter third-party notice enrollment, Linux arm64, both macOS targets,
+signing/minimum-OS evidence, owned-cluster execution and protected CI/release
+integration remain pending. See the [standalone report](acceptance/standalone-executables.md).
 Standalone downloads and public installation remain unavailable. No maintainer
 trial or publication is requested at this checkpoint.
 
