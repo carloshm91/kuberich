@@ -137,6 +137,7 @@ jobs:
             coverage.xml
             diff-coverage.json
             dist/*
+            artifacts/backend/*
             artifacts/ui/*
             artifacts/terminal/*
             artifacts/packaging/*

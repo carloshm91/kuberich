@@ -123,7 +123,12 @@ async def test_selected_running_container_uses_an_embedded_pty_and_keeps_detach_
             else:
                 await pilot.press("ctrl+q")
             if ending in {"detach", "back"}:
-                await wait_for(lambda: app.screen is containers)
+                await wait_for(
+                    lambda: (
+                        app.screen is containers
+                        and "Attach closed" in str(containers.status.content)
+                    )
+                )
                 assert not app._exit and not path.exists()
                 assert "Attach closed" in str(containers.status.content)
                 if ending == "detach":

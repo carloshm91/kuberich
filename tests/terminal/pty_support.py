@@ -144,7 +144,12 @@ class TerminalSession:
             try:
                 data = os.read(self.master, 65536)
                 self.transcript.extend(data)
-                self.screen_stream.feed(self.screen_decoder.decode(data))
+                # The owned disconnect flag is set before terminating SSH.
+                # Late output may contain truncated/interleaved terminal frames;
+                # retain it for exit/restoration evidence without inventing a
+                # visible screen after the transport has ceased to be observable.
+                if self.transport is None or not self.transport.disconnected:
+                    self.screen_stream.feed(self.screen_decoder.decode(data))
             except OSError as error:
                 if error.errno != errno.EIO:
                     raise

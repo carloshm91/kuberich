@@ -1,5 +1,25 @@
 # First things to try
 
+## Current qualification follow-up: Q03 #50
+
+The last delivered product remains the aggregate/generic-view checkpoint below.
+The maintainer-requested first 0.1.0 phase and project-owned
+`kuberich/tap/kuberich` channel are prepared in PR #172; no tag, package or tap has
+been published. That preparation's required native run failed on a backend
+heartbeat and three macOS verification cases, so it is pending.
+
+A focused correction now waits for actual attach return feedback and preserves
+raw lost-SSH evidence without projecting an interrupted remote screen. The backend
+keeps the 150-ms assertion and records bounded source/GC/instrumentation/cleanup
+diagnostics for further investigation. See
+[the original failures and limits](acceptance/native-verification-prerequisites.md).
+Local verification passed 36 attach/terminal cases, three final local/SSH
+observer cases and 27 Python 3.13 backend/diagnostic cases. The backend's measured
+23.12-ms gap does not explain the previous hosted failures. Required frozen
+Linux/macOS checks remain pending before this correction can merge.
+This does not introduce new product behavior or claim Q03/release qualification;
+there is no intermediate manual trial requested from the maintainer.
+
 ## Aggregate logs checkpoint: S06 #54
 
 Ordinary Pod/workload rows now open all-container logs with Shift+L or `:logsall`.

@@ -183,6 +183,8 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
         if step.get("uses", "").startswith("actions/upload-artifact@")
     )
     assert upload["with"]["name"] == "quality-${{ matrix.os }}-python-${{ matrix.python }}"
+    assert upload["if"] == "${{ always() }}"
+    assert "artifacts/backend/*" in upload["with"]["path"].splitlines()
 
 
 @pytest.mark.parametrize(

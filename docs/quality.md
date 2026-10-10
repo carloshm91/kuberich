@@ -134,6 +134,15 @@ pre-open 400 evidence changes, manual admission, same-name UID churn, expired
 selection, source/status bounds, noise/slow-source heartbeat and detached-export
 cleanup before context-client close. Source and fresh-installed console/module
 PTYs exercise actual controls, resize, exit and terminal restoration.
+The separate actual-HTTP tiny-line backend case still asserts its unchanged
+150-ms heartbeat, 32,770 received lines, a responsive slow source, 600 aggregate/
+300 per-source retained lines, byte limits, 30-second receive deadline and drained
+ownership. It retains bounded read-only failure attribution at
+`artifacts/backend/aggregate-tiny-lines-heartbeat.json`: source hashes, actual
+interpreter/tracer/import facts, normal GC policy, generation-two overlap and
+post-cleanup counts. These diagnostics do not collect garbage, alter thresholds,
+relax assertions or qualify timing. A passing new candidate does not explain an
+earlier failed measurement; Q03 retains the unresolved performance investigation.
 The required 5,000-row UI benchmark runs from its full-suite test node in an owned
 fresh pytest process. The full development catalogue imports a development-only
 IRI grammar through the SBOM validator: diagnosis found roughly 327,000 retained
