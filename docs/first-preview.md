@@ -1,5 +1,19 @@
 # First things to try
 
+## Owned workspace repaint work: Refs Q03 #50
+
+Unchanged workspace labels avoid duplicate updates while identity/theme/style
+changes still repaint. Resource tables reuse immutable projection rows and opt
+into native row repaint for safe width-preserving edits; geometry changes and
+unknown content retain full native behavior. The complete affected cohort passed
+224 UI/domain cases and ten actual owned source-terminal cases. Final signed-head
+native checks remain required before merging this candidate. Resource-only
+terminal observations improved but still exceed Q03's
+100-ms target; combined logs, sustained memory and lifecycle qualification remain
+open. [Exact scope and observer limits](acceptance/live-render-performance.md)
+retain the original evidence. No intermediate manual trial or publication is
+requested.
+
 ## Resource ordering work: Refs Q03 #50
 
 Pod, standard and discovered resource tables preserve their established order
@@ -8,7 +22,11 @@ scroll. Changed typed values, identity ties, membership, native reorder, schema,
 context and interrupted batches still receive canonical ordering. All 173
 affected UI/domain cases and three owned source-terminal cases passed. The
 critical Pod domain and all 43 changed executable production lines met 100%
-coverage; final signed-head native checks remain required. Exact evidence and the continuing input/throughput/memory limits are in
+coverage. PR #175 merged as `26ba91e5f03e04818fdc0c9343c2ae43b56a8832`
+after all eight required checks and independent original artifact review. Each
+of four development environments passed 4,246 cases; minimum whole line/branch
+coverage was 99.0920% / 96.8856%, with all 43 critical modules and changed
+executable lines at 100%. Exact evidence and continuing input/throughput/memory limits are in
 [resource-order evidence](acceptance/table-order-performance.md). Q03 remains open,
 and no intermediate manual maintainer trial or public publication is requested.
 

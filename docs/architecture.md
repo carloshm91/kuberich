@@ -1,5 +1,17 @@
 # Architecture decisions
 
+## Owned workspace repaint: Refs Q03 #50
+
+WorkspaceLabel projects all public rendering attributes of exact strings/Rich
+Text and compares current content to its bounded last projection. Its explicit
+owned update method leaves the native update/property contract intact. Resource
+tables distinguish reused immutable rows from merely equal values. Pod/standard
+tables opt into native public row-region repaint only for immutable header-bound
+edits without fixed cells; FrameTable defaults to full native repaint. The
+temporary public refresh guard resets in finally and never changes native
+geometry/cache counters. Unknown renderables and layout/width changes retain
+native behavior. See [acceptance limits](acceptance/live-render-performance.md).
+
 ## Phased immutable release decisions: Refs #89
 
 Release readiness validates the entire pinned 79-task graph and canonical issue

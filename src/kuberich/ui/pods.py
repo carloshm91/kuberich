@@ -27,6 +27,7 @@ class Viewport:
 
 
 class PodTable(FrameTable[PodCell]):
+    _row_repaint_enabled = True
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("s", "next_sort", "Sort"),
         Binding("S", "reverse_sort", "Reverse sort", show=False),
@@ -139,7 +140,11 @@ class PodTable(FrameTable[PodCell]):
         initial = not self.row_count
         incoming = {row.uid: row for row in rows}
         removals = [(uid, None) for uid in self._rows if uid not in incoming]
-        changes = [(uid, row) for uid, row in incoming.items() if self._rows.get(uid) != row]
+        changes = [
+            (uid, row)
+            for uid, row in incoming.items()
+            if (cached_row := self._rows.get(uid)) is not row and cached_row != row
+        ]
         patches = removals + changes
         now = utc_now()
         for start in range(0, len(patches), 128):

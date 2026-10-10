@@ -181,6 +181,41 @@ class WorkspaceFrame(Vertical):
     """
 
 
+def _text_projection(content: object) -> tuple[object, ...] | None:
+    if type(content) is str:
+        return (str, content)
+    if type(content) is Text:
+        return (
+            Text,
+            content.plain,
+            tuple(content.spans),
+            content.style,
+            content.justify,
+            content.overflow,
+            content.no_wrap,
+            content.end,
+            content.tab_size,
+        )
+    return None
+
+
+class WorkspaceLabel(Static):
+    """Keep native updates while avoiding repeated owned text projections."""
+
+    _last_projection: tuple[object, ...] | None = None
+
+    def update_text(self, content: str | Text) -> None:
+        projection = _text_projection(content)
+        if (
+            projection is not None
+            and projection == self._last_projection
+            and projection == _text_projection(self.content)
+        ):
+            return
+        super().update(content)
+        self._last_projection = projection
+
+
 class ViewActions(Static):
     """Reflow shortcuts when their own panel changes size, including logo changes."""
 
@@ -222,7 +257,7 @@ class WorkspaceHeader(Horizontal):
     def compose(self) -> ComposeResult:
         with Vertical(id="scope-bar"):
             for name in ("context", "cluster", "user", "namespace", "connection"):
-                yield Static("", id=name, markup=False)
+                yield WorkspaceLabel("", id=name, markup=False)
             yield Static(self.chrome.build, id="build-info", markup=False)
         with Horizontal(id="app-header"):
             yield ViewActions(self.shortcuts)
@@ -241,7 +276,7 @@ class WorkspaceHeader(Horizontal):
             label = name.title() if name != "connection" else "State"
             text = safe_text(f"{label}: {value}")
             text.stylize(self.app.get_css_variables()["accent"], 0, len(label) + 1)
-            self.query_one(f"#{name}", Static).update(text)
+            self.query_one(f"#{name}", WorkspaceLabel).update_text(text)
 
     def on_resize(self, event: Resize) -> None:
         self.layout_header()

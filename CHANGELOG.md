@@ -7,6 +7,10 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Avoid duplicate workspace label updates and wide equality on reused immutable
+  resource rows; repaint safe owned cell edits through native row regions while
+  retaining full native geometry and unknown-content handling.
+
 - Keep established Pod, standard and discovered resource order through unrelated
   live edits. Reorder changed typed sort values, identity ties and membership while
   retaining selection/scroll and generation-safe recovery.
