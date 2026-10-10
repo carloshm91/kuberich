@@ -7,6 +7,10 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Avoid scanning every retained row when a single-line resource cell changes
+  within a column whose header determines its width. Preserve native sizing,
+  rendering and selection across ordinary and discovered resource tables.
+
 - Pin every Linux CI host to Ubuntu 24.04 while retaining all interpreter/native,
   coverage and owned-cluster checks. Reject stale runner/job/artifact identities
   during release qualification and candidate retries.

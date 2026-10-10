@@ -5,7 +5,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import ClassVar
 
-from rich.text import Text
 from textual import on
 from textual.binding import Binding, BindingType
 from textual.coordinate import Coordinate
@@ -13,24 +12,9 @@ from textual.message import Message
 from textual.widgets import DataTable
 
 from kuberich.domain.pods import PodColumn, PodRow, order, utc_now
-from kuberich.security.presentation import safe_text
-from kuberich.ui.presentation import FrameTable
+from kuberich.ui.presentation import FrameTable, TableCell
 
-
-@dataclass(frozen=True)
-class PodCell:
-    uid: str
-    text: str
-    numeric: bool = False
-
-    def __rich__(self) -> Text:
-        value = safe_text(self.text)
-        value.truncate(256, overflow="ellipsis")
-        value.justify = "right" if self.numeric else "left"
-        return value
-
-    def __str__(self) -> str:
-        return self.__rich__().plain
+PodCell = TableCell
 
 
 @dataclass(frozen=True)

@@ -1,5 +1,25 @@
 # First things to try
 
+## Table responsiveness work: Refs Q03 #50
+
+Header-bounded numeric resource updates avoid measuring an entire retained
+column when public width metadata is still trustworthy. Native sizing remains
+responsible for mutable/custom cells and deferred width changes. A new parity
+case reproduced a deferred-update mismatch in the initial local candidate; the
+corrected candidate passed all 95 affected UI cases and three actual owned
+source-terminal cases. The affected module's 70 lines/14 branches and all 48
+changed executable production lines measured 100%. Final signed-head native
+verification must qualify this source before it reaches main. Exact
+commands and the source limits of earlier checks and diagnostic timings are in
+[table-width evidence](acceptance/table-width-performance.md).
+
+The 10,000-row diagnosis identified a useful hot path, but input responsiveness,
+combined throughput, independent pacing, 10,000 retained logs and the 30-minute
+memory plateau remain open in Q03. No intermediate manual trial is requested.
+The first public phase remains 0.1.0, with `brew install kuberich/tap/kuberich` as
+the project-owned channel proposal. No tag, package, organization/tap or new
+site/DNS publication occurs here.
+
 ## Phased release preparation: Refs #89
 
 The maintainer now targets first public **0.1.0**, followed by reviewed cumulative
@@ -71,11 +91,24 @@ fixtures. Linux 3.12 also passed the configured owned-cluster rehearsals.
 This delivers verification corrections and bounded backend diagnostics under the
 unchanged workload, default GC and 150-ms assertion. It adds no new product
 feature, does not establish the cause of the previous failed measurements and
-does not complete Q03 or the full six-environment release qualification. PR #172
-must qualify its own rebased source; the earlier failed run remains preserved.
+does not complete Q03 or the full six-environment release qualification. The
+earlier failed run remains preserved.
 [Original native evidence and limits](acceptance/native-verification-prerequisites.md)
 record the four successful development environments. No intermediate manual
 maintainer trial or public artifact publication is required by this checkpoint.
+
+[PR #172](https://github.com/carloshm91/kuberich/pull/172) subsequently merged as
+`b6337977f6e72f8688a9efc3f8e8b875f10b7c4e` after all required checks and
+independent review of the original native and Repository artifacts. Its source
+`098e398fb704b277b6a7376062a9d651eb41a511`, actual tested PR checkout
+`017a6de8969488a6a75f68685a29c3fa2eae0b2a` and squash merge share tree
+`35df36db9e21409339ac99462e334bb68abc2037`. All four development environments
+passed 4,185 cases; minimum line/branch coverage was 99.0787% / 96.8394%, with
+all 43 critical modules at 100%. Original reviews verified production/package
+source identity, runtime coverage, installers, terminal restoration and the
+configured owned-cluster checks. Repository checks covered all 49 desktop and
+49 mobile pages with zero violations or browser failures. This qualifies the
+preparation change; it does not activate or publish a distribution channel.
 
 ## Aggregate logs checkpoint: S06 #54
 
