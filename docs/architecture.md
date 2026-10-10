@@ -1,5 +1,31 @@
 # Architecture decisions
 
+## Incremental log geometry and fixed-height status: Refs Q03 #50
+
+LogBody retains at most two published wrap geometries for the current width,
+timestamp mode, literal query and marks. An update reuses only an exactly equal
+overlapping entry prefix, rebases its starts after eviction and appends new
+layouts in the existing cooperative turns. Both geometry forms and line caches
+are pruned to current retained identities. Search matches belong to the reused
+prefix itself; reordered histories cannot keep matches from rows prepared later.
+Context changes and invalidation discard geometry. Published arrays are copied
+before an update, and generation checks still prevent obsolete publication.
+
+A cancelled first wrap can leave a partially warmed line cache. Returning to
+unwrapped history prepares missing previously requested wrapped layouts before
+that history may use the prefix fast path. Rich-reference tests cover both entry
+forms, append/eviction, gaps, reorder, query/mark/timestamp changes, resize and
+generation/task cancellation.
+
+Log titles and status labels have fixed one-row CSS geometry. Their native
+Static updates use `layout=False`, so changing counters does not relayout the
+covered workspace. Unchanged title/frame content is not refreshed. Native
+terminal resize and log virtual-size changes retain their layout behavior.
+The first unprofiled short observation measured 91.190 ms p95; sustained and
+full native qualification for this candidate remain required. The complete
+owned log UI cohort passed 36 cases; the exact workflow lint/format and strict
+types passed over 492 files and 133 source files respectively.
+
 ## Owned CrashLoop qualification observation: Refs Q03 #50
 
 The working correction selects one complete genuine LIST response in which the

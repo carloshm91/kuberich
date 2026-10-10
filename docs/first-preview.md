@@ -64,6 +64,23 @@ Pod-table `G` is still tracked by B07 #61;
 its failed setup observation and cleanup receipt are retained.
 See [working evidence and limitations](acceptance/combined-workload-progress.md).
 
+A subsequent local candidate reuses exactly matching retained geometry and
+updates fixed-height log counters without recalculating the covered workspace layout.
+Its first normal 30-second observation measured **91.190 ms p95 / 113 controls**,
+with all 3,017 events and 60,340 log lines sent, unchanged measured inputs,
+zero source expiry and normal terminal/process cleanup. This is a short working
+observation, not sustained or native qualification. The exact tested command was:
+
+```sh
+uv run python -m tests.support.performance_terminal --seconds 30 --output artifacts/incremental50/normal-fixed-height-original
+```
+
+Twelve focused Rich/layout/cancellation cases passed after correcting search
+match pruning for reordered retained entries. The original failing cases remain
+retained. The complete owned log cohort then passed 36 cases in 223.20 seconds,
+and exact workflow lint/format and strict types passed over 492 files and 133
+source files. A frozen sustained run and full native qualification are next.
+
 The first public target remains 0.1.0. The `kuberich` GitHub organization now
 exists; source remains `carloshm91/kuberich`, and `brew install kuberich/tap/kuberich`
 is the intended unpublished channel. No source transfer, package, tap, tag or

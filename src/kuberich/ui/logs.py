@@ -391,14 +391,17 @@ class LogScreen(ModalScreen[None]):
             return
         mode = "previous" if self.previous else "current"
         target = self.stream.target
-        self.query_one("#log-dialog").border_title = safe_text(
-            f"logs({target.namespace}/{target.name}:{self.container}) · {mode}"
+        frame = self.query_one("#log-dialog")
+        title = safe_text(f"logs({target.namespace}/{target.name}:{self.container}) · {mode}")
+        if frame.border_title != title.markup:
+            frame.border_title = title
+        heading = safe_text(
+            f"Logs · {self.container} · {mode} · {target.namespace}/{target.name} · {target.session.context}"
         )
-        self.heading.update(
-            safe_text(
-                f"Logs · {self.container} · {mode} · {target.namespace}/{target.name} · {target.session.context}"
-            )
-        )
+        if self.heading.content != heading:
+            # These labels have fixed one-row geometry, including narrow mode.
+            # Updating their text need not relayout the whole covered workspace.
+            self.heading.update(heading, layout=False)
         state = "Paused" if self.paused else "Receiving enabled"
         follow = "Following" if self.body.follow else "Reading history"
         self.status.update(
@@ -408,7 +411,8 @@ class LogScreen(ModalScreen[None]):
                 f"{len(self.body.matches)} matching lines · {'wrap' if self.wrap else 'no wrap'} · "
                 f"{'timestamps' if self.timestamps else 'no timestamps'} · "
                 f"column lock {'on' if self.body.column_lock else 'off'}"
-            )
+            ),
+            layout=False,
         )
         self.pause_button.label = "Resume" if self.paused else "Pause"
         self.previous_button.label = "Current" if self.previous else "Previous"

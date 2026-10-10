@@ -202,3 +202,48 @@ An initial locally mislabeled invocation was discovered to have recreated its
 only as 3.12 evidence. Correct native invocations record executable, version,
 package source and input hashes. Full corrected native checks remain required;
 original failures are preserved and no whole-candidate qualification is claimed.
+
+## Incremental retained geometry and fixed-height refresh diagnosis
+
+The subsequent local prototype reuses an exactly matching retained entry prefix
+for each of at most two wrap geometries, prunes evicted identities and prepares
+only its new tail in cooperative turns. Its first normal observation measured
+154.931 ms p95 / 106 controls, with 3,019 events and 60,380 log lines delivered.
+That result remained above target; no improvement was inferred from one short
+distribution. The exact working sources and original ANSI/receipts are retained.
+
+An intrusive cProfile diagnosis completed 67 controls before its paint-byte
+assertion failed. Both owners drained, the profile and failure are preserved,
+and this result cannot qualify latency. A separate bounded actual-CLI GC callback
+diagnosis left ordinary 700/10/10 policy unchanged and observed 12 generation-two
+collections, with a largest 80.482-ms pause. It measured 106.676-ms input p95;
+only some slow inputs overlapped a long collection. This is instrumented
+diagnosis, not proof that GC explains every input delay.
+
+Inspection found that changing one-row log metadata called native Static updates
+with their default whole-layout refresh. The correction requests `layout=False`
+for their fixed geometry and skips unchanged heading/frame titles, retaining
+native resize, virtual log sizing and literal/sanitized text. The first normal
+corrected short run was:
+
+```sh
+uv run python -m tests.support.performance_terminal --seconds 30 --output artifacts/incremental50/normal-fixed-height-original
+```
+
+It completed 30.166 seconds, 113 controls, **91.190-ms p95**, a 61.662-ms median,
+3,017 resource events and 60,340 log lines, all sent without source expiry.
+Measured inputs stayed unchanged and both process owners and the terminal
+closed normally. Its 3 inputs above 100 ms do not invalidate this percentile;
+the 30-minute sustained distribution and memory rule remain required. No full
+candidate coverage, native qualification or Q03 completion is claimed.
+
+Ten focused existing layout/literal/live-control/resize cases passed before that
+short run. Four added Rich/cancellation cases exercised both entry forms and
+partially cancelled wrap warming. Extending their sequence to reorder entries
+under an unchanged query found two genuine failing originals: cached matches
+included retained entries outside the reused prefix. Matching is now pruned to
+that prefix before appending the new order. The corrected 12-case cohort passed;
+the original failing sources and logs remain retained. The complete owned log
+cohort subsequently passed **36 cases in 223.20 seconds**. Exact workflow
+Ruff/formatting checked 492 files and strict types passed over 133 source files.
+Frozen-source sustained observation and full native qualification remain pending.
