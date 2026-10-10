@@ -2,6 +2,25 @@
 
 ## Owned CrashLoop qualification observation: Refs Q03 #50
 
+The working correction selects one complete genuine LIST response in which the
+exact owned UID/name/namespace has CrashLoopBackOff and a terminated instance.
+It returns the response's records and resource version unchanged to the normal
+aggregate membership pipeline. Later LIST/WATCH calls and every log request
+remain ordinary real-cluster requests. This is an explicit fixture control at
+the membership observation boundary; its receipt labels it. It does not claim
+the server stays waiting through later requests. The first last-instance
+assertion, one-line output, no-replay and cleanup checks remain enforced.
+The selector owns a 120-second deadline; denial, cancellation or missing
+membership fails instead of manufacturing a snapshot. All 11 new local real-kind
+scenarios and 81 focused contracts passed; frozen native checks remain required.
+
+Subsequent real-kind evidence invalidated the assumption that a fresh waiting
+observation establishes a usable remaining backoff window. One owned 120-second
+diagnostic observed waiting-to-running at restart count three within about
+117 ms. The `321e9ca` required native candidate and two later local fixture
+revisions remain unqualified. The original setup below is retained as the
+attempt being corrected; production logs and replay contracts are unchanged.
+
 The actual-kind scenario observes a terminated container then its same identity
 in CrashLoopBackOff, admitting within three monotonic seconds of that transition
 after at least three restarts. Status receipt time avoids assuming `finishedAt`

@@ -2,6 +2,22 @@
 
 ## Native qualification and owned CrashLoop scenario: Refs Q03 #50
 
+Current update: the later `321e9ca` candidate also failed required real-kind
+enrollment after all four PR suites passed 4,365 cases. Two subsequent local
+fixture revisions remain unqualified. Owned status-timing evidence shows a
+waiting observation can last only about 117 ms before running. The earlier
+receipt-time window below does not lease container state across API calls;
+a successful new native candidate remains pending.
+
+The working correction now selects one unchanged actual waiting LIST response
+at the membership boundary, then leaves later LIST/WATCH and every log request
+ordinary. Its receipt labels that fixture control. First-instance, single-line,
+no-replay and cleanup assertions remain enforced. Its 81 focused contracts and
+all 11 real-kind scenarios passed, with unchanged caller configuration and
+verified cluster deletion. Required strict types over 133 files and static-site
+checks passed. A new frozen native candidate still needs its complete checks.
+This does not add a user-facing feature or request another maintainer trial.
+
 The dense-log candidate passed all 4,349 cases in four native environments.
 Three complete jobs passed; Linux/Python 3.12 failed later because the owned
 crashing container restarted before the waiting-instance log scenario enrolled.

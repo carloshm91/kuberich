@@ -12,6 +12,7 @@ from typing import Any
 
 from kubernetes_asyncio import client
 
+from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.config.catalog import load_catalog
 from kuberich.config.schema import Settings
 from kuberich.diagnostics.redaction import sanitize_text
@@ -19,6 +20,7 @@ from kuberich.domain.aggregate_logs import AggregateHistory
 from kuberich.domain.connections import ConnectionRequest
 from kuberich.domain.logs import LogLine, LogOptions
 from kuberich.domain.registry import RESOURCE_ALIASES
+from kuberich.domain.resources import ApiResource, ResourceRecord, ResourceSnapshot
 from kuberich.domain.targets import ResourceTarget
 from kuberich.services.access import AccessPolicy
 from kuberich.services.aggregate_logs import AggregateLogs
@@ -73,39 +75,128 @@ def task_status(task: asyncio.Task[None] | None) -> dict[str, Any]:
     }
 
 
-class CrashWaitingWindow:
-    """Observe a real termination → waiting transition, without server-clock assumptions."""
+class CrashWaitingReader(ResourceReader):
+    """Select one genuine waiting LIST response; all later requests stay ordinary.
 
-    def __init__(self) -> None:
-        self.terminated_id: str | None = None
-        self.waiting_since: float | None = None
+    This fixture never changes a returned record, version or log response. The
+    selected snapshot fixes the observation being exercised, not server state.
+    """
 
-    def observe(self, pod: client.V1Pod, now: float) -> bool:
-        entries = pod.status.container_statuses or [] if pod.status is not None else []
-        for status in entries:
-            if status.name != "app":
+    def __init__(
+        self, session: KubernetesSession, namespace: str, uid: str, evidence: dict[str, Any]
+    ) -> None:
+        super().__init__(session)
+        self.namespace, self.uid, self.evidence = namespace, uid, evidence
+        self.pending = True
+
+    async def list(
+        self, resource: ApiResource, namespace: str | None = None, *, page_size: int = 100
+    ) -> ResourceSnapshot:
+        if (
+            not self.pending
+            or resource.group
+            or resource.name != "pods"
+            or namespace != self.namespace
+        ):
+            return await super().list(resource, namespace, page_size=page_size)
+
+        snapshot: ResourceSnapshot | None = None
+
+        async def waiting() -> bool:
+            nonlocal snapshot
+            snapshot = await super(CrashWaitingReader, self).list(
+                resource, namespace, page_size=page_size
+            )
+            self.evidence["list_attempts"] = self.evidence.get("list_attempts", 0) + 1
+            return waiting_crash_record(snapshot, self.namespace, self.uid) is not None
+
+        await wait_for(waiting)
+        assert snapshot is not None
+        record = waiting_crash_record(snapshot, self.namespace, self.uid)
+        assert record is not None
+        self.evidence["membership_observed_monotonic"] = monotonic()
+        self.evidence["membership_resource_version"] = snapshot.resource_version
+        self.evidence["membership_waiting_uid"] = record.uid
+        self.evidence["membership_waiting_status"] = record.manifest["status"]["containerStatuses"][
+            :8
+        ]
+        self.evidence["membership_method"] = "one unchanged actual waiting LIST snapshot"
+        self.pending = False
+        return snapshot
+
+
+def waiting_crash_record(
+    snapshot: ResourceSnapshot, namespace: str, uid: str
+) -> ResourceRecord | None:
+    for record in snapshot.items:
+        if record.uid != uid or record.name != "owned-crash" or record.namespace != namespace:
+            continue
+        status = record.manifest.get("status")
+        entries = status.get("containerStatuses") if isinstance(status, dict) else None
+        if not isinstance(entries, list):
+            continue
+        for entry in entries:
+            if not isinstance(entry, dict):
                 continue
-            state, last = status.state, status.last_state
-            if state is not None and state.terminated is not None:
-                self.terminated_id = state.terminated.container_id
-                self.waiting_since = None
-                return False
-            terminated = last.terminated if last is not None else None
+            state, last = entry.get("state"), entry.get("lastState")
+            state = state if isinstance(state, dict) else {}
+            last = last if isinstance(last, dict) else {}
+            waiting, terminated = state.get("waiting"), last.get("terminated")
+            waiting = waiting if isinstance(waiting, dict) else {}
+            terminated = terminated if isinstance(terminated, dict) else {}
+            restarts = entry.get("restartCount")
             if (
-                status.restart_count >= 3
-                and state is not None
-                and state.waiting is not None
-                and state.waiting.reason == "CrashLoopBackOff"
-                and terminated is not None
-                and bool(terminated.container_id)
-                and terminated.container_id == self.terminated_id
+                entry.get("name") == "app"
+                and type(restarts) is int
+                and restarts >= 3
+                and waiting.get("reason") == "CrashLoopBackOff"
+                and isinstance(terminated.get("containerID"), str)
+                and bool(terminated.get("containerID"))
             ):
-                if self.waiting_since is None:
-                    self.waiting_since = now
-                return 0 <= now - self.waiting_since <= 3
-            self.terminated_id = None
-            self.waiting_since = None
-        return False
+                return record
+    return None
+
+
+async def crash_admission_precondition(
+    core: client.CoreV1Api,
+    namespace: str,
+    uid: str,
+    previous: bool,
+    evidence: dict[str, Any],
+) -> client.V1Pod:
+    value: client.V1Pod | None = None
+
+    async def available() -> bool:
+        nonlocal value
+        value = await core.read_namespaced_pod("owned-crash", namespace, _request_timeout=15)
+        assert value.metadata is not None and value.metadata.uid == uid
+        entries = value.status.container_statuses or [] if value.status is not None else []
+        if not any(
+            entry.name == "app"
+            and entry.restart_count >= 3
+            and entry.last_state is not None
+            and entry.last_state.terminated is not None
+            and entry.last_state.terminated.container_id
+            for entry in entries
+        ):
+            return False
+        evidence["direct_started_monotonic"] = monotonic()
+        direct = await core.read_namespaced_pod_log(
+            "owned-crash",
+            namespace,
+            container="app",
+            previous=previous,
+            follow=False,
+            tail_lines=10,
+            _request_timeout=15,
+        )
+        evidence["direct_finished_monotonic"] = monotonic()
+        return "owned-crash-output" in direct
+
+    await wait_for(available)
+    assert value is not None
+    evidence["available_pod"] = crash_status(value)
+    return value
 
 
 async def verify(cluster: OwnedCluster) -> dict[str, Any]:
@@ -395,7 +486,7 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
                         client.V1Container(
                             name="app",
                             image=SHELL_IMAGE,
-                            command=["sh", "-c", "echo owned-crash-output; exit 1"],
+                            command=["sh", "-c", "echo owned-crash-output; sleep 1; exit 1"],
                         )
                     ],
                     tolerations=[client.V1Toleration(operator="Exists")],
@@ -403,13 +494,9 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
             ),
         )
 
-        waiting_window = CrashWaitingWindow()
-
-        async def crash_waiting() -> bool:
-            value = await core.read_namespaced_pod("owned-crash", namespace)
-            return waiting_window.observe(value, monotonic())
-
         crash_modes: list[dict[str, Any]] = []
+        crash_histories: list[list[str]] = []
+        crash_precondition: dict[str, Any] = {}
 
         async def retain_crash_failure(
             stage: str,
@@ -437,6 +524,7 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
                         "error": type(error).__name__,
                         "http_status": getattr(error, "status", None),
                         "pod": status,
+                        "precondition": crash_precondition,
                         "successful_modes": crash_modes,
                         "line_count": len(lines or []),
                         "expected_output_seen": any(
@@ -465,25 +553,13 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
             )
 
         for previous in (False, True):
-            # Observe a fresh established backoff window for each mode. An
-            # arbitrary waiting observation may be just before its next restart,
-            # allowing valid current terminated logs instead of this scenario.
+            # A preflight GET cannot lease waiting state through later requests.
+            # Exercise first admission from a genuine waiting membership LIST.
             try:
-                await wait_for(crash_waiting)
-                available = await core.read_namespaced_pod(
-                    "owned-crash", namespace, _request_timeout=15
+                crash_precondition = {}
+                available = await crash_admission_precondition(
+                    core, namespace, crash.metadata.uid, previous, crash_precondition
                 )
-                assert waiting_window.observe(available, monotonic())
-                direct = await core.read_namespaced_pod_log(
-                    "owned-crash",
-                    namespace,
-                    container="app",
-                    previous=previous,
-                    follow=False,
-                    tail_lines=10,
-                    _request_timeout=15,
-                )
-                assert "owned-crash-output" in direct
             except Exception as error:
                 await retain_crash_failure("available-instance-precondition", previous, error)
                 raise
@@ -495,7 +571,12 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
                 lambda: sessions.client is connection,
             )
             crash_lines: list[str] = []
+            crash_histories.append(crash_lines)
             first_start: list[str | None] = []
+            crash_reader = CrashWaitingReader(
+                connection, namespace, crash.metadata.uid, crash_precondition
+            )
+            crash_owner.reader = crash_reader
 
             async def retain_crash(
                 source: Any,
@@ -511,6 +592,7 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
                 crash_lines.append(line.text)
                 del crash_lines[:-100]
 
+            crash_precondition["owner_started_monotonic"] = monotonic()
             crash_task = asyncio.create_task(
                 crash_owner.run(
                     LogOptions(previous=previous, follow=False), retain_crash, lambda message: None
@@ -533,6 +615,8 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
                     and first_start[0] is not None
                     and first_start[0].startswith("('last-terminated',")
                 )
+                assert not crash_reader.pending and len(crash_lines) == 1
+                assert crash_precondition["membership_waiting_uid"] == crash.metadata.uid
             except Exception as error:
                 await retain_crash_failure(
                     "initial-enrollment", previous, error, crash_owner, crash_task, crash_lines
@@ -541,13 +625,16 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
             crash_modes.append(
                 {
                     "previous": previous,
-                    "waiting_observation": crash_status(available),
+                    "available_observation": crash_status(available),
+                    "precondition": crash_precondition,
                     "direct_log_available": True,
                     "first_start": first_start[0],
+                    "initial_membership_controlled": True,
                     "line_count": len(crash_lines),
                     "ended": all(state.status == "ended" for state in crash_owner.states.values()),
                 }
             )
+        assert all(len(lines) == 1 for lines in crash_histories)
         checks.append(
             "actual-crashloop-waiting-last-instance-current-and-previous-initial-enrollment"
         )
