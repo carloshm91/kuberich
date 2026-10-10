@@ -1,5 +1,15 @@
 # Architecture decisions
 
+## Owned CrashLoop qualification observation: Refs Q03 #50
+
+The actual-kind scenario observes a terminated container then its same identity
+in CrashLoopBackOff, admitting within three monotonic seconds of that transition
+after at least three restarts. Status receipt time avoids assuming `finishedAt`
+is published immediately. Current/previous output and initial last-instance
+assertions, scenario deadline and cleanup remain unchanged. This changes only
+owned test setup, not production admission, restart handling or replay semantics.
+See [qualification evidence](acceptance/owned-crashloop-window.md).
+
 ## Bounded formatting and collected parser outcomes: Refs Q03 #50
 
 Aggregate view/export formatting captures immutable records, mode, timestamps

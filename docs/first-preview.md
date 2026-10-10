@@ -1,5 +1,26 @@
 # First things to try
 
+## Native qualification and owned CrashLoop scenario: Refs Q03 #50
+
+The dense-log candidate passed all 4,349 cases in four native environments.
+Three complete jobs passed; Linux/Python 3.12 failed later because the owned
+crashing container restarted before the waiting-instance log scenario enrolled.
+Its expected output and normal reader completion did not satisfy that scenario.
+The failed original remains retained and the candidate was not merged.
+
+The corrected verifier observes an actual termination-to-waiting transition and
+enrolls within its bounded receipt-time window. `uv run pytest -q
+tests/quality/test_aggregate_kind.py tests/quality/test_owned_kind.py
+tests/quality/test_ci_policy.py` passed 62 cases; the actual owned Kubernetes
+trial passed 11 scenarios, including current/previous waiting-instance logs,
+all-reader cleanup and verified cluster deletion. Required Ruff/format checks
+and strict types over 133 files passed. New frozen native checks remain required.
+See [evidence and limits](acceptance/owned-crashloop-window.md).
+
+The first public target remains 0.1.0, with planned brand-owned installation
+`brew install kuberich/tap/kuberich`. No version, tag, tap or package is published
+by this correction; Q03's full sustained-load qualification remains open.
+
 ## Cooperative dense-log delivery: Refs Q03 #50
 
 Pending input, cancellation and target changes now get a cooperative turn during

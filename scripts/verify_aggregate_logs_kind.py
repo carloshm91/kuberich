@@ -7,6 +7,7 @@ import logging
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from pathlib import Path
+from time import monotonic
 from typing import Any
 
 from kubernetes_asyncio import client
@@ -70,6 +71,41 @@ def task_status(task: asyncio.Task[None] | None) -> dict[str, Any]:
         "cancelled": task is not None and task.cancelled(),
         "exception": type(error).__name__ if error is not None else None,
     }
+
+
+class CrashWaitingWindow:
+    """Observe a real termination → waiting transition, without server-clock assumptions."""
+
+    def __init__(self) -> None:
+        self.terminated_id: str | None = None
+        self.waiting_since: float | None = None
+
+    def observe(self, pod: client.V1Pod, now: float) -> bool:
+        entries = pod.status.container_statuses or [] if pod.status is not None else []
+        for status in entries:
+            if status.name != "app":
+                continue
+            state, last = status.state, status.last_state
+            if state is not None and state.terminated is not None:
+                self.terminated_id = state.terminated.container_id
+                self.waiting_since = None
+                return False
+            terminated = last.terminated if last is not None else None
+            if (
+                status.restart_count >= 3
+                and state is not None
+                and state.waiting is not None
+                and state.waiting.reason == "CrashLoopBackOff"
+                and terminated is not None
+                and bool(terminated.container_id)
+                and terminated.container_id == self.terminated_id
+            ):
+                if self.waiting_since is None:
+                    self.waiting_since = now
+                return 0 <= now - self.waiting_since <= 3
+            self.terminated_id = None
+            self.waiting_since = None
+        return False
 
 
 async def verify(cluster: OwnedCluster) -> dict[str, Any]:
@@ -367,15 +403,11 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
             ),
         )
 
+        waiting_window = CrashWaitingWindow()
+
         async def crash_waiting() -> bool:
             value = await core.read_namespaced_pod("owned-crash", namespace)
-            return any(
-                status.state.waiting is not None
-                and status.state.waiting.reason == "CrashLoopBackOff"
-                and status.last_state.terminated is not None
-                and bool(status.last_state.terminated.container_id)
-                for status in value.status.container_statuses or []
-            )
+            return waiting_window.observe(value, monotonic())
 
         crash_modes: list[dict[str, Any]] = []
 
@@ -433,13 +465,15 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
             )
 
         for previous in (False, True):
-            # Each reader must enroll from its own observed waiting instance;
-            # the second mode may otherwise coincide with a real restart.
+            # Observe a fresh established backoff window for each mode. An
+            # arbitrary waiting observation may be just before its next restart,
+            # allowing valid current terminated logs instead of this scenario.
             try:
                 await wait_for(crash_waiting)
                 available = await core.read_namespaced_pod(
                     "owned-crash", namespace, _request_timeout=15
                 )
+                assert waiting_window.observe(available, monotonic())
                 direct = await core.read_namespaced_pod_log(
                     "owned-crash",
                     namespace,
