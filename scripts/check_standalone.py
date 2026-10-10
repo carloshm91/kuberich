@@ -26,6 +26,12 @@ def inspect_candidate(source: Path, candidate: Path) -> dict[str, Any]:
     manifest_path = candidate / "build-manifest.json"
     digest(manifest_path)
     manifest: dict[str, Any] = json.loads(manifest_path.read_text())
+    archive = candidate / asset_name(manifest["version"], manifest["target"])
+    return inspect_original(source, manifest, archive)
+
+
+def inspect_original(source: Path, manifest: dict[str, Any], archive: Path) -> dict[str, Any]:
+    """Verify retained original metadata against Git and the independently supplied archive."""
     commit = subprocess.check_output(
         ["git", "-C", str(source), "rev-parse", "HEAD"], text=True, timeout=15
     ).strip()
@@ -46,8 +52,11 @@ def inspect_candidate(source: Path, candidate: Path) -> dict[str, Any]:
             raise ValueError("Native inputs differ from their original Git blobs")
     target = manifest["target"]
     name = asset_name(manifest["version"], target)
-    archive = candidate / name
-    if manifest["archive"]["name"] != name or digest(archive) != manifest["archive"]["sha256"]:
+    if (
+        archive.name != name
+        or manifest["archive"]["name"] != name
+        or digest(archive) != manifest["archive"]["sha256"]
+    ):
         raise ValueError("Native archive name or original checksum differs")
     inventory = archive_inventory(archive, target)
     if inventory != manifest["archive"]["members"]:

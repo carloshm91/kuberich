@@ -6,16 +6,23 @@ from typing import Any
 
 from packaging.version import Version
 
-from scripts.ci_policy import LINUX_RUNNER, matrix
+from scripts.ci_policy import LINUX_RUNNER, matrix, native_matrix
 
 REPOSITORY = "carloshm91/kuberich"
 OWNER = "carloshm91"
 QUALITY_WORKFLOW = ".github/workflows/quality.yml"
 RELEASE_WORKFLOW = ".github/workflows/release.yml"
-APPLICATION_JOBS = {
-    f"Application ({job['os']}, Python {job['python']})": job["os"]
-    for job in matrix("workflow_dispatch", "refs/heads/main")["include"]
-} | {"Verification plan": LINUX_RUNNER, "Quality gate": LINUX_RUNNER}
+APPLICATION_JOBS = (
+    {
+        f"Application ({job['os']}, Python {job['python']})": job["os"]
+        for job in matrix("workflow_dispatch", "refs/heads/main")["include"]
+    }
+    | {
+        f"Standalone ({job['target']})": job["os"]
+        for job in native_matrix("workflow_dispatch", "refs/heads/main")["include"]
+    }
+    | {"Verification plan": LINUX_RUNNER, "Quality gate": LINUX_RUNNER}
+)
 SHA = re.compile(r"[0-9a-f]{40}")
 HASH = re.compile(r"[0-9a-f]{64}")
 API = Callable[[str], Any]
@@ -279,6 +286,18 @@ def release_preflight(api: API, sha: str, version: str, index: str) -> dict[str,
     ]
     if len(matches) != 1 or matches[0].get("expired") is not False:
         raise ValueError("Require the retained qualified Linux 3.12 artifact")
+    selected = [matches[0]]
+    for job in native_matrix("workflow_dispatch", "refs/heads/main")["include"]:
+        name = f"standalone-{job['target']}"
+        native = [item for item in artifacts if item.get("name") == name]
+        if len(native) != 1 or native[0].get("expired") is not False:
+            raise ValueError(f"Require one retained qualified native artifact: {name}")
+        selected.append(native[0])
+    ids = [item.get("id") for item in selected]
+    if any(type(identifier) is not int or identifier <= 0 for identifier in ids) or len(
+        set(ids)
+    ) != len(ids):
+        raise ValueError("Qualified artifacts require distinct positive integer identities")
     return {
         "commit": sha,
         "version": version,
@@ -286,6 +305,7 @@ def release_preflight(api: API, sha: str, version: str, index: str) -> dict[str,
         "environment": environment,
         "quality_run_id": run_id,
         "artifact_id": int(matches[0]["id"]),
+        "artifact_ids": ",".join(str(identifier) for identifier in ids),
         "index": index,
     }
 

@@ -54,6 +54,7 @@ INPUT_FILES = (
     "scripts/standalone.py",
     "scripts/standalone_python.py",
     "scripts/check_standalone.py",
+    "scripts/standalone_release.py",
     "scripts/verify_standalone.py",
     "scripts/verify_shell_kind.py",
     "packaging/standalone/python-runtime.json",

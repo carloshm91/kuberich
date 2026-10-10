@@ -18,6 +18,13 @@ required. Quality gate now depends on both complete matrices and refuses missing
 failed, cancelled or skipped native results. This prepared wiring still needs
 actual hosted results before #49 can close.
 
+The release preflight also requires all four native jobs and their original retained
+artifacts from the exact manual qualification run. Public candidate preparation
+and verification reject missing native archives or mismatched source/runtime
+records; source-only bundles remain explicitly local development candidates.
+Parser fixtures exercise fail-closed decisions, not real native execution. The
+corrected four-target hosted run remains required before D05 can close.
+
 | Gate | Requirement |
 | --- | --- |
 | Production line coverage | At least 90%, measured independently |

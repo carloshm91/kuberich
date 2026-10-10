@@ -39,6 +39,8 @@ from scripts.release_policy import (
     require_sha,
     reuse_artifact,
 )
+from scripts.standalone_release import enroll as enroll_native
+from scripts.standalone_release import verify as verify_native
 from scripts.supply_chain import digest
 
 
@@ -220,6 +222,8 @@ def prepare(
         shutil.copyfile(distribution / name, output / "dist" / name)
     for name in {"provenance.json", *provenance["reports"]}:
         shutil.copyfile(security / name, output / "artifacts/security" / name)
+    if not candidate or (source / "standalone").exists():
+        enroll_native(source, output / "standalone", root, sha, version)
     if notes is not None:
         (output / "release-notes.md").write_text(notes["body"], encoding="utf-8", newline="")
     manifest: dict[str, Any] = {
@@ -273,6 +277,8 @@ def verify_bundle(
     if read_json(directory / "artifacts/security/provenance.json")["source_commit"] != sha:
         raise ValueError("Release evidence source identity mismatch")
     metadata(directory / "dist", version)
+    if not candidate or (directory / "standalone").exists():
+        verify_native(directory / "standalone", root, sha, version)
     if candidate:
         if manifest.get("notes") is not None or notes_preview is not None:
             raise ValueError("Local development bundles cannot carry public release notes")
@@ -486,6 +492,7 @@ def main() -> int:
                 result["artifact_id"] = reuse_artifact(
                     api, args.commit, args.version, args.reuse_run
                 )
+                result["artifact_ids"] = str(result["artifact_id"])
                 result["download_run_id"] = args.reuse_run
             if args.output:
                 write_json(args.output, result)

@@ -3,6 +3,38 @@
 Status: **in progress**. No release, tag, package or standalone download was
 published. Build success and local runtime evidence do not complete all of #49.
 
+## Exact release enrollment under verification
+
+The public candidate pipeline now consumes the source artifact and all four
+standalone artifacts from one successful protected manual qualification run.
+Preflight rejects missing/failed/skipped/wrong-runner/duplicate native jobs and
+missing/expired/duplicate/shared-ID native artifacts. Its 257 decision tests passed.
+The full strict workflow command passed 141 source files. Native archives stay
+outside PyPI's wheel/sdist directory and keep unique original-provenance assets.
+The reader independently checks original Git inputs, archive members, actual
+ELF/Mach-O architecture and ABI floors, interpreter notices, styles/certificates,
+CLI controls, complete terminal restoration and archive-bound native kind records.
+The parser fixtures contain controlled non-executable headers and reports; they
+are not native runtime evidence. Corrected actual macOS execution and fresh full
+candidate qualification remain required. No publication or release dispatch ran.
+
+The first local packaging observation ran while the reader inputs were still
+changing: its original audit correctly rejected the source-policy digest mismatch.
+It also found a real Homebrew integration defect: selecting every `.tar.gz` in the
+complete bundle confused the four native archives with the source distribution.
+Homebrew now selects only the verified `dist/` sdist. Original failed reports and
+the controlled canonical fixture are retained under
+`artifacts/standalone49/packaging-pre-freeze-original-v1`; a stable-source packaging
+check is required rather than treating that observation as a passing candidate.
+
+Original source Python 3.14 job `114333977651` completed successfully with 4,591
+cases in 1,211.97 seconds. Its artifact `11685187401` ZIP checksum matches GitHub's
+original `13858680d2aa4c295bb7aafe85ba1b7e3e379fc43d638879ad745219cbec2870`.
+Independent reading measured 99.0694% lines and 96.8664% branches, all designated
+critical modules at 100%, and 52 changed executable lines at 100%. This evidence
+belongs to the original `bcbc09b` PR source, not the subsequent release-enrollment
+changes; the original overall run remains incomplete and its macOS failures remain.
+
 ## First hosted native observations: PR #181
 
 Application quality run `38093295317` at head `bcbc09b` selected all four native

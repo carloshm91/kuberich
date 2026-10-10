@@ -74,7 +74,11 @@ def formula(bundle: Path, root: Path, url: str, *, candidate: bool = False) -> s
     verify_bundle(bundle, sha, version, root=root, candidate=manifest["candidate_only"])
     if manifest["candidate_only"]:
         raise ValueError("Homebrew requires a canonical RC or stable source")
-    archives = [name for name in manifest["files"] if name.endswith(".tar.gz")]
+    archives = [
+        name
+        for name in manifest["files"]
+        if Path(name).parent == Path("dist") and name.endswith(".tar.gz")
+    ]
     if len(archives) != 1:
         raise ValueError("Require exactly one source distribution")
     archive = bundle / archives[0]

@@ -2,6 +2,15 @@
 
 ## Standalone work in progress: D05 #49
 
+Release enrollment now requires all four native jobs and five retained inputs from
+the same exact manual source qualification. Public bundles retain the original
+archives and uniquely named provenance; verification checks native bytes, source
+inputs, notices, original CLI/PTY controls and Linux native kind execution. PyPI
+contents remain wheel/sdist only. Release-policy regressions passed 257 cases and
+the full strict command passed 141 source files. Packaging and the additional
+native-record parser checks are being verified; these fixtures do not qualify a
+native host. No release workflow, tag or package publication has been invoked.
+
 [Draft PR #181](https://github.com/carloshm91/kuberich/pull/181) started the first
 hosted four-target run, `38093295317`, at head `bcbc09b`. Both Linux native jobs
 passed, including clean-base runtime and actual extracted-archive kind checks.

@@ -8,6 +8,7 @@ import pytest
 import yaml
 from packaging.version import Version
 
+from scripts.ci_policy import NATIVE_JOBS
 from scripts.release_policy import (
     APPLICATION_JOBS,
     HASH,
@@ -252,7 +253,13 @@ def trusted_api():
             "jobs": [successful_job("Repository checks")]
         },
         f"{prefix}/actions/runs/12/artifacts?per_page=100": {
-            "artifacts": [{"name": "quality-ubuntu-24.04-python-3.12", "id": 18, "expired": False}]
+            "artifacts": [
+                {"name": "quality-ubuntu-24.04-python-3.12", "id": 18, "expired": False},
+                *[
+                    {"name": f"standalone-{job['target']}", "id": 19 + offset, "expired": False}
+                    for offset, job in enumerate(NATIVE_JOBS)
+                ],
+            ]
         },
     }
 
@@ -269,7 +276,44 @@ def test_complete_main_qualification_selects_exact_artifact(index, environment):
         "environment": environment,
         "quality_run_id": 12,
         "artifact_id": 18,
+        "artifact_ids": "18,19,20,21,22",
     }
+
+
+@pytest.mark.parametrize("target", [job["target"] for job in NATIVE_JOBS])
+@pytest.mark.parametrize("mutation", ["missing", "failed", "skipped", "wrong_runner", "duplicate"])
+def test_each_native_job_is_required_by_publication_preflight(target, mutation):
+    data = trusted_api()
+    jobs = data[f"repos/{REPOSITORY}/actions/runs/12/jobs?filter=latest&per_page=100"]["jobs"]
+    job = next(job for job in jobs if job["name"] == f"Standalone ({target})")
+    if mutation == "missing":
+        jobs.remove(job)
+    elif mutation == "duplicate":
+        jobs.append(deepcopy(job))
+    elif mutation == "wrong_runner":
+        job["labels"] = ["ubuntu-24.04"]
+    else:
+        job["conclusion"] = mutation
+    with pytest.raises(ValueError, match="Required job"):
+        release_preflight(data.__getitem__, SHA, "0.1.0", "pypi")
+
+
+@pytest.mark.parametrize("target", [job["target"] for job in NATIVE_JOBS])
+@pytest.mark.parametrize("mutation", ["missing", "expired", "duplicate", "bad_id", "shared_id"])
+def test_each_native_artifact_must_be_retained_and_unambiguous(target, mutation):
+    data = trusted_api()
+    artifacts = data[f"repos/{REPOSITORY}/actions/runs/12/artifacts?per_page=100"]["artifacts"]
+    artifact = next(item for item in artifacts if item["name"] == f"standalone-{target}")
+    if mutation == "missing":
+        artifacts.remove(artifact)
+    elif mutation == "expired":
+        artifact["expired"] = True
+    elif mutation == "duplicate":
+        artifacts.append(deepcopy(artifact))
+    else:
+        artifact["id"] = False if mutation == "bad_id" else 18
+    with pytest.raises(ValueError, match=r"qualified native artifact|artifact.*identit"):
+        release_preflight(data.__getitem__, SHA, "0.1.0", "pypi")
 
 
 @pytest.mark.parametrize(
@@ -469,6 +513,13 @@ def test_workflow_has_readonly_dry_run_serialization_and_owner_protected_oidc():
     assert workflow["permissions"] == {"contents": "read"}
     validate, publish = workflow["jobs"]["validate"], workflow["jobs"]["publish"]
     assert validate["permissions"] == {"contents": "read", "actions": "read"}
+    download = next(
+        step
+        for step in validate["steps"]
+        if step.get("name", "").startswith("Download the already")
+    )
+    assert download["with"]["artifact-ids"] == "${{ steps.preflight.outputs.artifact_ids }}"
+    assert download["with"]["merge-multiple"] is True
     preparation = next(
         step["run"]
         for step in validate["steps"]
