@@ -1,7 +1,8 @@
 """Session controls and bounded visual work for the terminal workspace."""
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Self, TypeVar, cast
+from typing import Any, Self, TypeVar, cast
 
 from rich.style import Style
 from rich.text import Text
@@ -36,6 +37,7 @@ class FrameTable(DataTable[Cell]):
 
     _frame_style: Style | None = None
     _width_metadata_trusted = True
+    _row_order_revision = 0
 
     def add_row(
         self,
@@ -45,6 +47,7 @@ class FrameTable(DataTable[Cell]):
         label: str | Text | None = None,
     ) -> RowKey:
         result = super().add_row(*cells, height=height, key=key, label=label)
+        self._row_order_revision += 1
         if any(type(cell) is not TableCell for cell in cells):
             self._width_metadata_trusted = False
         return result
@@ -65,6 +68,21 @@ class FrameTable(DataTable[Cell]):
     def clear(self, columns: bool = False) -> Self:
         result = super().clear(columns)
         self._width_metadata_trusted = True
+        self._row_order_revision += 1
+        return result
+
+    def remove_row(self, row_key: RowKey | str) -> None:
+        super().remove_row(row_key)
+        self._row_order_revision += 1
+
+    def sort(
+        self,
+        *columns: ColumnKey | str,
+        key: Callable[[Any], Any] | None = None,
+        reverse: bool = False,
+    ) -> Self:
+        result = super().sort(*columns, key=key, reverse=reverse)
+        self._row_order_revision += 1
         return result
 
     def update_cell(

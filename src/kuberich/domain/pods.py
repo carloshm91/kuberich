@@ -190,23 +190,28 @@ def pod_row(record: ResourceRecord) -> PodRow:
     )
 
 
+def sort_value(row: PodRow, column: PodColumn) -> str | int | float | Fraction | None:
+    """Share the actual typed ordering value with incremental table decisions."""
+    if column is PodColumn.NAMESPACE:
+        return row.namespace.casefold()
+    if column is PodColumn.NAME:
+        return row.name.casefold()
+    if column is PodColumn.READY:
+        return Fraction(row.ready, max(1, row.containers))
+    if column is PodColumn.STATUS:
+        return row.status.casefold()
+    if column is PodColumn.RESTARTS:
+        return row.restarts
+    return -row.created_at.timestamp() if row.created_at is not None else None
+
+
 def order(
     rows: tuple[PodRow, ...], column: PodColumn, descending: bool = False
 ) -> tuple[PodRow, ...]:
     """Order typed values with stable name/namespace/UID ties and unknown ages last."""
 
     def key(row: PodRow) -> str | int | float | Fraction:
-        if column is PodColumn.NAMESPACE:
-            return row.namespace.casefold()
-        if column is PodColumn.NAME:
-            return row.name.casefold()
-        if column is PodColumn.READY:
-            return Fraction(row.ready, max(1, row.containers))
-        if column is PodColumn.STATUS:
-            return row.status.casefold()
-        if column is PodColumn.RESTARTS:
-            return row.restarts
-        return -row.created_at.timestamp() if row.created_at is not None else 0
+        return cast(str | int | float | Fraction, sort_value(row, column))
 
     stable = sorted(rows, key=lambda row: (row.namespace, row.name, row.uid))
     known = [row for row in stable if column is not PodColumn.AGE or row.created_at is not None]

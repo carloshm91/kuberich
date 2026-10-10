@@ -840,3 +840,12 @@ suggester worker/cache can outlive a workspace generation. Right retains editing
 semantics; Tab or deliberate cycling+Enter accepts actual candidate text.
 The resource overlay widget is removed. See [controls](command-navigation.md) and
 [geometry/terminal evidence](acceptance/stable-workspace.md).
+
+Q03 #50 also retains one table-owned ordering marker for the selected column,
+direction and public row-order revision. Immutable model edits invalidate it when
+the actual typed ordering value or stable namespace/name/UID tie changes; public
+membership/clear/native sort changes invalidate the revision. Pod ordering shares
+its typed value with the domain's canonical order function. Standard and discovered
+columns use their own typed value. Interrupted batches retain invalidation until
+an accepted view finishes ordering; schema/context replacement clears row ownership.
+Selection/scroll restoration and generation rejection remain independent.

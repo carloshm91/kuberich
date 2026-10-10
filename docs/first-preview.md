@@ -1,5 +1,17 @@
 # First things to try
 
+## Resource ordering work: Refs Q03 #50
+
+Pod, standard and discovered resource tables preserve their established order
+through unrelated live edits, while repainting cells and retaining selection and
+scroll. Changed typed values, identity ties, membership, native reorder, schema,
+context and interrupted batches still receive canonical ordering. All 173
+affected UI/domain cases and three owned source-terminal cases passed. The
+critical Pod domain and all 43 changed executable production lines met 100%
+coverage; final signed-head native checks remain required. Exact evidence and the continuing input/throughput/memory limits are in
+[resource-order evidence](acceptance/table-order-performance.md). Q03 remains open,
+and no intermediate manual maintainer trial or public publication is requested.
+
 ## Table responsiveness work: Refs Q03 #50
 
 Header-bounded numeric resource updates avoid measuring an entire retained
@@ -8,8 +20,13 @@ responsible for mutable/custom cells and deferred width changes. A new parity
 case reproduced a deferred-update mismatch in the initial local candidate; the
 corrected candidate passed all 95 affected UI cases and three actual owned
 source-terminal cases. The affected module's 70 lines/14 branches and all 48
-changed executable production lines measured 100%. Final signed-head native
-verification must qualify this source before it reaches main. Exact
+changed executable production lines measured 100%. PR #174 merged as
+`4ca1369b099c9af8453eb3355ca8942812d2ffbc` after all eight required checks and
+independent original artifact review. Each of the four development environments
+passed 4,216 cases; minimum whole line/branch coverage was 99.0897% / 96.8785%,
+with all 43 critical modules and changed executable lines at 100%. Python 3.14
+counts two fewer pure annotation statements; independent compiler/parser
+verification matched the original coverage inventories. Exact
 commands and the source limits of earlier checks and diagnostic timings are in
 [table-width evidence](acceptance/table-width-performance.md).
 

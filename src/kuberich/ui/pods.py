@@ -11,7 +11,7 @@ from textual.coordinate import Coordinate
 from textual.message import Message
 from textual.widgets import DataTable
 
-from kuberich.domain.pods import PodColumn, PodRow, order, utc_now
+from kuberich.domain.pods import PodColumn, PodRow, order, sort_value, utc_now
 from kuberich.ui.presentation import FrameTable, TableCell
 
 PodCell = TableCell
@@ -42,6 +42,7 @@ class PodTable(FrameTable[PodCell]):
         self._restoration = 0
         self.sort_column = PodColumn.NAME
         self.descending = False
+        self._ordered_state: tuple[PodColumn, bool, int] | None = None
 
     @property
     def sort_summary(self) -> str:
@@ -116,6 +117,9 @@ class PodTable(FrameTable[PodCell]):
         self.call_after_refresh(restore_scroll)
 
     def _sort(self) -> None:
+        state = self.sort_column, self.descending, self._row_order_revision
+        if state == self._ordered_state:
+            return
         viewport = self._capture()
         sorted_rows = order(tuple(self._rows.values()), self.sort_column, self.descending)
         wanted = tuple(row.uid for row in sorted_rows)
@@ -123,6 +127,7 @@ class PodTable(FrameTable[PodCell]):
             ranks = {uid: position for position, uid in enumerate(wanted)}
             self.sort(PodColumn.NAME.value, key=lambda cell: ranks[cell.uid])
             self._restore(viewport)
+        self._ordered_state = self.sort_column, self.descending, self._row_order_revision
 
     async def apply_rows(
         self, rows: tuple[PodRow, ...], revision: int, is_current: Callable[[], bool]
@@ -155,6 +160,19 @@ class PodTable(FrameTable[PodCell]):
                 if uid not in self._rows:
                     self.add_row(*cells, key=uid)
                 else:
+                    old_row = self._rows[uid]
+                    if (
+                        old_row.namespace,
+                        old_row.name,
+                        old_row.uid,
+                        sort_value(old_row, self.sort_column),
+                    ) != (
+                        row.namespace,
+                        row.name,
+                        row.uid,
+                        sort_value(row, self.sort_column),
+                    ):
+                        self._ordered_state = None
                     for column, cell, previous in zip(
                         PodColumn, cells, self.get_row(uid), strict=True
                     ):
