@@ -90,6 +90,39 @@ terminals. Its runtime maximum was 103.87 ms across both full-history rounds;
 the deliberate negative failed exactly at 205.98 ms, and the functional replay
 completed with nonqualifying timing. The original logo-settle reflow regression
 also passed separately. These remain local, precommit results.
+The signed `dcde9d6` candidate then passed Linux 3.13/3.14 but failed macOS on a
+real initial-table cursor race and Linux 3.12 during the later aggregate-kind
+CrashLoop enrollment check. All original runtime controls passed; the candidate
+remains unqualified. Public sort/cursor input is now preserved across the initial
+batch yield and pending custom-layout restoration. Eight focused Python 3.12
+cases and independent owned HTTP/Pilot reproductions pass. The original kind
+timeout's cause remains unresolved; revised bounded per-mode diagnostics and
+owned-instance preconditions preserve the original 120-second assertions without
+changing transport or retries. Its local 11-check kind trial passed and deleted
+the disposable cluster. Fresh final-head native checks are still required.
+The broader selection cohort passed 356 cases, with a 118.34-ms uninstrumented
+runtime maximum and complete ownership drain. Further independent public End
+evidence demonstrated horizontal scroll returning to zero at the initial commit.
+The correction now preserves cursor/sort/horizontal input through both that
+commit and pending callbacks. Ten focused cases pass, including End/Right at
+40×12 and existing UID/top/vertical-scroll and compatible-layout controls; a
+fresh frozen matrix remains required.
+The final affected cohort passed 358 cases in 522.88 s, with 118.67-ms runtime,
+207.73-ms deliberate heartbeat failure and successful functional replay. The
+verified 109-module coverage union and original child/parent receipts remain
+separate from historical failures. The focused public-input verification command
+was:
+
+```sh
+uv run --python 3.12 pytest \
+  tests/ui/test_custom_resources.py::test_initial_projection_preserves_public_selection_between_batches \
+  tests/ui/test_custom_resources.py::test_mixed_date_column_keeps_equal_timestamp_order_and_cursor_after_watch \
+  tests/ui/test_standard_table.py tests/ui/test_custom_table.py \
+  -q --tb=short --junitxml=artifacts/aggregated-logs-54/frame-failure/horizontal-complete312.xml
+```
+
+These are local working-source results; the next signed head must pass all fresh
+required native checks before merge.
 See
 [controls and limits](log-viewer.md#all-container-and-workload-logs-s06-54)
 and [acceptance evidence](acceptance/aggregated-logs.md). Embedded-shell

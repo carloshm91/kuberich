@@ -475,6 +475,103 @@ passed separately in 1.15 s. Originals are retained under
 checkout with these uncommitted source bytes. They do not establish full/native
 qualification of the next signed candidate.
 
+The signed frame-style candidate `dcde9d696c67a9cc9a7bf9430546baa6600e9130`
+subsequently failed required application run 38006100161. Actions tested merge
+checkout `8cd9305d2b32f651ed3fabd261fe9dad0d28a676`, whose tree matches the
+candidate. Repository/browser and Linux 3.13/3.14 passed; macOS 3.12, Linux 3.12
+and the aggregate application gate failed:
+
+| Environment | Job | Passed / failed | Suite duration | Failure |
+| --- | --- | --- | --- | --- |
+| Linux 3.12 | 114075165885 | 4,087 / 0 | 1,237.10 s | Later aggregate-kind CrashLoop enrollment exceeded 120 s |
+| Linux 3.13 | 114075165840 | 4,087 / 0 | 1,260.44 s | None |
+| Linux 3.14 | 114075165784 | 4,087 / 0 | 860.64 s | None |
+| macOS 3.12 | 114075165849 | 4,086 / 1 | 1,713.37 s | Initial generic-table projection overwrote selected identity |
+
+All four original runtime controls passed the unchanged 150-ms contract; the
+macOS positive reached 105.56 ms, and its deliberately blocking negative failed
+the exact heartbeat assertion. This does not qualify the failed candidate.
+The macOS failure exposed a real interaction race: an initial visible table batch
+yielded to public sort/cursor input, then restored its initial selection. A second
+custom-layout restoration could also overwrite that input. Independent owned
+HTTP/Pilot reproductions demonstrated both programmatic and public `s`/Down
+selection loss. The correction records cursor/sort revisions across batch yields
+and routes pending custom-layout restoration through the same guarded initial
+commit. Three public-key cases cover sort-and-move, Down/Up returning to the same
+row, and untouched initial sorting. The affected eight-case Python 3.12 cohort
+passed in 4.80 s; independent corrected reproductions preserved both selected
+identities and drained the client/readers. These are local, uncommitted results.
+
+Linux 3.12's original kind timeout did not retain its Current/Previous source
+state, so its cause remains unresolved. Its owned cluster was deleted and absence
+verified. An unchanged-source local diagnostic passed all 11 checks, with both
+CrashLoop modes reading one line from the last terminated instance; that local
+pass does not explain the hosted timeout. The verifier now observes waiting and
+checks the owned log instance separately before each mode. It preserves the
+120-second limit and all original assertions, with no transport or retry changes.
+Failures retain bounded mode, source/task state and scoped Pod status. The revised
+local Python 3.12 verifier also passed all 11 checks: each mode observed
+CrashLoopBackOff, verified available logs, first delivered from `last-terminated`,
+and ended after one line. The disposable cluster was deleted and absence verified;
+the receipt is `artifacts/aggregated-logs-54/cursor-kind312.json`. Fresh signed
+source and all required native checks remain necessary.
+
+The ordinary affected cohort then passed 356 cases in 520.91 s, with original
+runtime positive 118.34 ms/two rounds, deliberate negative 207.74 ms/exact expected
+heartbeat failure, and full instrumented replay at nonqualifying 187.19 ms. The
+helper verified all 109 parent/replay arc unions; critical aggregate/JSON/framing
+decisions and the visual helper remained 100%. Originals remain under
+`artifacts/aggregated-logs-54/cursor-cohort312-evidence/`. This working-source
+selection correction still had a separate horizontal-view race: an independent
+40×12 public End reproduction moved x from 0 to 27 before the initial commit
+returned it to 0. The scoped correction now observes horizontal-scroll changes
+and rejects pending restore callbacks after newer cursor/sort/horizontal input.
+It does not add a vertical-scroll watcher. Ten focused Python 3.12 controls passed
+in 6.22 s, including End/Right while the initial batch is held, cursor/scroll/top
+retention at both existing standard-table sizes, and compatible custom-layout
+restoration. A first End test incorrectly expected an animated scroll target;
+that setup failure is retained separately and is not a product reproduction.
+The corrected test observes End's direct position and Right's animated endpoint.
+These scoped local results still require a fresh signed candidate and all native
+checks.
+
+The final ordinary Python 3.12 affected cohort passed 358 cases in 522.88 s,
+including all five public initial-projection interactions, unchanged UID/top/
+vertical-scroll and compatible-layout controls, aggregate/log contracts, source
+PTYs and fresh-installed aggregate/standard console/module trials. The required
+untraced positive measured 118.67 ms with two full rounds and final drain; the
+negative failed exactly the heartbeat at 207.73 ms. The complete instrumented
+functional replay passed at nonqualifying 175.99-ms timing. Its verified coverage
+merge retains the original parent and proves all 109 per-file arc unions.
+Aggregate/JSON/framing decisions and the visual helper remain 100% lines and
+applicable branches. The originals and current working-source hashes are under
+`artifacts/aggregated-logs-54/horizontal-cohort312-evidence/`; this execution still
+records the failed dcde checkout plus the uncommitted correction, not a final
+native qualification. The exact parent invocation was:
+
+```sh
+env COVERAGE_FILE=artifacts/aggregated-logs-54/horizontal-cohort312.data uv run --python 3.12 pytest \
+  tests/unit/test_aggregate_logs.py tests/unit/test_logs.py \
+  tests/contract/test_aggregate_logs.py tests/contract/test_logs.py \
+  tests/ui/test_aggregate_logs.py tests/ui/test_logs.py tests/ui/test_table_rendering.py \
+  tests/ui/test_pods.py tests/ui/test_standard_table.py tests/ui/test_custom_table.py \
+  tests/ui/test_standard_resources.py tests/ui/test_custom_resources.py tests/ui/test_navigation.py \
+  tests/ui/test_header_lifecycle.py::test_queued_shortcut_render_after_view_removal_does_not_fail_the_app \
+  tests/ui/test_launch_options.py tests/terminal/test_aggregate_logs.py tests/terminal/test_pods.py \
+  tests/terminal/test_standard_resources.py tests/terminal/test_custom_resources.py tests/terminal/test_logs.py \
+  tests/packaging/test_distribution.py::test_installed_aggregate_logs_and_terminal_restore \
+  tests/packaging/test_distribution.py::test_installed_standard_resource_views_outside_checkout \
+  tests/quality/test_ci_policy.py tests/quality/test_runtime_coverage.py \
+  -q --tb=short --cov=kuberich --cov-branch \
+  --cov-report=json:artifacts/aggregated-logs-54/horizontal-cohort312.json \
+  --cov-report=xml:artifacts/aggregated-logs-54/horizontal-cohort312-coverage.xml --cov-report= \
+  --junitxml=artifacts/aggregated-logs-54/horizontal-cohort312.xml
+uv run --python 3.12 python -m scripts.merge_runtime_coverage \
+  --parent-data artifacts/aggregated-logs-54/horizontal-cohort312.data \
+  --parent-json artifacts/aggregated-logs-54/horizontal-cohort312.json \
+  --parent-xml artifacts/aggregated-logs-54/horizontal-cohort312-coverage.xml
+```
+
 ## Qualification limits
 
 The source remains a local implementation candidate until its signed frozen PR

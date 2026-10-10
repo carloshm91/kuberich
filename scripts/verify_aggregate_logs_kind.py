@@ -13,6 +13,7 @@ from kubernetes_asyncio import client
 
 from kuberich.config.catalog import load_catalog
 from kuberich.config.schema import Settings
+from kuberich.diagnostics.redaction import sanitize_text
 from kuberich.domain.aggregate_logs import AggregateHistory
 from kuberich.domain.connections import ConnectionRequest
 from kuberich.domain.logs import LogLine, LogOptions
@@ -32,6 +33,43 @@ async def wait_for(predicate: Callable[[], Awaitable[bool]]) -> None:
     async with asyncio.timeout(120):
         while not await predicate():
             await asyncio.sleep(0.05)
+
+
+def crash_status(pod: client.V1Pod) -> dict[str, Any]:
+    """Bounded synthetic fixture status, without retaining manifests or log payloads."""
+    entries = pod.status.container_statuses or [] if pod.status is not None else []
+    return {
+        "uid": pod.metadata.uid if pod.metadata is not None else None,
+        "containers": [
+            {
+                "name": sanitize_text(entry.name)[:128],
+                "restart_count": entry.restart_count,
+                "ready": entry.ready,
+                "started": entry.started,
+                "container_id": sanitize_text(entry.container_id or "")[:512],
+                "waiting_reason": sanitize_text(entry.state.waiting.reason or "")[:128]
+                if entry.state is not None and entry.state.waiting is not None
+                else None,
+                "running": entry.state is not None and entry.state.running is not None,
+                "terminated": entry.state is not None and entry.state.terminated is not None,
+                "last_container_id": sanitize_text(entry.last_state.terminated.container_id or "")[
+                    :512
+                ]
+                if entry.last_state is not None and entry.last_state.terminated is not None
+                else None,
+            }
+            for entry in entries[:8]
+        ],
+    }
+
+
+def task_status(task: asyncio.Task[None] | None) -> dict[str, Any]:
+    error = task.exception() if task is not None and task.done() and not task.cancelled() else None
+    return {
+        "done": task is not None and task.done(),
+        "cancelled": task is not None and task.cancelled(),
+        "exception": type(error).__name__ if error is not None else None,
+    }
 
 
 async def verify(cluster: OwnedCluster) -> dict[str, Any]:
@@ -339,8 +377,82 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
                 for status in value.status.container_statuses or []
             )
 
-        await wait_for(crash_waiting)
+        crash_modes: list[dict[str, Any]] = []
+
+        async def retain_crash_failure(
+            stage: str,
+            previous: bool,
+            error: Exception,
+            owner: AggregateLogs | None = None,
+            task: asyncio.Task[None] | None = None,
+            lines: list[str] | None = None,
+        ) -> None:
+            try:
+                value = await core.read_namespaced_pod(
+                    "owned-crash", namespace, _request_timeout=15
+                )
+                status = crash_status(value)
+            except Exception as observation_error:
+                status = {"observation_error": type(observation_error).__name__}
+            path = Path("artifacts/cluster") / f"aggregate-logs-kind-failure-{cluster.name}.json"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(
+                json.dumps(
+                    {
+                        "cluster": cluster.name,
+                        "stage": stage,
+                        "previous": previous,
+                        "error": type(error).__name__,
+                        "http_status": getattr(error, "status", None),
+                        "pod": status,
+                        "successful_modes": crash_modes,
+                        "line_count": len(lines or []),
+                        "expected_output_seen": any(
+                            "owned-crash-output" in line for line in lines or []
+                        ),
+                        "owner_task": task_status(task),
+                        "sources": [
+                            {
+                                "number": state.number,
+                                "uid": state.source.uid,
+                                "container": state.source.container,
+                                "status": state.status,
+                                "message": sanitize_text(state.message)[:512],
+                                "start_token": state.source.start_token,
+                                "retry_after_start": state.retry_after_start,
+                                "task": task_status(state.task),
+                            }
+                            for state in tuple(owner.states.values())[:8]
+                        ]
+                        if owner is not None
+                        else [],
+                    },
+                    indent=2,
+                )
+                + "\n"
+            )
+
         for previous in (False, True):
+            # Each reader must enroll from its own observed waiting instance;
+            # the second mode may otherwise coincide with a real restart.
+            try:
+                await wait_for(crash_waiting)
+                available = await core.read_namespaced_pod(
+                    "owned-crash", namespace, _request_timeout=15
+                )
+                direct = await core.read_namespaced_pod_log(
+                    "owned-crash",
+                    namespace,
+                    container="app",
+                    previous=previous,
+                    follow=False,
+                    tail_lines=10,
+                    _request_timeout=15,
+                )
+                assert "owned-crash-output" in direct
+            except Exception as error:
+                await retain_crash_failure("available-instance-precondition", previous, error)
+                raise
             crash_owner = AggregateLogs(
                 connection,
                 discovery.find("pods", group=""),
@@ -379,12 +491,28 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
                     state.status == "ended" for state in crash_owner.states.values()
                 )
 
-            await wait_for(crash_output)
-            assert crash_owner.selected is None
-            assert (
-                first_start
-                and first_start[0] is not None
-                and first_start[0].startswith("('last-terminated',")
+            try:
+                await wait_for(crash_output)
+                assert crash_owner.selected is None
+                assert (
+                    first_start
+                    and first_start[0] is not None
+                    and first_start[0].startswith("('last-terminated',")
+                )
+            except Exception as error:
+                await retain_crash_failure(
+                    "initial-enrollment", previous, error, crash_owner, crash_task, crash_lines
+                )
+                raise
+            crash_modes.append(
+                {
+                    "previous": previous,
+                    "waiting_observation": crash_status(available),
+                    "direct_log_available": True,
+                    "first_start": first_start[0],
+                    "line_count": len(crash_lines),
+                    "ended": all(state.status == "ended" for state in crash_owner.states.values()),
+                }
             )
         checks.append(
             "actual-crashloop-waiting-last-instance-current-and-previous-initial-enrollment"
@@ -438,6 +566,7 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
             "reader_limit": 8,
             "source_limit": 256,
             "retired_limit": 64,
+            "crash_modes": crash_modes,
         }
     finally:
         for log_owner, log_task in owners:

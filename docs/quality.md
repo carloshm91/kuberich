@@ -179,6 +179,10 @@ Required Linux 3.12 `scripts.verify_aggregate_logs_kind` verifies actual
 Deployment→ReplicaSet→Pod and CronJob→Job→Pod membership, matching-label rejection,
 regular/init/ephemeral sources, starting→logs without replay, Pod replacement and
 drained UI/backend ownership. Its receipt is `artifacts/cluster/aggregate-logs-kind.json`.
+CrashLoop Current/Previous trials each require an observed waiting Pod and an
+available owned log instance before enrollment. Failure receipts retain bounded
+mode, source/task status and Pod container state without log payloads; the
+120-second enrollment limit and no-replay behavior remain unchanged.
 C08 adds bounded credential-response validation and captured proxy/TLS decisions
 in `domain/exec_credentials.py` and `domain/proxies.py` to the 100% critical
 inventory. Real token-file/certificate renewal, HTTP CONNECT and SOCKS5 contracts
