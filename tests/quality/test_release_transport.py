@@ -18,14 +18,22 @@ from scripts.release import (
     request,
     require_source,
 )
-from scripts.release_policy import REPOSITORY, release_preflight
+from scripts.release_policy import REPOSITORY, phase_requirements, release_preflight
 from tests.quality.test_release_policy import SHA, trusted_api
+from tests.support.distribution import ROOT
+from tests.support.release_notes import commit_notes, note_bundle
 from tests.support.release_server import release_server
 
 
 @pytest.mark.parametrize(
     "name",
-    ["docs/backlog.json", "docs/github-issues.json", "packaging/homebrew/README.md", "NOTICE"],
+    [
+        "docs/backlog.json",
+        "docs/github-issues.json",
+        "packaging/homebrew/README.md",
+        "NOTICE",
+        "docs/release-notes/0.1.0.md",
+    ],
 )
 def test_exact_source_rejects_dirty_pinned_release_plan(tmp_path, name):
     path = tmp_path / name
@@ -67,17 +75,23 @@ def test_actual_http_main_qualification_is_readonly_and_source_version_matches(t
             ).decode()
         }
         files = {
-            "backlog.json": {
-                "milestones": [{"title": "v1.0.0"}],
-                "tasks": [{"id": "D10", "milestone": "v1.0.0", "requires": ["F01"]}],
-            },
-            "github-issues.json": {"issues": {"F01": {"number": 14}, "D10": {"number": 89}}},
+            name: json.loads((ROOT / "docs" / name).read_text())
+            for name in ("backlog.json", "github-issues.json")
         }
         for name, content in files.items():
             server.reads[f"/repos/{REPOSITORY}/contents/docs/{name}?ref={SHA}"] = {
                 "content": base64.b64encode(json.dumps(content).encode()).decode()
             }
-        server.reads[f"/repos/{REPOSITORY}/issues/14"] = {"number": 14, "state": "closed"}
+        _, numbers = phase_requirements(
+            "1.0.0rc1",
+            files["backlog.json"],
+            files["github-issues.json"],
+        )
+        for number in numbers:
+            server.reads[f"/repos/{REPOSITORY}/issues/{number}"] = {
+                "number": number,
+                "state": "closed",
+            }
         api = GitHub("synthetic-token", server.url)
         assert preflight(api, SHA, "1.0.0rc1", "pypi")["artifact_id"] == 18
         assert all(
@@ -166,25 +180,27 @@ def test_actual_partial_asset_upload_retries_only_missing_original_bytes(tmp_pat
     (bundle / "wheel.whl").write_bytes(b"exact tested wheel")
     (bundle / "z-source.tar.gz").write_bytes(b"exact tested source")
     with release_server(tmp_path / "service") as server:
+        source = tmp_path / "source"
+        sha = commit_notes(source, "1.0.0")
+        body = note_bundle(bundle, source, sha, "1.0.0")
         api = GitHub("synthetic-token", server.url, server.url)
         server.fail_upload = "z-source.tar.gz"
         with pytest.raises(ValueError, match="HTTP 503"):
-            github_assets(api, bundle, server.sha, "1.0.0")
-        assert server.assets == {"wheel.whl": b"exact tested wheel"}
+            github_assets(api, bundle, sha, "1.0.0")
+        assert server.assets["wheel.whl"] == b"exact tested wheel"
+        assert server.assets["release-notes.md"] == body.encode()
+        assert "z-source.tar.gz" not in server.assets
         assert server.release["draft"] is True
         server.fail_upload = None
-        assert github_assets(api, bundle, server.sha, "1.0.0") == ["z-source.tar.gz"]
-        assert server.assets == {
-            "wheel.whl": b"exact tested wheel",
-            "z-source.tar.gz": b"exact tested source",
-        }
+        assert github_assets(api, bundle, sha, "1.0.0") == ["z-source.tar.gz"]
+        assert server.assets["z-source.tar.gz"] == b"exact tested source"
         assert server.release["draft"] is False
         posts = len(server.posts)
-        assert github_assets(api, bundle, server.sha, "1.0.0") == []
+        assert github_assets(api, bundle, sha, "1.0.0") == []
         assert len(server.posts) == posts
         (bundle / "wheel.whl").write_bytes(b"changed bytes")
         with pytest.raises(ValueError, match="never replace"):
-            github_assets(api, bundle, server.sha, "1.0.0")
+            github_assets(api, bundle, sha, "1.0.0")
         assert server.assets["wheel.whl"] == b"exact tested wheel"
         assert len(server.posts) == posts
 
@@ -194,11 +210,12 @@ def test_wrong_uploaded_hash_never_publishes_draft(tmp_path):
     bundle.mkdir()
     (bundle / "wheel.whl").write_bytes(b"candidate")
     with release_server(tmp_path / "service") as server:
+        source = tmp_path / "source"
+        sha = commit_notes(source, "1.0.0")
+        note_bundle(bundle, source, sha, "1.0.0")
         server.corrupt_upload = True
         with pytest.raises(ValueError, match="digest differs"):
-            github_assets(
-                GitHub("synthetic-token", server.url, server.url), bundle, server.sha, "1.0.0"
-            )
+            github_assets(GitHub("synthetic-token", server.url, server.url), bundle, sha, "1.0.0")
         assert server.release["draft"] is True
 
 
@@ -241,7 +258,7 @@ def test_only_owner_main_dispatch_can_reach_publication_checks(monkeypatch, key,
         dispatch_identity(SHA)
 
 
-@pytest.mark.parametrize("version", ["0.0.1", "0.0.1rc1", "0.5.0"])
+@pytest.mark.parametrize("version", ["0.0.1", "0.0.1rc1", "0.0.99"])
 def test_old_engineering_versions_cannot_create_public_tags_assets_or_tap_prs(tmp_path, version):
     with release_server(tmp_path) as server:
         api = GitHub("synthetic-token", server.url)
@@ -256,7 +273,7 @@ def test_old_engineering_versions_cannot_create_public_tags_assets_or_tap_prs(tm
         bundle.mkdir()
         (bundle / "release.json").write_text(json.dumps({"commit": server.sha, "version": version}))
         for operation in (*operations, lambda: publish(bundle, tmp_path, api, tap)):
-            with pytest.raises(ValueError, match=r"requires 1\.0\.0"):
+            with pytest.raises(ValueError, match=r"requires 0\.1\.0"):
                 operation()
         assert server.requests == [] and server.posts == []
         assert server.command("tag", "--list") == ""

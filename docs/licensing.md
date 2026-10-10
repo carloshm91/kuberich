@@ -32,7 +32,8 @@ and source obligations; the project's license does not relicense them. See
 [dependency security](dependency-security.md).
 
 Opening the source repository is separate from publishing a product release.
-The first public product release remains 1.0.0 after its qualification gates.
+The first planned public product is 0.1.0 after its selected/cumulative
+qualification gates; stable 1.0 retains compatibility and capability audit.
 Website/DNS publication, package uploads, a public Homebrew tap and release tags
 require their separate approved delivery tasks.
 

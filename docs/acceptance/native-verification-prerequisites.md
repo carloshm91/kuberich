@@ -107,13 +107,57 @@ source inputs and removes its listener. This is diagnostic evidence, not a cause
 or fix claim for the previous hosted failures. Focused coverage is not a new
 whole-package coverage result; changed production-line coverage is inapplicable.
 
-The workflow retains backend diagnostics even when a native test fails. Required
-frozen hosted checks remain pending before merge. Full native/platform checks and
-Q03 performance remain necessary; no previous failure is converted into a passing
-result by a later run.
+The workflow retains backend diagnostics even when a native test fails. The
+scoped checks above preceded the frozen hosted qualification below. Full release
+platform checks and Q03 performance remain necessary; no previous failure is
+converted into a passing result by a later run.
 
 Ruff, formatting, strict application/tooling mypy and the plan validator passed.
 The workflow-policy cohort passed 19 cases, including always-retained backend
 evidence. Both static surfaces build and pass validation (49 pages, 1,726 local
 links/assets and 64 files); hosted browser checks remain part of the required PR
 validation. These scoped checks do not qualify public distribution or upgrades.
+
+## Frozen hosted qualification of PR #173
+
+[Application run 38021304020](https://github.com/carloshm91/kuberich/actions/runs/38021304020),
+[Repository run 38021303984](https://github.com/carloshm91/kuberich/actions/runs/38021303984)
+and DCO all succeeded. Source `e488919aa0d82254f055d99a8f07980e60aaa58a`, actual
+PR checkout `a009c88e5a0d0c8ab0a127cc006e1e7a048b5d0b` and squash merge
+`6c5cb3e358b316feca4754de4ca977b1ef3ce984` share tree
+`f98a7acdfb84c9e89d420f49bc73dd3a89427d64`. The four original native ZIPs and job
+logs were downloaded once and reviewed independently against that frozen source.
+
+| Environment | Passed cases | Suite seconds | Lines | Branches | Original artifact ID |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Linux / Python 3.12 | 4,100 | 1,781.26 | 99.1019% | 96.9248% | 11659345942 |
+| Linux / Python 3.13 | 4,100 | 1,453.66 | 99.1187% | 96.9533% | 11658254402 |
+| Linux / Python 3.14 | 4,100 | 1,171.74 | 99.0957% | 96.8679% | 11658868562 |
+| macOS / Python 3.12 | 4,100 | 1,839.35 | 99.1103% | 96.9248% | 11658859692 |
+
+Each original review verified 109 production modules, all 43 critical modules at
+100%, the successful functional replay's exact coverage arc union with its parent,
+the separate runtime positive and deliberate failing control, exact Git bytes for
+all 111 wheel/sdist payload files, locked/fresh dependency audits with no findings,
+and actual isolated uv/pipx wheel/sdist install and uninstall receipts. All original
+terminal receipts were checked, including explicit unavailable remote-screen facts
+after owned SSH loss; each still requires kernel TTY/process/descriptor cleanup.
+Linux 3.12 also succeeded in the configured disposable-cluster rehearsals.
+
+The tiny-line diagnostic maximum gaps were 22.186 / 115.667 / 11.537 / 46.773 ms
+for Linux 3.12 / 3.13 / 3.14 / macOS 3.12 respectively. All retained 302 records,
+received 32,771 lines and drained tasks/API logs/watches with unchanged default GC.
+The successful Linux 3.13 case observed a 112.085-ms generation-two collection
+overlapping its largest gap. This new correctly bracketed observation does not
+establish the cause of the earlier failed runs or complete Q03 qualification.
+Runtime UI positive gaps were 118.044 / 90.033 / 48.851 / 104.942 ms respectively;
+all remained below the unchanged 150-ms bound with genuine full-history/cache
+warmup and public cleanup. The deliberate blockers failed and drained as required.
+
+The original Repository artifact `11658207773` independently matched 140 source
+inputs and 63 payload files. Chrome checked all 49 desktop and 49 mobile pages
+with zero accessibility violations or browser/external-request failures; keyboard,
+320px, clipboard and no-JavaScript checks passed. Node audit had zero findings.
+These are four-environment development and verification-prerequisite results;
+full six-environment release qualification, upgrades, Q03 and publication remain
+open. PR #172 must pass its own newly rebased source checks.

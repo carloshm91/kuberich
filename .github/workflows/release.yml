@@ -26,6 +26,11 @@ name: Approved immutable release
         required: true
         default: '0'
         type: string
+      notes_preview:
+        description: Optional owner-reviewed generated-notes JSON bound to exact source/version/tag
+        required: false
+        default: ''
+        type: string
 permissions:
   contents: read
 concurrency:
@@ -36,6 +41,7 @@ env:
   RELEASE_VERSION: ${{ inputs.version }}
   RELEASE_INDEX: ${{ inputs.index }}
   RELEASE_REUSE_RUN: ${{ inputs.reuse_run }}
+  KUBERICH_RELEASE_NOTES_PREVIEW: ${{ inputs.notes_preview }}
 jobs:
   validate:
     name: Validate release
@@ -81,11 +87,11 @@ jobs:
       - name: Verify and prepare candidate; never rebuild
         run: |
           if [ "$RELEASE_REUSE_RUN" = '0' ]; then
-            uv run --locked python -m scripts.release prepare --commit "$RELEASE_COMMIT" --version "$RELEASE_VERSION"
+            uv run --locked python -m scripts.release prepare --commit "$RELEASE_COMMIT" --version "$RELEASE_VERSION" --notes-preview-env
           else
             mv qualified release-candidate
           fi
-          uv run --locked python -m scripts.release verify --commit "$RELEASE_COMMIT" --version "$RELEASE_VERSION"
+          uv run --locked python -m scripts.release verify --commit "$RELEASE_COMMIT" --version "$RELEASE_VERSION" --notes-preview-env
       - name: Retain the verified candidate for approval or retry
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

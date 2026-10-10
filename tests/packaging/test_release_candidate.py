@@ -8,7 +8,7 @@ import pytest
 
 from scripts import release
 from scripts.check_supply_chain import write_json
-from scripts.release import metadata, prepare, verify_bundle
+from scripts.release import bundle_files, metadata, prepare, verify_bundle
 from scripts.supply_chain import digest
 from tests.support.distribution import PROJECT, ROOT, run
 from tests.support.release_server import release_server
@@ -183,3 +183,83 @@ def test_actual_canonical_rc_build_audit_bundle_and_installed_version(canonical_
             verify_bundle(bundle, sha, "1.0.0rc1", root=source)
     finally:
         project.write_text(original)
+
+
+def test_rehashed_authored_notes_cannot_replace_committed_body(canonical_release, tmp_path):
+    source, original, sha = canonical_release
+    bundle = tmp_path / "bundle"
+    shutil.copytree(original, bundle)
+    manifest = json.loads((bundle / "release.json").read_text())
+    changed = manifest["notes"]["body"] + "\nUnreviewed replacement\n"
+    manifest["notes"]["body"] = changed
+    (bundle / "release-notes.md").write_text(changed)
+    manifest["notes"]["body_sha256"] = digest(bundle / "release-notes.md")
+    manifest["notes"]["authored_sha256"] = digest(bundle / "release-notes.md")
+    manifest["files"] = bundle_files(bundle)
+    write_json(bundle / "release.json", manifest)
+    expected = {**manifest["files"], "release.json": digest(bundle / "release.json")}
+    (bundle / "SHA256SUMS").write_text(
+        "".join(f"{value}  {name}\n" for name, value in sorted(expected.items()))
+    )
+    with pytest.raises(ValueError, match="committed source bytes"):
+        verify_bundle(bundle, sha, "1.0.0rc1", root=source)
+
+
+def test_actual_cli_dispatch_preview_and_file_retry_preserve_frozen_combined_body(
+    canonical_release, tmp_path
+):
+    source, _, sha = canonical_release
+    bundle = tmp_path / "combined"
+    preview = {
+        "schema_version": 1,
+        "commit": sha,
+        "version": "1.0.0rc1",
+        "tag": "v1.0.0-rc.1",
+        "body": "## Reviewed generated preview\n\nExact owned fixture pull requests.\n",
+    }
+    command = [
+        sys.executable,
+        "-m",
+        "scripts.release",
+        "prepare",
+        "--commit",
+        sha,
+        "--version",
+        "1.0.0rc1",
+        "--source",
+        str(source),
+        "--bundle",
+        str(bundle),
+        "--notes-preview-env",
+    ]
+    result = run(
+        command, source, environment={"KUBERICH_RELEASE_NOTES_PREVIEW": json.dumps(preview)}
+    )
+    manifest = json.loads(result.stdout)
+    assert manifest["notes"]["generated_preview"] == preview
+    assert (bundle / "release-notes.md").read_text().endswith("\n\n" + preview["body"])
+    preview_path = tmp_path / "reviewed-preview.json"
+    preview_path.write_text(json.dumps(preview))
+    verify_command = [
+        sys.executable,
+        "-m",
+        "scripts.release",
+        "verify",
+        "--commit",
+        sha,
+        "--version",
+        "1.0.0rc1",
+        "--bundle",
+        str(bundle),
+        "--notes-preview",
+        str(preview_path),
+    ]
+    assert json.loads(run(verify_command, source).stdout) == {
+        "verified": True,
+        "candidate_only": False,
+    }
+    preview["body"] += "changed after preparation"
+    preview_path.write_text(json.dumps(preview))
+    changed = run(verify_command, source, check=False)
+    assert changed.returncode == 1 and "Retry preview differs" in changed.stderr
+    assert manifest == json.loads((bundle / "release.json").read_text())

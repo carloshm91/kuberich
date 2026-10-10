@@ -1,5 +1,9 @@
 # Apache-2.0 and public source acceptance: #155
 
+> Historical receipt: the later maintainer-requested phased policy starts at
+> qualified 0.1.0. See [current release policy](../releases.md); this record
+> preserves the original source, scope and measurements.
+
 The maintainer approved Apache-2.0 and opening the source repository on
 2026-10-08. This task changes project licensing, notice inclusion and current
 source/release guidance; it changes no application behavior or version.

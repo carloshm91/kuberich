@@ -1,24 +1,81 @@
 # First things to try
 
-## Current qualification follow-up: Q03 #50
+## Phased release preparation: Refs #89
 
-The last delivered product remains the aggregate/generic-view checkpoint below.
-The maintainer-requested first 0.1.0 phase and project-owned
-`kuberich/tap/kuberich` channel are prepared in PR #172; no tag, package or tap has
-been published. That preparation's required native run failed on a backend
-heartbeat and three macOS verification cases, so it is pending.
+The maintainer now targets first public **0.1.0**, followed by reviewed cumulative
+0.x phases and stable 1.0 compatibility/audit. This supersedes the historical
+#154 first-public-1.0-only direction below. Development metadata remains
+`0.0.1.dev0`; no tag, application artifact, tap or new website was published by
+this preparation. The source stays `carloshm91/kuberich`; the intended project
+channel is `brew install kuberich/tap/kuberich`, pending actual organization
+control and approved activation.
 
-A focused correction now waits for actual attach return feedback and preserves
-raw lost-SSH evidence without projecting an interrupted remote screen. The backend
-keeps the 150-ms assertion and records bounded source/GC/instrumentation/cleanup
-diagnostics for further investigation. See
-[the original failures and limits](acceptance/native-verification-prerequisites.md).
-Local verification passed 36 attach/terminal cases, three final local/SSH
-observer cases and 27 Python 3.13 backend/diagnostic cases. The backend's measured
-23.12-ms gap does not explain the previous hosted failures. Required frozen
-Linux/macOS checks remain pending before this correction can merge.
-This does not introduce new product behavior or claim Q03/release qualification;
-there is no intermediate manual trial requested from the maintainer.
+The full 79-task plan validates repository/issue identity, unknown/cyclic
+references and every phase before issue requests. First 0.1 includes delivered
+#53/#54 despite their original v0.2 grouping, plus #123 and D06's full D04/D05/Q03
+prerequisites. Later phases require all prior gates; unknown minors fail. The live
+preparation snapshot has six open prerequisites #150/#123/#40/#49/#51/#50, with
+#89 as separate first activation. Actual manager upgrades are still required;
+fresh install tests do not complete that contract. Authored notes and an optional
+reviewed generated preview freeze to exact source/version/body bytes before
+approval, without expanding validator permissions.
+
+Current scoped local evidence: the final quality/packaging cohort passed all
+735 cases in 713.59 seconds without failures/skips, including real-Git notes,
+owned HTTP/TAP retries, actual artifact audits, isolated installers and CLI
+preview env/file paths. Its 517-file source snapshot includes all 109 production
+modules. Earlier 286-case and 32-case focused receipts remain retained. These are
+working-source preparation receipts, not final-head native qualification. Local
+build/Twine and site checks passed; Chrome checked 49 desktop and 49 mobile pages
+with zero violations, failures or external requests, including keyboard, 320px,
+clipboard and no-JavaScript controls. Node audit reported zero vulnerabilities.
+Exact commands and remaining limits are retained
+in [phase preparation acceptance](acceptance/phased-release-preparation.md).
+Main and both `release`/`release-test` environments were independently re-read at
+2026-10-10 02:09:56 UTC with enforced reviewed protection; no release dispatch was
+performed. Existing gate/epic/milestone scope was reconciled and independently
+re-read at 02:23:31 UTC (18 items, all open states preserved, no new tickets).
+PyPI/TestPyPI ownership/OIDC, full six-native release qualification,
+actual upgrades, public channels and approved final launch remain open in #89.
+
+A later main-push run 38014888892 on the same merged #54 baseline ended FAILURE:
+Linux 3.13 passed 4,091 cases but its separate tiny-line HTTP/retention contract
+measured 175.396 ms against unchanged 150 ms; the Quality gate failed. Linux 3.12/
+3.14 passed. A source-unchanged full-catalogue/selected-node diagnostic passed
+under branch coverage with default GC but did not reproduce or explain the gap.
+[Existing Q03 #50 records diagnosis](https://github.com/carloshm91/kuberich/issues/50#issuecomment-6092751782)
+for remediation before first-phase qualification; there is no retry-only success
+or new runtime change in this preparatory PR. Earlier #54 exact-head evidence
+below stays historical and is not relabeled as qualification of this failed run.
+
+## Native verification prerequisites: Refs #50 / #89
+
+[PR #173](https://github.com/carloshm91/kuberich/pull/173) merged as
+`6c5cb3e358b316feca4754de4ca977b1ef3ce984` after all required checks and an
+independent review of the retained original artifacts. Its source
+`e488919aa0d82254f055d99a8f07980e60aaa58a`, tested PR checkout
+`a009c88e5a0d0c8ab0a127cc006e1e7a048b5d0b` and squash merge share tree
+`f98a7acdfb84c9e89d420f49bc73dd3a89427d64`.
+
+Exact commands included `uv run pytest --cov=kuberich --cov-branch
+--cov-report=xml --cov-report=json`, followed by
+`uv run python -m scripts.merge_runtime_coverage` and the independent coverage
+and package gates in the configured workflow. Linux Python 3.12/3.13/3.14 and
+macOS Python 3.12 each passed 4,100 cases. Minimum line/branch coverage was
+99.0957% / 96.8679%; all 43 critical modules met 100%. Original reviews matched
+109 production modules and all 111 payload files in each built distribution,
+verified runtime positive/negative/functional coverage evidence, installed uv/
+pipx artifacts, terminal restoration, dependency audits and local-only release
+fixtures. Linux 3.12 also passed the configured owned-cluster rehearsals.
+
+This delivers verification corrections and bounded backend diagnostics under the
+unchanged workload, default GC and 150-ms assertion. It adds no new product
+feature, does not establish the cause of the previous failed measurements and
+does not complete Q03 or the full six-environment release qualification. PR #172
+must qualify its own rebased source; the earlier failed run remains preserved.
+[Original native evidence and limits](acceptance/native-verification-prerequisites.md)
+record the four successful development environments. No intermediate manual
+maintainer trial or public artifact publication is required by this checkpoint.
 
 ## Aggregate logs checkpoint: S06 #54
 
@@ -30,6 +87,32 @@ pause/follow, copy/save and Pod Enter→containers→selected logs remain availa
 Workload membership follows controller UID chains; newly started regular/init/
 ephemeral containers enroll without replaying ended streams. Generic routes
 retain their read-only inspection contract.
+
+Final #54 qualification is complete. [PR #171](https://github.com/carloshm91/kuberich/pull/171)
+merged as `422c9464bad73ed83df713b709e3db70559f23a2`; tested source
+`9be229bea98f498e1ee3f4a3ba28cabe7dd15327` and actual Actions checkout
+`2b5c68dabcdd4e9a4929f0706b4ec51fe81e3015` have the same tree
+`3858d1145546b1d88abcc51f91a95611fe7426d8` as that merge.
+[Application run 38011954997](https://github.com/carloshm91/kuberich/actions/runs/38011954997)
+and [Repository run 38011954992](https://github.com/carloshm91/kuberich/actions/runs/38011954992)
+plus DCO passed all eight required checks. All four native environments passed
+4,092 cases, independently verified whole/branch/changed coverage and every one
+of 43 critical modules at 100%. The minimum measured coverage was 99.0787%
+lines, 96.8394% branches and 98.27% changed lines. Runtime positive maximum gaps
+were 108.395 ms (Linux 3.12), 77.865 ms (3.13), 51.904 ms (3.14) and 100.963 ms
+(macOS 3.12), below the unchanged 150-ms bound, with both full-history rounds,
+default GC and public cleanup. Each environment retained the deliberate failing
+blocker and separate successful instrumented functional replay, exact 109-module
+coverage union, packages/installers and six source/installed PTYs. Linux 3.12
+passed all eleven aggregate-kind checks and deleted its owned cluster, including
+separate current/Previous available-instance preconditions. Root independently
+qualified original artifacts and preserved sign-off. This is development behavior
+qualification, not full six-native release/provider/RSS qualification.
+
+### Historical #54 diagnosis and local checkpoints
+
+The receipts below preserve superseded source failures and scoped local results;
+they do not replace the final exact-head qualification above.
 
 Exact tested command:
 `env COVERAGE_FILE=artifacts/aggregated-logs-54/final-focused.coverage uv run pytest -q tests/unit/test_aggregate_logs.py tests/unit/test_logs.py tests/contract/test_aggregate_logs.py tests/contract/test_logs.py tests/ui/test_aggregate_logs.py tests/ui/test_logs.py tests/terminal/test_aggregate_logs.py tests/packaging/test_distribution.py::test_installed_aggregate_logs_and_terminal_restore tests/quality/test_ci_policy.py --cov=kuberich --cov-branch`:
@@ -325,9 +408,10 @@ are merge requirements; [acceptance evidence](acceptance/credential-interoperabi
 and the live issue/PR retain the candidate results. Real cloud certification
 remains Q05 #87; actual Helm remains #66. No package/site/tag publication occurs.
 
-## First product release policy checkpoint: #154
+## Historical first product release policy checkpoint: #154
 
-The first public product remains **1.0.0**. Intermediate 0.x milestones are
+At this historical #154 checkpoint, the first-public policy was **1.0.0**;
+the phased #89 preparation above supersedes it. Intermediate 0.x milestones were
 engineering checkpoints; product features continue before dedicated final
 platform/performance/install qualification. All their actual prerequisites and
 quality evidence remain required before #89. The installed development version
@@ -359,7 +443,7 @@ All 13 real API checks passed and the owned cluster was removed. The binary is
 the pinned local kind 0.33.0; do not substitute an active cloud context.
 See [acceptance evidence](acceptance/resource-operations.md) and #46's linked PR
 for final candidate coverage, installed-wheel and hosted Linux/macOS results.
-The first public product release remains 1.0.0.
+At that checkpoint, the first-public policy was 1.0.0; current phased policy is above.
 
 ## Public hosted verification checkpoint: #157
 
@@ -374,8 +458,8 @@ visible feedback after deliberately delayed result delivery, including compact
 terminal confirmation and redacted history.
 See [acceptance evidence](acceptance/macos-terminal-verification.md) and the linked
 issue/PR for delivered-head hosted results. #157 and #46 are now merged after
-their required hosted checks passed. The first public product release
-remains 1.0.0; source opening does not publish package or website artifacts.
+their required hosted checks passed. That checkpoint's first-public policy was
+1.0.0; current phased policy is above. Source opening did not publish package or website artifacts.
 
 ## Apache-2.0 and public source checkpoint: #155
 
@@ -387,7 +471,7 @@ Use the checkout with `uv sync --locked --group dev`, then
 [licensing](licensing.md) for the actual derivative/commercial permissions and
 [acceptance evidence](acceptance/apache-public-source.md) for measured checks.
 No package release, public tap, website deployment or DNS change accompanies
-this source-opening checkpoint. The first public product release remains 1.0.0.
+this source-opening checkpoint. At that checkpoint, the first-public policy was 1.0.0; current phased policy is above.
 Earlier private checkpoint descriptions below retain their historical context.
 
 ## Initial private website checkpoint: #150
@@ -720,7 +804,7 @@ See [workspace behavior](resource-workspace.md) and
 | Resource synchronization backend | C03 | Verify live UID state, reconnect and cancellation; UI subscription/table integration follows |
 | First live cluster view | F04/F05, C01-C04, B02/B03/B04 | Choose context/namespace, inspect live pods, filter and open details/events |
 | Logs and interactive shell | S01-S04, credential/PTY/integration checks | Follow current/previous logs, choose a container, enter its shell and return safely |
-| Public 0.0.1 preview | D04 and every v0.0.1 acceptance gate | Install through tested PyPI/Homebrew channels and follow the verified first-user guide |
+| Planned public 0.1.0 | D06/full prerequisites, #53/#54/#123 and common launch gates, then #89 activation | Install through actually qualified public channels and follow the candidate-tested guide |
 
 The implementation order deliberately puts B01 immediately after configuration
 and quality foundations. At each checkpoint, the implementing PR must provide the

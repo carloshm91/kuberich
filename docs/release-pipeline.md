@@ -3,15 +3,16 @@
 D02 #36 implements `.github/workflows/release.yml` and
 `python -m scripts.release`. This is distribution automation, not a published
 version. Development still reports `0.0.1.dev0`. The source repository is public under #155. TestPyPI enrollment, public channel
-activation, enforced protection and first 1.0.0 publication remain D10 #89.
+activation and first qualified 0.1.0 publication remain D10 #89. Main and both
+publication environments are now enforced; full release qualification remains pending.
 
 ## Qualification and approval
 
 The maintainer dispatches the workflow from `main`, with a complete commit SHA,
 canonical `X.Y.Z` or `X.Y.ZrcN`, destination and `dry_run` (default **true**).
 Tags normalize to `vX.Y.Z` or `vX.Y.Z-rc.N`. Development/post/local/alpha/beta
-versions and noncanonical spellings fail. Release bases below 1.0.0, including
-0.x RCs, fail before external publication requests. Offline canonical candidate
+versions and noncanonical spellings fail. Release bases below 0.1.0 fail before external publication requests. Reviewed
+minor lines map to cumulative phase gates; unreviewed lines fail readiness. Offline canonical candidate
 verification remains available. One global release concurrency group
 queues dispatches; it never cancels an in-progress release.
 
@@ -28,8 +29,9 @@ Before preparing or publishing, require all of the following:
 - A merged in-repository PR with the same Git tree, successful DCO from its actual
   GitHub App, and the preserved maintainer sign-off on the squash commit.
 - All transitive implementation prerequisites and tracked additional launch issues
-  from the pinned source plan are closed in GitHub. The release gate itself stays open until public
-  channel verification finishes; a patch uses its established milestone baseline.
+  from the pinned source plan are closed in GitHub, including the selected and
+  prior qualification gates themselves. Only initial 0.1.0/0.1.0rcN can proceed
+  with #89 open; patches and later phases require initial activation complete.
 - Successful latest main-dispatch quality and main-push repository runs for that exact commit,
   including **every Linux/macOS Python 3.12/3.13/3.14 job**, not a green aggregate
   or an older successful attempt beside a failed rerun.
@@ -49,6 +51,10 @@ current job/artifact contract. See [runner-pin evidence](acceptance/ubuntu-runne
 The release workflow consumes the already built/tested quality artifact. Neither
 release job rebuilds it. Preparation verifies archive metadata and produces an
 exclusive bundle with SHA256SUMS, exact version/commit and every retained byte.
+Public preparation also freezes committed authored notes and the exact optional
+reviewed generated preview; see [notes preparation](release-notes/README.md).
+The optional dispatch `notes_preview` is parsed from a dedicated environment
+variable, never interpolated into shell code. The validator stays read-only.
 The read-only job uploads that verified candidate. Dry-run stops there.
 
 The requested commit must equal the dispatch event's `GITHUB_SHA`. Checking out
@@ -76,9 +82,15 @@ GitHub login does not prove index ownership or reserve the name. Use OIDC;
 this workflow has no PyPI password/API-token secret or long-lived publisher key.
 
 The source repository is now public and hosted development checks run again.
-First-publication readiness still requires observing and enforcing the actual
-main/environment rules, index ownership, OIDC/attestation, full release matrix
-and public installation evidence under #89. Neither source opening nor the old
+Main and `release`/`release-test` were configured and independently re-read on
+2026-10-10 at 02:09:56 UTC. The actual release-policy protection function passed
+against both environment records: required maintainer, protected branches,
+`can_admins_bypass=false`, `prevent_self_review=false`. Main has strict
+Quality gate/Repository checks bound to GitHub Actions and DCO bound to its app,
+admin enforcement, required PRs, linear history and resolved conversations, with
+force pushes/deletions disabled. First-publication readiness still requires index
+ownership, OIDC/attestation, the full release matrix and public installation/upgrade
+evidence under #89. This scoped configuration is not a release qualification. Neither source opening nor the old
 temporary local-merge exception bypasses those checks. The workflow must refuse
 when any live condition is missing; development CI is not release qualification.
 
@@ -118,7 +130,9 @@ Existing PyPI filenames must have the same SHA-256, be unyanked and belong to th
 same version. Existing tags must be annotated and point at the same commit.
 Existing GitHub assets must have matching SHA-256 digests. Mismatches, unknown
 assets and missing original evidence fail instead of overwriting anything.
-Retries send only missing files; a completed GitHub release is never edited to
+Retries compare the frozen source/version/tag and complete authored-plus-preview
+body, then send only missing files. They never call generate-notes again.
+A completed GitHub release is never edited to
 accept changed content. If an expired/missing candidate or changed sidecar cannot
 be recovered safely, qualify a new patch rather than moving a tag or replacing
 published bytes. Follow [release recovery](releases.md#failure-and-recovery) for

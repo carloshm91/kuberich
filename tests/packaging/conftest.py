@@ -12,6 +12,7 @@ from scripts.supply_chain import digest
 from tests.support.distribution import PROJECT, ROOT, run
 from tests.support.distribution import artifacts as artifacts
 from tests.support.distribution import installed_wheel as installed_wheel
+from tests.support.release_notes import authored
 
 
 @pytest.fixture(scope="session")
@@ -65,11 +66,15 @@ def canonical_release(tmp_path_factory):
         "scripts/homebrew.py",
         "packaging/homebrew/README.md",
         "packaging/homebrew/.github/workflows/verify.yml",
+        "docs/release-notes/1.0.0rc1.md",
     }
     for name in files:
         path = source / name
         path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(ROOT / name, path)
+        if name == "docs/release-notes/1.0.0rc1.md":
+            path.write_text(authored("1.0.0rc1"), encoding="utf-8")
+        else:
+            shutil.copyfile(ROOT / name, path)
     project = source / "pyproject.toml"
     project.write_text(
         project.read_text().replace(f'version = "{PROJECT["version"]}"', 'version = "1.0.0rc1"', 1)

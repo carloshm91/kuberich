@@ -1,5 +1,19 @@
 # Architecture decisions
 
+## Phased immutable release decisions: Refs #89
+
+Release readiness validates the entire pinned 79-task graph and canonical issue
+index before any issue request, then selects an explicitly reviewed major/minor
+phase and cumulative gates. Early-delivered mapped extras retain their own
+prerequisites. D10 follows D06 for initial 0.1 activation; unknown phase lines
+fail closed. This changes release preparation, not runtime module/contracts.
+Public candidates freeze regular committed authored-note blobs and an optional
+source/version/tag-bound reviewed preview before approval. The read-only validator
+never generates notes; publisher retries compare the complete frozen body and
+immutable assets. The planned Homebrew destination validates the actual project
+Organization owner and repository, while source provenance stays personal.
+See [release policy](releases.md) and [notes](release-notes/README.md).
+
 ## KubeRich identity migration: #149
 
 The maintainer selected KubeRich and confirmed acquiring kuberich.com. The

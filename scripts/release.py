@@ -26,6 +26,7 @@ from scripts.check_supply_chain import (
     verify,
     write_json,
 )
+from scripts.release_notes import freeze, frozen_body, parse_preview
 from scripts.release_policy import (
     OWNER,
     RELEASE_WORKFLOW,
@@ -167,6 +168,7 @@ def require_source(root: Path, sha: str) -> None:
         "uv.lock",
         "README.md",
         "CHANGELOG.md",
+        "docs/release-notes",
         "LICENSE",
         "NOTICE",
         ".gitignore",
@@ -189,6 +191,7 @@ def prepare(
     *,
     candidate: bool = False,
     root: Path = ROOT,
+    notes_preview: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     require_sha(sha)
     if candidate:
@@ -207,6 +210,9 @@ def prepare(
     if project["version"] != version:
         raise ValueError("Source version differs from requested release")
     metadata(distribution, version)
+    notes = None if candidate else freeze(root, sha, version, notes_preview)
+    if candidate and notes_preview is not None:
+        raise ValueError("Local development bundles cannot use a public notes preview")
     output.mkdir(mode=0o700, parents=True, exist_ok=False)
     (output / "dist").mkdir()
     (output / "artifacts/security").mkdir(parents=True)
@@ -214,6 +220,8 @@ def prepare(
         shutil.copyfile(distribution / name, output / "dist" / name)
     for name in {"provenance.json", *provenance["reports"]}:
         shutil.copyfile(security / name, output / "artifacts/security" / name)
+    if notes is not None:
+        (output / "release-notes.md").write_text(notes["body"], encoding="utf-8", newline="")
     manifest: dict[str, Any] = {
         "schema_version": 1,
         "repository": REPOSITORY,
@@ -221,6 +229,7 @@ def prepare(
         "version": version,
         "tag": tag,
         "candidate_only": candidate,
+        "notes": notes,
         "files": bundle_files(output),
     }
     write_json(output / "release.json", manifest)
@@ -239,6 +248,7 @@ def verify_bundle(
     *,
     root: Path = ROOT,
     candidate: bool = False,
+    notes_preview: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     require_sha(sha)
     if not candidate:
@@ -263,6 +273,16 @@ def verify_bundle(
     if read_json(directory / "artifacts/security/provenance.json")["source_commit"] != sha:
         raise ValueError("Release evidence source identity mismatch")
     metadata(directory / "dist", version)
+    if candidate:
+        if manifest.get("notes") is not None or notes_preview is not None:
+            raise ValueError("Local development bundles cannot carry public release notes")
+    else:
+        frozen_body(directory, sha, version)
+        notes = manifest["notes"]
+        if notes != freeze(root, sha, version, notes["generated_preview"]):
+            raise ValueError("Authored release notes differ from committed source bytes")
+        if notes_preview is not None and notes_preview != notes["generated_preview"]:
+            raise ValueError("Retry preview differs from the frozen original release notes")
     return manifest
 
 
@@ -323,6 +343,7 @@ def immutable_tag(api: GitHub, sha: str, version: str) -> None:
 
 def github_assets(api: GitHub, directory: Path, sha: str, version: str) -> list[str]:
     tag = publication_tag(version)
+    body = frozen_body(directory, sha, version)
     prefix = f"repos/{REPOSITORY}"
     release = api(f"{prefix}/releases/tags/{tag}")
     if release is None:
@@ -335,12 +356,16 @@ def github_assets(api: GitHub, directory: Path, sha: str, version: str) -> list[
                 "name": f"KubeRich {version}",
                 "draft": True,
                 "prerelease": Version(version).is_prerelease,
-                "generate_release_notes": True,
+                "body": body,
+                "generate_release_notes": False,
             },
         )
     if (
         release.get("tag_name") != tag
         or release.get("prerelease") is not Version(version).is_prerelease
+        or release.get("target_commitish") != sha
+        or release.get("name") != f"KubeRich {version}"
+        or release.get("body") != body
     ):
         raise ValueError("Existing GitHub release identity differs")
     expected = {path.name: digest(path) for path in directory.rglob("*") if path.is_file()}
@@ -367,7 +392,9 @@ def github_assets(api: GitHub, directory: Path, sha: str, version: str) -> list[
     if len(final) != len(assets) or missing_files(expected, final):
         raise ValueError("GitHub release upload is incomplete")
     if release.get("draft"):
-        api(f"{prefix}/releases/{int(release['id'])}", "PATCH", {"draft": False})
+        completed = api(f"{prefix}/releases/{int(release['id'])}", "PATCH", {"draft": False})
+        if completed.get("body") != body or completed.get("draft") is not False:
+            raise ValueError("Published release body differs from the reviewed notes")
     return missing
 
 
@@ -423,6 +450,16 @@ def main() -> int:
     parser.add_argument("--source", type=Path, default=Path("qualified"))
     parser.add_argument("--bundle", type=Path, default=Path("release-candidate"))
     parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--notes-preview",
+        type=Path,
+        help="owner-reviewed source/version-bound generated notes JSON",
+    )
+    parser.add_argument(
+        "--notes-preview-env",
+        action="store_true",
+        help="read optional KUBERICH_RELEASE_NOTES_PREVIEW JSON from the dispatch environment",
+    )
     parser.add_argument("--reuse-run", type=int, default=0)
     parser.add_argument(
         "--candidate", action="store_true", help="local-only preview; cannot publish"
@@ -432,6 +469,15 @@ def main() -> int:
         if args.candidate and args.operation not in {"prepare", "verify"}:
             raise ValueError("Local candidates cannot publish or create tags")
         api = GitHub(os.environ.get("GH_TOKEN", ""))
+        if args.notes_preview and args.notes_preview_env:
+            raise ValueError("Choose a preview file or dispatch environment, not both")
+        preview = (
+            parse_preview(args.notes_preview.read_text(encoding="utf-8"))
+            if args.notes_preview
+            else parse_preview(os.environ.get("KUBERICH_RELEASE_NOTES_PREVIEW", ""))
+            if args.notes_preview_env
+            else None
+        )
         if args.operation == "preflight":
             dispatch_identity(args.commit)
             result = preflight(api, args.commit, args.version, args.index)
@@ -448,10 +494,21 @@ def main() -> int:
                     output.write("".join(f"{key}={value}\n" for key, value in result.items()))
         elif args.operation == "prepare":
             result = prepare(
-                args.source, args.bundle, args.commit, args.version, candidate=args.candidate
+                args.source,
+                args.bundle,
+                args.commit,
+                args.version,
+                candidate=args.candidate,
+                notes_preview=preview,
             )
         else:
-            verify_bundle(args.bundle, args.commit, args.version, candidate=args.candidate)
+            verify_bundle(
+                args.bundle,
+                args.commit,
+                args.version,
+                candidate=args.candidate,
+                notes_preview=preview,
+            )
             if args.operation == "verify":
                 result = {"verified": True, "candidate_only": args.candidate}
             else:

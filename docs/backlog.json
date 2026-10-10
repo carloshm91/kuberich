@@ -5,27 +5,27 @@
   "milestones": [
     {
       "title": "v0.0.1",
-      "description": "Internal engineering checkpoint; no public 0.x tag, package or channel publication. First usable terminal preview: live pods, navigation, details, logs, exec, enforced quality, and verified PyPI/Homebrew installation."
+      "description": "Core engineering foundation: live pods, navigation, details, logs, exec and qualified local installation. No public 0.0.1 release is promised; first public activation is 0.1.0 under D10."
     },
     {
       "title": "v0.1.0",
-      "description": "Internal engineering checkpoint; no public 0.x tag, package or channel publication. Standard resource families, safe workload mutations, editing, port forwarding, standalone executables, and performance qualification."
+      "description": "Standard resource families, safe workload mutations, editing, port forwarding, standalone executables, and performance qualification. First usable public phase after core/workload, standalone, performance and terminal-history qualification; activation remains owner-reviewed D10."
     },
     {
       "title": "v0.2.0",
-      "description": "Internal engineering checkpoint; no public 0.x tag, package or channel publication. Generic CRDs, multi-container logs, themes, configurable navigation/views, and external command plugins."
+      "description": "Generic CRDs, multi-container logs, themes, configurable navigation/views, and external command plugins. This public phase requires its qualifier and all prior phase requirements; publication remains separately approved."
     },
     {
       "title": "v0.3.0",
-      "description": "Internal engineering checkpoint; no public 0.x tag, package or channel publication. Resource metrics, cluster overview, relationships, RBAC analysis, guided troubleshooting, and sanitized exports."
+      "description": "Resource metrics, cluster overview, relationships, RBAC analysis, guided troubleshooting, and sanitized exports. This public phase requires its qualifier and all prior phase requirements; publication remains separately approved."
     },
     {
       "title": "v0.4.0",
-      "description": "Internal engineering checkpoint; no public 0.x tag, package or channel publication. Node operations, ephemeral debugging, HTTP benchmarks, and policy/quota exploration."
+      "description": "Node operations, ephemeral debugging, HTTP benchmarks, and policy/quota exploration. This public phase requires its qualifier and all prior phase requirements; publication remains separately approved."
     },
     {
       "title": "v0.5.0",
-      "description": "Internal engineering checkpoint; no public 0.x tag, package or channel publication. Extended delivery: Windows/PowerShell qualification, shell completion, OCI terminal image, and distribution-channel recipes."
+      "description": "Extended delivery: Windows/PowerShell qualification, shell completion, OCI terminal image, and distribution-channel recipes. This public phase requires its qualifier and all prior phase requirements; publication remains separately approved."
     },
     {
       "title": "v1.0.0",
@@ -33,7 +33,7 @@
     },
     {
       "title": "Later: documentation website",
-      "description": "Expanded versioned MkDocs documentation after the first 1.0.0 product launch, deployed from GitHub Actions to Cloudflare Pages."
+      "description": "Expanded versioned MkDocs documentation after initial product publication, deployed from GitHub Actions to Cloudflare Pages."
     }
   ],
   "epics": [
@@ -1166,13 +1166,13 @@
         "D01",
         "D02"
       ],
-      "scope": "Create carloshm91/homebrew-tap and a source-based formula with hashed Python dependencies and release update automation.",
+      "scope": "Prepare organization-owned kuberich/homebrew-tap and a source-based formula with hashed Python dependencies and release update automation; actual namespace control and creation require D10 approval.",
       "acceptance": [
         "Formula definition installs the supplied release-candidate sdist in an isolated environment with hashed resources and required package assets; the release gate later binds it to the published immutable artifact.",
         "Run brew style/audit/install/test on declared Linux/macOS targets; install and upgrade preserve user configuration.",
-        "Release automation opens a version/checksum update PR. This task proves candidate installation and update automation; D04 performs the first live formula merge and public channel verification after PyPI publication."
+        "Release automation opens a version/checksum update PR. This task proves candidate installation and update automation; D10 performs first live formula merge and public channel verification after PyPI publication; D04/D06 retain actual local upgrade qualification."
       ],
-      "verification": "Use a local release-candidate sdist for formula audit and clean install/upgrade smoke before PyPI publication. D04 verifies the published formula; D03 does not require a package that has not been released yet.",
+      "verification": "Use a local release-candidate sdist for formula audit and clean install/upgrade smoke before PyPI publication. D10 verifies the published formula; D03 does not require a package that has not been released yet.",
       "priority": "P1"
     },
     {
@@ -1357,7 +1357,7 @@
         "D10",
         "W01"
       ],
-      "scope": "Create a searchable documentation site from validated user/developer docs after the first qualified 1.0.0 product release.",
+      "scope": "Create a searchable documentation site from validated user/developer docs after the initial qualified product release.",
       "acceptance": [
         "Organize installation, concepts, CLI, resources, customization/plugins, troubleshooting, security and contributing with version labels.",
         "Examples match installed behavior, navigation works on mobile and keyboard, and no unreleased feature is documented as available.",
@@ -1473,7 +1473,7 @@
         "Q04",
         "W01"
       ],
-      "scope": "After product features, qualify the exact candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Public publication belongs to D10 #89; this checkpoint creates no public 0.x artifacts or tags.",
+      "scope": "Qualify the exact phase candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Qualification does not publish; approved phased publication remains D10 #89.",
       "acceptance": [
         "Every scoped acceptance criterion has actual evidence; independent line/branch and changed-line coverage meet 90%, and designated deterministic critical modules meet 100%.",
         "Run the complete supported Linux/macOS Python matrix, owned API/terminal/cluster behavior and audited exact wheel/sdist; D05 standalone and extended-platform outputs are qualified where required by this checkpoint.",
@@ -1501,7 +1501,7 @@
         "Q03",
         "D04"
       ],
-      "scope": "After product features, qualify the exact candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Public publication belongs to D10 #89; this checkpoint creates no public 0.x artifacts or tags.",
+      "scope": "Qualify the exact phase candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Qualification does not publish; approved phased publication remains D10 #89.",
       "acceptance": [
         "Every scoped acceptance criterion has actual evidence; independent line/branch and changed-line coverage meet 90%, and designated deterministic critical modules meet 100%.",
         "Run the complete supported Linux/macOS Python matrix, owned API/terminal/cluster behavior and audited exact wheel/sdist; D05 standalone and extended-platform outputs are qualified where required by this checkpoint.",
@@ -1532,7 +1532,7 @@
         "U06",
         "D06"
       ],
-      "scope": "After product features, qualify the exact candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Public publication belongs to D10 #89; this checkpoint creates no public 0.x artifacts or tags.",
+      "scope": "Qualify the exact phase candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Qualification does not publish; approved phased publication remains D10 #89.",
       "acceptance": [
         "Every scoped acceptance criterion has actual evidence; independent line/branch and changed-line coverage meet 90%, and designated deterministic critical modules meet 100%.",
         "Run the complete supported Linux/macOS Python matrix, owned API/terminal/cluster behavior and audited exact wheel/sdist; D05 standalone and extended-platform outputs are qualified where required by this checkpoint.",
@@ -1559,7 +1559,7 @@
         "O07",
         "D07"
       ],
-      "scope": "After product features, qualify the exact candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Public publication belongs to D10 #89; this checkpoint creates no public 0.x artifacts or tags.",
+      "scope": "Qualify the exact phase candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Qualification does not publish; approved phased publication remains D10 #89.",
       "acceptance": [
         "Every scoped acceptance criterion has actual evidence; independent line/branch and changed-line coverage meet 90%, and designated deterministic critical modules meet 100%.",
         "Run the complete supported Linux/macOS Python matrix, owned API/terminal/cluster behavior and audited exact wheel/sdist; D05 standalone and extended-platform outputs are qualified where required by this checkpoint.",
@@ -1583,7 +1583,7 @@
         "Q07",
         "D08"
       ],
-      "scope": "After product features, qualify the exact candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Public publication belongs to D10 #89; this checkpoint creates no public 0.x artifacts or tags.",
+      "scope": "Qualify the exact phase candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Qualification does not publish; approved phased publication remains D10 #89.",
       "acceptance": [
         "Every scoped acceptance criterion has actual evidence; independent line/branch and changed-line coverage meet 90%, and designated deterministic critical modules meet 100%.",
         "Run the complete supported Linux/macOS Python matrix, owned API/terminal/cluster behavior and audited exact wheel/sdist; D05 standalone and extended-platform outputs are qualified where required by this checkpoint.",
@@ -1604,7 +1604,7 @@
         "D14",
         "D09"
       ],
-      "scope": "After product features, qualify the exact candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Public publication belongs to D10 #89; this checkpoint creates no public 0.x artifacts or tags.",
+      "scope": "Qualify the exact phase candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Qualification does not publish; approved phased publication remains D10 #89.",
       "acceptance": [
         "Every scoped acceptance criterion has actual evidence; independent line/branch and changed-line coverage meet 90%, and designated deterministic critical modules meet 100%.",
         "Run the complete supported Linux/macOS Python matrix, owned API/terminal/cluster behavior and audited exact wheel/sdist; D05 standalone and extended-platform outputs are qualified where required by this checkpoint.",
@@ -1616,19 +1616,17 @@
     },
     {
       "id": "D10",
-      "title": "Publish and verify the first qualified 1.0.0 product release",
+      "title": "Prepare phased releases and publish the first qualified 0.1.0 product",
       "epic": "E09",
-      "milestone": "v1.0.0",
+      "milestone": "v0.1.0",
       "requires": [
-        "Q05",
-        "Q06",
-        "D11"
+        "D06"
       ],
-      "scope": "Own the first public product launch after all engineering checkpoints, Q05 compatibility and Q06 capability audit. Preserve actual prerequisites and carry #150 final-candidate site requirements. Source opening #155 does not authorize package/site/tap/DNS publication.",
+      "scope": "Own initial 0.1.0 channel activation after the core/workload phase and explicit early-delivered generic/log and terminal-history prerequisites. Retain exact artifacts, owner review, installed upgrades and candidate-bound launch documentation; subsequent phases and stable 1.0 follow the reviewed cumulative mapping.",
       "acceptance": [
-        "All required features and intermediate engineering gates have measured evidence; the exact candidate passes independent coverage, full supported native matrix, performance, security, installed artifacts and three consecutive owned-cluster/fault rehearsals.",
+        "The selected phase qualifier and all cumulative prerequisites have measured evidence; the exact candidate passes independent coverage, the complete six-environment release matrix, scoped performance/security/installation and three consecutive owned-cluster/fault rehearsals.",
         "Enable and verify strict protected main with Quality gate, Repository checks and DCO, admin enforcement, protected publication environments, exact PyPI/TestPyPI ownership/OIDC and approved public tap/channel ownership. The separate GitHub project remains private.",
-        "Prepare the immutable 1.0.0 candidate (canonical 1.0.0rcN only if explicitly approved), changelog/migrations, provenance and actual install commands. Obtain explicit maintainer approval for the concrete tag/artifact/channel/site/DNS publication. Never publish a 0.x engineering checkpoint.",
+        "Prepare the immutable 0.1.0 first candidate (canonical 0.1.0rcN only if explicitly approved), authored notes/migrations, provenance and tested install/upgrade commands. Later releases inherit their reviewed phase requirements and require completed first activation. Obtain explicit approval for concrete tag/artifact/channel/site/DNS publication.",
         "Rebuild and browser/accessibility/quickstart-verify the initial landing and guides from the exact candidate. Prepare GitHub Actions deployment of the reviewed static bytes to Cloudflare Pages at kuberich.com and docs.kuberich.com, with protected credentials, manifest/deployment association and rollback.",
         "After approval, publish the tested immutable bytes; verify every promised public installation/upgrade/uninstall channel, HTTPS/domains/headers/links and published quickstart. Close only after real public verification; expanded/versioned docs remain W02/W03."
       ],
@@ -1679,6 +1677,7 @@
     "C05",
     "B06",
     "S06",
+    "D10",
     "M05",
     "U01",
     "U02",
@@ -1713,12 +1712,11 @@
     "D11",
     "Q05",
     "Q06",
-    "D10",
     "W02",
     "W03"
   ],
   "delivery": {
-    "first_public_version": "1.0.0",
+    "first_public_version": "0.1.0",
     "publication_gate": "D10",
     "source_opening_issue": 155,
     "project_visibility": "private",
@@ -1730,8 +1728,61 @@
       "D09",
       "D11"
     ],
-    "feature_first": true,
-    "feature_order": [
+    "feature_first": false,
+    "expanded_docs_order": [
+      "W02",
+      "W03"
+    ],
+    "publication_extra_issues": [
+      149,
+      150,
+      154,
+      155,
+      157,
+      162,
+      166
+    ],
+    "website_hosting": "GitHub Actions to Cloudflare Pages",
+    "stable_public_version": "1.0.0",
+    "release_phases": [
+      {
+        "version": "0.1.0",
+        "qualification_gate": "D06",
+        "extra_issues": [
+          53,
+          54,
+          123
+        ]
+      },
+      {
+        "version": "0.2.0",
+        "qualification_gate": "D07",
+        "extra_issues": [
+          124
+        ]
+      },
+      {
+        "version": "0.3.0",
+        "qualification_gate": "D08",
+        "extra_issues": []
+      },
+      {
+        "version": "0.4.0",
+        "qualification_gate": "D09",
+        "extra_issues": []
+      },
+      {
+        "version": "0.5.0",
+        "qualification_gate": "D11",
+        "extra_issues": []
+      },
+      {
+        "version": "1.0.0",
+        "qualification_gate": "Q06",
+        "extra_issues": []
+      }
+    ],
+    "execution_order": [
       "F00",
       "F01",
       "F02",
@@ -1759,6 +1810,7 @@
       "D03",
       "Q01",
       "W01",
+      "D04",
       "B05",
       "S05",
       "M01",
@@ -1767,9 +1819,13 @@
       "M04",
       "C08",
       "S07",
+      "D05",
+      "Q03",
+      "D06",
       "C05",
       "B06",
       "S06",
+      "D10",
       "M05",
       "U01",
       "U02",
@@ -1780,6 +1836,7 @@
       "S08",
       "M08",
       "U06",
+      "D07",
       "M06",
       "M07",
       "O01",
@@ -1789,42 +1846,22 @@
       "O05",
       "O06",
       "O07",
+      "D08",
       "A01",
       "A02",
       "A03",
       "A04",
       "A05",
-      "Q07"
-    ],
-    "final_qualification_order": [
-      "D05",
+      "Q07",
+      "D09",
       "D12",
       "D13",
       "D14",
-      "Q03",
-      "D04",
-      "D06",
-      "D07",
-      "D08",
-      "D09",
       "D11",
       "Q05",
-      "Q06"
-    ],
-    "expanded_docs_order": [
+      "Q06",
       "W02",
       "W03"
-    ],
-    "publication_extra_issues": [
-      124,
-      149,
-      150,
-      154,
-      155,
-      157,
-      162,
-      166
-    ],
-    "website_hosting": "GitHub Actions to Cloudflare Pages"
+    ]
   }
 }

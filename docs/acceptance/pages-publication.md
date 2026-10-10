@@ -1,5 +1,9 @@
 # Development Pages publication: #166
 
+> Historical receipt: the later maintainer-requested phased policy starts at
+> qualified 0.1.0. See [current release policy](../releases.md); this record
+> preserves the original source, scope and measurements.
+
 The maintainer explicitly authorized publishing the current landing and initial
 documentation on two Cloudflare Pages provider hosts on 2026-10-09. Custom domains,
 DNS and `www` are deferred. Application tags, packages and the first-product 1.0.0

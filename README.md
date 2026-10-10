@@ -55,14 +55,17 @@ shells; `--refresh` controls periodic table repaint while watches remain live.
 See the [launch contract](docs/k9s-cli.md) for aliases, precedence and limits.
 All audited flags are recognized; unimplemented options identify their owning task.
 
-The first public product release will be **1.0.0**, after the planned capabilities
-and compatibility checks are qualified. Source development is available before
-that release; intermediate milestones are engineering checkpoints.
+The first planned public product is **0.1.0**, after its core/workload,
+performance, installation and full native checks qualify. Later reviewed 0.x
+phases add capabilities; 1.0 retains stable compatibility and capability audit.
+Packages remain unavailable; source development is usable now. See
+[phased releases](docs/releases.md).
 Linux and macOS are the initial supported operating systems. Textual Web is
 outside the product scope.
 
-The initial [landing page and user documentation](docs/website.md) can be built
-and reviewed locally. Hosting, DNS and public release remain separate launch steps.
+The development [landing page and user documentation](docs/website.md) are
+available on approved Cloudflare provider hosts. Final-candidate publication,
+custom domains/DNS and application packages remain separate approved launch work.
 
 ## Try the development CLI
 
@@ -131,7 +134,7 @@ Application coverage must reach **at least 90% for lines and branches separately
 The reviewed critical modules must reach 100%. CI checks the complete production
 package, changed executable lines, and critical modules independently, with tests
 that demonstrate rejection of regressions. See the quality policy for check names
-and the current private-repository branch-protection limitation.
+and the current enforced main/environment rules with dated private-repository history.
 
 ## Community
 

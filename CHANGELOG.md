@@ -16,9 +16,12 @@ Release entries are written in release PRs and linked to their Git tags.
   contracts, reject stale source receipts, and rebuild both unpublished surfaces
   on each PR. Keep unavailable features and release/provider limits explicit.
 
-- Reserve first product publication for 1.0.0 after feature and final qualification.
-  Reject public 0.x tags/assets/tap updates, require transitive release readiness,
-  and keep intermediate checkpoints and website publication ownership explicit.
+- Prepare first public 0.1.0 and cumulative reviewed 0.x phases, superseding
+  the earlier first-public-1.0-only policy without changing development metadata.
+  Require selected/prior gates and all traced dependencies, immutable authored
+  notes with optional reviewed previews, actual upgrade evidence and the planned
+  organization-owned `kuberich/tap/kuberich` channel. Current public packages remain
+  unavailable; full qualification and activation stay under #89.
 
 - License KubeRich under Apache-2.0 and include contributor attribution NOTICE
   in Python artifacts. Align source Homebrew metadata and contribution guidance;
