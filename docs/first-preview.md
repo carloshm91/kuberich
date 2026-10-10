@@ -1,5 +1,37 @@
 # First things to try
 
+## Collected parser outcomes and bounded log formatting: Refs Q03 #50
+
+Repeated parser cancellation now drains a collector before returning, including
+late worker failures on Python 3.14. Uncancelled errors keep their original
+identity. Aggregate layout/export formatting preserves the captured source,
+order, timestamps and mode through sequential owned turns capped at 32 records
+and 8 KiB, with one larger retained record isolated in its own turn.
+
+`uv run --locked --python 3.12 pytest -q tests/unit tests/contract tests/ui/test_aggregate_logs.py tests/ui/test_logs.py tests/ui/test_sessions.py --cov=kuberich --cov-branch`
+passed 2,992 cases in 396.92 seconds; 11 actual source-terminal cases passed in
+33.82 seconds. Python 3.13 and 3.14 each passed the 209-case focused parser/
+formatting cohort. Four receipts bind 532 unchanged source inputs, including all
+109 production modules. After the required runtime replay coverage merge, all
+43 critical modules and the 29 owned changed executable lines measured 100%.
+The scoped suite's overall 89.2599% line / 86.6836% branch measurement does not
+qualify the whole-package gates; full frozen-head/native checks remain required.
+
+The ordinary runtime child completed both 5,000-record rounds at 113.758 ms,
+below the unchanged 150-ms guard. Its deliberately blocking negative control
+failed at 204.496 ms; the instrumented functional replay completed both rounds
+and is not timing evidence. All three final application/API cleanup receipts
+record zero owned viewers, log streams and watches.
+
+The preceding `087ee65` native run failed: Python 3.14 exposed two late shield
+error callbacks, and macOS measured 151.067 ms during round-two save. These
+original failures remain retained; passing local checks do not qualify that
+head or establish the complete cause of the macOS gap. See
+[acceptance evidence](acceptance/owned-log-formatting.md).
+The first public target stays 0.1.0 with the planned
+`brew install kuberich/tap/kuberich` channel. No new ticket, version bump,
+publication or intermediate maintainer trial accompanies this correction.
+
 ## Bounded aggregate input preparation: Refs Q03 #50
 
 The runtime fixture refills the same 5,000 records through owned batches capped

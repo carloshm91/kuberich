@@ -148,10 +148,11 @@ def _ssl_context(
 
 
 async def _finish_task[T](task: asyncio.Task[T]) -> T:
+    # Shield the collector: cancelled shields can report the child's late error.
+    finishing = asyncio.gather(task, return_exceptions=True)
     try:
-        return await asyncio.shield(task)
+        await asyncio.shield(finishing)
     except asyncio.CancelledError:
-        finishing = asyncio.gather(task, return_exceptions=True)
         while not finishing.done():
             try:
                 await asyncio.shield(finishing)
@@ -159,6 +160,7 @@ async def _finish_task[T](task: asyncio.Task[T]) -> T:
                 continue
         await finishing
         raise
+    return task.result()
 
 
 def _prepare(

@@ -7,12 +7,14 @@ from contextlib import aclosing
 from pathlib import Path
 
 import pytest
+import pytest_asyncio
 from aiohttp import web
 
 from kuberich.adapters import kubernetes
 from kuberich.domain.connections import ConnectionProblem, ConnectionState
 from kuberich.domain.watches import SyncStatus
 from kuberich.services import watches
+from kuberich.services.resources import parse_owned
 from kuberich.services.watches import ListWatch
 from tests.support.resources import collection, pod_resource, reader_fixture
 from tests.support.watches import event, frame
@@ -20,6 +22,20 @@ from tests.support.watches import event, frame
 
 class Finished(Exception):
     """Stop the owned consumer after its intended observations."""
+
+
+@pytest_asyncio.fixture
+async def collected_loop_errors():
+    loop = asyncio.get_running_loop()
+    original = loop.get_exception_handler()
+    errors = []
+    loop.set_exception_handler(lambda owner, context: errors.append(context))
+    try:
+        yield errors
+        await asyncio.sleep(0)
+        assert not errors
+    finally:
+        loop.set_exception_handler(original)
 
 
 @pytest.mark.asyncio
@@ -53,7 +69,7 @@ async def wait_for_thread(entered: threading.Event) -> None:
 @pytest.mark.parametrize("transport", ["get", "watch"])
 @pytest.mark.parametrize("fail", [False, True])
 async def test_json_transport_repeated_cancel_retains_parser_ownership(
-    tmp_path, monkeypatch, transport, fail
+    tmp_path, monkeypatch, transport, fail, collected_loop_errors
 ):
     entered, released, finished = threading.Event(), threading.Event(), threading.Event()
     original = kubernetes.decode_json
@@ -92,6 +108,33 @@ async def test_json_transport_repeated_cancel_retains_parser_ownership(
                     await task
             assert finished.is_set()
         assert not reader.session.api.rest_client.pool_manager.connector._acquired
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("parser", ["compatibility", "domain"])
+@pytest.mark.parametrize("fail", [False, True])
+async def test_uncancelled_parser_preserves_result_and_original_error(
+    monkeypatch, parser, fail, collected_loop_errors
+):
+    result = {"owned": "value"}
+    failure = ValueError("owned-parser-failure")
+
+    def operation(*args):
+        if fail:
+            raise failure
+        return result
+
+    if parser == "compatibility":
+        monkeypatch.setattr(kubernetes, "decode_json", operation)
+        awaitable = kubernetes._decode_owned(b'{"owned":"value"}')
+    else:
+        awaitable = parse_owned(operation)
+    if fail:
+        with pytest.raises(ValueError) as problem:
+            await awaitable
+        assert problem.value is failure
+    else:
+        assert await awaitable is result
 
 
 @pytest.mark.asyncio

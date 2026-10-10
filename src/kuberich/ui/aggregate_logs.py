@@ -24,7 +24,7 @@ from kuberich.domain.log_view import MAX_COPY_BYTES, window_options
 from kuberich.domain.logs import LogLine
 from kuberich.errors import AppError
 from kuberich.security.presentation import safe_text
-from kuberich.services.aggregate_logs import AggregateLogs
+from kuberich.services.aggregate_logs import AggregateLogs, format_records
 from kuberich.services.log_export import save_logs
 from kuberich.services.logs import LogStream
 from kuberich.services.processes import _finish_owned
@@ -295,12 +295,8 @@ class AggregateLogScreen(LogScreen):
                 self.aggregate.filter,
                 self.timestamps,
             )
-            entries = await parse_owned(
-                lambda: tuple(
-                    (record.number, record.text(json_mode=mode, timestamps=timestamps))
-                    for record in records
-                    if source_filter is None or record.source.key == source_filter
-                )
+            entries = await format_records(
+                records, json_mode=mode, timestamps=timestamps, source_filter=source_filter
             )
             if valid():
                 await self.body.load(
@@ -412,13 +408,8 @@ class AggregateLogScreen(LogScreen):
             self.aggregate.json_mode,
             self.aggregate.filter,
         )
-        text = await parse_owned(
-            lambda: "\n".join(
-                record.text(json_mode=mode)
-                for record in records
-                if source_filter is None or record.source.key == source_filter
-            )
-        )
+        entries = await format_records(records, json_mode=mode, source_filter=source_filter)
+        text = await parse_owned(lambda: "\n".join(text for _, text in entries))
         self.require_current()
         if clipboard and len(text.encode()) > MAX_COPY_BYTES:
             raise AppError("Copy exceeds 1 MiB; filter sources or save to a file.")

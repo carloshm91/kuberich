@@ -156,6 +156,11 @@ it never clears library caches. It then measures two full 5,000-record layout/
 format/timestamp/copy/save and Current/Previous cycles, with the unchanged 150-ms
 limit, at most 5,000 prepared records and 5,001 retained-plus-prepared records.
 Public Escape and final application/API cleanup must drain all owned work.
+Production aggregate view/export formatting now uses sequential owned turns of
+at most 32 records and 8 KiB of reserved output, with a larger single retained
+record isolated in its own turn. Captured identity/filter/order and repeated
+cancellation contracts apply between turns. This does not change the retained
+dataset, two full rounds, GC policy, runtime deadline or heartbeat budget.
 An independent child runs that same node with a deliberate 200-ms UI callback and
 must fail specifically the heartbeat assertion, then drain. Both runtime children
 require inactive coverage and no tracing/profile callback. A third mandatory

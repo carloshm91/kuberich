@@ -7,6 +7,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Format retained aggregate log views and exports in bounded owned turns,
+  preserving captured source identities, arrival order and plain/JSON controls.
+  Collect parser outcomes before returning cancellation, including late errors
+  on Python 3.14, while preserving ordinary error propagation.
+
 - Decode and validate live resource events in one owned worker, preserving
   bounded framing, pull backpressure, Table fallback and safe error messages.
   Drain JSON read/watch workers through repeated cancellation before cleanup.

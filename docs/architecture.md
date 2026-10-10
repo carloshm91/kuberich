@@ -1,5 +1,21 @@
 # Architecture decisions
 
+## Bounded formatting and collected parser outcomes: Refs Q03 #50
+
+Aggregate view/export formatting captures immutable records, mode, timestamps
+and the exact source filter before awaiting. Each owned worker formats at most
+32 records and 8 KiB of reserved output; one larger retained record gets its own
+turn without splitting or dropping it. Turns run sequentially, preserving arrival
+order and allowing the event loop to run between them. Layout generation and
+export target checks still reject obsolete results. No formatting queue is added.
+
+JSON and domain parser owners shield a collector created with
+`gather(return_exceptions=True)`, drain it through repeated caller cancellation,
+and then return the task's original result or exception when uncancelled. This
+keeps Python 3.14's late shield error callback from reporting an error that the
+owner deliberately consumes during cancellation. See
+[measured limits and original failures](acceptance/owned-log-formatting.md).
+
 ## Single owned watch parser: Refs Q03 #50
 
 The session exposes bounded complete raw watch frames through `watch_bytes`;
