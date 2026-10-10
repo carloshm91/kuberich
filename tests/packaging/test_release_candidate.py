@@ -8,7 +8,7 @@ import pytest
 
 from scripts import release
 from scripts.check_supply_chain import write_json
-from scripts.release import bundle_files, metadata, prepare, verify_bundle
+from scripts.release import bundle_files, download_checksums, metadata, prepare, verify_bundle
 from scripts.supply_chain import digest
 from tests.support.distribution import PROJECT, ROOT, run
 from tests.support.release_server import release_server
@@ -36,6 +36,17 @@ def test_real_artifacts_and_sidecars_are_preserved_in_an_exclusive_candidate(
     assert len(manifest["files"]) == 12
     for name, value in manifest["files"].items():
         assert digest(bundle / name) == value
+    downloads = tmp_path / "downloads"
+    downloads.mkdir()
+    for path in bundle.rglob("*"):
+        if path.is_file():
+            shutil.copyfile(path, downloads / path.name)
+    checker = shutil.which("sha256sum") or shutil.which("shasum")
+    assert checker is not None
+    arguments = [checker, "--check", "DOWNLOAD-SHA256SUMS"]
+    if checker.endswith("shasum"):
+        arguments = [checker, "-a", "256", "-c", "DOWNLOAD-SHA256SUMS"]
+    assert run(arguments, downloads).returncode == 0
     result = run(
         [
             sys.executable,
@@ -67,6 +78,7 @@ def test_real_artifacts_and_sidecars_are_preserved_in_an_exclusive_candidate(
         "artifact_rehashed",
         "extra",
         "checksum",
+        "download_checksum",
         "symlink",
         "source",
         "version",
@@ -89,10 +101,15 @@ def test_altered_release_bundle_cannot_pass_verification(release_candidate, tmp_
             (bundle / "SHA256SUMS").write_text(
                 "".join(f"{value}  {name}\n" for name, value in sorted(expected.items()))
             )
+            (bundle / "DOWNLOAD-SHA256SUMS").write_text(
+                download_checksums({**expected, "SHA256SUMS": digest(bundle / "SHA256SUMS")})
+            )
     elif mutation == "extra":
         (bundle / "unreviewed.txt").write_text("extra")
     elif mutation == "checksum":
         (bundle / "SHA256SUMS").write_text("incorrect")
+    elif mutation == "download_checksum":
+        (bundle / "DOWNLOAD-SHA256SUMS").write_text("incorrect download names")
     elif mutation == "symlink":
         wheel.rename(tmp_path / "outside.whl")
         wheel.symlink_to(tmp_path / "outside.whl")
@@ -200,6 +217,9 @@ def test_rehashed_authored_notes_cannot_replace_committed_body(canonical_release
     expected = {**manifest["files"], "release.json": digest(bundle / "release.json")}
     (bundle / "SHA256SUMS").write_text(
         "".join(f"{value}  {name}\n" for name, value in sorted(expected.items()))
+    )
+    (bundle / "DOWNLOAD-SHA256SUMS").write_text(
+        download_checksums({**expected, "SHA256SUMS": digest(bundle / "SHA256SUMS")})
     )
     with pytest.raises(ValueError, match="committed source bytes"):
         verify_bundle(bundle, sha, "1.0.0rc1", root=source)

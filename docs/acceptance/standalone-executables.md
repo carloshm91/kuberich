@@ -35,6 +35,22 @@ critical modules at 100%, and 52 changed executable lines at 100%. This evidence
 belongs to the original `bcbc09b` PR source, not the subsequent release-enrollment
 changes; the original overall run remains incomplete and its macOS failures remain.
 
+That original run has subsequently completed: all four source jobs succeeded;
+the aggregate correctly failed because the two native macOS jobs failed. Linux
+3.12 passed 4,591 cases in 1,910.89 seconds plus all owned-cluster/installed-guide
+checks. Its original artifact `11684929644` matches GitHub ZIP SHA-256
+`d72e51d61bc97df26f68da02f1c990d9893deb61687bde5a5cfa1fc811e0d06d`.
+It measured 99.1090% lines, 97.0038% branches and all 52 changed executable lines
+at 100%; raw run/jobs/artifact records and original logs remain retained.
+
+The reviewed `83b7c89` source was then built independently in an owned pinned
+Ubuntu 22.04 container, in 143.48 seconds. Its archive checksum is
+`e971f996ddd19a2ca4878cc574c247ecb89eb3d932728b47f07c3434ac170993`.
+The exact archive passed original-source/member/native/notices checks and the
+Python-free CLI, loopback browsing, optional-tool, C auth helper and real `/bin/sh`
+controls. These originals are retained in the `ubuntu22-release-enrollment-*`
+paths under `artifacts/standalone49`. The corrected Mac candidate remains pending.
+
 The stable `8022f60` release-enrollment candidate passed all 27 packaging/Homebrew
 cases in 350.36 seconds; the original log is
 `artifacts/standalone49/packaging-release-enrollment-stable-v1-original.log`.

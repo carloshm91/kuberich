@@ -15,6 +15,15 @@ checking passed 49 pages, 1,726 local links/assets and 64 output files. The
 controlled native fixtures do not qualify a native host. No release workflow,
 tag or package publication has been invoked.
 
+The first hosted run has now finished: all four source jobs passed, including
+Linux 3.12's complete owned-cluster and installed-guide checks. The overall run
+correctly failed because both macOS native startup checks failed. A subsequent
+owned Ubuntu 22.04 build of source `83b7c89` produced archive SHA-256
+`e971f996ddd19a2ca4878cc574c247ecb89eb3d932728b47f07c3434ac170993`;
+its exact extracted archive passed the reusable Python-free CLI/browsing/auth/
+shell qualifier. Public download preparation also adds `DOWNLOAD-SHA256SUMS`
+for GitHub's flat attachment names; its stable packaging check is pending.
+
 The exact local commands were:
 
 ```sh
@@ -33,8 +42,8 @@ commands at macOS 11; that does not establish support below the declared 14.
 Its error came from Rich importing `os.getcwd()` while the inherited checkout
 directory was deliberately inaccessible. The verifier now selects its owned
 temporary cwd and records it; eight host/helper regressions and strict types
-passed locally. Fresh actual macOS evidence for this correction, the remaining
-source matrix and release enrollment are still required. The sandbox denial
+passed locally. Fresh actual macOS evidence for this correction and the complete
+subsequent source/native candidate are still required. The sandbox denial
 has not been relaxed, and the failed original log/archive remain retained.
 
 The native checks are now reusable as `scripts.check_standalone` and

@@ -56,6 +56,13 @@ current job/artifact contract. See [runner-pin evidence](acceptance/ubuntu-runne
 The release workflow consumes the already built/tested quality artifact. Neither
 release job rebuilds it. Preparation verifies archive metadata and produces an
 exclusive bundle with SHA256SUMS, exact version/commit and every retained byte.
+`SHA256SUMS` describes the original bundle's relative paths. GitHub attaches
+individual files with flat names, so `DOWNLOAD-SHA256SUMS` separately records
+those exact download names and the original bundle checksum file. Preparation
+refuses colliding attachment basenames. Both inventories are checked before
+publication; a user downloading the attachments into one directory can run
+`sha256sum --check DOWNLOAD-SHA256SUMS` on Linux or
+`shasum -a 256 -c DOWNLOAD-SHA256SUMS` on macOS.
 Public preparation requires Linux x86_64/ARM64 and macOS Intel/ARM64 archives.
 It independently reads native headers, ABI/deployment floors, original interpreter
 notices and runtime assets, then checks their exact source/archive-bound CLI,
