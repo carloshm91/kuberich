@@ -1,5 +1,21 @@
 # First things to try
 
+## Bounded aggregate input preparation: Refs Q03 #50
+
+The runtime fixture refills the same 5,000 records through owned batches capped
+at the product transport's 8-KiB read size. Its receipt verifies 230 batches,
+22 records/8,184 bytes maximum per batch, both full-history rounds and the same
+5,001 maximum retained-plus-prepared records. The 150-ms gate, ordinary GC,
+warm navigation/resize/theme cycles and 200-ms blocking negative control remain.
+
+`uv run pytest -q tests/ui/test_aggregate_logs.py tests/contract/test_aggregate_logs.py --cov=kuberich --cov-branch`
+passed all 30 affected cases in 132.62 seconds. The final normal positive child
+measured 114.769 ms, the required negative child failed at 206.152 ms, and the
+instrumented functional replay completed both rounds. These local receipts bind
+165 unchanged source inputs. New frozen-head/native checks remain required;
+the original #176 macOS failure is retained and its cause is not established by
+these later observations. See [input preparation evidence](acceptance/aggregate-input-preparation.md).
+
 ## Watch pipeline work: Refs Q03 #50
 
 Live resource JSON and domain normalization share one owned worker per event.
@@ -26,6 +42,10 @@ The preceding PR #176 remains unmerged: its original macOS run
 input delivery (165.123 ms against 150 ms; 4,267 passed/one failed). Its original
 source, log and artifact remain preserved. Passing Linux jobs or local watch
 checks do not qualify that failed candidate or establish the failure's cause.
+All three original Linux environments independently passed 4,268 cases with
+all 43 critical modules and 47 changed executable lines at 100%; minimum whole
+line/branch coverage was 99.0944% / 96.8662%. Those environment-specific receipts
+do not override the macOS failure or failed aggregate Quality gate.
 
 ## Owned workspace repaint work: Refs Q03 #50
 

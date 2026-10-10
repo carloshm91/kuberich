@@ -266,6 +266,11 @@ async def require_runtime_children() -> None:
         assert heartbeat["timing_qualifying"] is (mode != "coverage")
         assert heartbeat["maximum_simultaneously_prepared_records"] == 5000
         assert heartbeat["maximum_retained_plus_prepared_records"] <= 5001
+        refill = heartbeat["input_refill"]
+        if mode != "negative":
+            assert refill["byte_budget"] == 8192 and refill["records"] == 5000
+            assert refill["batches"] > 1 and refill["maximum_batch_records"] < 500
+            assert 0 < refill["maximum_batch_bytes"] <= refill["byte_budget"]
         cases = ElementTree.parse(directory / "cases.xml").getroot().findall(".//testcase")
         assert len(cases) == 1 and cases[0].attrib["name"] == NODE.split("::")[1]
         assert cases[0].find("error") is None and cases[0].find("skipped") is None

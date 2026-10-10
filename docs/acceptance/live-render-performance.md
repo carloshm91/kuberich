@@ -86,3 +86,23 @@ for the signed candidate; no intermediate maintainer trial is requested.
 Ruff/all 472-file formatting, configured strict application/tooling types over
 133 files and four site files, plan validation, wheel/sdist build/Twine and both
 site build/link/digest checks passed (49 pages, 1,726 references, 64 files).
+
+## Original frozen-head qualification
+
+PR #176 head `950f7840d03a0e7748bca46473b4bd45788e21bf`, tree
+`a3017db90644914e72704aac8c95b7f4d868c5dc`, run `38036838862` remains unmerged.
+Independent original artifact review verified all three Linux interpreters:
+4,268 cases each, all 109 production modules, 43 critical modules and 47 changed
+executable lines at 100%. Minimum whole line/branch coverage was 99.0944% /
+96.8662%; all 111 wheel/sdist payloads, audits, isolated install receipts,
+runtime replay and native terminal evidence matched frozen Git bytes.
+Compiler-specific presentation statements matched the original 3.12/3.14
+coverage data (96/94, with pure annotation lines 21/22 accounting for the difference).
+
+The original macOS job failed at 165.123 ms during round-two full-history input
+preparation against the unchanged 150-ms aggregate runtime budget; 4,267 other
+cases passed. Its original ZIP/source/heartbeat/log evidence is retained, and
+the aggregate Quality gate correctly failed. Three Linux passes do not qualify
+this candidate. [Watch pipeline evidence](watch-pipeline-performance.md) preserves
+the failure identifiers; [bounded input preparation](aggregate-input-preparation.md)
+records the subsequent fixture correction and its limited local evidence.
