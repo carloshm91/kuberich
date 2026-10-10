@@ -4,6 +4,7 @@ import asyncio
 from bisect import bisect_right
 from collections import OrderedDict
 from collections.abc import Callable
+from dataclasses import dataclass
 from itertools import pairwise
 from typing import ClassVar
 
@@ -24,10 +25,51 @@ VISIBLE_CACHE = 128
 
 
 type PreparedEntry = tuple[int, str]
+type LayoutKey = tuple[int | None, bool, str]
 type Subline = tuple[str, int, tuple[tuple[int, int, bool], ...]]
 type CachedLayout = tuple[
     tuple[object, ...], tuple[Subline, ...], tuple[int, tuple[Subline, ...]], int
 ]
+
+
+@dataclass(frozen=True, slots=True)
+class _Geometry:
+    entries: tuple[LogEntry | PreparedEntry, ...]
+    rows: list[tuple[int, tuple[Subline, ...]]]
+    starts: list[int]
+    matches: list[int]
+    widths: list[int]
+    marks: frozenset[int]
+
+    def trim(
+        self, entries: tuple[LogEntry | PreparedEntry, ...], retained: set[int]
+    ) -> "_Geometry | None":
+        if not entries or not self.entries:
+            return None
+        try:
+            first = self.entries.index(entries[0])
+        except ValueError:
+            return None
+        count = min(len(entries), len(self.entries) - first)
+        stop = first + count
+        if entries[:count] != self.entries[first:stop]:
+            return None
+        if first == 0 and count == len(self.entries):
+            return self
+        origin = self.starts[first]
+        rows = self.rows[first:stop]
+        matches = []
+        if self.matches:
+            reused = {number for number, _ in rows}
+            matches = [number for number in self.matches if number in reused]
+        return _Geometry(
+            self.entries[first:stop],
+            rows,
+            [start - origin for start in self.starts[first:stop]],
+            matches,
+            self.widths[first:stop],
+            self.marks & retained,
+        )
 
 
 class LogBody(ScrollView, can_focus=True):
@@ -59,6 +101,10 @@ class LogBody(ScrollView, can_focus=True):
         self.matches: list[int] = []
         self._cache: dict[int, CachedLayout] = {}
         self._alternates: dict[int, CachedLayout] = {}
+        self._cache_key: LayoutKey | None = None
+        self._alternate_key: LayoutKey | None = None
+        self._geometry_context: tuple[int, bool, str] | None = None
+        self._geometries: dict[bool, _Geometry] = {}
         self._wrapped_context: tuple[int, bool, str] | None = None
         self._strips: OrderedDict[tuple[int, int], tuple[Subline, Strip]] = OrderedDict()
         self._layout_style = Style.null()
@@ -90,6 +136,9 @@ class LogBody(ScrollView, can_focus=True):
     ) -> None:
         if not valid():
             return
+        await asyncio.sleep(0)
+        if not valid():
+            return
         retained = {entry.number if isinstance(entry, LogEntry) else entry[0] for entry in entries}
         self._cache = {number: value for number, value in self._cache.items() if number in retained}
         self._alternates = {
@@ -97,6 +146,24 @@ class LogBody(ScrollView, can_focus=True):
         }
         width = max(1, self.scrollable_content_region.width)
         style = self.rich_style
+        context = width, timestamps, query
+        if context != self._geometry_context:
+            self._geometries.clear()
+            self._geometry_context = context
+        retained_marks = marks & retained
+        for mode, previous in tuple(self._geometries.items()):
+            trimmed = previous.trim(entries, retained)
+            if trimmed is None or trimmed.marks != retained_marks:
+                del self._geometries[mode]
+            else:
+                self._geometries[mode] = trimmed
+        layout_key = width if wrap else None, timestamps, query
+        if layout_key != self._cache_key:
+            if layout_key == self._alternate_key:
+                self._cache, self._alternates = self._alternates, self._cache
+            else:
+                self._cache, self._alternates = {}, self._cache
+            self._cache_key, self._alternate_key = layout_key, self._cache_key
         keys = (
             (width if wrap else None, timestamps, query, False),
             (width if wrap else None, timestamps, query, True),
@@ -105,30 +172,36 @@ class LogBody(ScrollView, can_focus=True):
             self._wrapped_context = width, timestamps, query
         prime_wrap = not wrap and self._wrapped_context == (width, timestamps, query)
         wrapped_keys = ((width, timestamps, query, False), (width, timestamps, query, True))
-        rows, starts, matches = [], [], []
-        height, maximum_width = 0, width
+        wrapped_key_base = width, timestamps, query
+        if prime_wrap and self._alternate_key != wrapped_key_base:
+            self._alternates.clear()
+            self._alternate_key = wrapped_key_base
+        geometry = self._geometries.get(wrap)
+        if (
+            geometry is not None
+            and prime_wrap
+            and not all(number in self._alternates for number, _ in geometry.rows)
+        ):
+            # A cancelled first wrap may have prepared only a prefix. Finish
+            # warming that existing history before skipping its layout work.
+            geometry = None
+        rows = [] if geometry is None else geometry.rows.copy()
+        starts = [] if geometry is None else geometry.starts.copy()
+        matches = [] if geometry is None else geometry.matches.copy()
+        widths = [] if geometry is None else geometry.widths.copy()
+        height = starts[-1] + len(rows[-1][1]) if rows else 0
         prepared = 0
-        for index, entry in enumerate(entries):
+        for index, entry in enumerate(entries[len(rows) :], start=len(rows)):
             number = entry.number if isinstance(entry, LogEntry) else entry[0]
             value: str | None = None
             key = keys[number in marks]
             cached = self._cache.get(number)
             if cached is None or cached[0] != key:
-                alternate = self._alternates.get(number)
-                if alternate is not None and alternate[0] == key:
-                    if cached is not None:
-                        self._alternates[number] = cached
-                    cached = alternate
-                    self._cache[number] = cached
-                    strips = alternate[1]
-                else:
-                    value = entry.text(timestamps) if isinstance(entry, LogEntry) else entry[1]
-                    strips = self._prepare(value, number in marks, wrap, width, query, style)
-                    prepared += 1
-                    if cached is not None:
-                        self._alternates[number] = cached
-                    cached = key, strips, (number, strips), max(line[1] for line in strips)
-                    self._cache[number] = cached
+                value = entry.text(timestamps) if isinstance(entry, LogEntry) else entry[1]
+                strips = self._prepare(value, number in marks, wrap, width, query, style)
+                prepared += 1
+                cached = key, strips, (number, strips), max(line[1] for line in strips)
+                self._cache[number] = cached
             else:
                 strips = cached[1]
             if prime_wrap:
@@ -155,7 +228,7 @@ class LogBody(ScrollView, can_focus=True):
             rows.append(cached[2])
             starts.append(height)
             height += len(strips)
-            maximum_width = max(maximum_width, cached[3])
+            widths.append(cached[3])
             if query:
                 if value is None:
                     value = entry.text(timestamps) if isinstance(entry, LogEntry) else entry[1]
@@ -170,6 +243,8 @@ class LogBody(ScrollView, can_focus=True):
                     return
         if not valid():
             return
+        maximum_width = max(width, max(widths, default=width))
+        self._geometries[wrap] = _Geometry(entries, rows, starts, matches, widths, retained_marks)
         anchor, x = self.first_visible, self.scroll_x
         self.rows, self.starts, self.matches = rows, starts, matches
         if self._layout_style != style:
@@ -266,6 +341,9 @@ class LogBody(ScrollView, can_focus=True):
     def invalidate(self) -> None:
         self._cache.clear()
         self._alternates.clear()
+        self._cache_key = self._alternate_key = None
+        self._geometries.clear()
+        self._geometry_context = None
         self._wrapped_context = None
         self._strips.clear()
 

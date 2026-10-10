@@ -7,6 +7,10 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Reuse retained log geometry across append, eviction and wrap changes while
+  preserving literal search, marks and navigation. Update fixed-height log
+  metadata without repeatedly recalculating the covered workspace layout.
+
 - Retain up to 10,000 log lines within the existing 4 MiB byte limit. Reuse
   bounded wrap layouts, wake display controls promptly and defer covered
   workspace painting while live observations and target validation continue.

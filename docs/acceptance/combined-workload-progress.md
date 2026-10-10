@@ -202,3 +202,100 @@ An initial locally mislabeled invocation was discovered to have recreated its
 only as 3.12 evidence. Correct native invocations record executable, version,
 package source and input hashes. Full corrected native checks remain required;
 original failures are preserved and no whole-candidate qualification is claimed.
+
+## Incremental retained geometry and fixed-height refresh diagnosis
+
+The subsequent local prototype reuses an exactly matching retained entry prefix
+for each of at most two wrap geometries, prunes evicted identities and prepares
+only its new tail in cooperative turns. Its first normal observation measured
+154.931 ms p95 / 106 controls, with 3,019 events and 60,380 log lines delivered.
+That result remained above target; no improvement was inferred from one short
+distribution. The exact working sources and original ANSI/receipts are retained.
+
+An intrusive cProfile diagnosis completed 67 controls before its paint-byte
+assertion failed. Both owners drained, the profile and failure are preserved,
+and this result cannot qualify latency. A separate bounded actual-CLI GC callback
+diagnosis left ordinary 700/10/10 policy unchanged and observed 12 generation-two
+collections, with a largest 80.482-ms pause. It measured 106.676-ms input p95;
+only some slow inputs overlapped a long collection. This is instrumented
+diagnosis, not proof that GC explains every input delay.
+
+Inspection found that changing one-row log metadata called native Static updates
+with their default whole-layout refresh. The correction requests `layout=False`
+for their fixed geometry and skips unchanged heading/frame titles, retaining
+native resize, virtual log sizing and literal/sanitized text. The first normal
+corrected short run was:
+
+```sh
+uv run python -m tests.support.performance_terminal --seconds 30 --output artifacts/incremental50/normal-fixed-height-original
+```
+
+It completed 30.166 seconds, 113 controls, **91.190-ms p95**, a 61.662-ms median,
+3,017 resource events and 60,340 log lines, all sent without source expiry.
+Measured inputs stayed unchanged and both process owners and the terminal
+closed normally. Its 3 inputs above 100 ms do not invalidate this percentile;
+the 30-minute sustained distribution and memory rule remain required. No full
+candidate coverage, native qualification or Q03 completion is claimed.
+
+Ten focused existing layout/literal/live-control/resize cases passed before that
+short run. Four added Rich/cancellation cases exercised both entry forms and
+partially cancelled wrap warming. Extending their sequence to reorder entries
+under an unchanged query found two genuine failing originals: cached matches
+included retained entries outside the reused prefix. Matching is now pruned to
+that prefix before appending the new order. The corrected 12-case cohort passed;
+the original failing sources and logs remain retained. The complete owned log
+cohort subsequently passed **36 cases in 223.20 seconds**. Exact workflow
+Ruff/formatting checked 492 files and strict types passed over 133 source files.
+The later frozen-source sustained observation is recorded below. Full native
+and remaining lifecycle qualification are still required.
+
+## Frozen incremental candidate sustained observation
+
+The original immutable source was
+`30b6856878d74fd61fab6b7e828157ab003a03e6`, with clean tracked inputs throughout.
+The exact command was:
+
+```sh
+uv run python -m tests.support.performance_terminal --seconds 1800 --output artifacts/incremental50/frozen-30b6856-soak-original
+```
+
+Reference machine: Linux 6.8.0-142/glibc 2.39, Intel i5-8500T at 2.10 GHz,
+six available CPUs with affinity 0–5 and 32,113,976 KiB physical memory.
+The interpreter was CPython 3.12.12; Textual 8.2.8, kubernetes-asyncio 36.1.0,
+pyte 0.8.2 and PyYAML 6.0.3 were installed. Coverage was installed but inactive;
+there was no tracing or profiling. Enabled GC retained its ordinary 700/10/10
+thresholds, verified against the same isolated executable's defaults.
+No local suite, profiler or artifact verifier overlapped the observation.
+Lightweight source/status/API reads, preparation of ignored review scripts and
+an issue-status update did occur. Native artifact collection started after the
+soak process reported its terminal exit.
+
+The 100×30 real CLI/PTY selected the last of 10,000 Pods and retained 10,000
+log lines within the existing 4 MiB bound. Public `w` controls alternated actual
+wrapped-tail appearance/disappearance, with 200-ms idle between controls.
+The independently paced source sent all 180,029 resource events and 3,600,580
+log lines during 1,800.285 seconds, without watch/log expiry. This describes
+transport delivery; ordinary bounded history eviction still applies.
+
+Independent review recomputed **99.076876-ms p95 across 6,533 controls**, checked
+350 process samples and verified all 163 source hashes against Git and disk.
+The unchanged 100-ms target passed with only **0.923124 ms** of margin; this is
+reference-machine evidence, not a guarantee for every input or machine.
+
+The four predeclared five-minute windows after ten minutes of warmup each had
+58 samples. CLI median and p95 RSS values were 162,460 / 162,480 / 162,480 /
+162,544 KiB: an 84-KiB range, within the declared 8-MiB allowance. Its 11
+descriptors and 13 threads stayed constant. Source and observer also passed
+their independently recomputed RSS, descriptor and thread rules. Both process
+owners exited zero, terminal attributes were restored and final source watches,
+log streams, workers and LIST snapshots were zero.
+
+Original receipt SHA-256:
+`f335a9d3c905f60ade287781cc44d887c499a87c54ac9182aa1e6b5148c1f8b4`.
+The 89,586,069-byte original ordered ANSI has SHA-256
+`8e44c883e55f91d51ba87a565ccc6b7834f38e47c79cb6c4d5a957a9524b32fc`.
+The retained independent review accepts only the combined-load latency and
+memory subsets; the observer deliberately keeps `runtime_qualified=false`.
+The candidate's full native checks and context-churn, slow-consumer and cancelled
+forward lifecycle evidence remain required. Q03 remains open. Earlier failures
+and their original sources/artifacts are retained without reruns or replacement.
