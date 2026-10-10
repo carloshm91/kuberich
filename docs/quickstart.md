@@ -2,15 +2,16 @@
 
 The usable development preview has live pods, namespace/context tables, inline
 command completion, local filters, 15 [standard resource tables](standard-resources.md),
-resource details/YAML/events, container logs and
+resource details/YAML/events, generic CRD tables, single/aggregate logs and
 embedded container shells. The checkout reports `0.0.1.dev0`. **Public packages
-are not available yet; the first public product release will be 1.0.0.**
+are not available yet; the first planned public product is qualified 0.1.0.**
 Guarded annotations, manifest editing, workload scale/restart/rollback and managed
 pod/Service port forwarding, guarded deletion and Job operations are also available.
 Exec credentials, certificates and proxies have locally verified connection contracts;
-see [connection compatibility](kubeconfig-interoperability.md). Generic CRD tables,
-metrics, attach, ephemeral debugging, file transfer and user plugins remain
-separate tickets.
+see [connection compatibility](kubeconfig-interoperability.md). Captured attach
+and file transfer are delivered; metrics, creating ephemeral debug containers
+and user plugins remain separate tickets. Embedded-shell scrollback/search/copy
+remains #123 before first-phase qualification.
 This preview does not claim complete K9s parity or real EKS/AKS certification.
 
 ## Run from source
@@ -144,7 +145,10 @@ the checkout does not create a uv tool installation to uninstall.
 
 PyPI and the public Homebrew tap are planned first-release channels. They are
 **not available installation instructions yet**. Public ownership, Linux/macOS
-installation and version-to-version upgrades must pass D04 #40 after approval.
+installation and actual upgrades must pass the scoped D04/D06 and public #89
+checks. First 0.1.0 uses an identified local upgrade baseline, without inventing
+a previous public version; later trials use the actual published predecessor.
+See [upgrade constraints](distribution.md#upgrade-and-uninstall-contract).
 Standalone Linux/macOS binaries remain 0.1.0 work.
 
 ## If something fails

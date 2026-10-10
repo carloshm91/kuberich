@@ -11,7 +11,14 @@ policy = {
     for node in ast.parse((ROOT / "scripts/release_policy.py").read_text()).body
     if isinstance(node, ast.Assign)
     and isinstance(node.targets[0], ast.Name)
-    and node.targets[0].id in {"FIRST_PUBLIC_VERSION", "QUALIFICATION_GATES", "RELEASE_GATES"}
+    and node.targets[0].id
+    in {
+        "FIRST_PUBLIC_VERSION",
+        "QUALIFICATION_GATES",
+        "RELEASE_GATES",
+        "PHASE_GATES",
+        "TASK_ISSUE_IDS",
+    }
 }
 plan = json.loads((ROOT / "docs/backlog.json").read_text())
 capabilities = json.loads((ROOT / "docs/capabilities.json").read_text())
@@ -54,26 +61,36 @@ delivery = plan["delivery"]
 assert delivery["first_public_version"] == policy["FIRST_PUBLIC_VERSION"]
 assert {delivery["publication_gate"]} == policy["RELEASE_GATES"]
 assert set(delivery["qualification_gates"]) == policy["QUALIFICATION_GATES"]
-assert delivery["feature_first"] is True
+assert delivery["feature_first"] is False
+assert delivery["stable_public_version"] == "1.0.0"
 assert delivery["source_opening_issue"] == 155 and delivery["project_visibility"] == "private"
-execution = (
-    delivery["feature_order"]
-    + delivery["final_qualification_order"]
-    + [delivery["publication_gate"]]
-    + delivery["expanded_docs_order"]
-)
+execution = delivery["execution_order"]
 assert len(execution) == len(tasks) and set(execution) == tasks.keys()
 execution_positions = {ident: index for index, ident in enumerate(execution)}
 for ident, task in tasks.items():
     assert all(execution_positions[dep] < execution_positions[ident] for dep in task["requires"]), (
         ident
     )
-assert policy["QUALIFICATION_GATES"] <= set(delivery["final_qualification_order"])
+assert policy["QUALIFICATION_GATES"] <= set(execution)
+assert set(tasks) == set(policy["TASK_ISSUE_IDS"])
+assert tasks["D10"]["milestone"] == "v0.1.0" and tasks["D10"]["requires"] == ["D06"]
+phases = delivery["release_phases"]
+assert [(phase["version"], phase["qualification_gate"]) for phase in phases] == list(
+    policy["PHASE_GATES"].items()
+)
+for phase in phases:
+    assert tasks[phase["qualification_gate"]]["milestone"] == "v" + phase["version"]
+    extra = phase["extra_issues"]
+    assert len(extra) == len(set(extra)) and all(
+        type(number) is int and number > 0 for number in extra
+    )
+assert {53, 54, 123} <= set(phases[0]["extra_issues"])
+assert 124 in phases[1]["extra_issues"]
 extras = delivery["publication_extra_issues"]
 assert len(extras) == len(set(extras)) and all(
     type(number) is int and number > 0 for number in extras
 )
-assert {124, 149, 150, 154, 155, 157} <= set(extras)
+assert {149, 150, 154, 155, 157, 162, 166} <= set(extras)
 for epic in epics.values():
     children = [task for task in tasks.values() if task["epic"] == epic["id"]]
     assert children, epic["id"]
@@ -116,8 +133,14 @@ for path in ROOT.rglob("*.md"):
 index = ROOT / "docs/github-issues.json"
 if index.exists():
     issues = json.loads(index.read_text())
+    assert plan["repository"] == issues["repository"] == "carloshm91/kuberich"
     assert set(issues["issues"]) == tasks.keys() | epics.keys()
     assert len({item["number"] for item in issues["issues"].values()}) == len(issues["issues"])
+    expected = dict(zip(policy["TASK_ISSUE_IDS"], range(13, 92), strict=True))
+    expected.update({f"E{number:02}": number for number in range(1, 13)})
+    for identifier, item in issues["issues"].items():
+        assert type(item["number"]) is int and item["number"] == expected[identifier]
+        assert item["url"] == f"https://github.com/carloshm91/kuberich/issues/{item['number']}"
 print(
     f"Valid plan: {len(epics)} epics, {len(tasks)} tasks, {len(rows)} capability families, {len(flags)} CLI flags"
 )

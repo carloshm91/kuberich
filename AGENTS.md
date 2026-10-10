@@ -41,13 +41,20 @@ implementation; do not claim to switch models without actual environment support
   with Apache-2.0 in #155. This authorization covers the source repository and
   its repository issues/history, not the separate GitHub project, hosting or
   distribution channels. Do not request the same visibility permission again.
-- The first public product release remains 1.0.0. Intermediate milestones are
-  engineering checkpoints, not instructions to publish 0.x artifacts or tags.
+- On 2026-10-09 the maintainer requested usable, qualified 0.x releases,
+  starting with 0.1.0. This supersedes the earlier first-public-1.0-only policy.
+  Follow the explicit cumulative phase mapping in docs/releases.md/backlog.json;
+  phase preparation does not authorize tags, packages, taps or website publication.
+- Main has enforced strict app-bound Quality gate/Repository checks/DCO, admin,
+  PR/linear/conversation controls and no force pushes/deletions. Both release
+  environments require owner review, protected branches and no admin bypass;
+  solo self-review remains allowed. Revalidate actual live rules before release.
 - On 2026-10-09 the maintainer explicitly authorized #166 to publish the current
   development landing and initial docs to two Cloudflare Pages provider hosts,
   using the protected `release` secrets. Custom domains/DNS, `www`, packages and
-  application tags remain outside this authorization. Resume the preserved
-  B06 #53 implementation after this focused deployment task.
+  application tags remain outside this authorization. #166 is delivered; #53
+  and #54 are delivered. Use the current issue/backlog rather than this historical
+  deployment sequence to choose the next task.
 - Ask before changing repository/project visibility, publishing a website,
   creating a public distribution repository, or publishing package artifacts.
   Prepare and verify the concrete result first, then request approval for the

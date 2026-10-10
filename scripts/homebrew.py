@@ -19,7 +19,8 @@ from scripts.release import GitHub, dispatch_identity, request, verify_bundle
 from scripts.release_policy import HASH, REPOSITORY, publication_tag, release_tag, require_sha
 from scripts.supply_chain import digest
 
-TAP = "carloshm91/homebrew-tap"
+TAP = "kuberich/homebrew-tap"
+TAP_OWNER = "kuberich"
 FORMULA = "Formula/kuberich.rb"
 SCAFFOLD = ROOT / "packaging/homebrew"
 
@@ -168,9 +169,12 @@ def propose(api: TapGitHub, text: str, sha: str, version: str) -> str:
     prefix = f"repos/{TAP}"
     repo = api(prefix)
     if (
-        repo.get("full_name") != TAP
+        not isinstance(repo, dict)
+        or repo.get("full_name") != TAP
         or repo.get("private") is not False
         or repo.get("default_branch") != "main"
+        or repo.get("owner", {}).get("login") != TAP_OWNER
+        or repo.get("owner", {}).get("type") != "Organization"
     ):
         raise ValueError("Require the owner-approved public tap with main")
     current = api(f"{prefix}/contents/{FORMULA}?ref=main")
@@ -219,7 +223,7 @@ def propose(api: TapGitHub, text: str, sha: str, version: str) -> str:
             != content
         ):
             raise ValueError("Existing update branch differs; it cannot be overwritten")
-    pulls = api(f"{prefix}/pulls?state=open&base=main&head=carloshm91:{quote(branch, safe='')}")
+    pulls = api(f"{prefix}/pulls?state=open&base=main&head={TAP_OWNER}:{quote(branch, safe='')}")
     if len(pulls) > 1:
         raise ValueError("Ambiguous update pull request")
     if pulls:

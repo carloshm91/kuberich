@@ -16,13 +16,19 @@ class TapServer(ReleaseServer):
         self.pulls = []
         self.fail_pull = False
         self.private = False
+        self.owner = {"login": "kuberich", "type": "Organization"}
 
     def get(self, path):
         parsed = urlsplit(path)
         route = unquote(parsed.path)
         prefix = f"/repos/{TAP}"
         if route == prefix:
-            return {"full_name": TAP, "private": self.private, "default_branch": "main"}
+            return {
+                "full_name": TAP,
+                "private": self.private,
+                "default_branch": "main",
+                "owner": self.owner,
+            }
         if route.startswith(prefix + "/contents/"):
             ref = parse_qs(parsed.query)["ref"][0]
             file = route.removeprefix(prefix + "/contents/")

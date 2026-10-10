@@ -20,14 +20,14 @@ Development versions are refused. Keep the candidate readable by the owned test
 account. Local file URLs never enter the public update path.
 
 Link the generated directory into an owned Homebrew environment as the local
-`carloshm91/tap`, then require these real checks:
+`kuberich/tap`, then require these real checks:
 
 ```sh
-brew style carloshm91/tap/kuberich
-brew audit --strict carloshm91/tap/kuberich
-brew install --build-from-source carloshm91/tap/kuberich
-brew test carloshm91/tap/kuberich
-brew uninstall carloshm91/tap/kuberich
+brew style kuberich/tap/kuberich
+brew audit --strict kuberich/tap/kuberich
+brew install --build-from-source kuberich/tap/kuberich
+brew test kuberich/tap/kuberich
+brew uninstall kuberich/tap/kuberich
 ```
 
 These are candidate checks, not currently available public installation commands.
@@ -46,7 +46,10 @@ The production release job invokes `scripts.homebrew publish` after complete
 matching PyPI/GitHub publication. It rechecks source identity, annotated tag,
 version/name and both channels' exact distribution hashes. The public source URL
 comes from that verified index response. The target must be the owner-approved
-public `carloshm91/homebrew-tap`, with main.
+public organization-owned `kuberich/homebrew-tap`, with main. The updater checks
+actual repository identity and Organization owner `kuberich`; a same-named
+personal repository is refused. Owner control and namespace availability must
+be established before activation; a 404 lookup is not a reservation.
 
 Before the approved D10 publication, initialize the tap from `packaging/homebrew` and configure
 `HOMEBREW_TAP_TOKEN` in the protected release environment. Prefer a short-lived
@@ -59,8 +62,10 @@ The updater creates Git objects, an immutable version/source branch and a PR.
 It never merges, force-pushes or deletes refs. Existing published versions cannot
 be downgraded or replaced. Retries verify existing branch bytes and reuse the PR;
 a partial failure does not rebuild or replace the branch. A mismatched branch
-requires investigation. First live cross-repository PR, online audit, macOS install
-and public version-to-version upgrades remain D10 #89. Owned HTTP/Git fixtures and a
+requires investigation. First live cross-repository PR, online audit and public installation/upgrades
+remain D10 #89. Actual owned local baseline-to-candidate upgrades remain D04/D06
+requirements, separate from fresh installs. Later public upgrades use the real
+previous published artifact; first 0.1.0 has no previous public KubeRich version. Owned HTTP/Git fixtures and a
 local RC do not establish public channel ownership.
 
 Sources: [Homebrew Python formulae](https://docs.brew.sh/Language-Specific-Formulae),

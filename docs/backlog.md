@@ -5,11 +5,11 @@
 The plan has **12 epics and 79 actionable tasks**.
 GitHub issues are the live status source; this file is the planning map.
 
-Work on one implementation task at a time. Follow the feature-first execution
-policy below, choosing the first unblocked task in the earliest unfinished
-feature milestone. The 0.x labels group engineering scope and do not schedule publication. F00 prepares the repository;
-F01 starts the product. B01 is deliberately early so the maintainer can try the
-first terminal window before the full first release. See [preview checkpoints](first-preview.md).
+Work on one implementation task at a time, choosing the first unblocked task in
+the earliest unfinished phase. Follow `delivery.execution_order` and the reviewed
+phase mapping below. F00 prepares the repository; F01 starts the product. B01 is
+deliberately early for a usable terminal checkpoint. v0.0.1 remains foundation
+scope with no public 0.0.1 promise. See [preview checkpoints](first-preview.md).
 
 F05 has a local launch-contract checkpoint before C01, with precise unavailable
 errors for absent behaviors. Its connection integration phase requires C01; keep
@@ -18,50 +18,42 @@ from parser tests alone. See [current CLI behavior](k9s-cli.md).
 
 ## Current maintainer priority
 
-#155 opened the Apache-2.0 source; the separate GitHub project stays private.
-#157 / #158 restored required native verification, and #46 / #159 delivered
-resource operations with all required checks passing. #154 reconciles the first
-public product release at **1.0.0**; development metadata remains `0.0.1.dev0`.
+The maintainer requested qualified, usable public **0.x phases** on 2026-10-09,
+superseding #154's earlier first-public-1.0-only policy. Development metadata
+remains `0.0.1.dev0`; preparation does not publish a package, tag or tap.
 
-1. Finish product features, continuing after #154 with C08 #47, S07 #48, then
-   the unblocked feature tasks in `delivery.feature_order` in backlog.json.
-   Include the remaining embedded keyboard/mouse refinement #124. Per-feature
-   behavioral, independent coverage, PTY, packaging and owned-cluster checks
-   continue; no intermediate manual maintainer trial is required.
-2. Complete dedicated final qualification in `delivery.final_qualification_order`:
-   D05 standalone builds before D12/D13/D14 Windows/completion/container/recipe
-   qualification, Q03 performance, all six engineering checkpoints, Q05
-   compatibility and Q06 capability audit. Preserve every real dependency.
-   Deferral does not count as completion; unavailable native/provider evidence
-   remains recorded and incomplete under the agreed certification scope.
-3. D10 #89 owns first-product publication, protected main/environments,
-   PyPI/TestPyPI ownership/OIDC, public tap/registries, immutable artifacts/tags,
-   public installed-channel trials, and #150's exact-candidate initial site.
-   Final-candidate website/docs verification follows product and final qualification;
-   deploy approved reviewed bytes from GitHub Actions to Cloudflare Pages.
-4. Expanded/versioned MkDocs and its deployment remain later W02 #90 / W03 #91.
+| Public line | Selected gate | Additional requirements |
+| --- | --- | --- |
+| 0.1.x | D06 #51 | Full prerequisites including D04 #40, D05 #49, Q03 #50; delivered #53/#54 and open #123 |
+| 0.2.x | D07 #65 | Every earlier phase plus #124 |
+| 0.3.x | D08 #75 | Every earlier phase |
+| 0.4.x | D09 #82 | Every earlier phase |
+| 0.5.x | D11 #86 | Every earlier phase |
+| 1.0.x | Q06 #88 | Every earlier phase, Q05 #87/D11 compatibility and capability audit |
 
-On 2026-10-09 the maintainer explicitly authorized independent Astra website work
-alongside the single active product issue. [#162](https://github.com/carloshm91/kuberich/issues/162)
-refines the local landing/docs and generated references in an isolated branch.
-This narrow preparation exception supersedes the earlier website sequence; it
-adds no deployment or DNS authorization. #162 is a tracked readiness prerequisite
-for #89 through `delivery.publication_extra_issues`. The product issue sequence,
-full required checks and separately approved final publication remain unchanged.
+All 79 task IDs and feature dependencies remain; D10 #89 now follows D06 and
+owns first 0.1 activation. The selected/cumulative gates themselves must close.
+Mapped early extras traverse their own prerequisites: #53 requires #52 even
+though #54 has a separate original graph. Delivered generic/aggregate features
+retain their original v0.2 issue grouping but are explicitly included in 0.1.
+Common launch issues #149/#150/#154/#155/#157/#162/#166 remain required.
+Only initial 0.1.0/RC can proceed while #89 is open; patches/later phases require
+it closed. Unknown minor lines need reviewed mapping before publication.
 
-D04 #40, D06 #51, D07 #65, D08 #75, D09 #82 and D11 #86 are engineering
-qualification checkpoints. Their local installs, complete platform matrix,
-security, artifact and terminal duties remain. They publish no 0.x package,
-tag, release or site, and are not prerequisites for moving to the next feature.
-Their dependencies still feed #89, so first publication cannot bypass them.
+Finish #123 and the first-phase gaps before first-release qualification. At the
+live snapshot for this preparation, v0.0.1 has open #40/#109/#150 and v0.1.0 has
+open #49/#50/#51/#123. A milestone's feature completion alone is not public
+readiness. Native/security/artifact/terminal/owned-cluster requirements remain
+for every gate; actual manager upgrades remain D04/D06 work, with public-channel
+verification under #89. No intermediate maintainer trials are requested.
 
-Identity migration #149 and local initial site preparation #150 are delivered;
-#89 owns their final-candidate installation/site/publication requirements.
-Continuous delivery now uses the configured hosted checks on the public source
-repository, in addition to measured local verification. The old private-account
-quota exception applies only while its recorded blocking condition exists.
-Provider trials remain the maintainer's later opt-in certification in Q05 #87;
-local/owned-cluster evidence never establishes real EKS/AKS/GKE certification.
+#155 opened the Apache-2.0 source; the separate project remains private.
+#166 delivered development landing/docs on two provider hosts. Main and both
+release environments now enforce the reviewed protections; index ownership,
+OIDC, public brand-owned tap and final installed/site evidence remain pending.
+Expanded/versioned docs remain W02 #90 / W03 #91 after initial product guides.
+Real-provider certification remains opt-in Q05 #87; owned clusters never prove
+EKS/AKS/GKE certification. See [release policy](releases.md).
 
 ## Historical delivery refinements
 
@@ -70,12 +62,12 @@ landing and initial docs before the product release. [#166](https://github.com/c
 owns a protected manual GitHub Actions deployment and actual HTTPS verification
 on two Cloudflare Pages provider hosts, temporarily preceding the committed B06
 #53 foundation. Custom domains/DNS and `www` are deferred; application artifacts,
-tags and final 1.0.0 website regeneration/qualification remain #89. Expanded and
+tags and each public candidate's website regeneration/qualification remain #89. Expanded and
 versioned documentation remains #90/#91. This dated exception supersedes only
 the earlier prohibition on independently publishing the development website.
 
 The dated changes below explain completed preview work. They do not supersede
-the current feature-first execution and first-product publication policy above.
+the current phased execution and publication policy above.
 
 After C01 and its preview correction (#102), prioritize the path to the first
 pod view: **C02 → C03 → C04 → B02 → B03**. This delivery order takes precedence
@@ -153,7 +145,7 @@ the broader U01 theme/update-notice requirements stay separate.
 
 ## v0.0.1
 
-Core terminal engineering checkpoint: live pods, navigation, details, logs, exec and qualified local packages. Public PyPI/Homebrew activation belongs to #89.
+Core engineering foundation: live pods, navigation, details, logs, exec and qualified local installation. No public 0.0.1 release is promised; first public activation is 0.1.0 under D10.
 
 | Issue | Task | Blocked by |
 | --- | --- | --- |
@@ -161,15 +153,12 @@ Core terminal engineering checkpoint: live pods, navigation, details, logs, exec
 | [F01 #14](https://github.com/carloshm91/kuberich/issues/14) | Bootstrap the installable Python package and developer toolchain | [F00 #13](https://github.com/carloshm91/kuberich/issues/13) |
 | [F02 #15](https://github.com/carloshm91/kuberich/issues/15) | Enforce independent coverage and required application CI gates | [F01 #14](https://github.com/carloshm91/kuberich/issues/14) |
 | [F03 #16](https://github.com/carloshm91/kuberich/issues/16) | Implement validated configuration and sanitized diagnostics | [F02 #15](https://github.com/carloshm91/kuberich/issues/15) |
-| [B01 #17](https://github.com/carloshm91/kuberich/issues/17) | Build the Textual application shell and responsive layout | [F02 #15](https://github.com/carloshm91/kuberich/issues/15), [F03 #16](https://github.com/carloshm91/kuberich/issues/16) |
 | [F04 #18](https://github.com/carloshm91/kuberich/issues/18) | Define and test Kubernetes, plugin, and terminal trust boundaries | [F02 #15](https://github.com/carloshm91/kuberich/issues/15) |
-| [F05 #19](https://github.com/carloshm91/kuberich/issues/19) | Implement the complete launch CLI and diagnostic command contract | [F03 #16](https://github.com/carloshm91/kuberich/issues/16), [F04 #18](https://github.com/carloshm91/kuberich/issues/18), [C01 #20](https://github.com/carloshm91/kuberich/issues/20) |
 | [C01 #20](https://github.com/carloshm91/kuberich/issues/20) | Create isolated kubeconfig and context sessions | [F03 #16](https://github.com/carloshm91/kuberich/issues/16), [F04 #18](https://github.com/carloshm91/kuberich/issues/18) |
-| [C06 #21](https://github.com/carloshm91/kuberich/issues/21) | Qualify EKS authentication and credential refresh | [C01 #20](https://github.com/carloshm91/kuberich/issues/20), [F05 #19](https://github.com/carloshm91/kuberich/issues/19) |
-| [C07 #22](https://github.com/carloshm91/kuberich/issues/22) | Qualify AKS Entra and Azure kubelogin authentication | [C01 #20](https://github.com/carloshm91/kuberich/issues/20), [F05 #19](https://github.com/carloshm91/kuberich/issues/19) |
 | [C02 #23](https://github.com/carloshm91/kuberich/issues/23) | Implement API discovery and consistent paginated resource listing | [C01 #20](https://github.com/carloshm91/kuberich/issues/20) |
 | [C03 #24](https://github.com/carloshm91/kuberich/issues/24) | Implement resilient list-watch synchronization | [C02 #23](https://github.com/carloshm91/kuberich/issues/23) |
 | [C04 #25](https://github.com/carloshm91/kuberich/issues/25) | Own session cancellation and reject stale-context updates | [C03 #24](https://github.com/carloshm91/kuberich/issues/24) |
+| [B01 #17](https://github.com/carloshm91/kuberich/issues/17) | Build the Textual application shell and responsive layout | [F02 #15](https://github.com/carloshm91/kuberich/issues/15), [F03 #16](https://github.com/carloshm91/kuberich/issues/16) |
 | [B02 #26](https://github.com/carloshm91/kuberich/issues/26) | Implement the live pod table with stable selection and typed sorting | [B01 #17](https://github.com/carloshm91/kuberich/issues/17), [C04 #25](https://github.com/carloshm91/kuberich/issues/25) |
 | [B03 #27](https://github.com/carloshm91/kuberich/issues/27) | Add resource commands, filtering, namespace shortcuts, and help | [B02 #26](https://github.com/carloshm91/kuberich/issues/26) |
 | [B04 #28](https://github.com/carloshm91/kuberich/issues/28) | Show YAML, resource details, and related events | [B03 #27](https://github.com/carloshm91/kuberich/issues/27), [C02 #23](https://github.com/carloshm91/kuberich/issues/23), [F04 #18](https://github.com/carloshm91/kuberich/issues/18) |
@@ -177,18 +166,21 @@ Core terminal engineering checkpoint: live pods, navigation, details, logs, exec
 | [S02 #30](https://github.com/carloshm91/kuberich/issues/30) | Build the log viewer with pause, follow, search, and bounded scrolling | [S01 #29](https://github.com/carloshm91/kuberich/issues/29), [B03 #27](https://github.com/carloshm91/kuberich/issues/27), [F04 #18](https://github.com/carloshm91/kuberich/issues/18) |
 | [S03 #31](https://github.com/carloshm91/kuberich/issues/31) | Implement explicit-target subprocess and terminal handoff services | [F04 #18](https://github.com/carloshm91/kuberich/issues/18), [C01 #20](https://github.com/carloshm91/kuberich/issues/20), [F05 #19](https://github.com/carloshm91/kuberich/issues/19) |
 | [S04 #32](https://github.com/carloshm91/kuberich/issues/32) | Provide interactive exec with container selection and reliable return | [S03 #31](https://github.com/carloshm91/kuberich/issues/31), [B02 #26](https://github.com/carloshm91/kuberich/issues/26) |
-| [Q02 #33](https://github.com/carloshm91/kuberich/issues/33) | Verify real terminal, SSH, tmux and shell restoration behavior | [B03 #27](https://github.com/carloshm91/kuberich/issues/27), [S02 #30](https://github.com/carloshm91/kuberich/issues/30), [S04 #32](https://github.com/carloshm91/kuberich/issues/32) |
+| [F05 #19](https://github.com/carloshm91/kuberich/issues/19) | Implement the complete launch CLI and diagnostic command contract | [F03 #16](https://github.com/carloshm91/kuberich/issues/16), [F04 #18](https://github.com/carloshm91/kuberich/issues/18), [C01 #20](https://github.com/carloshm91/kuberich/issues/20) |
+| [C06 #21](https://github.com/carloshm91/kuberich/issues/21) | Qualify EKS authentication and credential refresh | [C01 #20](https://github.com/carloshm91/kuberich/issues/20), [F05 #19](https://github.com/carloshm91/kuberich/issues/19) |
+| [C07 #22](https://github.com/carloshm91/kuberich/issues/22) | Qualify AKS Entra and Azure kubelogin authentication | [C01 #20](https://github.com/carloshm91/kuberich/issues/20), [F05 #19](https://github.com/carloshm91/kuberich/issues/19) |
 | [D01 #34](https://github.com/carloshm91/kuberich/issues/34) | Build and verify wheel and source distribution artifacts | [F02 #15](https://github.com/carloshm91/kuberich/issues/15) |
-| [Q04 #35](https://github.com/carloshm91/kuberich/issues/35) | Add dependency security, license, SBOM and provenance checks | [D01 #34](https://github.com/carloshm91/kuberich/issues/34), [F04 #18](https://github.com/carloshm91/kuberich/issues/18) |
 | [D02 #36](https://github.com/carloshm91/kuberich/issues/36) | Create the approved immutable release pipeline and PyPI publishing | [D01 #34](https://github.com/carloshm91/kuberich/issues/34), [Q04 #35](https://github.com/carloshm91/kuberich/issues/35) |
 | [D03 #37](https://github.com/carloshm91/kuberich/issues/37) | Create and test the Homebrew tap and formula delivery | [D01 #34](https://github.com/carloshm91/kuberich/issues/34), [D02 #36](https://github.com/carloshm91/kuberich/issues/36) |
 | [Q01 #38](https://github.com/carloshm91/kuberich/issues/38) | Build the disposable Kubernetes integration and API fault suite | [C04 #25](https://github.com/carloshm91/kuberich/issues/25), [B04 #28](https://github.com/carloshm91/kuberich/issues/28), [S04 #32](https://github.com/carloshm91/kuberich/issues/32), [S02 #30](https://github.com/carloshm91/kuberich/issues/30), [C06 #21](https://github.com/carloshm91/kuberich/issues/21), [C07 #22](https://github.com/carloshm91/kuberich/issues/22) |
+| [Q02 #33](https://github.com/carloshm91/kuberich/issues/33) | Verify real terminal, SSH, tmux and shell restoration behavior | [B03 #27](https://github.com/carloshm91/kuberich/issues/27), [S02 #30](https://github.com/carloshm91/kuberich/issues/30), [S04 #32](https://github.com/carloshm91/kuberich/issues/32) |
+| [Q04 #35](https://github.com/carloshm91/kuberich/issues/35) | Add dependency security, license, SBOM and provenance checks | [D01 #34](https://github.com/carloshm91/kuberich/issues/34), [F04 #18](https://github.com/carloshm91/kuberich/issues/18) |
 | [W01 #39](https://github.com/carloshm91/kuberich/issues/39) | Write and validate the first-user installation and trial guide | [B04 #28](https://github.com/carloshm91/kuberich/issues/28), [S04 #32](https://github.com/carloshm91/kuberich/issues/32), [S02 #30](https://github.com/carloshm91/kuberich/issues/30), [D03 #37](https://github.com/carloshm91/kuberich/issues/37), [C06 #21](https://github.com/carloshm91/kuberich/issues/21), [C07 #22](https://github.com/carloshm91/kuberich/issues/22) |
 | [D04 #40](https://github.com/carloshm91/kuberich/issues/40) | Qualify the core terminal engineering checkpoint | [F00 #13](https://github.com/carloshm91/kuberich/issues/13), [F01 #14](https://github.com/carloshm91/kuberich/issues/14), [F02 #15](https://github.com/carloshm91/kuberich/issues/15), [F03 #16](https://github.com/carloshm91/kuberich/issues/16), [F04 #18](https://github.com/carloshm91/kuberich/issues/18), [C01 #20](https://github.com/carloshm91/kuberich/issues/20), [C02 #23](https://github.com/carloshm91/kuberich/issues/23), [C03 #24](https://github.com/carloshm91/kuberich/issues/24), [C04 #25](https://github.com/carloshm91/kuberich/issues/25), [B01 #17](https://github.com/carloshm91/kuberich/issues/17), [B02 #26](https://github.com/carloshm91/kuberich/issues/26), [B03 #27](https://github.com/carloshm91/kuberich/issues/27), [B04 #28](https://github.com/carloshm91/kuberich/issues/28), [S01 #29](https://github.com/carloshm91/kuberich/issues/29), [S02 #30](https://github.com/carloshm91/kuberich/issues/30), [S03 #31](https://github.com/carloshm91/kuberich/issues/31), [S04 #32](https://github.com/carloshm91/kuberich/issues/32), [F05 #19](https://github.com/carloshm91/kuberich/issues/19), [C06 #21](https://github.com/carloshm91/kuberich/issues/21), [C07 #22](https://github.com/carloshm91/kuberich/issues/22), [D01 #34](https://github.com/carloshm91/kuberich/issues/34), [D02 #36](https://github.com/carloshm91/kuberich/issues/36), [D03 #37](https://github.com/carloshm91/kuberich/issues/37), [Q01 #38](https://github.com/carloshm91/kuberich/issues/38), [Q02 #33](https://github.com/carloshm91/kuberich/issues/33), [Q04 #35](https://github.com/carloshm91/kuberich/issues/35), [W01 #39](https://github.com/carloshm91/kuberich/issues/39) |
 
 ## v0.1.0
 
-Standard resource families, safe workload mutations, editing, port forwarding, standalone executables, and performance qualification.
+Standard resource families, safe workload mutations, editing, port forwarding, standalone executables, and performance qualification. First usable public phase after core/workload, standalone, performance and terminal-history qualification; activation remains owner-reviewed D10.
 
 | Issue | Task | Blocked by |
 | --- | --- | --- |
@@ -203,10 +195,11 @@ Standard resource families, safe workload mutations, editing, port forwarding, s
 | [D05 #49](https://github.com/carloshm91/kuberich/issues/49) | Build and qualify standalone Linux and macOS executables | [D01 #34](https://github.com/carloshm91/kuberich/issues/34), [Q02 #33](https://github.com/carloshm91/kuberich/issues/33) |
 | [Q03 #50](https://github.com/carloshm91/kuberich/issues/50) | Measure large-cluster responsiveness and sustained memory behavior | [Q01 #38](https://github.com/carloshm91/kuberich/issues/38), [S05 #42](https://github.com/carloshm91/kuberich/issues/42) |
 | [D06 #51](https://github.com/carloshm91/kuberich/issues/51) | Qualify the workload operations engineering checkpoint | [B05 #41](https://github.com/carloshm91/kuberich/issues/41), [S05 #42](https://github.com/carloshm91/kuberich/issues/42), [M01 #43](https://github.com/carloshm91/kuberich/issues/43), [M02 #44](https://github.com/carloshm91/kuberich/issues/44), [M03 #45](https://github.com/carloshm91/kuberich/issues/45), [M04 #46](https://github.com/carloshm91/kuberich/issues/46), [C08 #47](https://github.com/carloshm91/kuberich/issues/47), [S07 #48](https://github.com/carloshm91/kuberich/issues/48), [D05 #49](https://github.com/carloshm91/kuberich/issues/49), [Q03 #50](https://github.com/carloshm91/kuberich/issues/50), [D04 #40](https://github.com/carloshm91/kuberich/issues/40) |
+| [D10 #89](https://github.com/carloshm91/kuberich/issues/89) | Prepare phased releases and publish the first qualified 0.1.0 product | [D06 #51](https://github.com/carloshm91/kuberich/issues/51) |
 
 ## v0.2.0
 
-Generic CRDs, multi-container logs, themes, configurable navigation/views, and external command plugins.
+Generic CRDs, multi-container logs, themes, configurable navigation/views, and external command plugins. This public phase requires its qualifier and all prior phase requirements; publication remains separately approved.
 
 | Issue | Task | Blocked by |
 | --- | --- | --- |
@@ -227,7 +220,7 @@ Generic CRDs, multi-container logs, themes, configurable navigation/views, and e
 
 ## v0.3.0
 
-Resource metrics, cluster overview, relationships, RBAC analysis, guided troubleshooting, and sanitized exports.
+Resource metrics, cluster overview, relationships, RBAC analysis, guided troubleshooting, and sanitized exports. This public phase requires its qualifier and all prior phase requirements; publication remains separately approved.
 
 | Issue | Task | Blocked by |
 | --- | --- | --- |
@@ -244,7 +237,7 @@ Resource metrics, cluster overview, relationships, RBAC analysis, guided trouble
 
 ## v0.4.0
 
-Node operations, ephemeral debugging, HTTP benchmarks, and policy/quota exploration.
+Node operations, ephemeral debugging, HTTP benchmarks, and policy/quota exploration. This public phase requires its qualifier and all prior phase requirements; publication remains separately approved.
 
 | Issue | Task | Blocked by |
 | --- | --- | --- |
@@ -258,7 +251,7 @@ Node operations, ephemeral debugging, HTTP benchmarks, and policy/quota explorat
 
 ## v0.5.0
 
-Extended delivery: Windows/PowerShell qualification, shell completion, OCI terminal image, and distribution-channel recipes.
+Extended delivery: Windows/PowerShell qualification, shell completion, OCI terminal image, and distribution-channel recipes. This public phase requires its qualifier and all prior phase requirements; publication remains separately approved.
 
 | Issue | Task | Blocked by |
 | --- | --- | --- |
@@ -275,11 +268,10 @@ Qualified compatibility, migration and support contracts, a complete capability 
 | --- | --- | --- |
 | [Q05 #87](https://github.com/carloshm91/kuberich/issues/87) | Qualify Kubernetes, credential, config and platform compatibility | [Q01 #38](https://github.com/carloshm91/kuberich/issues/38), [C05 #52](https://github.com/carloshm91/kuberich/issues/52), [U05 #60](https://github.com/carloshm91/kuberich/issues/60), [Q03 #50](https://github.com/carloshm91/kuberich/issues/50), [D11 #86](https://github.com/carloshm91/kuberich/issues/86) |
 | [Q06 #88](https://github.com/carloshm91/kuberich/issues/88) | Audit complete feature parity and resolve every remaining gap | [Q05 #87](https://github.com/carloshm91/kuberich/issues/87), [D11 #86](https://github.com/carloshm91/kuberich/issues/86) |
-| [D10 #89](https://github.com/carloshm91/kuberich/issues/89) | Publish and verify the first qualified 1.0.0 product release | [Q05 #87](https://github.com/carloshm91/kuberich/issues/87), [Q06 #88](https://github.com/carloshm91/kuberich/issues/88), [D11 #86](https://github.com/carloshm91/kuberich/issues/86) |
 
 ## Later: documentation website
 
-Expanded versioned MkDocs documentation after the first qualified 1.0.0 product, deployed through GitHub Actions to Cloudflare Pages.
+Expanded versioned MkDocs documentation after initial product publication, deployed from GitHub Actions to Cloudflare Pages.
 
 | Issue | Task | Blocked by |
 | --- | --- | --- |
@@ -287,9 +279,9 @@ Expanded versioned MkDocs documentation after the first qualified 1.0.0 product,
 | [W03 #91](https://github.com/carloshm91/kuberich/issues/91) | Deploy and maintain the versioned documentation website | [W02 #90](https://github.com/carloshm91/kuberich/issues/90) |
 
 Each task has scope, acceptance criteria and verification in its issue and
-[backlog.json](backlog.json). Each release gate depends on every task assigned
-to that milestone, plus the previous release gate. Native parent/dependency links
-and epic checklists mirror this graph.
+[backlog.json](backlog.json). Qualification dependencies remain explicit in that
+graph; phase readiness adds cumulative gates and tracked launch/feedback extras.
+Native parent/dependency links and epic checklists mirror the reviewed scope.
 
 The initial F00 completion is repository preparation, not an application release.
 The first product task is [F01 #14](https://github.com/carloshm91/kuberich/issues/14).

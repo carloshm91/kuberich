@@ -97,7 +97,7 @@ before running it. Its local invocation includes staged and unstaged edits;
 CI compares committed code against the exact event base. A diff with no changed
 executable production lines is not applicable, not a new 100% coverage result.
 See [quality policy](docs/quality.md) for the required check names and the current
-private-repository branch-protection limitation.
+enforced branch/environment rules and their dated private-repository history.
 
 Every PR runs Linux on Python 3.12/3.13/3.14 and the macOS/Python 3.12 baseline.
 Linux jobs select `ubuntu-24.04`; macOS keeps `macos-latest`. The Ubuntu release
@@ -122,9 +122,11 @@ commit trailer, separate from cryptographic commit signing. Preserve the trailer
 in the squash commit and do not sign off on behalf of another contributor.
 
 Version changes happen in release PRs. Patches repair behavior; minor versions
-add capabilities. The first public product is 1.0.0; intermediate 0.x labels are engineering
-checkpoints and are not published. Incompatible public changes require a major
-version and migration notes. See [the exact release procedure](docs/releases.md).
+add capabilities. The first planned public product is qualified 0.1.0, followed
+by explicitly reviewed cumulative 0.x phases. An incompatible 0.x change needs a
+reviewed minor and migration notes; 1.0 introduces stable contracts. Release PRs
+commit authored version notes and tested install/upgrade limits; unknown minor
+lines require a reviewed plan mapping. Current packages are still unavailable. See [the exact release procedure](docs/releases.md).
 
 ## Safety and attribution
 

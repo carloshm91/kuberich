@@ -4,9 +4,9 @@
 
 | Channel | First required release | Method |
 | --- | --- | --- |
-| PyPI | 1.0.0 (#89) | Wheel and source distribution; isolated installation using uv or pipx |
-| Homebrew project tap | 1.0.0 (#89) | Python formula using virtualenv_install_with_resources and hashed resources |
-| GitHub standalone executables | 1.0.0 (#89), after D05 qualification | Platform-built PyInstaller bundles with checksums and provenance |
+| PyPI | 0.1.0 (#89) | Wheel and source distribution; isolated installation using uv or pipx |
+| Homebrew project tap | 0.1.0 (#89) | Python formula using virtualenv_install_with_resources and hashed resources |
+| GitHub standalone executables | 0.1.0 (#89), after D05 qualification | Platform-built PyInstaller bundles with checksums and provenance |
 
 The CLI and import package are named kuberich. PyPI name availability must be
 rechecked when the pending publisher is configured; a 404 lookup is not ownership.
@@ -24,7 +24,7 @@ still waits for the qualified release; see [preference compatibility](configurat
 The planned Homebrew command after publication is:
 
 ```sh
-brew install carloshm91/tap/kuberich
+brew install kuberich/tap/kuberich
 ```
 
 The planned Python commands after publication are:
@@ -96,7 +96,7 @@ kubectl. The Homebrew formula declares its Kubernetes CLI dependency.
 
 ## Homebrew implementation
 
-Prepare the dedicated carloshm91/homebrew-tap scaffold in the distribution task.
+Prepare the dedicated kuberich/homebrew-tap scaffold in the distribution task.
 Creating the public tap and activating the channel require concrete approval in
 D10 #89. Install from the released source artifact with a recorded SHA-256 and
 explicit dependency resources using Homebrew's Python formula conventions.
@@ -104,12 +104,49 @@ Run brew audit, formula tests, clean installation, version/help checks, and an
 upgrade smoke test on the advertised platforms. Update by PR after the upstream
 release is published; do not publish a formula pointing at unreleased main.
 
+## Upgrade and uninstall contract
+
+Fresh wheel/sdist uv-tool/pipx installs above do not prove upgrades. D04 #40 and
+D06 #51 must retain actual local baseline-to-candidate update evidence for every
+promised manager, including an explicitly identified immutable local baseline
+for first 0.1.0. There is no previous public KubeRich release to claim. Later
+releases must exercise the actual previous supported published artifact, with
+public channel checks under #89.
+
+After channel activation, an unpinned published installation uses its actual
+manager update/uninstall path:
+
+```sh
+uv tool upgrade kuberich
+uv tool uninstall kuberich
+# Alternative manager:
+pipx upgrade kuberich
+pipx uninstall kuberich
+# Approved project tap only:
+brew upgrade kuberich/tap/kuberich
+brew uninstall kuberich/tap/kuberich
+```
+
+These are future public-channel contracts, not completed update trials. Preserve
+the original source/version constraints: `uv tool upgrade` respects install-time
+constraints, so an exact version or file-path install cannot be assumed to select
+a new release. D04/D06 must use a real supported channel, such as an owned
+loopback index serving two immutable built artifacts, without deleting/reinstalling
+the environment or overwriting the old artifact. Record old/new source/version/
+digests, manager/interpreter/OS and exact commands. Verify installed CLI/module
+origin/assets, unchanged preference and caller kubeconfig bytes, owned-API/PTY
+behavior after update, and uninstall cleanup. A source `uv sync`, fresh reinstall,
+generated note preview or mocked updater is not manager-upgrade evidence.
+Standalone updates likewise need both real immutable bundles and post-replacement
+behavior while preserving user configuration; no unqualified platform is promised.
+
 ## Release verification
 
 - Install the built wheel and sdist independently in fresh environments.
 - Verify version, help, packaged Textual styles/assets, and missing-config errors.
 - Exercise the basic browser/logs/exec flow against a disposable cluster.
-- Check installation and upgrade from the previous supported patch.
+- Check actual local baseline-to-candidate updates; after first activation also
+  use the actual previous supported published artifact.
 - Verify checksums, dependency inventory, and artifact provenance.
 - Publish only tested artifacts; retain known limitations and support evidence.
 

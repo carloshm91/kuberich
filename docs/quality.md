@@ -365,23 +365,24 @@ unavailable after-change hosted measurement. Resume the configured development
 checks when Actions can start, then record an actual before/after comparison in
 #109. Full supported-platform qualification remains mandatory in #40.
 
-While this repository is private on its current GitHub plan, GitHub rejects
-branch-protection access with HTTP 403 and requires GitHub Pro. CI still executes
-these checks, but it cannot technically block a maintainer from merging. The
-temporary maintainer workflow is to inspect all three checks and every matrix
-job on the current PR commit before a squash merge. This is manual verification,
-not protected-branch enforcement; keep the repository private.
+Current enforced configuration was independently re-read on 2026-10-10 at
+02:09:56 UTC under #89. Main requires strict/up-to-date Quality gate and
+Repository checks bound to GitHub Actions app 15368, and DCO bound to app 1861.
+Admin enforcement, PRs, resolved conversations and linear history are enabled;
+force pushes and deletion are disabled. Zero required human PR approvals
+preserves the authorized solo workflow. Both `release` and `release-test` require
+the maintainer, protected branches and `can_admins_bypass=false`;
+`prevent_self_review=false` permits the authorized solo reviewer. The actual
+release-policy protection validator passed against both API records. No release
+was dispatched, and index ownership/OIDC, six-native release qualification,
+upgrades, public channels and approved final site remain incomplete under #89.
 
-Once protection is available, configure those three checks as required with
-strict/up-to-date status, enforce them for admins, require PRs and resolved
-conversations, retain linear history, and prohibit force pushes/deletions.
-Replace the old Bootstrap checks requirement with Quality gate and verify the
-actual returned configuration. The maintainer accepted this temporary manual
-workflow by merging PR #96 and authorizing continued private development on
-2026-10-04. F02 is complete under that documented scope adjustment; automatic
-enforcement must be enabled and verified before the first public release in
-[D10 #89](https://github.com/carloshm91/kuberich/issues/89). Repository visibility
-changes still require the maintainer's explicit approval.
+Historical private-repository condition: GitHub rejected branch-protection
+access with HTTP 403 on the previous account plan. The maintainer authorized
+manual inspection of all current checks before squash merges, recorded in PR #96
+on 2026-10-04. F02 completed under that scope adjustment; this dated exception is
+superseded by the actual enforced configuration above, without rewriting those
+historical measurements. Visibility changes still need explicit approval.
 See [GitHub's protected-branch availability](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
 
 ## Temporary private-development workflow when Actions is unavailable
@@ -390,7 +391,7 @@ Historical condition: the source repository opened under #155 on 2026-10-08.
 Hosted development checks resumed, including native macOS qualification in #157
 and the #46 candidate. Use actual required hosted results for current merges;
 the temporary exception below applies only while its stated blocker exists.
-Full release/protection qualification remains #89.
+Full release qualification remains #89; current protection is configured as above.
 
 
 On 2026-10-04, during PR #108, GitHub refused to start hosted jobs after the

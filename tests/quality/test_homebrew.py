@@ -93,6 +93,11 @@ def test_actual_update_git_objects_and_retry_never_change_main_or_duplicate_pr(t
         assert server.command("rev-parse", branch).strip() == original
         assert all(method != "PATCH" for method, _, _ in server.requests)
         assert all(token == "Bearer synthetic-tap-token" for _, _, token in server.requests)
+        assert any(
+            "head=kuberich:release%2F" in path
+            for method, path, _ in server.requests
+            if method == "GET"
+        )
 
 
 def test_private_tap_and_api_scope_are_refused_before_writes(tmp_path):
@@ -104,12 +109,24 @@ def test_private_tap_and_api_scope_are_refused_before_writes(tmp_path):
         assert not server.posts
         for path in (
             "repos/evil/tap",
+            "repos/carloshm91/homebrew-tap",
             f"repos/{TAP}-evil",
             f"repos/{TAP}/../secrets",
             f"repos/{TAP}/%2e%2e/secrets",
         ):
             with pytest.raises(ValueError):
                 api(path)
+
+
+@pytest.mark.parametrize(
+    "owner", [{"login": "carloshm91", "type": "User"}, {"login": "kuberich", "type": "User"}, {}]
+)
+def test_tap_requires_the_reviewed_project_organization_owner_before_any_write(tmp_path, owner):
+    with release_server(tmp_path, factory=TapServer) as server:
+        server.owner = owner
+        with pytest.raises(ValueError, match="owner-approved public tap"):
+            propose(TapGitHub("synthetic-token", server.url), TEXT, SHA, "1.0.1")
+        assert not server.posts
 
 
 def test_published_formula_cannot_be_downgraded_or_changed_at_same_version(tmp_path):

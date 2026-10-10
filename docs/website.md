@@ -113,7 +113,7 @@ Use the existing Direct Upload projects: `kuberich-site` for
 `artifacts/site/www` and `kuberich-docs` for `artifacts/site/docs`. The protected
 GitHub Actions workflow publishes the reviewed prebuilt directories with Wrangler.
 Provider-host preview publication is delivered; custom-domain/product launch
-still follows feature and final release qualification. Direct Upload supports this CI workflow;
+still follows the selected phase and cumulative release qualification. Direct Upload supports this CI workflow;
 see [Cloudflare's GitHub Actions procedure](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/).
 No project, deployment, credential or DNS record was created by #154;
 actual provider projects/deployments were created under #166.
@@ -122,12 +122,16 @@ The delivered workflow uses the protected maintainer-reviewed deployment
 environment, pinned Wrangler, `CLOUDFLARE_ACCOUNT_ID` and a limited Pages Edit
 token held in that environment's secrets. Ordinary/fork PRs build/check only.
 Reuse its immutable checked artifact and source/manifest/deployment receipts for
-future approved uploads. #89 must additionally qualify the exact product
-candidate, real public installation channels and approved domain launch.
+future approved uploads. #150 retains exact-candidate pre-publication guides/site
+qualification with actual owned/local installation and quickstart behavior,
+frozen site/browser receipts and a concrete launch proposal. #89 owns public
+channel/domain/site activation and actual public verification; closing #150
+before publication does not claim those external steps complete.
 
 Before an approved deployment:
 
-1. Complete website refinement #162, then freeze and qualify the exact release candidate through #89. Regenerate the
+1. Website refinement #162 is delivered. Freeze and qualify the exact selected-phase
+   release candidate, including #150's pre-publication guides/site checks. Regenerate the
    guides and installed version from that source. Replace preview availability
    text only with actual verified publication/install results; remove noindex
    only as part of the separately approved public launch.
@@ -148,8 +152,8 @@ Before an approved deployment:
    policy at the actual hosts. The browser rehearsal serves the declared headers;
    that does not establish provider enforcement or successful TLS provisioning.
 6. Record actual publication and public-install verification under #89. #150
-   closed its local preparation scope; its final-candidate quickstart and public
-   acceptance moved to #89. Expanded/versioned docs remain #90/#91.
+   remains open for final-candidate pre-publication guide/site qualification;
+   public activation and public-channel/domain checks belong to #89. Expanded/versioned docs remain #90/#91.
 
 No DNS records are precomputed from a guessed project URL. No registrar transfer
 is needed just to use a separately approved DNS provider.

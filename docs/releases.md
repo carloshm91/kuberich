@@ -8,47 +8,63 @@ project remains private. Source opening did not publish packages, a tap, a
 website, tags or GitHub Releases. Installed development metadata remains
 `0.0.1.dev0`; merges collect entries under Unreleased.
 
-The first public product release is **1.0.0**, after the planned features and
-final compatibility, performance, installation and capability qualification.
-D04 #40, D06 #51, D07 #65, D08 #75, D09 #82 and D11 #86 are internal engineering
-checkpoints. Their original dependencies and exact-artifact, native-platform,
-terminal, install and security requirements remain. Deferring those checks does
-not complete them. None publishes a public 0.x version.
+The maintainer changed the release policy on 2026-10-09 to usable, qualified
+**0.x phases**, beginning with **0.1.0**. This supersedes #154's earlier
+first-public-1.0-only policy. Development metadata remains `0.0.1.dev0` until a
+release PR. A phase label or a merged feature does not authorize publication.
 
-[D10 #89](https://github.com/carloshm91/kuberich/issues/89) owns first-product
-publication, public channel ownership/activation, enforced main/environment
-protection and initial website/DNS verification. Delivered identity #149 and
-local site preparation #150 are preparation evidence; the site must be regenerated
-and qualified against the final candidate before its approved publication.
-Expanded versioned documentation remains W02 #90 / W03 #91 after the product.
+| Public line | Required qualification gate | Additional phase scope |
+| --- | --- | --- |
+| 0.1.x | D06 #51 and all its prerequisites, including D04 #40, D05 #49 and Q03 #50 | Delivered generic views #53 and logs #54, plus embedded-shell history #123 |
+| 0.2.x | D07 #65 and every earlier phase | Keyboard/mouse refinement #124 |
+| 0.3.x | D08 #75 and every earlier phase | Observability, Helm and configuration workflows |
+| 0.4.x | D09 #82 and every earlier phase | Advanced node/debug/benchmark/policy operations |
+| 0.5.x | D11 #86 and every earlier phase | Extended platform/channel scope in the plan |
+| 1.0.x | Q06 #88, Q05 #87, D11 #86 and every earlier phase | Stable compatibility and capability audit |
 
-The maintainer separately authorized [#166](https://github.com/carloshm91/kuberich/issues/166)
-to publish the development landing and initial guides on Cloudflare Pages provider
-hosts before 1.0.0. The site retains development notices and unavailable-package
-status. Final-candidate regeneration and public installation remain #89. Custom
-domains/DNS and `www` are deferred until their owner-approved setup.
+The pinned [79-task plan](backlog.md) retains every feature dependency. The
+selected qualification gate itself and all cumulative prerequisites must close
+with actual evidence. Mapped early-delivered extras also traverse their own
+prerequisites: #53 cannot bypass #52. Common launch issues #149/#150/#154/#155/
+#157/#162/#166 remain required. An unreviewed minor such as 0.6 or 1.1 fails
+readiness rather than inheriting an earlier phase. Expanded/versioned docs remain
+W02 #90 / W03 #91 after the initial guides.
+
+[D10 #89](https://github.com/carloshm91/kuberich/issues/89) owns initial public
+channel activation and remains open through its real verification. Only initial
+0.1.0 or 0.1.0rcN may transact while #89 is open; patches and later phases require
+it closed. Opt-in provider certification remains Q05's agreed scope.
+
+The approved development sites are [landing](https://kuberich-site.pages.dev)
+and [initial docs](https://kuberich-docs.pages.dev), delivered by #166. Each public
+candidate still needs regenerated/verified site bytes under #150 before
+publication. #150 owns actual owned/local install/quickstart and candidate
+guides/site qualification; #89 owns later public channel/domain/site activation
+and public verification. This avoids making a pre-publication gate depend on
+its own subsequent publication. Custom domains/DNS and
+`www` remain separate owner-approved work.
 
 ## Version rules
 
-| Change | Public version example |
-| --- | --- |
-| First fully qualified product | 1.0.0 |
-| Compatible bug or security fix | 1.0.0 → 1.0.1 |
-| Compatible new capability | 1.0.0 → 1.1.0 |
-| Incompatible public contract change | 1.0.0 → 2.0.0 |
-| Explicitly approved candidate for a qualified target | 1.0.0rc1; tag v1.0.0-rc.1 |
+Compatible 0.x fixes use a patch; new phase capabilities use the reviewed minor.
+An intentional incompatible 0.x contract requires a new reviewed minor and clear
+migration notes. 1.0 defines stable contracts, followed by Semantic Versioning:
+compatible fixes use a patch, compatible capabilities a minor, and incompatible
+public changes a major. New minor/major lines need an explicit plan mapping
+before the readiness validator permits publication.
 
-Follow Semantic Versioning. A PR does not automatically bump a version.
 `pyproject.toml`'s `project.version` is the sole version source; the CLI reads
-installed package metadata. Stable tags are `vX.Y.Z`; canonical package release
-candidates are `X.Y.ZrcN` and their tags are `vX.Y.Z-rc.N`.
+installed metadata. A PR does not automatically bump a version. Stable tags are
+`vX.Y.Z`; canonical optional candidates are `X.Y.ZrcN`, tagged `vX.Y.Z-rc.N`.
+Public tooling refuses bases below 0.1.0. Local development bundles remain usable
+without a tag or authored public notes. An RC requires the same target evidence
+and explicit approval; it does not replace the phase's stable-release gate.
 
-Publication tooling rejects every release base below 1.0.0, including 0.x release
-candidates. This applies to production, TestPyPI, tags, GitHub assets and tap
-update proposals. Offline preparation can still verify historical canonical
-candidates; development bundles are explicitly local-only and have no tag.
-A public 1.0.0rcN is optional and requires explicit approval after all target
-requirements are qualified; it does not replace the agreed first stable 1.0.0.
+Every public release PR commits authored per-version notes covering features,
+fixes, compatibility/migrations, installation, upgrade/uninstall and known limits.
+[The notes contract](release-notes/README.md) freezes these exact source bytes and
+an optional owner-reviewed generated preview before publisher approval. Retries
+compare the complete body and never regenerate or rewrite published notes.
 
 ## Publication approval
 
@@ -61,15 +77,15 @@ without the owner's explicit authorization. The maintainer has purchased
 
 ## Release sequence
 
-1. Finish product behavior, then the dedicated qualification phase in
+1. Finish the selected phase's behavior and cumulative qualification in
    [the backlog](backlog.md). Keep unresolved native/provider evidence explicit;
    opt-in real-provider certification follows Q05 #87's agreed scope.
 2. Complete the pre-publication checklist in #89: all transitive implementation
-   and engineering prerequisites, Q05/Q06, identity/site preparation and tracked
-   launch refinements must be closed with real evidence. The publication gate
+   and engineering prerequisites, selected/cumulative phase gates, identity/site
+   preparation and tracked launch refinements must be closed with real evidence. The publication gate
    itself stays open through public channel verification.
-3. Open a release PR for version/lock changes, changelog, migrations and verified
-   installation documentation. Merge through protected main with the preserved
+3. Open a release PR for version/lock changes, authored notes, changelog,
+   migrations and verified installation/upgrade documentation. Merge through protected main with the preserved
    maintainer sign-off and successful required checks.
 4. Dispatch Application quality on that exact main commit. Require every native
    Linux/macOS CPython 3.12/3.13/3.14 job, independent coverage, critical modules,
@@ -126,9 +142,14 @@ already made cannot be undone by an external-channel rollback.
   release environment. GitHub authentication does not prove index ownership;
   a name lookup returning 404 does not reserve it.
 - Approve a dedicated public tap and limited cross-repository update credential,
-  plus any promised registry/channel accounts.
-- Enable and verify enforced main and publication environments, exact required
-  checks, immutable tag policy and retained artifacts.
+  for brand-owned `kuberich/homebrew-tap`, plus any promised registry/channel accounts.
+  Confirm actual organization control before activation; a name lookup is not ownership.
+- Main and both publication environments were configured and re-read on
+  2026-10-10 at 02:09:56 UTC. Main has strict app-bound required checks, admin
+  enforcement, PR/linear-history/conversation controls, no force pushes/deletions;
+  `release` and `release-test` require the maintainer, protected branches and no
+  admin bypass. Solo self-review remains allowed. Each dispatch revalidates the
+  live configuration; this does not establish index ownership or release qualification.
 - Approve scoped Cloudflare deployment credentials/projects and concrete DNS
   changes after local site and final-candidate qualification.
 

@@ -10,26 +10,28 @@ or a placeholder screen.
 | Milestone | Usable outcome |
 | --- | --- |
 | v0.0.1 | Internal core checkpoint: contexts/namespaces, live pods, filters, details, logs, exec and local distribution candidates |
-| v0.1.0 | Workload operations: standard resource families, edit/diff, scale/restart/rollback, delete/jobs, port-forward, standalone binaries |
+| v0.1.0 | First qualified public phase: workload operations, delivered generic/aggregate views and embedded history; standard resource families, edit/diff, scale/restart/rollback, delete/jobs, port-forward, standalone binaries |
 | v0.2.0 | Extensibility: generic CRDs, configurable views/keys/themes, external plugins, multi-container logs, explicit secret handling |
 | v0.3.0 | Observability: metrics, cluster overview, resource relationships, RBAC analysis, guided troubleshooting, sanitized exports, Helm, local manifests and image scans |
 | v0.4.0 | Advanced operations: node shell, cordon/drain, ephemeral debugging, service benchmarks, policy/quota exploration |
 | v0.5.0 | Extended delivery: Windows, shell completion, OCI image and tested distribution recipes |
-| v1.0.0 | First public product: all feature checkpoints, supported API/terminal/platform matrix, compatibility, performance, install and full capability qualification |
-| Later: documentation website | Expanded, versioned MkDocs documentation after the first 1.0.0 product release |
+| v1.0.0 | Stable product: all feature checkpoints, supported API/terminal/platform matrix, compatibility, performance, install and full capability qualification |
+| Later: documentation website | Expanded, versioned MkDocs documentation after the initial qualified product |
 
-The 0.x labels are internal engineering checkpoints, not public releases.
-Features come first; final platform/performance/install qualification follows,
-then #89 owns first-product publication. Compatible fixes after launch use patch
-versions such as 1.0.1; compatible capabilities use minor versions such as 1.1.0.
-No delivery dates or speculative patch releases are invented. Scope changes
-require an issue and the reviewed planning map.
+The maintainer requested usable qualified 0.x phases on 2026-10-09, beginning
+with 0.1.0 and superseding the earlier first-public-1.0-only policy. Each selected
+phase requires its own gate, all prior phase gates, transitive features and
+tracked launch/feedback issues. Unknown minor lines need a reviewed mapping.
+0.x compatible fixes use patches; intentional breaking changes need reviewed
+minor/migration notes. 1.0 retains stable compatibility and capability audit.
+No delivery dates or speculative patch releases are invented. See
+[release policy](releases.md) for exact gate/approval rules.
 
 ## Public launch preparation
 
 The maintainer approved opening the Apache-2.0 source repository in #155 on
 2026-10-08. The separate GitHub project remains private. The first public product
-release remains 1.0.0; intermediate milestones are engineering checkpoints.
+is planned at qualified 0.1.0; packages are not available yet.
 Prepare a simple landing page and initial documentation before that product
 launch. The landing page should explain the product
 and show its actual terminal interface; initial documentation should cover
@@ -48,7 +50,8 @@ The proposed address structure is `kuberich.com` for the landing page and
 `docs.kuberich.com` for documentation. [Initial launch material #150](https://github.com/carloshm91/kuberich/issues/150)
 is prepared locally before #89; expanded versioned documentation remains
 #90/#91 after the installable product. Domain ownership is maintainer-confirmed;
-the website and documentation hosting are not published or verified yet. DNS
+development landing/docs provider hosts are published and verified under #166;
+custom-domain and exact-candidate public launch remain separate #89 work. DNS
 changes, hosting publication and repository visibility changes require explicit
 maintainer authorization. There is no automatic
 publication deadline.
@@ -57,8 +60,9 @@ publication deadline.
 
 The [backlog](backlog.md) lists epics, implementation tasks, blockers, and the
 recommended order. Work on one implementation task at a time. Preserve every feature dependency and required PR check. Complete the dedicated
-final engineering qualification before #89; deferral does not complete a gate.
-Publication verifies all transitive features and promised public channels.
+phase/cumulative engineering qualification before publication; deferral does not
+complete a gate. #89 owns first public-channel activation and verification.
+Actual upgrades are required separately from fresh installs.
 
 The initial planning/preparation task can be closed when the repository,
 documentation, GitHub backlog, project, and protections are in place. That does
@@ -98,6 +102,6 @@ as an implemented capability.
 
 ## Execution order
 
-Follow the feature-first order in [backlog.json](backlog.json), including tracked
+Follow the phased topological execution order in [backlog.json](backlog.json), including tracked
 preview refinements. The product implementation is already in progress; select
 the next unblocked issue rather than restarting completed bootstrap work.

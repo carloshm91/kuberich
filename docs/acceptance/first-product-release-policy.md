@@ -1,5 +1,9 @@
 # First product release policy: #154
 
+> Historical receipt: the later maintainer-requested phased policy starts at
+> qualified 0.1.0. See [current release policy](../releases.md); this record
+> preserves the original source, scope and measurements.
+
 ## Delivered scope
 
 The agreed first public product is 1.0.0. Source opening #155 is already delivered;

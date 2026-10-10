@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+from packaging.version import Version
 
 from scripts.release_policy import (
     APPLICATION_JOBS,
@@ -462,10 +463,19 @@ def test_workflow_has_readonly_dry_run_serialization_and_owner_protected_oidc():
     assert list(workflow["on"]) == ["workflow_dispatch"]
     inputs = workflow["on"]["workflow_dispatch"]["inputs"]
     assert inputs["dry_run"]["default"] is True
+    assert inputs["notes_preview"]["required"] is False
+    assert workflow["env"]["KUBERICH_RELEASE_NOTES_PREVIEW"] == "${{ inputs.notes_preview }}"
     assert workflow["concurrency"] == {"group": "kuberich-release", "cancel-in-progress": False}
     assert workflow["permissions"] == {"contents": "read"}
     validate, publish = workflow["jobs"]["validate"], workflow["jobs"]["publish"]
     assert validate["permissions"] == {"contents": "read", "actions": "read"}
+    preparation = next(
+        step["run"]
+        for step in validate["steps"]
+        if "scripts.release prepare" in step.get("run", "")
+    )
+    assert preparation.count("--notes-preview-env") == 2
+    assert "${{ inputs.notes_preview }}" not in preparation
     assert "github.actor == 'carloshm91'" in validate["if"] and "refs/heads/main" in validate["if"]
     assert publish["if"] == "${{ !inputs.dry_run }}"
     assert publish["environment"]["name"] == "${{ needs.validate.outputs.environment }}"
@@ -488,21 +498,19 @@ def test_workflow_has_readonly_dry_run_serialization_and_owner_protected_oidc():
 
 @pytest.mark.parametrize("version", ["1.0.0", "1.0.0rc1", "1.0.1"])
 def test_release_and_patch_require_closed_milestone_prerequisites(version):
-    plan = {
-        "milestones": [{"title": "v1.0.0"}, {"title": "v1.1.0"}],
-        "tasks": [{"id": "D10", "milestone": "v1.0.0", "requires": ["F01"]}],
-    }
-    index = {"issues": {"F01": {"number": 14}, "D10": {"number": 89}}}
-    issue = {"number": 14, "state": "closed"}
+    plan = json.loads((ROOT / "docs/backlog.json").read_text())
+    index = json.loads((ROOT / "docs/github-issues.json").read_text())
+    incomplete = None
     calls = []
 
     def api(path):
         calls.append(path)
-        return issue
+        number = int(path.rsplit("/", 1)[1])
+        return {"number": number, "state": "open" if number == incomplete else "closed"}
 
     assert milestone_readiness(api, version, plan, index) == 89
-    assert calls == [f"repos/{REPOSITORY}/issues/14"]
-    issue["state"] = "open"
+    assert f"repos/{REPOSITORY}/issues/14" in calls
+    incomplete = 14
     with pytest.raises(ValueError, match="#14"):
         milestone_readiness(api, version, plan, index)
 
@@ -511,12 +519,9 @@ def test_release_and_patch_require_closed_milestone_prerequisites(version):
     "mutation", ["no_milestone", "no_gate", "duplicate_gate", "wrong_issue", "pr"]
 )
 def test_missing_or_ambiguous_release_readiness_cannot_pass(mutation):
-    plan = {
-        "milestones": [{"title": "v1.0.0"}],
-        "tasks": [{"id": "D10", "milestone": "v1.0.0", "requires": ["F01"]}],
-    }
-    index = {"issues": {"F01": {"number": 14}, "D10": {"number": 89}}}
-    issue = {"number": 14, "state": "closed"}
+    plan = json.loads((ROOT / "docs/backlog.json").read_text())
+    index = json.loads((ROOT / "docs/github-issues.json").read_text())
+    issue = {"number": 149, "state": "closed"}
     if mutation == "no_milestone":
         plan["milestones"] = []
     elif mutation == "no_gate":
@@ -540,20 +545,22 @@ def test_routine_development_matrix_does_not_qualify_publication(missing):
         release_preflight(data.__getitem__, SHA, "1.0.0", "pypi")
 
 
-@pytest.mark.parametrize("version", ["1.0.0", "1.0.0rc1", "1.0.1", "2.0.0"])
+@pytest.mark.parametrize(
+    "version", ["0.1.0", "0.1.0rc1", "0.1.1", "0.5.0", "1.0.0", "1.0.0rc1", "1.0.1", "2.0.0"]
+)
 def test_publication_supports_approved_stable_bases_and_their_rc(version):
     assert publication_tag(version) == release_tag(version)
 
 
-@pytest.mark.parametrize("version", ["0.0.1", "0.0.1rc1", "0.5.0", "0.99.99rc9"])
+@pytest.mark.parametrize("version", ["0.0.1", "0.0.1rc1", "0.0.99", "0.0.99rc9"])
 def test_engineering_versions_refuse_preflight_before_any_external_request(version):
     calls = []
-    with pytest.raises(ValueError, match=r"requires 1\.0\.0"):
+    with pytest.raises(ValueError, match=r"requires 0\.1\.0"):
         release_preflight(calls.append, SHA, version, "pypi")
     assert calls == []
 
 
-@pytest.mark.parametrize("incomplete", [None, 124, 47, 40, 154])
+@pytest.mark.parametrize("incomplete", [None, 123, 124, 47, 40, 154, 88, 89])
 def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomplete):
     plan = json.loads((ROOT / "docs/backlog.json").read_text())
     index = json.loads((ROOT / "docs/github-issues.json").read_text())
@@ -566,9 +573,190 @@ def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomp
 
     if incomplete is None:
         assert milestone_readiness(api, "1.0.0", plan, index) == 89
-        assert {40, 47, 51, 65, 75, 82, 86, 87, 88, 124, 149, 150, 154, 155, 157} <= set(calls)
-        assert {89, 90, 91}.isdisjoint(calls)
+        assert {
+            40,
+            47,
+            51,
+            53,
+            54,
+            65,
+            75,
+            82,
+            86,
+            87,
+            88,
+            89,
+            123,
+            124,
+            149,
+            150,
+            154,
+            155,
+            157,
+            162,
+            166,
+        } <= set(calls)
+        assert {90, 91}.isdisjoint(calls)
         assert len(calls) == len(set(calls))
     else:
         with pytest.raises(ValueError, match=f"#{incomplete}"):
             milestone_readiness(api, "1.0.0", plan, index)
+
+
+@pytest.mark.parametrize(
+    "version,phase_gate",
+    [
+        ("0.1.0", 51),
+        ("0.1.0rc2", 51),
+        ("0.1.7", 51),
+        ("0.2.0", 65),
+        ("0.5.2rc1", 86),
+        ("1.0.0", 88),
+    ],
+)
+def test_actual_phase_includes_selected_and_prior_qualifiers(version, phase_gate):
+    plan = json.loads((ROOT / "docs/backlog.json").read_text())
+    index = json.loads((ROOT / "docs/github-issues.json").read_text())
+    calls = []
+
+    def api(path):
+        number = int(path.rsplit("/", 1)[1])
+        calls.append(number)
+        return {"number": number, "state": "closed"}
+
+    assert milestone_readiness(api, version, plan, index) == 89
+    assert {40, 49, 50, 51, 52, 53, 54, 123, phase_gate} <= set(calls)
+    assert len(calls) == len(set(calls))
+    if Version(version).release[:2] == (0, 1):
+        assert {65, 75, 82, 86, 87, 88, 124}.isdisjoint(calls)
+    else:
+        assert {65, 124, 89} <= set(calls)
+    assert (89 in calls) == (Version(version).base_version != "0.1.0")
+
+
+@pytest.mark.parametrize(
+    "version,incomplete",
+    [
+        ("0.1.0", 51),
+        ("0.1.0", 40),
+        ("0.1.0", 52),
+        ("0.1.0", 123),
+        ("0.1.1", 89),
+        ("0.2.0", 51),
+        ("0.2.0", 65),
+        ("0.2.0", 123),
+        ("0.2.0", 124),
+        ("0.5.0", 82),
+        ("1.0.0", 87),
+    ],
+)
+def test_actual_phase_refuses_unfinished_current_or_prior_work(version, incomplete):
+    plan = json.loads((ROOT / "docs/backlog.json").read_text())
+    index = json.loads((ROOT / "docs/github-issues.json").read_text())
+    with pytest.raises(ValueError, match=f"#{incomplete}"):
+        milestone_readiness(
+            lambda path: {
+                "number": int(path.rsplit("/", 1)[1]),
+                "state": "open" if path.endswith(f"/{incomplete}") else "closed",
+            },
+            version,
+            plan,
+            index,
+        )
+
+
+@pytest.mark.parametrize("version", ["0.6.0", "0.99.0rc1", "1.1.0", "2.0.0"])
+def test_unreviewed_minor_does_not_inherit_an_earlier_phase(version):
+    calls = []
+    with pytest.raises(ValueError, match="explicitly reviewed"):
+        milestone_readiness(
+            calls.append,
+            version,
+            json.loads((ROOT / "docs/backlog.json").read_text()),
+            json.loads((ROOT / "docs/github-issues.json").read_text()),
+        )
+    assert calls == []
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "missing_mapping",
+        "duplicate_phase",
+        "reorder_phase",
+        "wrong_phase_gate",
+        "wrong_gate_milestone",
+        "missing_launch",
+        "missing_history",
+        "missing_early_generic",
+        "duplicate_extra",
+        "boolean_extra",
+        "unknown_future_dependency",
+        "future_cycle",
+        "untraceable_task",
+        "duplicate_issue",
+        "string_issue",
+        "bad_execution",
+        "duplicate_task",
+        "plan_repository",
+        "index_repository",
+        "noncanonical_url",
+        "positive_remapping",
+        "wrong_d10_scope",
+    ],
+)
+def test_malformed_entire_plan_fails_before_any_external_issue_request(mutation):
+    plan = json.loads((ROOT / "docs/backlog.json").read_text())
+    index = json.loads((ROOT / "docs/github-issues.json").read_text())
+    delivery = plan["delivery"]
+    if mutation == "missing_mapping":
+        del delivery["release_phases"]
+    elif mutation == "duplicate_phase":
+        delivery["release_phases"][1] = deepcopy(delivery["release_phases"][0])
+    elif mutation == "reorder_phase":
+        delivery["release_phases"].reverse()
+    elif mutation == "wrong_phase_gate":
+        delivery["release_phases"][0]["qualification_gate"] = "D04"
+    elif mutation == "wrong_gate_milestone":
+        next(task for task in plan["tasks"] if task["id"] == "D07")["milestone"] = "v0.1.0"
+    elif mutation == "missing_launch":
+        delivery["publication_extra_issues"].remove(150)
+    elif mutation in {"missing_history", "missing_early_generic"}:
+        delivery["release_phases"][0]["extra_issues"].remove(
+            123 if mutation == "missing_history" else 53
+        )
+    elif mutation == "duplicate_extra":
+        delivery["release_phases"][0]["extra_issues"].append(53)
+    elif mutation == "boolean_extra":
+        delivery["publication_extra_issues"].append(True)
+    elif mutation == "unknown_future_dependency":
+        plan["tasks"][-1]["requires"].append("unknown")
+    elif mutation == "future_cycle":
+        next(task for task in plan["tasks"] if task["id"] == "W02")["requires"].append("W03")
+    elif mutation == "untraceable_task":
+        del index["issues"]["W03"]
+    elif mutation == "duplicate_issue":
+        index["issues"]["W03"]["number"] = index["issues"]["W02"]["number"]
+    elif mutation == "string_issue":
+        index["issues"]["W03"]["number"] = "91"
+    elif mutation == "bad_execution":
+        delivery["execution_order"].reverse()
+    elif mutation == "plan_repository":
+        plan["repository"] = "other/kuberich"
+    elif mutation == "index_repository":
+        index["repository"] = "other/kuberich"
+    elif mutation == "noncanonical_url":
+        index["issues"]["W03"]["url"] = "https://github.com/other/kuberich/issues/91"
+    elif mutation == "positive_remapping":
+        index["issues"]["W03"] = {
+            "number": 999,
+            "url": "https://github.com/carloshm91/kuberich/issues/999",
+        }
+    elif mutation == "wrong_d10_scope":
+        next(task for task in plan["tasks"] if task["id"] == "D10")["requires"] = ["Q06"]
+    else:
+        plan["tasks"].append(deepcopy(plan["tasks"][0]))
+    calls = []
+    with pytest.raises(ValueError):
+        milestone_readiness(calls.append, "0.1.0", plan, index)
+    assert calls == []
