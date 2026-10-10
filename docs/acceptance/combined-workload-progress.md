@@ -299,3 +299,81 @@ memory subsets; the observer deliberately keeps `runtime_qualified=false`.
 The candidate's full native checks and context-churn, slow-consumer and cancelled
 forward lifecycle evidence remain required. Q03 remains open. Earlier failures
 and their original sources/artifacts are retained without reruns or replacement.
+
+## Repeated owned lifecycle cohort
+
+The preceding production correction is now merged by PR #178 as `e095b28`.
+Original required Application run `38074520032` passed 4,432 Linux cases per
+Python version and 4,429 on macOS with three explicit Linux-only observer skips.
+Independent original review verified at least 99.08% lines, 96.84% branches and
+96.15% changed lines, all 43 critical modules at 100%, complete source-linked
+package/runtime/terminal/audit evidence and real owned-kind scenarios.
+Original Repository run `38074520162` binds 140 source files and 49 desktop plus
+49 mobile browser pages. The squash has the qualified source's exact tree and
+all 163 original sustained runtime inputs. Full release qualification remains
+separate; the following new test-only cohort still needs its own native checks.
+
+The owned HTTP/process cohort uses three warmup and 36 measured cycles for each
+of context/forward changes, slow large-watch consumers, forward startup
+cancellation and expiry/recovery after a held initial snapshot. Each cycle must
+return to exact baseline descriptors, live threads
+and pending asyncio task counts. This is resource ownership evidence, not an
+additional input-latency or RSS observation. The exact tested command was:
+
+```sh
+uv run pytest -q tests/contract/test_performance_lifecycle.py
+```
+
+The initial four-case cohort passed in each actual local CPython 3.12.12, 3.13.12
+and 3.14.3 interpreter, in 28.29 / 22.82 / 22.88 seconds respectively. The extended
+five-case cohort then passed in 47.07 / 38.30 / 38.11 seconds on those same actual
+interpreters. Its twelve successful scenario originals each contain 36 measured
+samples: descriptor counts stayed
+15 on 3.12 and 16 on 3.13/3.14, live thread counts stayed 11 and pending tasks
+stayed zero. These absolute descriptor counts include pytest's own capture;
+the invariant is the unchanged count within each process.
+
+Context cycles switch two actual owned HTTP clients with 40 retained resources
+and 64 large annotation updates per watch. The delayed subscriber holds only the
+latest immutable observation. SessionService's close hook stops the real forward,
+then the old watch, HTTP pool and private directory are checked drained. The child
+is reaped and its bound listener refuses new connections. Closing the workspace
+clears discovery, subscriptions and the retained snapshot. Configuration bytes
+stay unchanged and forward history saturates at 32 non-client-bearing records.
+
+Slow-consumer cycles offer 128 individually streamed 64-KiB annotation frames.
+The first event is held at the sink; parser invocation stays at one through the
+hold. Repeated cancellation drains the watch, HTTP connection and source handler.
+Startup cycles cancel real children that have not advertised readiness, including
+repeated cancellation of the client-change cleanup owner; the process and staged
+file must be gone. A fifth case creates a real extra descriptor, thread and task,
+checks that all three observations increase, then returns to its baseline.
+
+The additional expiry/recovery cycle stalls a genuine LIST snapshot consumer
+while the independently paced source advances beyond its old opaque version.
+The owned protocol fixture uses three resources and a three-event replay ring
+to trigger expiry quickly; the 10,000-resource performance workload and its
+1,000-event replay bound are unchanged. Normal ListWatch receives the actual
+410, emits RELISTING with no retained old snapshot, obtains a fresh LIST and
+reopens from its current version. Both original watch versions and all three
+recovered rows are checked, followed by drained HTTP/source workers, unchanged
+configuration and the same resource-count assertions. No recovery method is
+mocked or replaced. Its first focused original passed 39 total cycles in 19.57
+seconds; its source and original receipts remain retained.
+
+The first context trial failed its thread-count assertion: the native default
+executor was still populating lazily after three cycles. Its original failure
+and source are retained. A separately labeled diagnostic observed all 39 cycles:
+only native `asyncio_0` through `asyncio_9` workers appeared, bounded by the
+unchanged ten-worker default, with stable descriptors and zero pending tasks.
+The maintained trial now fully populates that existing native pool before its
+baseline and records its capacity. It keeps the three-cycle warmup and exact
+resource assertions; its actual extra-thread negative control remains required.
+
+Receipts retain interpreter/platform facts, all production and relevant fixture
+hashes before/after, cycle samples and cleanup facts under unique filenames in
+`artifacts/backend/`. Full native CI for these new cohort sources remains
+required before Q03 closes. Existing oversized-frame rejection, bounded source
+admission/replay/410 and real-kind forward/context tests remain complementary;
+this controlled HTTP/process cohort does not certify a cloud provider or replace
+the actual-cluster contracts. No production behavior or performance limit changed.

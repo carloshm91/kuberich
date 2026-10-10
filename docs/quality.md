@@ -546,6 +546,32 @@ The observer never declares Q03 or a release qualified: the frozen-source
 latency/plateau review and separate context/forward/task lifecycle evidence
 are still required. macOS process-memory qualification remains separate.
 
+The complementary owned lifecycle cohort is
+`uv run pytest tests/contract/test_performance_lifecycle.py`. Each scenario has
+three warmup cycles followed by 36 measured cycles. Before the baseline it
+populates the interpreter's ordinary lazy asyncio executor to its existing
+capacity; it does not set a worker limit or replace the executor. Then descriptor,
+thread and pending-task counts must remain exactly constant between drained
+cycles. Receipts record the actual capacity, source hashes and every sample.
+An actual held descriptor, thread and task verify that these observations detect
+added resources. This measures cleanup and bounded ownership rather than latency
+or RSS; it does not replace the sustained real-CLI observation.
+
+Actual HTTP context transitions stop real forwarding children through the same
+SessionService close hook used by the application, close old API pools/private
+directories and leave only one pending observation for a slow subscriber.
+Large watch frames held at a slow sink must not create a background parser queue;
+repeated cancellation drains their transport. Forward startup cancellation must
+reap its real child and staged configuration. Retained forward history saturates
+at its existing 32 records. A held initial snapshot also expires the paced
+source's explicitly reduced three-event protocol ring; actual ListWatch must
+publish the 410 relisting state, drop its old snapshot and recover all current
+rows without leaked transport or source work. This protocol fixture keeps the
+qualification workload's ordinary replay and performance limits unchanged.
+Each required native environment runs the cohort;
+the existing real-kind forward and context trials remain required separately.
+Unique original receipts live under `artifacts/backend/performance-lifecycle-*`.
+
 ## Current repository stage
 
 F01 provides the installable development CLI and behavioral/artifact tests.

@@ -1,5 +1,43 @@
 # First things to try
 
+## Merged combined-load baseline: Refs Q03 #50
+
+[PR #178](https://github.com/carloshm91/kuberich/pull/178) merged as `e095b28`
+on 2026-10-10 after independent original-artifact review. Linux Python
+3.12/3.13/3.14 each passed 4,432 cases; macOS passed 4,429 plus three explicit
+Linux-only observer skips. Coverage measured at least 99.08% lines, 96.84%
+branches and 96.15% changed lines, with all 43 critical modules at 100%.
+Original package/installed-runtime/terminal/audit and owned-kind evidence passed;
+Repository evidence binds 140 Git inputs and 49 desktop plus 49 mobile pages.
+
+This baseline matches all 163 inputs of the original 30-minute combined-load
+observation: 99.077-ms input-to-painted-tail p95 and the declared memory plateau.
+The narrow reference-machine margin and original artifacts remain documented
+below. This qualifies the required PR matrix, not the six-environment release.
+The next PR adds only lifecycle/protocol tests and qualification documentation;
+its full native evidence is required before Q03 closes.
+
+## Owned lifecycle verification in progress: Refs Q03 #50
+
+The new cleanup cohort passed five focused cases in each actual local Python
+3.12, 3.13 and 3.14 interpreter. Each scenario has 36 measured cycles after
+warmup: context switches stop real forwarding children, slow large-watch sinks
+keep one parser operation, and repeatedly cancelled startup cleans private files
+and processes. Descriptor/thread counts stay constant, pending tasks return to
+zero and retained forwarding history stops at 32 records. An actual extra
+descriptor, thread and task verifies that the observer detects each increase.
+Its additional stalled-snapshot case forces a real 410 from the bounded local
+source and verifies ordinary ListWatch relisting and current-row recovery.
+The exact tested command was:
+
+```sh
+uv run pytest -q tests/contract/test_performance_lifecycle.py
+```
+
+Full native CI for these new sources remains required. See the
+[measured scope and original failed probe](acceptance/combined-workload-progress.md#repeated-owned-lifecycle-cohort).
+Q03 remains open; the maintainer need not repeat these automated trials.
+
 ## Latest verified baseline and sustained candidate: Refs Q03 #50
 
 [PR #177](https://github.com/carloshm91/kuberich/pull/177) merged as `498711a`
