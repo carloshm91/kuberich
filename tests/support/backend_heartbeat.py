@@ -126,9 +126,13 @@ class HeartbeatDiagnostic:
 
 
 def write_heartbeat_diagnostic(
-    diagnostic: HeartbeatDiagnostic, samples: Sequence[float], facts: dict[str, Any]
+    diagnostic: HeartbeatDiagnostic,
+    samples: Sequence[float],
+    facts: dict[str, Any],
+    *,
+    path: Path | None = None,
 ) -> None:
-    path = ROOT / "artifacts/backend/aggregate-tiny-lines-heartbeat.json"
+    path = path or ROOT / "artifacts/backend/aggregate-tiny-lines-heartbeat.json"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(diagnostic.report(samples, limit=0.15) | facts, indent=2) + "\n",

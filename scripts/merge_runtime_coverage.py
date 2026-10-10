@@ -319,14 +319,32 @@ async def merge(
 
 
 def main() -> int:
+    from scripts.check_backend_runtime import verify_backend_runtime
+    from tests.support.backend_runtime import backend_source
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--parent-data", type=Path, default=Path(".coverage"))
     parser.add_argument("--parent-json", type=Path, default=Path("coverage.json"))
     parser.add_argument("--parent-xml", type=Path, default=Path("coverage.xml"))
     args = parser.parse_args()
     try:
+        backend_expected = asyncio.run(backend_source())
+        backend_directory = ROOT / "artifacts/backend"
+        backend = verify_backend_runtime(backend_directory, backend_expected)
+        backend_hash = digest(backend_directory / "runtime-receipt.json")
         receipt = asyncio.run(
             merge(args.parent_data, args.parent_json, args.parent_xml, ROOT / "artifacts/ui")
+        )
+        require(
+            asyncio.run(backend_source()) == backend_expected
+            and digest(backend_directory / "runtime-receipt.json") == backend_hash
+            and verify_backend_runtime(backend_directory, backend_expected) == backend,
+            "Backend runtime evidence changed during coverage merge",
+        )
+        receipt["backend_controls_verified"] = True
+        receipt["backend_runtime_receipt_sha256"] = backend_hash
+        (ROOT / "artifacts/ui/coverage-merge-receipt.json").write_text(
+            json.dumps(receipt, indent=2) + "\n"
         )
     except (
         ValueError,

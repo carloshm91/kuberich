@@ -661,7 +661,11 @@ See [ordinary-view policy and controls](resource-inspection.md).
 with consumer-owned retention. The adapter opens a scoped `text/plain` stream
 with bounded headers and an explicit indefinite quiet-follow body. `services/logs.py`
 verifies captured pod UID/container before and after opening, awaits each consumer
-and closes its generator on cancellation/failure. Logs have no watch checkpoints
+and closes its generator on cancellation/failure. An immediately completing
+consumer receives at most 32 lines before an explicit cooperative turn, so pending
+input, cancellation and other readers are not deferred through an entire 8-KiB
+chunk. Every subsequent line rechecks the current captured target. Delivery stays
+sequential without a producer queue or dropping lines. Logs have no watch checkpoints
 and are never automatically replayed. S02 owns the UI presentation and lifetime.
 See [the transport contract](container-log-transport.md).
 

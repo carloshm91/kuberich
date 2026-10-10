@@ -1,5 +1,35 @@
 # First things to try
 
+## Cooperative dense-log delivery: Refs Q03 #50
+
+Pending input, cancellation and target changes now get a cooperative turn during
+dense log delivery. Three HTTP regressions reproduced the preceding 4,096-line
+delay; the correction checks each next target and yields after at most 32 lines,
+preserving order, partial EOF, slow-consumer backpressure and response ownership.
+
+`uv run --locked --python 3.12 pytest -q tests/unit tests/contract tests/ui/test_aggregate_logs.py tests/ui/test_logs.py tests/ui/test_sessions.py tests/quality/test_backend_runtime.py tests/quality/test_backend_heartbeat.py tests/quality/test_runtime_coverage.py --cov=kuberich --cov-branch`
+passed 3,077 cases in 440.60 seconds. Eleven actual source-terminal cases passed
+in 33.75 seconds; Python 3.13 and 3.14 each passed 149 focused cases. Four receipts
+bind 537 unchanged tracked inputs. All 43 critical modules and 13 owned changed
+executable lines measured 100% after the required runtime coverage verification/
+merge. The scoped overall 89.2635% line / 86.6836% branch result does not qualify
+whole-package floors; new frozen-head/native checks remain required.
+
+Normal backend latency now has its own source-bound fresh positive and deliberate
+200-ms blocking controls, while the full original 32,768-line HTTP workload stays
+branch-covered in the parent suite. The controls measured 31.011 ms and failed
+at 201.247 ms respectively, with complete line delivery and zero final owners/
+streams/watches. Original macOS source `46c4dea` failed at 561.710 ms with CTracer
+and the development IRI grammar loaded; a 534.620-ms GC collection overlapped it.
+Those observations do not establish the whole cause or qualify the failed head.
+All originals remain retained. See [exact evidence and limits](acceptance/cooperative-log-delivery.md).
+
+Q03 remains open for combined independent load, 10,000 retained lines, sustained
+input p95 below 100 ms, a 30-minute memory plateau and lifecycle qualification.
+The first public target remains 0.1.0 and the planned brand-owned command remains
+`brew install kuberich/tap/kuberich`. No package, tap, release or intermediate
+maintainer trial is published/requested by this correction.
+
 ## Collected parser outcomes and bounded log formatting: Refs Q03 #50
 
 Repeated parser cancellation now drains a collector before returning, including

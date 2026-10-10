@@ -1,9 +1,12 @@
 """Real HTTP concurrency, UID churn, source isolation and drained aggregate ownership."""
 
 import asyncio
+import os
+import time
 from copy import deepcopy
 from dataclasses import replace
 from itertools import pairwise
+from pathlib import Path
 
 import pytest
 from aiohttp import web
@@ -16,6 +19,12 @@ from kuberich.errors import AppError
 from kuberich.services.aggregate_logs import AggregateLogs
 from tests.support.aggregate_logs import PODS, AggregateApi, reference, workload
 from tests.support.backend_heartbeat import HeartbeatDiagnostic, write_heartbeat_diagnostic
+from tests.support.backend_runtime import (
+    MODE,
+    child_request,
+    finish_child,
+    require_backend_children,
+)
 from tests.support.resources import reader_fixture
 from tests.support.workspace import wait_for
 
@@ -218,6 +227,14 @@ async def test_live_intermediate_ownership_uid_replacement_and_no_hidden_replay(
 
 @pytest.mark.asyncio
 async def test_many_tiny_lines_slow_source_heartbeat_and_two_levels_of_retention(tmp_path):
+    request = await child_request() if MODE in os.environ else None
+    negative_executed = False
+
+    def block_runtime():
+        nonlocal negative_executed
+        negative_executed = True
+        time.sleep(0.2)
+
     api = AggregateApi(count=2)
     async with reader_fixture(tmp_path, api.handler) as reader:
         owner = api.owner(reader)
@@ -232,6 +249,8 @@ async def test_many_tiny_lines_slow_source_heartbeat_and_two_levels_of_retention
             owner.require_source(source, number)
             history.retain(source, number, line)
             received += 1
+            if received == 1 and request is not None and request["mode"] == "negative":
+                asyncio.get_running_loop().call_soon(block_runtime)
             if "slow-source-live" in line.text:
                 late_received.set()
 
@@ -256,7 +275,10 @@ async def test_many_tiny_lines_slow_source_heartbeat_and_two_levels_of_retention
                 assert all(len(numbers) <= 300 for numbers in history.by_source.values())
                 assert all(size <= 65536 for size in history.sizes.values())
                 assert len(heartbeats) > 3
-                assert max(b - a for a, b in pairwise(heartbeats)) < 0.15
+                if request is not None:
+                    assert max(b - a for a, b in pairwise(heartbeats)) < 0.15, (
+                        "Backend runtime heartbeat exceeded 150 ms"
+                    )
         finally:
             pulse.cancel()
             await asyncio.gather(pulse, return_exceptions=True)
@@ -268,6 +290,8 @@ async def test_many_tiny_lines_slow_source_heartbeat_and_two_levels_of_retention
                     heartbeats,
                     {
                         "received_lines": received,
+                        "timing_qualifying": request is not None,
+                        "negative_callback_executed": negative_executed,
                         "slow_source_received": late_received.is_set(),
                         "retained_lines": len(history.records),
                         "retained_bytes": history.buffer.size_bytes,
@@ -279,7 +303,14 @@ async def test_many_tiny_lines_slow_source_heartbeat_and_two_levels_of_retention
                             "api_watches": api.watch_active,
                         },
                     },
+                    path=Path(request["directory"]) / "heartbeat.json"
+                    if request is not None
+                    else None,
                 )
+                if request is not None:
+                    await finish_child(request)
+    if request is None:
+        await require_backend_children()
 
 
 @pytest.mark.asyncio
