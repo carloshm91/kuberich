@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "python_version": "3.12.15",
+  "release": "20261009",
+  "release_id": 408110548,
+  "immutable_release": true,
+  "supplemental_notices": {
+    "licenses/LICENSE.zlib-ng.txt": {
+      "url": "https://raw.githubusercontent.com/python/cpython-source-deps/a502e047655c31db29601def76ad6539acacf43d/LICENSE.md",
+      "bytes": 867,
+      "sha256": "6c9f0d975b41afaa34d22f55bb8986ce69e5cb7ad327cb2b28820cd425edf5ee",
+      "upstream_recipe_commit": "ccc07c40c2731bfb459c119f2388f65a5a470de6",
+      "upstream_recipe_file": "pythonbuild/downloads.json",
+      "source_archive_sha256": "00bbd88709bc416cb96160ab61d3e1c8f76e106799af7328d0fe434dc7dd5004",
+      "source_version": "zlib-ng 2.2.4",
+      "reason": "The full archive metadata lists this alternative zlib implementation but omits its notice. Retain the original referenced upstream text without claiming this alternative is linked."
+    }
+  },
+  "targets": {
+    "linux-x86_64": {
+      "triple": "x86_64-unknown-linux-gnu",
+      "asset_id": 625538951,
+      "bytes": 98368568,
+      "sha256": "36a23ba5776ede9db3dfbb1b1f84c74b18939331c75e1e70760f12ad61aa96d5"
+    },
+    "linux-arm64": {
+      "triple": "aarch64-unknown-linux-gnu",
+      "asset_id": 625538536,
+      "bytes": 86026089,
+      "sha256": "1f92ec1ede8ed1b08cc783b4e000a20c332ed3288bc7f7a2781bc5af0e655db3"
+    },
+    "macos-x86_64": {
+      "triple": "x86_64-apple-darwin",
+      "asset_id": 625538887,
+      "bytes": 54719526,
+      "sha256": "7c8bc24113d86ec2ffdb4fa2a48d730100daf3dd1bc6631cb6af0adbca9bfaa1"
+    },
+    "macos-arm64": {
+      "triple": "aarch64-apple-darwin",
+      "asset_id": 625538471,
+      "bytes": 55050628,
+      "sha256": "e291d81a598012deacfd813710e37d3001e7b3b156207a26c772e13404cbe719"
+    }
+  }
+}

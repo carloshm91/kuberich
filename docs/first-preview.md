@@ -2,6 +2,27 @@
 
 ## Standalone work in progress: D05 #49
 
+The current recipe prepares a separately hash-pinned full CPython 3.12.15 archive
+for each target and preserves the interpreter's original static component notices.
+The actual Linux full archive enrolled 17 metadata components and 20 original
+notice texts, including a separately pinned upstream supplemental text. The native
+interpreter reported OpenSSL 3.5.9 and zlib 1.3.2. The new package/floor checks
+passed 67 cases across the archive, notice, full-interpreter and Mach-O suites;
+strict builder types and Ruff passed. The command is:
+
+```sh
+uv run --no-sync pytest -q tests/quality/test_standalone_archive.py tests/quality/test_standalone_build.py tests/quality/test_standalone_python.py tests/quality/test_standalone_macos.py
+```
+
+An actual developer-host build now ships those interpreter notices and hashes.
+Its copied host `libstdc++` still advertises GLIBC 2.38, so this diagnostic archive
+cannot pass the promised whole-bundle 2.35 gate. The clean-host CLI preflight
+correctly refused it before launch; a separate owned C-auth/real-shell trial did
+pass on Ubuntu 22.04. That narrower positive result does not override the failed
+whole-bundle floor. The next committed minimum-floor build must collect compatible
+libraries and retain the same original notices. Four-target protected CI, actual
+Mac signing/runtime and exact release-input integration remain pending.
+
 [PR #180](https://github.com/carloshm91/kuberich/pull/180) merged as `a4e958c`
 on 2026-10-10 and closed #109. All four original required native environments,
 Repository checks and DCO passed; original artifact/aggregate and owned-cluster

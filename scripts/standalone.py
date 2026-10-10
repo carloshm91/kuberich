@@ -193,3 +193,38 @@ def glibc_versions(content: bytes) -> list[tuple[int, int]]:
             for major, minor in re.findall(rb"GLIBC_([0-9]+)\.([0-9]+)", content)
         }
     )
+
+
+def macos_minimum(content: bytes) -> tuple[int, int, int]:
+    """Read the actual Mach-O deployment command, rejecting truncation/other platforms."""
+    if len(content) < 32 or content[:4] != b"\xcf\xfa\xed\xfe":
+        raise ValueError("Missing native Mach-O deployment header")
+    count, size = struct.unpack_from("<II", content, 16)
+    if not 0 < count <= 4096 or size > 1024 * 1024 or len(content) < 32 + size:
+        raise ValueError("Mach-O deployment commands are missing, truncated or excessive")
+    offset = 32
+    minimum = None
+    for _ in range(count):
+        if offset + 8 > 32 + size:
+            raise ValueError("Truncated Mach-O load command")
+        command, length = struct.unpack_from("<II", content, offset)
+        if length < 8 or length % 8 or offset + length > 32 + size:
+            raise ValueError("Invalid Mach-O load command length")
+        if command in {0x24, 0x32}:
+            required = 16 if command == 0x24 else 24
+            if length < required or minimum is not None:
+                raise ValueError("Invalid or duplicate macOS deployment command")
+            if command == 0x32 and struct.unpack_from("<I", content, offset + 8)[0] != 1:
+                raise ValueError("Standalone Mach-O target must be macOS")
+            if command == 0x32:
+                tools = struct.unpack_from("<I", content, offset + 20)[0]
+                if length != 24 + 8 * tools:
+                    raise ValueError(
+                        "Mach-O build tool declarations differ from their command length"
+                    )
+            value = struct.unpack_from("<I", content, offset + (8 if command == 0x24 else 12))[0]
+            minimum = value >> 16, value >> 8 & 0xFF, value & 0xFF
+        offset += length
+    if offset != 32 + size or minimum is None or minimum[0] == 0:
+        raise ValueError("Missing complete native macOS deployment evidence")
+    return minimum

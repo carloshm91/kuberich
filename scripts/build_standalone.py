@@ -7,8 +7,8 @@ import hashlib
 import json
 import platform
 import shutil
+import struct
 import subprocess
-import sys
 import tomllib
 from pathlib import Path
 from typing import Any
@@ -19,8 +19,10 @@ from scripts.standalone import (
     check_executable,
     create_archive,
     glibc_versions,
+    macos_minimum,
     native_target,
 )
+from scripts.standalone_python import original_digest, prepare
 from scripts.supply_chain import digest, runtime_packages
 
 
@@ -30,6 +32,7 @@ def source_inputs(root: Path) -> dict[str, str]:
         *sorted((root / "src/kuberich").rglob("*.tcss")),
         root / "src/kuberich/py.typed",
         *sorted((root / "packaging/standalone").rglob("*.py")),
+        *sorted((root / "packaging/standalone").rglob("*.json")),
         root / "packaging/standalone/REPLACING-PYTE.md",
         root / "pyproject.toml",
         root / "uv.lock",
@@ -37,6 +40,7 @@ def source_inputs(root: Path) -> dict[str, str]:
         root / "NOTICE",
         root / "scripts/build_standalone.py",
         root / "scripts/standalone.py",
+        root / "scripts/standalone_python.py",
         root / "scripts/check_supply_chain.py",
         root / "scripts/dependency_inventory.py",
         root / "scripts/supply_chain.py",
@@ -60,6 +64,10 @@ def retain_notices(inventory: dict[str, Any], directory: Path, root: Path) -> No
         raise ValueError("The build interpreter must retain its original CPython license")
     shutil.copyfile(stdlib, directory / "CPYTHON-LICENSE.txt")
     extras = Path(inventory["base_prefix"]) / "licenses"
+    full_python = inventory.get("full_python_distribution")
+    if full_python is not None:
+        extras = Path(full_python["python"]).parents[2] / "licenses"
+        write_json(directory / "python-full-distribution.json", full_python)
     if extras.is_dir():
         shutil.copytree(extras, directory / "python-runtime", symlinks=False)
     for package in inventory["packages"]:
@@ -120,6 +128,8 @@ def native_evidence(bundle: Path, analysis: Path, notices: Path, target: str) ->
     sources = analysis_binaries(analysis)
     evidence: dict[str, Any] = {}
     highest = (0, 0)
+    highest_macos = (0, 0, 0)
+    signatures = {}
     for path in sorted(bundle.rglob("*")):
         if path.is_symlink() or not path.is_file():
             continue
@@ -131,6 +141,34 @@ def native_evidence(bundle: Path, analysis: Path, notices: Path, target: str) ->
         relative = path.relative_to(bundle).as_posix()
         source = sources.get(relative.removeprefix("_internal/"))
         entry: dict[str, Any] = {"sha256": digest(path), "original_build_source": source}
+        if target.startswith("macos-"):
+            load_size = struct.unpack_from("<I", header, 20)[0]
+            if load_size > 1024 * 1024:
+                raise ValueError("Native macOS load commands exceed their bounded format")
+            with path.open("rb") as commands:
+                minimum = macos_minimum(commands.read(32 + load_size))
+            highest_macos = max(highest_macos, minimum)
+            entry["minimum_macos"] = list(minimum)
+            verified = subprocess.run(
+                ["codesign", "--verify", "--strict", str(path)],
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            verified.check_returncode()
+            inspected = subprocess.run(
+                ["codesign", "--display", "--verbose=4", str(path)],
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=True,
+            )
+            description = inspected.stdout + inspected.stderr
+            signatures[relative] = {
+                "valid": True,
+                "ad_hoc": "Signature=adhoc" in description,
+                "developer_id": "Authority=Developer ID Application:" in description,
+            }
         if target.startswith("linux-"):
             content = path.read_bytes()
             versions = glibc_versions(content)
@@ -154,12 +192,24 @@ def native_evidence(bundle: Path, analysis: Path, notices: Path, target: str) ->
     return {
         "files": evidence,
         "highest_glibc_symbols": list(highest),
-        "macos_signing": {"developer_id": False, "notarization_performed": False},
+        "highest_macos_minimum": list(highest_macos),
+        "macos_signing": {
+            "verification_performed": bool(signatures),
+            "files": signatures,
+            "developer_id": bool(signatures)
+            and all(entry["developer_id"] for entry in signatures.values()),
+            "notarization_performed": False,
+        },
     }
 
 
 def build(
-    root: Path, output: Path, *, target: str | None = None, diagnostic: bool = False
+    root: Path,
+    output: Path,
+    *,
+    target: str | None = None,
+    diagnostic: bool = False,
+    interpreter_archive: Path | None = None,
 ) -> dict[str, Any]:
     target = native_target() if target is None else target
     if target != native_target():
@@ -189,6 +239,8 @@ def build(
     work = output / "build"
     work.mkdir()
     log = output / "build-original.log"
+    prepared = prepare(work / "python-runtime", target, archive=interpreter_archive)
+    selected_python = prepared["python"]
 
     def command(argv: list[str]) -> None:
         run(argv, work, log)
@@ -199,7 +251,7 @@ def build(
             "build",
             str(root),
             "--python",
-            sys.executable,
+            selected_python,
             "--wheel",
             "--out-dir",
             str(work / "wheel"),
@@ -212,7 +264,7 @@ def build(
             "--project",
             str(root),
             "--python",
-            sys.executable,
+            selected_python,
             "--locked",
             "--no-default-groups",
             "--group",
@@ -229,7 +281,7 @@ def build(
             "--project",
             str(root),
             "--python",
-            sys.executable,
+            selected_python,
             "--locked",
             "--no-default-groups",
             "--no-emit-project",
@@ -241,7 +293,7 @@ def build(
         ]
     )
     environment = work / "environment"
-    command(["uv", "venv", "--python", sys.executable, str(environment)])
+    command(["uv", "venv", "--python", selected_python, str(environment)])
     python = str(environment / "bin/python")
     command(
         [
@@ -269,6 +321,9 @@ def build(
         ]
     )
     inventory = json.loads((output / "build-environment.json").read_text())
+    if Path(inventory["base_prefix"]).resolve() != Path(selected_python).parents[1].resolve():
+        raise ValueError("The build environment must use the prepared full interpreter")
+    inventory["full_python_distribution"] = prepared
     pins = selected_requirements(
         (work / "runtime-requirements.txt").read_text(), inventory["python"]
     )
@@ -323,6 +378,9 @@ def build(
     ) <= (2, 35)
     if not compatible_floor and not diagnostic:
         raise ValueError("The built native libraries exceed the declared glibc 2.35 floor")
+    macos_floor = tuple(native["highest_macos_minimum"]) <= (14, 0, 0)
+    if target.startswith("macos-") and not macos_floor and not diagnostic:
+        raise ValueError("The native load commands exceed the declared macOS 14 floor")
     if not (bundle / "_internal/pyte/__init__.py").is_file():
         raise ValueError("The original LGPL Pyte sources must be external and replaceable")
     shutil.copyfile(root / "packaging/standalone/REPLACING-PYTE.md", bundle / "REPLACING-PYTE.md")
@@ -331,6 +389,15 @@ def build(
     members = create_archive(bundle, archive, target, timestamp)
     if before != source_inputs(root) or commit != git(root, "rev-parse", "HEAD"):
         raise ValueError("Source inputs changed during the native build")
+    for field in ("python", "shared_library"):
+        if original_digest(Path(prepared[field])) != prepared[field + "_sha256"]:
+            raise ValueError("The original interpreter executable/library changed during freezing")
+    original_root = work / "python-runtime/python"
+    if digest(original_root / "PYTHON.json") != prepared["metadata_sha256"]:
+        raise ValueError("Original interpreter metadata changed during freezing")
+    for relative, expected in prepared["licensing"]["notices"].items():
+        if digest(original_root / relative) != expected:
+            raise ValueError("Original interpreter notice changed during freezing")
     manifest = {
         "schema_version": 1,
         "source_commit": commit,
@@ -340,6 +407,7 @@ def build(
         "target": target,
         "source_inputs": before,
         "python": inventory["python"],
+        "full_python_distribution": prepared,
         "builder": platform.platform(),
         "wheel": {"name": wheels[0].name, "sha256": digest(wheels[0])},
         "archive": {"name": asset, "sha256": digest(archive), "members": members},
@@ -347,6 +415,7 @@ def build(
         "native": native,
         "declared_minimum": "glibc 2.35" if target.startswith("linux-") else "macOS 14",
         "compatible_glibc_floor": compatible_floor,
+        "compatible_macos_floor": macos_floor,
         "build_log_sha256": digest(log),
         "runtime_qualified": False,
     }
@@ -359,12 +428,23 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--target")
     parser.add_argument(
+        "--interpreter-archive",
+        type=Path,
+        help="reuse the exact hash-pinned full interpreter archive; never accepts a different build",
+    )
+    parser.add_argument(
         "--diagnostic", action="store_true", help="local exploration; never qualifies a release"
     )
     args = parser.parse_args()
     try:
         manifest = build(
-            ROOT, args.output.absolute(), target=args.target, diagnostic=args.diagnostic
+            ROOT,
+            args.output.absolute(),
+            target=args.target,
+            diagnostic=args.diagnostic,
+            interpreter_archive=args.interpreter_archive.absolute()
+            if args.interpreter_archive
+            else None,
         )
         print(
             json.dumps(

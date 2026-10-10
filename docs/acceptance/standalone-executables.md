@@ -3,6 +3,44 @@
 Status: **in progress**. No release, tag, package or standalone download was
 published. Build success and local runtime evidence do not complete all of #49.
 
+## Full interpreter enrollment checkpoint
+
+The recipe now prepares the reviewed full upstream CPython 3.12.15 / 20261009
+distribution for each architecture. Original immutable release digests were
+queried directly and pinned in `packaging/standalone/python-runtime.json`.
+Extraction validates digest/size, contained paths and links, native headers,
+version/target metadata, original component notices and interpreter/shared-library
+identity. It retains the licensing inventory in the frozen bundle and rechecks
+original hashes after construction. Zstandard is confined to the optional build
+group.
+
+An actual full Linux archive enrolled 17 metadata components and 20 notice texts.
+An independently invoked native interpreter reported Python 3.12.15, OpenSSL
+3.5.9 and zlib 1.3.2. Upstream metadata names both zlib implementations but omits
+the zlib-ng text from its full archive; that separately pinned upstream source
+text is retained as supplemental. This does not relabel the linked zlib version.
+The initial missing-notice failure is retained alongside the corrected enrollment.
+
+The developer-host full build has archive SHA-256
+`91514d0a2da9165dad72a1d11271f202f55ac66d2e825e54d2537664eaaadae4`.
+Its 128 input originals were retained separately. Its copied host `libstdc++`
+advertises GLIBC 2.38: the archive is diagnostic and fails the whole-bundle floor.
+The clean-host CLI preflight correctly refused it before container launch. A
+separate actual C-auth/real-shell PTY on the base Ubuntu 22.04 image passed, but
+that narrow behavior result cannot qualify an archive whose library inventory
+exceeds the promised minimum. The committed-source minimum-floor build remains
+the next required evidence.
+
+Full-interpreter ingestion checks and Mach-O deployment parsing add 22 cases to
+the archive/notice tests. Current combined scope is 67 cases; strict builder/
+archive/interpreter types and Ruff pass. macOS floors are now read from actual
+load commands, and code signatures are inspected/verified per native file. Pure
+format tests do not establish actual macOS runtime/signing qualification.
+
+The following report preserves the earlier install-only checkpoint and its
+remaining limits; it does not claim the new full-interpreter candidate inherits
+its qualification.
+
 ## Original local evidence: 2026-10-10
 
 The frozen launcher uses the application executable for its owned PTY child,

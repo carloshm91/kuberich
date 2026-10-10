@@ -125,6 +125,29 @@ an actual compatible source replacement in a copied bundle. The entire directory
 including `_internal` and notices, must be retained; the launcher alone is not a
 portable installation. No standalone artifact has been published.
 
+The freezing interpreter now comes from the full Python Build Standalone archive,
+not the developer's interpreter or an install-only download. The reviewed
+`packaging/standalone/python-runtime.json` pins CPython 3.12.15 / upstream release
+20261009 independently for all four native targets, including size and SHA-256.
+The recipe validates the archive, native header, target metadata and original
+component notices before using its interpreter. Zstandard is an optional build
+dependency; the installed application does not require the standalone group.
+An already-downloaded exact archive can be supplied with `--interpreter-archive`;
+different bytes, architecture or interpreter metadata are rejected.
+
+The full licensing inventory includes the original static component texts and
+metadata. One upstream metadata entry names an alternative zlib-ng notice missing
+from the full archive. The recipe retains that exact original upstream text from
+a separately pinned source commit/digest and records it as supplemental, without
+claiming the alternative is linked. A local native interpreter probe observed
+Python 3.12.15, OpenSSL 3.5.9 and zlib 1.3.2. The original Python/library/metadata/
+notice hashes are checked again after freezing.
+
+The macOS recipe now reads deployment floors from each actual Mach-O file and
+verifies collected code signatures with `codesign`; it distinguishes ad-hoc
+signatures from Developer ID and does not claim notarization. Pure format tests
+have passed; actual macOS build/signature/runtime evidence remains pending.
+
 ## Homebrew implementation
 
 Prepare the dedicated kuberich/homebrew-tap scaffold in the distribution task.
