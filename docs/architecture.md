@@ -711,6 +711,16 @@ tables. Nested renders share that immutable frame style; `finally` restores the
 enclosing value, so failures or later theme, visibility and layout changes cannot
 retain stale colors. It retains DataTable's rows, cursor, events and rendering.
 
+Q03 #50 keeps header-determined width updates bounded in that same table. A
+bounded per-table trust flag permits the shortcut while row contents remain owned
+immutable `TableCell` values. Mutable/custom row or column-default renderables
+and explicitly unsized edits retain native rescans until public `clear` resets
+all rows. Exact plain single-line headers and unchanged automatic-width bounds
+are also required. `ui.pods.PodCell` retains the shared cell's constructor alias;
+unknown renderables retain native evaluation order. The public update still
+performs ordinary repaint. This removes one measured full-column hot path and
+does not establish the Q03 performance gate.
+
 This uses public [Textual DataTable](https://textual.textualize.io/widgets/data_table/)
 row events/actions and [Input](https://textual.textualize.io/widgets/input/) submissions.
 
