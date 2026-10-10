@@ -3,6 +3,41 @@
 Status: **in progress**. No release, tag, package or standalone download was
 published. Build success and local runtime evidence do not complete all of #49.
 
+## Reproducible qualification and CI preparation
+
+The reusable reader rejects stale/dirty Git inputs, tampered archive/member
+identity, native architecture mismatches, overclaimed minimum versions, changed
+original interpreter pins/licenses and missing certificate/source/style assets.
+Actual native symbol/load-command/signature observations take precedence over
+producer compatibility flags. The executor extracts those exact checked bytes
+outside the checkout and retains original CLI, helper-compiler and PTY controls.
+The Linux base is physically Python-free; macOS's external-interpreter/source
+denial is explicitly process isolation rather than physical host absence.
+
+The retained `a2002de6...` Linux archive passed the executor. Its initial reader
+incorrectly assumed Textual had separate `.tcss` files; the actual retained
+inline stylesheet source and KubeRich `.tcss` are now checked. The next failure
+exposed relative controller Docker lookup after the application's PATH was
+isolated; absolute controller capture fixes that boundary, with a real-subprocess
+regression. The successful execution and original failure log remain separate
+under `artifacts/standalone49/formal-host-runtime-v2-original.log` and
+`formal-host-runtime-v3-original.log`; no failing original was overwritten.
+
+An actual owned-kind trial used the retained executable for all nine shell
+scenarios, including fullscreen `vi`, real selected-container exec, TLS overrides,
+impersonation/token/role denials and synthetic EKS/AKS helpers against a real API.
+The fixture uses typed SDK request models, with the source controller retained
+before execution. It exited zero, removed its owned cluster and verified absence.
+Evidence is `owned-kind-native-v1.json` / `owned-kind-native-v1-original.log`.
+This does not certify real AWS/Azure or the later committed CI candidate.
+
+The current focused cohort passed 163 cases; nine strict scripts and Ruff passed.
+Application quality now prepares four native jobs plus the unchanged source
+Python matrix, complete native planner validation and protected aggregate
+dependencies. Linux jobs require actual extracted-archive kind execution.
+Actual hosted matrix results, original cross-target evidence and exact
+release-candidate enrollment remain necessary before completion.
+
 ## Committed full-interpreter Linux checkpoint
 
 The owned Ubuntu 22.04 x86_64 build of `f2a0e310ff67e35b9f02f0ad33b3e96ef6c9a1ce`

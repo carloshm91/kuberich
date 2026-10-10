@@ -2,6 +2,26 @@
 
 ## Standalone work in progress: D05 #49
 
+The native checks are now reusable as `scripts.check_standalone` and
+`scripts.verify_standalone`. The exact previously retained Linux archive passed
+the new qualifier after the checker was corrected to inspect Textual's actual
+inline stylesheet source and to capture Docker's absolute controller path before
+isolating the application's PATH. The original failed qualifier output is kept
+separately. The combined native archive/interpreter/ABI/provenance/helper and CI
+planner/aggregate tests passed **163 cases**; strict types passed for nine scripts.
+
+The same retained frozen executable then passed the real owned-kind shell cohort
+through the new `scripts.verify_shell_kind --executable` path: two-container
+selection, configured/missing shell, repeated return, resize, Ctrl+C, fullscreen
+`vi`, TLS/alias/impersonation and real RBAC denials. Synthetic EKS/AKS helpers are
+still synthetic, not provider certification. Cluster deletion and absence were
+verified. Original evidence is
+`artifacts/standalone49/owned-kind-native-v1-original.log` and
+`artifacts/standalone49/owned-kind-native-v1.json`. The controller source original
+was retained; this is local evidence, not qualification of the later CI commit.
+Four native jobs and protected aggregate enforcement are prepared; hosted results
+and exact release-input enrollment remain pending.
+
 The committed full-interpreter build at `f2a0e310` now passed on the owned
 Ubuntu 22.04 x86_64 builder. Its complete native library inventory stayed at
 GLIBC 2.35, with all 20 original interpreter notice texts retained. The exact

@@ -4,9 +4,9 @@ import json
 import os
 import sys
 
-from scripts.ci_policy import matrix
+from scripts.ci_policy import matrix, native_matrix
 
-REQUIRED_JOBS = {"plan", "application"}
+REQUIRED_JOBS = {"plan", "application", "standalone"}
 
 
 def main() -> int:
@@ -24,10 +24,17 @@ def main() -> int:
         planned = json.loads(outputs["matrix"])
         if planned != expected:
             raise ValueError("the verified event's complete matrix must be planned")
+        native_output = outputs.get("native_matrix")
+        if not isinstance(native_output, str) or json.loads(native_output) != native_matrix(
+            os.environ["GITHUB_EVENT_NAME"], os.environ["GITHUB_REF"]
+        ):
+            raise ValueError("the complete native OS/architecture matrix must be planned")
     except (KeyError, ValueError) as error:
         print(f"Quality gate failed: {error}", file=sys.stderr)
         return 1
-    print("Quality gate passed: the complete application matrix succeeded.")
+    print(
+        "Quality gate passed: the complete application matrix succeeded; all four native targets succeeded."
+    )
     return 0
 
 

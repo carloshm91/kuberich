@@ -6,6 +6,18 @@ or reliable installation.
 
 ## Required gates
 
+D05 #49 adds a separate four-target native matrix on every Application quality
+event. It builds the pinned full interpreter, checks complete original provenance
+and native ABI/deployment floors, then runs the extracted archive's owned auth/UI/
+shell controls. Linux x86_64/ARM64 use Python-free Ubuntu 22.04 runtime containers
+and actual owned-kind exec/TLS/RBAC trials. macOS ARM64/Intel use native signing
+inspection and explicit process isolation from outside Python/source files;
+physical runner Python absence and macOS 14 Intel trials are not claimed.
+The existing source Python matrix, coverage and owned-cluster checks remain
+required. Quality gate now depends on both complete matrices and refuses missing,
+failed, cancelled or skipped native results. This prepared wiring still needs
+actual hosted results before #49 can close.
+
 | Gate | Requirement |
 | --- | --- |
 | Production line coverage | At least 90%, measured independently |

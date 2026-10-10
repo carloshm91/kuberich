@@ -130,8 +130,9 @@ not the developer's interpreter or an install-only download. The reviewed
 `packaging/standalone/python-runtime.json` pins CPython 3.12.15 / upstream release
 20261009 independently for all four native targets, including size and SHA-256.
 The recipe validates the archive, native header, target metadata and original
-component notices before using its interpreter. Zstandard is an optional build
-dependency; the installed application does not require the standalone group.
+component notices before using its interpreter. Zstandard is confined to the
+development/build groups; the installed application does not require it or the
+standalone group.
 An already-downloaded exact archive can be supplied with `--interpreter-archive`;
 different bytes, architecture or interpreter metadata are rejected.
 
@@ -147,6 +148,28 @@ The macOS recipe now reads deployment floors from each actual Mach-O file and
 verifies collected code signatures with `codesign`; it distinguishes ad-hoc
 signatures from Developer ID and does not claim notarization. Pure format tests
 have passed; actual macOS build/signature/runtime evidence remains pending.
+
+The native qualifier checks the original Git inputs and archive bytes, extracts
+the exact archive outside the checkout, independently measures native floors and
+signatures, and runs CLI/browsing/auth/embedded-shell PTYs. Linux uses the pinned
+Python-free Ubuntu 22.04 base image. macOS uses a process sandbox that denies
+execution of outside interpreters and access to the source/development environment;
+this does not claim the physical macOS runner lacks Python. Original controls,
+helper compilation and terminal-restoration receipts are retained:
+
+```sh
+uv run python -m scripts.verify_standalone --candidate artifacts/standalone-local --evidence artifacts/standalone-runtime
+```
+
+Application quality now selects four native jobs independently of the source
+Python matrix: Ubuntu 22.04 x86_64/ARM64, macOS 14 ARM64 and macOS 15 Intel. The
+labels are recorded in GitHub's [standard runner reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
+Intel job measures the declared macOS 14 deployment floor but does not establish
+an actual macOS 14 Intel host trial. The required aggregate refuses missing,
+failed, cancelled or skipped native jobs and incomplete/wrong-target plans.
+Both Linux jobs run the extracted executable's real selected-container/TLS/RBAC
+shell scenarios on owned kind clusters. Hosted qualification of this wiring is
+still pending; no package/tag/release channel has been activated.
 
 ## Homebrew implementation
 

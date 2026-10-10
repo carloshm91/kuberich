@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.ci_policy import matrix
+from scripts.ci_policy import matrix, native_matrix
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -35,9 +35,13 @@ def run_gate(
 def successful_results() -> dict:
     return {
         "application": {"result": "success"},
+        "standalone": {"result": "success"},
         "plan": {
             "result": "success",
-            "outputs": {"matrix": json.dumps(matrix("pull_request", "refs/pull/143/merge"))},
+            "outputs": {
+                "matrix": json.dumps(matrix("pull_request", "refs/pull/143/merge")),
+                "native_matrix": json.dumps(native_matrix("pull_request", "refs/pull/143/merge")),
+            },
         },
     }
 
@@ -48,7 +52,7 @@ def test_successful_complete_matrix_passes() -> None:
     assert "complete application matrix succeeded" in result.stdout
 
 
-@pytest.mark.parametrize("job", ["plan", "application"])
+@pytest.mark.parametrize("job", ["plan", "application", "standalone"])
 @pytest.mark.parametrize("state", ["failure", "cancelled", "skipped", None])
 def test_unsuccessful_matrix_cannot_pass(job: str, state: str | None) -> None:
     results = successful_results()
@@ -106,3 +110,27 @@ def test_complete_plan_with_wrong_linux_runner_cannot_pass(event, ref, runner) -
     results["plan"]["outputs"]["matrix"] = json.dumps(planned)
     refused = run_gate(json.dumps(results), event, ref)
     assert refused.returncode == 1 and "complete matrix" in refused.stderr
+
+
+@pytest.mark.parametrize(
+    "corruption", ["missing", "invalid", "empty", "duplicate", "wrong-runner", "missing-target"]
+)
+def test_a_successful_native_job_cannot_hide_an_incomplete_native_plan(corruption):
+    results = successful_results()
+    planned = native_matrix("pull_request", "refs/pull/143/merge")
+    if corruption == "missing":
+        results["plan"]["outputs"].pop("native_matrix")
+    elif corruption == "invalid":
+        results["plan"]["outputs"]["native_matrix"] = "{invalid"
+    else:
+        if corruption == "empty":
+            planned["include"] = []
+        elif corruption == "duplicate":
+            planned["include"][1] = dict(planned["include"][0])
+        elif corruption == "wrong-runner":
+            planned["include"][0]["os"] = "ubuntu-latest"
+        else:
+            planned["include"].pop()
+        results["plan"]["outputs"]["native_matrix"] = json.dumps(planned)
+    result = run_gate(json.dumps(results))
+    assert result.returncode == 1 and "Quality gate failed" in result.stderr

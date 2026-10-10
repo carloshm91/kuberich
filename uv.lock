@@ -1004,6 +1004,7 @@ dev = [
     { name = "twine" },
     { name = "types-pyyaml" },
     { name = "types-regex" },
+    { name = "zstandard" },
 ]
 standalone = [
     { name = "pyinstaller" },
@@ -1039,6 +1040,7 @@ dev = [
     { name = "twine", specifier = ">=7.0.0,<8" },
     { name = "types-pyyaml", specifier = ">=6.0.12,<7" },
     { name = "types-regex", specifier = ">=2026.9.29.20261005,<2027" },
+    { name = "zstandard", specifier = "==0.25.0" },
 ]
 standalone = [
     { name = "pyinstaller", specifier = "==6.22.3" },
