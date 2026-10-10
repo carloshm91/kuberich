@@ -15,6 +15,7 @@ from kuberich.domain.resources import ApiResource
 from kuberich.errors import AppError
 from kuberich.services.aggregate_logs import AggregateLogs
 from tests.support.aggregate_logs import PODS, AggregateApi, reference, workload
+from tests.support.backend_heartbeat import HeartbeatDiagnostic, write_heartbeat_diagnostic
 from tests.support.resources import reader_fixture
 from tests.support.workspace import wait_for
 
@@ -241,23 +242,44 @@ async def test_many_tiny_lines_slow_source_heartbeat_and_two_levels_of_retention
 
         task = asyncio.create_task(owner.run(LogOptions(), retain, lambda message: None))
         pulse = asyncio.create_task(heartbeat())
+        diagnostic = HeartbeatDiagnostic(asyncio.get_running_loop().time)
         try:
-            await wait_for(lambda: api.active == 2)
-            await api.emit("pod-00", "app", b"x\n" * 32768)
-            await api.emit("pod-01", "app", b"slow-source-live\n")
-            await wait_for(late_received.is_set)
-            async with asyncio.timeout(30):
-                while received < 32770:
-                    await asyncio.sleep(0.005)
-            assert len(history.records) <= 600 and history.buffer.size_bytes <= 262144
-            assert all(len(numbers) <= 300 for numbers in history.by_source.values())
-            assert all(size <= 65536 for size in history.sizes.values())
-            assert len(heartbeats) > 3
-            assert max(b - a for a, b in pairwise(heartbeats)) < 0.15
+            with diagnostic:
+                await wait_for(lambda: api.active == 2)
+                await api.emit("pod-00", "app", b"x\n" * 32768)
+                await api.emit("pod-01", "app", b"slow-source-live\n")
+                await wait_for(late_received.is_set)
+                async with asyncio.timeout(30):
+                    while received < 32770:
+                        await asyncio.sleep(0.005)
+                assert len(history.records) <= 600 and history.buffer.size_bytes <= 262144
+                assert all(len(numbers) <= 300 for numbers in history.by_source.values())
+                assert all(size <= 65536 for size in history.sizes.values())
+                assert len(heartbeats) > 3
+                assert max(b - a for a, b in pairwise(heartbeats)) < 0.15
         finally:
             pulse.cancel()
             await asyncio.gather(pulse, return_exceptions=True)
-            await finish(owner, task, api)
+            try:
+                await finish(owner, task, api)
+            finally:
+                write_heartbeat_diagnostic(
+                    diagnostic,
+                    heartbeats,
+                    {
+                        "received_lines": received,
+                        "slow_source_received": late_received.is_set(),
+                        "retained_lines": len(history.records),
+                        "retained_bytes": history.buffer.size_bytes,
+                        "per_source_lines": list(map(len, history.by_source.values())),
+                        "per_source_bytes": list(history.sizes.values()),
+                        "after_close": {
+                            "owner_tasks": len(owner._owned),
+                            "api_log_streams": api.active,
+                            "api_watches": api.watch_active,
+                        },
+                    },
+                )
 
 
 @pytest.mark.asyncio
