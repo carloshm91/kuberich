@@ -302,6 +302,17 @@ and their original sources/artifacts are retained without reruns or replacement.
 
 ## Repeated owned lifecycle cohort
 
+The preceding production correction is now merged by PR #178 as `e095b28`.
+Original required Application run `38074520032` passed 4,432 Linux cases per
+Python version and 4,429 on macOS with three explicit Linux-only observer skips.
+Independent original review verified at least 99.08% lines, 96.84% branches and
+96.15% changed lines, all 43 critical modules at 100%, complete source-linked
+package/runtime/terminal/audit evidence and real owned-kind scenarios.
+Original Repository run `38074520162` binds 140 source files and 49 desktop plus
+49 mobile browser pages. The squash has the qualified source's exact tree and
+all 163 original sustained runtime inputs. Full release qualification remains
+separate; the following new test-only cohort still needs its own native checks.
+
 The owned HTTP/process cohort uses three warmup and 36 measured cycles for each
 of context/forward changes, slow large-watch consumers, forward startup
 cancellation and expiry/recovery after a held initial snapshot. Each cycle must

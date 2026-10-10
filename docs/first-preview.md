@@ -1,5 +1,22 @@
 # First things to try
 
+## Merged combined-load baseline: Refs Q03 #50
+
+[PR #178](https://github.com/carloshm91/kuberich/pull/178) merged as `e095b28`
+on 2026-10-10 after independent original-artifact review. Linux Python
+3.12/3.13/3.14 each passed 4,432 cases; macOS passed 4,429 plus three explicit
+Linux-only observer skips. Coverage measured at least 99.08% lines, 96.84%
+branches and 96.15% changed lines, with all 43 critical modules at 100%.
+Original package/installed-runtime/terminal/audit and owned-kind evidence passed;
+Repository evidence binds 140 Git inputs and 49 desktop plus 49 mobile pages.
+
+This baseline matches all 163 inputs of the original 30-minute combined-load
+observation: 99.077-ms input-to-painted-tail p95 and the declared memory plateau.
+The narrow reference-machine margin and original artifacts remain documented
+below. This qualifies the required PR matrix, not the six-environment release.
+The next PR adds only lifecycle/protocol tests and qualification documentation;
+its full native evidence is required before Q03 closes.
+
 ## Owned lifecycle verification in progress: Refs Q03 #50
 
 The new cleanup cohort passed five focused cases in each actual local Python
