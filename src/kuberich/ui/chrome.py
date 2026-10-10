@@ -47,7 +47,7 @@ K9S_THEME = Theme(
 
 POD_SHORTCUTS = (
     ("Enter", "Containers"),
-    ("l", "Logs"),
+    ("l/L", "Logs / aggregate"),
     ("x", "Shell"),
     ("F", "Forward ports"),
     ("d", "Details"),

@@ -3,9 +3,11 @@
 import asyncio
 import logging
 import threading
+from types import SimpleNamespace
 
 import pytest
 
+import kuberich.ui.standard as standard_ui
 from kuberich.config.schema import Settings
 from kuberich.domain.views import ViewStatus
 from kuberich.services.commands import GenericResourceCommand
@@ -150,6 +152,7 @@ async def test_mixed_date_column_keeps_equal_timestamp_order_and_cursor_after_wa
             table.move_cursor(row=1)
             await pilot.pause()
             before = table.capture_viewport()
+            assert before.selected == "owned-ten"
             path = "/apis/" + GROUP + "/v1/namespaces/team/widgets"
             await wait_for(lambda: path in owner.streams)
             await owner.update(path)
@@ -174,6 +177,75 @@ async def test_mixed_date_column_keeps_equal_timestamp_order_and_cursor_after_wa
                 "owned-ten",
             ]
             assert table.selected_uid == "owned-ten"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("keys", "selected", "column", "size", "horizontal"),
+    [
+        (("s", "down"), "owned-two", "c2", (80, 24), False),
+        (("down", "up"), "owned-ten", "name", (80, 24), False),
+        ((), "owned-missing", "name", (80, 24), False),
+        (("end",), "owned-ten", "name", (40, 12), True),
+        (("right",), "owned-ten", "name", (40, 12), True),
+    ],
+)
+async def test_initial_projection_preserves_public_selection_between_batches(
+    tmp_path, monkeypatch, keys, selected, column, size, horizontal
+):
+    entered, resume = asyncio.Event(), asyncio.Event()
+    original = standard_ui.asyncio
+
+    async def held_yield(delay):
+        if delay == 0 and not entered.is_set():
+            entered.set()
+            await resume.wait()
+        await original.sleep(delay)
+
+    monkeypatch.setattr(standard_ui, "asyncio", SimpleNamespace(sleep=held_yield))
+    dates = {
+        "ten": "2026-10-09T00:00:00Z",
+        "two": "45m",
+        "missing": "2026-10-09T02:00:00+02:00",
+    }
+    async with custom_api(CustomAPI(dates=dates)) as (url, owner):
+        app = app_for(tmp_path, url)
+        async with app.run_test(size=size) as pilot:
+            try:
+                await wait_for(entered.is_set)
+                table = app.custom_table
+                assert app.focused is table and table.row_count == 3
+                assert not table.has_class("populated")
+                if horizontal:
+                    await wait_for(lambda: table.max_scroll_x > 0)
+                    await pilot.pause()
+                if keys:
+                    await pilot.press(*keys)
+                    assert table.selected_uid == selected and table.sort_column == column
+                if horizontal:
+                    await wait_for(
+                        lambda: (
+                            table.scroll_x > 0
+                            and (keys != ("right",) or table.scroll_x == table.scroll_target_x)
+                        )
+                    )
+                    before = table.capture_viewport()
+                    await pilot.pause()
+                    assert table.scroll_x == before.x
+            finally:
+                resume.set()
+            await wait_for(lambda: table.has_class("populated"))
+            await pilot.pause()
+            assert table.selected_uid == selected and table.sort_column == column
+            if horizontal:
+                assert table.scroll_x == min(before.x, table.max_scroll_x) > 0
+            assert [row.key.value for row in table.ordered_rows] == [
+                "owned-missing",
+                "owned-ten",
+                "owned-two",
+            ]
+        assert app.sessions.client is None and app._render_task.done()
+    assert not owner.streams
 
 
 @pytest.mark.asyncio

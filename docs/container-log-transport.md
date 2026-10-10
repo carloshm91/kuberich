@@ -21,8 +21,8 @@ LogOptions supports follow, previous, timestamps, tailLines, sinceSeconds or an
 aware sinceTime. Defaults: follow and timestamps enabled, current logs, tail 1000.
 Tail accepts -1 for all or 0–1,000,000; -1 omits the API tailLines parameter,
 because the server rejects negative tail counts. SinceSeconds is 1–2,147,483,647. Time-window
-options are mutually exclusive and sinceTime is sent in UTC. Regular and init
-containers are supported; ephemeral/debug container browsing remains later work.
+options are mutually exclusive and sinceTime is sent in UTC. Regular, init and
+ephemeral/debug containers are supported.
 
 The log request uses wildcard Accept negotiation and consumes response bytes
 directly: the API server negotiates Kubernetes serializers before returning its
@@ -63,6 +63,17 @@ chunks/lines, including markers in discarded long-line suffixes. Marker scanning
 also respects an old end followed by a new begin on the same line. As with the
 inspection policy, arbitrary unlabelled sensitive prose is not universally
 recognizable. There is no raw-output reveal mode in this backend.
+
+S06 also validates apparently structured JSON at the decoder's completed-line
+boundary, before producing a retained `LogLine`. It decodes credential keys and
+escaped strings, redacts them and preserves safe object/array/scalar types rather
+than inserting unquoted redaction markers that invalidate JSON. Parsing is bounded
+to depth 16, 512 values and 8,192 serialized characters; invalid/excessive structured
+input becomes a visible safe placeholder. Ordinary bracket, date, number-with-text
+and keyword-with-text prefixes remain literal sanitized logs. Private-key block
+handling and long-line/control bounds still apply to single and aggregate readers.
+Aggregate admission may wait for new container-start evidence after a pre-open
+current-log 400; it never automatically retries an opened/ended stream.
 
 Run the focused contract and deterministic tests with:
 

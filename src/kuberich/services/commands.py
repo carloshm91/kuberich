@@ -43,6 +43,7 @@ class Command(Enum):
     RESUME = auto()
     REFRESH = auto()
     COLUMNS = auto()
+    LOGS_ALL = auto()
     UNAVAILABLE = auto()
 
 
@@ -104,6 +105,7 @@ ALIASES = {
     "resume": Command.RESUME,
     "refresh": Command.REFRESH,
     "columns": Command.COLUMNS,
+    "logsall": Command.LOGS_ALL,
 }
 
 

@@ -58,9 +58,14 @@ class CustomTable(StandardTable):
         self, rows: tuple[ResourceRow, ...], revision: int, is_current: Callable[[], bool]
     ) -> bool:
         result = await super().apply_rows(rows, revision, is_current)
-        pending = self._pending_viewport
-        if result and pending is not None:
+        if result:
             self._pending_viewport = None
-            if pending[0] == revision:
-                self.restore_viewport(pending[1])
         return result
+
+    def _initial_viewport(self) -> Viewport:
+        pending = self._pending_viewport
+        return (
+            pending[1]
+            if pending is not None and pending[0] == self._revision
+            else super()._initial_viewport()
+        )

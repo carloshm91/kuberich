@@ -1,5 +1,134 @@
 # First things to try
 
+## Aggregate logs checkpoint: S06 #54
+
+Ordinary Pod/workload rows now open all-container logs with Shift+L or `:logsall`.
+Lines retain namespace/Pod/container/UID identity; `c` selects at most eight
+readers, `s` filters retained output without opening readers, and `J` selects
+plain/JSON. Existing log navigation, windows, previous-instance, timestamps,
+pause/follow, copy/save and Pod Enter→containers→selected logs remain available.
+Workload membership follows controller UID chains; newly started regular/init/
+ephemeral containers enroll without replaying ended streams. Generic routes
+retain their read-only inspection contract.
+
+Exact tested command:
+`env COVERAGE_FILE=artifacts/aggregated-logs-54/final-focused.coverage uv run pytest -q tests/unit/test_aggregate_logs.py tests/unit/test_logs.py tests/contract/test_aggregate_logs.py tests/contract/test_logs.py tests/ui/test_aggregate_logs.py tests/ui/test_logs.py tests/terminal/test_aggregate_logs.py tests/packaging/test_distribution.py::test_installed_aggregate_logs_and_terminal_restore tests/quality/test_ci_policy.py --cov=kuberich --cov-branch`:
+200 cases passed in 168.18 seconds, including source/fresh-installed real PTYs,
+full retained-history heartbeat, JSON/clipboard/save, UID churn and context cleanup.
+The separate 1,996-case pure suite passed in 41.13 seconds. Aggregate decisions
+measure 207/207 lines and 68/68 branches. The latest decoder-boundary correction
+passed 120 cases in 4.51 seconds, with JSON decisions 49/49 lines and 18/18
+branches. A separate footer/lifecycle correction cohort passed 125 cases in
+72.61 seconds, including all three source/fresh-installed aggregate PTYs.
+`uv run python -m scripts.verify_aggregate_logs_kind --kind /PATH/TO/OWNED/kind`
+passed eleven actual checks, including Pending/init→app and waiting CrashLoop
+current/Previous enrollment without reopen, Deployment/CronJob ownership,
+ephemeral sources, Pod replacement and drained
+cleanup; its unique disposable cluster was deleted. These are local draft
+receipts: final frozen source/platform/coverage/install qualification remains
+required. The first frozen hosted source failed four existing header/terminal
+cases because a thirteenth shortcut clipped Help; the paired `l/L` hint corrects
+that regression without weakening the assertions. All four native jobs failed;
+Linux 3.12 and 3.13 additionally exceeded the 150-ms full-history heartbeat
+limit. Failed hosted and reproduced local sequences remain diagnostic evidence.
+An intermediate layout retained styled segments and limited expensive visible
+Strip caches to 128 entries. It preserved complete retained layouts and public
+navigation. Earlier direct-Strip and fixture-isolation attempts still exceeded
+150 ms; those failed receipts remain preserved. That lightweight layout passed
+an ordinary Python 3.13 64-case sequence in 185.98 seconds at 120.06 ms, with
+normal GC and the unchanged 150-ms limit.
+The correction cohort passed sixteen layout/UI/source/fresh-installed PTY cases
+in 79.72 seconds. Its Python 3.12 affected cohort passed 217 cases in
+202.47 seconds, including sequential 5,000-record/control/replay cycles and
+public Escape/drain at a 126.70-ms maximum heartbeat with normal GC enabled.
+It also checks 15,000 delivered lines, 5,000 retained layouts, paging/cache bounds,
+resize anchors and actual fresh Head-window text. Its actual hosted replacement
+`23d0dfb` then failed Linux 3.12/3.13 at 238.49/207.72 ms; macOS 3.12 and Linux
+3.14 passed. That source remains superseded, not qualified. The next correction
+retains primitive text/cell-width/highlight descriptions and constructs actual
+styled segments only for viewed rows, with the same 128-entry cache. Sanitized
+aggregate projections also avoid redundant LogEntry/LogLine wrappers. Theme-only
+color changes and folded Unicode highlights pass actual rendering probes. The
+ordered full-catalogue diagnostic still failed at 182.36 ms with a 176.93-ms
+generation-two collection during second-round mode/timestamp/copy. Its failed
+receipt is preserved. The next narrow correction also avoids transient Rich
+objects and span calculations for plain unwrapped rows. Ordered diagnosis still
+failed at 182.63 ms, now at a Pilot callback allocation. Outside-measurement
+attribution found development-only IRI grammar and pytest catalogue roots absent
+from the installed runtime; all prior apps were gone. The reviewed required
+fresh-process scenario retains the 150-ms/default-GC/two-full-round contract and
+warms genuine same-app table/viewer/source-picker/theme/40+100-column caches.
+Its first local pair measured 133.83 ms for the successful scenario and 207.54 ms
+for a deliberate 200-ms callback that failed the exact heartbeat assertion; both
+drained. That initial pair merged only its successful positive branch coverage.
+The subsequent Python 3.12 cohort failed at 196.94 ms during warm
+navigation (245 passed, one failed). Ordinary paired diagnosis measured 177.48 ms
+with coverage's CTracer versus 112.49 ms uninstrumented, with identical controls
+and default GC. Required runtime positive/negative checks now run uninstrumented;
+a third mandatory full functional replay collects branch coverage, whose timing
+is marked nonqualifying. Only that successful replay merges through
+`uv run python -m scripts.merge_runtime_coverage` before unchanged coverage gates.
+The required local Python 3.12 trio passed: runtime positive
+113.04 ms/two full rounds, deliberate negative 204.65 ms/exact heartbeat failure,
+and successful instrumented full replay with nonqualifying 176.11-ms timing.
+All drained; the actual merge verified the 109-module parent/replay arc union.
+The final Python 3.12 affected cohort passed all 258 cases in 290.09 seconds,
+including source/fresh-installed terminals and the three-mode contract at a
+115.74-ms runtime maximum. Its signed `b9ecbf3` replacement subsequently failed
+required Linux 3.12 at 160.96 ms during warmed resource navigation, despite the
+other three native environments passing. That source is unqualified and the
+failed original receipts remain retained. A narrow table-rendering correction
+now resolves the inherited style once per synchronous frame, preserving themes,
+nested renders and visible output. Its ordinary Python 3.12 runtime/table cohort
+passed four cases in 97.73 seconds: 112.73-ms positive/two rounds, a deliberate
+201.31-ms negative heartbeat failure, and successful functional coverage replay.
+The unchanged GC, warm-up, history and 150-ms bounds remain required. Fresh signed
+source and full native qualification are still pending; local results do not
+qualify a release. The broader affected cohort then passed 353 cases in 546.32 s,
+including existing Pod/standard/custom table navigation and source/fresh-installed
+terminals. Its runtime maximum was 103.87 ms across both full-history rounds;
+the deliberate negative failed exactly at 205.98 ms, and the functional replay
+completed with nonqualifying timing. The original logo-settle reflow regression
+also passed separately. These remain local, precommit results.
+The signed `dcde9d6` candidate then passed Linux 3.13/3.14 but failed macOS on a
+real initial-table cursor race and Linux 3.12 during the later aggregate-kind
+CrashLoop enrollment check. All original runtime controls passed; the candidate
+remains unqualified. Public sort/cursor input is now preserved across the initial
+batch yield and pending custom-layout restoration. Eight focused Python 3.12
+cases and independent owned HTTP/Pilot reproductions pass. The original kind
+timeout's cause remains unresolved; revised bounded per-mode diagnostics and
+owned-instance preconditions preserve the original 120-second assertions without
+changing transport or retries. Its local 11-check kind trial passed and deleted
+the disposable cluster. Fresh final-head native checks are still required.
+The broader selection cohort passed 356 cases, with a 118.34-ms uninstrumented
+runtime maximum and complete ownership drain. Further independent public End
+evidence demonstrated horizontal scroll returning to zero at the initial commit.
+The correction now preserves cursor/sort/horizontal input through both that
+commit and pending callbacks. Ten focused cases pass, including End/Right at
+40×12 and existing UID/top/vertical-scroll and compatible-layout controls; a
+fresh frozen matrix remains required.
+The final affected cohort passed 358 cases in 522.88 s, with 118.67-ms runtime,
+207.73-ms deliberate heartbeat failure and successful functional replay. The
+verified 109-module coverage union and original child/parent receipts remain
+separate from historical failures. The focused public-input verification command
+was:
+
+```sh
+uv run --python 3.12 pytest \
+  tests/ui/test_custom_resources.py::test_initial_projection_preserves_public_selection_between_batches \
+  tests/ui/test_custom_resources.py::test_mixed_date_column_keeps_equal_timestamp_order_and_cursor_after_watch \
+  tests/ui/test_standard_table.py tests/ui/test_custom_table.py \
+  -q --tb=short --junitxml=artifacts/aggregated-logs-54/frame-failure/horizontal-complete312.xml
+```
+
+These are local working-source results; the next signed head must pass all fresh
+required native checks before merge.
+See
+[controls and limits](log-viewer.md#all-container-and-workload-logs-s06-54)
+and [acceptance evidence](acceptance/aggregated-logs.md). Embedded-shell
+scrollback/search/copy qualification remains open in #123; no provider trial or
+publication is part of this checkpoint.
+
 ## Generic resource browser checkpoint: B06 #53
 
 The terminal now browses discovered CRDs and other live APIs with qualified
@@ -23,7 +152,7 @@ The date-order correction passed 167 cases in 67.02 seconds with
 Equal timestamp/offset rows retain order after unrelated cached watch updates;
 mixed timestamp/duration columns use documented groups. Earlier `98412c8` hosted
 green checks are superseded by this demonstrated correction. Its replacement
-requires the full hosted gates again.
+passed the full required hosted gates.
 The rebased unit/session/process/navigation/context cohort passed 2,150 cases.
 The source native command
 `uv run pytest tests/terminal/test_custom_resources.py -q --tb=short`
@@ -31,8 +160,17 @@ passed one case in 3.18 seconds with terminal restoration and redacted output.
 The actual cluster command is
 `uv run python -m scripts.verify_custom_resources_kind --kind artifacts/custom-browser-53/tools/kind --evidence artifacts/custom-browser-53/kind-recreated.json`:
 all nine checks passed, including real generic UI/live/removal/recreation recovery, and the
-owned disposable cluster was deleted. Full source/platform/coverage/artifact
-qualification remains in progress on the issue branch. See
+owned disposable cluster was deleted. PR #170 merged as
+`57af8ae6a5540a3fb9baf5b8cd4282d3914ef900`; #53 is completed. The corrected head
+`a6cc4ad9704083142f554af7501f856d97d252b2` and actual tested PR merge checkout
+`274037f0281996897bbbffde4594d8365ba6bd51` have the same tree as that merge.
+[Application run 37959023794](https://github.com/carloshm91/kuberich/actions/runs/37959023794)
+passed 3,919 cases in each of the four native jobs, with all 41 critical modules
+at 100%, minimum 99.1551% production lines, 97.0660% branches and 97.61% changed
+lines. All eight required checks succeeded. Independent artifact/provenance,
+wheel/sdist payload, actual uv/pipx installs, source/installed PTYs, ten then-
+required cluster rehearsals plus lifecycle/quickstart and both browser surfaces
+were verified. See
 [the guide](standard-resources.md#generic-discovered-resources-b06-53) and
 [acceptance evidence](acceptance/generic-resource-browser.md).
 

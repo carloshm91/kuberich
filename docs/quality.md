@@ -126,6 +126,63 @@ fresh-wheel native terminals cover initial discovery, columns, inspection,
 scope/refresh and restoration. The existing required Linux 3.12
 `scripts.verify_custom_resources_kind` now also exercises the actual generic
 browser against both CRD scopes, live changes and removal/core recovery.
+S06 adds `domain/aggregate_logs.py` and `domain/log_json.py` to the 100% critical
+inventory. Pure decisions cover exact controller-chain ownership, container-start
+evidence, independently bounded retention and post-parse JSON redaction.
+Owned HTTP/Pilot cases cover interleaving, Pending/init/ephemeral startup,
+pre-open 400 evidence changes, manual admission, same-name UID churn, expired
+selection, source/status bounds, noise/slow-source heartbeat and detached-export
+cleanup before context-client close. Source and fresh-installed console/module
+PTYs exercise actual controls, resize, exit and terminal restoration.
+The required 5,000-row UI benchmark runs from its full-suite test node in an owned
+fresh pytest process. The full development catalogue imports a development-only
+IRI grammar through the SBOM validator: diagnosis found roughly 327,000 retained
+roots versus 93,500 from production UI imports. After prior suite apps, fixture
+preparation reached 489,434 roots and 168–211-ms collections before the benchmark
+app existed. The development grammar is absent from installed runtimes.
+The fresh process keeps normal GC and its default thresholds. It warms genuine
+runtime caches through four same-app Pod/ReplicaSet viewer reopens, source-picker
+admission cycles, theme changes and 40/100-column geometries under the heartbeat;
+it never clears library caches. It then measures two full 5,000-record layout/
+format/timestamp/copy/save and Current/Previous cycles, with the unchanged 150-ms
+limit, at most 5,000 prepared records and 5,001 retained-plus-prepared records.
+Public Escape and final application/API cleanup must drain all owned work.
+An independent child runs that same node with a deliberate 200-ms UI callback and
+must fail specifically the heartbeat assertion, then drain. Both runtime children
+require inactive coverage and no tracing/profile callback. A third mandatory
+child repeats the entire warmed two-round functional scenario under branch
+coverage, retaining every non-time behavior assertion. Its timing is explicitly
+nonqualifying: ordinary paired Python 3.12 evidence measured 177.48 ms with the
+pinned coverage 7.16.2 CTracer versus 112.49 ms without instrumentation; CSS
+reparse/update cost nearly doubled. Installed runtimes have no coverage tracer.
+The runtime children keep the original 150-ms assertions and the deliberate
+200-ms negative control. The parent requires all three results, actual coverage
+version/core and trace/profile type facts, exact source/input hashes, unique
+nonces, XML and import inventories;
+timeouts, missing/stale evidence and other failures fail closed. Each child owns
+its process group, 120-second deadline and bounded output; only the functional
+replay owns separate coverage files.
+Phase/CPU/GC diagnostics remain under `artifacts/ui/aggregate-heartbeat.json`;
+original positive, negative and instrumented replay artifacts are retained under
+`artifacts/ui/aggregate-runtime/`.
+A separate 15,000-line
+case retains 5,000 lightweight layouts, saturates the 128-entry visible Strip
+cache through public paging, preserves its resize anchor, and checks current
+identity and actual rendered text after a fresh Head 1000 window. Its receipt is
+`artifacts/ui/log-layout-cache.json`. These additional caches are separate from
+the text-retention byte bound; sustained-load/RSS qualification remains Q03.
+Pod, standard/custom and aggregate source-picker tables resolve their inherited
+Rich style once per synchronous visual frame. Pilot checks exact reference
+segments/cell widths, selected/scrolling rows, theme/hidden changes, nested renders
+and recovery after a render exception; no style persists into a later frame.
+Required Linux 3.12 `scripts.verify_aggregate_logs_kind` verifies actual
+Deployment→ReplicaSet→Pod and CronJob→Job→Pod membership, matching-label rejection,
+regular/init/ephemeral sources, starting→logs without replay, Pod replacement and
+drained UI/backend ownership. Its receipt is `artifacts/cluster/aggregate-logs-kind.json`.
+CrashLoop Current/Previous trials each require an observed waiting Pod and an
+available owned log instance before enrollment. Failure receipts retain bounded
+mode, source/task status and Pod container state without log payloads; the
+120-second enrollment limit and no-replay behavior remain unchanged.
 C08 adds bounded credential-response validation and captured proxy/TLS decisions
 in `domain/exec_credentials.py` and `domain/proxies.py` to the 100% critical
 inventory. Real token-file/certificate renewal, HTTP CONNECT and SOCKS5 contracts
@@ -148,9 +205,13 @@ sdist-to-wheel equivalence and actual isolated uv tool/pip-backed pipx installs.
 Each interpreter runs installed CLI/navigation/shell trials outside the checkout.
 Installer evidence is retained under `artifacts/packaging`; installed dependencies
 are measured independently of the development lock. Tool subprocesses own their
-process group and reap children on timeout. Application jobs allow 45 minutes
+process group and reap children on timeout. Application jobs allow 60 minutes
 for the measured full suite, cold pip-backed installs and owned cluster checks,
-including the setup/body cancellation qualification added in Q01 #38.
+including the setup/body cancellation qualification added in Q01 #38. Main
+run 37964239155's Linux 3.12 job took 39 minutes 11 seconds before S06's extra
+rehearsal, native installs and churn/lifecycle cases; the former 45-minute budget
+left 5 minutes 49 seconds for that work and host/setup variation. S06 raises
+only the job deadline; every check remains required.
 
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
@@ -199,9 +260,21 @@ change; do not bypass the current checks with a pragma or command-line filter.
 
 ```sh
 uv run pytest --cov=kuberich --cov-branch --cov-report=xml --cov-report=json
+uv run python -m scripts.merge_runtime_coverage
 uv run python scripts/check_coverage.py coverage.json
 uv run diff-cover coverage.xml --compare-branch origin/main --fail-under 90 --total-percent-float
 ```
+
+The runtime coverage helper verifies both required runtime controls and the
+successful instrumented replay against the current source, then merges only that
+replay's branch data into the full
+parent measurement. It preserves the original parent database/reports in an
+exclusive nonce-bound directory, verifies the exact per-file arc union over the
+whole production inventory and regenerates JSON/XML before the unchanged gates.
+The runtime children generate no coverage database. Hashes and provenance
+are retained in `artifacts/ui/coverage-merge-receipt.json`; missing, stale, tampered
+or missing-replay evidence rejects the merge. The full functional/audit suite and
+every production, critical-module and changed-line floor remain mandatory.
 
 `scripts/check_coverage.py` compares coverage.json's file inventory to every
 Python file under src/kuberich, including unimported namespace-package modules.
@@ -244,7 +317,7 @@ There are no path filters or allowed matrix failures.
 
 Each selected job still runs the complete behavioral/terminal/packaging suite,
 independent coverage gates, build and supply-chain verification. Linux 3.12 keeps
-all eleven actual disposable-cluster rehearsals. The macOS baseline is a development
+all twelve actual disposable-cluster rehearsals. The macOS baseline is a development
 check, not qualification of macOS 3.13/3.14. The planner refuses unknown events
 and non-main push/dispatch refs. PR checks stay on `pull_request`; a manual
 dispatch never substitutes for the required PR checks. Concurrency groups include

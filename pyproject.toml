@@ -162,5 +162,7 @@ critical_modules = [
     "src/kuberich/domain/inspection.py",
     "src/kuberich/domain/logs.py",
     "src/kuberich/domain/log_view.py",
+    "src/kuberich/domain/aggregate_logs.py",
+    "src/kuberich/domain/log_json.py",
     "src/kuberich/services/sessions.py",
 ]

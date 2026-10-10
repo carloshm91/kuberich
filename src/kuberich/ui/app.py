@@ -26,6 +26,7 @@ from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.adapters.terminal import current_terminal_size
 from kuberich.config.catalog import KubeCatalog
 from kuberich.config.schema import Settings
+from kuberich.domain.aggregate_logs import workload_kind
 from kuberich.domain.connections import (
     DEFAULT_CONNECTION,
     ConnectionRequest,
@@ -53,6 +54,7 @@ from kuberich.errors import AppError, ExecutableUnavailable
 from kuberich.security.arguments import validate_argument
 from kuberich.security.presentation import safe_text
 from kuberich.services.access import AccessPolicy, Action
+from kuberich.services.aggregate_logs import AggregateLogs
 from kuberich.services.attach import AttachService
 from kuberich.services.commands import (
     Command,
@@ -82,6 +84,7 @@ from kuberich.services.shell import ShellService
 from kuberich.services.transfers import TransferService
 from kuberich.services.workloads import WorkloadService
 from kuberich.services.workspace import ViewSubscription, WorkspaceService
+from kuberich.ui.aggregate_logs import AggregateLogScreen
 from kuberich.ui.chrome import (
     CTX_SHORTCUTS,
     K9S_THEME,
@@ -166,6 +169,7 @@ class HelpScreen(ModalScreen[None]):
                         "Context sessions and live pod synchronization are available. "
                         "Pod rows, container logs and embedded shells are available.\n"
                         "l                 Selected pod logs (regular / init)\n"
+                        "Shift+L / :logsall Aggregate Pod/workload logs (8 readers); c sources, s display filter, J plain/JSON.\n"
                         "Logs: g/G first/last, j/k, / search, p pause, f follow, ? controls.\n"
                         "Enter             Pod containers → container logs\n"
                         "x / :shell        Choose a pod's container for its shell\n"
@@ -208,6 +212,7 @@ class KubeRichApp(App[None]):
         Binding("e", "inspect_events", "Events"),
         Binding("E", "edit", "Edit", key_display="Shift+E"),
         Binding("l", "logs", "Logs"),
+        Binding("L", "logs_all", "Aggregate logs", key_display="Shift+L"),
         Binding("x", "shell", "Shell"),
         Binding("F", "port_forward", "Port forward", key_display="Shift+F"),
         Binding("c", "contexts", "Contexts"),
@@ -250,6 +255,7 @@ class KubeRichApp(App[None]):
         self._view_task: asyncio.Task[None] | None = None
         self._render_task: asyncio.Task[None] | None = None
         self._render_ready = asyncio.Event()
+        self._aggregate_screens: set[AggregateLogScreen] = set()
         self._input_completion: asyncio.Future[None] | None = None
         self.history = NavigationHistory()
         self._restore_state: tuple[int, NavigationState] | None = None
@@ -833,6 +839,11 @@ class KubeRichApp(App[None]):
             self.forwards.stop_for_client(client),
             *(
                 screen.stop_owned()
+                for screen in tuple(self._aggregate_screens)
+                if screen.owner.client is client
+            ),
+            *(
+                screen.stop_owned()
                 for screen in tuple(self.screen_stack)
                 if isinstance(
                     screen, (AnnotationScreen, EditingScreen, WorkloadScreen, TransferScreen)
@@ -1155,6 +1166,36 @@ class KubeRichApp(App[None]):
             if containers_first
             else LogScreen(stream, containers, chrome=self.chrome, trail=self.breadcrumbs.trail)
         )
+
+    def action_logs_all(self) -> None:
+        if self._aggregate_screens:
+            self._set_status(
+                "Previous aggregate logs are closing; wait for owned cleanup to finish."
+            )
+            return
+        if self.custom_table.display:
+            self._set_status(
+                "Generic resources retain read-only inspection; use an ordinary Pod/workload view for aggregate logs."
+            )
+            return
+        selection = self._capture_target()
+        if selection is None:
+            return
+        client, resource, _, target, current = selection
+        try:
+            workload_kind(target)
+            owner = AggregateLogs(client, resource, target, self.commands.policy, current)
+        except AppError as error:
+            self._set_status(str(error))
+            return
+        screen = AggregateLogScreen(
+            owner,
+            chrome=self.chrome,
+            trail=self.breadcrumbs.trail,
+            stopped=lambda: self._aggregate_screens.discard(screen),
+        )
+        self._aggregate_screens.add(screen)
+        self.push_screen(screen)
 
     def _capture_target(
         self,
@@ -1527,6 +1568,21 @@ class KubeRichApp(App[None]):
         self.screen_stack[0].set_class(event.size.height < 16, "short")
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        if action == "logs_all" and (
+            self.custom_table.display
+            or self._resource_name
+            not in {
+                "pods",
+                "deployments",
+                "replicasets",
+                "statefulsets",
+                "daemonsets",
+                "jobs",
+                "cronjobs",
+                "replicationcontrollers",
+            }
+        ):
+            return False
         if self.custom_table.display and action == "edit":
             return False
         if action == "port_forward" and self._resource_name not in {"pods", "services"}:
@@ -1546,6 +1602,7 @@ class KubeRichApp(App[None]):
             "inspect_events",
             "edit",
             "logs",
+            "logs_all",
             "shell",
             "attach",
             "upload",
@@ -1646,6 +1703,7 @@ class KubeRichApp(App[None]):
             return
         action_command = command.command if isinstance(command, ScopedCommand) else command
         if self.custom_table.display and action_command in {
+            Command.LOGS_ALL,
             Command.SHELL,
             Command.ATTACH,
             Command.UPLOAD,
@@ -1700,6 +1758,8 @@ class KubeRichApp(App[None]):
             self._refresh_discovery()
         elif command is Command.COLUMNS:
             self._configure_columns()
+        elif command is Command.LOGS_ALL:
+            self.action_logs_all()
         elif command is Command.LOGIN:
             self.action_login()
         elif command is Command.BACK:

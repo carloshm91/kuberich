@@ -134,6 +134,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     commands = "\n".join(step.get("run", "") for step in application["steps"])
     for required in (
         "pytest --cov=kuberich --cov-branch",
+        "scripts.merge_runtime_coverage",
         "scripts/check_coverage.py coverage.json",
         "diff-cover coverage.xml",
         "--fail-under 90",
@@ -149,11 +150,18 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
         "scripts.verify_credential_interop_kind",
         "scripts.verify_transfers_kind",
         "scripts.verify_custom_resources_kind",
+        "scripts.verify_aggregate_logs_kind",
         "scripts.verify_quickstart",
         "uv build",
         "twine check",
     ):
         assert required in commands
+    assert (
+        commands.index("pytest --cov=kuberich --cov-branch")
+        < commands.index("python -m scripts.merge_runtime_coverage")
+        < commands.index("scripts/check_coverage.py coverage.json")
+    )
+    assert "scripts/merge_runtime_coverage.py" in commands
     assert "git rev-parse HEAD^" in commands
     assert gate["name"] == "Quality gate" and gate["if"] == "${{ always() }}"
     assert set(gate["needs"]) == {"plan", "application"}
@@ -166,7 +174,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     cluster_steps = [
         step for step in application["steps"] if "python -m scripts.verify" in step.get("run", "")
     ]
-    assert len(cluster_steps) == 12
+    assert len(cluster_steps) == 13
     for step in cluster_steps:
         assert step["if"] == "${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}"
     upload = next(

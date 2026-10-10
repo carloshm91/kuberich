@@ -31,6 +31,14 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Aggregate regular/init/ephemeral container and workload-Pod logs with stable
+  source/UID prefixes, verified controller membership, bounded reader admission,
+  per-source/aggregate retention, source picker/filter and plain/JSON exports.
+  Enroll newly started containers without replaying ended streams; drain even
+  dismissed export work before context-client cleanup.
+- Preserve useful JSON log fields and scalar types while redacting decoded
+  credential keys/strings within strict depth/expansion/control bounds.
+
 - Prepare a protected main-only Cloudflare Pages publication of both development
   website surfaces, preserving checked artifact bytes and verifying live HTTPS
   digests, response headers and 404s. Retain source/deployment and partial-failure

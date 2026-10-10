@@ -14,6 +14,7 @@ from textual.widgets import DataTable
 
 from kuberich.domain.pods import PodColumn, PodRow, order, utc_now
 from kuberich.security.presentation import safe_text
+from kuberich.ui.presentation import FrameTable
 
 
 @dataclass(frozen=True)
@@ -41,7 +42,7 @@ class Viewport:
     top: str | None
 
 
-class PodTable(DataTable[PodCell]):
+class PodTable(FrameTable[PodCell]):
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("s", "next_sort", "Sort"),
         Binding("S", "reverse_sort", "Reverse sort", show=False),

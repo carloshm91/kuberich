@@ -614,7 +614,15 @@ See [the transport contract](container-log-transport.md).
 `domain/log_view.py` owns retained line identities, marks, read windows and
 clipboard bounds. `ui/log_body.py` virtualizes retained line layouts, yields
 layout work, preserves viewport identity and separates navigation follow from
-reception pause. `ui/logs.py` owns one serialized read controller, batched render
+reception pause. Primitive immutable text/cell-width/highlight descriptions retain
+the full bounded layout;
+actual Textual Strips use a 128-entry visible cache keyed by line/subline and
+checked against the current descriptor identity. Rich wrapped highlight ranges
+survive folding; style construction occurs only for viewed rows. Theme changes
+invalidate visible styles even without a new layout or incoming data.
+Invalidation clears both caches. The aggregate formatter hands the widget
+sanitized `(number, text)` pairs, avoiding another LogEntry/LogLine object pair.
+`ui/logs.py` owns one serialized read controller, batched render
 task and optional save task. Changing options cancels and awaits the old read;
 dismissal cancels tasks before widgets are removed and unmount drains them.
 
@@ -630,6 +638,37 @@ an exclusive mode-0600 file, never replacing an existing file/symlink. Explicitl
 requested file work is drained even if the viewer closes. Captured pod/client
 invalidation clears the viewer and prevents later display/copy/save, including
 while a child prompt is open. See [the viewer contract](log-viewer.md).
+
+## S06 aggregate log ownership
+
+`domain/aggregate_logs.py` owns controller-chain membership, per-container start
+evidence, stable source identity and independently bounded source/aggregate
+retention. Controller UID indexes avoid Pod×intermediate scans. Spec/Pod phase
+alone does not open a reader: each regular/init/ephemeral container requires
+running/terminated log evidence, with valid last-terminated fallback for waiting
+containers and independently selected Previous history. `domain/log_json.py` bounds JSON decode and
+post-decode redaction at the shared decoder boundary, preserving useful safe
+fields and scalar types before any emitted line.
+
+`services/aggregate_logs.py` owns one captured client/GVR/parent UID, Pod
+LIST/WATCH, optional ReplicaSet/Job LIST/WATCH, admission controller and at most
+eight `LogStream` readers. Each reader validates Pod UID/container and source
+generation. Shared decoder chunk/final framing runs through the existing owned
+parser worker and drains before cancellation returns. A pre-open current-log 400 can retry only after changed start
+evidence; opened/ended streams do not auto-replay. Explicit picker admission is
+independent of display filtering. Current metadata caps at 256 sources and
+refuses excess; recent removed status caps at 64. Per-source history caps at
+500 lines/256 KiB and aggregate history at 5,000 lines/4 MiB, accounting for both
+plain/JSON presentation. Arrival IDs establish order; timestamps do not.
+
+`ui/aggregate_logs.py` reuses the log viewer controls and owns serialized worker
+formatting/export. It patches source rows by identity, retains an expired selected
+row safely and invalidates layout caches when mode/timestamps change. The app
+retains at most one aggregate screen in an ownership registry until cleanup
+finishes, even after dismissal removes it from the visible stack.
+`SessionService.before_close` drains this registry before client/TLS cleanup.
+All watches/readers/render/copy/save work is cancelled and awaited on leave or
+context replacement. See [aggregate controls and limits](log-viewer.md#all-container-and-workload-logs-s06-54).
 
 ## Enter navigation feedback: #115
 
@@ -651,6 +690,12 @@ Stale targets disable container selection; the log service still verifies the
 captured pod UID and declared container before and after opening the API stream.
 The container list is a snapshot; reopening refreshes it. Live container status
 and broader resource drill-down remain #61; ephemeral containers remain #78.
+
+`ui/presentation.FrameTable` captures the inherited Rich style once for a
+synchronous `render_lines` call in Pod, standard/custom and aggregate source-picker
+tables. Nested renders share that immutable frame style; `finally` restores the
+enclosing value, so failures or later theme, visibility and layout changes cannot
+retain stale colors. It retains DataTable's rows, cursor, events and rendering.
 
 This uses public [Textual DataTable](https://textual.textualize.io/widgets/data_table/)
 row events/actions and [Input](https://textual.textualize.io/widgets/input/) submissions.

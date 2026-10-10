@@ -2,10 +2,16 @@
 
 import asyncio
 from bisect import bisect_right
+from collections import OrderedDict
 from collections.abc import Callable
+from itertools import pairwise
 from typing import ClassVar
 
-from rich.text import Text
+from rich.cells import cell_len
+from rich.control import strip_control_codes
+from rich.segment import Segment
+from rich.style import Style
+from rich.text import Span, Text
 from textual.binding import Binding, BindingType
 from textual.geometry import Size
 from textual.message import Message
@@ -13,6 +19,12 @@ from textual.scroll_view import ScrollView
 from textual.strip import Strip
 
 from kuberich.domain.log_view import LogEntry
+
+VISIBLE_CACHE = 128
+
+
+type PreparedEntry = tuple[int, str]
+type Subline = tuple[str, int, tuple[tuple[int, int, bool], ...]]
 
 
 class LogBody(ScrollView, can_focus=True):
@@ -39,10 +51,12 @@ class LogBody(ScrollView, can_focus=True):
         self.follow = True
         self.column_lock = False
         self.programmatic = False
-        self.rows: list[tuple[int, tuple[Strip, ...]]] = []
+        self.rows: list[tuple[int, tuple[Subline, ...]]] = []
         self.starts: list[int] = []
         self.matches: list[int] = []
-        self._cache: dict[int, tuple[tuple[object, ...], tuple[Strip, ...]]] = {}
+        self._cache: dict[int, tuple[tuple[object, ...], tuple[Subline, ...]]] = {}
+        self._strips: OrderedDict[tuple[int, int], tuple[Subline, Strip]] = OrderedDict()
+        self._layout_style = Style.null()
         self.render_batches = 0
         self.navigation_revision = 0
 
@@ -61,7 +75,7 @@ class LogBody(ScrollView, can_focus=True):
 
     async def load(
         self,
-        entries: tuple[LogEntry, ...],
+        entries: tuple[LogEntry | PreparedEntry, ...],
         *,
         wrap: bool,
         timestamps: bool,
@@ -71,34 +85,64 @@ class LogBody(ScrollView, can_focus=True):
     ) -> None:
         if not valid():
             return
-        retained = {entry.number for entry in entries}
+        retained = {entry.number if isinstance(entry, LogEntry) else entry[0] for entry in entries}
         self._cache = {number: value for number, value in self._cache.items() if number in retained}
         width = max(1, self.scrollable_content_region.width)
+        style = self.rich_style
+        keys = (
+            (width if wrap else None, timestamps, query, False),
+            (width if wrap else None, timestamps, query, True),
+        )
         rows, starts, matches = [], [], []
         height, maximum_width = 0, width
         for index, entry in enumerate(entries):
-            value = entry.text(timestamps)
-            key = (width if wrap else None, timestamps, query, entry.number in marks)
-            cached = self._cache.get(entry.number)
+            number, value = (
+                (entry.number, entry.text(timestamps)) if isinstance(entry, LogEntry) else entry
+            )
+            key = keys[number in marks]
+            cached = self._cache.get(number)
             if cached is None or cached[0] != key:
-                prefix = "* " if entry.number in marks else "  "
-                text = Text(prefix + value, style=self.rich_style)
-                if query:
-                    text.highlight_words([query], style="reverse bold", case_sensitive=True)
-                parts = text.wrap(self.app.console, width, overflow="fold") if wrap else [text]
-                strips = tuple(
-                    Strip(part.render(self.app.console)).apply_style(self.rich_style)
-                    for part in parts
-                )
-                self._cache[entry.number] = key, strips
+                prefix = "* " if number in marks else "  "
+                plain = prefix + value
+                if not wrap and not query:
+                    plain = strip_control_codes(plain)
+                    strips: tuple[Subline, ...] = ((plain, cell_len(plain), ()),)
+                else:
+                    text = Text(plain, style=style)
+                    if query:
+                        text.highlight_words([query], style="reverse bold", case_sensitive=True)
+                    parts = text.wrap(self.app.console, width, overflow="fold") if wrap else [text]
+                    rendered = []
+                    for part in parts:
+                        plain = part.plain
+                        ranges = tuple(
+                            (span.start, span.end, span.style == "reverse bold")
+                            for span in part.spans
+                        )
+                        if ranges:
+                            points = sorted(
+                                {
+                                    0,
+                                    len(plain),
+                                    *(point for start, end, _ in ranges for point in (start, end)),
+                                }
+                            )
+                            cells = sum(
+                                cell_len(plain[start:end]) for start, end in pairwise(points)
+                            )
+                        else:
+                            cells = cell_len(plain)
+                        rendered.append((plain, cells, ranges))
+                    strips = tuple(rendered)
+                self._cache[number] = key, strips
             else:
                 strips = cached[1]
-            rows.append((entry.number, strips))
+            rows.append((number, strips))
             starts.append(height)
             height += len(strips)
-            maximum_width = max(maximum_width, *(strip.cell_length for strip in strips))
+            maximum_width = max(maximum_width, *(strip[1] for strip in strips))
             if query and query in value:
-                matches.append(entry.number)
+                matches.append(number)
             if index % 16 == 0:
                 await asyncio.sleep(0)
                 if not valid():
@@ -107,6 +151,17 @@ class LogBody(ScrollView, can_focus=True):
             return
         anchor, x = self.first_visible, self.scroll_x
         self.rows, self.starts, self.matches = rows, starts, matches
+        if self._layout_style != style:
+            self._strips.clear()
+        self._layout_style = style
+        for visible_key, (line, _) in tuple(self._strips.items()):
+            cached_line = self._cache.get(visible_key[0])
+            if (
+                cached_line is None
+                or visible_key[1] >= len(cached_line[1])
+                or cached_line[1][visible_key[1]] is not line
+            ):
+                del self._strips[visible_key]
         self.programmatic = True
         try:
             self.virtual_size = Size(maximum_width, height)
@@ -139,7 +194,7 @@ class LogBody(ScrollView, can_focus=True):
         self,
         anchor: tuple[int, int],
         x: float,
-        rows: list[tuple[int, tuple[Strip, ...]]],
+        rows: list[tuple[int, tuple[Subline, ...]]],
         starts: list[int],
     ) -> None:
         numbers = [number for number, _ in rows]
@@ -148,25 +203,55 @@ class LogBody(ScrollView, can_focus=True):
         y = starts[position] + offset if starts else 0
         self.scroll_to(x=x, y=y, animate=False, immediate=True)
 
+    def invalidate(self) -> None:
+        self._cache.clear()
+        self._strips.clear()
+
     def clear(self) -> None:
         self.rows.clear()
         self.starts.clear()
         self.matches.clear()
-        self._cache.clear()
+        self.invalidate()
         self.virtual_size = Size(0, 0)
         self.refresh()
 
     def render_line(self, y: int) -> Strip:
+        style = self.rich_style
+        if style != self._layout_style:
+            self._strips.clear()
+            self._layout_style = style
         x, offset = self.scroll_offset
         position = offset + y
         index = bisect_right(self.starts, position) - 1
         if index < 0 or index >= len(self.rows):
-            return Strip.blank(self.size.width, self.rich_style)
+            return Strip.blank(self.size.width, style)
         strips = self.rows[index][1]
         line = position - self.starts[index]
         if line >= len(strips):
-            return Strip.blank(self.size.width, self.rich_style)
-        return strips[line].crop_extend(x, x + self.size.width, self.rich_style)
+            return Strip.blank(self.size.width, style)
+        rendered = strips[line]
+        key = self.rows[index][0], line
+        cached = self._strips.get(key)
+        if cached is None or cached[0] is not rendered:
+            plain, cells, ranges = rendered
+            text = Text(
+                plain,
+                style=self._layout_style,
+                spans=[
+                    Span(start, end, "reverse bold" if highlighted else self._layout_style)
+                    for start, end, highlighted in ranges
+                ],
+            )
+            strip = Strip(
+                Segment.apply_style(text.render(self.app.console), self._layout_style), cells
+            )
+            self._strips[key] = rendered, strip
+            if len(self._strips) > VISIBLE_CACHE:
+                self._strips.popitem(last=False)
+        else:
+            strip = cached[1]
+        self._strips.move_to_end(key)
+        return strip.crop_extend(x, x + self.size.width, style)
 
     def watch_scroll_y(self, old_value: float, new_value: float) -> None:
         super().watch_scroll_y(old_value, new_value)

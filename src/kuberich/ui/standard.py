@@ -18,9 +18,10 @@ from kuberich.domain.registry import (
     order_resources,
 )
 from kuberich.ui.pods import PodCell, Viewport
+from kuberich.ui.presentation import FrameTable
 
 
-class StandardTable(DataTable[PodCell]):
+class StandardTable(FrameTable[PodCell]):
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("j", "cursor_down", "Down", show=False),
         Binding("k", "cursor_up", "Up", show=False),
@@ -34,6 +35,7 @@ class StandardTable(DataTable[PodCell]):
         pass
 
     def __init__(self, *, id: str = "standard-resources") -> None:
+        self._interaction_revision = 0
         super().__init__(id=id, cursor_type="row", zebra_stripes=True)
         self._rows: dict[str, ResourceRow] = {}
         self._revision = -1
@@ -92,12 +94,23 @@ class StandardTable(DataTable[PodCell]):
         self._restore(viewport)
 
     def restore_sort(self, column: str, descending: bool) -> None:
+        self._interaction_revision += 1
         self.sort_column = (
             column if column in {item.key for item in self.definition.columns} else "name"
         )
         self.descending = descending
         self._sort()
         self.post_message(self.SortChanged())
+
+    def watch_cursor_coordinate(
+        self, old_coordinate: Coordinate, new_coordinate: Coordinate
+    ) -> None:
+        self._interaction_revision += old_coordinate != new_coordinate
+        super().watch_cursor_coordinate(old_coordinate, new_coordinate)
+
+    def watch_scroll_x(self, old_value: float, new_value: float) -> None:
+        self._interaction_revision += old_value != new_value
+        super().watch_scroll_x(old_value, new_value)
 
     def _restore(self, viewport: Viewport) -> None:
         destination = (
@@ -112,12 +125,14 @@ class StandardTable(DataTable[PodCell]):
         self._restoration += 1
         restoration = self._restoration
         selected = self.selected_uid
+        interaction = self._interaction_revision
 
         def restore_scroll() -> None:
             if (
                 self._revision == revision
                 and self._restoration == restoration
                 and self.selected_uid == selected
+                and self._interaction_revision == interaction
             ):
                 y = (
                     self.get_row_index(viewport.top) + viewport.y % 1
@@ -139,6 +154,9 @@ class StandardTable(DataTable[PodCell]):
             self.sort("name", key=lambda cell: ranks[cell.uid])
             self._restore(viewport)
 
+    def _initial_viewport(self) -> Viewport:
+        return Viewport(None, 0, 0, 0, None)
+
     async def apply_rows(
         self, rows: tuple[ResourceRow, ...], revision: int, is_current: Callable[[], bool]
     ) -> bool:
@@ -147,6 +165,7 @@ class StandardTable(DataTable[PodCell]):
             return False
         self.reset(revision)
         initial = not self.row_count
+        interacted = False
         incoming = {row.uid: row for row in rows}
         removals = [(uid, None) for uid in self._rows if uid not in incoming]
         changes = [(uid, row) for uid, row in incoming.items() if self._rows.get(uid) != row]
@@ -175,12 +194,15 @@ class StandardTable(DataTable[PodCell]):
                             self.update_cell(uid, column.key, cell, update_width=True)
                 self._rows[uid] = row
             self._restore(viewport)
+            # A visible batch may receive newer cursor/sort/horizontal input while yielding.
+            interaction = self._interaction_revision
             await asyncio.sleep(0)
+            interacted |= interaction != self._interaction_revision
         if not is_current():
             return False
         self._sort()
-        if initial:
-            self._restore(Viewport(None, 0, 0, 0, None))
+        if initial and not interacted:
+            self._restore(self._initial_viewport())
         return True
 
     def refresh_ages(self) -> None:
@@ -191,6 +213,7 @@ class StandardTable(DataTable[PodCell]):
                 self.update_cell(uid, "age", cell, update_width=True)
 
     def set_sort(self, column: str) -> None:
+        self._interaction_revision += 1
         self.descending = not self.descending if column == self.sort_column else False
         self.sort_column = (
             column if column in {item.key for item in self.definition.columns} else "name"

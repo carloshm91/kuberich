@@ -15,6 +15,7 @@ from textual.events import DescendantFocus, Resize
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Static
 
+from kuberich.domain.aggregate_logs import AggregateHistory
 from kuberich.domain.connections import ConnectionProblem
 from kuberich.domain.log_view import WINDOWS, LogHistory, parse_start_time, window_options
 from kuberich.domain.logs import LogLine
@@ -79,17 +80,24 @@ class TextRequestScreen(ModalScreen[str | None]):
 class LogHelpScreen(ModalScreen[None]):
     AUTO_FOCUS = "#help-scroll"
 
-    def __init__(self, status: str) -> None:
+    def __init__(self, status: str, *, aggregated: bool = False) -> None:
         super().__init__()
         self.status = status
+        self.aggregated = aggregated
 
     def compose(self) -> ComposeResult:
         with Vertical(id="help-dialog"):
             yield Static("Log controls", id="help-title", markup=False)
             with VerticalScroll(id="help-scroll"):
                 yield Static(
-                    self.status + "\n\n"
-                    "c container · v current/previous · o read window\n"
+                    self.status
+                    + "\n\n"
+                    + (
+                        "c source admission · s display filter · J plain/JSON"
+                        if self.aggregated
+                        else "c container"
+                    )
+                    + " · v current/previous · o read window\n"
                     "p pauses/resumes reception; reading older lines does not pause it\n"
                     "f follows the bottom; G jumps to the bottom and follows\n"
                     "g first retained line · j/k down/up · h/l horizontal\n"
@@ -104,7 +112,7 @@ class LogHelpScreen(ModalScreen[None]):
                     "again and may repeat it. No automatic stream replay.\n"
                     "Copy/save use retained, redacted, timestamped text. Copy is limited\n"
                     "to 1 MiB; save does not overwrite files. Copy requires terminal\n"
-                    "clipboard support. Structured exports are planned.",
+                    "clipboard support.",
                     markup=False,
                 )
             yield Button("Back", id="log-help-back", compact=True)
@@ -172,7 +180,7 @@ class LogScreen(ModalScreen[None]):
         )
         self.container = selected if selected is not None else containers[0]
         self._selected = selected
-        self.history = LogHistory()
+        self.history: LogHistory | AggregateHistory = LogHistory()
         self.body = LogBody()
         self.search = NavigationInput(
             lambda: self.set_focus(self.body), placeholder="Literal search · /", id="log-search"
