@@ -299,3 +299,55 @@ memory subsets; the observer deliberately keeps `runtime_qualified=false`.
 The candidate's full native checks and context-churn, slow-consumer and cancelled
 forward lifecycle evidence remain required. Q03 remains open. Earlier failures
 and their original sources/artifacts are retained without reruns or replacement.
+
+## Repeated owned lifecycle cohort
+
+The owned HTTP/process cohort uses three warmup and 36 measured cycles for each
+of context/forward changes, slow large-watch consumers and forward startup
+cancellation. Each cycle must return to exact baseline descriptors, live threads
+and pending asyncio task counts. This is resource ownership evidence, not an
+additional input-latency or RSS observation. The exact tested command was:
+
+```sh
+uv run pytest -q tests/contract/test_performance_lifecycle.py
+```
+
+Four cases passed in each actual local CPython 3.12.12, 3.13.12 and 3.14.3
+interpreter, in 28.29 / 22.82 / 22.88 seconds respectively. Their nine successful
+scenario originals each contain 36 measured samples: descriptor counts stayed
+15 on 3.12 and 16 on 3.13/3.14, live thread counts stayed 11 and pending tasks
+stayed zero. These absolute descriptor counts include pytest's own capture;
+the invariant is the unchanged count within each process.
+
+Context cycles switch two actual owned HTTP clients with 40 retained resources
+and 64 large annotation updates per watch. The delayed subscriber holds only the
+latest immutable observation. SessionService's close hook stops the real forward,
+then the old watch, HTTP pool and private directory are checked drained. The child
+is reaped and its bound listener refuses new connections. Closing the workspace
+clears discovery, subscriptions and the retained snapshot. Configuration bytes
+stay unchanged and forward history saturates at 32 non-client-bearing records.
+
+Slow-consumer cycles offer 128 individually streamed 64-KiB annotation frames.
+The first event is held at the sink; parser invocation stays at one through the
+hold. Repeated cancellation drains the watch, HTTP connection and source handler.
+Startup cycles cancel real children that have not advertised readiness, including
+repeated cancellation of the client-change cleanup owner; the process and staged
+file must be gone. A fourth case creates a real extra descriptor, thread and task,
+checks that all three observations increase, then returns to its baseline.
+
+The first context trial failed its thread-count assertion: the native default
+executor was still populating lazily after three cycles. Its original failure
+and source are retained. A separately labeled diagnostic observed all 39 cycles:
+only native `asyncio_0` through `asyncio_9` workers appeared, bounded by the
+unchanged ten-worker default, with stable descriptors and zero pending tasks.
+The maintained trial now fully populates that existing native pool before its
+baseline and records its capacity. It keeps the three-cycle warmup and exact
+resource assertions; its actual extra-thread negative control remains required.
+
+Receipts retain interpreter/platform facts, all production and relevant fixture
+hashes before/after, cycle samples and cleanup facts under unique filenames in
+`artifacts/backend/`. Full native CI for these new cohort sources remains
+required before Q03 closes. Existing oversized-frame rejection, bounded source
+admission/replay/410 and real-kind forward/context tests remain complementary;
+this controlled HTTP/process cohort does not certify a cloud provider or replace
+the actual-cluster contracts. No production behavior or performance limit changed.

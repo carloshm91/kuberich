@@ -1,5 +1,24 @@
 # First things to try
 
+## Owned lifecycle verification in progress: Refs Q03 #50
+
+The new cleanup cohort passed four focused cases in each actual local Python
+3.12, 3.13 and 3.14 interpreter. Each scenario has 36 measured cycles after
+warmup: context switches stop real forwarding children, slow large-watch sinks
+keep one parser operation, and repeatedly cancelled startup cleans private files
+and processes. Descriptor/thread counts stay constant, pending tasks return to
+zero and retained forwarding history stops at 32 records. An actual extra
+descriptor, thread and task verifies that the observer detects each increase.
+The exact tested command was:
+
+```sh
+uv run pytest -q tests/contract/test_performance_lifecycle.py
+```
+
+Full native CI for these new sources remains required. See the
+[measured scope and original failed probe](acceptance/combined-workload-progress.md#repeated-owned-lifecycle-cohort).
+Q03 remains open; the maintainer need not repeat these automated trials.
+
 ## Latest verified baseline and sustained candidate: Refs Q03 #50
 
 [PR #177](https://github.com/carloshm91/kuberich/pull/177) merged as `498711a`
