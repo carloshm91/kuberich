@@ -7,6 +7,10 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Keep established Pod, standard and discovered resource order through unrelated
+  live edits. Reorder changed typed sort values, identity ties and membership while
+  retaining selection/scroll and generation-safe recovery.
+
 - Avoid scanning every retained row when a single-line resource cell changes
   within a column whose header determines its width. Preserve native sizing,
   rendering and selection across ordinary and discovered resource tables.

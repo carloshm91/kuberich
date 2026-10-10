@@ -183,3 +183,38 @@ epics, 79 tasks, 64 capability families and 26 CLI flags. `uv build` and
 link/digest validation passed (49 pages, 1,726 references, 64 files). These local
 checks precede final signed-head native qualification; they do not qualify the
 full six-environment release, independent combined workload or public channels.
+
+## Original frozen-head development qualification
+
+[PR #174](https://github.com/carloshm91/kuberich/pull/174) merged as
+`4ca1369b099c9af8453eb3355ca8942812d2ffbc`. Its source
+`709bce48e51415b540175ec123e149d2eea9f46b`, actual tested PR checkout
+`adfb2db0c0ebf8774ea619fa1975c77f92615245` and squash merge share tree
+`3cd5185bda4ec396ea516028f15c352e0f19eedd`. All eight required checks passed.
+
+[Application run 38029457794](https://github.com/carloshm91/kuberich/actions/runs/38029457794)
+passed **4,216 cases in each** of Linux CPython 3.12/3.13/3.14 and macOS CPython
+3.12. Independently reviewed original artifacts matched all 109 production
+modules and 111 payload files per built distribution. All 43 critical modules
+met 100%; minimum whole line/branch coverage was **99.0897% / 96.8785%**.
+Changed executable coverage was 100%: 48 lines on Python 3.12/3.13 and 46 on 3.14.
+Original reviews also verified positive/negative/functional runtime evidence and
+exact coverage union, isolated uv/pipx install/uninstall, terminal restoration,
+locked/fresh dependency audits and the configured owned-cluster rehearsals.
+
+The original reader initially assumed Python 3.12 statement totals. Independent
+pinned coverage-parser checks on both local compilers matched the original native
+statement sets exactly; their only difference is two pure class annotations.
+The reader also assumed more than 100 backend heartbeat samples, while the
+frozen contract requires more than three. The complete Python 3.14 workload took
+0.637 seconds, recorded 83 pulses and received 32,771 lines. Correcting these
+reader assumptions changed no production code, workload, coverage policy or
+150-ms assertion; originals were neither redownloaded nor rerun.
+
+[Repository run 38029457732](https://github.com/carloshm91/kuberich/actions/runs/38029457732)
+matched 140 source inputs and 63 payloads. All 49 desktop and 49 mobile pages
+passed browser/accessibility/keyboard/320px/clipboard/no-JavaScript checks, with
+zero violations, browser errors or external requests. npm audit reported zero
+vulnerabilities. This qualifies the development correction, not Q03's combined
+throughput/input/memory contract or the full six-environment release. No tag,
+package, organization/tap or new site/DNS was published.

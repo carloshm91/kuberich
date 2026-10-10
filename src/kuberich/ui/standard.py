@@ -43,6 +43,7 @@ class StandardTable(FrameTable[PodCell]):
         self.definition = STANDARD_RESOURCES[0]
         self.sort_column = "name"
         self.descending = False
+        self._ordered_state: tuple[str, bool, int] | None = None
 
     @property
     def sort_summary(self) -> str:
@@ -144,6 +145,9 @@ class StandardTable(FrameTable[PodCell]):
         self.call_after_refresh(restore_scroll)
 
     def _sort(self) -> None:
+        state = self.sort_column, self.descending, self._row_order_revision
+        if state == self._ordered_state:
+            return
         viewport = self._capture()
         sorted_rows = order_resources(
             tuple(self._rows.values()), self._column_index(), self.descending
@@ -153,6 +157,7 @@ class StandardTable(FrameTable[PodCell]):
             ranks = {uid: position for position, uid in enumerate(wanted)}
             self.sort("name", key=lambda cell: ranks[cell.uid])
             self._restore(viewport)
+        self._ordered_state = self.sort_column, self.descending, self._row_order_revision
 
     def _initial_viewport(self) -> Viewport:
         return Viewport(None, 0, 0, 0, None)
@@ -187,6 +192,20 @@ class StandardTable(FrameTable[PodCell]):
                 if uid not in self._rows:
                     self.add_row(*cells, key=uid)
                 else:
+                    old_row = self._rows[uid]
+                    sort_index = self._column_index()
+                    if (
+                        old_row.namespace,
+                        old_row.name,
+                        old_row.uid,
+                        old_row.values[sort_index].sort,
+                    ) != (
+                        row.namespace,
+                        row.name,
+                        row.uid,
+                        row.values[sort_index].sort,
+                    ):
+                        self._ordered_state = None
                     for column, cell, previous in zip(
                         self.definition.columns, cells, self.get_row(uid), strict=True
                     ):
