@@ -154,3 +154,51 @@ establish a latency improvement. All three trials were removed; their exact
 sources, receipts and ANSI remain retained. The simpler 128-row reused-layout
 turns remain. There is no claim that first-row and last-row observations with
 different controller revisions establish a comparative improvement.
+
+## Original sustained observation and native GC correction
+
+The original frozen `04871e571f3fce37891265ee4755543038b770a2` invocation was:
+
+```sh
+uv run python -m tests.support.performance_terminal --seconds 1800 --output artifacts/workload50/frozen-04871e5-soak-original
+```
+
+On Linux 6.8 / Intel i5-8500T, six available cores, 32,113,976 KiB physical RAM,
+CPython 3.12.12 and Textual 8.2.8, the actual 100×30 CLI/PTY completed 1,800.084
+seconds, 5,826 public wrap controls and 349 process samples. Its **168.227-ms
+p95 fails the unchanged 100-ms target**. All 180,009 resource events and
+3,600,180 log lines were produced and sent, without stream expiry. Retained
+source bounds, 10,000 visible retained log lines, process-owner exits and terminal
+restoration passed. All 163 measured inputs match Git and stayed unchanged.
+
+The predeclared memory subset passed. Each late five-minute window contained
+58 samples. CLI RSS medians were 159,824 / 159,874 / 160,060 / 160,072 KiB;
+p95s were 159,824 / 160,060 / 160,072 / 160,072 KiB. The 248-KiB range is below
+the predeclared 8-MiB allowance; late CLI descriptors remained 11 and threads
+remained constant. Source and observer also passed their RSS/descriptor/thread
+rules. This does not qualify context churn or cancelled forwards.
+
+Independent review recomputed percentiles and every memory window from raw
+samples, verified PID/start-time continuity and monotonic input/byte counters,
+matched all source hashes to the frozen Git tree and checked final delivery,
+bounded buffers, zero workers and both process-owner exits. Original receipt
+SHA-256 is `dc82dbe032d592a447408554795908a98c5d2d38c7dfbb771641155d942a57de`;
+the 177,527,854-byte original ANSI SHA-256 is
+`b1f3f32720ffe9d9145a5e7b142a595774007cf774455689629c26a86c5c4d3f`.
+The independent receipt is retained beside the original, never replacing it.
+No local suite or profiler overlapped; lightweight repository/API reads and two
+hosted job text-log downloads occurred during the observation. Ordinary GC
+remained enabled at 700/10/10; coverage, tracing and profiling were inactive.
+
+Original Application run 38065880441 on PR #177 found two observer-test failures
+in each Linux 3.13/3.14 suite: an early guard assumed 3.12's default GC tuple.
+The other 4,423 cases passed in each failing environment. Actual untuned isolated
+3.13.12 and 3.14.3 processes return 2000/10/10 and 2000/10/0 respectively.
+The correction reads the current executable's isolated default rather than
+changing GC policy. Nineteen focused cases passed in each actual local
+3.12.12/3.13.12/3.14.3 interpreter, including real disabled/tuned-policy refusal.
+An initial locally mislabeled invocation was discovered to have recreated its
+3.13/3.14 virtual environments as 3.12; those originals are retained and count
+only as 3.12 evidence. Correct native invocations record executable, version,
+package source and input hashes. Full corrected native checks remain required;
+original failures are preserved and no whole-candidate qualification is claimed.

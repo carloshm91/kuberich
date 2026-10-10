@@ -32,21 +32,35 @@ Its latest 30-second normal CLI/PTY diagnosis measured **138.680 ms p95** across
 101 actual painted-tail controls, with all 3,012 resource updates and 60,240 log
 lines sent, no source expiry and seven process-memory/descriptor samples.
 Both process owners drained normally and all 163 measured inputs were unchanged.
-The exact tested command was:
+The original 30-minute observation on frozen `04871e5` then completed with
+**168.227 ms p95** across 5,826 painted controls and 349 process samples. All
+180,009 resource updates and 3,600,180 log lines were sent without source expiry.
+Independent review matched all 163 inputs to Git, recomputed the distributions
+and checked the original ANSI hash, bounded source and normal terminal/process
+cleanup. The predeclared memory rule passed: the CLI's late-window RSS medians
+were 159,824–160,072 KiB, with constant descriptors and threads. Source and
+observer also passed their late-window rules. The exact tested commands were:
 
 ```sh
 uv run python -m tests.support.performance_terminal --seconds 30 --output artifacts/workload50/last-pod-ctrl-end-original
+uv run python -m tests.support.performance_terminal --seconds 1800 --output artifacts/workload50/frozen-04871e5-soak-original
 ```
 
 Use a fresh output directory for another observation; existing originals are
-never overwritten. This short observation still exceeds the unchanged 100-ms
-target and cannot establish a memory plateau. The observer/negative-control
+never overwritten. Both input-response observations exceed the unchanged
+100-ms target; only the sustained original establishes the measured memory
+subset. The observer/negative-control
 cohort passed 16 cases; membership, observer and inspection behavior passed
 28 cases. The final generator/covered-view/layout/membership/observer cohort
 passed 39 cases, Ruff checked 491 formatted files and strict types passed over
 133 source files. These are scoped results for their recorded working inputs.
-Whole-candidate coverage, sustained memory, context churn and cancelled-forward
-qualification remain pending under Q03. Pod-table `G` is still tracked by B07 #61;
+The original PR #177 native suite found a measurement-helper assumption: Python
+3.13/3.14 have different ordinary GC thresholds from 3.12. The correction probes
+the same executable's isolated default and still rejects disabled or tuned GC;
+19 focused cases passed in each actual local 3.12/3.13/3.14 interpreter. The failed
+originals remain retained; corrected full native qualification, latency,
+context churn and cancelled-forward qualification remain pending under Q03.
+Pod-table `G` is still tracked by B07 #61;
 its failed setup observation and cleanup receipt are retained.
 See [working evidence and limitations](acceptance/combined-workload-progress.md).
 

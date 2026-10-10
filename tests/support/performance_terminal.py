@@ -45,6 +45,32 @@ RSS_ALLOWANCE_KIB = 8192
 RSS_ALLOWANCE_FRACTION = 0.05
 
 
+def interpreter_gc_defaults() -> tuple[int, int, int]:
+    """Read this executable's ordinary policy without site/package customization."""
+    result = subprocess.run(
+        [sys.executable, "-I", "-S", "-c", "import gc,json; print(json.dumps(gc.get_threshold()))"],
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=True,
+    )
+    assert len(result.stdout.encode()) <= 1024
+    values = json.loads(result.stdout)
+    assert isinstance(values, list) and len(values) == 3
+    assert all(type(value) is int and value >= 0 for value in values)
+    return values[0], values[1], values[2]
+
+
+def require_normal_gc() -> tuple[int, int, int]:
+    expected = interpreter_gc_defaults()
+    assert gc.isenabled() and gc.get_threshold() == expected, (
+        "Observation requires the enabled, untuned interpreter GC policy",
+        expected,
+        gc.get_threshold(),
+    )
+    return expected
+
+
 def p95(values: list[float]) -> float | None:
     return sorted(values)[math.ceil(len(values) * 0.95) - 1] if values else None
 
@@ -543,7 +569,7 @@ def main() -> None:
     if sys.platform != "linux":
         parser.error("The process-memory observer currently requires Linux /proc.")
     assert Coverage.current() is None and sys.gettrace() is None and sys.getprofile() is None
-    assert gc.isenabled() and gc.get_threshold() == (700, 10, 10)
+    default_thresholds = require_normal_gc()
     args.output.mkdir(parents=True, exist_ok=False)
 
     def interrupted(signum: int, frame: FrameType | None) -> None:
@@ -551,7 +577,9 @@ def main() -> None:
 
     previous = signal.signal(signal.SIGTERM, interrupted)
     try:
-        Observation(args.output, args.seconds).run()
+        observation = Observation(args.output, args.seconds)
+        observation.result["interpreter_default_gc_thresholds"] = default_thresholds
+        observation.run()
     finally:
         signal.signal(signal.SIGTERM, previous)
 

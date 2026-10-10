@@ -13,6 +13,7 @@ import pytest
 
 from tests.support.performance_terminal import (
     StreamingTerminal,
+    interpreter_gc_defaults,
     memory_plateau,
     p95,
     process_facts,
@@ -20,6 +21,37 @@ from tests.support.performance_terminal import (
 from tests.terminal.pty_support import TerminalSession
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def test_default_gc_probe_matches_a_fresh_untuned_interpreter():
+    result = subprocess.run(
+        [sys.executable, "-I", "-S", "-c", "import gc,json; print(json.dumps(gc.get_threshold()))"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=10,
+        check=True,
+    )
+    assert interpreter_gc_defaults() == tuple(json.loads(result.stdout))
+
+
+@pytest.mark.parametrize("tuning", ["gc.disable()", "gc.set_threshold(1, 2, 3)"])
+def test_modified_gc_policy_is_rejected_in_an_actual_process(tuning):
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import gc; from tests.support.performance_terminal import require_normal_gc; "
+            + tuning
+            + "; require_normal_gc()",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    assert result.returncode != 0
+    assert "enabled, untuned interpreter GC policy" in result.stderr
 
 
 def samples():

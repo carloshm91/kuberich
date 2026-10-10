@@ -527,6 +527,12 @@ The output includes source hashes, reference-machine/dependency metadata,
 raw public-key-to-painted-tail samples, ordered ANSI and cleanup/error receipts.
 An existing output directory is rejected. Run without coverage, tracing,
 profiling or competing local verification, and do not edit measured inputs.
+The GC guard compares the current interpreter with an isolated invocation of
+that same executable's untuned defaults; it never sets thresholds or disables
+GC. Record the actual policy because ordinary defaults differ across Python
+versions. A local alternate-Python environment must also record its actual
+executable/version: `uv run` can follow the project's pinned Python unless the
+alternate interpreter is explicitly selected.
 
 Before the first sustained invocation, declare ten minutes of warmup followed
 by four five-minute windows, each with at least 54 process samples. For each of
