@@ -35,6 +35,22 @@ critical modules at 100%, and 52 changed executable lines at 100%. This evidence
 belongs to the original `bcbc09b` PR source, not the subsequent release-enrollment
 changes; the original overall run remains incomplete and its macOS failures remain.
 
+The stable `8022f60` release-enrollment candidate passed all 27 packaging/Homebrew
+cases in 350.36 seconds; the original log is
+`artifacts/standalone49/packaging-release-enrollment-stable-v1-original.log`.
+The corrected parser/original-record/archive/owned-HTTP cohort passed 379 cases.
+The complete strict command passed 141 source files; Ruff/formatting passed over
+515 files. Site building/checking passed 49 pages, 1,726 local links/assets and
+64 files. These are local preparation/controlled-fixture results, not a public
+package or a substitute for fresh native qualification.
+
+Both original Linux archives were independently re-read from the original
+`a06fba3` Git source after each outer ZIP matched the corresponding GitHub digest.
+The complete 188 Git inputs, tar member checksums, actual native architecture/
+GLIBC floor, original interpreter metadata, 20 notices and required runtime assets
+passed for x86_64 and ARM64. The detached original source and reader outputs remain
+under `artifacts/standalone49/pr181-original-source` and `pr181-original-ci`.
+
 ## First hosted native observations: PR #181
 
 Application quality run `38093295317` at head `bcbc09b` selected all four native

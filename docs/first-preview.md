@@ -6,10 +6,23 @@ Release enrollment now requires all four native jobs and five retained inputs fr
 the same exact manual source qualification. Public bundles retain the original
 archives and uniquely named provenance; verification checks native bytes, source
 inputs, notices, original CLI/PTY controls and Linux native kind execution. PyPI
-contents remain wheel/sdist only. Release-policy regressions passed 257 cases and
-the full strict command passed 141 source files. Packaging and the additional
-native-record parser checks are being verified; these fixtures do not qualify a
-native host. No release workflow, tag or package publication has been invoked.
+contents remain wheel/sdist only. The release-policy, original-record, archive
+and owned-HTTP cohort passed 379 cases. The committed `8022f60` candidate passed
+27 packaging/Homebrew cases in 350.36 seconds, including a real RC build/audit/
+installed CLI and controlled native-record fixtures. The full strict command
+passed 141 source files; Ruff and formatting passed 515 files. Site generation/
+checking passed 49 pages, 1,726 local links/assets and 64 output files. The
+controlled native fixtures do not qualify a native host. No release workflow,
+tag or package publication has been invoked.
+
+The exact local commands were:
+
+```sh
+uv run --no-sync pytest -q tests/quality/test_standalone_release.py tests/quality/test_standalone_verification.py tests/quality/test_release_policy.py tests/quality/test_release_transport.py
+uv run --no-sync pytest -q --tb=short tests/packaging/test_release_candidate.py tests/packaging/test_homebrew_formula.py
+uv run --no-sync python -m scripts.build_site
+uv run --no-sync python -m scripts.check_site
+```
 
 [Draft PR #181](https://github.com/carloshm91/kuberich/pull/181) started the first
 hosted four-target run, `38093295317`, at head `bcbc09b`. Both Linux native jobs
