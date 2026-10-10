@@ -6,6 +6,7 @@ import time
 from collections.abc import Awaitable, Callable
 from contextlib import aclosing
 
+from kuberich.adapters.kubernetes import decode_json
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, HttpProblem
 from kuberich.domain.resources import ApiResource
 from kuberich.domain.tables import TABLE_ACCEPT, TableDecoder, TableUnavailable
@@ -55,18 +56,25 @@ class ListWatch:
     async def _event(
         self,
         resource: ApiResource,
-        payload: object,
+        payload: bytes,
         namespace: str | None,
         decoder: TableDecoder | None = None,
     ) -> WatchEvent:
-        try:
-            return await parse_owned(
-                lambda: (
-                    decoder.event(payload)
-                    if decoder is not None
-                    else watch_event(resource, payload, namespace)
-                )
+        def normalize() -> WatchEvent:
+            try:
+                value = decode_json(payload)
+            except (AppError, ValueError, UnicodeError, RecursionError, TypeError):
+                raise ConnectionProblem(
+                    ConnectionState.API_ERROR, "Invalid or oversized Kubernetes watch response."
+                ) from None
+            return (
+                decoder.event(value)
+                if decoder is not None
+                else watch_event(resource, value, namespace)
             )
+
+        try:
+            return await parse_owned(normalize)
         except TableUnavailable:
             raise
         except AppError:
@@ -97,11 +105,11 @@ class ListWatch:
                 table = self.reader.uses_tables(resource)
                 decoder = TableDecoder(resource, namespace) if table else None
                 stream = (
-                    self.reader.session.watch_json(
+                    self.reader.session.watch_bytes(
                         path, state.resource_version, accept=TABLE_ACCEPT, include_object=True
                     )
                     if table
-                    else self.reader.session.watch_json(path, state.resource_version)
+                    else self.reader.session.watch_bytes(path, state.resource_version)
                 )
                 async with aclosing(stream):
                     async for payload in stream:

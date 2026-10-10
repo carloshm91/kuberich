@@ -2,7 +2,7 @@
 
 from collections.abc import Callable
 
-from kuberich.adapters.kubernetes import KubernetesSession, _decode
+from kuberich.adapters.kubernetes import KubernetesSession, decode_json
 from kuberich.adapters.mutations import guarded_request
 from kuberich.domain.mutations import MutationResult, MutationState
 from kuberich.domain.operations import ResourceAction, ResourceIntent
@@ -11,7 +11,7 @@ from kuberich.errors import AppError
 
 
 def operation_receipt(data: bytes, intent: ResourceIntent) -> MutationResult:
-    value = _decode(data)
+    value = decode_json(data)
     if intent.action is ResourceAction.TRIGGER:
         resource = ApiResource("batch", "v1", "jobs", "Job", True, frozenset({"get"}))
         record = resource_record(resource, value, intent.target.namespace)

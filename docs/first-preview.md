@@ -1,5 +1,32 @@
 # First things to try
 
+## Watch pipeline work: Refs Q03 #50
+
+Live resource JSON and domain normalization share one owned worker per event.
+Raw framing stays bounded; decoded transport compatibility, slow consumers,
+Table fallback, retry/checkpoint semantics and safe errors are preserved.
+`uv run pytest -q tests/contract/test_watch_pipeline.py tests/contract/test_watches.py tests/contract/test_resources.py tests/contract/test_custom_resources.py --no-cov`
+passed all 188 focused cases, including 19 new HTTP/framing and repeated-cancel
+cases. The broad affected cohort passed 557 contract/UI cases and 20 actual
+source-terminal cases. All 25 owned changed executable lines measured 100%.
+Frozen-head/native verification remains required.
+
+A paired 30-second actual CLI/PTY resource-only diagnosis measured 141.081 ms
+input-to-painted-selection p95 before the combined worker and 96.333 ms after.
+These are working-source observations, not complete Q03 qualification. A
+headless diagnosis still lagged the independent event source and had a long
+heartbeat gap. A final-source actual CLI/PTY sample measured 80.443 ms p95 with
+normal restoration/cleanup. Combined logs, 10,000-line retention, sustained throughput and
+the 30-minute memory plateau remain open; no intermediate manual trial or
+publication is requested. Exact source limits are in
+[watch pipeline evidence](acceptance/watch-pipeline-performance.md).
+
+The preceding PR #176 remains unmerged: its original macOS run
+`38036838862` failed the aggregate runtime heartbeat during the second full-history
+input delivery (165.123 ms against 150 ms; 4,267 passed/one failed). Its original
+source, log and artifact remain preserved. Passing Linux jobs or local watch
+checks do not qualify that failed candidate or establish the failure's cause.
+
 ## Owned workspace repaint work: Refs Q03 #50
 
 Unchanged workspace labels avoid duplicate updates while identity/theme/style

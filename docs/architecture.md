@@ -1,5 +1,19 @@
 # Architecture decisions
 
+## Single owned watch parser: Refs Q03 #50
+
+The session exposes bounded complete raw watch frames through `watch_bytes`;
+`watch_json` remains a decoded compatibility consumer of that same transport.
+ListWatch decodes JSON and normalizes the event in one `parse_owned` worker,
+instead of transferring each event between two workers. The public shared JSON
+decoder retains object/nonfinite validation for reads and write receipts.
+The consumer still pulls one event at a time, so a slow sink cannot start a
+background parse queue. Table negotiation/fallback, opaque checkpoints, retries,
+scope validation and generation guards stay with their existing owners.
+Both combined and compatibility JSON workers drain through repeated cancellation;
+HTTP ownership closes only after parsing has finished. See
+[watch pipeline evidence](acceptance/watch-pipeline-performance.md).
+
 ## Owned workspace repaint: Refs Q03 #50
 
 WorkspaceLabel projects all public rendering attributes of exact strings/Rich

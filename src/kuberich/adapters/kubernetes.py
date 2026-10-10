@@ -8,7 +8,7 @@ import json
 import os
 import ssl
 from collections.abc import AsyncGenerator, AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import aclosing, asynccontextmanager
 from math import ceil
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -35,7 +35,8 @@ from kuberich.domain.proxies import effective_proxy, tls_failure
 from kuberich.errors import AppError
 
 
-def _decode(data: bytes) -> dict[str, Any]:
+def decode_json(data: bytes) -> dict[str, Any]:
+    """Decode a bounded JSON object for an owned transport or service worker."""
     return mapping(json.loads(data, parse_constant=_invalid_constant))
 
 
@@ -44,12 +45,8 @@ def _invalid_constant(value: str) -> NoReturn:
 
 
 async def _decode_owned(data: bytes) -> dict[str, Any]:
-    decoding = asyncio.create_task(asyncio.to_thread(_decode, data))
-    try:
-        return await asyncio.shield(decoding)
-    except asyncio.CancelledError:
-        await asyncio.gather(decoding, return_exceptions=True)
-        raise
+    decoding = asyncio.create_task(asyncio.to_thread(decode_json, data))
+    return await _finish_task(decoding)
 
 
 def _retry_after(value: str | None) -> float | None:
@@ -624,6 +621,33 @@ class KubernetesSession:
         include_object: bool = False,
     ) -> AsyncGenerator[dict[str, Any] | None, None]:
         """None signals an opened stream; complete JSON lines follow, without a queue."""
+        try:
+            async with aclosing(
+                self.watch_bytes(
+                    path,
+                    resource_version,
+                    max_bytes=max_bytes,
+                    accept=accept,
+                    include_object=include_object,
+                )
+            ) as stream:
+                async for line in stream:
+                    yield await _decode_owned(line) if line is not None else None
+        except (AppError, ValueError, UnicodeError, RecursionError, TypeError):
+            raise ConnectionProblem(
+                ConnectionState.API_ERROR, "Invalid or oversized Kubernetes watch response."
+            ) from None
+
+    async def watch_bytes(
+        self,
+        path: str,
+        resource_version: str,
+        *,
+        max_bytes: int = 8 * 1024 * 1024,
+        accept: str = "application/json",
+        include_object: bool = False,
+    ) -> AsyncGenerator[bytes | None, None]:
+        """Pull one bounded complete frame; its consumer owns parsing and validation."""
         duration = self.watch_seconds
         # Allow headers and graceful server expiry before the client deadline.
         # A server which never finishes still times out, including with no events.
@@ -648,7 +672,7 @@ class KubernetesSession:
                         line = bytes(buffer[:end])
                         del buffer[: end + 1]
                         if line.strip():
-                            yield await _decode_owned(line)
+                            yield line
                     if len(buffer) > max_bytes:
                         raise ValueError
                 if buffer.strip():

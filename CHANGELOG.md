@@ -7,6 +7,10 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Decode and validate live resource events in one owned worker, preserving
+  bounded framing, pull backpressure, Table fallback and safe error messages.
+  Drain JSON read/watch workers through repeated cancellation before cleanup.
+
 - Avoid duplicate workspace label updates and wide equality on reused immutable
   resource rows; repaint safe owned cell edits through native row regions while
   retaining full native geometry and unknown-content handling.

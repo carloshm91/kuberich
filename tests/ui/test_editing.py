@@ -30,7 +30,7 @@ async def test_pending_preparation_drains_before_client_or_screen_cleanup(
 ):
     entered, released, finished = threading.Event(), threading.Event(), threading.Event()
     ready, finish_trial, closed = asyncio.Event(), asyncio.Event(), asyncio.Event()
-    decode, paths, state = kubernetes._decode, [], {}
+    decode, paths, state = kubernetes.decode_json, [], {}
 
     def held_decode(data):
         if json.loads(data).get("kind") == "ConfigMap":
@@ -65,7 +65,7 @@ async def test_pending_preparation_drains_before_client_or_screen_cleanup(
                 screen.query_one("#edit-disclosure", Checkbox).value = True
                 await pilot.pause()
                 if stage == "read":
-                    monkeypatch.setattr(kubernetes, "_decode", held_decode)
+                    monkeypatch.setattr(kubernetes, "decode_json", held_decode)
                 else:
                     monkeypatch.setattr("kuberich.services.editing.ManifestFile", held_create)
                 old, close = app.sessions.client, app.sessions.client.close
