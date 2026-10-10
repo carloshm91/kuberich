@@ -1,6 +1,37 @@
 # First things to try
 
-## Current baseline and combined-load work: Refs Q03 #50
+## Latest verified baseline and sustained candidate: Refs Q03 #50
+
+[PR #177](https://github.com/carloshm91/kuberich/pull/177) merged as `498711a`
+on 2026-10-10. Its original four required native environments passed 4,428
+cases on each Linux Python version and 4,425 on macOS, with three explicit
+Linux-only observer skips. Independently reviewed coverage measured at least
+99.08% lines, 96.82% branches and 97.35% changed lines, with all 43 critical
+modules at 100%. Packaging, installed uv/pipx contracts, terminal restoration,
+runtime controls and both static-site checks passed. This is PR qualification;
+the six-environment release matrix remains separate.
+
+The subsequent frozen incremental-log candidate `30b6856` completed the
+30-minute combined workload: **99.077 ms p95**, 6,533 actual input-to-painted-tail
+controls and 350 process samples. All 180,029 resource events and 3,600,580 log
+lines were sent without source expiry. Independent review matched all 163 inputs
+to Git and verified the original ANSI, memory rules and process/terminal cleanup.
+Late-window CLI median RSS ranged from 162,460 to 162,544 KiB with constant
+descriptors and threads. The source and observer also passed their memory rules.
+
+The exact tested command on that frozen source was:
+
+```sh
+uv run python -m tests.support.performance_terminal --seconds 1800 --output artifacts/incremental50/frozen-30b6856-soak-original
+```
+
+The 100-ms target passed with a narrow 0.923-ms margin on the reference machine.
+The next PR has the same production bytes as that original candidate; its native
+checks remain required. Context churn, slow-consumer/cancelled-forward lifecycle
+qualification and the remaining 0.1.0 installation/release gates stay open.
+No maintainer trial, tag or public distribution is requested.
+
+## Earlier baseline and combined-load work: Refs Q03 #50
 
 [PR #176](https://github.com/carloshm91/kuberich/pull/176) merged as `9fa25c9`
 on 2026-10-10 after independent review of its original four-native artifacts.
@@ -79,7 +110,8 @@ Twelve focused Rich/layout/cancellation cases passed after correcting search
 match pruning for reordered retained entries. The original failing cases remain
 retained. The complete owned log cohort then passed 36 cases in 223.20 seconds,
 and exact workflow lint/format and strict types passed over 492 files and 133
-source files. A frozen sustained run and full native qualification are next.
+source files. The later frozen sustained result is recorded above; native and
+the remaining lifecycle qualification are still required.
 
 The first public target remains 0.1.0. The `kuberich` GitHub organization now
 exists; source remains `carloshm91/kuberich`, and `brew install kuberich/tap/kuberich`

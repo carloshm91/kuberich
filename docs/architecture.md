@@ -21,10 +21,15 @@ Log titles and status labels have fixed one-row CSS geometry. Their native
 Static updates use `layout=False`, so changing counters does not relayout the
 covered workspace. Unchanged title/frame content is not refreshed. Native
 terminal resize and log virtual-size changes retain their layout behavior.
-The first unprofiled short observation measured 91.190 ms p95; sustained and
-full native qualification for this candidate remain required. The complete
+The first unprofiled short observation measured 91.190 ms p95. A subsequent
+frozen 30-minute observation measured 99.077 ms p95 across 6,533 public painted
+controls; independent review verified the predeclared memory plateau and all
+163 original Git inputs. The 0.923-ms margin belongs to the recorded reference
+machine, not every machine or every input. Full native and context-churn,
+slow-consumer/cancelled-forward qualification remain required. The complete
 owned log UI cohort passed 36 cases; the exact workflow lint/format and strict
-types passed over 492 files and 133 source files respectively.
+types passed over 492 files and 133 source files respectively. See the
+[original sustained evidence](acceptance/combined-workload-progress.md#frozen-incremental-candidate-sustained-observation).
 
 ## Owned CrashLoop qualification observation: Refs Q03 #50
 

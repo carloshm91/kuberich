@@ -246,4 +246,56 @@ that prefix before appending the new order. The corrected 12-case cohort passed;
 the original failing sources and logs remain retained. The complete owned log
 cohort subsequently passed **36 cases in 223.20 seconds**. Exact workflow
 Ruff/formatting checked 492 files and strict types passed over 133 source files.
-Frozen-source sustained observation and full native qualification remain pending.
+The later frozen-source sustained observation is recorded below. Full native
+and remaining lifecycle qualification are still required.
+
+## Frozen incremental candidate sustained observation
+
+The original immutable source was
+`30b6856878d74fd61fab6b7e828157ab003a03e6`, with clean tracked inputs throughout.
+The exact command was:
+
+```sh
+uv run python -m tests.support.performance_terminal --seconds 1800 --output artifacts/incremental50/frozen-30b6856-soak-original
+```
+
+Reference machine: Linux 6.8.0-142/glibc 2.39, Intel i5-8500T at 2.10 GHz,
+six available CPUs with affinity 0–5 and 32,113,976 KiB physical memory.
+The interpreter was CPython 3.12.12; Textual 8.2.8, kubernetes-asyncio 36.1.0,
+pyte 0.8.2 and PyYAML 6.0.3 were installed. Coverage was installed but inactive;
+there was no tracing or profiling. Enabled GC retained its ordinary 700/10/10
+thresholds, verified against the same isolated executable's defaults.
+No local suite, profiler or artifact verifier overlapped the observation.
+Lightweight source/status/API reads, preparation of ignored review scripts and
+an issue-status update did occur. Native artifact collection started after the
+soak process reported its terminal exit.
+
+The 100×30 real CLI/PTY selected the last of 10,000 Pods and retained 10,000
+log lines within the existing 4 MiB bound. Public `w` controls alternated actual
+wrapped-tail appearance/disappearance, with 200-ms idle between controls.
+The independently paced source sent all 180,029 resource events and 3,600,580
+log lines during 1,800.285 seconds, without watch/log expiry. This describes
+transport delivery; ordinary bounded history eviction still applies.
+
+Independent review recomputed **99.076876-ms p95 across 6,533 controls**, checked
+350 process samples and verified all 163 source hashes against Git and disk.
+The unchanged 100-ms target passed with only **0.923124 ms** of margin; this is
+reference-machine evidence, not a guarantee for every input or machine.
+
+The four predeclared five-minute windows after ten minutes of warmup each had
+58 samples. CLI median and p95 RSS values were 162,460 / 162,480 / 162,480 /
+162,544 KiB: an 84-KiB range, within the declared 8-MiB allowance. Its 11
+descriptors and 13 threads stayed constant. Source and observer also passed
+their independently recomputed RSS, descriptor and thread rules. Both process
+owners exited zero, terminal attributes were restored and final source watches,
+log streams, workers and LIST snapshots were zero.
+
+Original receipt SHA-256:
+`f335a9d3c905f60ade287781cc44d887c499a87c54ac9182aa1e6b5148c1f8b4`.
+The 89,586,069-byte original ordered ANSI has SHA-256
+`8e44c883e55f91d51ba87a565ccc6b7834f38e47c79cb6c4d5a957a9524b32fc`.
+The retained independent review accepts only the combined-load latency and
+memory subsets; the observer deliberately keeps `runtime_qualified=false`.
+The candidate's full native checks and context-churn, slow-consumer and cancelled
+forward lifecycle evidence remain required. Q03 remains open. Earlier failures
+and their original sources/artifacts are retained without reruns or replacement.
