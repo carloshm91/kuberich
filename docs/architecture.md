@@ -1,5 +1,76 @@
 # Architecture decisions
 
+## Owned CrashLoop qualification observation: Refs Q03 #50
+
+The working correction selects one complete genuine LIST response in which the
+exact owned UID/name/namespace has CrashLoopBackOff and a terminated instance.
+It returns the response's records and resource version unchanged to the normal
+aggregate membership pipeline. Later LIST/WATCH calls and every log request
+remain ordinary real-cluster requests. This is an explicit fixture control at
+the membership observation boundary; its receipt labels it. It does not claim
+the server stays waiting through later requests. The first last-instance
+assertion, one-line output, no-replay and cleanup checks remain enforced.
+The selector owns a 120-second deadline; denial, cancellation or missing
+membership fails instead of manufacturing a snapshot. All 11 new local real-kind
+scenarios and 81 focused contracts passed; frozen native checks remain required.
+
+Subsequent real-kind evidence invalidated the assumption that a fresh waiting
+observation establishes a usable remaining backoff window. One owned 120-second
+diagnostic observed waiting-to-running at restart count three within about
+117 ms. The `321e9ca` required native candidate and two later local fixture
+revisions remain unqualified. The original setup below is retained as the
+attempt being corrected; production logs and replay contracts are unchanged.
+
+The actual-kind scenario observes a terminated container then its same identity
+in CrashLoopBackOff, admitting within three monotonic seconds of that transition
+after at least three restarts. Status receipt time avoids assuming `finishedAt`
+is published immediately. Current/previous output and initial last-instance
+assertions, scenario deadline and cleanup remain unchanged. This changes only
+owned test setup, not production admission, restart handling or replay semantics.
+See [qualification evidence](acceptance/owned-crashloop-window.md).
+
+## Bounded formatting and collected parser outcomes: Refs Q03 #50
+
+Aggregate view/export formatting captures immutable records, mode, timestamps
+and the exact source filter before awaiting. Each owned worker formats at most
+32 records and 8 KiB of reserved output; one larger retained record gets its own
+turn without splitting or dropping it. Turns run sequentially, preserving arrival
+order and allowing the event loop to run between them. Layout generation and
+export target checks still reject obsolete results. No formatting queue is added.
+
+JSON and domain parser owners shield a collector created with
+`gather(return_exceptions=True)`, drain it through repeated caller cancellation,
+and then return the task's original result or exception when uncancelled. This
+keeps Python 3.14's late shield error callback from reporting an error that the
+owner deliberately consumes during cancellation. See
+[measured limits and original failures](acceptance/owned-log-formatting.md).
+
+## Single owned watch parser: Refs Q03 #50
+
+The session exposes bounded complete raw watch frames through `watch_bytes`;
+`watch_json` remains a decoded compatibility consumer of that same transport.
+ListWatch decodes JSON and normalizes the event in one `parse_owned` worker,
+instead of transferring each event between two workers. The public shared JSON
+decoder retains object/nonfinite validation for reads and write receipts.
+The consumer still pulls one event at a time, so a slow sink cannot start a
+background parse queue. Table negotiation/fallback, opaque checkpoints, retries,
+scope validation and generation guards stay with their existing owners.
+Both combined and compatibility JSON workers drain through repeated cancellation;
+HTTP ownership closes only after parsing has finished. See
+[watch pipeline evidence](acceptance/watch-pipeline-performance.md).
+
+## Owned workspace repaint: Refs Q03 #50
+
+WorkspaceLabel projects all public rendering attributes of exact strings/Rich
+Text and compares current content to its bounded last projection. Its explicit
+owned update method leaves the native update/property contract intact. Resource
+tables distinguish reused immutable rows from merely equal values. Pod/standard
+tables opt into native public row-region repaint only for immutable header-bound
+edits without fixed cells; FrameTable defaults to full native repaint. The
+temporary public refresh guard resets in finally and never changes native
+geometry/cache counters. Unknown renderables and layout/width changes retain
+native behavior. See [acceptance limits](acceptance/live-render-performance.md).
+
 ## Phased immutable release decisions: Refs #89
 
 Release readiness validates the entire pinned 79-task graph and canonical issue
@@ -619,7 +690,11 @@ See [ordinary-view policy and controls](resource-inspection.md).
 with consumer-owned retention. The adapter opens a scoped `text/plain` stream
 with bounded headers and an explicit indefinite quiet-follow body. `services/logs.py`
 verifies captured pod UID/container before and after opening, awaits each consumer
-and closes its generator on cancellation/failure. Logs have no watch checkpoints
+and closes its generator on cancellation/failure. An immediately completing
+consumer receives at most 32 lines before an explicit cooperative turn, so pending
+input, cancellation and other readers are not deferred through an entire 8-KiB
+chunk. Every subsequent line rechecks the current captured target. Delivery stays
+sequential without a producer queue or dropping lines. Logs have no watch checkpoints
 and are never automatically replayed. S02 owns the UI presentation and lifetime.
 See [the transport contract](container-log-transport.md).
 

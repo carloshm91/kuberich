@@ -52,6 +52,12 @@ rejects inputs larger than 64 KiB and cannot be reused after finalization.
 
 Delivery awaits each consumer callback. There is no hidden application queue;
 slow consumers backpressure the transport rather than growing retained history.
+An async callback may finish immediately. Delivery explicitly gives the event
+loop a turn after at most 32 lines and revalidates the current target before
+each next line, so input, cancellation and other readers do not wait through
+thousands of tiny lines in one transport chunk. Ordered output and the final
+partial line are preserved. This uses the public
+[asyncio cooperative sleep contract](https://docs.python.org/3.12/library/asyncio-task.html#sleeping).
 The supplied consumer-owned LogBuffer defaults to at most 5,000 lines AND 4 MiB
 of UTF-8 text. Either bound evicts oldest lines, with a dropped-line counter;
 individual oversized lines can also be evicted. Transport-library/socket buffers

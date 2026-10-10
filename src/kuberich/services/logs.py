@@ -1,6 +1,7 @@
 """Owned cancellable container log reads; no automatic replay or hidden queue."""
 
-from collections.abc import Awaitable, Callable
+import asyncio
+from collections.abc import Awaitable, Callable, Iterable
 from contextlib import aclosing
 from functools import partial
 
@@ -50,6 +51,20 @@ class LogStream:
         if self.target.container not in log_containers(record.manifest):
             raise AppError("Selected regular/init container is unavailable in this pod.")
 
+    async def _deliver(
+        self, lines: Iterable[LogLine], sink: Callable[[LogLine], Awaitable[None]]
+    ) -> int:
+        count = 0
+        for line in lines:
+            self.require_current()
+            await sink(line)
+            count += 1
+            # Awaiting a consumer need not suspend. Tiny lines can fill a whole
+            # transport chunk, so explicitly let input/other readers run too.
+            if count % 32 == 0:
+                await asyncio.sleep(0)
+        return count
+
     async def run(
         self,
         options: LogOptions,
@@ -84,15 +99,13 @@ class LogStream:
                         if opened is not None:
                             opened()
                         continue
-                    for line in await parse_owned(partial(decoder.feed, chunk)):
-                        self.require_current()
-                        await sink(line)
-                        count += 1
+                    count += await self._deliver(
+                        await parse_owned(partial(decoder.feed, chunk)), sink
+                    )
                 self.require_current()
-                for line in await parse_owned(partial(decoder.feed, b"", final=True)):
-                    self.require_current()
-                    await sink(line)
-                    count += 1
+                count += await self._deliver(
+                    await parse_owned(partial(decoder.feed, b"", final=True)), sink
+                )
         except HttpProblem as error:
             if error.status == 403:
                 raise ConnectionProblem(

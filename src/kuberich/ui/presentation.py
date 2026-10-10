@@ -38,6 +38,19 @@ class FrameTable(DataTable[Cell]):
     _frame_style: Style | None = None
     _width_metadata_trusted = True
     _row_order_revision = 0
+    _scoped_cell_refresh = False
+    _row_repaint_enabled = False
+
+    def refresh(
+        self,
+        *regions: Region,
+        repaint: bool = True,
+        layout: bool = False,
+        recompose: bool = False,
+    ) -> Self:
+        if self._scoped_cell_refresh and not regions and repaint and not layout and not recompose:
+            return self
+        return super().refresh(*regions, repaint=repaint, layout=layout, recompose=recompose)
 
     def add_row(
         self,
@@ -94,6 +107,7 @@ class FrameTable(DataTable[Cell]):
         update_width: bool = False,
     ) -> None:
         requested_width = update_width
+        scoped_refresh = False
         if update_width and self._width_metadata_trusted:
             row_id = RowKey(row_key) if isinstance(row_key, str) else row_key
             column_id = ColumnKey(column_key) if isinstance(column_key, str) else column_key
@@ -130,7 +144,25 @@ class FrameTable(DataTable[Cell]):
                     # the edit. Native resizing would rescan every retained row;
                     # its ordinary repaint still runs through the public method.
                     update_width = False
-        super().update_cell(row_key, column_key, value, update_width=update_width)
+                    scoped_refresh = (
+                        self._row_repaint_enabled
+                        and type(previous) is TableCell
+                        and type(value) is TableCell
+                        and not self.fixed_rows
+                        and not self.fixed_columns
+                    )
+        if scoped_refresh:
+            previous_scope = self._scoped_cell_refresh
+            self._scoped_cell_refresh = True
+            try:
+                super().update_cell(row_key, column_key, value, update_width=update_width)
+            finally:
+                self._scoped_cell_refresh = previous_scope
+            # Native row-region handling owns scrolling and visible repaint;
+            # offscreen content still enters native cell/cache state immediately.
+            self.refresh_row(self.get_row_index(row_key))
+        else:
+            super().update_cell(row_key, column_key, value, update_width=update_width)
         if not requested_width or type(value) is not TableCell:
             # Unsized edits and mutable/custom renderables can invalidate widths
             # in other cells. Keep native rescans until all rows are cleared.

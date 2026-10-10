@@ -9,6 +9,7 @@ import sys
 import time
 from collections import deque
 from copy import deepcopy
+from functools import partial
 from pathlib import Path
 
 import pytest
@@ -368,20 +369,52 @@ async def exercise_aggregate_runtime(tmp_path, request):
             screen = app.screen
             line = LogDecoder().feed(("2026-10-09T12:00:00Z " + "x" * 350 + "\n").encode())[0]
             maximum_prepared_records = maximum_combined_records = 0
+            refill_batches = refill_records = refill_max_records = refill_max_bytes = 0
+            # Production log_bytes pulls at most 8 KiB before owned decoding.
+            # Keep dataset preparation subject to that same input-work boundary.
+            refill_byte_budget = 8192
+            input_line_bytes = len(line.text.encode()) + 1
+            refill_batch_records = max(1, refill_byte_budget // input_line_bytes)
+
+            def record_prepared(history, other_records):
+                nonlocal maximum_prepared_records, maximum_combined_records
+                maximum_prepared_records = max(maximum_prepared_records, len(history.records))
+                maximum_combined_records = max(
+                    maximum_combined_records, other_records + len(history.records)
+                )
+
+            def retain_batch(history, identity, source_number, count):
+                for _ in range(count):
+                    history.retain(identity, source_number, line)
 
             def full_history(other_records=0):
-                nonlocal maximum_prepared_records, maximum_combined_records
                 history = AggregateHistory()
                 for source in range(10):
                     identity = LogSource(
                         "team", f"historical-{source}", f"historic-uid-{source}", "app"
                     )
-                    for _ in range(500):
-                        history.retain(identity, source + 1, line)
-                maximum_prepared_records = max(maximum_prepared_records, len(history.records))
-                maximum_combined_records = max(
-                    maximum_combined_records, other_records + len(history.records)
-                )
+                    retain_batch(history, identity, source + 1, 500)
+                record_prepared(history, other_records)
+                return history
+
+            async def refill_history(other_records):
+                nonlocal refill_batches, refill_records, refill_max_records, refill_max_bytes
+                history = AggregateHistory()
+                for source in range(10):
+                    identity = LogSource(
+                        "team", f"historical-{source}", f"historic-uid-{source}", "app"
+                    )
+                    for offset in range(0, 500, refill_batch_records):
+                        count = min(refill_batch_records, 500 - offset)
+                        await parse_owned(
+                            partial(retain_batch, history, identity, source + 1, count)
+                        )
+                        refill_batches += 1
+                        refill_records += count
+                        refill_max_records = max(refill_max_records, count)
+                        refill_max_bytes = max(refill_max_bytes, count * input_line_bytes)
+                        record_prepared(history, other_records)
+                assert len(history.records) == 5000 and refill_records == 5000
                 return history
 
             history = full_history()
@@ -532,9 +565,7 @@ async def exercise_aggregate_runtime(tmp_path, request):
                         # delivery without retaining two full input histories.
                         phase = "round 2 input delivery"
                         remaining = len(screen.aggregate.records)
-                        history = await parse_owned(
-                            lambda remaining=remaining: full_history(remaining)
-                        )
+                        history = await refill_history(remaining)
                     phase = f"round {iteration} initial layout"
                     screen.aggregate = screen.history = history
                     batches = screen.body.render_batches
@@ -634,6 +665,13 @@ async def exercise_aggregate_runtime(tmp_path, request):
                             "completed_full_history_rounds": completed_rounds,
                             "maximum_simultaneously_prepared_records": maximum_prepared_records,
                             "maximum_retained_plus_prepared_records": maximum_combined_records,
+                            "input_refill": {
+                                "byte_budget": refill_byte_budget,
+                                "batches": refill_batches,
+                                "records": refill_records,
+                                "maximum_batch_records": refill_max_records,
+                                "maximum_batch_bytes": refill_max_bytes,
+                            },
                             "after_close": after_close,
                             "max_gap_seconds": max(gaps, default=0),
                             "limit_seconds": 0.15,

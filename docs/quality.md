@@ -134,14 +134,31 @@ pre-open 400 evidence changes, manual admission, same-name UID churn, expired
 selection, source/status bounds, noise/slow-source heartbeat and detached-export
 cleanup before context-client close. Source and fresh-installed console/module
 PTYs exercise actual controls, resize, exit and terminal restoration.
-The separate actual-HTTP tiny-line backend case still asserts its unchanged
-150-ms heartbeat, 32,770 received lines, a responsive slow source, 600 aggregate/
-300 per-source retained lines, byte limits, 30-second receive deadline and drained
-ownership. It retains bounded read-only failure attribution at
+The separate actual-HTTP tiny-line backend case retains 32,770 received lines,
+a responsive slow source, 600 aggregate/300 per-source retained lines, byte limits,
+the 30-second receive deadline and drained ownership under the full parent branch
+coverage run. Two mandatory owned fresh children run that exact same workload
+without coverage/trace/profile instrumentation or development-only IRI imports.
+The positive child must meet the unchanged 150-ms maximum heartbeat. The negative
+child must fail specifically that assertion after a deliberate 200-ms callback;
+it must still deliver the complete bounded workload and drain all owners.
+Normal GC stays enabled at its original thresholds. Each child owns its process
+group, 60-second deadline and 256-KiB output bound. Unique nonces, complete artifact
+hashes, actual instrumentation/import facts, source identity and final cleanup
+are independently required before the coverage merge. Neither child contributes
+coverage; the original parent workload remains branch-covered. A parent timing
+gap is diagnostic rather than evidence of ordinary runtime latency.
+The retained original macOS run `38043506336` measured 561.710 ms under CTracer
+with the development IRI grammar loaded; a 534.620-ms generation-two collection
+overlapped that gap. These observations do not establish the entire cause or
+qualify the failed source. The originals stay retained without a retry.
+The backend retains bounded read-only failure attribution at
 `artifacts/backend/aggregate-tiny-lines-heartbeat.json`: source hashes, actual
 interpreter/tracer/import facts, normal GC policy, generation-two overlap and
 post-cleanup counts. These diagnostics do not collect garbage, alter thresholds,
-relax assertions or qualify timing. A passing new candidate does not explain an
+relax functional assertions or qualify timing. Child originals stay in
+`artifacts/backend/runtime/`, with the control receipt at
+`artifacts/backend/runtime-receipt.json`. A passing new candidate does not explain an
 earlier failed measurement; Q03 retains the unresolved performance investigation.
 The required 5,000-row UI benchmark runs from its full-suite test node in an owned
 fresh pytest process. The full development catalogue imports a development-only
@@ -156,6 +173,11 @@ it never clears library caches. It then measures two full 5,000-record layout/
 format/timestamp/copy/save and Current/Previous cycles, with the unchanged 150-ms
 limit, at most 5,000 prepared records and 5,001 retained-plus-prepared records.
 Public Escape and final application/API cleanup must drain all owned work.
+Production aggregate view/export formatting now uses sequential owned turns of
+at most 32 records and 8 KiB of reserved output, with a larger single retained
+record isolated in its own turn. Captured identity/filter/order and repeated
+cancellation contracts apply between turns. This does not change the retained
+dataset, two full rounds, GC policy, runtime deadline or heartbeat budget.
 An independent child runs that same node with a deliberate 200-ms UI callback and
 must fail specifically the heartbeat assertion, then drain. Both runtime children
 require inactive coverage and no tracing/profile callback. A third mandatory
@@ -274,7 +296,8 @@ uv run python scripts/check_coverage.py coverage.json
 uv run diff-cover coverage.xml --compare-branch origin/main --fail-under 90 --total-percent-float
 ```
 
-The runtime coverage helper verifies both required runtime controls and the
+The runtime coverage helper first verifies both backend timing controls and the
+original branch-covered backend workload, then both UI runtime controls and the
 successful instrumented replay against the current source, then merges only that
 replay's branch data into the full
 parent measurement. It preserves the original parent database/reports in an

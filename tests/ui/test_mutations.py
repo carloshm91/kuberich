@@ -25,7 +25,7 @@ from tests.support.workspace import wait_for
 async def test_preparation_is_drained_before_client_cleanup(tmp_path, monkeypatch, closing):
     entered, released, finished = threading.Event(), threading.Event(), threading.Event()
     ready, finish_trial, closed = asyncio.Event(), asyncio.Event(), asyncio.Event()
-    decode = kubernetes._decode
+    decode = kubernetes.decode_json
     state = {}
 
     def held_decode(data):
@@ -50,7 +50,7 @@ async def test_preparation_is_drained_before_client_cleanup(tmp_path, monkeypatc
                 screen = app.screen
                 screen.query_one("#annotation-key", Input).value = "example.io/drain"
                 await pilot.pause()
-                monkeypatch.setattr(kubernetes, "_decode", held_decode)
+                monkeypatch.setattr(kubernetes, "decode_json", held_decode)
                 old = app.sessions.client
                 close = old.close
 

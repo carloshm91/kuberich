@@ -96,3 +96,27 @@ passed. Both static-site builds and link/digest validation passed with 49 pages,
 1,726 references and 64 files. These are local preparation checks before
 signed-head hosted qualification.
 Q03's combined workload, input/memory targets and full release scope stay open.
+
+## Original frozen-head development qualification
+
+[PR #175](https://github.com/carloshm91/kuberich/pull/175) merged as
+`26ba91e5f03e04818fdc0c9343c2ae43b56a8832`. Signed source
+`640159424b6adfcb8c20ea578df5b876d9aafb65`, actual tested PR checkout
+`efc84a986d3bf05ebd2c0d9698e79d724c16dca6` and squash share tree
+`9d61dc98e4b9bad43bf093a7056ac1aefc5f7059`. All eight required checks passed.
+
+[Application run 38033288908](https://github.com/carloshm91/kuberich/actions/runs/38033288908)
+passed **4,246 cases in each** of the four development environments. Independent
+original reviews matched all 109 production modules and all 111 payload files
+per distribution. Whole line/branch minima were **99.0920% / 96.8856%**; all 43
+critical modules and all 43 changed executable lines met 100%. Pinned compiler/
+parser checks matched original 3.12/3.14 presentation inventories exactly.
+Original runtime coverage/control, isolated installers, terminal restoration,
+dependency audits and configured owned-cluster evidence were verified.
+
+[Repository run 38033288905](https://github.com/carloshm91/kuberich/actions/runs/38033288905)
+matched 140 source inputs and 63 payloads. All 49 desktop and 49 mobile pages
+passed with no accessibility violations, browser errors or external requests;
+npm audit reported zero vulnerabilities. This qualifies the development
+correction, not Q03 or the full six-environment release. No tag, package, tap/
+organization or new site/DNS was published.

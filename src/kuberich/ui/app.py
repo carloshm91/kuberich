@@ -97,6 +97,7 @@ from kuberich.ui.chrome import (
     WorkspaceChrome,
     WorkspaceFrame,
     WorkspaceHeader,
+    WorkspaceLabel,
     workload_shortcuts,
 )
 from kuberich.ui.commands import CommandInput, NavigationInput
@@ -313,7 +314,7 @@ class KubeRichApp(App[None]):
             focus_table, placeholder="Filter resources", id="filter"
         )
         self.command_input = CommandInput(self._suggestions, focus_table, self._submit_command)
-        self.status = Static(DISCONNECTED_STATUS, id="status", markup=False)
+        self.status = WorkspaceLabel(DISCONNECTED_STATUS, id="status", markup=False)
 
     @property
     def _active_table(self) -> PodTable | NamespaceTable | ContextTable | StandardTable:
@@ -392,7 +393,7 @@ class KubeRichApp(App[None]):
         forwards = (
             f" · Forwards: {self.forwards.active_count}" if self.forwards.active_count else ""
         )
-        self.status.update(safe_text(prefix + insecure + message + forwards))
+        self.status.update_text(safe_text(prefix + insecure + message + forwards))
 
     def _forward_changed(self) -> None:
         self._render_ready.set()
@@ -464,8 +465,8 @@ class KubeRichApp(App[None]):
             yield self.standard_table
             yield self.custom_table
             with Vertical(id="empty-state"):
-                yield Static("No cluster connection", id="empty-title", markup=False)
-                yield Static(
+                yield WorkspaceLabel("No cluster connection", id="empty-title", markup=False)
+                yield WorkspaceLabel(
                     "Live resources are not connected in this preview.",
                     id="empty-description",
                     markup=False,
@@ -701,10 +702,10 @@ class KubeRichApp(App[None]):
                             and (view.status is ViewStatus.LIVE or kind == "contexts")
                             and problem is None
                         ):
-                            self.query_one("#empty-title", Static).update(
+                            self.query_one("#empty-title", WorkspaceLabel).update_text(
                                 f"No {kind} match this filter"
                             )
-                            self.query_one("#empty-description", Static).update(
+                            self.query_one("#empty-description", WorkspaceLabel).update_text(
                                 "Escape in the table clears the filter."
                             )
                     if (
@@ -758,8 +759,10 @@ class KubeRichApp(App[None]):
             )
             self.query_one("#empty-state").display = not bool(self.context_table.row_count)
             self.context_table.set_class(bool(self.context_table.row_count), "populated")
-            self.query_one("#empty-title", Static).update("No contexts match this filter")
-            self.query_one("#empty-description", Static).update(
+            self.query_one("#empty-title", WorkspaceLabel).update_text(
+                "No contexts match this filter"
+            )
+            self.query_one("#empty-description", WorkspaceLabel).update_text(
                 "Escape in the table clears the filter."
             )
             self._show_sort()
@@ -768,7 +771,7 @@ class KubeRichApp(App[None]):
             )
             return
         usable = observation.state in USABLE_CONNECTIONS
-        self.query_one("#empty-title", Static).update(
+        self.query_one("#empty-title", WorkspaceLabel).update_text(
             "Stale resource data"
             if view.snapshot is not None and view.problem is not None
             else "Resource data unavailable"
@@ -781,7 +784,7 @@ class KubeRichApp(App[None]):
             if usable
             else "Connection unavailable"
         )
-        self.query_one("#empty-description", Static).update(
+        self.query_one("#empty-description", WorkspaceLabel).update_text(
             f"No {self._resource_name} were returned. :ns namespaces · :ctx contexts."
             if view.status is ViewStatus.LIVE
             else "Keeping the last snapshot while reconnecting. Press i for details."
@@ -1292,7 +1295,7 @@ class KubeRichApp(App[None]):
         table.reset(self.workspace.store.observation.revision)
         self._active_table.remove_class("populated")
         self.query_one("#empty-state").display = True
-        self.query_one("#empty-title", Static).update("Loading resources")
+        self.query_one("#empty-title", WorkspaceLabel).update_text("Loading resources")
         self.command_input.reset_choice()
 
     def action_namespaces(self) -> None:

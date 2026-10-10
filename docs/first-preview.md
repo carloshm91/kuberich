@@ -1,5 +1,165 @@
 # First things to try
 
+## Native qualification and owned CrashLoop scenario: Refs Q03 #50
+
+Current update: the later `321e9ca` candidate also failed required real-kind
+enrollment after all four PR suites passed 4,365 cases. Two subsequent local
+fixture revisions remain unqualified. Owned status-timing evidence shows a
+waiting observation can last only about 117 ms before running. The earlier
+receipt-time window below does not lease container state across API calls;
+a successful new native candidate remains pending.
+
+The working correction now selects one unchanged actual waiting LIST response
+at the membership boundary, then leaves later LIST/WATCH and every log request
+ordinary. Its receipt labels that fixture control. First-instance, single-line,
+no-replay and cleanup assertions remain enforced. Its 81 focused contracts and
+all 11 real-kind scenarios passed, with unchanged caller configuration and
+verified cluster deletion. Required strict types over 133 files and static-site
+checks passed. A new frozen native candidate still needs its complete checks.
+This does not add a user-facing feature or request another maintainer trial.
+
+The dense-log candidate passed all 4,349 cases in four native environments.
+Three complete jobs passed; Linux/Python 3.12 failed later because the owned
+crashing container restarted before the waiting-instance log scenario enrolled.
+Its expected output and normal reader completion did not satisfy that scenario.
+The failed original remains retained and the candidate was not merged.
+
+The corrected verifier observes an actual termination-to-waiting transition and
+enrolls within its bounded receipt-time window. `uv run pytest -q
+tests/quality/test_aggregate_kind.py tests/quality/test_owned_kind.py
+tests/quality/test_ci_policy.py` passed 62 cases; the actual owned Kubernetes
+trial passed 11 scenarios, including current/previous waiting-instance logs,
+all-reader cleanup and verified cluster deletion. Required Ruff/format checks
+and strict types over 133 files passed. New frozen native checks remain required.
+See [evidence and limits](acceptance/owned-crashloop-window.md).
+
+The first public target remains 0.1.0, with planned brand-owned installation
+`brew install kuberich/tap/kuberich`. No version, tag, tap or package is published
+by this correction; Q03's full sustained-load qualification remains open.
+
+## Cooperative dense-log delivery: Refs Q03 #50
+
+Pending input, cancellation and target changes now get a cooperative turn during
+dense log delivery. Three HTTP regressions reproduced the preceding 4,096-line
+delay; the correction checks each next target and yields after at most 32 lines,
+preserving order, partial EOF, slow-consumer backpressure and response ownership.
+
+`uv run --locked --python 3.12 pytest -q tests/unit tests/contract tests/ui/test_aggregate_logs.py tests/ui/test_logs.py tests/ui/test_sessions.py tests/quality/test_backend_runtime.py tests/quality/test_backend_heartbeat.py tests/quality/test_runtime_coverage.py --cov=kuberich --cov-branch`
+passed 3,077 cases in 440.60 seconds. Eleven actual source-terminal cases passed
+in 33.75 seconds; Python 3.13 and 3.14 each passed 149 focused cases. Four receipts
+bind 537 unchanged tracked inputs. All 43 critical modules and 13 owned changed
+executable lines measured 100% after the required runtime coverage verification/
+merge. The scoped overall 89.2635% line / 86.6836% branch result does not qualify
+whole-package floors; new frozen-head/native checks remain required.
+
+Normal backend latency now has its own source-bound fresh positive and deliberate
+200-ms blocking controls, while the full original 32,768-line HTTP workload stays
+branch-covered in the parent suite. The controls measured 31.011 ms and failed
+at 201.247 ms respectively, with complete line delivery and zero final owners/
+streams/watches. Original macOS source `46c4dea` failed at 561.710 ms with CTracer
+and the development IRI grammar loaded; a 534.620-ms GC collection overlapped it.
+Those observations do not establish the whole cause or qualify the failed head.
+All originals remain retained. See [exact evidence and limits](acceptance/cooperative-log-delivery.md).
+
+Q03 remains open for combined independent load, 10,000 retained lines, sustained
+input p95 below 100 ms, a 30-minute memory plateau and lifecycle qualification.
+The first public target remains 0.1.0 and the planned brand-owned command remains
+`brew install kuberich/tap/kuberich`. No package, tap, release or intermediate
+maintainer trial is published/requested by this correction.
+
+## Collected parser outcomes and bounded log formatting: Refs Q03 #50
+
+Repeated parser cancellation now drains a collector before returning, including
+late worker failures on Python 3.14. Uncancelled errors keep their original
+identity. Aggregate layout/export formatting preserves the captured source,
+order, timestamps and mode through sequential owned turns capped at 32 records
+and 8 KiB, with one larger retained record isolated in its own turn.
+
+`uv run --locked --python 3.12 pytest -q tests/unit tests/contract tests/ui/test_aggregate_logs.py tests/ui/test_logs.py tests/ui/test_sessions.py --cov=kuberich --cov-branch`
+passed 2,992 cases in 396.92 seconds; 11 actual source-terminal cases passed in
+33.82 seconds. Python 3.13 and 3.14 each passed the 209-case focused parser/
+formatting cohort. Four receipts bind 532 unchanged source inputs, including all
+109 production modules. After the required runtime replay coverage merge, all
+43 critical modules and the 29 owned changed executable lines measured 100%.
+The scoped suite's overall 89.2599% line / 86.6836% branch measurement does not
+qualify the whole-package gates; full frozen-head/native checks remain required.
+
+The ordinary runtime child completed both 5,000-record rounds at 113.758 ms,
+below the unchanged 150-ms guard. Its deliberately blocking negative control
+failed at 204.496 ms; the instrumented functional replay completed both rounds
+and is not timing evidence. All three final application/API cleanup receipts
+record zero owned viewers, log streams and watches.
+
+The preceding `087ee65` native run failed: Python 3.14 exposed two late shield
+error callbacks, and macOS measured 151.067 ms during round-two save. These
+original failures remain retained; passing local checks do not qualify that
+head or establish the complete cause of the macOS gap. See
+[acceptance evidence](acceptance/owned-log-formatting.md).
+The first public target stays 0.1.0 with the planned
+`brew install kuberich/tap/kuberich` channel. No new ticket, version bump,
+publication or intermediate maintainer trial accompanies this correction.
+
+## Bounded aggregate input preparation: Refs Q03 #50
+
+The runtime fixture refills the same 5,000 records through owned batches capped
+at the product transport's 8-KiB read size. Its receipt verifies 230 batches,
+22 records/8,184 bytes maximum per batch, both full-history rounds and the same
+5,001 maximum retained-plus-prepared records. The 150-ms gate, ordinary GC,
+warm navigation/resize/theme cycles and 200-ms blocking negative control remain.
+
+`uv run pytest -q tests/ui/test_aggregate_logs.py tests/contract/test_aggregate_logs.py --cov=kuberich --cov-branch`
+passed all 30 affected cases in 132.62 seconds. The final normal positive child
+measured 114.769 ms, the required negative child failed at 206.152 ms, and the
+instrumented functional replay completed both rounds. These local receipts bind
+165 unchanged source inputs. New frozen-head/native checks remain required;
+the original #176 macOS failure is retained and its cause is not established by
+these later observations. See [input preparation evidence](acceptance/aggregate-input-preparation.md).
+
+## Watch pipeline work: Refs Q03 #50
+
+Live resource JSON and domain normalization share one owned worker per event.
+Raw framing stays bounded; decoded transport compatibility, slow consumers,
+Table fallback, retry/checkpoint semantics and safe errors are preserved.
+`uv run pytest -q tests/contract/test_watch_pipeline.py tests/contract/test_watches.py tests/contract/test_resources.py tests/contract/test_custom_resources.py --no-cov`
+passed all 188 focused cases, including 19 new HTTP/framing and repeated-cancel
+cases. The broad affected cohort passed 557 contract/UI cases and 20 actual
+source-terminal cases. All 25 owned changed executable lines measured 100%.
+Frozen-head/native verification remains required.
+
+A paired 30-second actual CLI/PTY resource-only diagnosis measured 141.081 ms
+input-to-painted-selection p95 before the combined worker and 96.333 ms after.
+These are working-source observations, not complete Q03 qualification. A
+headless diagnosis still lagged the independent event source and had a long
+heartbeat gap. A final-source actual CLI/PTY sample measured 80.443 ms p95 with
+normal restoration/cleanup. Combined logs, 10,000-line retention, sustained throughput and
+the 30-minute memory plateau remain open; no intermediate manual trial or
+publication is requested. Exact source limits are in
+[watch pipeline evidence](acceptance/watch-pipeline-performance.md).
+
+The preceding PR #176 remains unmerged: its original macOS run
+`38036838862` failed the aggregate runtime heartbeat during the second full-history
+input delivery (165.123 ms against 150 ms; 4,267 passed/one failed). Its original
+source, log and artifact remain preserved. Passing Linux jobs or local watch
+checks do not qualify that failed candidate or establish the failure's cause.
+All three original Linux environments independently passed 4,268 cases with
+all 43 critical modules and 47 changed executable lines at 100%; minimum whole
+line/branch coverage was 99.0944% / 96.8662%. Those environment-specific receipts
+do not override the macOS failure or failed aggregate Quality gate.
+
+## Owned workspace repaint work: Refs Q03 #50
+
+Unchanged workspace labels avoid duplicate updates while identity/theme/style
+changes still repaint. Resource tables reuse immutable projection rows and opt
+into native row repaint for safe width-preserving edits; geometry changes and
+unknown content retain full native behavior. The complete affected cohort passed
+224 UI/domain cases and ten actual owned source-terminal cases. Final signed-head
+native checks remain required before merging this candidate. Resource-only
+terminal observations improved but still exceed Q03's
+100-ms target; combined logs, sustained memory and lifecycle qualification remain
+open. [Exact scope and observer limits](acceptance/live-render-performance.md)
+retain the original evidence. No intermediate manual trial or publication is
+requested.
+
 ## Resource ordering work: Refs Q03 #50
 
 Pod, standard and discovered resource tables preserve their established order
@@ -8,7 +168,11 @@ scroll. Changed typed values, identity ties, membership, native reorder, schema,
 context and interrupted batches still receive canonical ordering. All 173
 affected UI/domain cases and three owned source-terminal cases passed. The
 critical Pod domain and all 43 changed executable production lines met 100%
-coverage; final signed-head native checks remain required. Exact evidence and the continuing input/throughput/memory limits are in
+coverage. PR #175 merged as `26ba91e5f03e04818fdc0c9343c2ae43b56a8832`
+after all eight required checks and independent original artifact review. Each
+of four development environments passed 4,246 cases; minimum whole line/branch
+coverage was 99.0920% / 96.8856%, with all 43 critical modules and changed
+executable lines at 100%. Exact evidence and continuing input/throughput/memory limits are in
 [resource-order evidence](acceptance/table-order-performance.md). Q03 remains open,
 and no intermediate manual maintainer trial or public publication is requested.
 

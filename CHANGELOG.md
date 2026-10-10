@@ -7,6 +7,24 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Give pending input, target changes and cancellation a turn during dense log
+  delivery, preserving source order, consumer backpressure and bounded retention.
+  Require normal-runtime backend latency controls alongside the original
+  branch-covered HTTP workload and final ownership checks.
+
+- Format retained aggregate log views and exports in bounded owned turns,
+  preserving captured source identities, arrival order and plain/JSON controls.
+  Collect parser outcomes before returning cancellation, including late errors
+  on Python 3.14, while preserving ordinary error propagation.
+
+- Decode and validate live resource events in one owned worker, preserving
+  bounded framing, pull backpressure, Table fallback and safe error messages.
+  Drain JSON read/watch workers through repeated cancellation before cleanup.
+
+- Avoid duplicate workspace label updates and wide equality on reused immutable
+  resource rows; repaint safe owned cell edits through native row regions while
+  retaining full native geometry and unknown-content handling.
+
 - Keep established Pod, standard and discovered resource order through unrelated
   live edits. Reorder changed typed sort values, identity ties and membership while
   retaining selection/scroll and generation-safe recovery.

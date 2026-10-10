@@ -22,6 +22,7 @@ from kuberich.ui.presentation import FrameTable
 
 
 class StandardTable(FrameTable[PodCell]):
+    _row_repaint_enabled = True
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("j", "cursor_down", "Down", show=False),
         Binding("k", "cursor_up", "Up", show=False),
@@ -173,7 +174,11 @@ class StandardTable(FrameTable[PodCell]):
         interacted = False
         incoming = {row.uid: row for row in rows}
         removals = [(uid, None) for uid in self._rows if uid not in incoming]
-        changes = [(uid, row) for uid, row in incoming.items() if self._rows.get(uid) != row]
+        changes = [
+            (uid, row)
+            for uid, row in incoming.items()
+            if (cached_row := self._rows.get(uid)) is not row and cached_row != row
+        ]
         patches = removals + changes
         now = utc_now()
         for start in range(0, len(patches), 128):

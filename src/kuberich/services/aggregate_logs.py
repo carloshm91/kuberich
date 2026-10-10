@@ -11,6 +11,7 @@ from kuberich.domain.aggregate_logs import (
     MAX_READERS,
     MAX_RETIRED,
     MAX_SOURCES,
+    AggregateLine,
     LogSource,
     intermediate_resource,
     sources,
@@ -30,6 +31,41 @@ from kuberich.services.watches import ListWatch
 
 _PODS = replace(PODS, verbs=frozenset({"get", "list", "watch"}))
 SourceSink = Callable[[LogSource, int, LogLine], Awaitable[None]]
+
+
+async def format_records(
+    records: tuple[AggregateLine, ...],
+    *,
+    json_mode: bool,
+    timestamps: bool = True,
+    source_filter: tuple[str, str] | None = None,
+) -> tuple[tuple[int, str], ...]:
+    """Format a captured history in owned turns of 32 records or 8 KiB.
+
+    Retention has already reserved each record's largest representation. A
+    single larger retained record gets its own turn; no record is split.
+    """
+    entries: list[tuple[int, str]] = []
+    batch: list[AggregateLine] = []
+    size = 0
+
+    def render(items: tuple[AggregateLine, ...]) -> tuple[tuple[int, str], ...]:
+        return tuple(
+            (item.number, item.text(json_mode=json_mode, timestamps=timestamps)) for item in items
+        )
+
+    for record in records:
+        if source_filter is not None and record.source.key != source_filter:
+            continue
+        if batch and (len(batch) == 32 or size + record.size_bytes > 8192):
+            entries.extend(await parse_owned(partial(render, tuple(batch))))
+            batch.clear()
+            size = 0
+        batch.append(record)
+        size += record.size_bytes
+    if batch:
+        entries.extend(await parse_owned(partial(render, tuple(batch))))
+    return tuple(entries)
 
 
 @dataclass

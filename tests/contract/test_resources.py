@@ -560,7 +560,7 @@ async def test_cancellation_waits_for_owned_json_decoding_thread(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     entered, released, finished = threading.Event(), threading.Event(), threading.Event()
-    original = kubernetes._decode
+    original = kubernetes.decode_json
 
     def delayed(data):
         entered.set()
@@ -573,7 +573,7 @@ async def test_cancellation_waits_for_owned_json_decoding_thread(
     async def handler(request):
         return web.json_response(collection())
 
-    monkeypatch.setattr(kubernetes, "_decode", delayed)
+    monkeypatch.setattr(kubernetes, "decode_json", delayed)
     async with reader_fixture(tmp_path, handler) as reader:
         task = asyncio.create_task(reader.session.get_json("/api"))
         async with asyncio.timeout(2):

@@ -246,6 +246,67 @@ async def test_consumer_backpressure_cancellation_and_retention_are_bounded(tmp_
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("interruption", ["observe", "cancel", "invalidate"])
+async def test_immediate_consumer_yields_to_pending_input_and_target_changes(
+    tmp_path, interruption
+):
+    """An async consumer may complete immediately; pending input still gets a turn."""
+    closed = asyncio.Event()
+    valid, intervened_at = True, []
+    output = []
+    task = None
+
+    async def handler(request):
+        if not request.path.endswith("/log"):
+            return web.json_response(manifest())
+        body = b"x\n" * 5000 + b"final-partial"
+        if interruption == "observe":
+            return web.Response(body=body)
+        response = web.StreamResponse()
+        await response.prepare(request)
+        try:
+            await response.write(body)
+            await wait_for(lambda: request.transport is None or request.transport.is_closing())
+        finally:
+            closed.set()
+        return response
+
+    def intervene():
+        nonlocal valid
+        intervened_at.append(len(output))
+        if interruption == "cancel":
+            task.cancel()
+        elif interruption == "invalidate":
+            valid = False
+
+    async def sink(line):
+        output.append(line.text)
+        if len(output) == 1:
+            asyncio.get_running_loop().call_soon(intervene)
+
+    async with reader_fixture(tmp_path, handler) as reader:
+        task = asyncio.create_task(
+            stream_for(reader, current=lambda: valid).run(LogOptions(follow=False), sink)
+        )
+        try:
+            if interruption == "observe":
+                assert await task == 5001
+                assert output == ["x"] * 5000 + ["final-partial"]
+            else:
+                error = asyncio.CancelledError if interruption == "cancel" else AppError
+                with pytest.raises(error):
+                    await task
+                await closed.wait()
+                assert len(output) < 1000
+                assert "final-partial" not in output
+            assert len(intervened_at) == 1 and 0 < intervened_at[0] < 1000
+        finally:
+            if not task.done():
+                task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+
+
+@pytest.mark.asyncio
 async def test_abrupt_disconnect_reports_failure_without_automatic_replay(tmp_path):
     requests = []
 
