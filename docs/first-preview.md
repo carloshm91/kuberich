@@ -2,6 +2,24 @@
 
 ## Standalone work in progress: D05 #49
 
+The committed full-interpreter build at `f2a0e310` now passed on the owned
+Ubuntu 22.04 x86_64 builder. Its complete native library inventory stayed at
+GLIBC 2.35, with all 20 original interpreter notice texts retained. The exact
+archive SHA-256 is
+`a2002de6ddddd4f8bba1ee995ccbd657aefb18a3e413739c87c60cfdaf120428`.
+An independent read matched its 128 Git inputs, archive members, original
+interpreter/library/metadata/notices, wheel and behavior receipts.
+
+That same executable passed `/app/kuberich --version`, `/app/kuberich --help`
+and `/app/kuberich info` in the pinned base container, whose installed packages
+and command discovery showed no system Python, uv, pip or kubectl. Actual PTYs
+then browsed 80 pods from an owned loopback API, opened containers, reported the
+missing optional kubectl, and exercised a C credential helper plus a kubectl
+fixture launching real `/bin/sh`. Both terminal modes were restored. These are
+synthetic local auth/API/exec checks, not real provider or Kubernetes exec
+certification. Containers were removed. macOS/ARM builds, protected four-target
+CI and exact release-input integration remain pending; #49 is still open.
+
 The current recipe prepares a separately hash-pinned full CPython 3.12.15 archive
 for each target and preserves the interpreter's original static component notices.
 The actual Linux full archive enrolled 17 metadata components and 20 original
@@ -19,8 +37,8 @@ Its copied host `libstdc++` still advertises GLIBC 2.38, so this diagnostic arch
 cannot pass the promised whole-bundle 2.35 gate. The clean-host CLI preflight
 correctly refused it before launch; a separate owned C-auth/real-shell trial did
 pass on Ubuntu 22.04. That narrower positive result does not override the failed
-whole-bundle floor. The next committed minimum-floor build must collect compatible
-libraries and retain the same original notices. Four-target protected CI, actual
+whole-bundle floor. The later committed minimum-floor build above collected
+compatible libraries and retained the original notices. Four-target protected CI, actual
 Mac signing/runtime and exact release-input integration remain pending.
 
 [PR #180](https://github.com/carloshm91/kuberich/pull/180) merged as `a4e958c`

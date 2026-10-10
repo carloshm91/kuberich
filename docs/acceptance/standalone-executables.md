@@ -3,6 +3,36 @@
 Status: **in progress**. No release, tag, package or standalone download was
 published. Build success and local runtime evidence do not complete all of #49.
 
+## Committed full-interpreter Linux checkpoint
+
+The owned Ubuntu 22.04 x86_64 build of `f2a0e310ff67e35b9f02f0ad33b3e96ef6c9a1ce`
+completed successfully in 146.24 seconds. It used the pinned full CPython 3.12.15
+archive, retained 17 metadata components / 20 original notice texts and produced
+archive SHA-256
+`a2002de6ddddd4f8bba1ee995ccbd657aefb18a3e413739c87c60cfdaf120428`.
+The whole native inventory's highest GLIBC symbols were 2.35; source was clean
+and this build was not diagnostic. `runtime_qualified` remains false pending
+the complete delivery contract.
+
+The exact bundle passed seven clean-base checks: package inventory, GLIBC,
+absence of system Python/uv/pip/kubectl, version, help, info, and an actual PTY
+pod/container browser with the explicit missing-kubectl behavior. A separate
+actual PTY passed the owned C exec-credential helper, private snapshot,
+sanitized external loader environment, real `/bin/sh` output, unchanged caller
+kubeconfig and UI return. Both sessions exited zero with exact terminal-mode,
+alternate-screen, cursor and reporting-mode restoration.
+
+The independent original reader matched all 128 source inputs against the Git
+commit, the archive/member/native-file hashes, original interpreter executable,
+shared library and metadata, every original and bundled notice text, the wheel,
+build logs and terminal receipts. Evidence stays under
+`artifacts/standalone49/ubuntu22-full-native-v1`; the two terminal receipts are
+`clean-full-ubuntu22-native-49-missing-kubectl.json` and
+`clean-full-ubuntu22-native-49-c-auth-exec.json`. No owned #49 containers remained.
+This is x86_64 Linux plus owned synthetic API/auth/exec behavior, not actual
+provider or cluster exec certification. macOS/ARM, protected native CI and
+exact release-candidate integration remain open requirements.
+
 ## Full interpreter enrollment checkpoint
 
 The recipe now prepares the reviewed full upstream CPython 3.12.15 / 20261009
@@ -28,8 +58,8 @@ advertises GLIBC 2.38: the archive is diagnostic and fails the whole-bundle floo
 The clean-host CLI preflight correctly refused it before container launch. A
 separate actual C-auth/real-shell PTY on the base Ubuntu 22.04 image passed, but
 that narrow behavior result cannot qualify an archive whose library inventory
-exceeds the promised minimum. The committed-source minimum-floor build remains
-the next required evidence.
+exceeds the promised minimum. That diagnostic checkpoint preceded the
+committed-source minimum-floor evidence recorded above.
 
 Full-interpreter ingestion checks and Mach-O deployment parsing add 22 cases to
 the archive/notice tests. Current combined scope is 67 cases; strict builder/
