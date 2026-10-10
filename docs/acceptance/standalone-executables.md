@@ -3,6 +3,28 @@
 Status: **in progress**. No release, tag, package or standalone download was
 published. Build success and local runtime evidence do not complete all of #49.
 
+## First hosted native observations: PR #181
+
+Application quality run `38093295317` at head `bcbc09b` selected all four native
+targets; artifacts bind the actual PR merge source `a06fba34508e9a00b7668ff10d13d5674a58af4e`.
+Linux x86_64 job `114333977598` and ARM64 job `114333977574` completed successfully,
+including Python-free runtime and real extracted-archive kind execution. Original
+artifacts are retained for independent review; this is not a complete green run.
+
+Both macOS jobs completed native construction then failed isolated `--version`.
+The ARM original artifact `11684797107` has ZIP SHA-256
+`4c7e06714eb6c8a9d1cbda9c92b589c3da244de1b732230f9ecbd5da6ac72c42`;
+its inner archive is `f05f01fab4a35498ff66bd7d2e53660d28a1bcf7b3fbc4376a00d7b73360f483`.
+All 13 native ad-hoc signatures were verified; actual load commands measured 11.0.
+The declared macOS minimum stays 14 and no Developer ID/notarization is claimed.
+External and system Python controls both failed with the intended sandbox denial.
+Version failed at Rich's `os.getcwd()` import because the controller inherited
+the deliberately forbidden repository cwd. The CLI observer now sets its owned
+temporary cwd and retains that path with the control result. The sandbox rules
+remain unchanged. Eight actual host/helper regressions and strict verifier types
+passed locally; corrected macOS execution still needs fresh native evidence.
+Original logs/archives are under `artifacts/standalone49/pr181-original-ci`.
+
 ## Reproducible qualification and CI preparation
 
 The reusable reader rejects stale/dirty Git inputs, tampered archive/member

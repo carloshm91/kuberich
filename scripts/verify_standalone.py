@@ -101,12 +101,18 @@ class Host:
         command = self.command(argv, environment)
         actual_environment = {**self.environment, **environment}
         result = subprocess.run(
-            command, env=actual_environment, capture_output=True, text=True, timeout=45
+            command,
+            cwd=self.directory,
+            env=actual_environment,
+            capture_output=True,
+            text=True,
+            timeout=45,
         )
         write_original(
             self.evidence / (name + ".json"),
             {
                 "argv": command,
+                "cwd": str(self.directory),
                 "exit": result.returncode,
                 "stdout": result.stdout,
                 "stderr": result.stderr,

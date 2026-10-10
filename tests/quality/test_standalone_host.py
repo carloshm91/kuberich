@@ -16,7 +16,7 @@ def test_controller_docker_remains_discoverable_when_the_application_has_no_path
     monkeypatch, tmp_path
 ):
     docker = tmp_path / "docker"
-    docker.write_text("#!/bin/sh\nprintf 'owned controller command executed\\n'\n")
+    docker.write_text("#!/bin/sh\npwd\n")
     docker.chmod(0o755)
     monkeypatch.setattr(verify_standalone.platform, "system", lambda: "Linux")
     monkeypatch.setattr(verify_standalone.shutil, "which", lambda name: str(docker))
@@ -29,7 +29,7 @@ def test_controller_docker_remains_discoverable_when_the_application_has_no_path
     output = host.observe(
         "outside-path", ["/app/kuberich", "--version"], {"PATH": str(tmp_path / "empty")}
     )
-    assert output == "owned controller command executed\n"
+    assert output == str(tmp_path) + "\n"
 
 
 def test_missing_controller_docker_is_an_explicit_failure(monkeypatch, tmp_path):

@@ -2,6 +2,19 @@
 
 ## Standalone work in progress: D05 #49
 
+[Draft PR #181](https://github.com/carloshm91/kuberich/pull/181) started the first
+hosted four-target run, `38093295317`, at head `bcbc09b`. Both Linux native jobs
+passed, including clean-base runtime and actual extracted-archive kind checks.
+The macOS jobs built their archives but failed the isolated `--version` control.
+The ARM original verified all 13 ad-hoc signatures and measured deployment
+commands at macOS 11; that does not establish support below the declared 14.
+Its error came from Rich importing `os.getcwd()` while the inherited checkout
+directory was deliberately inaccessible. The verifier now selects its owned
+temporary cwd and records it; eight host/helper regressions and strict types
+passed locally. Fresh actual macOS evidence for this correction, the remaining
+source matrix and release enrollment are still required. The sandbox denial
+has not been relaxed, and the failed original log/archive remain retained.
+
 The native checks are now reusable as `scripts.check_standalone` and
 `scripts.verify_standalone`. The exact previously retained Linux archive passed
 the new qualifier after the checker was corrected to inspect Textual's actual
