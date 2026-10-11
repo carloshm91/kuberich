@@ -179,3 +179,41 @@ is `b427f90762546d07f458df65dcf7062d55009a9154c4affa35b1eb2347cbc5e3`.
 These are local repair checks, not final frozen platform qualification. Required
 source/native/installation and owned-round evidence must be regenerated for
 the completed repair before this issue closes.
+
+## Completed local repair review
+
+The affected Python 3.13 UI, installed-distribution and launch suite passes
+704 cases in 1,032.24 seconds. The scoped style module measures 100% line and
+branch coverage (39 statements/eight branches); this does not substitute for the
+full production gate. Ruff/format passes across 536 files, strict application/
+gate/site checking passes over 145 files, and the repository plan/link check
+passes in the standard owned development environment. A first local command used
+a nonexistent test path, and a separate custom-venv setup caused the plan checker
+to inspect a dependency's README; neither is counted as passing validation.
+
+Both new captures are actual renders of the repaired application source tree
+`2946d2f627df18f456c81149188545cdb66a786f`. The CoreDNS capture comes from
+the new owned-context trial at `7a0c10d`; prewrite endpoint checks, UI/log return,
+caller preservation and verified cluster deletion passed. The workspace render
+is byte-identical to the prior fictional image. No user cluster/configuration
+was used. Upstream MIT notice for the scoped Textual adaptations is retained in
+the already-packaged NOTICE; the project's Apache license remains unchanged.
+
+Both static surfaces pass 57 pages, 2,336 local links/assets and 72 files.
+Chrome checks all desktop/mobile pages, narrow overflow, keyboard, clipboard and
+JavaScript-free navigation with zero A/AA violations, external requests or
+browser failures. The exact new site manifest digest is
+`12cf8138d6a6d86004e0d417cf6d65b22dd8f26ffd0534623b7544dbbe0d3763`;
+browser report digest is
+`98cce28d9cf72107d04f43f5b13497a2e3bcd3c43acc46dbe14c5e1157c66b49`.
+Original browser/capture receipts remain under `artifacts/launch150`.
+
+The previous `f451593` owned cohort completed all 44 commands, three rounds of
+996 contracts and thirteen scenarios per round in 51.470 minutes. Independent
+reading checks cleanup, caller preservation and original wheel/result hashes;
+the result digest is `e5953b3db610d652a823201695dd427c1d02b46814c942d65c58f68cdf2611e9`.
+Independent native-install reading also passes all three original artifacts and
+actual RC-to-stable upgrade/payload/uninstall checks. These earlier-source
+successes do not waive the failed source run or qualify the next frozen head.
+The repaired head still requires fresh source/native/installation/owned results
+and the protected-main release qualification. Nothing was published.

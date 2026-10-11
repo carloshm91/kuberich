@@ -1,13 +1,13 @@
 {
-  "application_tree": "314cb977557af5f453488ab2783c764bb31d9345",
+  "application_tree": "2946d2f627df18f456c81149188545cdb66a786f",
   "application_version": "0.1.0",
   "capture_command": "env -u NO_COLOR uv run python -m scripts.capture_site --output NEW_MEDIA_DIRECTORY --logs-source artifacts/ui/logs-owned-kind.svg",
   "external_fonts_removed": true,
   "images": {
     "logs.svg": {
-      "original_sha256": "d25e7c89ee24d27e16623bb043611048629a2223f7e9b72613011394d6ae12b6",
+      "original_sha256": "94bbc14e30925212a0bda864b10db2707b8790016ba6707130579d8a9e8132eb",
       "qualification": "docs/acceptance/workload-checkpoint.md",
-      "sha256": "b8223ed0b0f4d7a5f806b92642406226bd9b820ea0f0166c8536a9142c3b2517",
+      "sha256": "ac1ef6ff3b42fc248e2fb5df3cbf1e22630bc92bfbbeaa84de9b67d85f455ad9",
       "source": "Qualified owned-kind logs screenshot retained in artifacts/ui; cluster deleted",
       "terminal_cells": [
         100,
