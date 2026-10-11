@@ -151,6 +151,23 @@ already made cannot be undone by an external-channel rollback.
 
 ## Owner prerequisites
 
+- Configure the repository Actions secret `RELEASE_PROTECTION_TOKEN` before the
+  first dry-run. Use a fine-grained token owned by `carloshm91`, select only
+  `carloshm91/kuberich`, and grant only repository **Administration: read**
+  (Metadata read is automatic). Give it an expiry and renew/revoke it deliberately;
+  do not reuse the interactive CLI credential or grant administration write.
+  Create it at [GitHub token settings](https://github.com/settings/personal-access-tokens/new)
+  and save it directly in [repository Actions secrets](https://github.com/carloshm91/kuberich/settings/secrets/actions).
+  Never send its value through chat, issue bodies or command arguments.
+  The default Actions token cannot read branch protection. Release steps receive
+  the separate credential as `KUBERICH_PROTECTION_TOKEN`; the client sends it only
+  to the exact main-protection GET and rejects changes on that route. Other
+  validation reads and publication writes keep their job-scoped Actions token.
+  A missing credential fails before network/publication with setup instructions;
+  failed protection reads still fail the release. A repository-scoped GitHub App
+  installation token with the same read permission can replace the fine-grained
+  token later. See [required branch-protection permission](https://docs.github.com/en/rest/branches/branch-protection#get-branch-protection)
+  and [additional Actions token permissions](https://docs.github.com/en/actions/tutorials/authenticate-with-github_token#granting-additional-permissions).
 - Confirm PyPI/TestPyPI project ownership and exact pending publisher workflow and
   release environment. GitHub authentication does not prove index ownership;
   a name lookup returning 404 does not reserve it.

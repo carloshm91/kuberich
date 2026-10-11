@@ -51,6 +51,9 @@ jobs:
     permissions:
       contents: read
       actions: read
+      checks: read
+      pull-requests: read
+      issues: read
     outputs:
       environment: ${{ steps.preflight.outputs.environment }}
       tag: ${{ steps.preflight.outputs.tag }}
@@ -67,6 +70,7 @@ jobs:
         id: preflight
         env:
           GH_TOKEN: ${{ github.token }}
+          KUBERICH_PROTECTION_TOKEN: ${{ secrets.RELEASE_PROTECTION_TOKEN }}
         run: >-
           uv run --locked python -m scripts.release preflight
           --commit "$RELEASE_COMMIT" --version "$RELEASE_VERSION"
@@ -110,6 +114,9 @@ jobs:
     permissions:
       contents: write
       actions: read
+      checks: read
+      pull-requests: read
+      issues: read
       id-token: write
       attestations: write
     steps:
@@ -130,6 +137,7 @@ jobs:
         id: missing
         env:
           GH_TOKEN: ${{ github.token }}
+          KUBERICH_PROTECTION_TOKEN: ${{ secrets.RELEASE_PROTECTION_TOKEN }}
         run: >-
           uv run --locked python -m scripts.release pypi-missing
           --commit "$RELEASE_COMMIT" --version "$RELEASE_VERSION"
@@ -149,6 +157,7 @@ jobs:
         if: ${{ inputs.index == 'pypi' }}
         env:
           GH_TOKEN: ${{ github.token }}
+          KUBERICH_PROTECTION_TOKEN: ${{ secrets.RELEASE_PROTECTION_TOKEN }}
         run: >-
           uv run --locked python -m scripts.release tag --commit "$RELEASE_COMMIT"
           --version "$RELEASE_VERSION" --index pypi
@@ -162,6 +171,7 @@ jobs:
       - name: Verify complete matching publication on the selected index
         env:
           GH_TOKEN: ${{ github.token }}
+          KUBERICH_PROTECTION_TOKEN: ${{ secrets.RELEASE_PROTECTION_TOKEN }}
         run: >-
           uv run --locked python -m scripts.release pypi-verify
           --commit "$RELEASE_COMMIT" --version "$RELEASE_VERSION" --index "$RELEASE_INDEX"
@@ -169,6 +179,7 @@ jobs:
         if: ${{ inputs.index == 'pypi' }}
         env:
           GH_TOKEN: ${{ github.token }}
+          KUBERICH_PROTECTION_TOKEN: ${{ secrets.RELEASE_PROTECTION_TOKEN }}
         run: >-
           uv run --locked python -m scripts.release github-assets
           --commit "$RELEASE_COMMIT" --version "$RELEASE_VERSION" --index pypi

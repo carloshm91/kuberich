@@ -33,6 +33,7 @@ class ReleaseServer:
         self.assets = {}
         self.release = None
         self.requests = []
+        self.required_authorization = {}
         self.corrupt_upload = False
         self.fail_upload = None
         self.ref_barrier = None
@@ -147,7 +148,10 @@ def release_server(directory, factory=ReleaseServer):
                 self.send_header("Location", fixture.url + "target")
                 self.end_headers()
                 return
-            if self.path == "/denied":
+            required = fixture.required_authorization.get(self.path)
+            if required is not None and self.headers.get("Authorization") != required:
+                status, value = 403, {"message": "fixture permission denied"}
+            elif self.path == "/denied":
                 status, value = 403, {"secret": "must not be printed"}
             elif self.path == "/large":
                 status, value = 200, {"data": "x" * (4 * 1024 * 1024)}

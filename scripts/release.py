@@ -84,8 +84,11 @@ class GitHub:
         token: str,
         base: str = "https://api.github.com/",
         uploads: str = "https://uploads.github.com/",
+        *,
+        protection_token: str = "",
     ) -> None:
         self.token = token
+        self.protection_token = protection_token
         self.base = base.rstrip("/") + "/"
         self.uploads = uploads.rstrip("/") + "/"
 
@@ -96,11 +99,16 @@ class GitHub:
             segment in {".", ".."} for segment in segments
         ):
             raise ValueError("Unexpected release API scope")
+        token = self.token
+        if path == f"{prefix}/branches/main/protection" and self.protection_token:
+            if method != "GET" or value is not None:
+                raise ValueError("The branch-protection credential permits only its exact GET")
+            token = self.protection_token
         return request(
             self.base + path,
             method,
             None if value is None else json.dumps(value).encode(),
-            self.token,
+            token,
         )
 
     def upload(self, release: int, path: Path) -> Any:
@@ -494,7 +502,16 @@ def main() -> int:
     try:
         if args.candidate and args.operation not in {"prepare", "verify"}:
             raise ValueError("Local candidates cannot publish or create tags")
-        api = GitHub(os.environ.get("GH_TOKEN", ""))
+        api = GitHub(
+            os.environ.get("GH_TOKEN", ""),
+            protection_token=os.environ.get("KUBERICH_PROTECTION_TOKEN", ""),
+        )
+        if args.operation not in {"prepare", "verify"} and not api.protection_token:
+            raise ValueError(
+                "Configure RELEASE_PROTECTION_TOKEN with Administration: read on this "
+                "repository and pass it as KUBERICH_PROTECTION_TOKEN; GITHUB_TOKEN "
+                "cannot read branch protection"
+            )
         if args.notes_preview and args.notes_preview_env:
             raise ValueError("Choose a preview file or dispatch environment, not both")
         preview = (

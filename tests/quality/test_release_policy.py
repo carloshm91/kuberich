@@ -512,7 +512,14 @@ def test_workflow_has_readonly_dry_run_serialization_and_owner_protected_oidc():
     assert workflow["concurrency"] == {"group": "kuberich-release", "cancel-in-progress": False}
     assert workflow["permissions"] == {"contents": "read"}
     validate, publish = workflow["jobs"]["validate"], workflow["jobs"]["publish"]
-    assert validate["permissions"] == {"contents": "read", "actions": "read"}
+    read_permissions = {
+        "contents": "read",
+        "actions": "read",
+        "checks": "read",
+        "pull-requests": "read",
+        "issues": "read",
+    }
+    assert validate["permissions"] == read_permissions
     download = next(
         step
         for step in validate["steps"]
@@ -532,6 +539,24 @@ def test_workflow_has_readonly_dry_run_serialization_and_owner_protected_oidc():
     assert publish["environment"]["name"] == "${{ needs.validate.outputs.environment }}"
     assert publish["permissions"]["id-token"] == "write"
     assert publish["permissions"]["attestations"] == "write"
+    assert publish["permissions"] == {
+        **read_permissions,
+        "contents": "write",
+        "id-token": "write",
+        "attestations": "write",
+    }
+    protection_steps = [
+        step
+        for step in validate["steps"] + publish["steps"]
+        if "scripts.release" in step.get("run", "")
+        and "scripts.release prepare" not in step.get("run", "")
+    ]
+    assert len(protection_steps) == 5
+    for step in protection_steps:
+        assert step["env"]["GH_TOKEN"] == "${{ github.token }}"
+        assert step["env"]["KUBERICH_PROTECTION_TOKEN"] == "${{ secrets.RELEASE_PROTECTION_TOKEN }}"
+    assert "KUBERICH_PROTECTION_TOKEN" not in workflow["env"]
+    assert not any("administration" in job["permissions"] for job in (validate, publish))
     assert not any(
         "uv build" in step.get("run", "") for step in validate["steps"] + publish["steps"]
     )

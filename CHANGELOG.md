@@ -31,6 +31,12 @@ the [completed workload checkpoint](docs/acceptance/workload-checkpoint.md).
 
 ### Fixed
 
+- Separate read-only branch-protection access from release publication credentials;
+  give qualification reads their explicit Actions/checks/PR/issues permissions.
+  Explain missing owner setup before network/publication
+  ([#89](https://github.com/carloshm91/kuberich/issues/89),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Reduce temporary component-style allocations during focus and theme changes,
   preserving native CSS and the existing response-time gate. Pin the qualified
   Textual version used by scoped rendering adaptations
