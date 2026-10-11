@@ -1,5 +1,19 @@
 # Architecture decisions
 
+## Widget rendering-cache ownership: Refs D05 #49 / D04 #40
+
+KubeRich substitutes a native StylesCache subclass only when its own App
+registers a widget, after normal registration validation and before first paint.
+The bounded background-style memoization uses immutable colors as keys, retaining
+native alpha composition without retaining renderer instances and their lines.
+This addresses the instance-key retention described in
+[Textual #6665](https://github.com/Textualize/textual/issues/6665). It does not
+patch Textual globally or change GC policy. The pinned private registration
+boundary is covered by native-control ownership, theme/resize/color and
+before/after remount regressions; dependency upgrades must retain that behavior.
+This removes an avoidable retained heap root. Complete runtime and native checks
+are still required; it does not alone prove the original heartbeat failure fixed.
+
 ## Frozen runtime and external processes: Refs D05 #49
 
 The frozen entry dispatches its reserved PTY child before importing the CLI/UI.

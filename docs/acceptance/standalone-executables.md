@@ -36,6 +36,31 @@ Python absence, macOS 14 Intel trials and Developer ID/notarization remain uncla
 
 ## Separate original source performance failure: D04 #40
 
+Run `38098818073` subsequently finished with all four native jobs and three
+source jobs successful, but Linux/Python 3.12 job `114350286581` failed one
+retained-history case: 4,716 passed, one skipped, one failed in 2,027.01 seconds.
+Its fresh positive child measured 158.882876 ms during `warm 2 resource route`;
+a 99.681716-ms generation-two collection overlapped. Source and instrumentation
+receipts were unchanged, and process/app/API ownership drained. The original
+ZIP `11688150429` matches GitHub SHA-256
+`7c2a3582a42b87d30618c47acaf8a9fae74d2500a55a543ba519c50ba3f13f4f`;
+all final source job logs/ZIPs are preserved under `pr181-shell-delegate-ci`.
+This overall run is not a qualified candidate.
+
+A scoped rendering-cache correction removes Textual's renderer-instance key
+from background-color memoization, without patching other apps or changing GC.
+The initial removed-widget probe also encountered legitimate layout retention;
+the corrected probe retires the renderer to isolate color memoization ownership.
+Its native negative control retains that renderer until the color cache is
+cleared; the KubeRich control does not retain it. All three ownership/native-alpha/
+theme/resize/remount cases passed in 2.24 seconds. This proves the avoided cache
+root, not complete resolution of the timing failure. Fresh runtime and candidate
+checks remain required. The exact contract command was:
+
+```sh
+uv run --no-sync pytest -q --tb=short tests/ui/test_style_cache_ownership.py
+```
+
 The parent verifier now checks the child's original process/JUnit result after
 source, instrumentation and cleanup validation, before checking successful-work
 refill counters. Two controlled regressions reproduced the misleading assertion

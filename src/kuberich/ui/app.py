@@ -16,9 +16,11 @@ from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.dom import DOMNode
 from textual.events import DescendantFocus, Event, Key, Paste, Resize
 from textual.geometry import Size
 from textual.screen import ModalScreen
+from textual.widget import Widget
 from textual.widgets import Button, DataTable, Input, Static
 
 from kuberich.adapters.credentials import CredentialLogin, ExecToken, auth_problem
@@ -117,6 +119,7 @@ from kuberich.ui.presentation import DEFAULT_PRESENTATION, Presentation
 from kuberich.ui.scopes import ConnectionScreen
 from kuberich.ui.shutdown import TerminalSignals
 from kuberich.ui.standard import StandardTable
+from kuberich.ui.style_cache import ColorStylesCache
 from kuberich.ui.terminal import ShellScreen
 from kuberich.ui.transfers import TransferScreen
 from kuberich.ui.workloads import WorkloadScreen
@@ -478,6 +481,14 @@ class KubeRichApp(App[None]):
                 )
         yield self.breadcrumbs
         yield self.status
+
+    def _register_child(
+        self, parent: DOMNode, child: Widget, before: int | None, after: int | None
+    ) -> None:
+        # Pinned Textual registration owns new widgets before their first paint.
+        # Keep its validation/order and scope the cache correction to this app.
+        super()._register_child(parent, child, before, after)
+        child._styles_cache = ColorStylesCache()
 
     def on_mount(self) -> None:
         if not self.is_headless and not self.is_web:
