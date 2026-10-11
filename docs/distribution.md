@@ -94,7 +94,7 @@ or kubeconfig requires them. The application must detect missing executables
 and give actionable instructions; basic API browsing must still work without
 kubectl. The Homebrew formula declares its Kubernetes CLI dependency.
 
-### Native build recipe under development: #49
+### Native build and qualification: #49
 
 The optional `standalone` dependency group pins PyInstaller separately from the
 application's runtime. From a native build host:
@@ -116,8 +116,9 @@ Do not advertise the archive as a release solely because the builder exited zero
 An uncommitted developer build requires `--diagnostic` and is never a release
 input. The Linux recipe rejects native library symbol requirements above glibc
 2.35 outside diagnostic mode. It does not make a newer build compatible by merely
-writing a lower declared minimum. macOS build/signing and minimum-OS evidence
-remain under development; Developer ID signing/notarization is not claimed.
+writing a lower declared minimum. macOS deployment floors and ad-hoc signatures
+are inspected on the actual native files; Developer ID signing/notarization is
+not claimed.
 
 Pyte's original LGPL source stays outside the embedded Python archive and ships
 with its license and replacement instructions. A local diagnostic trial exercised
@@ -144,10 +145,17 @@ claiming the alternative is linked. A local native interpreter probe observed
 Python 3.12.15, OpenSSL 3.5.9 and zlib 1.3.2. The original Python/library/metadata/
 notice hashes are checked again after freezing.
 
-The macOS recipe now reads deployment floors from each actual Mach-O file and
+The macOS recipe reads deployment floors from each actual Mach-O file and
 verifies collected code signatures with `codesign`; it distinguishes ad-hoc
-signatures from Developer ID and does not claim notarization. Pure format tests
-have passed; actual macOS build/signature/runtime evidence remains pending.
+signatures from Developer ID and does not claim notarization. Actual Linux
+x86_64/ARM64 and macOS Intel/ARM64 archives passed native runtime qualification.
+Linux checks use a Python-free environment and exact-archive owned-kind exec;
+Mac checks sandbox-deny outside Python and checkout/interpreter reads, including
+Python invoked through the permitted system shell. Actual Mac hosts were macOS
+14 ARM and macOS 15 Intel. Physical Python absence and macOS 14 Intel trials
+remain unclaimed. The [D05 acceptance evidence](acceptance/standalone-executables.md)
+retains original execution records, archive digests and compatibility limits.
+Required full candidate checks and publication remain separate.
 
 The native qualifier checks the original Git inputs and archive bytes, extracts
 the exact archive outside the checkout, independently measures native floors and
