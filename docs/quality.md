@@ -82,6 +82,13 @@ plus shell target validation and sanitized return decisions, plus bounded termin
 geometry and keyboard/paste encoding. Namespace UID/lifecycle values in
 `domain/namespaces.py` join the critical inventory in #125; shared workspace
 layout receives Pilot and real-terminal checks.
+#123 adds `domain/terminal_history.py` to the 100% line/branch inventory for
+retention, literal search, selection and redacted bounded copy. Actual child,
+source/installed PTY and owned-kind trials exercise local review while output
+continues, alternate-screen isolation, resize, stale scope and session cleanup.
+Separate fresh-process allocation and uninstrumented mounted-widget stress
+checks retain receipts under `artifacts/terminal/history-*.json`; traced Python
+allocation is not RSS or a latency result. See [history acceptance](acceptance/terminal-history.md).
 Captured container specification/status decisions in `domain/containers.py`
 join the critical 100% line/branch inventory in #129.
 Standard resource summary, quantity and ordering decisions in

@@ -8,9 +8,10 @@ from typing import cast
 
 import pyte
 from pyte.modes import DECOM
-from pyte.screens import Screen
+from pyte.screens import Char, Screen
 
 from kuberich.domain.terminal import terminal_size
+from kuberich.domain.terminal_history import TerminalCell, TerminalHistory, TerminalRow
 
 # Controls has already bounded/framed every escape. Dispatch each frame separately
 # so a rejected Pyte parameter list cannot discard the later text in that read.
@@ -73,6 +74,43 @@ class _Screen(Screen):
     def __init__(self, width: int, height: int, reply: Callable[[bytes], None]) -> None:
         super().__init__(width, height)
         self.reply = reply
+        self.history: TerminalHistory | None = None
+        self._row_cells: dict[Char, TerminalCell] = {}
+
+    def _row_cell(self, char: Char) -> TerminalCell:
+        cell = self._row_cells.get(char)
+        if cell is None:
+            if len(self._row_cells) >= 1024:
+                self._row_cells.clear()
+            cell = TerminalCell(
+                char.data,
+                char.fg,
+                char.bg,
+                char.bold,
+                char.italics,
+                char.underscore,
+                char.strikethrough,
+                char.reverse,
+            )
+            self._row_cells[char] = cell
+        return cell
+
+    def row(self, index: int) -> TerminalRow:
+        cells = tuple(
+            self._row_cell(char) for x in range(self.columns) for char in (self.buffer[index][x],)
+        )
+        return TerminalRow(cells, "".join(cell.data for cell in cells).rstrip())
+
+    def index(self) -> None:
+        top, bottom = self.margins or (0, self.lines - 1)
+        if (
+            self.history is not None
+            and self.cursor.y == bottom
+            and top == 0
+            and bottom == self.lines - 1
+        ):
+            self.history.append(self.row(0))
+        super().index()
 
     def write_process_input(self, data: str) -> None:
         self.reply(data.encode("ascii"))
@@ -94,6 +132,9 @@ class _Screen(Screen):
             # Trim the bottom first. Scroll only far enough to retain the live
             # cursor when it would fall below the new viewport.
             shift = max(0, self.cursor.y - height + 1)
+            if self.history is not None:
+                for index in range(shift):
+                    self.history.append(self.row(index))
             retained = {
                 row - shift: cells
                 for row, cells in self.buffer.items()
@@ -172,6 +213,8 @@ class TerminalModel:
     def __init__(self, width: int, height: int, reply: Callable[[bytes], None]) -> None:
         width, height = terminal_size(width, height)
         self.normal = _Screen(width, height, reply)
+        self.history = TerminalHistory()
+        self.normal.history = self.history
         self.secondary = _Screen(width, height, reply)
         self.screen = self.normal
         self.application_cursor = False
@@ -180,6 +223,14 @@ class TerminalModel:
         self.decoder = codecs.getincrementaldecoder("utf-8")("replace")
         # Stream checks every documented event; the adapter supplies them through routing.
         self.stream = pyte.Stream(cast(Screen, _Router(self)))
+
+    def review_rows(self) -> tuple[TerminalRow, ...]:
+        return (*self.history.rows, *(self.normal.row(y) for y in range(self.normal.lines)))
+
+    def clear_history(self) -> None:
+        self.history.clear()
+        self.normal._row_cells.clear()
+        self.secondary._row_cells.clear()
 
     def alternate(self, enabled: bool, *, clear: bool) -> None:
         if enabled and self.screen is self.normal:

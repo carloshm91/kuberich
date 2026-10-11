@@ -20,6 +20,7 @@ from tests.support.shell import terminal_shell
         "close",
         "fullscreen",
         "protocol",
+        "history",
         "early_close",
         "hangup",
         "missing",

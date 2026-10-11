@@ -5,6 +5,14 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ## Unreleased
 
+### Added
+
+- Review the last 1,000 normal-screen shell rows inside the terminal, with
+  deliberate local paging, literal Unicode search and explicit redacted row
+  selection/copy. Keep remote output, cursor and editors live and return with
+  Enter or Escape. Report discarded history and release session-owned buffers
+  on exit or target invalidation.
+
 ### Changed
 
 - Reuse retained log geometry across append, eviction and wrap changes while
