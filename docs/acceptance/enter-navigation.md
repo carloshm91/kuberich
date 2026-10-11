@@ -95,7 +95,7 @@ per-interpreter coverage/diff reports, validation logs, distributions, UI SVGs
 and PTY records, plus kind.json/kind.log and four real-cluster SVGs. Initial
 qualification evidence is retained separately under `initial`; it is not
 reported as the final passing matrix. Temporary local artifacts can be
-regenerated. See the [minimal operator trial](../first-preview.md#enter-navigation-feedback-115--current-trial).
+regenerated. See the [minimal operator trial](../preview-history.md#enter-navigation-feedback-115--current-trial).
 
 ## Qualification limits
 

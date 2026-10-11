@@ -147,6 +147,7 @@ class OwnedCluster:
     directory: Path
     context: str
     node_ids: tuple[str, ...]
+    max_restart_period_seconds: int | None = None
 
 
 def capture_docker(docker: str = "docker") -> dict[str, str]:
@@ -165,8 +166,14 @@ def capture_docker(docker: str = "docker") -> dict[str, str]:
 
 
 @contextmanager
-def owned_cluster(kind: str, *, docker: str = "docker") -> Iterator[OwnedCluster]:
+def owned_cluster(
+    kind: str, *, docker: str = "docker", max_restart_period_seconds: int | None = None
+) -> Iterator[OwnedCluster]:
     """Create no cluster until ownership is explicit; delete only the owned one."""
+    if max_restart_period_seconds is not None and (
+        type(max_restart_period_seconds) is not int or not 1 <= max_restart_period_seconds <= 300
+    ):
+        raise ValueError("Owned kubelet restart period must be an integer from 1 to 300 seconds.")
     environment = capture_docker(docker)
     if not run_owned([kind, "version"], environment).startswith("kind v0.33.0 "):
         raise ValueError("Use verified kind v0.33.0.")
@@ -200,6 +207,36 @@ def owned_cluster(kind: str, *, docker: str = "docker") -> Iterator[OwnedCluster
     with TemporaryDirectory(prefix="kuberich-owned-kind-") as temporary:
         directory = Path(temporary)
         path = directory / "owned-kubeconfig"
+        config_args: list[str] = []
+        if max_restart_period_seconds is not None:
+            configuration = directory / "kind.yaml"
+            configuration.write_text(
+                yaml.safe_dump(
+                    {
+                        "kind": "Cluster",
+                        "apiVersion": "kind.x-k8s.io/v1alpha4",
+                        "nodes": [
+                            {
+                                "role": "control-plane",
+                                "kubeadmConfigPatches": [
+                                    yaml.safe_dump(
+                                        {
+                                            "kind": "KubeletConfiguration",
+                                            "featureGates": {"KubeletCrashLoopBackOffMax": True},
+                                            "crashLoopBackOff": {
+                                                "maxContainerRestartPeriod": (
+                                                    f"{max_restart_period_seconds}s"
+                                                )
+                                            },
+                                        }
+                                    )
+                                ],
+                            }
+                        ],
+                    }
+                )
+            )
+            config_args = ["--config", str(configuration)]
         environment["KUBECONFIG"] = str(path)
         identities: tuple[str, ...] | None = None
         for signum in previous:
@@ -219,6 +256,7 @@ def owned_cluster(kind: str, *, docker: str = "docker") -> Iterator[OwnedCluster
                     NODE_IMAGE,
                     "--wait",
                     "180s",
+                    *config_args,
                 ],
                 environment,
                 timeout=300,
@@ -226,8 +264,24 @@ def owned_cluster(kind: str, *, docker: str = "docker") -> Iterator[OwnedCluster
             nodes = inspect()
             identities = verified_nodes(nodes, name)
             context = verify_config(path, name, nodes)
+            if max_restart_period_seconds is not None:
+                kubelet = yaml.safe_load(
+                    run_owned(
+                        [docker, "exec", identities[0], "cat", "/var/lib/kubelet/config.yaml"],
+                        environment,
+                    )
+                )
+                if (
+                    not isinstance(kubelet, dict)
+                    or kubelet.get("crashLoopBackOff", {}).get("maxContainerRestartPeriod")
+                    != f"{max_restart_period_seconds}s"
+                    or kubelet.get("featureGates", {}).get("KubeletCrashLoopBackOffMax") is not True
+                ):
+                    raise ValueError("Owned kubelet restart period was not applied.")
             path.chmod(0o600)
-            yield OwnedCluster(name, path, directory, context, identities)
+            yield OwnedCluster(
+                name, path, directory, context, identities, max_restart_period_seconds
+            )
         finally:
             # A second cancellation must not interrupt deletion or signal restoration.
             for signum in previous:

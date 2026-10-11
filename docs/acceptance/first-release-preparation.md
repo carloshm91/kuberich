@@ -217,3 +217,60 @@ actual RC-to-stable upgrade/payload/uninstall checks. These earlier-source
 successes do not waive the failed source run or qualify the next frozen head.
 The repaired head still requires fresh source/native/installation/owned results
 and the protected-main release qualification. Nothing was published.
+
+## Latest frozen qualification and fixture boundaries
+
+Frozen head `cd8a3402a22c882b27afaac06cad21f0e951cc63` passes repository
+validation and all three native installation/upgrade/uninstall hosts. Independent
+reading of their original artifacts confirms installed payloads, configuration
+preservation and removal. Its application run
+[38152093422](https://github.com/carloshm91/kuberich/actions/runs/38152093422)
+passes Python 3.13/3.14 and all four native archives, but fails two source checks.
+The original Python 3.13 positive heartbeat is 110.116 ms; its deliberate slow
+callback still fails at 202.279 ms. The 150-ms limit and default GC remain intact.
+
+Mac Python 3.12 returns UNREACHABLE where a combined deadline/cancellation test
+expects CANCELLED. That test reuses a 100-ms request deadline, waits an arbitrary
+20 ms before cancelling and cannot guarantee which operation wins on a loaded
+event loop. The correction keeps the explicit 100-ms unreachable case, and tests
+cancellation separately at the actual owned HTTP GET boundary with the fixture's
+normal deadline. It requires cancellation acceptance, the CANCELLED result, no
+validation proof and no PATCH; application editing behavior is unchanged.
+
+Linux Python 3.12 passes its complete application suite, then fails initial
+CrashLoop aggregate enrollment. The original owned API precondition confirms
+current logs at restart three, but 2,188 actual LIST attempts within 120 seconds
+never yield the required waiting snapshot. No reader was admitted. The final
+GET is terminated at restart four. This evidence does not establish a product
+log-reader failure, nor conclusively identify every kubelet scheduling delay.
+The original failure JSON, job logs and GitHub-digest-verified ZIP are retained.
+
+Only the aggregate fixture now requests an explicit 20-second kubelet restart
+backoff maximum on its newly owned cluster. The helper reads the persisted
+kubelet configuration from the verified Docker node before yielding; mismatched
+settings fail and clean up. Ordinary owned clusters retain their defaults.
+Kubernetes documents this [configurable restart backoff](https://v1-36.docs.kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/)
+and kind supports [KubeletConfiguration patches](https://kind.sigs.k8s.io/docs/user/configuration/#kubeadm-config-patches).
+The 120-second observation, complete unchanged actual LIST, UID/controller checks,
+last-terminated identity and current/previous log requirements remain unchanged.
+
+The affected editing/ownership/aggregate fixture suite passes 95 cases in
+35.91 seconds, including invalid configuration and read-back failure controls.
+An exploratory owned-kind aggregate run passes all eleven checks. Its actual
+waiting LIST arrives 30.819 seconds after current-mode admission starts and
+24.958 seconds after previous-mode admission starts; each returns one line,
+ends and drains, with verified cluster deletion. These receipts are local checks
+of the correction, not the new frozen platform qualification.
+
+The older `cd8a340` local cohort independently passes all 44 commands: three
+rounds of 996 contracts plus thirteen owned scenarios each, in 49.654 minutes.
+Its original result digest is
+`dd3a70ca19eb08e32e4d3338d18830aefd75ad476443b76e6c7c13ba4adfc8ce`.
+These successes do not waive either failed source check or qualify later bytes.
+
+The current-preview page is now concise; its nearly 2,000-line historical
+engineering log is retained separately with acceptance links preserved.
+Current user guidance contains no issue/task references. Ruff/format passes
+across 537 files; strict application/gate types pass over 142 files and plan/link
+validation passes. All nineteen site cases pass in 31.77 seconds. Fresh frozen
+checks remain required before merging/publication.

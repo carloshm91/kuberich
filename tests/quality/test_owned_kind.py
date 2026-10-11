@@ -141,6 +141,7 @@ if Path(sys.argv[0]).name=='docker':
  elif args[0]=='ps':
   for n in json.loads(state.read_text()): print(n['Id'])
  elif args[0]=='inspect': print(state.read_text())
+ elif args[0]=='exec': print(state.with_suffix('.kubelet.yaml').read_text())
 else:
  if args[0]=='version': print('kind v0.33.0 fixture')
  elif args[0]=='create':
@@ -148,6 +149,13 @@ else:
   state.write_text(json.dumps([node(name)]));data=config(name)
   if os.environ.get('OWNED_FAULT')=='config': data['clusters'][0]['cluster']['server']='https://foreign:443'
   path.write_text(yaml.safe_dump(data))
+  if '--config' in args:
+   setup=yaml.safe_load(Path(args[args.index('--config')+1]).read_text())
+   kubelet=yaml.safe_load(setup['nodes'][0]['kubeadmConfigPatches'][0])
+   if os.environ.get('OWNED_KUBELET_FAULT')=='period': kubelet['crashLoopBackOff']['maxContainerRestartPeriod']='300s'
+   if os.environ.get('OWNED_KUBELET_FAULT')=='gate': kubelet['featureGates']['KubeletCrashLoopBackOffMax']=False
+   if os.environ.get('OWNED_KUBELET_FAULT')=='malformed': kubelet=None
+   state.with_suffix('.kubelet.yaml').write_text(yaml.safe_dump(kubelet))
   if os.environ.get('OWNED_FAULT')=='create': sys.exit(1)
  elif args[0]=='delete':
   if os.environ.get('OWNED_SECOND_CANCEL'): os.kill(os.getppid(),15)
@@ -202,8 +210,56 @@ def test_owned_lifecycle_cleans_success_failure_and_cancellation(fake_kind, monk
     creation = next(r for r in records if r[0] == "kind" and r[1][0] == "create")
     deletion = next(r for r in records if r[0] == "kind" and r[1][0] == "delete")
     assert creation[2] == deletion[2] and creation[2] != os.environ["KUBECONFIG"]
+    assert "--config" not in creation[1]
     assert deletion[1][-2:] == ["--kubeconfig", deletion[2]]
     assert {s: signal.getsignal(s) for s in before} == before
+
+
+@pytest.mark.parametrize("period", [1, 20, 300])
+def test_owned_restart_period_is_applied_and_read_back_from_verified_node(fake_kind, period):
+    kind, docker, state, calls = fake_kind
+    with owned_cluster(str(kind), docker=str(docker), max_restart_period_seconds=period) as cluster:
+        assert cluster.max_restart_period_seconds == period
+        records = [json.loads(line) for line in calls.read_text().splitlines()]
+        creation = next(row for row in records if row[0] == "kind" and row[1][0] == "create")
+        path = Path(creation[1][creation[1].index("--config") + 1])
+        configuration = yaml.safe_load(path.read_text())
+        patch = yaml.safe_load(configuration["nodes"][0]["kubeadmConfigPatches"][0])
+        assert configuration["nodes"][0]["role"] == "control-plane"
+        assert patch["kind"] == "KubeletConfiguration"
+        assert patch["crashLoopBackOff"]["maxContainerRestartPeriod"] == f"{period}s"
+        assert patch["featureGates"]["KubeletCrashLoopBackOffMax"] is True
+        read_back = next(row for row in records if row[0] == "docker" and row[1][0] == "exec")
+        assert read_back[1] == ["exec", "owned-node-id", "cat", "/var/lib/kubelet/config.yaml"]
+        assert read_back[2] == str(cluster.path)
+    assert json.loads(state.read_text()) == []
+    assert not path.exists()
+
+
+@pytest.mark.parametrize("period", [0, 301, -1, True, 20.5, "20s"])
+def test_invalid_restart_period_cannot_contact_docker_or_create_a_cluster(fake_kind, period):
+    kind, docker, state, calls = fake_kind
+    with (
+        pytest.raises(ValueError, match="integer from 1 to 300"),
+        owned_cluster(str(kind), docker=str(docker), max_restart_period_seconds=period),
+    ):
+        pytest.fail("invalid configuration must not yield")
+    assert not calls.exists() and json.loads(state.read_text()) == []
+
+
+@pytest.mark.parametrize("fault", ["period", "gate", "malformed"])
+def test_unapplied_owned_restart_configuration_fails_and_cleans_without_yield(
+    fake_kind, monkeypatch, fault
+):
+    kind, docker, state, calls = fake_kind
+    monkeypatch.setenv("OWNED_KUBELET_FAULT", fault)
+    with (
+        pytest.raises(ValueError, match="was not applied"),
+        owned_cluster(str(kind), docker=str(docker), max_restart_period_seconds=20),
+    ):
+        pytest.fail("an unverified kubelet setting must not yield")
+    assert json.loads(state.read_text()) == []
+    assert any(json.loads(line)[1][0] == "delete" for line in calls.read_text().splitlines())
 
 
 def test_existing_cluster_is_never_adopted_or_deleted(fake_kind):
