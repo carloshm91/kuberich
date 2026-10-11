@@ -28,6 +28,24 @@ the actual macOS sandbox regression is explicitly skipped on this Linux host.
 Strict types passed for the two changed verification scripts. These checks do not
 establish macOS execution success.
 
+The frozen correction at `50fe5cb` subsequently passed the complete combined
+host/native-reader/release-policy/archive/owned-HTTP cohort: 397 passed and one
+actual-Mac test skipped, in 73.14 seconds. All 28 packaging/Homebrew cases then
+passed in 352.36 seconds, retaining the original log at
+`artifacts/standalone49/macos-shell-delegate-packaging-v1-original.log`.
+The full strict workflow command passed 141 source files; lint/formatting passed
+515 files and site checks passed 49 pages, 1,726 links/assets and 64 files.
+
+Independent readers also accepted the second run's two actual Linux archives,
+including each original source/archive-bound host and native-kind record. Each
+retained 193 Git inputs, 15 native files and 12 original JSON records. The two Mac
+archives passed the independent source/member/header/notice/asset reader, with
+13 native files each; their highest original deployment commands were 11.0
+(ARM64) and 10.15 (Intel). This does not change the declared macOS 14 floor or
+qualify their failed interactive runtime. All four bind original merge source
+`271b1d6015d2726566492baabc7298f7b72aa56d`; reader originals remain beside the
+GitHub-digest-verified ZIPs under `pr181-corrected-ci`.
+
 The frozen `8fc22a2` download-checksum candidate passed all 28 packaging/Homebrew
 cases in 352.31 seconds. The retained original is
 `artifacts/standalone49/packaging-download-checksums-stable-v1-original.log`.

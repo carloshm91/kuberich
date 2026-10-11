@@ -10,6 +10,14 @@ a narrow allowlist correction and original positive/negative shell controls are
 prepared. Fresh Mac execution is still required. Original failed logs/archives
 stay retained; this is not a qualified four-target candidate.
 
+The frozen correction at `50fe5cb` passed the combined host/native-reader/
+release-policy/archive/owned-HTTP cohort: **397 passed, one actual-Mac test skipped**
+in 73.14 seconds. Its stable packaging/Homebrew check also passed **28 cases in
+352.36 seconds**. Strict types passed 141 source files; lint/formatting passed
+515 files and site checks passed 49 pages, 1,726 links/assets and 64 files.
+Independent readers accepted both original Linux runtime/kind bundles and all
+four archives' native contents; they do not qualify the failed Mac shell scenario.
+
 The stable download-checksum packaging check completed: **28 passed in 352.31
 seconds**, including the actual platform checksum command over flattened download
 names. No package/tag/release was published.
