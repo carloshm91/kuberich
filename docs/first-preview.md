@@ -21,7 +21,7 @@ Local uv/pipx upgrades from an unpublished `0.1.0rc1` source build into the actu
 `0.1.0` wheel passed, including installed navigation/shell, configuration
 preservation and uninstall. Both site surfaces passed link/digest checks and
 real Chrome desktop/mobile accessibility, keyboard, clipboard and JavaScript-free
-navigation checks over 53 pages. Exact frozen platform, native installation and
+navigation checks over 57 pages. Exact frozen platform, native installation and
 three-round owned quickstart receipts remain required before publication review.
 See [candidate preparation evidence](acceptance/first-release-preparation.md).
 

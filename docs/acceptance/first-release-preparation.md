@@ -123,3 +123,23 @@ with zero accessibility violations, external requests or browser errors.
 Its report digest is `22f2e184ce1f2b1ece6d1a239072ac31fbff3cda8f81f45dd5e608242c00dda1`.
 These editorial bytes precede the final summaries/capture; the final frozen build
 and fresh source/native/owned qualification remain required before handoff.
+
+
+## Final local editorial/capture result
+
+The final build has 57 pages, 2,336 local links/assets and 72 files. Actual new
+workspace output uses demo-lab/demo-apps/demo-cluster/demo-reader, with no ambient
+kubeconfig. Original owned-kind CoreDNS output retains its original digest and
+provenance; no screenshot text is hand-edited. Full-size image links improve
+mobile inspection. The maintained user guides contain no task codes or issue/PR
+links; version notes retain authored change references and contributor attribution.
+
+The final Chrome run covers all 57 desktop and 57 mobile pages, 320-pixel overflow,
+A/AA accessibility, keyboard, clipboard success/denial and no-JavaScript navigation,
+with zero external requests or browser failures. Source and output hashes are
+receipted. Site SHA-256: `40132b9053862992bc904d0adb7d1f652cd7c209fee97b45e9e6f5eea169cda1`.
+Browser SHA-256: `26278f3ebba184ff8889cccee2b06b069fe11cfda97699bccf0995ee731ed216`.
+The final site/owned-kind/contract slice passed 1,015 tests in 182.26 seconds
+(19 website tests plus 996 contracts/owned-boundary tests). Source/native/exact-main
+and three fresh corrected rounds still need their own immutable receipts. No
+public channel, final-site or custom-domain activation occurred.

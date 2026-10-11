@@ -64,7 +64,10 @@ Automated accessibility does not establish screen-reader certification.
 1. Update the relevant authored guide in `docs/` with the new behavior, keys,
    prerequisites, failure/permission paths and honest limits. Prose cannot be
    inferred from an implementation. Update `docs/capabilities.json` under its
-   existing evidence policy; a partly delivered row stays planned until qualified.
+   existing evidence policy; a partly delivered audit row stays planned until qualified.
+   Update `public_summary` and `public_status` for reader-facing availability
+   (available, partial, planned or unverified). Keep internal task IDs and historic
+   acceptance records out of public guide prose and generated reference text.
 2. For a new user guide, enroll its source, readable title and section in
    `GUIDES` in `scripts/build_site.py`. This allowlist owns both surfaces and their
    navigation. Keep acceptance reports, architecture and maintainer-only procedures
