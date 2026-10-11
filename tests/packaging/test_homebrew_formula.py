@@ -10,6 +10,7 @@ from scripts.homebrew import FORMULA, TapGitHub, formula, prepare, publish, reso
 from scripts.release import GitHub, request
 from scripts.release_policy import REPOSITORY
 from tests.support.release_server import release_server
+from tests.support.source_candidate import source_candidate
 from tests.support.tap_server import TapServer
 
 
@@ -32,6 +33,20 @@ def test_real_rc_formula_has_exact_audited_sources_and_is_exclusive(canonical_re
     assert (output / FORMULA).read_text() == text
     with pytest.raises(ValueError, match="verified local"):
         formula(bundle, source, "file:///unrelated/sdist.tar.gz", candidate=True)
+
+
+def test_audited_source_only_rc_can_qualify_local_brew_but_cannot_be_public(tmp_path):
+    source, bundle, sha = source_candidate(tmp_path, "0.1.0rc1")
+    archive = next((bundle / "dist").glob("*.tar.gz"))
+    text = formula(bundle, source, archive.resolve().as_uri(), candidate=True)
+    assert "# Source version: 0.1.0rc1" in text and f"# Source commit: {sha}" in text
+    assert not (bundle / "standalone").exists()
+    with pytest.raises(ValueError, match="canonical RC or stable source"):
+        formula(
+            bundle, source, "https://files.pythonhosted.org/packages/owned/kuberich-0.1.0rc1.tar.gz"
+        )
+    with pytest.raises(ValueError):
+        formula(bundle, source, "file:///unrelated/kuberich-0.1.0rc1.tar.gz", candidate=True)
 
 
 @pytest.mark.parametrize(

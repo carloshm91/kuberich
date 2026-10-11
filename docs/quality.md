@@ -1,5 +1,13 @@
 # Quality and coverage
 
+Normal Python manager version upgrades are behavioral packaging checks in the
+full suite. A separate `Native installation qualification` workflow requires real
+Homebrew source installation, version upgrade, formula checks, upgraded PTY
+behavior and removal on Ubuntu 24.04, ARM macOS 14 and Intel macOS 15. Its opt-in
+test is skipped outside an owned ephemeral Actions host; that skip is not native
+installation evidence. All three hosted results must pass before D04 qualification.
+Existing coverage and protected quality checks remain required.
+
 Coverage is a release requirement and one part of correctness. A high percentage
 does not establish correct Kubernetes semantics, responsive terminal behavior,
 or reliable installation.

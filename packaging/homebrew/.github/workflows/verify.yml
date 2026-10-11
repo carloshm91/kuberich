@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-24.04, macos-latest]
     env:
       HOMEBREW_NO_ANALYTICS: '1'
       HOMEBREW_NO_INSTALL_CLEANUP: '1'
@@ -34,11 +34,11 @@ jobs:
       - name: Install this checkout as the tap and require all formula checks
         run: |
           export PATH="$(brew --prefix)/bin:$PATH"
-          tap="$(brew --repository)/Library/Taps/carloshm91/homebrew-tap"
+          tap="$(brew --repository)/Library/Taps/kuberich/homebrew-tap"
           mkdir -p "$(dirname "$tap")"
           ln -s "$GITHUB_WORKSPACE" "$tap"
-          brew style carloshm91/tap/kuberich
-          brew audit --strict --online carloshm91/tap/kuberich
-          brew install --build-from-source carloshm91/tap/kuberich
-          brew test carloshm91/tap/kuberich
-          brew uninstall carloshm91/tap/kuberich
+          brew style kuberich/tap/kuberich
+          brew audit --strict --online kuberich/tap/kuberich
+          brew install --build-from-source kuberich/tap/kuberich
+          brew test kuberich/tap/kuberich
+          brew uninstall kuberich/tap/kuberich
