@@ -11,7 +11,7 @@ custom domains/DNS, `www`, tags and public packages remain deferred.
 
 The landing page introduces the actual workspace, captured local UI, 15 standard
 resource families, logs, embedded exec, forwarding and guarded changes. It leads
-to a read-only first launch. Twenty-one authored guides reuse the repository sources
+to a read-only first launch. Twenty-three authored guides reuse the repository sources
 for installation, navigation, configuration, inspection, logs, shells, forwarding,
 editing/workloads and EKS/AKS prerequisites. Current public distribution is absent;
 the page states that directly rather than supplying invented install/download links.

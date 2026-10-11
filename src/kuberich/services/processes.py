@@ -4,7 +4,6 @@ import asyncio
 import os
 import shutil
 import signal
-import sys
 from collections.abc import AsyncIterator, Callable, Iterator
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import replace
@@ -24,6 +23,7 @@ from kuberich.domain.processes import (
 )
 from kuberich.errors import AppError, ExecutableUnavailable
 from kuberich.runtime import external_environment, pty_argv
+from kuberich.runtime import signal_process_group as _signal_group
 from kuberich.services.access import AccessPolicy
 
 TargetGuard = Callable[[], None]
@@ -54,31 +54,6 @@ def _executable(command: ProcessCommand) -> str:
             "Executable is unavailable; check its installation, PATH and permissions."
         )
     return resolved
-
-
-async def _signal_group(pid: int, value: signal.Signals) -> bool:
-    try:
-        os.killpg(pid, value)
-        return True
-    except ProcessLookupError:
-        return False
-    except PermissionError:
-        if sys.platform != "darwin":
-            raise
-        # XNU can find a group but exclude all its exiting/zombie members from
-        # signal delivery, returning EPERM before the group disappears. Probe
-        # without sending another signal; only ESRCH establishes its removal.
-        # A live group or a persistent denial must still fail cleanup.
-        for _ in range(5):
-            await asyncio.sleep(0.01)
-            try:
-                os.killpg(pid, 0)
-            except ProcessLookupError:
-                return False
-            except PermissionError:
-                continue
-            raise
-        raise
 
 
 class _Output(asyncio.SubprocessProtocol):

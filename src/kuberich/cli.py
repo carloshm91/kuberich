@@ -132,7 +132,7 @@ def _parser() -> argparse.ArgumentParser:
                 "crumbsless": "hide the context/namespace scope bar",
             }[flag],
         )
-    pending = parser.add_argument_group("Recognized options awaiting their owning feature (exit 4)")
+    pending = parser.add_argument_group("Recognized options not yet available (exit 4)")
     for option in PENDING_OPTIONS:
         if option.boolean:
             pending.add_argument(

@@ -1,6 +1,6 @@
 # First installation and trial
 
-The usable development preview has live pods, namespace/context tables, inline
+The prepared first-release preview has live pods, namespace/context tables, inline
 command completion, local filters, 15 [standard resource tables](standard-resources.md),
 resource details/YAML/events, generic CRD tables, single/aggregate logs and
 embedded container shells. The prepared checkout reports `0.1.0`. **Public packages
@@ -11,7 +11,7 @@ pod/Service port forwarding, guarded deletion and Job operations are also availa
 Exec credentials, certificates and proxies have locally verified connection contracts;
 see [connection compatibility](kubeconfig-interoperability.md). Captured attach
 and file transfer are delivered; metrics, creating ephemeral debug containers
-and user plugins remain separate tickets. Embedded-shell history/search/copy is
+and user plugins are planned. Embedded-shell history/search/copy is
 delivered: Alt+PageUp opens local review, `/` searches, `v` selects, `y` copies
 with recognized credential redaction and Enter/Escape returns to live output.
 This preview does not claim complete K9s parity or real EKS/AKS certification.
@@ -117,7 +117,7 @@ does not provision clusters or manage a separate credential database.
   KubeRich does not infer a different tenant/login mode or convert the kubeconfig.
 
 The local adapter/process contracts are verified with owned helpers and kind.
-Actual AWS/EKS and Microsoft Entra/AKS trials are deferred to #87. Read
+Actual AWS/EKS and Microsoft Entra/AKS certification needs separate provider trials. Read
 [EKS](eks-authentication.md) and [AKS](aks-authentication.md) for supported
 versions/modes, refresh behavior and certification limits.
 
@@ -137,7 +137,7 @@ kuberich --kubeconfig /absolute/path/to/kubeconfig --context YOUR_CONTEXT --name
 Use the actual filename/version. If uv reports its tool bin directory missing
 from PATH, add the directory it reports using your preferred shell setup. The
 rehearsal uses private tool directories and an absolute executable path; it never
-changes the maintainer's shell configuration or existing tool installation.
+changes your shell configuration or existing tool installation.
 `pipx install --python python3.12 /absolute/path/to/WHEEL.whl` is the alternative
 already qualified by packaging checks. Do not install the same CLI with both.
 
@@ -147,7 +147,7 @@ the checkout does not create a uv tool installation to uninstall.
 
 PyPI and the public Homebrew tap are planned first-release channels. They are
 **not available installation instructions yet**. Public ownership, Linux/macOS
-installation and actual upgrades must pass the scoped D04/D06 and public #89
+installation and actual upgrades must pass native and public-channel
 checks. First 0.1.0 uses an identified local upgrade baseline, without inventing
 a previous public version; later trials use the actual published predecessor.
 See [upgrade constraints](distribution.md#upgrade-and-uninstall-contract).
@@ -184,5 +184,5 @@ uv run python -m scripts.verify_quickstart --wheel /absolute/path/to/WHEEL.whl -
 
 It uses pinned kind 0.33.0/Kubernetes+kubectl 1.36.4 and Alpine fixture identities
 from [integration qualification](integration-testing.md). Linux results are
-recorded in [W01 acceptance](acceptance/quickstart.md); actual macOS and public
-channel rehearsal remain #40. No package/site publication is performed.
+recorded in [quickstart verification](acceptance/quickstart.md); actual macOS and public
+channel verification remain release requirements. No package/site publication is performed.

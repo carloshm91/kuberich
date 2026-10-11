@@ -88,7 +88,7 @@ The API's RBAC and admission policies remain authoritative.
 
 ## Verification
 
-M04 #46 has pure decision tests, actual HTTP/TLS fault contracts, Textual Pilot,
+Resource operations are verified with decision tests, actual HTTP/TLS fault contracts, Textual Pilot,
 native source/fresh-wheel terminals and an owned-kind verifier:
 
 ```sh

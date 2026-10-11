@@ -46,6 +46,7 @@ class Guide:
 GUIDES = (
     Guide("installation.md", "Installation & upgrades", "Get started"),
     Guide("quickstart.md", "Install & first launch", "Get started"),
+    Guide("everyday-workflow.md", "An everyday workflow", "Get started"),
     Guide("configuration.md", "Preferences & migration", "Get started"),
     Guide("context-sessions.md", "Contexts & kubeconfig", "Get started"),
     Guide("command-navigation.md", "Commands & keys", "Browse"),
@@ -65,6 +66,7 @@ GUIDES = (
     Guide("aks-authentication.md", "Azure / AKS", "Authentication"),
     Guide("kubeconfig-interoperability.md", "GKE, OIDC, certificates & proxies", "Authentication"),
     Guide("terminal-compatibility.md", "Terminal, SSH & tmux", "Reference"),
+    Guide("troubleshooting.md", "Troubleshooting", "Reference"),
 )
 
 REFERENCES = (
@@ -234,9 +236,20 @@ def docs_index(root: Path, version: str, *, standalone: bool) -> str:
         '<h1>Get to know your workspace.</h1><p class="index-summary">Install a supplied local '
         "wheel or use a source checkout, select an intended context, and explore in read-only mode. These guides describe "
         "the implemented preview, its prerequisites and its limits.</p>"
-        '<p>Start with <a href="quickstart.html">installation and first launch</a>. '
-        "Use the same trusted kubeconfig and provider helper session that work with kubectl. "
-        "KubeRich preserves your kubeconfig and owns each connection separately.</p>"
+        "<h2>Choose your starting point</h2><ol>"
+        "<li><strong>First visit:</strong> "
+        '<a href="installation.html">install, upgrade or uninstall</a>, then '
+        '<a href="quickstart.html">open an explicit read-only session</a>.</li>'
+        "<li><strong>Daily use:</strong> follow the "
+        '<a href="everyday-workflow.html">pod, container, logs and shell walkthrough</a>, '
+        "then use the individual guides for each operation.</li>"
+        "<li><strong>Something failed:</strong> identify the visible state in "
+        '<a href="troubleshooting.html">troubleshooting</a> or check '
+        '<a href="terminal-compatibility.html">terminal compatibility</a>.</li></ol>'
+        "<p>Use a trusted kubeconfig and the intended provider helper session. "
+        "KubeRich preserves kubeconfig and owns each connection separately. "
+        "All tutorial names are fictional; captures use owned local test resources.</p>"
+        "<h2>All guides and references</h2>"
         f'<ul class="doc-index-links">{links}</ul></article></main>'
     )
     return page_frame(root, content, "Documentation", version, docs=True, standalone=standalone)

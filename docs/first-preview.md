@@ -2,6 +2,17 @@
 
 ## Prepared first `0.1.0` candidate: #150
 
+The reader-facing refresh adds a detailed everyday workflow and troubleshooting,
+cleans public guides and generated help of internal task references, and uses
+fictional tutorial names. The review distinguishes current, partial and planned
+capabilities and corrects stale feature descriptions.
+
+The initial candidate's three owned rounds and native installers passed, but its
+Mac Python 3.12 source job found a credential-helper teardown error. That failed
+original remains retained; four real-child negative controls reproduce it on old
+source. The shared runtime signal guard corrects it locally. Fresh frozen
+platform/native/owned qualification is pending, so this is not release-ready yet.
+
 Source metadata and the lock now identify `0.1.0`. The
 [authored notes](release-notes/0.1.0.md), [installation guide](installation.md)
 and two generated site surfaces describe the actual first phase and conditional

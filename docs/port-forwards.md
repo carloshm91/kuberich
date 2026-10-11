@@ -1,6 +1,6 @@
 # Managed TCP port forwards
 
-S05 #42 adds pod and core/v1 Service forwarding through your installed `kubectl`.
+KubeRich supports pod and core/v1 Service forwarding through your installed `kubectl`.
 It captures the selected context, namespace, resource UID and connection settings.
 No command changes your original kubeconfig or its current context.
 
@@ -62,8 +62,8 @@ kind pod and Service. Those fixtures never use the caller's active cluster.
 
 This implementation accepts numeric TCP ports and one bind address per session.
 Named ports, FastForward annotations/presets and additional transport behavior
-remain S08 #62; attach/file transfer remain S07 #48. Real cloud-provider trials
-remain opt-in Q05 #87, and complete macOS/hosted release qualification is pending.
+are planned. See [attach and file transfer](container-attach-copy.md) for those
+separate workflows. Real cloud-provider compatibility requires authorized trials.
 
 Kubernetes documents the underlying [kubectl command](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_port-forward/)
 and [pod/Service port-forward workflow](https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster/).

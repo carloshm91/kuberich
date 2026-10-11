@@ -1,7 +1,7 @@
 # Guarded resource changes
 
-M01 #43 supplies shared mutation services and one usable action: select a
-patchable resource, run `:annotate`, enter a key/value and choose Review. The
+To change an annotation, select a patchable resource, run `:annotate`,
+enter a key/value and choose Review. The
 confirmation shows captured context, namespace or cluster scope, resource name,
 UID, opaque resourceVersion and the intended annotation value. Enter after Review
 focuses Cancel. Only deliberate Confirm sends the patch. Existing annotations
@@ -41,7 +41,7 @@ This preserves an honest uncertain outcome for a write when
 necessary. Eight concurrent operations and 32 recent records bound ownership.
 API writes are not a sandbox or a replacement for server RBAC/admission.
 
-[Manifest editing](editing.md) in M02 #44 uses these guards after explicit local
+[Manifest editing](editing.md) uses these guards after explicit local
 disclosure, redacted preview and strict non-persisting server dry-run.
 [Workload operations](workloads.md) add guarded scale/restart/rollback and independent
 monitoring; [resource operations](resource-operations.md) add deliberate deletion,

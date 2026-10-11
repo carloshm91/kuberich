@@ -10,6 +10,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from kuberich import runtime
 from kuberich.domain.processes import ProcessMode, ProcessPurpose, ProcessStatus, capture_command
 from kuberich.errors import AppError
 from kuberich.services import processes
@@ -34,7 +35,7 @@ def command(tmp_path, code="print('owned')", mode=ProcessMode.CAPTURE, **changes
 async def test_darwin_empty_group_denial_requires_confirmed_disappearance(
     monkeypatch, denied_probes
 ):
-    monkeypatch.setattr(processes, "sys", SimpleNamespace(platform="darwin"))
+    monkeypatch.setattr(runtime, "sys", SimpleNamespace(platform="darwin"))
     calls = []
 
     def signal_group(pid, value):
@@ -53,7 +54,7 @@ async def test_darwin_empty_group_denial_requires_confirmed_disappearance(
     "platform,probe", [("linux", "denied"), ("darwin", "live"), ("darwin", "denied")]
 )
 async def test_group_permission_failure_cannot_be_reported_as_success(monkeypatch, platform, probe):
-    monkeypatch.setattr(processes, "sys", SimpleNamespace(platform=platform))
+    monkeypatch.setattr(runtime, "sys", SimpleNamespace(platform=platform))
     failure = PermissionError("real denial")
     calls = []
 
@@ -76,7 +77,7 @@ async def test_group_permission_failure_cannot_be_reported_as_success(monkeypatc
 @pytest.mark.asyncio
 async def test_exited_owned_child_with_darwin_group_race_is_reaped(tmp_path, monkeypatch):
     monkeypatch.setattr(
-        processes, "sys", SimpleNamespace(platform="darwin", executable=sys.executable)
+        runtime, "sys", SimpleNamespace(platform="darwin", executable=sys.executable)
     )
     original = os.killpg
     denied = []

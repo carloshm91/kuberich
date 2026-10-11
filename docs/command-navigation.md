@@ -1,6 +1,6 @@
 # Commands, filtering and navigation
 
-The development terminal has live pod and namespace views. Selected pods support [inspection](resource-inspection.md),
+The workspace has live pod and namespace views. Selected pods support [inspection](resource-inspection.md),
 [logs](log-viewer.md) and [embedded shells](container-shell.md); other resource
 tables are described in [standard resources](standard-resources.md).
 
@@ -88,9 +88,9 @@ Queries are limited to 256 characters. Matching runs off the UI loop, with a tot
 the error. The engine releases the GIL during matching and supports an actual
 match timeout. Cancellation awaits the owned worker. Scope/query identity guards
 reject late results; rapid input coalesces into the latest render request.
-Fuzzy/inverse matching, label/field selectors and saved filter history are B07.
-Maximum-workload latency and memory qualification remain Q01, rather than a
-performance claim from these bounds.
+Fuzzy/inverse matching, label/field selectors and saved filter history are planned.
+Maximum-workload latency and memory still need sustained performance validation.
+These bounds alone do not establish a maximum supported workload.
 
 ## Navigation history
 
@@ -101,7 +101,7 @@ forward stack. Missing/deleted UIDs use the table's deterministic row fallback.
 History can return from a failed context; authentication/read failures remain
 visible. Restoring a context owns a new connection and cancels the previous watch.
 Only the matching revision can restore a saved viewport. History is not persisted,
-and namespace favorites/last-command recall remain B07.
+and namespace favorites/last-command recall are planned.
 
 ## Verification
 
@@ -125,6 +125,6 @@ Sources: [Textual Input](https://textual.textualize.io/widgets/input/),
 [regex timeout and threading](https://pypi.org/project/regex/).
 
 Measured delivery evidence and unavailable platform checks:
-[B03 acceptance](acceptance/B03.md).
+[navigation verification](acceptance/B03.md).
 
 Namespaces share these filter bounds for name/status. See [workspace layout, live namespaces and Escape routes](resource-workspace.md).

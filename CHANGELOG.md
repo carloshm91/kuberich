@@ -16,6 +16,13 @@ the [completed workload checkpoint](docs/acceptance/workload-checkpoint.md).
 
 ### Added
 
+- Add a guided everyday workflow, troubleshooting, installation/upgrade coverage
+  and reader-facing capability summaries. Refresh the flat landing page and README;
+  tutorial names and screenshot resources are fictional or owned disposable fixtures.
+  Clean public guides and generated CLI references of internal tracking codes
+  ([#150](https://github.com/carloshm91/kuberich/issues/150),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Review the last 1,000 normal-screen shell rows inside the terminal, with
   deliberate local paging, literal Unicode search and explicit redacted row
   selection/copy. Keep remote output, cursor and editors live and return with
@@ -23,6 +30,12 @@ the [completed workload checkpoint](docs/acceptance/workload-checkpoint.md).
   on exit or target invalidation.
 
 ### Fixed
+
+- Preserve credential-helper success, size-limit errors and spawn cancellation
+  during the macOS process-group teardown race. Reuse the existing bounded group
+  signal guard; only confirmed disappearance permits transient teardown denial
+  ([#150](https://github.com/carloshm91/kuberich/issues/150),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
 
 - Keep shell output cleanup safe while Textual removes its footer controls;
   queued PTY output cannot query a History button that has already left the DOM.

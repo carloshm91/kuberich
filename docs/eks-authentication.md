@@ -1,12 +1,11 @@
-# EKS authentication: C06 #21
+# EKS authentication
 
 KubeRich uses the `aws eks get-token` exec entry already declared in your trusted
 local kubeconfig. The AWS CLI owns its credential chain, profiles, role assumption,
 SSO cache and refresh; KubeRich does not embed AWS credentials or create clusters.
 The local contracts below are implemented. **Actual AWS/EKS qualification is
-pending.** The maintainer deferred real-cloud trials to their later installed-preview
-test and authorized continuing with measured local/owned-kind evidence. C06 #21
-delivers these contracts; optional provider certification remains tracked in Q05 #87.
+pending.** Automated checks establish local credential-helper behavior; they
+do not certify a real AWS account, role or SSO policy.
 
 ## Supported local contracts
 
@@ -41,7 +40,7 @@ aws sso login --profile YOUR_PROFILE
 
 Then retry with `r` or `:retry`. KubeRich does not open a browser automatically or
 rewrite your kubeconfig/AWS files. The AWS CLI may renew its own cached credentials
-as part of the configured helper. C08 #47 adds explicit native `:login` for generic
+as part of the configured helper. Explicit native `:login` is available for generic
 helpers with `Always`/`IfAvailable`/`Never` stdin semantics and TLS certificate
 renewal. It runs the declared helper; it does not infer an `aws sso login` command.
 See [kubeconfig interoperability](kubeconfig-interoperability.md).

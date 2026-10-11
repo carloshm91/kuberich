@@ -1,148 +1,126 @@
 # KubeRich
 
-A keyboard-driven Kubernetes terminal UI, built with Python and Textual.
+A keyboard-driven Kubernetes workspace for your terminal, built with Python and Textual.
 
-Inspired by [K9s](https://k9scli.io/). Built by Python enthusiasts.
+[Get started](docs/quickstart.md) · [Installation](docs/installation.md) · [User guides](docs/everyday-workflow.md) · [Contribute](CONTRIBUTING.md)
 
-KubeRich aims to make browsing resources, investigating failures, following logs,
-and managing workloads comfortable from your terminal, including over SSH.
-It is an independent project and is not affiliated with K9s.
-All KubeRich capabilities will be open source under Apache-2.0, with no paid feature tiers.
+Browse a cluster, inspect a workload, follow its logs and open a container shell
+without losing your place. KubeRich is an independent Apache-2.0 project,
+inspired by [K9s](https://k9scli.io/) and built by Python enthusiasts.
+All capabilities are open source, with no paid feature tiers.
 
-## Project status
+![KubeRich showing fictional demo pods and inline command completion](https://raw.githubusercontent.com/carloshm91/kuberich/main/website/assets/workspace.svg)
 
-**The first `0.1.0` candidate is prepared. Public package/channel activation is
-still pending; the CLI is installable from this checkout or a trusted local wheel.**
+*Actual application render using fictional resources and an owned local API.
+No customer contexts, credentials or production resources are used in this demo.*
 
-It opens a terminal workspace with isolated context sessions, namespace discovery
-and selection, filter/command inputs, help, themes and responsive layouts. It
-supports kubeconfig/context/namespace/timeout flags, static token and certificate
-authentication and noninteractive exec tokens. The [active view](docs/resource-views.md)
-now synchronizes pods and [15 standard resource families](docs/standard-resources.md)
-for the selected scope and shows live counts, stale states
-and errors using discovery, paginated snapshots and recoverable watches.
-The [live pod table](docs/pod-table.md) now displays readiness, health reasons,
-restarts and age, with typed sorting, scrolling and selection preserved through
-updates. Quiet watch renewal keeps Live; successful empty scopes and denied reads
-are distinct. [Commands, Tab suggestions, local text/regex filters and navigation
-history](docs/command-navigation.md) are available. [Pod YAML, details and related
-events](docs/resource-inspection.md) include search, managedFields visibility and
-redacted copying. The [container log viewer](docs/log-viewer.md) provides current/
-previous output, container selection, Vim navigation, search, follow/pause,
-bounded retention and redacted copy/save. [Embedded container shells](docs/container-shell.md)
-use the selected context, pod and container, with a configurable shell and return
-to the retained table. [Managed pod/Service TCP forwards](docs/port-forwards.md)
-provide validated mappings, observed listeners, an owned session list and deliberate
-stop, with cleanup on context changes and exit.
-[Guarded annotation changes](docs/mutations.md) add explicit captured confirmation,
-atomic UID/version conditions, common read-only enforcement and public outcome
-history through `:annotate` / `:writes`. [Manifest editing](docs/editing.md) adds
-an explicitly disclosed native editor, redacted diff, strict server dry-run and
-separate guarded Apply through `:edit` / Shift+E. [Workload operations](docs/workloads.md)
-add reviewed scale/restart/explicit rollback and actual rollout monitoring.
-[Resource operations](docs/resource-operations.md) add reviewed deletion and exact
-batch selection, manual Job creation and Job/CronJob suspension, with retained
-partial, finalizer-pending and uncertain outcomes.
-The [resource workspace](docs/resource-workspace.md) adds a built-in `k9s` theme,
-top inputs and view-specific shortcuts, identity/version headers, Escape trails,
-and a live namespace table with Enter/Escape navigation. The command bar suggests
-completion inline, while resource frames keep their position across these views.
-See [context sessions](docs/context-sessions.md) for supported credentials,
-connection states and limits. Local diagnostics, read-only command guards,
-header/logo/scope visibility and initial view/scope/help commands remain available.
-Invocation connection overrides apply consistently to API streams and captured
-shells; `--refresh` controls periodic table repaint while watches remain live.
-See the [launch contract](docs/k9s-cli.md) for aliases, precedence and limits.
-All audited flags are recognized; unimplemented options identify their owning task.
+## First release
 
-The core/workload, performance and installation checkpoints are qualified.
-The prepared **0.1.0** candidate must retain its own complete platform checks
-before public activation. Later reviewed 0.x phases add capabilities; 1.0 retains
-stable compatibility and capability audit. See [phased releases](docs/releases.md).
-Linux and macOS are the initial supported operating systems. Textual Web is
-outside the product scope.
+The first release line is **0.1.0**. Its source candidate is usable; public PyPI,
+Homebrew and GitHub download activation remains under the
+[release procedure](docs/releases.md).
+Use a trusted checkout or supplied wheel while those channels are unavailable.
 
-The development [landing page and user documentation](docs/website.md) are
-available on approved Cloudflare provider hosts. Final-candidate publication,
-custom domains/DNS and application packages remain separate approved launch work.
+Linux and macOS are the initial targets, with CPython 3.12–3.14 for source
+installation. Four standalone archives have separate native qualification.
+The [installation guide](docs/installation.md#qualification-scope) states the
+actual host/architecture scope and limits. Stable 1.0 compatibility and complete
+K9s parity are later milestones.
 
-## Try the development CLI
+## What you can do
 
-With [uv](https://docs.astral.sh/uv/getting-started/installation/) and Python
-3.12, 3.13, or 3.14, run these commands from the repository:
+| Workflow | Available in this phase |
+| --- | --- |
+| Find a resource | Live pods, namespace/context tables, 15 standard resource families and discovered custom resources |
+| Navigate | Inline `:` completion, `/` filtering, Vim keys, typed sorting and retained selection/navigation history |
+| Investigate | Redacted details, YAML and events; pod → containers → selected-container logs |
+| Read logs | Current/previous and aggregate logs, bounded history, search, pause/follow and guarded export |
+| Connect | Embedded kubectl shells with local history/search/copy, managed pod/Service TCP forwarding, captured attach and file transfer |
+| Manage a workload | Reviewed annotations, manifest dry-run/Apply, scale/restart/rollback, deletion and Job/CronJob actions |
+
+Start read-only. Effectful actions require explicit write mode, captured targets
+and the Kubernetes permissions for that operation. Metrics, user plugins and
+advanced node/debug operations remain planned; see the maintained
+[resource views](docs/standard-resources.md) and [release phases](docs/releases.md).
+
+## Run from source
+
+With [uv](https://docs.astral.sh/uv/getting-started/installation/) and Python 3.12,
+3.13 or 3.14, run from a trusted checkout:
 
 ```sh
 uv sync --locked --group dev
-uv run kuberich --help
 uv run kuberich --version
-uv run kuberich version --short
-uv run kuberich info
 uv run kuberich config check
-uv run kuberich
+uv run kuberich --context demo-lab --namespace demo-apps --readonly
 ```
 
-The last command opens the terminal window in an interactive terminal. Press
-`?` for help, `Esc` to return, and `q` outside an input to quit; Ctrl+Q quits from
-anywhere. Launch reads your selected/default local kubeconfig and connects to its
-current context. Without configuration it opens disconnected. Configured credential
-helpers are trusted local programs and may run automatically for authentication.
-Help/version/info/config inspection never connects or executes helpers.
-Try `uv run kuberich --readonly --headless --command help` to start with help
-and a compact header. Read-only command decisions use a shared service guard;
-read-only blocks container shells, starting forwards and workload changes before
-preparation. Plugins remain upcoming.
-`uv run python -m kuberich` is also supported.
-`info` and `config check` create no files. `config init` optionally creates default
-preferences without overwriting an existing file. See
-[configuration and diagnostics](docs/configuration.md) for paths, precedence,
-schema, runtime log flags and error codes.
-See [the terminal preview](docs/terminal-preview.md) for the available controls
-and [first things to try](docs/first-preview.md) for a short feedback trial.
+`demo-lab` and `demo-apps` are fictional example names. Replace them with an
+explicitly intended context and namespace. Add `--kubeconfig /absolute/path/to/config`
+when needed; `--config` instead selects KubeRich preferences.
+Configured authentication helpers are trusted local programs. Version, help,
+`info` and `config check` do not connect to a cluster or execute helpers.
+The interface needs an interactive terminal; `python -m kuberich` is also supported.
 
-## Public installation
+For an isolated supplied wheel or future PyPI/Homebrew/archive installation,
+follow [installation and upgrades](docs/installation.md). The project-owned
+Homebrew target is `brew install kuberich/tap/kuberich` after public activation.
 
-The [installation guide](docs/installation.md) covers a trusted local wheel and
-the prepared PyPI (uv/pipx), project-owned `kuberich/tap/kuberich` Homebrew and
-four Linux/macOS archive channels. Public downloads and manager commands become
-usable after approved publication and actual public-channel verification.
+## A few keys to begin
 
-## Development
+| Key or command | Result |
+| --- | --- |
+| `:ctx`, `:ns` | Browse contexts or namespaces as tables; Enter selects a row |
+| `:pods`, `:deployments`, `:services` | Open the selected resource family |
+| `/` | Filter the current table; Enter returns focus, Escape clears the filter |
+| Enter on a pod | Open containers; Enter on a container opens its logs |
+| `d`, `y`, `e` on a pod | Inspect details, YAML or events |
+| `?` | Show actions for the current view |
+| Escape | Return through the workspace trail |
+| Ctrl+Q | Quit and restore the terminal |
 
-Start with the [installation and trial guide](docs/quickstart.md) for the current
-usable preview, actual controls and public-release limits.
+In a live shell, keys go to the remote program. `exit`/Ctrl+D returns to
+containers; Ctrl+] closes the owned session. See the
+[guided workflow](docs/everyday-workflow.md) and [shell controls](docs/container-shell.md).
 
-- [First preview checkpoints](docs/first-preview.md)
-- [Roadmap and release milestones](docs/roadmap.md)
-- [Issue index and implementation order](docs/backlog.md)
-- [Complete K9s capability audit](docs/k9s-parity.md)
-- [CLI and authentication compatibility](docs/k9s-cli.md)
-- [Local configuration and diagnostics](docs/configuration.md)
-- [Terminal preview controls](docs/terminal-preview.md)
-- [Resource workspace and namespace navigation](docs/resource-workspace.md)
-- [Commands, completion, filters and history](docs/command-navigation.md)
-- [Architecture decisions](docs/architecture.md)
-- [Security helpers and test isolation](docs/security-primitives.md)
-- [Focused threat model](docs/kuberich-threat-model.md)
-- [Contribution workflow](CONTRIBUTING.md)
-- [Testing and coverage policy](docs/quality.md)
-- [Versioning, tags, and release procedure](docs/releases.md)
-- [Distribution and platform support](docs/distribution.md)
-- [Development assistants and skills](docs/agent-setup.md)
+## Documentation
 
-Application coverage must reach **at least 90% for lines and branches separately**.
-The reviewed critical modules must reach 100%. CI checks the complete production
-package, changed executable lines, and critical modules independently, with tests
-that demonstrate rejection of regressions. See the quality policy for check names
-and the current enforced main/environment rules with dated private-repository history.
+The maintained Markdown guides generate both website surfaces. CLI/resource
+references come from application declarations; authored explanations are reviewed
+with the behavior they describe. The current approved development hosts are
+[website](https://kuberich-site.pages.dev) and
+[docs](https://kuberich-docs.pages.dev); they retain their recorded deployment
+until the final candidate is approved for publication.
 
-## Community
+- [Install, upgrade and uninstall](docs/installation.md)
+- [First launch](docs/quickstart.md) and [guided everyday workflow](docs/everyday-workflow.md)
+- [Contexts and authentication](docs/context-sessions.md), [EKS](docs/eks-authentication.md) and [AKS](docs/aks-authentication.md)
+- [Navigation and completion](docs/command-navigation.md), [logs](docs/log-viewer.md) and [shells](docs/container-shell.md)
+- [Guarded changes](docs/mutations.md), [manifest editing](docs/editing.md) and [workload operations](docs/workloads.md)
+- [Troubleshooting](docs/troubleshooting.md) and [terminal compatibility](docs/terminal-compatibility.md)
 
-Use [GitHub issues](https://github.com/carloshm91/kuberich/issues) for bugs and
-feature proposals. Please read [CONTRIBUTING.md](CONTRIBUTING.md),
-[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), and [SECURITY.md](SECURITY.md).
+## Development and quality
 
-## License
+Read [CONTRIBUTING.md](CONTRIBUTING.md), the [architecture](docs/architecture.md)
+and the selected GitHub issue before changing behavior. Work proceeds through
+short-lived issue branches, signed-off commits, checked PRs and squash merges.
+
+The [quality policy](docs/quality.md) enforces at least **90% line and branch
+coverage separately**, 90% changed-line coverage and **100%** for designated
+critical deterministic modules. Behavioral, actual PTY, owned Kubernetes and
+clean-install checks complement coverage. Real-provider and physical-terminal
+certification limits remain explicit; a percentage does not prove every environment.
+
+See [current checkpoints](docs/first-preview.md), [roadmap](docs/roadmap.md),
+[backlog](docs/backlog.md), [distribution](docs/distribution.md) and
+[release/versioning procedure](docs/releases.md) for measured progress and delivery.
+
+## Community and license
+
+[Issues](https://github.com/carloshm91/kuberich/issues) welcome bugs and proposals.
+Please follow the [code of conduct](CODE_OF_CONDUCT.md); use the
+[security policy](SECURITY.md) for vulnerability reports.
 
 [Apache-2.0](LICENSE). Copyright (c) 2026 Carlos Herrera and KubeRich contributors.
-See [NOTICE](NOTICE) and the [licensing guide](docs/licensing.md) for attribution,
-derivative permissions and earlier MIT-licensed copies.
+[NOTICE](NOTICE) and the [licensing guide](docs/licensing.md) explain attribution
+and derivative permissions.

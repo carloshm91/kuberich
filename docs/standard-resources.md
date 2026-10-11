@@ -1,6 +1,6 @@
 # Standard resource views
 
-B05 #41 adds 15 resource families to the existing live workspace. Endpoints and
+KubeRich adds 15 resource families to the existing live workspace. Endpoints and
 served versions come from the connected cluster's discovery response. Each view
 uses the same scoped LIST/WATCH owner, stable UIDs, filter bar and history.
 
@@ -47,10 +47,10 @@ including scope, filter, sorting and viewport.
 Shell and logs remain pod/container actions. [Manifest editing](editing.md),
 [workload scale/rollout](workloads.md) and [port forwarding](port-forwards.md) now
 have their own implemented contracts. [Deletion and Job operations](resource-operations.md)
-use captured confirmation and retained results. Owner drill-down remains O03 #70.
+use captured confirmation and retained results. Owner drill-down is planned.
 These views do not establish full K9s parity.
 Endpoints remains available when served, although modern clusters should
-also support the later EndpointSlice view tracked in the networking backlog.
+use the implemented EndpointSlice view for endpoint discovery.
 
 An absent API, denied LIST/WATCH/GET, expired resource version and a successful
 empty collection retain their distinct existing states. No fallback guesses a
@@ -62,7 +62,7 @@ different API group or silently substitutes an empty list.
 the existing [inspection policy](resource-inspection.md). Discovery, watch and
 context-generation behavior remain in the existing services.
 
-## Generic discovered resources: B06 #53
+## Generic discovered resources
 
 Browse other discovered APIs, including CRDs, with an unambiguous plural,
 singular or short name: `:wdg TEAM` or `:widgets *`. Qualify a family as
@@ -110,7 +110,7 @@ fields. `:columns none` shows metadata only and `:columns default` restores the
 server's ordinary columns. Invalid or duplicate keys retain the previous view.
 Layouts are transient, bounded to 32 context/GVR entries, and reset when the
 server schema or resource descriptor changes, or when switching context.
-Persistent preferences/hotkeys remain U02 #57.
+Persistent per-resource preferences and custom hotkeys are planned.
 
 Enter/`d`, `y` and `e` reuse captured-UID details, redacted YAML and related events.
 Unknown manifest fields remain in YAML. `/` searches displayed fields;
@@ -118,7 +118,7 @@ Alt+Left/Right and the context/namespace workspaces retain resource identity,
 version, filter, compatible sort and viewport. Direct `:ns TEAM` preserves an
 active generic resource. Generic browser actions are read-only in this
 checkpoint. Return to `:po` for pod/container logs, exec, attach, copy and selected
-port forwarding; custom editing remains M05 #55, and reactive jump chains U06 #64.
+port forwarding. Editing custom resources and reactive relationship jumps are planned.
 Server headers and strings are displayed literally, sensitive column names and
 credential-shaped cells are redacted, and opaque Secret/ConfigMap server cells
 are hidden. Arbitrary custom fields are not guaranteed to be confidential;

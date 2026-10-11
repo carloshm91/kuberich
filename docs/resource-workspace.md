@@ -1,8 +1,8 @@
 # Resource workspace
 
-Preview feedback [#125](https://github.com/carloshm91/kuberich/issues/125) adopts
-the layout and keyboard workflow in the maintainer's K9s screenshots, using
-original Python/Textual code. Local reference images are not distributed.
+KubeRich uses a keyboard-driven resource workspace built with original
+Python/Textual code. The shared header, input area and navigation trail keep
+resource views in a consistent frame.
 
 The default `k9s` theme has a black background, cyan tables/frames/selection,
 yellow metadata labels/navigation, blue shortcut keys and white headings.
@@ -94,7 +94,7 @@ CPU/MEM are specification requests/limits in Kubernetes quantity notation, with
 captured pod snapshot; reopen to refresh. Horizontal arrows/Home/End reveal wide
 columns. Enter/l logs and s/x shell retain the captured UID/container and parent
 cursor/scroll state. Live container refresh, ephemeral debug containers and usage
-metrics remain #41/#78/#68.
+metrics are planned.
 
 ## Sizes and remaining work
 
@@ -112,14 +112,10 @@ The project, installed version label and CLI remain KubeRich/`kuberich`.
 `--crumbsless` hides identity/navigation bars. Log `z` hides the header/route and
 frame, preserving search, controls and stream ownership.
 
-The header shows the actual installed development version. Optional real release
-notices and custom/live/context themes remain [U01 #56](https://github.com/carloshm91/kuberich/issues/56).
-Kubernetes-version/CPU/memory presentation belongs to [O01 #68](https://github.com/carloshm91/kuberich/issues/68)
-and [O02 #69](https://github.com/carloshm91/kuberich/issues/69).
-Stable geometry and inline completion are the focused correction
-[#127](https://github.com/carloshm91/kuberich/issues/127). Broader navigation/clipboard
-qualification remains [B07 #61](https://github.com/carloshm91/kuberich/issues/61). This preview does not
-establish full K9s parity.
+The header shows the actual installed version. Optional real release
+notices, custom/live/context themes and Kubernetes-version/CPU/memory
+presentation are planned. Clipboard receipt depends on the host terminal.
+This release does not establish full K9s parity.
 
 Behavior references: [K9s commands](https://k9scli.io/topics/commands/),
 [K9s skins](https://k9scli.io/topics/skins/),

@@ -1,11 +1,11 @@
-# Kubeconfig and credential interoperability: C08 #47
+# Kubeconfig and credential interoperability
 
 KubeRich uses the selected context's effective connection for resource reads,
 watches, logs, guarded writes, shells and port forwarding. It does not change
 your kubeconfig or infer a different cloud account when authentication fails.
 The contracts below are tested with owned helpers, HTTP/TLS/proxy servers,
 native terminals, installed packages and a disposable Kubernetes cluster.
-Real cloud-provider certification remains opt-in Q05 #87.
+Real cloud-provider compatibility needs separate trials in the intended environment.
 
 ## Configuration and private material
 
@@ -101,8 +101,7 @@ the selected proxy and reports failures rather than silently bypassing it.
 See the [kubeconfig API](https://kubernetes.io/docs/reference/config-api/kubeconfig.v1/).
 
 The shared private-connection staging also accepts Helm's future purpose. Actual
-Helm operations and their installed-tool qualification remain M06 #66; C08 does
-not claim that unfinished product feature works.
+Helm operations are not available in this release.
 
 ## GKE, OIDC and legacy migration
 

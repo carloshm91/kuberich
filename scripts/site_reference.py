@@ -102,22 +102,23 @@ def generated_guides(root: Path, version: str) -> dict[str, str]:
         columns = ", ".join(item["columns"])
         resources.append(f"| {names} | {item['group'] or 'core'} | {scope} | {columns} |")
     capabilities = [
-        "# Capability progress",
+        "# Capabilities and limits",
         f"Generated from the maintained capability inventory for source version `{version}`. "
         "This is an audit of intended scope, **not a promise of complete parity**. "
-        "A planned row can contain delivered portions; its current difference explains "
-        "the qualified scope. Feature guides describe the usable behavior.",
-        "The inventory compares a pinned upstream baseline; task IDs link to the "
-        "[planning map](backlog.md). Real-provider certification and final release "
-        "qualification remain separate from implemented local contracts.",
+        "Available means the described behavior works within its documented scope. "
+        "Partial means usable portions exist, with remaining behavior stated explicitly. "
+        "Planned features are unavailable. Feature guides describe prerequisites and limits.",
+        "Real-provider certification and final release qualification remain separate "
+        "from implemented local contracts. A locally verified helper is not proof "
+        "of compatibility with every cloud account or terminal.",
         "## Current inventory",
     ]
     inventory = json.loads((root / "docs/capabilities.json").read_text())
     for row in inventory["rows"]:
         capabilities += [
-            f"### {row['id']} · {row['capability']}",
-            f"**Status: {row['status']}** · Tasks: {', '.join(row['tasks'])}",
-            row["difference"],
+            f"### {row['capability']}",
+            f"**Status: {row['public_status']}**",
+            row["public_summary"],
         ]
     return {
         "cli-reference.md": "\n\n".join(cli[:3]) + "\n\n" + "\n".join(cli[3:]) + "\n",

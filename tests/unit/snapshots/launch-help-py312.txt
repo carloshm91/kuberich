@@ -45,11 +45,11 @@ options:
   --logoless            hide the brand in the header
   --crumbsless          hide the context/namespace scope bar
 
-Recognized options awaiting their owning feature (exit 4):
-  --splashless          unavailable: startup splash (U01 #56)
-  --invert              unavailable: theme inversion (U01 #56)
+Recognized options not yet available (exit 4):
+  --splashless          unavailable: startup splash
+  --invert              unavailable: theme inversion
   --screen-dump-dir SCREEN_DUMP_DIR
-                        unavailable: screen exports (O06 #73)
+                        unavailable: screen exports
 
 Session connection overrides:
   --cluster CLUSTER     kubeconfig cluster alias for this invocation

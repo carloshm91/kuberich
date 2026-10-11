@@ -59,10 +59,10 @@ The automated evidence uses owned synthetic helpers, loopback APIs, actual PTYs,
 fresh wheel installation and a disposable kind cluster with real kubectl. It
 establishes local adapter/process behavior, not successful Microsoft Entra
 exchange or tenant policy compatibility. Actual AKS/Entra certification is deferred
-to the maintainer's later opt-in trials in Q05 #87. No real tenant is contacted by
+to explicitly authorized provider trials. No real tenant is contacted by
 the automated suite. Linux results do not establish macOS qualification.
 
-C08 #47 qualifies generic GKE/OIDC-shaped helper contracts and
+Local tests also cover GKE/OIDC-shaped helper contracts and
 `ExecCredential.status.clientCertificateData/clientKeyData` output rotation locally.
 That Kubernetes TLS mechanism is distinct from Azure service-principal certificate
 **inputs**. [Interoperability guidance](kubeconfig-interoperability.md) documents

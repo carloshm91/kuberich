@@ -5,12 +5,13 @@ import json
 import re
 import shutil
 import xml.etree.ElementTree as ET
+from html.parser import HTMLParser
 from pathlib import Path
 
 import pytest
 from markdown_it import MarkdownIt
 
-from scripts.build_site import GUIDES, MARKER, REFERENCES, ROOT, build, heading_ids
+from scripts.build_site import GUIDES, MARKER, REFERENCES, ROOT, build, heading_ids, user_content
 from scripts.check_site import verify
 
 
@@ -224,8 +225,63 @@ def test_reference_uses_selected_checkout_contracts_and_preserves_planned_status
         assert "--owned-reference-probe" in (output / surface / "cli-reference.html").read_text()
         assert "owned-probe" in (output / surface / "resource-reference.html").read_text()
         progress = (output / surface / "capability-reference.html").read_text()
-        assert "Status: planned" in progress and "CLI01" in progress
+        assert "Status: planned" in progress and "CLI01" not in progress
+        assert "Tasks:" not in progress and "#87" not in progress
         assert "not a promise of complete parity" in progress
+    verify(output, source)
+
+
+def test_public_guides_use_product_language_and_fictional_tutorials(tmp_path):
+    """Visible user docs must not inherit issue IDs from internal acceptance records."""
+
+    class VisibleText(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.parts = []
+
+        def handle_data(self, data):
+            self.parts.append(data)
+
+    output = tmp_path / "output"
+    build(output)
+    inventory = json.loads((ROOT / "docs/capabilities.json").read_text())
+    for guide in GUIDES:
+        authored = user_content((ROOT / "docs" / guide.source).read_text())
+        assert not re.search(r"#[0-9]+|\b[A-Z][0-9]{2}\b|/(issues|pull)/", authored)
+    for surface in ("www/docs", "docs"):
+        for path in (output / surface).glob("*.html"):
+            parser = VisibleText()
+            html = path.read_text()
+            parser.feed(html)
+            text = " ".join(parser.parts)
+            assert not re.search(r"#[0-9]+|\b[A-Z][0-9]{2}\b", text), path
+            assert not re.search(r"github\.com/[^\s\"<>]+/(issues|pull)/", html), path
+        progress = (output / surface / "capability-reference.html").read_text()
+        for row in inventory["rows"]:
+            assert row["id"] not in progress
+            assert row["public_summary"]
+        workflow = (output / surface / "everyday-workflow.html").read_text()
+        assert "Every name here is fictional" in workflow and "demo-lab" in workflow
+        assert "Ctrl+]" in workflow and "scale 3" in workflow
+        troubleshooting = (output / surface / "troubleshooting.html").read_text()
+        assert "Authentication fails while kubectl works" in troubleshooting
+        assert "Report a problem" in troubleshooting
+    verify(output)
+
+
+def test_public_capability_summary_updates_without_rendering_tracking_fields(tmp_path):
+    source = copy_source(tmp_path / "source")
+    inventory_path = source / "docs/capabilities.json"
+    inventory = json.loads(inventory_path.read_text())
+    inventory["rows"][0]["public_summary"] = "Reviewed reader-facing behavior."
+    inventory["rows"][0]["difference"] = "Internal historical issue #12345."
+    inventory_path.write_text(json.dumps(inventory))
+    output = tmp_path / "output"
+    build(output, source)
+    for surface in ("www/docs", "docs"):
+        html = (output / surface / "capability-reference.html").read_text()
+        assert "Reviewed reader-facing behavior." in html
+        assert "#12345" not in html and "CLI01" not in html
     verify(output, source)
 
 

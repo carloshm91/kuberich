@@ -122,4 +122,4 @@ intentional destinations and review explicit replacement carefully.
 
 See [shells](container-shell.md), [connection setup](context-sessions.md),
 [credential transport](kubeconfig-interoperability.md), and the
-[S07 verification evidence](acceptance/container-transfers.md).
+[file-transfer verification evidence](acceptance/container-transfers.md).

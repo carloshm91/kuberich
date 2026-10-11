@@ -63,3 +63,63 @@ public installed-channel verification, final website/custom-domain activation
 and verified redirects. The GitHub organization already exists, while a namespace
 lookup alone does not prove package ownership or activate a channel. Publication
 and owner environment review remain required after the concrete candidate is ready.
+
+
+## Reader-facing review and Mac credential cleanup correction
+
+The maintainer requested detailed product guides, fictional examples and public
+text without internal task references. The initial editorial build has 23
+maintained user guides plus three generated references on both surfaces: 57 pages,
+2,330 local links/assets and 72 files. README now leads with available behavior,
+installation, essential keys, documentation and contribution/license guidance.
+An everyday walkthrough and troubleshooting connect the views into usable flows.
+Public summaries/statuses distinguish available, partial, planned and unverified
+capabilities while retaining internal source traceability outside rendered guides.
+
+Guide review corrected stale EndpointSlice, attach/transfer and shell-history
+statements, and separated log reception from following. Generated CLI help also
+omits internal task codes. Tests inspect visible HTML and authored public guide
+content, and verify that changing a public capability summary regenerates both
+surfaces without exposing internal tracking fields. A private 62-file content
+scan found no known customer names; no user Kubernetes configuration was read or
+contacted. Workspace capture now declares fictional demo-lab/demo-apps aliases.
+
+The initial frozen `be9c215346edd0446a57378efcd5eb0769e8e444` completed three
+owned rounds (44 commands, 992 contracts and thirteen scenarios per round), with
+cleanup/caller preservation independently checked in 50.447 minutes. Its original
+results digest is `dc201cba5647c80f7bd85194ebb797657cae632a51cd8254588e95760fcf35c5`.
+That does **not** override its failed Mac source job in
+[run 38142026668](https://github.com/carloshm91/kuberich/actions/runs/38142026668).
+The original source/native/installation ZIPs, API results and failed Mac log were
+retained. The native installation run passed, but its earlier source does not
+qualify the correction below. No unchanged retry is counted as a fix.
+
+The Mac failure masked the credential helper's expected output-size error with
+EPERM during process-group teardown. Apple XNU can report this while group members
+exit, but the original job did not capture process state and does not establish
+that diagnosis conclusively. The existing process-session signal guard is moved
+to the low-level runtime and shared by credential helpers. Darwin's transient
+denial is accepted only after bounded signal-zero probes establish ESRCH; live
+or persistent denial still propagates. This avoids a services-to-adapters import
+and preserves descendant-group cleanup after the leader exits.
+
+Four real-child regression cases cover valid output, stdout/stderr overflow and
+cancellation while spawn completes. All four fail behaviorally on the retained
+original source (35 unrelated cases deselected), and all pass with the correction.
+The initial negative-control import/setup error remains separately retained and
+is not counted as a failing behavior witness. Existing live/persistent/non-Darwin
+permission-failure controls also pass. The focused runtime guard measured 100%
+line/branch coverage; broader focused slices do not substitute for the complete
+production/critical-module gate.
+
+Local checks passed: 274 process/credential/runtime cases; 334 additional
+credential, real-terminal handoff and release-contract cases; 175 site/launch
+cases; Ruff/format over 535 files; strict checking over 145 application/gate/site
+files; and plan validation. An exploratory strict check including the preexisting
+untyped capture-test helpers failed; it is not reported as a passing required
+strict target. The initial editorial Chrome run checked all 57 pages at desktop
+and mobile widths, keyboard, no-JavaScript navigation and clipboard success/denial
+with zero accessibility violations, external requests or browser errors.
+Its report digest is `22f2e184ce1f2b1ece6d1a239072ac31fbff3cda8f81f45dd5e608242c00dda1`.
+These editorial bytes precede the final summaries/capture; the final frozen build
+and fresh source/native/owned qualification remain required before handoff.

@@ -29,7 +29,9 @@
         "tests/ui/test_launch_options.py",
         "scripts/verify_shell_kind.py",
         "docs/acceptance/connection-overrides.md"
-      ]
+      ],
+      "public_summary": "Help, version, local diagnostics, read-only policy, presentation flags, startup views and connection overrides are available. Splash, inversion, resource export settings and shell completion are unavailable.",
+      "public_status": "partial"
     },
     {
       "id": "AUTH01",
@@ -63,7 +65,9 @@
         "tests/terminal/test_credential_login.py",
         "tests/packaging/test_distribution.py",
         "scripts/verify_credential_interop_kind.py"
-      ]
+      ],
+      "public_summary": "Select explicit kubeconfig files, context, namespace, cluster/user overrides and connection options. Each context owns its connection and captured delegated identity.",
+      "public_status": "partial"
     },
     {
       "id": "AUTH02",
@@ -107,7 +111,9 @@
         "tests/terminal/test_credential_login.py",
         "tests/packaging/test_distribution.py",
         "scripts/verify_credential_interop_kind.py"
-      ]
+      ],
+      "public_summary": "Exec bearer/certificate helpers, token files and explicit native helper login are available. Local provider-shaped tests do not certify real cloud accounts or identity providers. Legacy auth-provider/basic entries require migration.",
+      "public_status": "partial"
     },
     {
       "id": "AUTH03",
@@ -141,7 +147,9 @@
         "tests/terminal/test_credential_login.py",
         "tests/packaging/test_distribution.py",
         "scripts/verify_credential_interop_kind.py"
-      ]
+      ],
+      "public_summary": "CA/client certificates, TLS names, timeouts, captured proxy settings and repeated impersonation are supported. SOCKS5 has documented streaming limitations. A permission browser is planned.",
+      "public_status": "partial"
     },
     {
       "id": "AUTH04",
@@ -160,7 +168,9 @@
         "tests/contract/test_credentials.py",
         "tests/ui/test_sessions.py",
         "scripts/verify_contexts_kind.py"
-      ]
+      ],
+      "public_summary": "Ordinary context switching preserves kubeconfig. Renaming/deleting contexts and persisted per-context view preferences are planned.",
+      "public_status": "partial"
     },
     {
       "id": "CORE01",
@@ -198,7 +208,9 @@
         "tests/ui/test_custom_resources.py",
         "tests/ui/test_custom_table.py",
         "tests/terminal/test_custom_resources.py"
-      ]
+      ],
+      "public_summary": "Discovery selects served API versions and exposes unambiguous aliases. Generic tables support server columns, metadata fallback and temporary column selection. Generic mutations and relationship jumps are planned.",
+      "public_status": "partial"
     },
     {
       "id": "CORE02",
@@ -227,7 +239,9 @@
         "tests/ui/test_pods.py",
         "tests/contract/test_pod_projection.py",
         "tests/terminal/test_pods.py"
-      ]
+      ],
+      "public_summary": "Live views own bounded list/watch continuity, stale-state retention and reconnect/relist behavior. Refresh renews discovery and the selected resource stream. Complete maximum-workload qualification remains separate.",
+      "public_status": "partial"
     },
     {
       "id": "UI01",
@@ -254,7 +268,9 @@
         "tests/ui/test_context_workspace.py",
         "tests/unit/test_container_rows.py",
         "tests/ui/test_context_scope_commands.py"
-      ]
+      ],
+      "public_summary": "The bordered command bar completes inline from local commands, contexts, namespaces and discovered resources. Tab accepts; arrows choose a candidate. No keystroke-triggered authentication or request is performed.",
+      "public_status": "partial"
     },
     {
       "id": "UI02",
@@ -270,7 +286,9 @@
         "docs/command-navigation.md",
         "tests/ui/test_navigation.py",
         "tests/terminal/test_navigation.py"
-      ]
+      ],
+      "public_summary": "Tables support local case-insensitive text and bounded Unicode regular-expression filtering with visible errors. Inverse/fuzzy matching, server selectors and saved filter history are planned.",
+      "public_status": "partial"
     },
     {
       "id": "UI03",
@@ -295,7 +313,9 @@
         "tests/ui/test_context_workspace.py",
         "tests/unit/test_container_rows.py",
         "tests/ui/test_context_scope_commands.py"
-      ]
+      ],
+      "public_summary": "Bounded session history retains resource kind, scope, filter, sort, selection and viewport. The trail states the Escape destination. Persistent history and wider relationship drill-down are planned.",
+      "public_status": "partial"
     },
     {
       "id": "UI04",
@@ -329,7 +349,9 @@
         "docs/acceptance/terminal-qualification.md",
         "tests/terminal/test_transports.py",
         "tests/terminal/test_shutdown.py"
-      ]
+      ],
+      "public_summary": "Tables support keyboard paging, horizontal scrolling, Unicode, small terminals and retained resource identity. Source/installed PTY and SSH/tmux checks have explicit physical-terminal and clipboard limits.",
+      "public_status": "partial"
     },
     {
       "id": "UI05",
@@ -353,7 +375,9 @@
         "docs/standard-resources.md",
         "tests/unit/test_custom_layout.py",
         "tests/ui/test_custom_resources.py"
-      ]
+      ],
+      "public_summary": "Standard and generic tables sort typed values with stable selection. Generic server columns can be selected/reordered for the session. Persistent layouts, range selection and errors-only filtering are planned.",
+      "public_status": "partial"
     },
     {
       "id": "UI06",
@@ -381,7 +405,9 @@
         "docs/acceptance/stable-workspace.md",
         "tests/ui/test_layout_snapshots.py",
         "docs/acceptance/header-logo.md"
-      ]
+      ],
+      "public_summary": "The shared header shows current-view shortcuts, with secondary actions in help on small terminals. Per-view user-defined hotkeys are planned.",
+      "public_status": "partial"
     },
     {
       "id": "UI07",
@@ -400,7 +426,9 @@
         "tests/ui/test_inspection.py",
         "tests/terminal/test_inspection.py",
         "scripts/verify_contexts_kind.py"
-      ]
+      ],
+      "public_summary": "Selected resources expose captured details, redacted YAML and UID-related events with local search. Inspection is a snapshot; reopen it to refresh. Automatic viewer refresh is planned.",
+      "public_status": "partial"
     },
     {
       "id": "UI08",
@@ -422,7 +450,9 @@
         "docs/acceptance/terminal-qualification.md",
         "tests/terminal/test_transports.py",
         "tests/terminal/test_shutdown.py"
-      ]
+      ],
+      "public_summary": "Inspection, logs and local shell review offer redacted terminal clipboard output. Actual host receipt depends on OSC52 permissions and SSH/tmux forwarding; native clipboard integration is planned.",
+      "public_status": "partial"
     },
     {
       "id": "UI09",
@@ -440,7 +470,9 @@
         "tests/unit/test_log_export.py",
         "tests/ui/test_logs.py",
         "docs/acceptance/S02.md"
-      ]
+      ],
+      "public_summary": "Logs can be saved to an explicit new private file without overwrite. A saved-export browser, general resource export and richer export formats are planned.",
+      "public_status": "partial"
     },
     {
       "id": "UI10",
@@ -458,7 +490,9 @@
         "tests/ui/test_resource_workspace.py",
         "tests/ui/test_layout_snapshots.py",
         "docs/acceptance/header-logo.md"
-      ]
+      ],
+      "public_summary": "The shared header displays the actual installed version and original KubeRich brand. Optional cached update notices and further presentation controls are planned.",
+      "public_status": "partial"
     },
     {
       "id": "RES01",
@@ -504,7 +538,9 @@
         "docs/acceptance/context-container-workspace.md",
         "tests/ui/test_context_workspace.py",
         "tests/unit/test_container_rows.py"
-      ]
+      ],
+      "public_summary": "Pods and namespaces have live dedicated views. Pod Enter opens captured regular/init/sidecar container rows; selected-container logs and existing ephemeral attach/file-copy checks have separate scope.",
+      "public_status": "partial"
     },
     {
       "id": "RES02",
@@ -524,7 +560,9 @@
         "tests/ui/test_standard_table.py",
         "tests/terminal/test_standard_resources.py",
         "scripts/standard_kind.py"
-      ]
+      ],
+      "public_summary": "Standard workload tables and reviewed scale/restart/revision rollback are available for supported controllers. Automatic owner/ReplicaSet drill-down is planned.",
+      "public_status": "partial"
     },
     {
       "id": "RES03",
@@ -545,7 +583,9 @@
         "tests/ui/test_standard_table.py",
         "tests/terminal/test_standard_resources.py",
         "scripts/standard_kind.py"
-      ]
+      ],
+      "public_summary": "Service, EndpointSlice, Ingress and NetworkPolicy views are available. Service numeric TCP forwarding has its own prerequisites. Discovery refuses APIs removed from the selected server.",
+      "public_status": "partial"
     },
     {
       "id": "RES04",
@@ -566,7 +606,9 @@
         "tests/ui/test_standard_table.py",
         "tests/terminal/test_standard_resources.py",
         "scripts/standard_kind.py"
-      ]
+      ],
+      "public_summary": "Node, PV, PVC, StorageClass and HPA tables are available. Live usage, scheduling overviews and broader quota/disruption diagnostics are planned.",
+      "public_status": "partial"
     },
     {
       "id": "RES05",
@@ -587,7 +629,9 @@
         "tests/ui/test_standard_table.py",
         "tests/terminal/test_standard_resources.py",
         "scripts/standard_kind.py"
-      ]
+      ],
+      "public_summary": "ConfigMap, Secret, service-account and RBAC resource tables support ordinary redacted inspection. Secret reveal/edit and a permission browser are unavailable.",
+      "public_status": "partial"
     },
     {
       "id": "RES06",
@@ -615,7 +659,9 @@
         "tests/ui/test_custom_resources.py",
         "tests/ui/test_custom_table.py",
         "tests/terminal/test_custom_resources.py"
-      ]
+      ],
+      "public_summary": "Discovered custom resources support served versions, server Table columns, typed sorting and captured inspection. Custom mutation, persistent layouts and relationship jumps are planned.",
+      "public_status": "partial"
     },
     {
       "id": "LOG01",
@@ -643,7 +689,9 @@
         "tests/ui/test_aggregate_logs.py",
         "tests/terminal/test_aggregate_logs.py",
         "scripts/verify_aggregate_logs_kind.py"
-      ]
+      ],
+      "public_summary": "Read current/previous container logs, select sources and aggregate supported workload logs. Owned readers track membership and preserve per-source identity.",
+      "public_status": "available"
     },
     {
       "id": "LOG02",
@@ -661,7 +709,9 @@
         "tests/terminal/test_logs.py",
         "scripts/verify_contexts_kind.py",
         "docs/acceptance/S02.md"
-      ]
+      ],
+      "public_summary": "Logs support head/tail/time windows, timestamps, wrapping, reception pause and independent viewport following. Retained history is bounded; rotated API output may be unavailable.",
+      "public_status": "available"
     },
     {
       "id": "LOG03",
@@ -681,7 +731,9 @@
         "tests/ui/test_logs.py",
         "tests/terminal/test_logs.py",
         "docs/acceptance/S02.md"
-      ]
+      ],
+      "public_summary": "Retained log search, match navigation, marks, clear/fullscreen, redacted copy and exclusive private-file save are available. Richer filtering and saved-export browsing are planned.",
+      "public_status": "partial"
     },
     {
       "id": "SES01",
@@ -724,7 +776,9 @@
         "tests/unit/test_terminal_history.py",
         "tests/ui/test_terminal_history.py",
         "tests/quality/test_terminal_history_stress.py"
-      ]
+      ],
+      "public_summary": "A selected container can open an embedded kubectl shell with captured scope and local bounded history/search/copy. Write mode, kubectl and exec permission are required. Advanced terminal protocols are outside the initial scope.",
+      "public_status": "partial"
     },
     {
       "id": "SES02",
@@ -748,7 +802,9 @@
         "tests/terminal/test_attach.py",
         "tests/terminal/test_transfers.py",
         "scripts/verify_transfers_kind.py"
-      ]
+      ],
+      "public_summary": "Attach to supported running containers and review bidirectional file/tree transfers. Uploads and attach require write mode; downloads use explicit local destinations and guarded extraction. Interrupted uploads can leave remote files.",
+      "public_status": "partial"
     },
     {
       "id": "SES03",
@@ -765,7 +821,9 @@
         "tests/ui/test_port_forwards.py",
         "tests/terminal/test_port_forwards.py",
         "scripts/verify_port_forwards_kind.py"
-      ]
+      ],
+      "public_summary": "Manage pod/Service numeric TCP forwards with explicit bind intent, readiness, listing and stop. Resource/context/exit cleanup owns local processes; external forwards are not discovered.",
+      "public_status": "partial"
     },
     {
       "id": "SES04",
@@ -775,7 +833,9 @@
       ],
       "source": "README.md",
       "status": "planned",
-      "difference": "Cluster annotations require local opt-in before automatic listeners start."
+      "difference": "Cluster annotations require local opt-in before automatic listeners start.",
+      "public_summary": "Named ports, FastForward annotations, multiple presets and additional port-forward transports are planned.",
+      "public_status": "planned"
     },
     {
       "id": "OPS01",
@@ -803,7 +863,9 @@
         "tests/contract/test_mutations.py",
         "tests/contract/test_mutation_faults.py",
         "scripts/verify_mutations_kind.py"
-      ]
+      ],
+      "public_summary": "Common read-only policy, captured targets, permission handling and one-use confirmations guard effectful operations. Kubernetes RBAC/admission remain authoritative; application read-only mode is not a sandbox.",
+      "public_status": "partial"
     },
     {
       "id": "OPS02",
@@ -828,7 +890,9 @@
         "tests/ui/test_editing.py",
         "tests/terminal/test_editing.py",
         "scripts/verify_editing_kind.py"
-      ]
+      ],
+      "public_summary": "Edit a selected supported manifest using an explicit local-disclosure review, trusted external editor, redacted diff, strict server dry-run and separate Apply. Secret editing is unavailable.",
+      "public_status": "partial"
     },
     {
       "id": "OPS03",
@@ -855,7 +919,9 @@
         "tests/ui/test_workloads.py",
         "tests/terminal/test_workloads.py",
         "scripts/verify_workloads_kind.py"
-      ]
+      ],
+      "public_summary": "Review scale, restart or an explicit retained-revision rollback for supported controllers. Rollout monitoring reports actual controller progress independently of API write confirmation. Owner drill-down is planned.",
+      "public_status": "partial"
     },
     {
       "id": "OPS04",
@@ -875,7 +941,9 @@
         "tests/ui/test_operations.py",
         "tests/terminal/test_operations.py",
         "scripts/verify_operations_kind.py"
-      ]
+      ],
+      "public_summary": "Single/batch deletion reviews identity, grace and propagation, then retains independent partial/uncertain outcomes. It never silently removes finalizers. Automatic completed/error pod cleanup is planned.",
+      "public_status": "partial"
     },
     {
       "id": "OPS05",
@@ -895,7 +963,9 @@
         "tests/terminal/test_operations.py",
         "tests/packaging/test_distribution.py",
         "scripts/verify_operations_kind.py"
-      ]
+      ],
+      "public_summary": "Review supported Job/CronJob suspend/resume and create an independent manual Job from a captured CronJob template. Scheduled concurrency policy does not govern that manual run.",
+      "public_status": "available"
     },
     {
       "id": "OPS06",
@@ -906,7 +976,9 @@
       ],
       "source": "internal/view/secret.go",
       "status": "planned",
-      "difference": ""
+      "difference": "",
+      "public_summary": "Ordinary ConfigMap/Secret inspection is redacted. Sensitive-content reveal, encoded/decoded toggles and environment provenance views are planned.",
+      "public_status": "partial"
     },
     {
       "id": "OPS07",
@@ -916,7 +988,9 @@
       ],
       "source": "internal/view/dir.go",
       "status": "planned",
-      "difference": ""
+      "difference": "",
+      "public_summary": "Local manifest directories, apply/delete workflows and Kustomize integration are planned.",
+      "public_status": "planned"
     },
     {
       "id": "HELM01",
@@ -926,7 +1000,9 @@
       ],
       "source": "internal/dao/helm_chart.go",
       "status": "planned",
-      "difference": "Optional external Helm adapter; no Go SDK inside Python."
+      "difference": "Optional external Helm adapter; no Go SDK inside Python.",
+      "public_summary": "Helm release browsing, status, notes, values, manifests and history are planned.",
+      "public_status": "planned"
     },
     {
       "id": "HELM02",
@@ -936,7 +1012,9 @@
       ],
       "source": "internal/dao/helm_history.go",
       "status": "planned",
-      "difference": ""
+      "difference": "",
+      "public_summary": "Helm rollback and uninstall workflows are planned.",
+      "public_status": "planned"
     },
     {
       "id": "EXT01",
@@ -952,7 +1030,9 @@
         "docs/resource-workspace.md",
         "docs/acceptance/resource-workspace.md",
         "tests/ui/test_resource_workspace.py"
-      ]
+      ],
+      "public_summary": "An original built-in k9s color theme and explicit Textual theme selection are available. Custom user skins, live reload and per-context theme overrides are planned.",
+      "public_status": "partial"
     },
     {
       "id": "EXT02",
@@ -962,7 +1042,9 @@
       ],
       "source": "internal/config/views.go",
       "status": "planned",
-      "difference": ""
+      "difference": "",
+      "public_summary": "Built-in/discovered aliases and temporary generic column selection are available. User-defined hotkeys, persistent layouts and context/resource view overrides are planned.",
+      "public_status": "partial"
     },
     {
       "id": "EXT03",
@@ -973,7 +1055,9 @@
       ],
       "source": "internal/config/json/schemas/jumps.json",
       "status": "planned",
-      "difference": ""
+      "difference": "",
+      "public_summary": "Configurable resource relationship jumps with templates, selectors and namespace routing are planned.",
+      "public_status": "planned"
     },
     {
       "id": "EXT04",
@@ -985,7 +1069,9 @@
       ],
       "source": "internal/config/k9s.go",
       "status": "planned",
-      "difference": "All schema fields are enumerated in the source inventory; compatible semantics do not imply identical config files."
+      "difference": "All schema fields are enumerated in the source inventory; compatible semantics do not imply identical config files.",
+      "public_summary": "Preferences are loaded and validated locally. Reactive reload, wider feature gates and connection/log/metric threshold configuration are planned.",
+      "public_status": "partial"
     },
     {
       "id": "EXT05",
@@ -996,7 +1082,9 @@
       ],
       "source": "internal/config/plugin.go",
       "status": "planned",
-      "difference": ""
+      "difference": "",
+      "public_summary": "User plugin search paths, scoped shortcuts, confirmation and dangerous-action handling are planned.",
+      "public_status": "planned"
     },
     {
       "id": "EXT06",
@@ -1007,7 +1095,9 @@
       ],
       "source": "internal/view/env.go",
       "status": "planned",
-      "difference": "Explicitly configured shell plugins remain unsandboxed local commands; no automatic shell interpolation."
+      "difference": "Explicitly configured shell plugins remain unsandboxed local commands; no automatic shell interpolation.",
+      "public_summary": "User plugin environment/resource expansion and foreground/background execution are planned.",
+      "public_status": "planned"
     },
     {
       "id": "EXT07",
@@ -1018,7 +1108,9 @@
       ],
       "source": "internal/ui/dialog/plugin_inputs.go",
       "status": "planned",
-      "difference": ""
+      "difference": "",
+      "public_summary": "Typed plugin inputs, defaults, validation and configurable output handling are planned.",
+      "public_status": "planned"
     },
     {
       "id": "EXT08",
@@ -1028,7 +1120,9 @@
       ],
       "source": "plugins/README.md",
       "status": "planned",
-      "difference": "Inventory includes all plugin files. External Argo/Flux/Helm/AI tools keep their own support/licensing; optional services are never required by KubeRich."
+      "difference": "Inventory includes all plugin files. External Argo/Flux/Helm/AI tools keep their own support/licensing; optional services are never required by KubeRich.",
+      "public_summary": "Community plugin workflows and their external-tool compatibility are planned; no bundled plugin parity is claimed.",
+      "public_status": "planned"
     },
     {
       "id": "OBS01",
@@ -1038,7 +1132,9 @@
       ],
       "source": "internal/client/metrics.go",
       "status": "planned",
-      "difference": ""
+      "difference": "",
+      "public_summary": "Container rows show declared CPU/memory requests and limits. Live usage, percentages, GPU/extended resources and metrics views are planned.",
+      "public_status": "partial"
     },
     {
       "id": "OBS02",
@@ -1048,7 +1144,9 @@
       ],
       "source": "internal/view/pulse.go",
       "status": "planned",
-      "difference": ""
+      "difference": "",
+      "public_summary": "A cluster metrics overview with CPU/memory drill-down is planned.",
+      "public_status": "planned"
     },
     {
       "id": "OBS03",
@@ -1058,7 +1156,9 @@
       ],
       "source": "internal/view/xray.go",
       "status": "planned",
-      "difference": ""
+      "difference": "",
+      "public_summary": "Resource relationship graphs, owner/node jumps, service endpoints and UsedBy views are planned.",
+      "public_status": "planned"
     },
     {
       "id": "OBS04",
@@ -1068,7 +1168,9 @@
       ],
       "source": "internal/view/rbac.go",
       "status": "planned",
-      "difference": ""
+      "difference": "",
+      "public_summary": "An interactive RBAC permission/rule browser is planned.",
+      "public_status": "planned"
     },
     {
       "id": "OBS05",
@@ -1078,7 +1180,9 @@
       ],
       "source": "README.md",
       "status": "planned",
-      "difference": "README advertises Popeye; treat this as documented surface, not proof of a working builtin in the pinned binary."
+      "difference": "README advertises Popeye; treat this as documented surface, not proof of a working builtin in the pinned binary.",
+      "public_summary": "Cluster diagnostic reports and actionable health-check views are planned.",
+      "public_status": "planned"
     },
     {
       "id": "OBS06",
@@ -1088,7 +1192,9 @@
       ],
       "source": "internal/view/img_scan.go",
       "status": "planned",
-      "difference": ""
+      "difference": "",
+      "public_summary": "Opt-in image vulnerability scanning and advisory/package/fix views are planned.",
+      "public_status": "planned"
     },
     {
       "id": "ADV01",
@@ -1098,7 +1204,9 @@
       ],
       "source": "internal/view/node.go",
       "status": "planned",
-      "difference": ""
+      "difference": "",
+      "public_summary": "Node helper-pod shells and configurable host-mount/image/namespace controls are planned.",
+      "public_status": "planned"
     },
     {
       "id": "ADV02",
@@ -1108,7 +1216,9 @@
       ],
       "source": "internal/view/drain_dialog.go",
       "status": "planned",
-      "difference": ""
+      "difference": "",
+      "public_summary": "Reviewed cordon, uncordon and drain with disruption constraints and explicit overrides are planned.",
+      "public_status": "planned"
     },
     {
       "id": "ADV03",
@@ -1119,7 +1229,9 @@
       ],
       "source": "plugins/debug-container.yaml",
       "status": "planned",
-      "difference": "Available through upstream plugin workflows; planned first-class KubeRich action."
+      "difference": "Available through upstream plugin workflows; planned first-class KubeRich action.",
+      "public_summary": "Creating ephemeral debug containers and their managed sessions is planned.",
+      "public_status": "planned"
     },
     {
       "id": "ADV04",
@@ -1129,7 +1241,9 @@
       ],
       "source": "internal/view/benchmark.go",
       "status": "planned",
-      "difference": ""
+      "difference": "",
+      "public_summary": "HTTP benchmarking, results browsing and benchmark cancellation are planned.",
+      "public_status": "planned"
     },
     {
       "id": "ADV05",
@@ -1139,7 +1253,9 @@
       ],
       "source": "internal/client/gvrs.go",
       "status": "planned",
-      "difference": ""
+      "difference": "",
+      "public_summary": "Expanded policy, quota, admission and scheduling diagnostics are planned. Discovery already reports removed APIs without fabricating a table.",
+      "public_status": "partial"
     },
     {
       "id": "DIST01",
@@ -1179,7 +1295,9 @@
         "tests/quality/test_standalone_host.py",
         "tests/quality/test_standalone_release.py",
         "packaging/standalone/python-runtime.json"
-      ]
+      ],
+      "public_summary": "Local wheel/source and Python-manager installation are verified with separate native archive/Homebrew qualification. Public PyPI, GitHub downloads and the project-owned tap remain unavailable until release activation.",
+      "public_status": "partial"
     },
     {
       "id": "DIST02",
@@ -1189,7 +1307,9 @@
       ],
       "source": "README.md",
       "status": "planned",
-      "difference": ""
+      "difference": "",
+      "public_summary": "Windows executables and Windows package-manager channels are planned.",
+      "public_status": "planned"
     },
     {
       "id": "DIST03",
@@ -1199,7 +1319,9 @@
       ],
       "source": "README.md",
       "status": "planned",
-      "difference": "Registry acceptance, Webi/pkgx/gah and Docker Desktop extensions need separate ownership; not guaranteed by a local recipe."
+      "difference": "Registry acceptance, Webi/pkgx/gah and Docker Desktop extensions need separate ownership; not guaranteed by a local recipe.",
+      "public_summary": "Additional Linux/FreeBSD/MacPorts and community package-manager channels are planned.",
+      "public_status": "planned"
     },
     {
       "id": "DIST04",
@@ -1209,7 +1331,9 @@
       ],
       "source": "README.md",
       "status": "planned",
-      "difference": ""
+      "difference": "",
+      "public_summary": "An OCI terminal image and shell completion are planned.",
+      "public_status": "planned"
     },
     {
       "id": "PAID01",
@@ -1220,7 +1344,9 @@
       ],
       "source": "https://github.com/derailed/k9s/releases/tag/v0.24.7",
       "status": "evidence-gap",
-      "difference": "Evidence gap: historical existence verified; no complete official accessible feature catalog found. Not counted as parity."
+      "difference": "Evidence gap: historical existence verified; no complete official accessible feature catalog found. Not counted as parity.",
+      "public_summary": "Additional proprietary upstream capabilities lack a verifiable complete public catalogue. They are not claimed as implemented or fully inventoried.",
+      "public_status": "unverified"
     },
     {
       "id": "DELTA01",
@@ -1237,7 +1363,9 @@
       ],
       "source": "https://github.com/derailed/k9s/compare/v0.51.0...7064f96f1e852e71efcb848a483a5b6d4b986f35",
       "status": "planned",
-      "difference": "103 commits/129 changed files indexed; relevant UI/CLI/configuration changes reviewed separately from released behavior. Refresh before stable release."
+      "difference": "103 commits/129 changed files indexed; relevant UI/CLI/configuration changes reviewed separately from released behavior. Refresh before stable release.",
+      "public_summary": "Unreleased upstream changes are tracked separately from the pinned baseline. They do not establish delivered KubeRich behavior.",
+      "public_status": "planned"
     }
   ]
 }

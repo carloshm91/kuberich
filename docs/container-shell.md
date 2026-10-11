@@ -99,7 +99,7 @@ ephemeral-debug workflow, not an invented SSH connection.
 
 ## Verification and remaining scope
 
-See [measured S04 acceptance evidence](acceptance/S04.md) and the
+See [shell verification evidence](acceptance/S04.md) and the
 [embedded-terminal acceptance](acceptance/embedded-shell.md) for qualified
 commits, coverage, actual terminal/cluster trials and unavailable platform checks.
 
@@ -122,13 +122,11 @@ return and denied pods/exec. It also edits only its owned source kubeconfig afte
 connection to verify the prepared session remains pinned. Evidence is written to
 `artifacts/cluster/shell.json` and `artifacts/terminal/kind-shell-*`.
 
-SSH/tmux/macOS qualification remains Q02/full platform CI. EKS/AKS/provider smoke
-qualification remains C06/C07/C08. Attach, file transfer, node/ephemeral shells
-remain separate work. This checkpoint supports shell keys, bounded Unicode paste,
+Native POSIX terminal, SSH and tmux behavior is tested separately from
+real-provider authentication. [Attach and file transfer](container-attach-copy.md)
+have separate workflows; node shells and new ephemeral debug containers are planned. This checkpoint supports shell keys, bounded Unicode paste,
 ANSI/256/true colors, cursor reports and alternate screens. It does not implement
-mouse reporting, terminal graphics or advanced keyboard protocols; these remain
-[#124](https://github.com/carloshm91/kuberich/issues/124), with platform qualification
-in Q02. There is no
+mouse reporting, terminal graphics or advanced keyboard protocols. There is no
 promise that every terminal program is compatible or that K9s parity is complete.
 
 Output storage is limited to two 400×150 cell screens, 32 code points per cell,
@@ -144,5 +142,4 @@ visible to its operator and is not stored in application diagnostic logs.
 dynamically imported LGPLv3 dependency, pinned in pyproject.toml and
 uv.lock. KubeRich's own adapter/widget code is original Apache-2.0 code; no upstream
 widget source is copied. Pyte's license and replacement/source availability must
-be preserved in future standalone distributions; Q04 owns the complete license
-and SBOM release checks.
+be preserved in standalone distributions, together with license and SBOM checks.

@@ -13,10 +13,11 @@ from tempfile import TemporaryDirectory
 
 from aiohttp import web
 
+from kuberich.config.catalog import Entry, KubeCatalog
 from kuberich.config.schema import Settings
 from kuberich.domain.views import ViewStatus
 from kuberich.ui.app import KubeRichApp
-from tests.support.connections import catalog_fixture, namespaces
+from tests.support.connections import namespaces
 from tests.support.pods import NOW, pod
 from tests.support.resources import collection
 from tests.support.workspace import stable_watch, wait_for, workspace_api
@@ -41,7 +42,7 @@ async def capture(output: Path, logs_source: Path) -> None:
         ("worker-5b8f9d7c64-a6j3r", True, 1),
         ("queue-0", False, 3),
     ):
-        value = pod(name, namespace="team", restarts=restarts, ready=ready, created=NOW)
+        value = pod(name, namespace="demo-apps", restarts=restarts, ready=ready, created=NOW)
         if not ready:
             value["status"]["containerStatuses"][0]["state"] = {
                 "waiting": {"reason": "CrashLoopBackOff"}
@@ -55,10 +56,26 @@ async def capture(output: Path, logs_source: Path) -> None:
 
     with TemporaryDirectory(prefix="kuberich-site-capture-") as temporary:
         async with workspace_api(lambda _: async_response(), resources) as url:
+            directory = Path(temporary)
+            catalog = KubeCatalog(
+                current="demo-lab",
+                contexts={
+                    "demo-lab": Entry(
+                        {
+                            "cluster": "demo-cluster",
+                            "user": "demo-reader",
+                            "namespace": "demo-apps",
+                        },
+                        directory,
+                    )
+                },
+                clusters={"demo-cluster": Entry({"server": url}, directory)},
+                users={"demo-reader": Entry({"token": "synthetic"}, directory)},
+            )
             app = KubeRichApp(
                 Settings(read_only=True, theme="k9s"),
                 logging.Logger("site-demo", level=100),
-                catalog=catalog_fixture(Path(temporary), url),
+                catalog=catalog,
             )
             async with app.run_test(size=(120, 30)) as pilot:
                 await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
@@ -99,7 +116,7 @@ async def capture(output: Path, logs_source: Path) -> None:
 
 
 async def async_response() -> web.Response:
-    return namespaces("default", "team")
+    return namespaces("default", "demo-apps")
 
 
 if __name__ == "__main__":

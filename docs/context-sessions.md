@@ -1,11 +1,10 @@
 # Context sessions
 
-C01 connects for bounded namespace discovery. C02/C03 provide resource reads/watches,
-and C04's [active view](resource-views.md) synchronizes pods for the selected scope
-with live/stale/error status and a collection count. The current workspace has
-live pod rows, details, container logs and embedded shells. Earlier sections
-describe the C01 authentication boundary; see [the current trial](first-preview.md)
-for navigation and [EKS contracts](eks-authentication.md) for provider qualification.
+Each selected context owns an independent connection. The workspace lists and
+watches the selected resource scope, reports live/stale/error states and retains
+its latest snapshot during temporary failures. It includes live resource tables,
+details, container logs and embedded shells. See [navigation](command-navigation.md)
+and [authentication setup](kubeconfig-interoperability.md) for the related workflows.
 Connection errors remain in the UI so you can choose another context or retry.
 
 ## Start and select
@@ -99,18 +98,18 @@ disabled. Owned real proxy/TLS contracts and Kubernetes HTTP CONNECT qualify
 local behavior; [interoperability guidance](kubeconfig-interoperability.md)
 records precedence, cleanup and SOCKS5 streaming limits.
 
-C08 adds generic exec certificate renewal and native helper `:login`, including
+KubeRich supports exec certificate renewal and native helper `:login`, including
 the exact declared stdin behavior, private stdout and restored terminal.
 Legacy `auth-provider` and basic credentials remain explicitly unsupported;
 the same guide describes migration to exec/token/certificate entries.
-C06/C07/C08 deliver locally qualified provider contracts. Actual EKS/AKS/GKE
-certification remains opt-in Q05 #87; synthetic tests do not certify cloud tenants.
+Credential behavior is verified locally. Real EKS/AKS/GKE compatibility requires
+separate provider trials; synthetic tests do not certify cloud tenants.
 See [EKS](eks-authentication.md) and [AKS](aks-authentication.md) limits.
-CLI cluster/user/token/TLS/impersonation overrides are implemented by F05 #19;
+CLI cluster/user/token/TLS/impersonation overrides are supported;
 see the [effective launch connection](k9s-cli.md#effective-invocation-connection).
 They apply to this invocation, including context changes, reads, watches, logs
 and the private captured kubectl shell connection. Real provider qualification
-remains Q05 #87.
+requires separate authorized trials.
 
 ## Connection states and bounds
 
@@ -128,7 +127,7 @@ remains Q05 #87.
 | API error | Unexpected status, malformed/excessive response; check endpoint and retry |
 
 A 403 cannot establish that any resource operation is authorized. The terminal
-checkpoint attempts namespace discovery; C02 resource reads have their own
+connection attempts namespace discovery; resource reads have their own
 explicit permission/error results. Namespace discovery follows at most
 32 pages and retains at most 2048 namespace names, with 1 MiB per response;
 exceeding a limit is a visible error rather than a truncated successful list.

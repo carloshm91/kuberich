@@ -132,8 +132,8 @@ try {
   const noJs = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   const staticPage = await noJs.newPage();
   await staticPage.goto(`${origin}/www/`);
-  await staticPage.getByRole("link", { name: "Read the quickstart" }).click();
-  assert.match(await staticPage.getByRole("heading", { level: 1 }).textContent(), /installation and trial/i);
+  await staticPage.getByRole("link", { name: "Get started" }).click();
+  assert.match(await staticPage.getByRole("heading", { level: 1 }).textContent(), /installation and upgrades/i);
   await staticPage.getByRole("navigation", { name: "Documentation", exact: true }).getByRole("link", { name: "Command-line options", exact: true }).click();
   assert.match(await staticPage.getByRole("heading", { level: 1 }).textContent(), /Command-line reference/);
   await noJs.close();
