@@ -191,8 +191,11 @@ def trial(
                 terminal.wait_for_screen("19 78")
                 if scenario == "success" and attempt == 0:
                     terminal.send(
-                        "i=0; while [ $i -lt 1100 ]; do printf 'HISTORY-%04d café界\\n' $i; i=$((i+1)); done; printf 'password=owned-secret\\n'\n".encode()
+                        "i=0; while [ $i -lt 1100 ]; do printf 'HISTORY-%04d café界\\n' $i; i=$((i+1)); done; printf '%s=%s\\n' password owned-secret; printf 'HISTORY_%s\\n' COMPLETE\n".encode()
                     )
+                    # An echoed command is not evidence that its output completed.
+                    # Neither the secret row nor this marker appears in its source.
+                    terminal.wait_for_screen("HISTORY_COMPLETE", timeout=30)
                     terminal.wait_for_screen("password=owned-secret", timeout=30)
                     terminal.wait_for_screen("OWNED-SHELL> ")
                     terminal.send(b"\x1b[5;2~")
@@ -202,9 +205,9 @@ def trial(
                     terminal.send(b"vjynNv")
                     terminal.send(b"/password=\r")
                     terminal.wait_for_screen("password=owned-secret")
-                    terminal.send(b"y")
+                    copied = terminal.send(b"y")
+                    terminal.wait_for(b"\x1b]52;c;cGFzc3dvcmQ9W1JFREFDVEVEXQ==", since=copied)
                     terminal.wait_for_screen("Redacted selection copied")
-                    assert b"\x1b]52;c;cGFzc3dvcmQ9W1JFREFDVEVEXQ==" in terminal.transcript
                     terminal.send(b"\r")
                     terminal.wait_for_screen("OWNED-SHELL> ")
                     terminal.send(b"printf 'REVIEW_%s\\n' RETURNED\n")

@@ -23,7 +23,7 @@ provider helpers do not establish real cloud-provider certification.
 | Unsafe node/config refusal, setup failure, repeated cancellation and process timeout | `tests/quality/test_owned_kind.py`; real lifecycle verifier |
 
 AWS/EKS and Azure/AKS certification remain Q05 #87. Maximum-workload performance
-belongs to Q03 #86; repeated bounded contracts do not establish a benchmark.
+belongs to Q03 #50; repeated bounded contracts do not establish a benchmark.
 
 ## Ownership before writes
 
@@ -59,10 +59,14 @@ uv run python -m scripts.verify_contexts_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_kind_lifecycle --kind /absolute/path/to/kind
 uv run python -m scripts.verify_shell_kind --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
 uv run python -m scripts.verify_port_forwards_kind --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
+uv run python -m scripts.verify_credential_interop_kind --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
 uv run python -m scripts.verify_mutations_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_editing_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_workloads_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_operations_kind --kind /absolute/path/to/kind
+uv run python -m scripts.verify_transfers_kind --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
+uv run python -m scripts.verify_custom_resources_kind --kind /absolute/path/to/kind
+uv run python -m scripts.verify_aggregate_logs_kind --kind /absolute/path/to/kind
 uv build
 uv run python -m scripts.verify_quickstart --wheel dist/kuberich-0.0.1.dev0-py3-none-any.whl --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
 ```
@@ -75,22 +79,26 @@ not overlap another process creating/removing clusters.
 
 ## Release-time repetition
 
-Required PR/main CI runs the complete suite and all nine real rehearsals once
-(contexts, lifecycle faults, shell, port forwards, mutations, editing, workloads,
-resource operations and installed quickstart).
-Before each canonical RC publication, and after client/runtime or lifecycle
-changes, repeat the contract suite and all nine real rehearsals three consecutive
+Required PR/main CI runs the complete suite and all thirteen real rehearsals once
+(contexts, lifecycle faults, shell, port forwards, credential interoperability,
+mutations, editing, workloads, resource operations, transfers, custom resources,
+aggregate logs and installed quickstart).
+Before each canonical stable or RC publication, and after client/runtime or lifecycle
+changes, repeat the contract suite and all thirteen real rehearsals three consecutive
 times on the exact candidate checkout. A failure blocks qualification; retain
 its evidence and diagnose before repetition.
 
 Use `--evidence artifacts/cluster/rc-N-contexts.json`, `rc-N-lifecycle.json`,
-`rc-N-shell.json`, `rc-N-port-forwards.json`, `rc-N-mutations.json`, `rc-N-editing.json`, `rc-N-workloads.json`, `rc-N-operations.json` and `rc-N-quickstart.json`, for
+`rc-N-shell.json`, `rc-N-port-forwards.json`, `rc-N-credential-interop.json`,
+`rc-N-mutations.json`, `rc-N-editing.json`, `rc-N-workloads.json`,
+`rc-N-operations.json`, `rc-N-transfers.json`, `rc-N-custom-resources.json`,
+`rc-N-aggregate-logs.json` and `rc-N-quickstart.json`, for
 N=1,2,3. Use that candidate's exact wheel filename for the quickstart. Preserve
 per-run logs, duration, exit status,
 candidate SHA, tool versions/digests, configuration invariance and node inventory.
 Archive `artifacts/ui`, `artifacts/terminal` and `artifacts/cluster` after each run
 so repeated screenshots do not overwrite earlier evidence. Hosted quality retains
-these directories even on failure. Link release-time evidence from D04 #40;
+these directories even on failure. Link release-time evidence from D06 #51 and D10 #89;
 a documented schedule is not a claim those repetitions ran.
 
 Sources: [kind explicit kubeconfig/provider](https://kind.sigs.k8s.io/docs/user/quick-start/),

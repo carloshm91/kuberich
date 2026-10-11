@@ -40,9 +40,10 @@ Common launch issues #149/#150/#154/#155/#157/#162/#166 remain required.
 Only initial 0.1.0/RC can proceed while #89 is open; patches/later phases require
 it closed. Unknown minor lines need reviewed mapping before publication.
 
-Finish #123 and the first-phase gaps before first-release qualification. At the
-live snapshot for this preparation, v0.0.1 has open #40/#109/#150 and v0.1.0 has
-open #49/#50/#51/#123. A milestone's feature completion alone is not public
+Finish the first-phase gaps before first-release qualification. At the
+historical preparation snapshot, v0.0.1 had open #40/#109/#150 and v0.1.0 had
+open #49/#50/#51/#123. The 2026-10-11 live update has closed #40/#49/#50/#123;
+#51/#150 and publication #89 remain. A milestone's feature completion alone is not public
 readiness. Native/security/artifact/terminal/owned-cluster requirements remain
 for every gate; actual manager upgrades remain D04/D06 work, with public-channel
 verification under #89. No intermediate maintainer trials are requested.

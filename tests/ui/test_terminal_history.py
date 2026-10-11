@@ -1,5 +1,6 @@
 """Local history controls over a real child PTY while remote output continues."""
 
+import asyncio
 import logging
 import os
 import sys
@@ -88,6 +89,14 @@ async def embedded(tmp_path):
             os.kill(int((tmp_path / "pid").read_text()), 0)
 
 
+async def wait_for_late_output(screen):
+    # This is completion of 9,000 real PTY rows under coverage, not a
+    # responsiveness benchmark. The separate heartbeat limit stays 150 ms.
+    async with asyncio.timeout(30):
+        while "LATE REMOTE" not in "\n".join(screen.terminal.model.screen.display):
+            await asyncio.sleep(0.001)
+
+
 @pytest.mark.asyncio
 async def test_live_history_search_selection_copy_and_return_use_real_pty(tmp_path):
     async with embedded(tmp_path) as (app, pilot, screen):
@@ -102,7 +111,7 @@ async def test_live_history_search_selection_copy_and_return_use_real_pty(tmp_pa
         frozen = terminal.review.rows
         assert "dropped" in str(screen.query_one("#shell-controls", Static).content)
         (tmp_path / "continue").touch()
-        await wait_for(lambda: "LATE REMOTE" in "\n".join(terminal.model.screen.display))
+        await wait_for_late_output(screen)
         assert terminal.review.rows is frozen
         assert not any("LATE REMOTE" in row.text for row in frozen)
         await pilot.press("slash")
@@ -139,6 +148,26 @@ async def test_live_history_search_selection_copy_and_return_use_real_pty(tmp_pa
         await wait_for(lambda: app.screen is not screen)
         assert output.read_bytes() == b"exit\r"
         assert not terminal.model.history.rows and terminal.review is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("removed_id", ["shell-toolbar", "shell-history", "shell-controls"])
+async def test_pty_review_output_during_child_unmount_keeps_owned_cleanup(tmp_path, removed_id):
+    async with embedded(tmp_path) as (app, pilot, screen):
+        await pilot.press("alt+pageup")
+        assert screen.terminal.review is not None
+        # Reproduce Textual's children-before-parent teardown interval while
+        # the real owned PTY still has queued output and the screen is mounted.
+        removed = screen.query_one("#" + removed_id)
+        await removed.remove()
+        assert screen.is_mounted
+        assert not removed.is_attached
+        (tmp_path / "continue").touch()
+        await wait_for_late_output(screen)
+        assert screen._session_task is not None and not screen._session_task.done()
+        await pilot.press("ctrl+right_square_bracket")
+        await wait_for(lambda: app.screen is not screen)
+        assert not screen.terminal.model.history.rows and screen.terminal.endpoint is None
 
 
 @pytest.mark.asyncio

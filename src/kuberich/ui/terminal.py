@@ -188,6 +188,8 @@ class ShellScreen(ModalScreen[str]):
         self.searching = False
         self.search_query = ""
         self.review_message = ""
+        self.history_button = Button("History", id="shell-history")
+        self.controls = Static(self.live_controls(), id="shell-controls", markup=False)
 
     def compose(self) -> ComposeResult:
         target = self.request.command.target
@@ -207,8 +209,8 @@ class ShellScreen(ModalScreen[str]):
             )
             yield self.terminal
             with Horizontal(id="shell-toolbar"):
-                yield Static(self.live_controls(), id="shell-controls", markup=False)
-                yield Button("History", id="shell-history")
+                yield self.controls
+                yield self.history_button
 
     def live_controls(self) -> str:
         return (
@@ -222,9 +224,12 @@ class ShellScreen(ModalScreen[str]):
             self.update_review_controls()
 
     def update_review_controls(self) -> None:
+        # Textual removes children before dispatching the screen's Unmount.
+        # The owned PTY can still deliver output during that interval.
+        if not self.controls.is_attached or not self.history_button.is_attached:
+            return
         review = self.terminal.review
-        button = self.query_one("#shell-history", Button)
-        button.label = "Live" if review is not None else "History"
+        self.history_button.label = "Live" if review is not None else "History"
         if review is None:
             text = self.live_controls()
         elif self.searching:
@@ -236,7 +241,7 @@ class ShellScreen(ModalScreen[str]):
             )
             if self.review_message:
                 text = self.review_message + " · " + text
-        self.query_one("#shell-controls", Static).update(safe_text(text))
+        self.controls.update(safe_text(text))
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "shell-history" and not self._shell_closing:

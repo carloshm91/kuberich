@@ -1,5 +1,16 @@
 # First things to try
 
+## First-phase engineering qualification: D06 #51
+
+#40 and #123 are merged. Final qualification includes all thirteen current owned
+cluster rehearsals and the complete supported platform matrix. A local full-suite
+run found a shell teardown race: output could update the History button after
+Textual removed its children. The correction checks actual DOM attachment and
+retains the controls directly; real child-PTY regression cases remove the toolbar
+or either control while remote output continues, then require child reaping.
+No release or public installation channel has been activated.
+See [workload checkpoint evidence](acceptance/workload-checkpoint.md).
+
 ## Shell history checkpoint: #123
 
 The shell now has a **History** button and Alt+PageUp / Shift+PageUp for frozen
@@ -23,8 +34,8 @@ Both actual local Python manager upgrades now pass: `uv tool upgrade` and
 `pipx upgrade` move between immutable versions, retain preferences and the owned
 caller configuration, run upgraded navigation/shell and uninstall cleanly.
 The exact local command is `uv run pytest -q --tb=short tests/packaging/test_upgrades.py`.
-Native Homebrew Linux/ARM Mac/Intel Mac qualification and complete matrix evidence
-remain pending. See [core checkpoint evidence](acceptance/core-checkpoint.md).
+Native Homebrew Linux/ARM Mac/Intel Mac and the full six-source/four-native
+matrix passed; #40 is closed. See [core checkpoint evidence](acceptance/core-checkpoint.md).
 These checks do not publish a package or require an intermediate manual trial.
 
 ## Standalone development candidate: D05 #49

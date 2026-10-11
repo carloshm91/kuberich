@@ -69,7 +69,18 @@ fills and measures that live screen before history, preserves the same history
 plateau requirement, and requires cleanup to return within 128 KiB of the live
 baseline. It does not reduce retained-row limits or suppress a growth failure.
 
-Full supported platform CI, installed bytes/audits, independent coverage and
-final exact-candidate qualification remain merge/release requirements. This
+The merged [PR #183](https://github.com/carloshm91/kuberich/pull/183) passed four
+source environments and all four native targets in
+[38121009965](https://github.com/carloshm91/kuberich/actions/runs/38121009965).
+An independent reader verified the original eight artifact ZIP digests, audit
+sets and native archive enrollment at producer source
+`f1f23e363ece935f72531c0a92d84629f34ba101`. All 45 critical modules had 100% line
+and branch coverage; source line coverage ranged 99.0881–99.1353% and branch
+coverage 96.8297–96.9640%. #123 is closed; no full six-environment release
+qualification is inferred from the four-environment PR matrix.
+
+A subsequent full local suite retained a teardown race while review output
+continued; [D06 evidence](workload-checkpoint.md) records the original failure
+and correction. Final exact-candidate qualification remains required. This
 issue does not activate public channels, publish a release or claim broader
 keyboard/mouse protocol compatibility (#124).
