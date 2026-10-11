@@ -33,6 +33,19 @@ Python absence, macOS 14 Intel trials and Developer ID/notarization remain uncla
 
 ## Separate original source performance failure: D04 #40
 
+The parent verifier now checks the child's original process/JUnit result after
+source, instrumentation and cleanup validation, before checking successful-work
+refill counters. Two controlled regressions reproduced the misleading assertion
+before the correction; all three then passed, including continued refusal of a
+successful but incomplete workload. This changes failure attribution only. The
+150-ms threshold, dataset, GC and all successful/negative-control acceptance
+checks remain enforced; it does not resolve the performance failure below.
+The exact local command was:
+
+```sh
+uv run --no-sync pytest -q --tb=short tests/quality/test_aggregate_runtime_failure.py
+```
+
 The second run's macOS source job `114343581231` failed the full retained
 aggregate-history scenario: 1 failed, 4,704 passed and 3 skipped in 1,942.47
 seconds. The parent refill assertion obscured the child's original heartbeat

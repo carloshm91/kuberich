@@ -261,6 +261,16 @@ async def require_runtime_children() -> None:
             "api_log_streams": 0,
             "api_watches": 0,
         }
+        cases = ElementTree.parse(directory / "cases.xml").getroot().findall(".//testcase")
+        assert len(cases) == 1 and cases[0].attrib["name"] == NODE.split("::")[1]
+        assert cases[0].find("error") is None and cases[0].find("skipped") is None
+        failures = cases[0].findall("failure")
+        if mode != "negative":
+            # A failed child may not have reached refill or later rounds. Keep
+            # its actual failure visible before checking successful-work counters.
+            assert (
+                result.status is ProcessStatus.SUCCEEDED and result.returncode == 0 and not failures
+            ), result.stdout.decode()
         assert heartbeat["gc_enabled"] and heartbeat["limit_seconds"] == 0.15
         assert heartbeat["gc_thresholds"] == list(gc.get_threshold())
         assert heartbeat["timing_qualifying"] is (mode != "coverage")
@@ -271,14 +281,7 @@ async def require_runtime_children() -> None:
             assert refill["byte_budget"] == 8192 and refill["records"] == 5000
             assert refill["batches"] > 1 and refill["maximum_batch_records"] < 500
             assert 0 < refill["maximum_batch_bytes"] <= refill["byte_budget"]
-        cases = ElementTree.parse(directory / "cases.xml").getroot().findall(".//testcase")
-        assert len(cases) == 1 and cases[0].attrib["name"] == NODE.split("::")[1]
-        assert cases[0].find("error") is None and cases[0].find("skipped") is None
-        failures = cases[0].findall("failure")
         if mode != "negative":
-            assert (
-                result.status is ProcessStatus.SUCCEEDED and result.returncode == 0 and not failures
-            ), result.stdout.decode()
             assert not heartbeat["negative_callback_executed"]
             if mode == "positive":
                 assert heartbeat["max_gap_seconds"] < 0.15
