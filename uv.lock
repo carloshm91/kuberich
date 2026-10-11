@@ -974,7 +974,7 @@ wheels = [
 
 [[package]]
 name = "kuberich"
-version = "0.0.1.dev0"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -1020,7 +1020,7 @@ requires-dist = [
     { name = "pyte", specifier = "==0.8.2" },
     { name = "pyyaml", specifier = ">=6.0.3,<7" },
     { name = "regex", specifier = ">=2026.9.29,<2027" },
-    { name = "textual", specifier = ">=8.2.8,<9" },
+    { name = "textual", specifier = "==8.2.8" },
 ]
 
 [package.metadata.requires-dev]

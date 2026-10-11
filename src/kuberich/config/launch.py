@@ -16,32 +16,26 @@ class PendingOption:
 
 
 PENDING_OPTIONS = (
-    PendingOption(("--splashless",), "splashless", "startup splash (U01 #56)", boolean=True),
-    PendingOption(("--invert",), "invert", "theme inversion (U01 #56)", boolean=True),
-    PendingOption(("--screen-dump-dir",), "screen_dump_dir", "screen exports (O06 #73)"),
+    PendingOption(("--splashless",), "splashless", "startup splash", boolean=True),
+    PendingOption(("--invert",), "invert", "theme inversion", boolean=True),
+    PendingOption(("--screen-dump-dir",), "screen_dump_dir", "screen exports"),
 )
 
 CONNECTION_OPTIONS = (
-    PendingOption(("--cluster",), "cluster", "connection overrides (F05 #19 / C08 #47)"),
-    PendingOption(("--user",), "user", "connection overrides (F05 #19 / C08 #47)"),
-    PendingOption(("--as",), "as_user", "impersonation transport (F05 #19 / C08 #47)"),
-    PendingOption(
-        ("--as-group",), "as_group", "impersonation transport (F05 #19 / C08 #47)", repeated=True
-    ),
+    PendingOption(("--cluster",), "cluster", "connection overrides"),
+    PendingOption(("--user",), "user", "connection overrides"),
+    PendingOption(("--as",), "as_user", "impersonation transport"),
+    PendingOption(("--as-group",), "as_group", "impersonation transport", repeated=True),
     PendingOption(
         ("--insecure-skip-tls-verify",),
         "insecure",
-        "TLS transport (F05 #19 / C08 #47)",
+        "TLS transport",
         boolean=True,
     ),
-    PendingOption(
-        ("--certificate-authority",), "certificate_authority", "TLS transport (F05 #19 / C08 #47)"
-    ),
-    PendingOption(("--client-key",), "client_key", "TLS transport (F05 #19 / C08 #47)"),
-    PendingOption(
-        ("--client-certificate",), "client_certificate", "TLS transport (F05 #19 / C08 #47)"
-    ),
-    PendingOption(("--token",), "token", "credential overrides (F05 #19 / C08 #47)"),
+    PendingOption(("--certificate-authority",), "certificate_authority", "TLS transport"),
+    PendingOption(("--client-key",), "client_key", "TLS transport"),
+    PendingOption(("--client-certificate",), "client_certificate", "TLS transport"),
+    PendingOption(("--token",), "token", "credential overrides"),
 )
 
 

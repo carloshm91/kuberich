@@ -5,13 +5,14 @@
 The Apache-2.0 source repository is public by the maintainer's approval in
 [#155](https://github.com/carloshm91/kuberich/issues/155). The separate GitHub
 project remains private. Source opening did not publish packages, a tap, a
-website, tags or GitHub Releases. Installed development metadata remains
-`0.0.1.dev0`; merges collect entries under Unreleased.
+website, tags or GitHub Releases. The first release-preparation PR sets metadata
+to `0.1.0`; that source version is a prepared candidate until approved publication.
 
 The maintainer changed the release policy on 2026-10-09 to usable, qualified
 **0.x phases**, beginning with **0.1.0**. This supersedes #154's earlier
-first-public-1.0-only policy. Development metadata remains `0.0.1.dev0` until a
-release PR. A phase label or a merged feature does not authorize publication.
+first-public-1.0-only policy. The core/workload qualifier #51 is complete, and
+the first candidate's launch preparation remains #150. A phase label, source
+version or merged feature does not authorize publication.
 
 | Public line | Required qualification gate | Additional phase scope |
 | --- | --- | --- |
@@ -84,9 +85,11 @@ without the owner's explicit authorization. The maintainer has purchased
    and engineering prerequisites, selected/cumulative phase gates, identity/site
    preparation and tracked launch refinements must be closed with real evidence. The publication gate
    itself stays open through public channel verification.
-3. Open a release PR for version/lock changes, authored notes, changelog,
+3. Open a release-preparation PR for version/lock changes, authored notes, changelog,
    migrations and verified installation/upgrade documentation. Merge through protected main with the preserved
-   maintainer sign-off and successful required checks.
+   maintainer sign-off and successful required checks. This PR may belong to
+   #150 before that issue closes: its exact version is needed for launch-material
+   qualification. All preparation prerequisites still close before publication.
 4. Dispatch Application quality on that exact main commit. Require every native
    Linux/macOS CPython 3.12/3.13/3.14 job, independent coverage, critical modules,
    audits, installed artifacts, owned-cluster and terminal checks. Routine

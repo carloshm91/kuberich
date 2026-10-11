@@ -1,12 +1,13 @@
 {
-  "application_tree": "7f64b0f1e46acaa60280ef006f6a1bf4ccca70bc",
+  "application_tree": "2946d2f627df18f456c81149188545cdb66a786f",
+  "application_version": "0.1.0",
   "capture_command": "env -u NO_COLOR uv run python -m scripts.capture_site --output NEW_MEDIA_DIRECTORY --logs-source artifacts/ui/logs-owned-kind.svg",
   "external_fonts_removed": true,
   "images": {
     "logs.svg": {
-      "original_sha256": "4e04d7fb16c67f3d7ea9e1393d644a690f06a71d2e4d221d5cd628126fc22f1b",
-      "qualification": "docs/acceptance/identity-migration.md",
-      "sha256": "dea8abea52f100edf4d89c02a1155db7899a93070f701c42dbe9d80748a38bf5",
+      "original_sha256": "94bbc14e30925212a0bda864b10db2707b8790016ba6707130579d8a9e8132eb",
+      "qualification": "docs/acceptance/workload-checkpoint.md",
+      "sha256": "ac1ef6ff3b42fc248e2fb5df3cbf1e22630bc92bfbbeaa84de9b67d85f455ad9",
       "source": "Qualified owned-kind logs screenshot retained in artifacts/ui; cluster deleted",
       "terminal_cells": [
         100,
@@ -14,7 +15,7 @@
       ]
     },
     "workspace.svg": {
-      "sha256": "1a5520e67084f16352ba03516e85baaf1e3f3081af33f16255ce7841bc9181bd",
+      "sha256": "93bbf0d70e475d8b735736ae8f571aad090bc3003710b6b9dc1bc3e45ba9f23a",
       "source": "Actual Textual render against owned loopback API with synthetic pods",
       "terminal_cells": [
         120,

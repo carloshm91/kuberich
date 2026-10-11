@@ -6,7 +6,6 @@ import os
 import shutil
 import signal
 from collections.abc import Awaitable, Callable, Mapping
-from contextlib import suppress
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -25,7 +24,7 @@ from kuberich.domain.credential_helpers import (
 from kuberich.domain.exec_credentials import parse_credentials
 from kuberich.domain.processes import ProcessCommand, ProcessMode, ProcessPurpose
 from kuberich.errors import AppError
-from kuberich.runtime import external_environment
+from kuberich.runtime import external_environment, signal_process_group
 
 
 def auth_problem(message: str) -> ConnectionProblem:
@@ -62,8 +61,7 @@ async def _execute(
             process = await asyncio.shield(spawning)
         except asyncio.CancelledError:
             process = await spawning
-            with suppress(ProcessLookupError):
-                os.killpg(process.pid, signal.SIGKILL)
+            await signal_process_group(process.pid, signal.SIGKILL)
             await process.wait()
             raise
     except OSError as error:
@@ -88,8 +86,7 @@ async def _execute(
     finally:
         # Kill the owned process group even if the direct child has exited:
         # descendants can still hold the pipe descriptors open.
-        with suppress(ProcessLookupError):
-            os.killpg(process.pid, signal.SIGKILL)
+        await signal_process_group(process.pid, signal.SIGKILL)
         for reader in readers:
             reader.cancel()
         await asyncio.gather(*readers, return_exceptions=True)

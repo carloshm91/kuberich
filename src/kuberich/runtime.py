@@ -1,11 +1,39 @@
 """Frozen entry and child environment; retain the application's own loader state."""
 
+import asyncio
 import os
+import signal
 import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 PTY_OPTION = "--kuberich-pty-child"
+
+
+async def signal_process_group(pid: int, value: signal.Signals) -> bool:
+    """Signal an owned group; accept Darwin teardown denial only after ESRCH."""
+    try:
+        os.killpg(pid, value)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        if sys.platform != "darwin":
+            raise
+        # XNU can find a group but exclude all its exiting/zombie members from
+        # signal delivery, returning EPERM before the group disappears. Probe
+        # without sending another signal; only ESRCH establishes its removal.
+        # A live group or a persistent denial must still fail cleanup.
+        for _ in range(5):
+            await asyncio.sleep(0.01)
+            try:
+                os.killpg(pid, 0)
+            except ProcessLookupError:
+                return False
+            except PermissionError:
+                continue
+            raise
+        raise
 
 
 def _outside_bundle(value: str, bundle: Path) -> str:

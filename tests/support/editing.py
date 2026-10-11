@@ -31,9 +31,16 @@ class EditingApi(MutationApi):
         super().__init__()
         self.validation_status = None
         self.validation_entered = None
+        self.before_read = None
 
     async def handle(self, request):
         if request.method != "PATCH":
+            if (
+                request.method == "GET"
+                and request.path == "/api/v1/namespaces/team/configmaps/owned-one"
+                and self.before_read is not None
+            ):
+                self.before_read()
             return await super().handle(request)
         body = await request.json()
         query = dict(request.query)

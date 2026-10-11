@@ -3,13 +3,16 @@
 import asyncio
 import json
 import os
+import signal
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from aiohttp import web
 
+from kuberich import runtime
 from kuberich.adapters.credentials import ExecToken
 from kuberich.config.catalog import Entry
 from kuberich.domain.connections import ConnectionProblem, ConnectionRequest, ConnectionState
@@ -354,3 +357,66 @@ async def test_cancellation_while_process_creation_is_pending_reaps_child(
     assert len(processes) == 1 and processes[0].returncode is not None
     with pytest.raises(ProcessLookupError):
         os.kill(processes[0].pid, 0)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("result", ["success", "stdout", "stderr", "cancel-spawn"])
+async def test_disappearing_darwin_helper_group_preserves_outcome_and_is_reaped(
+    tmp_path, monkeypatch, result
+):
+    """Real exited helpers reproduce EPERM followed by confirmed group removal."""
+    processes = []
+    denied = []
+    original_spawn = asyncio.create_subprocess_exec
+    original_signal = os.killpg
+    started, release = asyncio.Event(), asyncio.Event()
+
+    async def exited_helper(*args, **kwargs):
+        # Hold enough data to let this owned child exit before the readers start.
+        # Production still uses its normal pipe limits; this controls the race.
+        process = await original_spawn(*args, limit=2 * 1024 * 1024, **kwargs)
+        processes.append(process)
+        await process.wait()
+        started.set()
+        if result == "cancel-spawn":
+            await release.wait()
+        return process
+
+    def disappearing_group(pid, value):
+        try:
+            original_signal(pid, value)
+        except ProcessLookupError:
+            if value == signal.SIGKILL and not denied:
+                denied.append(pid)
+                raise PermissionError("owned disappearing group") from None
+            raise
+
+    monkeypatch.setattr(runtime, "sys", SimpleNamespace(platform="darwin"))
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", exited_helper)
+    monkeypatch.setattr(os, "killpg", disappearing_group)
+    source = printer(response())
+    if result in {"stdout", "stderr"}:
+        limit = 1024 * 1024 if result == "stdout" else 65536
+        source = f'import sys; sys.{result}.write("x" * {limit + 1}); sys.{result}.flush()'
+    credentials = helper(tmp_path, source)
+    async with asyncio.timeout(10):
+        if result == "success":
+            assert await credentials.token() == "synthetic"
+        elif result == "cancel-spawn":
+            task = asyncio.create_task(credentials.token())
+            await started.wait()
+            task.cancel()
+            await asyncio.sleep(0)
+            release.set()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+        else:
+            with pytest.raises(ConnectionProblem, match="size limit") as error:
+                await credentials.token()
+            assert error.value.state is ConnectionState.AUTH_ERROR
+    assert len(processes) == 1 and processes[0].returncode == 0
+    assert denied == [processes[0].pid] and not credentials.lock.locked()
+    with pytest.raises(ProcessLookupError):
+        os.kill(processes[0].pid, 0)
+    with pytest.raises(ProcessLookupError):
+        original_signal(processes[0].pid, 0)

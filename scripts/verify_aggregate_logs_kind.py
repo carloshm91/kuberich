@@ -688,6 +688,7 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
             "source_limit": 256,
             "retired_limit": 64,
             "crash_modes": crash_modes,
+            "owned_kubelet_max_restart_period_seconds": cluster.max_restart_period_seconds,
         }
     finally:
         for log_owner, log_task in owners:
@@ -704,7 +705,9 @@ def main() -> None:
         "--evidence", type=Path, default="artifacts/cluster/aggregate-logs-kind.json"
     )
     args = parser.parse_args()
-    with owned_cluster(args.kind) as cluster:
+    # Keep real CrashLoopBackOff and unchanged API snapshots while bounding the
+    # owned fixture's next restart inside the existing 120-second observation.
+    with owned_cluster(args.kind, max_restart_period_seconds=20) as cluster:
         result = asyncio.run(verify(cluster))
         result["cluster"] = cluster.name
     result["owned_cluster_deleted"] = True

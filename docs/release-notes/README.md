@@ -12,6 +12,9 @@ Start with `# KubeRich X.Y.Z`, then provide these nonempty sections:
 - `## Upgrade and uninstall`: tested baseline, commands, selection constraints and
   preference/configuration preservation; first release has no prior public version.
 - `## Known limits`: unresolved scope, provider/native evidence and unavailable channels.
+- `## Contributors and references`: identify actual authors and link the reviewed
+  issues/PRs for this version. Keep those tracking references in changelog/release
+  notes; public user guides explain behavior without internal task codes.
 
 Use bounded UTF-8 Markdown without terminal controls. The authored file must be
 a regular Git blob at the exact candidate commit, with matching working bytes and

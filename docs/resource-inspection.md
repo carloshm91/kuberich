@@ -14,7 +14,7 @@ query or a query longer than 256 characters produces no matches.
 `Ctrl+Y` or Copy copies the selected redacted text, or the current page when
 there is no selection. Textual sends OSC52 to the terminal; the terminal must
 support and permit clipboard writes. This establishes local terminal output,
-not the separate native clipboard, SSH and tmux qualification in B07/Q02.
+not proof that every terminal or clipboard receives the text.
 `Ctrl+C` retains the application's quit behavior. Escape leaves search first,
 then closes the viewer. Back closes it directly. Returning retains the table's
 filter, sorting, UID selection and viewport while live updates continue.
@@ -33,7 +33,7 @@ unavailable. An events error leaves YAML and details usable. Missing events
 means none were returned for that UID, not that the pod has never had events.
 
 The viewer is a captured inspection snapshot. Reopen it to refresh; automatic
-viewer refresh remains U06. Live updates to the same UID continue underneath.
+viewer refresh is planned. Live updates to the same UID continue underneath.
 Deletion, same-name recreation, scope changes and client replacement invalidate
 the viewer, clear its text and prevent copying. Closing cancels and awaits
 owned reads; serializer cancellation also drains its background thread.
@@ -50,7 +50,7 @@ inline environment values, command/argument arrays, annotation values, sensitive
 key names and recognized credential text. Managed field managers, operation,
 time and other metadata remain available when enabled; `fieldsV1` sets are
 hidden because set keys may embed literal values. Secret references retain safe
-identifiers where possible. There is no reveal-sensitive-data action in B04.
+identifiers where possible. There is no reveal-sensitive-data action in ordinary inspection.
 The resulting YAML is an inspection document and may contain redaction markers;
 it is not an apply/edit export.
 

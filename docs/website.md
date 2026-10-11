@@ -1,6 +1,7 @@
 # Initial landing page and launch documentation
 
-#150 delivered local preparation of the initial static product website. The proposed custom
+#150 delivered the initial local preparation and now binds launch material to
+the prepared `0.1.0` candidate. The proposed custom
 addresses are **kuberich.com** and **docs.kuberich.com**; the maintainer confirmed
 buying the domain. Neither custom address is claimed to host this site yet.
 #166 subsequently published the development preview to
@@ -10,7 +11,7 @@ custom domains/DNS, `www`, tags and public packages remain deferred.
 
 The landing page introduces the actual workspace, captured local UI, 15 standard
 resource families, logs, embedded exec, forwarding and guarded changes. It leads
-to a read-only first launch. Eighteen initial guides reuse the repository sources
+to a read-only first launch. Twenty-three authored guides reuse the repository sources
 for installation, navigation, configuration, inspection, logs, shells, forwarding,
 editing/workloads and EKS/AKS prerequisites. Current public distribution is absent;
 the page states that directly rather than supplying invented install/download links.

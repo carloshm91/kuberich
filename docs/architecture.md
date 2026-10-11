@@ -25,6 +25,17 @@ before/after remount regressions; dependency upgrades must retain that behavior.
 This removes an avoidable retained heap root. Complete runtime and native checks
 are still required; it does not alone prove the original heartbeat failure fixed.
 
+The application also owns a scoped stylesheet that reuses each widget's virtual
+component nodes. Native CSS evaluation recreates these cyclic DOM graphs during
+focus and theme changes. Reuse bounds that allocation to the live components;
+selectors are still evaluated by Textual, previous base/inline rules are reset,
+and changed styles still refresh their widget. Stylesheet copies preserve this
+behavior during CSS reload. Native comparisons cover focus, themes, resize,
+inline changes and removed declarations. Textual is pinned to the qualified
+8.2.8 release because these adaptations depend on private framework boundaries;
+upgrades require the same behavior and runtime checks. GC remains enabled with
+the interpreter's default thresholds; no global stylesheet or cache is patched.
+
 ## Frozen runtime and external processes: Refs D05 #49
 
 The frozen entry dispatches its reserved PTY child before importing the CLI/UI.

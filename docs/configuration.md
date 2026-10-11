@@ -1,11 +1,11 @@
 # Local preferences and diagnostics
 
-This development build provides `info`, `config init`, `config check`, `config migrate`, and local
-diagnostic logging, alongside the [terminal preview](terminal-preview.md).
+KubeRich provides `info`, `config init`, `config check`, `config migrate`, and local
+diagnostic logging, alongside the [resource workspace](resource-workspace.md).
 Preference inspection does not connect to Kubernetes. The UI applies built-in themes and displays
 read-only mode in both header/status and shared command decisions. The native shell service applies the shared read-only guard before preparation.
 
-## Compatibility with the private Kubetrol preview
+## Legacy preview compatibility
 
 KubeRich uses `kuberich` for its package, Python imports and canonical command.
 The `kubetrol` console command remains an alias to the same entry point for the
@@ -189,7 +189,7 @@ contains no secret. Debug output stays in the file.
 | `1` | Unexpected internal/local failure; concise message without raw exception |
 | `2` | Invalid arguments, settings, schema, YAML or a noninteractive UI launch |
 | `3` | Missing explicit file, local permissions/I/O, existing init destination or log ownership failure |
-| `4` | Recognized option/command requires behavior not shipped in this development build |
+| `4` | Recognized option/command requires behavior not shipped in this version |
 | `130` | Interrupted non-UI operation |
 | `143` | SIGTERM during a native shell, after cleanup and terminal restoration |
 

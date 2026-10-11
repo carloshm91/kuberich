@@ -15,6 +15,7 @@ from urllib.parse import urlsplit
 
 from markdown_it import MarkdownIt
 from markdown_it.token import Token
+from packaging.version import Version
 
 from scripts.site_reference import generated_guides
 
@@ -43,7 +44,9 @@ class Guide:
 
 
 GUIDES = (
+    Guide("installation.md", "Installation & upgrades", "Get started"),
     Guide("quickstart.md", "Install & first launch", "Get started"),
+    Guide("everyday-workflow.md", "An everyday workflow", "Get started"),
     Guide("configuration.md", "Preferences & migration", "Get started"),
     Guide("context-sessions.md", "Contexts & kubeconfig", "Get started"),
     Guide("command-navigation.md", "Commands & keys", "Browse"),
@@ -62,6 +65,8 @@ GUIDES = (
     Guide("eks-authentication.md", "AWS / EKS", "Authentication"),
     Guide("aks-authentication.md", "Azure / AKS", "Authentication"),
     Guide("kubeconfig-interoperability.md", "GKE, OIDC, certificates & proxies", "Authentication"),
+    Guide("terminal-compatibility.md", "Terminal, SSH & tmux", "Reference"),
+    Guide("troubleshooting.md", "Troubleshooting", "Reference"),
 )
 
 REFERENCES = (
@@ -150,12 +155,17 @@ def navigation(current: str) -> str:
     return "".join(parts)
 
 
+def preview_label(version: str) -> str:
+    return "Development preview" if Version(version).is_devrelease else "Prepared release"
+
+
 def preview_banner(version: str) -> str:
     return (
         '<aside class="preview-banner" aria-label="Preview status">'
-        f"<p><strong>Development preview · {escape(version)}</strong>. "
+        f"<p><strong>{preview_label(version)} · {escape(version)}</strong>. "
         "Public PyPI/Homebrew packages are not available. Use the source checkout or a trusted "
-        "local wheel. Full release qualification and real-cloud trials remain pending.</p></aside>"
+        "local wheel. Full release qualification is recorded separately; real-cloud "
+        "certification remains deferred.</p></aside>"
     )
 
 
@@ -166,12 +176,13 @@ def page_frame(
     home = "https://kuberich.com" if standalone else ("../index.html" if docs else "index.html")
     values = {
         "title": escape(title),
-        "description": "KubeRich: a Python terminal workspace for Kubernetes. Development preview.",
+        "description": f"KubeRich: a Python terminal workspace for Kubernetes. {preview_label(version)}.",
         "prefix": prefix,
         "home": home,
         "docs": "index.html" if docs or standalone else "docs/index.html",
         "body_class": "docs-page" if docs else "landing-page",
         "version": escape(version),
+        "preview_label": preview_label(version),
         "content": content,
     }
     return Template((root / "website/frame.html").read_text()).substitute(values)
@@ -225,9 +236,20 @@ def docs_index(root: Path, version: str, *, standalone: bool) -> str:
         '<h1>Get to know your workspace.</h1><p class="index-summary">Install a supplied local '
         "wheel or use a source checkout, select an intended context, and explore in read-only mode. These guides describe "
         "the implemented preview, its prerequisites and its limits.</p>"
-        '<p>Start with <a href="quickstart.html">installation and first launch</a>. '
-        "Use the same trusted kubeconfig and provider helper session that work with kubectl. "
-        "KubeRich preserves your kubeconfig and owns each connection separately.</p>"
+        "<h2>Choose your starting point</h2><ol>"
+        "<li><strong>First visit:</strong> "
+        '<a href="installation.html">install, upgrade or uninstall</a>, then '
+        '<a href="quickstart.html">open an explicit read-only session</a>.</li>'
+        "<li><strong>Daily use:</strong> follow the "
+        '<a href="everyday-workflow.html">pod, container, logs and shell walkthrough</a>, '
+        "then use the individual guides for each operation.</li>"
+        "<li><strong>Something failed:</strong> identify the visible state in "
+        '<a href="troubleshooting.html">troubleshooting</a> or check '
+        '<a href="terminal-compatibility.html">terminal compatibility</a>.</li></ol>'
+        "<p>Use a trusted kubeconfig and the intended provider helper session. "
+        "KubeRich preserves kubeconfig and owns each connection separately. "
+        "All tutorial names are fictional; captures use owned local test resources.</p>"
+        "<h2>All guides and references</h2>"
         f'<ul class="doc-index-links">{links}</ul></article></main>'
     )
     return page_frame(root, content, "Documentation", version, docs=True, standalone=standalone)
@@ -304,7 +326,9 @@ def build(output: Path, root: Path = ROOT) -> dict[str, object]:
                     generated=references.get(guide.source),
                 )
             )
-    landing = Template((root / "website/landing.html").read_text()).substitute(version=version)
+    landing = Template((root / "website/landing.html").read_text()).substitute(
+        version=version, preview_label=preview_label(version)
+    )
     (output / "www/index.html").write_text(
         page_frame(root, landing, "A terminal workspace for Kubernetes", version, docs=False)
     )
@@ -323,7 +347,7 @@ def build(output: Path, root: Path = ROOT) -> dict[str, object]:
         "generator": GENERATOR,
         "version": version,
         "private_preparation": True,
-        "application_qualification": "docs/acceptance/identity-migration.md",
+        "application_qualification": "docs/acceptance/workload-checkpoint.md",
         "publication_performed": False,
         "sources": {p.relative_to(root).as_posix(): digest(p) for p in inputs},
         "files": {

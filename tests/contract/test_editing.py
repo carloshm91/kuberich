@@ -225,14 +225,24 @@ async def test_readonly_secret_guard_revalidation_denial_and_new_draft_invalidat
 
 
 @pytest.mark.asyncio
-async def test_failed_or_cancelled_validation_read_cannot_authorize_apply(tmp_path):
+async def test_failed_validation_read_cannot_authorize_apply(tmp_path):
     async with source_fixture(tmp_path, timeout=0.1) as (source, api, _):
         await draft(source)
         api.read_delay = 0.3
         assert (await source.validate()).state is MutationState.UNREACHABLE
+        assert source.validated is None and not api.requests
+
+
+@pytest.mark.asyncio
+async def test_cancelled_validation_read_cannot_authorize_apply(tmp_path):
+    async with source_fixture(tmp_path) as (source, api, _):
+        await draft(source)
         api.read_delay = 1
         validation = asyncio.create_task(source.validate())
-        await asyncio.sleep(0.02)
-        validation.cancel()
+        cancelled = []
+        # Cancel at the actual owned GET boundary, not after an elapsed sleep
+        # that can race the other scenario's deliberately short request timeout.
+        api.before_read = lambda: cancelled.append(validation.cancel())
         assert (await validation).state is MutationState.CANCELLED
+        assert cancelled == [True]
         assert source.validated is None and not api.requests

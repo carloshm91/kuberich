@@ -36,6 +36,5 @@ Enter to accept and submit once. Tab accepts without submitting. Plain Enter
 keeps literal commands and the bare `:ns`/`:ctx` selectors. Editing, leaving the
 input or changing scope discards prior arrow selection.
 
-See [log controls](log-viewer.md), [commands](command-navigation.md),
-[feedback #115](https://github.com/carloshm91/kuberich/issues/115) and
-[measured acceptance evidence](acceptance/enter-navigation.md).
+See [log controls](log-viewer.md), [commands](command-navigation.md) and
+[container shells](container-shell.md) for the next steps.

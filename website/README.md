@@ -1,14 +1,14 @@
 # Initial KubeRich website
 
 This is the development launch material from #150, refined in #162.
-It is a static landing page, 19 authored user guides and three generated references, without a backend, account system, analytics,
+It is a static landing page, 23 authored user guides and three generated references, without a backend, account system, analytics,
 external fonts or cluster connectivity. Expanded/versioned MkDocs stays #90/#91.
 
 The HTML guides are built from the maintained files in `docs/`; edit those
 sources instead of duplicating installation instructions. The project version
 comes from `pyproject.toml`. CLI flags/aliases/descriptions come from the actual
 argument parser, resource aliases/scopes/columns from the application registry,
-and capability status/differences from `docs/capabilities.json`. Both HTML surfaces retain explicit preview status
+and capability status/public summaries from `docs/capabilities.json`. Both HTML surfaces retain explicit preview status
 and noindex directives. The builder never registers a project or changes DNS.
 The separately authorized #166 workflow publishes checked bytes to provider hosts;
 its publication receipt records actual URLs and IDs. See
@@ -64,7 +64,10 @@ Automated accessibility does not establish screen-reader certification.
 1. Update the relevant authored guide in `docs/` with the new behavior, keys,
    prerequisites, failure/permission paths and honest limits. Prose cannot be
    inferred from an implementation. Update `docs/capabilities.json` under its
-   existing evidence policy; a partly delivered row stays planned until qualified.
+   existing evidence policy; a partly delivered audit row stays planned until qualified.
+   Update `public_summary` and `public_status` for reader-facing availability
+   (available, partial, planned or unverified). Keep internal task IDs and historic
+   acceptance records out of public guide prose and generated reference text.
 2. For a new user guide, enroll its source, readable title and section in
    `GUIDES` in `scripts/build_site.py`. This allowlist owns both surfaces and their
    navigation. Keep acceptance reports, architecture and maintainer-only procedures
@@ -112,7 +115,8 @@ See [hosting and release gates](../docs/website.md) and
 
 ## Publication ownership
 
-Local preparation #150 is delivered. Final-candidate regeneration, actual public
-quickstart and protected GitHub Actions → Cloudflare Pages deployment are #89,
+Initial local preparation is delivered; #150 now qualifies the exact `0.1.0`
+candidate's guides and static bytes. Actual public quickstart and protected
+GitHub Actions → Cloudflare Pages deployment are #89,
 after product features and dedicated qualification. Package/site/DNS publication
 needs approval of the concrete result. See [the deployment procedure](../docs/website.md).

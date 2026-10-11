@@ -1,4 +1,4 @@
-# Container log viewer: S02
+# Container log viewer
 
 Select a connected pod and press Enter to open its [container table](container-navigation.md),
 then Enter on a container to read its logs. Esc returns logs → containers → pods.
@@ -11,7 +11,7 @@ They do not mutate kubeconfig or Kubernetes resources.
 
 The title identifies the container/current-or-previous mode and target. `?` or
 **Help** shows the complete context/namespace/pod, state and keyboard controls
-when a narrow terminal truncates the header/status. Windows down to 40×12 retain
+when a narrow terminal truncates the header/status. Terminal sizes down to 40×12 retain
 the target controls, log body, search and status.
 
 ## Controls
@@ -77,8 +77,8 @@ reception every 64 lines. Reflow/search uses an owned serialized layout operatio
 The top visible line identity and horizontal offset survive arrivals and reflow;
 if that line is evicted, the viewport clamps to the oldest retained output.
 Layout/cache memory is bounded additional storage, separate from the 4 MiB text
-bound. This is not an overall RSS or maximum-load performance claim; Q03 remains
-the sustained responsiveness/memory qualification task.
+bound. Overall resident memory and maximum-load responsiveness still need
+separate sustained performance validation.
 
 Scope/client changes and disappearance/recreation of the selected pod invalidate
 and clear the viewer, including while a child container/window/save prompt is
@@ -98,12 +98,11 @@ without replacing a file or symlink. The parent directory must exist. File work
 runs outside the event loop and is drained on cancellation; an explicitly
 requested save can finish while closing the viewer.
 
-Native clipboard and SSH/tmux integration
-remain B07 #61 / Q02 #33; saved-export browsing and richer export formats remain
-O06 #73. CLI buffer/refresh preference integration remains F05 #19. Main table
-Vim letter bindings remain B07; this issue scopes them to the log body.
+Clipboard receipt depends on the terminal, SSH and tmux configuration. Saved-export
+browsing and richer export formats are planned. The controls below operate on
+the log body; resource-table keys are described in the navigation guide.
 
-## All-container and workload logs: S06 #54
+## All-container and workload logs
 
 Select an ordinary Pod, Deployment, ReplicaSet, StatefulSet, DaemonSet, Job or
 CronJob row and press Shift+L (`:logsall`). Pod Enter still opens the container
@@ -175,19 +174,20 @@ history on the event loop. Leave, context change and shutdown drain membership
 watches, readers, render and export work before captured client/TLS cleanup.
 A closing viewer remains registered until that work completes; another aggregate
 waits for it. An explicitly requested save may finish during close.
-These are bounded retained-history controls; embedded-shell scrollback/search/copy
-qualification remains open in #123, and sustained performance remains Q03.
+These are bounded retained-history controls. Embedded shells have their own
+[local history, search and copy](container-shell.md). Sustained performance
+validation remains separate from the documented buffer bounds.
 
-## Trial
+## Try the workflow
 
-From updated main after this issue is merged:
+From a trusted, installed version:
 
 ```sh
-uv sync --locked --group dev
-uv run kuberich
+kuberich --context demo-lab --namespace demo-apps --readonly
 ```
 
-Use `:ctx`, `:ns YOUR_NAMESPACE`, select a pod and press `l`. Choose its container,
+The context and namespace above are fictional; replace them with your intended scope.
+Select a pod and press `l`. Choose its container,
 try `g` then `G`, `/` plus some visible text, and `p`/`f`. Esc returns to pods.
 Report whether output matches `kubectl logs` for the same explicit target/window,
 and whether follow, search, resizing and return work in your terminal.

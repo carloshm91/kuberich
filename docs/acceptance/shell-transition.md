@@ -89,7 +89,7 @@ lines against base `1966b2f7e65d542bc6a50d39cd1f607655100fd7`. The real trial is
 uv run --locked --python 3.12 python -m scripts.verify_shell_kind --kind /path/to/kind --kubectl /path/to/kubectl
 ```
 
-[Current maintainer trial](../first-preview.md#selected-container-shell-s04-32--current-trial)
+[Current maintainer trial](../preview-history.md#selected-container-shell-s04-32--current-trial)
 uses the same pod → container → `s` → `exit` flow. Verify the launch command no
 longer appears above the remote prompt and the heading identifies your selection.
 

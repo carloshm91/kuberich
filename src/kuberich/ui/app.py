@@ -119,7 +119,7 @@ from kuberich.ui.presentation import DEFAULT_PRESENTATION, Presentation
 from kuberich.ui.scopes import ConnectionScreen
 from kuberich.ui.shutdown import TerminalSignals
 from kuberich.ui.standard import StandardTable
-from kuberich.ui.style_cache import ColorStylesCache
+from kuberich.ui.style_cache import ColorStylesCache, ComponentStylesheet
 from kuberich.ui.terminal import ShellScreen
 from kuberich.ui.transfers import TransferScreen
 from kuberich.ui.workloads import WorkloadScreen
@@ -246,6 +246,7 @@ class KubeRichApp(App[None]):
         connection: ConnectionRequest = DEFAULT_CONNECTION,
     ) -> None:
         super().__init__()
+        self.stylesheet = ComponentStylesheet(variables=self.get_css_variables())
         self.title = "KubeRich"
         self.sub_title = "Local preview"
         self._diagnostic_logger = logger

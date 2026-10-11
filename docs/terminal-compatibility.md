@@ -36,7 +36,26 @@ Inside tmux, losing SSH detaches the client and keeps the application and an ope
 embedded shell running. Reattaching to the same session restores the workspace;
 normal shell return and application shutdown still close owned resources.
 
-## Repeatable qualification
+## Tested scope and limits
+
+Source tests cover Ubuntu 24.04 x86_64 and macOS 26 ARM with Python 3.12–3.14;
+standalone and Homebrew installations have separate native host/architecture
+checks. See [installation scope](installation.md#qualification-scope). Each release
+candidate needs fresh qualification before its public channels are activated.
+
+Automated PTY tests exercise actual input, output, resize, shutdown and terminal
+restoration, including local SSH and tmux transports. They do not certify every
+physical terminal emulator, font, SSH policy or host clipboard. macOS 14 Intel
+physical trials and real cloud-provider compatibility remain separate limits.
+
+Use `:ctx`/`:ns` if your terminal consumes F2/F3, and `:back`/`:forward` if Alt
+navigation is intercepted. The current view's `?` help shows available actions.
+Embedded shells forward ordinary keys to the remote program; local history
+review has separate keys. [Shell controls](container-shell.md) describes return
+and session closure. [Troubleshooting](troubleshooting.md) distinguishes connection,
+permission and terminal failures.
+
+## Verification
 
 Development tests require `ssh`, `ssh-keygen`, `sshd` and `tmux`, in addition to
 the locked Python development environment. These are test prerequisites, not
@@ -71,7 +90,7 @@ normal/alternate buffer text after shrinking a rendered terminal.
 Additional failing witnesses cover deferred header callbacks after view removal
 and a stale queued resize event overriding the actual native TTY dimensions.
 
-Follow-up #157 makes the test observer accept private device-status queries
+The test observer accepts private device-status queries
 without injecting artificial input into the application. Actual terminal bytes
 still determine the observed screen. Raw termios values remain in the evidence;
 only Darwin's kernel-maintained `PENDIN` bit is normalized when comparing
@@ -79,13 +98,15 @@ restoration. Darwin sets that bit when returning to canonical mode and preserves
 it across attribute updates. Every other flag, both speeds and every control
 character remain exact comparisons; negative controls reject their changes.
 See [Apple's tty implementation](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/tty.c)
-and [#157 qualification](acceptance/macos-terminal-verification.md).
+and [macOS terminal verification](acceptance/macos-terminal-verification.md).
 
-Linux results and tool versions are recorded in the issue-linked acceptance
-report. macOS jobs and physical terminal-emulator/manual clipboard checks remain
-unavailable or unperformed unless that report supplies actual results. Linux
-evidence does not certify macOS. The complete hosted matrix remains a public
-release gate in #40; broader environment/provider certification remains #87.
+The workload-checkpoint six-environment source matrix passed on Ubuntu 24.04
+x86_64 and macOS 26 ARM with Python 3.12–3.14. Four standalone archives and
+three Homebrew hosts have separate native evidence: macOS 14 ARM and 15 Intel
+are the actual Mac native hosts. Exact 0.1.0 candidate evidence remains required
+before activation; see [installation scope](installation.md#qualification-scope).
+Physical terminal-emulator/font/manual clipboard and macOS 14 Intel trials are
+not claimed by automated PTYs. Real-provider compatibility requires separate trials.
 
 ## References
 
