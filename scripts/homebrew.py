@@ -72,7 +72,7 @@ def formula(bundle: Path, root: Path, url: str, *, candidate: bool = False) -> s
     version, sha = manifest["version"], manifest["commit"]
     release_tag(version)
     verify_bundle(bundle, sha, version, root=root, candidate=manifest["candidate_only"])
-    if manifest["candidate_only"]:
+    if manifest["candidate_only"] and not candidate:
         raise ValueError("Homebrew requires a canonical RC or stable source")
     archives = [
         name

@@ -1,5 +1,15 @@
 # First things to try
 
+## Installer upgrade qualification: D04 #40
+
+Both actual local Python manager upgrades now pass: `uv tool upgrade` and
+`pipx upgrade` move between immutable versions, retain preferences and the owned
+caller configuration, run upgraded navigation/shell and uninstall cleanly.
+The exact local command is `uv run pytest -q --tb=short tests/packaging/test_upgrades.py`.
+Native Homebrew Linux/ARM Mac/Intel Mac qualification and complete matrix evidence
+remain pending. See [core checkpoint evidence](acceptance/core-checkpoint.md).
+These checks do not publish a package or require an intermediate manual trial.
+
 ## Standalone development candidate: D05 #49
 
 The corrected run `38098818073` passed **all four native targets** at head
