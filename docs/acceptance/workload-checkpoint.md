@@ -48,6 +48,36 @@ native matrix remain required on the frozen correction.
 
 ## Required final evidence
 
+The first correction's [PR run 38124841363](https://github.com/carloshm91/kuberich/actions/runs/38124841363)
+retains a real-kind shell verifier failure after **4,759 ordinary tests passed**
+on Linux 3.12. Its original artifact ZIP SHA-256 is
+`e444e445f2a5f8ef4018e4804182077a2cb36eeb1ba4dee2be7003e412ce808d`.
+The failed PTY capture shows `Review 6/362` and a clipboard payload containing
+the echoed command fragment rather than its eventual output row. The original
+fixture waited for `password=owned-secret`, which also occurred literally in
+the command, and for a prompt already visible before command completion.
+This admitted a frozen review before the full 1,100-row output completed.
+
+The fixture now emits the credential-shaped row through separate printf arguments
+and waits for an assembled completion marker absent from the command source.
+It also waits for the exact redacted OSC52 payload after its own copy request,
+instead of assuming a matching footer establishes clipboard completion. The
+console/module/installed helper uses the same fresh-payload wait. Actual copy
+content, redaction and source/input ownership requirements are unchanged.
+
+The interrupted first repetition retains one complete 992-contract/thirteen-kind
+round and a partial second round. Its active owned cluster was deleted and
+absence verified during graceful cancellation. These partial results do not
+count as three consecutive corrected rounds. New qualification must use a
+fresh frozen correction, retaining the failed original and cancellation logs.
+
+The [native Homebrew run 38124866302](https://github.com/carloshm91/kuberich/actions/runs/38124866302)
+passed all three hosts on the original correction. The independent reader matched
+all original ZIP and bundle checksums and both installed version payloads to
+that frozen production source, alongside normal upgrade, actual upgraded PTY
+behavior, configuration invariance and uninstall. A later source identity must
+retain applicable qualification; this does not waive the failed PR gate.
+
 Before closing this issue, retain the correction's negative control, complete
 supported source/native matrix with actual original audit/install bytes,
 independent line/branch/changed-line and 45 critical-module coverage, installation

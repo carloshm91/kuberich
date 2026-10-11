@@ -217,9 +217,9 @@ def terminal_shell(
                     terminal.wait_for_screen("Review")
                     terminal.send(b"/password=\r")
                     terminal.wait_for_screen("password=owned-secret")
-                    terminal.send(b"y")
+                    copied = terminal.send(b"y")
+                    terminal.wait_for(b"\x1b]52;c;cGFzc3dvcmQ9W1JFREFDVEVEXQ==", since=copied)
                     terminal.wait_for_screen("Redacted selection copied")
-                    assert b"\x1b]52;c;cGFzc3dvcmQ9W1JFREFDVEVEXQ==" in terminal.transcript
                     assert b"\x1b]52;c;cGFzc3dvcmQ9b3duZWQtc2VjcmV0" not in terminal.transcript
                     terminal.send(b"\r")
                     terminal.wait_for_screen("HISTORY LIVE>")
