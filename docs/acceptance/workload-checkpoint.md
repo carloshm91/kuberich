@@ -90,3 +90,59 @@ Follow [integration qualification](../integration-testing.md) and
 PR, immutable public channels, owner approval and installed-channel checks remain
 [#89](https://github.com/carloshm91/kuberich/issues/89). Exact-candidate initial
 site preparation remains [#150](https://github.com/carloshm91/kuberich/issues/150).
+
+## Completed PR checks and retained main findings
+
+[PR #186](https://github.com/carloshm91/kuberich/pull/186) passed all protected
+checks and merged as `560032a841b230805d2b0b69df192cc6ed8291a4`. Its complete
+tree equals branch `56e056eb63c252a2a1a8566c90047fde222efbc4`; the tested PR
+producer is `63dee25c9ee6bbcad1b1d4b2c6845bfa5e8de66d`. Independent reading of
+all eight original archives in
+[run 38127302020](https://github.com/carloshm91/kuberich/actions/runs/38127302020)
+verified ZIP digests, original wheel/sdist audits, all four native enrollments
+and the private development bundle. Four source jobs measured 99.096–99.128%
+line and 96.858–96.966% branch coverage; all 45 deterministic critical gates
+passed. Four jobs do not substitute for the six-environment release matrix.
+
+[Native installation run 38127365939](https://github.com/carloshm91/kuberich/actions/runs/38127365939)
+passed Linux, ARM macOS 14 and Intel macOS 15. Original archives verified both
+immutable version payloads, normal manager upgrade, upgraded PTY behavior,
+configuration preservation and uninstall. Three consecutive frozen branch rounds
+completed 992 contracts and all thirteen owned-cluster scenarios each: 44
+successful commands including build/metadata, 48.066 minutes. Independent review
+verified all original logs, fault/cancellation cleanup and caller configuration.
+Wheel SHA-256: `b415e6680d0b904404bceea14d4ac0d922a45bce3e33348fe6e8eba893a1bc67`;
+results SHA-256: `3bb0365aea905a8685ea78c033063bcda5e6b84b13ea00a801e449ffbfe9bf7b`.
+Those rehearsals are honestly branch-produced, with complete-tree equality to
+the squash source recorded separately.
+
+The complete [main run 38130866046](https://github.com/carloshm91/kuberich/actions/runs/38130866046)
+then retained **two failures, 4,755 passes and four documented skips** on
+macOS/Python 3.12 in 2,395.99 seconds. Its original artifact ZIP SHA-256 is
+`534d9f3e5ab31a1ea69e7e5136458981877ffa3856d029f0b9f22a44309e8b46`, independently
+matched to GitHub's digest. This run does not qualify the checkpoint.
+
+The lifecycle test observed the PID path after the child's write opened it but
+before its contents arrived, and `int('')` failed. The owned child now writes
+the full record to a sibling pending path and atomically replaces the published
+path. The 39-cycle cancellation/reaping/configuration/resource-count contracts
+remain unchanged. No production PID/file behavior is changed.
+
+The quiet-watch PTY failed before receiving its first pod and its retained frame
+shows `State: Timeout`. Its 250-ms request timeout also bounded initial discovery;
+the original does not measure the runner's scheduling delay or prove a broken
+watch renewal. The revised scenario uses a 2.5-second request budget and verifies
+three actual requested three-second quiet watches, each outliving that budget,
+with identical resource versions and no stale/reconnecting/timed-out hints.
+It additionally holds initial namespace discovery for 350 ms using an owned
+gate. The separate 100-ms protocol tests still enforce short-deadline renewal.
+Production request deadlines and latency/memory requirements are unchanged.
+
+The focused cohort passed **96 cases in 46.10 seconds**. An owned negative
+control reapplied the former 250-ms CLI argument to the same delayed-discovery
+scenario and failed with the original initial-timeout behavior in 15.96 seconds.
+The former negative-control collection attempt failed before executing a test;
+its log is retained separately and is not regression evidence. Focused and
+negative-control originals remain under `artifacts/qualification51-repair`.
+Fresh PR and six-source/four-native main qualification are still required;
+passing other jobs does not erase the failed originals or close this issue.

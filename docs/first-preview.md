@@ -11,6 +11,24 @@ or either control while remote output continues, then require child reaping.
 No release or public installation channel has been activated.
 See [workload checkpoint evidence](acceptance/workload-checkpoint.md).
 
+The corrected shell passed PR #186, four source platforms, all four native
+archives, three Homebrew hosts and three consecutive thirteen-scenario owned
+rounds. Complete qualification on squash source `560032a` exposed two test
+fixture failures on macOS/Python 3.12: an incompletely written PID record and a
+250-ms discovery deadline in the quiet-watch scenario. The fixtures now publish
+the complete PID atomically and separately exercise both immediate and deliberately
+delayed initial discovery before three genuine quiet-watch renewals. Application
+code and performance limits are unchanged. The exact local check is:
+
+```sh
+uv run pytest tests/contract/test_performance_lifecycle.py::test_repeated_startup_cancellation_reaps_children_and_private_configurations tests/contract/test_port_forwards.py tests/terminal/test_contexts.py::test_quiet_watch_renewals_keep_the_real_cli_live_without_retry_hints tests/contract/test_watches.py -q --tb=short
+```
+
+It passed 96 cases in 46.10 seconds; the former discovery deadline fails the
+controlled-delay witness in 15.96 seconds. The failed original is retained.
+Fresh protected checks and complete main qualification remain required before
+closing #51; this does not request an intermediate manual trial.
+
 ## Shell history checkpoint: #123
 
 The shell now has a **History** button and Alt+PageUp / Shift+PageUp for frozen
