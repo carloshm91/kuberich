@@ -10,8 +10,9 @@ pod/Service port forwarding, guarded deletion and Job operations are also availa
 Exec credentials, certificates and proxies have locally verified connection contracts;
 see [connection compatibility](kubeconfig-interoperability.md). Captured attach
 and file transfer are delivered; metrics, creating ephemeral debug containers
-and user plugins remain separate tickets. Embedded-shell scrollback/search/copy
-remains #123 before first-phase qualification.
+and user plugins remain separate tickets. Embedded-shell history/search/copy is
+delivered: Alt+PageUp opens local review, `/` searches, `v` selects, `y` copies
+with recognized credential redaction and Enter/Escape returns to live output.
 This preview does not claim complete K9s parity or real EKS/AKS certification.
 
 ## Run from source

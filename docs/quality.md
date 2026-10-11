@@ -23,15 +23,18 @@ inspection and explicit process isolation from outside Python/source files;
 physical runner Python absence and macOS 14 Intel trials are not claimed.
 The existing source Python matrix, coverage and owned-cluster checks remain
 required. Quality gate now depends on both complete matrices and refuses missing,
-failed, cancelled or skipped native results. This prepared wiring still needs
-actual hosted results before #49 can close.
+failed, cancelled or skipped native results. The corrected four-target hosted
+qualification closed #49; the complete six-source/four-native main run retained
+under #40 also passed. Later runtime changes need fresh checks on their own source.
 
 The release preflight also requires all four native jobs and their original retained
 artifacts from the exact manual qualification run. Public candidate preparation
 and verification reject missing native archives or mismatched source/runtime
 records; source-only bundles remain explicitly local development candidates.
-Parser fixtures exercise fail-closed decisions, not real native execution. The
-corrected four-target hosted run remains required before D05 can close.
+Parser fixtures exercise fail-closed decisions, not real native execution. See
+[core qualification](acceptance/core-checkpoint.md) for original retained matrix,
+audit and installer results. First-phase and public-release qualification remain
+separate gates.
 
 | Gate | Requirement |
 | --- | --- |

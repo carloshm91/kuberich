@@ -1,5 +1,16 @@
 # Architecture decisions
 
+## Shell controls during teardown: D06 #51
+
+The shell owns its footer widgets directly. Before updating them for arriving PTY
+output, it checks their public `is_attached` state. Textual can remove children
+before the screen's Unmount handler cancels its owned session; `is_mounted` alone
+does not establish current DOM attachment in the pinned implementation. The
+PTY owner still cancels, drains and clears its endpoint/history normally. Real
+PTY regressions reproduce this children-before-parent interval independently
+for the toolbar and each control. See
+[Textual MessagePump](https://textual.textualize.io/api/message_pump/#textual.message_pump.MessagePump.is_attached).
+
 ## Widget rendering-cache ownership: Refs D05 #49 / D04 #40
 
 KubeRich substitutes a native StylesCache subclass only when its own App

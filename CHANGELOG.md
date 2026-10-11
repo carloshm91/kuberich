@@ -13,6 +13,11 @@ Release entries are written in release PRs and linked to their Git tags.
   Enter or Escape. Report discarded history and release session-owned buffers
   on exit or target invalidation.
 
+### Fixed
+
+- Keep shell output cleanup safe while Textual removes its footer controls;
+  queued PTY output cannot query a History button that has already left the DOM.
+
 ### Changed
 
 - Reuse retained log geometry across append, eviction and wrap changes while
