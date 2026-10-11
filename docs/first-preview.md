@@ -2,6 +2,27 @@
 
 ## Standalone work in progress: D05 #49
 
+The corrected run `38098818073` passed **all four native targets** at head
+`00f41ab` / merge source `3255a0f7e3aa449da363fff4b126387f9b41c519`.
+Both Mac archives passed auth/interactive-shell and terminal-restoration controls;
+the real system-shell builtin succeeded while Python launched through that shell
+remained sandbox-denied. Both Linux archives passed Python-free runtime and
+exact-executable owned-kind checks. Original GitHub ZIP digests matched; independent
+readers accepted all four archives and original CLI/PTY/platform records. Actual
+local release enrollment then preserved and verified the four real archives and
+their raw-provenance sidecars without rebuilding. The original receipt is
+`artifacts/standalone49/pr181-shell-delegate-ci/native-enrollment-result-original.json`.
+
+The complete source matrix is still running, so #49 and PR #181 remain open.
+The original #40 heartbeat failure below is not resolved by the Mac sandbox fix.
+No package/tag/release was published. Native CI executed these exact commands
+with its recorded target-specific environment:
+
+```sh
+uv run python -m scripts.build_standalone --output "$KUBERICH_NATIVE_DIR/candidate" --target "$KUBERICH_NATIVE_TARGET"
+uv run python -m scripts.verify_standalone --candidate "$KUBERICH_NATIVE_DIR/candidate" --evidence "$KUBERICH_NATIVE_DIR/runtime"
+```
+
 The second run also exposed a separate macOS source performance failure in the
 full retained log-history test: a fresh uninstrumented child paused 150.267833 ms
 during resource navigation, exceeding the unchanged 150-ms limit. A 64.916208-ms
@@ -55,7 +76,7 @@ for GitHub's flat attachment names; the stable packaging result is recorded abov
 The exact local commands were:
 
 ```sh
-uv run --no-sync pytest -q tests/quality/test_standalone_release.py tests/quality/test_standalone_verification.py tests/quality/test_release_policy.py tests/quality/test_release_transport.py
+uv run --no-sync pytest -q tests/quality/test_standalone_host.py tests/quality/test_standalone_release.py tests/quality/test_standalone_verification.py tests/quality/test_release_policy.py tests/quality/test_release_transport.py
 uv run --no-sync pytest -q --tb=short tests/packaging/test_release_candidate.py tests/packaging/test_homebrew_formula.py
 uv run --no-sync python -m scripts.build_site
 uv run --no-sync python -m scripts.check_site

@@ -3,6 +3,34 @@
 Status: **in progress**. No release, tag, package or standalone download was
 published. Build success and local runtime evidence do not complete all of #49.
 
+## Four-target native execution and original enrollment passed
+
+Corrected run `38098818073`, head `00f41ab`, passed Linux x86_64/ARM64 and
+macOS Intel/ARM64. Its native archives bind the actual PR merge source
+`3255a0f7e3aa449da363fff4b126387f9b41c519`. Mac jobs `114350286523`
+(Intel) and `114350286580` (ARM) passed CLI, owned auth/interactive shell, native
+signature inspection and terminal restoration. The system-shell positive controls
+succeeded; both direct outside-Python controls and Python invoked through the
+allowed system shell remained denied. This confirms the delegate correction on
+both architectures. Linux jobs `114350286632` and `114350286565` passed their
+Python-free runtimes and exact-native-executable owned-kind/TLS/RBAC controls.
+
+All four outer ZIP digests matched GitHub. Independent readers accepted each
+actual archive, 193 original Git inputs, complete native/assets/notices and its
+12 original JSON records. Each Linux archive contains 15 native files; each Mac
+contains 13. Actual local `enroll()` and `verify()` then preserved and re-read the
+four original archives and unique raw-provenance sidecars without rebuilding.
+This is actual native evidence rather than controlled parser-fixture coverage.
+Original ZIPs, detached source and independent results remain under
+`artifacts/standalone49/pr181-shell-delegate-ci` and `pr181-shell-delegate-source`.
+The final local native-enrollment receipt is `native-enrollment-result-original.json`.
+
+The complete source matrix remains in progress. Repository validation and DCO
+passed, but #49/PR #181 remain open until the required full candidate gates pass.
+This does not resolve the separate original #40 performance failure below or
+claim public release qualification. No publication was performed. Physical Mac
+Python absence, macOS 14 Intel trials and Developer ID/notarization remain unclaimed.
+
 ## Separate original source performance failure: D04 #40
 
 The second run's macOS source job `114343581231` failed the full retained
