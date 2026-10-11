@@ -1,17 +1,18 @@
 # Homebrew source delivery
 
 D03 #37 prepares a source tap, verified formula generator and immutable update-PR
-automation. No public tap/package exists yet. D10 #89 must qualify macOS, approve
+automation. Native source checks and owned upgrades passed on Linux, macOS ARM
+and macOS Intel under #40/#51. No public tap/package exists yet. D10 #89 must approve
 public tap creation, publish the immutable artifacts and verify public installation.
 
 ## Local candidate
 
-An audited source-only canonical RC may be used for private source-install and
+An audited source-only canonical version may be used for private source-install and
 version-upgrade qualification. This path accepts only its exact local sdist URL.
 It does not qualify or publish native archives. Public generation still rejects
 source-only bundles and requires the complete public release verification.
 
-Use an audited canonical RC and its exact clean source checkout. The generator
+Use an audited canonical version and its exact clean source checkout. The generator
 verifies metadata, source identity, audits, notices and complete bundle digests:
 
 ```sh

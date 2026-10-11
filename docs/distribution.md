@@ -78,10 +78,12 @@ publish packages or create a release.
 
 ## Supported targets
 
-Source and Homebrew installations initially target Linux and macOS on x86_64
-and arm64, with CPython 3.12, 3.13, and 3.14. The release gate must qualify each
-advertised combination or explicitly narrow the published support matrix before
-release. macOS 14+ is the initial qualification baseline.
+The six source qualification environments are Ubuntu 24.04 x86_64 and macOS 26
+ARM, each on CPython 3.12, 3.13 and 3.14. Native Homebrew source trials cover
+Ubuntu 24.04 x86_64, macOS 14 ARM and macOS 15 Intel with formula Python 3.14.
+Broader source/architecture combinations and physical macOS 14 Intel remain
+unclaimed. The exact prepared version must pass these checks before release;
+see the [installation scope](installation.md#qualification-scope).
 
 Standalone release targets are Linux x86_64/arm64 with glibc 2.35+ and macOS
 x86_64/arm64 on macOS 14+. Build separately for each target; PyInstaller is not
@@ -176,8 +178,10 @@ Intel job measures the declared macOS 14 deployment floor but does not establish
 an actual macOS 14 Intel host trial. The required aggregate refuses missing,
 failed, cancelled or skipped native jobs and incomplete/wrong-target plans.
 Both Linux jobs run the extracted executable's real selected-container/TLS/RBAC
-shell scenarios on owned kind clusters. Hosted qualification of this wiring is
-still pending; no package/tag/release channel has been activated.
+shell scenarios on owned kind clusters. These four jobs and all six source
+environments passed the completed [D06 checkpoint](acceptance/workload-checkpoint.md).
+The prepared `0.1.0` version retains its own qualification before public
+activation; no package/tag/release channel has been activated.
 
 ## Homebrew implementation
 

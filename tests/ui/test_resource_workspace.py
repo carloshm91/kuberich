@@ -19,6 +19,7 @@ from kuberich.ui.containers import ContainerScreen
 from kuberich.ui.logs import LogScreen
 from kuberich.ui.namespaces import NamespaceTable
 from tests.support.connections import catalog_fixture, namespaces
+from tests.support.distribution import PROJECT
 from tests.support.pods import pod
 from tests.support.resources import collection
 from tests.support.watches import frame
@@ -55,7 +56,7 @@ async def test_top_input_namespace_table_drilldown_escape_and_actual_view_hints(
             assert app.filter_input.region.y < app.resources.region.y
             assert app.command_input.region.y < app.resources.region.y
             assert "owned" in str(app.header.query_one("#cluster", Static).content)
-            assert "0.0.1.dev0" in str(app.header.query_one("#build-info", Static).content)
+            assert PROJECT["version"] in str(app.header.query_one("#build-info", Static).content)
             await pilot.pause()
             frame = app.query_one("#resource-view").region
             identifiers = ("workspace-top", "scope-bar", "app-header", "view-actions", "brand")

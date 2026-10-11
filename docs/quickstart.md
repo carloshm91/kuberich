@@ -3,8 +3,9 @@
 The usable development preview has live pods, namespace/context tables, inline
 command completion, local filters, 15 [standard resource tables](standard-resources.md),
 resource details/YAML/events, generic CRD tables, single/aggregate logs and
-embedded container shells. The checkout reports `0.0.1.dev0`. **Public packages
-are not available yet; the first planned public product is qualified 0.1.0.**
+embedded container shells. The prepared checkout reports `0.1.0`. **Public packages
+are not available yet; first-phase activation is still pending.** See
+[installation and upgrades](installation.md) for channels and measured scope.
 Guarded annotations, manifest editing, workload scale/restart/rollback and managed
 pod/Service port forwarding, guarded deletion and Job operations are also available.
 Exec credentials, certificates and proxies have locally verified connection contracts;
@@ -150,7 +151,8 @@ installation and actual upgrades must pass the scoped D04/D06 and public #89
 checks. First 0.1.0 uses an identified local upgrade baseline, without inventing
 a previous public version; later trials use the actual published predecessor.
 See [upgrade constraints](distribution.md#upgrade-and-uninstall-contract).
-Standalone Linux/macOS binaries remain 0.1.0 work.
+Four standalone Linux/macOS archives have native qualification; their exact
+0.1.0 artifacts and public availability remain candidate/publication gates.
 
 ## If something fails
 

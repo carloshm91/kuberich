@@ -7,6 +7,7 @@ import json
 import logging
 import re
 import subprocess
+from importlib.metadata import version
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -75,6 +76,7 @@ async def capture(output: Path, logs_source: Path) -> None:
     source_tree = subprocess.check_output(["git", "rev-parse", "HEAD:src"], text=True).strip()
     inventory = {
         "application_tree": source_tree,
+        "application_version": version("kuberich"),
         "capture_command": "env -u NO_COLOR uv run python -m scripts.capture_site --output NEW_MEDIA_DIRECTORY --logs-source artifacts/ui/logs-owned-kind.svg",
         "private_data_used": False,
         "external_fonts_removed": True,
@@ -88,7 +90,7 @@ async def capture(output: Path, logs_source: Path) -> None:
                 "sha256": hashlib.sha256((output / "logs.svg").read_bytes()).hexdigest(),
                 "source": "Qualified owned-kind logs screenshot retained in artifacts/ui; cluster deleted",
                 "original_sha256": hashlib.sha256(logs_source.read_bytes()).hexdigest(),
-                "qualification": "docs/acceptance/identity-migration.md",
+                "qualification": "docs/acceptance/workload-checkpoint.md",
                 "terminal_cells": [100, 30],
             },
         },

@@ -5,6 +5,15 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ## Unreleased
 
+Changes after the first prepared candidate will be collected here.
+
+## 0.1.0 — prepared candidate
+
+Publication is pending. [Authored release notes](docs/release-notes/0.1.0.md)
+describe this phase, installation, upgrades and known limits. The entries below
+retain development history; dated qualification statements are superseded by
+the [completed workload checkpoint](docs/acceptance/workload-checkpoint.md).
+
 ### Added
 
 - Review the last 1,000 normal-screen shell rows inside the terminal, with

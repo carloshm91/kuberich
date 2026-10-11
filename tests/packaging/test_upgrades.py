@@ -25,23 +25,35 @@ def upgrade_artifacts(artifacts, tmp_path_factory):
     for name in ("pyproject.toml", "README.md", "CHANGELOG.md", "LICENSE", "NOTICE", ".gitignore"):
         shutil.copyfile(ROOT / name, source / name)
     # This is an unpublished owned test build, not a repository version bump or edited wheel.
-    previous = Version(PROJECT["version"])
-    version = (
-        f"{previous.base_version}.dev{previous.dev + 1}"
-        if previous.dev is not None
-        else previous.public + ".post1"
+    current = Version(PROJECT["version"])
+    fixture_version = (
+        f"{current.base_version}.dev{current.dev + 1}"
+        if current.dev is not None
+        else current.public + ".post1"
+        if current.is_prerelease
+        else f"{current.base_version}rc1"
     )
-    assert Version(version) > previous
+    # A stable candidate receives the real normal upgrade, rather than only
+    # serving as the baseline for a hypothetical subsequent test version.
+    old_version, version = (
+        (str(current), fixture_version)
+        if current.is_prerelease
+        else (fixture_version, str(current))
+    )
+    assert Version(version) > Version(old_version)
     project = source / "pyproject.toml"
     original = project.read_text()
     assert original.count(f'version = "{PROJECT["version"]}"') == 1
     project.write_text(
-        original.replace(f'version = "{PROJECT["version"]}"', f'version = "{version}"', 1)
+        original.replace(f'version = "{PROJECT["version"]}"', f'version = "{fixture_version}"', 1)
     )
     output = directory / "new"
     run(["uv", "build", "--wheel", "--python", sys.executable, "--out-dir", str(output)], source)
-    newer = next(output.glob("*.whl"))
-    with zipfile.ZipFile(artifacts[0]) as before, zipfile.ZipFile(newer) as after:
+    fixture_wheel = next(output.glob("*.whl"))
+    old, newer = (
+        (artifacts[0], fixture_wheel) if current.is_prerelease else (fixture_wheel, artifacts[0])
+    )
+    with zipfile.ZipFile(old) as before, zipfile.ZipFile(newer) as after:
         old_payload = {
             name: before.read(name) for name in before.namelist() if name.startswith("kuberich/")
         }
@@ -81,14 +93,14 @@ def upgrade_artifacts(artifacts, tmp_path_factory):
         180,
     )
     assert list(dependencies.glob("*.whl"))
-    return artifacts[0], newer, version, dependencies
+    return old, newer, old_version, version, dependencies
 
 
 @pytest.mark.parametrize("installer", ["uv", "pipx"])
 def test_real_version_upgrade_retains_preferences_and_runs_installed_ui(
     upgrade_artifacts, tmp_path, installer
 ):
-    old, newer, version, dependencies = upgrade_artifacts
+    old, newer, old_version, version, dependencies = upgrade_artifacts
     outside = tmp_path / "outside"
     outside.mkdir()
     wheelhouse = tmp_path / "owned wheelhouse"
@@ -134,7 +146,7 @@ def test_real_version_upgrade_retains_preferences_and_runs_installed_ui(
             commands.append({"command": argv, "exit": result.returncode})
             assert (
                 run([str(binary), "--version"], outside, environment=environment).stdout
-                == f"kuberich {PROJECT['version']}\n"
+                == f"kuberich {old_version}\n"
             )
         # Make the second immutable version available; use the manager's normal upgrade command.
         shutil.copyfile(newer, wheelhouse / newer.name)
@@ -177,7 +189,7 @@ def test_real_version_upgrade_retains_preferences_and_runs_installed_ui(
             {
                 "result": "passed",
                 "installer": installer,
-                "old_version": PROJECT["version"],
+                "old_version": old_version,
                 "new_version": version,
                 "original_artifacts": originals,
                 "commands": commands,

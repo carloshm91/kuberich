@@ -81,11 +81,13 @@ character remain exact comparisons; negative controls reject their changes.
 See [Apple's tty implementation](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/tty.c)
 and [#157 qualification](acceptance/macos-terminal-verification.md).
 
-Linux results and tool versions are recorded in the issue-linked acceptance
-report. macOS jobs and physical terminal-emulator/manual clipboard checks remain
-unavailable or unperformed unless that report supplies actual results. Linux
-evidence does not certify macOS. The complete hosted matrix remains a public
-release gate in #40; broader environment/provider certification remains #87.
+The complete six-environment source matrix passed under #51 on Ubuntu 24.04
+x86_64 and macOS 26 ARM with Python 3.12–3.14. Four standalone archives and
+three Homebrew hosts have separate native evidence: macOS 14 ARM and 15 Intel
+are the actual Mac native hosts. Exact 0.1.0 candidate evidence remains required
+before activation; see [installation scope](installation.md#qualification-scope).
+Physical terminal-emulator/font/manual clipboard and macOS 14 Intel trials are
+not claimed by automated PTYs. Broader provider certification remains #87.
 
 ## References
 

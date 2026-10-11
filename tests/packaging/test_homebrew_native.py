@@ -9,9 +9,10 @@ import sys
 from pathlib import Path
 
 import pytest
+from packaging.version import Version
 
 from scripts.homebrew import FORMULA, prepare
-from tests.support.distribution import ROOT, clean_environment, run
+from tests.support.distribution import PROJECT, ROOT, clean_environment, run
 from tests.support.navigation import terminal_navigation
 from tests.support.shell import terminal_shell
 from tests.support.source_candidate import source_candidate
@@ -70,7 +71,16 @@ def test_native_source_install_real_version_upgrade_and_uninstall(tmp_path):
         return result
 
     try:
-        for index, version in enumerate(("0.1.0rc1", "0.1.0rc2")):
+        current = Version(PROJECT["version"])
+        # Development qualification uses two private RC fixtures. A prepared
+        # stable version also receives real installation/upgrade with its exact
+        # metadata; this baseline is unpublished, not a previous public release.
+        versions = (
+            ("0.1.0rc1", "0.1.0rc2")
+            if current.is_prerelease
+            else (f"{current.base_version}rc1", str(current))
+        )
+        for index, version in enumerate(versions):
             source, bundle, sha = source_candidate(tmp_path / ("candidate-" + version), version)
             prepared = tmp_path / ("tap-" + version)
             prepare(bundle, source, prepared)

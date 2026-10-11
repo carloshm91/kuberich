@@ -1,5 +1,19 @@
 # First things to try
 
+## Prepared first `0.1.0` candidate: #150
+
+Source metadata and the lock now identify `0.1.0`. The
+[authored notes](release-notes/0.1.0.md), [installation guide](installation.md)
+and two generated site surfaces describe the actual first phase and conditional
+public channels. No tag, package, tap or final site/domain publication has occurred.
+Local uv/pipx upgrades from an unpublished `0.1.0rc1` source build into the actual
+`0.1.0` wheel passed, including installed navigation/shell, configuration
+preservation and uninstall. Both site surfaces passed link/digest checks and
+real Chrome desktop/mobile accessibility, keyboard, clipboard and JavaScript-free
+navigation checks over 53 pages. Exact frozen platform, native installation and
+three-round owned quickstart receipts remain required before publication review.
+See [candidate preparation evidence](acceptance/first-release-preparation.md).
+
 ## First-phase engineering qualification: D06 #51
 
 #40 and #123 are merged. Final qualification includes all thirteen current owned
@@ -26,8 +40,14 @@ uv run pytest tests/contract/test_performance_lifecycle.py::test_repeated_startu
 
 It passed 96 cases in 46.10 seconds; the former discovery deadline fails the
 controlled-delay witness in 15.96 seconds. The failed original is retained.
-Fresh protected checks and complete main qualification remain required before
-closing #51; this does not request an intermediate manual trial.
+The repair subsequently passed protected PR #187 and complete exact-main
+[run 38137221192](https://github.com/carloshm91/kuberich/actions/runs/38137221192):
+six source environments and all four native archives. Three Homebrew hosts and
+three fresh 992-contract/thirteen-scenario owned rounds also passed, with original
+bytes independently reviewed. Lines measured 99.105–99.128%, branches
+96.858–96.966%, and all 45 critical modules met 100%. **#51 is closed.** The
+remaining candidate/publication work is #150/#89; no intermediate manual trial
+is requested.
 
 ## Shell history checkpoint: #123
 

@@ -11,8 +11,8 @@ All KubeRich capabilities will be open source under Apache-2.0, with no paid fea
 
 ## Project status
 
-**The development CLI is installable from this checkout. No public application
-release is available yet.**
+**The first `0.1.0` candidate is prepared. Public package/channel activation is
+still pending; the CLI is installable from this checkout or a trusted local wheel.**
 
 It opens a terminal workspace with isolated context sessions, namespace discovery
 and selection, filter/command inputs, help, themes and responsive layouts. It
@@ -55,11 +55,10 @@ shells; `--refresh` controls periodic table repaint while watches remain live.
 See the [launch contract](docs/k9s-cli.md) for aliases, precedence and limits.
 All audited flags are recognized; unimplemented options identify their owning task.
 
-The first planned public product is **0.1.0**, after its core/workload,
-performance, installation and full native checks qualify. Later reviewed 0.x
-phases add capabilities; 1.0 retains stable compatibility and capability audit.
-Packages remain unavailable; source development is usable now. See
-[phased releases](docs/releases.md).
+The core/workload, performance and installation checkpoints are qualified.
+The prepared **0.1.0** candidate must retain its own complete platform checks
+before public activation. Later reviewed 0.x phases add capabilities; 1.0 retains
+stable compatibility and capability audit. See [phased releases](docs/releases.md).
 Linux and macOS are the initial supported operating systems. Textual Web is
 outside the product scope.
 
@@ -102,10 +101,10 @@ and [first things to try](docs/first-preview.md) for a short feedback trial.
 
 ## Public installation
 
-Installation instructions will be published after the first release passes its
-release checklist. The planned first-release channels are PyPI (uv/pipx) and
-the project's Homebrew tap. Standalone Linux and macOS executables are planned
-for 0.1.0. These channels are tracked work, not currently available downloads.
+The [installation guide](docs/installation.md) covers a trusted local wheel and
+the prepared PyPI (uv/pipx), project-owned `kuberich/tap/kuberich` Homebrew and
+four Linux/macOS archive channels. Public downloads and manager commands become
+usable after approved publication and actual public-channel verification.
 
 ## Development
 

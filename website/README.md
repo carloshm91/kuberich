@@ -1,7 +1,7 @@
 # Initial KubeRich website
 
 This is the development launch material from #150, refined in #162.
-It is a static landing page, 19 authored user guides and three generated references, without a backend, account system, analytics,
+It is a static landing page, 21 authored user guides and three generated references, without a backend, account system, analytics,
 external fonts or cluster connectivity. Expanded/versioned MkDocs stays #90/#91.
 
 The HTML guides are built from the maintained files in `docs/`; edit those
@@ -112,7 +112,8 @@ See [hosting and release gates](../docs/website.md) and
 
 ## Publication ownership
 
-Local preparation #150 is delivered. Final-candidate regeneration, actual public
-quickstart and protected GitHub Actions → Cloudflare Pages deployment are #89,
+Initial local preparation is delivered; #150 now qualifies the exact `0.1.0`
+candidate's guides and static bytes. Actual public quickstart and protected
+GitHub Actions → Cloudflare Pages deployment are #89,
 after product features and dedicated qualification. Package/site/DNS publication
 needs approval of the concrete result. See [the deployment procedure](../docs/website.md).

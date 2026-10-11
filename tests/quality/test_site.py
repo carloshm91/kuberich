@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import re
 import shutil
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -46,6 +47,44 @@ def test_builds_both_surfaces_deterministically_and_rebuilds_owned_output(tmp_pa
         assert "uninstall" in html and "Full release qualification" in html
         assert "PyPI/Homebrew packages are not available" in html
         assert "Maintainer rehearsal" not in html
+    for surface in ("www/docs", "docs"):
+        installation = (first / surface / "installation.html").read_text()
+        assert "brew install kuberich/tap/kuberich" in installation
+        assert "pipx upgrade kuberich" in installation
+        assert "kuberich-0.1.0-linux-arm64.tar.gz" in installation
+        assert "macOS 26" in installation and "glibc 2.35" in installation
+        assert "terminal-compatibility.html" in installation
+        assert "PyPI/Homebrew packages are not available" in installation
+
+
+@pytest.mark.parametrize(
+    ("version", "label"),
+    [("0.1.0", "Prepared release"), ("0.0.1.dev0", "Development preview")],
+)
+def test_site_version_does_not_imply_published_packages(tmp_path, version, label):
+    source = copy_source(tmp_path / "source")
+    project = source / "pyproject.toml"
+    project.write_text(
+        re.sub(
+            r'^version = "[^"]+"',
+            f'version = "{version}"',
+            project.read_text(),
+            count=1,
+            flags=re.M,
+        )
+    )
+    output = tmp_path / "output"
+    manifest = build(output, source)
+    assert manifest["version"] == version and manifest["publication_performed"] is False
+    for name in ("www/index.html", "docs/installation.html"):
+        html = (output / name).read_text()
+        assert label in html and version in html
+        assert 'content="noindex' in html
+    assert (
+        "PyPI/Homebrew packages are not available"
+        in (output / "docs/installation.html").read_text()
+    )
+    verify(output, source)
 
 
 def test_source_document_changes_flow_into_the_built_guide(tmp_path):

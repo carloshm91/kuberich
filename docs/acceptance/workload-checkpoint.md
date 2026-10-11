@@ -1,7 +1,8 @@
 # Workload engineering checkpoint: D06 #51
 
-Base main: `595e9a40cfcf7fe502a0e52be59a86d019dc72b5`. Qualification is in
-progress; this checkpoint does not publish packages, tags, a tap or websites.
+Qualified main: `7cb3c6bab12c65f6ad76b6ee02af914d009a7315`. D06 #51 is
+complete. This checkpoint does not publish packages, tags, a tap or websites;
+the prepared `0.1.0` version retains its own candidate qualification.
 
 Every original prerequisite is closed, including the complete core checkpoint
 [#40](https://github.com/carloshm91/kuberich/issues/40), four native executables
@@ -144,5 +145,43 @@ scenario and failed with the original initial-timeout behavior in 15.96 seconds.
 The former negative-control collection attempt failed before executing a test;
 its log is retained separately and is not regression evidence. Focused and
 negative-control originals remain under `artifacts/qualification51-repair`.
-Fresh PR and six-source/four-native main qualification are still required;
-passing other jobs does not erase the failed originals or close this issue.
+At that repair checkpoint, fresh PR and six-source/four-native main qualification
+were still required. Passing other jobs did not erase the failed originals.
+
+## Completed qualification
+
+[PR #187](https://github.com/carloshm91/kuberich/pull/187) passed protected
+checks and merged as the qualified main above. Its complete tree equals frozen
+branch `fe69af58a4cd6fc2609499a3f32f20f77ea4d47c`. The independent reader
+verified all eight original source/native archives from
+[PR run 38133853019](https://github.com/carloshm91/kuberich/actions/runs/38133853019)
+and three native Homebrew archives from
+[installation run 38133872760](https://github.com/carloshm91/kuberich/actions/runs/38133872760),
+including both immutable payloads, normal upgrades, upgraded PTYs, configuration
+preservation and uninstall. These are owned local versions, not public releases.
+
+The complete exact-main
+[run 38137221192](https://github.com/carloshm91/kuberich/actions/runs/38137221192)
+passed **all six source environments and four native archive jobs**. Source
+jobs ran Ubuntu 24.04 x86_64 and macOS 26 ARM on CPython 3.12, 3.13 and 3.14.
+Independent original-byte reading verified each GitHub ZIP digest, original
+wheel/sdist audits, native enrollment and the complete private development bundle.
+Production lines measured **99.105–99.128%**, branches **96.858–96.966%**;
+all **45 critical deterministic modules** met 100% line/branch requirements.
+PR #186's eight changed production lines measured 100%; the test-only PR #187
+and final-main comparison contain no changed executable production lines.
+
+Three fresh consecutive rounds on the frozen repair branch passed **992
+contracts and all thirteen owned-cluster scenarios each**: 44 successful
+commands including build/metadata, **50.758 minutes**. Independent review
+verified all 39 scenario receipts, fault/cancellation/reaping, cleanup, pinned
+node/tools, caller configuration and retained original logs. Branch production
+and complete-tree equality to main are recorded separately.
+Wheel SHA-256: `b415e6680d0b904404bceea14d4ac0d922a45bce3e33348fe6e8eba893a1bc67`;
+results SHA-256: `9540eb32146833717db7ed45d06fbf5ca5b535936da47ad94e9dc5c76c66d0ef`.
+
+Original receipts remain under `artifacts/qualification51/run-38137221192-originals`
+and `artifacts/qualification51-repair/consecutive` in their retained producer/
+reader worktrees. Real EKS/AKS/GKE, physical terminal/font/clipboard combinations,
+physical macOS 14 Intel, final `0.1.0` artifacts and public channel/domain/site
+verification are not established by this development checkpoint.
