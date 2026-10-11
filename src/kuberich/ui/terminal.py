@@ -240,6 +240,7 @@ class ShellScreen(ModalScreen[str]):
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "shell-history" and not self._shell_closing:
+            self.detach_pending = False
             if self.terminal.review is None:
                 self.terminal.begin_review()
             else:
@@ -345,7 +346,9 @@ class ShellScreen(ModalScreen[str]):
     def key(self, event: Key) -> None:
         if self._shell_closing:
             return
-        self.detach_pending = self.attach_mode and event.key == "ctrl+p"
+        self.detach_pending = (
+            self.attach_mode and self.terminal.review is None and event.key == "ctrl+p"
+        )
         if event.key == "ctrl+right_square_bracket":
             self.close_shell()
             return
