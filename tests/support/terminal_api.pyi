@@ -14,6 +14,7 @@ class Server(ThreadingHTTPServer):
     quiet_watches: threading.Event
     renewed: threading.Event
     watch_versions: list[str]
+    watch_durations: list[int]
     watch_lock: threading.Lock
     pod_events: queue.Queue[dict[str, Any]]
     pod_table: threading.Event

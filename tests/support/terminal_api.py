@@ -68,11 +68,13 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
+            duration = int(query["timeoutSeconds"][0])
             with self.server.watch_lock:
                 self.server.watch_versions.append(query["resourceVersion"][0])
+                self.server.watch_durations.append(duration)
                 if len(self.server.watch_versions) >= 3:
                     self.server.renewed.set()
-            deadline = time.monotonic() + int(query["timeoutSeconds"][0])
+            deadline = time.monotonic() + duration
             try:
                 while time.monotonic() < deadline and not self.server.stopping.wait(0.03):
                     try:
@@ -199,6 +201,7 @@ class Server(ThreadingHTTPServer):
         self.quiet_watches = threading.Event()
         self.renewed = threading.Event()
         self.watch_versions = []
+        self.watch_durations = []
         self.watch_lock = threading.Lock()
         self.pod_events = queue.Queue()
         self.pod_table = threading.Event()

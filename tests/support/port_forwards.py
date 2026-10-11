@@ -18,7 +18,10 @@ config=json.loads(path.read_text())
 assert config['current-context']=='kuberich-test-one'
 assert config['clusters'][0]['cluster']['server'].startswith('http://127.0.0.1:')
 assert os.environ['KUBECONFIG']==str(path)
-Path('forward-child.pid').write_text(str(os.getpid()))
+pid_path=Path('forward-child.pid')
+pid_pending=pid_path.with_suffix('.pending')
+pid_pending.write_text(str(os.getpid()))
+pid_pending.replace(pid_path)
 Path('forward-argv.json').write_text(json.dumps(arguments))
 mode=os.environ.get('OWNED_FORWARD_MODE','normal')
 if mode=='fail':

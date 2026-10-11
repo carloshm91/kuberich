@@ -187,9 +187,21 @@ def test_stale_live_recovery_scope_switch_and_quit_restore_real_terminal(tmp_pat
         assert not thread.is_alive()
 
 
-def test_quiet_watch_renewals_keep_the_real_cli_live_without_retry_hints(tmp_path):
+@pytest.mark.parametrize("initial_namespace_delay", [0, 0.35])
+def test_quiet_watch_renewals_keep_the_real_cli_live_without_retry_hints(
+    tmp_path, initial_namespace_delay
+):
     server = Server()
     server.quiet_watches.set()
+    server.namespace_gate.clear()
+
+    def admit_namespace():
+        if server.namespace_requested.wait(15):
+            time.sleep(initial_namespace_delay)
+        server.namespace_gate.set()
+
+    admission = threading.Thread(target=admit_namespace, daemon=True)
+    admission.start()
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     path = config(
@@ -207,7 +219,11 @@ def test_quiet_watch_renewals_keep_the_real_cli_live_without_retry_hints(tmp_pat
                 "--kubeconfig",
                 str(path),
                 "--request-timeout",
-                "250ms",
+                # This probes graceful quiet renewal, not discovery latency.
+                # The real server's three-second watch still outlives this
+                # request deadline; the short-deadline protocol cases remain
+                # independently covered in test_watches.py.
+                "2.5s",
             ],
             tmp_path,
         ) as terminal:
@@ -220,6 +236,7 @@ def test_quiet_watch_renewals_keep_the_real_cli_live_without_retry_hints(tmp_pat
                 assert time.monotonic() < deadline, "Quiet CLI watch failed to renew"
             assert len(server.watch_versions) == 3
             assert len(set(server.watch_versions)) == 1
+            assert server.watch_durations == [3, 3, 3]
             assert b"Stale resource data" not in terminal.transcript
             assert b"Reconnecting" not in terminal.transcript
             assert b"timed out" not in terminal.transcript
@@ -230,10 +247,13 @@ def test_quiet_watch_renewals_keep_the_real_cli_live_without_retry_hints(tmp_pat
             terminal.save_evidence("workspace-quiet-watch-renewal")
         assert path.read_bytes() == before
     finally:
+        server.namespace_requested.set()
+        admission.join(timeout=2)
         server.stopping.set()
         server.shutdown()
         thread.join(timeout=2)
         server.server_close()
+        assert not admission.is_alive()
         assert not thread.is_alive()
 
 
