@@ -25,6 +25,7 @@ from kuberich.domain.credential_helpers import (
 from kuberich.domain.exec_credentials import parse_credentials
 from kuberich.domain.processes import ProcessCommand, ProcessMode, ProcessPurpose
 from kuberich.errors import AppError
+from kuberich.runtime import external_environment
 
 
 def auth_problem(message: str) -> ConnectionProblem:
@@ -49,7 +50,7 @@ async def _execute(
         spawning = asyncio.create_task(
             asyncio.create_subprocess_exec(
                 *argv,
-                env=environment,
+                env=external_environment(environment),
                 cwd=directory,
                 stdin=asyncio.subprocess.DEVNULL,
                 stdout=asyncio.subprocess.PIPE,
@@ -147,7 +148,7 @@ class ExecToken:
             if not isinstance(args, list) or len(args) > 256:
                 raise auth_problem("Credential helper args must be a list of at most 256 strings.")
             argv = [command, *(text(arg) for arg in args)]
-            environment = dict(self.environment)
+            environment = external_environment(self.environment)
             variables = spec.get("env", [])
             if variables is None:
                 variables = []

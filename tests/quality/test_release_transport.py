@@ -12,6 +12,7 @@ from scripts.homebrew import TapGitHub, propose, publish
 from scripts.release import (
     GitHub,
     dispatch_identity,
+    download_checksums,
     github_assets,
     immutable_tag,
     preflight,
@@ -23,6 +24,16 @@ from tests.quality.test_release_policy import SHA, trusted_api
 from tests.support.distribution import ROOT
 from tests.support.release_notes import commit_notes, note_bundle
 from tests.support.release_server import release_server
+
+
+def test_native_download_checksums_use_actual_flat_attachment_names():
+    files = {"dist/kuberich.whl": "a" * 64, "standalone/kuberich-linux.tar.gz": "b" * 64}
+    assert (
+        download_checksums(files)
+        == "b" * 64 + "  kuberich-linux.tar.gz\n" + "a" * 64 + "  kuberich.whl\n"
+    )
+    with pytest.raises(ValueError, match="basenames must be unique"):
+        download_checksums({"dist/archive.tar.gz": "a" * 64, "standalone/archive.tar.gz": "b" * 64})
 
 
 @pytest.mark.parametrize(

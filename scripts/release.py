@@ -39,6 +39,8 @@ from scripts.release_policy import (
     require_sha,
     reuse_artifact,
 )
+from scripts.standalone_release import enroll as enroll_native
+from scripts.standalone_release import verify as verify_native
 from scripts.supply_chain import digest
 
 
@@ -150,9 +152,21 @@ def bundle_files(directory: Path) -> dict[str, str]:
     for path in directory.rglob("*"):
         if path.is_symlink():
             raise ValueError("Release bundles cannot contain symlinks")
-        if path.is_file() and path.name not in {"release.json", "SHA256SUMS"}:
+        if path.is_file() and path.name not in {
+            "release.json",
+            "SHA256SUMS",
+            "DOWNLOAD-SHA256SUMS",
+        }:
             files[path.relative_to(directory).as_posix()] = digest(path)
     return files
+
+
+def download_checksums(files: dict[str, str]) -> str:
+    """GitHub attachments are flat; preserve their actual download names in checksums."""
+    names = {Path(name).name: value for name, value in files.items()}
+    if len(names) != len(files):
+        raise ValueError("Download checksum attachment basenames must be unique")
+    return "".join(f"{value}  {name}\n" for name, value in sorted(names.items()))
 
 
 def require_source(root: Path, sha: str) -> None:
@@ -220,6 +234,8 @@ def prepare(
         shutil.copyfile(distribution / name, output / "dist" / name)
     for name in {"provenance.json", *provenance["reports"]}:
         shutil.copyfile(security / name, output / "artifacts/security" / name)
+    if not candidate or (source / "standalone").exists():
+        enroll_native(source, output / "standalone", root, sha, version)
     if notes is not None:
         (output / "release-notes.md").write_text(notes["body"], encoding="utf-8", newline="")
     manifest: dict[str, Any] = {
@@ -236,6 +252,9 @@ def prepare(
     hashes = {**manifest["files"], "release.json": digest(output / "release.json")}
     (output / "SHA256SUMS").write_text(
         "".join(f"{value}  {name}\n" for name, value in sorted(hashes.items()))
+    )
+    (output / "DOWNLOAD-SHA256SUMS").write_text(
+        download_checksums({**hashes, "SHA256SUMS": digest(output / "SHA256SUMS")})
     )
     verify_bundle(output, sha, version, root=root, candidate=candidate)
     return manifest
@@ -269,10 +288,17 @@ def verify_bundle(
     digest(directory / "SHA256SUMS")
     if (directory / "SHA256SUMS").read_text() != content:
         raise ValueError("Release checksums do not match every supplied byte")
+    digest(directory / "DOWNLOAD-SHA256SUMS")
+    if (directory / "DOWNLOAD-SHA256SUMS").read_text() != download_checksums(
+        {**expected, "SHA256SUMS": digest(directory / "SHA256SUMS")}
+    ):
+        raise ValueError("Download checksums do not match the flat GitHub attachment names")
     verify(directory / "artifacts/security", directory / "dist", root)
     if read_json(directory / "artifacts/security/provenance.json")["source_commit"] != sha:
         raise ValueError("Release evidence source identity mismatch")
     metadata(directory / "dist", version)
+    if not candidate or (directory / "standalone").exists():
+        verify_native(directory / "standalone", root, sha, version)
     if candidate:
         if manifest.get("notes") is not None or notes_preview is not None:
             raise ValueError("Local development bundles cannot carry public release notes")
@@ -486,6 +512,7 @@ def main() -> int:
                 result["artifact_id"] = reuse_artifact(
                     api, args.commit, args.version, args.reuse_run
                 )
+                result["artifact_ids"] = str(result["artifact_id"])
                 result["download_run_id"] = args.reuse_run
             if args.output:
                 write_json(args.output, result)

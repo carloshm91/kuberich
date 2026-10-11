@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from scripts.ci_policy import main, matrix
+from scripts.ci_policy import main, matrix, native_matrix
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -85,12 +85,17 @@ def test_plan_cli_and_aggregate_use_the_same_actual_event(tmp_path):
         timeout=10,
     )
     assert process.returncode == 0, process.stderr
-    key, value = output.read_text().strip().split("=", 1)
-    assert key == "matrix" and json.loads(value) == matrix("workflow_dispatch", "refs/heads/main")
+    outputs = dict(line.split("=", 1) for line in output.read_text().splitlines())
+    assert set(outputs) == {"matrix", "native_matrix"}
+    assert json.loads(outputs["matrix"]) == matrix("workflow_dispatch", "refs/heads/main")
+    assert json.loads(outputs["native_matrix"]) == native_matrix(
+        "workflow_dispatch", "refs/heads/main"
+    )
     environment["KUBERICH_JOB_RESULTS"] = json.dumps(
         {
-            "plan": {"result": "success", "outputs": {"matrix": value}},
+            "plan": {"result": "success", "outputs": outputs},
             "application": {"result": "success"},
+            "standalone": {"result": "success"},
         }
     )
     passed = subprocess.run(
@@ -164,7 +169,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert "scripts/merge_runtime_coverage.py" in commands
     assert "git rev-parse HEAD^" in commands
     assert gate["name"] == "Quality gate" and gate["if"] == "${{ always() }}"
-    assert set(gate["needs"]) == {"plan", "application"}
+    assert set(gate["needs"]) == {"plan", "application", "standalone"}
     assert gate["steps"][-1]["run"] == "python3 -m scripts.check_quality_gate"
     linux_tools = next(
         step for step in application["steps"] if "apt-get install" in step.get("run", "")
@@ -195,6 +200,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
             {
                 "plan": "ubuntu-24.04",
                 "application": "${{ matrix.os }}",
+                "standalone": "${{ matrix.os }}",
                 "quality-gate": "ubuntu-24.04",
             },
         ),
@@ -206,3 +212,55 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
 def test_workflows_pin_every_linux_job_and_preserve_matrix_selection(filename, hosts):
     workflow = yaml.safe_load((ROOT / ".github/workflows" / filename).read_text())
     assert {name: job["runs-on"] for name, job in workflow["jobs"].items()} == hosts
+
+
+@pytest.mark.parametrize(
+    "event,ref",
+    [
+        ("pull_request", "refs/pull/49/merge"),
+        ("push", "refs/heads/main"),
+        ("workflow_dispatch", "refs/heads/main"),
+    ],
+)
+def test_native_verification_always_covers_four_real_os_architectures(event, ref):
+    selected = native_matrix(event, ref)["include"]
+    assert {(job["os"], job["target"]) for job in selected} == {
+        ("ubuntu-22.04", "linux-x86_64"),
+        ("ubuntu-22.04-arm", "linux-arm64"),
+        ("macos-15-intel", "macos-x86_64"),
+        ("macos-14", "macos-arm64"),
+    }
+    assert len(selected) == 4
+    for job in selected:
+        if job["target"].startswith("linux-"):
+            assert len(job["kind_sha256"]) == 64 and len(job["kubectl_sha256"]) == 64
+
+
+def test_native_matrix_is_required_and_cannot_skip_archive_or_runtime_failures():
+    workflow = yaml.safe_load((ROOT / ".github/workflows/quality.yml").read_text())
+    native = workflow["jobs"]["standalone"]
+    assert native["needs"] == "plan"
+    assert "if" not in native and "continue-on-error" not in native
+    assert native["strategy"] == {
+        "fail-fast": False,
+        "matrix": "${{ fromJSON(needs.plan.outputs.native_matrix) }}",
+    }
+    for step in native["steps"]:
+        assert "continue-on-error" not in step
+    commands = "\n".join(step.get("run", "") for step in native["steps"])
+    for required in (
+        "scripts.build_standalone",
+        "scripts.verify_standalone",
+        "scripts.check_standalone",
+        "scripts.verify_shell_kind",
+        "--executable",
+        "sha256sum --check",
+    ):
+        assert required in commands
+    upload = next(
+        step
+        for step in native["steps"]
+        if step.get("uses", "").startswith("actions/upload-artifact@")
+    )
+    assert upload["with"]["if-no-files-found"] == "error"
+    assert upload["if"] == "${{ always() }}"

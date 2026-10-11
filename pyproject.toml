@@ -60,6 +60,11 @@ dev = [
     "twine>=7.0.0,<8",
     "types-pyyaml>=6.0.12,<7",
     "types-regex>=2026.9.29.20261005,<2027",
+    "zstandard==0.25.0",
+]
+standalone = [
+    "pyinstaller==6.22.3",
+    "zstandard==0.25.0",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -124,6 +129,7 @@ show_contexts = true
 critical_modules = [
     "src/kuberich/cli.py",
     "src/kuberich/__main__.py",
+    "src/kuberich/runtime.py",
     "src/kuberich/config/schema.py",
     "src/kuberich/diagnostics/redaction.py",
     "src/kuberich/security/controls.py",

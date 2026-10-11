@@ -6,12 +6,14 @@ import sys
 
 import pytest
 
+from scripts.build_standalone import source_inputs
 from scripts.check_supply_chain import INPUT_FILES, generate, write_json
 from scripts.release import prepare, verify_bundle
 from scripts.supply_chain import digest
 from tests.support.distribution import PROJECT, ROOT, run
 from tests.support.distribution import artifacts as artifacts
 from tests.support.distribution import installed_wheel as installed_wheel
+from tests.support.native_release import candidates
 from tests.support.release_notes import authored
 
 
@@ -57,6 +59,7 @@ def canonical_release(tmp_path_factory):
     shutil.copytree(ROOT / "src", source / "src", ignore=shutil.ignore_patterns("__pycache__"))
     files = {
         *INPUT_FILES,
+        *source_inputs(ROOT),
         "README.md",
         "CHANGELOG.md",
         "LICENSE",
@@ -106,6 +109,7 @@ def canonical_release(tmp_path_factory):
     sha = run(["git", "rev-parse", "HEAD"], source).stdout.strip()
     run(["uv", "build", "--python", sys.executable], source, 120)
     generate(source / "artifacts/security", source / "dist", root=source)
+    candidates(source, sha, "1.0.0rc1", source)
     bundle = tmp_path / "release-candidate"
     prepared = prepare(source, bundle, sha, "1.0.0rc1", root=source)
     assert prepared["tag"] == "v1.0.0-rc.1" and prepared["candidate_only"] is False

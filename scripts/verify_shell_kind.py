@@ -7,6 +7,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 import yaml
 from kubernetes_asyncio import client
@@ -15,11 +16,13 @@ from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.config.catalog import load_catalog
 from kuberich.domain.connections import ConnectionRequest
 from scripts.owned_kind import NODE_IMAGE, SHELL_IMAGE, owned_cluster, run_owned
+from scripts.standalone import check_executable, native_target
+from scripts.supply_chain import digest
 from scripts.verify_eks_auth import verify as verify_eks_auth
 from tests.terminal.pty_support import TerminalSession
 
 
-async def prepare(path: Path, context: str, namespace: str) -> tuple[dict, str]:
+async def prepare(path: Path, context: str, namespace: str) -> tuple[dict[str, Any], str]:
     request = ConnectionRequest(kubeconfig=str(path), context=context, namespace=namespace)
     selected = load_catalog(request, {}).select(context)
     session = KubernetesSession(selected, 15)
@@ -27,26 +30,26 @@ async def prepare(path: Path, context: str, namespace: str) -> tuple[dict, str]:
         await session.open()
         assert session.api is not None
         api = client.CoreV1Api(session.api)
-        await api.create_namespace({"metadata": {"name": namespace}})
+        await api.create_namespace(client.V1Namespace(metadata=client.V1ObjectMeta(name=namespace)))
         await api.create_namespaced_pod(
             namespace,
-            {
-                "metadata": {"name": "owned-shell-pod", "namespace": namespace},
-                "spec": {
-                    "containers": [
-                        {
-                            "name": name,
-                            "image": SHELL_IMAGE,
-                            "command": ["/bin/sh", "-c", "while true; do sleep 60; done"],
-                            "env": [
-                                {"name": "KUBERICH_OWNED_CONTAINER", "value": name},
-                                {"name": "PS1", "value": "OWNED-SHELL> "},
+            client.V1Pod(
+                metadata=client.V1ObjectMeta(name="owned-shell-pod", namespace=namespace),
+                spec=client.V1PodSpec(
+                    containers=[
+                        client.V1Container(
+                            name=name,
+                            image=SHELL_IMAGE,
+                            command=["/bin/sh", "-c", "while true; do sleep 60; done"],
+                            env=[
+                                client.V1EnvVar(name="KUBERICH_OWNED_CONTAINER", value=name),
+                                client.V1EnvVar(name="PS1", value="OWNED-SHELL> "),
                             ],
-                        }
+                        )
                         for name in ["app-a", "app-b"]
                     ]
-                },
-            },
+                ),
+            ),
         )
         async with asyncio.timeout(180):
             while True:
@@ -56,68 +59,55 @@ async def prepare(path: Path, context: str, namespace: str) -> tuple[dict, str]:
                 ):
                     break
                 await asyncio.sleep(0.5)
-        await api.create_namespaced_service_account(
-            namespace, {"metadata": {"name": "shell-reader"}}
-        )
         rbac = client.RbacAuthorizationV1Api(session.api)
-        await rbac.create_namespaced_role(
-            namespace,
-            {
-                "metadata": {"name": "shell-reader"},
-                "rules": [
-                    {"apiGroups": [""], "resources": ["pods"], "verbs": ["get", "list", "watch"]}
+        for role_name, rules in [
+            (
+                "shell-reader",
+                [
+                    client.V1PolicyRule(
+                        api_groups=[""], resources=["pods"], verbs=["get", "list", "watch"]
+                    )
                 ],
-            },
-        )
-        await rbac.create_namespaced_role_binding(
-            namespace,
-            {
-                "metadata": {"name": "shell-reader"},
-                "roleRef": {
-                    "apiGroup": "rbac.authorization.k8s.io",
-                    "kind": "Role",
-                    "name": "shell-reader",
-                },
-                "subjects": [
-                    {"kind": "ServiceAccount", "name": "shell-reader", "namespace": namespace}
+            ),
+            (
+                "shell-operator",
+                [
+                    client.V1PolicyRule(
+                        api_groups=[""],
+                        resources=["pods", "pods/log"],
+                        verbs=["get", "list", "watch"],
+                    ),
+                    client.V1PolicyRule(api_groups=[""], resources=["pods/exec"], verbs=["create"]),
                 ],
-            },
-        )
-        await api.create_namespaced_service_account(
-            namespace, {"metadata": {"name": "shell-operator"}}
-        )
-        await rbac.create_namespaced_role(
-            namespace,
-            {
-                "metadata": {"name": "shell-operator"},
-                "rules": [
-                    {
-                        "apiGroups": [""],
-                        "resources": ["pods", "pods/log"],
-                        "verbs": ["get", "list", "watch"],
-                    },
-                    {"apiGroups": [""], "resources": ["pods/exec"], "verbs": ["create"]},
-                ],
-            },
-        )
-        await rbac.create_namespaced_role_binding(
-            namespace,
-            {
-                "metadata": {"name": "shell-operator"},
-                "roleRef": {
-                    "apiGroup": "rbac.authorization.k8s.io",
-                    "kind": "Role",
-                    "name": "shell-operator",
-                },
-                "subjects": [
-                    {"kind": "ServiceAccount", "name": "shell-operator", "namespace": namespace}
-                ],
-            },
-        )
+            ),
+        ]:
+            metadata = client.V1ObjectMeta(name=role_name)
+            await api.create_namespaced_service_account(
+                namespace, client.V1ServiceAccount(metadata=metadata)
+            )
+            await rbac.create_namespaced_role(
+                namespace, client.V1Role(metadata=metadata, rules=rules)
+            )
+            await rbac.create_namespaced_role_binding(
+                namespace,
+                client.V1RoleBinding(
+                    metadata=metadata,
+                    role_ref=client.V1RoleRef(
+                        api_group="rbac.authorization.k8s.io", kind="Role", name=role_name
+                    ),
+                    subjects=[
+                        client.RbacV1Subject(
+                            kind="ServiceAccount", name=role_name, namespace=namespace
+                        )
+                    ],
+                ),
+            )
         token = await api.create_namespaced_service_account_token(
             "shell-reader",
             namespace,
-            {"spec": {"expirationSeconds": 1800}},
+            client.AuthenticationV1TokenRequest(
+                spec=client.V1TokenRequestSpec(audiences=[], expiration_seconds=1800)
+            ),
         )
         return {"uid": pod.metadata.uid, "namespace": namespace}, token.status.token
     finally:
@@ -133,9 +123,10 @@ def trial(
     scenario: str,
     kubectl: Path,
     launch_overrides: tuple[str, ...] = (),
+    executable: Path | None = None,
 ) -> None:
     directory.mkdir()
-    preferences = {"schema_version": 1}
+    preferences: dict[str, Any] = {"schema_version": 1}
     if scenario == "configured":
         preferences["shell"] = ["/bin/sh", "-i"]
     if scenario == "missing-shell":
@@ -149,9 +140,7 @@ def trial(
         sys.executable,
         str(wrapper),
         str(kubectl),
-        sys.executable,
-        "-m",
-        "kuberich",
+        *([str(executable)] if executable is not None else [sys.executable, "-m", "kuberich"]),
         "--kubeconfig",
         str(path),
         "--context",
@@ -247,7 +236,20 @@ def main() -> None:
     parser.add_argument("--kind", required=True)
     parser.add_argument("--kubectl", required=True)
     parser.add_argument("--evidence", default="artifacts/cluster/shell.json")
+    parser.add_argument(
+        "--executable",
+        type=Path,
+        help="run an exact extracted native CLI instead of the source entry",
+    )
     arguments = parser.parse_args()
+    executable = arguments.executable.absolute() if arguments.executable is not None else None
+    executable_digest = None
+    if executable is not None:
+        executable_digest = digest(executable)
+        with executable.open("rb") as native:
+            check_executable(native.read(64), native_target())
+        if not os.access(executable, os.X_OK):
+            raise ValueError("The owned native trial requires an executable CLI")
     kubectl = Path(arguments.kubectl).absolute()
     version = json.loads(
         run_owned([str(kubectl), "version", "--client", "-o", "json"], os.environ)
@@ -273,6 +275,7 @@ def main() -> None:
                 directory / scenario,
                 scenario=scenario,
                 kubectl=kubectl,
+                executable=executable,
             )
             print("Real shell trial passed: " + scenario, flush=True)
         captured = yaml.safe_load(path.read_text())
@@ -327,6 +330,7 @@ def main() -> None:
             scenario="overrides",
             kubectl=kubectl,
             launch_overrides=overrides,
+            executable=executable,
         )
         print("Real TLS/alias/impersonated shell overrides passed.", flush=True)
         trial(
@@ -342,6 +346,7 @@ def main() -> None:
                 "--as-group",
                 "system:authenticated",
             ),
+            executable=executable,
         )
         trial(
             path,
@@ -351,6 +356,7 @@ def main() -> None:
             scenario="token-denied",
             kubectl=kubectl,
             launch_overrides=("--token", token),
+            executable=executable,
         )
         limited = yaml.safe_load(path.read_text())
         limited["users"] = [{"name": "shell-reader", "user": {"token": token}}]
@@ -366,6 +372,7 @@ def main() -> None:
             directory / "denied",
             scenario="denied",
             kubectl=kubectl,
+            executable=executable,
         )
         # EKS-shaped exec contract against a real API and real kubectl.
         # The helper is a local synthetic shim using this owned kind token;
@@ -423,6 +430,7 @@ def main() -> None:
             directory / "eks-denied",
             scenario="eks-denied",
             kubectl=kubectl,
+            executable=executable,
         )
         print(
             "Synthetic EKS helper, actual kubectl reads and exec RBAC denial passed on owned kind.",
@@ -481,6 +489,7 @@ def main() -> None:
             directory / "aks-denied",
             scenario="aks-denied",
             kubectl=kubectl,
+            executable=executable,
         )
         print(
             "Synthetic Azure helper, actual kubectl reads and exec RBAC denial passed on owned kind.",
@@ -492,6 +501,8 @@ def main() -> None:
             json.dumps(
                 {
                     "result": "passed",
+                    "application_entry": "native" if executable is not None else "source",
+                    "native_executable_sha256": executable_digest,
                     "prewrite_owned_endpoint_verified": True,
                     "kind": "0.33.0",
                     "kubernetes": "1.36.4",

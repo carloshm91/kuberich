@@ -23,6 +23,7 @@ from kuberich.domain.processes import (
     process_timeout,
 )
 from kuberich.errors import AppError, ExecutableUnavailable
+from kuberich.runtime import external_environment, pty_argv
 from kuberich.services.access import AccessPolicy
 
 TargetGuard = Callable[[], None]
@@ -39,7 +40,7 @@ async def _finish_owned[T](task: asyncio.Future[T]) -> None:
 
 
 def _executable(command: ProcessCommand) -> str:
-    environment = dict(command.environment)
+    environment = external_environment(dict(command.environment))
     path = os.pathsep.join(
         str(Path(part) if Path(part).is_absolute() else command.directory / part)
         for part in os.get_exec_path(environment)
@@ -284,16 +285,13 @@ class ProcessRunner:
             foreground = terminal_fd is not None
             argv = (executable, *command.argv[1:])
             if embedded:
-                argv = (
-                    sys.executable,
-                    "-I",
-                    str(Path(__file__).parents[1] / "adapters" / "pty_child.py"),
-                    *argv,
-                )
+                argv = pty_argv(argv)
             transport, _ = await asyncio.get_running_loop().subprocess_exec(
                 lambda: output,
                 *argv,
-                env=dict(command.environment),
+                env=dict(command.environment)
+                if embedded
+                else external_environment(dict(command.environment)),
                 cwd=command.directory,
                 stdin=terminal_fd
                 if foreground and command.terminal_input

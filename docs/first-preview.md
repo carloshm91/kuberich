@@ -1,5 +1,250 @@
 # First things to try
 
+## Standalone development candidate: D05 #49
+
+The corrected run `38098818073` passed **all four native targets** at head
+`00f41ab` / merge source `3255a0f7e3aa449da363fff4b126387f9b41c519`.
+Both Mac archives passed auth/interactive-shell and terminal-restoration controls;
+the real system-shell builtin succeeded while Python launched through that shell
+remained sandbox-denied. Both Linux archives passed Python-free runtime and
+exact-executable owned-kind checks. Original GitHub ZIP digests matched; independent
+readers accepted all four archives and original CLI/PTY/platform records. Actual
+local release enrollment then preserved and verified the four real archives and
+their raw-provenance sidecars without rebuilding. The original receipt is
+`artifacts/standalone49/pr181-shell-delegate-ci/native-enrollment-result-original.json`.
+
+These native originals were enrolled while the complete source matrix was still
+running. [PR #181](https://github.com/carloshm91/kuberich/pull/181) tracks the
+required complete candidate checks and delivery status. The original #40 heartbeat
+failure below is not resolved by the Mac sandbox fix.
+The runtime verifier now reports a failed child's original cause before testing
+unfinished workload counters. Its controlled regressions and actual three-child
+scenario passed at `0f8185e`; the positive child measured 112.607 ms and the
+injected negative child failed at 203.398 ms. Source and process-ownership receipts
+remain preserved. This verifies failure reporting, not a fix for #40.
+No package/tag/release was published. Native CI executed these exact commands
+with its recorded target-specific environment:
+
+```sh
+uv run python -m scripts.build_standalone --output "$KUBERICH_NATIVE_DIR/candidate" --target "$KUBERICH_NATIVE_TARGET"
+uv run python -m scripts.verify_standalone --candidate "$KUBERICH_NATIVE_DIR/candidate" --evidence "$KUBERICH_NATIVE_DIR/runtime"
+```
+
+The second run also exposed a separate macOS source performance failure in the
+full retained log-history test: a fresh uninstrumented child paused 150.267833 ms
+during resource navigation, exceeding the unchanged 150-ms limit. A 64.916208-ms
+generation-two collection overlapped but does not establish the whole cause.
+The original source artifact/child receipts are retained and recorded in #40;
+the D05 native sandbox-shell correction does not resolve that performance issue.
+This source job and the two failed native Mac jobs keep the second run unqualified.
+
+The second native run (`38096565815`, head `8fc22a2`) passed Linux x86_64 and
+ARM64. Both actual Mac archives now passed CLI and missing-tool browsing/terminal
+restoration, but their interactive-shell scenario failed after the C helper
+started. The sandbox allowed `/bin/sh` without its macOS system-shell delegates;
+a narrow allowlist correction and original positive/negative shell controls are
+prepared. At that point fresh Mac execution was still required; the later run
+recorded above passed it. Original failed logs/archives stay retained; the second
+run is not a qualified four-target candidate.
+
+The frozen correction at `50fe5cb` passed the combined host/native-reader/
+release-policy/archive/owned-HTTP cohort: **397 passed, one actual-Mac test skipped**
+in 73.14 seconds. Its stable packaging/Homebrew check also passed **28 cases in
+352.36 seconds**. Strict types passed 141 source files; lint/formatting passed
+515 files and site checks passed 49 pages, 1,726 links/assets and 64 files.
+Independent readers accepted both original Linux runtime/kind bundles and all
+four archives' native contents; they do not qualify the failed Mac shell scenario.
+
+The stable download-checksum packaging check completed: **28 passed in 352.31
+seconds**, including the actual platform checksum command over flattened download
+names. No package/tag/release was published.
+
+Release enrollment now requires all four native jobs and five retained inputs from
+the same exact manual source qualification. Public bundles retain the original
+archives and uniquely named provenance; verification checks native bytes, source
+inputs, notices, original CLI/PTY controls and Linux native kind execution. PyPI
+contents remain wheel/sdist only. The release-policy, original-record, archive
+and owned-HTTP cohort passed 379 cases. The committed `8022f60` candidate passed
+27 packaging/Homebrew cases in 350.36 seconds, including a real RC build/audit/
+installed CLI and controlled native-record fixtures. The full strict command
+passed 141 source files; Ruff and formatting passed 515 files. Site generation/
+checking passed 49 pages, 1,726 local links/assets and 64 output files. The
+controlled native fixtures do not qualify a native host. No release workflow,
+tag or package publication has been invoked.
+
+The first hosted run has now finished: all four source jobs passed, including
+Linux 3.12's complete owned-cluster and installed-guide checks. The overall run
+correctly failed because both macOS native startup checks failed. A subsequent
+owned Ubuntu 22.04 build of source `83b7c89` produced archive SHA-256
+`e971f996ddd19a2ca4878cc574c247ecb89eb3d932728b47f07c3434ac170993`;
+its exact extracted archive passed the reusable Python-free CLI/browsing/auth/
+shell qualifier. Public download preparation also adds `DOWNLOAD-SHA256SUMS`
+for GitHub's flat attachment names; the stable packaging result is recorded above.
+
+The exact local commands were:
+
+```sh
+uv run --no-sync pytest -q tests/quality/test_standalone_host.py tests/quality/test_standalone_release.py tests/quality/test_standalone_verification.py tests/quality/test_release_policy.py tests/quality/test_release_transport.py
+uv run --no-sync pytest -q --tb=short tests/packaging/test_release_candidate.py tests/packaging/test_homebrew_formula.py
+uv run --no-sync python -m scripts.build_site
+uv run --no-sync python -m scripts.check_site
+```
+
+[Draft PR #181](https://github.com/carloshm91/kuberich/pull/181) started the first
+hosted four-target run, `38093295317`, at head `bcbc09b`. Both Linux native jobs
+passed, including clean-base runtime and actual extracted-archive kind checks.
+The macOS jobs built their archives but failed the isolated `--version` control.
+The ARM original verified all 13 ad-hoc signatures and measured deployment
+commands at macOS 11; that does not establish support below the declared 14.
+Its error came from Rich importing `os.getcwd()` while the inherited checkout
+directory was deliberately inaccessible. The verifier now selects its owned
+temporary cwd and records it; eight host/helper regressions and strict types
+passed locally. Fresh actual macOS evidence for this correction and the complete
+subsequent source/native candidate are still required. The sandbox denial
+has not been relaxed, and the failed original log/archive remain retained.
+
+The native checks are now reusable as `scripts.check_standalone` and
+`scripts.verify_standalone`. The exact previously retained Linux archive passed
+the new qualifier after the checker was corrected to inspect Textual's actual
+inline stylesheet source and to capture Docker's absolute controller path before
+isolating the application's PATH. The original failed qualifier output is kept
+separately. The combined native archive/interpreter/ABI/provenance/helper and CI
+planner/aggregate tests passed **163 cases**; strict types passed for nine scripts.
+
+The same retained frozen executable then passed the real owned-kind shell cohort
+through the new `scripts.verify_shell_kind --executable` path: two-container
+selection, configured/missing shell, repeated return, resize, Ctrl+C, fullscreen
+`vi`, TLS/alias/impersonation and real RBAC denials. Synthetic EKS/AKS helpers are
+still synthetic, not provider certification. Cluster deletion and absence were
+verified. Original evidence is
+`artifacts/standalone49/owned-kind-native-v1-original.log` and
+`artifacts/standalone49/owned-kind-native-v1.json`. The controller source original
+was retained; this is local evidence, not qualification of the later CI commit.
+Four native jobs and protected aggregate enforcement are prepared; hosted results
+and exact release-input enrollment remain pending.
+
+The committed full-interpreter build at `f2a0e310` now passed on the owned
+Ubuntu 22.04 x86_64 builder. Its complete native library inventory stayed at
+GLIBC 2.35, with all 20 original interpreter notice texts retained. The exact
+archive SHA-256 is
+`a2002de6ddddd4f8bba1ee995ccbd657aefb18a3e413739c87c60cfdaf120428`.
+An independent read matched its 128 Git inputs, archive members, original
+interpreter/library/metadata/notices, wheel and behavior receipts.
+
+That same executable passed `/app/kuberich --version`, `/app/kuberich --help`
+and `/app/kuberich info` in the pinned base container, whose installed packages
+and command discovery showed no system Python, uv, pip or kubectl. Actual PTYs
+then browsed 80 pods from an owned loopback API, opened containers, reported the
+missing optional kubectl, and exercised a C credential helper plus a kubectl
+fixture launching real `/bin/sh`. Both terminal modes were restored. These are
+synthetic local auth/API/exec checks, not real provider or Kubernetes exec
+certification. Containers were removed. macOS/ARM builds, protected four-target
+CI and exact release-input integration remain pending; #49 is still open.
+
+The current recipe prepares a separately hash-pinned full CPython 3.12.15 archive
+for each target and preserves the interpreter's original static component notices.
+The actual Linux full archive enrolled 17 metadata components and 20 original
+notice texts, including a separately pinned upstream supplemental text. The native
+interpreter reported OpenSSL 3.5.9 and zlib 1.3.2. The new package/floor checks
+passed 67 cases across the archive, notice, full-interpreter and Mach-O suites;
+strict builder types and Ruff passed. The command is:
+
+```sh
+uv run --no-sync pytest -q tests/quality/test_standalone_archive.py tests/quality/test_standalone_build.py tests/quality/test_standalone_python.py tests/quality/test_standalone_macos.py
+```
+
+An actual developer-host build now ships those interpreter notices and hashes.
+Its copied host `libstdc++` still advertises GLIBC 2.38, so this diagnostic archive
+cannot pass the promised whole-bundle 2.35 gate. The clean-host CLI preflight
+correctly refused it before launch; a separate owned C-auth/real-shell trial did
+pass on Ubuntu 22.04. That narrower positive result does not override the failed
+whole-bundle floor. The later committed minimum-floor build above collected
+compatible libraries and retained the original notices. Four-target protected CI, actual
+Mac signing/runtime and exact release-input integration remain pending.
+
+[PR #180](https://github.com/carloshm91/kuberich/pull/180) merged as `a4e958c`
+on 2026-10-10 and closed #109. All four original required native environments,
+Repository checks and DCO passed; original artifact/aggregate and owned-cluster
+evidence was reviewed. The separate qualification finding under #40 remains open.
+
+D05 now prepares Linux/macOS x86_64/arm64 executables. The new runtime launcher
+re-executes the frozen application for its owned embedded PTY child and restores
+external tools' library environment without changing the main process or captured
+context. The focused source command was:
+
+```sh
+uv run --no-sync pytest -q tests/unit/test_runtime.py tests/unit/test_pty_boundary.py tests/unit/test_processes.py tests/contract/test_processes.py tests/contract/test_credentials.py tests/ui/test_embedded_terminal.py --cov=kuberich.runtime --cov-branch --cov-report=json:artifacts/standalone49/focused-runtime-coverage.json --cov-report=term-missing
+```
+
+It passed 219 cases on Linux/Python 3.12.12. Coverage of the new runtime module
+alone was 100% lines/branches; full production/changed-line qualification is still
+required. Ruff and strict mypy passed for the selected source/tool scope.
+
+An exploratory PyInstaller 6.22.3 build used a separate environment containing
+locked runtime/freezer dependencies and the actual built wheel. Its version/help
+and valid-preference `info` ran outside the checkout with an empty PATH. The first
+`info` fixture explicitly named a missing preference file and correctly exited 3;
+that original result is retained separately from the corrected valid fixture.
+This is local smoke evidence, not clean-host/minimum-OS or four-target qualification.
+The actual copied frozen executable also passed three original owned-API/PTY
+scenarios outside the checkout: repeated successful shell sessions, Unicode/
+cursor/alternate-screen protocol and resize, and deliberate closure. Terminal
+mode, cursor and reporting modes were restored; the fake external helper rejected
+leaked frozen loader state. That helper deliberately uses the test host's Python,
+so these cases establish the frozen application's launcher/UI behavior, not an
+interpreter-free host or a real cloud-provider trial.
+
+The native archive recipe now retains original dependency/build-tool notices,
+CPython's license, copied system-library copyrights and the exact wheel,
+source-input, file and archive hashes. The focused archive/notice checks passed
+41 cases with:
+
+```sh
+uv run --no-sync pytest -q tests/quality/test_standalone_archive.py tests/quality/test_standalone_build.py
+```
+
+The actual diagnostic archive was validated and extracted outside the checkout.
+Its frozen UI/PTY passed three scenarios and a fourth run with a compatible
+modified Pyte source. The original Pyte source matched the installed wheel and
+was absent from the embedded PYZ, so replacement used the external library.
+These trials still use owned synthetic APIs and the host's Python helper.
+The developer-host archive requires GLIBC 2.38, above the declared 2.35 floor:
+it is explicitly diagnostic and cannot be a qualified release input. Builds
+on the minimum supported Linux environment and the other native targets remain
+pending. The first recipe attempt failed while parsing uv's generated comment
+header; its original log is retained, and the export now excludes that header.
+The first minimum-floor container lacked the documented development gate
+dependencies and exited before the recipe started. The second reached the recipe
+but its sanitized subprocess could not rediscover an interpreter installed in an
+owned nondefault directory. Original logs are retained; wheel construction and
+lock export now receive the already-selected interpreter explicitly, without
+re-enabling ambient Python settings or downloads.
+The next container built the native executable but package-notice collection
+failed because dpkg recorded `/lib` while the resolved file lived under `/usr/lib`.
+Notice discovery now checks the original source path and verified merged-/usr
+aliases, rejecting missing or ambiguous owners. The failed original remains
+retained; this does not waive notice or minimum-floor qualification.
+
+A committed-source build (`af42daa`) then succeeded in the pinned owned Ubuntu
+22.04 image. Its actual highest GLIBC symbols were 2.35. On a separate unmodified
+base image, installed-package and executable checks confirmed no system Python,
+uv, pip or kubectl. The frozen version/help/info and an actual 80-pod owned-API
+browser/container route passed, including the missing-kubectl message. A second
+clean-host trial used compiled C credential/kubectl fixtures and the container's
+real `/bin/sh`: authentication, private snapshot delivery, a shell command,
+return to the resource view, unchanged caller kubeconfig and terminal restoration
+passed. These helpers simulate the provider/exec boundaries; they are not real
+cloud-provider or real-cluster kubectl certification.
+
+An independent reader matched 126 inputs to the frozen Git commit, all 688
+archive members and 15 native files, and reviewed the original process/TTY
+receipts without rerunning behavior. This is Linux x86_64 evidence only. Full
+interpreter third-party notice enrollment, Linux arm64, both macOS targets,
+signing/minimum-OS evidence, owned-cluster execution and protected CI/release
+integration remain pending. See the [standalone report](acceptance/standalone-executables.md).
+Standalone downloads and public installation remain unavailable. No maintainer
+trial or publication is requested at this checkpoint.
+
 ## Completed Q03 and resumed CI observation: Refs #50 / #109
 
 [PR #179](https://github.com/carloshm91/kuberich/pull/179) merged as `f5933bb`

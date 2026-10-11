@@ -42,6 +42,11 @@ Before preparing or publishing, require all of the following:
   three/four-environment development runs cannot satisfy this gate.
 - The retained `quality-ubuntu-24.04-python-3.12` artifact and complete fresh audit/SBOM/notices
   bound to its wheel/sdist and source/lock/policy inputs.
+- All four successful standalone jobs from that same qualification run, on their
+  exact reviewed native runner labels, and one unexpired, uniquely identified
+  `standalone-<target>` artifact per target. A green source matrix cannot replace
+  missing or failed native jobs. The fresh dispatch downloads all five artifacts;
+  an identical-byte retry instead downloads the original complete release bundle.
 
 The Ubuntu release pin does not freeze hosted image revisions or system package
 versions. Historical `ubuntu-latest` evidence retains its original identity;
@@ -51,6 +56,26 @@ current job/artifact contract. See [runner-pin evidence](acceptance/ubuntu-runne
 The release workflow consumes the already built/tested quality artifact. Neither
 release job rebuilds it. Preparation verifies archive metadata and produces an
 exclusive bundle with SHA256SUMS, exact version/commit and every retained byte.
+`SHA256SUMS` describes the original bundle's relative paths. GitHub attaches
+individual files with flat names, so `DOWNLOAD-SHA256SUMS` separately records
+those exact download names and the original bundle checksum file. Preparation
+refuses colliding attachment basenames. Both inventories are checked before
+publication; a user downloading the attachments into one directory can run
+`sha256sum --check DOWNLOAD-SHA256SUMS` on Linux or
+`shasum -a 256 -c DOWNLOAD-SHA256SUMS` on macOS.
+Public preparation requires Linux x86_64/ARM64 and macOS Intel/ARM64 archives.
+It independently reads native headers, ABI/deployment floors, original interpreter
+notices and runtime assets, then checks their exact source/archive-bound CLI,
+terminal-restoration and external-Python controls. Linux also requires the actual
+native executable's owned-kind shell/RBAC receipt. Original JSON bytes are retained
+on macOS for both successful system-shell delegation and refused outside-Python
+execution through that shell, in addition to direct interpreter refusal. They remain
+in uniquely named provenance sidecars beside the four archives under `standalone/`.
+Cross-platform reading checks actual archive bytes; macOS signature verification
+comes from the required native job's original execution record, not a Linux
+simulation of codesign. Physical Python absence on macOS and notarization are
+not claimed. PyPI still receives only the wheel and sdist; GitHub assets and
+native archive attestations include the standalone archives.
 Public preparation also freezes committed authored notes and the exact optional
 reviewed generated preview; see [notes preparation](release-notes/README.md).
 The optional dispatch `notes_preview` is parsed from a dedicated environment
@@ -110,6 +135,9 @@ directory. A development candidate is explicitly marked local-only, has no tag,
 and cannot enter tag/publish commands. These commands neither contact a cluster
 nor publish packages. Source identity, inputs and candidate bytes must remain
 unchanged while generating evidence.
+An explicitly local development candidate may contain only Python distributions.
+If native artifacts are supplied, it verifies all four targets too. This exception
+does not apply to public release preparation or publisher verification.
 
 ## Partial failure and identical-byte retry
 

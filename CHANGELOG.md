@@ -70,6 +70,12 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Build standalone Linux x86_64/ARM64 and macOS Intel/ARM64 bundles with an
+  included Python runtime, terminal assets, certificates and dependency notices.
+  Verify archive-bound CLI, browsing, credential-helper and shell behavior, and
+  preserve checksums/provenance for release preparation. Public downloads remain
+  pending the first qualified release.
+
 - Aggregate regular/init/ephemeral container and workload-Pod logs with stable
   source/UID prefixes, verified controller membership, bounded reader admission,
   per-source/aggregate retention, source picker/filter and plain/JSON exports.

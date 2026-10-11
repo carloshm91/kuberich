@@ -1148,7 +1148,7 @@
       ],
       "source": "README.md",
       "status": "planned",
-      "difference": "D01 qualifies local wheel/sdist and isolated uv tool/pip-backed pipx installs. D02 adds immutable release automation and local RC/HTTP/Git tests; D03 adds checked formulas and local Homebrew/install update automation. D04/D06/D07/D08/D09/D11 retain native/exact-artifact engineering qualification. D05 standalone outputs remain pending. First public 0.1.0 and cumulative phases retain scoped gate qualifications. Channel ownership/OIDC, organization-owned tap/registry activation and public upgrade/install verification belong to D10 #89. Main and release environments are configured; full release qualification is pending. Fresh installers are not actual upgrade evidence.",
+      "difference": "D01 qualifies local wheel/sdist and isolated uv tool/pip-backed pipx installs. D02 adds immutable release automation and local RC/HTTP/Git tests; D03 adds checked formulas and local Homebrew/install update automation. D05 #49 adds pinned native Linux/macOS bundles and original archive-bound CLI/UI/auth/shell qualification on all four targets, including actual Linux owned-kind execution and independent four-archive release enrollment. Final candidate checks are tracked in PR #181; public downloads remain unavailable. D04/D06/D07/D08/D09/D11 retain exact-artifact engineering qualification. First public 0.1.0 and cumulative phases retain scoped gate qualifications. Channel ownership/OIDC, organization-owned tap/registry activation and public upgrade/install verification belong to D10 #89. Main and release environments are configured; full release qualification is pending. Fresh installers are not actual upgrade evidence.",
       "partial_evidence": [
         "docs/distribution.md",
         "docs/acceptance/distribution-artifacts.md",
@@ -1164,7 +1164,16 @@
         "scripts/homebrew.py",
         "packaging/homebrew/.github/workflows/verify.yml",
         "tests/quality/test_homebrew.py",
-        "tests/packaging/test_homebrew_formula.py"
+        "tests/packaging/test_homebrew_formula.py",
+        "docs/acceptance/standalone-executables.md",
+        "scripts/build_standalone.py",
+        "scripts/check_standalone.py",
+        "scripts/verify_standalone.py",
+        "scripts/standalone_release.py",
+        "tests/quality/test_standalone_build.py",
+        "tests/quality/test_standalone_host.py",
+        "tests/quality/test_standalone_release.py",
+        "packaging/standalone/python-runtime.json"
       ]
     },
     {
