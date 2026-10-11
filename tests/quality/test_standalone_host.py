@@ -3,6 +3,7 @@
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -37,6 +38,36 @@ def test_missing_controller_docker_is_an_explicit_failure(monkeypatch, tmp_path)
     monkeypatch.setattr(verify_standalone.shutil, "which", lambda name: None)
     with pytest.raises(ValueError, match="controller's Docker"):
         verify_standalone.Host(tmp_path, tmp_path, tmp_path)
+
+
+def test_macos_shell_delegates_do_not_allow_outside_interpreters_or_source(monkeypatch, tmp_path):
+    monkeypatch.setattr(verify_standalone.platform, "system", lambda: "Darwin")
+    host = verify_standalone.Host(tmp_path / "bundle", tmp_path, tmp_path)
+    assert host.profile is not None
+    profile = host.profile.read_text()
+    assert '(literal "/bin/bash")' in profile
+    assert '(literal "/bin/dash")' in profile
+    assert '(literal "/bin/zsh")' in profile
+    assert '(literal "/usr/bin/python3")' not in profile
+    assert "(deny process-exec (require-not (require-any " in profile
+    for path in {ROOT.resolve(), Path(sys.prefix).resolve(), Path(sys.base_prefix).resolve()}:
+        assert '(subpath "' + str(path) + '")' in profile
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="Requires actual macOS sandbox-exec")
+def test_macos_system_shell_runs_builtins_but_cannot_launch_controller_python(tmp_path):
+    host = verify_standalone.Host(tmp_path / "bundle", tmp_path, tmp_path)
+    overrides = {"HOME": str(tmp_path), "PATH": str(tmp_path / "no-tools")}
+    assert (
+        host.observe("shell", ["/bin/sh", "-ec", "printf owned-shell"], overrides) == "owned-shell"
+    )
+    host.observe(
+        "denied",
+        ["/bin/sh", "-ec", 'exec "$1" -c "raise SystemExit(0)"', "owned", sys.executable],
+        overrides,
+        success=False,
+    )
+    assert "Operation not permitted" in (tmp_path / "denied.json").read_text()
 
 
 @pytest.fixture

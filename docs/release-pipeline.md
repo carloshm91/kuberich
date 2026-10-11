@@ -68,6 +68,8 @@ It independently reads native headers, ABI/deployment floors, original interpret
 notices and runtime assets, then checks their exact source/archive-bound CLI,
 terminal-restoration and external-Python controls. Linux also requires the actual
 native executable's owned-kind shell/RBAC receipt. Original JSON bytes are retained
+on macOS for both successful system-shell delegation and refused outside-Python
+execution through that shell, in addition to direct interpreter refusal. They remain
 in uniquely named provenance sidecars beside the four archives under `standalone/`.
 Cross-platform reading checks actual archive bytes; macOS signature verification
 comes from the required native job's original execution record, not a Linux

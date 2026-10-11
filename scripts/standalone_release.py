@@ -224,7 +224,14 @@ def check_records(
             or host.get("external_python_execution_denied") is not True
         ):
             raise ValueError("macOS must retain its explicit external-Python isolation limits")
-        for name in ("external-python-denied", "system-python-denied"):
+        shell = json_record(records, "runtime/system-shell.json")
+        if (
+            type(shell.get("exit")) is not int
+            or shell["exit"] != 0
+            or shell.get("stdout") != "NATIVE_SYSTEM_SHELL_OUTPUT_17\n"
+        ):
+            raise ValueError("macOS system shell control did not succeed")
+        for name in ("external-python-denied", "system-python-denied", "shell-python-denied"):
             control = json_record(records, f"runtime/{name}.json")
             if (
                 type(control.get("exit")) is not int

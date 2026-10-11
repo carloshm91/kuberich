@@ -180,6 +180,10 @@ def test_linux_requires_python_free_controls_and_this_executables_real_kind_repo
     "mutation",
     [
         "python_allowed",
+        "shell_failed",
+        "shell_output",
+        "shell_python_allowed",
+        "shell_python_wrong_failure",
         "missing_signatures",
         "invalid_signature",
         "notarization",
@@ -196,6 +200,18 @@ def test_macos_requires_actual_signature_and_isolation_records_without_overstati
         control = json.loads(records["runtime/external-python-denied.json"])
         control["exit"] = 0
         records["runtime/external-python-denied.json"] = json.dumps(control).encode()
+    elif mutation in {"shell_failed", "shell_output"}:
+        control = json.loads(records["runtime/system-shell.json"])
+        control["exit" if mutation == "shell_failed" else "stdout"] = (
+            1 if mutation == "shell_failed" else ""
+        )
+        records["runtime/system-shell.json"] = json.dumps(control).encode()
+    elif mutation in {"shell_python_allowed", "shell_python_wrong_failure"}:
+        control = json.loads(records["runtime/shell-python-denied.json"])
+        control["exit" if mutation == "shell_python_allowed" else "stderr"] = (
+            0 if mutation == "shell_python_allowed" else "unrelated failure"
+        )
+        records["runtime/shell-python-denied.json"] = json.dumps(control).encode()
     elif mutation == "missing_signatures":
         host["native"]["macos_signatures"] = {}
     elif mutation == "invalid_signature":

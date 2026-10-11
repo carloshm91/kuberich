@@ -55,6 +55,10 @@ class Host:
                 directory / "tools/owned-auth",
                 directory / "tools/kubectl",
                 Path("/bin/sh"),
+                # macOS sh re-execs a system shell selected through /var/select/sh.
+                Path("/bin/bash"),
+                Path("/bin/dash"),
+                Path("/bin/zsh"),
             ]
             predicates = " ".join("(literal " + json.dumps(str(path)) + ")" for path in allowed)
             denied = {ROOT.resolve(), Path(sys.base_prefix).resolve(), Path(sys.prefix).resolve()}
@@ -324,6 +328,25 @@ def verify(source: Path, candidate: Path, evidence: Path) -> dict[str, Any]:
                 host.observe(
                     "system-python-denied",
                     ["/usr/bin/python3", "-c", "raise SystemExit(0)"],
+                    overrides,
+                    success=False,
+                )
+                shell = host.observe(
+                    "system-shell",
+                    ["/bin/sh", "-ec", "printf 'NATIVE_SYSTEM_SHELL_OUTPUT_%s\\n' 17"],
+                    overrides,
+                )
+                if shell != "NATIVE_SYSTEM_SHELL_OUTPUT_17\n":
+                    raise ValueError("Native host system shell did not execute its builtin")
+                host.observe(
+                    "shell-python-denied",
+                    [
+                        "/bin/sh",
+                        "-ec",
+                        'exec "$1" -c "raise SystemExit(0)"',
+                        "owned-shell-control",
+                        sys.executable,
+                    ],
                     overrides,
                     success=False,
                 )

@@ -3,6 +3,37 @@
 Status: **in progress**. No release, tag, package or standalone download was
 published. Build success and local runtime evidence do not complete all of #49.
 
+## macOS shell delegation correction under verification
+
+The second native run, `38096565815` at head `8fc22a2`, passed both Linux native
+jobs. Both macOS archives now passed version/help/info and the missing-tool UI
+scenario, including terminal restoration. This confirms the owned-cwd correction
+for those actual archives. The C credential/exec fixtures reached the shell-start
+marker, but `/bin/sh` exited with status 1 before executing the command; both Mac
+original logs and GitHub-digest-verified ZIPs remain under
+`artifacts/standalone49/pr181-corrected-ci`. This is a failed native qualification.
+
+The sandbox permitted `/bin/sh` but denied its system-shell delegates. Apple
+documents the macOS [shell selection mechanism](https://support.apple.com/en-us/102360#how-to-test-your-shell-scripts)
+through `/var/select/sh`. The corrected profile permits only the exact system
+bash/dash/zsh paths in addition to the existing app/helper/sh paths. It still
+denies other executables and checkout/interpreter reads. Original controls now
+require a real system-shell builtin to succeed and Python launched through that
+shell to fail specifically with the sandbox denial; the release reader requires
+both original controls. This diagnosis remains provisional until a fresh native
+macOS candidate passes the complete auth/interactive-shell scenario.
+
+The corrected host/release-reader cohort passed 92 local cases in 51.93 seconds;
+the actual macOS sandbox regression is explicitly skipped on this Linux host.
+Strict types passed for the two changed verification scripts. These checks do not
+establish macOS execution success.
+
+The frozen `8fc22a2` download-checksum candidate passed all 28 packaging/Homebrew
+cases in 352.31 seconds. The retained original is
+`artifacts/standalone49/packaging-download-checksums-stable-v1-original.log`.
+The result includes checking actual flattened download names with the platform
+checksum command; it does not qualify a public package or the subsequent Mac fix.
+
 ## Exact release enrollment under verification
 
 The public candidate pipeline now consumes the source artifact and all four

@@ -130,8 +130,13 @@ def candidates(root: Path, commit: str, version: str, destination: Path) -> None
             controls.update(
                 {
                     name: {"exit": 71, "stderr": "sandbox-exec: Operation not permitted"}
-                    for name in ("external-python-denied", "system-python-denied")
+                    for name in (
+                        "external-python-denied",
+                        "system-python-denied",
+                        "shell-python-denied",
+                    )
                 }
             )
+            controls["system-shell"] = {"exit": 0, "stdout": "NATIVE_SYSTEM_SHELL_OUTPUT_17\n"}
         for name, value in controls.items():
             (runtime / (name + ".json")).write_text(json.dumps(value))

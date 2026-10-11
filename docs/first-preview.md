@@ -2,6 +2,18 @@
 
 ## Standalone work in progress: D05 #49
 
+The second native run (`38096565815`, head `8fc22a2`) passed Linux x86_64 and
+ARM64. Both actual Mac archives now passed CLI and missing-tool browsing/terminal
+restoration, but their interactive-shell scenario failed after the C helper
+started. The sandbox allowed `/bin/sh` without its macOS system-shell delegates;
+a narrow allowlist correction and original positive/negative shell controls are
+prepared. Fresh Mac execution is still required. Original failed logs/archives
+stay retained; this is not a qualified four-target candidate.
+
+The stable download-checksum packaging check completed: **28 passed in 352.31
+seconds**, including the actual platform checksum command over flattened download
+names. No package/tag/release was published.
+
 Release enrollment now requires all four native jobs and five retained inputs from
 the same exact manual source qualification. Public bundles retain the original
 archives and uniquely named provenance; verification checks native bytes, source
@@ -22,7 +34,7 @@ owned Ubuntu 22.04 build of source `83b7c89` produced archive SHA-256
 `e971f996ddd19a2ca4878cc574c247ecb89eb3d932728b47f07c3434ac170993`;
 its exact extracted archive passed the reusable Python-free CLI/browsing/auth/
 shell qualifier. Public download preparation also adds `DOWNLOAD-SHA256SUMS`
-for GitHub's flat attachment names; its stable packaging check is pending.
+for GitHub's flat attachment names; the stable packaging result is recorded above.
 
 The exact local commands were:
 
