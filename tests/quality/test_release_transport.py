@@ -15,6 +15,7 @@ from scripts.release import (
     download_checksums,
     github_assets,
     immutable_tag,
+    main,
     preflight,
     request,
     require_source,
@@ -103,11 +104,18 @@ def test_actual_http_main_qualification_is_readonly_and_source_version_matches(t
                 "number": number,
                 "state": "closed",
             }
-        api = GitHub("synthetic-token", server.url)
+        route = f"/repos/{REPOSITORY}/branches/main/protection"
+        server.required_authorization[route] = "Bearer synthetic-protection-token"
+        with pytest.raises(ValueError, match="HTTP 403"):
+            preflight(GitHub("synthetic-token", server.url), SHA, "1.0.0rc1", "pypi")
+        server.requests.clear()
+        api = GitHub("synthetic-token", server.url, protection_token="synthetic-protection-token")
         assert preflight(api, SHA, "1.0.0rc1", "pypi")["artifact_id"] == 18
         assert all(
-            method == "GET" and auth == "Bearer synthetic-token"
-            for method, _, auth in server.requests
+            method == "GET"
+            and auth
+            == ("Bearer synthetic-protection-token" if path == route else "Bearer synthetic-token")
+            for method, path, auth in server.requests
         )
         assert server.posts == []
         with pytest.raises(ValueError, match="metadata version"):
@@ -116,6 +124,37 @@ def test_actual_http_main_qualification_is_readonly_and_source_version_matches(t
         with pytest.raises(ValueError, match="Public launch"):
             release_preflight(api, SHA, "1.0.0", "pypi")
         assert server.posts == []
+
+
+@pytest.mark.parametrize("method,value", [("POST", None), ("PATCH", {}), ("GET", {})])
+def test_protection_credential_refuses_changes_before_any_request(tmp_path, method, value):
+    with release_server(tmp_path) as server:
+        api = GitHub("synthetic-token", server.url, protection_token="synthetic-protection-token")
+        with pytest.raises(ValueError, match="only its exact GET"):
+            api(f"repos/{REPOSITORY}/branches/main/protection", method, value)
+        assert server.requests == []
+
+
+@pytest.mark.parametrize(
+    "operation", ["preflight", "tag", "pypi-missing", "pypi-verify", "github-assets"]
+)
+def test_publishing_cli_requires_protection_credential_before_requests(
+    monkeypatch, capsys, operation
+):
+    monkeypatch.delenv("KUBERICH_PROTECTION_TOKEN", raising=False)
+    monkeypatch.setenv("GH_TOKEN", "synthetic-token-must-not-be-printed")
+    monkeypatch.setattr("sys.argv", ["release", operation, "--commit", SHA, "--version", "0.1.0"])
+
+    def forbidden_request(*args, **kwargs):
+        pytest.fail("Missing protection credentials must fail before network requests")
+
+    monkeypatch.setattr("scripts.release.request", forbidden_request)
+    with pytest.raises(SystemExit) as error:
+        main()
+    assert error.value.code == 1
+    message = capsys.readouterr().err
+    assert "RELEASE_PROTECTION_TOKEN" in message and "Administration: read" in message
+    assert "synthetic-token-must-not-be-printed" not in message
 
 
 @pytest.mark.parametrize("mismatch", ["runner", "artifact"])
