@@ -1,7 +1,9 @@
 # Standalone executables: D05 #49
 
-Status: **in progress**. No release, tag, package or standalone download was
-published. Build success and local runtime evidence do not complete all of #49.
+Status: **development candidate**. No release, tag, package or standalone download
+was published. Native runtime evidence does not replace the required complete
+source checks; [PR #181](https://github.com/carloshm91/kuberich/pull/181) records
+the current candidate and delivery status.
 
 ## Four-target native execution and original enrollment passed
 
@@ -25,9 +27,10 @@ Original ZIPs, detached source and independent results remain under
 `artifacts/standalone49/pr181-shell-delegate-ci` and `pr181-shell-delegate-source`.
 The final local native-enrollment receipt is `native-enrollment-result-original.json`.
 
-The complete source matrix remains in progress. Repository validation and DCO
-passed, but #49/PR #181 remain open until the required full candidate gates pass.
-This does not resolve the separate original #40 performance failure below or
+The complete source matrix was still running when these native originals were
+enrolled. Repository validation and DCO passed. The required full candidate gates
+remain a condition of merging #49; their current result is tracked in PR #181.
+This native evidence does not resolve the original #40 performance failure below or
 claim public release qualification. No publication was performed. Physical Mac
 Python absence, macOS 14 Intel trials and Developer ID/notarization remain unclaimed.
 
@@ -44,6 +47,20 @@ The exact local command was:
 
 ```sh
 uv run --no-sync pytest -q --tb=short tests/quality/test_aggregate_runtime_failure.py
+```
+
+The committed correction `0f8185e` also passed the actual retained-history
+parent scenario in 100.64 seconds. Its fresh positive child measured a maximum
+112.607-ms heartbeat; the injected negative child failed as required at
+203.398 ms. The separate coverage child passed the full workload but is not a
+timing measurement. All three process owners drained and source receipts matched
+the unchanged commit. The original child reports, JUnit and source receipts are
+preserved in `artifacts/standalone49/aggregate-child-cause-real-controls-v1-originals`.
+Strict workflow types passed 140 source files; the generated site passed checks
+for 49 pages, 1,726 local links/assets and 64 files. The actual runtime command was:
+
+```sh
+uv run --no-sync pytest -q --tb=short tests/ui/test_aggregate_logs.py::test_full_retained_history_format_heartbeat_clipboard_bound_save_failure_and_previous
 ```
 
 The second run's macOS source job `114343581231` failed the full retained
@@ -66,7 +83,7 @@ unresolved performance observation; the prepared D05 sandbox-shell correction
 does not change that path or resolve it. No unchanged retry, threshold relaxation,
 GC policy change or skipped gate is used as a performance fix.
 
-## macOS shell delegation correction under verification
+## Original macOS failure and shell delegation correction
 
 The second native run, `38096565815` at head `8fc22a2`, passed both Linux native
 jobs. Both macOS archives now passed version/help/info and the missing-tool UI
@@ -83,8 +100,8 @@ bash/dash/zsh paths in addition to the existing app/helper/sh paths. It still
 denies other executables and checkout/interpreter reads. Original controls now
 require a real system-shell builtin to succeed and Python launched through that
 shell to fail specifically with the sandbox denial; the release reader requires
-both original controls. This diagnosis remains provisional until a fresh native
-macOS candidate passes the complete auth/interactive-shell scenario.
+both original controls. The subsequent original native execution on both Mac
+architectures confirms this correction, as recorded above.
 
 The corrected host/release-reader cohort passed 92 local cases in 51.93 seconds;
 the actual macOS sandbox regression is explicitly skipped on this Linux host.

@@ -1,6 +1,6 @@
 # First things to try
 
-## Standalone work in progress: D05 #49
+## Standalone development candidate: D05 #49
 
 The corrected run `38098818073` passed **all four native targets** at head
 `00f41ab` / merge source `3255a0f7e3aa449da363fff4b126387f9b41c519`.
@@ -13,8 +13,15 @@ local release enrollment then preserved and verified the four real archives and
 their raw-provenance sidecars without rebuilding. The original receipt is
 `artifacts/standalone49/pr181-shell-delegate-ci/native-enrollment-result-original.json`.
 
-The complete source matrix is still running, so #49 and PR #181 remain open.
-The original #40 heartbeat failure below is not resolved by the Mac sandbox fix.
+These native originals were enrolled while the complete source matrix was still
+running. [PR #181](https://github.com/carloshm91/kuberich/pull/181) tracks the
+required complete candidate checks and delivery status. The original #40 heartbeat
+failure below is not resolved by the Mac sandbox fix.
+The runtime verifier now reports a failed child's original cause before testing
+unfinished workload counters. Its controlled regressions and actual three-child
+scenario passed at `0f8185e`; the positive child measured 112.607 ms and the
+injected negative child failed at 203.398 ms. Source and process-ownership receipts
+remain preserved. This verifies failure reporting, not a fix for #40.
 No package/tag/release was published. Native CI executed these exact commands
 with its recorded target-specific environment:
 
@@ -36,8 +43,9 @@ ARM64. Both actual Mac archives now passed CLI and missing-tool browsing/termina
 restoration, but their interactive-shell scenario failed after the C helper
 started. The sandbox allowed `/bin/sh` without its macOS system-shell delegates;
 a narrow allowlist correction and original positive/negative shell controls are
-prepared. Fresh Mac execution is still required. Original failed logs/archives
-stay retained; this is not a qualified four-target candidate.
+prepared. At that point fresh Mac execution was still required; the later run
+recorded above passed it. Original failed logs/archives stay retained; the second
+run is not a qualified four-target candidate.
 
 The frozen correction at `50fe5cb` passed the combined host/native-reader/
 release-policy/archive/owned-HTTP cohort: **397 passed, one actual-Mac test skipped**
