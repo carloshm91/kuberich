@@ -4,6 +4,15 @@ Implementation base: `754d1a610931d13151c970366a38d398f5b30981`.
 Qualification is in progress. These are private local test artifacts, not a
 public release or a product version change.
 
+The first complete local round passed 992 contracts and all 13 current owned-kind
+rehearsals. Round two retained a failure in the CoreDNS log evidence assertion:
+the last ten lines did not include its startup banner. The verifier now checks
+the banner after requesting all retained container logs; timestamp/tail, since,
+follow cancellation and previous-log assertions remain required. Real-HTTP
+positive/negative regression cases cover a truncated tail and an absent banner.
+The original is `artifacts/core40/consecutive-v1/run-2-contexts.log`. A fresh
+three-round sequence is required after this verifier correction.
+
 ## Actual Python manager upgrades
 
 The local CPython 3.12 run passed both manager cases in **55.70 seconds**:
