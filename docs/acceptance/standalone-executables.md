@@ -3,6 +3,28 @@
 Status: **in progress**. No release, tag, package or standalone download was
 published. Build success and local runtime evidence do not complete all of #49.
 
+## Separate original source performance failure: D04 #40
+
+The second run's macOS source job `114343581231` failed the full retained
+aggregate-history scenario: 1 failed, 4,704 passed and 3 skipped in 1,942.47
+seconds. The parent refill assertion obscured the child's original heartbeat
+failure. Its fresh positive child measured 150.267833 ms during `warm 2 resource
+route`, with 148.478 ms of main-thread CPU. A generation-two collection overlapped
+for 64.916208 ms and collected 29,067 objects while Textual composed strips.
+The overlap does not establish the complete cause. Coverage/tracing/profiling were
+inactive, the development grammar was absent, source identity stayed unchanged,
+normal GC remained enabled and app/API/watch ownership drained. The child did not
+complete a full history round or refill; later negative/coverage children did not
+run. The failed source job does not qualify this candidate.
+
+Original artifact `11686237488` matches GitHub ZIP SHA-256
+`8a6c2ebe578bbfe4c2606a0ddb56c01a2597735a14406bf1d147f9218cbfec19`.
+Its complete original ZIP/job log and child receipts/stdout/JUnit/heartbeat remain
+under `artifacts/standalone49/pr181-corrected-ci`. The existing #40 retains this
+unresolved performance observation; the prepared D05 sandbox-shell correction
+does not change that path or resolve it. No unchanged retry, threshold relaxation,
+GC policy change or skipped gate is used as a performance fix.
+
 ## macOS shell delegation correction under verification
 
 The second native run, `38096565815` at head `8fc22a2`, passed both Linux native

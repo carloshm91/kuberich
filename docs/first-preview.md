@@ -2,6 +2,14 @@
 
 ## Standalone work in progress: D05 #49
 
+The second run also exposed a separate macOS source performance failure in the
+full retained log-history test: a fresh uninstrumented child paused 150.267833 ms
+during resource navigation, exceeding the unchanged 150-ms limit. A 64.916208-ms
+generation-two collection overlapped but does not establish the whole cause.
+The original source artifact/child receipts are retained and recorded in #40;
+the D05 native sandbox-shell correction does not resolve that performance issue.
+This source job and the two failed native Mac jobs keep the second run unqualified.
+
 The second native run (`38096565815`, head `8fc22a2`) passed Linux x86_64 and
 ARM64. Both actual Mac archives now passed CLI and missing-tool browsing/terminal
 restoration, but their interactive-shell scenario failed after the C helper
