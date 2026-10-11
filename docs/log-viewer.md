@@ -11,7 +11,7 @@ They do not mutate kubeconfig or Kubernetes resources.
 
 The title identifies the container/current-or-previous mode and target. `?` or
 **Help** shows the complete context/namespace/pod, state and keyboard controls
-when a narrow terminal truncates the header/status. Windows down to 40×12 retain
+when a narrow terminal truncates the header/status. Terminal sizes down to 40×12 retain
 the target controls, log body, search and status.
 
 ## Controls

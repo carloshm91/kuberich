@@ -38,8 +38,9 @@ K9s parity are later milestones.
 | Connect | Embedded kubectl shells with local history/search/copy, managed pod/Service TCP forwarding, captured attach and file transfer |
 | Manage a workload | Reviewed annotations, manifest dry-run/Apply, scale/restart/rollback, deletion and Job/CronJob actions |
 
-Start read-only. Effectful actions require explicit write mode, captured targets
-and the Kubernetes permissions for that operation. Metrics, user plugins and
+Use `--readonly` for your first connection; the default preference permits writes.
+Effectful actions require captured targets and the corresponding Kubernetes
+permissions; reviewed changes also require confirmation. Metrics, user plugins and
 advanced node/debug operations remain planned; see the maintained
 [resource views](docs/standard-resources.md) and [release phases](docs/releases.md).
 

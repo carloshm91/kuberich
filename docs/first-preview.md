@@ -51,7 +51,9 @@ uv run kuberich config check
 
 They do not contact Kubernetes or execute authentication helpers. Connecting
 requires an explicitly intended kubeconfig/context; see [first launch](quickstart.md).
-Write actions also require explicit write mode and Kubernetes permissions.
+The default preference permits writes. Use `--readonly` for a first connection;
+write actions require the corresponding Kubernetes permissions and their
+operation-specific target/review controls.
 
 The [candidate evidence](acceptance/first-release-preparation.md) retains measured
 results and limits. [Historical engineering checkpoints](preview-history.md)

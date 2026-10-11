@@ -274,3 +274,19 @@ Current user guidance contains no issue/task references. Ruff/format passes
 across 537 files; strict application/gate types pass over 142 files and plan/link
 validation passes. All nineteen site cases pass in 31.77 seconds. Fresh frozen
 checks remain required before merging/publication.
+
+## Default-mode wording review
+
+A final cross-check against `Preferences.read_only=False` found that the README
+and current-preview wording could imply `--write` is always required. They now
+state the actual default, recommend explicit `--readonly` for the first connection,
+and distinguish Kubernetes permissions from operation-specific review controls.
+No application, fixture or preference defaults change. The log guide also calls
+40×12 a terminal size, avoiding ambiguity with the unsupported Windows platform.
+
+The affected static build retains 57 pages, 2,336 references and 72 files. New
+Chrome desktop/mobile, narrow-width, accessibility, keyboard, clipboard and
+JavaScript-free checks pass with no external requests or browser errors. Locked
+browser dependencies audit cleanly. The preceding frozen runtime/installation
+and owned receipts remain scoped to their recorded source; fresh exact-candidate
+qualification is still required for the completed reader correction.
