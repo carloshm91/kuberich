@@ -210,6 +210,14 @@ it never clears library caches. It then measures two full 5,000-record layout/
 format/timestamp/copy/save and Current/Previous cycles, with the unchanged 150-ms
 limit, at most 5,000 prepared records and 5,001 retained-plus-prepared records.
 Public Escape and final application/API cleanup must drain all owned work.
+The first 0.1.0 candidate's Ubuntu/Python 3.13 normal-runtime child measured
+183.688 ms while opening a source picker; a generation-two collection occupied
+174.698 ms and reclaimed 46,159 objects. The original failed run is retained.
+A scoped component stylesheet now avoids repeatedly allocating virtual DOM
+graphs during focus/theme changes. Native CSS comparisons and the existing
+positive/negative runtime observer verify the changed behavior. This is a source
+correction, not a raised limit, disabled GC or unchanged retry. Exact candidate
+platform qualification must pass before those local results qualify a release.
 Production aggregate view/export formatting now uses sequential owned turns of
 at most 32 records and 8 KiB of reserved output, with a larger single retained
 record isolated in its own turn. Captured identity/filter/order and repeated

@@ -30,7 +30,8 @@ dependencies = [
     "pyte==0.8.2",
     "pyyaml>=6.0.3,<7",
     "regex>=2026.9.29,<2027",
-    "textual>=8.2.8,<9",
+    # Scoped rendering adaptations use private APIs qualified against this version.
+    "textual==8.2.8",
 ]
 
 [project.scripts]

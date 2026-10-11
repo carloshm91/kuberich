@@ -143,3 +143,39 @@ The final site/owned-kind/contract slice passed 1,015 tests in 182.26 seconds
 (19 website tests plus 996 contracts/owned-boundary tests). Source/native/exact-main
 and three fresh corrected rounds still need their own immutable receipts. No
 public channel, final-site or custom-domain activation occurred.
+
+## Installed help and component-style allocation review
+
+The subsequent frozen `f45159323ca4f7b2a1a1e21fa6c70c43f3edc9ab` failed
+[source run 38147690087](https://github.com/carloshm91/kuberich/actions/runs/38147690087).
+Every source job found an installed-help test still requiring the removed
+`U01 #56` reference. Ubuntu/Python 3.13 additionally failed the normal-runtime
+aggregate UI heartbeat at 183.688 ms during a source-picker transition. A
+174.698-ms generation-two collection reclaimed 46,159 objects; its allocation
+stack includes Textual Strip/compositor rendering. That overlap accounts for
+most of the observed gap, but does not identify every collected object.
+Original job logs, artifact ZIPs and GitHub digest comparisons remain retained.
+All four native archives and all three native source-install/upgrade trials
+passed for that earlier source; they do not qualify the next repair.
+
+The installed contract now checks the user-facing missing-feature description
+and exit status. All eight installed launch cases pass. Diagnostic-only SAVEALL
+attribution found repeated virtual component DOM graphs among collected objects;
+its changed retention policy disqualifies it as latency evidence. The scoped
+stylesheet instead reuses each widget's component nodes, with native selector
+evaluation, reset rules, change detection and reload-copy behavior. Native
+comparisons cover focus, theme/geometry changes, inline edits and removed CSS.
+The five focused component/color-ownership cases pass. Textual is pinned to the
+qualified 8.2.8 version for these private rendering boundaries.
+
+The retained local Python 3.13 normal-runtime replay completes both full-history
+rounds at 90.292 ms maximum; its deliberate callback control fails at 202.268 ms.
+GC stays enabled at default thresholds, source hashes remain unchanged within
+each child, and final app/log/watch/registry owners drain. The parent-coverage
+replay also completes both rounds; its 178.215-ms maximum is diagnostic, not
+ordinary-runtime qualification. Original child artifacts are retained under
+`artifacts/launch150/affected-runtime313-original`; the positive heartbeat digest
+is `b427f90762546d07f458df65dcf7062d55009a9154c4affa35b1eb2347cbc5e3`.
+These are local repair checks, not final frozen platform qualification. Required
+source/native/installation and owned-round evidence must be regenerated for
+the completed repair before this issue closes.

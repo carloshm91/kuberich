@@ -11,7 +11,13 @@ The initial candidate's three owned rounds and native installers passed, but its
 Mac Python 3.12 source job found a credential-helper teardown error. That failed
 original remains retained; four real-child negative controls reproduce it on old
 source. The shared runtime signal guard corrects it locally. Fresh frozen
-platform/native/owned qualification is pending, so this is not release-ready yet.
+qualification also found a missed installed-help assertion and a 183.688-ms
+normal-runtime UI pause on Python 3.13, overlapping a 174.698-ms generation-two
+collection. Originals remain retained. The installed assertion now checks the
+user-facing explanation; a scoped stylesheet reuses owned component nodes while
+preserving native CSS behavior. Its retained Python 3.13 replay measured 90.292 ms;
+the deliberate 200-ms callback still fails. Full frozen platform/native/owned
+qualification remains required, so this is not release-ready yet.
 
 Source metadata and the lock now identify `0.1.0`. The
 [authored notes](release-notes/0.1.0.md), [installation guide](installation.md)

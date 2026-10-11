@@ -31,6 +31,12 @@ the [completed workload checkpoint](docs/acceptance/workload-checkpoint.md).
 
 ### Fixed
 
+- Reduce temporary component-style allocations during focus and theme changes,
+  preserving native CSS and the existing response-time gate. Pin the qualified
+  Textual version used by scoped rendering adaptations
+  ([#150](https://github.com/carloshm91/kuberich/issues/150),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Preserve credential-helper success, size-limit errors and spawn cancellation
   during the macOS process-group teardown race. Reuse the existing bounded group
   signal guard; only confirmed disappearance permits transient teardown denial

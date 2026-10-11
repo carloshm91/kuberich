@@ -424,7 +424,7 @@ def test_installed_launch_contract_outside_checkout(
     elif arguments == ["--readonly", "info"]:
         assert json.loads(output.stdout)["preferences"]["read_only"]
     elif expected == 4:
-        assert "unavailable" in output.stderr and "U01 #56" in output.stderr
+        assert "unavailable" in output.stderr and "theme inversion" in output.stderr
     elif arguments in (["--context", "fixture"], ["--token", "opaque-secret"]):
         assert "interactive terminal" in output.stderr
     elif expected == 2:
