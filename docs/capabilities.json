@@ -693,7 +693,7 @@
       ],
       "source": "internal/view/exec.go",
       "status": "planned",
-      "difference": "S03/S04 provide captured, chosen-container native kubectl exec with a literal configured shell, private prepared-session connection, guarded launch and retained view on return. #119 adds a clean full-terminal entry and bounded captured-target heading. Actual Linux PTY, installed CLI and disposable-kind evidence is available. Q02 supplies Linux SSH/tmux evidence while macOS qualification remains full platform CI; this does not establish the full capability family. #121 replaces the default native shell route with an embedded Textual PTY/emulator and a persistent target frame; broader terminal compatibility/platform qualification remains separate. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux native and embedded shells, private/malformed protocol and buffer-resize recovery, pending-preflight cancellation, child/config cleanup after lost SSH and same-shell tmux reattachment. macOS/platform qualification remains the public-release gate; broader terminal history/protocols remain #123/#124.",
+      "difference": "S03/S04 provide captured, chosen-container native kubectl exec with a literal configured shell, private prepared-session connection, guarded launch and retained view on return. #119 adds a clean full-terminal entry and bounded captured-target heading. Actual Linux PTY, installed CLI and disposable-kind evidence is available. Q02 supplies Linux SSH/tmux evidence while macOS qualification remains full platform CI; this does not establish the full capability family. #121 replaces the default native shell route with an embedded Textual PTY/emulator and a persistent target frame; broader terminal compatibility/platform qualification remains separate. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux native and embedded shells, private/malformed protocol and buffer-resize recovery, pending-preflight cancellation, child/config cleanup after lost SSH and same-shell tmux reattachment. macOS/platform qualification remains the public-release gate; #123 provides bounded normal-screen history, frozen local review/search and explicit redacted row copy over real child, source/installed PTY and owned-kind shells. Advanced keyboard/mouse protocols remain #124; exact release-candidate platform qualification remains required.",
       "partial_evidence": [
         "docs/process-handoff.md",
         "docs/acceptance/S03.md",
@@ -718,7 +718,12 @@
         "docs/terminal-compatibility.md",
         "docs/acceptance/terminal-qualification.md",
         "tests/terminal/test_transports.py",
-        "tests/terminal/test_shutdown.py"
+        "tests/terminal/test_shutdown.py",
+        "https://github.com/carloshm91/kuberich/issues/123",
+        "docs/acceptance/terminal-history.md",
+        "tests/unit/test_terminal_history.py",
+        "tests/ui/test_terminal_history.py",
+        "tests/quality/test_terminal_history_stress.py"
       ]
     },
     {

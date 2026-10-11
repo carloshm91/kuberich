@@ -15,13 +15,41 @@ programs are rendered by an emulator. Textual stays active throughout the sessio
 - Ctrl+] closes the owned exec session and returns to containers.
 - Ctrl+C reaches the shell/program; it does not quit KubeRich here.
 - Ctrl+Q quits KubeRich and cleans up the exec process.
-- Escape, Tab, arrows, `q`, `:` and `/` reach the remote program while this screen is open.
+- Escape, Tab, arrows, `q`, `:` and `/` reach the remote program while the terminal is live.
 - After returning, Escape goes from containers to the retained pod table.
 
 The frame consumes two columns and six rows; resizing a 80×25 terminal gives the
 remote PTY 78×19 cells. Target lines are literal, redacted and clipped in compact
 windows. A failed exec returns to safe, scrollable feedback. SIGTERM cleans up
 and exits the CLI with 143 after terminal restoration.
+
+## Review output without sending shell commands
+
+Click **History**, or press Alt+PageUp / Shift+PageUp, to review a frozen copy of
+normal-screen output. The remote program keeps running and receiving its actual
+PTY size; its latest output and cursor stay in the live emulator. Full-screen
+alternate buffers, such as an editor, do not enter normal-screen history.
+
+- Up/Down or `j/k`, PageUp/PageDown and Home/End or `g/G` move through the capture.
+  The mouse wheel scrolls only during review; clicking selects a row.
+- `/` or Ctrl+F starts literal, case-insensitive Unicode search. Enter finds a
+  match; `n/N` finds the next/previous match with wraparound. Escape cancels search.
+- `v` or Space starts/ends a range; move to its other end. Shift-click also
+  selects a range. `y` or Ctrl+Y explicitly copies the selected whole rows.
+- Enter, Escape or `q`, or clicking **Live**, returns to the current remote
+  screen. Search, selection, navigation and paste stay local during review.
+  Ctrl+] still closes the session and Ctrl+Q still quits KubeRich.
+
+At most **1,000 scrolled rows** are retained. The footer reports discarded live
+history; a frozen capture retains its own rows while the live ring advances.
+Resizing crops the capture to the new viewport without reflowing or modifying its
+captured rows. Search accepts 256 characters and copy accepts at most 64 KiB after
+control escaping. Copy redacts the recognized credential patterns used elsewhere
+in KubeRich; it cannot identify arbitrary secrets printed by a program. Copy uses
+the host clipboard mechanism, whose availability depends on the outer terminal.
+Remote OSC52 clipboard requests remain inert. Nothing copies automatically.
+Closing, stale-target cancellation and repeated sessions release the capture,
+history and session-owned cell cache. See [history evidence](acceptance/terminal-history.md).
 
 ## Requirements and preferences
 
@@ -98,14 +126,15 @@ SSH/tmux/macOS qualification remains Q02/full platform CI. EKS/AKS/provider smok
 qualification remains C06/C07/C08. Attach, file transfer, node/ephemeral shells
 remain separate work. This checkpoint supports shell keys, bounded Unicode paste,
 ANSI/256/true colors, cursor reports and alternate screens. It does not implement
-mouse reporting, terminal graphics, advanced keyboard protocols or retained
-scrollback/search; these are tracked in [#123](https://github.com/carloshm91/kuberich/issues/123) and
+mouse reporting, terminal graphics or advanced keyboard protocols; these remain
 [#124](https://github.com/carloshm91/kuberich/issues/124), with platform qualification
 in Q02. There is no
 promise that every terminal program is compatible or that K9s parity is complete.
 
 Output storage is limited to two 400×150 cell screens, 32 code points per cell,
-a single saved cursor and 128-byte control sequences. PTY reads backpressure at
+1,000 history rows, one frozen capture of at most 1,150 rows, a session-owned
+1,024-entry immutable cell cache, a single saved cursor and 128-byte control
+sequences. PTY reads backpressure at
 8×16 KiB and pending input at 64 KiB; paste accepts at most 16,384 characters.
 Remote OSC/DCS/APC/PM/SOS strings, including clipboard/title/link/image commands,
 are consumed without being relayed to the host. Terminal output is deliberately

@@ -68,6 +68,18 @@ def resize(signum,frame):
     # A resize may interrupt stdout's buffered READY write; avoid reentrant IO.
     os.write(1,('SHELL CHILD SIZE '+str(size.columns)+' '+str(size.lines)+'\n').encode())
 signal.signal(signal.SIGWINCH,resize)
+if scenario=='history':
+    tty.setraw(0)
+    for i in range(1100):
+        os.write(1,f'HISTORY-{i:04d} café界\r\n'.encode())
+    os.write(1,b'password=owned-secret\r\nHISTORY LIVE> ')
+    value=bytearray()
+    while not value.endswith(b'\r'):
+        value.extend(os.read(0,64))
+        assert len(value)<100
+    assert bytes(value)==b'exit\r',bytes(value)
+    (directory/'history-result.json').write_text(json.dumps({'remote_input':bytes(value).hex(),'local_review_keys_not_forwarded':True}))
+    raise SystemExit(0)
 if scenario=='protocol':
     tty.setraw(0)
     os.write(1,b'\x1b[H\x1b[1;2;3H\x1b[1;2;3r\x1b[?6n\x1b[?5nPROTOCOL RECOVERED\r\n')
@@ -192,7 +204,30 @@ def terminal_shell(
                 assert b"\x1b[?1049l" not in entering
                 assert b"\x1b[3J" not in entering
                 terminal.send(b"start\n")
-                if scenario == "protocol":
+                if scenario == "history":
+                    terminal.wait_for_screen("HISTORY LIVE>")
+                    terminal.send(b"\x1b[5;2~")
+                    terminal.wait_for_screen("Review")
+                    terminal.send(b"/HISTORY-0200\r")
+                    terminal.wait_for_screen("HISTORY-0200 café界")
+                    terminal.wait_for_screen("Match")
+                    terminal.send(b"vjynNv\x1b[6~\x1b[5~")
+                    terminal.wait_for_screen("Review")
+                    terminal.resize(80, 25)
+                    terminal.wait_for_screen("Review")
+                    terminal.send(b"/password=\r")
+                    terminal.wait_for_screen("password=owned-secret")
+                    terminal.send(b"y")
+                    terminal.wait_for_screen("Redacted selection copied")
+                    assert b"\x1b]52;c;cGFzc3dvcmQ9W1JFREFDVEVEXQ==" in terminal.transcript
+                    assert b"\x1b]52;c;cGFzc3dvcmQ9b3duZWQtc2VjcmV0" not in terminal.transcript
+                    terminal.send(b"\r")
+                    terminal.wait_for_screen("HISTORY LIVE>")
+                    terminal.send(b"exit\r")
+                    terminal.wait_for_screen("Shell closed")
+                    result = json.loads((directory / "history-result.json").read_text())
+                    assert result["remote_input"] == b"exit\r".hex()
+                elif scenario == "protocol":
                     terminal.wait_for_screen("PROTOCOL RECOVERED")
                     terminal.wait_for_screen("PROTOCOL NORMAL café 你好🙂")
                     terminal.wait_for_screen("PROTOCOL STDERR [red]literal[/red]")

@@ -266,6 +266,13 @@ def test_installed_selected_container_shell_uses_real_cli(installed_wheel) -> No
     )
 
 
+def test_installed_terminal_history_search_copy_and_return(installed_wheel, tmp_path):
+    binary_dir, _ = installed_wheel
+    terminal_shell(
+        [str(binary_dir / "kuberich")], tmp_path, "history", evidence="installed-shell-history"
+    )
+
+
 @pytest.mark.parametrize("kind", ["ssh", "ssh_tmux"])
 def test_installed_wheel_embedded_protocol_over_real_transport(installed_wheel, tmp_path, kind):
     binary_dir, _ = installed_wheel

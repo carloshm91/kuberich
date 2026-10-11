@@ -926,6 +926,19 @@ control strings never reach the host driver. `domain/terminal.py` supplies criti
 size/keyboard/paste decisions. Rendering builds literal styled segments and
 coalesces equal styles; color values are validated before Rich sees them.
 
+For #123, `domain/terminal_history.py` owns immutable rows, the 1,000-row ring
+and a bounded frozen local review with literal search, row selection and redacted
+64-KiB copy decisions. Only full-viewport upward scrolling and rows displaced by
+normal-screen shrink enter history; alternate screens and partial scroll regions
+remain independent. The Pyte adapter converts cells through a session-owned,
+1,024-entry bounded value cache. No cache retains an application/widget globally.
+Review references one immutable capture, never accumulating incoming output.
+The real PTY continues feeding the live emulator, receiving resizes and answering
+cursor reports. ShellScreen intercepts keys/paste locally only during deliberate
+review; return restores the latest active normal/alternate screen. Explicit copy
+revalidates the captured target and uses the application clipboard; remote OSC52
+stays discarded. Session close/cancellation releases history, capture and cache.
+
 See [shell behavior, dependency license and limits](container-shell.md) and
 [embedded-shell evidence](acceptance/embedded-shell.md). Native handoff's earlier
 qualification remains in [S03](acceptance/S03.md), [S04](acceptance/S04.md) and

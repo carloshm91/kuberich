@@ -52,7 +52,10 @@ def test_attach_command_is_available_and_gated_before_any_transport():
         ("ephemeralContainers", "ephemeralContainerStatuses"),
     ],
 )
-@pytest.mark.parametrize("ending", ["detach", "back", "quit", "quit-after-other-key"])
+@pytest.mark.parametrize(
+    "ending",
+    ["detach", "back", "quit", "quit-after-other-key", "quit-in-history", "history-button"],
+)
 async def test_selected_running_container_uses_an_embedded_pty_and_keeps_detach_sequence(
     tmp_path, kind, observed, ending
 ):
@@ -120,6 +123,13 @@ async def test_selected_running_container_uses_an_embedded_pty_and_keeps_detach_
                 await pilot.press("ctrl+right_square_bracket")
             elif ending == "quit-after-other-key":
                 await pilot.press("ctrl+p", "x", "ctrl+q")
+            elif ending == "quit-in-history":
+                await pilot.press("shift+pageup", "ctrl+p", "ctrl+q")
+            elif ending == "history-button":
+                await pilot.press("ctrl+p")
+                await pilot.click("#shell-history")
+                assert screen.terminal.review is not None
+                await pilot.press("ctrl+q")
             else:
                 await pilot.press("ctrl+q")
             if ending in {"detach", "back"}:

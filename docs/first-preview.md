@@ -1,5 +1,22 @@
 # First things to try
 
+## Shell history checkpoint: #123
+
+The shell now has a **History** button and Alt+PageUp / Shift+PageUp for frozen
+local review of up to 1,000 scrolled rows. `/` searches, `v` selects whole rows,
+`y` explicitly copies with recognized credential redaction, and Enter/Escape
+returns to the latest live prompt. Remote output continues during review;
+alternate editor screens remain independent. The footer reports discarded history.
+
+Real child/Pilot, console/module and newly installed wheel PTYs have passed,
+including Unicode, local-only input, selection/copy, resize, stale scope and
+cleanup. The owned-kind shell trial passed history plus actual vi, configured/
+missing shells, RBAC and repeated return; its cluster was deleted and verified.
+The exact targeted installed check is
+`uv run pytest -q --tb=short tests/packaging/test_distribution.py::test_installed_terminal_history_search_copy_and_return`.
+Full merge/platform and exact first-release qualification remain required.
+See [controls](container-shell.md) and [evidence](acceptance/terminal-history.md).
+
 ## Installer upgrade qualification: D04 #40
 
 Both actual local Python manager upgrades now pass: `uv tool upgrade` and
