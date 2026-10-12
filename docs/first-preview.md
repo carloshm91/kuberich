@@ -34,6 +34,11 @@ deletion and Job/CronJob operations.
 
 Metrics, user plugins and advanced node/debug operations remain planned.
 Complete K9s parity and stable 1.0 compatibility are later milestones.
+The next planned public phase, 0.2.0, includes themes, configurable navigation
+and views, external plugins, deliberate secret editing, terminal refinements
+and verified Homebrew bottles to reduce installation compilation. These remain
+planned until implemented and qualified; 0.1.0 currently installs from source
+through Homebrew.
 The [guided workflow](everyday-workflow.md) describes the current controls,
 and the [release phases](releases.md) explain what belongs to each version.
 

@@ -3,6 +3,7 @@
 import base64
 import hashlib
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -116,6 +117,37 @@ def test_original_package_path_is_preserved_before_resolving_symlink(tmp_path, m
     monkeypatch.setattr("scripts.build_standalone.subprocess.run", query)
     assert system_package(alias) == "owned-package:amd64"
     assert calls == [["dpkg-query", "-S", str(alias)]]
+
+
+def test_slow_owned_package_query_completes_without_waiving_metadata(tmp_path, monkeypatch):
+    source = tmp_path / "original.so"
+    source.write_bytes(b"owned library")
+    query = tmp_path / "owned-query.py"
+    query.write_text(
+        "import time\ntime.sleep(10.2)\nprint('owned-package:amd64: /owned/library')\n"
+    )
+    runner = subprocess.run
+    with pytest.raises(subprocess.TimeoutExpired):
+        runner([sys.executable, str(query)], capture_output=True, text=True, timeout=10)
+
+    def execute(argv, **kwargs):
+        assert argv == ["dpkg-query", "-S", str(source)]
+        return runner([sys.executable, str(query)], **kwargs)
+
+    monkeypatch.setattr("scripts.build_standalone.subprocess.run", execute)
+    assert system_package(source) == "owned-package:amd64"
+
+
+def test_expired_package_query_still_aborts_provenance(tmp_path, monkeypatch):
+    source = tmp_path / "original.so"
+    source.write_bytes(b"owned library")
+
+    def expired(argv, **kwargs):
+        raise subprocess.TimeoutExpired(argv, kwargs["timeout"])
+
+    monkeypatch.setattr("scripts.build_standalone.subprocess.run", expired)
+    with pytest.raises(subprocess.TimeoutExpired):
+        system_package(source)
 
 
 @pytest.mark.parametrize(

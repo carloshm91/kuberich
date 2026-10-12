@@ -190,3 +190,33 @@ Artifact channels are available. This documentation update changes no published
 tag or package bytes, and building its revised website sources does not deploy
 them. Final website/custom-domain/HTTPS verification still remains #89; the
 separate roadmap project stays private.
+
+## Post-publication launch preparation
+
+The first routine main run after the installation-guide update,
+[38211522139](https://github.com/carloshm91/kuberich/actions/runs/38211522139),
+failed only its Linux x86_64 native build and dependent aggregate. The actual
+error was a ten-second `dpkg-query -S /lib/x86_64-linux-gnu/libgcc_s.so.1` deadline
+during original system-library ownership inspection. Original job logs are
+retained. This was a build-host metadata lookup, outside application operation;
+it does not change the already qualified published 0.1.0 archives.
+
+The query now has a bounded sixty-second metadata budget. Original path/alias
+identity, mandatory package ownership and strict missing/failed/ambiguous-query
+refusals remain unchanged. An owned real process delayed beyond the former
+ten-second bound supplies a negative control and successful corrected lookup;
+expiry still aborts provenance. No application performance or coverage gate is
+relaxed. Fresh hosted checks remain required.
+
+Local verification passed 271 focused native-build/release-policy tests in
+23.15 seconds, Ruff, formatting across 539 files, strict types for both changed
+build/release modules, plan validation, and the 57-page/2,338-reference site
+check. The regenerated site manifest remains byte-identical to PR #192's
+browser-qualified `bac596a5cabb3c7012ce42ca1bb3f0a8775864b4e88e5302319494afb8393f61`.
+These owned-process tests establish the deadline behavior, not a reproduction
+of the hosted runner's package-database load.
+
+The maintainer requested faster Homebrew bottles specifically for 0.2.0 in #193.
+The reviewed phase map now makes that task a cumulative requirement alongside
+#124 and D07's existing scope. Actual 0.1.0 upgrade, native relocation and
+installation timing evidence remain required; no 0.1.0 package is replaced.

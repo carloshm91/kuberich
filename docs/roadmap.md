@@ -11,7 +11,7 @@ or a placeholder screen.
 | --- | --- |
 | v0.0.1 | Internal core checkpoint: contexts/namespaces, live pods, filters, details, logs, exec and local distribution candidates |
 | v0.1.0 | First qualified public phase: workload operations, delivered generic/aggregate views and embedded history; standard resource families, edit/diff, scale/restart/rollback, delete/jobs, port-forward, standalone binaries |
-| v0.2.0 | Extensibility: generic CRDs, configurable views/keys/themes, external plugins, multi-container logs, explicit secret handling |
+| v0.2.0 | Extensibility: configurable views/keys/themes, external plugins, explicit secret handling, improved terminal protocols and verified Homebrew bottles; retain delivered generic CRDs/aggregate logs |
 | v0.3.0 | Observability: metrics, cluster overview, resource relationships, RBAC analysis, guided troubleshooting, sanitized exports, Helm, local manifests and image scans |
 | v0.4.0 | Advanced operations: node shell, cordon/drain, ephemeral debugging, service benchmarks, policy/quota exploration |
 | v0.5.0 | Extended delivery: Windows, shell completion, OCI image and tested distribution recipes |
@@ -31,7 +31,8 @@ No delivery dates or speculative patch releases are invented. See
 
 The maintainer approved opening the Apache-2.0 source repository in #155 on
 2026-10-08. The separate GitHub project remains private. The first public product
-is planned at qualified 0.1.0; packages are not available yet.
+is published at qualified 0.1.0 through PyPI, GitHub and Homebrew. Final website
+and custom-domain verification remain in the launch task.
 Prepare a simple landing page and initial documentation before that product
 launch. The landing page should explain the product
 and show its actual terminal interface; initial documentation should cover
