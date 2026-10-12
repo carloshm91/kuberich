@@ -1,10 +1,10 @@
 # First installation and trial
 
-The prepared first-release preview has live pods, namespace/context tables, inline
+KubeRich 0.1.0 has live pods, namespace/context tables, inline
 command completion, local filters, 15 [standard resource tables](standard-resources.md),
 resource details/YAML/events, generic CRD tables, single/aggregate logs and
-embedded container shells. The prepared checkout reports `0.1.0`. **Public packages
-are not available yet; first-phase activation is still pending.** See
+embedded container shells. Public PyPI, Homebrew and standalone installations
+are available. See
 [installation and upgrades](installation.md) for channels and measured scope.
 Guarded annotations, manifest editing, workload scale/restart/rollback and managed
 pod/Service port forwarding, guarded deletion and Job operations are also available.
@@ -15,6 +15,21 @@ and user plugins are planned. Embedded-shell history/search/copy is
 delivered: Alt+PageUp opens local review, `/` searches, `v` selects, `y` copies
 with recognized credential redaction and Enter/Escape returns to live output.
 This preview does not claim complete K9s parity or real EKS/AKS certification.
+
+## Install the public release
+
+On Linux or macOS, choose one method:
+
+```sh
+brew install kuberich/tap/kuberich
+# Alternative with Python 3.12–3.14:
+uv tool install --python 3.12 kuberich
+```
+
+Then run `kuberich --version`, `kuberich config check` and
+`kuberich --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly`.
+Use your intended context and namespace. The remaining examples use a source
+checkout; omit `uv run` when using the installed command.
 
 ## Run from source
 
@@ -145,14 +160,12 @@ Uninstall with `uv tool uninstall kuberich` or, for pipx, `pipx uninstall kuberi
 Preferences/logs remain separate from the installed application. Running through
 the checkout does not create a uv tool installation to uninstall.
 
-PyPI and the public Homebrew tap are planned first-release channels. They are
-**not available installation instructions yet**. Public ownership, Linux/macOS
-installation and actual upgrades must pass native and public-channel
-checks. First 0.1.0 uses an identified local upgrade baseline, without inventing
+PyPI and the public Homebrew tap are available first-release channels.
+First 0.1.0 uses an identified local upgrade baseline, without inventing
 a previous public version; later trials use the actual published predecessor.
 See [upgrade constraints](distribution.md#upgrade-and-uninstall-contract).
-Four standalone Linux/macOS archives have native qualification; their exact
-0.1.0 artifacts and public availability remain candidate/publication gates.
+Four qualified standalone Linux/macOS archives are available in the
+[0.1.0 release](https://github.com/carloshm91/kuberich/releases/tag/v0.1.0).
 
 ## If something fails
 

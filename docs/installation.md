@@ -1,9 +1,8 @@
 # Installation and upgrades
 
-The first prepared public version is **0.1.0**. Channel activation is still
-pending: use a trusted checkout or a supplied local candidate now. The PyPI,
-Homebrew and GitHub commands below become public installation instructions only
-after their artifacts and channels are published and verified.
+**0.1.0 is published** on [PyPI](https://pypi.org/project/kuberich/0.1.0/),
+[GitHub Releases](https://github.com/carloshm91/kuberich/releases/tag/v0.1.0) and
+the [project Homebrew tap](https://github.com/kuberich/homebrew-tap).
 
 Choose one installation method. Every method provides the `kuberich` command;
 preferences and kubeconfig remain separate from the application installation.
@@ -30,7 +29,7 @@ Use the actual trusted file path. If the manager reports a missing executable
 directory on PATH, add the directory it reports through your normal shell setup.
 KubeRich does not modify your shell startup files.
 
-After public PyPI activation, the normal installation commands will be:
+For the public PyPI package, use:
 
 ```sh
 uv tool install --python 3.12 kuberich
@@ -44,8 +43,8 @@ see the upgrade section before changing installation methods.
 
 ## Homebrew on Linux or macOS
 
-The approved channel proposal is the project organization **kuberich**, with
-repository `kuberich/homebrew-tap`. Once activated, install with:
+The project organization **kuberich** owns repository `kuberich/homebrew-tap`.
+Install with:
 
 ```sh
 brew install kuberich/tap/kuberich
@@ -54,14 +53,15 @@ kuberich --version
 
 The initial formula builds from source and declares Python 3.14, kubectl and
 libyaml. Homebrew manages these dependencies; a separate Python environment is
-unnecessary. A source installation can take several minutes. No public tap or
-bottle is currently available. Owned native qualification and later public
-channel verification are separate steps.
+unnecessary. A source installation can take several minutes; this release has
+no prebuilt Homebrew bottle. The published formula passed style, online audit,
+source installation, CLI tests and uninstall on Linux and macOS.
 
 ## Standalone Linux and macOS archives
 
-A supplied standalone candidate includes its own Python runtime. The proposed
-GitHub Release contains these four archives and `DOWNLOAD-SHA256SUMS`:
+A standalone archive includes its own Python runtime. The
+[GitHub Release](https://github.com/carloshm91/kuberich/releases/tag/v0.1.0)
+contains these four archives and `DOWNLOAD-SHA256SUMS`:
 
 | System | Architecture | Archive |
 | --- | --- | --- |
@@ -124,7 +124,7 @@ See [first launch](quickstart.md), [EKS](eks-authentication.md) and
 
 ## Upgrade and uninstall
 
-After channel activation, update an unpinned managed installation with:
+Update an unpinned managed installation with:
 
 ```sh
 uv tool upgrade kuberich
@@ -163,7 +163,7 @@ to locate your preference/log paths; deleting those files is a separate choice.
 | Command not found | Check the manager's reported executable directory or the complete archive launcher path |
 | Unsupported Python | Select Python 3.12–3.14 explicitly; standalone archives include their runtime |
 | Executable format/library error | Match OS/architecture, verify the checksum and retain the full directory; check the documented native floor |
-| Package/tap unavailable | Use a supplied candidate or source while public activation is pending |
+| Package/tap unavailable | Check network access, the project tap name and your configured package index |
 | UI does not open | Use an interactive terminal and run `kuberich config check` |
 | kubectl works but KubeRich fails | Compare the exact context, kubeconfig, namespace, helper PATH and provider session; see the connection guides |
 

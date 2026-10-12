@@ -1,4 +1,4 @@
-# First channel activation preparation
+# First channel activation
 
 The product/site preparation closed #150 with [PR #188](https://github.com/carloshm91/kuberich/pull/188)
 and main `c9a50b60ec6e1cae17978ddc9baf2894e45418ff`. Exact-main
@@ -136,3 +136,57 @@ passed. Application source remains unchanged. The revised terminal fixtures
 require fresh hosted qualification; previous consecutive owned rehearsals remain
 historical evidence, not new runs of the revised fixtures. No failed required
 check has been waived and no distribution was uploaded by these checks.
+
+## Actual artifact-channel activation: 2026-10-12
+
+The complete exact-main matrix [38198965903](https://github.com/carloshm91/kuberich/actions/runs/38198965903)
+passed on `3dbf9c0118193aa11635baea6ae2a0b36bee4c6e`; independent original audits,
+coverage/critical gates, native enrollment and canonical preparation passed.
+Three fresh revised-fixture owned rehearsals passed all 44 commands and thirteen
+scenario families per round, preserving caller configuration and cleanup.
+The actual [dry-run 38202631838](https://github.com/carloshm91/kuberich/actions/runs/38202631838)
+passed and its original candidate matched independent preparation.
+
+[TestPyPI 38205728318](https://github.com/carloshm91/kuberich/actions/runs/38205728318)
+succeeded on attempt 2. Its first attempt passed build/SBOM attestations and
+uploaded both distributions, then failed immediate index verification because
+not every file was visible. A later actual index read verified both original
+digests before the identical-byte retry; the retry skipped already present
+uploads and passed the same hosted verification. Both attempts' originals are
+retained. This records changed external index state, not a waived check.
+
+[Production 38206308157](https://github.com/carloshm91/kuberich/actions/runs/38206308157)
+passed actual protected review, attestations, OIDC upload, immutable annotated
+`v0.1.0`, complete matching PyPI verification and GitHub attachment publication.
+The [public release](https://github.com/carloshm91/kuberich/releases/tag/v0.1.0)
+published at `2026-10-12T05:07:35Z`. All **24** public attachment downloads match
+the qualified candidate, including all four native archives and the manifests.
+The wheel remains SHA-256
+`4d3db9914c43f5c6351a5393478aa6991a0025cf279796d93d2c8d3c3a812611`;
+the source distribution is
+`c3b4fa5fae7877b19bdcb823e955952d594325827c175b6652f77e2d296cb3f3`.
+
+Actual public PyPI-by-name uv and pipx installations passed version/help, default
+preference validation, no-op upgrade and uninstall outside the checkout, with
+owned installer/configuration state and no active user kubeconfig. The first uv
+probe supplied an explicit missing preference path and correctly returned exit
+3; its original diagnostic is retained. The default-preference probe then passed
+without changing product code. Public Linux x86_64 archive extraction, CLI checks
+and owned-tree removal passed; the other three public archives match their real
+hosted native trials. No prior public version upgrade is invented.
+
+[Homebrew PR #1](https://github.com/kuberich/homebrew-tap/pull/1) passed actual
+app-bound Linux/macOS formula checks and DCO in
+[38206633105](https://github.com/kuberich/homebrew-tap/actions/runs/38206633105).
+Both hosts ran style, strict online audit, source installation, CLI tests and
+uninstall against the immutable public PyPI source/resources. Protected squash
+merge `ec62f339cdb71bf379724fcb2753326dd26ad570` preserves
+`carloshm91@gmail.com` and the maintainer sign-off. The actual public main formula
+matches the checked PR; SHA-256 is
+`4a0696cc1f126deca0cf18706377a7210efdf9f3c92702e733617df8ba63b958`.
+Original run/jobs/logs, formula and enforced-protection receipts are retained.
+
+Artifact channels are available. This documentation update changes no published
+tag or package bytes, and building its revised website sources does not deploy
+them. Final website/custom-domain/HTTPS verification still remains #89; the
+separate roadmap project stays private.

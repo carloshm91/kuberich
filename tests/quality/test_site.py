@@ -46,7 +46,8 @@ def test_builds_both_surfaces_deterministically_and_rebuilds_owned_output(tmp_pa
         assert "kuberich --kubeconfig" in html
         assert "--readonly" in html and "--write" in html
         assert "uninstall" in html and "Full release qualification" in html
-        assert "PyPI/Homebrew packages are not available" in html
+        assert "Install from PyPI, the project Homebrew tap or GitHub Release archives" in html
+        assert "PyPI/Homebrew packages are not available" not in html
         assert "Maintainer rehearsal" not in html
     for surface in ("www/docs", "docs"):
         installation = (first / surface / "installation.html").read_text()
@@ -55,7 +56,8 @@ def test_builds_both_surfaces_deterministically_and_rebuilds_owned_output(tmp_pa
         assert "kuberich-0.1.0-linux-arm64.tar.gz" in installation
         assert "macOS 26" in installation and "glibc 2.35" in installation
         assert "terminal-compatibility.html" in installation
-        assert "PyPI/Homebrew packages are not available" in installation
+        assert "Public release" in installation
+        assert "PyPI/Homebrew packages are not available" not in installation
 
 
 @pytest.mark.parametrize(
@@ -64,6 +66,9 @@ def test_builds_both_surfaces_deterministically_and_rebuilds_owned_output(tmp_pa
 )
 def test_site_version_does_not_imply_published_packages(tmp_path, version, label):
     source = copy_source(tmp_path / "source")
+    (source / "docs/published-releases.json").write_text(
+        json.dumps({"schema_version": 1, "releases": {}})
+    )
     project = source / "pyproject.toml"
     project.write_text(
         re.sub(
@@ -86,6 +91,32 @@ def test_site_version_does_not_imply_published_packages(tmp_path, version, label
         in (output / "docs/installation.html").read_text()
     )
     verify(output, source)
+
+
+def test_published_inventory_does_not_activate_a_later_candidate(tmp_path):
+    source = copy_source(tmp_path / "source")
+    project = source / "pyproject.toml"
+    project.write_text(project.read_text().replace('version = "0.1.0"', 'version = "0.2.0"', 1))
+    output = tmp_path / "output"
+    manifest = build(output, source)
+    assert manifest["version"] == "0.2.0" and manifest["publication_performed"] is False
+    assert "docs/published-releases.json" in manifest["sources"]
+    for name in ("www/index.html", "docs/installation.html"):
+        html = (output / name).read_text()
+        assert "Prepared release" in html and "0.2.0" in html
+        assert "Public PyPI/Homebrew packages are not available" in html
+    verify(output, source)
+
+
+@pytest.mark.parametrize(
+    "record",
+    [None, [], {"schema_version": 2, "releases": {}}, {"schema_version": 1, "releases": []}],
+)
+def test_invalid_publication_inventory_fails_the_build(tmp_path, record):
+    source = copy_source(tmp_path / "source")
+    (source / "docs/published-releases.json").write_text(json.dumps(record))
+    with pytest.raises(ValueError, match="Invalid published release inventory"):
+        build(tmp_path / "output", source)
 
 
 def test_source_document_changes_flow_into_the_built_guide(tmp_path):

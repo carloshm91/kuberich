@@ -8,26 +8,24 @@
 | Homebrew project tap | 0.1.0 (#89) | Python formula using virtualenv_install_with_resources and hashed resources |
 | GitHub standalone executables | 0.1.0 (#89), after D05 qualification | Platform-built PyInstaller bundles with checksums and provenance |
 
-The CLI and import package are named kuberich. PyPI name availability must be
-rechecked when the pending publisher is configured; a 404 lookup is not ownership.
-If the name cannot be acquired, resolve the naming issue before any public
-release instead of silently changing the advertised package.
+The CLI and import package are named kuberich. Actual TestPyPI and PyPI Trusted
+Publishing uploads established the first release in the owner-configured projects.
+Later releases retain those project identities and immutable file checks.
 
 The private preview was previously named Kubetrol. Checkout upgrades use
 `uv sync --locked --group dev`, then `uv run kuberich`; the local directory name
 does not determine the CLI name. A pre-existing isolated `uv tool`/`pipx`
 installation of the old distribution must be uninstalled before installing
 the new local candidate, because both expose the retained `kubetrol` alias.
-Uninstalling a tool does not delete its preference files. Public installation
-still waits for the qualified release; see [preference compatibility](configuration.md).
+Uninstalling a tool does not delete its preference files. See [preference compatibility](configuration.md) before changing installations.
 
-The planned Homebrew command after publication is:
+The published Homebrew command is:
 
 ```sh
 brew install kuberich/tap/kuberich
 ```
 
-The planned Python commands after publication are:
+The public PyPI commands are:
 
 ```sh
 uv tool install kuberich
@@ -35,8 +33,9 @@ uv tool install kuberich
 pipx install kuberich
 ```
 
-These commands are intentionally documented as future release contracts. The
-README switches to active installation instructions only after verification.
+Version 0.1.0 is published and verified. See [installation](installation.md) for
+platform scope and the [release](https://github.com/carloshm91/kuberich/releases/tag/v0.1.0)
+for four native archives, checksums and provenance.
 
 ## Development artifacts: D01 #34
 
@@ -180,8 +179,8 @@ failed, cancelled or skipped native jobs and incomplete/wrong-target plans.
 Both Linux jobs run the extracted executable's real selected-container/TLS/RBAC
 shell scenarios on owned kind clusters. These four jobs and all six source
 environments passed the completed [D06 checkpoint](acceptance/workload-checkpoint.md).
-The prepared `0.1.0` version retains its own qualification before public
-activation; no package/tag/release channel has been activated.
+Version `0.1.0` passed its complete exact-main qualification and is published on
+PyPI, GitHub Releases and the project Homebrew tap.
 
 ## Homebrew implementation
 
@@ -202,7 +201,7 @@ for first 0.1.0. There is no previous public KubeRich release to claim. Later
 releases must exercise the actual previous supported published artifact, with
 public channel checks under #89.
 
-After channel activation, an unpinned published installation uses its actual
+An unpinned published installation uses its actual
 manager update/uninstall path:
 
 ```sh
@@ -216,7 +215,8 @@ brew upgrade kuberich/tap/kuberich
 brew uninstall kuberich/tap/kuberich
 ```
 
-These are future public-channel contracts, not completed update trials. Preserve
+Public uv/pipx installation and no-op upgrade checks passed for the first release; distinct
+version upgrades use the owned baseline trials until a public predecessor exists. Preserve
 the original source/version constraints: `uv tool upgrade` respects install-time
 constraints, so an exact version or file-path install cannot be assumed to select
 a new release. D04/D06 must use a real supported channel, such as an owned
@@ -239,8 +239,8 @@ behavior while preserving user configuration; no unqualified platform is promise
 - Verify checksums, dependency inventory, and artifact provenance.
 - Publish only tested artifacts; retain known limitations and support evidence.
 
-The repository starts without a PyPI publisher, Homebrew tap, or released
-application. Those are explicit prerequisite tasks, not hidden assumptions.
+Version 0.1.0 has actual OIDC publication and public-channel installation evidence;
+final website/domain verification remains in the first-channel activation task.
 
 ## Sources
 

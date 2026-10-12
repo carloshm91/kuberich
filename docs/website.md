@@ -7,14 +7,16 @@ buying the domain. Neither custom address is claimed to host this site yet.
 #166 subsequently published the development preview to
 [kuberich-site.pages.dev](https://kuberich-site.pages.dev) and
 [kuberich-docs.pages.dev](https://kuberich-docs.pages.dev). Source is public;
-custom domains/DNS, `www`, tags and public packages remain deferred.
+custom domains/DNS and `www` remain deferred. The 0.1.0 packages and tag are
+now published.
 
 The landing page introduces the actual workspace, captured local UI, 15 standard
 resource families, logs, embedded exec, forwarding and guarded changes. It leads
 to a read-only first launch. Twenty-three authored guides reuse the repository sources
 for installation, navigation, configuration, inspection, logs, shells, forwarding,
-editing/workloads and EKS/AKS prerequisites. Current public distribution is absent;
-the page states that directly rather than supplying invented install/download links.
+editing/workloads and EKS/AKS prerequisites. Regenerated source now describes the
+verified 0.1.0 installation channels. Existing provider hosts still serve their
+earlier development bytes until a separately approved upload.
 
 ## Flat presentation and generated references: #162
 
@@ -24,7 +26,8 @@ blue links and native keyboard navigation. Real terminal captures keep their
 reviewed provenance. Mobile documentation uses an expandable guide menu, with
 usable native navigation when JavaScript is disabled. At the #162 preparation
 checkpoint, source was public and the website was unpublished. #166's provider
-publication below establishes current hosting; packages remain unavailable.
+publication below establishes current hosting. Package unavailability was the
+status at that development checkpoint; 0.1.0 distribution is now active.
 
 Three generated references read the actual launch parser, standard-resource
 registry and maintained capability inventory. Planned/partial audit differences
@@ -153,7 +156,7 @@ Before an approved deployment:
    policy at the actual hosts. The browser rehearsal serves the declared headers;
    that does not establish provider enforcement or successful TLS provisioning.
 6. Record actual publication and public-install verification under #89. #150
-   remains open for final-candidate pre-publication guide/site qualification;
+   is complete with final-candidate pre-publication guide/site qualification;
    public activation and public-channel/domain checks belong to #89. Expanded/versioned docs remain #90/#91.
 
 No DNS records are precomputed from a guessed project URL. No registrar transfer

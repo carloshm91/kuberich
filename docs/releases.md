@@ -6,12 +6,14 @@ The Apache-2.0 source repository is public by the maintainer's approval in
 [#155](https://github.com/carloshm91/kuberich/issues/155). The separate GitHub
 project remains private. Source opening did not publish packages, a tap, a
 website, tags or GitHub Releases. The first release-preparation PR sets metadata
-to `0.1.0`; that source version is a prepared candidate until approved publication.
+to `0.1.0`; its TestPyPI/PyPI uploads, immutable tag/GitHub Release and checked
+Homebrew activation completed on 2026-10-12. Final site/domain activation remains
+separate work.
 
 The maintainer changed the release policy on 2026-10-09 to usable, qualified
 **0.x phases**, beginning with **0.1.0**. This supersedes #154's earlier
 first-public-1.0-only policy. The core/workload qualifier #51 is complete, and
-the first candidate's launch preparation remains #150. A phase label, source
+the first candidate's launch preparation #150 is complete. A phase label, source
 version or merged feature does not authorize publication.
 
 | Public line | Required qualification gate | Additional phase scope |
