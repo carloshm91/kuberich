@@ -108,6 +108,87 @@ def test_published_inventory_does_not_activate_a_later_candidate(tmp_path):
     verify(output, source)
 
 
+def test_public_launch_prepares_indexable_both_surfaces_without_deploying(tmp_path):
+    output = tmp_path / "public"
+    manifest = build(output, public_launch=True)
+    assert manifest["indexing"] == "public"
+    assert manifest["private_preparation"] is False
+    assert manifest["publication_performed"] is False
+    assert verify(output)["pages"] == 57
+    for path in output.rglob("*.html"):
+        assert '<meta name="robots" content="index,follow">' in path.read_text()
+        assert '<meta name="robots" content="noindex' not in path.read_text()
+    for surface in ("www", "docs"):
+        headers = (output / surface / "_headers").read_text()
+        assert "X-Robots-Tag: index, follow" in headers
+        assert "Content-Security-Policy:" in headers
+        assert (output / surface / "robots.txt").read_text() == "User-agent: *\nAllow: /\n"
+
+
+@pytest.mark.parametrize("version", ["0.1.0", "0.2.0", "0.0.1.dev0"])
+def test_public_indexing_refuses_unpublished_versions_before_replacing_owned_output(
+    tmp_path, version
+):
+    source = copy_source(tmp_path / "source")
+    output = tmp_path / "output"
+    build(output, source)
+    original = (output / MARKER).read_bytes()
+    project = source / "pyproject.toml"
+    project.write_text(
+        project.read_text().replace('version = "0.1.0"', f'version = "{version}"', 1)
+    )
+    (source / "docs/published-releases.json").write_text(
+        json.dumps({"schema_version": 1, "releases": {}})
+    )
+    with pytest.raises(ValueError, match="verified published release"):
+        build(output, source, public_launch=True)
+    assert (output / MARKER).read_bytes() == original
+
+
+@pytest.mark.parametrize("public_launch", [False, True])
+@pytest.mark.parametrize(
+    "fault", ["missing-meta", "opposite-meta", "headers", "robots", "state", "mode", "version"]
+)
+def test_checker_refuses_indexing_drift_with_refreshed_output_digests(
+    tmp_path, public_launch, fault
+):
+    output = tmp_path / "output"
+    build(output, public_launch=public_launch)
+    if fault in {"state", "mode", "version"}:
+        marker = output / MARKER
+        manifest = json.loads(marker.read_text())
+        if fault == "state":
+            manifest["private_preparation"] = public_launch
+        elif fault == "mode":
+            manifest["indexing"] = {}
+        else:
+            manifest["version"] = "0.2.0"
+        marker.write_text(json.dumps(manifest))
+    else:
+        path = (
+            output
+            / "docs"
+            / {"headers": "_headers", "robots": "robots.txt"}.get(fault, "index.html")
+        )
+        text = path.read_text()
+        if fault == "missing-meta":
+            text = re.sub(r'  <meta name="robots"[^>]+>\n', "", text)
+        elif fault == "opposite-meta":
+            text = (
+                text.replace('content="index,follow"', 'content="noindex,nofollow"')
+                if public_launch
+                else text.replace('content="noindex,nofollow"', 'content="index,follow"')
+            )
+        elif fault == "headers":
+            text += "  Unexpected-Header: drift\n"
+        else:
+            text = "User-agent: *\n"
+        path.write_text(text)
+        refresh(output, path)
+    with pytest.raises(ValueError, match=r"indexing|robots|headers|version"):
+        verify(output)
+
+
 @pytest.mark.parametrize(
     "record",
     [None, [], {"schema_version": 2, "releases": {}}, {"schema_version": 1, "releases": []}],

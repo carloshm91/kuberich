@@ -1,4 +1,4 @@
-"""Publish checked development site bytes; credentials stay in the protected job."""
+"""Publish checked site bytes; credentials stay in the protected job."""
 
 import argparse
 import hashlib
@@ -14,7 +14,7 @@ from urllib.error import HTTPError
 from urllib.parse import quote, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
 
-from scripts.build_site import HEADERS, MARKER
+from scripts.build_site import MARKER
 from scripts.check_site import verify
 
 API = "https://api.cloudflare.com/client/v4"
@@ -141,7 +141,9 @@ def verify_surface(output: Path, surface: str, url: str) -> dict[str, object]:
     origin = pages_url(url)
     manifest = json.loads((output / MARKER).read_text())
     required_headers = dict(
-        line.strip().split(": ", 1) for line in HEADERS.splitlines() if line.startswith("  ")
+        line.strip().split(": ", 1)
+        for line in (output / surface / "_headers").read_text().splitlines()
+        if line.startswith("  ")
     )
     checked = 0
     for relative, expected in manifest["files"].items():

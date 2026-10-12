@@ -10,7 +10,7 @@ import pytest
 import yaml
 
 from scripts import pages
-from scripts.build_site import HEADERS, ROOT, build
+from scripts.build_site import ROOT, build
 from tests.support.release_server import release_server
 
 SHA = "a" * 40
@@ -199,15 +199,18 @@ def test_dispatch_requires_canonical_manual_main_and_clean_exact_checkout(tmp_pa
         pages.dispatch_identity(environment, tmp_path)
 
 
-@pytest.mark.parametrize("fault", [None, "bytes", "headers", "notfound"])
+@pytest.mark.parametrize("public_launch", [False, True])
+@pytest.mark.parametrize("fault", [None, "bytes", "headers", "indexing", "notfound"])
 def test_live_verification_reads_real_owned_http_and_detects_drift_without_credentials(
-    tmp_path, monkeypatch, fault
+    tmp_path, monkeypatch, fault, public_launch
 ):
     output = tmp_path / "site"
-    build(output)
+    build(output, public_launch=public_launch)
     requests = []
     required = dict(
-        line.strip().split(": ", 1) for line in HEADERS.splitlines() if line.startswith("  ")
+        line.strip().split(": ", 1)
+        for line in (output / "www/_headers").read_text().splitlines()
+        if line.startswith("  ")
     )
 
     class Handler(BaseHTTPRequestHandler):
@@ -223,6 +226,8 @@ def test_live_verification_reads_real_owned_http_and_detects_drift_without_crede
                 content += b"changed"
             self.send_response(200 if not missing or fault == "notfound" else 404)
             for key, value in required.items():
+                if fault == "indexing" and key == "X-Robots-Tag":
+                    value = "noindex, nofollow" if public_launch else "index, follow"
                 if fault != "headers" or key != "Content-Security-Policy":
                     self.send_header(key, value)
             self.end_headers()
@@ -241,7 +246,12 @@ def test_live_verification_reads_real_owned_http_and_detects_drift_without_crede
         if fault:
             with pytest.raises(
                 pages.PagesError,
-                match={"bytes": "digest", "headers": "headers", "notfound": "404"}[fault],
+                match={
+                    "bytes": "digest",
+                    "headers": "headers",
+                    "indexing": "headers",
+                    "notfound": "404",
+                }[fault],
             ):
                 pages.verify_surface(output, "www", ORIGIN)
         else:
@@ -378,9 +388,17 @@ def test_workflow_never_publishes_from_pr_and_secrets_are_only_available_to_the_
     assert set(workflow["on"]) == {"workflow_dispatch"}
     assert workflow["permissions"] == {"contents": "read"}
     assert workflow["concurrency"]["cancel-in-progress"] is False
+    launch_input = workflow["on"]["workflow_dispatch"]["inputs"]["public_launch"]
+    assert launch_input["type"] == "boolean" and launch_input["default"] is False
     prepare, publish = workflow["jobs"]["prepare"], workflow["jobs"]["publish"]
     assert "refs/heads/main" in prepare["if"] and pages.REPOSITORY in prepare["if"]
     assert "environment" not in prepare and "secrets." not in json.dumps(prepare)
+    build_step = next(
+        step for step in prepare["steps"] if step.get("name") == "Build and check the exact source"
+    )
+    assert build_step["env"] == {"KUBERICH_PUBLIC_LAUNCH": "${{ inputs.public_launch }}"}
+    assert "site_args+=(--public-launch)" in build_step["run"]
+    assert 'scripts.build_site "${site_args[@]}"' in build_step["run"]
     assert publish["needs"] == "prepare" and publish["environment"] == "release"
     credential_steps = [step for step in publish["steps"] if "secrets." in json.dumps(step)]
     assert (

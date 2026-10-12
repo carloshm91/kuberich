@@ -1,6 +1,12 @@
 name: Website publication
 'on':
   workflow_dispatch:
+    inputs:
+      public_launch:
+        description: Prepare indexable pages for the verified published release
+        type: boolean
+        required: false
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -22,11 +28,20 @@ jobs:
         with:
           node-version: '22'
       - name: Build and check the exact source
+        env:
+          KUBERICH_PUBLIC_LAUNCH: ${{ inputs.public_launch }}
         run: |
+          set -euo pipefail
           uv sync --locked --group dev
           uv run mypy --strict scripts/build_site.py scripts/check_site.py scripts/site_reference.py scripts/pages.py
           uv run pytest tests/quality/test_site.py tests/quality/test_pages.py -q
-          uv run python -m scripts.build_site
+          site_args=()
+          case "$KUBERICH_PUBLIC_LAUNCH" in
+            true) site_args+=(--public-launch) ;;
+            false|'') ;;
+            *) exit 1 ;;
+          esac
+          uv run python -m scripts.build_site "${site_args[@]}"
           uv run python -m scripts.check_site
       - name: Verify both surfaces in real Chrome
         run: |

@@ -18,6 +18,9 @@ your intended context and namespace. The [installation guide](installation.md)
 covers pipx, standalone archives, updates and removal. Website provider hosts
 retain their earlier development deployment; final site/custom-domain activation
 remains separate work.
+The public website build is prepared and browser-verified with indexable pages
+for the verified 0.1.0 release. Upload and custom-domain/redirect activation
+remain separately approved steps; preparation does not change either live site.
 
 ## Available workflows
 

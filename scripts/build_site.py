@@ -32,6 +32,14 @@ HEADERS = """/*
 """
 
 
+def site_headers(public_launch: bool) -> str:
+    return HEADERS.replace("noindex, nofollow", "index, follow") if public_launch else HEADERS
+
+
+def robots_content(public_launch: bool) -> str:
+    return "User-agent: *\nAllow: /\n" if public_launch else "User-agent: *\nDisallow: /\n"
+
+
 @dataclass(frozen=True)
 class Guide:
     source: str
@@ -191,7 +199,14 @@ def preview_banner(version: str, root: Path = ROOT) -> str:
 
 
 def page_frame(
-    root: Path, content: str, title: str, version: str, *, docs: bool, standalone: bool = False
+    root: Path,
+    content: str,
+    title: str,
+    version: str,
+    *,
+    docs: bool,
+    standalone: bool = False,
+    public_launch: bool = False,
 ) -> str:
     prefix = "." if standalone or not docs else ".."
     home = "https://kuberich.com" if standalone else ("../index.html" if docs else "index.html")
@@ -205,12 +220,19 @@ def page_frame(
         "version": escape(version),
         "preview_label": preview_label(version, root),
         "content": content,
+        "robots": "index,follow" if public_launch else "noindex,nofollow",
     }
     return Template((root / "website/frame.html").read_text()).substitute(values)
 
 
 def guide_html(
-    root: Path, guide: Guide, version: str, *, standalone: bool, generated: str | None = None
+    root: Path,
+    guide: Guide,
+    version: str,
+    *,
+    standalone: bool,
+    generated: str | None = None,
+    public_launch: bool = False,
 ) -> str:
     source = root / "docs" / guide.source
     md = MarkdownIt("commonmark", {"html": False}).enable("table")
@@ -242,10 +264,18 @@ def guide_html(
         )
         + "</div></article></main>"
     )
-    return page_frame(root, content, guide.title, version, docs=True, standalone=standalone)
+    return page_frame(
+        root,
+        content,
+        guide.title,
+        version,
+        docs=True,
+        standalone=standalone,
+        public_launch=public_launch,
+    )
 
 
-def docs_index(root: Path, version: str, *, standalone: bool) -> str:
+def docs_index(root: Path, version: str, *, standalone: bool, public_launch: bool = False) -> str:
     links = "".join(
         f'<li><a href="{guide.filename}">{escape(guide.title)}</a> '
         f'<span class="muted">/ {escape(guide.group)}</span></li>'
@@ -256,7 +286,7 @@ def docs_index(root: Path, version: str, *, standalone: bool) -> str:
         f'<article class="doc-body">{preview_banner(version, root)}<p class="eyebrow">DOCUMENTATION</p>'
         '<h1>Get to know your workspace.</h1><p class="index-summary">Choose an installation '
         "method, select an intended context, and explore in read-only mode. These guides describe "
-        "the implemented preview, its prerequisites and its limits.</p>"
+        "the implemented release, its prerequisites and its limits.</p>"
         "<h2>Choose your starting point</h2><ol>"
         "<li><strong>First visit:</strong> "
         '<a href="installation.html">install, upgrade or uninstall</a>, then '
@@ -273,7 +303,15 @@ def docs_index(root: Path, version: str, *, standalone: bool) -> str:
         "<h2>All guides and references</h2>"
         f'<ul class="doc-index-links">{links}</ul></article></main>'
     )
-    return page_frame(root, content, "Documentation", version, docs=True, standalone=standalone)
+    return page_frame(
+        root,
+        content,
+        "Documentation",
+        version,
+        docs=True,
+        standalone=standalone,
+        public_launch=public_launch,
+    )
 
 
 def prepare_output(output: Path, root: Path) -> None:
@@ -314,7 +352,7 @@ def source_inputs(root: Path) -> list[Path]:
     return inputs
 
 
-def build(output: Path, root: Path = ROOT) -> dict[str, object]:
+def build(output: Path, root: Path = ROOT, *, public_launch: bool = False) -> dict[str, object]:
     inputs = source_inputs(root)
     for path in inputs:
         if not path.is_file() or path.is_symlink():
@@ -325,6 +363,8 @@ def build(output: Path, root: Path = ROOT) -> dict[str, object]:
         if digest(root / "website/assets" / name) != record["sha256"]:
             raise ValueError("Screenshot digest differs from reviewed media inventory")
     version = str(tomllib.loads((root / "pyproject.toml").read_text())["project"]["version"])
+    if public_launch and (Version(version).is_devrelease or not is_published(version, root)):
+        raise ValueError("Public indexing requires a verified published release")
     references = generated_guides(root, version)
     prepare_output(output, root)
     for surface in ("www", "docs"):
@@ -332,12 +372,14 @@ def build(output: Path, root: Path = ROOT) -> dict[str, object]:
         (destination / "assets").mkdir(parents=True)
         for name in ("site.css", "site.js", "mark.svg", "workspace.svg", "logs.svg"):
             shutil.copyfile(root / "website/assets" / name, destination / "assets" / name)
-        (destination / "_headers").write_text(HEADERS)
-        (destination / "robots.txt").write_text("User-agent: *\nDisallow: /\n")
+        (destination / "_headers").write_text(site_headers(public_launch))
+        (destination / "robots.txt").write_text(robots_content(public_launch))
         standalone = surface == "docs"
         docs_dir = destination if standalone else destination / "docs"
         docs_dir.mkdir(exist_ok=True)
-        (docs_dir / "index.html").write_text(docs_index(root, version, standalone=standalone))
+        (docs_dir / "index.html").write_text(
+            docs_index(root, version, standalone=standalone, public_launch=public_launch)
+        )
         for guide in (*GUIDES, *REFERENCES):
             (docs_dir / guide.filename).write_text(
                 guide_html(
@@ -346,6 +388,7 @@ def build(output: Path, root: Path = ROOT) -> dict[str, object]:
                     version,
                     standalone=standalone,
                     generated=references.get(guide.source),
+                    public_launch=public_launch,
                 )
             )
     landing = Template((root / "website/landing.html").read_text()).substitute(
@@ -354,7 +397,14 @@ def build(output: Path, root: Path = ROOT) -> dict[str, object]:
         installation_status=installation_status(version, root),
     )
     (output / "www/index.html").write_text(
-        page_frame(root, landing, "A terminal workspace for Kubernetes", version, docs=False)
+        page_frame(
+            root,
+            landing,
+            "A terminal workspace for Kubernetes",
+            version,
+            docs=False,
+            public_launch=public_launch,
+        )
     )
     for surface in ("www", "docs"):
         content = (
@@ -364,13 +414,20 @@ def build(output: Path, root: Path = ROOT) -> dict[str, object]:
         )
         (output / surface / "404.html").write_text(
             page_frame(
-                root, content, "Page not found", version, docs=False, standalone=surface == "docs"
+                root,
+                content,
+                "Page not found",
+                version,
+                docs=False,
+                standalone=surface == "docs",
+                public_launch=public_launch,
             )
         )
     manifest: dict[str, object] = {
         "generator": GENERATOR,
         "version": version,
-        "private_preparation": True,
+        "private_preparation": not public_launch,
+        "indexing": "public" if public_launch else "preview",
         "application_qualification": "docs/acceptance/workload-checkpoint.md",
         "publication_performed": False,
         "sources": {p.relative_to(root).as_posix(): digest(p) for p in inputs},
@@ -387,9 +444,14 @@ def build(output: Path, root: Path = ROOT) -> dict[str, object]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "artifacts/site")
+    parser.add_argument(
+        "--public-launch",
+        action="store_true",
+        help="Prepare indexable pages for a verified published release; does not deploy.",
+    )
     args = parser.parse_args()
     try:
-        result = build(args.output)
+        result = build(args.output, public_launch=args.public_launch)
     except (OSError, ValueError, KeyError) as error:
         print(f"Site build failed: {error}", file=sys.stderr)
         return 1

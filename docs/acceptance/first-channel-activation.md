@@ -220,3 +220,36 @@ The maintainer requested faster Homebrew bottles specifically for 0.2.0 in #193.
 The reviewed phase map now makes that task a cumulative requirement alongside
 #124 and D07's existing scope. Actual 0.1.0 upgrade, native relocation and
 installation timing evidence remain required; no 0.1.0 package is replaced.
+
+## Prepared public website indexing
+
+The generator now has an explicit `--public-launch` mode for the exact verified
+published source version. It updates HTML robots metadata, HTTP indexing
+headers and robots files on both surfaces. Default builds stay noindex;
+development and unpublished versions are refused before owned output is
+replaced. The checker rejects inconsistent version/mode/state, metadata,
+headers and robots files even when output digests are refreshed.
+
+The protected manual Website publication workflow has a boolean `public_launch`
+input, defaulting to false. Build and real-browser checks remain unprivileged;
+only the existing reviewed upload step receives credentials. Served-header
+verification reads the selected checked surface, so a stale noindex response
+cannot pass verification for public output. Owned HTTP controls verify both
+indexing modes and detect changed content, headers, indexing and 404 behavior
+without sending credentials.
+
+Local verification passed **84 site/publication tests in 99.19 seconds**, Ruff,
+539-file formatting, strict types for all four site/publication modules, plan
+validation and whitespace checks. Both generated modes passed **57 pages,
+2,338 local references and 72 files**. The public manifest SHA-256 is
+`50f3d6eec86555b65d533804ee6be3eee872cc04075fdf055c0a5725717b95d2`.
+Actual Chrome verification passed desktop/mobile pages, keyboard/copy/no-JS
+navigation, narrow layout and zero automated accessibility violations; the
+locked npm audit reported zero known vulnerabilities.
+
+Public DNS/HTTPS reads on 2026-10-12 found both earlier provider deployments
+available with noindex, while `kuberich.com`, `docs.kuberich.com` and
+`www.kuberich.com` did not resolve. This preparation uploads nothing and changes
+no DNS. Hosted required checks, concrete final website approval, provider
+upload, domain/certificate activation and exact served-byte/redirect checks
+remain necessary before final hosting acceptance.
