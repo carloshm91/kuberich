@@ -14,7 +14,7 @@ from urllib.error import HTTPError
 from urllib.parse import quote, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
 
-from scripts.build_site import MARKER
+from scripts.build_site import DOCS_ORIGIN, MARKER
 from scripts.check_site import verify
 
 API = "https://api.cloudflare.com/client/v4"
@@ -31,6 +31,13 @@ class NoApiRedirect(HTTPRedirectHandler):
         self, req: Any, fp: Any, code: int, msg: str, headers: Any, newurl: str
     ) -> None:
         raise PagesError("Authenticated API redirects are forbidden")
+
+
+class InspectPublicRedirect(HTTPRedirectHandler):
+    def redirect_request(
+        self, req: Any, fp: Any, code: int, msg: str, headers: Any, newurl: str
+    ) -> None:
+        return None
 
 
 def dispatch_identity(environment: dict[str, str], checkout: Path) -> str:
@@ -150,7 +157,7 @@ def verify_surface(output: Path, surface: str, url: str) -> dict[str, object]:
         if not relative.startswith(surface + "/"):
             continue
         name = relative.removeprefix(surface + "/")
-        if name == "_headers":
+        if name in {"_headers", "_redirects"}:
             continue  # Pages consumes this routing configuration; it is not a served asset.
         status, headers, content = fetch(origin + "/" + quote(name, safe="/"))
         if status not in ({200, 404} if name == "404.html" else {200}):
@@ -166,12 +173,35 @@ def verify_surface(output: Path, surface: str, url: str) -> dict[str, object]:
     expected_404 = manifest["files"][surface + "/404.html"]
     if status != 404 or hashlib.sha256(content).hexdigest() != expected_404:
         raise PagesError("Public 404 routing differs from the checked page")
+    redirects_verified = 0
+    if surface == "www" and manifest["indexing"] == "public":
+        for path, target in (
+            ("/docs", "/"),
+            ("/docs/", "/"),
+            ("/docs/index.html", "/"),
+            ("/docs/quickstart.html", "/quickstart.html"),
+        ):
+            status, location = fetch_redirect(origin + path)
+            if status != 301 or location != DOCS_ORIGIN + target:
+                raise PagesError("Public documentation redirect differs from the checked policy")
+            redirects_verified += 1
     return {
         "url": origin,
         "files_verified": checked,
         "headers_verified": True,
         "not_found_verified": True,
+        "documentation_redirects_verified": redirects_verified,
     }
+
+
+def fetch_redirect(url: str) -> tuple[int, str | None]:
+    request = Request(url, headers={"User-Agent": "KubeRich-site-verifier"})
+    try:
+        response = build_opener(InspectPublicRedirect()).open(request, timeout=30)
+    except HTTPError as error:
+        response = error
+    with response:
+        return response.status, response.headers.get("Location")
 
 
 def wait_verified(output: Path, surface: str, url: str) -> dict[str, object]:
@@ -209,11 +239,14 @@ def publish(output: Path, receipt: Path, wrangler: Path, checkout: Path) -> dict
         receipt.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
 
     try:
+        manifest = json.loads((output / MARKER).read_text())
+        surfaces = ("docs", "www") if manifest["indexing"] == "public" else tuple(PROJECTS)
         # Resolve both first; do not start uploads if the second project conflicts.
         projects = {
-            surface: ensure_project(account, token, name) for surface, name in PROJECTS.items()
+            surface: ensure_project(account, token, PROJECTS[surface]) for surface in surfaces
         }
-        for surface, name in PROJECTS.items():
+        for surface in surfaces:
+            name = PROJECTS[surface]
             project = projects[surface]
             entry: dict[str, Any] = {
                 "project": name,

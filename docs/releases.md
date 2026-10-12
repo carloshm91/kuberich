@@ -112,9 +112,15 @@ without the owner's explicit authorization. The maintainer has purchased
    exact artifacts and public install/upgrade/uninstall behavior. Tap automation
    proposes a checked formula PR; the maintainer reviews and merges it after
    native tap checks.
-9. Regenerate and browser/quickstart-verify the initial site from the final
-   candidate, then deploy the approved immutable static bytes from GitHub Actions
-   to Cloudflare Pages. Verify actual domains, HTTPS, headers, links, deployment
+9. After verified artifact activation, record the exact published version in
+   `docs/published-releases.json` and update installation/upgrade guides through
+   a checked PR. Regenerate and browser/quickstart-verify the site for that
+   release, then deploy the approved immutable static bytes from GitHub Actions
+   to Cloudflare Pages with `public_launch` enabled. Website builds in repository
+   CI alone do not update live hosting. Treat documentation activation as part
+   of every public release, not an optional later cleanup. Verify that actual
+   site/guide notices name the available release and no longer claim unavailable
+   packages; retain this evidence alongside domains, HTTPS, headers, links, deployment
    IDs and rollback association; see [website delivery](website.md).
 10. Close #89 only after every promised public channel and site is verified.
     Record real links and start the next Unreleased section by PR.

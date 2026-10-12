@@ -146,6 +146,12 @@ node scripts/verify_site_browser.mjs artifacts/site-public artifacts/site-qa
 The explicit mode updates HTML metadata, response headers and robots files on
 both surfaces while retaining the existing security headers. It refuses a
 development or unpublished source version before replacing existing output.
+Public output puts the landing page on `kuberich.com` and guides exclusively
+on `docs.kuberich.com`, with canonical URLs and direct documentation links.
+Legacy `/docs` paths have checked 301 redirects. Default preview output keeps
+its nested guides for offline local navigation; public deployment omits that
+duplicate tree. Browser qualification maps the two declared public hosts to
+owned loopback responses, never to a real cluster or live provider deployment.
 The checker rejects inconsistent version, indexing policy and output/source
 digests. Every build manifest still records `publication_performed: false`.
 

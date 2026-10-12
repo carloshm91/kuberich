@@ -253,3 +253,46 @@ available with noindex, while `kuberich.com`, `docs.kuberich.com` and
 no DNS. Hosted required checks, concrete final website approval, provider
 upload, domain/certificate activation and exact served-byte/redirect checks
 remain necessary before final hosting acceptance.
+
+## Canonical documentation host and current release notices
+
+The maintainer activated the two custom domains on 2026-10-12. Independent
+HTTPS reads returned 200 and the exact prior development homepage digests for
+both. The live documentation still advertised `0.0.1.dev0` and unavailable
+packages even though 0.1.0 artifact channels were already active. Repository
+builds had regenerated current content; those builds had not deployed it.
+
+Public output now links directly from the landing page to `docs.kuberich.com`,
+publishes guides only on that surface, records canonical URLs, and gives legacy
+`/docs` paths checked 301 redirects. Default local output retains nested guides
+for offline preview. Version/availability notices use the verified publication
+inventory and omit internal qualification boilerplate. The release procedure
+requires actual documentation activation with each public release; a successful
+repository build alone is explicitly insufficient.
+
+The publisher uploads/verifies docs before the landing surface. It does not
+request provider-consumed `_redirects` as an asset, and checks four actual
+redirect status/location pairs without following them or sending credentials.
+Owned HTTP controls refuse changed redirect status/target; both declared public
+hosts are mapped to owned loopback responses for browser navigation checks.
+
+Local verification passed 89 site/publication tests in 102.89 seconds, followed
+by all 12 owned-HTTP cases (including two new redirect controls) in 22.30 seconds.
+Ruff, 539-file formatting, four-module strict types, plan and whitespace checks
+passed. Public output passed **30 pages, 1,221 references and 46 files**;
+offline preview passed **57 pages, 2,338 references and 72 files**. Both passed
+real Chrome desktop/mobile, accessibility, keyboard/copy/no-JS and narrow-layout
+checks. Public browser evidence retained 17 owned public-host requests and no
+external requests/errors. Its manifest is
+`ba68a4491c5c2a8b6a058053f94c616365b3454ca8bbbd9c02d9477a2b74b744`.
+The first preview browser attempt lacked its owned Playwright directory; the
+original failure was retained and the correct locked tools were installed
+before successful verification. No product behavior was waived.
+
+Protected public-site preparation PR #195 passed and merged. Website run
+[38265140901](https://github.com/carloshm91/kuberich/actions/runs/38265140901)
+passed secret-free preparation and was canceled while its publisher waited for
+owner review, before upload, so the new routing correction can be included.
+Original run/job metadata is retained. Required hosted checks and a fresh
+owner-reviewed upload with actual provider/custom-domain/redirect acceptance
+remain open here; no updated live website is claimed by this preparation.
