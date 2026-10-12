@@ -636,7 +636,7 @@ def test_engineering_versions_refuse_preflight_before_any_external_request(versi
     assert calls == []
 
 
-@pytest.mark.parametrize("incomplete", [None, 123, 124, 47, 40, 154, 88, 89])
+@pytest.mark.parametrize("incomplete", [None, 123, 124, 193, 47, 40, 154, 88, 89])
 def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomplete):
     plan = json.loads((ROOT / "docs/backlog.json").read_text())
     index = json.loads((ROOT / "docs/github-issues.json").read_text())
@@ -664,6 +664,7 @@ def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomp
             89,
             123,
             124,
+            193,
             149,
             150,
             154,
@@ -704,9 +705,9 @@ def test_actual_phase_includes_selected_and_prior_qualifiers(version, phase_gate
     assert {40, 49, 50, 51, 52, 53, 54, 123, phase_gate} <= set(calls)
     assert len(calls) == len(set(calls))
     if Version(version).release[:2] == (0, 1):
-        assert {65, 75, 82, 86, 87, 88, 124}.isdisjoint(calls)
+        assert {65, 75, 82, 86, 87, 88, 124, 193}.isdisjoint(calls)
     else:
-        assert {65, 124, 89} <= set(calls)
+        assert {65, 124, 193, 89} <= set(calls)
     assert (89 in calls) == (Version(version).base_version != "0.1.0")
 
 
@@ -722,6 +723,7 @@ def test_actual_phase_includes_selected_and_prior_qualifiers(version, phase_gate
         ("0.2.0", 65),
         ("0.2.0", 123),
         ("0.2.0", 124),
+        ("0.2.0", 193),
         ("0.5.0", 82),
         ("1.0.0", 87),
     ],

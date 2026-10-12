@@ -19,7 +19,7 @@ version or merged feature does not authorize publication.
 | Public line | Required qualification gate | Additional phase scope |
 | --- | --- | --- |
 | 0.1.x | D06 #51 and all its prerequisites, including D04 #40, D05 #49 and Q03 #50 | Delivered generic views #53 and logs #54, plus embedded-shell history #123 |
-| 0.2.x | D07 #65 and every earlier phase | Keyboard/mouse refinement #124 |
+| 0.2.x | D07 #65 and every earlier phase | Keyboard/mouse refinement #124 and verified Homebrew bottles #193 |
 | 0.3.x | D08 #75 and every earlier phase | Observability, Helm and configuration workflows |
 | 0.4.x | D09 #82 and every earlier phase | Advanced node/debug/benchmark/policy operations |
 | 0.5.x | D11 #86 and every earlier phase | Extended platform/channel scope in the plan |

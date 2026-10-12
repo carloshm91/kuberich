@@ -126,7 +126,7 @@ def system_package(source: Path) -> str:
             candidates.append(alias)
     for candidate in dict.fromkeys(candidates):
         owned = subprocess.run(
-            ["dpkg-query", "-S", str(candidate)], capture_output=True, text=True, timeout=10
+            ["dpkg-query", "-S", str(candidate)], capture_output=True, text=True, timeout=60
         )
         if owned.returncode == 0:
             lines = owned.stdout.splitlines()

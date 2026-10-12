@@ -1758,7 +1758,8 @@
         "version": "0.2.0",
         "qualification_gate": "D07",
         "extra_issues": [
-          124
+          124,
+          193
         ]
       },
       {

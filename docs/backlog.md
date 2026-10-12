@@ -20,12 +20,13 @@ from parser tests alone. See [current CLI behavior](k9s-cli.md).
 
 The maintainer requested qualified, usable public **0.x phases** on 2026-10-09,
 superseding #154's earlier first-public-1.0-only policy. Development metadata
-remains `0.0.1.dev0`; preparation does not publish a package, tag or tap.
+is `0.1.0`; its PyPI, GitHub and Homebrew artifacts are published. Final
+website/custom-domain verification remains #89.
 
 | Public line | Selected gate | Additional requirements |
 | --- | --- | --- |
-| 0.1.x | D06 #51 | Full prerequisites including D04 #40, D05 #49, Q03 #50; delivered #53/#54 and open #123 |
-| 0.2.x | D07 #65 | Every earlier phase plus #124 |
+| 0.1.x | D06 #51 | Full prerequisites including D04 #40, D05 #49, Q03 #50; delivered #53/#54/#123 |
+| 0.2.x | D07 #65 | Every earlier phase plus #124 and faster Homebrew bottles #193 |
 | 0.3.x | D08 #75 | Every earlier phase |
 | 0.4.x | D09 #82 | Every earlier phase |
 | 0.5.x | D11 #86 | Every earlier phase |
@@ -43,15 +44,17 @@ it closed. Unknown minor lines need reviewed mapping before publication.
 Finish the first-phase gaps before first-release qualification. At the
 historical preparation snapshot, v0.0.1 had open #40/#109/#150 and v0.1.0 had
 open #49/#50/#51/#123. The 2026-10-11 live update has closed #40/#49/#50/#123;
-#51/#150 and publication #89 remain. A milestone's feature completion alone is not public
+#51/#150 are now closed, artifact channels are active, and #89 remains open
+for final website/domain verification. A milestone's feature completion alone is not public
 readiness. Native/security/artifact/terminal/owned-cluster requirements remain
 for every gate; actual manager upgrades remain D04/D06 work, with public-channel
 verification under #89. No intermediate maintainer trials are requested.
 
 #155 opened the Apache-2.0 source; the separate project remains private.
 #166 delivered development landing/docs on two provider hosts. Main and both
-release environments now enforce the reviewed protections; index ownership,
-OIDC, public brand-owned tap and final installed/site evidence remain pending.
+release environments enforce the reviewed protections. Actual index ownership/OIDC,
+public brand-owned tap and installed artifact evidence passed; final site/domain
+evidence remains pending.
 Expanded/versioned docs remain W02 #90 / W03 #91 after initial product guides.
 Real-provider certification remains opt-in Q05 #87; owned clusters never prove
 EKS/AKS/GKE certification. See [release policy](releases.md).
