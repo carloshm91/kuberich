@@ -469,14 +469,19 @@ def test_installed_navigation_and_initial_namespace_outside_checkout(installed_w
 def test_installed_wheel_connects_to_owned_api_and_changes_namespace(
     installed_wheel: tuple[Path, Path],
     quiet: bool,
+    tmp_path: Path,
 ) -> None:
     import threading
     import time
 
     from tests.support.terminal_api import Server, config
 
-    binary_dir, directory = installed_wheel
+    binary_dir, _ = installed_wheel
+    directory = tmp_path
     server = Server()
+    # Exercise normal connection establishment, including a held LIST response.
+    # The quiet-stream renewal contract retains its separate eight-second limit.
+    server.pod_list_delay_seconds = 0.4
     if quiet:
         server.quiet_watches.set()
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -489,7 +494,7 @@ def test_installed_wheel_connects_to_owned_api_and_changes_namespace(
     before = path.read_bytes()
     try:
         with TerminalSession(
-            [str(binary_dir / "kuberich"), "--kubeconfig", str(path), "--request-timeout", "250ms"],
+            [str(binary_dir / "kuberich"), "--kubeconfig", str(path), "--request-timeout", "2s"],
             directory,
         ) as terminal:
             terminal.wait_for(b"Live")

@@ -105,3 +105,34 @@ serial added were accepted. This is parser evidence, not a complete hosted
 attestation/OIDC upload result. Application source is unchanged. Fresh original
 audits, protected PR checks, exact-main qualification and actual approved
 publication remain required before claiming channel activation.
+
+## Installed-terminal fixture repair
+
+The first SBOM-correction PR matrix
+[38192572191](https://github.com/carloshm91/kuberich/actions/runs/38192572191)
+failed on Linux/Python 3.12: 4,802 tests passed, two were skipped and two installed
+connection cases failed. The other three source jobs, all four native jobs,
+Repository checks and DCO passed. Original logs, terminal transcripts and the
+failed Linux artifact ZIP are retained; its SHA-256 is
+`f2aebe9cb89756b9d2ce024adfeb914cfb0e46795778d2e177c423be2ff6a2e9`.
+
+The normal connection test used a 250 ms request budget under host load. Its
+failed terminal context could terminate the session owner before the actual
+child exited, leaving the diagnostic-file lock unavailable for the next case.
+The terminal fixture now keeps its owner alive to reap that child, with bounded
+forced termination. Each installed case owns a separate state directory. The
+normal connection budget is two seconds; an owned delayed LIST response exercises
+that path. The separate eight-second quiet-watch renewal limit and all visible
+state assertions remain enforced.
+
+Local verification: 35 real-terminal observer/context/shutdown/installation
+regressions passed in 58.30 seconds, including delayed and ignored SIGTERM,
+released locks, reaped children and closed descriptors after injected failures.
+An isolated negative control kept the old owner source unchanged: its child
+survived context exit and held the lock; the corrected owner reaped the same
+owned child and released the lock. Both controls ignore SIGHUP, and the diagnostic
+reaps its own negative-control orphan. Ruff and the 539-file formatting check
+passed. Application source remains unchanged. The revised terminal fixtures
+require fresh hosted qualification; previous consecutive owned rehearsals remain
+historical evidence, not new runs of the revised fixtures. No failed required
+check has been waived and no distribution was uploaded by these checks.

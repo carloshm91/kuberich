@@ -32,18 +32,33 @@ _SESSION_OWNER = """
 import fcntl
 import json
 import os
+import signal
 import subprocess
 import sys
 import termios
+import time
 
 def encode_mode(mode):
     return [*mode[:6], [value.hex() if isinstance(value, bytes) else value for value in mode[6]]]
 
 fcntl.ioctl(0, termios.TIOCSCTTY, 0)
 before = termios.tcgetattr(0)
-result = subprocess.run(sys.argv[2:], check=False)
+stopped_at = None
+def stopping(*_):
+    global stopped_at
+    if stopped_at is None:
+        stopped_at = time.monotonic()
+signal.signal(signal.SIGTERM, stopping)
+process = subprocess.Popen(sys.argv[2:])
+while True:
+    try:
+        result = process.wait(timeout=0.1)
+        break
+    except subprocess.TimeoutExpired:
+        if stopped_at is not None and time.monotonic() - stopped_at >= 2:
+            process.kill()
 after = termios.tcgetattr(0)
-record = {'exit': result.returncode, 'before': encode_mode(before), 'after': encode_mode(after)}
+record = {'exit': result, 'before': encode_mode(before), 'after': encode_mode(after)}
 os.write(int(sys.argv[1]), json.dumps(record).encode() + b'\\n')
 """
 
