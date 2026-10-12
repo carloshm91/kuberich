@@ -12,6 +12,8 @@ implementation; do not claim to switch models without actual environment support
 
 ## Scope and ownership
 
+- Write repository content, documentation, issues, pull requests, comments and
+  commit messages in English.
 - Build a new Python terminal application. K9s is a design inspiration, not a
   source tree to copy. Keep the README attribution short.
 - Keep unrelated experiments and their history out of public documentation,

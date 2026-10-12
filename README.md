@@ -16,10 +16,17 @@ No customer contexts, credentials or production resources are used in this demo.
 
 ## First release
 
-The first release line is **0.1.0**. Its source candidate is usable; public PyPI,
-Homebrew and GitHub download activation remains under the
-[release procedure](docs/releases.md).
-Use a trusted checkout or supplied wheel while those channels are unavailable.
+**0.1.0 is available** from [PyPI](https://pypi.org/project/kuberich/0.1.0/),
+the project Homebrew tap and [GitHub Releases](https://github.com/carloshm91/kuberich/releases/tag/v0.1.0).
+
+```sh
+brew install kuberich/tap/kuberich
+# Alternative with Python 3.12–3.14:
+uv tool install --python 3.12 kuberich
+```
+
+Choose one method, then run `kuberich --version`. See
+[installation and upgrades](docs/installation.md) for pipx and standalone archives.
 
 Linux and macOS are the initial targets, with CPython 3.12–3.14 for source
 installation. Four standalone archives have separate native qualification.
@@ -63,9 +70,8 @@ Configured authentication helpers are trusted local programs. Version, help,
 `info` and `config check` do not connect to a cluster or execute helpers.
 The interface needs an interactive terminal; `python -m kuberich` is also supported.
 
-For an isolated supplied wheel or future PyPI/Homebrew/archive installation,
-follow [installation and upgrades](docs/installation.md). The project-owned
-Homebrew target is `brew install kuberich/tap/kuberich` after public activation.
+For an isolated PyPI, Homebrew, archive or supplied-wheel installation,
+follow [installation and upgrades](docs/installation.md).
 
 ## A few keys to begin
 

@@ -1,10 +1,23 @@
 # Current preview
 
-KubeRich's first release candidate is **0.1.0**. It is under validation;
-there is no published tag, PyPI package, public Homebrew tap or final website
-deployment yet. The existing development website retains its earlier deployment.
-The [installation guide](installation.md) distinguishes trusted local builds
-from the public channels that still require activation.
+**KubeRich 0.1.0 is published** on [PyPI](https://pypi.org/project/kuberich/0.1.0/),
+[GitHub Releases](https://github.com/carloshm91/kuberich/releases/tag/v0.1.0) and
+[Homebrew](https://github.com/kuberich/homebrew-tap).
+
+```sh
+brew install kuberich/tap/kuberich
+# Alternative with Python 3.12–3.14:
+uv tool install --python 3.12 kuberich
+kuberich --version
+kuberich config check
+```
+
+Choose one installation method. Start with
+`kuberich --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly`, using
+your intended context and namespace. The [installation guide](installation.md)
+covers pipx, standalone archives, updates and removal. Website provider hosts
+retain their earlier development deployment; final site/custom-domain activation
+remains separate work.
 
 ## Available workflows
 
@@ -29,16 +42,21 @@ and the [release phases](releases.md) explain what belongs to each version.
 The website and documentation contain fictional examples and actual application
 renders from owned fixtures. Both generated surfaces passed checks across
 57 pages, including desktop/mobile navigation, accessibility and local links.
-The preceding frozen candidate passed Python 3.13/3.14, all four native archives
-and all three Homebrew installation/upgrade/uninstall hosts.
-Three local rounds also passed all thirteen owned-cluster scenarios per round.
+Exact main `3dbf9c0118193aa11635baea6ae2a0b36bee4c6e` passed all six source
+Python combinations and all four native executables. Original audits and native
+provenance passed independent review. Measured coverage was 99.0987–99.1296%
+lines and 96.8382–96.9721% branches, with 100% for designated critical modules.
+Three fresh consecutive rounds passed all thirteen owned-cluster scenario
+families with caller configuration preservation and cleanup.
 
-That candidate failed two checks: a macOS cancellation test raced its
-deliberately short connection deadline, and a Linux aggregate-log fixture did
-not observe the required waiting-container snapshot. The corrections pass
-95 focused cases and an actual owned-cluster aggregate trial locally.
-Fresh frozen platform checks remain required before publication review.
-The successful earlier checks do not qualify the corrected candidate.
+Actual TestPyPI/PyPI uploads, SBOM/build attestations, immutable annotated tag and
+all 24 public GitHub attachment digests passed verification. Public PyPI-by-name
+uv and pipx installs passed version/help/default-preference checks, no-op upgrade
+and uninstall in owned environments. The public Linux x86_64 archive also passed
+CLI checks outside the checkout. The other archive bytes match their native
+hosted qualification. The published Homebrew formula passed Linux/macOS style,
+online audit, source install, CLI tests and uninstall before protected merge.
+There is no prior public release to claim as a version-upgrade baseline.
 
 These safe local commands have been verified against the candidate:
 

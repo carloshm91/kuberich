@@ -155,16 +155,37 @@ def navigation(current: str) -> str:
     return "".join(parts)
 
 
-def preview_label(version: str) -> str:
-    return "Development preview" if Version(version).is_devrelease else "Prepared release"
+def is_published(version: str, root: Path = ROOT) -> bool:
+    record = json.loads((root / "docs/published-releases.json").read_text())
+    if (
+        not isinstance(record, dict)
+        or record.get("schema_version") != 1
+        or not isinstance(record.get("releases"), dict)
+    ):
+        raise ValueError("Invalid published release inventory")
+    return version in record["releases"]
 
 
-def preview_banner(version: str) -> str:
+def preview_label(version: str, root: Path = ROOT) -> str:
+    if Version(version).is_devrelease:
+        return "Development preview"
+    return "Public release" if is_published(version, root) else "Prepared release"
+
+
+def installation_status(version: str, root: Path = ROOT) -> str:
+    if is_published(version, root):
+        return "Install from PyPI, the project Homebrew tap or GitHub Release archives."
+    return (
+        "Public PyPI/Homebrew packages are not available. Use the source checkout or a trusted "
+        "local wheel."
+    )
+
+
+def preview_banner(version: str, root: Path = ROOT) -> str:
     return (
         '<aside class="preview-banner" aria-label="Preview status">'
-        f"<p><strong>{preview_label(version)} · {escape(version)}</strong>. "
-        "Public PyPI/Homebrew packages are not available. Use the source checkout or a trusted "
-        "local wheel. Full release qualification is recorded separately; real-cloud "
+        f"<p><strong>{preview_label(version, root)} · {escape(version)}</strong>. "
+        f"{installation_status(version, root)} Full release qualification is recorded separately; real-cloud "
         "certification remains deferred.</p></aside>"
     )
 
@@ -176,13 +197,13 @@ def page_frame(
     home = "https://kuberich.com" if standalone else ("../index.html" if docs else "index.html")
     values = {
         "title": escape(title),
-        "description": f"KubeRich: a Python terminal workspace for Kubernetes. {preview_label(version)}.",
+        "description": f"KubeRich: a Python terminal workspace for Kubernetes. {preview_label(version, root)}.",
         "prefix": prefix,
         "home": home,
         "docs": "index.html" if docs or standalone else "docs/index.html",
         "body_class": "docs-page" if docs else "landing-page",
         "version": escape(version),
-        "preview_label": preview_label(version),
+        "preview_label": preview_label(version, root),
         "content": content,
     }
     return Template((root / "website/frame.html").read_text()).substitute(values)
@@ -209,7 +230,7 @@ def guide_html(
     content = (
         f'<main id="main" tabindex="-1" class="docs-shell">{navigation(guide.filename)}'
         '<article class="doc-body">'
-        f'{preview_banner(version)}<p class="eyebrow">{escape(guide.group).upper()}</p>'
+        f'{preview_banner(version, root)}<p class="eyebrow">{escape(guide.group).upper()}</p>'
         f"{rendered.split('</h1>', 1)[0]}</h1>{toc}{rendered.split('</h1>', 1)[1]}"
         '<div class="source-link">'
         + (
@@ -232,9 +253,9 @@ def docs_index(root: Path, version: str, *, standalone: bool) -> str:
     )
     content = (
         f'<main id="main" tabindex="-1" class="docs-shell">{navigation("index.html")}'
-        f'<article class="doc-body">{preview_banner(version)}<p class="eyebrow">DOCUMENTATION</p>'
-        '<h1>Get to know your workspace.</h1><p class="index-summary">Install a supplied local '
-        "wheel or use a source checkout, select an intended context, and explore in read-only mode. These guides describe "
+        f'<article class="doc-body">{preview_banner(version, root)}<p class="eyebrow">DOCUMENTATION</p>'
+        '<h1>Get to know your workspace.</h1><p class="index-summary">Choose an installation '
+        "method, select an intended context, and explore in read-only mode. These guides describe "
         "the implemented preview, its prerequisites and its limits.</p>"
         "<h2>Choose your starting point</h2><ol>"
         "<li><strong>First visit:</strong> "
@@ -283,6 +304,7 @@ def source_inputs(root: Path) -> list[Path]:
         root / "scripts/build_site.py",
         root / "scripts/site_reference.py",
         root / "docs/capabilities.json",
+        root / "docs/published-releases.json",
     ]
     # Imported parser/registry dependencies are part of the receipt, including future modules.
     inputs += sorted((root / "src/kuberich").rglob("*.py"))
@@ -327,7 +349,9 @@ def build(output: Path, root: Path = ROOT) -> dict[str, object]:
                 )
             )
     landing = Template((root / "website/landing.html").read_text()).substitute(
-        version=version, preview_label=preview_label(version)
+        version=version,
+        preview_label=preview_label(version, root),
+        installation_status=installation_status(version, root),
     )
     (output / "www/index.html").write_text(
         page_frame(root, landing, "A terminal workspace for Kubernetes", version, docs=False)

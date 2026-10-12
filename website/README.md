@@ -120,3 +120,13 @@ candidate's guides and static bytes. Actual public quickstart and protected
 GitHub Actions → Cloudflare Pages deployment are #89,
 after product features and dedicated qualification. Package/site/DNS publication
 needs approval of the concrete result. See [the deployment procedure](../docs/website.md).
+
+## Published installation status
+
+`docs/published-releases.json` records versions whose actual package, GitHub and
+Homebrew publication passed verification. Update it with the retained channel
+evidence after activation. The builder enrolls this file in its source manifest
+and shows public installation status only for an exact recorded version. A new
+source version stays a prepared release until its own activation is recorded;
+changing `pyproject.toml` alone never advertises published packages. Building the
+site still does not deploy it.

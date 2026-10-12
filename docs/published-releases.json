@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "releases": {
+    "0.1.0": {
+      "tag": "v0.1.0",
+      "source_commit": "3dbf9c0118193aa11635baea6ae2a0b36bee4c6e",
+      "published_at": "2026-10-12T05:07:35Z",
+      "pypi": "https://pypi.org/project/kuberich/0.1.0/",
+      "github": "https://github.com/carloshm91/kuberich/releases/tag/v0.1.0",
+      "homebrew_formula_commit": "ec62f339cdb71bf379724fcb2753326dd26ad570"
+    }
+  }
+}
