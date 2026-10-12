@@ -1,13 +1,25 @@
-"""Verify static launch outputs, local links/anchors, media and private-preview limits."""
+"""Verify static outputs, local links, media and explicit preview/public indexing."""
 
 import argparse
 import hashlib
 import json
+import tomllib
 from html.parser import HTMLParser
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-from scripts.build_site import GENERATOR, MARKER, ROOT, digest, source_inputs
+from packaging.version import Version
+
+from scripts.build_site import (
+    GENERATOR,
+    MARKER,
+    ROOT,
+    digest,
+    is_published,
+    robots_content,
+    site_headers,
+    source_inputs,
+)
 
 
 class Page(HTMLParser):
@@ -18,7 +30,7 @@ class Page(HTMLParser):
         self.assets: list[str] = []
         self.h1 = 0
         self.has_main = False
-        self.noindex = False
+        self.robots: str | None = None
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attributes = dict(attrs)
@@ -40,14 +52,27 @@ class Page(HTMLParser):
         if tag == "main":
             self.has_main = identifier == "main"
         if tag == "meta" and attributes.get("name") == "robots":
-            self.noindex = "noindex" in str(attributes.get("content"))
+            if self.robots is not None:
+                raise ValueError("Duplicate robots metadata")
+            self.robots = str(attributes.get("content"))
 
 
 def verify(output: Path, source: Path = ROOT) -> dict[str, int]:
     root = output.resolve()
     manifest = json.loads((root / MARKER).read_text())
     if manifest.get("generator") != GENERATOR or manifest.get("publication_performed") is not False:
-        raise ValueError("Invalid private build manifest")
+        raise ValueError("Invalid local build manifest")
+    indexing = manifest.get("indexing")
+    if indexing not in ("preview", "public"):
+        raise ValueError("Invalid site indexing mode")
+    public_launch = indexing == "public"
+    if manifest.get("private_preparation") is not (not public_launch):
+        raise ValueError("Site preparation/indexing state is inconsistent")
+    version = str(tomllib.loads((source / "pyproject.toml").read_text())["project"]["version"])
+    if manifest.get("version") != version:
+        raise ValueError("Site version differs from its source")
+    if public_launch and (Version(version).is_devrelease or not is_published(version, source)):
+        raise ValueError("Public indexing requires a verified published release")
     inputs = source_inputs(source)
     if set(manifest["sources"]) != {path.relative_to(source).as_posix() for path in inputs}:
         raise ValueError("Site source inventory changed; rebuild both surfaces")
@@ -69,10 +94,9 @@ def verify(output: Path, source: Path = ROOT) -> dict[str, int]:
     for path in root.rglob("*.html"):
         page = Page()
         page.feed(path.read_text())
-        if page.h1 != 1 or not page.has_main or not page.noindex:
-            raise ValueError(
-                f"Invalid heading/main/private-preview structure: {path.relative_to(root)}"
-            )
+        expected_robots = "index,follow" if public_launch else "noindex,nofollow"
+        if page.h1 != 1 or not page.has_main or page.robots != expected_robots:
+            raise ValueError(f"Invalid heading/main/indexing structure: {path.relative_to(root)}")
         pages[path.resolve()] = page
     checked = 0
     for path, page in pages.items():
@@ -95,6 +119,10 @@ def verify(output: Path, source: Path = ROOT) -> dict[str, int]:
                 raise ValueError(f"Broken anchor in {path.name}: {target}")
             checked += 1
     for surface in ("www", "docs"):
+        if (root / surface / "_headers").read_text() != site_headers(public_launch):
+            raise ValueError("Site headers differ from the selected indexing policy")
+        if (root / surface / "robots.txt").read_text() != robots_content(public_launch):
+            raise ValueError("Site robots file differs from the selected indexing policy")
         for name in ("workspace.svg", "logs.svg"):
             svg = (root / surface / "assets" / name).read_text()
             if "@font-face" in svg or 'url("https:' in svg or "<script" in svg:

@@ -113,6 +113,14 @@ own exact source/manifest receipts.
 
 ## Final product hosting: Cloudflare Pages
 
+The public-launch generator mode is explicit: `--public-launch` prepares HTML,
+HTTP headers and robots files that allow indexing on both surfaces. The exact
+source version must appear in the verified publication inventory. Ordinary
+builds retain noindex, and unpublished future versions cannot enable public
+indexing. This preparation never uploads a site or changes DNS. The protected
+Website publication workflow has a matching `public_launch` boolean input,
+defaulting to false; enable it only for the concretely approved public launch.
+
 Use the existing Direct Upload projects: `kuberich-site` for
 `artifacts/site/www` and `kuberich-docs` for `artifacts/site/docs`. The protected
 GitHub Actions workflow publishes the reviewed prebuilt directories with Wrangler.
@@ -142,6 +150,9 @@ Before an approved deployment:
 2. Rebuild/check/browser-verify the exact website bytes, retain the manifest,
    screenshots and artifact digests, and obtain explicit website/visibility/DNS
    approval from the maintainer for the concrete result.
+   For public-launch preparation, use
+   `uv run python -m scripts.build_site --public-launch --output artifacts/site-public`,
+   check that directory and retain its browser report.
 3. After final-product publication approval, dispatch the protected GitHub Actions
    job to the existing projects for each exact output directory.
    Record the actual deployment/project IDs and URL-to-manifest association.

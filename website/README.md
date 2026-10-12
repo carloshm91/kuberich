@@ -8,8 +8,10 @@ The HTML guides are built from the maintained files in `docs/`; edit those
 sources instead of duplicating installation instructions. The project version
 comes from `pyproject.toml`. CLI flags/aliases/descriptions come from the actual
 argument parser, resource aliases/scopes/columns from the application registry,
-and capability status/public summaries from `docs/capabilities.json`. Both HTML surfaces retain explicit preview status
-and noindex directives. The builder never registers a project or changes DNS.
+and capability status/public summaries from `docs/capabilities.json`. The default
+build retains noindex directives. An explicit public-launch build requires an
+exact verified published release; prepared future versions remain previews.
+The builder never registers a project or changes DNS.
 The separately authorized #166 workflow publishes checked bytes to provider hosts;
 its publication receipt records actual URLs and IDs. See
 [development publication](../docs/website.md#development-publication-166).
@@ -130,3 +132,26 @@ and shows public installation status only for an exact recorded version. A new
 source version stays a prepared release until its own activation is recorded;
 changing `pyproject.toml` alone never advertises published packages. Building the
 site still does not deploy it.
+
+## Prepare the public website
+
+After verified artifact activation, prepare indexable landing/docs output:
+
+```sh
+uv run python -m scripts.build_site --public-launch --output artifacts/site-public
+uv run python -m scripts.check_site --output artifacts/site-public
+node scripts/verify_site_browser.mjs artifacts/site-public artifacts/site-qa
+```
+
+The explicit mode updates HTML metadata, response headers and robots files on
+both surfaces while retaining the existing security headers. It refuses a
+development or unpublished source version before replacing existing output.
+The checker rejects inconsistent version, indexing policy and output/source
+digests. Every build manifest still records `publication_performed: false`.
+
+Only after concrete owner approval, dispatch the protected Website publication
+workflow with its `public_launch` input enabled. It rebuilds and browser-verifies
+that mode without credentials, then uploads the exact checked artifact after
+environment review. Public verification compares the selected headers as well
+as every file digest. The input defaults to preview mode; repository checks
+and ordinary PRs do not publish. See [launch procedure](../docs/website.md).
