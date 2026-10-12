@@ -45,7 +45,7 @@ def test_builds_both_surfaces_deterministically_and_rebuilds_owned_output(tmp_pa
         assert "uv tool install --python 3.12" in html
         assert "kuberich --kubeconfig" in html
         assert "--readonly" in html and "--write" in html
-        assert "uninstall" in html and "Full release qualification" in html
+        assert "uninstall" in html and "Public release" in html
         assert "Install from PyPI, the project Homebrew tap or GitHub Release archives" in html
         assert "PyPI/Homebrew packages are not available" not in html
         assert "Maintainer rehearsal" not in html
@@ -114,15 +114,64 @@ def test_public_launch_prepares_indexable_both_surfaces_without_deploying(tmp_pa
     assert manifest["indexing"] == "public"
     assert manifest["private_preparation"] is False
     assert manifest["publication_performed"] is False
-    assert verify(output)["pages"] == 57
+    assert verify(output)["pages"] == len(GUIDES) + len(REFERENCES) + 4
+    assert not (output / "www/docs").exists()
+    landing = (output / "www/index.html").read_text()
+    assert 'href="https://docs.kuberich.com/"' in landing
+    assert 'href="https://docs.kuberich.com/installation.html"' in landing
+    assert 'href="docs/' not in landing
+    assert 'rel="canonical" href="https://kuberich.com/"' in landing
+    assert (
+        'rel="canonical" href="https://docs.kuberich.com/quickstart"'
+        in (output / "docs/quickstart.html").read_text()
+    )
+    assert (output / "www/_redirects").read_text() == (
+        "/docs https://docs.kuberich.com/ 301\n"
+        "/docs/index.html https://docs.kuberich.com/ 301\n"
+        "/docs/* https://docs.kuberich.com/:splat 301\n"
+    )
     for path in output.rglob("*.html"):
         assert '<meta name="robots" content="index,follow">' in path.read_text()
         assert '<meta name="robots" content="noindex' not in path.read_text()
+        assert "Development preview · 0.0.1.dev0" not in path.read_text()
+        assert "Public PyPI/Homebrew packages are not available" not in path.read_text()
+        assert "Full release qualification" not in path.read_text()
     for surface in ("www", "docs"):
         headers = (output / surface / "_headers").read_text()
         assert "X-Robots-Tag: index, follow" in headers
         assert "Content-Security-Policy:" in headers
         assert (output / surface / "robots.txt").read_text() == "User-agent: *\nAllow: /\n"
+
+
+@pytest.mark.parametrize("fault", ["canonical", "guide-link", "redirect", "duplicate"])
+def test_public_documentation_host_policy_rejects_inventoried_drift(tmp_path, fault):
+    output = tmp_path / "output"
+    build(output, public_launch=True)
+    if fault == "redirect":
+        path = output / "www/_redirects"
+        path.write_text(path.read_text().replace("docs.kuberich.com", "wrong.example"))
+    elif fault == "duplicate":
+        path = output / "www/docs/index.html"
+        path.parent.mkdir()
+        path.write_text((output / "docs/index.html").read_text())
+    else:
+        path = output / "www/index.html"
+        text = path.read_text()
+        text = (
+            text.replace(
+                'rel="canonical" href="https://kuberich.com/"',
+                'rel="canonical" href="https://wrong.example/"',
+            )
+            if fault == "canonical"
+            else text.replace(
+                'href="https://docs.kuberich.com/installation.html"',
+                'href="https://docs.kuberich.com/missing.html"',
+            )
+        )
+        path.write_text(text)
+    refresh(output, path)
+    with pytest.raises(ValueError, match=r"canonical|Broken|redirects|dedicated"):
+        verify(output)
 
 
 @pytest.mark.parametrize("version", ["0.1.0", "0.2.0", "0.0.1.dev0"])

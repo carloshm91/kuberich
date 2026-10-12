@@ -20,6 +20,7 @@ const external = [];
 const failures = [];
 const reports = [];
 const mobileReports = [];
+const ownedPublicHostRequests = [];
 const mime = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml", ".txt": "text/plain" };
 const headers = Object.fromEntries((await fs.readFile(path.join(output, "www/_headers"), "utf8")).split("\n").filter(line => line.startsWith("  ")).map(line => {
   const split = line.indexOf(":");
@@ -41,17 +42,24 @@ const server = http.createServer(async (request, response) => {
 });
 await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
+const docsRoot = manifest.indexing === "public" ? `${origin}/docs` : `${origin}/www/docs`;
+async function ownedNavigation(route) {
+  const requestUrl = new URL(route.request().url());
+  if (requestUrl.origin === origin) return route.continue();
+  const surfaces = { "https://kuberich.com": "www", "https://docs.kuberich.com": "docs" };
+  if (manifest.indexing === "public" && Object.hasOwn(surfaces, requestUrl.origin)) {
+    ownedPublicHostRequests.push(requestUrl.href);
+    const response = await route.fetch({ url: `${origin}/${surfaces[requestUrl.origin]}${requestUrl.pathname}${requestUrl.search}`, maxRedirects: 0 });
+    return route.fulfill({ response });
+  }
+  external.push(requestUrl.href);
+  return route.abort();
+}
 let browser;
 try {
   browser = await chromium.launch({ channel: "chrome", headless: true });
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, permissions: ["clipboard-read", "clipboard-write"] });
-  await context.route("**/*", async route => {
-    if (!route.request().url().startsWith(origin + "/")) {
-      external.push(route.request().url());
-      return route.abort();
-    }
-    return route.continue();
-  });
+  await context.route("**/*", ownedNavigation);
   const page = await context.newPage();
   page.on("pageerror", error => failures.push(error.message));
   page.on("response", response => { if (response.status() >= 400) failures.push(`${response.status()} ${response.url()}`); });
@@ -63,6 +71,14 @@ try {
     assert.equal(result.violations.length, 0, `${name}: ${JSON.stringify(result.violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) })))}`);
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, `${name}: horizontal page overflow`);
     reports.push({ page: name, violations: result.violations.length, checks: result.passes.length });
+  }
+  if (manifest.indexing === "public") {
+    await page.goto(`${origin}/www/`, { waitUntil: "networkidle" });
+    await page.getByRole("navigation", { name: "Main navigation", exact: true }).getByRole("link", { name: "Documentation", exact: true }).click();
+    assert.equal(page.url(), "https://docs.kuberich.com/");
+    assert.match(await page.getByRole("heading", { level: 1 }).textContent(), /Get to know your workspace/);
+    await page.getByRole("link", { name: "KubeRich home", exact: true }).click();
+    assert.equal(page.url(), "https://kuberich.com/");
   }
   await page.goto(`${origin}/www/`, { waitUntil: "networkidle" });
   for (const image of await page.locator("img").all()) await image.scrollIntoViewIfNeeded();
@@ -95,14 +111,14 @@ try {
   assert.equal(mobile.violations.length, 0, JSON.stringify(mobile.violations));
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
   await page.screenshot({ path: path.join(evidence, "landing-mobile.png"), fullPage: true });
-  await page.goto(`${origin}/www/docs/quickstart.html`, { waitUntil: "networkidle" });
+  await page.goto(`${docsRoot}/quickstart.html`, { waitUntil: "networkidle" });
   assert.equal(await page.locator(".docs-menu").getAttribute("open"), null);
   await page.locator(".docs-menu > summary").focus();
   await page.keyboard.press("Enter");
   assert.notEqual(await page.locator(".docs-menu").getAttribute("open"), null);
   await page.getByRole("navigation", { name: "Documentation", exact: true }).getByRole("link", { name: "Resource registry", exact: true }).click();
   assert.match(await page.getByRole("heading", { level: 1 }).textContent(), /Resource reference/);
-  await page.goto(`${origin}/www/docs/quickstart.html`, { waitUntil: "networkidle" });
+  await page.goto(`${docsRoot}/quickstart.html`, { waitUntil: "networkidle" });
   await page.locator(".copy-button").first().click();
   assert.equal(await page.evaluate(() => navigator.clipboard.readText()), await page.locator("pre code").first().textContent());
   assert.match(await page.locator("#copy-status").textContent(), /copied/);
@@ -114,7 +130,7 @@ try {
   await page.screenshot({ path: path.join(evidence, "docs-mobile.png"), fullPage: true });
   await page.screenshot({ path: path.join(evidence, "docs-mobile-viewport.png") });
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto(`${origin}/www/docs/quickstart.html`, { waitUntil: "networkidle" });
+  await page.goto(`${docsRoot}/quickstart.html`, { waitUntil: "networkidle" });
   assert.notEqual(await page.locator(".docs-menu").getAttribute("open"), null);
   await page.screenshot({ path: path.join(evidence, "docs-desktop.png"), fullPage: true });
   await page.screenshot({ path: path.join(evidence, "docs-desktop-viewport.png") });
@@ -130,6 +146,7 @@ try {
   assert.match(await denied.locator("#copy-status").textContent(), /unavailable/);
   await denied.close();
   const noJs = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+  await noJs.route("**/*", ownedNavigation);
   const staticPage = await noJs.newPage();
   await staticPage.goto(`${origin}/www/`);
   await staticPage.getByRole("link", { name: "Get started" }).click();
@@ -139,7 +156,7 @@ try {
   await noJs.close();
   assert.deepEqual(external, [], "External runtime requests");
   assert.deepEqual(failures, [], "Browser failures");
-  const report = { browser: browser.version(), playwright: require("playwright/package.json").version, axe: require("axe-core/package.json").version, build_manifest_sha256: createHash("sha256").update(await fs.readFile(path.join(output, "build-manifest.json"))).digest("hex"), desktop_pages: reports, mobile_pages: mobileReports, mobile_keyboard_menu: true, narrow_320px_overflow: true, mobile_landing_violations: mobile.violations.length, mobile_docs_violations: mobileDocs.violations.length, keyboard_skip_link: true, clipboard_success_and_denial: true, no_javascript_navigation: true, external_requests: external, browser_failures: failures, publication_performed: false };
+  const report = { browser: browser.version(), playwright: require("playwright/package.json").version, axe: require("axe-core/package.json").version, build_manifest_sha256: createHash("sha256").update(await fs.readFile(path.join(output, "build-manifest.json"))).digest("hex"), desktop_pages: reports, mobile_pages: mobileReports, mobile_keyboard_menu: true, narrow_320px_overflow: true, mobile_landing_violations: mobile.violations.length, mobile_docs_violations: mobileDocs.violations.length, keyboard_skip_link: true, clipboard_success_and_denial: true, no_javascript_navigation: true, canonical_host_navigation: manifest.indexing === "public", owned_public_host_requests: ownedPublicHostRequests, external_requests: external, browser_failures: failures, publication_performed: false };
   await fs.writeFile(path.join(evidence, "browser-report.json"), JSON.stringify(report, null, 2) + "\n");
   process.stdout.write(JSON.stringify({ pages: reports.length, violations: 0, evidence }) + "\n");
 } finally {

@@ -199,8 +199,23 @@ def test_dispatch_requires_canonical_manual_main_and_clean_exact_checkout(tmp_pa
         pages.dispatch_identity(environment, tmp_path)
 
 
-@pytest.mark.parametrize("public_launch", [False, True])
-@pytest.mark.parametrize("fault", [None, "bytes", "headers", "indexing", "notfound"])
+@pytest.mark.parametrize(
+    ("public_launch", "fault"),
+    [
+        (public_launch, fault)
+        for public_launch in (False, True)
+        for fault in (
+            None,
+            "bytes",
+            "headers",
+            "indexing",
+            "notfound",
+            "redirect-status",
+            "redirect-target",
+        )
+        if public_launch or fault not in {"redirect-status", "redirect-target"}
+    ],
+)
 def test_live_verification_reads_real_owned_http_and_detects_drift_without_credentials(
     tmp_path, monkeypatch, fault, public_launch
 ):
@@ -219,6 +234,21 @@ def test_live_verification_reads_real_owned_http_and_detects_drift_without_crede
 
         def do_GET(self):
             requests.append((self.path, self.headers.get("Authorization")))
+            if public_launch and self.path.startswith("/docs"):
+                target = (
+                    "/"
+                    if self.path in {"/docs", "/docs/", "/docs/index.html"}
+                    else self.path.removeprefix("/docs")
+                )
+                self.send_response(302 if fault == "redirect-status" else 301)
+                location = (
+                    f"http://127.0.0.1:{server.server_port}/should-not-follow"
+                    if fault == "redirect-target"
+                    else "https://docs.kuberich.com" + target
+                )
+                self.send_header("Location", location)
+                self.end_headers()
+                return
             file = output / "www" / self.path.lstrip("/")
             missing = not file.is_file()
             content = (output / "www/404.html" if missing else file).read_bytes()
@@ -237,10 +267,16 @@ def test_live_verification_reads_real_owned_http_and_detects_drift_without_crede
     thread = threading.Thread(target=server.serve_forever)
     thread.start()
     fetch = pages.fetch
+    fetch_redirect = pages.fetch_redirect
     monkeypatch.setattr(
         pages,
         "fetch",
         lambda url: fetch(url.replace(ORIGIN, f"http://127.0.0.1:{server.server_port}")),
+    )
+    monkeypatch.setattr(
+        pages,
+        "fetch_redirect",
+        lambda url: fetch_redirect(url.replace(ORIGIN, f"http://127.0.0.1:{server.server_port}")),
     )
     try:
         if fault:
@@ -251,13 +287,20 @@ def test_live_verification_reads_real_owned_http_and_detects_drift_without_crede
                     "headers": "headers",
                     "indexing": "headers",
                     "notfound": "404",
+                    "redirect-status": "documentation redirect",
+                    "redirect-target": "documentation redirect",
                 }[fault],
             ):
                 pages.verify_surface(output, "www", ORIGIN)
         else:
             result = pages.verify_surface(output, "www", ORIGIN)
-            assert result["files_verified"] > 25 and result["not_found_verified"] is True
+            assert (
+                result["files_verified"] > (5 if public_launch else 25)
+                and result["not_found_verified"] is True
+            )
+            assert result["documentation_redirects_verified"] == (4 if public_launch else 0)
         assert requests and all(auth is None for _, auth in requests)
+        assert all(path != "/should-not-follow" for path, _ in requests)
     finally:
         server.shutdown()
         thread.join(timeout=5)
@@ -285,8 +328,9 @@ def publication_fixture(tmp_path, monkeypatch, script="process.exit(0);"):
     return output, receipt, wrangler
 
 
+@pytest.mark.parametrize("public_launch", [False, True])
 def test_both_actual_node_uploads_receive_scoped_argv_and_receipt_matches_checked_manifest(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, public_launch
 ):
     argument_file = tmp_path / "arguments.jsonl"
     script = (
@@ -295,12 +339,15 @@ def test_both_actual_node_uploads_receive_scoped_argv_and_receipt_matches_checke
         + ", JSON.stringify(process.argv.slice(2))+'\\n');"
     )
     output, receipt, wrangler = publication_fixture(tmp_path, monkeypatch, script)
+    if public_launch:
+        build(output, public_launch=True)
     result = pages.publish(output, receipt, wrangler, ROOT)
     assert result["status"] == "verified" and result["publication_performed"] is True
     assert json.loads(receipt.read_text()) == result
     arguments = [json.loads(line) for line in argument_file.read_text().splitlines()]
     assert len(arguments) == 2
-    for args, surface in zip(arguments, ("www", "docs"), strict=True):
+    surfaces = ("docs", "www") if public_launch else ("www", "docs")
+    for args, surface in zip(arguments, surfaces, strict=True):
         assert args[:3] == ["pages", "deploy", str(output / surface)]
         assert args[3:] == [
             "--project-name",

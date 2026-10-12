@@ -11,9 +11,12 @@ from urllib.parse import unquote, urlsplit
 from packaging.version import Version
 
 from scripts.build_site import (
+    DOCS_ORIGIN,
+    DOCS_REDIRECTS,
     GENERATOR,
     MARKER,
     ROOT,
+    SITE_ORIGIN,
     digest,
     is_published,
     robots_content,
@@ -31,6 +34,7 @@ class Page(HTMLParser):
         self.h1 = 0
         self.has_main = False
         self.robots: str | None = None
+        self.canonical: str | None = None
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         attributes = dict(attrs)
@@ -44,7 +48,12 @@ class Page(HTMLParser):
         if tag in {"script", "img"} and attributes.get("src"):
             self.assets.append(str(attributes["src"]))
         if tag == "link" and attributes.get("href"):
-            self.assets.append(str(attributes["href"]))
+            if attributes.get("rel") == "canonical":
+                if self.canonical is not None:
+                    raise ValueError("Duplicate canonical URL")
+                self.canonical = str(attributes["href"])
+            else:
+                self.assets.append(str(attributes["href"]))
         if tag == "img" and "alt" not in attributes:
             raise ValueError("Image lacks alternative text")
         if tag == "h1":
@@ -66,6 +75,8 @@ def verify(output: Path, source: Path = ROOT) -> dict[str, int]:
     if indexing not in ("preview", "public"):
         raise ValueError("Invalid site indexing mode")
     public_launch = indexing == "public"
+    if public_launch and (root / "www/docs").exists():
+        raise ValueError("Public documentation must use its dedicated host")
     if manifest.get("private_preparation") is not (not public_launch):
         raise ValueError("Site preparation/indexing state is inconsistent")
     version = str(tomllib.loads((source / "pyproject.toml").read_text())["project"]["version"])
@@ -97,6 +108,13 @@ def verify(output: Path, source: Path = ROOT) -> dict[str, int]:
         expected_robots = "index,follow" if public_launch else "noindex,nofollow"
         if page.h1 != 1 or not page.has_main or page.robots != expected_robots:
             raise ValueError(f"Invalid heading/main/indexing structure: {path.relative_to(root)}")
+        canonical = None
+        if public_launch and path.name != "404.html":
+            surface, filename = path.relative_to(root).parts
+            host = DOCS_ORIGIN if surface == "docs" else SITE_ORIGIN
+            canonical = host + "/" + ("" if filename == "index.html" else path.stem)
+        if page.canonical != canonical:
+            raise ValueError("Page canonical URL differs from its public host")
         pages[path.resolve()] = page
     checked = 0
     for path, page in pages.items():
@@ -107,8 +125,15 @@ def verify(output: Path, source: Path = ROOT) -> dict[str, int]:
             if parsed.scheme or parsed.netloc:
                 if parsed.scheme not in {"https", "mailto"} or parsed.username or parsed.password:
                     raise ValueError("Unsafe external link")
-                continue
-            destination = (path.parent / unquote(parsed.path)).resolve() if parsed.path else path
+                if public_launch and parsed.netloc in {"docs.kuberich.com", "kuberich.com"}:
+                    surface = "docs" if parsed.netloc == "docs.kuberich.com" else "www"
+                    destination = (root / surface / unquote(parsed.path).lstrip("/")).resolve()
+                else:
+                    continue
+            else:
+                destination = (
+                    (path.parent / unquote(parsed.path)).resolve() if parsed.path else path
+                )
             if destination.is_dir():
                 destination /= "index.html"
             if not destination.is_relative_to(root) or not destination.is_file():
@@ -127,6 +152,12 @@ def verify(output: Path, source: Path = ROOT) -> dict[str, int]:
             svg = (root / surface / "assets" / name).read_text()
             if "@font-face" in svg or 'url("https:' in svg or "<script" in svg:
                 raise ValueError("Screenshot includes external/active content")
+    redirects = root / "www/_redirects"
+    if public_launch:
+        if not redirects.is_file() or redirects.read_text() != DOCS_REDIRECTS:
+            raise ValueError("Public documentation redirects differ from the selected policy")
+    elif redirects.exists():
+        raise ValueError("Preview output cannot redirect local documentation")
     return {"pages": len(pages), "local_links_and_assets": checked, "files": len(actual)}
 
 

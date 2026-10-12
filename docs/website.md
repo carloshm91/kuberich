@@ -121,6 +121,18 @@ indexing. This preparation never uploads a site or changes DNS. The protected
 Website publication workflow has a matching `public_launch` boolean input,
 defaulting to false; enable it only for the concretely approved public launch.
 
+Public landing links use `docs.kuberich.com` for all guides; canonical URLs name
+the appropriate custom host. Public output includes no nested documentation
+copy on the landing surface. Its `_redirects` file moves legacy `/docs` URLs to
+the documentation host. The publisher uploads/verifies docs before the landing
+page, skips provider-consumed routing files as served assets, and independently
+checks actual redirect status/location without following the response or
+sending credentials. The default local preview retains nested guides so it
+remains usable without custom hosts. Building updated sources does not deploy
+them: every public release must complete the publication steps in
+[the release procedure](releases.md), including verified current version and
+installation notices on actual HTTPS pages.
+
 Use the existing Direct Upload projects: `kuberich-site` for
 `artifacts/site/www` and `kuberich-docs` for `artifacts/site/docs`. The protected
 GitHub Actions workflow publishes the reviewed prebuilt directories with Wrangler.

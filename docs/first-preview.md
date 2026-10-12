@@ -15,12 +15,15 @@ kuberich config check
 Choose one installation method. Start with
 `kuberich --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly`, using
 your intended context and namespace. The [installation guide](installation.md)
-covers pipx, standalone archives, updates and removal. Website provider hosts
-retain their earlier development deployment; final site/custom-domain activation
-remains separate work.
+covers pipx, standalone archives, updates and removal. The maintainer activated
+`kuberich.com` and `docs.kuberich.com`; both passed HTTPS reads on 2026-10-12.
+They still serve the earlier development deployment. Updated public content and
+the `www` redirect remain final hosting work.
 The public website build is prepared and browser-verified with indexable pages
-for the verified 0.1.0 release. Upload and custom-domain/redirect activation
-remain separately approved steps; preparation does not change either live site.
+for the verified 0.1.0 release. It directs landing links to the dedicated docs
+host and redirects legacy `/docs` paths instead of publishing a duplicate guide
+tree. Upload and final redirect verification remain separate steps; preparation
+does not change either live site.
 
 ## Available workflows
 

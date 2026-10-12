@@ -23,6 +23,12 @@ ROOT = Path(__file__).resolve().parents[1]
 GENERATOR = "kuberich-initial-site-v1"
 MARKER = "build-manifest.json"
 REPOSITORY = "https://github.com/carloshm91/kuberich"
+SITE_ORIGIN = "https://kuberich.com"
+DOCS_ORIGIN = "https://docs.kuberich.com"
+DOCS_REDIRECTS = f"""/docs {DOCS_ORIGIN}/ 301
+/docs/index.html {DOCS_ORIGIN}/ 301
+/docs/* {DOCS_ORIGIN}/:splat 301
+"""
 HEADERS = """/*
   Content-Security-Policy: default-src 'none'; img-src 'self'; style-src 'self'; script-src 'self'; font-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
   X-Content-Type-Options: nosniff
@@ -191,10 +197,9 @@ def installation_status(version: str, root: Path = ROOT) -> str:
 
 def preview_banner(version: str, root: Path = ROOT) -> str:
     return (
-        '<aside class="preview-banner" aria-label="Preview status">'
+        '<aside class="preview-banner" aria-label="Release status">'
         f"<p><strong>{preview_label(version, root)} · {escape(version)}</strong>. "
-        f"{installation_status(version, root)} Full release qualification is recorded separately; real-cloud "
-        "certification remains deferred.</p></aside>"
+        f"{installation_status(version, root)}</p></aside>"
     )
 
 
@@ -207,6 +212,7 @@ def page_frame(
     docs: bool,
     standalone: bool = False,
     public_launch: bool = False,
+    canonical: str | None = None,
 ) -> str:
     prefix = "." if standalone or not docs else ".."
     home = "https://kuberich.com" if standalone else ("../index.html" if docs else "index.html")
@@ -215,12 +221,21 @@ def page_frame(
         "description": f"KubeRich: a Python terminal workspace for Kubernetes. {preview_label(version, root)}.",
         "prefix": prefix,
         "home": home,
-        "docs": "index.html" if docs or standalone else "docs/index.html",
+        "docs": (
+            "index.html"
+            if docs or standalone
+            else DOCS_ORIGIN + "/"
+            if public_launch
+            else "docs/index.html"
+        ),
         "body_class": "docs-page" if docs else "landing-page",
         "version": escape(version),
         "preview_label": preview_label(version, root),
         "content": content,
         "robots": "index,follow" if public_launch else "noindex,nofollow",
+        "canonical": f'<link rel="canonical" href="{escape(canonical, quote=True)}">'
+        if canonical and public_launch
+        else "",
     }
     return Template((root / "website/frame.html").read_text()).substitute(values)
 
@@ -272,6 +287,7 @@ def guide_html(
         docs=True,
         standalone=standalone,
         public_launch=public_launch,
+        canonical=DOCS_ORIGIN + "/" + guide.filename.removesuffix(".html"),
     )
 
 
@@ -311,6 +327,7 @@ def docs_index(root: Path, version: str, *, standalone: bool, public_launch: boo
         docs=True,
         standalone=standalone,
         public_launch=public_launch,
+        canonical=DOCS_ORIGIN + "/",
     )
 
 
@@ -375,6 +392,9 @@ def build(output: Path, root: Path = ROOT, *, public_launch: bool = False) -> di
         (destination / "_headers").write_text(site_headers(public_launch))
         (destination / "robots.txt").write_text(robots_content(public_launch))
         standalone = surface == "docs"
+        if public_launch and not standalone:
+            (destination / "_redirects").write_text(DOCS_REDIRECTS)
+            continue
         docs_dir = destination if standalone else destination / "docs"
         docs_dir.mkdir(exist_ok=True)
         (docs_dir / "index.html").write_text(
@@ -395,6 +415,7 @@ def build(output: Path, root: Path = ROOT, *, public_launch: bool = False) -> di
         version=version,
         preview_label=preview_label(version, root),
         installation_status=installation_status(version, root),
+        docs_base=DOCS_ORIGIN + "/" if public_launch else "docs/",
     )
     (output / "www/index.html").write_text(
         page_frame(
@@ -404,6 +425,7 @@ def build(output: Path, root: Path = ROOT, *, public_launch: bool = False) -> di
             version,
             docs=False,
             public_launch=public_launch,
+            canonical=SITE_ORIGIN + "/",
         )
     )
     for surface in ("www", "docs"):
