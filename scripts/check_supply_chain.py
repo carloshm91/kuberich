@@ -30,6 +30,7 @@ from scripts.supply_chain import (
     digest,
     license_inventory,
     runtime_packages,
+    sbom_serial,
     validate_sbom,
 )
 
@@ -169,6 +170,9 @@ def attach_artifacts(
             {"name": "kuberich:runtime-selection", "value": scope},
         ]
     )
+    # Reproducible cyclonedx-py output omits serialNumber, but the pinned
+    # attestation action requires it. Include the completed artifact bindings.
+    bom["serialNumber"] = sbom_serial(bom)
 
 
 def check_attachment(

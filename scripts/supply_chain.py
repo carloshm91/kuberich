@@ -10,6 +10,7 @@ import re
 from datetime import date
 from pathlib import Path
 from typing import Any
+from uuid import NAMESPACE_URL, uuid5
 
 import yaml
 from cyclonedx.schema import SchemaVersion
@@ -176,9 +177,21 @@ def check_audit(
     return accepted
 
 
+def sbom_serial(bom: dict[str, Any]) -> str:
+    """Identify the complete document reproducibly, excluding its own identifier."""
+    content = {key: value for key, value in bom.items() if key != "serialNumber"}
+    encoded = json.dumps(
+        content, sort_keys=True, separators=(",", ":"), ensure_ascii=False, allow_nan=False
+    ).encode("utf-8")
+    checksum = hashlib.sha256(encoded).hexdigest()
+    return uuid5(NAMESPACE_URL, f"https://github.com/carloshm91/kuberich/sbom/{checksum}").urn
+
+
 def validate_sbom(bom: dict[str, Any]) -> None:
     if bom.get("specVersion") != "1.6" or bom.get("bomFormat") != "CycloneDX":
         raise ValueError("CycloneDX 1.6 SBOM required")
+    if not bom.get("serialNumber"):
+        raise ValueError("SBOM serialNumber is required for GitHub attestation")
     error = JsonStrictValidator(SchemaVersion.V1_6).validate_str(json.dumps(bom))
     if error is not None:
         raise ValueError("SBOM schema validation failed")

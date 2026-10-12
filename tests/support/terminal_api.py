@@ -112,6 +112,10 @@ class Handler(BaseHTTPRequestHandler):
         elif parsed.path in legacy_roots():
             payload = legacy_roots()[parsed.path]
         elif parsed.path.endswith("/pods"):
+            if self.server.pod_list_delay_seconds and self.server.stopping.wait(
+                self.server.pod_list_delay_seconds
+            ):
+                return
             namespace = parsed.path.split("/")[4] if "/namespaces/" in parsed.path else "default"
             payload = collection(item("owned-pty-pod", namespace=namespace))
             if self.server.pod_table.is_set():
@@ -205,6 +209,7 @@ class Server(ThreadingHTTPServer):
         self.watch_lock = threading.Lock()
         self.pod_events = queue.Queue()
         self.pod_table = threading.Event()
+        self.pod_list_delay_seconds = 0.0
         self.shell_containers: tuple[str, ...] = ()
         self.pod_get_status = 200
         self.pod_requested = threading.Event()
