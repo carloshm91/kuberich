@@ -3,6 +3,7 @@
 import copy
 import json
 from datetime import date, timedelta
+from uuid import UUID
 
 import pytest
 
@@ -13,6 +14,7 @@ from scripts.supply_chain import (
     check_policy,
     digest,
     runtime_packages,
+    sbom_serial,
     validate_sbom,
 )
 from tests.support.distribution import ROOT
@@ -251,6 +253,7 @@ def test_cyclonedx_schema_and_digest_linkage_are_independently_required():
         "version": 1,
         "metadata": {"component": {"type": "application", "name": "kuberich", "version": "0.1"}},
     }
+    bom["serialNumber"] = sbom_serial(bom)
     validate_sbom(bom)
     from scripts.check_supply_chain import attach_artifacts
 
@@ -275,3 +278,71 @@ def test_cyclonedx_schema_and_digest_linkage_are_independently_required():
         with pytest.raises(ValueError):
             validate_sbom(candidate)
             check_attachment(candidate, artifacts, "c" * 64, "locked", {"version": "0.1"})
+
+
+@pytest.mark.parametrize("serial", [None, "", False, 1, "not-a-uuid", "urn:uuid:invalid"])
+def test_missing_or_invalid_attestation_serial_cannot_pass_schema_gate(serial):
+    bom = {
+        "bomFormat": "CycloneDX",
+        "specVersion": "1.6",
+        "version": 1,
+        "serialNumber": serial,
+    }
+    with pytest.raises(ValueError, match="SBOM"):
+        validate_sbom(bom)
+    del bom["serialNumber"]
+    with pytest.raises(ValueError, match="serialNumber"):
+        validate_sbom(bom)
+
+
+def test_attached_sbom_serial_is_reproducible_and_independent_of_key_order_or_old_serial():
+    from scripts.check_supply_chain import attach_artifacts
+
+    bom = {
+        "bomFormat": "CycloneDX",
+        "specVersion": "1.6",
+        "version": 1,
+        "metadata": {"component": {"type": "application", "name": "kuberich", "version": "0.1"}},
+        "components": [{"type": "library", "name": "example", "version": "1.0"}],
+    }
+    artifacts = {"kuberich.whl": "a" * 64, "kuberich.tar.gz": "b" * 64}
+    different = dict(reversed(list(copy.deepcopy(bom).items())))
+    different["serialNumber"] = "urn:uuid:11111111-1111-4111-8111-111111111111"
+    attach_artifacts(bom, artifacts, "c" * 64, "locked")
+    attach_artifacts(different, dict(reversed(list(artifacts.items()))), "c" * 64, "locked")
+    assert bom["serialNumber"] == different["serialNumber"] == sbom_serial(bom)
+    assert UUID(bom["serialNumber"]).version == 5
+    validate_sbom(bom)
+
+
+@pytest.mark.parametrize("change", ["wheel", "sdist", "lock", "scope", "root", "dependency"])
+def test_serial_changes_with_the_exact_installed_document_and_artifact_bindings(change):
+    from scripts.check_supply_chain import attach_artifacts
+
+    bom = {
+        "bomFormat": "CycloneDX",
+        "specVersion": "1.6",
+        "version": 1,
+        "metadata": {"component": {"type": "application", "name": "kuberich", "version": "0.1"}},
+        "components": [{"type": "library", "name": "example", "version": "1.0"}],
+    }
+    candidate = copy.deepcopy(bom)
+    artifacts = {"kuberich.whl": "a" * 64, "kuberich.tar.gz": "b" * 64}
+    original = copy.deepcopy(artifacts)
+    if change == "wheel":
+        artifacts["kuberich.whl"] = "d" * 64
+    if change == "sdist":
+        artifacts["kuberich.tar.gz"] = "d" * 64
+    if change == "root":
+        candidate["metadata"]["component"]["version"] = "0.2"
+    if change == "dependency":
+        candidate["components"][0]["version"] = "2.0"
+    attach_artifacts(bom, original, "c" * 64, "locked")
+    attach_artifacts(
+        candidate,
+        artifacts,
+        "d" * 64 if change == "lock" else "c" * 64,
+        "fresh" if change == "scope" else "locked",
+    )
+    assert candidate["serialNumber"] != bom["serialNumber"]
+    validate_sbom(candidate)

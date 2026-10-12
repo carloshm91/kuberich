@@ -31,6 +31,11 @@ the [completed workload checkpoint](docs/acceptance/workload-checkpoint.md).
 
 ### Fixed
 
+- Give reproducible CycloneDX reports a content-derived serial number required
+  by GitHub's SBOM attestation parser. Reject missing identifiers before publication
+  ([#89](https://github.com/carloshm91/kuberich/issues/89),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Separate read-only branch-protection access from release publication credentials;
   give qualification reads their explicit Actions/checks/PR/issues permissions.
   Explain missing owner setup before network/publication
