@@ -136,8 +136,12 @@ installation notices on actual HTTPS pages.
 Use the existing Direct Upload projects: `kuberich-site` for
 `artifacts/site/www` and `kuberich-docs` for `artifacts/site/docs`. The protected
 GitHub Actions workflow publishes the reviewed prebuilt directories with Wrangler.
-Provider-host preview publication is delivered; custom-domain/product launch
-still follows the selected phase and cumulative release qualification. Direct Upload supports this CI workflow;
+Provider-host preview publication and the owner-approved public 0.1.0 deployment
+are delivered. Both custom domains serve the verified release and canonical
+documentation routing. Final custom-domain asset-header cache cleanup and the
+separate `www` redirect remain in
+[first-channel acceptance](acceptance/first-channel-activation.md#owner-approved-public-website-activation-2026-10-13-utc).
+Direct Upload supports this CI workflow;
 see [Cloudflare's GitHub Actions procedure](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/).
 No project, deployment, credential or DNS record was created by #154;
 actual provider projects/deployments were created under #166.

@@ -296,3 +296,53 @@ owner review, before upload, so the new routing correction can be included.
 Original run/job metadata is retained. Required hosted checks and a fresh
 owner-reviewed upload with actual provider/custom-domain/redirect acceptance
 remain open here; no updated live website is claimed by this preparation.
+
+## Owner-approved public website activation: 2026-10-13 UTC
+
+PR #196 passed its required checks and protected-squash merged to
+`f35032b7008a53f295ef8568e29e4f36aaa27fd0`. The maintainer approved the protected
+`release` environment for
+[Website publication 38275728993](https://github.com/carloshm91/kuberich/actions/runs/38275728993).
+Both preparation and publication succeeded. The downloaded checked-site,
+browser-evidence and publication-receipt ZIP digests match GitHub's originals.
+All declared local files match the downloaded inventory. The source/manifest
+association is retained with manifest SHA-256
+`ba68a4491c5c2a8b6a058053f94c616365b3454ca8bbbd9c02d9477a2b74b744`.
+
+Actual production deployment IDs are `bdb4f167-97fe-4e8b-b121-2e5ee41e9633`
+for `kuberich-docs` and `8984a988-80ae-4ee4-90ea-ba9d692ad648` for
+`kuberich-site`. The publisher independently verified all 34 docs and eight
+landing files, declared headers and custom 404s at both immutable deployment
+and provider production URLs. Four first-hop documentation redirects passed
+at each landing URL. Previous deployment IDs remain in the receipt as recovery
+targets; no rollback was executed or claimed by this activation.
+
+An independent 76-request custom-domain review matched all 42 published file
+bodies, all 26 extensionless guide URLs, both homepages and both custom 404s.
+Four legacy `/docs` responses have the expected 301 status and exact docs-host
+Location. Both homepages serve public 0.1.0, correct canonical URLs and current
+indexing headers; the landing's Documentation link targets the dedicated host.
+The former development/package-unavailable notices are absent. Actual Chrome
+154.0.8037.97 preparation covered 30 desktop and 30 mobile pages with zero
+automated accessibility violations, no browser errors and no external requests.
+Its owned-host browser mapping is preparation evidence, distinct from actual
+custom-domain HTTPS reads.
+
+A separate live Chrome 143.0.7499.169 smoke review loaded both custom-host
+homepages at desktop 1440 px and mobile 390 px, with current version notices,
+loaded landing images and no horizontal overflow, browser errors or unexpected
+host requests. Actual clicks passed landing Documentation to the docs homepage
+and the installation guide to its clean URL and Homebrew command. Screenshots
+and the live-browser receipt are retained with the publication originals.
+
+The strict custom-domain review still failed five asset-header cases. The
+ordinary URLs for `assets/mark.svg` and `assets/site.css` on each custom host,
+plus landing `assets/site.js`, retain `X-Robots-Tag: noindex, nofollow` with
+`CF-Cache-Status: REVALIDATED`. All body digests and all security headers match.
+The same URLs with a diagnostic query key return `MISS` and `index, follow`;
+the original failed responses and both variants are retained. Those diagnostic
+requests are not substituted for acceptance of the ordinary URLs. Cloudflare
+[documents zone-cache purging for stale custom-domain responses](https://developers.cloudflare.com/pages/configuration/serving-pages/#caching-and-performance).
+Owner cache cleanup and fresh ordinary-URL verification remain pending, along
+with the separately owned `www` redirect. No DNS, zone settings or cache entries
+were changed by this review; #89 remains open through those measured results.
