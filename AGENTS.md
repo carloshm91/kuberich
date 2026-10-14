@@ -68,6 +68,13 @@ implementation; do not claim to switch models without actual environment support
   do not claim parity from planned work or an unverifiable paid feature catalog.
 - Work on one implementation issue at a time. Select the first unblocked issue
   in the earliest unfinished product milestone; see docs/backlog.md.
+- The maintainer's current cadence is two to three product implementation issues
+  per working day, with a maximum of three in America/Cancun. Finish and verify
+  each issue before advancing; larger issues can carry into the next block.
+  The next requested product block is #55, #56 and #57, in dependency order.
+  Owner-dependent final hosting work remains tracked in #89 and gates later
+  publication; independently unblocked 0.2.0 product preparation may proceed
+  after the current prerequisite PR is verified and merged.
 - Use a short-lived issue branch, an issue-linked pull request, required checks,
   and squash merging. Keep main releasable.
 - While hosted Actions cannot start because of the account quota/billing block,

@@ -148,6 +148,7 @@ class OwnedCluster:
     context: str
     node_ids: tuple[str, ...]
     max_restart_period_seconds: int | None = None
+    sync_frequency_seconds: int | None = None
 
 
 def capture_docker(docker: str = "docker") -> dict[str, str]:
@@ -167,13 +168,21 @@ def capture_docker(docker: str = "docker") -> dict[str, str]:
 
 @contextmanager
 def owned_cluster(
-    kind: str, *, docker: str = "docker", max_restart_period_seconds: int | None = None
+    kind: str,
+    *,
+    docker: str = "docker",
+    max_restart_period_seconds: int | None = None,
+    sync_frequency_seconds: int | None = None,
 ) -> Iterator[OwnedCluster]:
     """Create no cluster until ownership is explicit; delete only the owned one."""
     if max_restart_period_seconds is not None and (
         type(max_restart_period_seconds) is not int or not 1 <= max_restart_period_seconds <= 300
     ):
         raise ValueError("Owned kubelet restart period must be an integer from 1 to 300 seconds.")
+    if sync_frequency_seconds is not None and (
+        type(sync_frequency_seconds) is not int or not 1 <= sync_frequency_seconds <= 60
+    ):
+        raise ValueError("Owned kubelet sync frequency must be an integer from 1 to 60 seconds.")
     environment = capture_docker(docker)
     if not run_owned([kind, "version"], environment).startswith("kind v0.33.0 "):
         raise ValueError("Use verified kind v0.33.0.")
@@ -208,7 +217,17 @@ def owned_cluster(
         directory = Path(temporary)
         path = directory / "owned-kubeconfig"
         config_args: list[str] = []
-        if max_restart_period_seconds is not None:
+        if max_restart_period_seconds is not None or sync_frequency_seconds is not None:
+            kubelet_config: dict[str, Any] = {"kind": "KubeletConfiguration"}
+            if max_restart_period_seconds is not None:
+                kubelet_config.update(
+                    featureGates={"KubeletCrashLoopBackOffMax": True},
+                    crashLoopBackOff={
+                        "maxContainerRestartPeriod": f"{max_restart_period_seconds}s"
+                    },
+                )
+            if sync_frequency_seconds is not None:
+                kubelet_config["syncFrequency"] = f"{sync_frequency_seconds}s"
             configuration = directory / "kind.yaml"
             configuration.write_text(
                 yaml.safe_dump(
@@ -218,19 +237,7 @@ def owned_cluster(
                         "nodes": [
                             {
                                 "role": "control-plane",
-                                "kubeadmConfigPatches": [
-                                    yaml.safe_dump(
-                                        {
-                                            "kind": "KubeletConfiguration",
-                                            "featureGates": {"KubeletCrashLoopBackOffMax": True},
-                                            "crashLoopBackOff": {
-                                                "maxContainerRestartPeriod": (
-                                                    f"{max_restart_period_seconds}s"
-                                                )
-                                            },
-                                        }
-                                    )
-                                ],
+                                "kubeadmConfigPatches": [yaml.safe_dump(kubelet_config)],
                             }
                         ],
                     }
@@ -264,23 +271,34 @@ def owned_cluster(
             nodes = inspect()
             identities = verified_nodes(nodes, name)
             context = verify_config(path, name, nodes)
-            if max_restart_period_seconds is not None:
+            if max_restart_period_seconds is not None or sync_frequency_seconds is not None:
                 kubelet = yaml.safe_load(
                     run_owned(
                         [docker, "exec", identities[0], "cat", "/var/lib/kubelet/config.yaml"],
                         environment,
                     )
                 )
-                if (
-                    not isinstance(kubelet, dict)
-                    or kubelet.get("crashLoopBackOff", {}).get("maxContainerRestartPeriod")
+                if not isinstance(kubelet, dict):
+                    raise ValueError("Owned kubelet configuration was not applied.")
+                if max_restart_period_seconds is not None and (
+                    kubelet.get("crashLoopBackOff", {}).get("maxContainerRestartPeriod")
                     != f"{max_restart_period_seconds}s"
                     or kubelet.get("featureGates", {}).get("KubeletCrashLoopBackOffMax") is not True
                 ):
                     raise ValueError("Owned kubelet restart period was not applied.")
+                if sync_frequency_seconds is not None and (
+                    kubelet.get("syncFrequency") != f"{sync_frequency_seconds}s"
+                ):
+                    raise ValueError("Owned kubelet sync frequency was not applied.")
             path.chmod(0o600)
             yield OwnedCluster(
-                name, path, directory, context, identities, max_restart_period_seconds
+                name,
+                path,
+                directory,
+                context,
+                identities,
+                max_restart_period_seconds,
+                sync_frequency_seconds,
             )
         finally:
             # A second cancellation must not interrupt deletion or signal restoration.

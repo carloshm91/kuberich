@@ -689,6 +689,7 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
             "retired_limit": 64,
             "crash_modes": crash_modes,
             "owned_kubelet_max_restart_period_seconds": cluster.max_restart_period_seconds,
+            "owned_kubelet_sync_frequency_seconds": cluster.sync_frequency_seconds,
         }
     finally:
         for log_owner, log_task in owners:
@@ -705,9 +706,12 @@ def main() -> None:
         "--evidence", type=Path, default="artifacts/cluster/aggregate-logs-kind.json"
     )
     args = parser.parse_args()
-    # Keep real CrashLoopBackOff and unchanged API snapshots while bounding the
-    # owned fixture's next restart inside the existing 120-second observation.
-    with owned_cluster(args.kind, max_restart_period_seconds=20) as cluster:
+    # Publish waiting status before the next restart; the default one-minute
+    # pod sync can expose that status only near the end of a 20-second backoff.
+    # These owned-node controls leave real API snapshots and log replies intact.
+    with owned_cluster(
+        args.kind, max_restart_period_seconds=20, sync_frequency_seconds=1
+    ) as cluster:
         result = asyncio.run(verify(cluster))
         result["cluster"] = cluster.name
     result["owned_cluster_deleted"] = True

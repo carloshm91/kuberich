@@ -154,6 +154,7 @@ else:
    kubelet=yaml.safe_load(setup['nodes'][0]['kubeadmConfigPatches'][0])
    if os.environ.get('OWNED_KUBELET_FAULT')=='period': kubelet['crashLoopBackOff']['maxContainerRestartPeriod']='300s'
    if os.environ.get('OWNED_KUBELET_FAULT')=='gate': kubelet['featureGates']['KubeletCrashLoopBackOffMax']=False
+   if os.environ.get('OWNED_KUBELET_FAULT')=='sync': kubelet['syncFrequency']='1m'
    if os.environ.get('OWNED_KUBELET_FAULT')=='malformed': kubelet=None
    state.with_suffix('.kubelet.yaml').write_text(yaml.safe_dump(kubelet))
   if os.environ.get('OWNED_FAULT')=='create': sys.exit(1)
@@ -194,6 +195,7 @@ def test_owned_lifecycle_cleans_success_failure_and_cancellation(fake_kind, monk
             assert cluster.path.stat().st_mode & 0o777 == 0o600
             assert cluster.context == "kind-" + cluster.name
             assert cluster.node_ids == ("owned-node-id",)
+            assert cluster.sync_frequency_seconds is None
             if fault == "body":
                 raise RuntimeError("owned body failure")
             if fault in {"cancel", "second-cancel"}:
@@ -229,6 +231,7 @@ def test_owned_restart_period_is_applied_and_read_back_from_verified_node(fake_k
         assert patch["kind"] == "KubeletConfiguration"
         assert patch["crashLoopBackOff"]["maxContainerRestartPeriod"] == f"{period}s"
         assert patch["featureGates"]["KubeletCrashLoopBackOffMax"] is True
+        assert "syncFrequency" not in patch
         read_back = next(row for row in records if row[0] == "docker" and row[1][0] == "exec")
         assert read_back[1] == ["exec", "owned-node-id", "cat", "/var/lib/kubelet/config.yaml"]
         assert read_back[2] == str(cluster.path)
@@ -258,6 +261,52 @@ def test_unapplied_owned_restart_configuration_fails_and_cleans_without_yield(
         owned_cluster(str(kind), docker=str(docker), max_restart_period_seconds=20),
     ):
         pytest.fail("an unverified kubelet setting must not yield")
+    assert json.loads(state.read_text()) == []
+    assert any(json.loads(line)[1][0] == "delete" for line in calls.read_text().splitlines())
+
+
+@pytest.mark.parametrize("frequency,period", [(1, None), (60, None), (1, 20)])
+def test_owned_sync_frequency_is_explicit_and_verified_before_yield(fake_kind, frequency, period):
+    kind, docker, state, calls = fake_kind
+    with owned_cluster(
+        str(kind),
+        docker=str(docker),
+        max_restart_period_seconds=period,
+        sync_frequency_seconds=frequency,
+    ) as cluster:
+        assert cluster.sync_frequency_seconds == frequency
+        records = [json.loads(line) for line in calls.read_text().splitlines()]
+        creation = next(row for row in records if row[0] == "kind" and row[1][0] == "create")
+        path = Path(creation[1][creation[1].index("--config") + 1])
+        config = yaml.safe_load(path.read_text())
+        patch = yaml.safe_load(config["nodes"][0]["kubeadmConfigPatches"][0])
+        assert patch["syncFrequency"] == f"{frequency}s"
+        assert ("crashLoopBackOff" in patch) == (period is not None)
+        read_back = next(row for row in records if row[0] == "docker" and row[1][0] == "exec")
+        assert read_back[1] == ["exec", "owned-node-id", "cat", "/var/lib/kubelet/config.yaml"]
+    assert json.loads(state.read_text()) == [] and not path.exists()
+
+
+@pytest.mark.parametrize("frequency", [0, 61, -1, True, 1.5, "1s"])
+def test_invalid_sync_frequency_is_rejected_before_any_process(fake_kind, frequency):
+    kind, docker, state, calls = fake_kind
+    with (
+        pytest.raises(ValueError, match="integer from 1 to 60"),
+        owned_cluster(str(kind), docker=str(docker), sync_frequency_seconds=frequency),
+    ):
+        pytest.fail("invalid configuration must not yield")
+    assert not calls.exists() and json.loads(state.read_text()) == []
+
+
+@pytest.mark.parametrize("fault", ["sync", "malformed"])
+def test_unapplied_sync_frequency_fails_and_cleans_the_owned_cluster(fake_kind, monkeypatch, fault):
+    kind, docker, state, calls = fake_kind
+    monkeypatch.setenv("OWNED_KUBELET_FAULT", fault)
+    with (
+        pytest.raises(ValueError, match="was not applied"),
+        owned_cluster(str(kind), docker=str(docker), sync_frequency_seconds=1),
+    ):
+        pytest.fail("unverified synchronization must not yield")
     assert json.loads(state.read_text()) == []
     assert any(json.loads(line)[1][0] == "delete" for line in calls.read_text().splitlines())
 

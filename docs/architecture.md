@@ -1,5 +1,23 @@
 # Architecture decisions
 
+## Owned CrashLoop status synchronization: Refs #89
+
+The aggregate owned-kind fixture explicitly uses a one-second kubelet
+`syncFrequency` alongside its existing twenty-second restart cap. The default
+one-minute synchronization period can publish a genuine waiting snapshot near
+the next restart; observing that snapshot does not reserve its log availability.
+This is an owned test-node setting, not a client retry or a production-cluster
+change. Both options remain absent by default in the shared cluster owner, and
+their configured values are read back from the verified owned node before use.
+See [KubeletConfiguration](https://kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/).
+
+The actual required-check failure retained one ended previous-log line without
+the expected synthetic output. The revised fixture retains the existing genuine
+LIST/UID/last-instance assertions, first-output and one-line checks, no replay,
+120-second scenario deadlines and owned cleanup. Faster owned status publication
+does not manufacture API records or log responses. Evidence and limitations are
+recorded in [first-channel acceptance](acceptance/first-channel-activation.md).
+
 ## Shell controls during teardown: D06 #51
 
 The shell owns its footer widgets directly. Before updating them for arriving PTY

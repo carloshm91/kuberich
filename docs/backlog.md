@@ -18,6 +18,16 @@ from parser tests alone. See [current CLI behavior](k9s-cli.md).
 
 ## Current maintainer priority
 
+The current delivery cadence is **two to three product implementation issues
+per working day, with a maximum of three**, using America/Cancun. Each issue
+retains its complete verification and protected PR workflow. A larger issue can
+continue into the next block; report completed issues and measured checks at
+the end of each block. Count product tasks separately from grouping epics and
+maintenance PRs. The next requested product block is **#55 → #56 → #57**;
+#57 retains its dependency on #56. Finish the active prerequisite PR first.
+Owner-dependent final cache/`www` work stays in #89 and blocks later publication,
+while independently unblocked 0.2.0 implementation may proceed one issue at a time.
+
 The maintainer requested qualified, usable public **0.x phases** on 2026-10-09,
 superseding #154's earlier first-public-1.0-only policy. Development metadata
 is `0.1.0`; its PyPI, GitHub and Homebrew artifacts are published. Final

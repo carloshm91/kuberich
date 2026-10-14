@@ -346,3 +346,52 @@ requests are not substituted for acceptance of the ordinary URLs. Cloudflare
 Owner cache cleanup and fresh ordinary-URL verification remain pending, along
 with the separately owned `www` redirect. No DNS, zone settings or cache entries
 were changed by this review; #89 remains open through those measured results.
+
+## Required CrashLoop fixture correction and delivery cadence
+
+The documentation PR's first actual matrix
+[38333096529](https://github.com/carloshm91/kuberich/actions/runs/38333096529)
+failed its Linux/Python 3.12 owned aggregate scenario. Other source jobs, all four
+native targets, Repository checks and DCO passed. The retained failed artifact
+ZIP SHA-256 is
+`ec0f0c709d57c76ec6cc16e71a2ff127f56633cbcf640ad67b96eb66952f07b2`.
+Its previous-mode reader ended after one line without the expected fixture
+output, while the owner remained alive and subsequent pod restarts continued.
+The waiting membership LIST was observed about 22.95 seconds after its direct
+preflight log read. The original record does not retain that unexpected line's
+payload; no specific runtime error text is inferred from it.
+
+The owned aggregate node now explicitly sets and verifies `syncFrequency: 1s`
+alongside the existing twenty-second restart cap. The default kubelet period is
+one minute; see the
+[configuration contract](https://kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/).
+Both options remain absent by default for other cluster owners. Invalid values
+fail before any process, and missing/apparently ignored settings fail before
+yielding the cluster, with owned cleanup verified. This changes fixture status
+publication, leaving client code, actual API snapshots/log responses, one-line
+first admission, no replay and existing 120-second deadlines unchanged.
+
+Local verification passed **83 owned-node/aggregate fixture cases in 49.39
+seconds**, Ruff, 539-file formatting and strict types for both changed scripts.
+Two fresh revised owned-kind executions passed all eleven scenario groups,
+current/previous initial waiting admission, caller configuration preservation,
+reader/watch cleanup and deletion. In the first execution, waiting membership
+arrived about 2.93 seconds after preflight; previous admission used one LIST.
+An intervening diagnostic using the original default sync setting also passed,
+but its waiting LIST arrived after about 30.94 seconds. It did not reproduce
+the hosted failure and is not claimed as a failing negative control. Its original
+diagnostic used exact line equality in one observational field, whereas the
+unchanged qualifier requires substring presence; a separate annotation preserves
+that distinction without rewriting the original receipt.
+
+The rebuilt public site remains byte-identical to the actual deployed manifest:
+30 pages, 1,221 references and 46 files. Application coverage is unchanged;
+changed executable production coverage is N/A. Fresh hosted checks remain
+required before merging this fixture correction. No artifact, tag or website
+replacement is performed by it.
+
+The maintainer requested two to three product tasks per working day, capped at
+three in America/Cancun. The next block is #55, #56 and #57, retaining their
+dependency order and complete verification. Owner-dependent hosting acceptance
+remains #89 and blocks later publication; independent 0.2.0 implementation may
+proceed after this prerequisite PR passes and merges.
