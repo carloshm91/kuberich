@@ -2,16 +2,19 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Self, TypeVar, cast
+from typing import Any, ClassVar, Self, TypeVar, cast
 
 from rich.style import Style
 from rich.text import Text
+from textual.binding import BindingType
 from textual.geometry import Region
 from textual.strip import Strip
 from textual.widgets import DataTable
 from textual.widgets.data_table import ColumnKey, RowKey
 
+from kuberich.domain.resource_preferences import Justification
 from kuberich.security.presentation import safe_text
+from kuberich.ui.keybindings import EffectiveKeys, key_hint, table_bindings
 
 Cell = TypeVar("Cell")
 
@@ -21,25 +24,42 @@ class TableCell:
     uid: str
     text: str
     numeric: bool = False
+    alignment: Justification | None = None
 
     def __rich__(self) -> Text:
         value = safe_text(self.text)
         value.truncate(256, overflow="ellipsis")
-        value.justify = "right" if self.numeric else "left"
+        value.justify = self.alignment or ("right" if self.numeric else "left")
         return value
 
     def __str__(self) -> str:
         return self.__rich__().plain
 
+    @property
+    def plain(self) -> str:
+        return str(self)
+
 
 class FrameTable(DataTable[Cell]):
     """Keep native cell sizing and reuse inherited style within one render frame."""
 
+    BINDING_PROFILE: ClassVar[str] = "table"
+    BINDINGS: ClassVar[list[BindingType]] = table_bindings("table")
+    effective_keys: EffectiveKeys = ()
+    _column_revision = 0
     _frame_style: Style | None = None
     _width_metadata_trusted = True
     _row_order_revision = 0
     _scoped_cell_refresh = False
     _row_repaint_enabled = False
+
+    def navigation_hint(self, action: str) -> str:
+        label = key_hint(self.effective_keys, self.BINDING_PROFILE, action)
+        return "Shift+" + label if len(label) == 1 and label.isupper() else label
+
+    def action_half_page(self, direction: int) -> None:
+        height = max(1, (self.scrollable_content_region.height - self.header_height) // 2)
+        self.move_cursor(row=self.cursor_row + direction * height)
 
     def refresh(
         self,
@@ -74,6 +94,7 @@ class FrameTable(DataTable[Cell]):
         default: Cell | None = None,
     ) -> ColumnKey:
         result = super().add_column(label, width=width, key=key, default=default)
+        self._column_revision += 1
         if default is not None and type(default) is not TableCell:
             self._width_metadata_trusted = False
         return result
@@ -82,6 +103,7 @@ class FrameTable(DataTable[Cell]):
         result = super().clear(columns)
         self._width_metadata_trusted = True
         self._row_order_revision += 1
+        self._column_revision += columns
         return result
 
     def remove_row(self, row_key: RowKey | str) -> None:

@@ -1,6 +1,7 @@
 """Public Input events implement deliberate completion without async stale results."""
 
 from collections.abc import Callable
+from dataclasses import replace
 from typing import ClassVar
 
 from textual.binding import Binding, BindingType
@@ -15,6 +16,8 @@ class NavigationInput(Input):
     """Finish focus/value ownership in the key handler before the next queued key."""
 
     BINDINGS: ClassVar[list[BindingType]] = [
+        # Finish native editing before subsequent typeahead or a focus change.
+        *(replace(binding, priority=True) for binding in Binding.make_bindings(Input.BINDINGS)),
         Binding("enter", "submit", "Submit", show=False, priority=True),
         Binding("tab", "app.focus_next", "Next field", show=False, priority=True),
         Binding("shift+tab", "app.focus_previous", "Previous field", show=False, priority=True),

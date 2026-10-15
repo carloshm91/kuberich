@@ -28,18 +28,16 @@ from kuberich.ui.chrome import (
     WorkspaceFrame,
     WorkspaceHeader,
 )
+from kuberich.ui.keybindings import table_bindings
 from kuberich.ui.logs import LogScreen
+from kuberich.ui.presentation import FrameTable
 from kuberich.ui.terminal import ShellScreen
 from kuberich.ui.transfers import TransferScreen
 
 
-class ContainerTable(DataTable[Text]):
-    BINDINGS: ClassVar[list[BindingType]] = [
-        Binding("j", "cursor_down", "Down", show=False),
-        Binding("k", "cursor_up", "Up", show=False),
-        Binding("g", "scroll_top", "First", show=False),
-        Binding("G", "scroll_bottom", "Last", show=False),
-    ]
+class ContainerTable(FrameTable[Text]):
+    BINDING_PROFILE = "containers"
+    BINDINGS: ClassVar[list[BindingType]] = table_bindings("containers")
 
 
 class ContainerScreen(ModalScreen[None]):
@@ -98,7 +96,7 @@ class ContainerScreen(ModalScreen[None]):
     def compose(self) -> ComposeResult:
         target = self.stream.target
         if self.chrome is not None:
-            yield WorkspaceHeader(self.chrome, CONTAINER_SHORTCUTS)
+            yield WorkspaceHeader(self.chrome, CONTAINER_SHORTCUTS, binding_profile="containers")
         with WorkspaceBars():
             yield Static(
                 safe_text(

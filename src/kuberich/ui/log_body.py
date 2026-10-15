@@ -74,16 +74,24 @@ class _Geometry:
 
 class LogBody(ScrollView, can_focus=True):
     BINDINGS: ClassVar[list[BindingType]] = [
-        Binding("up,k", "move(-1)", "Up", show=False),
-        Binding("down,j", "move(1)", "Down", show=False),
-        Binding("pageup,ctrl+b", "page(-1,False)", "Page up", show=False),
-        Binding("pagedown,ctrl+f", "page(1,False)", "Page down", show=False),
-        Binding("ctrl+u", "page(-1,True)", "Half page up", show=False),
-        Binding("ctrl+d", "page(1,True)", "Half page down", show=False),
-        Binding("home,ctrl+home,g", "beginning", "First line", show=False),
-        Binding("end,ctrl+end,G", "latest", "Last line", show=False),
-        Binding("left,h", "horizontal(-1)", "Left", show=False),
-        Binding("right,l", "horizontal(1)", "Right", show=False),
+        Binding("up", "move(-1)", "Up", show=False),
+        Binding("k", "move(-1)", "Up", show=False, id="logs.up"),
+        Binding("down", "move(1)", "Down", show=False),
+        Binding("j", "move(1)", "Down", show=False, id="logs.down"),
+        Binding("pageup", "page(-1,False)", "Page up", show=False),
+        Binding("ctrl+b", "page(-1,False)", "Page up", show=False, id="logs.page_up"),
+        Binding("pagedown", "page(1,False)", "Page down", show=False),
+        Binding("ctrl+f", "page(1,False)", "Page down", show=False, id="logs.page_down"),
+        Binding("ctrl+u", "page(-1,True)", "Half page up", show=False, id="logs.half_up"),
+        Binding("ctrl+d", "page(1,True)", "Half page down", show=False, id="logs.half_down"),
+        Binding("home,ctrl+home", "beginning", "First line", show=False),
+        Binding("g", "beginning", "First line", show=False, id="logs.first"),
+        Binding("end,ctrl+end", "latest", "Last line", show=False),
+        Binding("G", "latest", "Last line", show=False, id="logs.last"),
+        Binding("left", "horizontal(-1)", "Left", show=False),
+        Binding("h", "horizontal(-1)", "Left", show=False, id="logs.left"),
+        Binding("right", "horizontal(1)", "Right", show=False),
+        Binding("l", "horizontal(1)", "Right", show=False, id="logs.right"),
     ]
 
     class NavigationChanged(Message):

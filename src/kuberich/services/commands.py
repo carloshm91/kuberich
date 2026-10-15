@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from enum import Enum, auto
 
+from kuberich.domain.aliases import Aliases, expand_alias
 from kuberich.domain.connections import namespace_name
 from kuberich.domain.registry import RESOURCE_ALIASES, ResourceDefinition
 from kuberich.domain.resources import Discovery, api_segment
@@ -16,6 +17,7 @@ class Command(Enum):
     HELP = auto()
     THEMES = auto()
     ABOUT = auto()
+    VIEWS = auto()
     QUIT = auto()
     PODS = auto()
     CONTEXTS = auto()
@@ -75,6 +77,7 @@ _ACTIONS = {
 }
 
 ALIASES = {
+    "views": Command.VIEWS,
     "themes": Command.THEMES,
     "theme": Command.THEMES,
     "about": Command.ABOUT,
@@ -112,6 +115,8 @@ ALIASES = {
     "columns": Command.COLUMNS,
     "logsall": Command.LOGS_ALL,
 }
+
+RESERVED_COMMANDS = frozenset({*ALIASES, *RESOURCE_ALIASES, *_ACTIONS, "resource"})
 
 
 @dataclass(frozen=True)
@@ -183,39 +188,59 @@ def resource_candidates(discovery: Discovery | None) -> tuple[str, ...]:
     return tuple(sorted(candidates))
 
 
+def discovered_alias_names(discovery: Discovery | None) -> frozenset[str]:
+    return frozenset(
+        name
+        for resource in (() if discovery is None else discovery.resources)
+        for name in (resource.name, *resource.aliases)
+    )
+
+
 def suggestions(
     text: str,
     contexts: tuple[str, ...],
     namespaces: tuple[str, ...],
     discovery: Discovery | None = None,
+    aliases: Aliases = (),
 ) -> tuple[str, ...]:
     """Literal local candidates only; no regex, credentials or transport work."""
     text = text.removeprefix(":")
     verb, separator, prefix = text.partition(" ")
+    blocked = set(dict(aliases)) & discovered_alias_names(discovery)
     if not separator:
         values = tuple(
             sorted(
-                set(ALIASES)
-                | set(RESOURCE_ALIASES)
-                | set(resource_candidates(discovery))
-                | {"resource"}
+                (
+                    set(ALIASES)
+                    | set(RESOURCE_ALIASES)
+                    | set(resource_candidates(discovery))
+                    | set(dict(aliases))
+                    | {"resource"}
+                )
+                - blocked
             )
         )
         head = ""
         prefix = verb
     else:
-        command = ALIASES.get(verb.lower())
+        if verb.lower() in blocked:
+            return ()
+        effective = expand_alias(verb, aliases, blocked)
+        if len(effective.split(maxsplit=1)) != 1:
+            return ()  # A preset argument cannot be combined with completion input.
+        effective = effective.lower()
+        command = ALIASES.get(effective)
         if command is Command.CONTEXTS:
             values = contexts
         elif command in {Command.NAMESPACES, Command.PODS} or (
-            verb.lower() in RESOURCE_ALIASES and RESOURCE_ALIASES[verb.lower()].namespaced
+            effective in RESOURCE_ALIASES and RESOURCE_ALIASES[effective].namespaced
         ):
             values = namespaces
-        elif verb == "resource":
+        elif effective == "resource":
             values = resource_candidates(discovery)
         elif discovery is not None:
             try:
-                resolved = generic_command(verb, discovery)
+                resolved = generic_command(effective, discovery)
                 resource = discovery.resolve(
                     resolved.name, group=resolved.group, version=resolved.version
                 )
@@ -249,11 +274,13 @@ def suggestions(
 @dataclass(frozen=True)
 class CommandService:
     policy: AccessPolicy
+    aliases: Aliases = ()
 
     def resolve(self, text: str, discovery: Discovery | None = None) -> ResolvedCommand:
         text = text.strip().removeprefix(":").strip()
         if not text:
             return Command.EMPTY
+        text = expand_alias(text, self.aliases, discovered_alias_names(discovery))
         parts = text.split(maxsplit=1)
         verb = parts[0].lower()
         self.policy.require(_ACTIONS.get(verb, Action.READ))

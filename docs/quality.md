@@ -12,6 +12,23 @@ Coverage is a release requirement and one part of correctness. A high percentage
 does not establish correct Kubernetes semantics, responsive terminal behavior,
 or reliable installation.
 
+## Navigation preferences: U02 #57
+
+Focused new-model coverage does not qualify modified existing critical modules.
+The CLI's invalid-navigation offline-diagnostics fallback is also an explicit
+behavioral contract; the unchanged 100% critical CLI gate remains required.
+
+`config/navigation.py`, `domain/keyboard.py`, `domain/aliases.py` and
+`domain/resource_preferences.py` join the 100% line/branch critical inventory.
+Behavioral verification covers per-owner conflicts and literal input, alias
+recursion/collisions, migration and exact-version applicability, typed hidden
+sorting, explicit private saves and schema/context invalidation. Pilot, owned
+HTTP and source/installed console/module PTYs exercise actual controls and
+restart persistence; the four-target native verifier exercises configured
+first/last, a literal alias and the view editor with native terminal restoration.
+Whole-package, changed-line, native and owned-kind checks remain mandatory.
+See [acceptance evidence](acceptance/navigation-preferences.md).
+
 ## Appearance and release notices: U01 #56
 
 `domain/appearance.py` and `domain/releases.py` join the 100% line/branch critical

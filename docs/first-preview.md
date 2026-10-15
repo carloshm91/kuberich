@@ -32,6 +32,26 @@ indexing header. The HTML pages already serve `index, follow`. Zone-cache cleanu
 and a new ordinary-URL read are still needed before claiming every response
 header verified on the custom domains.
 
+## Source checkpoint toward 0.2.0: navigation preferences
+
+The next-release source supports per-view navigation keys, literal command aliases
+and resource-specific column order, visibility, width, alignment and typed sort.
+`:views` applies a session choice or explicitly saves globally/per context.
+Help/completion reflect effective settings; invalid overrides retain working
+navigation and the original file. Server-column signatures prevent stale saved
+positions from being interpreted under a changed schema.
+
+```sh
+uv run pytest tests/unit/test_navigation_preferences.py tests/contract/test_navigation_preferences.py
+uv run pytest tests/ui/test_navigation_preferences.py tests/terminal/test_preferences.py
+```
+
+The source PTY verifies actual remapped keys, alias completion, private saves,
+reopening and terminal restoration against an owned local API. Published 0.1.0
+packages remain unchanged. Expanded filters, resource jumps, reactive reload and
+plugins remain later work. See [the guide](navigation-preferences.md) and
+[measured acceptance](acceptance/navigation-preferences.md).
+
 ## Source checkpoint toward 0.2.0: appearance
 
 The next-release source provides `:themes`, `:theme` and `:about`, custom opaque

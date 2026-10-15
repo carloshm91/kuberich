@@ -29,6 +29,7 @@ from kuberich.adapters.credentials import CredentialLogin, ExecToken, auth_probl
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.adapters.terminal import current_terminal_size
 from kuberich.config.catalog import KubeCatalog
+from kuberich.config.navigation import NavigationPreferences, navigation_from
 from kuberich.config.schema import Settings
 from kuberich.domain.aggregate_logs import workload_kind
 from kuberich.domain.appearance import Appearance, effective_theme
@@ -38,6 +39,7 @@ from kuberich.domain.connections import (
 )
 from kuberich.domain.credential_helpers import helper_start_failure
 from kuberich.domain.custom import CustomLayout
+from kuberich.domain.keyboard import effective_keymap
 from kuberich.domain.logs import log_containers
 from kuberich.domain.navigation import (
     MAX_HISTORY,
@@ -116,6 +118,7 @@ from kuberich.ui.custom import CustomTable
 from kuberich.ui.editing import EditingScreen
 from kuberich.ui.handoff import terminal_handoff
 from kuberich.ui.inspection import InspectionScreen, Page
+from kuberich.ui.keybindings import NavigationHelpScreen, navigation_help
 from kuberich.ui.logs import LogScreen
 from kuberich.ui.mutations import AnnotationScreen, MutationHistoryScreen
 from kuberich.ui.namespaces import NamespaceTable
@@ -130,6 +133,7 @@ from kuberich.ui.style_cache import ColorStylesCache, ComponentStylesheet
 from kuberich.ui.terminal import ShellScreen
 from kuberich.ui.theme_catalog import appearance_from, invert_theme, themes_for
 from kuberich.ui.transfers import TransferScreen
+from kuberich.ui.views import ViewPreferences, ViewScreen
 from kuberich.ui.workloads import WorkloadScreen
 
 DISCONNECTED_STATUS = "Disconnected · No resource data"
@@ -139,6 +143,10 @@ class HelpScreen(ModalScreen[None]):
     """Scrollable help keeps its close control accessible in small terminals."""
 
     AUTO_FOCUS = "#help-scroll"
+
+    def __init__(self, navigation: str = "", aliases: str = "") -> None:
+        super().__init__()
+        self.navigation, self.aliases = navigation, aliases
 
     def compose(self) -> ComposeResult:
         with Vertical(id="help-dialog"):
@@ -175,7 +183,7 @@ class HelpScreen(ModalScreen[None]):
                         "Unique discovered aliases work directly; ambiguous names require a group.\n"
                         ":refresh renews discovery on the current client. "
                         ":columns shows server keys; :columns cN ... / default / none.\n"
-                        "Generic resources are read-only; columns are session-local.\n"
+                        "Generic resources are read-only; :views configures and explicitly saves columns/sort.\n"
                         "Filter: plain case-insensitive text; re:PATTERN for regex. "
                         "Searches namespace, name, readiness, status and restarts. "
                         "Invalid or timed-out regex shows all pods and an error.\n\n"
@@ -183,7 +191,7 @@ class HelpScreen(ModalScreen[None]):
                         "Pod rows, container logs and embedded shells are available.\n"
                         "l                 Selected pod logs (regular / init)\n"
                         "Shift+L / :logsall Aggregate Pod/workload logs (8 readers); c sources, s display filter, J plain/JSON.\n"
-                        "Logs: g/G first/last, j/k, / search, p pause, f follow, ? controls.\n"
+                        "Logs: / search, p pause, f follow, ? effective controls.\n"
                         "Enter             Pod containers → container logs\n"
                         "x / :shell        Choose a pod's container for its shell\n"
                         "Shift+F           Start pod/Service TCP port-forward\n"
@@ -195,10 +203,11 @@ class HelpScreen(ModalScreen[None]):
                         "d                 Resource details\n"
                         "y / e             YAML / related events\n"
                         "Viewer: m managedFields, / search, n/N matches, Ctrl+Y copy.\n"
-                        "s                 Cycle sort column\n"
-                        "Shift+S           Reverse sort\n"
                         "Header click      Sort / reverse column\n"
-                        "Arrows / PageUp / PageDown navigate the table."
+                        "Arrows / PageUp / PageDown navigate the table.\n\n"
+                        + self.navigation
+                        + "\n\n"
+                        + self.aliases
                     ),
                     id="help-content",
                 )
@@ -225,6 +234,7 @@ class KubeRichApp(App[None]):
         Binding("e", "inspect_events", "Events"),
         Binding("E", "edit", "Edit", key_display="Shift+E"),
         Binding("v", "configuration_data", "Data keys"),
+        Binding("ctrl+d", "review_delete", "Review deletion", show=False),
         Binding("l", "logs", "Logs"),
         Binding("L", "logs_all", "Aggregate logs", key_display="Shift+L"),
         Binding("x", "shell", "Shell"),
@@ -276,7 +286,17 @@ class KubeRichApp(App[None]):
         self._input_completion: asyncio.Future[None] | None = None
         self.history = NavigationHistory()
         self._restore_state: tuple[int, NavigationState] | None = None
-        self.commands = CommandService(AccessPolicy(settings.read_only))
+        self.navigation = NavigationPreferences()
+        self._navigation_warning: str | None = None
+        self._navigation_invalid = False
+        if preferences is not None:
+            try:
+                self.navigation = navigation_from(preferences.document)
+            except AppError as error:
+                self._navigation_warning = str(error)
+                self._navigation_invalid = True
+        self.navigation_keymap = effective_keymap(self.navigation.keys)
+        self.commands = CommandService(AccessPolicy(settings.read_only), self.navigation.aliases)
         self.processes = ProcessRunner(self.commands.policy)
         self.forwards = ForwardManager(self.processes, changed=self._forward_changed)
         self.mutations = MutationManager()
@@ -341,7 +361,10 @@ class KubeRichApp(App[None]):
         self._pod_projection = PodProjection()
         self._namespace_projection = NamespaceProjection()
         self.chrome = WorkspaceChrome(
-            self._header_identity, f"KubeRich: {version('kuberich')} · {self._mode}", presentation
+            self._header_identity,
+            f"KubeRich: {version('kuberich')} · {self._mode}",
+            presentation,
+            self.navigation_keymap,
         )
         self.header = WorkspaceHeader(self.chrome, POD_SHORTCUTS)
         self.breadcrumbs = Breadcrumbs(
@@ -356,6 +379,7 @@ class KubeRichApp(App[None]):
         )
         self.command_input = CommandInput(self._suggestions, focus_table, self._submit_command)
         self.status = WorkspaceLabel(DISCONNECTED_STATUS, id="status", markup=False)
+        self.view_preferences = ViewPreferences(self)
 
     def _theme_context(self) -> str | None:
         return (
@@ -649,6 +673,15 @@ class KubeRichApp(App[None]):
         child._styles_cache = ColorStylesCache()
 
     def on_mount(self) -> None:
+        self.set_keymap(dict(self.navigation_keymap))
+        for table in (
+            self.resources,
+            self.standard_table,
+            self.custom_table,
+            self.namespace_table,
+            self.context_table,
+        ):
+            table.effective_keys = self.navigation_keymap
         if not self.is_headless and not self.is_web:
             self._terminal_signals.install()
         self.query_one("#all-namespaces").display = False
@@ -666,6 +699,11 @@ class KubeRichApp(App[None]):
         if self._appearance_warning:
             self.notify(
                 self._appearance_warning + " Run kuberich config check; working defaults retained.",
+                severity="warning",
+            )
+        if self._navigation_warning:
+            self.notify(
+                self._navigation_warning + " Run kuberich config check; working defaults retained.",
                 severity="warning",
             )
         self._start_update_check()
@@ -695,6 +733,7 @@ class KubeRichApp(App[None]):
                 context is not None
                 and initial is not Command.THEMES
                 and initial is not Command.ABOUT
+                and initial is not Command.VIEWS
             ):
                 self._start_connection(context, scope=scope)
             if (
@@ -814,6 +853,7 @@ class KubeRichApp(App[None]):
                     )
 
                 if kind == "namespaces":
+                    self.view_preferences.prepare(view)
                     await self._pod_projection.project(None)
                     await self._standard_projection.project(None)
                     ns_rows = await self._namespace_projection.project(view.snapshot)
@@ -835,6 +875,7 @@ class KubeRichApp(App[None]):
                     )
                     applied = await self.context_table.apply_rows(ctx_result.rows, current)
                 elif kind == "pods":
+                    self.view_preferences.prepare(view)
                     await self._namespace_projection.project(None)
                     await self._standard_projection.project(None)
                     rows = await self._pod_projection.project(view.snapshot)
@@ -861,10 +902,12 @@ class KubeRichApp(App[None]):
                             or layout.headers != snapshot.columns
                         ):
                             layout = CustomLayout.build(snapshot.resource, snapshot.columns)
+                        layout = self.view_preferences.prepare(view, layout) or layout
                         self._remember_layout(key, layout)
                         if self.custom_table.resource_layout != layout:
                             self.custom_table.configure_layout(layout, view.revision)
                             self._custom_projection = CustomProjection(layout)
+                        self.view_preferences.configure_custom(view)
                     custom_rows = (
                         await self._custom_projection.project(snapshot)
                         if self._custom_projection is not None
@@ -880,6 +923,7 @@ class KubeRichApp(App[None]):
                         custom_result.rows, view.revision, partial(current, layout=layout)
                     )
                 else:
+                    self.view_preferences.prepare(view)
                     await self._pod_projection.project(None)
                     await self._namespace_projection.project(None)
                     standard_rows = await self._standard_projection.project(view.snapshot)
@@ -919,6 +963,18 @@ class KubeRichApp(App[None]):
                         and (view.snapshot is not None or kind == "contexts")
                     ):
                         state = self._restore_state[1]
+                        if isinstance(
+                            self._active_table, (PodTable, StandardTable, NamespaceTable)
+                        ):
+                            if self._resource_name == "pods":
+                                self.resources.restore_sort(
+                                    PodColumn(state.column), state.descending
+                                )
+                            elif (
+                                isinstance(self._active_table, (StandardTable, NamespaceTable))
+                                and not self.custom_table.display
+                            ):
+                                self._active_table.restore_sort(state.column, state.descending)
                         if self.custom_table.display:
                             compatible = (
                                 self.custom_table.resource_layout is not None
@@ -1026,20 +1082,25 @@ class KubeRichApp(App[None]):
                 self._selection_notice = None
         self._set_status(message)
 
-    @on(PodTable.SortChanged)
-    @on(StandardTable.SortChanged)
     def _show_sort(self) -> None:
         self.query_one("#resource-view", Vertical).border_subtitle = (
             self.resources.sort_summary
             if self._resource_name == "pods"
             else "Name ↑ · Enter connect · * selected session"
             if self._resource_name == "contexts"
-            else "Name ↑ · Enter use namespace · 0 all"
+            else self.namespace_table.sort_summary + " · Enter use namespace · 0 all"
             if self._resource_name == "namespaces"
             else self.custom_table.sort_summary
             if self.custom_table.display
             else self.standard_table.sort_summary
         )
+
+    @on(PodTable.SortChanged)
+    @on(StandardTable.SortChanged)
+    @on(NamespaceTable.SortChanged)
+    def sort_changed(self) -> None:
+        self.view_preferences.remember_sort()
+        self._show_sort()
 
     async def _close_client_operations(self, client: KubernetesSession) -> None:
         closing = asyncio.gather(
@@ -1594,6 +1655,9 @@ class KubeRichApp(App[None]):
             if resource == "services"
             else workload_shortcuts(resource, self.commands.policy.read_only)
         )
+        self.header.binding_profile = (
+            "contexts" if resource == "contexts" else "namespaces" if namespaces else "resources"
+        )
         self.header.render_shortcuts()
         if focus and len(self.screen_stack) == 1:
             self.set_focus(self._active_table)
@@ -1771,6 +1835,7 @@ class KubeRichApp(App[None]):
                     configured, self.workspace.store.observation.revision
                 )
                 self._custom_projection = CustomProjection(configured)
+                self.view_preferences.columns_changed(configured)
                 view = self.workspace.store.observation
                 self._remember_layout(
                     (
@@ -1827,6 +1892,10 @@ class KubeRichApp(App[None]):
         self.screen_stack[0].set_class(event.size.height < 16, "short")
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        if action == "review_delete" and (
+            self.custom_table.display or self._resource_name in {"contexts", "namespaces"}
+        ):
+            return False
         if action == "configuration_data" and (
             self.custom_table.display or self._resource_name not in {"configmaps", "secrets"}
         ):
@@ -1872,6 +1941,7 @@ class KubeRichApp(App[None]):
             "upload",
             "download",
             "port_forward",
+            "review_delete",
         }:
             return not isinstance(self.screen, ModalScreen) and not isinstance(self.focused, Input)
         return True
@@ -1885,10 +1955,31 @@ class KubeRichApp(App[None]):
 
     def action_show_help(self) -> None:
         if not isinstance(self.screen, ModalScreen):
-            self.push_screen(HelpScreen())
+            aliases = "Aliases: " + ", ".join(
+                f":{name} → {target}" for name, target in self.navigation.aliases
+            )
+            self.push_screen(
+                HelpScreen(
+                    navigation_help(self.navigation_keymap, self.header.binding_profile), aliases
+                )
+            )
+
+    def action_navigation_help(self) -> None:
+        if not isinstance(self.screen, ModalScreen):
+            self.action_show_help()
+        else:
+            profile = getattr(self.focused, "BINDING_PROFILE", "table")
+            self.push_screen(NavigationHelpScreen(self.navigation_keymap, profile))
+
+    def action_review_delete(self) -> None:
+        self.action_resource_operation(ResourceAction.DELETE)
+
+    def action_views(self) -> None:
+        if not isinstance(self.screen, ModalScreen):
+            self.view_preferences.open()
 
     async def action_back(self) -> None:
-        if isinstance(self.screen, (InspectionScreen, LogScreen, ThemeScreen)):
+        if isinstance(self.screen, (InspectionScreen, LogScreen, ThemeScreen, ViewScreen)):
             self.screen.back()
         elif isinstance(self.screen, TransferScreen):
             await self.screen.cancel()
@@ -2004,6 +2095,8 @@ class KubeRichApp(App[None]):
             return
         if command is Command.THEMES:
             self.action_change_theme()
+        elif command is Command.VIEWS:
+            self.action_views()
         elif command is Command.ABOUT:
             self.action_about()
         elif command is Command.HELP:
@@ -2093,7 +2186,11 @@ class KubeRichApp(App[None]):
 
     def _suggestions(self, value: str) -> tuple[str, ...]:
         return suggestions(
-            value, self.sessions.catalog.names, self._namespace_choices(), self.workspace.discovery
+            value,
+            self.sessions.catalog.names,
+            self._namespace_choices(),
+            self.workspace.discovery,
+            self.navigation.aliases,
         )
 
     @on(Input.Changed, "#command")
@@ -2112,10 +2209,10 @@ class KubeRichApp(App[None]):
             view.connection.namespace,
             self.filter_input.value,
             self._active_table.sort_column
-            if isinstance(self._active_table, StandardTable)
+            if isinstance(self._active_table, (StandardTable, NamespaceTable))
             else self.resources.sort_column,
             self._active_table.descending
-            if isinstance(self._active_table, StandardTable)
+            if isinstance(self._active_table, (StandardTable, NamespaceTable))
             else self.resources.descending,
             viewport.selected,
             viewport.index,
@@ -2169,10 +2266,6 @@ class KubeRichApp(App[None]):
             self._display_resource(state.resource, generic=state.generic)
             self._start_connection(state.context, scope=scope, remember=False)
         self.filter_input.value = state.query
-        if state.resource == "pods":
-            self.resources.restore_sort(PodColumn(state.column), state.descending)
-        elif state.resource in RESOURCE_ALIASES:
-            self.standard_table.restore_sort(state.column, state.descending)
         self._restore_state = self.workspace.store.observation.revision, state
 
     def action_history_back(self) -> None:

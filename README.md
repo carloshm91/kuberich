@@ -53,6 +53,10 @@ advanced node/debug operations remain planned; see the maintained
 
 ## Run from source
 
+The next-release source also includes configurable themes and
+[navigation, aliases and saved resource views](https://github.com/carloshm91/kuberich/blob/main/docs/navigation-preferences.md).
+These additions are not part of the published 0.1.0 packages.
+
 With [uv](https://docs.astral.sh/uv/getting-started/installation/) and Python 3.12,
 3.13 or 3.14, run from a trusted checkout:
 

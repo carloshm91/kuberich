@@ -39,8 +39,8 @@ options:
   --readonly            block mutations, shell, attach and plugins
   --write               override the configured read-only preference for this session
   --command, -c INITIAL_COMMAND
-                        initial terminal command: po, ctx, ns, themes, about, status, retry, back,
-                        forward, help or quit
+                        initial terminal command: po, ctx, ns, themes, views, about, status, retry,
+                        back, forward, help or quit
   --headless            hide the application header
   --logoless            hide the brand in the header
   --crumbsless          hide the context/namespace scope bar

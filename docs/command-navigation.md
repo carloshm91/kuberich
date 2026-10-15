@@ -24,6 +24,7 @@ read-only policy handle `--command` / `-c` at launch. Arguments preserve casing.
 | `resource NAME[.GROUP][/VERSION] [NAMESPACE or *]` | Browse a discovered API family or an explicit served version |
 | `refresh` | Renew discovery and the selected resource watch on the current client |
 | `columns`, `columns cN ...`, `columns default`, `columns none` | Inspect/configure transient generic server columns |
+| `views` | Configure resource columns, widths, alignment and typed sort; explicitly save globally or by context in next-release source |
 | `back`, `forward` | Restore the previous / next navigation state |
 | `help`, `?` | Show actual keyboard actions and limits |
 | `quit`, `q`, `exit` | Exit and restore the terminal |
@@ -132,3 +133,7 @@ Namespaces share these filter bounds for name/status. See [workspace layout, liv
 The next-release source also provides `:themes` / `:theme` for local appearance
 and `:about` for branding/version-check state. See [themes](themes.md) for
 preview, save, precedence and release availability.
+
+The next-release source also offers [navigation preferences](navigation-preferences.md):
+per-view keys, literal aliases with effective completion and explicitly saved
+resource layouts. Published 0.1.0 packages retain their original fixed keys.

@@ -163,7 +163,18 @@ def environment(directory: Path, *, helpers: bool, bundle: str) -> dict[str, str
 
 def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> dict[str, Any]:
     directory.mkdir()
-    (directory / "preferences.yaml").write_text("schema_version: 1\n")
+    (directory / "preferences.yaml").write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "navigation": {
+                    "schema_version": 1,
+                    "keys": {"resources": {"first": "H", "last": "K"}},
+                    "aliases": {"ownedpods": "pods"},
+                },
+            }
+        )
+    )
     server = Server()
     server.pod_table.set()
     server.quiet_watches.set()
@@ -204,6 +215,10 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
             terminal.wait_for(b"80 pods", timeout=30)
             if helpers:
                 assert "native auth helper called" in (directory / "auth-called").read_text()
+            marker = terminal.send(b"K")
+            terminal.wait_for_screen("owned-pty-pod-079", since=marker)
+            marker = terminal.send(b"H")
+            terminal.wait_for_screen("owned-pty-pod-000", since=marker)
             marker = terminal.send(b"\x1b[1;5F")
             terminal.wait_for(b"owned-pty-pod-079", since=marker)
             marker = terminal.send(b"\r")
@@ -235,6 +250,12 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
             terminal.wait_for_screen("Apache-2.0")
             terminal.send(b"\x1b")
             terminal.wait_for_screen("Sort NAME", absent=("Apache-2.0",))
+            marker = terminal.send(b":ownedpods\r")
+            terminal.wait_for_screen("80 pods", since=marker)
+            marker = terminal.send(b":views\r")
+            terminal.wait_for_screen("View · v1/pods", since=marker)
+            terminal.send(b"\x1b")
+            terminal.wait_for_screen("Sort NAME", absent=("Available:",))
             terminal.send(b"\x11")
             terminal.finish()
             name = "standalone-" + native_target() + ("-auth-exec" if helpers else "-missing-tool")
@@ -258,6 +279,7 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
             "sha256": digest(retained),
             "caller_kubeconfig_unchanged": True,
             "theme_preview_cancel_and_about": True,
+            "configured_navigation_alias_and_view_editor": True,
         }
     finally:
         server.stopping.set()

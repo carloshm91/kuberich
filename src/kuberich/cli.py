@@ -13,6 +13,11 @@ from typing import NoReturn
 from platformdirs import user_data_path
 
 from kuberich.config.launch import CONNECTION_OPTIONS, PENDING_OPTIONS, require_available
+from kuberich.config.navigation import (
+    NavigationPreferences,
+    navigation_from,
+    validate_resource_views,
+)
 from kuberich.config.paths import config_location, log_location
 from kuberich.config.schema import ConfigDocument, resolve_settings
 from kuberich.config.store import migrate_config, read_config, write_config
@@ -121,7 +126,7 @@ def _parser() -> argparse.ArgumentParser:
         "-c",
         dest="initial_command",
         type=_argument,
-        help="initial terminal command: po, ctx, ns, themes, about, status, retry, back, forward, help or quit",
+        help="initial terminal command: po, ctx, ns, themes, views, about, status, retry, back, forward, help or quit",
     )
     for flag in ("headless", "logoless", "crumbsless", "invert"):
         parser.add_argument(
@@ -328,7 +333,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             and not arguments.initial_command.strip().removeprefix(":").strip()
         ):
             raise AppError("--command must name an initial command; use help or quit.")
-        initial = CommandService(AccessPolicy(settings.read_only)).resolve(
+        try:
+            navigation = navigation_from(document)
+        except AppError:
+            if arguments.subcommand == "config":
+                raise
+            navigation = NavigationPreferences()
+        initial = CommandService(AccessPolicy(settings.read_only), navigation.aliases).resolve(
             arguments.initial_command or ""
         )
         action = initial.command if isinstance(initial, ScopedCommand) else initial
@@ -344,6 +355,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             Command.RESTART,
             Command.ROLLBACK,
             Command.ROLLOUT,
+            Command.COLUMNS,
+            Command.LOGS_ALL,
+            Command.PORT_FORWARD,
+            Command.DELETE,
+            Command.DELETE_BATCH,
+            Command.TRIGGER,
+            Command.SUSPEND,
+            Command.RESUME,
         }:
             raise AppError(
                 "--command requires an available startup view; resource actions need an interactive resource selection. Available: po, ctx, ns, deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, no, pvc, pv, sc, status, retry, themes, about, help, quit.",
@@ -372,6 +391,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         "log_file": sanitize_text(str(log_file)),
                         "config_exists": location.path.exists(),
                         "migration_pending": document.migrated
+                        or navigation.migrated
                         or location.migration_target is not None,
                         "config_migration_target": sanitize_text(str(location.migration_target))
                         if location.migration_target is not None
@@ -389,6 +409,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
             )
         elif arguments.subcommand == "config":
+            validate_resource_views(navigation)
             appearance = appearance_from(document)
             if settings.theme not in BUILTINS | {theme.name for theme in appearance.themes}:
                 raise AppError("Selected theme is unavailable; choose k9s or a registered theme.")

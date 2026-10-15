@@ -25,6 +25,8 @@ from kuberich.ui.chrome import (
     WorkspaceFrame,
     WorkspaceHeader,
 )
+from kuberich.ui.keybindings import table_bindings
+from kuberich.ui.presentation import FrameTable
 
 
 class ForwardInput(Input):
@@ -107,13 +109,9 @@ class ForwardPrompt(ModalScreen[UUID | None]):
         self.dismiss()
 
 
-class ForwardTable(DataTable[Text]):
-    BINDINGS: ClassVar[list[BindingType]] = [
-        Binding("j", "cursor_down", "Down", show=False),
-        Binding("k", "cursor_up", "Up", show=False),
-        Binding("g", "scroll_top", "First", show=False),
-        Binding("G", "scroll_bottom", "Last", show=False),
-    ]
+class ForwardTable(FrameTable[Text]):
+    BINDING_PROFILE = "forwards"
+    BINDINGS: ClassVar[list[BindingType]] = table_bindings("forwards")
 
 
 SHORTCUTS = (
@@ -157,7 +155,7 @@ class ForwardScreen(ModalScreen[None]):
         self._shown: dict[str, ForwardInfo] = {}
 
     def compose(self) -> ComposeResult:
-        yield WorkspaceHeader(self.chrome, SHORTCUTS)
+        yield WorkspaceHeader(self.chrome, SHORTCUTS, binding_profile="forwards")
         with WorkspaceBars():
             yield Static(
                 "Port forwards · changing context stops active sessions",

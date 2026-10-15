@@ -108,12 +108,22 @@ without interpreting old values under a different header.
 `:columns c3 c2` to choose and order fields, including optional wide-priority
 fields. `:columns none` shows metadata only and `:columns default` restores the
 server's ordinary columns. Invalid or duplicate keys retain the previous view.
-Layouts are transient, bounded to 32 context/GVR entries, and reset when the
-server schema or resource descriptor changes, or when switching context.
-Persistent per-resource preferences and custom hotkeys are planned.
+In published 0.1.0, layouts are transient, bounded to 32 context/GVR entries and
+reset when the server schema or resource descriptor changes, or when switching
+context. The next-release source adds [keys, aliases and saved resource views](navigation-preferences.md).
+Use `:views` to choose display order, widths, alignment and a typed sort field,
+then apply for the session or explicitly save globally/per context. Server views
+are version-pinned and fingerprint their printer schema; changed fields fall back
+to working defaults while the original saved preference remains intact.
 
 Enter/`d`, `y` and `e` reuse captured-UID details, redacted YAML and related events.
-Unknown manifest fields remain in YAML. `/` searches displayed fields;
+Unknown manifest fields remain in YAML. In 0.1.0, `/` searches displayed fields.
+Next-release saved views retain the typed row model for sorting: a hidden sort
+field is also searchable. Fields excluded by `:columns` and not needed for sorting
+remain outside that projection. Pod filters retain their documented readiness,
+status and restart fields even when a saved layout hides them; standard-resource
+filters likewise use their complete non-age summary. Layouts control display,
+not confidentiality; the existing redaction policy remains in force.
 Alt+Left/Right and the context/namespace workspaces retain resource identity,
 version, filter, compatible sort and viewport. Direct `:ns TEAM` preserves an
 active generic resource. Generic browser actions are read-only in this

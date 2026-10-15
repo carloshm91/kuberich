@@ -63,6 +63,7 @@ GUIDES = (
     Guide("everyday-workflow.md", "An everyday workflow", "Get started"),
     Guide("configuration.md", "Preferences & migration", "Get started"),
     Guide("themes.md", "Themes & version notices", "Get started"),
+    Guide("navigation-preferences.md", "Keys, aliases & saved views", "Get started"),
     Guide("context-sessions.md", "Contexts & kubeconfig", "Get started"),
     Guide("command-navigation.md", "Commands & keys", "Browse"),
     Guide("resource-workspace.md", "The workspace", "Browse"),

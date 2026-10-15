@@ -2,9 +2,11 @@
 
 import asyncio
 from collections.abc import Awaitable, Callable
+from typing import ClassVar
 
 from textual import on
 from textual.app import ComposeResult
+from textual.binding import BindingType
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, Checkbox, DataTable, Static
@@ -12,6 +14,13 @@ from textual.widgets import Button, Checkbox, DataTable, Static
 from kuberich.errors import AppError
 from kuberich.security.presentation import safe_text
 from kuberich.services.processes import _finish_owned
+from kuberich.ui.keybindings import table_bindings
+from kuberich.ui.presentation import FrameTable
+
+
+class ThemeTable(FrameTable[str]):
+    BINDING_PROFILE = "themes"
+    BINDINGS: ClassVar[list[BindingType]] = table_bindings("themes")
 
 
 class ThemeScreen(ModalScreen[None]):
@@ -47,7 +56,7 @@ class ThemeScreen(ModalScreen[None]):
         self.writable = writable
         self._ready = False
         self._save_task: asyncio.Task[None] | None = None
-        self.table: DataTable[str] = DataTable(id="theme-list", cursor_type="row")
+        self.table: DataTable[str] = ThemeTable(id="theme-list", cursor_type="row")
         self.check = Checkbox(
             "Check releases: on (save Global)" if enabled else "Check releases: off (opt in)",
             value=enabled,

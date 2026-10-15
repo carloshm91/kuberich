@@ -161,6 +161,7 @@ class WorkspaceChrome:
     identity: Callable[[], tuple[str, str, str, str, str]]
     build: str
     presentation: Presentation = DEFAULT_PRESENTATION
+    keymap: tuple[tuple[str, str], ...] = ()
 
 
 class WorkspaceBars(Vertical):
@@ -252,10 +253,17 @@ class ViewActions(Static):
 class WorkspaceHeader(Horizontal):
     """Responsive shared header; identity comes from the owned workspace."""
 
-    def __init__(self, chrome: WorkspaceChrome, shortcuts: tuple[tuple[str, str], ...]) -> None:
+    def __init__(
+        self,
+        chrome: WorkspaceChrome,
+        shortcuts: tuple[tuple[str, str], ...],
+        *,
+        binding_profile: str = "resources",
+    ) -> None:
         super().__init__(id="workspace-top")
         self.chrome = chrome
         self.shortcuts = shortcuts
+        self.binding_profile = binding_profile
 
     def compose(self) -> ComposeResult:
         with Vertical(id="scope-bar"):
@@ -316,7 +324,9 @@ class WorkspaceHeader(Horizontal):
         if not self.is_attached or not self.is_running:
             return
         actions = self.query_one(ViewActions)
-        actions.shortcuts = self.shortcuts
+        from kuberich.ui.keybindings import shortcut_keys
+
+        actions.shortcuts = shortcut_keys(self.shortcuts, self.chrome.keymap, self.binding_profile)
         actions.render_shortcuts()
 
 
