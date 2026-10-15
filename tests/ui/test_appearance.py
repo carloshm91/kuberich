@@ -375,6 +375,25 @@ async def test_inverted_session_is_runtime_only_and_retains_status_words(tmp_pat
 
 
 @pytest.mark.asyncio
+async def test_about_after_compact_resize_scrolls_to_the_notice_and_back_remains_reachable(
+    tmp_path,
+):
+    app, _ = owned_app(tmp_path, initial=Command.ABOUT)
+    async with app.run_test(size=(100, 30)) as pilot:
+        assert isinstance(app.screen, AboutScreen)
+        await pilot.resize_terminal(40, 12)
+        body = app.screen.query_one("#about-scroll")
+        await pilot.press("end")
+        await wait_for(lambda: body.max_scroll_y > 0 and body.scroll_y == body.max_scroll_y)
+        assert "Version checks disabled" in str(app.screen.content.content)
+        assert app.screen.query_one("#about-back", Button).region.bottom <= 12
+        await pilot.press("home")
+        await wait_for(lambda: body.scroll_y == 0)
+        await pilot.click("#about-back")
+        assert not isinstance(app.screen, AboutScreen)
+
+
+@pytest.mark.asyncio
 async def test_about_identifies_verified_cached_release_without_a_network_request(tmp_path):
     import time
 

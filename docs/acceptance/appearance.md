@@ -92,3 +92,14 @@ installed-runtime checks now require both original license texts. Unknown themes
 are tested through recovery, About and normal exit. The focused policy/recovery
 cohort passed 69 cases. Required whole-platform checks must qualify the corrected
 commit before merge; no unchanged retry or gate exemption is used.
+
+The corrected run's Python 3.14 suite passed 5,046 cases with two conditional
+skips, 99.0903% production lines, 96.6363% branches, 99.19% changed lines and all
+48 critical modules independently at 100%. Python 3.13 then retained a separate
+real installed-console PTY failure: the probe sent End immediately after
+SIGWINCH, before the new compact layout had painted. The observed 40-column
+screen remained at the top. The probe now waits for the actual wrapped compact
+content before sending End and requires a subsequent painted notice; it adds
+neither sleep/retry nor a weaker visibility assertion. A Pilot regression
+separately verifies resize, bottom/top scrolling and the reachable Back control.
+The earlier failed receipt remains intact and cannot qualify the new test head.

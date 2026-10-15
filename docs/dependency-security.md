@@ -66,7 +66,7 @@ composition. A future bundler must qualify its concrete redistribution method.
 
 ## Runtime security boundaries
 
-The full deterministic inventory remains the 29 modules listed under
+The full deterministic inventory is listed under
 `tool.kuberich.coverage.critical_modules`. Each must independently reach 100% lines
 and branches; gate scripts and their negative controls are development code and
 do not inflate application coverage. See [quality](quality.md),

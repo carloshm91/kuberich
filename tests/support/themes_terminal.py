@@ -43,9 +43,13 @@ def terminal_themes(command, directory, evidence):
         terminal.wait_for_screen("Resources", absent=("Theme",))
         marker = terminal.send(b":about\r")
         terminal.wait_for_screen("An independent Python", since=marker)
-        terminal.resize(40, 12)
-        terminal.send(b"\x1b[F")
-        terminal.wait_for_screen("Version checks disabled")
+        resized = terminal.resize(40, 12)
+        # SIGWINCH requests geometry; it does not acknowledge Textual's layout.
+        # This wrapped second line is absent in the old wide layout. Observe the
+        # actual compact paint before asking its scroll area to jump to the end.
+        terminal.wait_for_screen("workspace for Kubernetes.", row=5, since=resized)
+        marker = terminal.send(b"\x1b[F")
+        terminal.wait_for_screen("Version checks disabled", since=marker)
         terminal.send(b"\x1b")
         terminal.wait_for_screen("Resources", absent=("Apache-2.0",))
         terminal.send(b"\x11")
