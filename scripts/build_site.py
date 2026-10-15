@@ -74,6 +74,7 @@ GUIDES = (
     Guide("port-forwards.md", "Port forwarding", "Observe & connect"),
     Guide("mutations.md", "Guarded changes", "Change deliberately"),
     Guide("editing.md", "Manifest editing", "Change deliberately"),
+    Guide("configuration-data.md", "ConfigMap & Secret data", "Change deliberately"),
     Guide("workloads.md", "Scale & rollout", "Change deliberately"),
     Guide("resource-operations.md", "Delete & Jobs", "Change deliberately"),
     Guide("eks-authentication.md", "AWS / EKS", "Authentication"),

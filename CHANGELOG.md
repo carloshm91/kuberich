@@ -5,7 +5,13 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ## Unreleased
 
-Changes after 0.1.0 will be collected here.
+### Added
+
+- Inspect ConfigMap and Secret keys with values hidden by default, explicit
+  reveal/copy, text/Base64 controls and fresh identity/version-bound reads.
+  Edit Secrets through the private-draft, redacted-review and separate
+  dry-run/Apply workflow ([#55](https://github.com/carloshm91/kuberich/issues/55),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
 
 ## 0.1.0 — 2026-10-12
 

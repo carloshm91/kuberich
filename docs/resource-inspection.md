@@ -51,6 +51,9 @@ key names and recognized credential text. Managed field managers, operation,
 time and other metadata remain available when enabled; `fieldsV1` sets are
 hidden because set keys may embed literal values. Secret references retain safe
 identifiers where possible. There is no reveal-sensitive-data action in ordinary inspection.
+The source checkout additionally provides a separate
+[configuration data view](configuration-data.md) with deliberate per-key
+reveal/copy. That view does not change ordinary inspection redaction.
 The resulting YAML is an inspection document and may contain redaction markers;
 it is not an apply/edit export.
 

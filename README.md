@@ -131,3 +131,7 @@ Please follow the [code of conduct](CODE_OF_CONDUCT.md); use the
 [Apache-2.0](LICENSE). Copyright (c) 2026 Carlos Herrera and KubeRich contributors.
 [NOTICE](NOTICE) and the [licensing guide](docs/licensing.md) explain attribution
 and derivative permissions.
+
+The source checkout for the next release adds [deliberate ConfigMap and Secret
+data inspection](docs/configuration-data.md), including guarded Secret editing.
+These features are not part of the published 0.1.0 package.

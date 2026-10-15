@@ -109,12 +109,30 @@ def terminal_standard_views(command, directory, evidence):
             terminal.resize(100, 30)
             terminal.wait_for_screen("[REDACTED]")
             terminal.send(b"\x1b")
+            terminal.wait_for_screen("secrets(team)[1]", absent=("kind: Secret",))
+            terminal.resize(100, 30)
+            # No payload is rendered before a deliberate disclosure.
+            assert b"private-secret-payload" not in terminal.transcript
+            terminal.send(b"v")
+            terminal.wait_for_screen("Storage")
+            terminal.wait_for_screen("token")
+            assert "private-secret-payload" not in "\n".join(terminal.screen.display)
+            terminal.send(b"r")
+            terminal.wait_for_screen("private-secret-payload")
+            terminal.send(b"r")
+            terminal.wait_for_screen("values hidden", absent=("private-secret-payload",))
+            terminal.send(b"x")
+            terminal.send(b"r")
+            terminal.wait_for_screen("cHJpdmF0ZS1zZWNyZXQtcGF5bG9hZA==")
+            terminal.resize(40, 12)
+            terminal.send(b"\x1b")
+            terminal.wait_for_screen("secrets(team)[1]", absent=("Storage",))
             terminal.resize(100, 30)
             terminal.send(b"\x11")
             terminal.finish()
             terminal.save_evidence(evidence)
             assert b"synthetic-pty" not in terminal.transcript
-            assert b"private-secret-payload" not in terminal.transcript
+            assert b"private-secret-payload" in terminal.transcript
         assert path.read_bytes() == before
     finally:
         server.stopping.set()

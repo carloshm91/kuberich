@@ -7,7 +7,10 @@ initial focus; `--readonly` refuses the action before a file or editor is opened
 
 1. Read and enable the local-disclosure checkbox. Your trusted editor receives
    the full manifest, including potentially sensitive values such as ConfigMap
-   data. Editing Secret manifests is unavailable in this release. The displayed diff is redacted separately from the real patch.
+   data. The source checkout also supports Secret manifest editing through the
+   same deliberate flow; the published 0.1.0 package does not. See
+   [configuration data](configuration-data.md). The displayed diff is redacted
+   separately from the real patch.
 2. Choose Editor. KubeRich reads the identified object and creates a private
    temporary directory (0700) and initial file (0600). The editor uses the native
    terminal and returns to the form. Its argument list comes from

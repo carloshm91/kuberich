@@ -69,9 +69,9 @@ FIXTURES = (
     },
     {
         "data": {"config": "private-config-payload"},
-        "binaryData": {"binary": "private-binary-payload"},
+        "binaryData": {"binary": "cHJpdmF0ZS1iaW5hcnktcGF5bG9hZA=="},
     },
-    {"type": "Opaque", "data": {"token": "private-secret-payload"}},
+    {"type": "Opaque", "data": {"token": "cHJpdmF0ZS1zZWNyZXQtcGF5bG9hZA=="}},
     {
         "metadata": {"labels": {"node-role.kubernetes.io/control-plane": ""}},
         "status": {

@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import base64
 import json
 import stat
 from pathlib import Path
@@ -11,18 +12,152 @@ from kubernetes_asyncio import client
 
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.config.catalog import load_catalog
+from kuberich.domain.configuration_data import configuration_value
 from kuberich.domain.connection_overrides import ConnectionOverrides
 from kuberich.domain.connections import ConnectionRequest
 from kuberich.domain.editing import editable_manifest
 from kuberich.domain.mutations import MutationState
-from kuberich.domain.targets import ResourceTarget
+from kuberich.domain.targets import ResourceTarget, SessionIdentity
 from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
+from kuberich.services.configuration_data import ConfigurationService
 from kuberich.services.editing import EditingService
 from kuberich.services.mutations import MutationManager
 from kuberich.services.resources import ResourceReader
 from kuberich.services.sessions import SessionService
 from scripts.owned_kind import NODE_IMAGE, OwnedCluster, owned_cluster
+
+
+async def configuration_trials(
+    connection: KubernetesSession,
+    denied: KubernetesSession,
+    identity: SessionIdentity,
+    namespace: str,
+) -> list[str]:
+    """Exercise real API payloads without including them in receipts or previews."""
+    assert connection.api is not None
+    api = client.CoreV1Api(connection.api)
+    discovered = await ResourceReader(connection).discover()
+    resource = discovered.find("secrets")
+    text = "owned-secret-content"
+    obj = await api.create_namespaced_secret(
+        namespace,
+        client.V1Secret(
+            metadata=client.V1ObjectMeta(name="owned-secret"),
+            data={"text": base64.b64encode(text.encode()).decode(), "blob": "/wA="},
+        ),
+    )
+    target = ResourceTarget(identity, "", "secrets", namespace, "owned-secret", obj.metadata.uid)
+    source = ConfigurationService(connection, resource, target, AccessPolicy(True), lambda: True)
+    index = await source.index()
+    assert len(index.keys) == 2 and text not in repr(index)
+    assert await source.value(("data", "text"), index.resource_version, encoded=False) == text
+    assert await source.value(("data", "blob"), index.resource_version, encoded=True) == "/wA="
+    try:
+        await source.value(("data", "blob"), index.resource_version, encoded=False)
+    except AppError as error:
+        assert "binary" in str(error) and text not in str(error)
+    else:
+        raise AssertionError("Binary data was treated as decoded text")
+    editors: list[EditingService] = []
+    try:
+        readonly = EditingService(connection, resource, target, AccessPolicy(True), lambda: True)
+        editors.append(readonly)
+        try:
+            await readonly.open()
+        except AppError as error:
+            assert "Read-only" in str(error) and readonly.file is None
+        else:
+            raise AssertionError("Read-only policy permitted Secret editing")
+        for transport, expected in (
+            (connection, MutationState.SUCCEEDED),
+            (denied, MutationState.DENIED),
+        ):
+            editor = EditingService(transport, resource, target, AccessPolicy(False), lambda: True)
+            editors.append(editor)
+            draft = await editor.open()
+            assert editor.snapshot is not None
+            data = editable_manifest(editor.snapshot)
+            data["data"]["text"] = base64.b64encode(
+                b"owned-edited-secret" if transport is connection else b"must-not-apply"
+            ).decode()
+            draft.path.write_text(json.dumps(data))
+            intent, preview = await editor.prepare()
+            assert (
+                intent is not None and text not in preview and data["data"]["text"] not in preview
+            )
+            before = await api.read_namespaced_secret(target.name, namespace)
+            assert (await editor.validate()).state is expected
+            after = await api.read_namespaced_secret(target.name, namespace)
+            assert (
+                before.data == after.data
+                and before.metadata.resource_version == after.metadata.resource_version
+            )
+            if expected is MutationState.SUCCEEDED:
+                assert (await editor.execute(editor.confirm(intent))).state is expected
+                changed = await api.read_namespaced_secret(target.name, namespace)
+                assert base64.b64decode(changed.data["text"]) == b"owned-edited-secret"
+                assert configuration_value(editor.snapshot, ("data", "text"), encoded=False) == text
+        try:
+            await source.value(("data", "text"), index.resource_version, encoded=False)
+        except AppError as error:
+            assert "changed" in str(error)
+        else:
+            raise AssertionError("Disclosure used an obsolete resourceVersion")
+        stale = editors[1]
+        assert (await stale.validate()).state is MutationState.CONFLICT
+        restricted = ConfigurationService(
+            denied, resource, target, AccessPolicy(True), lambda: True
+        )
+        assert len((await restricted.index()).keys) == 2
+        await api.patch_namespaced_secret(target.name, namespace, {"immutable": True})
+        immutable = EditingService(connection, resource, target, AccessPolicy(False), lambda: True)
+        editors.append(immutable)
+        draft = await immutable.open()
+        assert immutable.snapshot is not None
+        data = editable_manifest(immutable.snapshot)
+        data["data"]["text"] = base64.b64encode(b"must-not-apply").decode()
+        draft.path.write_text(json.dumps(data))
+        assert (await immutable.prepare())[0] is not None
+        assert (await immutable.validate()).state is MutationState.REJECTED
+        assert (
+            base64.b64decode(
+                (await api.read_namespaced_secret(target.name, namespace)).data["text"]
+            )
+            == b"owned-edited-secret"
+        )
+        cm_resource = discovered.find("configmaps")
+        cm = await api.read_namespaced_config_map("owned-one", namespace)
+        cm_source = ConfigurationService(
+            connection,
+            cm_resource,
+            ResourceTarget(
+                identity, "", "configmaps", namespace, cm.metadata.name, cm.metadata.uid
+            ),
+            AccessPolicy(True),
+            lambda: True,
+        )
+        cm_index = await cm_source.index()
+        assert (
+            await cm_source.value(("data", "original"), cm_index.resource_version, encoded=False)
+            == "owned-original"
+        )
+        return [
+            "secret-hidden-metadata",
+            "secret-text-and-binary",
+            "secret-readonly-guard",
+            "secret-dryrun-no-persistence",
+            "secret-exact-apply",
+            "secret-version-conflict",
+            "secret-rbac-denial",
+            "secret-immutable-rejection",
+            "configmap-explicit-disclosure",
+        ]
+    finally:
+        for editor in editors:
+            path = editor.file.path if editor.file else None
+            await editor.close_file()
+            assert path is None or not path.parent.exists()
 
 
 async def verify(cluster: OwnedCluster) -> dict[str, Any]:
@@ -134,7 +269,9 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
             client.V1Role(
                 metadata=client.V1ObjectMeta(name="get-only"),
                 rules=[
-                    client.V1PolicyRule(api_groups=[""], resources=["configmaps"], verbs=["get"])
+                    client.V1PolicyRule(
+                        api_groups=[""], resources=["configmaps", "secrets"], verbs=["get"]
+                    )
                 ],
             ),
         )
@@ -164,6 +301,8 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
         assert (await restricted.validate()).state is MutationState.DENIED
         assert "denied" not in (await api.read_namespaced_config_map("owned-one", namespace)).data
 
+        configuration_checks = await configuration_trials(connection, denied, identity, namespace)
+
         await api.delete_namespaced_config_map("owned-one", namespace)
         replacement = await api.create_namespaced_config_map(
             namespace,
@@ -184,6 +323,7 @@ async def verify(cluster: OwnedCluster) -> dict[str, Any]:
         return {
             "node_image": NODE_IMAGE,
             "checks": [
+                *configuration_checks,
                 "private-draft-permissions",
                 "no-op-no-version-change",
                 "dry-run-no-persistence",

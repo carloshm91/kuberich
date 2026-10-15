@@ -13,6 +13,15 @@ The goal is complete functional coverage of the public reference, with every
 discovered capability assigned to implementation and verification work. A source
 inventory and a ticket are evidence of planning, not proof that a feature works.
 
+## Configuration-data implementation checkpoint
+
+M05 #55 adds metadata-only key indexes, explicit version-bound reveal/copy,
+UTF-8/Base64 selection and guarded Secret manifest editing. Ordinary views remain
+redacted; no complete RES05/OPS06 parity is claimed while permission browsing and
+environment provenance remain planned. See [the guide](configuration-data.md)
+and [measured acceptance](acceptance/configuration-data.md). The published 0.1.0
+package does not include this source-checkout checkpoint.
+
 ## Audit method and limits
 
 The review covers launch commands, README workflows, view/action registrations,

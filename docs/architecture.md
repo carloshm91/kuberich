@@ -1,5 +1,18 @@
 # Architecture decisions
 
+## Deliberate configuration disclosure: M05 #55
+
+`domain/configuration_data.py` validates bounded text/Base64 payloads and produces
+immutable key metadata without retaining values. A captured per-context service
+performs a fresh GET for each disclosure, checks UID and resourceVersion and
+revalidates scope after its owned parser. The Textual screen owns and drains its
+reads before client closure; key/encoding/scope changes invalidate late results
+and clear displayed values. Explicit disclosure bypasses ordinary value redaction
+only in this dedicated screen; terminal controls remain escaped. SVG exports are
+blocked while it is mounted. Trusted editor disclosure retains the common private
+draft, conditional identity/version patch, strict dry-run and separate Apply.
+No raw payload enters a public mutation receipt or the key index.
+
 ## Owned CrashLoop status synchronization: Refs #89
 
 The aggregate owned-kind fixture explicitly uses a one-second kubelet

@@ -67,6 +67,7 @@ from kuberich.services.commands import (
     ScopedCommand,
     suggestions,
 )
+from kuberich.services.configuration_data import ConfigurationService
 from kuberich.services.editing import EditingService
 from kuberich.services.filtering import apply_filter
 from kuberich.services.inspection import InspectionService
@@ -103,6 +104,7 @@ from kuberich.ui.chrome import (
     workload_shortcuts,
 )
 from kuberich.ui.commands import CommandInput, NavigationInput
+from kuberich.ui.configuration_data import ConfigurationScreen
 from kuberich.ui.containers import ContainerScreen
 from kuberich.ui.contexts import ContextTable
 from kuberich.ui.custom import CustomTable
@@ -215,6 +217,7 @@ class KubeRichApp(App[None]):
         Binding("d", "inspect_details", "Details"),
         Binding("e", "inspect_events", "Events"),
         Binding("E", "edit", "Edit", key_display="Shift+E"),
+        Binding("v", "configuration_data", "Data keys"),
         Binding("l", "logs", "Logs"),
         Binding("L", "logs_all", "Aggregate logs", key_display="Shift+L"),
         Binding("x", "shell", "Shell"),
@@ -595,7 +598,14 @@ class KubeRichApp(App[None]):
                         header_identity = identity
                     for screen in tuple(self.screen_stack):
                         if isinstance(
-                            screen, (InspectionScreen, LogScreen, ContainerScreen, ShellScreen)
+                            screen,
+                            (
+                                InspectionScreen,
+                                LogScreen,
+                                ContainerScreen,
+                                ShellScreen,
+                                ConfigurationScreen,
+                            ),
                         ):
                             screen.validate_target()
         except Exception as error:
@@ -869,6 +879,11 @@ class KubeRichApp(App[None]):
             self.forwards.stop_for_client(client),
             *(
                 screen.stop_owned()
+                for screen in tuple(self.screen_stack)
+                if isinstance(screen, ConfigurationScreen) and screen.service.client is client
+            ),
+            *(
+                screen.stop_owned()
                 for screen in tuple(self._aggregate_screens)
                 if screen.owner.client is client
             ),
@@ -936,7 +951,38 @@ class KubeRichApp(App[None]):
     @on(DataTable.RowSelected, "#custom-resources")
     def standard_selected(self, event: DataTable.RowSelected) -> None:
         event.stop()
-        self._inspect("details")
+        if not self.custom_table.display and self._resource_name in {"configmaps", "secrets"}:
+            self.action_configuration_data()
+        else:
+            self._inspect("details")
+
+    def action_configuration_data(self) -> None:
+        selection = self._capture_target()
+        if selection is not None:
+            client, resource, _, target, current = selection
+            self.push_screen(
+                ConfigurationScreen(
+                    ConfigurationService(client, resource, target, self.commands.policy, current)
+                )
+            )
+
+    def deliver_screenshot(
+        self,
+        filename: str | None = None,
+        path: str | None = None,
+        time_format: str | None = None,
+    ) -> str | None:
+        if any(isinstance(screen, ConfigurationScreen) for screen in self.screen_stack):
+            self.notify(
+                "Close the configuration data view before taking a screenshot.", severity="warning"
+            )
+            return None
+        return super().deliver_screenshot(filename, path, time_format)
+
+    def export_screenshot(self, *, title: str | None = None, simplify: bool = False) -> str:
+        if any(isinstance(screen, ConfigurationScreen) for screen in self.screen_stack):
+            raise AppError("Close the configuration data view before exporting a screenshot.")
+        return super().export_screenshot(title=title, simplify=simplify)
 
     def action_inspect_yaml(self) -> None:
         self._inspect("yaml")
@@ -1609,6 +1655,10 @@ class KubeRichApp(App[None]):
         self.screen_stack[0].set_class(event.size.height < 16, "short")
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        if action == "configuration_data" and (
+            self.custom_table.display or self._resource_name not in {"configmaps", "secrets"}
+        ):
+            return False
         if action == "logs_all" and (
             self.custom_table.display
             or self._resource_name
@@ -1641,6 +1691,7 @@ class KubeRichApp(App[None]):
             "inspect_yaml",
             "inspect_details",
             "inspect_events",
+            "configuration_data",
             "edit",
             "logs",
             "logs_all",

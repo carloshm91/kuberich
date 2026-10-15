@@ -328,7 +328,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40×12 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -620,7 +620,7 @@
       ],
       "source": "internal/view/registrar.go",
       "status": "planned",
-      "difference": "B05 implements ConfigMap and Secret type/key-count tables; payloads never enter row/filter text and ordinary details stay redacted. ServiceAccounts/RBAC views remain later tasks.",
+      "difference": "M05 adds explicit ConfigMap/Secret key metadata, reveal/copy and UTF-8/Base64 controls with fresh UID/version-bound reads, plus common guarded Secret editing. Permission browsing and environment provenance remain later work; full family parity is not claimed.",
       "partial_evidence": [
         "docs/standard-resources.md",
         "docs/acceptance/standard-resources.md",
@@ -628,9 +628,15 @@
         "tests/ui/test_standard_resources.py",
         "tests/ui/test_standard_table.py",
         "tests/terminal/test_standard_resources.py",
-        "scripts/standard_kind.py"
+        "scripts/standard_kind.py",
+        "docs/configuration-data.md",
+        "docs/acceptance/configuration-data.md",
+        "tests/unit/test_configuration_data.py",
+        "tests/contract/test_configuration_data.py",
+        "tests/ui/test_configuration_data.py",
+        "scripts/verify_editing_kind.py"
       ],
-      "public_summary": "ConfigMap, Secret, service-account and RBAC resource tables support ordinary redacted inspection. Secret reveal/edit and a permission browser are unavailable.",
+      "public_summary": "Source checkout: explicit ConfigMap/Secret reveal/copy and guarded Secret editing; published 0.1.0 keeps data redacted. Permission browsing remains planned.",
       "public_status": "partial"
     },
     {
@@ -976,9 +982,18 @@
       ],
       "source": "internal/view/secret.go",
       "status": "planned",
-      "difference": "",
-      "public_summary": "Ordinary ConfigMap/Secret inspection is redacted. Sensitive-content reveal, encoded/decoded toggles and environment provenance views are planned.",
-      "public_status": "partial"
+      "difference": "M05 adds explicit ConfigMap/Secret key metadata, reveal/copy and UTF-8/Base64 controls with fresh UID/version-bound reads, plus common guarded Secret editing. Permission browsing and environment provenance remain later work; full family parity is not claimed.",
+      "public_summary": "Source checkout: deliberate per-key reveal/copy, UTF-8/Base64 selection and guarded editing. Published 0.1.0 keeps data redacted; environment provenance remains planned.",
+      "public_status": "partial",
+      "partial_evidence": [
+        "docs/configuration-data.md",
+        "docs/acceptance/configuration-data.md",
+        "tests/unit/test_configuration_data.py",
+        "tests/contract/test_configuration_data.py",
+        "tests/ui/test_configuration_data.py",
+        "tests/terminal/test_standard_resources.py",
+        "scripts/verify_editing_kind.py"
+      ]
     },
     {
       "id": "OPS07",
