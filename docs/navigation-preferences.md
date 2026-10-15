@@ -51,7 +51,7 @@ navigation:
   aliases:
     work: pods
     lab: ctx demo-lab
-    widgets: resource widgets.example.test/v1
+    mywidgets: resource widgets.example.test/v1
 ```
 
 The names and context in this example are fictional. Choose names from your own
