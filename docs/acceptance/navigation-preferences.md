@@ -1,5 +1,23 @@
 # U02 #57 acceptance evidence
 
+The first completed hosted Python 3.14 suite passed 5,211 cases with two skips
+in 1,653.34 seconds. Its independent gate correctly failed: `cli.py` had one
+uncovered invalid-navigation fallback line/branch (99.35% lines / 97.73% branches)
+despite 99.0589% production lines and 96.5133% branches. Other critical modules
+measured 100%. These results are not final qualification and no merge occurred.
+The original job is 116295227662 in run 38696757569; retained artifact 11956075948
+has SHA-256 `f0fe9cf97c3ba3b94d22587941f5550fbeecaf5553e5a0a2b7958b1f1c9cb95a`.
+An added actual CLI contract verifies that invalid navigation retains offline
+diagnostics, refuses strict config validation and preserves the original file.
+The critical inventory and thresholds remain unchanged; fresh final-head checks
+must qualify the correction.
+
+The corrected local CLI/preferences/appearance/navigation cohort passed 379
+cases in 116.14 seconds. The critical CLI measured all 154 executable lines and
+44 branches (100% independently), with no missing/excluded lines or branches.
+The application production subtree remains unchanged; the correction adds the
+missing behavioral test and records the original failure, without weakening a gate.
+
 The next-release source supplies independently versioned navigation preferences,
 per-owner remapping through public Textual bindings, literal bounded aliases and
 captured resource-view editing. Native fallback/input/copy/quit keys remain

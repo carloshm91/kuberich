@@ -107,3 +107,35 @@ def test_startup_aliases_share_original_view_and_interactive_action_policy(
         assert cli.main(["--config", str(path), "--command", action]) == 4
         assert "interactive resource selection" in capsys.readouterr().err
     assert captured == [Command.VIEWS]
+
+
+def test_invalid_navigation_retains_offline_diagnostics_and_original_preferences(
+    tmp_path, monkeypatch, capsys
+):
+    import json
+
+    from kuberich import cli
+
+    path = tmp_path / "preferences.yaml"
+    write_config(
+        path,
+        parse_document(
+            {
+                "schema_version": 1,
+                "opaque": "retained",
+                "navigation": {"schema_version": 1, "keys": {"resources": {"right": "l"}}},
+            }
+        ),
+    )
+    original = path.read_bytes()
+    monkeypatch.setattr(
+        cli, "run_terminal", lambda *a, **kw: pytest.fail("Offline diagnostics opened a terminal")
+    )
+    assert cli.main(["--config", str(path), "info"]) == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["terminal_ui_available"] and not result["cluster_connected"]
+    assert result["unknown_fields"] == 1 and result["preferences"]["theme"] == "k9s"
+    assert "navigation" not in result and not (tmp_path / "kuberich.log").exists()
+    assert path.read_bytes() == original
+    assert cli.main(["--config", str(path), "config", "check"]) == 2
+    assert "conflicts" in capsys.readouterr().err and path.read_bytes() == original

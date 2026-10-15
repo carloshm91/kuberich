@@ -14,6 +14,10 @@ or reliable installation.
 
 ## Navigation preferences: U02 #57
 
+Focused new-model coverage does not qualify modified existing critical modules.
+The CLI's invalid-navigation offline-diagnostics fallback is also an explicit
+behavioral contract; the unchanged 100% critical CLI gate remains required.
+
 `config/navigation.py`, `domain/keyboard.py`, `domain/aliases.py` and
 `domain/resource_preferences.py` join the 100% line/branch critical inventory.
 Behavioral verification covers per-owner conflicts and literal input, alias
