@@ -82,3 +82,13 @@ and whole-package qualification is delegated to the mandatory exact-head CI.
 Ruff, formatting, strict typing (126 source/gate files), plan/link validation,
 build and Twine pass locally. Public site/package publication is not part of
 this issue.
+
+The first hosted Python 3.14 run on `4659c69` rejected the new runtime dependency's
+unreviewed `Apache-2.0 OR BSD-2-Clause` expression and an obsolete test still
+expected unknown themes to abort startup. The original failed run is retained
+as [38678677347](https://github.com/carloshm91/kuberich/actions/runs/38678677347).
+The exact expression was reviewed against packaging 26.3's original license;
+installed-runtime checks now require both original license texts. Unknown themes
+are tested through recovery, About and normal exit. The focused policy/recovery
+cohort passed 69 cases. Required whole-platform checks must qualify the corrected
+commit before merge; no unchanged retry or gate exemption is used.

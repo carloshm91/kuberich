@@ -48,6 +48,13 @@ license files. Unknown licenses or changed legacy metadata require a new review.
 python-dateutil's original notice states that its BSD license covers all its code;
 the generated notices preserve both license sections.
 
+The runtime version comparator, packaging 26.3, declares
+`Apache-2.0 OR BSD-2-Clause`. Its installed original `LICENSE` explicitly offers
+either license, and both `LICENSE.APACHE` and `LICENSE.BSD` are retained in the
+generated notices. This exact SPDX expression is reviewed in the allowlist;
+unknown expressions still fail the gate. See the
+[upstream license at 26.3](https://github.com/pypa/packaging/blob/26.3/LICENSE).
+
 Pyte 0.8.2 remains an unmodified, dynamically imported LGPL-3.0-only dependency.
 KubeRich's own code is Apache-2.0 (see licensing.md). Preserve Pyte's original license, authors and
 corresponding source when bundling a standalone distribution, and preserve users'

@@ -16,13 +16,16 @@ def test_locked_and_fresh_installed_runtime_reports_have_valid_complete_sboms(se
     results = verify(output, distribution)
     assert results.keys() == {"locked", "fresh"}
     assert all(
-        value["dependencies"] >= 27 and value["accepted_exceptions"] == []
+        value["dependencies"] >= 30 and value["accepted_exceptions"] == []
         for value in results.values()
     )
     for scope in results:
         notices = (output / f"{scope}-NOTICES.txt").read_text()
         assert "LGPL-3.0-only" in notices and "GNU LESSER GENERAL PUBLIC LICENSE" in notices
         assert "wcwidth" in notices and "MIT License" in notices
+        assert "packaging 26.3" in notices and "Apache-2.0 OR BSD-2-Clause" in notices
+        assert "LICENSE.APACHE" in notices and "LICENSE.BSD" in notices
+        assert "Copyright (c) Donald Stufft and individual contributors." in notices
     result = run(
         [
             sys.executable,
