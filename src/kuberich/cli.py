@@ -23,9 +23,11 @@ from kuberich.domain.connections import ConnectionRequest, request_duration
 from kuberich.errors import AppError, ExitCode
 from kuberich.security.arguments import validate_argument
 from kuberich.services.access import AccessPolicy
+from kuberich.services.appearance import PreferenceSource
 from kuberich.services.commands import Command, CommandService, ScopedCommand
 from kuberich.ui.launch import run_terminal
 from kuberich.ui.presentation import Presentation
+from kuberich.ui.theme_catalog import BUILTINS, appearance_from
 
 
 class _Parser(argparse.ArgumentParser):
@@ -119,14 +121,15 @@ def _parser() -> argparse.ArgumentParser:
         "-c",
         dest="initial_command",
         type=_argument,
-        help="initial terminal command: po, ctx, ns, status, retry, back, forward, help or quit",
+        help="initial terminal command: po, ctx, ns, themes, about, status, retry, back, forward, help or quit",
     )
-    for flag in ("headless", "logoless", "crumbsless"):
+    for flag in ("headless", "logoless", "crumbsless", "invert"):
         parser.add_argument(
             f"--{flag}",
             action="store_true",
             default=None,
             help={
+                "invert": "invert this session theme with readable contrast",
                 "headless": "hide the application header",
                 "logoless": "hide the brand in the header",
                 "crumbsless": "hide the context/namespace scope bar",
@@ -229,6 +232,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "headless",
                     "logoless",
                     "crumbsless",
+                    "invert",
                     "kubeconfig",
                     "context",
                     "namespace",
@@ -248,7 +252,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print(version("kuberich") if arguments.short else f"kuberich {version('kuberich')}")
             return 0
         if arguments.subcommand is not None and any(
-            key in runtime for key in ("initial_command", "headless", "logoless", "crumbsless")
+            key in runtime
+            for key in ("initial_command", "headless", "logoless", "crumbsless", "invert")
         ):
             raise AppError("Command and presentation flags apply only to terminal launch.")
         if arguments.subcommand is not None and any(
@@ -341,7 +346,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             Command.ROLLOUT,
         }:
             raise AppError(
-                "--command requires an available startup view; resource actions need an interactive resource selection. Available: po, ctx, ns, deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, no, pvc, pv, sc, status, retry, help, quit.",
+                "--command requires an available startup view; resource actions need an interactive resource selection. Available: po, ctx, ns, deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, no, pvc, pv, sc, status, retry, themes, about, help, quit.",
                 ExitCode.UNAVAILABLE,
             )
         log_file = log_location(
@@ -384,6 +389,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
             )
         elif arguments.subcommand == "config":
+            appearance = appearance_from(document)
+            if settings.theme not in BUILTINS | {theme.name for theme in appearance.themes}:
+                raise AppError("Selected theme is unavailable; choose k9s or a registered theme.")
             print("KubeRich preferences are valid. No files were changed.")
         else:
             with diagnostic_logging(log_file, settings.log_level) as logger:
@@ -396,9 +404,17 @@ def main(argv: Sequence[str] | None = None) -> int:
                             bool(arguments.headless),
                             bool(arguments.logoless),
                             bool(arguments.crumbsless),
+                            bool(arguments.invert),
                         ),
                         initial_command=initial,
                         connection=connection,
+                        preferences=PreferenceSource(
+                            location,
+                            document,
+                            settings.theme
+                            if "KUBERICH_THEME" in os.environ or "KUBETROL_THEME" in os.environ
+                            else None,
+                        ),
                     )
                 except Exception:
                     logger.debug("Terminal launch failed.", exc_info=True)

@@ -2,7 +2,7 @@
 
 A keyboard-driven Kubernetes workspace for your terminal, built with Python and Textual.
 
-[Get started](docs/quickstart.md) · [Installation](docs/installation.md) · [User guides](docs/everyday-workflow.md) · [Contribute](CONTRIBUTING.md)
+[Get started](https://github.com/carloshm91/kuberich/blob/main/docs/quickstart.md) · [Installation](https://github.com/carloshm91/kuberich/blob/main/docs/installation.md) · [User guides](https://github.com/carloshm91/kuberich/blob/main/docs/everyday-workflow.md) · [Contribute](https://github.com/carloshm91/kuberich/blob/main/CONTRIBUTING.md)
 
 Browse a cluster, inspect a workload, follow its logs and open a container shell
 without losing your place. KubeRich is an independent Apache-2.0 project,
@@ -26,11 +26,11 @@ uv tool install --python 3.12 kuberich
 ```
 
 Choose one method, then run `kuberich --version`. See
-[installation and upgrades](docs/installation.md) for pipx and standalone archives.
+[installation and upgrades](https://github.com/carloshm91/kuberich/blob/main/docs/installation.md) for pipx and standalone archives.
 
 Linux and macOS are the initial targets, with CPython 3.12–3.14 for source
 installation. Four standalone archives have separate native qualification.
-The [installation guide](docs/installation.md#qualification-scope) states the
+The [installation guide](https://github.com/carloshm91/kuberich/blob/main/docs/installation.md#qualification-scope) states the
 actual host/architecture scope and limits. Stable 1.0 compatibility and complete
 K9s parity are later milestones.
 
@@ -49,7 +49,7 @@ Use `--readonly` for your first connection; the default preference permits write
 Effectful actions require captured targets and the corresponding Kubernetes
 permissions; reviewed changes also require confirmation. Metrics, user plugins and
 advanced node/debug operations remain planned; see the maintained
-[resource views](docs/standard-resources.md) and [release phases](docs/releases.md).
+[resource views](https://github.com/carloshm91/kuberich/blob/main/docs/standard-resources.md) and [release phases](https://github.com/carloshm91/kuberich/blob/main/docs/releases.md).
 
 ## Run from source
 
@@ -71,7 +71,7 @@ Configured authentication helpers are trusted local programs. Version, help,
 The interface needs an interactive terminal; `python -m kuberich` is also supported.
 
 For an isolated PyPI, Homebrew, archive or supplied-wheel installation,
-follow [installation and upgrades](docs/installation.md).
+follow [installation and upgrades](https://github.com/carloshm91/kuberich/blob/main/docs/installation.md).
 
 ## A few keys to begin
 
@@ -88,50 +88,51 @@ follow [installation and upgrades](docs/installation.md).
 
 In a live shell, keys go to the remote program. `exit`/Ctrl+D returns to
 containers; Ctrl+] closes the owned session. See the
-[guided workflow](docs/everyday-workflow.md) and [shell controls](docs/container-shell.md).
+[guided workflow](https://github.com/carloshm91/kuberich/blob/main/docs/everyday-workflow.md) and [shell controls](https://github.com/carloshm91/kuberich/blob/main/docs/container-shell.md).
 
 ## Documentation
 
 The maintained Markdown guides generate both website surfaces. CLI/resource
 references come from application declarations; authored explanations are reviewed
-with the behavior they describe. The current approved development hosts are
-[website](https://kuberich-site.pages.dev) and
-[docs](https://kuberich-docs.pages.dev); they retain their recorded deployment
-until the final candidate is approved for publication.
+with the behavior they describe. The public [website](https://kuberich.com/) and
+[documentation](https://docs.kuberich.com/) serve the approved 0.1.0 release.
+Merged source guides describe subsequent development explicitly; their next
+public deployment is qualified and approved separately.
 
-- [Install, upgrade and uninstall](docs/installation.md)
-- [First launch](docs/quickstart.md) and [guided everyday workflow](docs/everyday-workflow.md)
-- [Contexts and authentication](docs/context-sessions.md), [EKS](docs/eks-authentication.md) and [AKS](docs/aks-authentication.md)
-- [Navigation and completion](docs/command-navigation.md), [logs](docs/log-viewer.md) and [shells](docs/container-shell.md)
-- [Guarded changes](docs/mutations.md), [manifest editing](docs/editing.md) and [workload operations](docs/workloads.md)
-- [Troubleshooting](docs/troubleshooting.md) and [terminal compatibility](docs/terminal-compatibility.md)
+- [Install, upgrade and uninstall](https://github.com/carloshm91/kuberich/blob/main/docs/installation.md)
+- [First launch](https://github.com/carloshm91/kuberich/blob/main/docs/quickstart.md) and [guided everyday workflow](https://github.com/carloshm91/kuberich/blob/main/docs/everyday-workflow.md)
+- [Contexts and authentication](https://github.com/carloshm91/kuberich/blob/main/docs/context-sessions.md), [EKS](https://github.com/carloshm91/kuberich/blob/main/docs/eks-authentication.md) and [AKS](https://github.com/carloshm91/kuberich/blob/main/docs/aks-authentication.md)
+- [Navigation and completion](https://github.com/carloshm91/kuberich/blob/main/docs/command-navigation.md), [logs](https://github.com/carloshm91/kuberich/blob/main/docs/log-viewer.md) and [shells](https://github.com/carloshm91/kuberich/blob/main/docs/container-shell.md)
+- [Guarded changes](https://github.com/carloshm91/kuberich/blob/main/docs/mutations.md), [manifest editing](https://github.com/carloshm91/kuberich/blob/main/docs/editing.md) and [workload operations](https://github.com/carloshm91/kuberich/blob/main/docs/workloads.md)
+- [Troubleshooting](https://github.com/carloshm91/kuberich/blob/main/docs/troubleshooting.md) and [terminal compatibility](https://github.com/carloshm91/kuberich/blob/main/docs/terminal-compatibility.md)
 
 ## Development and quality
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md), the [architecture](docs/architecture.md)
+Read [CONTRIBUTING.md](https://github.com/carloshm91/kuberich/blob/main/CONTRIBUTING.md), the [architecture](https://github.com/carloshm91/kuberich/blob/main/docs/architecture.md)
 and the selected GitHub issue before changing behavior. Work proceeds through
 short-lived issue branches, signed-off commits, checked PRs and squash merges.
 
-The [quality policy](docs/quality.md) enforces at least **90% line and branch
+The [quality policy](https://github.com/carloshm91/kuberich/blob/main/docs/quality.md) enforces at least **90% line and branch
 coverage separately**, 90% changed-line coverage and **100%** for designated
 critical deterministic modules. Behavioral, actual PTY, owned Kubernetes and
 clean-install checks complement coverage. Real-provider and physical-terminal
 certification limits remain explicit; a percentage does not prove every environment.
 
-See [current checkpoints](docs/first-preview.md), [roadmap](docs/roadmap.md),
-[backlog](docs/backlog.md), [distribution](docs/distribution.md) and
-[release/versioning procedure](docs/releases.md) for measured progress and delivery.
+See [current checkpoints](https://github.com/carloshm91/kuberich/blob/main/docs/first-preview.md), [roadmap](https://github.com/carloshm91/kuberich/blob/main/docs/roadmap.md),
+[backlog](https://github.com/carloshm91/kuberich/blob/main/docs/backlog.md), [distribution](https://github.com/carloshm91/kuberich/blob/main/docs/distribution.md) and
+[release/versioning procedure](https://github.com/carloshm91/kuberich/blob/main/docs/releases.md) for measured progress and delivery.
 
 ## Community and license
 
 [Issues](https://github.com/carloshm91/kuberich/issues) welcome bugs and proposals.
-Please follow the [code of conduct](CODE_OF_CONDUCT.md); use the
-[security policy](SECURITY.md) for vulnerability reports.
+Please follow the [code of conduct](https://github.com/carloshm91/kuberich/blob/main/CODE_OF_CONDUCT.md); use the
+[security policy](https://github.com/carloshm91/kuberich/blob/main/SECURITY.md) for vulnerability reports.
 
-[Apache-2.0](LICENSE). Copyright (c) 2026 Carlos Herrera and KubeRich contributors.
-[NOTICE](NOTICE) and the [licensing guide](docs/licensing.md) explain attribution
+[Apache-2.0](https://github.com/carloshm91/kuberich/blob/main/LICENSE). Copyright (c) 2026 Carlos Herrera and KubeRich contributors.
+[NOTICE](https://github.com/carloshm91/kuberich/blob/main/NOTICE) and the [licensing guide](https://github.com/carloshm91/kuberich/blob/main/docs/licensing.md) explain attribution
 and derivative permissions.
 
 The source checkout for the next release adds [deliberate ConfigMap and Secret
-data inspection](docs/configuration-data.md), including guarded Secret editing.
-These features are not part of the published 0.1.0 package.
+data inspection](https://github.com/carloshm91/kuberich/blob/main/docs/configuration-data.md), including guarded Secret editing.
+It also adds [theme preview, context palettes, inversion and optional version
+notices](https://github.com/carloshm91/kuberich/blob/main/docs/themes.md). These features are not part of the published 0.1.0 package.

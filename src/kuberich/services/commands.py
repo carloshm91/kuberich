@@ -14,6 +14,8 @@ from kuberich.services.access import AccessPolicy, Action
 class Command(Enum):
     EMPTY = auto()
     HELP = auto()
+    THEMES = auto()
+    ABOUT = auto()
     QUIT = auto()
     PODS = auto()
     CONTEXTS = auto()
@@ -73,6 +75,9 @@ _ACTIONS = {
 }
 
 ALIASES = {
+    "themes": Command.THEMES,
+    "theme": Command.THEMES,
+    "about": Command.ABOUT,
     **dict.fromkeys(("help", "?"), Command.HELP),
     **dict.fromkeys(("quit", "q", "exit"), Command.QUIT),
     **dict.fromkeys(("po", "pod", "pods"), Command.PODS),

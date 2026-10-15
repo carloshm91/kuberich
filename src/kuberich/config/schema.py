@@ -8,6 +8,7 @@ from kuberich.errors import AppError
 from kuberich.security.arguments import freeze_arguments
 
 SCHEMA_VERSION = 1
+EXTENSIONS = frozenset({"appearance"})
 LOG_LEVELS = frozenset({"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"})
 FIELDS = frozenset({"theme", "refresh_seconds", "read_only", "log_level", "log_file", "shell"})
 
@@ -98,9 +99,15 @@ class ConfigDocument:
     settings: Settings = field(default_factory=Settings)
     unknown: dict[str, object] = field(default_factory=dict)
     migrated: bool = False
+    extensions: dict[str, object] = field(default_factory=dict, repr=False)
 
     def to_mapping(self) -> dict[str, object]:
-        return {**self.unknown, "schema_version": SCHEMA_VERSION, **self.settings.to_mapping()}
+        return {
+            **self.unknown,
+            **self.extensions,
+            "schema_version": SCHEMA_VERSION,
+            **self.settings.to_mapping(),
+        }
 
 
 def parse_document(values: Mapping[str, object]) -> ConfigDocument:
@@ -120,8 +127,13 @@ def parse_document(values: Mapping[str, object]) -> ConfigDocument:
                     raise AppError("Legacy and current preference names cannot be combined.")
                 data[new] = data.pop(old)
     settings = settings_from(data)
-    unknown = {key: value for key, value in data.items() if key not in FIELDS}
-    return ConfigDocument(settings, unknown, migrated=schema == 0)
+    unknown = {key: value for key, value in data.items() if key not in FIELDS | EXTENSIONS}
+    return ConfigDocument(
+        settings,
+        unknown,
+        migrated=schema == 0,
+        extensions={key: data[key] for key in EXTENSIONS if key in data},
+    )
 
 
 ENV_FIELDS = {

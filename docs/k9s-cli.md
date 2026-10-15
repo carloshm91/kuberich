@@ -62,7 +62,8 @@ scheduled later report that limitation until their owning task is implemented.
 | `--refresh`, `-r` | Effective periodic table ages/local repaint (0.1–3600 seconds); watches remain live independently; validated/reportable through `info` and `config check` |
 | `--kubeconfig`, `--context`, `--namespace`/`-n`, `--all-namespaces`/`-A`, `--request-timeout` | Read-only catalogue, explicit background client and namespace discovery/selection; see [C01](context-sessions.md) |
 | Cluster/user/token/TLS/impersonation CLI overrides | Per-invocation effective connection shared by API reads, watches, logs and captured kubectl shells; source kubeconfigs stay unchanged |
-| `--splashless`, `--invert`, `--screen-dump-dir` | Exit 4; there is currently no splash, theme inversion or screen export to control |
+| `--invert` | Next-release source: invert the selected session palette with contrast repair; saved theme names and the terminal palette remain unchanged |
+| `--splashless`, `--screen-dump-dir` | Exit 4; there is currently no splash or screen export to control |
 
 Place global options before a subcommand. Scalar options repeated on the command
 line use their last value; `--as-group` preserves every occurrence in order, but

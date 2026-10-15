@@ -32,6 +32,26 @@ indexing header. The HTML pages already serve `index, follow`. Zone-cache cleanu
 and a new ordinary-URL read are still needed before claiming every response
 header verified on the custom domains.
 
+## Source checkpoint toward 0.2.0: appearance
+
+The next-release source provides `:themes`, `:theme` and `:about`, custom opaque
+palettes, environment/context/global precedence, explicit preference saves and
+runtime `--invert`. Version notices are disabled by default; opt-in checks are
+asynchronous, bounded, cached and offline-safe. See [the guide](themes.md).
+
+```sh
+uv sync --locked --group dev
+uv run kuberich --command themes
+uv run kuberich --invert --command about
+```
+
+The commands were exercised through actual source/installed-console/module PTYs,
+including NO_COLOR, preview/cancel, a real save, 40-column About and terminal
+restoration. Owned HTTP/cache and Pilot cases cover errors, cancellation,
+precedence and private persistence. [Appearance acceptance](acceptance/appearance.md)
+records measured scope; the issue-linked PR retains exact-head platform gates.
+These features are not in the published 0.1.0 package. No real cloud was used.
+
 ## Source checkpoint toward 0.2.0: configuration data
 
 The next-release source adds Enter / `v` on ConfigMaps and Secrets: a key/size

@@ -1,5 +1,23 @@
 # Architecture decisions
 
+## Appearance and optional release reads: U01 #56
+
+Preference schema v1 recognizes an additive raw `appearance` extension without
+mixing it into effective runtime Settings or diagnostic values. A pure bounded
+model validates palettes, contrast and context references; UI conversion uses
+Textual's public Theme API. Invalid appearance data leaves the file intact and
+uses working defaults; the strict config check explains errors. Explicit saves
+use the original document rather than CLI/environment settings, reject competing
+content/legacy-path writes and run through owned file workers. Preview/cancel
+and session RGB inversion do not write preferences.
+
+The opt-in release service owns an unauthenticated, proxy-independent public
+HTTP session, a three-second/64-KiB request and a private bounded atomic cache.
+Pure PEP 440 decisions reject malformed, nonstable and foreign-URL records.
+Cleanup drains repeated cancellation before HTTP closure; disabled checks create
+no request. The App owns its task, checks mounted child ownership before updates,
+and exposes verified/cached results in About without downloading executable code.
+
 ## Deliberate configuration disclosure: M05 #55
 
 `domain/configuration_data.py` validates bounded text/Base64 payloads and produces

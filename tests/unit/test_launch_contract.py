@@ -38,7 +38,6 @@ def test_selected_resource_actions_are_refused_at_startup(action, monkeypatch, c
     "arguments,flag,owner",
     [
         (["--splashless"], "--splashless", "startup splash"),
-        (["--invert"], "--invert", "theme inversion"),
         (["--screen-dump-dir", "fixture"], "--screen-dump-dir", "screen exports"),
     ],
 )
@@ -491,3 +490,12 @@ def test_cli_certificate_paths_are_captured_from_launch_directory_without_readin
     assert overrides.client_key == str(tmp_path / "absent-key")
     assert overrides.client_certificate == str(tmp_path / "absent-cert")
     assert not any(path.name.startswith("absent") for path in tmp_path.iterdir())
+
+
+def test_invert_is_an_active_runtime_presentation_option(monkeypatch):
+    captured = []
+    monkeypatch.setattr(
+        cli, "run_terminal", lambda *args, **kwargs: captured.append(kwargs["presentation"])
+    )
+    assert cli.main(["--invert"]) == 0
+    assert captured[0].invert is True

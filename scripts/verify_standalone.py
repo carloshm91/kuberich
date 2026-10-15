@@ -189,7 +189,14 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
         overrides = environment(
             directory, helpers=helpers, bundle="/app" if host.linux else str(host.bundle)
         )
-        argv = [host.executable, "--kubeconfig", str(kubeconfig), "--context", "kuberich-test-pty"]
+        argv = [
+            host.executable,
+            "--invert",
+            "--kubeconfig",
+            str(kubeconfig),
+            "--context",
+            "kuberich-test-pty",
+        ]
         command = host.command(argv, overrides, tty=True)
         with TerminalSession(
             command, directory, environment={**host.environment, **overrides}
@@ -218,6 +225,16 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
                 assert b"SHELL CHILD START" not in terminal.transcript
             marker = terminal.send(b"\x1b")
             terminal.wait_for_screen("Sort NAME", since=marker)
+            terminal.send(b":themes\r")
+            terminal.wait_for_screen("Selected")
+            terminal.send(b"\x1b[B")
+            terminal.wait_for_screen("Preview: kuberich-mono")
+            terminal.send(b"\x1b")
+            terminal.wait_for_screen("Sort NAME", absent=("Theme",))
+            terminal.send(b":about\r")
+            terminal.wait_for_screen("Apache-2.0")
+            terminal.send(b"\x1b")
+            terminal.wait_for_screen("Sort NAME", absent=("Apache-2.0",))
             terminal.send(b"\x11")
             terminal.finish()
             name = "standalone-" + native_target() + ("-auth-exec" if helpers else "-missing-tool")
@@ -240,6 +257,7 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
             "receipt": retained.name,
             "sha256": digest(retained),
             "caller_kubeconfig_unchanged": True,
+            "theme_preview_cancel_and_about": True,
         }
     finally:
         server.stopping.set()
