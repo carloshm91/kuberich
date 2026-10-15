@@ -102,6 +102,10 @@ field can be hidden. The `name` column stays visible for stable identity;
 all-namespace lists also retain `namespace` so equal names can be distinguished.
 Widths and alignment affect display only. They do not convert typed sort values
 into strings. Header clicks and effective sort keys change this session's sort.
+Filters retain the typed row model, so hiding a field does not make its values
+confidential or necessarily remove it from search. Pod/standard summaries remain
+searchable, and a generic view's hidden sort field also participates. Generic
+fields excluded from both display and sort are not projected into its filter.
 
 - **Apply** updates this session only.
 - **Global** explicitly saves the resource view for all contexts.

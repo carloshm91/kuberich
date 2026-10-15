@@ -385,6 +385,12 @@ async def test_custom_persistence_hidden_typed_sort_and_schema_change_reject_sta
             assert saved.printer_signature == printer_signature(
                 app.custom_table.resource_layout.headers
             )
+            await pilot.press("slash", *"10", "enter")
+            await wait_for(lambda: app.custom_table.row_count == 1)
+            assert app.custom_table.selected_uid == "owned-ten"
+            assert tuple(c.value for c in app.custom_table.columns) == ("name", "c3")
+            await pilot.press("escape")
+            await custom_loaded(app)
             screen = await editor(app, pilot)
             api.changed = True
             await api.update("/apis/" + GROUP + "/v1/namespaces/team/widgets", changed=True)
