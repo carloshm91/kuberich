@@ -71,6 +71,16 @@ line coverage and full native checks; #166 is consequently not a site-only diff.
 Process regressions retain real-child reaping and descendant cancellation, and
 negative controls reject live or persistently denied Darwin groups.
 
+The later #89 documentation PR's actual Linux/Python 3.12 aggregate-kind check
+timed out on previous CrashLoop logs. Its original ended one-line result lacked
+the expected synthetic output; failure did not waive the gate. The aggregate
+fixture now explicitly sets and verifies a one-second owned kubelet sync period
+alongside its existing twenty-second restart cap. Other owned-cluster callers
+keep their defaults. Original deadlines, genuine membership responses, first
+current/previous output, no-replay and cleanup checks remain required. Retain the
+failed originals, independent owned-node controls and new hosted verification;
+a subsequent unchanged passing rerun is not a correction.
+
 The current critical modules are the CLI/module entry points, preference schema
 validation/precedence, diagnostic redaction, control escaping, literal text
 presentation, argument validation/capture, client/UID target identity checks,

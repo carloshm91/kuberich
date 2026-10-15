@@ -15,15 +15,22 @@ kuberich config check
 Choose one installation method. Start with
 `kuberich --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly`, using
 your intended context and namespace. The [installation guide](installation.md)
-covers pipx, standalone archives, updates and removal. The maintainer activated
-`kuberich.com` and `docs.kuberich.com`; both passed HTTPS reads on 2026-10-12.
-They still serve the earlier development deployment. Updated public content and
-the `www` redirect remain final hosting work.
-The public website build is prepared and browser-verified with indexable pages
-for the verified 0.1.0 release. It directs landing links to the dedicated docs
-host and redirects legacy `/docs` paths instead of publishing a duplicate guide
-tree. Upload and final redirect verification remain separate steps; preparation
-does not change either live site.
+covers pipx, standalone archives, updates and removal. The
+[website](https://kuberich.com/) and [documentation](https://docs.kuberich.com/)
+now serve the verified public 0.1.0 content. The maintainer approved the protected
+deployment, which passed on 2026-10-13 UTC. Independent custom-domain HTTPS reads
+matched all 42 published files and all 26 direct guide URLs to the checked build.
+The landing links to the dedicated documentation host; four legacy `/docs`
+routes return the expected 301 redirects. Both custom 404 routes passed too.
+The former development-version and unavailable-package notices are gone.
+
+Final hosting acceptance remains open for the separately configured `www`
+redirect and a measured custom-domain cache detail: five unchanged assets retain
+the earlier `noindex, nofollow` response header. Their content and security
+headers match the checked build, and fresh query-key requests return the current
+indexing header. The HTML pages already serve `index, follow`. Zone-cache cleanup
+and a new ordinary-URL read are still needed before claiming every response
+header verified on the custom domains.
 
 ## Available workflows
 
@@ -52,7 +59,12 @@ and the [release phases](releases.md) explain what belongs to each version.
 
 The website and documentation contain fictional examples and actual application
 renders from owned fixtures. Both generated surfaces passed checks across
-57 pages, including desktop/mobile navigation, accessibility and local links.
+57 offline-preview pages, including desktop/mobile navigation, accessibility
+and local links. The public build has 30 pages without duplicate guides. Its
+exact deployed artifact passed all 30 desktop and 30 mobile browser cases,
+keyboard/copy/no-JavaScript navigation and zero automated accessibility
+violations. Live custom-domain checks independently matched the served content;
+the remaining asset-header cache finding above is retained without a waiver.
 Exact main `3dbf9c0118193aa11635baea6ae2a0b36bee4c6e` passed all six source
 Python combinations and all four native executables. Original audits and native
 provenance passed independent review. Measured coverage was 99.0987–99.1296%
