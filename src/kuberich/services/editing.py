@@ -24,8 +24,6 @@ class EditingService(MutationService):
 
     async def open(self) -> ManifestFile:
         self.require_current()
-        if self.resource.kind == "Secret":
-            raise AppError("Secret editing is unavailable in this preview.")
         if self.file is None:
             if self._file_closing is not None and not self._file_closing.done():
                 raise AppError("The previous edit draft is still closing.")

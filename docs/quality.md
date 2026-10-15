@@ -12,6 +12,17 @@ Coverage is a release requirement and one part of correctness. A high percentage
 does not establish correct Kubernetes semantics, responsive terminal behavior,
 or reliable installation.
 
+## Configuration data: M05 #55
+
+`domain/configuration_data.py` joins the 100% line/branch critical inventory.
+Synthetic parser cases cover binary/text/Base64 errors and content-free bounds;
+owned HTTP tests cover fresh reads, UID/version/scope changes, cancellation and
+Secret editor disclosure. Pilot and real source/installed PTYs verify deliberate
+reveal/hide, encoding, small-window return and terminal restoration. The existing
+mandatory editing-kind verifier also checks real Secret reads, dry-run/Apply,
+read-only, conflicts, RBAC and immutable-field rejection. Measurements and honest
+limits belong in [acceptance](acceptance/configuration-data.md).
+
 ## Required gates
 
 D05 #49 adds a separate four-target native matrix on every Application quality

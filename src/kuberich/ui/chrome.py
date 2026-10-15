@@ -101,7 +101,10 @@ def workload_shortcuts(resource: str, read_only: bool) -> tuple[tuple[str, str],
         actions.append((":rollout", "Rollout status"))
     if not read_only:
         actions.append((":delete", "Review deletion"))
-    return (*actions, *RESOURCE_SHORTCUTS)[:12]
+    shortcuts: tuple[tuple[str, str], ...] = RESOURCE_SHORTCUTS
+    if resource in {"configmaps", "secrets"}:
+        shortcuts = (("Enter / v", "Data keys"), ("d", "Details"), *RESOURCE_SHORTCUTS[1:])
+    return (*actions, *shortcuts)[:12]
 
 
 SERVICE_SHORTCUTS = (

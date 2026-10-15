@@ -12,6 +12,7 @@ from kuberich.domain.registry import RESOURCE_ALIASES, STANDARD_RESOURCES
 from kuberich.domain.views import ViewStatus
 from kuberich.services.commands import ResourceCommand
 from kuberich.ui.app import KubeRichApp
+from kuberich.ui.configuration_data import ConfigurationScreen
 from kuberich.ui.inspection import InspectionScreen
 from tests.support.connections import catalog_fixture
 from tests.support.standard import api, manifest, standard_api
@@ -75,6 +76,14 @@ async def test_every_resource_has_discovered_list_watch_detail_and_correct_hints
                 assert "(cluster)" in str(app.query_one("#resource-view").border_title)
             before = app.standard_table.capture_viewport()
             await pilot.press("enter")
+            if definition.name in {"configmaps", "secrets"}:
+                await wait_for(
+                    lambda: (
+                        isinstance(app.screen, ConfigurationScreen) and app.screen.index is not None
+                    )
+                )
+                assert app.screen.viewer.text == ""
+                await pilot.press("escape", "d")
             await wait_for(
                 lambda: isinstance(app.screen, InspectionScreen) and app.screen.result is not None
             )

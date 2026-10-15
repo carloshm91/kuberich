@@ -32,6 +32,25 @@ indexing header. The HTML pages already serve `index, follow`. Zone-cache cleanu
 and a new ordinary-URL read are still needed before claiming every response
 header verified on the custom domains.
 
+## Source checkpoint toward 0.2.0: configuration data
+
+The next-release source adds Enter / `v` on ConfigMaps and Secrets: a key/size
+index with values hidden by default, explicit per-key reveal/copy, UTF-8/Base64
+selection, bounded output and fresh UID/version-bound reads. Secret manifests
+use the existing deliberate editor disclosure, redacted review, strict dry-run
+and separate conditional Apply. Ordinary inspection stays redacted.
+
+```sh
+uv sync --locked --group dev
+uv run kuberich --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly
+```
+
+These commands run the checkout, not an upgrade to the published 0.1.0 package.
+Owned-loopback Pilot and real PTY verification cover the controls; disposable-kind
+verification covers actual Secret/ConfigMap reads and guarded edits. Measured
+final acceptance is retained in [configuration-data evidence](acceptance/configuration-data.md).
+No maintainer cluster was used; real-cloud certification remains deferred.
+
 ## Available workflows
 
 The current implementation supports live pods, context and namespace tables,

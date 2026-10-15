@@ -198,14 +198,14 @@ async def test_interrupted_or_invalid_validation_does_not_persist(tmp_path, mode
 
 
 @pytest.mark.asyncio
-async def test_readonly_secret_guard_revalidation_denial_and_new_draft_invalidate_proof(tmp_path):
+async def test_readonly_type_guard_revalidation_denial_and_new_draft_invalidate_proof(tmp_path):
     async with source_fixture(tmp_path, read_only=True) as (source, api, _):
         with pytest.raises(AppError, match="Read-only"):
             await source.open()
         assert source.file is None and not api.requests
     async with source_fixture(tmp_path) as (source, api, _):
         source.resource = replace(source.resource, kind="Secret")
-        with pytest.raises(AppError, match="Secret"):
+        with pytest.raises(AppError, match="discovered type"):
             await source.open()
         source.resource = replace(source.resource, kind="ConfigMap")
         _, intent, _ = await draft(source)
