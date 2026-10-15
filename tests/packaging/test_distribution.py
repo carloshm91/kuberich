@@ -28,6 +28,7 @@ from tests.support.operation_terminal import terminal_operation
 from tests.support.operations import operation_api
 from tests.support.shell import terminal_shell
 from tests.support.standard_terminal import terminal_standard_views
+from tests.support.themes_terminal import terminal_themes
 from tests.support.transports import TerminalTransport
 from tests.support.workload_terminal import terminal_workload
 from tests.support.workloads import workload_api
@@ -405,7 +406,8 @@ def test_installed_terminal_launch_restores_tty_outside_the_checkout(
         (["--readonly", "info"], 0),
         (["--context", "fixture"], 2),
         (["--token", "opaque-secret"], 2),
-        (["--invert"], 4),
+        (["--splashless"], 4),
+        (["--invert"], 2),
         (["--readonly", "-c", "shell"], 2),
         (["--readonly", "-c", "annotate"], 2),
     ],
@@ -424,8 +426,8 @@ def test_installed_launch_contract_outside_checkout(
     elif arguments == ["--readonly", "info"]:
         assert json.loads(output.stdout)["preferences"]["read_only"]
     elif expected == 4:
-        assert "unavailable" in output.stderr and "theme inversion" in output.stderr
-    elif arguments in (["--context", "fixture"], ["--token", "opaque-secret"]):
+        assert "unavailable" in output.stderr and "startup splash" in output.stderr
+    elif arguments in (["--context", "fixture"], ["--token", "opaque-secret"], ["--invert"]):
         assert "interactive terminal" in output.stderr
     elif expected == 2:
         assert "Read-only mode blocks" in output.stderr
@@ -549,3 +551,14 @@ def test_installed_log_viewer_outside_checkout(installed_wheel, entry_point):
         else [str(binary_dir / "python"), "-m", "kuberich"]
     )
     terminal_logs(command, directory, evidence=f"installed-log-viewer-{entry_point}")
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+def test_installed_theme_preferences_and_about_outside_checkout(installed_wheel, entry_point):
+    binary, directory = installed_wheel
+    command = (
+        [str(binary / "kuberich")]
+        if entry_point == "console"
+        else [str(binary / "python"), "-m", "kuberich"]
+    )
+    terminal_themes(command, directory, f"installed-themes-{entry_point}")

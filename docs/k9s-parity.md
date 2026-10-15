@@ -13,6 +13,16 @@ The goal is complete functional coverage of the public reference, with every
 discovered capability assigned to implementation and verification work. A source
 inventory and a ticket are evidence of planning, not proof that a feature works.
 
+## Appearance implementation checkpoint
+
+U01 #56 provides custom/global/context palettes, temporary preview, explicit
+persistence, session inversion and original About content. The real opt-in update
+checker validates stable public releases, uses a bounded cache/request and works
+offline. [The guide](themes.md) distinguishes source from published 0.1.0;
+[acceptance](acceptance/appearance.md) records the evidence. EXT01 stays partial:
+transparent palettes, icon settings and reactive reload remain U06 #64; complete
+K9s skin compatibility is not claimed.
+
 ## Configuration-data implementation checkpoint
 
 M05 #55 adds metadata-only key indexes, explicit version-bound reveal/copy,

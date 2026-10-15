@@ -8,6 +8,7 @@ from kuberich.config.catalog import load_catalog
 from kuberich.config.schema import Settings
 from kuberich.domain.connections import DEFAULT_CONNECTION, ConnectionRequest
 from kuberich.errors import AppError, ExitCode
+from kuberich.services.appearance import PreferenceSource
 from kuberich.services.commands import Command, ResolvedCommand
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.presentation import DEFAULT_PRESENTATION, Presentation
@@ -20,6 +21,7 @@ def run_terminal(
     presentation: Presentation = DEFAULT_PRESENTATION,
     initial_command: ResolvedCommand = Command.EMPTY,
     connection: ConnectionRequest = DEFAULT_CONNECTION,
+    preferences: PreferenceSource | None = None,
 ) -> None:
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         raise AppError(
@@ -33,6 +35,7 @@ def run_terminal(
         initial_command=initial_command,
         catalog=catalog,
         connection=connection,
+        preferences=preferences,
     )
     app.run()
     if app.return_code == ExitCode.HANGUP:

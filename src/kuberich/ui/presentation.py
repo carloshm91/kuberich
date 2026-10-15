@@ -189,6 +189,7 @@ class Presentation:
     headless: bool = False
     logoless: bool = False
     crumbsless: bool = False
+    invert: bool = False
 
 
 DEFAULT_PRESENTATION = Presentation()

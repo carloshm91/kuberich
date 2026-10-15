@@ -12,6 +12,18 @@ Coverage is a release requirement and one part of correctness. A high percentage
 does not establish correct Kubernetes semantics, responsive terminal behavior,
 or reliable installation.
 
+## Appearance and release notices: U01 #56
+
+`domain/appearance.py` and `domain/releases.py` join the 100% line/branch critical
+inventory. Pure tests cover limits, contrast, inversion, precedence, PEP 440 and
+hostile cache/release values. Actual private files and owned HTTP cover optimistic
+save conflicts, symlinks/FIFOs, binary/oversize/error/rate-limit responses,
+credential absence, deadlines and repeated cancellation. Pilot covers working
+fallbacks, preview/cancel, scope, saves and child-before-parent teardown. Source,
+installed console/module and actual native PTYs exercise presentation/About;
+all existing whole-package/platform/owned-kind gates remain required.
+See [measured acceptance](acceptance/appearance.md).
+
 ## Configuration data: M05 #55
 
 `domain/configuration_data.py` joins the 100% line/branch critical inventory.

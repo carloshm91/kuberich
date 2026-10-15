@@ -392,6 +392,18 @@ def test_reference_uses_selected_checkout_contracts_and_preserves_planned_status
     verify(output, source)
 
 
+def public_tracking_text(text: str) -> str:
+    """Quoted theme color values are data; issue references remain forbidden."""
+    from kuberich.domain.appearance import COLORS
+
+    fields = "|".join(sorted(COLORS))
+    return re.sub(
+        rf"(?m)(^[ \t]*(?:{fields}):[ \t]*)(?P<quote>['\"])#[0-9a-fA-F]{{6}}(?P=quote)",
+        r"\1'COLOR'",
+        text,
+    )
+
+
 def test_public_guides_use_product_language_and_fictional_tutorials(tmp_path):
     """Visible user docs must not inherit issue IDs from internal acceptance records."""
 
@@ -408,14 +420,16 @@ def test_public_guides_use_product_language_and_fictional_tutorials(tmp_path):
     inventory = json.loads((ROOT / "docs/capabilities.json").read_text())
     for guide in GUIDES:
         authored = user_content((ROOT / "docs" / guide.source).read_text())
-        assert not re.search(r"#[0-9]+|\b[A-Z][0-9]{2}\b|/(issues|pull)/", authored)
+        assert not re.search(
+            r"#[0-9]+|\b[A-Z][0-9]{2}\b|/(issues|pull)/", public_tracking_text(authored)
+        )
     for surface in ("www/docs", "docs"):
         for path in (output / surface).glob("*.html"):
             parser = VisibleText()
             html = path.read_text()
             parser.feed(html)
             text = " ".join(parser.parts)
-            assert not re.search(r"#[0-9]+|\b[A-Z][0-9]{2}\b", text), path
+            assert not re.search(r"#[0-9]+|\b[A-Z][0-9]{2}\b", public_tracking_text(text)), path
             assert not re.search(r"github\.com/[^\s\"<>]+/(issues|pull)/", html), path
         progress = (output / surface / "capability-reference.html").read_text()
         for row in inventory["rows"]:
@@ -459,3 +473,23 @@ def test_checker_rejects_source_drift_and_new_unreceipted_modules(tmp_path):
     (source / "src/kuberich/new_contract.py").write_text('"""New application declaration."""\n')
     with pytest.raises(ValueError, match="source inventory"):
         verify(output, source)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "See #56",
+        "See '#123456'",
+        "issue: '#123456'",
+        "primary: '#123456' # See #56",
+        "https://github.com/example/project/issues/56",
+        "U01",
+    ],
+)
+def test_public_tracking_scan_retains_issue_and_internal_references(text):
+    assert re.search(r"#[0-9]+|\b[A-Z][0-9]{2}\b|/(issues|pull)/", public_tracking_text(text))
+
+
+def test_public_tracking_scan_accepts_quoted_color_values_without_ignoring_other_lines():
+    text = "primary: '#5fd7ff'\nbackground: '#000000'\nforeground: '#123456'\n"
+    assert not re.search(r"#[0-9]+", public_tracking_text(text))

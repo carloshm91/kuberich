@@ -5,6 +5,12 @@ diagnostic logging, alongside the [resource workspace](resource-workspace.md).
 Preference inspection does not connect to Kubernetes. The UI applies built-in themes and displays
 read-only mode in both header/status and shared command decisions. The native shell service applies the shared read-only guard before preparation.
 
+The next-release source adds [theme preview and context preferences](themes.md),
+including the explicit local save controls and an opt-in cached version notice.
+The published 0.1.0 package does not include those controls. `config check` in the
+source validates custom palette fields, contrast and registered theme references;
+invalid appearance settings leave files unchanged.
+
 ## Legacy preview compatibility
 
 KubeRich uses `kuberich` for its package, Python imports and canonical command.

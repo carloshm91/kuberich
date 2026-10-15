@@ -13,6 +13,7 @@ from kuberich.config.schema import Settings
 from kuberich.diagnostics.logging import diagnostic_logging
 from kuberich.errors import AppError
 from kuberich.ui.app import DISCONNECTED_STATUS, HelpScreen, KubeRichApp
+from kuberich.ui.appearance import AboutScreen
 
 
 def make_app(settings: Settings | None = None) -> KubeRichApp:
@@ -195,9 +196,16 @@ async def test_mouse_selects_a_row_and_arrows_preserve_widget_navigation() -> No
         assert app.resources.cursor_row == 2
 
 
-def test_unregistered_theme_is_a_safe_config_error() -> None:
-    with pytest.raises(AppError, match="theme is unavailable"):
-        make_app(Settings(theme="not-registered"))
+@pytest.mark.asyncio
+async def test_unregistered_theme_retains_a_navigable_default() -> None:
+    app = make_app(Settings(theme="not-registered"))
+    async with app.run_test() as pilot:
+        assert app.theme == "k9s"
+        assert app._appearance_warning == "Selected theme is unavailable; using k9s."
+        await pilot.press("colon", "a", "b", "o", "u", "t", "enter")
+        assert isinstance(app.screen, AboutScreen)
+        await pilot.press("escape", "q")
+    assert app.return_code == 0
 
 
 @pytest.mark.asyncio

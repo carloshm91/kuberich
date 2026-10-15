@@ -220,3 +220,19 @@ def test_info_omits_sensitive_shell_arguments_and_retains_only_safe_preferences(
         "log_level",
     }
     assert path.read_text() == contents
+
+
+def test_config_check_validates_registered_theme_references_without_rewriting(tmp_path, capsys):
+    path = tmp_path / "preferences.yaml"
+    path.write_text("schema_version: 1\ntheme: missing-theme\n")
+    before = path.read_bytes()
+    assert main(["--config", str(path), "config", "check"]) == 2
+    assert "Selected theme is unavailable" in capsys.readouterr().err
+    assert path.read_bytes() == before
+    path.write_text(
+        "schema_version: 1\ntheme: ocean\nappearance:\n  themes:\n    ocean:\n      primary: '#5fd7ff'\n      foreground: '#ffffff'\n      background: '#000000'\n"
+    )
+    before = path.read_bytes()
+    assert main(["--config", str(path), "config", "check"]) == 0
+    assert "valid" in capsys.readouterr().out
+    assert path.read_bytes() == before

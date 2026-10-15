@@ -5,12 +5,14 @@ import logging
 import os
 from collections.abc import Callable
 from contextlib import suppress
+from dataclasses import replace
 from functools import partial
 from importlib.metadata import version
 from pathlib import Path
 from typing import ClassVar
 from uuid import UUID
 
+from platformdirs import user_cache_path
 from rich.text import Text
 from textual import on
 from textual.app import App, ComposeResult
@@ -29,6 +31,7 @@ from kuberich.adapters.terminal import current_terminal_size
 from kuberich.config.catalog import KubeCatalog
 from kuberich.config.schema import Settings
 from kuberich.domain.aggregate_logs import workload_kind
+from kuberich.domain.appearance import Appearance, effective_theme
 from kuberich.domain.connections import (
     DEFAULT_CONNECTION,
     ConnectionRequest,
@@ -57,6 +60,7 @@ from kuberich.security.arguments import validate_argument
 from kuberich.security.presentation import safe_text
 from kuberich.services.access import AccessPolicy, Action
 from kuberich.services.aggregate_logs import AggregateLogs
+from kuberich.services.appearance import PreferenceSource
 from kuberich.services.attach import AttachService
 from kuberich.services.commands import (
     Command,
@@ -85,12 +89,13 @@ from kuberich.services.processes import ProcessRunner, _finish_owned
 from kuberich.services.sessions import SessionService
 from kuberich.services.shell import ShellService
 from kuberich.services.transfers import TransferService
+from kuberich.services.updates import UpdateResult, UpdateService
 from kuberich.services.workloads import WorkloadService
 from kuberich.services.workspace import ViewSubscription, WorkspaceService
 from kuberich.ui.aggregate_logs import AggregateLogScreen
+from kuberich.ui.appearance import AboutScreen, ThemeScreen
 from kuberich.ui.chrome import (
     CTX_SHORTCUTS,
-    K9S_THEME,
     NS_SHORTCUTS,
     POD_SHORTCUTS,
     RESOURCE_SHORTCUTS,
@@ -123,6 +128,7 @@ from kuberich.ui.shutdown import TerminalSignals
 from kuberich.ui.standard import StandardTable
 from kuberich.ui.style_cache import ColorStylesCache, ComponentStylesheet
 from kuberich.ui.terminal import ShellScreen
+from kuberich.ui.theme_catalog import appearance_from, invert_theme, themes_for
 from kuberich.ui.transfers import TransferScreen
 from kuberich.ui.workloads import WorkloadScreen
 
@@ -147,6 +153,7 @@ class HelpScreen(ModalScreen[None]):
                         "n / F3            Namespaces (:ns)\n"
                         "r / F4            Retry connection (:retry)\n"
                         ":login            Explicit credential helper login and reconnect\n"
+                        ":themes / :about  Appearance, preferences and version notice\n"
                         "i / F5            Connection status (:status)\n"
                         "Letter shortcuts work outside text inputs.\n"
                         "PageUp / PageDown Scroll help\n"
@@ -247,6 +254,8 @@ class KubeRichApp(App[None]):
         initial_command: ResolvedCommand = Command.EMPTY,
         catalog: KubeCatalog | None = None,
         connection: ConnectionRequest = DEFAULT_CONNECTION,
+        preferences: PreferenceSource | None = None,
+        updates: UpdateService | None = None,
     ) -> None:
         super().__init__()
         self.stylesheet = ComponentStylesheet(variables=self.get_css_variables())
@@ -277,11 +286,36 @@ class KubeRichApp(App[None]):
         self._refresh_seconds = settings.refresh_seconds
         self._process_environment = dict(os.environ)
         self._process_directory = Path.cwd()
-        self.register_theme(K9S_THEME)
-        if settings.theme not in self.available_themes:
-            raise AppError("Selected theme is unavailable; choose k9s or a built-in Textual theme.")
-        self.theme = settings.theme
-        self._mode = "Read-only" if settings.read_only else "Local preview"
+        self.preferences = preferences
+        self._global_theme = preferences.document.settings.theme if preferences else settings.theme
+        self._theme_override = preferences.theme_override if preferences else None
+        self.appearance = Appearance()
+        self._appearance_warning: str | None = None
+        self._appearance_invalid = False
+        if preferences is not None:
+            try:
+                self.appearance = appearance_from(preferences.document)
+            except AppError as error:
+                self._appearance_warning = str(error)
+                self._appearance_invalid = True
+        for theme in themes_for(self.appearance):
+            self.register_theme(theme)
+        if presentation.invert:
+            for theme in tuple(self.available_themes.values()):
+                self.register_theme(invert_theme(theme))
+        self._applied_context: str | None = None
+        self._apply_theme()
+        self._updates = updates or UpdateService(
+            version("kuberich"),
+            user_cache_path("kuberich", appauthor=False) / "latest-release.json",
+        )
+        self._update_task: asyncio.Task[None] | None = None
+        self._updates_stopped = False
+        self._build_info: Static | None = None
+        self.update_result = UpdateResult("Version checks disabled; opt in under :themes.")
+        self._mode = ("Read-only" if settings.read_only else "Local preview") + (
+            " · inverted" if presentation.invert else ""
+        )
         self.resources = PodTable()
         self.namespace_table = NamespaceTable()
         self.namespace_table.display = False
@@ -322,6 +356,126 @@ class KubeRichApp(App[None]):
         )
         self.command_input = CommandInput(self._suggestions, focus_table, self._submit_command)
         self.status = WorkspaceLabel(DISCONNECTED_STATUS, id="status", markup=False)
+
+    def _theme_context(self) -> str | None:
+        return (
+            self.workspace.store.observation.context
+            or self.sessions.request.context
+            or self.sessions.catalog.current
+        )
+
+    def _apply_theme(self, context: str | None = None) -> None:
+        context = context or self._theme_context()
+        self.theme, unavailable = effective_theme(
+            self._global_theme,
+            self.appearance,
+            context,
+            self._theme_override,
+            self.available_themes,
+        )
+        self._applied_context = context
+        if unavailable:
+            self._appearance_warning = "Selected theme is unavailable; using k9s."
+
+    def action_change_theme(self) -> None:
+        if not isinstance(self.screen, ModalScreen):
+            context = self._theme_context()
+            self.push_screen(
+                ThemeScreen(
+                    tuple(sorted(self.available_themes)),
+                    self.theme,
+                    context,
+                    self.appearance.check_updates,
+                    self._preview_theme,
+                    self._apply_theme,
+                    self._save_theme,
+                    writable=self.preferences is not None and not self._appearance_invalid,
+                )
+            )
+
+    def _preview_theme(self, name: str) -> None:
+        self.theme = name
+
+    async def _save_theme(self, name: str, context: str | None, check_updates: bool) -> str:
+        if self.preferences is None:
+            raise AppError("Launch through the CLI to save local preferences.")
+        if self._appearance_invalid:
+            raise AppError(
+                "Correct appearance settings with kuberich config check before saving; the file is retained."
+            )
+        if name not in self.available_themes or (
+            context is not None and context != self._theme_context()
+        ):
+            raise AppError("Theme or context changed; close and select it again.")
+        appearance = replace(
+            self.appearance,
+            check_updates=check_updates if context is None else self.appearance.check_updates,
+        )
+        await self.preferences.save(appearance, name, context)
+        self.appearance = appearance_from(self.preferences.document)
+        self._global_theme = self.preferences.document.settings.theme
+        self._apply_theme()
+        self._start_update_check()
+        return f"Saved {'globally' if context is None else 'for this context'} · effective theme: {self.theme} · environment > context > global"
+
+    def action_about(self) -> None:
+        if not isinstance(self.screen, ModalScreen):
+            message = self._notice_text()
+            self.push_screen(
+                AboutScreen(
+                    version("kuberich") + (" · inverted" if self._presentation.invert else ""),
+                    message,
+                )
+            )
+
+    def _notice_text(self) -> str:
+        result = self.update_result
+        return (
+            result.message
+            + (" · cached within 24 hours" if result.cached else "")
+            + ("\n" + result.release.url if result.release else "")
+        )
+
+    def _start_update_check(self) -> None:
+        if self._updates_stopped:
+            return
+        if not self.appearance.check_updates:
+            if self._update_task is not None:
+                self._update_task.cancel()
+            self.update_result = UpdateResult("Version checks disabled; opt in under :themes.")
+            if self._build_info is not None and self._build_info.is_attached:
+                self._build_info.update(self.chrome.build)
+            return
+        if self._update_task is None or self._update_task.done():
+            self.update_result = UpdateResult("Checking public stable releases…")
+            self._update_task = asyncio.create_task(self._check_update())
+            self._update_task.add_done_callback(self._update_finished)
+
+    async def _check_update(self) -> None:
+        result = await self._updates.check()
+        if self._updates_stopped or not self.appearance.check_updates:
+            return
+        self.update_result = result
+        message = self._notice_text()
+        for screen in tuple(self.screen_stack):
+            if isinstance(screen, AboutScreen):
+                screen.update_notice(message)
+        if (
+            self.is_running
+            and result.release is not None
+            and self._build_info is not None
+            and self._build_info.is_attached
+        ):
+            self._build_info.update(self.chrome.build + " · ↑" + result.release.version)
+            self.notify(result.message + " · :about for release notes")
+
+    def _update_finished(self, task: asyncio.Task[None]) -> None:
+        if task.cancelled():
+            if not self._updates_stopped and self.appearance.check_updates:
+                self._start_update_check()
+            return
+        if isinstance(error := task.exception(), Exception):
+            self._handle_exception(error)
 
     @property
     def _active_table(self) -> PodTable | NamespaceTable | ContextTable | StandardTable:
@@ -508,6 +662,13 @@ class KubeRichApp(App[None]):
         self.screen.set_class(self.size.height < 16, "short")
         self.set_focus(self.resources)
         self._set_status(DISCONNECTED_STATUS)
+        self._build_info = self.header.query_one("#build-info", Static)
+        if self._appearance_warning:
+            self.notify(
+                self._appearance_warning + " Run kuberich config check; working defaults retained.",
+                severity="warning",
+            )
+        self._start_update_check()
         if self._initial_command is not Command.QUIT:
             subscription = self.workspace.subscribe()
             self._view_task = asyncio.create_task(self._observe_view(subscription))
@@ -530,7 +691,11 @@ class KubeRichApp(App[None]):
                     scope = NamespaceChoice(None if initial.scope == "*" else initial.scope)
             if isinstance(initial, GenericResourceCommand):
                 self._pending_generic = initial
-            if context is not None:
+            if (
+                context is not None
+                and initial is not Command.THEMES
+                and initial is not Command.ABOUT
+            ):
                 self._start_connection(context, scope=scope)
             if (
                 not isinstance(initial, (ScopedCommand, ResourceCommand, GenericResourceCommand))
@@ -559,6 +724,7 @@ class KubeRichApp(App[None]):
             self._namespace_parent = self._namespace_state = None
             self._namespace_route = False
             self._custom_layouts.clear()
+        self._apply_theme(context)
         self._connection_task = self.workspace.connect(
             context, scope=scope, authenticate=authenticate
         )
@@ -591,6 +757,8 @@ class KubeRichApp(App[None]):
                     if self._pending_generic is not None and self.workspace.discovery is not None:
                         pending, self._pending_generic = self._pending_generic, None
                         self._apply_generic(pending)
+                    if self._theme_context() != self._applied_context:
+                        self._apply_theme()
                     identity = self.chrome.identity()
                     if identity != header_identity:
                         for header in self.query(WorkspaceHeader):
@@ -909,6 +1077,10 @@ class KubeRichApp(App[None]):
             raise
 
     async def on_unmount(self) -> None:
+        self._updates_stopped = True
+        if self._update_task is not None:
+            self._update_task.cancel()
+            await _finish_owned(asyncio.gather(self._update_task, return_exceptions=True))
         try:
             await self.mutations.close()
             await self.forwards.close()
@@ -1716,7 +1888,7 @@ class KubeRichApp(App[None]):
             self.push_screen(HelpScreen())
 
     async def action_back(self) -> None:
-        if isinstance(self.screen, (InspectionScreen, LogScreen)):
+        if isinstance(self.screen, (InspectionScreen, LogScreen, ThemeScreen)):
             self.screen.back()
         elif isinstance(self.screen, TransferScreen):
             await self.screen.cancel()
@@ -1830,7 +2002,11 @@ class KubeRichApp(App[None]):
             else:
                 self._namespace_selected(command.argument)
             return
-        if command is Command.HELP:
+        if command is Command.THEMES:
+            self.action_change_theme()
+        elif command is Command.ABOUT:
+            self.action_about()
+        elif command is Command.HELP:
             self.action_show_help()
         elif command is Command.QUIT:
             self.exit()

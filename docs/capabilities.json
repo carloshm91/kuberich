@@ -483,15 +483,25 @@
       ],
       "source": "internal/view/cow.go",
       "status": "planned",
-      "difference": "Preview #125 displays the actual installed application version in the shared header. A real optional cached/offline-safe release check remains U01 #56; no newer-release state is fabricated. Preview #132 supplies an original ktrol header logo with a compact wordmark; broader about/theme/update work remains open.",
+      "difference": "U01 implements explicit built-in/custom theme preview and global/context persistence, runtime inversion with contrast repair, original About and a real optional bounded/cached/offline-safe stable release check. Reactive reload, transparent colors and icon preferences remain U06; full skin parity is not claimed.",
       "partial_evidence": [
         "docs/resource-workspace.md",
         "docs/acceptance/resource-workspace.md",
         "tests/ui/test_resource_workspace.py",
         "tests/ui/test_layout_snapshots.py",
-        "docs/acceptance/header-logo.md"
+        "docs/acceptance/header-logo.md",
+        "docs/themes.md",
+        "docs/acceptance/appearance.md",
+        "tests/unit/test_appearance.py",
+        "tests/unit/test_releases.py",
+        "tests/contract/test_updates.py",
+        "tests/contract/test_appearance_preferences.py",
+        "tests/ui/test_appearance.py",
+        "tests/terminal/test_themes.py",
+        "tests/packaging/test_distribution.py",
+        "scripts/verify_standalone.py"
       ],
-      "public_summary": "The shared header displays the actual installed version and original KubeRich brand. Optional cached update notices and further presentation controls are planned.",
+      "public_summary": "Source checkout: original About and opt-in cached stable-release notices; published 0.1.0 displays its version/brand without these new controls.",
       "public_status": "partial"
     },
     {
@@ -1040,13 +1050,23 @@
       ],
       "source": "internal/config/styles.go",
       "status": "planned",
-      "difference": "The built-in original k9s theme and explicit Textual theme selection are implemented in preview #125. Custom user skins, live reload, per-context overrides and remaining skin semantics stay U01 #56.",
+      "difference": "U01 implements explicit built-in/custom theme preview and global/context persistence, runtime inversion with contrast repair, original About and a real optional bounded/cached/offline-safe stable release check. Reactive reload, transparent colors and icon preferences remain U06; full skin parity is not claimed.",
       "partial_evidence": [
         "docs/resource-workspace.md",
         "docs/acceptance/resource-workspace.md",
-        "tests/ui/test_resource_workspace.py"
+        "tests/ui/test_resource_workspace.py",
+        "docs/themes.md",
+        "docs/acceptance/appearance.md",
+        "tests/unit/test_appearance.py",
+        "tests/unit/test_releases.py",
+        "tests/contract/test_updates.py",
+        "tests/contract/test_appearance_preferences.py",
+        "tests/ui/test_appearance.py",
+        "tests/terminal/test_themes.py",
+        "tests/packaging/test_distribution.py",
+        "scripts/verify_standalone.py"
       ],
-      "public_summary": "An original built-in k9s color theme and explicit Textual theme selection are available. Custom user skins, live reload and per-context theme overrides are planned.",
+      "public_summary": "Source checkout: custom/global/context opaque palettes, preview/save and session inversion. Published 0.1.0 supports configured built-ins; transparent palettes, icons and reactive reload remain planned.",
       "public_status": "partial"
     },
     {

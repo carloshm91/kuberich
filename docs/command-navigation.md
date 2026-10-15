@@ -128,3 +128,7 @@ Measured delivery evidence and unavailable platform checks:
 [navigation verification](acceptance/B03.md).
 
 Namespaces share these filter bounds for name/status. See [workspace layout, live namespaces and Escape routes](resource-workspace.md).
+
+The next-release source also provides `:themes` / `:theme` for local appearance
+and `:about` for branding/version-check state. See [themes](themes.md) for
+preview, save, precedence and release availability.

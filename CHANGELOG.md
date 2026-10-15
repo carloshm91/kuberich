@@ -7,6 +7,12 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Preview and save built-in/custom themes globally or per context, retain working
+  defaults after invalid appearance overrides, and invert session colors with
+  contrast repair. Add original About content and an opt-in cached, bounded,
+  offline-safe public-release notice ([#56](https://github.com/carloshm91/kuberich/issues/56),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Inspect ConfigMap and Secret keys with values hidden by default, explicit
   reveal/copy, text/Base64 controls and fresh identity/version-bound reads.
   Edit Secrets through the private-draft, redacted-review and separate

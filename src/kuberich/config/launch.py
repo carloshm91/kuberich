@@ -17,7 +17,6 @@ class PendingOption:
 
 PENDING_OPTIONS = (
     PendingOption(("--splashless",), "splashless", "startup splash", boolean=True),
-    PendingOption(("--invert",), "invert", "theme inversion", boolean=True),
     PendingOption(("--screen-dump-dir",), "screen_dump_dir", "screen exports"),
 )
 
