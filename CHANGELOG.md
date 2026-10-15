@@ -7,6 +7,13 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Configure per-view navigation keys and literal command aliases with effective
+  help/completion. Apply or explicitly save resource column order, visibility,
+  widths, alignment and typed sort globally/per context; retain working fallbacks
+  after invalid overrides or changed server columns
+  ([#57](https://github.com/carloshm91/kuberich/issues/57),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Preview and save built-in/custom themes globally or per context, retain working
   defaults after invalid appearance overrides, and invert session colors with
   contrast repair. Add original About content and an opt-in cached, bounded,

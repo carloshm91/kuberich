@@ -33,6 +33,7 @@ from kuberich.ui.chrome import (
     WorkspaceHeader,
 )
 from kuberich.ui.commands import NavigationInput
+from kuberich.ui.keybindings import key_hint, navigation_help
 from kuberich.ui.log_body import LogBody
 from kuberich.ui.scopes import ScopeScreen
 
@@ -81,10 +82,13 @@ class TextRequestScreen(ModalScreen[str | None]):
 class LogHelpScreen(ModalScreen[None]):
     AUTO_FOCUS = "#help-scroll"
 
-    def __init__(self, status: str, *, aggregated: bool = False) -> None:
+    def __init__(
+        self, status: str, *, aggregated: bool = False, keymap: tuple[tuple[str, str], ...] = ()
+    ) -> None:
         super().__init__()
         self.status = status
         self.aggregated = aggregated
+        self.keymap = keymap
 
     def compose(self) -> ComposeResult:
         with Vertical(id="help-dialog"):
@@ -100,20 +104,18 @@ class LogHelpScreen(ModalScreen[None]):
                     )
                     + " · v current/previous · o read window\n"
                     "p pauses/resumes reception; reading older lines does not pause it\n"
-                    "f follows the bottom; G jumps to the bottom and follows\n"
-                    "g first retained line · j/k down/up · h/l horizontal\n"
-                    "Ctrl+F/B page · Ctrl+D/U half-page · arrows/PageUp/PageDown\n"
+                    "f follows the bottom; the last-line navigation key also follows\n"
                     "/ literal search · Enter then n/N next/previous matching line\n"
                     "t timestamps · w wrap · L lock horizontal offset during follow\n"
                     "C clear retained history · m mark first visible line\n"
                     "z fullscreen · Ctrl+Y copy retained text · Ctrl+S save to a new file\n"
                     "? these controls · Esc leaves an input then returns to the prior view\n\n"
-                    "Oldest lines are evicted at 10,000 lines or 4 MiB. g/G only navigate\n"
+                    "Oldest lines are evicted at 10,000 lines or 4 MiB. First/last only navigate\n"
                     "retained output. Reopening or changing a window requests history\n"
                     "again and may repeat it. No automatic stream replay.\n"
                     "Copy/save use retained, redacted, timestamped text. Copy is limited\n"
                     "to 1 MiB; save does not overwrite files. Copy requires terminal\n"
-                    "clipboard support.",
+                    "clipboard support.\n\n" + navigation_help(self.keymap, "logs"),
                     markup=False,
                 )
             yield Button("Back", id="log-help-back", compact=True)
@@ -208,13 +210,15 @@ class LogScreen(ModalScreen[None]):
 
     def compose(self) -> ComposeResult:
         if self.chrome is not None:
-            yield WorkspaceHeader(self.chrome, LOG_SHORTCUTS)
+            yield WorkspaceHeader(self.chrome, LOG_SHORTCUTS, binding_profile="logs")
         with WorkspaceBars(id="log-bars"):
             with Horizontal(id="log-search-bar", classes="input-bar"):
                 yield Static("/", classes="input-label", markup=False)
                 yield self.search
             yield Static(
-                "g/G first/last · / search · p pause · ? controls", markup=False, id="log-hints"
+                f"{key_hint(self.chrome.keymap if self.chrome else (), 'logs', 'first')}/{key_hint(self.chrome.keymap if self.chrome else (), 'logs', 'last')} first/last · / search · p pause · ? controls",
+                markup=False,
+                id="log-hints",
             )
         with WorkspaceFrame(id="log-dialog"):
             yield self.heading
@@ -543,7 +547,8 @@ class LogScreen(ModalScreen[None]):
         self.app.push_screen(
             LogHelpScreen(
                 f"{target.session.context} · {target.namespace}/{target.name} · {self.container}\n"
-                + str(self.status.content)
+                + str(self.status.content),
+                keymap=self.chrome.keymap if self.chrome else (),
             )
         )
 

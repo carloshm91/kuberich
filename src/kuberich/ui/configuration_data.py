@@ -20,6 +20,13 @@ from kuberich.security.presentation import safe_text
 from kuberich.services.configuration_data import ConfigurationService
 from kuberich.services.inspection import read_error
 from kuberich.services.processes import _finish_owned
+from kuberich.ui.keybindings import table_bindings
+from kuberich.ui.presentation import FrameTable
+
+
+class ConfigurationKeyTable(FrameTable[str | Text]):
+    BINDING_PROFILE = "data"
+    BINDINGS: ClassVar[list[BindingType]] = table_bindings("data")
 
 
 class ConfigurationScreen(ModalScreen[None]):
@@ -50,9 +57,12 @@ class ConfigurationScreen(ModalScreen[None]):
         self.encoded = False
         self.revealed = False
         self._generation = 0
+        self._metadata_generation = 0
         self._tasks: set[asyncio.Task[None]] = set()
         self._data_stopped = False
-        self.keys: DataTable[str | Text] = DataTable(id="configuration-keys", cursor_type="row")
+        self.keys: DataTable[str | Text] = ConfigurationKeyTable(
+            id="configuration-keys", cursor_type="row"
+        )
         self.viewer = TextArea(read_only=True, soft_wrap=False, id="configuration-value")
         self.status = Static("Loading key metadata…", markup=False, id="configuration-status")
 
@@ -90,6 +100,9 @@ class ConfigurationScreen(ModalScreen[None]):
             self.status.update("A read is in progress; retry after it completes.")
             return
         generation = self._generation
+        if operation == "load":
+            self._metadata_generation += 1
+            generation = self._metadata_generation
         task = asyncio.create_task(
             self._load(generation) if operation == "load" else self._read(operation, generation)
         )
@@ -120,8 +133,15 @@ class ConfigurationScreen(ModalScreen[None]):
     async def _load(self, generation: int) -> None:
         try:
             index = await self.service.index()
-            if generation != self._generation or not self.is_attached:
+            if (
+                generation != self._metadata_generation
+                or not self.is_attached
+                or self._data_stopped
+            ):
                 return
+            self.service.require_current()
+            selected = self._selected()
+            identity = selected.identity if selected is not None else None
             self.index = index
             self.keys.clear()
             for key in index.keys:
@@ -131,6 +151,11 @@ class ConfigurationScreen(ModalScreen[None]):
                     "Binary" if key.binary else "Text",
                     str(key.size),
                 )
+            if identity is not None:
+                position = next(
+                    (i for i, key in enumerate(index.keys) if key.identity == identity), 0
+                )
+                self.keys.move_cursor(row=position)
             self._hint()
             if not index.keys:
                 self.status.update("No data keys returned for this resource.")
@@ -196,7 +221,6 @@ class ConfigurationScreen(ModalScreen[None]):
         self._launch("copy")
 
     def action_reload(self) -> None:
-        self.index = None
         self._launch("load")
 
     @on(DataTable.RowHighlighted, "#configuration-keys")

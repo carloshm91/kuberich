@@ -6,12 +6,14 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from textual import on
-from textual.binding import Binding, BindingType
+from textual.binding import BindingType
 from textual.coordinate import Coordinate
 from textual.message import Message
 from textual.widgets import DataTable
 
 from kuberich.domain.pods import PodColumn, PodRow, order, sort_value, utc_now
+from kuberich.domain.resource_preferences import ColumnSpec, ViewSpec, applicable_view
+from kuberich.ui.keybindings import table_bindings
 from kuberich.ui.presentation import FrameTable, TableCell
 
 PodCell = TableCell
@@ -28,15 +30,14 @@ class Viewport:
 
 class PodTable(FrameTable[PodCell]):
     _row_repaint_enabled = True
-    BINDINGS: ClassVar[list[BindingType]] = [
-        Binding("s", "next_sort", "Sort"),
-        Binding("S", "reverse_sort", "Reverse sort", show=False),
-    ]
+    BINDING_PROFILE = "resources"
+    BINDINGS: ClassVar[list[BindingType]] = table_bindings("resources")
 
     class SortChanged(Message):
         pass
 
     def __init__(self) -> None:
+        self._interaction_revision = 0
         super().__init__(id="resources", cursor_type="row", zebra_stripes=True)
         self._rows: dict[str, PodRow] = {}
         self._revision = -1
@@ -44,10 +45,13 @@ class PodTable(FrameTable[PodCell]):
         self.sort_column = PodColumn.NAME
         self.descending = False
         self._ordered_state: tuple[PodColumn, bool, int] | None = None
+        self.view_spec: ViewSpec | None = None
+        self._columns: tuple[tuple[PodColumn, ColumnSpec, int], ...] = ()
+        self._pending_viewport: tuple[int, Viewport] | None = None
 
     @property
     def sort_summary(self) -> str:
-        return f"Sort {self.sort_column.name} {'↓' if self.descending else '↑'} · s column · Shift+S reverse"
+        return f"Sort {self.sort_column.name} {'↓' if self.descending else '↑'} · {self.navigation_hint('sort')} column · {self.navigation_hint('reverse_sort')} reverse"
 
     @property
     def selected_uid(self) -> str | None:
@@ -56,14 +60,54 @@ class PodTable(FrameTable[PodCell]):
         return self.coordinate_to_cell_key(self.cursor_coordinate).row_key.value
 
     def setup(self) -> None:
-        for column in PodColumn:
-            self.add_column(column.name, key=column.value)
+        fields = tuple(PodColumn)
+        specs = self.view_spec.columns if self.view_spec is not None else None
+        self._columns = tuple(
+            (PodColumn(spec.key), spec, fields.index(PodColumn(spec.key)))
+            for spec in (specs if specs is not None else tuple(ColumnSpec(c.value) for c in fields))
+        )
+        for column, spec, _ in self._columns:
+            self.add_column(column.name, key=column.value, width=spec.width)
+
+    @property
+    def visible_columns(self) -> tuple[ColumnSpec, ...]:
+        return tuple(spec for _, spec, _ in self._columns)
+
+    def configure_view(self, view: ViewSpec | None, *, force: bool = False) -> None:
+        validated = (
+            applicable_view(view, tuple(column.value for column in PodColumn))
+            if view is not None
+            else None
+        )
+        if self.view_spec == validated and not force:
+            return
+        viewport = self.capture_viewport()
+        self.view_spec = validated
+        self._rows.clear()
+        self.clear(columns=True)
+        self.setup()
+        if validated is not None:
+            self.sort_column, self.descending = PodColumn(validated.sort), validated.descending
+        self._ordered_state = None
+        self._pending_viewport = self._revision, viewport
+
+    def watch_cursor_coordinate(
+        self, old_coordinate: Coordinate, new_coordinate: Coordinate
+    ) -> None:
+        self._interaction_revision += old_coordinate != new_coordinate
+        super().watch_cursor_coordinate(old_coordinate, new_coordinate)
+
+    def watch_scroll_x(self, old_value: float, new_value: float) -> None:
+        self._interaction_revision += old_value != new_value
+        super().watch_scroll_x(old_value, new_value)
 
     def reset(self, revision: int) -> None:
         if revision != self._revision:
             self._revision = revision
             self._rows.clear()
             self.clear()
+            if self._pending_viewport is not None and self._pending_viewport[0] != revision:
+                self._pending_viewport = None
             self.scroll_to(0, 0, animate=False, immediate=True)
 
     def _capture(self) -> Viewport:
@@ -83,6 +127,7 @@ class PodTable(FrameTable[PodCell]):
         self._restore(viewport)
 
     def restore_sort(self, column: PodColumn, descending: bool) -> None:
+        self._interaction_revision += 1
         self.sort_column = column
         self.descending = descending
         self._sort()
@@ -101,12 +146,15 @@ class PodTable(FrameTable[PodCell]):
         self._restoration += 1
         restoration = self._restoration
         selected = self.selected_uid
+        layout, interaction = self._column_revision, self._interaction_revision
 
         def restore_scroll() -> None:
             if (
                 self._revision == revision
                 and self._restoration == restoration
                 and self.selected_uid == selected
+                and self._column_revision == layout
+                and self._interaction_revision == interaction
             ):
                 y = (
                     self.get_row_index(viewport.top) + viewport.y % 1
@@ -137,7 +185,9 @@ class PodTable(FrameTable[PodCell]):
         if not is_current():
             return False
         self.reset(revision)
+        layout = self._column_revision
         initial = not self.row_count
+        interacted = False
         incoming = {row.uid: row for row in rows}
         removals = [(uid, None) for uid in self._rows if uid not in incoming]
         changes = [
@@ -148,7 +198,7 @@ class PodTable(FrameTable[PodCell]):
         patches = removals + changes
         now = utc_now()
         for start in range(0, len(patches), 128):
-            if not is_current():
+            if not is_current() or layout != self._column_revision:
                 return False
             viewport = self._capture()
             for uid, row in patches[start : start + 128]:
@@ -156,11 +206,15 @@ class PodTable(FrameTable[PodCell]):
                     self.remove_row(uid)
                     del self._rows[uid]
                     continue
+                values = row.cells(now)
                 cells = tuple(
                     PodCell(
-                        uid, value, column in {PodColumn.READY, PodColumn.RESTARTS, PodColumn.AGE}
+                        uid,
+                        values[index],
+                        column in {PodColumn.READY, PodColumn.RESTARTS, PodColumn.AGE},
+                        spec.justify,
                     )
-                    for column, value in zip(PodColumn, row.cells(now), strict=True)
+                    for column, spec, index in self._columns
                 )
                 if uid not in self._rows:
                     self.add_row(*cells, key=uid)
@@ -178,37 +232,51 @@ class PodTable(FrameTable[PodCell]):
                         sort_value(row, self.sort_column),
                     ):
                         self._ordered_state = None
-                    for column, cell, previous in zip(
-                        PodColumn, cells, self.get_row(uid), strict=True
+                    for (column, _, _), cell, previous in zip(
+                        self._columns, cells, self.get_row(uid), strict=True
                     ):
                         if cell != previous:
                             self.update_cell(uid, column.value, cell, update_width=True)
                 self._rows[uid] = row
             self._restore(viewport)
+            interaction = self._interaction_revision
             await asyncio.sleep(0)
-        if not is_current():
+            interacted |= interaction != self._interaction_revision
+        if not is_current() or layout != self._column_revision:
             return False
         self._sort()
-        if initial:
-            self._restore(Viewport(None, 0, 0, 0, None))
+        if initial and not interacted:
+            self._restore(
+                self._pending_viewport[1]
+                if self._pending_viewport is not None
+                else Viewport(None, 0, 0, 0, None)
+            )
+        self._pending_viewport = None
         return True
 
     def refresh_ages(self) -> None:
+        age_spec = next(
+            (spec for column, spec, _ in self._columns if column is PodColumn.AGE), None
+        )
+        if age_spec is None:
+            return
         now = utc_now()
         for uid, row in self._rows.items():
-            cell = PodCell(uid, row.cells(now)[-1], True)
+            cell = PodCell(uid, row.cells(now)[-1], True, age_spec.justify)
             if cell != self.get_cell(uid, PodColumn.AGE.value):
                 self.update_cell(uid, PodColumn.AGE.value, cell, update_width=True)
 
     def set_sort(self, column: PodColumn) -> None:
+        self._interaction_revision += 1
         self.descending = not self.descending if column is self.sort_column else False
         self.sort_column = column
         self._sort()
         self.post_message(self.SortChanged())
 
     def action_next_sort(self) -> None:
-        columns = tuple(PodColumn)
-        self.set_sort(columns[(columns.index(self.sort_column) + 1) % len(columns)])
+        columns = tuple(column for column, _, _ in self._columns)
+        index = columns.index(self.sort_column) + 1 if self.sort_column in columns else 0
+        self.set_sort(columns[index % len(columns)])
 
     def action_reverse_sort(self) -> None:
         self.set_sort(self.sort_column)

@@ -2,8 +2,11 @@
 
 from collections.abc import Callable
 
+from rich.text import Text
+
 from kuberich.domain.custom import CustomLayout
 from kuberich.domain.registry import ResourceRow
+from kuberich.domain.resource_preferences import printer_signature
 from kuberich.security.presentation import safe_text
 from kuberich.ui.pods import Viewport
 from kuberich.ui.standard import StandardTable
@@ -17,8 +20,22 @@ class CustomTable(StandardTable):
 
     def setup(self) -> None:
         if self.resource_layout is not None:
-            for column in self.definition.columns:
-                self.add_column(safe_text(self.resource_layout.label(column.key)), key=column.key)
+            super().setup()
+
+    def column_label(self, key: str) -> str | Text:
+        return (
+            safe_text(self.resource_layout.label(key))
+            if self.resource_layout is not None
+            else key.upper()
+        )
+
+    @property
+    def schema_signature(self) -> str | None:
+        return (
+            printer_signature(self.resource_layout.headers)
+            if self.resource_layout is not None
+            else None
+        )
 
     def configure_layout(self, layout: CustomLayout, revision: int) -> None:
         if self.resource_layout == layout:
@@ -38,6 +55,7 @@ class CustomTable(StandardTable):
         )
         self.resource_layout = layout
         self.definition = layout.definition
+        self.view_spec = None
         self._rows.clear()
         self.clear(columns=True)
         self.setup()
@@ -52,7 +70,7 @@ class CustomTable(StandardTable):
             if self.resource_layout is not None
             else "NAME"
         )
-        return f"Sort {label} {'↓' if self.descending else '↑'} · s column · Shift+S reverse"
+        return f"Sort {label} {'↓' if self.descending else '↑'} · {self.navigation_hint('sort')} column · {self.navigation_hint('reverse_sort')} reverse"
 
     async def apply_rows(
         self, rows: tuple[ResourceRow, ...], revision: int, is_current: Callable[[], bool]

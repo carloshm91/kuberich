@@ -3,11 +3,13 @@
 from dataclasses import dataclass, replace
 
 from kuberich.adapters.editing import file_worker
+from kuberich.config.navigation import NavigationPreferences, parse_navigation
 from kuberich.config.paths import ConfigLocation
 from kuberich.config.schema import ConfigDocument
 from kuberich.config.store import read_config, write_config
 from kuberich.domain.appearance import Appearance, parse_appearance, theme_name
 from kuberich.errors import AppError
+from kuberich.services.commands import RESERVED_COMMANDS
 
 
 @dataclass
@@ -17,10 +19,6 @@ class PreferenceSource:
     theme_override: str | None = None
 
     async def save(self, appearance: Appearance, theme: str, context: str | None) -> None:
-        if self.location.migration_target is not None:
-            raise AppError(
-                "Run kuberich config migrate before saving preferences from the legacy path."
-            )
         theme_name(theme)
         original = self.document
         contexts = dict(appearance.contexts)
@@ -37,11 +35,31 @@ class PreferenceSource:
             migrated=False,
         )
 
+        await self._persist(updated)
+
+    async def save_navigation(self, navigation: NavigationPreferences) -> None:
+        original = self.document
+        validated = parse_navigation(navigation.mapping(), RESERVED_COMMANDS)
+        updated = replace(
+            original,
+            extensions={**original.extensions, "navigation": validated.mapping()},
+            migrated=False,
+        )
+        await self._persist(updated)
+
+    async def _persist(self, updated: ConfigDocument) -> None:
+        if self.location.migration_target is not None:
+            raise AppError(
+                "Run kuberich config migrate before saving preferences from the legacy path."
+            )
+        original = self.document
+
         def persist() -> None:
+            existed = self.location.path.exists()
             current = read_config(self.location.path)
             if current.to_mapping() != original.to_mapping():
                 raise AppError("Preferences changed on disk; restart to reload before saving.")
-            write_config(self.location.path, updated, overwrite=self.location.path.exists())
+            write_config(self.location.path, updated, overwrite=existed)
 
         await file_worker(persist)
         self.document = updated

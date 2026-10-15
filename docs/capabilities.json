@@ -253,7 +253,7 @@
       ],
       "source": "internal/view/cmd/interpreter.go",
       "status": "planned",
-      "difference": "B03 implements available pod aliases, shared initial/interactive scope commands and local bounded Tab/arrow suggestions (#115). Preview #125 adds a real namespace workspace table and resource-aware command/history routing. Other resource tables, CRD/custom aliases and broader command routing remain their owning tickets. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage.",
+      "difference": "B03 implements available pod aliases, shared initial/interactive scope commands and local bounded Tab/arrow suggestions (#115). Preview #125 adds a real namespace workspace table and resource-aware command/history routing. Other resource tables, CRD/custom aliases and broader command routing remain their owning tickets. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. U02 #57 implements bounded per-owner navigation keys, literal aliases and explicit version-pinned column width/alignment/order/visibility and typed-sort saves. Server schemas invalidate stale layouts. This source checkpoint does not claim broader navigation/filter/jump/plugin parity.",
       "partial_evidence": [
         "docs/command-navigation.md",
         "tests/ui/test_navigation.py",
@@ -267,9 +267,18 @@
         "docs/acceptance/context-container-workspace.md",
         "tests/ui/test_context_workspace.py",
         "tests/unit/test_container_rows.py",
-        "tests/ui/test_context_scope_commands.py"
+        "tests/ui/test_context_scope_commands.py",
+        "docs/navigation-preferences.md",
+        "docs/acceptance/navigation-preferences.md",
+        "tests/unit/test_navigation_preferences.py",
+        "tests/contract/test_navigation_preferences.py",
+        "tests/ui/test_navigation_preferences.py",
+        "tests/ui/test_view_layout_lifecycle.py",
+        "tests/terminal/test_preferences.py",
+        "tests/packaging/test_distribution.py",
+        "scripts/verify_standalone.py"
       ],
-      "public_summary": "The bordered command bar completes inline from local commands, contexts, namespaces and discovered resources. Tab accepts; arrows choose a candidate. No keystroke-triggered authentication or request is performed.",
+      "public_summary": "Inline command completion includes user-defined literal aliases in next-release source. Built-in and discovered commands, context and namespace arguments retain shared policy and no keystroke-triggered requests.",
       "public_status": "partial"
     },
     {
@@ -364,7 +373,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02/B05/B06 provide typed sorting, stable UID selection and generic server-column choice/order including optional wide-priority fields, bounded to this session. Persistent/movable views, errors-only filters and selection ranges remain B07/U02.",
+      "difference": "B02/B05/B06 provide typed sorting, stable UID selection and generic server-column choice/order including optional wide-priority fields, bounded to this session. Persistent/movable views, errors-only filters and selection ranges remain B07/U02. U02 #57 implements bounded per-owner navigation keys, literal aliases and explicit version-pinned column width/alignment/order/visibility and typed-sort saves. Server schemas invalidate stale layouts. This source checkpoint does not claim broader navigation/filter/jump/plugin parity.",
       "partial_evidence": [
         "docs/pod-table.md",
         "tests/unit/test_pods.py",
@@ -374,9 +383,18 @@
         "scripts/verify_contexts_kind.py",
         "docs/standard-resources.md",
         "tests/unit/test_custom_layout.py",
-        "tests/ui/test_custom_resources.py"
+        "tests/ui/test_custom_resources.py",
+        "docs/navigation-preferences.md",
+        "docs/acceptance/navigation-preferences.md",
+        "tests/unit/test_navigation_preferences.py",
+        "tests/contract/test_navigation_preferences.py",
+        "tests/ui/test_navigation_preferences.py",
+        "tests/ui/test_view_layout_lifecycle.py",
+        "tests/terminal/test_preferences.py",
+        "tests/packaging/test_distribution.py",
+        "scripts/verify_standalone.py"
       ],
-      "public_summary": "Standard and generic tables sort typed values with stable selection. Generic server columns can be selected/reordered for the session. Persistent layouts, range selection and errors-only filtering are planned.",
+      "public_summary": "Next-release source saves column order, visibility, width, alignment and typed sort globally/per context, retaining stable selection. Range selection and errors-only filtering remain planned.",
       "public_status": "partial"
     },
     {
@@ -660,7 +678,7 @@
       ],
       "source": "internal/view/custom_jump.go",
       "status": "planned",
-      "difference": "C05/B06 provide discovery-qualified aliases and explicit versions, live generic tables with typed server columns or metadata fallback, bounded session-local column selection, captured YAML/details, scope/history routing and owned discovery/removal refresh. Generic mutations, persistent custom preferences/hotkeys and reactive jump chains retain M05/U02/U06; full parity is not claimed.",
+      "difference": "C05/B06 provide discovery-qualified aliases and explicit versions, live generic tables with typed server columns or metadata fallback, bounded session-local column selection, captured YAML/details, scope/history routing and owned discovery/removal refresh. Generic mutations, persistent custom preferences/hotkeys and reactive jump chains retain M05/U02/U06; full parity is not claimed. U02 #57 implements bounded per-owner navigation keys, literal aliases and explicit version-pinned column width/alignment/order/visibility and typed-sort saves. Server schemas invalidate stale layouts. This source checkpoint does not claim broader navigation/filter/jump/plugin parity.",
       "partial_evidence": [
         "docs/resource-discovery.md",
         "docs/acceptance/custom-resources.md",
@@ -674,9 +692,18 @@
         "tests/contract/test_custom_projection.py",
         "tests/ui/test_custom_resources.py",
         "tests/ui/test_custom_table.py",
-        "tests/terminal/test_custom_resources.py"
+        "tests/terminal/test_custom_resources.py",
+        "docs/navigation-preferences.md",
+        "docs/acceptance/navigation-preferences.md",
+        "tests/unit/test_navigation_preferences.py",
+        "tests/contract/test_navigation_preferences.py",
+        "tests/ui/test_navigation_preferences.py",
+        "tests/ui/test_view_layout_lifecycle.py",
+        "tests/terminal/test_preferences.py",
+        "tests/packaging/test_distribution.py",
+        "scripts/verify_standalone.py"
       ],
-      "public_summary": "Discovered custom resources support served versions, server Table columns, typed sorting and captured inspection. Custom mutation, persistent layouts and relationship jumps are planned.",
+      "public_summary": "Discovered APIs support served versions, typed printer columns and inspection. Next-release source persists schema-pinned views; generic mutations and relationship jumps remain planned.",
       "public_status": "partial"
     },
     {
@@ -1077,9 +1104,20 @@
       ],
       "source": "internal/config/views.go",
       "status": "planned",
-      "difference": "",
-      "public_summary": "Built-in/discovered aliases and temporary generic column selection are available. User-defined hotkeys, persistent layouts and context/resource view overrides are planned.",
-      "public_status": "partial"
+      "difference": " U02 #57 implements bounded per-owner navigation keys, literal aliases and explicit version-pinned column width/alignment/order/visibility and typed-sort saves. Server schemas invalidate stale layouts. This source checkpoint does not claim broader navigation/filter/jump/plugin parity.",
+      "public_summary": "Next-release source supports per-view navigation keys, literal aliases and explicit global/context/resource column and sort preferences. Inputs retain literal editing and invalid overrides keep working defaults.",
+      "public_status": "partial",
+      "partial_evidence": [
+        "docs/navigation-preferences.md",
+        "docs/acceptance/navigation-preferences.md",
+        "tests/unit/test_navigation_preferences.py",
+        "tests/contract/test_navigation_preferences.py",
+        "tests/ui/test_navigation_preferences.py",
+        "tests/ui/test_view_layout_lifecycle.py",
+        "tests/terminal/test_preferences.py",
+        "tests/packaging/test_distribution.py",
+        "scripts/verify_standalone.py"
+      ]
     },
     {
       "id": "EXT03",

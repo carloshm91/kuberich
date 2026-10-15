@@ -1,5 +1,24 @@
 # Architecture decisions
 
+## Per-owner navigation and captured views: U02 #57
+
+The additive navigation extension owns an independent schema version, immutable
+key/alias/view models and pure applicability validation. Public Textual Binding
+IDs and `App.set_keymap` apply validated keys to the focused owner; native
+fallbacks remain independent bindings and ordinary input handlers own letters.
+Aliases expand literal command text before the shared access policy, without
+shell parsing, and discovered-name collisions retain an explicit resource path.
+
+The UI view controller retains a bounded context/GVR cache of display preferences,
+never clients or resource values. Server-printer views use a separate `server:`
+namespace and ordered header fingerprint. Captured scope/schema checks reject
+late edits. Tables project selected display cells from complete typed row models;
+column revisions invalidate older yielded row patches and viewport callbacks.
+Saves use the original ConfigDocument and owned file workers, preserving unrelated
+extensions and runtime override separation. Metadata reload ownership is distinct
+from value-disclosure navigation generations, so scrolling cannot discard a
+valid reload or permit a late reveal.
+
 ## Appearance and optional release reads: U01 #56
 
 Preference schema v1 recognizes an additive raw `appearance` extension without

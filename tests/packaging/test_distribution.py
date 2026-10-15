@@ -26,6 +26,7 @@ from tests.support.mutation_terminal import terminal_mutation
 from tests.support.navigation import terminal_navigation
 from tests.support.operation_terminal import terminal_operation
 from tests.support.operations import operation_api
+from tests.support.preferences_terminal import terminal_preferences
 from tests.support.shell import terminal_shell
 from tests.support.standard_terminal import terminal_standard_views
 from tests.support.themes_terminal import terminal_themes
@@ -562,3 +563,14 @@ def test_installed_theme_preferences_and_about_outside_checkout(installed_wheel,
         else [str(binary / "python"), "-m", "kuberich"]
     )
     terminal_themes(command, directory, f"installed-themes-{entry_point}")
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+def test_installed_navigation_preferences_outside_checkout(installed_wheel, entry_point):
+    binary, directory = installed_wheel
+    command = (
+        [str(binary / "kuberich")]
+        if entry_point == "console"
+        else [str(binary / "python"), "-m", "kuberich"]
+    )
+    terminal_preferences(command, directory, f"installed-navigation-preferences-{entry_point}")

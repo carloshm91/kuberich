@@ -5,24 +5,21 @@ from collections.abc import Callable
 from typing import ClassVar
 
 from rich.text import Text
-from textual.binding import Binding, BindingType
+from textual.binding import BindingType
 from textual.coordinate import Coordinate
-from textual.widgets import DataTable
 
 from kuberich.domain.navigation import ContextRow
 from kuberich.security.presentation import safe_text
+from kuberich.ui.keybindings import table_bindings
 from kuberich.ui.pods import Viewport
+from kuberich.ui.presentation import FrameTable
 
 CONTEXT_COLUMNS = ("CURRENT", "NAME", "CLUSTER", "AUTHINFO", "NAMESPACE")
 
 
-class ContextTable(DataTable[Text]):
-    BINDINGS: ClassVar[list[BindingType]] = [
-        Binding("j", "cursor_down", "Down", show=False),
-        Binding("k", "cursor_up", "Up", show=False),
-        Binding("g", "scroll_top", "First", show=False),
-        Binding("G", "scroll_bottom", "Last", show=False),
-    ]
+class ContextTable(FrameTable[Text]):
+    BINDING_PROFILE = "contexts"
+    BINDINGS: ClassVar[list[BindingType]] = table_bindings("contexts")
 
     def __init__(self) -> None:
         super().__init__(id="contexts", cursor_type="row", zebra_stripes=False)

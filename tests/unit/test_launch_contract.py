@@ -26,6 +26,15 @@ from kuberich.ui.presentation import Presentation
         "attach",
         "upload",
         "download",
+        "columns",
+        "columns c2",
+        "logsall",
+        "portforward",
+        "delete",
+        "deletebatch",
+        "trigger",
+        "suspend",
+        "resume",
     ],
 )
 def test_selected_resource_actions_are_refused_at_startup(action, monkeypatch, capsys):

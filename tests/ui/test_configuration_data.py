@@ -85,6 +85,38 @@ async def test_hidden_keys_reveal_encoding_copy_controls_and_table_return(tmp_pa
 
 
 @pytest.mark.asyncio
+async def test_navigation_and_busy_disclosure_do_not_discard_owned_metadata_reload(tmp_path):
+    async with data_api() as (url, api):
+        app = app_for(tmp_path, url, "Secret")
+        async with app.run_test() as pilot:
+            screen = await opened(app, pilot)
+            await pilot.press("down")
+            selected = screen._selected().identity
+            api.hold = True
+            api.started.clear()
+            await pilot.press("R")
+            await asyncio.wait_for(api.started.wait(), 5)
+            await pilot.press("up", "down", "x", "r")
+            assert screen.viewer.text == "" and "in progress" in str(screen.status.content)
+            api.value["metadata"]["resourceVersion"] = "navigation-reloaded"
+            api.release.set()
+            await wait_for(
+                lambda: (
+                    screen.index is not None
+                    and screen.index.resource_version == "navigation-reloaded"
+                )
+            )
+            await pilot.pause()
+            assert screen._selected().identity == selected and not screen._tasks
+            assert screen.viewer.text == "" and screen.encoded
+            await pilot.press("question_mark")
+            assert "Navigation · data" in app.screen.text
+            await pilot.press("escape", "r")
+            await wait_for(lambda: screen.revealed)
+            assert screen.viewer.text == "/wA="
+
+
+@pytest.mark.asyncio
 async def test_changed_version_rejects_reveal_and_reload_refreshes_metadata(tmp_path):
     async with data_api() as (url, api):
         app = app_for(tmp_path, url, "Secret")
