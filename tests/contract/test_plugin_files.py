@@ -174,6 +174,34 @@ def test_directory_permissions_and_file_errors_are_translated(tmp_path, monkeypa
     assert "private-detail" not in str(error.value)
 
 
+@pytest.mark.parametrize("failure", ["directory", "fdopen"])
+def test_rejected_files_always_close_the_original_descriptor(tmp_path, monkeypatch, failure):
+    path = tmp_path / "owned.yaml"
+    if failure == "directory":
+        path.mkdir()
+    else:
+        write(path)
+    original_open = os.open
+    descriptors = []
+
+    def opened(*args, **kwargs):
+        descriptor = original_open(*args, **kwargs)
+        descriptors.append(descriptor)
+        return descriptor
+
+    def failed_fdopen(*args, **kwargs):
+        raise OSError("private stream failure")
+
+    monkeypatch.setattr(os, "open", opened)
+    if failure == "fdopen":
+        monkeypatch.setattr(os, "fdopen", failed_fdopen)
+    for _ in range(20):
+        with pytest.raises(AppError):
+            _file(path)
+        with pytest.raises(OSError):
+            os.fstat(descriptors[-1])
+
+
 def test_offline_cli_validates_every_context_and_does_not_execute(tmp_path, capsys):
     sentinel = tmp_path / "never-executed"
     config = tmp_path / "config.yaml"

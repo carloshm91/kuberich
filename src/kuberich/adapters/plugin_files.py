@@ -16,10 +16,13 @@ from kuberich.errors import AppError
 def _file(path: Path) -> tuple[Plugin, ...]:
     try:
         descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
-        with os.fdopen(descriptor, "rb") as stream:
-            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+        try:
+            if not stat.S_ISREG(os.fstat(descriptor).st_mode):
                 raise AppError("Plugin locations must contain regular YAML files.")
-            content = stream.read(MAX_CONFIG_BYTES + 1)
+            with os.fdopen(descriptor, "rb", closefd=False) as stream:
+                content = stream.read(MAX_CONFIG_BYTES + 1)
+        finally:
+            os.close(descriptor)
         if len(content) > MAX_CONFIG_BYTES:
             raise AppError("Plugin files must not exceed 64 KiB.")
         document = parse_config_text(content.decode("utf-8"))

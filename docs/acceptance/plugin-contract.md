@@ -18,6 +18,17 @@ lines/112 branches in the plugin domain, 49 lines/20 branches in its configurati
 parser and 66 lines/36 branches in the explicit file adapter. These counts are
 focused evidence, not the complete application's coverage.
 
+An additional real descriptor observation rejected twenty owned YAML-named
+directories on the original head and measured descriptors growing from 4 to 24.
+`fdopen` could fail before entering its stream context. The corrected adapter
+owns the original descriptor in `finally`, checks regular-file identity before
+stream wrapping, and retains ownership even when `fdopen` itself fails. Both
+regressions assert the actual descriptor is closed after every rejection.
+The corrected cohort passed **259 cases in 8.06 seconds**, with 68/68 adapter
+lines and 36/36 branches; both critical-module totals above remain 100%.
+Original run 39095176945 was cancelled after this local finding; its completed
+native checks belong to the older source and do not qualify the correction.
+
 The original focused run exposed a NUL substitution crossing the internal dollar
 marker boundary. The correction validates substituted values before marker
 restoration; the negative control now rejects it. An initial broader command
