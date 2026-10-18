@@ -3,7 +3,8 @@
 import pytest
 
 from kuberich.cli import main
-from kuberich.domain.plugins import PluginSelection
+from kuberich.domain.keyboard import parse_keys
+from kuberich.domain.plugins import PluginSelection, parse_plugin, plugin_bindings
 from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
 from kuberich.services.commands import Command, CommandService, PluginCommand, suggestions
@@ -50,3 +51,15 @@ def test_empty_resource_views_retain_captured_scope_without_inventing_an_object(
     assert values["RESOURCE"] == resource.split("/")[-1]
     assert values["NAMESPACE"] == (namespace or "")
     assert "NAME" not in values and "CONTAINER" not in values
+
+
+def test_namespace_shortcut_conflicts_use_the_namespace_owner_profile(tmp_path):
+    keys = parse_keys({"namespaces": {"down": "z"}})
+    plugin = parse_plugin("inspect", {"command": "harmless", "shortcut": "z"}, tmp_path)
+    assert plugin_bindings((plugin,), "v1/pods", keys) == (("z", "inspect"),)
+    with pytest.raises(AppError, match="override"):
+        plugin_bindings((plugin,), "v1/namespaces", keys)
+    overriding = parse_plugin(
+        "inspect", {"command": "harmless", "shortcut": "z", "override": True}, tmp_path
+    )
+    assert plugin_bindings((overriding,), "v1/namespaces", keys) == (("z", "inspect"),)

@@ -243,7 +243,8 @@ def plugin_bindings(
     plugins: tuple[Plugin, ...], resource: str | None, keys: KeyOverrides = ()
 ) -> tuple[tuple[str, str], ...]:
     bindings: dict[str, str] = {}
-    occupied = FIXED_KEYS["resources"] | set(keys_for(keys, "resources").values())
+    profile = "namespaces" if resource == "v1/namespaces" else "resources"
+    occupied = FIXED_KEYS[profile] | set(keys_for(keys, profile).values())
     for plugin in plugins:
         if plugin.shortcut is None or not plugin.applies(resource):
             continue

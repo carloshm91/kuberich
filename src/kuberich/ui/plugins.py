@@ -418,9 +418,15 @@ class PluginController:
 
     def resource(self) -> str | None:
         scope = self.app.workspace.store.observation.scope
-        return scope.resource.api_version + "/" + scope.resource.name if scope is not None else None
+        return (
+            scope.resource.api_version + "/" + scope.resource.name
+            if scope is not None and self.app._resource_name != "contexts"
+            else None
+        )
 
     def bindings(self) -> tuple[tuple[str, str], ...]:
+        if self.app._resource_name == "contexts":
+            return ()
         return plugin_bindings(self.plugins, self.resource(), self.app.navigation.keys)
 
     def open(self, name: str | None = None) -> None:
@@ -434,7 +440,17 @@ class PluginController:
         view, client = app.workspace.store.observation, app.sessions.client
         if client is None or view.scope is None:
             raise AppError("Select a connected context before running a plugin.")
-        resource = view.scope.resource
+        local_contexts = app._resource_name == "contexts"
+        resource = None if local_contexts else view.scope.resource
+        if resource is not None and resource.name != app._resource_name:
+            raise AppError("The resource view is loading; wait before reviewing a plugin.")
+        generic = app._generic_selection
+        if (
+            resource is not None
+            and generic is not None
+            and (generic.group != resource.group or generic.version not in {None, resource.version})
+        ):
+            raise AppError("The resource version is loading; wait before reviewing a plugin.")
         uid = app._active_table.capture_viewport().selected
         selected = (
             app._capture_target() if uid is not None and app._resource_name != "contexts" else None
@@ -464,7 +480,7 @@ class PluginController:
         context_data = app.sessions.catalog.contexts[client.context.name].data
         selection = PluginSelection(
             client.context.name,
-            resource.api_version + "/" + resource.name,
+            resource.api_version + "/" + resource.name if resource is not None else None,
             target,
             variables=(
                 ("CLUSTER", str(context_data.get("cluster", ""))),
@@ -472,7 +488,7 @@ class PluginController:
                 ("FILTER", app.filter_input.value),
             ),
             columns=columns,
-            namespace=view.scope.namespace,
+            namespace=None if local_contexts else view.scope.namespace,
         )
         return PluginSource(
             client, resource, selection, app.commands.policy, current, app._process_environment

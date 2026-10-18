@@ -68,6 +68,13 @@ coverage exclusion or timeout was changed. Original native checks passed; the
 source run was canceled for this correction and is not qualified evidence.
 The corrected commit requires fresh complete source/native checks.
 
+Final scope regressions additionally passed 157 focused cases in 5.72 seconds,
+with all 239 current plugin-domain statements and 114 branches covered. They
+verify that the local contexts table cannot inherit a hidden pod view's scope or
+hotkeys, global context commands have no invented object name, pending resource/
+version transitions refuse capture, and global plugins validate shortcut
+conflicts against custom namespace navigation keys.
+
 The private credential child is critical: 100% lines and branches are required,
 alongside the existing critical plugin/process/runtime/CLI/command decisions.
 Whole-package independent line/branch floors and changed-line gates remain

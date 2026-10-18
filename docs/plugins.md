@@ -185,6 +185,13 @@ actual selected row. A selected row is captured before asynchronous loading and
 checked again by GET and UID before starting. Guards cannot make a later external
 program's server operations atomic.
 
+The local contexts list has no Kubernetes resource scope or plugin hotkeys.
+Explicit `:plugins` / `:plugin NAME` there can review global commands against the
+currently connected context; highlighting another context does not connect it or
+supply a resource `NAME`. Resource-specific commands wait until their matching
+API view is ready. Shortcut validation uses the namespace table's own navigation
+profile for namespace-scoped/global commands, including custom namespace keys.
+
 - `capture`: waits for the one-shot command and shows status, exit code and bounded
   output. Cancel stops and drains the process group before returning.
 - `background`: stays owned after Back closes the form. Use `:pluginjobs`, Enter

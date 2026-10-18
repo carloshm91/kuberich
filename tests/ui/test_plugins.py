@@ -12,6 +12,7 @@ from textual.widgets import Button, Checkbox, Input, Select, Static
 
 from kuberich.config.paths import ConfigLocation
 from kuberich.config.schema import ConfigDocument, Settings
+from kuberich.domain.views import ResourceSelection
 from kuberich.errors import AppError
 from kuberich.services.appearance import PreferenceSource
 from kuberich.ui.app import KubeRichApp
@@ -369,3 +370,50 @@ async def test_offline_execution_and_native_foreground_refusal_are_visible(tmp_p
         app.plugins.open("unknown")
         await wait_for(lambda: app.plugins._opening.done())
         assert "connected context" in str(app.status.content)
+
+
+@pytest.mark.asyncio
+async def test_context_catalogue_does_not_inherit_pod_scope_or_keys_and_loading_gvr_is_refused(
+    tmp_path, monkeypatch
+):
+    definitions = {
+        "pod": {"command": sys.executable, "scopes": ["v1/pods"], "shortcut": "z"},
+        "global": {"command": sys.executable},
+    }
+    async with workspace_api(ns, api) as url:
+        app = app_for(tmp_path, url, definitions=definitions)
+        async with app.run_test() as pilot:
+            await wait_for(lambda: app.resources.row_count == 1 and bool(app.plugins.plugins))
+            with monkeypatch.context() as patch:
+                patch.setattr(app, "_resource_name", "deployments")
+                with pytest.raises(AppError, match="loading"):
+                    app.plugins.capture_source()
+            with monkeypatch.context() as patch:
+                patch.setattr(
+                    app,
+                    "_generic_selection",
+                    ResourceSelection("pods", "other.example", "v2", True),
+                )
+                with pytest.raises(AppError, match="version is loading"):
+                    app.plugins.capture_source()
+            await pilot.press("colon", *"ctx", "enter")
+            assert app._resource_name == "contexts" and app.plugins.resource() is None
+            assert app.plugins.bindings() == ()
+            app.plugins.open("pod")
+            await wait_for(lambda: app.plugins._opening.done())
+            assert len(app.screen_stack) == 1 and "does not apply" in str(app.status.content)
+            app.plugins.open()
+            await wait_for(lambda: isinstance(app.screen, PluginCatalogue))
+            await pilot.pause()
+            assert app.screen.query_one("#plugin-catalogue").row_count == 1
+            await pilot.press("enter")
+            await wait_for(lambda: isinstance(app.screen, PluginScreen))
+            await pilot.pause()
+            values = app.screen.source.selection.values()
+            assert (
+                values["CONTEXT"] == "kuberich-test-one"
+                and "NAME" not in values
+                and "RESOURCE" not in values
+            )
+            assert app.screen.source.resource is None
+            await pilot.press("escape")
