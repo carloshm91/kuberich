@@ -62,7 +62,7 @@ class ContainerScreen(CommandWorkspace):
     #container-title { color: $accent; height: 1; border: none; }
     ContainerScreen.short #container-title { height: 1; border-top: none; border-bottom: none; }
     #container-feedback { height: auto; min-height: 1; max-height: 3; }
-    ContainerScreen.short #container-feedback { max-height: 1; }
+    ContainerScreen.short #container-feedback { display: none; }
     #container-status { height: auto; text-overflow: fold; }
     #containers { height: 1fr; }
     #container-title { width: 1fr; }
@@ -105,6 +105,7 @@ class ContainerScreen(CommandWorkspace):
             markup=False,
             id="container-status",
         )
+        self.workspace_status = Static("", markup=False, id="workspace-status")
 
     def compose(self) -> ComposeResult:
         target = self.stream.target
@@ -119,7 +120,7 @@ class ContainerScreen(CommandWorkspace):
                     id="container-title",
                 )
                 yield Static(
-                    "Containers l logs s shell"
+                    "Containers · s shell"
                     if self.shell is not None
                     else "Containers Enter logs",
                     markup=False,
@@ -136,9 +137,18 @@ class ContainerScreen(CommandWorkspace):
             "Pods",
             visible=self.chrome is None or not self.chrome.presentation.crumbsless,
         )
-        yield Static("", id="workspace-status", markup=False)
+        yield self.workspace_status
+
+    def _set_status(self, message: str | Text) -> None:
+        self.status.update(message)
+        if self.is_mounted:
+            self.on_resize()
+
+    def on_resize(self) -> None:
+        self.workspace_status.update(self.status.content if self.app.size.height < 16 else "")
 
     def on_mount(self) -> None:
+        self.on_resize()
         target = self.stream.target
         self.query_one("#container-dialog", Vertical).border_title = safe_text(
             f"containers({target.namespace}/{target.name})[{len(self.names)}]"
@@ -170,7 +180,7 @@ class ContainerScreen(CommandWorkspace):
                 and not self._rows_task.cancelling()
             ):
                 self._rows_task.cancel()
-            self.status.update(safe_text(str(error)))
+            self._set_status(safe_text(str(error)))
 
     @on(DataTable.RowSelected, "#containers")
     def selected(self, event: DataTable.RowSelected) -> None:
@@ -230,7 +240,7 @@ class ContainerScreen(CommandWorkspace):
             if selected in names:
                 table.move_cursor(row=table.get_row_index(selected), scroll=False)
             table.scroll_to(x=x, y=y, animate=False, immediate=True, force=True)
-            self.status.update(
+            self._set_status(
                 "Live pod watch · CPU/MEM are requests/limits; usage is not collected."
             )
 
@@ -277,12 +287,12 @@ class ContainerScreen(CommandWorkspace):
         try:
             self.transfers.require_current(direction)
         except AppError as error:
-            self.status.update(safe_text(str(error)))
+            self._set_status(safe_text(str(error)))
             return
 
         def returned(message: str | None) -> None:
             self.validate_target()
-            self.status.update(safe_text(message or "No transfer started."))
+            self._set_status(safe_text(message or "No transfer started."))
 
         self.app.push_screen(
             TransferScreen(self.transfers, self._selected_name(), direction), returned
@@ -296,12 +306,12 @@ class ContainerScreen(CommandWorkspace):
         try:
             request = service.capture(self._selected_name())
         except AppError as error:
-            self.status.update(safe_text(str(error)))
+            self._set_status(safe_text(str(error)))
             return
 
         def returned(message: str | None) -> None:
             self.validate_target()
-            self.status.update(safe_text(message or "Shell closed."))
+            self._set_status(safe_text(message or "Shell closed."))
 
         self.app.push_screen(ShellScreen(service, self.processes, request), returned)
 
@@ -312,7 +322,7 @@ class ContainerScreen(CommandWorkspace):
             self.stream.require_current()
         except AppError as error:
             self.validate_target()
-            self.status.update(safe_text(str(error)))
+            self._set_status(safe_text(str(error)))
             return
         self.app.push_screen(
             LogScreen(self.stream, self.names, selected=name, chrome=self.chrome, trail=self.trail)

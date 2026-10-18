@@ -57,7 +57,7 @@ The first unpaced `g:copy` trial exposed queued navigation losing ownership when
 colon moved focus. Navigation bindings now complete in their focused owner before
 the next key. A narrow-terminal fixture initially looked for clipped status text;
 it now observes the visible resource frame/count. The shared container Back
-control shares the caption above the frame, retaining two table lines at 40x12
+control shares the caption above the frame, retaining a visible data row plus its header/scrollbar at 40x12
 after the new command bar displaced it. Blank mark-gutter header clicks no
 longer sort by a negative column index; real header clicks retain typed sorting.
 Unmarked batch review preserves its previous ordering and explicit selections;
@@ -71,7 +71,10 @@ before returning from help; the behavioral test verifies both steps.
 The initial broad diagnostic run found two strict source-identity rejections:
 new production files were still untracked by git ls-files, and a lifecycle trial
 observed edits during its interval. Index the complete source and keep it frozen
-for qualification; neither original is a performance success. No GC, workload,
+for qualification; neither original is a performance success. Visual inspection caught the horizontal scrollbar consuming the last compact
+container row. Compact status now uses the existing bottom status line; Pilot
+checks the scrollable body below the header, and source/installed/native PTYs
+require an actual container name at 40x12. No GC, workload,
 latency budget or identity guard is relaxed. Focused fixes also retain the old
 batch-review ordering, above-frame Back control and actual header hit regions.
 

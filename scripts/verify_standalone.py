@@ -236,6 +236,10 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
             marker = terminal.send(b"\r")
             terminal.wait_for_screen("Containers", since=marker)
             terminal.wait_for_screen("worker", since=marker)
+            terminal.resize(40, 12)
+            marker = terminal.send(b"G")
+            terminal.wait_for_screen("worker", since=marker)
+            terminal.resize(100, 30)
             terminal.send(b"\x1b[B")
             if helpers:
                 terminal.send(b"s")
@@ -291,6 +295,7 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
             "theme_preview_cancel_and_about": True,
             "configured_navigation_alias_and_view_editor": True,
             "bounded_osc52_exact_payload_receipt": True,
+            "compact_container_body_row_visible": True,
             "plugin_capture_background_repeated_foreground_and_private_cleanup": True,
         }
     finally:

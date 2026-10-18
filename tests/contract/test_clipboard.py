@@ -188,7 +188,10 @@ async def test_selection_process_ownership_contract_on_every_platform(tmp_path, 
         except AppError as error:
             failed(error)
         async with asyncio.timeout(5):
-            while not (tmp_path / "owned-input").exists():
+            while not (
+                (tmp_path / "owned-input").exists()
+                and (tmp_path / "owned-input").read_bytes() == data
+            ):
                 await asyncio.sleep(0.005)
         if outcome == "denied":
             await asyncio.wait_for(observed.wait(), 5)
