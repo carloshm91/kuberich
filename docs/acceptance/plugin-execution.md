@@ -117,6 +117,17 @@ ordering with real captured child output. Fresh full source/native checks are
 required for the corrected candidate; failed originals are never counted as
 qualified environments.
 
+Run 39108464464 at `b4ada3a1` passed all four native archives, including the new
+mode/cleanup trials. Its Python 3.14 source job correctly rejected 11 functional
+navigation/install failures (5,444 passed, 2 skipped): the new plugin aliases
+sorted before the established `:p` → `po` completion, opening plugin jobs instead
+of pods. The original source artifact was retained and SHA-256 verified as
+`0ded802cf9c946c512496631859cc7e33b99223c50d85f778f106426d6b8d773`.
+The fix keeps plugin/forward commands after familiar pod completions without
+changing the existing assertions. Corrected local navigation cohorts passed
+57 tests, an isolated Python 3.14 cohort passed 11, and fresh-wheel console/module
+navigation passed both cases. Complete fresh hosted checks remain required.
+
 The private credential child is critical: 100% lines and branches are required,
 alongside the existing critical plugin/process/runtime/CLI/command decisions.
 Whole-package independent line/branch floors and changed-line gates remain

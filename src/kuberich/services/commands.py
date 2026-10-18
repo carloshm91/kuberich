@@ -270,7 +270,14 @@ def suggestions(
         # Preserve familiar :c → context and existing local command completions.
         key=lambda value: (
             not separator and (value not in ALIASES or value == "columns"),
-            not separator and ALIASES.get(value) in {Command.PORT_FORWARDS, Command.PORT_FORWARD},
+            not separator
+            and ALIASES.get(value)
+            in {
+                Command.PORT_FORWARDS,
+                Command.PORT_FORWARD,
+                Command.PLUGINS,
+                Command.PLUGIN_JOBS,
+            },
             value.casefold(),
             value,
         ),
