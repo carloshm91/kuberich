@@ -23,6 +23,11 @@ Pilot exercises typed forms, Review/Run, scope/key/input ownership, read-only,
 job output/Stop and screenshot concealment. Existing real handoff PTYs verify
 plugin-purpose terminal restoration; a fresh installed-wheel child and all four
 native archive verifiers execute the packaged private credential launcher.
+The full real CLI plugin-mode trial additionally repeats reviewed foreground
+handoff, verifies private-path cleanup with a capture command and inspects
+background output from source, an installed wheel and each exact native archive.
+Owned kind verifies real client-go plugin authentication with four credential
+mechanisms, distinct cwd, TLS/CONNECT proxy and private-file/session cleanup.
 No provider/current-context trial or publication is inferred from these checks.
 See [execution evidence](acceptance/plugin-execution.md).
 

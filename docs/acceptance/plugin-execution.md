@@ -75,6 +75,22 @@ hotkeys, global context commands have no invented object name, pending resource/
 version transitions refuse capture, and global plugins validate shortcut
 conflicts against custom namespace navigation keys.
 
+The complete public CLI plugin-mode trial passed from source in 4.39 seconds
+and from a freshly built/installed wheel in 13.04 seconds. Real terminal keys
+open Review/Run, repeat foreground handoff twice, run a capture probe that checks
+the previous private path is gone, and inspect completed background output in the
+jobs view. The original caller kubeconfig and terminal modes are preserved. Each
+native archive now runs the same interaction inside its existing owned browser
+trial, using only `/bin/sh` builtins and no external Python interpreter.
+
+Local `scripts.verify_credential_interop_kind` also passed with SHA-verified
+kind 0.33.0 and kubectl 1.36.4 on the owned disposable cluster. Real client-go
+plugin capture succeeded for relative certificates, exec certificates, tokenFile
+and generic exec-token credentials through the actual CONNECT proxy/TLS server.
+Every case used a distinct plugin cwd, retained helper-relative credential files,
+removed both private delegation files and drained the session; the owned cluster
+was removed. This verifier remains mandatory in the hosted Linux 3.12 lane.
+
 The private credential child is critical: 100% lines and branches are required,
 alongside the existing critical plugin/process/runtime/CLI/command decisions.
 Whole-package independent line/branch floors and changed-line gates remain

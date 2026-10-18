@@ -26,6 +26,7 @@ from tests.support.mutation_terminal import terminal_mutation
 from tests.support.navigation import terminal_navigation
 from tests.support.operation_terminal import terminal_operation
 from tests.support.operations import operation_api
+from tests.support.plugins_terminal import terminal_plugins
 from tests.support.preferences_terminal import terminal_preferences
 from tests.support.shell import terminal_shell
 from tests.support.standard_terminal import terminal_standard_views
@@ -34,6 +35,13 @@ from tests.support.transports import TerminalTransport
 from tests.support.workload_terminal import terminal_workload
 from tests.support.workloads import workload_api
 from tests.terminal.pty_support import TerminalSession
+
+
+def test_installed_plugin_modes_use_real_review_terminal_and_owned_cleanup(
+    installed_wheel, tmp_path
+):
+    binary_dir, _ = installed_wheel
+    terminal_plugins([str(binary_dir / "kuberich")], tmp_path, "installed-plugin-modes")
 
 
 def test_installed_private_credential_launcher_without_checkout_imports(installed_wheel):

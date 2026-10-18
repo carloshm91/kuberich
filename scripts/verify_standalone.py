@@ -18,6 +18,7 @@ from scripts.check_standalone import inspect_bundle, inspect_candidate
 from scripts.owned_kind import capture_docker
 from scripts.standalone import native_target
 from scripts.supply_chain import digest
+from tests.support.plugins_terminal import exercise_plugins, plugin_definitions
 from tests.support.terminal_api import Server, config
 from tests.terminal.pty_support import TerminalSession
 
@@ -172,6 +173,7 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
                     "keys": {"resources": {"first": "H", "last": "K"}},
                     "aliases": {"ownedpods": "pods"},
                 },
+                "plugins": {"schema_version": 1, "commands": plugin_definitions(directory)},
             }
         )
     )
@@ -256,6 +258,7 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
             terminal.wait_for_screen("View · v1/pods", since=marker)
             terminal.send(b"\x1b")
             terminal.wait_for_screen("Sort NAME", absent=("Available:",))
+            exercise_plugins(terminal)
             terminal.send(b"\x11")
             terminal.finish()
             name = "standalone-" + native_target() + ("-auth-exec" if helpers else "-missing-tool")
@@ -280,6 +283,7 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
             "caller_kubeconfig_unchanged": True,
             "theme_preview_cancel_and_about": True,
             "configured_navigation_alias_and_view_editor": True,
+            "plugin_capture_background_repeated_foreground_and_private_cleanup": True,
         }
     finally:
         server.stopping.set()
