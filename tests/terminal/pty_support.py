@@ -86,7 +86,10 @@ class TerminalSession:
         size: tuple[int, int] = (100, 30),
         transport: "TerminalTransport | None" = None,
         environment: dict[str, str] | None = None,
+        read_size: int = 65536,
     ) -> None:
+        assert type(read_size) is int and 1 <= read_size <= 65536
+        self.read_size = read_size
         self.master, self.slave = pty.openpty()
         self.original_mode = termios.tcgetattr(self.slave)
         self.completion_read, completion_write = os.pipe()
@@ -157,7 +160,7 @@ class TerminalSession:
                 self.completion = json.loads(self.completion_bytes)
         if self.master in ready:
             try:
-                data = os.read(self.master, 65536)
+                data = os.read(self.master, self.read_size)
                 self.transcript.extend(data)
                 # The owned disconnect flag is set before terminating SSH.
                 # Late output may contain truncated/interleaved terminal frames;

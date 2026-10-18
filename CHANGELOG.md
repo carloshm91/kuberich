@@ -7,9 +7,14 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Run explicitly configured local plugins with typed Review/Run forms,
+  scope-aware shortcuts, capture/background/native foreground modes, bounded
+  sanitized output, visible job controls and captured credential-helper identity
+  ([#59](https://github.com/carloshm91/kuberich/issues/59)).
+
 - Validate explicitly configured local plugin files, context/resource scope,
   shortcut overrides, typed inputs and literal captured variables without running
-  commands during configuration checks. Interactive execution follows separately
+  commands during configuration checks. Explicit execution uses separate review
   ([#58](https://github.com/carloshm91/kuberich/issues/58),
   [Carlos J. Herrera](https://github.com/carloshm91)).
 

@@ -17,10 +17,13 @@ from kuberich.adapters.credentials import _execute
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.config.catalog import load_catalog
 from kuberich.domain.connections import ConnectionRequest, ConnectionState
+from kuberich.domain.plugins import PluginSelection, parse_plugin
 from kuberich.domain.port_forwards import ForwardState, parse_mappings
 from kuberich.domain.targets import ResourceTarget
 from kuberich.services.access import AccessPolicy
 from kuberich.services.delegation import capture_delegation, stage_connection
+from kuberich.services.logs import PODS
+from kuberich.services.plugins import PluginManager, PluginSource
 from kuberich.services.port_forwards import ForwardManager, ForwardService
 from kuberich.services.processes import ProcessRunner
 from kuberich.services.sessions import SessionService
@@ -245,6 +248,63 @@ async def verify(cluster: OwnedCluster, kubectl: Path) -> dict[str, Any]:
                         )
                         checks[mechanism + "_delegated_exec"] = result == b"OWNED-INTEROP-EXEC"
                     checks[mechanism + "_private_config_cleaned"] = not delegation.path.exists()
+                    plugin_directory = directory / "plugin-cwd"
+                    plugin_directory.mkdir()
+                    plugin_policy = AccessPolicy(True)
+                    plugins = PluginManager(plugin_policy)
+                    plugin_source = PluginSource(
+                        connection,
+                        PODS,
+                        PluginSelection(
+                            cluster.context,
+                            "v1/pods",
+                            ResourceTarget(
+                                identity, "", "pods", namespace, "owned-http", pod.metadata.uid
+                            ),
+                        ),
+                        plugin_policy,
+                        partial(current, sessions, connection),
+                        environment,
+                    )
+                    try:
+                        definition = parse_plugin(
+                            "owned-interop",
+                            {
+                                "command": str(kubectl),
+                                "args": [
+                                    "--kubeconfig=${KUBECONFIG}",
+                                    "--context=${CONTEXT}",
+                                    "--namespace=${NAMESPACE}",
+                                    "--request-timeout=15s",
+                                    "get",
+                                    "pod",
+                                    "${NAME}",
+                                    "-o=jsonpath={.metadata.uid}",
+                                ],
+                                "scopes": ["v1/pods"],
+                                "mode": "capture",
+                                "dangerous": False,
+                                "trusted_read_only": True,
+                                "confirm": False,
+                                "timeout": 30,
+                            },
+                            plugin_directory,
+                        )
+                        reviewed = await plugin_source.prepare(definition, {})
+                        assert reviewed is not None
+                        job = plugins.start(plugin_source, reviewed)
+                        await job.wait()
+                        checks[mechanism + "_plugin_real_client_go"] = (
+                            job.status == "Succeeded" and pod.metadata.uid in job.output
+                        )
+                        checks[mechanism + "_plugin_private_files_cleaned"] = all(
+                            not path.exists() for path, _ in reviewed.files
+                        )
+                        checks[mechanism + "_plugin_distinct_cwd"] = (
+                            reviewed.command.directory == plugin_directory
+                        )
+                    finally:
+                        await plugins.close()
                     policy = AccessPolicy(False)
                     async with ProcessRunner(policy) as processes:
                         manager = ForwardManager(processes, check_interval=0.1)

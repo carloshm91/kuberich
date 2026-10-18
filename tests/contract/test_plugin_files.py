@@ -10,6 +10,7 @@ from kuberich.adapters.plugin_files import _file, load_plugins
 from kuberich.cli import main
 from kuberich.config.plugins import PluginLayer, PluginPreferences, parse_plugins
 from kuberich.config.store import migrate_config, read_config
+from kuberich.domain.keyboard import parse_keys
 from kuberich.errors import AppError
 from tests.unit.test_plugins import definition, plugin
 
@@ -32,6 +33,14 @@ def write(path, commands=None, **extension):
 
 def preferences(directory, **raw):
     return parse_plugins({"schema_version": 1, **raw}, directory)
+
+
+def test_global_commands_validate_namespace_owner_shortcuts_even_without_namespace_scopes(tmp_path):
+    configured = preferences(
+        tmp_path, commands={"inspect": {"command": "harmless", "shortcut": "z"}}
+    )
+    with pytest.raises(AppError, match="override"):
+        load_plugins(configured, None, keys=parse_keys({"namespaces": {"down": "z"}}))
 
 
 def test_explicit_files_directories_context_shadowing_and_no_ambient_loading(tmp_path, monkeypatch):

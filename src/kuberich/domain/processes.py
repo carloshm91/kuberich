@@ -76,6 +76,7 @@ class ProcessCommand:
     purpose: ProcessPurpose
     target: ResourceTarget | None = None
     terminal_input: bool = True
+    trusted_read_only: bool = False
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "argv", freeze_arguments(self.argv))
@@ -90,6 +91,10 @@ class ProcessCommand:
             raise AppError("Commands require a valid captured target.")
         if type(self.terminal_input) is not bool:
             raise AppError("Terminal input availability must be true or false.")
+        if type(self.trusted_read_only) is not bool or (
+            self.trusted_read_only and self.purpose is not ProcessPurpose.PLUGIN
+        ):
+            raise AppError("Only plugins support an explicit trusted read-only classification.")
         environment = tuple((key, value) for key, value in self.environment)
         if len(environment) > 4096 or len({key for key, _ in environment}) != len(environment):
             raise AppError("Process environment must have bounded, unique names.")
@@ -116,6 +121,7 @@ def capture_command(
     mode: ProcessMode,
     purpose: ProcessPurpose,
     target: ResourceTarget | None = None,
+    trusted_read_only: bool = False,
 ) -> ProcessCommand:
     return ProcessCommand(
         freeze_arguments(argv),
@@ -124,6 +130,7 @@ def capture_command(
         mode,
         purpose,
         target,
+        trusted_read_only=trusted_read_only,
     )
 
 

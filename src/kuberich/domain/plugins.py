@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
+from kuberich.domain.connections import namespace_name
 from kuberich.domain.keyboard import FIXED_KEYS, KeyOverrides, keys_for, navigation_key
 from kuberich.domain.processes import ProcessCommand, ProcessMode, ProcessPurpose, capture_command
 from kuberich.domain.targets import ResourceTarget
@@ -242,7 +243,8 @@ def plugin_bindings(
     plugins: tuple[Plugin, ...], resource: str | None, keys: KeyOverrides = ()
 ) -> tuple[tuple[str, str], ...]:
     bindings: dict[str, str] = {}
-    occupied = FIXED_KEYS["resources"] | set(keys_for(keys, "resources").values())
+    profile = "namespaces" if resource == "v1/namespaces" else "resources"
+    occupied = FIXED_KEYS[profile] | set(keys_for(keys, profile).values())
     for plugin in plugins:
         if plugin.shortcut is None or not plugin.applies(resource):
             continue
@@ -263,6 +265,7 @@ class PluginSelection:
     target: ResourceTarget | None = None
     variables: tuple[tuple[str, str], ...] = ()
     columns: tuple[tuple[str, str], ...] = ()
+    namespace: str | None = None
 
     def values(self) -> dict[str, str]:
         if self.resource is not None and not _SCOPES.fullmatch(self.resource):
@@ -270,6 +273,14 @@ class PluginSelection:
                 "Captured plugin resource requires an exact group/version/resource scope."
             )
         values = {"CONTEXT": validate_argument(self.context)}
+        if self.resource is not None:
+            parts = self.resource.split("/")
+            values.update(
+                RESOURCE=parts[-1],
+                VERSION=parts[-2],
+                GROUP=parts[0] if len(parts) == 3 else "",
+                NAMESPACE=namespace_name(self.namespace) if self.namespace is not None else "",
+            )
         for key, value in self.variables:
             if key not in {"CLUSTER", "USER", "FILTER", "KUBECONFIG"}:
                 raise AppError("Unknown captured plugin variable.")
@@ -359,4 +370,5 @@ def plugin_command(
         mode=plugin.mode,
         purpose=ProcessPurpose.PLUGIN,
         target=selection.target,
+        trusted_read_only=plugin.trusted_read_only and not plugin.dangerous,
     )

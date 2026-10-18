@@ -89,6 +89,6 @@ def load_plugins(
         raise AppError("An effective plugin catalogue supports at most 64 commands.")
     plugins = tuple(sorted(commands.values(), key=lambda plugin: plugin.name))
     resources = {scope for plugin in plugins for scope in plugin.scopes}
-    for resource in {None, *resources}:
+    for resource in {None, "v1/namespaces", *resources}:
         plugin_bindings(plugins, resource, keys)
     return plugins

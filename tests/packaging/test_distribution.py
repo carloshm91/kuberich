@@ -26,6 +26,7 @@ from tests.support.mutation_terminal import terminal_mutation
 from tests.support.navigation import terminal_navigation
 from tests.support.operation_terminal import terminal_operation
 from tests.support.operations import operation_api
+from tests.support.plugins_terminal import terminal_plugins
 from tests.support.preferences_terminal import terminal_preferences
 from tests.support.shell import terminal_shell
 from tests.support.standard_terminal import terminal_standard_views
@@ -34,6 +35,36 @@ from tests.support.transports import TerminalTransport
 from tests.support.workload_terminal import terminal_workload
 from tests.support.workloads import workload_api
 from tests.terminal.pty_support import TerminalSession
+
+
+def test_installed_plugin_modes_use_real_review_terminal_and_owned_cleanup(
+    installed_wheel, tmp_path
+):
+    binary_dir, _ = installed_wheel
+    terminal_plugins([str(binary_dir / "kuberich")], tmp_path, "installed-plugin-modes")
+
+
+def test_installed_private_credential_launcher_without_checkout_imports(installed_wheel):
+    binary_dir, directory = installed_wheel
+    trial = r"""
+import json,os,subprocess,sys
+from pathlib import Path
+from kuberich.runtime import credential_argv
+root=Path.cwd()
+helper=root/'credential-target.py'
+helper.write_text("import os;from pathlib import Path;assert Path.cwd().name=='helper-cwd';assert os.environ['PROFILE']=='captured';assert os.environ['KUBERNETES_EXEC_INFO']=='fresh';print('captured helper executed')")
+cwd=root/'helper-cwd'
+cwd.mkdir()
+request=root/'private-invocation.json'
+request.write_text(json.dumps({'argv':[sys.executable,str(helper)],'directory':str(cwd),'environment':{'PROFILE':'captured'}}))
+request.chmod(0o600)
+result=subprocess.run(credential_argv(request),env={**os.environ,'PROFILE':'plugin','KUBERNETES_EXEC_INFO':'fresh'},capture_output=True,text=True,timeout=20)
+assert result.returncode==0, result.stderr
+assert result.stdout=='captured helper executed\n'
+print(result.stdout,end='')
+"""
+    completed = run([str(binary_dir / "python"), "-I", "-c", trial], directory)
+    assert completed.stdout == "captured helper executed\n"
 
 
 @pytest.mark.parametrize("entry_point", ["console", "module"])

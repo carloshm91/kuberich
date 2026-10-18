@@ -18,6 +18,11 @@ from scripts.check_standalone import inspect_bundle, inspect_candidate
 from scripts.owned_kind import capture_docker
 from scripts.standalone import native_target
 from scripts.supply_chain import digest
+from tests.support.plugins_terminal import (
+    exercise_plugins,
+    exercise_view_preferences,
+    plugin_definitions,
+)
 from tests.support.terminal_api import Server, config
 from tests.terminal.pty_support import TerminalSession
 
@@ -172,6 +177,7 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
                     "keys": {"resources": {"first": "H", "last": "K"}},
                     "aliases": {"ownedpods": "pods"},
                 },
+                "plugins": {"schema_version": 1, "commands": plugin_definitions(directory)},
             }
         )
     )
@@ -252,10 +258,8 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
             terminal.wait_for_screen("Sort NAME", absent=("Apache-2.0",))
             marker = terminal.send(b":ownedpods\r")
             terminal.wait_for_screen("80 pods", since=marker)
-            marker = terminal.send(b":views\r")
-            terminal.wait_for_screen("View · v1/pods", since=marker)
-            terminal.send(b"\x1b")
-            terminal.wait_for_screen("Sort NAME", absent=("Available:",))
+            exercise_view_preferences(terminal)
+            exercise_plugins(terminal)
             terminal.send(b"\x11")
             terminal.finish()
             name = "standalone-" + native_target() + ("-auth-exec" if helpers else "-missing-tool")
@@ -280,6 +284,7 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
             "caller_kubeconfig_unchanged": True,
             "theme_preview_cancel_and_about": True,
             "configured_navigation_alias_and_view_editor": True,
+            "plugin_capture_background_repeated_foreground_and_private_cleanup": True,
         }
     finally:
         server.stopping.set()
@@ -394,6 +399,43 @@ def verify(source: Path, candidate: Path, evidence: Path) -> dict[str, Any]:
             if version.strip() != "kuberich " + manifest["version"]:
                 raise ValueError("Native CLI version differs from archive metadata")
             host.observe("help", [host.executable, "--help"], overrides)
+            credential_request = cli / "credential-child.json"
+            credential_marker = cli / "credential-child-called"
+            credential_request.write_text(
+                json.dumps(
+                    {
+                        "argv": [str(tools / "owned-auth"), str(credential_marker)],
+                        "directory": str(cli),
+                        "environment": {
+                            "PATH": "/usr/bin:/bin",
+                            "OWNED_NATIVE_BUNDLE": "/app" if host.linux else str(bundle),
+                        },
+                    }
+                )
+            )
+            credential_request.chmod(0o600)
+            if host.linux:
+                host.observe(
+                    "private-credential-owner",
+                    ["/usr/bin/chown", "0", str(credential_request)],
+                    overrides,
+                )
+            credential_output = host.observe(
+                "private-credential-child",
+                [host.executable, "--kuberich-credential-child", str(credential_request)],
+                {
+                    **overrides,
+                    "KUBERNETES_EXEC_INFO": '{"apiVersion":"client.authentication.k8s.io/v1"}',
+                },
+            )
+            if (
+                json.loads(credential_output)["status"]["token"] != "synthetic-pty"
+                or not credential_marker.is_file()
+            ):
+                raise ValueError(
+                    "Frozen private credential dispatch did not execute its captured helper"
+                )
+            credential_request.unlink()
             info = json.loads(host.observe("info", [host.executable, "info"], overrides))
             if info["version"] != manifest["version"] or info["cluster_connected"] is not False:
                 raise ValueError("Native info must report the artifact and avoid cluster access")
@@ -416,6 +458,7 @@ def verify(source: Path, candidate: Path, evidence: Path) -> dict[str, Any]:
             "owned_helper_sha256": digest(helper),
             "missing_optional_tool": missing,
             "auth_and_shell": external,
+            "private_credential_child": True,
             "scope": "Exact extracted archive, native CLI, owned loopback API, C credential and kubectl fixtures with real /bin/sh. Not provider or real Kubernetes exec certification.",
             "runtime_qualified": False,
             "publication_performed": False,
