@@ -257,6 +257,13 @@ async def test_readonly_document_and_help_have_independent_text_keys_and_shared_
             await pilot.press("l", "h")
             await pilot.press("colon", *"copy", "enter")
             assert app.clipboard == "api" and app.screen is screen
+            await pilot.press("colon", *"fullscreen", "enter")
+            await pilot.pause()
+            assert screen.status.display and screen.status.region.height == 1
+            assert screen.viewer.scrollable_content_region.height >= 2
+            await pilot.press("colon", *"fullscreen", "enter")
+            await pilot.pause()
+            assert screen.status.display is (size[1] >= 16)
             await pilot.press("colon", *"ns default", "enter")
             await wait_for(
                 lambda: (

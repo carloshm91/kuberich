@@ -3,6 +3,7 @@
 import asyncio
 from typing import ClassVar, Literal
 
+from rich.text import Text
 from textual import on
 from textual.app import ComposeResult
 from textual.binding import Binding, BindingType
@@ -43,7 +44,8 @@ class InspectionScreen(CommandWorkspace):
     DEFAULT_CSS = """
     InspectionScreen { layout: vertical; background: $background; }
     #inspection-dialog { height: 1fr; min-height: 2; }
-    InspectionScreen.short #inspection-title { display: none; }
+    InspectionScreen.short #inspection-title, InspectionScreen.short #inspection-status { display: none; }
+    InspectionScreen.short #inspection-dialog.fullscreen #inspection-status { display: block; }
     #inspection-title, #inspection-status, #inspection-search { height: 1; }
     #inspection-title { color: $accent; padding: 0 1; text-overflow: ellipsis; }
     #inspection-buttons { height: 1; }
@@ -102,14 +104,25 @@ class InspectionScreen(CommandWorkspace):
         yield Breadcrumbs((self.service.target.resource, self.page), "Resource table")
 
     def on_mount(self) -> None:
+        self.on_resize()
         self._load_task = asyncio.create_task(self._load())
+
+    def _set_status(self, message: str | Text) -> None:
+        self.status.update(message)
+        if self.is_mounted:
+            self.on_resize()
+
+    def on_resize(self) -> None:
+        self.query_one("#inspection-dialog", WorkspaceFrame).border_subtitle = (
+            safe_text(str(self.status.content)) if self.app.size.height < 16 else ""
+        )
 
     async def _load(self) -> None:
         try:
             result = await self.service.load()
         except (AppError, ConnectionProblem) as error:
             self.viewer.load_text("")
-            self.status.update(safe_text(read_error(error)))
+            self._set_status(safe_text(read_error(error)))
         except Exception as error:
             self.app._handle_exception(error)
         else:
@@ -138,7 +151,7 @@ class InspectionScreen(CommandWorkspace):
             self.invalidated = True
             self.result = None
             self.viewer.load_text("")
-            self.status.update(safe_text(str(error)))
+            self._set_status(safe_text(str(error)))
             if self._load_task is not None and not self._load_task.cancelling():
                 self._load_task.cancel()
 
@@ -163,7 +176,7 @@ class InspectionScreen(CommandWorkspace):
             text = self.result.events_error
         self.viewer.load_text(text)
         self._search_changed()
-        self.status.update(
+        self._set_status(
             safe_text(
                 f"{self.page.title()} · redacted · m managedFields · / search · Ctrl+Y copy · Esc back"
             )
@@ -178,7 +191,7 @@ class InspectionScreen(CommandWorkspace):
         self.managed = not self.managed
         self.page = "yaml"
         self.show_page()
-        self.status.update(
+        self._set_status(
             f"YAML · managedFields {'shown' if self.managed else 'hidden'} · sensitive field sets hidden"
         )
 
@@ -189,7 +202,7 @@ class InspectionScreen(CommandWorkspace):
     def _search_changed(self) -> None:
         self.matches = text_matches(self.viewer.text, self.search.value)
         self.match_index = -1
-        self.status.update(
+        self._set_status(
             f"{len(self.matches)}{'+' if len(self.matches) == MAX_MATCHES else ''} matches · Enter then n / N · Esc leaves search"
         )
 
@@ -199,21 +212,19 @@ class InspectionScreen(CommandWorkspace):
 
     def action_match(self, reverse: bool) -> None:
         if not self.matches:
-            self.status.update("No matches.")
+            self._set_status("No matches.")
             return
         self.match_index = (self.match_index + (-1 if reverse else 1)) % len(self.matches)
         row, start, end = self.matches[self.match_index]
         self.viewer.move_cursor((row, start), center=True)
         self.viewer.move_cursor((row, end), select=True)
-        self.status.update(
-            f"Match {self.match_index + 1}/{len(self.matches)} · n next · N previous"
-        )
+        self._set_status(f"Match {self.match_index + 1}/{len(self.matches)} · n next · N previous")
 
     def action_copy(self) -> None:
         try:
             self.service.require_current()
         except AppError as error:
-            self.status.update(safe_text(str(error)))
+            self._set_status(safe_text(str(error)))
             return
         if self.result is None:
             return
@@ -221,9 +232,9 @@ class InspectionScreen(CommandWorkspace):
         try:
             self.app.copy_to_clipboard(text)
         except AppError as error:
-            self.status.update(str(error))
+            self._set_status(str(error))
         else:
-            self.status.update("Redacted text copied; clipboard write requested.")
+            self._set_status("Redacted text copied; clipboard write requested.")
 
     def back(self) -> None:
         if self.focused is self.search:

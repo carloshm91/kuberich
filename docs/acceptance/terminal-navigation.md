@@ -93,3 +93,12 @@ and critical 100% coverage, full source/installed/native matrix, repository/docs
 and protected checks on the same tree. The linked PR records measured results;
 do not close the issue or merge a subset before that complete acceptance. No tags/releases/distribution/hosting
 publication is part of this implementation.
+
+The final broad packaging trial then caught YAML inspection exposing only its
+first line at 40x12. Compact inspection now mirrors its status in the frame's
+bottom border, freeing a second document line while retaining clickable actions,
+search, command input and breadcrumbs. The original installed console/module
+checks still require visible `kind: Secret`; Pilot additionally requires two
+scrollable document rows and visible compact status feedback. The interrupted
+original run retained its two failures and 1,143 passing tests before correction;
+it is not complete qualification.
