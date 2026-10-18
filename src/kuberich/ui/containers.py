@@ -120,9 +120,7 @@ class ContainerScreen(CommandWorkspace):
                     id="container-title",
                 )
                 yield Static(
-                    "Containers · s shell"
-                    if self.shell is not None
-                    else "Containers Enter logs",
+                    "Containers · s shell" if self.shell is not None else "Containers Enter logs",
                     markup=False,
                     id="container-hints",
                 )
