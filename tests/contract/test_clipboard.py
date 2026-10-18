@@ -5,14 +5,41 @@ import os
 import shutil
 import subprocess
 import sys
+from unittest.mock import AsyncMock
 
 import pytest
 
 from kuberich.domain.clipboard import ClipboardBackend as B
-from kuberich.domain.processes import ProcessMode, ProcessPurpose, ProcessStatus, capture_command
+from kuberich.domain.processes import (
+    ProcessMode,
+    ProcessPurpose,
+    ProcessResult,
+    ProcessStatus,
+    capture_command,
+)
+from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
 from kuberich.services.clipboard import NativeClipboard
 from kuberich.services.processes import ProcessRunner
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status", [ProcessStatus.SUCCEEDED, ProcessStatus.FAILED])
+async def test_mac_program_is_constant_single_line_and_data_uses_stdin(tmp_path, status):
+    runner = ProcessRunner(AccessPolicy(True))
+    runner.capture = AsyncMock(return_value=ProcessResult(status, 0))
+    clipboard = NativeClipboard(runner, {"PATH": "/usr/bin"}, tmp_path)
+    data = b"private\x00\x1b]52;c;inert\x07"
+    if status is ProcessStatus.FAILED:
+        with pytest.raises(AppError, match="Native clipboard write failed"):
+            await clipboard.write(data, B.MACOS)
+    else:
+        await clipboard.write(data, B.MACOS)
+    command = runner.capture.call_args.args[0]
+    assert command.input_data == data
+    assert all("\n" not in argument and "private" not in argument for argument in command.argv)
+    await clipboard.close()
+    await runner.close()
 
 
 @pytest.mark.asyncio

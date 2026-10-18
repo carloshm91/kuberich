@@ -36,7 +36,13 @@ class NativeClipboard:
         command = capture_command(
             ("xclip", "-quiet", "-selection", "clipboard")
             if x11
-            else ("/usr/bin/osascript", "-l", "JavaScript", "-e", MACOS_WRITE),
+            else (
+                "/usr/bin/osascript",
+                "-l",
+                "JavaScript",
+                "-e",
+                " ".join(MACOS_WRITE.splitlines()),
+            ),
             environment=self.environment,
             directory=self.directory,
             purpose=ProcessPurpose.CLIPBOARD,
