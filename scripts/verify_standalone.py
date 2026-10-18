@@ -394,6 +394,43 @@ def verify(source: Path, candidate: Path, evidence: Path) -> dict[str, Any]:
             if version.strip() != "kuberich " + manifest["version"]:
                 raise ValueError("Native CLI version differs from archive metadata")
             host.observe("help", [host.executable, "--help"], overrides)
+            credential_request = cli / "credential-child.json"
+            credential_marker = cli / "credential-child-called"
+            credential_request.write_text(
+                json.dumps(
+                    {
+                        "argv": [str(tools / "owned-auth"), str(credential_marker)],
+                        "directory": str(cli),
+                        "environment": {
+                            "PATH": "/usr/bin:/bin",
+                            "OWNED_NATIVE_BUNDLE": "/app" if host.linux else str(bundle),
+                        },
+                    }
+                )
+            )
+            credential_request.chmod(0o600)
+            if host.linux:
+                host.observe(
+                    "private-credential-owner",
+                    ["/usr/bin/chown", "0", str(credential_request)],
+                    overrides,
+                )
+            credential_output = host.observe(
+                "private-credential-child",
+                [host.executable, "--kuberich-credential-child", str(credential_request)],
+                {
+                    **overrides,
+                    "KUBERNETES_EXEC_INFO": '{"apiVersion":"client.authentication.k8s.io/v1"}',
+                },
+            )
+            if (
+                json.loads(credential_output)["status"]["token"] != "synthetic-pty"
+                or not credential_marker.is_file()
+            ):
+                raise ValueError(
+                    "Frozen private credential dispatch did not execute its captured helper"
+                )
+            credential_request.unlink()
             info = json.loads(host.observe("info", [host.executable, "info"], overrides))
             if info["version"] != manifest["version"] or info["cluster_connected"] is not False:
                 raise ValueError("Native info must report the artifact and avoid cluster access")
@@ -416,6 +453,7 @@ def verify(source: Path, candidate: Path, evidence: Path) -> dict[str, Any]:
             "owned_helper_sha256": digest(helper),
             "missing_optional_tool": missing,
             "auth_and_shell": external,
+            "private_credential_child": True,
             "scope": "Exact extracted archive, native CLI, owned loopback API, C credential and kubectl fixtures with real /bin/sh. Not provider or real Kubernetes exec certification.",
             "runtime_qualified": False,
             "publication_performed": False,

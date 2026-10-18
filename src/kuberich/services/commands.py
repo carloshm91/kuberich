@@ -1,5 +1,6 @@
 """One command decision path for initial CLI commands and interactive input."""
 
+import re
 from dataclasses import dataclass
 from enum import Enum, auto
 
@@ -18,6 +19,8 @@ class Command(Enum):
     THEMES = auto()
     ABOUT = auto()
     VIEWS = auto()
+    PLUGINS = auto()
+    PLUGIN_JOBS = auto()
     QUIT = auto()
     PODS = auto()
     CONTEXTS = auto()
@@ -77,6 +80,8 @@ _ACTIONS = {
 }
 
 ALIASES = {
+    "plugins": Command.PLUGINS,
+    "pluginjobs": Command.PLUGIN_JOBS,
     "views": Command.VIEWS,
     "themes": Command.THEMES,
     "theme": Command.THEMES,
@@ -139,6 +144,11 @@ class GenericResourceCommand:
     scope: str | None = None
 
 
+@dataclass(frozen=True)
+class PluginCommand:
+    name: str
+
+
 def generic_command(text: str, discovery: Discovery | None = None) -> GenericResourceCommand:
     """resource[.group][/version] [namespace or *], with explicit GVR identity."""
     parts = text.split()
@@ -165,7 +175,7 @@ def generic_command(text: str, discovery: Discovery | None = None) -> GenericRes
     return command
 
 
-ResolvedCommand = Command | ScopedCommand | ResourceCommand | GenericResourceCommand
+ResolvedCommand = Command | ScopedCommand | ResourceCommand | GenericResourceCommand | PluginCommand
 
 
 def resource_candidates(discovery: Discovery | None) -> tuple[str, ...]:
@@ -202,6 +212,7 @@ def suggestions(
     namespaces: tuple[str, ...],
     discovery: Discovery | None = None,
     aliases: Aliases = (),
+    plugins: tuple[str, ...] = (),
 ) -> tuple[str, ...]:
     """Literal local candidates only; no regex, credentials or transport work."""
     text = text.removeprefix(":")
@@ -232,6 +243,8 @@ def suggestions(
         command = ALIASES.get(effective)
         if command is Command.CONTEXTS:
             values = contexts
+        elif effective == "plugin":
+            values = plugins
         elif command in {Command.NAMESPACES, Command.PODS} or (
             effective in RESOURCE_ALIASES and RESOURCE_ALIASES[effective].namespaced
         ):
@@ -283,6 +296,12 @@ class CommandService:
         text = expand_alias(text, self.aliases, discovered_alias_names(discovery))
         parts = text.split(maxsplit=1)
         verb = parts[0].lower()
+        if verb == "plugin" and len(parts) == 2:
+            if re.fullmatch(r"[a-z][a-z0-9_-]{0,63}", parts[1]) is None:
+                raise AppError("Use :plugin NAME with one configured plugin name.")
+            # The manifest's explicit classification is checked before any
+            # input, credential/helper lookup or process preparation.
+            return PluginCommand(parts[1])
         self.policy.require(_ACTIONS.get(verb, Action.READ))
         if verb == "resource":
             return generic_command(parts[1] if len(parts) == 2 else "", discovery)

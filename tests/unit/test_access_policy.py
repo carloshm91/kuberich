@@ -50,7 +50,7 @@ def test_readonly_cannot_be_changed_mid_action() -> None:
         "shell",
         "ssh",
         "attach pod",
-        "plugin local",
+        "plugin",
         "delete pod",
         "edit pod",
         "scale 3",

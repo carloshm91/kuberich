@@ -24,7 +24,7 @@ from kuberich.domain.processes import (
 from kuberich.errors import AppError, ExecutableUnavailable
 from kuberich.runtime import external_environment, pty_argv
 from kuberich.runtime import signal_process_group as _signal_group
-from kuberich.services.access import AccessPolicy
+from kuberich.services.access import AccessPolicy, Action
 
 TargetGuard = Callable[[], None]
 
@@ -234,7 +234,7 @@ class ProcessRunner:
             raise AppError("Process runner is closed.")
         if command.mode is not mode:
             raise AppError("The command process mode does not match this operation.")
-        self.policy.require(command.purpose.action)
+        self.policy.require(Action.READ if command.trusted_read_only else command.purpose.action)
         if command.target is not None and guard is None:
             raise AppError("A captured resource process requires a current-target guard.")
         if guard is not None:

@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
+from kuberich.domain.connections import namespace_name
 from kuberich.domain.keyboard import FIXED_KEYS, KeyOverrides, keys_for, navigation_key
 from kuberich.domain.processes import ProcessCommand, ProcessMode, ProcessPurpose, capture_command
 from kuberich.domain.targets import ResourceTarget
@@ -263,6 +264,7 @@ class PluginSelection:
     target: ResourceTarget | None = None
     variables: tuple[tuple[str, str], ...] = ()
     columns: tuple[tuple[str, str], ...] = ()
+    namespace: str | None = None
 
     def values(self) -> dict[str, str]:
         if self.resource is not None and not _SCOPES.fullmatch(self.resource):
@@ -270,6 +272,14 @@ class PluginSelection:
                 "Captured plugin resource requires an exact group/version/resource scope."
             )
         values = {"CONTEXT": validate_argument(self.context)}
+        if self.resource is not None:
+            parts = self.resource.split("/")
+            values.update(
+                RESOURCE=parts[-1],
+                VERSION=parts[-2],
+                GROUP=parts[0] if len(parts) == 3 else "",
+                NAMESPACE=namespace_name(self.namespace) if self.namespace is not None else "",
+            )
         for key, value in self.variables:
             if key not in {"CLUSTER", "USER", "FILTER", "KUBECONFIG"}:
                 raise AppError("Unknown captured plugin variable.")
@@ -359,4 +369,5 @@ def plugin_command(
         mode=plugin.mode,
         purpose=ProcessPurpose.PLUGIN,
         target=selection.target,
+        trusted_read_only=plugin.trusted_read_only and not plugin.dangerous,
     )

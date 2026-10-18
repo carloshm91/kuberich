@@ -32,6 +32,26 @@ indexing header. The HTML pages already serve `index, follow`. Zone-cache cleanu
 and a new ordinary-URL read are still needed before claiming every response
 header verified on the custom domains.
 
+## Source checkpoint toward 0.2.0: plugin execution
+
+The next-release source adds `:plugins`, `:plugin NAME`, typed Review/Run forms,
+resource-scoped shortcuts and `:pluginjobs`. Capture, background and native
+foreground commands use owned processes, explicit read-only trust, bounded
+captured output and private single-context credentials. Context/UID invalidation
+and exit drain processes before removing connection files. The published 0.1.0
+package is unchanged; no package/tag/site publication is part of this checkpoint.
+
+```sh
+uv run pytest tests/contract/test_plugins.py tests/ui/test_plugins.py
+uv run pytest tests/unit/test_credential_child.py tests/unit/test_plugin_commands.py
+uv run pytest tests/terminal/test_handoff.py
+```
+
+See [the invocation guide](plugins.md) and [acceptance evidence](acceptance/plugin-execution.md).
+Foreground local plugins deliberately use native terminal handoff; pod/container
+shells remain embedded. Arbitrary local programs are not sandboxed, and direct
+foreground output cannot be redacted by KubeRich.
+
 ## Source checkpoint toward 0.2.0: plugin configuration
 
 The source validates explicitly configured global/context plugin files, exact

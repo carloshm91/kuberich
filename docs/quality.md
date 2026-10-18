@@ -12,6 +12,20 @@ Coverage is a release requirement and one part of correctness. A high percentage
 does not establish correct Kubernetes semantics, responsive terminal behavior,
 or reliable installation.
 
+## Plugin execution: U04 #59
+
+`adapters/credential_child.py` joins the critical 100% line/branch inventory.
+Existing critical process/plugin/runtime/command/CLI decisions retain their
+unchanged floors. Actual children exercise literal argv/cwd/environment, private
+single-context files, independently captured helper cwd/profile, exit/signal/
+timeout/overflow, background waiter ownership, descendants and repeated cleanup.
+Pilot exercises typed forms, Review/Run, scope/key/input ownership, read-only,
+job output/Stop and screenshot concealment. Existing real handoff PTYs verify
+plugin-purpose terminal restoration; a fresh installed-wheel child and all four
+native archive verifiers execute the packaged private credential launcher.
+No provider/current-context trial or publication is inferred from these checks.
+See [execution evidence](acceptance/plugin-execution.md).
+
 ## Plugin configuration: U03 #58
 
 The required 3.13 failure retained a 152.010-ms genuine runtime pause, including

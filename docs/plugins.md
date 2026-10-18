@@ -1,8 +1,8 @@
 # Local command plugins
 
 Plugin configuration is available in the next-release source. The published
-0.1.0 package does not load or execute plugins. This checkpoint validates and
-captures definitions; the invocation UI and process execution are the next step.
+0.1.0 package does not load or execute plugins. The next-release source loads definitions, presents typed input/review forms
+and runs explicitly selected commands through the owned process services.
 
 Plugins are trusted local programs running with your user privileges. They can
 read files, use inherited credentials, contact services and change a cluster.
@@ -134,7 +134,8 @@ arguments must remain nonempty; use a prefixed value or an environment variable.
 | `CONTEXT` | Captured session's exact context name |
 | `CLUSTER`, `USER`, `FILTER` | Explicitly captured view values, when available |
 | `KUBECONFIG` | Private prepared connection path supplied by the invocation owner |
-| `NAME`, `NAMESPACE`, `RESOURCE`, `GROUP`, `VERSION`, `CONTAINER` | Captured selected resource/container; optional namespace/container can be empty |
+| `RESOURCE`, `GROUP`, `VERSION`, `NAMESPACE` | Captured view scope; a selected row supplies its exact namespace |
+| `NAME`, `CONTAINER` | Captured selected resource/container; container is empty outside a captured container |
 | `COL-HEADER` | Explicitly captured uppercase column identifier, such as `${COL-NAME}` |
 | `INPUT_NAME` | Validated named input; uppercase with hyphens changed to underscores |
 
@@ -170,14 +171,57 @@ expanded command values must not enter diagnostics or exception representations.
 
 ## Execution modes and output
 
-The invocation owner will use the shared managed process runner: capture owns a
-bounded one-shot command, background retains an owned cancellable session, and
-foreground uses the deliberate terminal lifecycle. Timeout, output overflow,
-exit status and cancellation must remain visible. A context switch or application
-exit must drain resource-bound commands and private connection files.
-These execution behaviors are not delivered by this configuration checkpoint.
+Use `:plugins` to list applicable commands, or `:plugin NAME` to open a specific
+command. Tab completes configured names after `plugin `. Configured shortcuts
+work while a root resource table owns focus; text inputs and embedded pod shells
+retain their keys. A plugin override replaces that resource shortcut, and root
+help lists the effective plugin keys. The form defaults to Cancel. Review
+validates typed values; Run is a separate explicit action. Changing a value
+invalidates the previous review, and a review can run only once.
 
-Output must use the ordinary redaction and terminal-control escaping boundaries.
+A connected context is required. An empty resource view can run commands that
+need only context/scope values; `NAME`, container and column values require an
+actual selected row. A selected row is captured before asynchronous loading and
+checked again by GET and UID before starting. Guards cannot make a later external
+program's server operations atomic.
+
+- `capture`: waits for the one-shot command and shows status, exit code and bounded
+  output. Cancel stops and drains the process group before returning.
+- `background`: stays owned after Back closes the form. Use `:pluginjobs`, Enter
+  for its completed output, or Stop selected. Output is collected until completion
+  rather than streamed; there are at most four active jobs and 32 retained jobs.
+- `foreground`: deliberately suspends Textual and gives the native terminal to
+  the local executable. Exit/interruption restores the interface. This does not
+  change the embedded pod/container shell. It requires a real terminal and its
+  direct output is outside captured-output redaction and byte limits.
+
+Captured stdout and stderr share the configured cumulative byte limit; overflow
+terminates the owned group and reports Output Limit. Timeout, nonzero exit,
+signal, cancellation and start refusal have distinct visible states. Background
+waiter cancellation does not detach a job. Scope/UID invalidation, context/retry
+replacement and application exit cancel and drain owned work. Private credential
+files stay available until processes stop and are then removed.
+
+Each command gets a private, single-context mode-0600 kubeconfig under the owned
+mode-0700 session directory. KubeRich sets `KUBECONFIG`, `KUBERICH_CONTEXT` and the
+captured `KUBERICH_NAMESPACE`; it does not reload the ambient current context.
+Explicit plugin cwd/environment do not alter the original authentication helper's
+cwd, frozen environment or relative files. A private credential launcher retains
+those separately and forwards client-go's fresh `KUBERNETES_EXEC_INFO`. Native
+archives dispatch this launcher internally without an external Python install.
+
+Read-only mode refuses an unclassified or dangerous command before helper lookup
+or input preparation. Running one requires both `trusted_read_only: true` and
+`dangerous: false`; that is your explicit trust decision, not inferred safety.
+Both GUI entry routes still use Review and Run. At the service boundary,
+`confirm: true` or `dangerous: true` always requires explicit confirmation.
+`--command 'plugin NAME'` is refused before connection/authentication; execution
+requires interactive review.
+
+Captured output uses credential-pattern redaction, known captured token/input
+value masking and terminal-control escaping. Display is bounded to 16,384
+characters with an explicit truncation marker; retained sanitized text is at most
+65,536 characters. Raw output is never logged or included in job representations.
 No remote OSC sequence can become a clipboard operation. Arbitrary plugin output
 can contain information KubeRich cannot recognize as sensitive; review the local
 program and avoid asking it to print secrets.

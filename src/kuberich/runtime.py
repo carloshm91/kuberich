@@ -8,6 +8,18 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 PTY_OPTION = "--kuberich-pty-child"
+CREDENTIAL_OPTION = "--kuberich-credential-child"
+
+
+def credential_argv(path: Path) -> tuple[str, ...]:
+    if getattr(sys, "frozen", False):
+        return (sys.executable, CREDENTIAL_OPTION, str(path))
+    return (
+        sys.executable,
+        "-I",
+        str(Path(__file__).parent / "adapters" / "credential_child.py"),
+        str(path),
+    )
 
 
 async def signal_process_group(pid: int, value: signal.Signals) -> bool:
@@ -87,6 +99,10 @@ def pty_argv(argv: Sequence[str]) -> tuple[str, ...]:
 
 def main() -> int:
     """Dispatch the owned PTY child before loading the UI or its dependencies."""
+    if getattr(sys, "frozen", False) and sys.argv[1:2] == [CREDENTIAL_OPTION]:
+        from kuberich.adapters.credential_child import main as run_credential
+
+        return run_credential(sys.argv[2:])
     if getattr(sys, "frozen", False) and sys.argv[1:2] == [PTY_OPTION]:
         from kuberich.adapters.pty_child import main as run_pty
 

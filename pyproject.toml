@@ -132,6 +132,7 @@ critical_modules = [
     "src/kuberich/cli.py",
     "src/kuberich/__main__.py",
     "src/kuberich/runtime.py",
+    "src/kuberich/adapters/credential_child.py",
     "src/kuberich/ui/style_cache.py",
     "src/kuberich/config/schema.py",
     "src/kuberich/config/navigation.py",

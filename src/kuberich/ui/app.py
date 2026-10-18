@@ -68,6 +68,7 @@ from kuberich.services.commands import (
     Command,
     CommandService,
     GenericResourceCommand,
+    PluginCommand,
     ResolvedCommand,
     ResourceCommand,
     ScopedCommand,
@@ -123,6 +124,7 @@ from kuberich.ui.logs import LogScreen
 from kuberich.ui.mutations import AnnotationScreen, MutationHistoryScreen
 from kuberich.ui.namespaces import NamespaceTable
 from kuberich.ui.operations import ResourceOperationScreen
+from kuberich.ui.plugins import PluginController, PluginJobs, PluginScreen
 from kuberich.ui.pods import PodTable, Viewport
 from kuberich.ui.port_forwards import ForwardPrompt, ForwardScreen
 from kuberich.ui.presentation import DEFAULT_PRESENTATION, Presentation
@@ -380,6 +382,7 @@ class KubeRichApp(App[None]):
         self.command_input = CommandInput(self._suggestions, focus_table, self._submit_command)
         self.status = WorkspaceLabel(DISCONNECTED_STATUS, id="status", markup=False)
         self.view_preferences = ViewPreferences(self)
+        self.plugins = PluginController(self)
 
     def _theme_context(self) -> str | None:
         return (
@@ -602,6 +605,19 @@ class KubeRichApp(App[None]):
             event.stop()
             event.prevent_default()
             return
+        if (
+            isinstance(event, Key)
+            and not event.is_forwarded
+            and self.screen_stack
+            and not isinstance(self.screen, ModalScreen)
+            and isinstance(self.focused, DataTable)
+        ):
+            plugin = dict(self.plugins.bindings()).get(event.key)
+            if plugin is not None:
+                self.plugins.open(plugin)
+                event.stop()
+                event.prevent_default()
+                return
         focused = (
             self.focused
             if isinstance(event, Key) and not event.is_forwarded and self.screen_stack
@@ -674,6 +690,7 @@ class KubeRichApp(App[None]):
 
     def on_mount(self) -> None:
         self.set_keymap(dict(self.navigation_keymap))
+        self.plugins.refresh()
         for table in (
             self.resources,
             self.standard_table,
@@ -792,6 +809,8 @@ class KubeRichApp(App[None]):
                     and observation.revision == self.workspace.store.observation.revision
                 ):
                     self._render_ready.set()
+                    self.plugins.refresh()
+                    self.plugins.manager.invalidate()
                     self.command_input.refresh_choices()
                     if self._pending_generic is not None and self.workspace.discovery is not None:
                         pending, self._pending_generic = self._pending_generic, None
@@ -1104,6 +1123,7 @@ class KubeRichApp(App[None]):
 
     async def _close_client_operations(self, client: KubernetesSession) -> None:
         closing = asyncio.gather(
+            self.plugins.manager.stop_for_client(client),
             self.mutations.stop_for_client(client),
             self.forwards.stop_for_client(client),
             *(
@@ -1120,7 +1140,8 @@ class KubeRichApp(App[None]):
                 screen.stop_owned()
                 for screen in tuple(self.screen_stack)
                 if isinstance(
-                    screen, (AnnotationScreen, EditingScreen, WorkloadScreen, TransferScreen)
+                    screen,
+                    (AnnotationScreen, EditingScreen, WorkloadScreen, TransferScreen, PluginScreen),
                 )
                 and screen.source.client is client
             ),
@@ -1143,6 +1164,7 @@ class KubeRichApp(App[None]):
             self._update_task.cancel()
             await _finish_owned(asyncio.gather(self._update_task, return_exceptions=True))
         try:
+            await self.plugins.close()
             await self.mutations.close()
             await self.forwards.close()
             await self.processes.close()
@@ -1205,16 +1227,23 @@ class KubeRichApp(App[None]):
         path: str | None = None,
         time_format: str | None = None,
     ) -> str | None:
-        if any(isinstance(screen, ConfigurationScreen) for screen in self.screen_stack):
+        if any(
+            isinstance(screen, (ConfigurationScreen, PluginScreen)) for screen in self.screen_stack
+        ):
             self.notify(
-                "Close the configuration data view before taking a screenshot.", severity="warning"
+                "Close the configuration data view or plugin input view before taking a screenshot.",
+                severity="warning",
             )
             return None
         return super().deliver_screenshot(filename, path, time_format)
 
     def export_screenshot(self, *, title: str | None = None, simplify: bool = False) -> str:
-        if any(isinstance(screen, ConfigurationScreen) for screen in self.screen_stack):
-            raise AppError("Close the configuration data view before exporting a screenshot.")
+        if any(
+            isinstance(screen, (ConfigurationScreen, PluginScreen)) for screen in self.screen_stack
+        ):
+            raise AppError(
+                "Close the configuration data view or plugin input view before exporting a screenshot."
+            )
         return super().export_screenshot(title=title, simplify=simplify)
 
     def action_inspect_yaml(self) -> None:
@@ -1958,6 +1987,10 @@ class KubeRichApp(App[None]):
             aliases = "Aliases: " + ", ".join(
                 f":{name} → {target}" for name, target in self.navigation.aliases
             )
+            aliases += "\nPlugins: :plugins · :plugin NAME · :pluginjobs\n" + "\n".join(
+                f"{key} → plugin {name} (overrides its resource action when configured)"
+                for key, name in self.plugins.bindings()
+            )
             self.push_screen(
                 HelpScreen(
                     navigation_help(self.navigation_keymap, self.header.binding_profile), aliases
@@ -2045,6 +2078,9 @@ class KubeRichApp(App[None]):
         self._apply_command(command)
 
     def _apply_command(self, command: ResolvedCommand) -> None:
+        if isinstance(command, PluginCommand):
+            self.plugins.open(command.name)
+            return
         if isinstance(command, GenericResourceCommand):
             self._apply_generic(command)
             return
@@ -2093,7 +2129,11 @@ class KubeRichApp(App[None]):
             else:
                 self._namespace_selected(command.argument)
             return
-        if command is Command.THEMES:
+        if command is Command.PLUGINS:
+            self.plugins.open()
+        elif command is Command.PLUGIN_JOBS:
+            self.push_screen(PluginJobs(self.plugins.manager))
+        elif command is Command.THEMES:
             self.action_change_theme()
         elif command is Command.VIEWS:
             self.action_views()
@@ -2191,6 +2231,7 @@ class KubeRichApp(App[None]):
             self._namespace_choices(),
             self.workspace.discovery,
             self.navigation.aliases,
+            tuple(plugin.name for plugin in self.plugins.plugins),
         )
 
     @on(Input.Changed, "#command")

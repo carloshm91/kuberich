@@ -1,5 +1,29 @@
 # Architecture decisions
 
+## Owned plugin execution: U04 #59
+
+`PluginSource` freezes a client/scope/UID/column selection before asynchronous
+manifest loading. Reviews are bounded, one-use object identities. Explicit trust
+is checked before preparation/lookup and again by the shared ProcessRunner; only
+PLUGIN commands may carry the trusted-read-only classification. Preflight GET
+verifies the selected UID without replaying an external write.
+
+`PluginManager` owns up to four active groups and 32 job records. Per-job runners
+keep cumulative capture limits; cancellation closes groups before staged files.
+Background waiters cannot abandon ownership. Session replacement and application
+exit drain preparation, readers, groups and private file cleanup before SDK close.
+The form owns its preparation/capture waiter; background ownership transfers to
+the manager. Foreground reuses the native terminal lease and restoration path.
+
+Plugin cwd/environment are independent of credential helper identity. The private
+stdlib-only credential child reads owned regular mode-0600 bounded JSON, rejects
+links/foreign owners and executes absolute captured argv/cwd/environment. Only
+client-go supplied KUBERNETES_EXEC_INFO crosses from the caller. Source uses its
+installed interpreter with -I; frozen entry dispatch occurs before UI/CLI import.
+Secrets stay in private files rather than launcher arguments. Captured output is
+masked/escaped in an owned worker; foreground local output goes directly to TTY.
+See [execution evidence](acceptance/plugin-execution.md).
+
 ## Bounded native CSS parse reuse: prerequisite for U03 #58
 
 Required Python 3.13 run 39096419046 measured a 152.010-ms runtime heartbeat

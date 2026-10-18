@@ -337,7 +337,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40×12 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -1155,9 +1155,19 @@
       ],
       "source": "internal/config/plugin.go",
       "status": "planned",
-      "difference": "",
-      "public_summary": "Explicit user plugin locations, context/resource scopes and shortcut conflicts are validated offline. Interactive confirmation and execution follow separately.",
-      "public_status": "partial"
+      "difference": "U03/U04 implement the independent explicit schema and local process lifecycle. Bundled-workflow translation and complete compatibility mapping remain U05; foreground local commands are unsandboxed and use terminal handoff.",
+      "public_summary": "Next-release source loads explicit user definitions, context/resource scopes and shortcut overrides; typed review defaults to Cancel and Run is explicit. Published 0.1.0 is unchanged.",
+      "public_status": "partial",
+      "partial_evidence": [
+        "docs/plugins.md",
+        "docs/acceptance/plugin-execution.md",
+        "tests/contract/test_plugins.py",
+        "tests/ui/test_plugins.py",
+        "tests/unit/test_credential_child.py",
+        "tests/terminal/test_handoff.py",
+        "tests/packaging/test_distribution.py",
+        "scripts/verify_standalone.py"
+      ]
     },
     {
       "id": "EXT06",
@@ -1168,9 +1178,19 @@
       ],
       "source": "internal/view/env.go",
       "status": "planned",
-      "difference": "Explicitly configured shell plugins remain unsandboxed local commands; no automatic shell interpolation.",
-      "public_summary": "Captured resource/column/environment variables expand as literal arguments. Foreground and background execution are not available in this checkpoint.",
-      "public_status": "partial"
+      "difference": "U03/U04 implement the independent explicit schema and local process lifecycle. Bundled-workflow translation and complete compatibility mapping remain U05; foreground local commands are unsandboxed and use terminal handoff.",
+      "public_summary": "Next-release source runs captured literal argv/environment in capture, owned background and native foreground modes with private per-context credentials. This is not a drop-in K9s configuration format.",
+      "public_status": "partial",
+      "partial_evidence": [
+        "docs/plugins.md",
+        "docs/acceptance/plugin-execution.md",
+        "tests/contract/test_plugins.py",
+        "tests/ui/test_plugins.py",
+        "tests/unit/test_credential_child.py",
+        "tests/terminal/test_handoff.py",
+        "tests/packaging/test_distribution.py",
+        "scripts/verify_standalone.py"
+      ]
     },
     {
       "id": "EXT07",
@@ -1181,9 +1201,19 @@
       ],
       "source": "internal/ui/dialog/plugin_inputs.go",
       "status": "planned",
-      "difference": "",
-      "public_summary": "Typed input/default/choice validation and cancellation are implemented in the invocation contract. Interactive input and output handling follow separately.",
-      "public_status": "partial"
+      "difference": "U03/U04 implement the independent explicit schema and local process lifecycle. Bundled-workflow translation and complete compatibility mapping remain U05; foreground local commands are unsandboxed and use terminal handoff.",
+      "public_summary": "Next-release source provides typed input/default/choice forms, one-use reviews, cancellation, bounded sanitized capture, exit/timeout/overflow status and owned job Stop. Foreground output goes directly to the native terminal.",
+      "public_status": "partial",
+      "partial_evidence": [
+        "docs/plugins.md",
+        "docs/acceptance/plugin-execution.md",
+        "tests/contract/test_plugins.py",
+        "tests/ui/test_plugins.py",
+        "tests/unit/test_credential_child.py",
+        "tests/terminal/test_handoff.py",
+        "tests/packaging/test_distribution.py",
+        "scripts/verify_standalone.py"
+      ]
     },
     {
       "id": "EXT08",

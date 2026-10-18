@@ -29,7 +29,7 @@ from kuberich.errors import AppError, ExitCode
 from kuberich.security.arguments import validate_argument
 from kuberich.services.access import AccessPolicy
 from kuberich.services.appearance import PreferenceSource
-from kuberich.services.commands import Command, CommandService, ScopedCommand
+from kuberich.services.commands import Command, CommandService, PluginCommand, ScopedCommand
 from kuberich.ui.launch import run_terminal
 from kuberich.ui.presentation import Presentation
 from kuberich.ui.theme_catalog import BUILTINS, appearance_from
@@ -343,7 +343,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             arguments.initial_command or ""
         )
         action = initial.command if isinstance(initial, ScopedCommand) else initial
-        if action in {
+        if isinstance(initial, PluginCommand) or action in {
             Command.UNAVAILABLE,
             Command.SHELL,
             Command.ATTACH,
