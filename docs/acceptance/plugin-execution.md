@@ -57,6 +57,17 @@ Ruff, formatting, strict mypy, repository validation and local two-surface site
 build/check passed: 65 pages and 2,922 local links/assets. The build is local;
 no website is deployed by these commands.
 
+The original eight-preparation test synchronized through nine blocking executor
+operations. An isolated four-CPU control at `7af1a341` reproduced starvation of
+the eight-worker default and failed at the unchanged five-second wait. The
+corrected harness observes eight reserved preparations on the event loop, then
+releases the worker gate and drains every task in `finally`. It retains the same
+eight-request bound, ninth-request refusal and immutable-input assertions; the
+same four-CPU control passed in 0.25 seconds. No runtime behavior, executor size,
+coverage exclusion or timeout was changed. Original native checks passed; the
+source run was canceled for this correction and is not qualified evidence.
+The corrected commit requires fresh complete source/native checks.
+
 The private credential child is critical: 100% lines and branches are required,
 alongside the existing critical plugin/process/runtime/CLI/command decisions.
 Whole-package independent line/branch floors and changed-line gates remain

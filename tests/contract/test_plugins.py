@@ -444,19 +444,12 @@ async def test_live_invalidated_selection_cancels_job_and_unrelated_client_does_
 async def test_concurrent_preparations_reserve_the_bound_and_freeze_inputs_before_await(
     tmp_path, monkeypatch
 ):
-    entered, release = threading.Event(), threading.Event()
-    count = 0
-    lock = threading.Lock()
+    release = threading.Event()
     async with reader_fixture(tmp_path, handler) as reader:
         owner = source(reader, tmp_path)
         original = owner._capture
 
         def delayed(command, values):
-            nonlocal count
-            with lock:
-                count += 1
-                if count == 8:
-                    entered.set()
             assert release.wait(5)
             return original(command, values)
 
@@ -467,13 +460,16 @@ async def test_concurrent_preparations_reserve_the_bound_and_freeze_inputs_befor
         values = {"value": "original-value"}
         tasks = [asyncio.create_task(owner.prepare(command, values)) for _ in range(8)]
         try:
-            assert await asyncio.to_thread(entered.wait, 5)
+            async with asyncio.timeout(5):
+                while owner._preparing != 8:
+                    await asyncio.sleep(0.001)
             values["value"] = "changed-value"
             with pytest.raises(AppError, match="pending"):
                 await owner.prepare(command, values)
         finally:
             release.set()
-        requests = await asyncio.gather(*tasks)
+            requests = await asyncio.gather(*tasks, return_exceptions=True)
+        assert not any(isinstance(request, BaseException) for request in requests)
         assert all(request.command.argv[-1] == "original-value" for request in requests)
         assert owner._preparing == 0 and len(owner._prepared) == 8
         owner.close()
