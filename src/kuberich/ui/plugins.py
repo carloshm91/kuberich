@@ -113,6 +113,21 @@ class PluginScreen(ModalScreen[None]):
             )
             with VerticalScroll(id="plugin-fields"):
                 yield Static(safe_text(self.plugin.description))
+                selection = self.source.selection
+                target = selection.target
+                yield Static(
+                    safe_text(
+                        f"Scope: {selection.resource or 'context'} · namespace: "
+                        f"{target.namespace or 'cluster' if target is not None else selection.namespace or 'all/cluster'}\n"
+                        + (
+                            f"Target: {target.resource}/{target.name}\nUID: {target.uid}"
+                            if target is not None
+                            else "Target: context/scope only; no selected object"
+                        ),
+                        multiline=True,
+                    ),
+                    id="plugin-captured-target",
+                )
                 yield Static(
                     "Runs unsandboxed with your local user privileges. Confirmation is not a sandbox. Foreground output goes directly to your terminal.",
                     markup=False,
@@ -121,7 +136,11 @@ class PluginScreen(ModalScreen[None]):
                     name = f"plugin-input-{index}"
                     yield Static(safe_text(item.label))
                     if item.kind == "bool":
-                        yield Checkbox(safe_text(item.label), value=bool(item.default), id=name)
+                        yield Checkbox(
+                            safe_text(item.label),
+                            value=item.default is True or item.default == "true",
+                            id=name,
+                        )
                     elif item.kind == "dropdown":
                         yield Select(
                             ((safe_text(value), value) for value in item.options),

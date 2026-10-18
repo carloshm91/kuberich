@@ -75,6 +75,8 @@ async def test_colon_catalogue_review_run_status_keys_and_input_ownership(tmp_pa
             await wait_for(lambda: isinstance(app.screen, PluginScreen))
             await pilot.pause()
             screen = app.screen
+            assert "pods/api" in str(screen.query_one("#plugin-captured-target", Static).content)
+            assert "UID:" in str(screen.query_one("#plugin-captured-target", Static).content)
             assert screen.focused.id == "plugin-cancel"
             assert screen.query_one("#plugin-run", Button).disabled
             await pilot.click("#plugin-review")
@@ -123,7 +125,7 @@ async def test_typed_inputs_validation_change_invalidates_review_and_cancel_neve
             ],
             "inputs": [
                 {"name": "count", "type": "number", "default": 3},
-                {"name": "active", "type": "bool", "default": False},
+                {"name": "active", "type": "bool", "default": "false"},
                 {"name": "choice", "type": "dropdown", "options": ["one", "two"]},
                 {"name": "text", "default": "literal"},
             ],
@@ -142,6 +144,7 @@ async def test_typed_inputs_validation_change_invalidates_review_and_cancel_neve
             assert screen.review is None and "required" in str(
                 screen.query_one("#plugin-feedback").content
             )
+            assert not screen.query_one("#plugin-input-1", Checkbox).value
             screen.query_one("#plugin-input-2", Select).value = "two"
             screen.query_one("#plugin-input-1", Checkbox).value = True
             await pilot.pause()
