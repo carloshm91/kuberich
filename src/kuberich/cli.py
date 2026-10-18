@@ -25,6 +25,7 @@ from kuberich.diagnostics.logging import diagnostic_logging
 from kuberich.diagnostics.redaction import sanitize_text
 from kuberich.domain.connection_overrides import ConnectionOverrides
 from kuberich.domain.connections import ConnectionRequest, request_duration
+from kuberich.domain.interactions import InteractionCommand
 from kuberich.errors import AppError, ExitCode
 from kuberich.security.arguments import validate_argument
 from kuberich.services.access import AccessPolicy
@@ -343,7 +344,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             arguments.initial_command or ""
         )
         action = initial.command if isinstance(initial, ScopedCommand) else initial
-        if isinstance(initial, PluginCommand) or action in {
+        if isinstance(initial, (PluginCommand, InteractionCommand)) or action in {
             Command.UNAVAILABLE,
             Command.SHELL,
             Command.ATTACH,

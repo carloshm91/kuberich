@@ -85,3 +85,18 @@ HelpScreen {
     height: 1;
     margin-top: 1;
 }
+
+.nested-command-bar { height: 3; border: solid $primary; margin: 0; }
+.short .nested-command-bar { height: 1; border-top: none; border-bottom: none; }
+ContainerScreen .container-caption { height: 1; }
+LogScreen WorkspaceBars #log-search-bar { height: 1; border: none; }
+LogScreen WorkspaceBars #log-hints { display: none; }
+WorkspaceFrame.fullscreen { border: none; margin: 0; }
+
+HelpScreen { layout: vertical; }
+HelpScreen #help-dialog { width: 1fr; height: 1fr; margin: 0 1; padding: 0; }
+.help-caption { height: 1; }
+InspectionScreen WorkspaceBars > NavigationInput { height: 1; border: none; }
+
+LogHelpScreen { layout: vertical; }
+LogHelpScreen #help-dialog { width: 1fr; height: 1fr; min-height: 2; margin: 0 1; padding: 0; }

@@ -1,6 +1,5 @@
 """Regression witnesses for the real-terminal observer and restoration oracle."""
 
-import json
 import os
 import sys
 from contextlib import ExitStack
@@ -62,7 +61,7 @@ def test_owned_disconnect_retains_late_malformed_bytes_and_actual_cleanup(tmp_pa
             [sys.executable, "-c", child], tmp_path, transport=transport
         ) as terminal:
             terminal.wait_for_screen("observer-ready")
-            ready = json.loads((transport.directory / "ready.json").read_text())
+            ready = transport.wait_ready()
             before = tuple(terminal.screen.display)
             marker = len(terminal.transcript)
             transport.disconnect()
@@ -127,3 +126,41 @@ def test_every_operator_setting_still_blocks_restoration_when_changed(index):
 @pytest.mark.parametrize("invalid", [None, {}, [], [0] * 7, [0, 0, 0, True, 0, 0, []]])
 def test_malformed_evidence_cannot_claim_restoration_even_when_equal(invalid):
     assert not restored_modes(invalid, invalid, system="darwin")
+
+
+def test_child_output_can_precede_atomic_owner_readiness_without_losing_cleanup(tmp_path):
+    import threading
+
+    # Delay only the owner's record, after it has started the real child. This
+    # reproduces the observed hosted 3.13 ordering instead of relying on timing.
+    with TerminalTransport(tmp_path / "transport", "ssh") as transport:
+        owner = transport.directory / "owner.py"
+        release = tmp_path / "release-ready"
+        text = owner.read_text()
+        text = "import time\n" + text.replace(
+            "temporary=Path(spec['ready']+'.tmp')",
+            "while not Path("
+            + repr(str(release))
+            + ").exists(): time.sleep(0.005)\ntemporary=Path(spec['ready']+'.tmp')",
+            1,
+        )
+        owner.write_text(text)
+        raw = b"\x1b[?1049hready-before-record\x1b[?1049l\x1b[?25h" + b"".join(
+            f"\x1b[?{mode}l".encode() for mode in (1000, 1003, 1004, 1006, 2004)
+        )
+        with TerminalSession(
+            [sys.executable, "-c", f"import os,time; os.write(1,{raw!r}); time.sleep(.2)"],
+            tmp_path,
+            transport=transport,
+        ) as terminal:
+            terminal.wait_for(b"ready-before-record")
+            assert not (transport.directory / "ready.json").exists()
+            publishing = threading.Timer(0.05, release.touch)
+            publishing.start()
+            try:
+                record = transport.wait_ready()
+                assert record["application"] > 0
+            finally:
+                publishing.join(5)
+            terminal.finish()
+        assert transport.record["exit"] == 0

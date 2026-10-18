@@ -37,7 +37,7 @@ def run_terminal(
         connection=connection,
         preferences=preferences,
     )
-    app.run()
+    app.run(mouse=app.navigation.mouse)
     if app.return_code == ExitCode.HANGUP:
         raise AppError("Terminal disconnected.", ExitCode.HANGUP)
     if app.return_code == ExitCode.TERMINATED:

@@ -32,23 +32,29 @@ indexing header. The HTML pages already serve `index, follow`. Zone-cache cleanu
 and a new ordinary-URL read are still needed before claiming every response
 header verified on the custom domains.
 
-## Navigation work in progress
+## Source checkpoint toward 0.2.0: terminal navigation
 
-The next source checkpoint prepares bounded native macOS/X11 clipboard writers
-and write-only OSC52 framing for SSH/tmux. Headless trials remain memory-only;
-ordinary PTY fixtures explicitly select OSC52 rather than replacing a developer's
-host clipboard. Native payloads are limited to 1 MiB and terminal requests to
-64 KiB of UTF-8. A terminal request is not a paste acknowledgement.
+The next source checkpoint adds command/filter recall, inverse/fuzzy/metadata
+filters, wide/errors controls, bounded UID ranges and explicit namespace
+favorites. Read-only workspaces share chrome and nested command routing;
+container status refreshes from the owned Pod watch. Native macOS/X Window System writers and
+OSC52/tmux clipboard requests have explicit UTF-8 bounds. Published 0.1.0 is unchanged.
 
 ```sh
-uv run pytest tests/unit/test_clipboard.py tests/contract/test_clipboard.py
+uv run pytest tests/unit/test_interactions.py tests/unit/test_selectors.py tests/unit/test_metadata_filtering.py
+uv run pytest tests/ui/test_interactions.py tests/terminal/test_interactions.py
 ```
 
-The local Linux trial writes and reads synthetic text on its own Xvfb display,
-including Unicode, embedded controls, NUL, RTF/EPS-looking text and replacement;
-its selection owner is drained on exit. Native macOS qualification and the rest
-of the navigation/filter/container-refresh contract are still pending. This is
-an implementation checkpoint, not completion of navigation or a new release.
+Focused deterministic clipboard/history/range/selector modules passed 100% line
+and branch coverage. Pilot verified controls at 40 and 120 columns, live
+container status and fatal permission invalidation. Owned kind verified status
+patches, same-name UID replacement, nested namespace/context drain and Escape;
+that Pod was deliberately unscheduled and is not a real exec/restart trial.
+Owned Xvfb and ephemeral hosted macOS verified synthetic plaintext clipboard
+roundtrips. Source and installed console/module PTYs verify navigation and exact
+OSC52 receipts. The [implementation PR](https://github.com/carloshm91/kuberich/pull/206)
+retains the full protected platform/native and coverage qualification; it must
+pass before merging. See [behavior and limits](terminal-navigation.md).
 
 ## Source checkpoint toward 0.2.0: plugin compatibility and examples
 

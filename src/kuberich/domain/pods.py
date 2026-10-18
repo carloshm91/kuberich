@@ -17,6 +17,9 @@ class PodColumn(StrEnum):
     STATUS = "status"
     RESTARTS = "restarts"
     AGE = "age"
+    NODE = "node"
+    IP = "ip"
+    QOS = "qos"
 
 
 def _object(value: object) -> dict[str, object]:
@@ -63,9 +66,12 @@ class PodRow:
     status: str
     restarts: int
     created_at: datetime | None
+    node: str = "—"
+    ip: str = "—"
+    qos: str = "—"
 
-    def cells(self, now: datetime) -> tuple[str, ...]:
-        return (
+    def cells(self, now: datetime, *, wide: bool = False) -> tuple[str, ...]:
+        cells = (
             self.namespace,
             self.name,
             f"{self.ready}/{self.containers}",
@@ -73,6 +79,7 @@ class PodRow:
             str(self.restarts),
             age(self.created_at, now),
         )
+        return (*cells, self.node, self.ip, self.qos) if wide else cells
 
 
 def age(created: datetime | None, now: datetime) -> str:
@@ -187,6 +194,9 @@ def pod_row(record: ResourceRecord) -> PodRow:
         reason,
         restarts,
         record.created_at,
+        _text(spec.get("nodeName"), "—"),
+        _text(status.get("podIP"), "—"),
+        _text(status.get("qosClass"), "—"),
     )
 
 
@@ -202,6 +212,10 @@ def sort_value(row: PodRow, column: PodColumn) -> str | int | float | Fraction |
         return row.status.casefold()
     if column is PodColumn.RESTARTS:
         return row.restarts
+    if column in {PodColumn.NODE, PodColumn.IP, PodColumn.QOS}:
+        return {PodColumn.NODE: row.node, PodColumn.IP: row.ip, PodColumn.QOS: row.qos}[
+            column
+        ].casefold()
     return -row.created_at.timestamp() if row.created_at is not None else None
 
 

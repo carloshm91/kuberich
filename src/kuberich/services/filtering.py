@@ -18,6 +18,7 @@ REGEX_SECONDS = 0.05
 class FilterResult[T: PodRow | NamespaceRow | ContextRow | ResourceRow]:
     rows: tuple[T, ...]
     problem: str | None = None
+    unknown: int = 0
 
 
 def search_text(row: PodRow | NamespaceRow | ContextRow | ResourceRow) -> str:
@@ -37,6 +38,26 @@ def filter_rows[T: PodRow | NamespaceRow | ContextRow | ResourceRow](
         return FilterResult(rows)
     if len(query) > 256:
         return FilterResult(rows, f"Filter is too long. Showing all {kind}.")
+    if query.startswith("fuzzy:"):
+        needle = query[6:].casefold()
+
+        def match(row: T) -> bool:
+            letters = iter(search_text(row).casefold())
+            return all(any(letter == wanted for letter in letters) for wanted in needle)
+
+        deadline = time.monotonic() + REGEX_SECONDS
+        fuzzy_matches: list[T] = []
+        for row in rows:
+            if time.monotonic() >= deadline:
+                return FilterResult(
+                    rows, f"Fuzzy filter exceeded its time budget. Showing all {kind}."
+                )
+            if match(row):
+                fuzzy_matches.append(row)
+        return FilterResult(tuple(fuzzy_matches))
+    inverse = query.startswith("!re:")
+    if inverse:
+        query = query[1:]
     if not query.startswith("re:"):
         needle = query.casefold()
         return FilterResult(tuple(row for row in rows if needle in search_text(row).casefold()))
@@ -53,7 +74,9 @@ def filter_rows[T: PodRow | NamespaceRow | ContextRow | ResourceRow](
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise TimeoutError
-            if pattern.search(search_text(row), timeout=remaining, concurrent=True) is not None:
+            if (
+                pattern.search(search_text(row), timeout=remaining, concurrent=True) is not None
+            ) != inverse:
                 matches.append(row)
     except TimeoutError:
         return FilterResult(

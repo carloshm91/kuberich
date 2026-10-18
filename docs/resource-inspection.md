@@ -12,9 +12,10 @@ uses character positions for Unicode and lists at most 10,000 matches. An empty
 query or a query longer than 256 characters produces no matches.
 
 `Ctrl+Y` or Copy copies the selected redacted text, or the current page when
-there is no selection. Textual sends OSC52 to the terminal; the terminal must
-support and permit clipboard writes. This establishes local terminal output,
-not proof that every terminal or clipboard receives the text.
+there is no selection. Published 0.1.0 sends OSC52 to the terminal. Next-release
+source adds bounded native macOS and X Window System and explicit remote OSC52 backends; see
+[clipboard behavior](terminal-navigation.md#explicit-clipboard-writes). A sent
+terminal request does not prove physical clipboard receipt.
 `Ctrl+C` retains the application's quit behavior. Escape leaves search first,
 then closes the viewer. Back closes it directly. Returning retains the table's
 filter, sorting, UID selection and viewport while live updates continue.

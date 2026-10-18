@@ -11,7 +11,7 @@ from textual import on
 from textual.app import ComposeResult
 from textual.await_complete import AwaitComplete
 from textual.binding import Binding, BindingType
-from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.containers import Horizontal, Vertical
 from textual.events import DescendantFocus, Resize
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Static
@@ -26,6 +26,7 @@ from kuberich.services.log_export import save_logs
 from kuberich.services.logs import LogStream
 from kuberich.ui.chrome import (
     LOG_SHORTCUTS,
+    TEXT_SHORTCUTS,
     Breadcrumbs,
     WorkspaceBars,
     WorkspaceChrome,
@@ -35,7 +36,9 @@ from kuberich.ui.chrome import (
 from kuberich.ui.commands import NavigationInput
 from kuberich.ui.keybindings import key_hint, navigation_help
 from kuberich.ui.log_body import LogBody
+from kuberich.ui.nested import CommandWorkspace
 from kuberich.ui.scopes import ScopeScreen
+from kuberich.ui.text_navigation import ReadOnlyScroll
 
 
 class TextRequestScreen(ModalScreen[str | None]):
@@ -79,7 +82,7 @@ class TextRequestScreen(ModalScreen[str | None]):
         self.dismiss(None)
 
 
-class LogHelpScreen(ModalScreen[None]):
+class LogHelpScreen(CommandWorkspace):
     AUTO_FOCUS = "#help-scroll"
 
     def __init__(
@@ -91,9 +94,14 @@ class LogHelpScreen(ModalScreen[None]):
         self.keymap = keymap
 
     def compose(self) -> ComposeResult:
-        with Vertical(id="help-dialog"):
+        if hasattr(self.app, "chrome"):
+            yield WorkspaceHeader(self.app.chrome, TEXT_SHORTCUTS, binding_profile="text")
+        with WorkspaceBars():
+            yield Static("Log controls", classes="help-caption", markup=False)
+            yield from self.command_bar()
+        with WorkspaceFrame(id="help-dialog"):
             yield Static("Log controls", id="help-title", markup=False)
-            with VerticalScroll(id="help-scroll"):
+            with ReadOnlyScroll(id="help-scroll"):
                 yield Static(
                     self.status
                     + "\n\n"
@@ -119,6 +127,7 @@ class LogHelpScreen(ModalScreen[None]):
                     markup=False,
                 )
             yield Button("Back", id="log-help-back", compact=True)
+        yield Breadcrumbs(("logs", "help"), "Logs")
 
     @on(Button.Pressed)
     def close_help(self) -> None:
@@ -129,7 +138,7 @@ class _HeadComplete(Exception):
     pass
 
 
-class LogScreen(ModalScreen[None]):
+class LogScreen(CommandWorkspace):
     AUTO_FOCUS = "#log-body"
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("c", "container", "Container"),
@@ -215,6 +224,7 @@ class LogScreen(ModalScreen[None]):
             with Horizontal(id="log-search-bar", classes="input-bar"):
                 yield Static("/", classes="input-label", markup=False)
                 yield self.search
+            yield from self.command_bar()
             yield Static(
                 f"{key_hint(self.chrome.keymap if self.chrome else (), 'logs', 'first')}/{key_hint(self.chrome.keymap if self.chrome else (), 'logs', 'last')} first/last · / search · p pause · ? controls",
                 markup=False,
@@ -506,8 +516,11 @@ class LogScreen(ModalScreen[None]):
 
     def action_fullscreen(self) -> None:
         frame = self.query_one("#log-dialog")
-        frame.toggle_class("fullscreen")
-        fullscreen = frame.has_class("fullscreen")
+        self._local_fullscreen = not getattr(self, "_local_fullscreen", False)
+        fullscreen = self._local_fullscreen or bool(
+            getattr(getattr(self.app, "interactions", None), "fullscreen", False)
+        )
+        frame.set_class(fullscreen, "fullscreen")
         for header in self.query(WorkspaceHeader):
             header.display = not fullscreen
         self.breadcrumbs.display = not fullscreen and (
@@ -618,7 +631,7 @@ class LogScreen(ModalScreen[None]):
         self._cancel_tasks()
         return super().dismiss(result)
 
-    async def on_unmount(self) -> None:
+    async def stop_owned(self) -> None:
         self._cancel_tasks()
         await asyncio.gather(
             *(
@@ -628,3 +641,6 @@ class LogScreen(ModalScreen[None]):
             ),
             return_exceptions=True,
         )
+
+    async def on_unmount(self) -> None:
+        await self.stop_owned()

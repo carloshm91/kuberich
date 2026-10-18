@@ -30,6 +30,10 @@ Press `?` while a table has focus to see its effective navigation and fixed
 actions. Resource help, log controls and applicable header shortcuts reflect
 configured keys. Upper/lowercase keys remain distinct.
 
+Next-release source also has an independent `text` profile for read-only
+documents/help, explicit mouse opt-in, namespace favorites and bounded remote
+copy. See the [complete interaction matrix](terminal-navigation.md).
+
 ## Configure keys and aliases
 
 Use the preference file shown by `kuberich info`, or select one with `--config`.

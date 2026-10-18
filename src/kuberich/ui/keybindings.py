@@ -5,11 +5,11 @@ from typing import ClassVar
 from textual import on
 from textual.app import ComposeResult
 from textual.binding import Binding, BindingType
-from textual.containers import Vertical, VerticalScroll
-from textual.screen import ModalScreen
 from textual.widgets import Button, Static
 
 from kuberich.domain.keyboard import key_label, keys_for
+from kuberich.ui.nested import CommandWorkspace
+from kuberich.ui.text_navigation import ReadOnlyScroll
 
 type EffectiveKeys = tuple[tuple[str, str], ...]
 
@@ -31,7 +31,14 @@ _ACTIONS = {
 
 def table_bindings(profile: str) -> list[BindingType]:
     bindings: list[BindingType] = [
-        Binding(key, _ACTIONS[name][0], _ACTIONS[name][1], show=False, id=f"{profile}.{name}")
+        Binding(
+            key,
+            _ACTIONS[name][0],
+            _ACTIONS[name][1],
+            show=False,
+            priority=True,
+            id=f"{profile}.{name}",
+        )
         for name, key in keys_for((), profile).items()
     ]
     bindings.append(Binding("question_mark", "app.navigation_help", "Keys", show=False))
@@ -52,7 +59,7 @@ def navigation_help(keymap: EffectiveKeys, profile: str) -> str:
             "",
             "Arrows, Home/End and PageUp/PageDown remain fixed fallbacks.",
             "Ctrl+Home/End select the first/last row. Letters remain literal in inputs.",
-            "Ctrl+D reviews resource deletion; in logs it moves half a page down.",
+            "Ctrl+D reviews resource deletion; in read-only text/logs it moves half a page down.",
             "Ctrl+Y belongs to copy views; it is not a navigation key.",
             "Escape goes back; Ctrl+Q quits.",
         )
@@ -83,12 +90,12 @@ _FIXED_HELP = {
 }
 
 
-class NavigationHelpScreen(ModalScreen[None]):
+class NavigationHelpScreen(CommandWorkspace):
     AUTO_FOCUS = "#navigation-help-scroll"
     BINDINGS: ClassVar[list[BindingType]] = []
     DEFAULT_CSS = """
-    NavigationHelpScreen { align: center middle; background: $background 80%; }
-    #navigation-help-dialog { width: 95%; height: 90%; border: solid $primary;
+    NavigationHelpScreen { layout: vertical; background: $background; }
+    #navigation-help-dialog { width: 1fr; height: 1fr; border: solid $primary;
         background: $surface; padding: 0 1; }
     #navigation-help-scroll { height: 1fr; }
     #navigation-help-back { height: 1; border: none; }
@@ -99,10 +106,24 @@ class NavigationHelpScreen(ModalScreen[None]):
         self.text = navigation_help(keymap, profile) + "\n\n" + _FIXED_HELP.get(profile, "")
 
     def compose(self) -> ComposeResult:
-        with Vertical(id="navigation-help-dialog"):
-            with VerticalScroll(id="navigation-help-scroll"):
+        from kuberich.ui.chrome import (
+            TEXT_SHORTCUTS,
+            Breadcrumbs,
+            WorkspaceBars,
+            WorkspaceFrame,
+            WorkspaceHeader,
+        )
+
+        if hasattr(self.app, "chrome"):
+            yield WorkspaceHeader(self.app.chrome, TEXT_SHORTCUTS, binding_profile="text")
+        with WorkspaceBars():
+            yield Static("Navigation help", classes="help-caption", markup=False)
+            yield from self.command_bar()
+        with WorkspaceFrame(id="navigation-help-dialog"):
+            with ReadOnlyScroll(id="navigation-help-scroll"):
                 yield Static(self.text, markup=False)
             yield Button("Back", id="navigation-help-back", compact=True)
+        yield Breadcrumbs(("navigation help",), "Previous view")
 
     @on(Button.Pressed, "#navigation-help-back")
     def close_help(self) -> None:

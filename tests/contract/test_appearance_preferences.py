@@ -70,3 +70,44 @@ async def test_failed_save_retains_the_prior_document_and_never_overwrites_exter
             "bad\x1b" if problem == "bad-context" else None,
         )
     assert path.read_bytes() == before and source.document == original
+
+
+@pytest.mark.asyncio
+async def test_competing_theme_and_favorite_saves_are_serialized_without_lost_extensions(
+    tmp_path, monkeypatch
+):
+    import asyncio
+
+    from kuberich.config.navigation import NavigationPreferences
+    from kuberich.services import appearance as module
+
+    path = tmp_path / "preferences.yaml"
+    original = parse_document({"schema_version": 1, "opaque": "retained"})
+    write_config(path, original)
+    source = PreferenceSource(ConfigLocation(path, True), original)
+    entered, release = asyncio.Event(), asyncio.Event()
+    worker = module.file_worker
+
+    async def held(operation):
+        entered.set()
+        await release.wait()
+        return await worker(operation)
+
+    monkeypatch.setattr(module, "file_worker", held)
+    theme = asyncio.create_task(source.save(Appearance(), "textual-light", None))
+    await entered.wait()
+    favorite = asyncio.create_task(
+        source.save_navigation(NavigationPreferences().with_favorite("demo-lab", "team-a"))
+    )
+    await asyncio.sleep(0)
+    assert not favorite.done()
+    release.set()
+    await theme
+    with pytest.raises(AppError, match="another save"):
+        await favorite
+    assert source.document.settings.theme == "textual-light"
+    assert "navigation" not in source.document.extensions
+    assert read_config(path).unknown == original.unknown
+    await source.save_navigation(NavigationPreferences().with_favorite("demo-lab", "team-a"))
+    assert read_config(path).settings.theme == "textual-light"
+    assert read_config(path).extensions["navigation"]["favorites"] == {"demo-lab": ["team-a"]}

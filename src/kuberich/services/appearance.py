@@ -1,6 +1,7 @@
 """Explicit local preference persistence, separate from effective runtime overrides."""
 
-from dataclasses import dataclass, replace
+import asyncio
+from dataclasses import dataclass, field, replace
 
 from kuberich.adapters.editing import file_worker
 from kuberich.config.navigation import NavigationPreferences, parse_navigation
@@ -17,6 +18,7 @@ class PreferenceSource:
     location: ConfigLocation
     document: ConfigDocument
     theme_override: str | None = None
+    _lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False, repr=False)
 
     async def save(self, appearance: Appearance, theme: str, context: str | None) -> None:
         theme_name(theme)
@@ -35,7 +37,7 @@ class PreferenceSource:
             migrated=False,
         )
 
-        await self._persist(updated)
+        await self._persist(updated, original)
 
     async def save_navigation(self, navigation: NavigationPreferences) -> None:
         original = self.document
@@ -45,14 +47,13 @@ class PreferenceSource:
             extensions={**original.extensions, "navigation": validated.mapping()},
             migrated=False,
         )
-        await self._persist(updated)
+        await self._persist(updated, original)
 
-    async def _persist(self, updated: ConfigDocument) -> None:
+    async def _persist(self, updated: ConfigDocument, original: ConfigDocument) -> None:
         if self.location.migration_target is not None:
             raise AppError(
                 "Run kuberich config migrate before saving preferences from the legacy path."
             )
-        original = self.document
 
         def persist() -> None:
             existed = self.location.path.exists()
@@ -61,5 +62,10 @@ class PreferenceSource:
                 raise AppError("Preferences changed on disk; restart to reload before saving.")
             write_config(self.location.path, updated, overwrite=existed)
 
-        await file_worker(persist)
-        self.document = updated
+        async with self._lock:
+            if self.document is not original:
+                raise AppError(
+                    "Preferences changed during another save; retry the explicit change."
+                )
+            await file_worker(persist)
+            self.document = updated

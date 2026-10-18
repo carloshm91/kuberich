@@ -133,3 +133,18 @@ async def test_owned_hosted_macos_plaintext_roundtrip(tmp_path):
             assert child.returncode == 0 and stdout == data
         await clipboard.close()
         assert runner.active_count == 0
+
+
+@pytest.mark.asyncio
+async def test_owned_x11_startup_denial_is_visible_and_does_not_leak_input(tmp_path):
+    if sys.platform != "linux" or not shutil.which("xclip"):
+        pytest.skip("X11 helper failure qualification runs on Linux with xclip")
+    # Invalid local display syntax fails before any network/display connection.
+    environment = {**os.environ, "DISPLAY": "owned-invalid-display-without-colon"}
+    async with ProcessRunner(AccessPolicy(True)) as runner:
+        clipboard = NativeClipboard(runner, environment, tmp_path)
+        with pytest.raises(AppError, match="Native clipboard write failed") as failure:
+            await clipboard.write(b"synthetic private payload", B.X11)
+        assert "synthetic private payload" not in str(failure.value)
+        await clipboard.close()
+        assert runner.active_count == 0

@@ -53,6 +53,14 @@ class FrameTable(DataTable[Cell]):
     _scoped_cell_refresh = False
     _row_repaint_enabled = False
 
+    def set_mark(self, uid: str, marked: bool) -> None:
+        row = self.rows.get(RowKey(uid))
+        if row is not None:
+            row.label = Text("●" if marked else " ")
+            if self.columns:
+                column = next(iter(self.columns))
+                self.update_cell(row.key, column, self.get_cell(row.key, column), update_width=True)
+
     def navigation_hint(self, action: str) -> str:
         label = key_hint(self.effective_keys, self.BINDING_PROFILE, action)
         return "Shift+" + label if len(label) == 1 and label.isupper() else label

@@ -9,6 +9,7 @@ from textual.events import Blur, Focus
 from textual.strip import Strip
 from textual.widgets import Input
 
+from kuberich.domain.interactions import CommandHistory
 from kuberich.security.presentation import safe_text
 
 
@@ -18,6 +19,8 @@ class NavigationInput(Input):
     BINDINGS: ClassVar[list[BindingType]] = [
         # Finish native editing before subsequent typeahead or a focus change.
         *(replace(binding, priority=True) for binding in Binding.make_bindings(Input.BINDINGS)),
+        Binding("alt+up", "history(-1)", "Previous entry", show=False, priority=True),
+        Binding("alt+down", "history(1)", "Next entry", show=False, priority=True),
         Binding("enter", "submit", "Submit", show=False, priority=True),
         Binding("tab", "app.focus_next", "Next field", show=False, priority=True),
         Binding("shift+tab", "app.focus_previous", "Previous field", show=False, priority=True),
@@ -30,12 +33,21 @@ class NavigationInput(Input):
         placeholder: str,
         id: str,
         clear_on_submit: bool = False,
+        history: CommandHistory | None = None,
     ) -> None:
+        self._entry_history = history
         self.focus_table = focus_table
         self.clear_on_submit = clear_on_submit
         super().__init__(placeholder=placeholder, id=id, compact=True, max_length=256)
 
+    def action_history(self, direction: int) -> None:
+        if self._entry_history is not None:
+            self.value = self._entry_history.move(self.value, direction)
+            self.cursor_position = len(self.value)
+
     async def action_submit(self) -> None:
+        if self._entry_history is not None:
+            self._entry_history.record(self.value)
         await super().action_submit()
         if self.clear_on_submit:
             self.value = ""
@@ -45,6 +57,8 @@ class NavigationInput(Input):
 class CommandInput(NavigationInput):
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("tab", "complete", "Complete", show=False, priority=True),
+        Binding("alt+up", "history(-1)", "Previous command", show=False, priority=True),
+        Binding("alt+down", "history(1)", "Next command", show=False, priority=True),
         Binding("up", "previous_choice", "Previous suggestion", show=False, priority=True),
         Binding("down", "next_choice", "Next suggestion", show=False, priority=True),
     ]
@@ -54,7 +68,11 @@ class CommandInput(NavigationInput):
         provider: Callable[[str], tuple[str, ...]],
         focus_table: Callable[[], None],
         submit: Callable[[str], None] | None = None,
+        *,
+        history: CommandHistory | None = None,
+        id: str = "command",
     ) -> None:
+        self.history = history or CommandHistory()
         self.submit = submit
         self.provider = provider
         self.choices: tuple[str, ...] = ()
@@ -65,7 +83,7 @@ class CommandInput(NavigationInput):
         super().__init__(
             focus_table,
             placeholder="po / ctx / ns · Tab completes",
-            id="command",
+            id=id,
             clear_on_submit=True,
         )
 
@@ -170,6 +188,11 @@ class CommandInput(NavigationInput):
             self.selected = (self.selected + delta) % len(self.choices)
             self._cycled = True
             self.refresh()
+
+    def action_history(self, direction: int) -> None:
+        self.value = self.history.move(self.value, direction)
+        self.cursor_position = len(self.value)
+        self.reset_choice()
 
     def action_previous_choice(self) -> None:
         self._cycle(-1)

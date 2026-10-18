@@ -4,6 +4,10 @@ The workspace has live pod and namespace views. Selected pods support [inspectio
 [logs](log-viewer.md) and [embedded shells](container-shell.md); other resource
 tables are described in [standard resources](standard-resources.md).
 
+See [terminal navigation and remote clipboard](terminal-navigation.md) for the
+next-release key matrix, wide/errors/selection controls, nested commands, favorites
+and explicit clipboard backends.
+
 ## Commands
 
 Press `:` outside an input, type a command and press Enter. The same parser and
@@ -91,7 +95,7 @@ Queries are limited to 256 characters. Matching runs off the UI loop, with a tot
 the error. The engine releases the GIL during matching and supports an actual
 match timeout. Cancellation awaits the owned worker. Scope/query identity guards
 reject late results; rapid input coalesces into the latest render request.
-Fuzzy/inverse matching, label/field selectors and saved filter history are planned.
+Next-release source adds inverse regex, fuzzy subsequences, bounded local label/field selectors and separate memory-only filter recall; see [terminal navigation](terminal-navigation.md).
 Maximum-workload latency and memory still need sustained performance validation.
 These bounds alone do not establish a maximum supported workload.
 
@@ -104,7 +108,7 @@ forward stack. Missing/deleted UIDs use the table's deterministic row fallback.
 History can return from a failed context; authentication/read failures remain
 visible. Restoring a context owns a new connection and cancels the previous watch.
 Only the matching revision can restore a saved viewport. History is not persisted,
-and namespace favorites/last-command recall are planned.
+and next-release source adds explicit per-context namespace favorites and last-command recall; see [terminal navigation](terminal-navigation.md).
 
 ## Verification
 

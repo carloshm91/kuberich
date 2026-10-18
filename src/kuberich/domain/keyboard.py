@@ -34,7 +34,7 @@ TABLE_PROFILES = (
     "forwards",
     "sources",
 )
-PROFILES = (*TABLE_PROFILES, "logs")
+PROFILES = (*TABLE_PROFILES, "logs", "text")
 SORT_PROFILES = frozenset({"resources", "namespaces"})
 _SAFETY = frozenset(
     {
@@ -79,6 +79,7 @@ FIXED_KEYS = {
     "themes": _SAFETY,
     "forwards": _SAFETY | {"s"},
     "sources": _SAFETY | {"space", "r", "a"},
+    "text": _SAFETY | {"y", "d", "e", "m", "n", "N"},
     "logs": _SAFETY
     | {"c", "v", "o", "p", "f", "t", "w", "L", "C", "m", "z", "n", "N", "ctrl+s", "s", "J"},
 }
@@ -100,11 +101,11 @@ def navigation_key(value: object) -> str:
 def keys_for(overrides: KeyOverrides, profile: str) -> dict[str, str]:
     if profile not in PROFILES:
         raise AppError("Unknown navigation profile.")
-    defaults = dict(LOG_KEYS if profile == "logs" else TABLE_KEYS)
+    defaults = dict(LOG_KEYS if profile in {"logs", "text"} else TABLE_KEYS)
     if profile in SORT_PROFILES:
         defaults.update(SORT_KEYS)
     configured = dict(overrides)
-    if profile != "logs":
+    if profile not in {"logs", "text"}:
         defaults.update(
             (name, key) for name, key in configured.get("table", ()) if name in defaults
         )
@@ -117,7 +118,7 @@ def parse_keys(value: object) -> KeyOverrides:
         raise AppError("keys must contain only documented navigation profiles.")
     result = []
     for profile, fields in value.items():
-        allowed = dict(LOG_KEYS if profile == "logs" else TABLE_KEYS)
+        allowed = dict(LOG_KEYS if profile in {"logs", "text"} else TABLE_KEYS)
         if profile in SORT_PROFILES or profile == "table":
             allowed.update(SORT_KEYS)
         if not isinstance(fields, dict) or fields.keys() - allowed.keys():

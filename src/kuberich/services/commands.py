@@ -6,6 +6,7 @@ from enum import Enum, auto
 
 from kuberich.domain.aliases import Aliases, expand_alias
 from kuberich.domain.connections import namespace_name
+from kuberich.domain.interactions import INTERACTION_VERBS, InteractionCommand, interaction_command
 from kuberich.domain.registry import RESOURCE_ALIASES, ResourceDefinition
 from kuberich.domain.resources import Discovery, api_segment
 from kuberich.errors import AppError
@@ -121,7 +122,9 @@ ALIASES = {
     "logsall": Command.LOGS_ALL,
 }
 
-RESERVED_COMMANDS = frozenset({*ALIASES, *RESOURCE_ALIASES, *_ACTIONS, "resource"})
+RESERVED_COMMANDS = frozenset(
+    {*ALIASES, *RESOURCE_ALIASES, *_ACTIONS, *INTERACTION_VERBS, "resource"}
+)
 
 
 @dataclass(frozen=True)
@@ -175,7 +178,14 @@ def generic_command(text: str, discovery: Discovery | None = None) -> GenericRes
     return command
 
 
-ResolvedCommand = Command | ScopedCommand | ResourceCommand | GenericResourceCommand | PluginCommand
+ResolvedCommand = (
+    Command
+    | ScopedCommand
+    | ResourceCommand
+    | GenericResourceCommand
+    | PluginCommand
+    | InteractionCommand
+)
 
 
 def resource_candidates(discovery: Discovery | None) -> tuple[str, ...]:
@@ -227,6 +237,7 @@ def suggestions(
                     | set(resource_candidates(discovery))
                     | set(dict(aliases))
                     | {"resource"}
+                    | INTERACTION_VERBS
                 )
                 - blocked
             )
@@ -301,6 +312,9 @@ class CommandService:
         if not text:
             return Command.EMPTY
         text = expand_alias(text, self.aliases, discovered_alias_names(discovery))
+        local = interaction_command(text)
+        if local is not None:
+            return local
         parts = text.split(maxsplit=1)
         verb = parts[0].lower()
         if verb == "plugin" and len(parts) == 2:

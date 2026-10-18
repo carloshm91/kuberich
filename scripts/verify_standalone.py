@@ -1,6 +1,7 @@
 """Execute exact native bytes outside the checkout with owned API/auth/PTY fixtures."""
 
 import argparse
+import base64
 import json
 import os
 import platform
@@ -158,6 +159,7 @@ def environment(directory: Path, *, helpers: bool, bundle: str) -> dict[str, str
         "HOME": str(directory),
         "PATH": str(directory.parent / "tools") if helpers else str(directory / "no-tools"),
         "TERM": "xterm-256color",
+        "KUBERICH_CLIPBOARD": "osc52",
         "KUBERICH_CONFIG": str(directory / "preferences.yaml"),
         "KUBERICH_LOG_FILE": str(directory / "kuberich.log"),
         "KUBECONFIG": str(directory / "never-use-a-real-cluster"),
@@ -225,6 +227,10 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
             terminal.wait_for_screen("owned-pty-pod-079", since=marker)
             marker = terminal.send(b"H")
             terminal.wait_for_screen("owned-pty-pod-000", since=marker)
+            marker = terminal.send(b":copy\r")
+            terminal.wait_for(
+                b"\x1b]52;c;" + base64.b64encode(b"owned-pty-pod-000") + b"\x07", since=marker
+            )
             marker = terminal.send(b"\x1b[1;5F")
             terminal.wait_for(b"owned-pty-pod-079", since=marker)
             marker = terminal.send(b"\r")
@@ -284,6 +290,7 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
             "caller_kubeconfig_unchanged": True,
             "theme_preview_cancel_and_about": True,
             "configured_navigation_alias_and_view_editor": True,
+            "bounded_osc52_exact_payload_receipt": True,
             "plugin_capture_background_repeated_foreground_and_private_cleanup": True,
         }
     finally:

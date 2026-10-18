@@ -173,6 +173,8 @@ class NamespaceTable(FrameTable[TableCell]):
     @on(DataTable.HeaderSelected)
     def sort_header(self, event: DataTable.HeaderSelected) -> None:
         event.stop()
+        if event.column_index < 0:
+            return
         self.set_sort((event.column_key.value or "name").lower())
 
     async def apply_rows(
@@ -204,7 +206,7 @@ class NamespaceTable(FrameTable[TableCell]):
                         for key, spec, index in self._columns
                     )
                     if uid not in self._rows:
-                        self.add_row(*cells, key=uid)
+                        self.add_row(*cells, key=uid, label=" ")
                     else:
                         for (key, _, _), cell in zip(self._columns, cells, strict=True):
                             self.update_cell(uid, key.upper(), cell, update_width=True)

@@ -22,6 +22,7 @@ from tests.support.distribution import PROJECT, run
 from tests.support.editing_terminal import terminal_editing
 from tests.support.forward_terminal import terminal_forward
 from tests.support.handoff import terminal_handoff_trial
+from tests.support.interactions_terminal import terminal_interactions
 from tests.support.mutation_terminal import terminal_mutation
 from tests.support.navigation import terminal_navigation
 from tests.support.operation_terminal import terminal_operation
@@ -497,6 +498,17 @@ def test_installed_navigation_and_initial_namespace_outside_checkout(installed_w
     terminal_navigation(
         command, directory, evidence=f"installed-navigation-{entry_point}", initial_scope=True
     )
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+def test_installed_navigation_clipboard_and_filters_outside_checkout(installed_wheel, entry_point):
+    binary_dir, directory = installed_wheel
+    command = (
+        [str(binary_dir / "kuberich")]
+        if entry_point == "console"
+        else [str(binary_dir / "python"), "-m", "kuberich"]
+    )
+    terminal_interactions(command, directory, evidence=f"installed-interactions-{entry_point}")
 
 
 @pytest.mark.parametrize("quiet", [False, True])
