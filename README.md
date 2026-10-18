@@ -47,8 +47,11 @@ K9s parity are later milestones.
 
 Use `--readonly` for your first connection; the default preference permits writes.
 Effectful actions require captured targets and the corresponding Kubernetes
-permissions; reviewed changes also require confirmation. Metrics, user plugins and
-advanced node/debug operations remain planned; see the maintained
+permissions; reviewed changes also require confirmation. Next-release source adds
+explicit local [command plugins](https://github.com/carloshm91/kuberich/blob/main/docs/plugins.md)
+with [tested examples and compatibility limits](https://github.com/carloshm91/kuberich/blob/main/docs/plugin-compatibility.md);
+published 0.1.0 does not load plugins. Metrics and advanced node/debug operations
+remain planned; see the maintained
 [resource views](https://github.com/carloshm91/kuberich/blob/main/docs/standard-resources.md) and [release phases](https://github.com/carloshm91/kuberich/blob/main/docs/releases.md).
 
 ## Run from source

@@ -1,0 +1,3065 @@
+{
+  "schema_version": 1,
+  "reviewed_on": "2026-10-18",
+  "baseline": {
+    "tag": "v0.51.0",
+    "commit": "558caafe7ba067467de46b320cc22ef11fef9c34"
+  },
+  "contract": "Classification and argv tests only; no downloaded code is executed or installed. External tools/services are not certified or bundled.",
+  "records": [
+    {
+      "source": "plugins/ai-incident-investigation.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "eed0a1df30e4aaa58a1e46aaa1b0f2e36fb644a1",
+      "sha256": "b3b772e22bd45d4d965d39619f142fb135ac0254937bff9d555ccd346cc79419",
+      "bytes": 1785,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/ai-incident-investigation.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash",
+        "holmes CLI",
+        "configured model/provider",
+        "editor for custom questions"
+      ],
+      "free_alternative": "Read details/events/logs and investigate manually with kubectl.",
+      "review_note": "External model requests may disclose cluster data and may incur provider charges; review scripts and provider terms.",
+      "commands": [
+        {
+          "name": "holmesgpt",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME",
+            "$NAMESPACE",
+            "$RESOURCE_NAME"
+          ]
+        },
+        {
+          "name": "custom-holmesgpt",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$DEFAULT_ASK_COMMAND",
+            "$INSTRUCTIONS",
+            "$NAME",
+            "$NAMESPACE",
+            "$QUESTION_FILE",
+            "$RESOURCE_NAME"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/argo-rollouts-powershell.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "fead287285a9d95b559a25527c3fd7f88813ab01",
+      "sha256": "c2924821d76313e175be6dbe425e2baddaff28b9f2531578fbc94c4220009c8a",
+      "bytes": 1895,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/argo-rollouts-powershell.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "PowerShell",
+        "kubectl",
+        "Argo Rollouts kubectl extension/controller"
+      ],
+      "free_alternative": "Inspect rollout CRDs with the generic browser or kubectl.",
+      "review_note": "PowerShell statements and ReadKey are not literal argv; use reviewed platform-specific scripts.",
+      "commands": [
+        {
+          "name": "argo-rollouts-get",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$H",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "argo-rollouts-watch",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$H",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "argo-rollouts-promote",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$H",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "argo-rollouts-restart",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$H",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/argo-rollouts.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "34c4fb87c41ba75515090ad92424537436b12eeb",
+      "sha256": "a1149ec7b5b34b811e881548a5d4fbc0f912b4cb62db4bceb96099d4ec8f79ce",
+      "bytes": 1265,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/argo-rollouts.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash",
+        "kubectl",
+        "Argo Rollouts extension/controller",
+        "less"
+      ],
+      "free_alternative": "Inspect rollout CRDs; use the separately installed Rollouts CLI for its actions.",
+      "review_note": "Pipelines and shell interpolation need a rewrite; select the actual served Rollout GVR.",
+      "commands": [
+        {
+          "name": "argo-rollouts-get",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "argo-rollouts-watch",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "argo-rollouts-promote",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "argo-rollouts-restart",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/argo-workflows.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "dfa738c6b291bc35b60910ed6cb5f19e4851821d",
+      "sha256": "9c696990be713020c6beb246c3f5293d041abbda86357da2e94950cbe272e789",
+      "bytes": 1268,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/argo-workflows.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "sh",
+        "argo CLI/controller",
+        "watch for watch-workflow"
+      ],
+      "free_alternative": "Browse workflow CRDs and inspect their YAML/events.",
+      "review_note": "CLI authentication/options and installed CRD versions must be verified; shell watch recipes need separate scripts.",
+      "commands": [
+        {
+          "name": "view-workflow",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "watch-workflow",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "terminate-workflow",
+          "classification": "tested-argv",
+          "fixture": "terminate-workflow",
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "submit-from",
+          "classification": "tested-argv",
+          "fixture": "submit-template",
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME",
+            "$NAMESPACE",
+            "$RESOURCE_NAME"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/argocd.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "38d3d4d64a52093eff96ecf0b69f6040189cec73",
+      "sha256": "bae06662ee2e3fd092407edc55a718558f8d1a89d1bf05cf992c9bbf9d50e604",
+      "bytes": 1347,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/argocd.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "argocd CLI/server/login",
+        "kubectl",
+        "bash"
+      ],
+      "free_alternative": "Browse Application CRDs and review YAML changes with kubectl.",
+      "review_note": "An Argo CD server login is a separate identity; KUBECONFIG does not constrain a server-side argocd app sync.",
+      "commands": [
+        {
+          "name": "argocd",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "refresh-apps",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME"
+          ]
+        },
+        {
+          "name": "disable-auto-sync",
+          "classification": "tested-argv",
+          "fixture": "disable-auto-sync",
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME"
+          ]
+        },
+        {
+          "name": "enable-auto-sync",
+          "classification": "tested-argv",
+          "fixture": "enable-auto-sync",
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/blame.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "97220d2935c664a5d0f1e5bf996e9f79bb321f9b",
+      "sha256": "83bd992d838a93fe573cb0ac7abb992a19819b98d746257b802f2f7477fffd67",
+      "bytes": 581,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/blame.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "sh",
+        "kubectl-blame",
+        "less"
+      ],
+      "free_alternative": "Inspect managedFields in YAML; that is not a full blame history.",
+      "review_note": "External ownership rendering and paging require the external tool.",
+      "commands": [
+        {
+          "name": "blame",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE",
+            "$RESOURCE_NAME"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/carvel.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "dd8a4d9e9036e9a8d02ab5f71ec3518ac68b85c3",
+      "sha256": "819b5629ee80aa79fe2f435af6dfbf311c9175e91282f11b2c7b3766393dba5c",
+      "bytes": 1288,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/carvel.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash",
+        "kapp",
+        "kctrl",
+        "Carvel controllers",
+        "less"
+      ],
+      "free_alternative": "Inspect Carvel CRDs/YAML and use the separately installed Carvel tools.",
+      "review_note": "Shell export/pipes need reviewed scripts; pause/kick change controller state.",
+      "commands": [
+        {
+          "name": "kapp-inspect",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "kctrl-app-status",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "kctrl-app-pause",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "kctrl-app-kick",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/cert-manager.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "957ee9175f021cbf4a014f8044a814903c8d2c6e",
+      "sha256": "cfc81fc93937e06d1a8eb1e73e498bde220ff661c74b5a8a0f429b7cf46465aa",
+      "bytes": 887,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/cert-manager.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash",
+        "cmctl",
+        "cert-manager",
+        "less"
+      ],
+      "free_alternative": "Inspect Certificate CRDs/events; use cmctl explicitly for renew/inspection.",
+      "review_note": "Secret inspection discloses certificate content; renew changes state.",
+      "commands": [
+        {
+          "name": "cert-status",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "cert-renew",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "secret-inspect",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/crd-wizard.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "b4bf97be68209fc1b0cac71257d6b6b642b86a9f",
+      "sha256": "544af04c5530485d46ecc2a8ab2114096db642a45db41398534f9a561d47d21b",
+      "bytes": 304,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/crd-wizard.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash",
+        "crd-wizard TUI"
+      ],
+      "free_alternative": "Browse discovered CRDs and inspect/edit their YAML.",
+      "review_note": "Requires an available KIND column and an external TUI; literal argv must replace the shell command.",
+      "commands": [
+        {
+          "name": "crd-wizard",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "dangerous",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$COL-KIND",
+            "$CONTEXT"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/crossplane.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "8bdc7bba52f0a237063e4c2a1a04b09ef7e2809d",
+      "sha256": "afe68cfb35e3d8dc9eaf184023ef38ad77330a5a5d9bdacfe106c07d6b663d45",
+      "bytes": 1302,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/crossplane.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "sh",
+        "crossplane CLI/controllers",
+        "less",
+        "viddy for watch"
+      ],
+      "free_alternative": "Browse Crossplane CRDs and inspect their status/YAML.",
+      "review_note": "Conditional namespace handling, external watch and group-qualified kinds require reviewed scripts.",
+      "commands": [
+        {
+          "name": "crossplane-trace",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE",
+            "$RESOURCE_GROUP",
+            "$RESOURCE_NAME"
+          ]
+        },
+        {
+          "name": "crossplane-watch",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE",
+            "$RESOURCE_GROUP",
+            "$RESOURCE_NAME"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/current-ctx-terminal.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "668a7ab4b1292215e844da57ce2be2fd6c62a235",
+      "sha256": "738518c2201e38db4aef1e6e57b191ce2da03799ce6c321cd9ffedeb6b8041c8",
+      "bytes": 782,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/current-ctx-terminal.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "/usr/bin/sh",
+        "bash",
+        "kubectl"
+      ],
+      "free_alternative": "Use explicit kubectl --kubeconfig/--context flags for each command.",
+      "review_note": "Upstream use-context writes configuration; never run it against the caller configuration. A private config is not a shell sandbox.",
+      "commands": [
+        {
+          "name": "open-terminal",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/debug-container.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "59606b366dc14c83fb4e5dbf76385bb2ee7d0528",
+      "sha256": "549dc355fbd12cc0d53ae8912efd4a754d3dd6a5bef562ec95d99e64bff55839",
+      "bytes": 1294,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/debug-container.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash",
+        "kubectl debug",
+        "permitted debug image/profile"
+      ],
+      "free_alternative": "Use reviewed kubectl debug; built-in shells connect to existing containers only.",
+      "review_note": "Virtual containers scope and POD/NAME meanings differ; privileged debug creation is not a native capability.",
+      "commands": [
+        {
+          "name": "debug",
+          "classification": "unsupported-view",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "dangerous",
+            "description",
+            "inputs",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$INPUT_IMAGE",
+            "$INPUT_PROFILE",
+            "$INPUT_SHARE_PROCESSES",
+            "$NAME",
+            "$NAMESPACE",
+            "$POD"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/dive.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "090bc2c680d53cbcd183546ca53442afb32dc227",
+      "sha256": "db953908e20f4ae0d7856324b1ad2e59fac945d37ac02099724e477be35a675b",
+      "bytes": 182,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/dive.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "dive",
+        "supported local/container image backend"
+      ],
+      "free_alternative": "Inspect declared image references; use dive separately for image layers.",
+      "review_note": "Virtual container selection and IMAGE column are unavailable to root plugin hotkeys; image-layer analysis remains external.",
+      "commands": [
+        {
+          "name": "dive",
+          "classification": "unsupported-view",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$COL-IMAGE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/dup.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "0d1988e83cbe2f324f874be45fbd719491d9df59",
+      "sha256": "bb3cf3600e7df7730acc152061f5f151b2e50d302a42f30b02c29eb586d68c05",
+      "bytes": 2190,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/dup.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash",
+        "kubectl",
+        "kubectl-dup extension"
+      ],
+      "free_alternative": "Review an exported manifest and apply a deliberately edited copy with kubectl.",
+      "review_note": "Duplication/debug actions create resources; never infer read-only from the missing dangerous flag.",
+      "commands": [
+        {
+          "name": "dup",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE",
+            "$RESOURCE_NAME"
+          ]
+        },
+        {
+          "name": "dup_edit",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE",
+            "$RESOURCE_NAME"
+          ]
+        },
+        {
+          "name": "dup_debug_pods",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE",
+            "$RESOURCE_NAME"
+          ]
+        },
+        {
+          "name": "dup_debug_deploy",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE",
+            "$RESOURCE_NAME"
+          ]
+        },
+        {
+          "name": "dup_debug_sts",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE",
+            "$RESOURCE_NAME"
+          ]
+        },
+        {
+          "name": "dup_debug_cronjob",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE",
+            "$RESOURCE_NAME"
+          ]
+        },
+        {
+          "name": "dup_debug_jobs",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE",
+            "$RESOURCE_NAME"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/duplik8s.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "05731ecce415ca012547d46005891b03dd18a1be",
+      "sha256": "f6e9d4e50bad95259a56dc32c1015f3031d14804b206fe4f837f430ea23c2e24",
+      "bytes": 444,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/duplik8s.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "kubectl",
+        "duplik8s kubectl-duplicate extension"
+      ],
+      "free_alternative": "Review/export a manifest and create an explicitly named copy with kubectl.",
+      "review_note": "Short resource aliases must become exact GVR scopes; the external extension still needs installation.",
+      "commands": [
+        {
+          "name": "duplicate",
+          "classification": "tested-argv",
+          "fixture": "duplicate-pod",
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE",
+            "$RESOURCE_NAME"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/eks-node-viewer.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "4b04db0d009df3c1f6c7a1fbfbaab2bc2cbde1ea",
+      "sha256": "43f8cf4644c7af4a1cd1cde8443be3197497c6249b77faca33aa66dce0efcdd5",
+      "bytes": 760,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/eks-node-viewer.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash",
+        "kubectl",
+        "jq",
+        "eks-node-viewer",
+        "AWS configuration/credentials"
+      ],
+      "free_alternative": "Inspect nodes and declared resources with kubectl; AWS billing views remain external.",
+      "review_note": "Do not scrape private ExecCredential launchers for AWS_PROFILE/region; configure the external AWS tool explicitly. AWS services may charge.",
+      "commands": [
+        {
+          "name": "eks-node-viewer",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/external-secrets.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "df79f7bdd53760413bf48b7f5dcce46a9751d8fa",
+      "sha256": "fdcd6a91a63c966c725a4060130d45d6b1e61854718b5d3ca76707f77eabe59d",
+      "bytes": 685,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/external-secrets.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash",
+        "kubectl",
+        "date",
+        "External Secrets controllers"
+      ],
+      "free_alternative": "Inspect ExternalSecret/PushSecret CRDs and explicitly annotate with kubectl.",
+      "review_note": "Timestamp command substitution and controller-specific API versions need review; reconciliation changes state.",
+      "commands": [
+        {
+          "name": "refresh-external-secrets",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "refresh-push-secrets",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/flux.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "3efd89601656ede257ca91e1e245c61f887adcc4",
+      "sha256": "e12171b79bbcd2eef49223ad61d86153812ca7c1a2621df3e90e05a167586d4e",
+      "bytes": 7722,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/flux.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash/sh",
+        "kubectl",
+        "flux",
+        "flux-operator",
+        "controllers",
+        "less",
+        "jq/tail/awk"
+      ],
+      "free_alternative": "Browse Flux CRDs/YAML and run the installed Flux CLI explicitly.",
+      "review_note": "Toggle/trace scripts perform lookups, conditionals and writes; select the actual served API groups/versions.",
+      "commands": [
+        {
+          "name": "toggle-helmrelease",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "toggle-kustomization",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "reconcile-git",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "reconcile-hr",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "reconcile-helm-repo",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "reconcile-oci-repo",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "reconcile-ks",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "reconcile-ir",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "reconcile-iua",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "toggle-rset",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "toggle-inputprovider",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "reconcile-rset",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "reconcile-inputprovider",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "reconcile-fluxinstance",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "trace",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE",
+            "$RESOURCE_GROUP",
+            "$RESOURCE_NAME",
+            "$RESOURCE_VERSION"
+          ]
+        },
+        {
+          "name": "get-suspended-helmreleases",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT"
+          ]
+        },
+        {
+          "name": "get-suspended-kustomizations",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/get-all-namespace-resources.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "efc1c59b9dcf00c6167ef7e5c88f54e2fd98fcd6",
+      "sha256": "96866449b26f97290d424828fb9360cf770029e1cb44bb20218171cdfeba59a8",
+      "bytes": 1413,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/get-all-namespace-resources.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "sh",
+        "kubectl",
+        "less"
+      ],
+      "free_alternative": "Browse a selected resource family or enumerate/list with kubectl api-resources.",
+      "review_note": "Loops, suppressed failures and many API calls are not a single native all-resource view; retain explicit scope and errors.",
+      "commands": [
+        {
+          "name": "get-all-resources-by-selected-namespace",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME"
+          ]
+        },
+        {
+          "name": "get-all-resources-in-current-namespace",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/get-all.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "58f65d71c33e011853095a57dcef1f8d507ed24b",
+      "sha256": "70bf973161bf86efa43b8d21d1961014dfa1daf1aacc6b1ae6a829084057691f",
+      "bytes": 539,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/get-all.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "sh",
+        "kubectl-get-all extension",
+        "less"
+      ],
+      "free_alternative": "Use kubectl api-resources and explicit resource-family listings.",
+      "review_note": "External enumeration and paging require the extension; namespace NAME differs from a resource namespace.",
+      "commands": [
+        {
+          "name": "get-all-namespace",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME"
+          ]
+        },
+        {
+          "name": "get-all-other",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/helm-default-values.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "253d03d689b59c7985538041a28d4c92874818d3",
+      "sha256": "435587d61a401e6da02731c45bcf62e7eeaccef07bd8378709809094add17c15",
+      "bytes": 633,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/helm-default-values.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "sh",
+        "helm",
+        "kubectl",
+        "grep/cut/tr",
+        "yq",
+        "base64",
+        "gunzip",
+        "jq",
+        "less"
+      ],
+      "free_alternative": "Use helm show values or helm get values with explicit release/context.",
+      "review_note": "Virtual Helm rows and release-secret decoding are unsupported; yq dialect and secret handling require review.",
+      "commands": [
+        {
+          "name": "helm-default-values",
+          "classification": "unsupported-view",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$COL-NAME",
+            "$CONTEXT",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/helm-diff.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "2aaaf4801055bf9e8a73e3cd00c2e04708a154bf",
+      "sha256": "6af5eb8cb05fd6aba7ab9c540ff80551d398d905d892c944f0b145f1c9f72fa4",
+      "bytes": 1119,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/helm-diff.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash",
+        "helm",
+        "helm-diff extension",
+        "grep/cut/tr",
+        "less"
+      ],
+      "free_alternative": "Use helm history/get values; diff retained manifests with ordinary diff.",
+      "review_note": "Virtual Helm/history rows, revision arithmetic and release-name parsing are not available.",
+      "commands": [
+        {
+          "name": "helm-diff-previous",
+          "classification": "unsupported-view",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$COL-NAME",
+            "$COL-REVISION",
+            "$COL-REVISION-1",
+            "$CONTEXT",
+            "$LAST_REVISION",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "helm-diff-current",
+          "classification": "unsupported-view",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$COL-REVISION",
+            "$CONTEXT",
+            "$LATEST_REVISION",
+            "$NAME",
+            "$NAMESPACE",
+            "$RELEASE_NAME"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/helm-purge.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "f81f8a554c1b45b7968f283717f1bfdcf7181b01",
+      "sha256": "187aa064ed6b8c72668bb85a71bfa84d63d1f794f5a11f44549b8490e1c68f1d",
+      "bytes": 400,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/helm-purge.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "kubectl-purge helper",
+        "Helm 2",
+        "Tiller",
+        "BSD xargs -J"
+      ],
+      "free_alternative": "Plan a reviewed migration to Helm 3 and use its supported uninstall command.",
+      "review_note": "Legacy Helm 2/Tiller purge is not translated or certified; do not execute the unquoted helper.",
+      "commands": [
+        {
+          "name": "helm-purge",
+          "classification": "retired-helper",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "dangerous",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/helm-values.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "97e70cf85009ca01a49418e2dd46d9b6a9f2f37b",
+      "sha256": "9e533c2e7c08168eb852ae2f8979c7744a9104062c195bf659fb9e54c345a71e",
+      "bytes": 312,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/helm-values.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "sh",
+        "helm",
+        "less"
+      ],
+      "free_alternative": "Use helm get values with explicit release, namespace and kube context.",
+      "review_note": "Virtual Helm rows are unsupported; provide an explicit release input to a separately reviewed definition.",
+      "commands": [
+        {
+          "name": "helm-values",
+          "classification": "unsupported-view",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$COL-NAME",
+            "$CONTEXT",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/job-suspend.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "799f884efdd3a0c80ecd5e13c77f8004d19877a6",
+      "sha256": "c4240915fe76716823034d4c36745248f11c53cec065bd2103bd6bc1dbdbea97",
+      "bytes": 425,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/job-suspend.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "kubectl",
+        "batch/v1 CronJob API"
+      ],
+      "free_alternative": "Use the built-in reviewed CronJob suspend/resume operation.",
+      "review_note": "Replace boolean inversion with an explicit desired boolean; this is set-state, not a toggle.",
+      "commands": [
+        {
+          "name": "toggleCronjob",
+          "classification": "tested-argv",
+          "fixture": "set-cronjob-suspend",
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "dangerous",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$!COL-SUSPEND",
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/k3d-root-shell.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "d44304284c03ac989527c35c3dc53af6aa1cdde7",
+      "sha256": "3f4f27d303d34833c3407e4f49781d6721eac3209e6a802f5ff0158317661b26",
+      "bytes": 1205,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/k3d-root-shell.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash",
+        "kubectl",
+        "jq",
+        "Docker",
+        "k3d node containers",
+        "less"
+      ],
+      "free_alternative": "Use an existing pod shell; review node/container-runtime administration separately.",
+      "review_note": "Virtual container scope, runtime IDs and Docker root access are external and highly privileged.",
+      "commands": [
+        {
+          "name": "k3d-root-shell",
+          "classification": "unsupported-view",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "dangerous",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$COL-NAME",
+            "$CONTEXT",
+            "$NAMESPACE",
+            "$NODE_NAME",
+            "$POD",
+            "$POD_DATA",
+            "${CONTAINER_ID}",
+            "${NODE_NAME}",
+            "${POD_DATA}"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/keda-toggle.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "3c3fcbf9cabfe852c226fe447b1c32195258c540",
+      "sha256": "97519f28b94981e133a5bf2ed9ded91b719e3371a3e3c864c5fd09faa689495e",
+      "bytes": 862,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/keda-toggle.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash",
+        "kubectl",
+        "grep",
+        "KEDA controller"
+      ],
+      "free_alternative": "Inspect KEDA CRDs; review an explicit annotation change with kubectl.",
+      "review_note": "overwriteOutput is unsupported; conditional pause mutation needs a separately reviewed script.",
+      "commands": [
+        {
+          "name": "toggle-keda",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "dangerous",
+            "description",
+            "override",
+            "overwriteOutput",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$ANNOTATION",
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/kube-metrics.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "a1056beb1f7c59354e0a34c5ff51b2c7d7c95c13",
+      "sha256": "6382bf3701b575e0ffe1bed7baf3903d680dbcb7919933b4d08de581465737bd",
+      "bytes": 499,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/kube-metrics.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "sh",
+        "kube-metrics external tool and its metrics backend"
+      ],
+      "free_alternative": "Use kubectl top where Metrics Server/RBAC permit; unavailable metrics are not zero.",
+      "review_note": "External metrics aggregation is not native; explicitly pin the tool connection instead of relying on ambient defaults.",
+      "commands": [
+        {
+          "name": "kube-metrics-pod",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/kubectl/kubectl-purge",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "e3574dc187ec330fb50b1ae3f62e99b2d504e2e0",
+      "sha256": "f56a64270040bd8fe3208bff954d3d705330b5f6b5268998c7706df208cf954a",
+      "bytes": 924,
+      "kind": "executable-helper",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/kubectl/kubectl-purge",
+      "classification": "retired-helper",
+      "dependencies": [
+        "bash",
+        "kubectl",
+        "Helm 2/Tiller",
+        "grep/cut",
+        "BSD xargs -J"
+      ],
+      "free_alternative": "Review migration to Helm 3 before using helm uninstall.",
+      "review_note": "Executable helper, not YAML. Legacy purge, unquoted substitutions and BSD-only xargs are not supported recipes.",
+      "commands": []
+    },
+    {
+      "source": "plugins/kubectl-get-in-shell.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "047b959021576cd4624b512d4a0ea690e67198bb",
+      "sha256": "eb5b6f3e51f7c3911ecff27233204ef7e957cd64ada3c7a59c0f75a376c87d27",
+      "bytes": 741,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/kubectl-get-in-shell.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash",
+        "kubectl",
+        "less"
+      ],
+      "free_alternative": "Use resource details/YAML or compose an explicit kubectl get argument vector.",
+      "review_note": "Printing shell text is not execution safety; shell conditionals/formatting require a reviewed script.",
+      "commands": [
+        {
+          "name": "kubectl-get-cmd",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE",
+            "$RESOURCE_NAME"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/kubectl-plugins/kubectl-jq",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "44a8cd61feb049c22526f3000f8fc7225da436c9",
+      "sha256": "d811191cddfdf49f711a3bb027c3c35ea8513890882b157f5a91122eaae54fe2",
+      "bytes": 142,
+      "kind": "executable-helper",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/kubectl-plugins/kubectl-jq",
+      "classification": "reviewed-rewrite",
+      "dependencies": [
+        "bash",
+        "kubectl",
+        "jq"
+      ],
+      "free_alternative": "Use kubectl logs with jq explicitly, or bounded native log viewing.",
+      "review_note": "Executable helper, not YAML; replace unquoted arguments and review raw terminal/color output.",
+      "commands": []
+    },
+    {
+      "source": "plugins/liveMigration.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "a0fbbe72b4d11f1638bbce8e3c7abfadb097bb92",
+      "sha256": "b4e7aca435fa449444b745f9d3c00a8d1a77ccad97ba8fdaf076e739008964b3",
+      "bytes": 1136,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/liveMigration.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "virtctl",
+        "compatible KubeVirt controller/CRDs and migration permissions"
+      ],
+      "free_alternative": "Inspect KubeVirt CRDs; run installed virtctl deliberately for migration.",
+      "review_note": "Migration is an external effectful operation; the fixture tests arguments, not a real migration.",
+      "commands": [
+        {
+          "name": "liveMigration",
+          "classification": "tested-argv",
+          "fixture": "migrate-vmi",
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "dangerous",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/log-bunyan.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "443c4099d9b4f224d29481e791030a576e771880",
+      "sha256": "aa43cb7691def4e71410a8f471e3a116d5a265a20a7989581864ee6c412ae7cb",
+      "bytes": 981,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/log-bunyan.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash",
+        "kubectl",
+        "Node.js/bunyan"
+      ],
+      "free_alternative": "Use bounded native logs or kubectl logs and a separately installed JSON formatter.",
+      "review_note": "Pipelines and an interactive shell are not automatically translated; service/deployment log selection is external.",
+      "commands": [
+        {
+          "name": "bunyanlogsp",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "bunyanlogsd",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "bunyanlogss",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/log-full.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "9bad01cd038ce8be3ac206ab5a0fb89ef3040a3d",
+      "sha256": "f7f5977744f274bfa51e59b89051af8a0ad0336552e9c0ad3fb3951e54ef2f04",
+      "bytes": 974,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/log-full.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "kubectl",
+        "bash/less for pager variants"
+      ],
+      "free_alternative": "Use native bounded logs or aggregate logs for active Pods/workloads.",
+      "review_note": "Container pager scope needs an explicit container input; foreground output is outside capture bounds/redaction.",
+      "commands": [
+        {
+          "name": "raw-logs-follow",
+          "classification": "tested-argv",
+          "fixture": "follow-pod",
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$KUBECONFIG",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "log-less",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$KUBECONFIG",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "log-less-container",
+          "classification": "unsupported-view",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$KUBECONFIG",
+            "$NAME",
+            "$NAMESPACE",
+            "$POD"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/log-jq.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "331427b92f282b72130754fa468a104860e6b2c8",
+      "sha256": "306e387e1042b1e9f4dd28ad56637ad55341dab23d75f74f05afb0b04185b217",
+      "bytes": 309,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/log-jq.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "kubectl-jq helper",
+        "bash",
+        "kubectl",
+        "jq"
+      ],
+      "free_alternative": "Use native log viewing or reviewed kubectl logs piped to jq.",
+      "review_note": "External helper remains required; its original unquoted shell recipe is not bundled.",
+      "commands": [
+        {
+          "name": "jqlogs",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/log-loki.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "7e09d48d4e738158d60b5b0c734cd9118fa57215",
+      "sha256": "cf104285f638e47bbd94e5b248c4018006af7e7a86550db517c4a6c2cee82b59",
+      "bytes": 1961,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/log-loki.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "logcli",
+        "Loki server/credentials and its retained logs"
+      ],
+      "free_alternative": "Use native current-container logs; those do not replace Loki history/query services.",
+      "review_note": "Loki is a separately configured service/identity. Root-row fixtures test query argv only; container virtual scopes are unavailable.",
+      "commands": [
+        {
+          "name": "loki-container",
+          "classification": "unsupported-view",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME",
+            "$NAMESPACE",
+            "$POD"
+          ]
+        },
+        {
+          "name": "loki-container-raw",
+          "classification": "unsupported-view",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME",
+            "$NAMESPACE",
+            "$POD"
+          ]
+        },
+        {
+          "name": "loki-pods",
+          "classification": "tested-argv",
+          "fixture": "loki-pods",
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "loki-pods-raw",
+          "classification": "tested-argv",
+          "fixture": "loki-pods-raw",
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "loki-node",
+          "classification": "tested-argv",
+          "fixture": "loki-node",
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME"
+          ]
+        },
+        {
+          "name": "loki-node-raw",
+          "classification": "tested-argv",
+          "fixture": "loki-node-raw",
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME"
+          ]
+        },
+        {
+          "name": "loki-ns",
+          "classification": "tested-argv",
+          "fixture": "loki-ns",
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME"
+          ]
+        },
+        {
+          "name": "loki-ns-raw",
+          "classification": "tested-argv",
+          "fixture": "loki-ns-raw",
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/log-stern.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "e3f60cc60925197f3c801dc9afe0b4f2e8121f18",
+      "sha256": "1a5fbb3e1d41cc2532d035d46dfbab41eb10d7fe1a1006632ef2e656fdcbcb1a",
+      "bytes": 341,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/log-stern.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "stern",
+        "Kubernetes log permissions"
+      ],
+      "free_alternative": "Use native Pod/workload aggregate logs with its documented reader limit.",
+      "review_note": "Quote numeric argv; use an explicit selector input because empty FILTER has no selected-name fallback.",
+      "commands": [
+        {
+          "name": "stern",
+          "classification": "tested-argv",
+          "fixture": "stern-selector",
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$FILTER",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/node-root-shell.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "0342f79b5b638792fec5559a13cd1661ac3f9fbe",
+      "sha256": "6308482f9b4e0f7b041ff29b4ede248e1c9727d368d44874c2494d4c986b7de2",
+      "bytes": 784,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/node-root-shell.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash",
+        "kubectl",
+        "privileged Pod admission",
+        "nsenter",
+        "host shell"
+      ],
+      "free_alternative": "Inspect node details/YAML; review node debugging separately.",
+      "review_note": "The pinned script reads $1 without passing a selected host, uses an old image and privileged host namespaces; no automatic translation.",
+      "commands": [
+        {
+          "name": "node-root-shell",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "dangerous",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": []
+        }
+      ]
+    },
+    {
+      "source": "plugins/openssl.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "c21bf31631e1ba297fab5ab7d6a711f13827bfe6",
+      "sha256": "03407ccdfa0221a85271c7d08349a730ee70c04b6d147e4b342b683d4e31dabb",
+      "bytes": 794,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/openssl.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash",
+        "kubectl",
+        "base64",
+        "openssl storeutl",
+        "less"
+      ],
+      "free_alternative": "Explicitly reveal the intended Secret key, then inspect a certificate with local OpenSSL.",
+      "review_note": "Certificate decoding is external and discloses Secret content; compatible OpenSSL commands need verification.",
+      "commands": [
+        {
+          "name": "secret-openssl-ca",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "secret-openssl-tls",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/pvc-debug-container.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "f553551c0bb761f0b3dedcee7257d3c7891ef488",
+      "sha256": "be3e9a0e953310d7ee93d47fdfe364309f034facff615148d5d027035920ee8b",
+      "bytes": 2689,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/pvc-debug-container.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "sh",
+        "kubectl",
+        "head",
+        "permitted debug image and PVC access"
+      ],
+      "free_alternative": "Inspect PVC/Pod details and use a reviewed temporary Pod manifest with kubectl.",
+      "review_note": "Resource creation, RWO scheduling, heredocs, waits and cleanup require a reviewed script; not a native debug session.",
+      "commands": [
+        {
+          "name": "pvc-shell",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "inputs",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$INPUT_IMAGE",
+            "$INPUT_MOUNTPATH",
+            "$INPUT_PODNAME",
+            "$NAME",
+            "$NAMESPACE",
+            "$NODE",
+            "$NODE_LINE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/pvc-resize.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "b5625ee7e1388267b08700e88951e19bf49a7e81",
+      "sha256": "e44c330d99e9c35652e44c0f5b368b89e925fae35e0b6746581a6370b6f81e91",
+      "bytes": 459,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/pvc-resize.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "kubectl",
+        "expandable StorageClass/CSI driver and resize permissions"
+      ],
+      "free_alternative": "Review a PVC storage request change with kubectl; observe actual driver/controller status.",
+      "review_note": "A quantity allowlist replaces free-form JSON interpolation. No real storage expansion is certified by argv fixtures.",
+      "commands": [
+        {
+          "name": "resize-pvc",
+          "classification": "tested-argv",
+          "fixture": "resize-pvc",
+          "fields": [
+            "args",
+            "command",
+            "confirm",
+            "dangerous",
+            "description",
+            "inputs",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$INPUT_SIZE",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/remove-finalizers.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "3b36350d253db7822dbf9d958087d439a6326f20",
+      "sha256": "ae38d0a38468042968f61c24eeac47e8db9707d672640bec59ca15a3bbcef85e",
+      "bytes": 1249,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/remove-finalizers.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "kubectl",
+        "target-resource patch permissions"
+      ],
+      "free_alternative": "Use the built-in deliberate finalizer workflow where supported, or a reviewed kubectl patch.",
+      "review_note": "Removing finalizers can bypass cleanup. The fixture is deliberately restricted to apps/v1 Deployments rather than global scope.",
+      "commands": [
+        {
+          "name": "remove_finalizers",
+          "classification": "tested-argv",
+          "fixture": "remove-deployment-finalizers",
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "dangerous",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE",
+            "$RESOURCE_GROUP",
+            "$RESOURCE_NAME"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/resource-recommendations.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "ba1f83514d916d92c370cb8cda0baeb053942ded",
+      "sha256": "83448b5b278d7a5c71e6341497b3bd5058b3e357308e2ad9a1b5edc3142e559f",
+      "bytes": 1269,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/resource-recommendations.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash",
+        "kubectl",
+        "awk",
+        "krr",
+        "supported Prometheus/backend"
+      ],
+      "free_alternative": "Inspect requests/limits; use separately configured kubectl top/metrics tools for observations.",
+      "review_note": "Recommendations remain external; the pinned namespace recipe uses RESOURCE_NAME rather than selected NAME and needs correction.",
+      "commands": [
+        {
+          "name": "krr",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$LABELS",
+            "$NAME",
+            "$NAMESPACE",
+            "$NF",
+            "$RESOURCE_NAME"
+          ]
+        },
+        {
+          "name": "krr-ns",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$RESOURCE_NAME"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/rm-ns.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "a73592c040f8e7f30c03f77cb0cf5ffc73567002",
+      "sha256": "c75b1da759e4f322a0d453c9c6d176b2fd87a4694cd893e39f0baf5e40675cd2",
+      "bytes": 386,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/rm-ns.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "sh",
+        "kubectl",
+        "jq",
+        "namespace finalize permissions"
+      ],
+      "free_alternative": "Use reviewed ordinary namespace deletion and investigate finalizers first.",
+      "review_note": "Force-finalize is destructive; shell pipelines and missing explicit scope must be rewritten, never run blindly.",
+      "commands": [
+        {
+          "name": "rm-ns",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "dangerous",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$NAME"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/spark-operator.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "17758f42c4890f86ebfc914568f84e41ec19cc71",
+      "sha256": "d0b993ab1ccc148b0e5a790acfff32c12b8812f2deed3cacf24c18a16961440e",
+      "bytes": 467,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/spark-operator.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "kubectl",
+        "Spark Operator CRDs/controller"
+      ],
+      "free_alternative": "Inspect scheduled Spark CRDs and explicitly set suspend with kubectl.",
+      "review_note": "Rename the mixed-case command and replace inversion with an explicit desired boolean; verify the served GVR.",
+      "commands": [
+        {
+          "name": "toggleScheduledSparkApp",
+          "classification": "tested-argv",
+          "fixture": "set-spark-suspend",
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "dangerous",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$!COL-SUSPEND",
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/start-alpine.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "59efe685c53cb999e853f73fce669b6c5a75841d",
+      "sha256": "68ede0807947046d5049ce52c9e989a00c7a4b9975f37170af6890603f782785",
+      "bytes": 1097,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/start-alpine.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash",
+        "kubectl",
+        "permitted image and workload create/exec permissions"
+      ],
+      "free_alternative": "Use an existing container shell or review an explicit temporary Pod manifest.",
+      "review_note": "Embedded manifest creation/exec and cleanup are not a native debug workflow; a reviewed external script is needed.",
+      "commands": [
+        {
+          "name": "start-alpine-pod",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAMESPACE"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/szero.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "59e3aa71748e60a59f7f8bc08575c75c40a0ac0e",
+      "sha256": "91de82f1b827a5fc49d1fbb7eb55b9f785cbfc22074421e1dd2d46b6a679ecee",
+      "bytes": 650,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/szero.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "sh",
+        "szero and workload scale permissions"
+      ],
+      "free_alternative": "Use reviewed per-workload scaling; record desired replica counts yourself.",
+      "review_note": "Namespace-wide down/up state storage and restoration belong to the external tool, not native scaling.",
+      "commands": [
+        {
+          "name": "szero-down",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "dangerous",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME"
+          ]
+        },
+        {
+          "name": "szero-up",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "dangerous",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/trace-dns.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "e08fadcf6c23af9f8183ec5e458735022be404ac",
+      "sha256": "e4eb58a6151554e0c954eed43afd4a5ae802eb1a66e7e41746b82abd69a20e3e",
+      "bytes": 2578,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/trace-dns.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "bash",
+        "kubectl debug",
+        "Inspektor Gadget image/eBPF support",
+        "awk/cut",
+        "privileged node access"
+      ],
+      "free_alternative": "Inspect DNS-related events/logs; perform packet tracing with a separately reviewed diagnostic tool.",
+      "review_note": "Shell arithmetic/variables, virtual container scope and privileged debug Pods require review; no native DNS/eBPF tracing claim.",
+      "commands": [
+        {
+          "name": "trace-dns",
+          "classification": "unsupported-view",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$IG_FIELD",
+            "$IG_IMAGE",
+            "$IG_NODE",
+            "$IG_VERSION",
+            "$KUBECONFIG",
+            "$KUBECTL_VERSION",
+            "$NAME",
+            "$NAMESPACE",
+            "$POD",
+            "${BLUE}",
+            "${GREEN}",
+            "${NAMESPACE}",
+            "${NAME}",
+            "${NC}",
+            "${POD}",
+            "${RED}"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/vector-dev-top.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "dc487e5352df3c21821402784e7a08f923baec4c",
+      "sha256": "f53b0b1665f06b0ab12a551d7fd6ec0b027ed970f6c041539887563ff2c41a2e",
+      "bytes": 938,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/vector-dev-top.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "sh",
+        "kubectl",
+        "a Vector container with vector executable/API enabled"
+      ],
+      "free_alternative": "Use native logs; Vector throughput statistics require Vector itself.",
+      "review_note": "Pod recipe can be rewritten as literal exec; virtual-container variant needs an explicit container input.",
+      "commands": [
+        {
+          "name": "vector-top",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE"
+          ]
+        },
+        {
+          "name": "vector-top-container",
+          "classification": "unsupported-view",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE",
+            "$POD"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "plugins/watch-events.yaml",
+      "revision": "558caafe7ba067467de46b320cc22ef11fef9c34",
+      "git_blob": "46a4d80779b3d9a80af185a04a36bdc78210c62d",
+      "sha256": "d9088b47869a6d61e701002af6e9b37b9c72aa592e7d9d999318cf73d5f4adeb",
+      "bytes": 426,
+      "kind": "manifest",
+      "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/plugins/watch-events.yaml",
+      "classification": "command-specific",
+      "dependencies": [
+        "sh",
+        "kubectl events/watch permissions"
+      ],
+      "free_alternative": "Use native related-event snapshots or the original background example in this guide.",
+      "review_note": "Shell conditional resource-group construction is not copied; the original example deliberately scopes to Pod events.",
+      "commands": [
+        {
+          "name": "watch-events",
+          "classification": "reviewed-rewrite",
+          "fixture": null,
+          "fields": [
+            "args",
+            "background",
+            "command",
+            "confirm",
+            "description",
+            "scopes",
+            "shortCut"
+          ],
+          "variables": [
+            "$CONTEXT",
+            "$NAME",
+            "$NAMESPACE",
+            "$RESOURCE_NAME"
+          ]
+        }
+      ]
+    }
+  ]
+}

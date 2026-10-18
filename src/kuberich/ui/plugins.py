@@ -85,7 +85,11 @@ class PluginCatalogue(ModalScreen[str | None]):
 
 class PluginScreen(ModalScreen[None]):
     AUTO_FOCUS = "#plugin-cancel"
-    BINDINGS: ClassVar[list[BindingType]] = [Binding("escape", "cancel", "Cancel", priority=True)]
+    BINDINGS: ClassVar[list[BindingType]] = [
+        Binding("escape", "cancel", "Cancel", priority=True),
+        Binding("tab", "app.focus_next", "Next field", show=False, priority=True),
+        Binding("shift+tab", "app.focus_previous", "Previous field", show=False, priority=True),
+    ]
     DEFAULT_CSS = """
     PluginScreen { align: center middle; background: $background 80%; }
     #plugin-form { width: 96%; max-width: 110; height: 94%; border: round $primary;

@@ -1,7 +1,7 @@
 # Initial KubeRich website
 
 This is the development launch material from #150, refined in #162.
-It is a static landing page, 23 authored user guides and three generated references, without a backend, account system, analytics,
+It is a static landing page, authored user guides and three generated references, without a backend, account system, analytics,
 external fonts or cluster connectivity. Expanded/versioned MkDocs stays #90/#91.
 
 The HTML guides are built from the maintained files in `docs/`; edit those

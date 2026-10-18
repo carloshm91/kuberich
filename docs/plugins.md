@@ -9,6 +9,11 @@ read files, use inherited credentials, contact services and change a cluster.
 KubeRich does not sandbox them or infer safety from an executable's name.
 Only install definitions you have reviewed.
 
+For the precise K9s field/variable comparison, three original tested definitions
+and the complete pinned community-workflow census, see
+[compatibility and examples](plugin-compatibility.md). There is no automatic
+K9s importer; external tool features are not native KubeRich capabilities.
+
 ## Explicit configuration
 
 Add the independently versioned `plugins` extension to your preferences:
@@ -196,7 +201,8 @@ profile for namespace-scoped/global commands, including custom namespace keys.
   output. Cancel stops and drains the process group before returning.
 - `background`: stays owned after Back closes the form. Use `:pluginjobs`, Enter
   for its completed output, or Stop selected. Output is collected until completion
-  rather than streamed; there are at most four active jobs and 32 retained jobs.
+  rather than streamed; stopping/cancelling can discard in-flight captured output.
+  There are at most four active jobs and 32 retained jobs.
 - `foreground`: deliberately suspends Textual and gives the native terminal to
   the local executable. Exit/interruption restores the interface. This does not
   change the embedded pod/container shell. It requires a real terminal and its

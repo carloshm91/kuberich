@@ -12,6 +12,20 @@ Coverage is a release requirement and one part of correctness. A high percentage
 does not establish correct Kubernetes semantics, responsive terminal behavior,
 or reliable installation.
 
+## Plugin compatibility: U05 #60
+
+The complete pinned workflow census is checked against the source inventory,
+including both extensionless executable helpers. Eighteen original adaptation
+fixtures assert exact expanded argv, scope, typed values and conservative trust;
+unsupported upstream fields/variables fail closed. Three original manifest files
+load through the real adapter. Harmless real children exercise capture, completed
+background output, Stop, read-only refusal, missing executables and private-file
+cleanup. A real CLI PTY repeats the interactive example with hostile literal
+container input and checks native terminal restoration. No upstream program or
+maintainer cluster is executed. Existing critical/full-package/changed-line and
+complete platform/native gates remain unchanged. See
+[acceptance evidence](acceptance/plugin-compatibility.md).
+
 ## Plugin execution: U04 #59
 
 `adapters/credential_child.py` joins the critical 100% line/branch inventory.

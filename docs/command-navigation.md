@@ -25,6 +25,7 @@ read-only policy handle `--command` / `-c` at launch. Arguments preserve casing.
 | `refresh` | Renew discovery and the selected resource watch on the current client |
 | `columns`, `columns cN ...`, `columns default`, `columns none` | Inspect/configure transient generic server columns |
 | `views` | Configure resource columns, widths, alignment and typed sort; explicitly save globally or by context in next-release source |
+| `plugins`, `plugin NAME`, `pluginjobs` | Next-release source: list/review explicitly configured local commands and inspect/stop owned jobs; see [plugins](plugins.md) |
 | `back`, `forward` | Restore the previous / next navigation state |
 | `help`, `?` | Show actual keyboard actions and limits |
 | `quit`, `q`, `exit` | Exit and restore the terminal |
@@ -37,7 +38,8 @@ Inspection commands remain usable in read-only mode. Embedded shells are availab
 in write mode; startup `--command shell`/`exec` is refused because a deliberately
 selected pod is required. Attach and copies also require interactive selection;
 see [attach and file transfer](container-attach-copy.md). Guarded mutations have
-their own review workflows; plugins remain a later task.
+their own review workflows. Local plugins are available in next-release source
+through explicit [configuration and review](plugins.md); published 0.1.0 is unchanged.
 The shared policy rejects effectful commands in read-only mode.
 
 ## Completion

@@ -1155,7 +1155,7 @@
       ],
       "source": "internal/config/plugin.go",
       "status": "planned",
-      "difference": "U03/U04 implement the independent explicit schema and local process lifecycle. Bundled-workflow translation and complete compatibility mapping remain U05; foreground local commands are unsandboxed and use terminal handoff.",
+      "difference": "U03/U04 implement the independent explicit schema and owned local execution. U05 records every pinned community command and tests original examples/argv adaptations; shell recipes, unavailable virtual views, legacy helpers and external tool/service certification remain explicit limits. Foreground plugins use unsandboxed native terminal handoff.",
       "public_summary": "Next-release source loads explicit user definitions, context/resource scopes and shortcut overrides; typed review defaults to Cancel and Run is explicit. Published 0.1.0 is unchanged.",
       "public_status": "partial",
       "partial_evidence": [
@@ -1166,7 +1166,12 @@
         "tests/unit/test_credential_child.py",
         "tests/terminal/test_handoff.py",
         "tests/packaging/test_distribution.py",
-        "scripts/verify_standalone.py"
+        "scripts/verify_standalone.py",
+        "docs/plugin-compatibility.md",
+        "docs/plugin-compatibility.json",
+        "tests/contract/test_plugin_examples.py",
+        "tests/terminal/test_plugin_examples.py",
+        "tests/fixtures/plugins/translations.json"
       ]
     },
     {
@@ -1178,7 +1183,7 @@
       ],
       "source": "internal/view/env.go",
       "status": "planned",
-      "difference": "U03/U04 implement the independent explicit schema and local process lifecycle. Bundled-workflow translation and complete compatibility mapping remain U05; foreground local commands are unsandboxed and use terminal handoff.",
+      "difference": "U03/U04 implement the independent explicit schema and owned local execution. U05 records every pinned community command and tests original examples/argv adaptations; shell recipes, unavailable virtual views, legacy helpers and external tool/service certification remain explicit limits. Foreground plugins use unsandboxed native terminal handoff.",
       "public_summary": "Next-release source runs captured literal argv/environment in capture, owned background and native foreground modes with private per-context credentials. This is not a drop-in K9s configuration format.",
       "public_status": "partial",
       "partial_evidence": [
@@ -1189,7 +1194,12 @@
         "tests/unit/test_credential_child.py",
         "tests/terminal/test_handoff.py",
         "tests/packaging/test_distribution.py",
-        "scripts/verify_standalone.py"
+        "scripts/verify_standalone.py",
+        "docs/plugin-compatibility.md",
+        "docs/plugin-compatibility.json",
+        "tests/contract/test_plugin_examples.py",
+        "tests/terminal/test_plugin_examples.py",
+        "tests/fixtures/plugins/translations.json"
       ]
     },
     {
@@ -1201,7 +1211,7 @@
       ],
       "source": "internal/ui/dialog/plugin_inputs.go",
       "status": "planned",
-      "difference": "U03/U04 implement the independent explicit schema and local process lifecycle. Bundled-workflow translation and complete compatibility mapping remain U05; foreground local commands are unsandboxed and use terminal handoff.",
+      "difference": "U03/U04 implement the independent explicit schema and owned local execution. U05 records every pinned community command and tests original examples/argv adaptations; shell recipes, unavailable virtual views, legacy helpers and external tool/service certification remain explicit limits. Foreground plugins use unsandboxed native terminal handoff.",
       "public_summary": "Next-release source provides typed input/default/choice forms, one-use reviews, cancellation, bounded sanitized capture, exit/timeout/overflow status and owned job Stop. Foreground output goes directly to the native terminal.",
       "public_status": "partial",
       "partial_evidence": [
@@ -1212,7 +1222,12 @@
         "tests/unit/test_credential_child.py",
         "tests/terminal/test_handoff.py",
         "tests/packaging/test_distribution.py",
-        "scripts/verify_standalone.py"
+        "scripts/verify_standalone.py",
+        "docs/plugin-compatibility.md",
+        "docs/plugin-compatibility.json",
+        "tests/contract/test_plugin_examples.py",
+        "tests/terminal/test_plugin_examples.py",
+        "tests/fixtures/plugins/translations.json"
       ]
     },
     {
@@ -1223,9 +1238,19 @@
       ],
       "source": "plugins/README.md",
       "status": "planned",
-      "difference": "Inventory includes all plugin files. External Argo/Flux/Helm/AI tools keep their own support/licensing; optional services are never required by KubeRich.",
-      "public_summary": "Community plugin workflows and their external-tool compatibility are planned; no bundled plugin parity is claimed.",
-      "public_status": "planned"
+      "difference": "U05 classifies all 50 pinned files and 108 commands with source identities, dependencies and free inspection alternatives; 18 synthetic argv adaptations and three original capture/interactive/background manifests have executable contract tests. This is not drop-in import, external-tool certification or native workflow parity. Shell/PowerShell, virtual views and legacy helpers are classified explicitly.",
+      "public_summary": "Next-release source documents all 50 pinned community files, dependencies and limits, with three original examples and 18 tested argv adaptations. External tools/services remain separately installed and unqualified; published 0.1.0 has no plugins.",
+      "public_status": "partial",
+      "partial_evidence": [
+        "docs/plugin-compatibility.md",
+        "docs/plugin-compatibility.json",
+        "tests/contract/test_plugin_examples.py",
+        "tests/terminal/test_plugin_examples.py",
+        "tests/fixtures/plugins/translations.json",
+        "examples/plugins/inspect-pod.yaml",
+        "examples/plugins/pod-shell.yaml",
+        "examples/plugins/collect-pod-events.yaml"
+      ]
     },
     {
       "id": "OBS01",
@@ -1332,9 +1357,13 @@
       ],
       "source": "plugins/debug-container.yaml",
       "status": "planned",
-      "difference": "Available through upstream plugin workflows; planned first-class KubeRich action.",
+      "difference": "U05 classifies upstream debug recipes and their privileged/external dependencies. The original interactive example execs an existing container; it does not create an ephemeral debug container. First-class managed creation remains A03.",
       "public_summary": "Creating ephemeral debug containers and their managed sessions is planned.",
-      "public_status": "planned"
+      "public_status": "planned",
+      "partial_evidence": [
+        "docs/plugin-compatibility.md",
+        "docs/plugin-compatibility.json"
+      ]
     },
     {
       "id": "ADV04",
