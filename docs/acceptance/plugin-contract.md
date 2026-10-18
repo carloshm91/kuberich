@@ -29,6 +29,50 @@ lines and 36/36 branches; both critical-module totals above remain 100%.
 Original run 39095176945 was cancelled after this local finding; its completed
 native checks belong to the older source and do not qualify the correction.
 
+## Required responsiveness correction
+
+The next head, `510d48c2719eaa8af19ea9e37c90b96be9012f9e`, passed all four
+native jobs and the Linux/Python 3.14 and macOS baseline source jobs. Its required
+Python 3.13 job `117583801039` failed the original aggregate runtime heartbeat:
+152.010 ms against the unchanged 150-ms maximum during warm resource route four.
+The original job recorded 5,356 passed / one failed / two skipped in 2,110.05 s.
+Artifact `12124858771` ZIP SHA-256
+`455c8ba4dc9168aeb293eac5e3c448ff4fd60ae63368ae5a7a22c93be596ecf4`
+was independently verified and retained, including complete positive-child
+heartbeat/source receipts. GC occupied 97.881 ms of that pause inside native CSS
+reparse; total main-thread CPU was 149.939 ms. A successful different platform
+does not qualify this failed head.
+
+The production correction retains three exact variable snapshots, each with the
+native 64-source parse cache, within the app-owned stylesheet. It preserves
+source/content/scope/priority keys, transactional errors, independent copies and
+the existing component ownership. Native-control tests prove revisiting an exact
+snapshot avoids repeated parsing while rules and errors remain equivalent.
+The cache remains bounded and is not shared globally. No budget, GC threshold,
+dataset, warmup, required job or failure condition was relaxed.
+
+Ten focused cache/component/color cases passed on Python 3.13.12 in 9.76 s;
+the complete cache module measured 73/73 lines and 14/14 branches. The broader
+Python 3.12.12 UI cohort passed 49 cases in 248.53 s, covering themes, persisted
+navigation/views and aggregate-log controls. A working-source Python 3.13 runtime
+parent passed in 64.25 s: the real positive child completed both full-history
+rounds with a 77.769-ms maximum; the deliberate 200-ms negative callback was
+rejected at 202.538 ms; the complete branch-covered replay passed its functional
+assertions (155.905-ms instrumentation timing is explicitly nonqualifying).
+Normal GC remained enabled at that interpreter's default (2000, 10, 10).
+Fresh full hosted qualification must verify the final frozen correction.
+
+## Preference relocation
+
+An explicit migration validates known plugin schema and rebases file locations
+and every inline working directory against the original preference location.
+Actual files verify identical global/context effective catalogues and executable
+directories after migration, retained source bytes, private destination permissions
+and no destination write for invalid definitions. The expanded plugin/config/CLI
+cohort passed 261 cases in 8.27 s: plugin configuration 69/69 lines and 28/28
+branches, domain 233/233 and 112/112, file adapter 68/68 and 36/36. These remain
+focused measurements rather than complete-package qualification.
+
 The original focused run exposed a NUL substitution crossing the internal dollar
 marker boundary. The correction validates substituted values before marker
 restoration; the negative control now rejects it. An initial broader command

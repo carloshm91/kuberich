@@ -1,7 +1,9 @@
 """Explicit plugin configuration layers; no directory discovery or execution."""
 
-from dataclasses import dataclass
+from copy import deepcopy
+from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import cast
 
 from kuberich.config.schema import ConfigDocument
 from kuberich.domain.plugins import MAX_PLUGINS, Plugin, parse_plugin
@@ -77,3 +79,27 @@ def plugins_from(document: ConfigDocument, directory: Path) -> PluginPreferences
         if "plugins" in document.extensions
         else PluginPreferences()
     )
+
+
+def relocate_plugins(document: ConfigDocument, directory: Path) -> ConfigDocument:
+    """An explicit preference migration must retain its executable trust roots."""
+    if "plugins" not in document.extensions:
+        return document
+    preferences = plugins_from(document, directory)
+    extension = cast(dict[str, object], deepcopy(document.extensions["plugins"]))
+
+    def relocate(layer: dict[str, object], parsed: PluginLayer) -> None:
+        if "locations" in layer:
+            layer["locations"] = [str(path) for path in parsed.locations]
+        commands = cast(dict[str, dict[str, object]], layer.get("commands", {}))
+        for plugin in parsed.commands:
+            commands[plugin.name]["directory"] = str(plugin.directory)
+
+    relocate(extension, preferences.global_layer)
+    contexts = cast(dict[str, dict[str, object]], extension.get("contexts", {}))
+    for context, layer in preferences.contexts:
+        relocate(contexts[context], layer)
+    updated = replace(document, extensions={**document.extensions, "plugins": extension})
+    # Absolute output paths must still meet the same bounded schema.
+    plugins_from(updated, directory)
+    return updated

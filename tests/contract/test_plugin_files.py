@@ -9,6 +9,7 @@ import yaml
 from kuberich.adapters.plugin_files import _file, load_plugins
 from kuberich.cli import main
 from kuberich.config.plugins import PluginLayer, PluginPreferences, parse_plugins
+from kuberich.config.store import migrate_config, read_config
 from kuberich.errors import AppError
 from tests.unit.test_plugins import definition, plugin
 
@@ -224,3 +225,54 @@ def test_context_rename_references_are_local_and_do_not_change_the_manifest(tmp_
     second = replace(first, name="other", scopes=("v1/services",))
     preferences_value = PluginPreferences(PluginLayer((first, second)))
     assert load_plugins(preferences_value, "renamed") == (first, second)
+
+
+def test_explicit_preference_migration_preserves_plugin_files_and_working_directories(tmp_path):
+    from kuberich.config.plugins import plugins_from
+
+    old, new = tmp_path / "legacy", tmp_path / "current"
+    old.mkdir()
+    external = old / "plugins"
+    external.mkdir()
+    write(external / "external.yaml", {"external": definition(directory="work")})
+    source = old / "config.yaml"
+    write(
+        source,
+        {"inspect": definition(), "relative": definition(directory="work")},
+        locations=["plugins"],
+        contexts={
+            "demo": {
+                "locations": [],
+                "commands": {
+                    "inspect": definition(command="scoped-tool", directory="context-work")
+                },
+            }
+        },
+    )
+    before = source.read_bytes()
+    original = plugins_from(read_config(source), old)
+    migrate_config(source, new / "config.yaml")
+    migrated = plugins_from(read_config(new / "config.yaml"), new)
+    assert migrated == original
+    assert load_plugins(migrated, None) == load_plugins(original, None)
+    assert load_plugins(migrated, "demo") == load_plugins(original, "demo")
+    assert source.read_bytes() == before
+    assert (new / "config.yaml").stat().st_mode & 0o777 == 0o600
+
+
+def test_migration_with_empty_plugin_layers_and_invalid_definitions_is_non_destructive(tmp_path):
+    from kuberich.config.plugins import relocate_plugins
+    from kuberich.config.schema import ConfigDocument, parse_document
+
+    original = ConfigDocument()
+    assert relocate_plugins(original, tmp_path) is original
+    empty = parse_document(
+        {"schema_version": 1, "plugins": {"schema_version": 1, "contexts": {"demo": {}}}}
+    )
+    assert relocate_plugins(empty, tmp_path) == empty
+    source, destination = tmp_path / "legacy.yaml", tmp_path / "current.yaml"
+    write(source, {"invalid": definition(mode="invalid")})
+    before = source.read_bytes()
+    with pytest.raises(AppError, match="mode"):
+        migrate_config(source, destination)
+    assert source.read_bytes() == before and not destination.exists()

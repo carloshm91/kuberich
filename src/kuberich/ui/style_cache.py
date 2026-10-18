@@ -1,10 +1,13 @@
 """Cache immutable background styles without retaining removed widget renderers."""
 
+from collections import OrderedDict
 from functools import lru_cache
 from typing import Self
 
 from textual._styles_cache import StylesCache
+from textual.cache import LRUCache
 from textual.color import Color
+from textual.css.model import RuleSet
 from textual.css.stylesheet import Stylesheet
 from textual.dom import DOMNode
 from textual.style import Style
@@ -35,6 +38,46 @@ class ComponentStylesheet(Stylesheet):
     widget, while recomputing selectors and clearing previous rules as native
     evaluation does. No global caches or garbage-collection policy are changed.
     """
+
+    def __init__(self, *, variables: dict[str, str] | None = None) -> None:
+        super().__init__(variables=variables)
+        self._variable_caches: OrderedDict[
+            tuple[tuple[str, str], ...], LRUCache[tuple[object, ...], list[RuleSet]]
+        ] = OrderedDict()
+        self._parse_cache = self._cache_for_variables()
+
+    def _cache_for_variables(self) -> LRUCache[tuple[object, ...], list[RuleSet]]:
+        key = tuple(sorted(self._variables.items()))
+        cache = self._variable_caches.pop(key, None)
+        if cache is None:
+            cache = LRUCache(64)
+        self._variable_caches[key] = cache
+        while len(self._variable_caches) > 3:
+            self._variable_caches.popitem(last=False)
+        return cache
+
+    def set_variables(self, variables: dict[str, str]) -> None:
+        # Native clearing must not empty a previous variable snapshot's cache.
+        self._parse_cache = LRUCache(64)
+        super().set_variables(variables)
+        self._parse_cache = self._cache_for_variables()
+
+    def reparse(self) -> None:
+        # Retain native transactional parsing. Its fresh temporary stylesheet
+        # otherwise discards every parsed source even when a theme is revisited.
+        candidate = Stylesheet(variables=self._variables)
+        candidate._parse_cache = self._cache_for_variables()
+        for location, (css, defaults, tie, scope) in self.source.items():
+            candidate.add_source(css, location, defaults, tie, scope)
+        try:
+            candidate.parse()
+        except Exception:
+            self._invalid_css.update(candidate._invalid_css)
+            raise
+        self._rules = candidate.rules
+        self._rules_map = None
+        self.source = candidate.source
+        self._require_parse = False
 
     def copy(self) -> Self:
         stylesheet = type(self)(variables=self._variables.copy())

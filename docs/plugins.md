@@ -85,6 +85,10 @@ plugins:
 
 Up to 128 context layers are supported. Context names are exact local names.
 Changing the active context cannot change a previously captured invocation.
+When `config migrate` moves legacy preferences, it validates the plugin schema
+and makes file locations and inline working directories absolute against the
+original file. Migration retains the same configured programs and directories,
+keeps the source unchanged and refuses an invalid definition before writing.
 
 ## Definition fields
 

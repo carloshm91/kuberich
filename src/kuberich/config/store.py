@@ -127,6 +127,8 @@ def write_config(path: Path, document: ConfigDocument, *, overwrite: bool = Fals
 
 def migrate_config(source: Path, destination: Path) -> None:
     """Retain the source and log destination; create the new file without replacement."""
+    from kuberich.config.plugins import relocate_plugins
+
     document = read_config(source, missing_ok=False)
     if document.settings.log_file is not None:
         document = replace(
@@ -136,4 +138,5 @@ def migrate_config(source: Path, destination: Path) -> None:
                 log_file=str(log_location(document.settings, source, from_file=True)),
             ),
         )
+    document = relocate_plugins(document, source.absolute().parent)
     write_config(destination, document)
