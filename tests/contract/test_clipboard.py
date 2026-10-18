@@ -148,3 +148,62 @@ async def test_owned_x11_startup_denial_is_visible_and_does_not_leak_input(tmp_p
         assert "synthetic private payload" not in str(failure.value)
         await clipboard.close()
         assert runner.active_count == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("outcome", ["owned-selection", "success", "denied"])
+async def test_selection_process_ownership_contract_on_every_platform(tmp_path, outcome):
+    import shlex
+
+    # This private helper models process ownership only. Real X11 receipt is
+    # separately verified against the owned Xvfb display; no host GUI is touched.
+    helper = tmp_path / "xclip"
+    code = (
+        "import pathlib,sys,time; assert sys.argv[1:]==['-quiet','-selection','clipboard']; pathlib.Path('owned-input').write_bytes(sys.stdin.buffer.read()); "
+        + (
+            "time.sleep(30)"
+            if outcome == "owned-selection"
+            else "time.sleep(.2); raise SystemExit(3)"
+            if outcome == "denied"
+            else "raise SystemExit(0)"
+        )
+    )
+    helper.write_text(
+        "#!/bin/sh\nexec " + shlex.quote(sys.executable) + " -c " + shlex.quote(code) + ' "$@"\n'
+    )
+    helper.chmod(0o700)
+    env = {**os.environ, "PATH": str(tmp_path) + os.pathsep + os.environ.get("PATH", "")}
+    data = b"owned\x00\x1b]52;c;inert\x07"
+    async with ProcessRunner(AccessPolicy(True)) as runner:
+        clipboard = NativeClipboard(runner, env, tmp_path)
+        errors = []
+        observed = asyncio.Event()
+
+        def failed(error):
+            errors.append(str(error))
+            observed.set()
+
+        try:
+            await clipboard.write(data, B.X11, failed=failed)
+        except AppError as error:
+            failed(error)
+        async with asyncio.timeout(5):
+            while not (tmp_path / "owned-input").exists():
+                await asyncio.sleep(0.005)
+        if outcome == "denied":
+            await asyncio.wait_for(observed.wait(), 5)
+            assert len(errors) == 1 and "Native clipboard" in errors[0]
+        else:
+            assert not errors
+        assert (tmp_path / "owned-input").read_bytes() == data
+        if outcome == "owned-selection":
+            original = clipboard.owner
+            assert original.running
+            await clipboard.write(b"replacement", B.X11)
+            assert original.task.done() and clipboard.owner.running
+            async with asyncio.timeout(5):
+                while (tmp_path / "owned-input").read_bytes() != b"replacement":
+                    await asyncio.sleep(0.005)
+            assert not errors
+        await clipboard.close()
+        assert runner.active_count == 0

@@ -341,6 +341,7 @@ class KubeRichApp(App[None]):
         )
         self._clipboard_task: asyncio.Task[None] | None = None
         self._clipboard_pending: tuple[bytes, ClipboardBackend] | None = None
+        self._clipboard_closing = False
         self.preferences = preferences
         self._global_theme = preferences.document.settings.theme if preferences else settings.theme
         self._theme_override = preferences.theme_override if preferences else None
@@ -1307,21 +1308,27 @@ class KubeRichApp(App[None]):
             data, backend = self._clipboard_pending
             self._clipboard_pending = None
             try:
-                await self._native_clipboard.write(data, backend)
+                await self._native_clipboard.write(
+                    data, backend, failed=partial(self._clipboard_failed, data)
+                )
             except AppError as error:
-                if self._clipboard_pending is not None:
-                    continue
-                if self._process_environment.get("KUBERICH_CLIPBOARD", "auto") == "auto":
-                    try:
-                        sequence = osc52(data, tmux=bool(self._process_environment.get("TMUX")))
-                        if self._driver is not None:
-                            self._driver.write(sequence)
-                    except AppError:
-                        self.notify(str(error), severity="error")
-                else:
-                    self.notify(str(error), severity="error")
+                self._clipboard_failed(data, error)
+
+    def _clipboard_failed(self, data: bytes, error: AppError) -> None:
+        if self._clipboard_pending is not None or self._clipboard_closing:
+            return
+        if self._process_environment.get("KUBERICH_CLIPBOARD", "auto") == "auto":
+            try:
+                sequence = osc52(data, tmux=bool(self._process_environment.get("TMUX")))
+                if self._driver is not None:
+                    self._driver.write(sequence)
+            except AppError:
+                self.notify(str(error), severity="error")
+        else:
+            self.notify(str(error), severity="error")
 
     async def on_unmount(self) -> None:
+        self._clipboard_closing = True
         self._updates_stopped = True
         if self._update_task is not None:
             self._update_task.cancel()

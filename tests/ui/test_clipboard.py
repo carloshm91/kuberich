@@ -48,7 +48,7 @@ async def test_native_failure_falls_back_only_when_allowed_and_bounded(
     notices = []
     monkeypatch.setattr(app, "notify", lambda message, **kwargs: notices.append(str(message)))
 
-    async def failed(data, backend):
+    async def failed(data, backend, **kwargs):
         raise AppError("Native clipboard is unavailable in this owned fixture.")
 
     monkeypatch.setattr(app._native_clipboard, "write", failed)
@@ -79,7 +79,7 @@ async def test_rapid_native_copies_coalesce_and_old_failures_do_not_overwrite_ne
     entered, release = asyncio.Event(), asyncio.Event()
     written = []
 
-    async def writer(data, backend):
+    async def writer(data, backend, **kwargs):
         written.append(data)
         if data == b"first":
             entered.set()
@@ -130,7 +130,7 @@ async def test_app_exit_cancels_and_drains_active_native_write(monkeypatch):
     app = ClipboardApp()
     entered, finished = asyncio.Event(), asyncio.Event()
 
-    async def writer(data, backend):
+    async def writer(data, backend, **kwargs):
         entered.set()
         try:
             await asyncio.Future()
@@ -144,3 +144,28 @@ async def test_app_exit_cancels_and_drains_active_native_write(monkeypatch):
         app.copy_to_clipboard("superseded on exit")
     assert finished.is_set() and app._clipboard_task.done()
     assert app._clipboard_pending is None and app.processes.active_count == 0
+
+
+@pytest.mark.asyncio
+async def test_late_native_failure_uses_bounded_fallback_and_is_silent_after_exit(monkeypatch):
+    monkeypatch.setenv("KUBERICH_CLIPBOARD", "auto")
+    monkeypatch.setenv("DISPLAY", ":owned-adapter-boundary")
+    for variable in ("WAYLAND_DISPLAY", "SSH_TTY", "SSH_CONNECTION", "TMUX"):
+        monkeypatch.delenv(variable, raising=False)
+    app = ClipboardApp()
+    callbacks = []
+
+    async def writer(data, backend, *, failed):
+        callbacks.append(failed)
+
+    monkeypatch.setattr(app._native_clipboard, "write", writer)
+    async with app.run_test(headless=False):
+        app.copy_to_clipboard("owned late copy")
+        await app._clipboard_task
+        callbacks[-1](AppError("Owned selection process exited later."))
+        assert app.clipboard_requests == [
+            "\x1b]52;c;" + base64.b64encode(b"owned late copy").decode() + "\x07"
+        ]
+    previous = list(app.clipboard_requests)
+    callbacks[-1](AppError("Late completion after exit"))
+    assert app.clipboard_requests == previous
