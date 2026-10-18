@@ -134,6 +134,8 @@ critical_modules = [
     "src/kuberich/runtime.py",
     "src/kuberich/config/schema.py",
     "src/kuberich/config/navigation.py",
+    "src/kuberich/config/plugins.py",
+    "src/kuberich/domain/plugins.py",
     "src/kuberich/domain/keyboard.py",
     "src/kuberich/domain/aliases.py",
     "src/kuberich/domain/resource_preferences.py",

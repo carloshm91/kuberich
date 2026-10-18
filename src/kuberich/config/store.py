@@ -28,7 +28,7 @@ class _PreferenceLoader(yaml.SafeLoader):
         return super().construct_mapping(node, deep=deep)
 
 
-def _parse_yaml(text: str) -> ConfigDocument:
+def parse_config_text(text: str) -> ConfigDocument:
     depth = 0
     for count, event in enumerate(yaml.parse(text, Loader=yaml.SafeLoader)):
         if isinstance(event, AliasEvent):
@@ -59,7 +59,7 @@ def read_config(path: Path, *, missing_ok: bool = True) -> ConfigDocument:
             content = stream.read(MAX_CONFIG_BYTES + 1)
         if len(content) > MAX_CONFIG_BYTES:
             raise AppError("Preference file exceeds 64 KiB.")
-        return _parse_yaml(content.decode("utf-8"))
+        return parse_config_text(content.decode("utf-8"))
     except (yaml.YAMLError, UnicodeError, RecursionError, ValueError):
         raise AppError("Invalid YAML preferences; check syntax and UTF-8 encoding.") from None
     except OSError:
@@ -86,7 +86,7 @@ def write_config(path: Path, document: ConfigDocument, *, overwrite: bool = Fals
         text = yaml.safe_dump(document.to_mapping(), sort_keys=False, allow_unicode=True)
         if len(text.encode("utf-8")) > MAX_CONFIG_BYTES:
             raise AppError("Preference file exceeds 64 KiB.")
-        _parse_yaml(text)
+        parse_config_text(text)
         path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
         descriptor, name = tempfile.mkstemp(prefix=".kuberich-", suffix=".tmp", dir=path.parent)
         temporary = Path(name)

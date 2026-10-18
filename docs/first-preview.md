@@ -32,6 +32,21 @@ indexing header. The HTML pages already serve `index, follow`. Zone-cache cleanu
 and a new ordinary-URL read are still needed before claiming every response
 header verified on the custom domains.
 
+## Source checkpoint toward 0.2.0: plugin configuration
+
+The source validates explicitly configured global/context plugin files, exact
+resource scopes, shortcut overrides, typed inputs and captured literal variables.
+This configuration checkpoint executes no command; interactive invocation and
+owned process execution follow in the next task. Published 0.1.0 is unchanged.
+
+```sh
+uv run pytest tests/unit/test_plugins.py tests/contract/test_plugin_files.py
+```
+
+The offline CLI test also runs `kuberich --config <owned-fixture> config check`,
+verifies no sentinel command was executed and confirms the file is unchanged.
+See [configuration and trust](plugins.md) and [evidence](acceptance/plugin-contract.md).
+
 ## Source checkpoint toward 0.2.0: navigation preferences
 
 The next-release source supports per-view navigation keys, literal command aliases

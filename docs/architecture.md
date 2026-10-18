@@ -1,5 +1,21 @@
 # Architecture decisions
 
+## Explicit plugin definitions and capture: U03 #58
+
+`config/plugins.py` parses independently versioned global/context layers without
+filesystem discovery. `adapters/plugin_files.py` reads only configured bounded
+regular YAML files, with no recursive locations, ambient current-directory search
+or cluster registration. Context definitions replace complete global definitions;
+within-layer name collisions fail. Shortcut validation evaluates each declared
+resource scope against effective navigation and fixed safety keys.
+
+Critical `domain/plugins.py` owns immutable definitions, typed inputs, scope,
+read-only classification and one-pass literal variable expansion. Captured
+session/resource/columns and input values form one argv/environment request;
+substituted values never become templates or shell syntax. Cancellation yields
+no request. This contract checkpoint is wired into offline config validation;
+interactive review/execution/process ownership remain U04 #59.
+
 ## Per-owner navigation and captured views: U02 #57
 
 The additive navigation extension owns an independent schema version, immutable

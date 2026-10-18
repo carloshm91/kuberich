@@ -12,6 +12,17 @@ Coverage is a release requirement and one part of correctness. A high percentage
 does not establish correct Kubernetes semantics, responsive terminal behavior,
 or reliable installation.
 
+## Plugin configuration: U03 #58
+
+`config/plugins.py` and `domain/plugins.py` join the 100% line/branch critical
+inventory. Pure tests cover type/size/schema/scope/shortcut conflicts, context
+identity, hostile literal substitutions, typed defaults and deliberate input
+cancellation. Actual files and offline CLI tests cover explicit-only discovery,
+per-context precedence, invalid/duplicate/oversize YAML, symlinks/special files,
+permission failures and retained preference bytes. No plugin is executed by a
+configuration check. Interactive/process behavior remains U04; see
+[contract acceptance](acceptance/plugin-contract.md).
+
 ## Navigation preferences: U02 #57
 
 Focused new-model coverage does not qualify modified existing critical modules.
