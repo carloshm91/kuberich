@@ -128,3 +128,16 @@ missing-executable message is now concise with the action visible immediately;
 row projection keeps existing action feedback. The original two CLI assertions
 remain, and an owned-watch regression verifies updated cells/focus while feedback
 survives. The unchanged full source/native/coverage gates still apply.
+
+All twelve protected checks passed on 1d8b07b, including four complete source
+environments and four exact native archives. The additional local full original
+retained 5,666 passes and one 11-byte observer failure. Replaying its exact
+117,089-byte transcript took 18.54 s with 10,645 full-screen inspections and
+0.47 s with 167 inspections, producing the identical final screen. This exceeded
+the existing 15-s deadline in the observer itself. The correction batches only
+ready fragment consumption before inspecting the screen, preserving actual
+11-byte reads, decoding, byte order, the original deadline, restoration and
+all view/focus assertions. An owned real-PTY Unicode/ANSI burst verifies bounded
+inspection, actual tiny reads, exact retained bytes and original restoration.
+The original local failure/coverage/transcript/digest remain unqualified evidence;
+fresh complete protected qualification remains required after this test-only fix.
