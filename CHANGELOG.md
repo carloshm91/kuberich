@@ -7,6 +7,12 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Validate explicitly configured local plugin files, context/resource scope,
+  shortcut overrides, typed inputs and literal captured variables without running
+  commands during configuration checks. Interactive execution follows separately
+  ([#58](https://github.com/carloshm91/kuberich/issues/58),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Configure per-view navigation keys and literal command aliases with effective
   help/completion. Apply or explicitly save resource column order, visibility,
   widths, alignment and typed sort globally/per context; retain working fallbacks
@@ -24,6 +30,15 @@ Release entries are written in release PRs and linked to their Git tags.
   reveal/copy, text/Base64 controls and fresh identity/version-bound reads.
   Edit Secrets through the private-draft, redacted-review and separate
   dry-run/Apply workflow ([#55](https://github.com/carloshm91/kuberich/issues/55),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
+### Fixed
+
+- Preserve configured plugin file locations and working directories during
+  explicit preference migration. Reuse bounded exact CSS parses when revisiting
+  themes, retaining native errors and independent app ownership after a required
+  responsiveness check exposed repeated parsing/collection work
+  ([#58](https://github.com/carloshm91/kuberich/issues/58),
   [Carlos J. Herrera](https://github.com/carloshm91)).
 
 ## 0.1.0 — 2026-10-12

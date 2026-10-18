@@ -337,7 +337,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40×12 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -1156,8 +1156,8 @@
       "source": "internal/config/plugin.go",
       "status": "planned",
       "difference": "",
-      "public_summary": "User plugin search paths, scoped shortcuts, confirmation and dangerous-action handling are planned.",
-      "public_status": "planned"
+      "public_summary": "Explicit user plugin locations, context/resource scopes and shortcut conflicts are validated offline. Interactive confirmation and execution follow separately.",
+      "public_status": "partial"
     },
     {
       "id": "EXT06",
@@ -1169,8 +1169,8 @@
       "source": "internal/view/env.go",
       "status": "planned",
       "difference": "Explicitly configured shell plugins remain unsandboxed local commands; no automatic shell interpolation.",
-      "public_summary": "User plugin environment/resource expansion and foreground/background execution are planned.",
-      "public_status": "planned"
+      "public_summary": "Captured resource/column/environment variables expand as literal arguments. Foreground and background execution are not available in this checkpoint.",
+      "public_status": "partial"
     },
     {
       "id": "EXT07",
@@ -1182,8 +1182,8 @@
       "source": "internal/ui/dialog/plugin_inputs.go",
       "status": "planned",
       "difference": "",
-      "public_summary": "Typed plugin inputs, defaults, validation and configurable output handling are planned.",
-      "public_status": "planned"
+      "public_summary": "Typed input/default/choice validation and cancellation are implemented in the invocation contract. Interactive input and output handling follow separately.",
+      "public_status": "partial"
     },
     {
       "id": "EXT08",

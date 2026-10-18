@@ -1,5 +1,44 @@
 # Architecture decisions
 
+## Bounded native CSS parse reuse: prerequisite for U03 #58
+
+Required Python 3.13 run 39096419046 measured a 152.010-ms runtime heartbeat
+while changing themes. A genuine generation-two collection occupied 97.881 ms
+inside native CSS parsing; total main-thread CPU was 149.939 ms. The pinned
+framework reparses every source in a new stylesheet even when returning to an
+already used variable snapshot. This is a retained failed original, not a pass.
+
+The app-owned ComponentStylesheet now keeps three exact, complete variable
+snapshots, each with the native 64-entry source parse cache. Source content,
+location, default status, priority and scope remain native keys. Reparse still
+uses a fresh transactional stylesheet, publishes only after successful parsing
+and preserves invalid-CSS error propagation. Copies/apps have separate caches;
+rule data carries no widget reference. No global Textual patch, GC change,
+budget increase, dataset reduction or unchanged retry is introduced.
+Native-control tests compare rules, variable changes, error recovery, source
+replacement/removal, bounds and independent ownership. Existing focus/theme/
+component/remount controls remain required; fresh full hosted/native checks must
+qualify the changed source. See [measured evidence](acceptance/plugin-contract.md).
+
+## Explicit plugin definitions and capture: U03 #58
+
+`config/plugins.py` parses independently versioned global/context layers without
+filesystem discovery. `adapters/plugin_files.py` reads only configured bounded
+regular YAML files, with no recursive locations, ambient current-directory search
+or cluster registration. Context definitions replace complete global definitions;
+within-layer name collisions fail. Shortcut validation evaluates each declared
+resource scope against effective navigation and fixed safety keys.
+
+Critical `domain/plugins.py` owns immutable definitions, typed inputs, scope,
+read-only classification and one-pass literal variable expansion. Captured
+session/resource/columns and input values form one argv/environment request;
+substituted values never become templates or shell syntax. Cancellation yields
+no request. This contract checkpoint is wired into offline config validation;
+interactive review/execution/process ownership remain U04 #59.
+Explicit preference migration rebases configured files and every inline working
+directory against the original source without reading plugin files or executing
+commands. It preserves trust roots and refuses invalid schema before a new write.
+
 ## Per-owner navigation and captured views: U02 #57
 
 The additive navigation extension owns an independent schema version, immutable

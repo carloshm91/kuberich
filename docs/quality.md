@@ -12,6 +12,25 @@ Coverage is a release requirement and one part of correctness. A high percentage
 does not establish correct Kubernetes semantics, responsive terminal behavior,
 or reliable installation.
 
+## Plugin configuration: U03 #58
+
+The required 3.13 failure retained a 152.010-ms genuine runtime pause, including
+97.881 ms of GC during CSS reparse. The production correction bounds exact
+variable/source parse reuse within each app and retains transactional errors.
+`ui/style_cache.py` joins the critical 100% line/branch inventory, with native
+control, source/variable/error/copy/bounds and existing component/color tests.
+All original 150-ms controls, 200-ms deliberate negative callback, full dataset,
+two rounds, GC policy and complete platform/native gates remain required.
+
+`config/plugins.py` and `domain/plugins.py` join the 100% line/branch critical
+inventory. Pure tests cover type/size/schema/scope/shortcut conflicts, context
+identity, hostile literal substitutions, typed defaults and deliberate input
+cancellation. Actual files and offline CLI tests cover explicit-only discovery,
+per-context precedence, invalid/duplicate/oversize YAML, symlinks/special files,
+permission failures and retained preference bytes. No plugin is executed by a
+configuration check. Interactive/process behavior remains U04; see
+[contract acceptance](acceptance/plugin-contract.md).
+
 ## Navigation preferences: U02 #57
 
 Focused new-model coverage does not qualify modified existing critical modules.

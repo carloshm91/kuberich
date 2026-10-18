@@ -409,7 +409,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
             )
         elif arguments.subcommand == "config":
+            from kuberich.adapters.plugin_files import load_plugins
+            from kuberich.config.plugins import plugins_from
+
             validate_resource_views(navigation)
+            plugin_preferences = plugins_from(document, location.path.parent)
+            for context in (None, *(name for name, _ in plugin_preferences.contexts)):
+                load_plugins(plugin_preferences, context, navigation.keys)
             appearance = appearance_from(document)
             if settings.theme not in BUILTINS | {theme.name for theme in appearance.themes}:
                 raise AppError("Selected theme is unavailable; choose k9s or a registered theme.")

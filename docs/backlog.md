@@ -23,8 +23,9 @@ per working day, with a maximum of three**, using America/Cancun. Each issue
 retains its complete verification and protected PR workflow. A larger issue can
 continue into the next block; report completed issues and measured checks at
 the end of each block. Count product tasks separately from grouping epics and
-maintenance PRs. The next requested product block is **#55 → #56 → #57**;
-#57 retains its dependency on #56. Finish the active prerequisite PR first.
+maintenance PRs. The latest maintainer request authorizes **four** product issues
+for the current block: **#58 → #59 → #60 → #61**. This supersedes the usual
+three-issue cap for this block; each retains its complete dependency and quality gates.
 Owner-dependent final cache/`www` work stays in #89 and blocks later publication,
 while independently unblocked 0.2.0 implementation may proceed one issue at a time.
 
