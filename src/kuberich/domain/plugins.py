@@ -18,7 +18,10 @@ MAX_PLUGINS = 64
 _IDENTIFIER = re.compile(r"[a-z][a-z0-9_-]{0,63}\Z", re.ASCII)
 _VARIABLE = re.compile(r"\$(?:\{([A-Z][A-Z0-9_-]*)\}|([A-Z][A-Z0-9_-]*))", re.ASCII)
 _ENVIRONMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*\Z", re.ASCII)
-_SCOPES = re.compile(r"(?:[a-z0-9][a-z0-9.-]*/)?[a-z0-9]+/[a-z0-9]+\Z", re.ASCII)
+_SCOPES = re.compile(
+    r"(?:[a-z0-9][a-z0-9.-]*/)?[a-z0-9]+/[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?\Z",
+    re.ASCII,
+)
 _RESERVED_KEYS = frozenset({"q", "ctrl+q", "ctrl+c", "ctrl+z", "ctrl+p", "ctrl+y"})
 
 
@@ -318,10 +321,10 @@ class PluginSelection:
 def expand_plugin(text: str, values: Mapping[str, str]) -> str:
     """Expand once into one literal argument; substituted text is never reparsed."""
     _text(text, "template", empty=True)
-    if "$!" in text:
-        raise AppError("Plugin shell-escaped variables are unsupported; use literal argv.")
     marker = "\x00"
     text = text.replace("$$", marker)
+    if "$!" in text or "${!" in text:
+        raise AppError("Plugin boolean inversion is unsupported; use an explicit typed input.")
 
     def substitute(match: re.Match[str]) -> str:
         name = match[1] or match[2]

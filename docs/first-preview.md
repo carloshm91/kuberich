@@ -32,6 +32,24 @@ indexing header. The HTML pages already serve `index, follow`. Zone-cache cleanu
 and a new ordinary-URL read are still needed before claiming every response
 header verified on the custom domains.
 
+## Source checkpoint toward 0.2.0: plugin compatibility and examples
+
+The source classifies all 50 pinned community plugin files and 108 commands,
+including two executable helpers. It adds three original reviewed definitions
+for Pod inspection, an interactive local kubectl exec and finite background
+event collection; 18 synthetic argv adaptations record their changed semantics.
+Upstream scripts/virtual views/legacy tools are not automatically imported,
+installed or claimed as native features. The published 0.1.0 package is unchanged.
+
+```sh
+uv run pytest tests/contract/test_plugin_examples.py tests/unit/test_plugins.py
+uv run pytest tests/terminal/test_plugin_examples.py
+```
+
+See [compatibility and examples](plugin-compatibility.md) and
+[acceptance evidence](acceptance/plugin-compatibility.md). Runtime prerequisites,
+read-only trust, output/Stop behavior and separate service identities are explicit.
+
 ## Source checkpoint toward 0.2.0: plugin execution
 
 The next-release source adds `:plugins`, `:plugin NAME`, typed Review/Run forms,

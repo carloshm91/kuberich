@@ -1,0 +1,851 @@
+{
+  "schema_version": 1,
+  "baseline": "558caafe7ba067467de46b320cc22ef11fef9c34",
+  "cases": [
+    {
+      "id": "terminate-workflow",
+      "source": "plugins/argo-workflows.yaml",
+      "upstream_command": "terminate-workflow",
+      "definition": {
+        "command": "argo",
+        "args": [
+          "--kubeconfig=${KUBECONFIG}",
+          "--context=${CONTEXT}",
+          "-n",
+          "${NAMESPACE}",
+          "terminate",
+          "${NAME}"
+        ],
+        "scopes": [
+          "argoproj.io/v1alpha1/workflows"
+        ],
+        "mode": "capture",
+        "confirm": true,
+        "dangerous": true,
+        "trusted_read_only": false
+      },
+      "inputs": {},
+      "selection": {
+        "scope": "argoproj.io/v1alpha1/workflows",
+        "name": "api",
+        "namespace": "team",
+        "context": "demo",
+        "filter": "api",
+        "columns": {
+          "NAME": "api",
+          "SUSPEND": "false"
+        }
+      },
+      "expected_argv": [
+        "argo",
+        "--kubeconfig=/owned/private.yaml",
+        "--context=demo",
+        "-n",
+        "team",
+        "terminate",
+        "api"
+      ],
+      "difference": "Explicit version-pinned scope, reviewed execution and captured connection replace upstream defaults."
+    },
+    {
+      "id": "submit-template",
+      "source": "plugins/argo-workflows.yaml",
+      "upstream_command": "submit-from",
+      "definition": {
+        "command": "argo",
+        "args": [
+          "--kubeconfig=${KUBECONFIG}",
+          "--context=${CONTEXT}",
+          "-n",
+          "${NAMESPACE}",
+          "submit",
+          "--from",
+          "${RESOURCE}/${NAME}"
+        ],
+        "scopes": [
+          "argoproj.io/v1alpha1/workflowtemplates"
+        ],
+        "mode": "capture",
+        "confirm": true,
+        "dangerous": true,
+        "trusted_read_only": false
+      },
+      "inputs": {},
+      "selection": {
+        "scope": "argoproj.io/v1alpha1/workflowtemplates",
+        "name": "api",
+        "namespace": "team",
+        "context": "demo",
+        "filter": "api",
+        "columns": {
+          "NAME": "api",
+          "SUSPEND": "false"
+        }
+      },
+      "expected_argv": [
+        "argo",
+        "--kubeconfig=/owned/private.yaml",
+        "--context=demo",
+        "-n",
+        "team",
+        "submit",
+        "--from",
+        "workflowtemplates/api"
+      ],
+      "difference": "One explicit WorkflowTemplate scope is tested; CronWorkflow needs its own served scope."
+    },
+    {
+      "id": "disable-auto-sync",
+      "source": "plugins/argocd.yaml",
+      "upstream_command": "disable-auto-sync",
+      "definition": {
+        "command": "kubectl",
+        "args": [
+          "--kubeconfig=${KUBECONFIG}",
+          "--context=${CONTEXT}",
+          "--namespace=${NAMESPACE}",
+          "patch",
+          "applications.argoproj.io",
+          "${NAME}",
+          "--type=json",
+          "--patch=[{\"op\":\"replace\",\"path\":\"/spec/syncPolicy\",\"value\":{}}]"
+        ],
+        "scopes": [
+          "argoproj.io/v1alpha1/applications"
+        ],
+        "mode": "capture",
+        "confirm": true,
+        "dangerous": true,
+        "trusted_read_only": false
+      },
+      "inputs": {},
+      "selection": {
+        "scope": "argoproj.io/v1alpha1/applications",
+        "name": "api",
+        "namespace": "team",
+        "context": "demo",
+        "filter": "api",
+        "columns": {
+          "NAME": "api",
+          "SUSPEND": "false"
+        }
+      },
+      "expected_argv": [
+        "kubectl",
+        "--kubeconfig=/owned/private.yaml",
+        "--context=demo",
+        "--namespace=team",
+        "patch",
+        "applications.argoproj.io",
+        "api",
+        "--type=json",
+        "--patch=[{\"op\":\"replace\",\"path\":\"/spec/syncPolicy\",\"value\":{}}]"
+      ],
+      "difference": "Uses the selected Application namespace, not a hardcoded argocd namespace; simplified explicit sync policy is not all upstream syncOptions."
+    },
+    {
+      "id": "enable-auto-sync",
+      "source": "plugins/argocd.yaml",
+      "upstream_command": "enable-auto-sync",
+      "definition": {
+        "command": "kubectl",
+        "args": [
+          "--kubeconfig=${KUBECONFIG}",
+          "--context=${CONTEXT}",
+          "--namespace=${NAMESPACE}",
+          "patch",
+          "applications.argoproj.io",
+          "${NAME}",
+          "--type=merge",
+          "--patch={\"spec\":{\"syncPolicy\":{\"automated\":{\"prune\":true,\"selfHeal\":true}}}}"
+        ],
+        "scopes": [
+          "argoproj.io/v1alpha1/applications"
+        ],
+        "mode": "capture",
+        "confirm": true,
+        "dangerous": true,
+        "trusted_read_only": false
+      },
+      "inputs": {},
+      "selection": {
+        "scope": "argoproj.io/v1alpha1/applications",
+        "name": "api",
+        "namespace": "team",
+        "context": "demo",
+        "filter": "api",
+        "columns": {
+          "NAME": "api",
+          "SUSPEND": "false"
+        }
+      },
+      "expected_argv": [
+        "kubectl",
+        "--kubeconfig=/owned/private.yaml",
+        "--context=demo",
+        "--namespace=team",
+        "patch",
+        "applications.argoproj.io",
+        "api",
+        "--type=merge",
+        "--patch={\"spec\":{\"syncPolicy\":{\"automated\":{\"prune\":true,\"selfHeal\":true}}}}"
+      ],
+      "difference": "Uses the selected Application namespace, not a hardcoded argocd namespace; simplified explicit sync policy is not all upstream syncOptions."
+    },
+    {
+      "id": "duplicate-pod",
+      "source": "plugins/duplik8s.yaml",
+      "upstream_command": "duplicate",
+      "definition": {
+        "command": "kubectl",
+        "args": [
+          "--kubeconfig=${KUBECONFIG}",
+          "--context=${CONTEXT}",
+          "--namespace=${NAMESPACE}",
+          "duplicate",
+          "${RESOURCE}",
+          "${NAME}"
+        ],
+        "scopes": [
+          "v1/pods"
+        ],
+        "mode": "background",
+        "confirm": true,
+        "dangerous": true,
+        "trusted_read_only": false
+      },
+      "inputs": {},
+      "selection": {
+        "scope": "v1/pods",
+        "name": "api",
+        "namespace": "team",
+        "context": "demo",
+        "filter": "api",
+        "columns": {
+          "NAME": "api",
+          "SUSPEND": "false"
+        }
+      },
+      "expected_argv": [
+        "kubectl",
+        "--kubeconfig=/owned/private.yaml",
+        "--context=demo",
+        "--namespace=team",
+        "duplicate",
+        "pods",
+        "api"
+      ],
+      "difference": "Only Pod duplication argv is tested; the duplik8s extension must be installed. Deployment/StatefulSet scopes need separate review."
+    },
+    {
+      "id": "set-cronjob-suspend",
+      "source": "plugins/job-suspend.yaml",
+      "upstream_command": "toggleCronjob",
+      "definition": {
+        "command": "kubectl",
+        "args": [
+          "--kubeconfig=${KUBECONFIG}",
+          "--context=${CONTEXT}",
+          "--namespace=${NAMESPACE}",
+          "patch",
+          "cronjobs",
+          "${NAME}",
+          "--type=merge",
+          "--patch={\"spec\":{\"suspend\":${INPUT_SUSPEND}}}"
+        ],
+        "scopes": [
+          "batch/v1/cronjobs"
+        ],
+        "mode": "capture",
+        "confirm": true,
+        "dangerous": true,
+        "trusted_read_only": false,
+        "inputs": [
+          {
+            "name": "suspend",
+            "type": "bool",
+            "required": true
+          }
+        ]
+      },
+      "inputs": {
+        "suspend": true
+      },
+      "selection": {
+        "scope": "batch/v1/cronjobs",
+        "name": "api",
+        "namespace": "team",
+        "context": "demo",
+        "filter": "api",
+        "columns": {
+          "NAME": "api",
+          "SUSPEND": "false"
+        }
+      },
+      "expected_argv": [
+        "kubectl",
+        "--kubeconfig=/owned/private.yaml",
+        "--context=demo",
+        "--namespace=team",
+        "patch",
+        "cronjobs",
+        "api",
+        "--type=merge",
+        "--patch={\"spec\":{\"suspend\":true}}"
+      ],
+      "difference": "Sets an explicitly reviewed desired boolean; does not translate $! inversion or claim toggle equivalence."
+    },
+    {
+      "id": "set-spark-suspend",
+      "source": "plugins/spark-operator.yaml",
+      "upstream_command": "toggleScheduledSparkApp",
+      "definition": {
+        "command": "kubectl",
+        "args": [
+          "--kubeconfig=${KUBECONFIG}",
+          "--context=${CONTEXT}",
+          "--namespace=${NAMESPACE}",
+          "patch",
+          "scheduledsparkapplications.sparkoperator.k8s.io",
+          "${NAME}",
+          "--type=merge",
+          "--patch={\"spec\":{\"suspend\":${INPUT_SUSPEND}}}"
+        ],
+        "scopes": [
+          "sparkoperator.k8s.io/v1beta2/scheduledsparkapplications"
+        ],
+        "mode": "capture",
+        "confirm": true,
+        "dangerous": true,
+        "trusted_read_only": false,
+        "inputs": [
+          {
+            "name": "suspend",
+            "type": "bool",
+            "required": true
+          }
+        ]
+      },
+      "inputs": {
+        "suspend": true
+      },
+      "selection": {
+        "scope": "sparkoperator.k8s.io/v1beta2/scheduledsparkapplications",
+        "name": "api",
+        "namespace": "team",
+        "context": "demo",
+        "filter": "api",
+        "columns": {
+          "NAME": "api",
+          "SUSPEND": "false"
+        }
+      },
+      "expected_argv": [
+        "kubectl",
+        "--kubeconfig=/owned/private.yaml",
+        "--context=demo",
+        "--namespace=team",
+        "patch",
+        "scheduledsparkapplications.sparkoperator.k8s.io",
+        "api",
+        "--type=merge",
+        "--patch={\"spec\":{\"suspend\":true}}"
+      ],
+      "difference": "Sets an explicitly reviewed desired boolean; does not translate $! inversion or claim toggle equivalence."
+    },
+    {
+      "id": "migrate-vmi",
+      "source": "plugins/liveMigration.yaml",
+      "upstream_command": "liveMigration",
+      "definition": {
+        "command": "virtctl",
+        "args": [
+          "--kubeconfig=${KUBECONFIG}",
+          "--context=${CONTEXT}",
+          "--namespace=${NAMESPACE}",
+          "migrate",
+          "${NAME}"
+        ],
+        "scopes": [
+          "kubevirt.io/v1/virtualmachineinstances"
+        ],
+        "mode": "capture",
+        "confirm": true,
+        "dangerous": true,
+        "trusted_read_only": false
+      },
+      "inputs": {},
+      "selection": {
+        "scope": "kubevirt.io/v1/virtualmachineinstances",
+        "name": "api",
+        "namespace": "team",
+        "context": "demo",
+        "filter": "api",
+        "columns": {
+          "NAME": "api",
+          "SUSPEND": "false"
+        }
+      },
+      "expected_argv": [
+        "virtctl",
+        "--kubeconfig=/owned/private.yaml",
+        "--context=demo",
+        "--namespace=team",
+        "migrate",
+        "api"
+      ],
+      "difference": "Explicit version-pinned scope, reviewed execution and captured connection replace upstream defaults."
+    },
+    {
+      "id": "follow-pod",
+      "source": "plugins/log-full.yaml",
+      "upstream_command": "raw-logs-follow",
+      "definition": {
+        "command": "kubectl",
+        "args": [
+          "--kubeconfig=${KUBECONFIG}",
+          "--context=${CONTEXT}",
+          "--namespace=${NAMESPACE}",
+          "logs",
+          "--follow",
+          "${NAME}"
+        ],
+        "scopes": [
+          "v1/pods"
+        ],
+        "mode": "foreground",
+        "confirm": true,
+        "dangerous": true,
+        "trusted_read_only": false
+      },
+      "inputs": {},
+      "selection": {
+        "scope": "v1/pods",
+        "name": "api",
+        "namespace": "team",
+        "context": "demo",
+        "filter": "api",
+        "columns": {
+          "NAME": "api",
+          "SUSPEND": "false"
+        }
+      },
+      "expected_argv": [
+        "kubectl",
+        "--kubeconfig=/owned/private.yaml",
+        "--context=demo",
+        "--namespace=team",
+        "logs",
+        "--follow",
+        "api"
+      ],
+      "difference": "Explicit version-pinned scope, reviewed execution and captured connection replace upstream defaults."
+    },
+    {
+      "id": "loki-pods",
+      "source": "plugins/log-loki.yaml",
+      "upstream_command": "loki-pods",
+      "definition": {
+        "command": "logcli",
+        "args": [
+          "query",
+          "{ namespace = \"${NAMESPACE}\", pod = \"${NAME}\" }",
+          "-f"
+        ],
+        "scopes": [
+          "v1/pods"
+        ],
+        "mode": "foreground",
+        "confirm": true,
+        "dangerous": true,
+        "trusted_read_only": false
+      },
+      "inputs": {},
+      "selection": {
+        "scope": "v1/pods",
+        "name": "api",
+        "namespace": "team",
+        "context": "demo",
+        "filter": "api",
+        "columns": {
+          "NAME": "api",
+          "SUSPEND": "false"
+        }
+      },
+      "expected_argv": [
+        "logcli",
+        "query",
+        "{ namespace = \"team\", pod = \"api\" }",
+        "-f"
+      ],
+      "difference": "Tests literal query argv only. Configure the separate Loki address/credentials explicitly; no server, historical logs or cluster identity is certified."
+    },
+    {
+      "id": "loki-pods-raw",
+      "source": "plugins/log-loki.yaml",
+      "upstream_command": "loki-pods-raw",
+      "definition": {
+        "command": "logcli",
+        "args": [
+          "query",
+          "{ namespace = \"${NAMESPACE}\", pod = \"${NAME}\" }",
+          "-f",
+          "-oraw"
+        ],
+        "scopes": [
+          "v1/pods"
+        ],
+        "mode": "foreground",
+        "confirm": true,
+        "dangerous": true,
+        "trusted_read_only": false
+      },
+      "inputs": {},
+      "selection": {
+        "scope": "v1/pods",
+        "name": "api",
+        "namespace": "team",
+        "context": "demo",
+        "filter": "api",
+        "columns": {
+          "NAME": "api",
+          "SUSPEND": "false"
+        }
+      },
+      "expected_argv": [
+        "logcli",
+        "query",
+        "{ namespace = \"team\", pod = \"api\" }",
+        "-f",
+        "-oraw"
+      ],
+      "difference": "Tests literal query argv only. Configure the separate Loki address/credentials explicitly; no server, historical logs or cluster identity is certified."
+    },
+    {
+      "id": "loki-node",
+      "source": "plugins/log-loki.yaml",
+      "upstream_command": "loki-node",
+      "definition": {
+        "command": "logcli",
+        "args": [
+          "query",
+          "{ node_name = \"${NAME}\" }",
+          "-f"
+        ],
+        "scopes": [
+          "v1/nodes"
+        ],
+        "mode": "foreground",
+        "confirm": true,
+        "dangerous": true,
+        "trusted_read_only": false
+      },
+      "inputs": {},
+      "selection": {
+        "scope": "v1/nodes",
+        "name": "api",
+        "namespace": "team",
+        "context": "demo",
+        "filter": "api",
+        "columns": {
+          "NAME": "api",
+          "SUSPEND": "false"
+        }
+      },
+      "expected_argv": [
+        "logcli",
+        "query",
+        "{ node_name = \"api\" }",
+        "-f"
+      ],
+      "difference": "Tests literal query argv only. Configure the separate Loki address/credentials explicitly; no server, historical logs or cluster identity is certified."
+    },
+    {
+      "id": "loki-node-raw",
+      "source": "plugins/log-loki.yaml",
+      "upstream_command": "loki-node-raw",
+      "definition": {
+        "command": "logcli",
+        "args": [
+          "query",
+          "{ node_name = \"${NAME}\" }",
+          "-f",
+          "-oraw"
+        ],
+        "scopes": [
+          "v1/nodes"
+        ],
+        "mode": "foreground",
+        "confirm": true,
+        "dangerous": true,
+        "trusted_read_only": false
+      },
+      "inputs": {},
+      "selection": {
+        "scope": "v1/nodes",
+        "name": "api",
+        "namespace": "team",
+        "context": "demo",
+        "filter": "api",
+        "columns": {
+          "NAME": "api",
+          "SUSPEND": "false"
+        }
+      },
+      "expected_argv": [
+        "logcli",
+        "query",
+        "{ node_name = \"api\" }",
+        "-f",
+        "-oraw"
+      ],
+      "difference": "Tests literal query argv only. Configure the separate Loki address/credentials explicitly; no server, historical logs or cluster identity is certified."
+    },
+    {
+      "id": "loki-ns",
+      "source": "plugins/log-loki.yaml",
+      "upstream_command": "loki-ns",
+      "definition": {
+        "command": "logcli",
+        "args": [
+          "query",
+          "{ namespace = \"${NAME}\" }",
+          "-f"
+        ],
+        "scopes": [
+          "v1/namespaces"
+        ],
+        "mode": "foreground",
+        "confirm": true,
+        "dangerous": true,
+        "trusted_read_only": false
+      },
+      "inputs": {},
+      "selection": {
+        "scope": "v1/namespaces",
+        "name": "api",
+        "namespace": "team",
+        "context": "demo",
+        "filter": "api",
+        "columns": {
+          "NAME": "api",
+          "SUSPEND": "false"
+        }
+      },
+      "expected_argv": [
+        "logcli",
+        "query",
+        "{ namespace = \"api\" }",
+        "-f"
+      ],
+      "difference": "Tests literal query argv only. Configure the separate Loki address/credentials explicitly; no server, historical logs or cluster identity is certified."
+    },
+    {
+      "id": "loki-ns-raw",
+      "source": "plugins/log-loki.yaml",
+      "upstream_command": "loki-ns-raw",
+      "definition": {
+        "command": "logcli",
+        "args": [
+          "query",
+          "{ namespace = \"${NAME}\" }",
+          "-f",
+          "-oraw"
+        ],
+        "scopes": [
+          "v1/namespaces"
+        ],
+        "mode": "foreground",
+        "confirm": true,
+        "dangerous": true,
+        "trusted_read_only": false
+      },
+      "inputs": {},
+      "selection": {
+        "scope": "v1/namespaces",
+        "name": "api",
+        "namespace": "team",
+        "context": "demo",
+        "filter": "api",
+        "columns": {
+          "NAME": "api",
+          "SUSPEND": "false"
+        }
+      },
+      "expected_argv": [
+        "logcli",
+        "query",
+        "{ namespace = \"api\" }",
+        "-f",
+        "-oraw"
+      ],
+      "difference": "Tests literal query argv only. Configure the separate Loki address/credentials explicitly; no server, historical logs or cluster identity is certified."
+    },
+    {
+      "id": "stern-selector",
+      "source": "plugins/log-stern.yaml",
+      "upstream_command": "stern",
+      "definition": {
+        "command": "stern",
+        "args": [
+          "--kubeconfig=${KUBECONFIG}",
+          "--context=${CONTEXT}",
+          "-n",
+          "${NAMESPACE}",
+          "--tail",
+          "50",
+          "${INPUT_SELECTOR}"
+        ],
+        "scopes": [
+          "v1/pods"
+        ],
+        "mode": "foreground",
+        "confirm": true,
+        "dangerous": true,
+        "trusted_read_only": false,
+        "inputs": [
+          {
+            "name": "selector",
+            "type": "string"
+          }
+        ]
+      },
+      "inputs": {
+        "selector": "api|worker"
+      },
+      "selection": {
+        "scope": "v1/pods",
+        "name": "api",
+        "namespace": "team",
+        "context": "demo",
+        "filter": "api",
+        "columns": {
+          "NAME": "api",
+          "SUSPEND": "false"
+        }
+      },
+      "expected_argv": [
+        "stern",
+        "--kubeconfig=/owned/private.yaml",
+        "--context=demo",
+        "-n",
+        "team",
+        "--tail",
+        "50",
+        "api|worker"
+      ],
+      "difference": "Quotes numeric argv and requires an explicit regex selector instead of relying on upstream FILTER fallback."
+    },
+    {
+      "id": "resize-pvc",
+      "source": "plugins/pvc-resize.yaml",
+      "upstream_command": "resize-pvc",
+      "definition": {
+        "command": "kubectl",
+        "args": [
+          "--kubeconfig=${KUBECONFIG}",
+          "--context=${CONTEXT}",
+          "--namespace=${NAMESPACE}",
+          "patch",
+          "pvc",
+          "${NAME}",
+          "--type=merge",
+          "--patch={\"spec\":{\"resources\":{\"requests\":{\"storage\":\"${INPUT_SIZE}\"}}}}"
+        ],
+        "scopes": [
+          "v1/persistentvolumeclaims"
+        ],
+        "mode": "capture",
+        "confirm": true,
+        "dangerous": true,
+        "trusted_read_only": false,
+        "inputs": [
+          {
+            "name": "size",
+            "type": "dropdown",
+            "options": [
+              "1Gi",
+              "5Gi",
+              "10Gi"
+            ]
+          }
+        ]
+      },
+      "inputs": {
+        "size": "10Gi"
+      },
+      "selection": {
+        "scope": "v1/persistentvolumeclaims",
+        "name": "api",
+        "namespace": "team",
+        "context": "demo",
+        "filter": "api",
+        "columns": {
+          "NAME": "api",
+          "SUSPEND": "false"
+        }
+      },
+      "expected_argv": [
+        "kubectl",
+        "--kubeconfig=/owned/private.yaml",
+        "--context=demo",
+        "--namespace=team",
+        "patch",
+        "pvc",
+        "api",
+        "--type=merge",
+        "--patch={\"spec\":{\"resources\":{\"requests\":{\"storage\":\"10Gi\"}}}}"
+      ],
+      "difference": "A reviewed quantity allowlist prevents free-form JSON injection; real storage-controller/expansion behavior is not tested here."
+    },
+    {
+      "id": "remove-deployment-finalizers",
+      "source": "plugins/remove-finalizers.yaml",
+      "upstream_command": "remove_finalizers",
+      "definition": {
+        "command": "kubectl",
+        "args": [
+          "--kubeconfig=${KUBECONFIG}",
+          "--context=${CONTEXT}",
+          "--namespace=${NAMESPACE}",
+          "patch",
+          "${RESOURCE}.${GROUP}",
+          "${NAME}",
+          "--type=merge",
+          "--patch={\"metadata\":{\"finalizers\":null}}"
+        ],
+        "scopes": [
+          "apps/v1/deployments"
+        ],
+        "mode": "capture",
+        "confirm": true,
+        "dangerous": true,
+        "trusted_read_only": false
+      },
+      "inputs": {},
+      "selection": {
+        "scope": "apps/v1/deployments",
+        "name": "api",
+        "namespace": "team",
+        "context": "demo",
+        "filter": "api",
+        "columns": {
+          "NAME": "api",
+          "SUSPEND": "false"
+        }
+      },
+      "expected_argv": [
+        "kubectl",
+        "--kubeconfig=/owned/private.yaml",
+        "--context=demo",
+        "--namespace=team",
+        "patch",
+        "deployments.apps",
+        "api",
+        "--type=merge",
+        "--patch={\"metadata\":{\"finalizers\":null}}"
+      ],
+      "difference": "Restricted to Deployments in a namespace; deliberate destructive review. This is not the upstream global all-resource scope."
+    }
+  ]
+}

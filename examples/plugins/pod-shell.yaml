@@ -1,0 +1,29 @@
+schema_version: 1
+plugins:
+  schema_version: 1
+  commands:
+    pod-shell:
+      description: Run an interactive local kubectl exec against the captured pod
+      command: kubectl
+      args:
+        - --kubeconfig=${KUBECONFIG}
+        - --context=${CONTEXT}
+        - --namespace=${NAMESPACE}
+        - exec
+        - --stdin
+        - --tty
+        - --container=${INPUT_CONTAINER}
+        - ${NAME}
+        - --
+        - sh
+      scopes: [v1/pods]
+      mode: foreground
+      confirm: true
+      dangerous: true
+      trusted_read_only: false
+      timeout: 3600
+      inputs:
+        - name: container
+          label: Exact container name
+          type: string
+          required: true

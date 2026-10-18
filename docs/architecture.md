@@ -1,5 +1,22 @@
 # Architecture decisions
 
+## Audited plugin adaptations: U05 #60
+
+Compatibility is a reviewed documentation/fixture boundary, not a second parser
+or implicit importer. The 50 pinned records retain original Git blob/SHA-256
+identities; each of the 108 command names has an explicit classification. Only
+18 original argument-vector adaptations claim their tested literal contracts.
+Three standalone original manifests use the same explicit loader, captured
+connection and process owner as user definitions. No downloaded script executes.
+
+Plugin scopes now accept valid hyphenated DNS resource plurals; Kubernetes
+[CRD validation](https://github.com/kubernetes/apiextensions-apiserver/blob/v0.36.4/pkg/apis/apiextensions/validation/validation.go)
+uses DNS1035 labels for the plural. Boolean inversion syntax is rejected with
+its actual meaning, after protecting literal dollars. Explicit desired-state
+boolean inputs replace toggles in fixtures. Plugin-form Tab/Shift+Tab bindings
+resolve before queued printable keys, preserving exact unpaced input and review.
+See [compatibility acceptance](acceptance/plugin-compatibility.md).
+
 ## Owned plugin execution: U04 #59
 
 `PluginSource` freezes a client/scope/UID/column selection before asynchronous

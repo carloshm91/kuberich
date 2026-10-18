@@ -1,0 +1,22 @@
+schema_version: 1
+plugins:
+  schema_version: 1
+  commands:
+    inspect-pod:
+      description: Inspect the captured pod as JSON
+      command: kubectl
+      args:
+        - --kubeconfig=${KUBECONFIG}
+        - --context=${CONTEXT}
+        - --namespace=${NAMESPACE}
+        - get
+        - pod
+        - ${NAME}
+        - --output=json
+      scopes: [v1/pods]
+      mode: capture
+      confirm: true
+      dangerous: false
+      trusted_read_only: true
+      timeout: 30
+      output_limit: 65536

@@ -77,6 +77,7 @@ def test_capture_is_literal_immutable_scoped_and_has_explicit_defaults():
         ("$COL-AGE", {"COL-AGE": "5m"}, "5m"),
         ("${NAME}suffix", {"NAME": "worker"}, "workersuffix"),
         ("$$HOME:$NAME", {"NAME": "one"}, "$HOME:one"),
+        ("$$!NAME/$${!NAME}", {}, "$!NAME/${!NAME}"),
     ],
 )
 def test_expansion_is_one_pass_and_explicit(text, values, expected):
@@ -103,6 +104,35 @@ def test_expansion_is_one_pass_and_explicit(text, values, expected):
 def test_expansion_rejects_missing_malformed_and_control_values(text, values):
     with pytest.raises(AppError):
         expand_plugin(text, values)
+
+
+@pytest.mark.parametrize("text", ["$!COL-SUSPEND", "${!COL-SUSPEND}"])
+def test_upstream_boolean_inversion_requires_a_deliberate_input(text):
+    with pytest.raises(AppError, match="boolean inversion"):
+        expand_plugin(text, {"COL-SUSPEND": "true"})
+
+
+@pytest.mark.parametrize(
+    "scope",
+    [
+        "v1/pods",
+        "example.test/v1/a",
+        "example.test/v1/" + "a" * 63,
+        "k8s.cni.cncf.io/v1/network-attachment-definitions",
+    ],
+)
+def test_scopes_accept_dns_resource_plurals_and_match_exact_served_version(scope):
+    value = plugin(scopes=[scope])
+    assert value.applies(scope)
+    assert not value.applies(scope.replace("v1/", "v2/", 1))
+
+
+@pytest.mark.parametrize(
+    "plural", ["-pods", "pods-", "pods/status", "pods.name", "1pods", "a" * 64]
+)
+def test_scopes_reject_invalid_resource_plural_boundaries(plural):
+    with pytest.raises(AppError, match="scopes"):
+        plugin(scopes=["example.test/v1/" + plural])
 
 
 @pytest.mark.parametrize(

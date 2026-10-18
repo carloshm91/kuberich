@@ -7,6 +7,13 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Document the pinned 50-file/108-command plugin compatibility census, external
+  dependencies and alternatives; verify 18 explicit argv adaptations and three
+  original capture/interactive/background manifests. Accept valid hyphenated CRD
+  plural scopes and identify unsupported boolean inversion accurately
+  ([#60](https://github.com/carloshm91/kuberich/issues/60),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Run explicitly configured local plugins with typed Review/Run forms,
   scope-aware shortcuts, capture/background/native foreground modes, bounded
   sanitized output, visible job controls and captured credential-helper identity

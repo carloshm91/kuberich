@@ -1,0 +1,22 @@
+schema_version: 1
+plugins:
+  schema_version: 1
+  commands:
+    collect-pod-events:
+      description: Collect matching Pod events in an owned background job
+      command: kubectl
+      args:
+        - --kubeconfig=${KUBECONFIG}
+        - --context=${CONTEXT}
+        - --namespace=${NAMESPACE}
+        - get
+        - events
+        - --field-selector=involvedObject.kind=Pod,involvedObject.name=${NAME}
+        - --output=json
+      scopes: [v1/pods]
+      mode: background
+      confirm: true
+      dangerous: false
+      trusted_read_only: true
+      timeout: 300
+      output_limit: 65536
