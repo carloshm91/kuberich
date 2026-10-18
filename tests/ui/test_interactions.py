@@ -274,6 +274,7 @@ async def test_readonly_document_and_help_have_independent_text_keys_and_shared_
             await pilot.press("question_mark")
             help_screen = app.screen
             assert isinstance(help_screen, HelpScreen)
+            assert "Read-only" in str(help_screen.query_one(".help-caption").content)
             scroll = help_screen.query_one("#help-scroll", VerticalScroll)
             await pilot.press("G")
             await pilot.pause()

@@ -117,6 +117,8 @@ Details/YAML/events and help share the workspace header and frame. The captured
 resource remains explicit; inspection content is still a read snapshot. Container
 lists now refresh readiness, restart counts and waiting/running/terminated state
 from the existing Pod watch, preserving selection by container name and viewport.
+Long container feedback stays scrollable in the bottom status area; use Tab to
+focus it and arrow/page keys to read the full message.
 No separate watch is opened for each container list. Deletion, replacement UID,
 namespace/context change or fatal permission loss invalidates the old screen;
 covered logs/shell work is closed and drained before client replacement. Late

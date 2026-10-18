@@ -61,8 +61,8 @@ class ContainerScreen(CommandWorkspace):
     #container-title, #container-hints, #container-status { height: 1; text-overflow: ellipsis; }
     #container-title { color: $accent; height: 1; border: none; }
     ContainerScreen.short #container-title { height: 1; border-top: none; border-bottom: none; }
-    #container-feedback { height: auto; min-height: 1; max-height: 3; }
-    ContainerScreen.short #container-feedback { display: none; }
+    #container-feedback { height: auto; min-height: 1; max-height: 3; margin: 0 1; }
+    ContainerScreen.short #container-feedback { height: 1; max-height: 1; }
     #container-status { height: auto; text-overflow: fold; }
     #containers { height: 1fr; }
     #container-title { width: 1fr; }
@@ -70,7 +70,6 @@ class ContainerScreen(CommandWorkspace):
     ContainerScreen.short #container-hints { display: block; }
     ContainerScreen.short #container-title { display: none; }
     #container-back { width: 14; min-width: 14; height: 1; border: none; }
-    #workspace-status { height: 1; margin: 0 1; }
     """
 
     def __init__(
@@ -105,7 +104,6 @@ class ContainerScreen(CommandWorkspace):
             markup=False,
             id="container-status",
         )
-        self.workspace_status = Static("", markup=False, id="workspace-status")
 
     def compose(self) -> ComposeResult:
         target = self.stream.target
@@ -128,25 +126,18 @@ class ContainerScreen(CommandWorkspace):
             yield from self.command_bar()
         with WorkspaceFrame(id="container-dialog"):
             yield self.table
-            with VerticalScroll(id="container-feedback"):
-                yield self.status
         yield Breadcrumbs(
             self.trail,
             "Pods",
             visible=self.chrome is None or not self.chrome.presentation.crumbsless,
         )
-        yield self.workspace_status
+        with VerticalScroll(id="container-feedback"):
+            yield self.status
 
     def _set_status(self, message: str | Text) -> None:
         self.status.update(message)
-        if self.is_mounted:
-            self.on_resize()
-
-    def on_resize(self) -> None:
-        self.workspace_status.update(self.status.content if self.app.size.height < 16 else "")
 
     def on_mount(self) -> None:
-        self.on_resize()
         target = self.stream.target
         self.query_one("#container-dialog", Vertical).border_title = safe_text(
             f"containers({target.namespace}/{target.name})[{len(self.names)}]"

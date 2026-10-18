@@ -164,8 +164,15 @@ class HelpScreen(CommandWorkspace):
             cast(KubeRichApp, self.app).chrome, TEXT_SHORTCUTS, binding_profile="text"
         )
         with WorkspaceBars():
+            mode = (
+                "Read-only"
+                if cast(KubeRichApp, self.app).commands.policy.read_only
+                else "Read/write"
+            )
             yield Static(
-                "Keyboard help · j/k · g/G · : command", markup=False, classes="help-caption"
+                f"Keyboard help · {mode} · j/k · g/G · : command",
+                markup=False,
+                classes="help-caption",
             )
             yield from self.command_bar()
         with WorkspaceFrame(id="help-dialog"):

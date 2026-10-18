@@ -85,6 +85,7 @@ def test_real_terminal_initial_help_and_readonly_with_hidden_header(tmp_path: Pa
     ]
     with TerminalSession(command, tmp_path) as terminal:
         terminal.wait_for(b"Keyboard help")
+        terminal.wait_for_screen("Read-only")
         marker = terminal.send(b"\x1b")
         # Wait for restored workspace bindings, not a background redraw beneath help.
         terminal.wait_for_screen(

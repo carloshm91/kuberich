@@ -102,3 +102,13 @@ checks still require visible `kind: Secret`; Pilot additionally requires two
 scrollable document rows and visible compact status feedback. The interrupted
 original run retained its two failures and 1,143 passing tests before correction;
 it is not complete qualification.
+
+The subsequent 3.13 and 3.14 originals each retained 5,665 passing tests and two
+failures: initial hidden-header help no longer exposed its read-only mode, and
+compact container feedback could not scroll a long shell error. Help now places
+the actual policy mode in its visible caption; its PTY waits for that visible
+witness before Escape. The actual scrollable container feedback now occupies
+the existing bottom status space at every size, retaining both a data row and
+the full error text instead of an ellipsized mirror. Existing scroll/cleanup
+assertions remain; stronger geometry assertions also require a visible footer
+and table body at 40x12. These failed originals are not qualification results.
