@@ -220,7 +220,8 @@ async def test_natural_parent_exit_cleans_descendants_holding_output_pipes(tmp_p
     [
         value
         for value in ProcessPurpose
-        if value not in {ProcessPurpose.AUTHENTICATE, ProcessPurpose.DOWNLOAD}
+        if value
+        not in {ProcessPurpose.AUTHENTICATE, ProcessPurpose.DOWNLOAD, ProcessPurpose.CLIPBOARD}
     ],
 )
 async def test_read_only_blocks_every_effectful_process_before_executable_resolution(

@@ -119,6 +119,8 @@ class TerminalSession:
         environment["KUBERICH_CONFIG"] = str(preferences)
         environment["KUBERICH_LOG_FILE"] = str(directory / "kuberich.log")
         environment["KUBERICH_LOG_LEVEL"] = "DEBUG"
+        # Ordinary PTY trials must never replace a developer's host clipboard.
+        environment["KUBERICH_CLIPBOARD"] = "osc52"
         environment["KUBECONFIG"] = str(directory / "never-use-a-real-cluster")
         environment.update(overrides)
 

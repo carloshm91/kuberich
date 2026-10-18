@@ -32,6 +32,24 @@ indexing header. The HTML pages already serve `index, follow`. Zone-cache cleanu
 and a new ordinary-URL read are still needed before claiming every response
 header verified on the custom domains.
 
+## Navigation work in progress
+
+The next source checkpoint prepares bounded native macOS/X11 clipboard writers
+and write-only OSC52 framing for SSH/tmux. Headless trials remain memory-only;
+ordinary PTY fixtures explicitly select OSC52 rather than replacing a developer's
+host clipboard. Native payloads are limited to 1 MiB and terminal requests to
+64 KiB of UTF-8. A terminal request is not a paste acknowledgement.
+
+```sh
+uv run pytest tests/unit/test_clipboard.py tests/contract/test_clipboard.py
+```
+
+The local Linux trial writes and reads synthetic text on its own Xvfb display,
+including Unicode, embedded controls, NUL, RTF/EPS-looking text and replacement;
+its selection owner is drained on exit. Native macOS qualification and the rest
+of the navigation/filter/container-refresh contract are still pending. This is
+an implementation checkpoint, not completion of navigation or a new release.
+
 ## Source checkpoint toward 0.2.0: plugin compatibility and examples
 
 The source classifies all 50 pinned community plugin files and 108 commands,

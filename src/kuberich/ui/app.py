@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import os
+import sys
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import replace
@@ -33,6 +34,7 @@ from kuberich.config.navigation import NavigationPreferences, navigation_from
 from kuberich.config.schema import Settings
 from kuberich.domain.aggregate_logs import workload_kind
 from kuberich.domain.appearance import Appearance, effective_theme
+from kuberich.domain.clipboard import ClipboardBackend, clipboard_backend, clipboard_bytes, osc52
 from kuberich.domain.connections import (
     DEFAULT_CONNECTION,
     ConnectionRequest,
@@ -64,6 +66,7 @@ from kuberich.services.access import AccessPolicy, Action
 from kuberich.services.aggregate_logs import AggregateLogs
 from kuberich.services.appearance import PreferenceSource
 from kuberich.services.attach import AttachService
+from kuberich.services.clipboard import NativeClipboard
 from kuberich.services.commands import (
     Command,
     CommandService,
@@ -308,6 +311,11 @@ class KubeRichApp(App[None]):
         self._refresh_seconds = settings.refresh_seconds
         self._process_environment = dict(os.environ)
         self._process_directory = Path.cwd()
+        self._native_clipboard = NativeClipboard(
+            self.processes, self._process_environment, self._process_directory
+        )
+        self._clipboard_task: asyncio.Task[None] | None = None
+        self._clipboard_pending: tuple[bytes, ClipboardBackend] | None = None
         self.preferences = preferences
         self._global_theme = preferences.document.settings.theme if preferences else settings.theme
         self._theme_override = preferences.theme_override if preferences else None
@@ -1158,12 +1166,48 @@ class KubeRichApp(App[None]):
             await _finish_owned(closing)
             raise
 
+    def copy_to_clipboard(self, text: str) -> None:
+        backend = clipboard_backend(
+            self._process_environment, sys.platform, headless=self.is_headless
+        )
+        data = clipboard_bytes(text, backend)
+        self._clipboard = text
+        if backend is ClipboardBackend.OSC52:
+            if self._driver is not None:
+                self._driver.write(osc52(data, tmux=bool(self._process_environment.get("TMUX"))))
+        elif backend is not ClipboardBackend.MEMORY:
+            self._clipboard_pending = data, backend
+            if self._clipboard_task is None or self._clipboard_task.done():
+                self._clipboard_task = asyncio.create_task(self._write_clipboard())
+
+    async def _write_clipboard(self) -> None:
+        while self._clipboard_pending is not None:
+            data, backend = self._clipboard_pending
+            self._clipboard_pending = None
+            try:
+                await self._native_clipboard.write(data, backend)
+            except AppError as error:
+                if self._process_environment.get("KUBERICH_CLIPBOARD", "auto") == "auto":
+                    try:
+                        sequence = osc52(data, tmux=bool(self._process_environment.get("TMUX")))
+                        if self._driver is not None:
+                            self._driver.write(sequence)
+                    except AppError:
+                        self.notify(str(error), severity="error")
+                else:
+                    self.notify(str(error), severity="error")
+
     async def on_unmount(self) -> None:
         self._updates_stopped = True
         if self._update_task is not None:
             self._update_task.cancel()
             await _finish_owned(asyncio.gather(self._update_task, return_exceptions=True))
         try:
+            self._clipboard_pending = None
+            if self._clipboard_task is not None:
+                self._clipboard_task.cancel()
+                await _finish_owned(asyncio.gather(self._clipboard_task, return_exceptions=True))
+            await self._native_clipboard.close()
             await self.plugins.close()
             await self.mutations.close()
             await self.forwards.close()

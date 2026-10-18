@@ -189,8 +189,12 @@ class InspectionScreen(ModalScreen[None]):
         if self.result is None:
             return
         text = self.viewer.selected_text or self.viewer.text
-        self.app.copy_to_clipboard(text)
-        self.status.update("Redacted text copied; terminal clipboard support is required.")
+        try:
+            self.app.copy_to_clipboard(text)
+        except AppError as error:
+            self.status.update(str(error))
+        else:
+            self.status.update("Redacted text copied; clipboard write requested.")
 
     def back(self) -> None:
         if self.focused is self.search:

@@ -556,11 +556,11 @@ class LogScreen(ModalScreen[None]):
         try:
             self.require_current()
             text = self.history.export(clipboard=True)
+            self.app.copy_to_clipboard(text)
         except AppError as error:
             self.message = str(error)
         else:
-            self.app.copy_to_clipboard(text)
-            self.message = "Retained redacted logs copied"
+            self.message = "Retained redacted logs copied; clipboard write requested"
         self._status()
 
     def action_save(self) -> None:
