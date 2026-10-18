@@ -64,6 +64,28 @@ permission failures and retained preference bytes. No plugin is executed by a
 configuration check. Interactive/process behavior remains U04; see
 [contract acceptance](acceptance/plugin-contract.md).
 
+## Terminal interactions: B07 #61
+
+`domain/clipboard.py`, `domain/interactions.py` and `domain/selectors.py` join
+critical 100% line/branch policy. Pure tests cover bounds, malformed selectors,
+missing label/health data, drafts/recall, UID ranges and exact terminal framing.
+Pilot covers per-view ownership, captured-action review, stale guards, wide
+projection changes, local preference conflicts and owned stream/worker cleanup.
+An inert recording driver exercises clipboard wiring/coalescing/error/exit paths
+without accessing a developer clipboard; real owned Xvfb and explicitly ephemeral
+hosted macOS perform synthetic native roundtrips. Ordinary terminal tests force
+OSC52; production never reads a clipboard for acknowledgement.
+
+Source, installed and native PTYs retain original restoration controls. Actual
+capital-G and unpaced navigation-to-command input, resize, Unicode and exact
+outer OSC52 receipts run through owned SSH/tmux/private passthrough servers.
+Mouse tests separately prove default-off and explicit opt-in. Owned kind reuses
+the existing context qualification cluster for status patches, captured UID
+recreation and nested namespace/context/Escape cleanup; its fixture is deliberately
+unscheduled and makes no running-container/restart/exec claim. Existing separate
+shell, RBAC, runtime/performance and full platform checks remain required.
+See [acceptance](acceptance/terminal-navigation.md).
+
 ## Navigation preferences: U02 #57
 
 Focused new-model coverage does not qualify modified existing critical modules.

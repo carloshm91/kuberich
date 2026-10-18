@@ -1,5 +1,6 @@
 """Pod/container drill-down retains the captured target and the parent viewport."""
 
+import asyncio
 from typing import Any, ClassVar
 
 from rich.text import Text
@@ -8,16 +9,16 @@ from textual.app import ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.events import ScreenResume
-from textual.screen import ModalScreen
-from textual.widgets import Button, DataTable, Static
+from textual.widgets import Button, DataTable, Input, Static
 
-from kuberich.domain.containers import CONTAINER_COLUMNS, container_rows
+from kuberich.domain.containers import CONTAINER_COLUMNS, ContainerRow, container_rows
+from kuberich.domain.resources import ResourceRecord
 from kuberich.domain.transfers import TransferDirection
 from kuberich.errors import AppError
 from kuberich.security.presentation import safe_text
 from kuberich.services.attach import AttachService
 from kuberich.services.logs import LogStream
-from kuberich.services.processes import ProcessRunner
+from kuberich.services.processes import ProcessRunner, _finish_owned
 from kuberich.services.shell import ShellService
 from kuberich.services.transfers import TransferService
 from kuberich.ui.chrome import (
@@ -30,9 +31,14 @@ from kuberich.ui.chrome import (
 )
 from kuberich.ui.keybindings import table_bindings
 from kuberich.ui.logs import LogScreen
+from kuberich.ui.nested import CommandWorkspace
 from kuberich.ui.presentation import FrameTable
 from kuberich.ui.terminal import ShellScreen
 from kuberich.ui.transfers import TransferScreen
+
+
+def _project_containers(record: ResourceRecord) -> tuple[ContainerRow, ...]:
+    return container_rows(record.manifest)
 
 
 class ContainerTable(FrameTable[Text]):
@@ -40,7 +46,7 @@ class ContainerTable(FrameTable[Text]):
     BINDINGS: ClassVar[list[BindingType]] = table_bindings("containers")
 
 
-class ContainerScreen(ModalScreen[None]):
+class ContainerScreen(CommandWorkspace):
     AUTO_FOCUS = "#containers"
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("l", "logs", "Logs"),
@@ -53,15 +59,16 @@ class ContainerScreen(ModalScreen[None]):
     DEFAULT_CSS = """
     ContainerScreen { layout: vertical; background: $background; }
     #container-title, #container-hints, #container-status { height: 1; text-overflow: ellipsis; }
-    #container-title { color: $accent; height: 3; border: solid $primary; }
+    #container-title { color: $accent; height: 1; border: none; }
     ContainerScreen.short #container-title { height: 1; border-top: none; border-bottom: none; }
-    #container-feedback { height: auto; min-height: 1; max-height: 3; }
-    ContainerScreen.short #container-feedback { max-height: 1; }
+    #container-feedback { height: 1; min-height: 1; max-height: 1; margin: 0 1; }
     #container-status { height: auto; text-overflow: fold; }
     #containers { height: 1fr; }
-    #container-hints { width: 1fr; }
+    #container-title { width: 1fr; }
+    #container-hints { width: 1fr; display: none; }
+    ContainerScreen.short #container-hints { display: block; }
+    ContainerScreen.short #container-title { display: none; }
     #container-back { width: 14; min-width: 14; height: 1; border: none; }
-    #workspace-status { height: 1; margin: 0 1; }
     """
 
     def __init__(
@@ -78,6 +85,10 @@ class ContainerScreen(ModalScreen[None]):
     ) -> None:
         super().__init__()
         self.stream = stream
+        self.invalidated = False
+        self._pending_record: ResourceRecord | None = None
+        self._last_record: ResourceRecord | None = None
+        self._rows_task: asyncio.Task[None] | None = None
         self.shell, self.processes = shell, processes
         self.attach = attach
         self.transfers = transfers
@@ -88,7 +99,7 @@ class ContainerScreen(ModalScreen[None]):
             raise AppError("The selected pod has no regular/init/ephemeral containers.")
         self.table = ContainerTable(id="containers", cursor_type="row", zebra_stripes=True)
         self.status = Static(
-            "Pod snapshot · CPU/MEM are requests/limits; live usage is not collected.",
+            "CPU/MEM show requests/limits; usage is not collected.",
             markup=False,
             id="container-status",
         )
@@ -98,40 +109,40 @@ class ContainerScreen(ModalScreen[None]):
         if self.chrome is not None:
             yield WorkspaceHeader(self.chrome, CONTAINER_SHORTCUTS, binding_profile="containers")
         with WorkspaceBars():
-            yield Static(
-                safe_text(
-                    f"Containers · {target.namespace}/{target.name} · {target.session.context}"
-                ),
-                id="container-title",
-            )
-            with Horizontal():
+            with Horizontal(classes="container-caption"):
                 yield Static(
-                    "Enter/l logs · s shell · a attach · u upload · d download · Esc pods"
-                    if self.attach is not None
-                    else "Enter/l logs · s shell · Esc pods"
-                    if self.shell is not None
-                    else "Enter/l logs · j/k ↑/↓ · g/G first/last · Esc pods",
+                    safe_text(
+                        f"Containers · {target.namespace}/{target.name} · {target.session.context}"
+                    ),
+                    id="container-title",
+                )
+                yield Static(
+                    "Containers · s shell" if self.shell is not None else "Containers Enter logs",
                     markup=False,
                     id="container-hints",
                 )
                 yield Button("Back to pods", id="container-back", compact=True)
+            yield from self.command_bar()
         with WorkspaceFrame(id="container-dialog"):
             yield self.table
-            with VerticalScroll(id="container-feedback"):
-                yield self.status
         yield Breadcrumbs(
             self.trail,
             "Pods",
             visible=self.chrome is None or not self.chrome.presentation.crumbsless,
         )
-        yield Static("", id="workspace-status", markup=False)
+        with VerticalScroll(id="container-feedback"):
+            yield self.status
+
+    def _set_status(self, message: str | Text) -> None:
+        self.status.update(message)
 
     def on_mount(self) -> None:
         target = self.stream.target
         self.query_one("#container-dialog", Vertical).border_title = safe_text(
             f"containers({target.namespace}/{target.name})[{len(self.names)}]"
         )
-        self.table.add_columns(*CONTAINER_COLUMNS)
+        for index, label in enumerate(CONTAINER_COLUMNS):
+            self.table.add_column(label, key=str(index))
         for row in self.rows:
             self.table.add_row(*(safe_text(cell) for cell in row.cells()), key=row.name)
         self.validate_target()
@@ -141,20 +152,100 @@ class ContainerScreen(ModalScreen[None]):
 
     def validate_target(self) -> None:
         try:
+            if self.invalidated:
+                raise AppError("The container target is stale; select the pod again.")
             self.stream.require_current()
         except AppError as error:
+            self.invalidated = True
+            self._pending_record = None
+            self.names = ()
+            self.rows = ()
+            self.table.clear()
             self.table.disabled = True
-            self.status.update(safe_text(str(error)))
+            if (
+                self._rows_task is not None
+                and not self._rows_task.done()
+                and not self._rows_task.cancelling()
+            ):
+                self._rows_task.cancel()
+            self._set_status(safe_text(str(error)))
 
     @on(DataTable.RowSelected, "#containers")
     def selected(self, event: DataTable.RowSelected) -> None:
         event.stop()
-        self._open(self.names[event.cursor_row])
+        name = event.row_key.value
+        if name is not None and name in self.names and not self.invalidated:
+            self._open(name)
 
     def action_logs(self) -> None:
-        self._open(self.names[self.table.cursor_row])
+        if self.names and not self.invalidated:
+            self._open(self._selected_name())
+
+    def _selected_name(self) -> str:
+        if self.invalidated or not self.table.row_count:
+            raise AppError("Select a current container first.")
+        name = self.table.coordinate_to_cell_key(self.table.cursor_coordinate).row_key.value
+        if name not in self.names:
+            raise AppError("The selected container is no longer present.")
+        return name
+
+    def observe_record(self, record: ResourceRecord) -> None:
+        if self.invalidated or record is self._last_record or record.uid != self.stream.target.uid:
+            return
+        self._last_record = record
+        self._pending_record = record
+        if self._rows_task is None or self._rows_task.done():
+            self._rows_task = asyncio.create_task(self._refresh_rows())
+
+    async def _refresh_rows(self) -> None:
+        while self._pending_record is not None and not self.invalidated:
+            record, self._pending_record = self._pending_record, None
+            worker = asyncio.create_task(asyncio.to_thread(_project_containers, record))
+            try:
+                rows = await asyncio.shield(worker)
+            except asyncio.CancelledError:
+                await _finish_owned(asyncio.gather(worker, return_exceptions=True))
+                raise
+            self.validate_target()
+            if self.invalidated or record is not self._last_record:
+                continue
+            table = self.table
+            selected = self._selected_name() if table.row_count else None
+            x, y = table.scroll_x, table.scroll_y
+            names = tuple(row.name for row in rows)
+            for key in tuple(table.rows):
+                if key.value not in names:
+                    table.remove_row(key)
+            for row in rows:
+                cells = tuple(safe_text(cell) for cell in row.cells())
+                if row.name not in table.rows:
+                    table.add_row(*cells, key=row.name)
+                else:
+                    for index, cell in enumerate(cells):
+                        if table.get_cell(row.name, str(index)) != cell:
+                            table.update_cell(row.name, str(index), cell, update_width=True)
+            self.rows, self.names = rows, names
+            if selected in names:
+                table.move_cursor(row=table.get_row_index(selected), scroll=False)
+            table.scroll_to(x=x, y=y, animate=False, immediate=True, force=True)
+
+    async def stop_owned(self) -> None:
+        self.invalidated = True
+        self._pending_record = None
+        if self._rows_task is not None:
+            if not self._rows_task.done() and not self._rows_task.cancelling():
+                self._rows_task.cancel()
+            await _finish_owned(asyncio.gather(self._rows_task, return_exceptions=True))
+        self.names, self.rows = (), ()
+        self.table.clear()
+        self.table.disabled = True
+
+    async def on_unmount(self) -> None:
+        await self.stop_owned()
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        if isinstance(self.focused, Input) or self.invalidated:
+            return False
         if action == "shell":
             return self.shell is not None and self.processes is not None
         if action == "attach":
@@ -181,15 +272,15 @@ class ContainerScreen(ModalScreen[None]):
         try:
             self.transfers.require_current(direction)
         except AppError as error:
-            self.status.update(safe_text(str(error)))
+            self._set_status(safe_text(str(error)))
             return
 
         def returned(message: str | None) -> None:
             self.validate_target()
-            self.status.update(safe_text(message or "No transfer started."))
+            self._set_status(safe_text(message or "No transfer started."))
 
         self.app.push_screen(
-            TransferScreen(self.transfers, self.names[self.table.cursor_row], direction), returned
+            TransferScreen(self.transfers, self._selected_name(), direction), returned
         )
 
     def _terminal(self, service: ShellService | AttachService | None) -> None:
@@ -198,14 +289,14 @@ class ContainerScreen(ModalScreen[None]):
         if service is None or self.processes is None:
             return
         try:
-            request = service.capture(self.names[self.table.cursor_row])
+            request = service.capture(self._selected_name())
         except AppError as error:
-            self.status.update(safe_text(str(error)))
+            self._set_status(safe_text(str(error)))
             return
 
         def returned(message: str | None) -> None:
             self.validate_target()
-            self.status.update(safe_text(message or "Shell closed."))
+            self._set_status(safe_text(message or "Shell closed."))
 
         self.app.push_screen(ShellScreen(service, self.processes, request), returned)
 
@@ -216,7 +307,7 @@ class ContainerScreen(ModalScreen[None]):
             self.stream.require_current()
         except AppError as error:
             self.validate_target()
-            self.status.update(safe_text(str(error)))
+            self._set_status(safe_text(str(error)))
             return
         self.app.push_screen(
             LogScreen(self.stream, self.names, selected=name, chrome=self.chrome, trail=self.trail)

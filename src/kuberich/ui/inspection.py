@@ -3,24 +3,33 @@
 import asyncio
 from typing import ClassVar, Literal
 
+from rich.text import Text
 from textual import on
 from textual.app import ComposeResult
 from textual.binding import Binding, BindingType
-from textual.containers import Horizontal, Vertical
-from textual.screen import ModalScreen
-from textual.widgets import Button, Input, Static, TextArea
+from textual.containers import Horizontal
+from textual.widgets import Button, Input, Static
 
 from kuberich.domain.connections import ConnectionProblem
 from kuberich.domain.inspection import MAX_MATCHES, text_matches
 from kuberich.errors import AppError
 from kuberich.security.presentation import safe_text
 from kuberich.services.inspection import InspectionResult, InspectionService, read_error
+from kuberich.ui.chrome import (
+    TEXT_SHORTCUTS,
+    Breadcrumbs,
+    WorkspaceBars,
+    WorkspaceFrame,
+    WorkspaceHeader,
+)
 from kuberich.ui.commands import NavigationInput
+from kuberich.ui.nested import CommandWorkspace
+from kuberich.ui.text_navigation import ReadOnlyText
 
 Page = Literal["yaml", "details", "events"]
 
 
-class InspectionScreen(ModalScreen[None]):
+class InspectionScreen(CommandWorkspace):
     AUTO_FOCUS = "#inspection-text"
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("y", "page('yaml')", "YAML"),
@@ -33,8 +42,10 @@ class InspectionScreen(ModalScreen[None]):
         Binding("ctrl+y", "copy", "Copy", priority=True),
     ]
     DEFAULT_CSS = """
-    InspectionScreen { align: center middle; background: $background 80%; }
-    #inspection-dialog { width: 100%; height: 100%; border: round $primary; }
+    InspectionScreen { layout: vertical; background: $background; }
+    #inspection-dialog { height: 1fr; min-height: 2; }
+    InspectionScreen.short #inspection-title, InspectionScreen.short #inspection-status { display: none; }
+    InspectionScreen.short #inspection-dialog.fullscreen #inspection-status { display: block; }
     #inspection-title, #inspection-status, #inspection-search { height: 1; }
     #inspection-title { color: $accent; padding: 0 1; text-overflow: ellipsis; }
     #inspection-buttons { height: 1; }
@@ -46,11 +57,12 @@ class InspectionScreen(ModalScreen[None]):
     def __init__(self, service: InspectionService, page: Page = "details") -> None:
         super().__init__()
         self.service = service
+        self.invalidated = False
         self.page = page
         self.managed = False
         self.result: InspectionResult | None = None
         self._load_task: asyncio.Task[None] | None = None
-        self.viewer = TextArea(
+        self.viewer = ReadOnlyText(
             read_only=True,
             soft_wrap=False,
             highlight_cursor_line=False,
@@ -68,7 +80,12 @@ class InspectionScreen(ModalScreen[None]):
 
     def compose(self) -> ComposeResult:
         target = self.service.target
-        with Vertical(id="inspection-dialog"):
+        if hasattr(self.app, "chrome"):
+            yield WorkspaceHeader(self.app.chrome, TEXT_SHORTCUTS, binding_profile="text")
+        with WorkspaceBars():
+            yield self.search
+            yield from self.command_bar()
+        with WorkspaceFrame(id="inspection-dialog"):
             yield Static(
                 safe_text(
                     f"{target.session.context} · {target.namespace or 'Cluster'} / {target.name}"
@@ -83,36 +100,58 @@ class InspectionScreen(ModalScreen[None]):
                 yield Button("Copy", id="copy-view", compact=True)
                 yield Button("Back", id="inspection-back", compact=True)
             yield self.viewer
-            yield self.search
             yield self.status
+        yield Breadcrumbs((self.service.target.resource, self.page), "Resource table")
 
     def on_mount(self) -> None:
+        self.on_resize()
         self._load_task = asyncio.create_task(self._load())
+
+    def _set_status(self, message: str | Text) -> None:
+        self.status.update(message)
+        if self.is_mounted:
+            self.on_resize()
+
+    def on_resize(self) -> None:
+        self.query_one("#inspection-dialog", WorkspaceFrame).border_subtitle = (
+            safe_text(str(self.status.content)) if self.app.size.height < 16 else ""
+        )
 
     async def _load(self) -> None:
         try:
-            self.result = await self.service.load()
+            result = await self.service.load()
         except (AppError, ConnectionProblem) as error:
             self.viewer.load_text("")
-            self.status.update(safe_text(read_error(error)))
+            self._set_status(safe_text(read_error(error)))
         except Exception as error:
             self.app._handle_exception(error)
         else:
-            self.show_page()
+            if not self.invalidated:
+                self.result = result
+                self.show_page()
 
-    async def on_unmount(self) -> None:
+    async def stop_owned(self) -> None:
+        self.invalidated = True
+        self.result = None
+        self.viewer.load_text("")
         if self._load_task is not None:
             if not self._load_task.cancelling():
                 self._load_task.cancel()
             await asyncio.gather(self._load_task, return_exceptions=True)
 
+    async def on_unmount(self) -> None:
+        await self.stop_owned()
+
     def validate_target(self) -> None:
         try:
+            if self.invalidated:
+                raise AppError("The inspection target is stale; select the resource again.")
             self.service.require_current()
         except AppError as error:
+            self.invalidated = True
             self.result = None
             self.viewer.load_text("")
-            self.status.update(safe_text(str(error)))
+            self._set_status(safe_text(str(error)))
             if self._load_task is not None and not self._load_task.cancelling():
                 self._load_task.cancel()
 
@@ -122,6 +161,9 @@ class InspectionScreen(ModalScreen[None]):
         return True
 
     def show_page(self) -> None:
+        self.query_one("#inspection-dialog", WorkspaceFrame).border_title = safe_text(
+            f"{self.page}({self.service.target.namespace or 'Cluster'}/{self.service.target.name})"
+        )
         if self.result is None:
             return
         documents = self.result.documents
@@ -134,7 +176,7 @@ class InspectionScreen(ModalScreen[None]):
             text = self.result.events_error
         self.viewer.load_text(text)
         self._search_changed()
-        self.status.update(
+        self._set_status(
             safe_text(
                 f"{self.page.title()} · redacted · m managedFields · / search · Ctrl+Y copy · Esc back"
             )
@@ -149,7 +191,7 @@ class InspectionScreen(ModalScreen[None]):
         self.managed = not self.managed
         self.page = "yaml"
         self.show_page()
-        self.status.update(
+        self._set_status(
             f"YAML · managedFields {'shown' if self.managed else 'hidden'} · sensitive field sets hidden"
         )
 
@@ -160,7 +202,7 @@ class InspectionScreen(ModalScreen[None]):
     def _search_changed(self) -> None:
         self.matches = text_matches(self.viewer.text, self.search.value)
         self.match_index = -1
-        self.status.update(
+        self._set_status(
             f"{len(self.matches)}{'+' if len(self.matches) == MAX_MATCHES else ''} matches · Enter then n / N · Esc leaves search"
         )
 
@@ -170,27 +212,29 @@ class InspectionScreen(ModalScreen[None]):
 
     def action_match(self, reverse: bool) -> None:
         if not self.matches:
-            self.status.update("No matches.")
+            self._set_status("No matches.")
             return
         self.match_index = (self.match_index + (-1 if reverse else 1)) % len(self.matches)
         row, start, end = self.matches[self.match_index]
         self.viewer.move_cursor((row, start), center=True)
         self.viewer.move_cursor((row, end), select=True)
-        self.status.update(
-            f"Match {self.match_index + 1}/{len(self.matches)} · n next · N previous"
-        )
+        self._set_status(f"Match {self.match_index + 1}/{len(self.matches)} · n next · N previous")
 
     def action_copy(self) -> None:
         try:
             self.service.require_current()
         except AppError as error:
-            self.status.update(safe_text(str(error)))
+            self._set_status(safe_text(str(error)))
             return
         if self.result is None:
             return
         text = self.viewer.selected_text or self.viewer.text
-        self.app.copy_to_clipboard(text)
-        self.status.update("Redacted text copied; terminal clipboard support is required.")
+        try:
+            self.app.copy_to_clipboard(text)
+        except AppError as error:
+            self._set_status(str(error))
+        else:
+            self._set_status("Redacted text copied; clipboard write requested.")
 
     def back(self) -> None:
         if self.focused is self.search:

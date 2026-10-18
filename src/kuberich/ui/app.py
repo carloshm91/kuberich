@@ -3,13 +3,14 @@
 import asyncio
 import logging
 import os
+import sys
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import replace
 from functools import partial
 from importlib.metadata import version
 from pathlib import Path
-from typing import ClassVar
+from typing import ClassVar, cast
 from uuid import UUID
 
 from platformdirs import user_cache_path
@@ -17,7 +18,7 @@ from rich.text import Text
 from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding, BindingType
-from textual.containers import Horizontal, Vertical, VerticalScroll
+from textual.containers import Horizontal, Vertical
 from textual.dom import DOMNode
 from textual.events import DescendantFocus, Event, Key, Paste, Resize
 from textual.geometry import Size
@@ -33,14 +34,17 @@ from kuberich.config.navigation import NavigationPreferences, navigation_from
 from kuberich.config.schema import Settings
 from kuberich.domain.aggregate_logs import workload_kind
 from kuberich.domain.appearance import Appearance, effective_theme
+from kuberich.domain.clipboard import ClipboardBackend, clipboard_backend, clipboard_bytes, osc52
 from kuberich.domain.connections import (
     DEFAULT_CONNECTION,
     ConnectionRequest,
 )
 from kuberich.domain.credential_helpers import helper_start_failure
 from kuberich.domain.custom import CustomLayout
+from kuberich.domain.interactions import InteractionCommand
 from kuberich.domain.keyboard import effective_keymap
 from kuberich.domain.logs import log_containers
+from kuberich.domain.namespaces import NamespaceRow
 from kuberich.domain.navigation import (
     MAX_HISTORY,
     ContextRow,
@@ -49,10 +53,10 @@ from kuberich.domain.navigation import (
     NavigationState,
 )
 from kuberich.domain.operations import MAX_BATCH, ResourceAction
-from kuberich.domain.pods import PodColumn
+from kuberich.domain.pods import PodColumn, PodRow
 from kuberich.domain.port_forwards import suggested_port
 from kuberich.domain.processes import ProcessStatus
-from kuberich.domain.registry import RESOURCE_ALIASES, resource_selection
+from kuberich.domain.registry import RESOURCE_ALIASES, ResourceRow, resource_selection
 from kuberich.domain.resources import ApiResource, ResourceRecord
 from kuberich.domain.targets import ResourceTarget
 from kuberich.domain.views import USABLE_CONNECTIONS, ResourceSelection, ViewObservation, ViewStatus
@@ -64,6 +68,7 @@ from kuberich.services.access import AccessPolicy, Action
 from kuberich.services.aggregate_logs import AggregateLogs
 from kuberich.services.appearance import PreferenceSource
 from kuberich.services.attach import AttachService
+from kuberich.services.clipboard import NativeClipboard
 from kuberich.services.commands import (
     Command,
     CommandService,
@@ -76,7 +81,7 @@ from kuberich.services.commands import (
 )
 from kuberich.services.configuration_data import ConfigurationService
 from kuberich.services.editing import EditingService
-from kuberich.services.filtering import apply_filter
+from kuberich.services.filtering import FilterResult, apply_filter
 from kuberich.services.inspection import InspectionService
 from kuberich.services.logs import LogStream
 from kuberich.services.mutations import MutationManager, MutationService
@@ -103,6 +108,7 @@ from kuberich.ui.chrome import (
     POD_SHORTCUTS,
     RESOURCE_SHORTCUTS,
     SERVICE_SHORTCUTS,
+    TEXT_SHORTCUTS,
     Breadcrumbs,
     WorkspaceBars,
     WorkspaceChrome,
@@ -119,10 +125,12 @@ from kuberich.ui.custom import CustomTable
 from kuberich.ui.editing import EditingScreen
 from kuberich.ui.handoff import terminal_handoff
 from kuberich.ui.inspection import InspectionScreen, Page
+from kuberich.ui.interactions import Interactions
 from kuberich.ui.keybindings import NavigationHelpScreen, navigation_help
 from kuberich.ui.logs import LogScreen
 from kuberich.ui.mutations import AnnotationScreen, MutationHistoryScreen
 from kuberich.ui.namespaces import NamespaceTable
+from kuberich.ui.nested import CommandWorkspace
 from kuberich.ui.operations import ResourceOperationScreen
 from kuberich.ui.plugins import PluginController, PluginJobs, PluginScreen
 from kuberich.ui.pods import PodTable, Viewport
@@ -133,6 +141,7 @@ from kuberich.ui.shutdown import TerminalSignals
 from kuberich.ui.standard import StandardTable
 from kuberich.ui.style_cache import ColorStylesCache, ComponentStylesheet
 from kuberich.ui.terminal import ShellScreen
+from kuberich.ui.text_navigation import ReadOnlyScroll
 from kuberich.ui.theme_catalog import appearance_from, invert_theme, themes_for
 from kuberich.ui.transfers import TransferScreen
 from kuberich.ui.views import ViewPreferences, ViewScreen
@@ -141,7 +150,7 @@ from kuberich.ui.workloads import WorkloadScreen
 DISCONNECTED_STATUS = "Disconnected · No resource data"
 
 
-class HelpScreen(ModalScreen[None]):
+class HelpScreen(CommandWorkspace):
     """Scrollable help keeps its close control accessible in small terminals."""
 
     AUTO_FOCUS = "#help-scroll"
@@ -151,9 +160,24 @@ class HelpScreen(ModalScreen[None]):
         self.navigation, self.aliases = navigation, aliases
 
     def compose(self) -> ComposeResult:
-        with Vertical(id="help-dialog"):
+        yield WorkspaceHeader(
+            cast(KubeRichApp, self.app).chrome, TEXT_SHORTCUTS, binding_profile="text"
+        )
+        with WorkspaceBars():
+            mode = (
+                "Read-only"
+                if cast(KubeRichApp, self.app).commands.policy.read_only
+                else "Read/write"
+            )
+            yield Static(
+                f"Keyboard help · {mode} · j/k · g/G · : command",
+                markup=False,
+                classes="help-caption",
+            )
+            yield from self.command_bar()
+        with WorkspaceFrame(id="help-dialog"):
             yield Static("Keyboard help", id="help-title", markup=False)
-            with VerticalScroll(id="help-scroll"):
+            with ReadOnlyScroll(id="help-scroll"):
                 yield Static(
                     Text(
                         "/                 Focus filter\n"
@@ -188,7 +212,12 @@ class HelpScreen(ModalScreen[None]):
                         "Generic resources are read-only; :views configures and explicitly saves columns/sort.\n"
                         "Filter: plain case-insensitive text; re:PATTERN for regex. "
                         "Searches namespace, name, readiness, status and restarts. "
-                        "Invalid or timed-out regex shows all pods and an error.\n\n"
+                        "Invalid or timed-out regex shows all pods and an error.\n"
+                        "Filters also accept !re:, fuzzy:, label: and allowlisted field:.\n"
+                        "Alt+Up/Down recall commands/filters; :!! repeats through normal review.\n"
+                        ":wide, :errors, :mark/:range/:selectall/:selectnone; :copy/:copyns/:copytext.\n"
+                        ":favorites; :favorite add/remove NAMESPACE explicitly saves preferences.\n"
+                        ":headless/:crumbsless/:fullscreen toggle session presentation.\n\n"
                         "Context sessions and live pod synchronization are available. "
                         "Pod rows, container logs and embedded shells are available.\n"
                         "l                 Selected pod logs (regular / init)\n"
@@ -247,6 +276,10 @@ class KubeRichApp(App[None]):
         Binding("i", "connection_details", "Status", show=False),
         Binding("alt+left", "history_back", "Previous view", show=False),
         Binding("alt+right", "history_forward", "Next view", show=False),
+        Binding("space", "mark_selection", "Mark", show=False),
+        Binding("shift+down", "mark_range(1)", "Extend selection", show=False),
+        Binding("shift+up", "mark_range(-1)", "Extend selection", show=False),
+        Binding("ctrl+y", "copy_selection", "Copy name", show=False),
         Binding("f2", "contexts", "Contexts", show=False, priority=True),
         Binding("f3", "namespaces", "Namespaces", show=False, priority=True),
         Binding("f4", "retry", "Retry", show=False, priority=True),
@@ -286,7 +319,9 @@ class KubeRichApp(App[None]):
         self._render_ready = asyncio.Event()
         self._aggregate_screens: set[AggregateLogScreen] = set()
         self._input_completion: asyncio.Future[None] | None = None
+        self._nested_route_task: asyncio.Task[None] | None = None
         self.history = NavigationHistory()
+        self.interactions = Interactions(self)
         self._restore_state: tuple[int, NavigationState] | None = None
         self.navigation = NavigationPreferences()
         self._navigation_warning: str | None = None
@@ -308,6 +343,12 @@ class KubeRichApp(App[None]):
         self._refresh_seconds = settings.refresh_seconds
         self._process_environment = dict(os.environ)
         self._process_directory = Path.cwd()
+        self._native_clipboard = NativeClipboard(
+            self.processes, self._process_environment, self._process_directory
+        )
+        self._clipboard_task: asyncio.Task[None] | None = None
+        self._clipboard_pending: tuple[bytes, ClipboardBackend] | None = None
+        self._clipboard_closing = False
         self.preferences = preferences
         self._global_theme = preferences.document.settings.theme if preferences else settings.theme
         self._theme_override = preferences.theme_override if preferences else None
@@ -377,9 +418,14 @@ class KubeRichApp(App[None]):
             self.set_focus(self._active_table)
 
         self.filter_input = NavigationInput(
-            focus_table, placeholder="Filter resources", id="filter"
+            focus_table,
+            placeholder="Filter resources",
+            id="filter",
+            history=self.interactions.filter_history,
         )
-        self.command_input = CommandInput(self._suggestions, focus_table, self._submit_command)
+        self.command_input = CommandInput(
+            self._suggestions, focus_table, self._submit_command, history=self.interactions.history
+        )
         self.status = WorkspaceLabel(DISCONNECTED_STATUS, id="status", markup=False)
         self.view_preferences = ViewPreferences(self)
         self.plugins = PluginController(self)
@@ -609,6 +655,18 @@ class KubeRichApp(App[None]):
             isinstance(event, Key)
             and not event.is_forwarded
             and self.screen_stack
+            and isinstance(self.screen, CommandWorkspace)
+            and event.key == "colon"
+            and not isinstance(self.focused, Input)
+        ):
+            self.screen.focus_command()
+            event.stop()
+            event.prevent_default()
+            return
+        if (
+            isinstance(event, Key)
+            and not event.is_forwarded
+            and self.screen_stack
             and not isinstance(self.screen, ModalScreen)
             and isinstance(self.focused, DataTable)
         ):
@@ -701,6 +759,11 @@ class KubeRichApp(App[None]):
             table.effective_keys = self.navigation_keymap
         if not self.is_headless and not self.is_web:
             self._terminal_signals.install()
+            if not self.navigation.mouse and self._driver is not None:
+                # Own a known reporting state in this alternate screen even
+                # when the caller left mouse reporting enabled. Textual skips
+                # both enable and disable sequences when run(mouse=False).
+                self._driver.write("\x1b[?1000l\x1b[?1003l\x1b[?1015l\x1b[?1006l")
         self.query_one("#all-namespaces").display = False
         self.resources.setup()
         self.namespace_table.setup()
@@ -760,6 +823,24 @@ class KubeRichApp(App[None]):
                 self._apply_command(initial)
         else:
             self.exit()
+
+    async def _interaction_filter[T: PodRow | NamespaceRow | ContextRow | ResourceRow](
+        self, rows: tuple[T, ...], query: str, kind: str
+    ) -> FilterResult[T]:
+        view = self.workspace.store.observation
+        records = view.snapshot.items if view.snapshot else ()
+        result = await self.interactions.filter.apply(
+            rows, records, query, kind, errors=self.interactions.errors
+        )
+        if kind == "namespaces" and self.interactions.favorites and result.problem is None:
+            names = dict(self.navigation.favorites).get(view.context or "", ())
+            result = replace(result, rows=tuple(row for row in result.rows if row.name in names))
+        if self.interactions.errors and result.problem is None:
+            result = replace(
+                result,
+                problem=f"Errors only · {len(result.rows)}/{len(rows)} {kind} · {result.unknown} unknown omitted",
+            )
+        return result
 
     def _start_connection(
         self,
@@ -834,6 +915,29 @@ class KubeRichApp(App[None]):
                             ),
                         ):
                             screen.validate_target()
+                            if (
+                                isinstance(screen, ContainerScreen)
+                                and observation.snapshot is not None
+                            ):
+                                record = next(
+                                    (
+                                        item
+                                        for item in observation.snapshot.items
+                                        if item.uid == screen.stream.target.uid
+                                    ),
+                                    None,
+                                )
+                                if record is not None:
+                                    screen.observe_record(record)
+                            if (
+                                (
+                                    isinstance(screen, (ContainerScreen, InspectionScreen))
+                                    and screen.invalidated
+                                )
+                                or (isinstance(screen, LogScreen) and screen.stale)
+                                or (isinstance(screen, ShellScreen) and screen._shell_closing)
+                            ):
+                                await screen.stop_owned()
         except Exception as error:
             self._handle_exception(error)
         finally:
@@ -854,6 +958,7 @@ class KubeRichApp(App[None]):
                         return
                 view = self.workspace.store.observation
                 query = self.filter_input.value
+                interaction_revision = self.interactions.revision
                 kind = self._resource_name
 
                 def current(
@@ -861,6 +966,7 @@ class KubeRichApp(App[None]):
                     query: str = query,
                     kind: str = kind,
                     layout: CustomLayout | None = None,
+                    interaction_revision: int = interaction_revision,
                 ) -> bool:
                     return (
                         self.is_running
@@ -868,6 +974,7 @@ class KubeRichApp(App[None]):
                         and view is self.workspace.store.observation
                         and query == self.filter_input.value
                         and kind == self._resource_name
+                        and interaction_revision == self.interactions.revision
                         and (layout is None or layout == self.custom_table.resource_layout)
                     )
 
@@ -876,7 +983,7 @@ class KubeRichApp(App[None]):
                     await self._pod_projection.project(None)
                     await self._standard_projection.project(None)
                     ns_rows = await self._namespace_projection.project(view.snapshot)
-                    ns_result = await apply_filter(ns_rows, query, "namespaces")
+                    ns_result = await self._interaction_filter(ns_rows, query, "namespaces")
                     count, filtered, problem = len(ns_rows), len(ns_result.rows), ns_result.problem
                     applied = await self.namespace_table.apply_rows(
                         ns_result.rows, view.revision, current
@@ -898,7 +1005,7 @@ class KubeRichApp(App[None]):
                     await self._namespace_projection.project(None)
                     await self._standard_projection.project(None)
                     rows = await self._pod_projection.project(view.snapshot)
-                    result = await apply_filter(rows, query)
+                    result = await self._interaction_filter(rows, query, "pods")
                     count, filtered, problem = len(rows), len(result.rows), result.problem
                     applied = await self.resources.apply_rows(result.rows, view.revision, current)
                 elif self.custom_table.display:
@@ -932,7 +1039,7 @@ class KubeRichApp(App[None]):
                         if self._custom_projection is not None
                         else ()
                     )
-                    custom_result = await apply_filter(custom_rows, query, kind)
+                    custom_result = await self._interaction_filter(custom_rows, query, kind)
                     count, filtered, problem = (
                         len(custom_rows),
                         len(custom_result.rows),
@@ -946,7 +1053,7 @@ class KubeRichApp(App[None]):
                     await self._pod_projection.project(None)
                     await self._namespace_projection.project(None)
                     standard_rows = await self._standard_projection.project(view.snapshot)
-                    standard_result = await apply_filter(standard_rows, query, kind)
+                    standard_result = await self._interaction_filter(standard_rows, query, kind)
                     count, filtered, problem = (
                         len(standard_rows),
                         len(standard_result.rows),
@@ -956,8 +1063,24 @@ class KubeRichApp(App[None]):
                         standard_result.rows, view.revision, current
                     )
                 if applied:
+                    if view.revision != self.interactions.scope_revision:
+                        self.interactions.selection.marked = frozenset()
+                        self.interactions.selection.anchor = None
+                        self.interactions.scope_revision = view.revision
+                    self.interactions.selection.prune(
+                        tuple(
+                            row.key.value
+                            for row in self._active_table.ordered_rows
+                            if row.key.value is not None
+                        )
+                    )
+                    self.interactions.paint_selection()
                     self._show_view(view)
-                    if query:
+                    if (
+                        query
+                        or self.interactions.errors
+                        or (kind == "namespaces" and self.interactions.favorites)
+                    ):
                         detail = (
                             "Local kubeconfig catalogue" if kind == "contexts" else view.message
                         )
@@ -1123,6 +1246,19 @@ class KubeRichApp(App[None]):
 
     async def _close_client_operations(self, client: KubernetesSession) -> None:
         closing = asyncio.gather(
+            *(
+                screen.stop_owned()
+                for screen in tuple(self.screen_stack)
+                if isinstance(screen, (InspectionScreen, ContainerScreen, LogScreen, ShellScreen))
+                and (
+                    screen.service.client
+                    if isinstance(screen, InspectionScreen)
+                    else screen.shell.client
+                    if isinstance(screen, ShellScreen)
+                    else screen.stream.client
+                )
+                is client
+            ),
             self.plugins.manager.stop_for_client(client),
             self.mutations.stop_for_client(client),
             self.forwards.stop_for_client(client),
@@ -1158,12 +1294,66 @@ class KubeRichApp(App[None]):
             await _finish_owned(closing)
             raise
 
+    def copy_to_clipboard(self, text: str) -> None:
+        backend = clipboard_backend(
+            self._process_environment,
+            sys.platform,
+            headless=self.is_headless or not self.is_running,
+        )
+        data = clipboard_bytes(text, backend)
+        self._clipboard = text
+        if backend is ClipboardBackend.OSC52:
+            if self._driver is not None:
+                self._driver.write(osc52(data, tmux=bool(self._process_environment.get("TMUX"))))
+        elif backend is not ClipboardBackend.MEMORY:
+            self._clipboard_pending = data, backend
+            if self._clipboard_task is None or self._clipboard_task.done():
+                self._clipboard_task = asyncio.create_task(self._write_clipboard())
+
+    async def _write_clipboard(self) -> None:
+        while self._clipboard_pending is not None:
+            data, backend = self._clipboard_pending
+            self._clipboard_pending = None
+            try:
+                await self._native_clipboard.write(
+                    data, backend, failed=partial(self._clipboard_failed, data)
+                )
+            except AppError as error:
+                self._clipboard_failed(data, error)
+
+    def _clipboard_failed(self, data: bytes, error: AppError) -> None:
+        if self._clipboard_pending is not None or self._clipboard_closing:
+            return
+        if self._process_environment.get("KUBERICH_CLIPBOARD", "auto") == "auto":
+            try:
+                sequence = osc52(data, tmux=bool(self._process_environment.get("TMUX")))
+                if self._driver is not None:
+                    self._driver.write(sequence)
+            except AppError:
+                self.notify(str(error), severity="error")
+        else:
+            self.notify(str(error), severity="error")
+
     async def on_unmount(self) -> None:
+        self._clipboard_closing = True
         self._updates_stopped = True
         if self._update_task is not None:
             self._update_task.cancel()
             await _finish_owned(asyncio.gather(self._update_task, return_exceptions=True))
         try:
+            if self._nested_route_task is not None:
+                if not self._nested_route_task.done() and not self._nested_route_task.cancelling():
+                    self._nested_route_task.cancel()
+                await _finish_owned(asyncio.gather(self._nested_route_task, return_exceptions=True))
+            if self.interactions._favorite_task is not None:
+                await _finish_owned(
+                    asyncio.gather(self.interactions._favorite_task, return_exceptions=True)
+                )
+            self._clipboard_pending = None
+            if self._clipboard_task is not None:
+                self._clipboard_task.cancel()
+                await _finish_owned(asyncio.gather(self._clipboard_task, return_exceptions=True))
+            await self._native_clipboard.close()
             await self.plugins.close()
             await self.mutations.close()
             await self.forwards.close()
@@ -1336,7 +1526,18 @@ class KubeRichApp(App[None]):
             return
         selections = [selection]
         if batch:
-            uids = tuple(key.value for key in self._active_table.rows)
+            visible_uids = tuple(
+                row.key.value
+                for row in self._active_table.ordered_rows
+                if row.key.value is not None
+            )
+            self.interactions.selection.prune(visible_uids)
+            marked = self.interactions.selection.marked
+            uids = (
+                tuple(uid for uid in visible_uids if uid in marked)
+                if marked
+                else tuple(key.value for key in self._active_table.rows if key.value is not None)
+            )
             if len(uids) > MAX_BATCH:
                 self._set_status(
                     "Filter this view to at most 100 rows before choosing a delete batch."
@@ -1579,6 +1780,7 @@ class KubeRichApp(App[None]):
                 or observation.scope != scope
                 or observation.revision != revision
                 or observation.snapshot is None
+                or observation.status is ViewStatus.FAILED
             ):
                 return False
             # Every watch update owns a new immutable snapshot. Validate its
@@ -1645,6 +1847,7 @@ class KubeRichApp(App[None]):
         self.command_input.reset_choice()
 
     def action_namespaces(self) -> None:
+        self.interactions.favorites = False
         observation = self.workspace.store.observation.connection
         if observation.state not in USABLE_CONNECTIONS:
             message = "Connect to a context before selecting a namespace."
@@ -1954,6 +2157,9 @@ class KubeRichApp(App[None]):
         ):
             return False
         if action in {
+            "mark_selection",
+            "mark_range",
+            "copy_selection",
             "focus_filter",
             "focus_command",
             "history_back",
@@ -1974,6 +2180,19 @@ class KubeRichApp(App[None]):
         }:
             return not isinstance(self.screen, ModalScreen) and not isinstance(self.focused, Input)
         return True
+
+    def action_mark_selection(self) -> None:
+        self.interactions.apply(InteractionCommand("mark"))
+
+    def action_mark_range(self, delta: int) -> None:
+        if self.interactions.selection.anchor is None:
+            self.action_mark_selection()
+        table = self._active_table
+        table.move_cursor(row=table.cursor_row + delta)
+        self.interactions.apply(InteractionCommand("range"))
+
+    def action_copy_selection(self) -> None:
+        self.interactions.apply(InteractionCommand("copy"))
 
     def action_focus_filter(self) -> None:
         self.set_focus(self.filter_input)
@@ -2012,6 +2231,8 @@ class KubeRichApp(App[None]):
             self.view_preferences.open()
 
     async def action_back(self) -> None:
+        if isinstance(self.screen, CommandWorkspace) and self.screen.leave_command():
+            return
         if isinstance(self.screen, (InspectionScreen, LogScreen, ThemeScreen, ViewScreen)):
             self.screen.back()
         elif isinstance(self.screen, TransferScreen):
@@ -2066,7 +2287,130 @@ class KubeRichApp(App[None]):
     def command_submitted(self, event: Input.Submitted) -> None:
         self._submit_command(event.value)
 
-    def _submit_command(self, value: str) -> None:
+    def route_nested(self, origin: CommandWorkspace, value: str) -> None:
+        if self._nested_route_task is not None and not self._nested_route_task.done():
+            self.notify("A workspace transition is already in progress.")
+            return
+        try:
+            command = self.commands.resolve(value, self.workspace.discovery)
+            if isinstance(command, InteractionCommand) and command.verb == "!!":
+                value = self.interactions.history.repeat()
+                command = self.commands.resolve(value, self.workspace.discovery)
+            if command is Command.EMPTY or command is Command.UNAVAILABLE:
+                if command is Command.UNAVAILABLE:
+                    self.notify("Command is unavailable; the current view is retained.")
+                return
+        except AppError as error:
+            self.notify(str(error), severity="error")
+            return
+        if isinstance(command, InteractionCommand) and command.verb in {
+            "headless",
+            "crumbsless",
+            "fullscreen",
+            "favorite",
+        }:
+            self.interactions.apply(command)
+            self.interactions.history.record(value)
+            return
+        if isinstance(command, InteractionCommand) and command.verb in {
+            "copy",
+            "copyns",
+            "copytext",
+        }:
+            try:
+                source = (
+                    origin.service
+                    if isinstance(origin, InspectionScreen)
+                    else origin.stream
+                    if isinstance(origin, (ContainerScreen, LogScreen))
+                    else None
+                )
+                if source is None:
+                    raise AppError("This view has no captured resource to copy.")
+                source.require_current()
+                if command.verb == "copytext" and isinstance(origin, (InspectionScreen, LogScreen)):
+                    origin.action_copy()
+                else:
+                    self.copy_to_clipboard(
+                        (source.target.namespace or "")
+                        if command.verb == "copyns"
+                        else source.target.name
+                    )
+                self.interactions.history.record(value)
+            except AppError as error:
+                self.notify(str(error), severity="error")
+            return
+        self._nested_route_task = asyncio.create_task(self._route_nested(origin, command, value))
+
+    async def _route_nested(
+        self, origin: CommandWorkspace, command: ResolvedCommand, value: str
+    ) -> None:
+        source = (
+            origin.service
+            if isinstance(origin, InspectionScreen)
+            else origin.stream
+            if isinstance(origin, (ContainerScreen, LogScreen))
+            else None
+        )
+        local = {
+            Command.HELP,
+            Command.THEMES,
+            Command.ABOUT,
+            Command.VIEWS,
+            Command.PLUGINS,
+            Command.PLUGIN_JOBS,
+            Command.STATUS,
+            Command.PORT_FORWARDS,
+            Command.WRITES,
+        }
+        navigation = {
+            Command.CONTEXTS,
+            Command.NAMESPACES,
+            Command.PODS,
+            Command.BACK,
+            Command.FORWARD,
+            Command.QUIT,
+            Command.RETRY,
+            Command.LOGIN,
+            Command.REFRESH,
+        }
+        action = command.command if isinstance(command, ScopedCommand) else command
+        requires_target = (
+            not isinstance(command, (ResourceCommand, GenericResourceCommand, InteractionCommand))
+            and action not in local | navigation
+        )
+        try:
+            if requires_target:
+                if source is None:
+                    raise AppError("This command requires a captured resource view.")
+                source.require_current()
+            if command is Command.BACK:
+                await origin.dismiss()
+                self.interactions.history.record(value)
+                return
+            # Drain covered owners before changing namespace/context or targeting a root action.
+            for screen in reversed(tuple(self.screen_stack[1:])):
+                if not isinstance(screen, CommandWorkspace):
+                    raise AppError(
+                        "Close the current review before navigating to another workspace."
+                    )
+                if isinstance(screen, (ContainerScreen, LogScreen, InspectionScreen)):
+                    await screen.stop_owned()
+            if requires_target and source is not None:
+                source.require_current()
+            for screen in reversed(tuple(self.screen_stack[1:])):
+                await screen.dismiss()
+            if requires_target and source is not None:
+                table = self._active_table
+                if source.target.uid not in table.rows:
+                    raise AppError("The captured resource is no longer visible; select it again.")
+                table.move_cursor(row=table.get_row_index(source.target.uid), scroll=False)
+            self.interactions.history.record(value)
+            self._apply_command(command)
+        except AppError as error:
+            self.notify(str(error), severity="error")
+
+    def _submit_command(self, value: str, *, repeat: bool = False) -> None:
         self._column_notice = None
         try:
             command = self.commands.resolve(value, self.workspace.discovery)
@@ -2075,9 +2419,18 @@ class KubeRichApp(App[None]):
                 self._column_notice = str(error)
             self._set_status(str(error))
             return
+        if (
+            not repeat
+            and command is not Command.UNAVAILABLE
+            and not (isinstance(command, InteractionCommand) and command.verb == "!!")
+        ):
+            self.interactions.history.record(value)
         self._apply_command(command)
 
     def _apply_command(self, command: ResolvedCommand) -> None:
+        if isinstance(command, InteractionCommand):
+            self.interactions.apply(command)
+            return
         if isinstance(command, PluginCommand):
             self.plugins.open(command.name)
             return
@@ -2222,7 +2575,10 @@ class KubeRichApp(App[None]):
         if connection.state not in USABLE_CONNECTIONS:
             return ()
         current = (connection.namespace,) if connection.namespace is not None else ()
-        return ("*", *sorted(set(connection.namespaces) | set(current)))
+        favorites = dict(self.navigation.favorites).get(
+            connection.identity.context if connection.identity else "", ()
+        )
+        return ("*", *sorted(set(connection.namespaces) | set(current) | set(favorites)))
 
     def _suggestions(self, value: str) -> tuple[str, ...]:
         return suggestions(

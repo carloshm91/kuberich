@@ -68,6 +68,7 @@ GUIDES = (
     Guide("plugin-compatibility.md", "Plugin compatibility & examples", "Get started"),
     Guide("context-sessions.md", "Contexts & kubeconfig", "Get started"),
     Guide("command-navigation.md", "Commands & keys", "Browse"),
+    Guide("terminal-navigation.md", "Navigation & clipboard", "Browse"),
     Guide("resource-workspace.md", "The workspace", "Browse"),
     Guide("standard-resources.md", "Resource views", "Browse"),
     Guide("resource-inspection.md", "Details, YAML & events", "Browse"),

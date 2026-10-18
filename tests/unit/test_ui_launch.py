@@ -6,6 +6,7 @@ import sys
 
 import pytest
 
+from kuberich.config.navigation import NavigationPreferences
 from kuberich.config.schema import Settings
 from kuberich.errors import AppError
 from kuberich.ui import launch
@@ -32,12 +33,13 @@ def test_terminal_return_code_is_propagated_safely(
 ) -> None:
     class _App:
         return_code = result
+        navigation = NavigationPreferences()
 
         def __init__(self, settings: Settings, logger: logging.Logger, **kwargs: object) -> None:
             assert settings.theme == "k9s"
 
-        def run(self) -> None:
-            pass
+        def run(self, *, mouse: bool) -> None:
+            assert mouse is False
 
     monkeypatch.setattr(sys, "stdin", _Terminal())
     monkeypatch.setattr(sys, "stdout", _Terminal())

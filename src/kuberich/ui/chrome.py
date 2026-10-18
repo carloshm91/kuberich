@@ -45,6 +45,18 @@ K9S_THEME = Theme(
     },
 )
 
+TEXT_SHORTCUTS = (
+    ("j/k", "Down / up"),
+    ("g/G", "First / last"),
+    ("Ctrl+F/B", "Page"),
+    ("Ctrl+D/U", "Half page"),
+    ("/", "Search"),
+    ("n/N", "Search match"),
+    ("Ctrl+Y", "Copy"),
+    (":", "Command"),
+    ("Esc", "Back"),
+)
+
 POD_SHORTCUTS = (
     ("Enter", "Containers"),
     ("l/L", "Logs / aggregate"),
@@ -177,6 +189,12 @@ class WorkspaceBars(Vertical):
 class WorkspaceFrame(Vertical):
     """Shared resource boundary, independent of its table or viewer contents."""
 
+    def on_mount(self) -> None:
+        self.set_class(
+            bool(getattr(getattr(self.app, "interactions", None), "fullscreen", False)),
+            "fullscreen",
+        )
+
     DEFAULT_CSS = """
     WorkspaceFrame {
         width: 1fr; height: 1fr; min-height: 4;
@@ -275,6 +293,9 @@ class WorkspaceHeader(Horizontal):
             yield Static("KubeRich", id="brand", markup=False)
 
     def on_mount(self) -> None:
+        self.display = not bool(
+            getattr(getattr(self.app, "interactions", None), "fullscreen", False)
+        )
         self.update_identity()
         self.layout_header()
         self.watch(self.app, "theme", self._theme_changed, init=False)
@@ -340,6 +361,8 @@ class Breadcrumbs(Static):
         self.display = visible
 
     def on_mount(self) -> None:
+        if bool(getattr(getattr(self.app, "interactions", None), "fullscreen", False)):
+            self.display = False
         self.show_trail()
 
     def show_trail(self, *, destination: str | None = None) -> None:

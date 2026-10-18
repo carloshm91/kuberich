@@ -119,6 +119,8 @@ class TerminalSession:
         environment["KUBERICH_CONFIG"] = str(preferences)
         environment["KUBERICH_LOG_FILE"] = str(directory / "kuberich.log")
         environment["KUBERICH_LOG_LEVEL"] = "DEBUG"
+        # Ordinary PTY trials must never replace a developer's host clipboard.
+        environment["KUBERICH_CLIPBOARD"] = "osc52"
         environment["KUBECONFIG"] = str(directory / "never-use-a-real-cluster")
         environment.update(overrides)
 
@@ -211,6 +213,13 @@ class TerminalSession:
             ):
                 return
             self._read()
+            # Preserve real fragmented reads/UTF-8/ANSI decoding without rebuilding
+            # the entire screen for each tiny fragment. Bound ready-only work so
+            # the unchanged deadline and process checks remain observable.
+            for _ in range(min(63, 65536 // self.read_size - 1)):
+                if not select.select([self.master], [], [], 0)[0]:
+                    break
+                self._read(0)
             assert self.process.poll() is None, f"Exited before visible {text!r}"
             assert time.monotonic() < deadline, f"Missing visible {text!r}: {self.screen.display!r}"
 

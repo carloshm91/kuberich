@@ -182,7 +182,7 @@ class ConfigurationScreen(ModalScreen[None]):
                         "Clipboard write failed; no value was included in the error."
                     )
                     return
-                self.status.update("Selected value copied; terminal clipboard support is required.")
+                self.status.update("Selected value copied; clipboard write requested.")
             else:
                 preview = escape_controls(value[:16384], allow_newlines=True)
                 if len(value) > 16384:

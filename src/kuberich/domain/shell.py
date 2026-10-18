@@ -47,7 +47,7 @@ def shell_result(result: ProcessResult) -> str:
         return "Shell interrupted. Press s to open the selected container again."
     if result.status is ProcessStatus.FAILED:
         if result.returncode in {126, 127}:
-            return "Shell executable unavailable in this image. Change the shell argument list in preferences."
+            return "Shell executable unavailable; change shell preferences for this image."
         return (
             f"kubectl exec failed (exit {result.returncode}). Check pods/exec permission, "
             "container state and the configured shell; this image may have no shell."

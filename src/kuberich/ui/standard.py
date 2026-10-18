@@ -253,7 +253,7 @@ class StandardTable(FrameTable[PodCell]):
                     for column, spec, index in self._columns
                 )
                 if uid not in self._rows:
-                    self.add_row(*cells, key=uid)
+                    self.add_row(*cells, key=uid, label=" ")
                 else:
                     old_row = self._rows[uid]
                     sort_index = self._column_index()
@@ -318,4 +318,6 @@ class StandardTable(FrameTable[PodCell]):
     @on(DataTable.HeaderSelected)
     def sort_header(self, event: DataTable.HeaderSelected) -> None:
         event.stop()
+        if event.column_index < 0:
+            return
         self.set_sort(event.column_key.value or "name")

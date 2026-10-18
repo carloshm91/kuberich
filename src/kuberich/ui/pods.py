@@ -64,7 +64,9 @@ class PodTable(FrameTable[PodCell]):
         specs = self.view_spec.columns if self.view_spec is not None else None
         self._columns = tuple(
             (PodColumn(spec.key), spec, fields.index(PodColumn(spec.key)))
-            for spec in (specs if specs is not None else tuple(ColumnSpec(c.value) for c in fields))
+            for spec in (
+                specs if specs is not None else tuple(ColumnSpec(c.value) for c in fields[:6])
+            )
         )
         for column, spec, _ in self._columns:
             self.add_column(column.name, key=column.value, width=spec.width)
@@ -206,7 +208,7 @@ class PodTable(FrameTable[PodCell]):
                     self.remove_row(uid)
                     del self._rows[uid]
                     continue
-                values = row.cells(now)
+                values = row.cells(now, wide=True)
                 cells = tuple(
                     PodCell(
                         uid,
@@ -217,7 +219,7 @@ class PodTable(FrameTable[PodCell]):
                     for column, spec, index in self._columns
                 )
                 if uid not in self._rows:
-                    self.add_row(*cells, key=uid)
+                    self.add_row(*cells, key=uid, label=" ")
                 else:
                     old_row = self._rows[uid]
                     if (
@@ -284,4 +286,6 @@ class PodTable(FrameTable[PodCell]):
     @on(DataTable.HeaderSelected)
     def sort_header(self, event: DataTable.HeaderSelected) -> None:
         event.stop()
+        if event.column_index < 0:
+            return
         self.set_sort(PodColumn(event.column_key.value or PodColumn.NAME))

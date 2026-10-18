@@ -28,6 +28,7 @@ class ProcessPurpose(Enum):
     AUTHENTICATE = auto()
     DOWNLOAD = auto()
     UPLOAD = auto()
+    CLIPBOARD = auto()
 
     @property
     def action(self) -> Action:
@@ -40,6 +41,7 @@ class ProcessPurpose(Enum):
             ProcessPurpose.AUTHENTICATE: Action.READ,
             ProcessPurpose.DOWNLOAD: Action.READ,
             ProcessPurpose.UPLOAD: Action.MUTATE,
+            ProcessPurpose.CLIPBOARD: Action.READ,
         }[self]
 
 
@@ -77,6 +79,7 @@ class ProcessCommand:
     target: ResourceTarget | None = None
     terminal_input: bool = True
     trusted_read_only: bool = False
+    input_data: bytes | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "argv", freeze_arguments(self.argv))
@@ -91,6 +94,13 @@ class ProcessCommand:
             raise AppError("Commands require a valid captured target.")
         if type(self.terminal_input) is not bool:
             raise AppError("Terminal input availability must be true or false.")
+        if self.input_data is not None and (
+            type(self.input_data) is not bytes
+            or len(self.input_data) > 1024 * 1024
+            or self.purpose is not ProcessPurpose.CLIPBOARD
+            or self.mode is ProcessMode.FOREGROUND
+        ):
+            raise AppError("Only noninteractive clipboard commands accept bounded input bytes.")
         if type(self.trusted_read_only) is not bool or (
             self.trusted_read_only and self.purpose is not ProcessPurpose.PLUGIN
         ):
@@ -122,6 +132,7 @@ def capture_command(
     purpose: ProcessPurpose,
     target: ResourceTarget | None = None,
     trusted_read_only: bool = False,
+    input_data: bytes | None = None,
 ) -> ProcessCommand:
     return ProcessCommand(
         freeze_arguments(argv),
@@ -131,6 +142,7 @@ def capture_command(
         purpose,
         target,
         trusted_read_only=trusted_read_only,
+        input_data=input_data,
     )
 
 

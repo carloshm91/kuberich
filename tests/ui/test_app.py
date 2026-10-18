@@ -84,6 +84,9 @@ async def test_help_is_not_stacked_and_escape_restores_focus(key: str) -> None:
         await pilot.press(key, "f1", "slash", "colon")
         assert len(app.screen_stack) == 2
         assert not app.check_action("focus_filter", ())
+        assert app.focused is app.screen.command_input
+        await pilot.press("escape")
+        assert isinstance(app.screen, HelpScreen)
         await pilot.press("escape")
         assert len(app.screen_stack) == 1
         assert app.focused is app.command_input and app.command_input.value == "a"

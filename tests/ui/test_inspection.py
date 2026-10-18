@@ -9,7 +9,9 @@ from aiohttp import web
 
 from kuberich.config.schema import Settings
 from kuberich.domain.views import ViewStatus
+from kuberich.errors import AppError
 from kuberich.ui.app import KubeRichApp
+from kuberich.ui.chrome import WorkspaceFrame
 from kuberich.ui.inspection import InspectionScreen
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
@@ -82,8 +84,14 @@ async def test_yaml_details_events_search_copy_managed_scroll_and_return_keep_ta
             assert "apiVersion: v1" in screen.viewer.text
             assert "hidden-env" not in screen.viewer.text
             assert screen.viewer.read_only and not screen.viewer.soft_wrap
-            assert screen.viewer.content_region.height >= 1
-            assert screen.search.region.bottom <= screen.status.region.y
+            assert screen.viewer.scrollable_content_region.height >= 2
+            if size[1] < 16:
+                assert not screen.status.display
+                assert "Yaml" in str(
+                    screen.query_one("#inspection-dialog", WorkspaceFrame).border_subtitle
+                )
+            else:
+                assert screen.search.region.bottom <= screen.status.region.y
             await pilot.press("m")
             assert "managedFields" in screen.viewer.text and "test-manager" in screen.viewer.text
             await pilot.press("m")
@@ -95,6 +103,10 @@ async def test_yaml_details_events_search_copy_managed_scroll_and_return_keep_ta
             assert app.clipboard == "containers"
             await pilot.press("slash", "ctrl+a", *"absent", "enter")
             assert "No matches" in str(screen.status.content)
+            if size[1] < 16:
+                assert "No matches" in str(
+                    screen.query_one("#inspection-dialog", WorkspaceFrame).border_subtitle
+                )
             await pilot.press("slash", "y", "d", "e", "m", "n", "colon", "slash")
             assert screen.search.value.endswith("ydemn:/") and len(app.screen_stack) == 2
             await pilot.press("escape")
@@ -369,3 +381,34 @@ async def test_scope_invalidation_then_close_drains_the_same_serializer_once(tmp
                 release.set()
                 await asyncio.gather(check, return_exceptions=True)
             assert ended.is_set() and screen._load_task.done()
+
+
+@pytest.mark.asyncio
+async def test_clipboard_backend_refusal_retains_redacted_view_and_safe_error(
+    tmp_path, monkeypatch
+):
+    async def handler(request):
+        if "watch" in request.query:
+            return await stable_watch(request)
+        if request.path.endswith("/events"):
+            return web.json_response(collection())
+        return web.json_response(
+            collection(manifest()) if request.path.endswith("/pods") else manifest()
+        )
+
+    async with workspace_api(ns, handler) as url:
+        app = app_for(tmp_path, url)
+        async with app.run_test() as pilot:
+            await loaded(app)
+            await pilot.press("y")
+            screen = await viewer_loaded(app)
+            before = screen.viewer.text
+
+            def refused(text):
+                assert "hidden-env" not in text
+                raise AppError("Clipboard backend refused the bounded write.")
+
+            monkeypatch.setattr(app, "copy_to_clipboard", refused)
+            await pilot.press("ctrl+y")
+            assert "refused" in str(screen.status.content)
+            assert screen.viewer.text == before and app.screen is screen

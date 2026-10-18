@@ -430,7 +430,7 @@ class AggregateLogScreen(LogScreen):
         try:
             text = await self._export_text(clipboard=True)
             self.app.copy_to_clipboard(text)
-            self.message = "Retained redacted logs copied"
+            self.message = "Retained redacted logs copied; clipboard write requested"
         except AppError as error:
             self.message = str(error)
         finally:

@@ -165,6 +165,10 @@ async def test_shell_failures_return_to_the_selected_view_and_cleanup(
             assert not paths[0].exists()
             assert containers.table.cursor_row == 0
             feedback = containers.query_one("#container-feedback", VerticalScroll)
+            assert feedback.display and feedback.region.height == 1
+            assert (
+                containers.table.scrollable_content_region.height > containers.table.header_height
+            )
             feedback.focus()
             feedback.scroll_end(animate=False)
             await pilot.pause()

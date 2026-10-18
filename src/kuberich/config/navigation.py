@@ -4,6 +4,7 @@ from dataclasses import dataclass, replace
 
 from kuberich.config.schema import ConfigDocument
 from kuberich.domain.aliases import Aliases, parse_aliases
+from kuberich.domain.connections import namespace_name
 from kuberich.domain.keyboard import KeyOverrides, key_mapping, parse_keys
 from kuberich.domain.resource_preferences import ViewSpec, applicable_view, parse_view, resource_key
 from kuberich.errors import AppError
@@ -36,9 +37,17 @@ class NavigationPreferences:
     views: Views = ()
     contexts: tuple[tuple[str, Views], ...] = ()
     migrated: bool = False
+    mouse: bool = False
+    favorites: tuple[tuple[str, tuple[str, ...]], ...] = ()
 
     def mapping(self) -> dict[str, object]:
         return {
+            **({"mouse": True} if self.mouse else {}),
+            **(
+                {"favorites": {context: list(names) for context, names in self.favorites}}
+                if self.favorites
+                else {}
+            ),
             "schema_version": 1,
             "keys": dict(key_mapping(self.keys)),
             "aliases": dict(self.aliases),
@@ -48,6 +57,17 @@ class NavigationPreferences:
                 for context, views in self.contexts
             },
         }
+
+    def with_favorite(
+        self, context: str, name: str, *, remove: bool = False
+    ) -> "NavigationPreferences":
+        namespace_name(name)
+        values = dict(self.favorites)
+        selected = set(values.get(context, ()))
+        selected.discard(name) if remove else selected.add(name)
+        values[context] = tuple(sorted(selected))
+        updated = replace(self, favorites=tuple(sorted(values.items())))
+        return parse_navigation(updated.mapping())
 
     def choices(self, key: str, context: str | None) -> tuple[ViewSpec, ...]:
         scoped = dict(dict(self.contexts).get(context, ())) if context is not None else {}
@@ -77,8 +97,12 @@ def parse_navigation(
         "aliases",
         "views",
         "contexts",
+        "mouse",
+        "favorites",
     }:
-        raise AppError("navigation accepts only schema_version, keys, aliases, views and contexts.")
+        raise AppError(
+            "navigation accepts only schema_version, keys, aliases, views, contexts, mouse and favorites."
+        )
     schema = value.get("schema_version", 0)
     if type(schema) is not int or schema not in {0, 1}:
         raise AppError("Unsupported navigation.schema_version; use version 1.")
@@ -101,12 +125,33 @@ def parse_navigation(
         if not isinstance(fields, dict) or fields.keys() - {"views"}:
             raise AppError("Each navigation context accepts a views mapping.")
         scoped.append((context, _views(fields.get("views", {}), schema == 0)))
+    mouse = value.get("mouse", False)
+    if type(mouse) is not bool:
+        raise AppError("navigation.mouse must be true or false.")
+    favorites = value.get("favorites", {})
+    if not isinstance(favorites, dict) or len(favorites) > 128:
+        raise AppError("Namespace favorites support at most 128 contexts.")
+    parsed_favorites = []
+    for context, names in favorites.items():
+        if not isinstance(context, str) or not 1 <= len(context) <= 253:
+            raise AppError("Favorite context names must be 1-253 characters.")
+        validate_argument(context)
+        if (
+            not isinstance(names, list)
+            or any(not isinstance(name, str) for name in names)
+            or len(names) > 64
+            or len(set(names)) != len(names)
+        ):
+            raise AppError("Favorites require at most 64 unique namespace names per context.")
+        parsed_favorites.append((context, tuple(sorted(namespace_name(name) for name in names))))
     return NavigationPreferences(
         parse_keys(keys),
         parse_aliases(value.get("aliases", {}), reserved),
         _views(value.get("views", {}), schema == 0),
         tuple(sorted(scoped)),
         schema == 0,
+        mouse,
+        tuple(sorted(parsed_favorites)),
     )
 
 

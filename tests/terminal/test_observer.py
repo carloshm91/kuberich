@@ -1,6 +1,5 @@
 """Regression witnesses for the real-terminal observer and restoration oracle."""
 
-import json
 import os
 import sys
 from contextlib import ExitStack
@@ -62,7 +61,7 @@ def test_owned_disconnect_retains_late_malformed_bytes_and_actual_cleanup(tmp_pa
             [sys.executable, "-c", child], tmp_path, transport=transport
         ) as terminal:
             terminal.wait_for_screen("observer-ready")
-            ready = json.loads((transport.directory / "ready.json").read_text())
+            ready = transport.wait_ready()
             before = tuple(terminal.screen.display)
             marker = len(terminal.transcript)
             transport.disconnect()
@@ -127,3 +126,93 @@ def test_every_operator_setting_still_blocks_restoration_when_changed(index):
 @pytest.mark.parametrize("invalid", [None, {}, [], [0] * 7, [0, 0, 0, True, 0, 0, []]])
 def test_malformed_evidence_cannot_claim_restoration_even_when_equal(invalid):
     assert not restored_modes(invalid, invalid, system="darwin")
+
+
+def test_child_output_can_precede_atomic_owner_readiness_without_losing_cleanup(tmp_path):
+    import threading
+
+    # Delay only the owner's record, after it has started the real child. This
+    # reproduces the observed hosted 3.13 ordering instead of relying on timing.
+    with TerminalTransport(tmp_path / "transport", "ssh") as transport:
+        owner = transport.directory / "owner.py"
+        release = tmp_path / "release-ready"
+        text = owner.read_text()
+        text = "import time\n" + text.replace(
+            "temporary=Path(spec['ready']+'.tmp')",
+            "while not Path("
+            + repr(str(release))
+            + ").exists(): time.sleep(0.005)\ntemporary=Path(spec['ready']+'.tmp')",
+            1,
+        )
+        owner.write_text(text)
+        raw = b"\x1b[?1049hready-before-record\x1b[?1049l\x1b[?25h" + b"".join(
+            f"\x1b[?{mode}l".encode() for mode in (1000, 1003, 1004, 1006, 2004)
+        )
+        with TerminalSession(
+            [sys.executable, "-c", f"import os,time; os.write(1,{raw!r}); time.sleep(.2)"],
+            tmp_path,
+            transport=transport,
+        ) as terminal:
+            terminal.wait_for(b"ready-before-record")
+            assert not (transport.directory / "ready.json").exists()
+            publishing = threading.Timer(0.05, release.touch)
+            publishing.start()
+            try:
+                record = transport.wait_ready()
+                assert record["application"] > 0
+            finally:
+                publishing.join(5)
+            terminal.finish()
+        assert transport.record["exit"] == 0
+
+
+def test_fragmented_reads_do_not_rebuild_the_full_screen_for_every_fragment(tmp_path, monkeypatch):
+    prefix = b"\x1b[?1049h\x1b[?25l\x1b[2J"
+    cell = "\x1b[38;5;81m界x \x1b[0m".encode()
+    frame = b"".join(f"\x1b[{row};1H".encode() + cell * 25 for row in range(1, 31))
+    raw = prefix + frame * 4 + b"\x1b[30;1H\x1b[2KFRAGMENTED OBSERVER READY"
+    (tmp_path / "observer-burst.ansi").write_bytes(raw)
+    ending = b"\x1b[?1049l\x1b[?25h" + b"".join(
+        f"\x1b[?{mode}l".encode() for mode in (1000, 1003, 1004, 1006, 2004)
+    )
+    program = (
+        "import os,termios,tty;from pathlib import Path\n"
+        "before=termios.tcgetattr(0)\n"
+        "try:\n"
+        " tty.setraw(0)\n"
+        " pending=memoryview(Path('observer-burst.ansi').read_bytes())\n"
+        " while pending: pending=pending[os.write(1,pending):]\n"
+        " assert os.read(0,1)==b'q'\n"
+        f" os.write(1,{ending!r})\n"
+        "finally: termios.tcsetattr(0,termios.TCSANOW,before)\n"
+    )
+
+    class CountedScreen(ObserverScreen):
+        inspections = 0
+
+        @property
+        def display(self):
+            self.inspections += 1
+            return super().display
+
+    reads = []
+    original_read = os.read
+    with TerminalSession([sys.executable, "-c", program], tmp_path, read_size=11) as terminal:
+        terminal.screen = CountedScreen(100, 30)
+        terminal.screen_stream = pyte.Stream(terminal.screen)
+
+        def fragmented_read(fd, size):
+            data = original_read(fd, size)
+            if fd == terminal.master:
+                reads.append(len(data))
+            return data
+
+        monkeypatch.setattr(os, "read", fragmented_read)
+        terminal.wait_for_screen("FRAGMENTED OBSERVER READY")
+        assert len(reads) > 1000 and max(reads) <= 11
+        assert terminal.screen.inspections < 500
+        terminal.read_size = 65536
+        terminal.send(b"q")
+        terminal.finish()
+        assert raw in terminal.transcript
+        terminal.save_evidence("observer-bounded-fragment-inspection")

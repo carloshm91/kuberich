@@ -331,6 +331,8 @@ class ViewPreferences:
                     ).definition.columns
                 )
                 if layout is not None
+                else descriptor.fields[:6]
+                if descriptor.key == "v1/pods"
                 else descriptor.fields
             )
             effective = ViewSpec(
@@ -367,6 +369,7 @@ class ViewPreferences:
             and self._table_contexts[table.id or ""] != descriptor.context
         )
         self._table_contexts[table.id or ""] = descriptor.context
+        effective = self.app.interactions.overlay(effective, descriptor.fields)
         if layout is not None:
             custom_keys = [
                 column.key
@@ -392,7 +395,9 @@ class ViewPreferences:
             all_namespaces=descriptor.all_namespaces,
             signature=descriptor.signature,
         )
-        self.app.custom_table.configure_view(effective)
+        self.app.custom_table.configure_view(
+            self.app.interactions.overlay(effective, descriptor.fields)
+        )
 
     def remember_sort(self) -> None:
         try:

@@ -291,7 +291,7 @@ class ShellScreen(ModalScreen[str]):
         elif event.key in {"y", "ctrl+y"}:
             self.shell.require_current()
             self.app.copy_to_clipboard(review.copy())
-            self.review_message = "Redacted selection copied"
+            self.review_message = "Redacted selection copied; clipboard write requested"
         elif event.key in {"n", "N"}:
             self.review_message = (
                 "Match"
@@ -345,7 +345,7 @@ class ShellScreen(ModalScreen[str]):
         self.terminal.endpoint = None
         self.terminal.pending.clear()
         self.terminal.clear_history()
-        if self._session_task is not None:
+        if self._session_task is not None and not self._session_task.cancelling():
             self._session_task.cancel()
 
     def key(self, event: Key) -> None:
@@ -428,8 +428,11 @@ class ShellScreen(ModalScreen[str]):
             self.terminal.endpoint = None
             self.terminal.clear_history()
 
-    async def on_unmount(self) -> None:
-        self._shell_unmounting = True
+    async def stop_owned(self) -> None:
         self.close_shell()
         if self._session_task is not None:
             await asyncio.gather(self._session_task, return_exceptions=True)
+
+    async def on_unmount(self) -> None:
+        self._shell_unmounting = True
+        await self.stop_owned()

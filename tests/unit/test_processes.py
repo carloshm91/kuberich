@@ -61,6 +61,7 @@ def command(tmp_path, **changes):
         (ProcessPurpose.AUTHENTICATE, Action.READ),
         (ProcessPurpose.DOWNLOAD, Action.READ),
         (ProcessPurpose.UPLOAD, Action.MUTATE),
+        (ProcessPurpose.CLIPBOARD, Action.READ),
     ],
 )
 def test_purpose_has_explicit_effect_policy(purpose, action):

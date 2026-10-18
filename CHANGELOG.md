@@ -7,6 +7,14 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Add session command/filter recall, inverse/fuzzy/local metadata filters, namespace
+  favorites, wide/errors controls, bounded UID ranges, read-only text navigation,
+  nested command bars and live captured-container refresh with owned cleanup.
+  Copy names/namespaces/text through bounded native macOS/X11 or OSC52/tmux
+  backends; mouse reporting requires explicit opt-in
+  ([#61](https://github.com/carloshm91/kuberich/issues/61),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Document the pinned 50-file/108-command plugin compatibility census, external
   dependencies and alternatives; verify 18 explicit argv adaptations and three
   original capture/interactive/background manifests. Accept valid hyphenated CRD

@@ -73,6 +73,8 @@ async def test_uid_scroll_sort_changes_deletion_and_replacement(size, monkeypatc
         table.restore_sort("name", False)
         await pilot.pause()
         assert await pilot.click("#standard-resources", offset=(2, 0))
+        assert table.sort_column == "name"  # The mark gutter is not a sort field.
+        assert await pilot.click("#standard-resources", offset=(2 * table.cell_padding + 2, 0))
         assert table.sort_column == "namespace"
         assert await table.apply_rows((), 1, lambda: True)
         assert table.row_count == 0 and table.selected_uid is None

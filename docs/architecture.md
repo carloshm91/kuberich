@@ -1170,3 +1170,33 @@ its typed value with the domain's canonical order function. Standard and discove
 columns use their own typed value. Interrupted batches retain invalidation until
 an accepted view finishes ordering; schema/context replacement clears row ownership.
 Selection/scroll restoration and generation rejection remain independent.
+
+## Terminal interactions and captured read workspaces
+
+B07 #61 keeps bounded command/filter entry and UID ranges in
+`domain/interactions.py`, local metadata/known-health decisions in
+`domain/selectors.py`, and write-only backend/OSC52 decisions in
+`domain/clipboard.py`. `services/metadata_filtering.py` owns its decoding worker,
+separate metadata budget and one-snapshot cache. Cache hits reuse match identity,
+not stale cell projections after a column change. `ui/interactions.py` coordinates
+session preferences and marks without moving Kubernetes operations into widgets.
+
+`ProcessCommand.input_data` is immutable, bounded and restricted to noninteractive
+clipboard-purpose commands. `ProcessRunner` registers ownership before writing
+stdin. Native clipboard data never enters argv/code/logs; X11 retains one owned
+foreground selection process, macOS uses a constant AppKit plaintext program,
+and OSC52/tmux emit only bounded base64 in trusted framing. No production backend
+reads a clipboard. Headless runs stay memory-only and ordinary PTYs force OSC52.
+
+Read-only `CommandWorkspace` screens share the command provider/history. Invalid
+or forbidden commands retain the view; accepted scope transitions await covered
+read owners before dispatch. Resource commands revalidate the originating target
+and restore that UID rather than using a changed hidden cursor. The embedded
+shell's earlier event route remains authoritative for remote keystrokes.
+
+A container screen coalesces owned Pod-record projections independently of the
+covered root renderer, preserves container name/viewport and never steals focus.
+UID/session/namespace/context/fatal-permission invalidation is sticky. Closing
+clients drains inspection, log, container projection and shell owners in addition
+to existing mutation/plugin/forward work. Preference writes serialize and reject
+an intervening document, retaining unrelated extensions instead of losing a save.

@@ -270,6 +270,8 @@ class ProcessRunner:
                 cwd=command.directory,
                 stdin=terminal_fd
                 if foreground and command.terminal_input
+                else asyncio.subprocess.PIPE
+                if command.input_data is not None
                 else asyncio.subprocess.DEVNULL,
                 stdout=terminal_fd
                 if foreground and command.purpose is not ProcessPurpose.AUTHENTICATE
@@ -287,6 +289,10 @@ class ProcessRunner:
         session.task.add_done_callback(lambda _: self._sessions.discard(session))
         try:
             self.require(command, command.mode, guard)
+            if command.input_data is not None:
+                pipe = cast(asyncio.WriteTransport, transport.get_pipe_transport(0))
+                pipe.write(command.input_data)
+                pipe.close()
         except BaseException:
             await session.close()
             raise

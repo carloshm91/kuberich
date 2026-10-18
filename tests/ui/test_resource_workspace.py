@@ -93,7 +93,10 @@ async def test_top_input_namespace_table_drilldown_escape_and_actual_view_hints(
                 assert "shell" in str(containers.query_one("#container-hints", Static).content)
             assert "containers" in str(containers.query_one("#breadcrumbs", Static).content)
             assert containers.query_one("#container-dialog").region == frame
-            assert containers.table.content_region.height >= 2
+            assert (
+                containers.table.scrollable_content_region.height
+                >= containers.table.header_height + 1
+            )
             assert containers.query_one("#container-back").region.bottom <= frame.y
             assert (
                 tuple(containers.query_one(f"#{key}").region for key in identifiers)

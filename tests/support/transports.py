@@ -15,7 +15,7 @@ from contextlib import suppress
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import TracebackType
-from typing import BinaryIO
+from typing import Any, BinaryIO, cast
 
 from tests.support.terminal_modes import restored_modes
 
@@ -39,6 +39,9 @@ def terminal_signal(value,_):
 for signum in (signal.SIGHUP,signal.SIGTERM):
     signal.signal(signum, terminal_signal)
 spec=json.loads(Path(sys.argv[1]).read_text())
+for name in ('TMUX','SSH_CONNECTION','SSH_TTY'):
+    if name in os.environ:
+        spec['environment'][name]=os.environ[name]
 before=encode(termios.tcgetattr(0))
 process=subprocess.Popen(spec['command'],cwd=spec['directory'],env=spec['environment'])
 ready={'owner':os.getpid(),'connection':os.getppid(),'application':process.pid,
@@ -78,6 +81,7 @@ SAFE_ENV = {
     "KUBERICH_CONFIG",
     "KUBERICH_LOG_FILE",
     "KUBERICH_LOG_LEVEL",
+    "KUBERICH_CLIPBOARD",
     "KUBECONFIG",
 }
 
@@ -85,7 +89,7 @@ SAFE_ENV = {
 class TerminalTransport:
     """No ambient keys/config/agent, global daemon, or existing tmux server."""
 
-    def __init__(self, directory: Path, kind: str) -> None:
+    def __init__(self, directory: Path, kind: str, *, clipboard_passthrough: bool = False) -> None:
         assert kind in {"ssh", "tmux", "ssh_tmux"}
         self.directory, self.kind = directory, kind
         self.directory.mkdir(mode=0o700)
@@ -118,6 +122,7 @@ class TerminalTransport:
         (directory / "tmux.conf").write_text(
             "set -g status off\nset -g default-terminal screen-256color\n"
             "set -g default-shell /bin/sh\nset -s escape-time 0\n"
+            + ("set -g allow-passthrough on\n" if clipboard_passthrough else "")
         )
 
     @staticmethod
@@ -278,9 +283,18 @@ class TerminalTransport:
         self.disconnected = False
         return wrapped, safe
 
+    def wait_ready(self) -> dict[str, Any]:
+        """Child output may precede the owner's atomic readiness publication."""
+        deadline = time.monotonic() + 5
+        path = self.directory / "ready.json"
+        while not path.exists():
+            assert time.monotonic() < deadline, "Missing owned transport readiness record"
+            time.sleep(0.005)
+        return cast(dict[str, Any], json.loads(path.read_text()))
+
     def verify(self, expected: int) -> None:
         if self.disconnected and self.tmux is not None:
-            ready = json.loads((self.directory / "ready.json").read_text())
+            ready = self.wait_ready()
             os.kill(ready["application"], 0)
             assert not (self.directory / "result.json").exists()
             self.record = {

@@ -253,7 +253,7 @@
       ],
       "source": "internal/view/cmd/interpreter.go",
       "status": "planned",
-      "difference": "B03 implements available pod aliases, shared initial/interactive scope commands and local bounded Tab/arrow suggestions (#115). Preview #125 adds a real namespace workspace table and resource-aware command/history routing. Other resource tables, CRD/custom aliases and broader command routing remain their owning tickets. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. U02 #57 implements bounded per-owner navigation keys, literal aliases and explicit version-pinned column width/alignment/order/visibility and typed-sort saves. Server schemas invalidate stale layouts. This source checkpoint does not claim broader navigation/filter/jump/plugin parity.",
+      "difference": "B03 implements available pod aliases, shared initial/interactive scope commands and local bounded Tab/arrow suggestions (#115). Preview #125 adds a real namespace workspace table and resource-aware command/history routing. Other resource tables, CRD/custom aliases and broader command routing remain their owning tickets. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. U02 #57 implements bounded per-owner navigation keys, literal aliases and explicit version-pinned column width/alignment/order/visibility and typed-sort saves. Server schemas invalidate stale layouts. This source checkpoint does not claim broader navigation/filter/jump/plugin parity. B07 #61: Next-release source adds shared nested command bars in captured resource/container/log workspaces. Invalid/read-only commands retain streams; accepted scope changes drain covered owners before replacing clients. Resource actions preserve the originating UID. Completion remains inline and local; embedded-shell keys retain remote ownership.",
       "partial_evidence": [
         "docs/command-navigation.md",
         "tests/ui/test_navigation.py",
@@ -276,9 +276,17 @@
         "tests/ui/test_view_layout_lifecycle.py",
         "tests/terminal/test_preferences.py",
         "tests/packaging/test_distribution.py",
-        "scripts/verify_standalone.py"
+        "scripts/verify_standalone.py",
+        "docs/terminal-navigation.md",
+        "docs/acceptance/terminal-navigation.md",
+        "tests/unit/test_interactions.py",
+        "tests/unit/test_selectors.py",
+        "tests/unit/test_metadata_filtering.py",
+        "tests/ui/test_interactions.py",
+        "tests/terminal/test_interactions.py",
+        "scripts/navigation_kind.py"
       ],
-      "public_summary": "Inline command completion includes user-defined literal aliases in next-release source. Built-in and discovered commands, context and namespace arguments retain shared policy and no keystroke-triggered requests.",
+      "public_summary": "Next-release source adds shared nested command bars in captured resource/container/log workspaces. Invalid/read-only commands retain streams; accepted scope changes drain covered owners before replacing clients. Resource actions preserve the originating UID. Completion remains inline and local; embedded-shell keys retain remote ownership.",
       "public_status": "partial"
     },
     {
@@ -290,13 +298,21 @@
       ],
       "source": "internal/view/cmd/types.go",
       "status": "planned",
-      "difference": "B03 implements local case-insensitive literal text and Unicode VERSION1 regex filters with a total timeout, explicit errors and current snapshot/query guards. Inverse/fuzzy matching, selectors and saved filter history remain B07.",
+      "difference": "B03 implements local case-insensitive literal text and Unicode VERSION1 regex filters with a total timeout, explicit errors and current snapshot/query guards. Inverse/fuzzy matching, selectors and saved filter history remain B07. B07 #61: Next-release source adds inverse Unicode regex, case-insensitive fuzzy subsequences, bounded local label/allowlisted field filters and memory-only command/filter entry recall. Regex keeps its 50-ms total budget; metadata filters use a separate 250-ms budget and one-snapshot cache. Server-side selector parity and persistent filter history are not claimed.",
       "partial_evidence": [
         "docs/command-navigation.md",
         "tests/ui/test_navigation.py",
-        "tests/terminal/test_navigation.py"
+        "tests/terminal/test_navigation.py",
+        "docs/terminal-navigation.md",
+        "docs/acceptance/terminal-navigation.md",
+        "tests/unit/test_interactions.py",
+        "tests/unit/test_selectors.py",
+        "tests/unit/test_metadata_filtering.py",
+        "tests/ui/test_interactions.py",
+        "tests/terminal/test_interactions.py",
+        "scripts/navigation_kind.py"
       ],
-      "public_summary": "Tables support local case-insensitive text and bounded Unicode regular-expression filtering with visible errors. Inverse/fuzzy matching, server selectors and saved filter history are planned.",
+      "public_summary": "Next-release source adds inverse Unicode regex, case-insensitive fuzzy subsequences, bounded local label/allowlisted field filters and memory-only command/filter entry recall. Regex keeps its 50-ms total budget; metadata filters use a separate 250-ms budget and one-snapshot cache. Server-side selector parity and persistent filter history are not claimed.",
       "public_status": "partial"
     },
     {
@@ -309,7 +325,7 @@
       ],
       "source": "internal/view/page_stack.go",
       "status": "planned",
-      "difference": "B03 implements bounded scope/filter/viewport history. Preview #125 retains pod/namespace resource kind and displays nested namespace/pod/container/log routes with the current Escape destination. Broader resource drill-down remains planned. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage.",
+      "difference": "B03 implements bounded scope/filter/viewport history. Preview #125 retains pod/namespace resource kind and displays nested namespace/pod/container/log routes with the current Escape destination. Broader resource drill-down remains planned. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. B07 #61: Next-release source adds bounded command recall with draft restoration, policy-rechecked last-command repeat and explicitly saved per-context namespace favorites. Scope/view history remains separately bounded and memory-only; favorites do not grant namespace-list permissions or create API rows.",
       "partial_evidence": [
         "docs/command-navigation.md",
         "tests/ui/test_navigation.py",
@@ -321,9 +337,17 @@
         "docs/acceptance/context-container-workspace.md",
         "tests/ui/test_context_workspace.py",
         "tests/unit/test_container_rows.py",
-        "tests/ui/test_context_scope_commands.py"
+        "tests/ui/test_context_scope_commands.py",
+        "docs/terminal-navigation.md",
+        "docs/acceptance/terminal-navigation.md",
+        "tests/unit/test_interactions.py",
+        "tests/unit/test_selectors.py",
+        "tests/unit/test_metadata_filtering.py",
+        "tests/ui/test_interactions.py",
+        "tests/terminal/test_interactions.py",
+        "scripts/navigation_kind.py"
       ],
-      "public_summary": "Bounded session history retains resource kind, scope, filter, sort, selection and viewport. The trail states the Escape destination. Persistent history and wider relationship drill-down are planned.",
+      "public_summary": "Next-release source adds bounded command recall with draft restoration, policy-rechecked last-command repeat and explicitly saved per-context namespace favorites. Scope/view history remains separately bounded and memory-only; favorites do not grant namespace-list permissions or create API rows.",
       "public_status": "partial"
     },
     {
@@ -337,7 +361,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -357,9 +381,17 @@
         "docs/terminal-compatibility.md",
         "docs/acceptance/terminal-qualification.md",
         "tests/terminal/test_transports.py",
-        "tests/terminal/test_shutdown.py"
+        "tests/terminal/test_shutdown.py",
+        "docs/terminal-navigation.md",
+        "docs/acceptance/terminal-navigation.md",
+        "tests/unit/test_interactions.py",
+        "tests/unit/test_selectors.py",
+        "tests/unit/test_metadata_filtering.py",
+        "tests/ui/test_interactions.py",
+        "tests/terminal/test_interactions.py",
+        "scripts/navigation_kind.py"
       ],
-      "public_summary": "Tables support keyboard paging, horizontal scrolling, Unicode, small terminals and retained resource identity. Source/installed PTY and SSH/tmux checks have explicit physical-terminal and clipboard limits.",
+      "public_summary": "Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
       "public_status": "partial"
     },
     {
@@ -373,7 +405,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02/B05/B06 provide typed sorting, stable UID selection and generic server-column choice/order including optional wide-priority fields, bounded to this session. Persistent/movable views, errors-only filters and selection ranges remain B07/U02. U02 #57 implements bounded per-owner navigation keys, literal aliases and explicit version-pinned column width/alignment/order/visibility and typed-sort saves. Server schemas invalidate stale layouts. This source checkpoint does not claim broader navigation/filter/jump/plugin parity.",
+      "difference": "B02/B05/B06 provide typed sorting, stable UID selection and generic server-column choice/order including optional wide-priority fields, bounded to this session. Persistent/movable views, errors-only filters and selection ranges remain B07/U02. U02 #57 implements bounded per-owner navigation keys, literal aliases and explicit version-pinned column width/alignment/order/visibility and typed-sort saves. Server schemas invalidate stale layouts. This source checkpoint does not claim broader navigation/filter/jump/plugin parity. B07 #61: Next-release source adds transient wide columns (Pod Node/IP/QoS), observable-errors filtering with an explicit unknown count, bounded UID marks/ranges in filtered/sorted order and marked-row batch review. Existing typed sorting, configuration saves, read-only/default-Cancel/UID guards remain enforced. Health interpretation is a deliberate known-condition subset.",
       "partial_evidence": [
         "docs/pod-table.md",
         "tests/unit/test_pods.py",
@@ -392,9 +424,17 @@
         "tests/ui/test_view_layout_lifecycle.py",
         "tests/terminal/test_preferences.py",
         "tests/packaging/test_distribution.py",
-        "scripts/verify_standalone.py"
+        "scripts/verify_standalone.py",
+        "docs/terminal-navigation.md",
+        "docs/acceptance/terminal-navigation.md",
+        "tests/unit/test_interactions.py",
+        "tests/unit/test_selectors.py",
+        "tests/unit/test_metadata_filtering.py",
+        "tests/ui/test_interactions.py",
+        "tests/terminal/test_interactions.py",
+        "scripts/navigation_kind.py"
       ],
-      "public_summary": "Next-release source saves column order, visibility, width, alignment and typed sort globally/per context, retaining stable selection. Range selection and errors-only filtering remain planned.",
+      "public_summary": "Next-release source adds transient wide columns (Pod Node/IP/QoS), observable-errors filtering with an explicit unknown count, bounded UID marks/ranges in filtered/sorted order and marked-row batch review. Existing typed sorting, configuration saves, read-only/default-Cancel/UID guards remain enforced. Health interpretation is a deliberate known-condition subset.",
       "public_status": "partial"
     },
     {
@@ -408,7 +448,7 @@
       ],
       "source": "internal/view/help.go",
       "status": "planned",
-      "difference": "Implemented pod, namespace, container and log shortcuts appear in the shared responsive header (#125); help retains secondary keys in short terminals. Per-view custom hotkeys and other resource actions remain planned. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Preview #132 refines the responsive header brand to an original ktrol ASCII logo; project/CLI naming and presentation controls are retained.",
+      "difference": "Implemented pod, namespace, container and log shortcuts appear in the shared responsive header (#125); help retains secondary keys in short terminals. Per-view custom hotkeys and other resource actions remain planned. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Preview #132 refines the responsive header brand to an original ktrol ASCII logo; project/CLI naming and presentation controls are retained. B07 #61: Next-release source extends shared header/frame chrome to read-only inspection/help and provides session header/trail/fullscreen toggles without persisting preferences. Per-view navigation keys and nested command/search Escape destinations retain focused-input ownership.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_launch_options.py",
@@ -422,9 +462,17 @@
         "tests/ui/test_resource_workspace.py",
         "docs/acceptance/stable-workspace.md",
         "tests/ui/test_layout_snapshots.py",
-        "docs/acceptance/header-logo.md"
+        "docs/acceptance/header-logo.md",
+        "docs/terminal-navigation.md",
+        "docs/acceptance/terminal-navigation.md",
+        "tests/unit/test_interactions.py",
+        "tests/unit/test_selectors.py",
+        "tests/unit/test_metadata_filtering.py",
+        "tests/ui/test_interactions.py",
+        "tests/terminal/test_interactions.py",
+        "scripts/navigation_kind.py"
       ],
-      "public_summary": "The shared header shows current-view shortcuts, with secondary actions in help on small terminals. Per-view user-defined hotkeys are planned.",
+      "public_summary": "Next-release source extends shared header/frame chrome to read-only inspection/help and provides session header/trail/fullscreen toggles without persisting preferences. Per-view navigation keys and nested command/search Escape destinations retain focused-input ownership.",
       "public_status": "partial"
     },
     {
@@ -457,7 +505,7 @@
       ],
       "source": "internal/view/clipboard.go",
       "status": "planned",
-      "difference": "B04 and S02 copy redacted inspection/log text using Textual OSC52. Native clipboard and physical host clipboard receipt remain B07 #61. Q02 #33 exercises redacted log-copy controls over SSH/tmux, but does not certify the host clipboard receiving OSC52; native clipboard and physical-emulator/manual checks remain B07 #61.",
+      "difference": "B04 and S02 copy redacted inspection/log text using Textual OSC52. Native clipboard and physical host clipboard receipt remain B07 #61. Q02 #33 exercises redacted log-copy controls over SSH/tmux, but does not certify the host clipboard receiving OSC52; native clipboard and physical-emulator/manual checks remain B07 #61. B07 #61: Next-release source writes bounded native plaintext via macOS AppKit/system osascript or foreground-owned X11 xclip and bounded base64 OSC52 with tmux framing. Explicit name/namespace/table-text controls preserve existing redacted views. Native/headless 1-MiB and terminal 64-KiB UTF-8 limits refuse rather than truncate. Owned Xvfb/ephemeral hosted macOS roundtrips and outer PTY receipts do not claim every physical-terminal paste acknowledgement.",
       "partial_evidence": [
         "docs/resource-inspection.md",
         "docs/log-viewer.md",
@@ -467,9 +515,17 @@
         "docs/terminal-compatibility.md",
         "docs/acceptance/terminal-qualification.md",
         "tests/terminal/test_transports.py",
-        "tests/terminal/test_shutdown.py"
+        "tests/terminal/test_shutdown.py",
+        "docs/terminal-navigation.md",
+        "docs/acceptance/terminal-navigation.md",
+        "tests/unit/test_interactions.py",
+        "tests/unit/test_selectors.py",
+        "tests/unit/test_metadata_filtering.py",
+        "tests/ui/test_interactions.py",
+        "tests/terminal/test_interactions.py",
+        "scripts/navigation_kind.py"
       ],
-      "public_summary": "Inspection, logs and local shell review offer redacted terminal clipboard output. Actual host receipt depends on OSC52 permissions and SSH/tmux forwarding; native clipboard integration is planned.",
+      "public_summary": "Next-release source writes bounded native plaintext via macOS AppKit/system osascript or foreground-owned X Window System xclip and bounded base64 OSC52 with tmux framing. Explicit name/namespace/table-text controls preserve existing redacted views. Native/headless 1-MiB and terminal 64-KiB UTF-8 limits refuse rather than truncate. Owned Xvfb/ephemeral hosted macOS roundtrips and outer PTY receipts do not claim every physical-terminal paste acknowledgement.",
       "public_status": "partial"
     },
     {

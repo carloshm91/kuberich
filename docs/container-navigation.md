@@ -20,8 +20,10 @@ The container table supports arrows, PageUp/PageDown, `j/k` and `g/G` (Shift+G)
 for first/last row. These letters remain log controls after opening logs.
 The view fits 40×12 and 100×30 windows, with horizontal scrolling for long names.
 
-This table uses data from the captured pod snapshot. Reopen it to refresh.
-Live container status and ephemeral debug container browsing remain later work.
+Published 0.1.0 uses a captured snapshot. Next-release source refreshes the
+open list from the owned Pod watch and invalidates it on UID/scope/permission
+loss. See [terminal navigation](terminal-navigation.md). Ephemeral debug
+container creation remains separate work.
 Read-only mode supports container navigation and logs. No kubeconfig or cluster
 resource is modified by opening these views.
 
