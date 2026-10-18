@@ -59,6 +59,14 @@ def review_and_run(terminal: TerminalSession, name: str) -> int:
     return terminal.send(b"\x1b[Z\r")
 
 
+def exercise_view_preferences(terminal: TerminalSession) -> None:
+    marker = terminal.send(b":views\r")
+    terminal.wait_for_screen("View · v1/pods", since=marker)
+    terminal.wait_for_screen("Available:", since=marker)
+    marker = terminal.send(b"\x1b")
+    terminal.wait_for_screen("Sort NAME", since=marker, absent=("Available:", "View · v1/pods"))
+
+
 def exercise_plugins(terminal: TerminalSession) -> None:
     for _ in range(2):
         marker = review_and_run(terminal, "trial-interactive")
@@ -66,27 +74,31 @@ def exercise_plugins(terminal: TerminalSession) -> None:
         terminal.send(b"owned-input\n")
         terminal.wait_for(b"PLUGIN_INPUT owned-input", since=marker)
         terminal.wait_for_screen("Succeeded")
-        terminal.send(b"\x1b")
-        terminal.wait_for_screen("80 pods")
+        close_plugin_view(terminal)
     # The same native child checks the previous invocation's private path after
     # return, including Linux containers where host-side stat cannot observe it.
     review_and_run(terminal, "trial-probe")
     terminal.wait_for_screen("PLUGIN_CLEAN")
-    terminal.send(b"\x1b")
-    terminal.wait_for_screen("80 pods")
+    close_plugin_view(terminal)
     review_and_run(terminal, "trial-background")
     terminal.wait_for_screen("Background job")
-    terminal.send(b"\x1b")
-    terminal.wait_for_screen("80 pods")
+    close_plugin_view(terminal)
     terminal.send(b":pluginjobs\r")
     terminal.wait_for_screen("Owned plugin jobs")
+    terminal.wait_for_screen("trial-background")
     terminal.send(b"G\r")
     terminal.wait_for_screen("PLUGIN_BACKGROUND")
-    terminal.send(b"\x1b")
-    terminal.wait_for_screen("80 pods")
+    close_plugin_view(terminal)
 
 
-def terminal_plugins(command: list[str], directory: Path, evidence: str) -> None:
+def close_plugin_view(terminal: TerminalSession) -> None:
+    marker = terminal.send(b"\x1b")
+    terminal.wait_for_screen("80 pods", since=marker, absent=("Plugin:", "Owned plugin jobs"))
+
+
+def terminal_plugins(
+    command: list[str], directory: Path, evidence: str, *, read_size: int = 65536
+) -> None:
     preferences = directory / "preferences.yaml"
     preferences.write_text(
         yaml.safe_dump(
@@ -121,6 +133,11 @@ def terminal_plugins(command: list[str], directory: Path, evidence: str) -> None
             directory,
         ) as terminal:
             terminal.wait_for_screen("80 pods")
+            terminal.read_size = read_size
+            try:
+                exercise_view_preferences(terminal)
+            finally:
+                terminal.read_size = 65536
             exercise_plugins(terminal)
             terminal.send(b"\x11")
             terminal.finish()

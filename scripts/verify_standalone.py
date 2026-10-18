@@ -18,7 +18,11 @@ from scripts.check_standalone import inspect_bundle, inspect_candidate
 from scripts.owned_kind import capture_docker
 from scripts.standalone import native_target
 from scripts.supply_chain import digest
-from tests.support.plugins_terminal import exercise_plugins, plugin_definitions
+from tests.support.plugins_terminal import (
+    exercise_plugins,
+    exercise_view_preferences,
+    plugin_definitions,
+)
 from tests.support.terminal_api import Server, config
 from tests.terminal.pty_support import TerminalSession
 
@@ -254,10 +258,7 @@ def browser(host: Host, directory: Path, evidence: Path, *, helpers: bool) -> di
             terminal.wait_for_screen("Sort NAME", absent=("Apache-2.0",))
             marker = terminal.send(b":ownedpods\r")
             terminal.wait_for_screen("80 pods", since=marker)
-            marker = terminal.send(b":views\r")
-            terminal.wait_for_screen("View · v1/pods", since=marker)
-            terminal.send(b"\x1b")
-            terminal.wait_for_screen("Sort NAME", absent=("Available:",))
+            exercise_view_preferences(terminal)
             exercise_plugins(terminal)
             terminal.send(b"\x11")
             terminal.finish()

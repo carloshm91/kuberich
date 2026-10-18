@@ -473,3 +473,40 @@ async def test_concurrent_preparations_reserve_the_bound_and_freeze_inputs_befor
         assert all(request.command.argv[-1] == "original-value" for request in requests)
         assert owner._preparing == 0 and len(owner._prepared) == 8
         owner.close()
+
+
+@pytest.mark.asyncio
+async def test_completed_status_is_not_published_before_output_and_private_cleanup(
+    tmp_path, monkeypatch
+):
+    import kuberich.services.plugins as module
+
+    entered, release = asyncio.Event(), asyncio.Event()
+    original = module.file_worker
+
+    async def delayed(operation):
+        if getattr(operation, "__name__", "") == "redact":
+            entered.set()
+            await release.wait()
+        return await original(operation)
+
+    monkeypatch.setattr(module, "file_worker", delayed)
+    async with reader_fixture(tmp_path, handler) as reader:
+        owner = source(reader, tmp_path)
+        reviewed = await owner.prepare(
+            plugin(tmp_path, "print('complete-output')", mode="background"), {}
+        )
+        manager = PluginManager(owner.policy)
+        job = manager.start(owner, reviewed, confirmed=True)
+        try:
+            async with asyncio.timeout(5):
+                await entered.wait()
+            assert job.status == "Running" and job.output == ""
+            assert all(path.exists() for path, _ in reviewed.files)
+            release.set()
+            await job.wait()
+            assert job.status == "Succeeded" and "complete-output" in job.output
+            assert all(not path.exists() for path, _ in reviewed.files)
+        finally:
+            release.set()
+            await manager.close()

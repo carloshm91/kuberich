@@ -91,6 +91,32 @@ Every case used a distinct plugin cwd, retained helper-relative credential files
 removed both private delegation files and drained the session; the owned cluster
 was removed. This verifier remains mandatory in the hosted Linux 3.12 lane.
 
+Native run 39106849004 at `a900e7e0` passed Linux x86_64/arm64 but failed both
+macOS archives in the new plugin trial. The retained screens show `:plugin ...`
+inside the preceding view-editor input. The old return witness could match a
+mixed repaint: the editor title had appeared while the root sort row remained,
+and the editor's Available row had not yet appeared. The next bytes could follow
+Escape before its return was observed. Both original artifact ZIPs were downloaded
+and verified against GitHub's SHA-256 digests; original job logs and failed
+terminal evidence remain retained. The secondary failure-cleanup EPERM is not a
+successful restoration receipt.
+
+The shared trial now observes the editor's full field witness, then requires new
+output and absence of its title before continuing. Plugin/job returns likewise
+require disappearance of their own titles. No timeout or budget is increased.
+A real source trial fragments the view transition into 11-byte observer reads;
+the targeted case passed in 10.90 seconds and the corrected installed-wheel trial
+passed in 13.08 seconds. The source terminal/process cohort passed 31 tests,
+including full-session fragmentation, before fragmentation was confined to the
+relevant view boundary to avoid redundant observer work.
+
+A separate controlled regression reproduced premature Succeeded publication
+while output redaction was deliberately blocked. Completion is now published
+after output and private-file cleanup. The same cohort verifies the corrected
+ordering with real captured child output. Fresh full source/native checks are
+required for the corrected candidate; failed originals are never counted as
+qualified environments.
+
 The private credential child is critical: 100% lines and branches are required,
 alongside the existing critical plugin/process/runtime/CLI/command decisions.
 Whole-package independent line/branch floors and changed-line gates remain

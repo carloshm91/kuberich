@@ -268,7 +268,6 @@ class PluginManager:
                         request.command, timeout=plugin.timeout, guard=guard
                     )
                 job.returncode = result.returncode
-                job.status = result.status.name.replace("_", " ").title()
 
                 def redact() -> str:
                     output = (result.stdout + b"\n" + result.stderr).decode(
@@ -280,6 +279,7 @@ class PluginManager:
                     return sanitize_text(output, allow_newlines=True)[:65536]
 
                 job.output = await file_worker(redact)
+            job.status = result.status.name.replace("_", " ").title()
         except asyncio.CancelledError:
             job.status = "Cancelled"
         except (AppError, OSError, ConnectionProblem) as error:
