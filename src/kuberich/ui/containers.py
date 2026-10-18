@@ -61,8 +61,7 @@ class ContainerScreen(CommandWorkspace):
     #container-title, #container-hints, #container-status { height: 1; text-overflow: ellipsis; }
     #container-title { color: $accent; height: 1; border: none; }
     ContainerScreen.short #container-title { height: 1; border-top: none; border-bottom: none; }
-    #container-feedback { height: auto; min-height: 1; max-height: 3; margin: 0 1; }
-    ContainerScreen.short #container-feedback { height: 1; max-height: 1; }
+    #container-feedback { height: 1; min-height: 1; max-height: 1; margin: 0 1; }
     #container-status { height: auto; text-overflow: fold; }
     #containers { height: 1fr; }
     #container-title { width: 1fr; }
@@ -100,7 +99,7 @@ class ContainerScreen(CommandWorkspace):
             raise AppError("The selected pod has no regular/init/ephemeral containers.")
         self.table = ContainerTable(id="containers", cursor_type="row", zebra_stripes=True)
         self.status = Static(
-            "Pod snapshot · CPU/MEM are requests/limits; live usage is not collected.",
+            "CPU/MEM show requests/limits; usage is not collected.",
             markup=False,
             id="container-status",
         )
@@ -229,9 +228,6 @@ class ContainerScreen(CommandWorkspace):
             if selected in names:
                 table.move_cursor(row=table.get_row_index(selected), scroll=False)
             table.scroll_to(x=x, y=y, animate=False, immediate=True, force=True)
-            self._set_status(
-                "Live pod watch · CPU/MEM are requests/limits; usage is not collected."
-            )
 
     async def stop_owned(self) -> None:
         self.invalidated = True

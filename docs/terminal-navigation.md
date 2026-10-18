@@ -118,7 +118,8 @@ resource remains explicit; inspection content is still a read snapshot. Containe
 lists now refresh readiness, restart counts and waiting/running/terminated state
 from the existing Pod watch, preserving selection by container name and viewport.
 Long container feedback stays scrollable in the bottom status area; use Tab to
-focus it and arrow/page keys to read the full message.
+focus it and arrow/page keys to read the full message. Live row updates retain
+existing action feedback.
 No separate watch is opened for each container list. Deletion, replacement UID,
 namespace/context change or fatal permission loss invalidates the old screen;
 covered logs/shell work is closed and drained before client replacement. Late

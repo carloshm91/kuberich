@@ -157,6 +157,7 @@ async def test_live_container_rows_preserve_focus_and_nested_streams_are_drained
             screen = app.screen
             assert isinstance(screen, ContainerScreen)
             assert app.focused is screen.command_input
+            screen._set_status("Owned action feedback remains until the next action.")
             value["metadata"]["resourceVersion"] = "updated"
             value["status"]["containerStatuses"].append(
                 {"name": "worker", "ready": True, "restartCount": 7, "state": {"running": {}}}
@@ -164,6 +165,7 @@ async def test_live_container_rows_preserve_focus_and_nested_streams_are_drained
             await updates.put({"type": "MODIFIED", "object": value})
             await wait_for(lambda: screen.table.get_row("worker")[4].plain == "7")
             assert screen._selected_name() == "worker"
+            assert "Owned action feedback" in str(screen.status.content)
             assert app.focused is screen.command_input and screen.command_input.value == "draft"
             await pilot.press("escape", "enter")
             logs = app.screen

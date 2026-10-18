@@ -112,3 +112,19 @@ the existing bottom status space at every size, retaining both a data row and
 the full error text instead of an ellipsized mirror. Existing scroll/cleanup
 assertions remain; stronger geometry assertions also require a visible footer
 and table body at 40x12. These failed originals are not qualification results.
+
+The 8212362 full 3.13 original retained 5,664 passing tests and three geometry
+failures: expanding normal-size feedback shifted the exact shared frame and
+Escape trail row during two actual shell-failure entry points and the 60x18
+workspace route. The footer now reserves exactly one scrollable row at every
+size; original frame equality, fixed physical trail rows and long-error scrolling
+assertions are retained. Focused verification includes every embedded-shell
+scenario and all four workspace sizes before fresh complete qualification.
+
+The focused fixed-footer trial retained 79 passing tests and two actual
+missing-shell failures: the actionable preferences hint wrapped out of the
+first visible row, and subsequent watch updates replaced action feedback. The
+missing-executable message is now concise with the action visible immediately;
+row projection keeps existing action feedback. The original two CLI assertions
+remain, and an owned-watch regression verifies updated cells/focus while feedback
+survives. The unchanged full source/native/coverage gates still apply.
