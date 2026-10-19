@@ -4,6 +4,7 @@ import argparse
 import asyncio
 import json
 import os
+import signal
 from pathlib import Path
 from typing import Any
 
@@ -11,8 +12,10 @@ from kubernetes_asyncio import client
 
 from kuberich.config.catalog import load_catalog
 from kuberich.domain.connections import ConnectionRequest
+from kuberich.domain.forward_presets import ForwardTransport, annotation_preset, resolve_mappings
 from kuberich.domain.port_forwards import ForwardState, parse_mappings
 from kuberich.domain.targets import ResourceTarget
+from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
 from kuberich.services.port_forwards import ForwardInfo, ForwardManager, ForwardService
 from kuberich.services.processes import ProcessRunner
@@ -35,14 +38,14 @@ async def observed(manager: ForwardManager, state: ForwardState) -> ForwardInfo:
             await asyncio.sleep(0.03)
 
 
-async def payload(port: int) -> None:
+async def payload(port: int, *, expected: bytes = b"OWNED-FORWARD-HTTP") -> None:
     async with asyncio.timeout(10):
         reader, writer = await asyncio.open_connection("127.0.0.1", port)
         try:
             writer.write(b"GET / HTTP/1.0\r\nHost: owned\r\n\r\n")
             await writer.drain()
             response = await reader.read()
-            assert b"200 OK" in response and b"OWNED-FORWARD-HTTP" in response
+            assert b"200 OK" in response and expected in response
         finally:
             writer.close()
             await writer.wait_closed()
@@ -89,12 +92,20 @@ async def verify(cluster: OwnedCluster, kubectl: Path) -> dict[str, Any]:
             await api.create_namespaced_pod(
                 namespace,
                 client.V1Pod(
-                    metadata=client.V1ObjectMeta(name="owned-http", labels={"app": "owned-http"}),
+                    metadata=client.V1ObjectMeta(
+                        name="owned-http",
+                        labels={"app": "owned-http"},
+                        annotations={"k9scli.io/auto-port-forwards": "http::0:web,http::0:admin"},
+                    ),
                     spec=client.V1PodSpec(
                         containers=[
                             client.V1Container(
                                 name="http",
                                 image=FORWARD_IMAGE,
+                                ports=[
+                                    client.V1ContainerPort(name="web", container_port=8080),
+                                    client.V1ContainerPort(name="admin", container_port=8081),
+                                ],
                                 command=[
                                     "/bin/sh",
                                     "-c",
@@ -121,7 +132,7 @@ async def verify(cluster: OwnedCluster, kubectl: Path) -> dict[str, Any]:
                     metadata=client.V1ObjectMeta(name="owned-http"),
                     spec=client.V1ServiceSpec(
                         selector={"app": "owned-http"},
-                        ports=[client.V1ServicePort(port=80, target_port=8080)],
+                        ports=[client.V1ServicePort(name="http", port=80, target_port=8080)],
                     ),
                 ),
             )
@@ -149,13 +160,45 @@ async def verify(cluster: OwnedCluster, kubectl: Path) -> dict[str, Any]:
                     directory=cluster.directory,
                 )
 
-            manager.start(source("pods"), parse_mappings(":8080,:8081"))
+            raw_pod = connection.api.sanitize_for_serialization(pod)
+            preset = annotation_preset(raw_pod, "pods")
+            assert preset is not None and preset[1]
+            manager.start(
+                source("pods"),
+                resolve_mappings(preset[0].ports, "pods", raw_pod),
+                transport=ForwardTransport.WEBSOCKET,
+                intent=preset[0].intent,
+            )
             pod_forward = await observed(manager, ForwardState.READY)
+            assert (
+                dict(manager._live[pod_forward.identity].request.command.environment)[
+                    "KUBECTL_PORT_FORWARD_WEBSOCKETS"
+                ]
+                == "true"
+            )
             assert len(pod_forward.ports) == 2
             for bound in pod_forward.ports:
                 await payload(bound.local)
+            try:
+                manager.start(source("pods"), parse_mappings(f"{pod_forward.ports[0].local}:8080"))
+            except AppError as error:
+                assert "reserves" in str(error)
+            else:
+                raise AssertionError("An owned listener collision was accepted.")
+            occupied = await asyncio.start_server(
+                lambda _reader, writer: writer.close(), "127.0.0.1", 0
+            )
+            try:
+                occupied_port = occupied.sockets[0].getsockname()[1]
+                manager.start(source("pods"), parse_mappings(f"{occupied_port}:8080"))
+                collision = await observed(manager, ForwardState.FAILED)
+                assert "Cannot bind" in collision.message and collision.pid is None
+            finally:
+                occupied.close()
+                await occupied.wait_closed()
             sessions.select_namespace("default")
-            assert manager.infos[-1].state is ForwardState.READY
+            retained = next(info for info in manager.infos if info.identity == pod_forward.identity)
+            assert retained.state is ForwardState.READY
             await manager.stop(pod_forward.identity)
             await gone(pod_forward)
             assert not list(directory.glob("forward-*.json"))
@@ -165,19 +208,101 @@ async def verify(cluster: OwnedCluster, kubectl: Path) -> dict[str, Any]:
             )
 
             # Reuse an explicitly freed local port; Service port 80 maps to backend 8080.
-            manager.start(source("services"), parse_mappings(f"{pod_forward.ports[0].local}:80"))
+            manager.start(
+                source("services"),
+                resolve_mappings(
+                    f"{pod_forward.ports[0].local}:http",
+                    "services",
+                    connection.api.sanitize_for_serialization(service),
+                ),
+                transport=ForwardTransport.SPDY,
+                retries=1,
+                intent=f"{pod_forward.ports[0].local}:http",
+            )
             service_forward = await observed(manager, ForwardState.READY)
+            assert (
+                dict(manager._live[service_forward.identity].request.command.environment)[
+                    "KUBECTL_PORT_FORWARD_WEBSOCKETS"
+                ]
+                == "false"
+            )
             assert service_forward.ports[0].remote == 8080
             await payload(service_forward.ports[0].local)
+            # Change the Service backend deliberately. The old process keeps its
+            # original pod until a real disconnect; a bounded retry resolves anew.
+            await api.create_namespaced_pod(
+                namespace,
+                client.V1Pod(
+                    metadata=client.V1ObjectMeta(
+                        name="owned-alternate", labels={"app": "owned-alternate"}
+                    ),
+                    spec=client.V1PodSpec(
+                        containers=[
+                            client.V1Container(
+                                name="http",
+                                image=FORWARD_IMAGE,
+                                command=[
+                                    "/bin/sh",
+                                    "-c",
+                                    "mkdir /tmp/www; echo OWNED-FORWARD-HTTP-ALTERNATE >/tmp/www/index.html; exec httpd -f -p 8081 -h /tmp/www",
+                                ],
+                                readiness_probe=client.V1Probe(
+                                    http_get=client.V1HTTPGetAction(path="/", port=8081)
+                                ),
+                            )
+                        ]
+                    ),
+                ),
+            )
+            async with asyncio.timeout(180):
+                while True:
+                    alternate = await api.read_namespaced_pod("owned-alternate", namespace)
+                    if (
+                        alternate.status.container_statuses
+                        and alternate.status.container_statuses[0].ready
+                    ):
+                        break
+                    await asyncio.sleep(0.5)
+            await api.patch_namespaced_service(
+                "owned-http",
+                namespace,
+                {
+                    "spec": {
+                        "selector": {"app": "owned-alternate"},
+                        "ports": [{"name": "http", "port": 80, "targetPort": 8081}],
+                    }
+                },
+            )
+            assert service_forward.pid is not None
+            os.kill(service_forward.pid, signal.SIGTERM)
+            await observed(manager, ForwardState.RECONNECTING)
+            await gone(service_forward)
+            rebound = await observed(manager, ForwardState.READY)
+            assert rebound.attempt == 1 and rebound.identity == service_forward.identity
+            assert rebound.ports[0].remote == 8081
+            await payload(rebound.ports[0].local, expected=b"OWNED-FORWARD-HTTP-ALTERNATE")
             await api.delete_namespaced_service("owned-http", namespace)
             deleted = await observed(manager, ForwardState.FAILED)
             assert "404" in deleted.message or "unavailable" in deleted.message
-            await gone(service_forward)
+            await gone(rebound)
             assert not list(directory.glob("forward-*.json"))
             print(
                 "Actual Service forward: explicit local port, translated backend, payload and deletion cleanup passed.",
                 flush=True,
             )
+
+            remote_source = source("pods")
+            try:
+                manager.start(remote_source, parse_mappings(":8080"), "0.0.0.0")
+            except AppError as error:
+                assert "explicit permission" in str(error)
+            else:
+                raise AssertionError("Unreviewed non-loopback forward was accepted.")
+            manager.start(remote_source, parse_mappings(":8080"), "0.0.0.0", allow_remote=True)
+            remote = await observed(manager, ForwardState.READY)
+            await payload(remote.ports[0].local)
+            await manager.stop(remote.identity)
+            await gone(remote)
 
             manager.start(source("pods"), parse_mappings(":8080"))
             reconnect_forward = await observed(manager, ForwardState.READY)
@@ -219,6 +344,12 @@ async def verify(cluster: OwnedCluster, kubectl: Path) -> dict[str, Any]:
             return {
                 "pod_dynamic_mappings": 2,
                 "service_target_port": 8080,
+                "service_reconnect_target_port": 8081,
+                "service_backend_replaced": True,
+                "transport_modes": ["websocket-preferred", "spdy"],
+                "annotation_named_ports": True,
+                "remote_bind_optin": True,
+                "owned_and_external_listener_collisions": True,
                 "checks": [
                     "real-http",
                     "stop",

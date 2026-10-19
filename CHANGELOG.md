@@ -7,6 +7,12 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Add named/container-qualified TCP forward mappings, local/context presets,
+  explicitly trusted annotation shortcuts, kubectl transport selection and
+  bounded reconnects with captured-resource and process cleanup checks
+  ([#62](https://github.com/carloshm91/kuberich/issues/62),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Add session command/filter recall, inverse/fuzzy/local metadata filters, namespace
   favorites, wide/errors controls, bounded UID ranges, read-only text navigation,
   nested command bars and live captured-container refresh with owned cleanup.
@@ -53,6 +59,12 @@ Release entries are written in release PRs and linked to their Git tags.
   [Carlos J. Herrera](https://github.com/carloshm91)).
 
 ### Fixed
+
+- Release retired table-render cache entries promptly when views change, retaining
+  native LRU behavior and capacity. Size configuration-key columns from their
+  captured metadata so initial paints do not truncate names while idle layout is
+  pending ([#62](https://github.com/carloshm91/kuberich/issues/62),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
 
 - Preserve configured plugin file locations and working directories during
   explicit preference migration. Reuse bounded exact CSS parses when revisiting

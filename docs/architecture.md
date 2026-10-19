@@ -1,5 +1,39 @@
 # Architecture decisions
 
+## Native table-cache retirement and metadata geometry: prerequisite for S08 #62
+
+`FrameTable` uses a small native LRU subclass for its six rendering/ordering
+caches. It leaves lookup, insertion, eviction, counters and original capacities
+with Textual, but unlinks discarded rings on clear/discard/owner retirement.
+This releases retired rendering values without waiting for a later cyclic
+collection. The adapter applies only to KubeRich-owned tables; no framework
+global or garbage-collection policy changes. Pinned native-control tests cover
+the ownership boundary and ordinary cache semantics.
+
+Configuration-key metadata supplies explicit cell widths before its first paint.
+Reload reconstructs those columns from the new captured index and restores the
+selected key identity. Values remain hidden; a deferred native auto-width scan
+cannot leave key names clipped to their shorter header labels.
+
+## Captured forwarding presets and bounded reconnects: S08 #62
+
+`domain/forward_presets.py` resolves literal names/container-qualified mappings
+against one captured resource and keeps transport selection independent from
+Textual. `config/forwarding.py` validates explicit, versioned local opt-in and
+exact-context replacement. Cluster annotations cannot grant permission, select
+an address or initiate listeners during list/watch updates. The existing action
+captures resolved numeric intent before asynchronous preparation.
+
+Only a previously ready, disconnected child can enter the optional, bounded
+reconnect loop. Startup failures terminate the controller without retrying helper
+or configuration errors, including a failed replacement during reconnect.
+The previous ownership stack drains its process and private files first;
+each new attempt refreshes delegation, rechecks UID/scope and probes ports.
+No implicit client replacement or mutation retry occurs. A Service restart lets
+kubectl select its current backend, with observed readiness kept distinct from
+requested Service ports. Transport overrides affect only the owned child, and
+WebSocket preference does not imply measured negotiation.
+
 ## Audited plugin adaptations: U05 #60
 
 Compatibility is a reviewed documentation/fixture boundary, not a second parser
@@ -449,8 +483,9 @@ before SDK/TLS-directory removal; namespace generations keep the same connection
 Shared shell/forward delegation freezes effective config/helper environment and
 stages mode-0600 files with awaited cancellation cleanup. ProcessSession output
 drain replenishes consumed capacity without clearing an existing overflow.
-Numeric TCP, loopback defaults and explicit non-loopback opt-in are current scope;
-FastForward/named ports remain #62. See [port forwarding](port-forwards.md).
+S08 #62 extends this controller with named ports, locally authorized annotation
+presets, child transport selection and bounded reconnects. Loopback remains the
+default; remote binds require separate opt-in. See [port forwarding](port-forwards.md).
 
 Q01 #38 shares an explicit local-kind lifecycle between cluster verifiers.
 Generated configuration must match the owned Docker node and published API port

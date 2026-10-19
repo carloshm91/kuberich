@@ -143,14 +143,28 @@ class ConfigurationScreen(ModalScreen[None]):
             selected = self._selected()
             identity = selected.identity if selected is not None else None
             self.index = index
-            self.keys.clear()
-            for key in index.keys:
-                self.keys.add_row(
+            rows = tuple(
+                (
                     safe_text(key.name),
                     key.section,
                     "Binary" if key.binary else "Text",
                     str(key.size),
                 )
+                for key in index.keys
+            )
+            # The immutable metadata already determines exact cell widths.
+            # Do not paint key names at header width while native idle sizing
+            # is pending after mount/resize; reload computes them anew.
+            labels = ("Key", "Storage", "Type", "Bytes")
+            widths = (
+                max((row[0].cell_len for row in rows), default=0),
+                *(max((len(row[i]) for row in rows), default=0) for i in (1, 2, 3)),
+            )
+            self.keys.clear(columns=True)
+            for label, width in zip(labels, widths, strict=True):
+                self.keys.add_column(label, width=max(len(label), width))
+            for row in rows:
+                self.keys.add_row(*row)
             if identity is not None:
                 position = next(
                     (i for i, key in enumerate(index.keys) if key.identity == identity), 0

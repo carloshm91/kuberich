@@ -47,6 +47,7 @@ def suggested_port(resource: str, manifest: Mapping[str, object]) -> int:
 
 class ForwardState(Enum):
     STARTING = auto()
+    RECONNECTING = auto()
     READY = auto()
     STOPPING = auto()
     STOPPED = auto()

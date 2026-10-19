@@ -30,6 +30,7 @@ from kuberich.adapters.credentials import CredentialLogin, ExecToken, auth_probl
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.adapters.terminal import current_terminal_size
 from kuberich.config.catalog import KubeCatalog
+from kuberich.config.forwarding import ForwardPreferences, forwarding_from
 from kuberich.config.navigation import NavigationPreferences, navigation_from
 from kuberich.config.schema import Settings
 from kuberich.domain.aggregate_logs import workload_kind
@@ -41,6 +42,7 @@ from kuberich.domain.connections import (
 )
 from kuberich.domain.credential_helpers import helper_start_failure
 from kuberich.domain.custom import CustomLayout
+from kuberich.domain.forward_presets import annotation_preset, resolve_mappings
 from kuberich.domain.interactions import InteractionCommand
 from kuberich.domain.keyboard import effective_keymap
 from kuberich.domain.logs import log_containers
@@ -336,6 +338,7 @@ class KubeRichApp(App[None]):
         self.commands = CommandService(AccessPolicy(settings.read_only), self.navigation.aliases)
         self.processes = ProcessRunner(self.commands.policy)
         self.forwards = ForwardManager(self.processes, changed=self._forward_changed)
+        self._auto_forward_contexts: set[str] = set()
         self.mutations = MutationManager()
         self.sessions.before_close = self._close_client_operations
         self._terminal_signals = TerminalSignals(self)
@@ -1649,8 +1652,44 @@ class KubeRichApp(App[None]):
             self._set_status(str(error))
             return
         remote = suggested_port(target.resource, record.manifest)
+        try:
+            options = (
+                forwarding_from(self.preferences.document)
+                if self.preferences
+                else ForwardPreferences()
+            ).for_context(target.session.context)
+            annotated = annotation_preset(record.manifest, target.resource)
+            presets = options.presets
+            initial = f"0:{remote}"
+            if annotated is not None:
+                preset, automatic = annotated
+                if automatic and (
+                    options.auto_annotations
+                    or target.session.context in self._auto_forward_contexts
+                ):
+                    identity = self.forwards.start(
+                        source,
+                        resolve_mappings(preset.ports, target.resource, record.manifest),
+                        intent=preset.intent,
+                    )
+                    self._forward_started(identity)
+                    return
+                presets = (preset, *presets)
+                initial = preset.ports
+        except AppError as error:
+            self._set_status(str(error))
+            return
         self.push_screen(
-            ForwardPrompt(self.forwards, source, selected, initial=f"0:{remote}"),
+            ForwardPrompt(
+                self.forwards,
+                source,
+                selected,
+                initial=initial,
+                manifest=record.manifest,
+                initial_intent=annotated[0].intent if annotated is not None else None,
+                presets=presets,
+                trust_annotations=lambda: self._auto_forward_contexts.add(target.session.context),
+            ),
             self._forward_started,
         )
 

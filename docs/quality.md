@@ -1,5 +1,33 @@
 # Quality and coverage
 
+## Forwarding presets: S08 #62
+
+The required Python 3.13 runtime child retained a 152.761-ms pause, including
+a 119.516-ms generation-two collection of 22,139 objects during a view transition.
+The pinned table-cache correction unlinks retired native LRU rings, rather than
+changing GC or the 150-ms control. `ui/table_cache.py` joins the 100% deterministic
+line/branch inventory. An owned weak-reference negative control reproduces
+retention before the fix; native comparisons retain capacity, lookup, eviction,
+key order and counters. A second required macOS check exposed clipped key names
+on the first metadata paint. A held idle-width-scan control reproduces that
+clipping; explicit metadata widths preserve complete names and hidden values.
+Original failed logs/artifacts and fresh complete platform/native checks remain
+required. See [forwarding acceptance](acceptance/forward-presets.md).
+
+Named/container-qualified port resolution, annotation precedence and local
+opt-in/transport/retry preferences join the critical deterministic inventory.
+Owned HTTP/process contracts exercise both child flags, reconnect budgets,
+permission/UID/context invalidation, cancellation and listener/file cleanup.
+Startup errors cannot enter reconnect: only a previously READY child may retry,
+and a failed replacement terminates the controller.
+Pilot checks default review, explicit exact-context opt-in, presets and remote
+bind refusal at 40×12 and 100×30. Source and installed-console/module PTYs retain
+strict terminal restoration while using named annotation defaults.
+The existing owned-kind forward verifier additionally resolves declared names,
+selects both kubectl transport modes and replaces a Service backend before a
+real process disconnect/reconnect and distinct HTTP response. Local/hosted
+results are recorded separately; these fixtures do not certify real providers.
+
 Normal Python manager version upgrades are behavioral packaging checks in the
 full suite. A separate `Native installation qualification` workflow requires real
 Homebrew source installation, version upgrade, formula checks, upgraded PTY
