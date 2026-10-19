@@ -71,8 +71,11 @@ implementation; do not claim to switch models without actual environment support
 - The maintainer's current cadence is two to three product implementation issues
   per working day, with a maximum of three in America/Cancun. Finish and verify
   each issue before advancing; larger issues can carry into the next block.
-  The latest maintainer request authorizes a four-issue block, #58 through #61,
-  in dependency order, superseding the usual three-issue cap for this block.
+  The maintainer completed the four-issue block #58 through #61, then explicitly
+  authorized all six remaining 0.2.0 engineering tasks on 2026-10-18:
+  #62, #63, #64, #124, #193 and #65, in dependency order. This supersedes the
+  three-issue cap for this block. Prepare publication after full qualification;
+  a target date does not waive checks or authorize unreviewed artifacts.
   Owner-dependent final hosting work remains tracked in #89 and gates later
   publication; independently unblocked 0.2.0 product preparation may proceed
   after the current prerequisite PR is verified and merged.

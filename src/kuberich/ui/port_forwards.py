@@ -1,6 +1,6 @@
 """Explicit forward intent and a shared-frame list of app-owned TCP sessions."""
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import replace
 from typing import ClassVar
 from uuid import UUID
@@ -12,9 +12,10 @@ from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.coordinate import Coordinate
 from textual.screen import ModalScreen
-from textual.widgets import Button, Checkbox, DataTable, Input, Static
+from textual.widgets import Button, Checkbox, DataTable, Input, Select, Static
 
-from kuberich.domain.port_forwards import ForwardState, parse_mappings
+from kuberich.domain.forward_presets import ForwardPreset, ForwardTransport, resolve_mappings
+from kuberich.domain.port_forwards import ForwardState
 from kuberich.errors import AppError
 from kuberich.security.presentation import safe_text
 from kuberich.services.port_forwards import ForwardInfo, ForwardManager, ForwardService
@@ -58,9 +59,17 @@ class ForwardPrompt(ModalScreen[UUID | None]):
         current: Callable[[], bool],
         *,
         initial: str = "0:8080",
+        manifest: Mapping[str, object] | None = None,
+        presets: tuple[ForwardPreset, ...] = (),
+        trust_annotations: Callable[[], None] = lambda: None,
+        initial_intent: str | None = None,
     ) -> None:
         super().__init__()
         self.manager, self.source, self.current, self.initial = manager, source, current, initial
+        self.manifest = manifest or {}
+        self.presets = {preset.name: preset for preset in presets}
+        self.trust_annotations = trust_annotations
+        self.initial_intent = initial_intent
 
     def compose(self) -> ComposeResult:
         target = self.source.target
@@ -69,9 +78,18 @@ class ForwardPrompt(ModalScreen[UUID | None]):
                 safe_text(f"Forward · {target.namespace}/{target.name}"), id="forward-target"
             )
             with VerticalScroll(id="forward-fields"):
-                yield Static("TCP mappings (comma-separated local:remote)", markup=False)
+                yield Static("Preset", markup=False)
+                yield Select(
+                    [("Manual", "manual"), *((name, name) for name in self.presets)],
+                    value="manual",
+                    allow_blank=False,
+                    id="forward-preset",
+                )
+                yield Static(
+                    "TCP mappings (local:remote; remote may be a declared port name)", markup=False
+                )
                 yield ForwardInput(
-                    self.initial, id="forward-mappings", select_on_focus=False, max_length=256
+                    self.initial, id="forward-mappings", select_on_focus=False, max_length=2048
                 )
                 yield Static(
                     "Local 0 chooses an available port. Context changes stop the forward.",
@@ -82,10 +100,34 @@ class ForwardPrompt(ModalScreen[UUID | None]):
                     "127.0.0.1", id="forward-address", select_on_focus=False, max_length=64
                 )
                 yield Checkbox("Allow connections from other hosts", id="forward-remote")
+                yield Static("kubectl transport (WebSocket can fall back to SPDY)", markup=False)
+                yield Select(
+                    [(item.value, item.value) for item in ForwardTransport],
+                    value="auto",
+                    allow_blank=False,
+                    id="forward-transport",
+                )
+                yield Static("Reconnect attempts after process disconnect (0-3)", markup=False)
+                yield ForwardInput("0", id="forward-retries", max_length=1)
+                yield Checkbox(
+                    "Allow auto-port-forward annotations for this context this session",
+                    id="forward-trust-annotations",
+                )
             yield Static("", id="forward-feedback", markup=False)
             with Horizontal(id="forward-buttons"):
                 yield Button("Start", id="forward-start", variant="primary", compact=True)
                 yield Button("Cancel", id="forward-cancel", compact=True)
+
+    @on(Select.Changed, "#forward-preset")
+    def choose_preset(self, event: Select.Changed) -> None:
+        if isinstance(event.value, str) and event.value in self.presets:
+            preset = self.presets[event.value]
+            self.query_one("#forward-mappings", Input).value = preset.ports
+            self.query_one("#forward-address", Input).value = preset.address
+            self.query_one("#forward-transport", Select).value = preset.transport.value
+            self.query_one("#forward-retries", Input).value = str(preset.retries)
+            # Loading a preset never grants remote-bind permission.
+            self.query_one("#forward-remote", Checkbox).value = False
 
     @on(Button.Pressed, "#forward-start")
     @on(Input.Submitted)
@@ -93,15 +135,40 @@ class ForwardPrompt(ModalScreen[UUID | None]):
         try:
             if not self.current():
                 raise AppError("The selected target changed. Select the resource again.")
+            retries = self.query_one("#forward-retries", Input).value
+            if retries not in {"0", "1", "2", "3"}:
+                raise AppError("Forward retries must be an integer from 0 to 3.")
+            transport = self.query_one("#forward-transport", Select).value
+            if not isinstance(transport, str):
+                raise AppError("Choose a forward transport.")
+            text = self.query_one("#forward-mappings", Input).value
+            selected = self.query_one("#forward-preset", Select).value
+            preset = self.presets.get(selected) if isinstance(selected, str) else None
+            intent = (
+                preset.intent
+                if preset and preset.ports == text and preset.intent
+                else self.initial_intent
+                if text == self.initial and self.initial_intent
+                else text
+            )
             identity = self.manager.start(
                 self.source,
-                parse_mappings(self.query_one("#forward-mappings", Input).value),
+                resolve_mappings(
+                    text,
+                    self.source.target.resource,
+                    self.manifest,
+                ),
                 self.query_one("#forward-address", Input).value,
                 allow_remote=self.query_one("#forward-remote", Checkbox).value,
+                transport=ForwardTransport(transport),
+                retries=int(retries),
+                intent=intent,
             )
         except AppError as error:
             self.query_one("#forward-feedback", Static).update(safe_text(str(error)))
         else:
+            if self.query_one("#forward-trust-annotations", Checkbox).value:
+                self.trust_annotations()
             self.dismiss(identity)
 
     @on(Button.Pressed, "#forward-cancel")

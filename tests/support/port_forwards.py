@@ -23,6 +23,7 @@ pid_pending=pid_path.with_suffix('.pending')
 pid_pending.write_text(str(os.getpid()))
 pid_pending.replace(pid_path)
 Path('forward-argv.json').write_text(json.dumps(arguments))
+Path('forward-transport.json').write_text(json.dumps(os.environ.get('KUBECTL_PORT_FORWARD_WEBSOCKETS')))
 mode=os.environ.get('OWNED_FORWARD_MODE','normal')
 if mode=='fail':
     print('Forbidden opaque-private-body token=private-synthetic',file=sys.stderr,flush=True)

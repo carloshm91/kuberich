@@ -14,6 +14,12 @@ from weakref import WeakSet
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.diagnostics.redaction import sanitize_text
 from kuberich.domain.connections import HttpProblem
+from kuberich.domain.forward_presets import (
+    ForwardTransport,
+    mapping_text,
+    resolve_mappings,
+    transport_environment,
+)
 from kuberich.domain.port_forwards import (
     BoundPort,
     ForwardState,
@@ -40,6 +46,8 @@ class ForwardRequest:
     configuration: str
     mappings: tuple[PortMapping, ...]
     address: str
+    transport: ForwardTransport = ForwardTransport.AUTO
+    intent: str | None = None
 
 
 def _available(address: str, mappings: tuple[PortMapping, ...]) -> None:
@@ -81,9 +89,17 @@ class ForwardService:
             raise AppError("Port-forward connection changed; select the resource again.")
 
     def capture(
-        self, mappings: tuple[PortMapping, ...], address: str, *, allow_remote: bool = False
+        self,
+        mappings: tuple[PortMapping, ...],
+        address: str,
+        *,
+        allow_remote: bool = False,
+        transport: ForwardTransport = ForwardTransport.AUTO,
+        intent: str | None = None,
     ) -> ForwardRequest:
         self.require_current()
+        if intent is not None:
+            mapping_text(intent)
         address = bind_address(address)
         if not ip_address(address).is_loopback and allow_remote is not True:
             raise AppError(
@@ -97,12 +113,14 @@ class ForwardService:
             material.path,
             mappings,
             address,
-            environment=dict(material.environment),
+            environment=transport_environment(dict(material.environment), transport),
             directory=material.directory,
         )
-        return ForwardRequest(command, material.path, material.configuration, mappings, address)
+        return ForwardRequest(
+            command, material.path, material.configuration, mappings, address, transport, intent
+        )
 
-    async def verify(self) -> None:
+    async def verify(self, request: ForwardRequest | None = None) -> None:
         self.require_current()
         target = self.target
         resource = ApiResource(
@@ -126,7 +144,15 @@ class ForwardService:
                 ) from None
             raise
         self.require_current()
-        verify_forward_target(target, resource_record(resource, payload, target.namespace))
+        record = resource_record(resource, payload, target.namespace)
+        verify_forward_target(target, record)
+        if (
+            request is not None
+            and request.intent is not None
+            and resolve_mappings(request.intent, target.resource, record.manifest)
+            != request.mappings
+        ):
+            raise AppError("Declared forward ports changed; review the resource again.")
 
     @asynccontextmanager
     async def stage(self, request: ForwardRequest) -> AsyncIterator[ProcessCommand]:
@@ -140,14 +166,16 @@ class ForwardService:
                 request.path,
                 request.mappings,
                 request.address,
-                environment=dict(request.command.environment),
+                environment=transport_environment(
+                    dict(request.command.environment), request.transport
+                ),
                 directory=request.command.directory,
             )
         ):
             raise AppError(
                 "Port-forward preparation requires this captured target and private directory."
             )
-        await self.verify()
+        await self.verify(request)
         probing = asyncio.create_task(
             asyncio.to_thread(_available, request.address, request.mappings)
         )
@@ -172,6 +200,12 @@ class ForwardInfo:
     ports: tuple[BoundPort, ...] = ()
     message: str = "Starting; waiting for kubectl to bind."
     pid: int | None = None
+    transport: ForwardTransport = ForwardTransport.AUTO
+    attempt: int = 0
+
+
+class _Disconnected(AppError):
+    """Only an ended kubectl process can enter the explicit bounded reconnect path."""
 
 
 class _Forward:
@@ -183,10 +217,14 @@ class _Forward:
         changed: Callable[[ForwardInfo], None],
         timeout: float,
         interval: float,
+        retries: int = 0,
     ) -> None:
         self.source, self.request, self.runner = source, request, runner
         self.changed, self.timeout, self.interval = changed, timeout, interval
-        self.info = ForwardInfo(uuid4(), source.target, request.mappings, request.address)
+        self.retries = retries
+        self.info = ForwardInfo(
+            uuid4(), source.target, request.mappings, request.address, transport=request.transport
+        )
         self.reason = "Stopped by operator."
         self.denied = False
         self.task = asyncio.create_task(self._run())
@@ -201,12 +239,16 @@ class _Forward:
     async def _require_running(self, process: ProcessSession) -> None:
         if not process.running:
             result = await process.wait()
-            raise AppError(
-                "Port-forward was refused. Check get pods/services and create pods/portforward permission."
-                if self.denied
+            if (
+                self.denied
                 or b"forbidden" in result.stderr.lower()
                 or b"unauthorized" in result.stderr.lower()
-                else f"Port-forward ended (exit {result.returncode}). Check target, connectivity and kubectl."
+            ):
+                raise AppError(
+                    "Port-forward was refused. Check get pods/services and create pods/portforward permission."
+                )
+            raise _Disconnected(
+                f"Port-forward ended (exit {result.returncode}). Check target, connectivity and kubectl."
             )
 
     async def _work(self) -> None:
@@ -226,7 +268,7 @@ class _Forward:
                     await self._require_running(process)
                     if not readiness.ready:
                         await asyncio.sleep(0.03)
-                await self.source.verify()
+                await self.source.verify(self.request)
                 await self._require_running(process)
                 self.info = replace(
                     self.info,
@@ -241,13 +283,41 @@ class _Forward:
                 self._observe(process, readiness)
                 await self._require_running(process)
                 if asyncio.get_running_loop().time() >= check_at:
-                    await self.source.verify()
+                    await self.source.verify(self.request)
                     check_at = asyncio.get_running_loop().time() + self.interval
                 await asyncio.sleep(0.03)
 
     async def _run(self) -> None:
         try:
-            await self._work()
+            for attempt in range(self.retries + 1):
+                try:
+                    await self._work()
+                    return
+                except _Disconnected:
+                    if attempt == self.retries:
+                        raise
+                    # _work's exit stack has already reaped the process and
+                    # removed private files before another listener may start.
+                    self.source.require_current()
+                    self.info = replace(
+                        self.info,
+                        state=ForwardState.RECONNECTING,
+                        pid=None,
+                        attempt=attempt + 1,
+                        message=f"Reconnecting ({attempt + 1}/{self.retries}); rechecking captured UID.",
+                    )
+                    self.changed(self.info)
+                    await asyncio.sleep(min(0.25 * 2**attempt, 1.0))
+                    # Refresh effective credentials on the same captured client;
+                    # kubectl resolves a Service's current backend on each start.
+                    self.request = self.source.capture(
+                        self.request.mappings,
+                        self.request.address,
+                        allow_remote=not ip_address(self.request.address).is_loopback,
+                        transport=self.request.transport,
+                        intent=self.request.intent,
+                    )
+                    self.denied = False
         except asyncio.CancelledError:
             self.info = replace(self.info, state=ForwardState.STOPPED, message=self.reason)
         except TimeoutError:
@@ -345,15 +415,22 @@ class ForwardManager:
         address: str = "127.0.0.1",
         *,
         allow_remote: bool = False,
+        transport: ForwardTransport = ForwardTransport.AUTO,
+        retries: int = 0,
+        intent: str | None = None,
     ) -> UUID:
         if self._closed:
             raise AppError("Port-forward manager is closed.")
+        if type(retries) is not int or not 0 <= retries <= 3:
+            raise AppError("Forward retries must be an integer from 0 to 3.")
         source.require_current()
         if source.client in self._retired:
             raise AppError("That client is closing. Connect again before starting a port-forward.")
         if self.active_count >= 8:
             raise AppError("Eight port forwards are already active. Stop a session first.")
-        request = source.capture(mappings, address, allow_remote=allow_remote)
+        request = source.capture(
+            mappings, address, allow_remote=allow_remote, transport=transport, intent=intent
+        )
         ports = {mapping.local for mapping in request.mappings if mapping.local}
         for record in self._live.values():
             if (
@@ -371,7 +448,7 @@ class ForwardManager:
             oldest = next(identity for identity in self._records if identity not in self._live)
             del self._records[oldest]
         record = _Forward(
-            source, request, self.runner, self._record_changed, self.timeout, self.interval
+            source, request, self.runner, self._record_changed, self.timeout, self.interval, retries
         )
         self._records[record.info.identity] = record.info
         self._live[record.info.identity] = record

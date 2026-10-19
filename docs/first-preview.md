@@ -24,13 +24,36 @@ The landing links to the dedicated documentation host; four legacy `/docs`
 routes return the expected 301 redirects. Both custom 404 routes passed too.
 The former development-version and unavailable-package notices are gone.
 
-Final hosting acceptance remains open for the separately configured `www`
-redirect and a measured custom-domain cache detail: five unchanged assets retain
-the earlier `noindex, nofollow` response header. Their content and security
-headers match the checked build, and fresh query-key requests return the current
-indexing header. The HTML pages already serve `index, follow`. Zone-cache cleanup
-and a new ordinary-URL read are still needed before claiming every response
-header verified on the custom domains.
+Final hosting acceptance remains open. Read-only verification on 2026-10-19
+confirmed the HTTPS `www` redirect to the apex, but HTTP `www` still returned
+522 without a redirect. Both docs-host assets now return `index, follow`; three
+unchanged apex-host assets retain the earlier `noindex, nofollow` header. Their
+bodies match the approved build. The HTML pages already serve `index, follow`.
+Ordinary-URL reads must verify the remaining redirect/cache responses before
+claiming final custom-domain acceptance. No zone/DNS/cache change was made by
+that inspection.
+
+## Source checkpoint toward 0.2.0: forwarding presets
+
+The next-release source adds named/container-qualified TCP mappings, local and
+exact-context presets, explicit local permission for annotation shortcuts,
+kubectl child transport selection and optional bounded reconnects. Non-loopback
+binds still need separate confirmation; resource listing never starts a listener.
+Published 0.1.0 remains unchanged.
+
+```sh
+uv run pytest tests/unit/test_forward_presets.py tests/contract/test_forward_reconnect.py tests/ui/test_forward_presets.py
+uv run pytest tests/terminal/test_port_forwards.py tests/packaging/test_forward_presets.py
+```
+
+The final focused command passed 218 cases in 98.18 seconds, including real
+source and installed terminals. Both new deterministic modules measured 100%
+line/branch coverage. Fresh owned-kind trials verified HTTP, named annotations,
+both transport modes, listener collisions, deliberate remote bind, Service backend
+replacement/reconnect and full cleanup. Required platform/native PR checks and
+the cumulative phase qualifier remain independent gates.
+See [forwarding behavior](port-forwards.md) and
+[acceptance evidence](acceptance/forward-presets.md).
 
 ## Source checkpoint toward 0.2.0: terminal navigation
 
@@ -53,8 +76,8 @@ that Pod was deliberately unscheduled and is not a real exec/restart trial.
 Owned Xvfb and ephemeral hosted macOS verified synthetic plaintext clipboard
 roundtrips. Source and installed console/module PTYs verify navigation and exact
 OSC52 receipts. The [implementation PR](https://github.com/carloshm91/kuberich/pull/206)
-retains the full protected platform/native and coverage qualification; it must
-pass before merging. See [behavior and limits](terminal-navigation.md).
+retains the successful protected platform/native and coverage qualification.
+See [behavior and limits](terminal-navigation.md).
 
 ## Source checkpoint toward 0.2.0: plugin compatibility and examples
 

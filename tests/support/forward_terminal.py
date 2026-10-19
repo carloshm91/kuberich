@@ -15,7 +15,7 @@ from tests.support.terminal_api import config
 from tests.terminal.pty_support import TerminalSession
 
 
-def terminal_forward(command, directory, evidence):
+def terminal_forward(command, directory, evidence, *, mapping=":80"):
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     server.stopping = threading.Event()
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -47,7 +47,7 @@ def terminal_forward(command, directory, evidence):
             terminal.wait_for_screen("services(team)[1]")
             marker = terminal.send(b"F")
             terminal.wait_for_screen("TCP mappings", since=marker)
-            terminal.send(b"\x01\x0b:80\r")
+            terminal.send(b"\x01\x0b" + mapping.encode("ascii") + b"\r")
             terminal.wait_for_screen("Listening; context changes stop this session.")
             pid = int((directory / "forward-child.pid").read_text())
             argv = json.loads((directory / "forward-argv.json").read_text())

@@ -23,9 +23,12 @@ per working day, with a maximum of three**, using America/Cancun. Each issue
 retains its complete verification and protected PR workflow. A larger issue can
 continue into the next block; report completed issues and measured checks at
 the end of each block. Count product tasks separately from grouping epics and
-maintenance PRs. The latest maintainer request authorizes **four** product issues
-for the current block: **#58 → #59 → #60 → #61**. This supersedes the usual
+maintenance PRs. After completing #58 through #61, the maintainer authorized
+**all six remaining 0.2.0 engineering tasks** on 2026-10-18:
+**#62 → #63 → #64 → #124 → #193 → #65**. This supersedes the usual
 three-issue cap for this block; each retains its complete dependency and quality gates.
+The requested next-day release is a target, not an exception to qualification or
+owner-reviewed publication. Keep published 0.1.0 artifacts immutable.
 Owner-dependent final cache/`www` work stays in #89 and blocks later publication,
 while independently unblocked 0.2.0 implementation may proceed one issue at a time.
 

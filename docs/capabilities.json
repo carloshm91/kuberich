@@ -361,7 +361,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40×12 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -913,7 +913,7 @@
       ],
       "source": "internal/view/pf.go",
       "status": "planned",
-      "difference": "S05 #42 implements owned pod/Service numeric TCP mappings, default loopback and deliberate IPv4/IPv6 bind intent, actual readiness, session listing/stop and resource/context/exit cleanup. Named ports/FastForward/transport remain S08 #62; external forwards are not discovered.",
+      "difference": "S05 #42 implements owned pod/Service numeric TCP mappings, default loopback and deliberate IPv4/IPv6 bind intent, actual readiness, session listing/stop and resource/context/exit cleanup. S08 #62 extends the next-release source with named ports, presets, annotation opt-in, child transport selection and bounded reconnects; external forwards are not discovered.",
       "partial_evidence": [
         "docs/acceptance/port-forwards.md",
         "tests/contract/test_port_forwards.py",
@@ -932,9 +932,19 @@
       ],
       "source": "README.md",
       "status": "planned",
-      "difference": "Cluster annotations require local opt-in before automatic listeners start.",
-      "public_summary": "Named ports, FastForward annotations, multiple presets and additional port-forward transports are planned.",
-      "public_status": "planned"
+      "difference": "S08 #62 adds literal named/container-qualified mappings, local/context presets and explicit local opt-in for auto annotations. Optional bounded reconnects recheck UID and clean the old process/listener/private file before restarting. Transport modes set kubectl child flags; negotiated protocol and real-provider certification are not claimed.",
+      "public_summary": "Next-release source adds named/container-qualified TCP mappings, reviewed local presets, opt-in annotation shortcuts, child transport selection and bounded UID-checked reconnects. Published 0.1.0 is unchanged.",
+      "public_status": "partial",
+      "partial_evidence": [
+        "docs/port-forwards.md",
+        "docs/acceptance/forward-presets.md",
+        "tests/unit/test_forward_presets.py",
+        "tests/contract/test_forward_reconnect.py",
+        "tests/ui/test_forward_presets.py",
+        "tests/terminal/test_port_forwards.py",
+        "tests/packaging/test_forward_presets.py",
+        "scripts/verify_port_forwards_kind.py"
+      ]
     },
     {
       "id": "OPS01",

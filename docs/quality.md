@@ -1,5 +1,19 @@
 # Quality and coverage
 
+## Forwarding presets: S08 #62
+
+Named/container-qualified port resolution, annotation precedence and local
+opt-in/transport/retry preferences join the critical deterministic inventory.
+Owned HTTP/process contracts exercise both child flags, reconnect budgets,
+permission/UID/context invalidation, cancellation and listener/file cleanup.
+Pilot checks default review, explicit exact-context opt-in, presets and remote
+bind refusal at 40×12 and 100×30. Source and installed-console/module PTYs retain
+strict terminal restoration while using named annotation defaults.
+The existing owned-kind forward verifier additionally resolves declared names,
+selects both kubectl transport modes and replaces a Service backend before a
+real process disconnect/reconnect and distinct HTTP response. Local/hosted
+results are recorded separately; these fixtures do not certify real providers.
+
 Normal Python manager version upgrades are behavioral packaging checks in the
 full suite. A separate `Native installation qualification` workflow requires real
 Homebrew source installation, version upgrade, formula checks, upgraded PTY
