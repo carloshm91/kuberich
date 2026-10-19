@@ -9,7 +9,9 @@ exact-context replacement. Cluster annotations cannot grant permission, select
 an address or initiate listeners during list/watch updates. The existing action
 captures resolved numeric intent before asynchronous preparation.
 
-Only a disconnected child can enter the optional, bounded reconnect loop.
+Only a previously ready, disconnected child can enter the optional, bounded
+reconnect loop. Startup failures terminate the controller without retrying helper
+or configuration errors, including a failed replacement during reconnect.
 The previous ownership stack drains its process and private files first;
 each new attempt refreshes delegation, rechecks UID/scope and probes ports.
 No implicit client replacement or mutation retry occurs. A Service restart lets

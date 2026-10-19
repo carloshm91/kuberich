@@ -6,6 +6,8 @@ Named/container-qualified port resolution, annotation precedence and local
 opt-in/transport/retry preferences join the critical deterministic inventory.
 Owned HTTP/process contracts exercise both child flags, reconnect budgets,
 permission/UID/context invalidation, cancellation and listener/file cleanup.
+Startup errors cannot enter reconnect: only a previously READY child may retry,
+and a failed replacement terminates the controller.
 Pilot checks default review, explicit exact-context opt-in, presets and remote
 bind refusal at 40×12 and 100×30. Source and installed-console/module PTYs retain
 strict terminal restoration while using named annotation defaults.

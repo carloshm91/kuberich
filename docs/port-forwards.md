@@ -35,7 +35,10 @@ Forwards survive resource-view and namespace changes within the same connection.
 Changing context, retrying/re-authenticating or replacing that connection stops
 its forwards before SDK/TLS directory cleanup. Application exit stops all forwards.
 The UI states these rules. Reconnections are disabled by default. The review form
-can opt into **0–3 reconnect attempts** after the `kubectl` process disconnects.
+can opt into **0–3 reconnect attempts** after a previously ready `kubectl` process
+disconnects. A child that fails before readiness does not consume further retries,
+including a failed replacement during reconnect. Correct the startup problem and
+start a newly reviewed forward.
 **RECONNECTING** appears only after the old process/listener/private file have
 been cleaned up. Each attempt rechecks the captured UID and current connection,
 uses fresh private connection material and starts a new owned process after

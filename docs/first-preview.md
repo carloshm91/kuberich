@@ -46,8 +46,8 @@ uv run pytest tests/unit/test_forward_presets.py tests/contract/test_forward_rec
 uv run pytest tests/terminal/test_port_forwards.py tests/packaging/test_forward_presets.py
 ```
 
-The final focused command passed 218 cases in 98.18 seconds, including real
-source and installed terminals. Both new deterministic modules measured 100%
+The final focused command passed 220 cases in 79.79 seconds, including real
+source/installed terminals and initial/replacement startup failure regressions. Both new deterministic modules measured 100%
 line/branch coverage. Fresh owned-kind trials verified HTTP, named annotations,
 both transport modes, listener collisions, deliberate remote bind, Service backend
 replacement/reconnect and full cleanup. Required platform/native PR checks and

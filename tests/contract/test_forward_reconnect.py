@@ -203,3 +203,29 @@ async def test_invalid_startup_is_not_a_retryable_disconnect(tmp_path, mode):
         final = await state(manager, identity, ForwardState.FAILED)
         assert final.attempt == 0 and not runner.active_count
         await manager.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("when", ["initial", "reconnect"])
+async def test_a_child_that_never_became_ready_does_not_consume_more_reconnects(tmp_path, when):
+    async def handler(request):
+        return web.json_response(manifest())
+
+    observations = []
+    async with (
+        reader_fixture(tmp_path, handler) as api,
+        ProcessRunner(AccessPolicy(False)) as runner,
+    ):
+        manager = ForwardManager(runner, changed=lambda: observations.append(manager.infos[-1]))
+        captured = source(api, tmp_path, mode="startup-fail" if when == "initial" else "normal")
+        identity = manager.start(captured, parse_mappings(":80"), retries=3)
+        if when == "reconnect":
+            first = await state(manager, identity, ForwardState.READY)
+            (tmp_path / "forward-fail-next-start").write_text("owned failure injection\n")
+            os.kill(first.pid, signal.SIGTERM)
+        final = await state(manager, identity, ForwardState.FAILED)
+        expected = 0 if when == "initial" else 1
+        assert final.attempt == expected
+        assert len({info.pid for info in observations if info.pid is not None}) == expected + 1
+        assert not runner.active_count
+        await manager.close()

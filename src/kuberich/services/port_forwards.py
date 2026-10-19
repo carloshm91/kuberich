@@ -247,6 +247,10 @@ class _Forward:
                 raise AppError(
                     "Port-forward was refused. Check get pods/services and create pods/portforward permission."
                 )
+            if self.info.state is not ForwardState.READY:
+                raise AppError(
+                    f"Port-forward could not start (exit {result.returncode}). Check target, connectivity and kubectl."
+                )
             raise _Disconnected(
                 f"Port-forward ended (exit {result.returncode}). Check target, connectivity and kubectl."
             )

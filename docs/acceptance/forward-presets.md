@@ -55,7 +55,7 @@ fixtures are not real EKS/AKS/GKE certification.
 
 ## Measured results and delivery
 
-The final focused command passed **218 tests in 98.18 seconds**, including pure
+The initial focused command passed **218 tests in 98.18 seconds**, including pure
 contracts, owned HTTP/process listeners, compact/normal Pilot forms and actual
 source/installed-console/module terminals. Both new deterministic modules and
 the original forward domain measured **100% line and branch coverage**. Strict
@@ -87,3 +87,20 @@ kind logs are retained under `artifacts/forward62-*`, `artifacts/terminal` and
 whole-production and changed-line qualification separately; this focused result
 is not a claim that every production module was exercised by these 218 cases.
 The phase gate and public release activation remain separate work.
+
+## Startup failure regression
+
+A final review distinguished a disconnected established forward from a child
+that never became ready. Two real-process negative controls reproduced the old
+behavior: initial and replacement configuration errors consumed all three retries
+(2 failures in 4.62 seconds). The controller now allows reconnect only after
+READY; an initial or replacement startup failure terminates without another
+helper invocation. No output matching, deadline or retry-budget limit was relaxed.
+
+The corrected source passed **220 focused tests in 79.79 seconds**, including
+both regressions and the original unit/HTTP/Pilot/source/installed-terminal cases.
+Both new deterministic modules and the existing forward domain retained 100%
+line and branch coverage. The earlier full local suite remains frozen on original
+commit `2af1b83`; it is supplemental baseline evidence, not a full-suite result
+for this correction. Fresh complete protected source/native/owned-kind checks
+qualify the corrected PR head before merge.
