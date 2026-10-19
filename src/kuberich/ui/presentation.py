@@ -15,6 +15,7 @@ from textual.widgets.data_table import ColumnKey, RowKey
 from kuberich.domain.resource_preferences import Justification
 from kuberich.security.presentation import safe_text
 from kuberich.ui.keybindings import EffectiveKeys, key_hint, table_bindings
+from kuberich.ui.table_cache import RenderCache
 
 Cell = TypeVar("Cell")
 
@@ -52,6 +53,15 @@ class FrameTable(DataTable[Cell]):
     _row_order_revision = 0
     _scoped_cell_refresh = False
     _row_repaint_enabled = False
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._row_render_cache = RenderCache(self._row_render_cache.maxsize)
+        self._cell_render_cache = RenderCache(self._cell_render_cache.maxsize)
+        self._row_renderable_cache = RenderCache(self._row_renderable_cache.maxsize)
+        self._line_cache = RenderCache(self._line_cache.maxsize)
+        self._offset_cache = RenderCache(self._offset_cache.maxsize)
+        self._ordered_row_cache = RenderCache(self._ordered_row_cache.maxsize)
 
     def set_mark(self, uid: str, marked: bool) -> None:
         row = self.rows.get(RowKey(uid))

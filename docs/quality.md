@@ -2,6 +2,18 @@
 
 ## Forwarding presets: S08 #62
 
+The required Python 3.13 runtime child retained a 152.761-ms pause, including
+a 119.516-ms generation-two collection of 22,139 objects during a view transition.
+The pinned table-cache correction unlinks retired native LRU rings, rather than
+changing GC or the 150-ms control. `ui/table_cache.py` joins the 100% deterministic
+line/branch inventory. An owned weak-reference negative control reproduces
+retention before the fix; native comparisons retain capacity, lookup, eviction,
+key order and counters. A second required macOS check exposed clipped key names
+on the first metadata paint. A held idle-width-scan control reproduces that
+clipping; explicit metadata widths preserve complete names and hidden values.
+Original failed logs/artifacts and fresh complete platform/native checks remain
+required. See [forwarding acceptance](acceptance/forward-presets.md).
+
 Named/container-qualified port resolution, annotation precedence and local
 opt-in/transport/retry preferences join the critical deterministic inventory.
 Owned HTTP/process contracts exercise both child flags, reconnect budgets,

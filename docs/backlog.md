@@ -29,6 +29,10 @@ maintenance PRs. After completing #58 through #61, the maintainer authorized
 three-issue cap for this block; each retains its complete dependency and quality gates.
 The requested next-day release is a target, not an exception to qualification or
 owner-reviewed publication. Keep published 0.1.0 artifacts immutable.
+The maintainer subsequently requested stopping after the active #62 ticket.
+Finish its verification and protected merge, then stop; do not start #63 or
+another ticket until the maintainer resumes work. This later instruction limits
+the current block without removing the remaining release scope.
 Owner-dependent final cache/`www` work stays in #89 and blocks later publication,
 while independently unblocked 0.2.0 implementation may proceed one issue at a time.
 

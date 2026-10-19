@@ -1,5 +1,20 @@
 # Architecture decisions
 
+## Native table-cache retirement and metadata geometry: prerequisite for S08 #62
+
+`FrameTable` uses a small native LRU subclass for its six rendering/ordering
+caches. It leaves lookup, insertion, eviction, counters and original capacities
+with Textual, but unlinks discarded rings on clear/discard/owner retirement.
+This releases retired rendering values without waiting for a later cyclic
+collection. The adapter applies only to KubeRich-owned tables; no framework
+global or garbage-collection policy changes. Pinned native-control tests cover
+the ownership boundary and ordinary cache semantics.
+
+Configuration-key metadata supplies explicit cell widths before its first paint.
+Reload reconstructs those columns from the new captured index and restores the
+selected key identity. Values remain hidden; a deferred native auto-width scan
+cannot leave key names clipped to their shorter header labels.
+
 ## Captured forwarding presets and bounded reconnects: S08 #62
 
 `domain/forward_presets.py` resolves literal names/container-qualified mappings

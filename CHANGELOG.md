@@ -60,6 +60,12 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Fixed
 
+- Release retired table-render cache entries promptly when views change, retaining
+  native LRU behavior and capacity. Size configuration-key columns from their
+  captured metadata so initial paints do not truncate names while idle layout is
+  pending ([#62](https://github.com/carloshm91/kuberich/issues/62),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Preserve configured plugin file locations and working directories during
   explicit preference migration. Reuse bounded exact CSS parses when revisiting
   themes, retaining native errors and independent app ownership after a required

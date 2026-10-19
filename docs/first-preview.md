@@ -55,6 +55,14 @@ the cumulative phase qualifier remain independent gates.
 See [forwarding behavior](port-forwards.md) and
 [acceptance evidence](acceptance/forward-presets.md).
 
+Required checks also exposed a table-cache collection pause and a configuration
+key-name clipping race. The source now releases retired native cache entries
+promptly and sizes key columns from captured metadata before painting. Both have
+owned negative controls. The local Python 3.13 runtime trial retained an 89-ms
+maximum gap with the original 150-ms limit and active GC; fresh full platform/native
+qualification remains required. The maintainer requested stopping after this
+ticket's verified delivery, before starting the next implementation issue.
+
 ## Source checkpoint toward 0.2.0: terminal navigation
 
 The next source checkpoint adds command/filter recall, inverse/fuzzy/metadata

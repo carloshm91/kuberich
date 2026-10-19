@@ -12,7 +12,7 @@ from kuberich.errors import AppError
 from kuberich.security.controls import escape_controls
 from kuberich.services.commands import ResourceCommand
 from kuberich.ui.app import KubeRichApp
-from kuberich.ui.configuration_data import ConfigurationScreen
+from kuberich.ui.configuration_data import ConfigurationKeyTable, ConfigurationScreen
 from tests.support.configuration_data import TEXT, data_api
 from tests.support.connections import catalog_fixture
 from tests.support.workspace import wait_for
@@ -37,6 +37,27 @@ async def opened(app, pilot):
     )
     await pilot.pause()
     return app.screen
+
+
+@pytest.mark.asyncio
+async def test_key_names_fit_first_paint_before_native_idle_measurement(tmp_path, monkeypatch):
+    original = ConfigurationKeyTable._update_dimensions
+
+    def delayed_content_measurement(table, new_rows):
+        # Preserve native geometry but hold the deferred content-width scan.
+        # The metadata read may complete between mount/paint and that idle scan.
+        original(table, ())
+
+    monkeypatch.setattr(ConfigurationKeyTable, "_update_dimensions", delayed_content_measurement)
+    async with data_api() as (url, api):
+        key = "configuration-token.longname"
+        api.value["data"] = {key: base64.b64encode(TEXT.encode()).decode()}
+        app = app_for(tmp_path, url, "Secret")
+        async with app.run_test(size=(100, 30)) as pilot:
+            screen = await opened(app, pilot)
+            strips = screen.keys.render_lines(screen.keys.content_region.at_offset((0, 0)))
+            assert key in "\n".join(strip.text for strip in strips)
+            assert screen.viewer.text == "" and not screen.revealed
 
 
 @pytest.mark.asyncio

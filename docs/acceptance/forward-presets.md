@@ -104,3 +104,40 @@ line and branch coverage. The earlier full local suite remains frozen on origina
 commit `2af1b83`; it is supplemental baseline evidence, not a full-suite result
 for this correction. Fresh complete protected source/native/owned-kind checks
 qualify the corrected PR head before merge.
+
+## Required-check UI regressions
+
+Run `39187185271` retained a genuine Python 3.13 runtime failure: a 152.761-ms
+heartbeat gap during the fourth resource route, including a 119.516-ms generation-two
+collection of 22,139 objects. The callback measured 150.700 ms of main-thread CPU.
+The test's unchanged 150-ms limit rejected the candidate; an unchanged rerun was
+not used as evidence of correction.
+
+An independent native-control weak-reference test reproduced a concrete retention
+source: clearing Textual's LRU owner left its linked ring and render values waiting
+for cyclic collection. The owned table cache now unlinks discarded native entries
+on clear/discard/owner retirement. Lookup, eviction, key order, counters and all six
+original capacities remain native. Nine ownership/API cases passed, and the new
+deterministic module measured 100% lines and branches.
+
+The first corrected local Python 3.13 runtime control passed both full retained-history
+rounds with an 89.312-ms maximum heartbeat. Its deliberate 200-ms negative callback
+still failed at 202.963 ms; the required instrumented coverage replay completed.
+GC stayed enabled with its original `(2000, 10, 10)` thresholds. These local results
+do not replace fresh full hosted qualification after subsequent source changes.
+
+The same original run's macOS installed-console trial retained a real `tok` paint
+where the metadata key was `token`, followed by a cleanup failure that masked the
+initial assertion. The original ANSI transcript confirms application clipping,
+rather than merely a missing observer substring. A held native content-width scan
+reproduced header-width clipping in Pilot before correction. Configuration columns
+now use widths from the captured metadata before painting; values remain hidden.
+The corrected ownership/configuration cohort passed 21 tests in 22.84 seconds.
+Source and installed PTYs keep their original visible-name and restoration controls.
+
+Original failed source artifacts and exact digests remain under
+`artifacts/failed62-python313` and `artifacts/failed62-macos`. A fresh complete
+source/native/owned-cluster run must qualify the final source; earlier passing
+native archives and the two passing source environments belong to the earlier
+tree. The original full local baseline on `2af1b83` completed with 5,774 passes
+and three skips in 4,317.23 seconds; it does not qualify these later corrections.
