@@ -1577,8 +1577,7 @@ class KubeRichApp(App[None]):
         except AppError as error:
             self._set_status(str(error))
             return
-        client = self.sessions.client
-        connected = client.context.name if client is not None else None
+        connected = self.workspace.store.observation.context
         screen = ContextEditScreen(paths, change, name, new_name=new_name, connected=connected)
         self.push_screen(screen, partial(self._context_saved, connected))
 
@@ -1597,9 +1596,12 @@ class KubeRichApp(App[None]):
             return
         self.sessions.catalog = catalog
         done = "Renamed" if plan.change is ContextChange.RENAME else "Deleted"
-        self._set_status(f"{done} {plan.name}. Backup: {result.backup}")
         if plan.new_name is not None and connected == plan.name:
             self._start_connection(plan.new_name, remember=False)
+        self._selection_notice = (
+            self.workspace.store.observation,
+            f"{done} {plan.name}. Backup: {result.backup}",
+        )
         self._render_ready.set()
 
     def action_workload(self, operation: WorkloadAction, argument: str = "") -> None:

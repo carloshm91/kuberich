@@ -2,12 +2,14 @@
 
 Select a resource in a connected table, then use a command below. These commands
 require write mode; `--readonly` blocks both the UI and service paths. Local
-contexts are configuration entries and cannot be deleted through Kubernetes.
+contexts are configuration entries and cannot be deleted through Kubernetes. To
+remove one from kubeconfig, see [rename or delete a context](context-sessions.md#rename-or-delete-a-context).
 
 | Command | Captured effect |
 | --- | --- |
 | `:delete` | Delete the selected resource UID/version. |
 | `:deletebatch` | Choose exact targets from the currently displayed, filtered rows. |
+| `:cleanup` | In the pods view, review deleting the completed and failed pods shown. |
 | `:trigger` | Create one manual Job from the selected batch/v1 CronJob template. |
 | `:suspend` | Set the selected batch/v1 Job or CronJob's `spec.suspend` to true. |
 | `:resume` | Set its `spec.suspend` to false. |
@@ -63,6 +65,27 @@ No write follows redirects, refreshes/replays a 401, or retries transport/server
 failures. In particular, DELETE connection replay is suppressed through the HTTP
 client's public middleware. If the response is lost, inspect actual cluster state
 before making a new deliberate change.
+
+## Clean up finished pods
+
+In a connected `:pods` view, type `:cleanup`. KubeRich lists the pods in the
+current view that have finished: completed pods and failed pods, such as evicted
+ones. Running and pending pods are never listed. Pods that are already being
+deleted are skipped. Filter the view first to narrow the list.
+
+Each row shows the namespace, name, state and UID. Every listed pod starts
+selected; press Space to keep one. Then use the normal delete review: choose
+Review, type `DELETE <count>` and Confirm.
+
+KubeRich checks every pod again before deleting it:
+
+- If a listed pod is removed or replaced (it gets a new UID) before Confirm,
+  nothing is deleted. Run `:cleanup` again and review the new list.
+- If a pod only changed after Review, that pod is not deleted and its result
+  shows a conflict. The other pods are still deleted.
+
+One cleanup handles at most 100 pods; run it again for the rest. `--readonly`
+blocks cleanup.
 
 ## Manual Jobs and suspension
 

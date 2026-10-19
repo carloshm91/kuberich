@@ -57,7 +57,7 @@ class ContextEditScreen(ModalScreen[ContextEditResult | None]):
         self.paths, self.change, self.context = paths, change, name
         self.new_name, self.connected = new_name, connected
         self.plan: ContextEditPlan | None = None
-        self._task: asyncio.Task[None] | None = None
+        self._edit_task: asyncio.Task[None] | None = None
         self._saving = False
 
     def compose(self) -> ComposeResult:
@@ -111,11 +111,11 @@ class ContextEditScreen(ModalScreen[ContextEditResult | None]):
     @on(Input.Submitted, "#context-edit-name")
     @on(Button.Pressed, "#context-edit-review")
     def review(self) -> None:
-        if self._task is not None and not self._task.done():
+        if self._edit_task is not None and not self._edit_task.done():
             return
         self.plan = None
         self.query_one("#context-edit-confirm", Button).disabled = True
-        self._task = asyncio.create_task(self._prepare(self._requested_name()))
+        self._edit_task = asyncio.create_task(self._prepare(self._requested_name()))
 
     async def _prepare(self, requested: str | None) -> None:
         self._status("Reading kubeconfig files…")
@@ -149,7 +149,11 @@ class ContextEditScreen(ModalScreen[ContextEditResult | None]):
     @on(Button.Pressed, "#context-edit-confirm")
     def confirm(self) -> None:
         plan = self.plan
-        if plan is None or self._saving or (self._task is not None and not self._task.done()):
+        if (
+            plan is None
+            or self._saving
+            or (self._edit_task is not None and not self._edit_task.done())
+        ):
             return
         if plan.confirmation is not None and (
             self.query_one("#context-edit-confirmation", Input).value != plan.confirmation
@@ -167,7 +171,7 @@ class ContextEditScreen(ModalScreen[ContextEditResult | None]):
             for widget in self.query(selector):
                 widget.disabled = True
         self._status("Saving…")
-        self._task = asyncio.create_task(self._save(plan))
+        self._edit_task = asyncio.create_task(self._save(plan))
 
     async def _save(self, plan: ContextEditPlan) -> None:
         try:
@@ -190,7 +194,7 @@ class ContextEditScreen(ModalScreen[ContextEditResult | None]):
         self.dismiss(None)
 
     async def stop_owned(self) -> None:
-        task = self._task
+        task = self._edit_task
         if task is not None and not self._saving:
             if not task.done():
                 task.cancel()

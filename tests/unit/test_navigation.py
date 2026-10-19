@@ -40,6 +40,8 @@ def test_aliases_share_one_readonly_initial_and_interactive_parser(alias, comman
         Command.TRIGGER,
         Command.SUSPEND,
         Command.RESUME,
+        Command.RENAME,
+        Command.CLEANUP,
     }:
         with pytest.raises(AppError, match="Read-only"):
             service.resolve(text)
@@ -78,6 +80,8 @@ def test_completions_are_literal_bounded_case_preserving_and_deduplicated():
         "configmaps",
     )
     assert suggestions("ct", (), ()) == ("ctx",)
+    assert suggestions("cl", (), ()) == ("cleanup",)
+    assert suggestions("ren", (), ()) == ("rename",)
     assert suggestions(":ctx p", ("Production", "prod[red]", "Production"), ()) == (
         "ctx prod[red]",
         "ctx Production",

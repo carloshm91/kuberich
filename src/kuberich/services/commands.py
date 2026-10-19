@@ -284,8 +284,10 @@ def suggestions(
         head = verb + " "
     candidates = sorted(
         set(head + value for value in values),
-        # Preserve familiar :c → context and existing local command completions.
+        # Preserve familiar :c → context and existing local command completions;
+        # newer view-specific commands come last and appear once typed further.
         key=lambda value: (
+            not separator and ALIASES.get(value) in {Command.RENAME, Command.CLEANUP},
             not separator and (value not in ALIASES or value == "columns"),
             not separator
             and ALIASES.get(value)

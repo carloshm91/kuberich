@@ -1,5 +1,16 @@
 # Quality and coverage
 
+## Context edits and pod cleanup: M08 #63
+
+`domain/kubeconfig_edit.py`, `domain/cleanup.py` and `domain/view_actions.py`
+join the 100% line/branch inventory. Fixture tests cover merged files, ambiguous
+ownership, a file changed after review, backup removal on failure, symbolic
+links and file modes. Headless UI tests drive rename, delete, the current-context
+confirmation, Escape/Cancel, read-only refusal and a lost cleanup race. An owned
+kind trial drives `:cleanup` through the real UI: running pods are never listed,
+a replaced pod refuses the whole batch, a changed pod returns a conflict while
+the other pod is deleted. See [acceptance evidence](acceptance/context-cleanup.md).
+
 ## Forwarding presets: S08 #62
 
 The required Python 3.13 runtime child retained a 152.761-ms pause, including

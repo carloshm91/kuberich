@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 import yaml
 from aiohttp import web
-from textual.widgets import Input, SelectionList, Static
+from textual.widgets import Button, Input, SelectionList, Static
 
 from kuberich.config.catalog import load_catalog
 from kuberich.config.schema import Settings
@@ -63,6 +63,12 @@ async def command(pilot, text: str) -> None:
     await pilot.press(*text)
     await pilot.press("enter")
     await pilot.pause()
+
+
+async def click_again(pilot, screen, selector: str) -> None:
+    """A button ignores a second click while its press effect is still showing."""
+    await pilot.pause(screen.query_one(selector, Button).active_effect_duration)
+    await pilot.click(selector)
 
 
 class PodApi:
@@ -172,7 +178,7 @@ async def test_deleting_the_current_context_needs_the_stronger_confirmation(tmp_
         await wait_for(lambda: "exactly" in str(feedback.content))
         assert "owned-one" in path.read_text()
         confirmation.value = "DELETE CURRENT"
-        await pilot.click("#context-edit-confirm")
+        await click_again(pilot, screen, "#context-edit-confirm")
         await wait_for(lambda: table_names(app) == ["owned-two"])
     saved = yaml.safe_load(path.read_text())
     assert "current-context" not in saved
@@ -237,7 +243,9 @@ async def test_cleanup_preselects_finished_pods_and_reports_a_lost_race(tmp_path
             await wait_for(lambda: isinstance(app.screen, ResourceOperationScreen))
             screen = app.screen
             targets = screen.query_one(SelectionList)
-            labels = [str(targets.get_option_at_index(i).prompt) for i in range(targets.option_count)]
+            labels = [
+                str(targets.get_option_at_index(i).prompt) for i in range(targets.option_count)
+            ]
             assert len(labels) == 3 and not any("web" in label for label in labels)
             assert any("job-evicted · Failed (Evicted)" in label for label in labels)
             assert len(targets.selected) == 3
@@ -248,10 +256,10 @@ async def test_cleanup_preselects_finished_pods_and_reports_a_lost_race(tmp_path
             screen.query_one("#operation-count", Input).value = "DELETE 3"
             await pilot.click("#operation-confirm")
             feedback = screen.query_one("#operation-feedback", Static)
-            await wait_for(lambda: len(api.deletes) == 3 and ":" in str(feedback.content))
-            preview = str(screen.query_one("#operation-preview", Static).content)
-            assert "job-raced" in preview
-    assert sorted(name for name, _ in api.deletes) == ["job-done", "job-evicted", "job-raced"]
+            await wait_for(lambda: "job-raced: Conflict" in str(feedback.content))
+            assert "job-done: Succeeded" in str(feedback.content)
+    # The changed pod is caught when it is read again, so no DELETE is ever sent for it.
+    assert sorted(name for name, _ in api.deletes) == ["job-done", "job-evicted"]
     assert set(api.pods) == {"web", "job-raced"}
 
 
@@ -268,3 +276,59 @@ async def test_cleanup_without_finished_pods_explains_and_opens_nothing(tmp_path
             await command(pilot, "cleanup")
             assert "Open a connected :pods view" in status(app)
     assert not api.deletes
+
+
+@pytest.mark.asyncio
+async def test_renaming_the_connected_context_reconnects_and_escape_cancels(tmp_path):
+    path = write_kubeconfig(tmp_path, "http://127.0.0.1:9")
+    app = make_app(path, context="owned-two")
+    async with app.run_test(size=(110, 30)) as pilot:
+        await command(pilot, "ctx")
+        await wait_for(lambda: table_names(app) == ["owned-one", "owned-two"])
+        await pilot.press("down")
+        await command(pilot, "rename")
+        await wait_for(lambda: isinstance(app.screen, ContextEditScreen))
+        await pilot.press("escape")
+        await wait_for(lambda: not isinstance(app.screen, ContextEditScreen))
+        assert not list(tmp_path.glob("config.kuberich-*.bak"))
+        await command(pilot, "rename renamed-two")
+        await wait_for(lambda: isinstance(app.screen, ContextEditScreen))
+        await pilot.click("#context-edit-review")
+        preview = app.screen.query_one("#context-edit-preview", Static)
+        await wait_for(lambda: "renamed-two" in str(preview.content))
+        await pilot.click("#context-edit-confirm")
+        await wait_for(lambda: app.workspace.store.observation.context == "renamed-two")
+        await wait_for(lambda: table_names(app) == ["owned-one", "renamed-two"])
+
+
+@pytest.mark.asyncio
+async def test_a_file_changed_after_review_is_not_overwritten(tmp_path):
+    path = write_kubeconfig(tmp_path, "http://127.0.0.1:9")
+    app = make_app(path)
+    async with app.run_test(size=(110, 30)) as pilot:
+        await command(pilot, "ctx")
+        await wait_for(lambda: table_names(app) == ["owned-one", "owned-two"])
+        await pilot.press("down")
+        await command(pilot, "rename owned-one")
+        await wait_for(lambda: isinstance(app.screen, ContextEditScreen))
+        screen = app.screen
+        await pilot.click("#context-edit-review")
+        feedback = screen.query_one("#context-edit-feedback", Static)
+        await wait_for(lambda: "already uses this name" in str(feedback.content))
+        assert screen.query_one("#context-edit-confirm", Button).disabled
+        screen.query_one("#context-edit-name", Input).value = "short-two"
+        await click_again(pilot, screen, "#context-edit-review")
+        await wait_for(lambda: not screen.query_one("#context-edit-confirm", Button).disabled)
+        external = path.read_text() + "preferences: {}\n"
+        path.write_text(external)
+        await pilot.click("#context-edit-confirm")
+        await wait_for(lambda: "changed after review" in str(feedback.content))
+        assert path.read_text() == external
+        assert not list(tmp_path.glob("config.kuberich-*.bak"))
+        assert not screen.query_one("#context-edit-review", Button).disabled
+        await click_again(pilot, screen, "#context-edit-review")
+        await wait_for(lambda: not screen.query_one("#context-edit-confirm", Button).disabled)
+        await pilot.click("#context-edit-confirm")
+        await wait_for(lambda: table_names(app) == ["owned-one", "short-two"])
+    assert "preferences: {}" in path.read_text()
+    assert len(list(tmp_path.glob("config.kuberich-*.bak"))) == 1

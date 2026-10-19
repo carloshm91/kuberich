@@ -49,7 +49,9 @@ def test_rename_in_second_file_leaves_other_current_context_alone():
     assert plan.document["current-context"] == "gamma" and plan.renames_current
     other = plan_context_edit((first, second), ContextChange.RENAME, "alpha", "delta")
     assert other.path == Path("/owned/first") and other.document["current-context"] == "delta"
-    plain = plan_context_edit((document("plain", ["one", "two"]),), ContextChange.RENAME, "two", "z")
+    plain = plan_context_edit(
+        (document("plain", ["one", "two"]),), ContextChange.RENAME, "two", "z"
+    )
     assert "current-context" not in plain.document and not plain.renames_current
 
 
@@ -92,7 +94,14 @@ def test_missing_contexts_section_and_unset_current_context():
             None,
             "Another kubeconfig file",
         ),
-        ((document("a", ["alpha", "beta"]),), ContextChange.RENAME, "alpha", "beta", None, "already"),
+        (
+            (document("a", ["alpha", "beta"]),),
+            ContextChange.RENAME,
+            "alpha",
+            "beta",
+            None,
+            "already",
+        ),
         (
             (document("a", ["alpha"]), document("b", ["beta"])),
             ContextChange.RENAME,

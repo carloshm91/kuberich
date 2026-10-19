@@ -161,15 +161,19 @@
       ],
       "source": "internal/view/context.go",
       "status": "planned",
-      "difference": "C01 ordinary context/scope switching never rewrites kubeconfig. Persisted per-context view preferences and explicit rename/delete remain F03/M08.",
+      "difference": "C01 ordinary context/scope switching never rewrites kubeconfig. M08 #63 adds explicit rename/delete of one owning file with review, typed delete confirmation, a 0600 backup, digest recheck and atomic replace; ambiguous ownership is refused and shared clusters/users are kept. Persisted per-context view preferences remain planned.",
       "partial_evidence": [
         "docs/context-sessions.md",
         "tests/contract/test_sessions.py",
         "tests/contract/test_credentials.py",
         "tests/ui/test_sessions.py",
-        "scripts/verify_contexts_kind.py"
+        "scripts/verify_contexts_kind.py",
+        "tests/unit/test_kubeconfig_edit.py",
+        "tests/contract/test_kubeconfig_files.py",
+        "tests/ui/test_context_cleanup.py",
+        "docs/acceptance/context-cleanup.md"
       ],
-      "public_summary": "Ordinary context switching preserves kubeconfig. Renaming/deleting contexts and persisted per-context view preferences are planned.",
+      "public_summary": "Ordinary context switching preserves kubeconfig. You can rename or delete a context after a review, with a backup. Persisted per-context view preferences are planned.",
       "public_status": "partial"
     },
     {
@@ -1040,8 +1044,8 @@
         "M08"
       ],
       "source": "internal/view/pod.go",
-      "status": "planned",
-      "difference": "M04 #46 implements explicit single/batch deletion, UID/version preconditions, propagation/grace/count review and independent finalizer/partial/uncertain results. Zero grace stays explicit and never removes finalizers; instantaneous unconfirmed deletion is an intentional safety difference. Completed/error pod cleanup remains M08 #63; broader bulk actions remain with their owners.",
+      "status": "implemented",
+      "difference": "M04 #46 implements explicit single/batch deletion, UID/version preconditions, propagation/grace/count review and independent finalizer/partial/uncertain results. Zero grace stays explicit and never removes finalizers; instantaneous unconfirmed deletion is an intentional safety difference. M08 #63 adds :cleanup, which preselects visible Succeeded/Failed pods that are not terminating into the same reviewed batch (at most 100) and revalidates each target before DELETE.",
       "evidence": [
         "docs/resource-operations.md",
         "docs/acceptance/resource-operations.md",
@@ -1049,10 +1053,14 @@
         "tests/contract/test_operations.py",
         "tests/ui/test_operations.py",
         "tests/terminal/test_operations.py",
-        "scripts/verify_operations_kind.py"
+        "scripts/verify_operations_kind.py",
+        "tests/unit/test_cleanup.py",
+        "tests/ui/test_context_cleanup.py",
+        "scripts/verify_cleanup_kind.py",
+        "docs/acceptance/context-cleanup.md"
       ],
-      "public_summary": "Single/batch deletion reviews identity, grace and propagation, then retains independent partial/uncertain outcomes. It never silently removes finalizers. Automatic completed/error pod cleanup is planned.",
-      "public_status": "partial"
+      "public_summary": "Single/batch deletion reviews identity, grace and propagation, then reports each result separately. It never silently removes finalizers. :cleanup reviews deleting the completed and failed pods in the current view.",
+      "public_status": "available"
     },
     {
       "id": "OPS05",
