@@ -10,13 +10,16 @@ or a placeholder screen.
 | Milestone | Usable outcome |
 | --- | --- |
 | v0.0.1 | Internal core checkpoint: contexts/namespaces, live pods, filters, details, logs, exec and local distribution candidates |
-| v0.1.0 | First qualified public phase: workload operations, delivered generic/aggregate views and embedded history; standard resource families, edit/diff, scale/restart/rollback, delete/jobs, port-forward, standalone binaries |
-| v0.2.0 | Extensibility: configurable views/keys/themes, external plugins, explicit secret handling, improved terminal protocols and verified Homebrew bottles; retain delivered generic CRDs/aggregate logs |
-| v0.3.0 | Observability: metrics, cluster overview, resource relationships, RBAC analysis, guided troubleshooting, sanitized exports, Helm, local manifests and image scans |
-| v0.4.0 | Advanced operations: node shell, cordon/drain, ephemeral debugging, service benchmarks, policy/quota exploration |
-| v0.5.0 | Extended delivery: Windows, shell completion, OCI image and tested distribution recipes |
-| v1.0.0 | Stable product: all feature checkpoints, supported API/terminal/platform matrix, compatibility, performance, install and full capability qualification |
-| Later: documentation website | Expanded, versioned MkDocs documentation after the initial qualified product |
+| v0.1.0 | First public phase: standard resources, edit/diff, scale/restart/rollback, delete/jobs, port forwarding, generic CRDs, aggregate logs, standalone binaries |
+| v0.2.0 | Extensibility: themes, keys, aliases, saved views, plugins, ConfigMap/Secret workflows, context cleanup, custom-resource jumps and Homebrew bottles |
+| v0.3.0 | Foundations: smaller app shell, behavior-level tests, fast test tiers, large-cluster resilience, fast startup, kubeconfig parity and a rewritten documentation set |
+| v0.4.0 | Observability: metrics-server and Prometheus metrics with terminal charts, cluster overview, relationships, RBAC, diagnostics, exports and every Lens resource view |
+| v0.5.0 | Operations: full Helm lifecycle, manifests/Kustomize, templates, node shell, cordon/drain, ephemeral debugging, benchmarks and policies |
+| v0.6.0 | Multi-cluster workspace: catalog and hotbar, multi-cluster views, local terminal tabs, cloud discovery, GitOps/CRD packs, timelines and native transport |
+| v0.7.0 | Ecosystem: Python extension API and index, security center, MCP server and an optional bring-your-own AI assistant |
+| v0.8.0 | Platforms: Windows, shell completion, OCI image, package recipes, terminal input protocols and accessibility |
+| v0.9.0 | Release candidate: frozen configuration and extension contracts, compatibility matrix, versioned docs and a K9s/Lens parity dry run |
+| v1.0.0 | Stable product: every phase complete, audited parity with K9s and Lens, and documented differences |
 
 The maintainer requested usable qualified 0.x phases on 2026-10-09, beginning
 with 0.1.0 and superseding the earlier first-public-1.0-only policy. Each selected

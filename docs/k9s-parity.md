@@ -49,12 +49,11 @@ Q06 refreshes this audit and requires test evidence before a stable parity claim
 ## Historical paid offering
 
 The [official v0.24.7 announcement](https://github.com/derailed/k9s/releases/tag/v0.24.7)
-establishes the existence of K9sAlpha and additional features. On the review date,
-the linked official site did not yield an accessible complete feature catalog.
-Its current commercial status and full additional feature set remain unverified.
-Q07 tracks that evidence gap. We cannot claim 100% Alpha parity from its existence
-alone. Any substantiated capability will receive an open-source implementation
-ticket; no proprietary source, assets or private access is required by this plan.
+mentions a short-lived paid K9sAlpha edition, but no public, verifiable feature
+catalog exists. Q07 (#81) was closed as not planned on 2026-10-19, and KubeRich
+makes no Alpha parity claim. The stable audit (Q06 #88) instead compares
+KubeRich with the public K9s feature set and with Lens (open source and publicly
+documented Pro features).
 
 KubeRich has no paid capability tiers. External services invoked by optional
 plugins retain their own terms and infrastructure costs. They are not mandatory
@@ -130,7 +129,6 @@ single generic “plugins” or “configuration” checkbox.
 | DIST02 | Windows executables, PowerShell, Winget/Scoop/Chocolatey | [D12 #83](https://github.com/carloshm91/kuberich/issues/83) | [Source](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/README.md).  |
 | DIST03 | Linux packages, snap, FreeBSD, MacPorts and community package managers | [D14 #85](https://github.com/carloshm91/kuberich/issues/85) | [Source](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/README.md). Registry acceptance, Webi/pkgx/gah and Docker Desktop extensions need separate ownership; not guaranteed by a local recipe. |
 | DIST04 | OCI terminal image and shell completion | [D13 #84](https://github.com/carloshm91/kuberich/issues/84) | [Source](https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/README.md).  |
-| PAID01 | Additional K9sAlpha capabilities beyond the public baseline | [Q07 #81](https://github.com/carloshm91/kuberich/issues/81), [Q06 #88](https://github.com/carloshm91/kuberich/issues/88) | [Source](https://github.com/derailed/k9s/releases/tag/v0.24.7). Evidence gap: historical existence verified; no complete official accessible feature catalog found. Not counted as parity. |
 | DELTA01 | Unreleased upstream fixes/configuration additions after v0.51.0 | [Q06 #88](https://github.com/carloshm91/kuberich/issues/88), [S01 #29](https://github.com/carloshm91/kuberich/issues/29), [S02 #30](https://github.com/carloshm91/kuberich/issues/30), [U03 #58](https://github.com/carloshm91/kuberich/issues/58), [U04 #59](https://github.com/carloshm91/kuberich/issues/59), [U06 #64](https://github.com/carloshm91/kuberich/issues/64), [A01 #76](https://github.com/carloshm91/kuberich/issues/76), [D13 #84](https://github.com/carloshm91/kuberich/issues/84) | [Source](https://github.com/derailed/k9s/compare/v0.51.0...7064f96f1e852e71efcb848a483a5b6d4b986f35). 103 commits/129 changed files indexed; relevant UI/CLI/configuration changes reviewed separately from released behavior. Refresh before stable release. |
 
 ## Completion rules

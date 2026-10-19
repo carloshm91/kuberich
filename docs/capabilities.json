@@ -1534,19 +1534,6 @@
       "public_status": "planned"
     },
     {
-      "id": "PAID01",
-      "capability": "Additional K9sAlpha capabilities beyond the public baseline",
-      "tasks": [
-        "Q07",
-        "Q06"
-      ],
-      "source": "https://github.com/derailed/k9s/releases/tag/v0.24.7",
-      "status": "evidence-gap",
-      "difference": "Evidence gap: historical existence verified; no complete official accessible feature catalog found. Not counted as parity.",
-      "public_summary": "Additional proprietary upstream capabilities lack a verifiable complete public catalogue. They are not claimed as implemented or fully inventoried.",
-      "public_status": "unverified"
-    },
-    {
       "id": "DELTA01",
       "capability": "Unreleased upstream fixes/configuration additions after v0.51.0",
       "tasks": [

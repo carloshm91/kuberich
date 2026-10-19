@@ -28,15 +28,22 @@ HASH = re.compile(r"[0-9a-f]{64}")
 API = Callable[[str], Any]
 FIRST_PUBLIC_VERSION = "0.1.0"
 RELEASE_GATES = {"D10"}
-QUALIFICATION_GATES = {"D04", "D06", "D07", "D08", "D09", "D11"}
+QUALIFICATION_GATES = {"D04", "D06", "D07", "D08", "D09", "D11", "D16", "D17", "D18", "D19"}
+# Phase plan revised on 2026-10-19 (#221): foundations precede observability.
 PHASE_GATES = {
     "0.1.0": "D06",
     "0.2.0": "D07",
-    "0.3.0": "D08",
-    "0.4.0": "D09",
-    "0.5.0": "D11",
+    "0.3.0": "D16",
+    "0.4.0": "D08",
+    "0.5.0": "D09",
+    "0.6.0": "D17",
+    "0.7.0": "D18",
+    "0.8.0": "D11",
+    "0.9.0": "D19",
     "1.0.0": "Q06",
 }
+# Phase-specific extras that must stay attached to their reviewed phase.
+PHASE_EXTRAS = {"0.1.0": {53, 54, 123}, "0.2.0": {193}, "0.8.0": {124}}
 # Original plan issue creation order, #13 through #91. Phase changes cannot remap IDs.
 TASK_ISSUE_IDS = (
     "F00",
@@ -119,6 +126,66 @@ TASK_ISSUE_IDS = (
     "W02",
     "W03",
 )
+# Tasks and epics added by the 2026-10-19 backlog review (#221) keep their actual issues.
+ADDITIONAL_ISSUE_NUMBERS = {
+    "Q10": 209,
+    "Q09": 210,
+    "Q08": 211,
+    "Q11": 212,
+    "Q12": 213,
+    "Q13": 214,
+    "Q14": 215,
+    "Q15": 216,
+    "Q16": 217,
+    "Q17": 218,
+    "Q18": 219,
+    "Q19": 220,
+    "D15": 221,
+    "W04": 222,
+    "W05": 223,
+    "W06": 224,
+    "W07": 225,
+    "W08": 226,
+    "W09": 227,
+    "W10": 228,
+    "W11": 229,
+    "D16": 230,
+    "O08": 231,
+    "O09": 232,
+    "M09": 233,
+    "M10": 234,
+    "L01": 235,
+    "L02": 236,
+    "L03": 237,
+    "L04": 238,
+    "L05": 239,
+    "L06": 240,
+    "L07": 241,
+    "D17": 242,
+    "X01": 243,
+    "X02": 244,
+    "X03": 245,
+    "X04": 246,
+    "X05": 247,
+    "D18": 248,
+    "U07": 249,
+    "Q20": 250,
+    "Q21": 251,
+    "Q22": 252,
+    "D19": 253,
+    "E13": 254,
+    "E14": 255,
+    "E15": 256,
+}
+ADDITIONAL_TASK_IDS = tuple(key for key in ADDITIONAL_ISSUE_NUMBERS if not key.startswith("E"))
+
+
+def reviewed_issue_numbers() -> dict[str, int]:
+    """Return every reviewed epic/task identity and its immutable issue number."""
+    numbers = dict(zip(TASK_ISSUE_IDS, range(13, 92), strict=True))
+    numbers.update({f"E{number:02}": number for number in range(1, 13)})
+    numbers.update(ADDITIONAL_ISSUE_NUMBERS)
+    return numbers
 
 
 def release_tag(value: str) -> str:
@@ -370,11 +437,10 @@ def phase_requirements(
             ):
                 raise ValueError("Invalid release task milestone or dependencies")
             tasks[identifier] = task
-        if set(tasks) != set(TASK_ISSUE_IDS):
-            raise ValueError("Release plan must preserve all 79 reviewed task identities")
+        if set(tasks) != set(TASK_ISSUE_IDS) | set(ADDITIONAL_TASK_IDS):
+            raise ValueError("Release plan must preserve every reviewed task identity")
         issues = index["issues"]
-        expected_numbers = dict(zip(TASK_ISSUE_IDS, range(13, 92), strict=True))
-        expected_numbers.update({f"E{number:02}": number for number in range(1, 13)})
+        expected_numbers = reviewed_issue_numbers()
         if set(issues) != set(expected_numbers):
             raise ValueError("Release issue index must preserve reviewed epic/task identities")
         issue_numbers: dict[str, int] = {}
@@ -456,9 +522,10 @@ def phase_requirements(
             ):
                 raise ValueError("Release phase version, order or qualifier differs")
             extras(phase["extra_issues"])
-        if (
-            not {53, 54, 123} <= set(phases[0]["extra_issues"])
-            or 124 not in phases[1]["extra_issues"]
+        if any(
+            not required <= set(phase["extra_issues"])
+            for phase in phases
+            for required in [PHASE_EXTRAS.get(phase["version"], set())]
         ):
             raise ValueError("Required phase-specific behavior is missing")
         selected = [

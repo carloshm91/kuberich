@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "repository": "carloshm91/kuberich",
-  "planning_date": "2026-10-04",
+  "planning_date": "2026-10-19",
   "milestones": [
     {
       "title": "v0.0.1",
@@ -13,27 +13,39 @@
     },
     {
       "title": "v0.2.0",
-      "description": "Generic CRDs, multi-container logs, themes, configurable navigation/views, and external command plugins. This public phase requires its qualifier and all prior phase requirements; publication remains separately approved."
+      "description": "Configurable themes, navigation/resource views, external plugins, deliberate configuration/secret workflows, context and completed-pod cleanup, custom-resource jumps and verified Homebrew bottles. Retains generic CRDs and aggregate logs from 0.1.0."
     },
     {
       "title": "v0.3.0",
-      "description": "Resource metrics, cluster overview, relationships, RBAC analysis, guided troubleshooting, and sanitized exports. This public phase requires its qualifier and all prior phase requirements; publication remains separately approved."
+      "description": "Foundations and quality: decompose the application shell, decouple tests, remove private framework dependencies, degrade gracefully on large clusters, enforce a startup budget, reach kubeconfig parity with kubectl, add error boundaries and fast test tiers, and rewrite the documentation. No new feature families."
     },
     {
       "title": "v0.4.0",
-      "description": "Node operations, ephemeral debugging, HTTP benchmarks, and policy/quota exploration. This public phase requires its qualifier and all prior phase requirements; publication remains separately approved."
+      "description": "Observability: metrics-server and Prometheus metrics with terminal charts, cluster overview, relationships, RBAC analysis, diagnostics, sanitized exports, curated views for every remaining Lens resource family and container environment inspection. Requires its qualifier and every earlier phase."
     },
     {
       "title": "v0.5.0",
-      "description": "Extended delivery: Windows/PowerShell qualification, shell completion, OCI terminal image, and distribution-channel recipes. This public phase requires its qualifier and all prior phase requirements; publication remains separately approved."
+      "description": "Operations: full Helm lifecycle, local manifests and Kustomize, resource templates, node shell, cordon/drain, ephemeral debugging, HTTP benchmarks and policy/quota/admission exploration. Requires its qualifier and every earlier phase."
+    },
+    {
+      "title": "v0.6.0",
+      "description": "Multi-cluster workspace: cluster catalog and pinned hotbar, multi-cluster views, context-scoped local terminals, cloud cluster discovery, curated CRD and GitOps packs, change timeline and diffs, native exec/port-forward transport. Requires its qualifier and every earlier phase."
+    },
+    {
+      "title": "v0.7.0",
+      "description": "Ecosystem and intelligence: stable in-process Python extension API, extension index, security center, read-only MCP server and opt-in bring-your-own AI assistant. Requires its qualifier and every earlier phase."
+    },
+    {
+      "title": "v0.8.0",
+      "description": "Platforms and accessibility: Windows terminal and packaged installation, shell completion, OCI image, distribution recipes, advanced embedded-terminal input and accessibility. Requires its qualifier and every earlier phase."
+    },
+    {
+      "title": "v0.9.0",
+      "description": "Release candidate: configuration and extension API freeze, compatibility matrix, versioned documentation, K9s and Lens parity dry run and stabilization. Requires its qualifier and every earlier phase."
     },
     {
       "title": "v1.0.0",
-      "description": "Qualified compatibility, migration and support contracts, a complete capability audit, and a stable release."
-    },
-    {
-      "title": "Later: documentation website",
-      "description": "Expanded versioned MkDocs documentation after initial product publication, deployed from GitHub Actions to Cloudflare Pages."
+      "description": "Stable release: every phase complete, including Windows; stable configuration and extension contracts; evidence-backed Kubernetes and platform compatibility; audited capability parity with K9s and Lens (open source and publicly documented Pro features), with every difference documented."
     }
   ],
   "epics": [
@@ -68,7 +80,7 @@
     {
       "id": "E05",
       "title": "Safe workload and configuration operations",
-      "milestone": "v0.3.0",
+      "milestone": "v0.5.0",
       "area": "operations",
       "outcome": "Implement useful Kubernetes writes with read-only enforcement, clear targets, validation, conflict handling, and tested outcomes."
     },
@@ -82,14 +94,14 @@
     {
       "id": "E07",
       "title": "Observability and troubleshooting",
-      "milestone": "v0.3.0",
+      "milestone": "v0.4.0",
       "area": "observability",
       "outcome": "Connect metrics, events, resource relationships, and permission evidence into practical troubleshooting workflows."
     },
     {
       "id": "E08",
       "title": "Advanced cluster operations",
-      "milestone": "v0.4.0",
+      "milestone": "v0.5.0",
       "area": "operations",
       "outcome": "Add node maintenance, diagnostic sessions, and bounded service benchmarks with predictable cleanup and disruption handling."
     },
@@ -110,16 +122,37 @@
     {
       "id": "E11",
       "title": "User documentation and contribution experience",
-      "milestone": "Later: documentation website",
+      "milestone": "v0.9.0",
       "area": "docs",
       "outcome": "Keep installation and user guidance accurate, then publish a versioned documentation website after the core product ships."
     },
     {
       "id": "E12",
-      "title": "Extended platforms and ecosystem delivery",
-      "milestone": "v0.5.0",
+      "title": "Extended platforms, accessibility and ecosystem delivery",
+      "milestone": "v0.8.0",
       "area": "release",
       "outcome": "Track the full upstream installation surface without implying that external registries have accepted a package."
+    },
+    {
+      "id": "E13",
+      "title": "Foundations and engineering quality",
+      "milestone": "v0.3.0",
+      "area": "foundation",
+      "outcome": "A codebase that can absorb Lens-class features: small units, behavior-level tests, fast feedback, no private framework dependencies, large-cluster resilience, instant startup and kubeconfig parity."
+    },
+    {
+      "id": "E14",
+      "title": "Multi-cluster workspace beyond Lens",
+      "milestone": "v0.6.0",
+      "area": "kubernetes",
+      "outcome": "Match the Lens catalog, hotbar and terminal in the terminal, then go further with multi-cluster views, change timelines and native transport."
+    },
+    {
+      "id": "E15",
+      "title": "Ecosystem and intelligence",
+      "milestone": "v0.7.0",
+      "area": "customization",
+      "outcome": "Python-native extensibility, a free security center and optional AI help that never leaks secrets."
     }
   ],
   "tasks": [
@@ -830,7 +863,7 @@
       "id": "M06",
       "title": "Browse, inspect and roll back Helm releases",
       "epic": "E05",
-      "milestone": "v0.3.0",
+      "milestone": "v0.5.0",
       "requires": [
         "M01",
         "C08",
@@ -850,7 +883,7 @@
       "id": "M07",
       "title": "Browse local manifests and apply/delete with Kustomize awareness",
       "epic": "E05",
-      "milestone": "v0.3.0",
+      "milestone": "v0.5.0",
       "requires": [
         "M02",
         "C08"
@@ -905,7 +938,7 @@
       "id": "O01",
       "title": "Collect and present resource metrics with explicit availability",
       "epic": "E07",
-      "milestone": "v0.3.0",
+      "milestone": "v0.4.0",
       "requires": [
         "C04",
         "B05"
@@ -917,13 +950,13 @@
         "Bound concurrency/cache lifetime and stop old-context polls; sorting uses numeric values, not formatted strings."
       ],
       "verification": "Unit-test Kubernetes quantities and denominators including absent/zero limits; integration contracts cover missing API and stale metrics; UI asserts status and sorting.",
-      "priority": "P1"
+      "priority": "P0"
     },
     {
       "id": "O02",
       "title": "Build a cluster pulse overview and CPU/memory drill-downs",
       "epic": "E07",
-      "milestone": "v0.3.0",
+      "milestone": "v0.4.0",
       "requires": [
         "O01",
         "B05"
@@ -941,7 +974,7 @@
       "id": "O03",
       "title": "Build XRay-style relationships and resource references",
       "epic": "E07",
-      "milestone": "v0.3.0",
+      "milestone": "v0.4.0",
       "requires": [
         "B05",
         "C05",
@@ -960,7 +993,7 @@
       "id": "O04",
       "title": "Explain effective RBAC and subject/resource permissions",
       "epic": "E07",
-      "milestone": "v0.3.0",
+      "milestone": "v0.4.0",
       "requires": [
         "C02",
         "M01"
@@ -978,7 +1011,7 @@
       "id": "O05",
       "title": "Integrate cluster diagnostics and Popeye-style reports",
       "epic": "E07",
-      "milestone": "v0.3.0",
+      "milestone": "v0.4.0",
       "requires": [
         "S06",
         "O03",
@@ -997,7 +1030,7 @@
       "id": "O06",
       "title": "Save, browse and share redacted resource and diagnostic exports",
       "epic": "E07",
-      "milestone": "v0.3.0",
+      "milestone": "v0.4.0",
       "requires": [
         "O05",
         "M05"
@@ -1013,9 +1046,9 @@
     },
     {
       "id": "O07",
-      "title": "Inspect container environments and image vulnerabilities",
+      "title": "Inspect container environments, images and configuration sources",
       "epic": "E07",
-      "milestone": "v0.3.0",
+      "milestone": "v0.4.0",
       "requires": [
         "O03",
         "M05",
@@ -1034,7 +1067,7 @@
       "id": "A01",
       "title": "Open controlled node-shell diagnostic sessions",
       "epic": "E08",
-      "milestone": "v0.4.0",
+      "milestone": "v0.5.0",
       "requires": [
         "S04",
         "M01",
@@ -1053,7 +1086,7 @@
       "id": "A02",
       "title": "Cordon, drain and uncordon nodes with disruption awareness",
       "epic": "E08",
-      "milestone": "v0.4.0",
+      "milestone": "v0.5.0",
       "requires": [
         "A01",
         "M01"
@@ -1071,7 +1104,7 @@
       "id": "A03",
       "title": "Launch ephemeral container debugging sessions",
       "epic": "E08",
-      "milestone": "v0.4.0",
+      "milestone": "v0.5.0",
       "requires": [
         "S04",
         "M01",
@@ -1090,7 +1123,7 @@
       "id": "A04",
       "title": "Run bounded HTTP benchmarks through selected services and forwards",
       "epic": "E08",
-      "milestone": "v0.4.0",
+      "milestone": "v0.5.0",
       "requires": [
         "S08",
         "O01"
@@ -1102,13 +1135,13 @@
         "Tie forwarding/process lifetime to session ownership and forbid accidental background load after UI exit."
       ],
       "verification": "Run against a local test HTTP server; test limits, error stats, malformed output, cancellation and process cleanup without external traffic.",
-      "priority": "P1"
+      "priority": "P2"
     },
     {
       "id": "A05",
       "title": "Explore policy, quota, admission and scheduling resources",
       "epic": "E08",
-      "milestone": "v0.4.0",
+      "milestone": "v0.5.0",
       "requires": [
         "B06",
         "O04"
@@ -1274,7 +1307,7 @@
       "id": "Q05",
       "title": "Qualify Kubernetes, credential, config and platform compatibility",
       "epic": "E10",
-      "milestone": "v1.0.0",
+      "milestone": "v0.9.0",
       "requires": [
         "Q01",
         "C05",
@@ -1298,7 +1331,9 @@
       "milestone": "v1.0.0",
       "requires": [
         "Q05",
-        "D11"
+        "D11",
+        "Q22",
+        "D19"
       ],
       "scope": "Reconcile the pinned source inventory, capability matrix, community plugin workflows and any publicly documented Alpha additions with implementation evidence.",
       "acceptance": [
@@ -1313,18 +1348,19 @@
       "id": "Q07",
       "title": "Investigate publicly documented K9sAlpha additions",
       "epic": "E10",
-      "milestone": "v0.4.0",
+      "milestone": "v0.5.0",
       "requires": [
         "F00"
       ],
-      "scope": "Recover a verifiable official feature catalog for the historically advertised K9sAlpha offering without accessing private or proprietary materials without permission.",
+      "scope": "Recover a verifiable official feature catalog for the historically advertised K9sAlpha offering without accessing private or proprietary materials without permission. Closed as not planned on 2026-10-19: no verifiable feature catalog exists.",
       "acceptance": [
         "The official v0.24.7 release establishes Alpha existence but not a complete feature list; capture official links, versions and dates for any further evidence.",
         "Map every substantiated additional behavior to an Apache-2.0 implementation ticket and acceptance tests; do not reproduce proprietary source/assets.",
         "If authoritative material remains unavailable, publish the precise unresolved evidence gap and keep parity unclaimed; closing the investigation does not certify unknown features."
       ],
       "verification": "Review cited first-party materials and audit all resulting matrix rows. Investigation outcome may be evidence-unavailable, but must be explicit.",
-      "priority": "P1"
+      "priority": "P1",
+      "status": "not-planned"
     },
     {
       "id": "W01",
@@ -1350,12 +1386,20 @@
     },
     {
       "id": "W02",
-      "title": "Build versioned MkDocs documentation after the usable product",
+      "title": "Build versioned documentation on the existing site generator",
       "epic": "E11",
-      "milestone": "Later: documentation website",
+      "milestone": "v0.9.0",
       "requires": [
         "D10",
-        "W01"
+        "W01",
+        "W04",
+        "W05",
+        "W06",
+        "W07",
+        "W08",
+        "W09",
+        "W10",
+        "W11"
       ],
       "scope": "Create a searchable documentation site from validated user/developer docs after the initial qualified product release.",
       "acceptance": [
@@ -1370,7 +1414,7 @@
       "id": "W03",
       "title": "Deploy and maintain the versioned documentation website",
       "epic": "E11",
-      "milestone": "Later: documentation website",
+      "milestone": "v0.9.0",
       "requires": [
         "W02"
       ],
@@ -1387,7 +1431,7 @@
       "id": "D12",
       "title": "Qualify Windows terminal operation and packaged installation",
       "epic": "E12",
-      "milestone": "v0.5.0",
+      "milestone": "v0.8.0",
       "requires": [
         "D05",
         "S07",
@@ -1407,7 +1451,7 @@
       "id": "D13",
       "title": "Provide shell completion and an OCI terminal container image",
       "epic": "E12",
-      "milestone": "v0.5.0",
+      "milestone": "v0.8.0",
       "requires": [
         "F05",
         "D05"
@@ -1425,7 +1469,7 @@
       "id": "D14",
       "title": "Prepare Linux/BSD/macOS package recipes and channel ownership",
       "epic": "E12",
-      "milestone": "v0.5.0",
+      "milestone": "v0.8.0",
       "requires": [
         "D05",
         "D03"
@@ -1546,10 +1590,8 @@
       "id": "D08",
       "title": "Qualify the observability engineering checkpoint",
       "epic": "E09",
-      "milestone": "v0.3.0",
+      "milestone": "v0.4.0",
       "requires": [
-        "M06",
-        "M07",
         "O01",
         "O02",
         "O03",
@@ -1557,7 +1599,10 @@
         "O05",
         "O06",
         "O07",
-        "D07"
+        "O08",
+        "O09",
+        "D07",
+        "D16"
       ],
       "scope": "Qualify the exact phase candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Qualification does not publish; approved phased publication remains D10 #89.",
       "acceptance": [
@@ -1573,14 +1618,17 @@
       "id": "D09",
       "title": "Qualify the advanced operations engineering checkpoint",
       "epic": "E09",
-      "milestone": "v0.4.0",
+      "milestone": "v0.5.0",
       "requires": [
+        "M06",
+        "M07",
+        "M09",
+        "M10",
         "A01",
         "A02",
         "A03",
         "A04",
         "A05",
-        "Q07",
         "D08"
       ],
       "scope": "Qualify the exact phase candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Qualification does not publish; approved phased publication remains D10 #89.",
@@ -1597,12 +1645,14 @@
       "id": "D11",
       "title": "Qualify the extended platform engineering checkpoint",
       "epic": "E09",
-      "milestone": "v0.5.0",
+      "milestone": "v0.8.0",
       "requires": [
         "D12",
         "D13",
         "D14",
-        "D09"
+        "U07",
+        "D09",
+        "D18"
       ],
       "scope": "Qualify the exact phase candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Qualification does not publish; approved phased publication remains D10 #89.",
       "acceptance": [
@@ -1631,6 +1681,794 @@
         "After approval, publish the tested immutable bytes; verify every promised public installation/upgrade/uninstall channel, HTTPS/domains/headers/links and published quickstart. Close only after real public verification; expanded/versioned docs remain W02/W03."
       ],
       "verification": "Require exact full supported matrix, performance/compatibility/audit records, source/artifact/site digests, owned-cluster repetitions and clean installed candidate behavior before approval. Then retain actual public tag/release/package/tap/deployment IDs, installed channel transcripts, TLS/header checks and rollback evidence.",
+      "priority": "P0"
+    },
+    {
+      "id": "Q10",
+      "title": "Add fast, parallel test tiers",
+      "epic": "E13",
+      "milestone": "v0.3.0",
+      "requires": [],
+      "scope": "The suite has 5,789 tests and runs serially. A local run on a 6-core machine covered about 21% in 15 minutes, so a full run takes roughly 70 minutes. There is no `pytest-xdist` and no layer markers. Slow feedback pushes toward huge PRs and skipped verification.",
+      "acceptance": [
+        "Add `pytest-xdist`. Tests are safe in parallel: unique ports and temp directories, no shared global state. Fix order-dependent tests; never silently skip them.",
+        "Add markers for `unit`, `contract`, `ui`, `terminal`, `packaging` and `kind`, with documented commands.",
+        "A `fast` tier (unit + contract + ui) finishes in under 3 minutes on the reference machine.",
+        "CI runs the fast tier first and fails fast. Required gates and coverage combination keep working with xdist.",
+        "Publish before/after timings in the PR."
+      ],
+      "verification": "Three consecutive parallel full runs without flakes, plus measured timings. Resolve #208 if it blocks parallel PTY tests.",
+      "priority": "P0"
+    },
+    {
+      "id": "Q09",
+      "title": "Decouple UI tests from private application state",
+      "epic": "E13",
+      "milestone": "v0.3.0",
+      "requires": [
+        "Q10"
+      ],
+      "scope": "Tests reach into private application state 244 times: `app._submit_command` (46), `app._resource_name` (40), `app._connection_task` (28) and more. Any refactor breaks hundreds of tests, which freezes the current design in place.",
+      "acceptance": [
+        "Add a minimal public surface, for example a read-only `app.state` snapshot (view kind, scope, selection, connection status) and `await app.run_command(text)` routed exactly like the command bar.",
+        "Zero `app._*` / `screen._*` accesses in `tests/`. An AST-based check fails CI on private access from tests into `kuberich`.",
+        "Every rewritten test still covers the same scenario, and coverage gates hold."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P0"
+    },
+    {
+      "id": "Q08",
+      "title": "Decompose KubeRichApp into view controllers and a declarative command registry",
+      "epic": "E13",
+      "milestone": "v0.3.0",
+      "requires": [
+        "Q09"
+      ],
+      "scope": "`src/kuberich/ui/app.py` has 2,726 lines. `KubeRichApp` has about 110 methods and more than 60 state fields:",
+      "acceptance": [
+        "A `ViewController` protocol: project, filter, apply rows, capture/restore viewport, available actions. Implementations for pods, namespaces, contexts, standard and custom resources. One generic render path.",
+        "Commands are registered declaratively: handler, required capabilities, read-only policy, help text. Help, completion and `check_action` use the same registry.",
+        "An event-driven resume replaces the modal busy-wait.",
+        "No cross-object private attribute access in `kuberich.ui`, enforced by lint.",
+        "`app.py` ≤ 800 lines, and no `kuberich.ui` module over 900 lines.",
+        "Behavior is unchanged: full suite green, terminal snapshots unchanged.",
+        "A short ADR explains the structure."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P0"
+    },
+    {
+      "id": "Q11",
+      "title": "Remove private Textual API dependencies and relax the exact pin",
+      "epic": "E13",
+      "milestone": "v0.3.0",
+      "requires": [
+        "Q08"
+      ],
+      "scope": "`textual==8.2.8` is pinned exactly because the code depends on private framework internals:",
+      "acceptance": [
+        "A CI check fails on any new `textual._*` import or `_`-prefixed override of a framework class.",
+        "Each workaround is either upstreamed (link the Textualize issue or PR, for example Textualize/textual#6665) or replaced with public API. Remaining workarounds live in one module with a removal condition.",
+        "The dependency becomes `textual>=8.2.8,<9`. A scheduled CI job runs against the latest Textual release.",
+        "The Q03 performance budgets still hold."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "Q12",
+      "title": "Degrade gracefully for collections beyond 10,000 resources",
+      "epic": "E13",
+      "milestone": "v0.3.0",
+      "requires": [],
+      "scope": "With `MAX_RESOURCE_ITEMS = 10000`, the view fails with \"Live collection exceeds its item/memory limit.\" Q03 #50 measured exactly 10,000 resources, with a p95 margin of 0.92 ms. All-namespace views on production clusters routinely exceed this, and that is exactly where a cluster tool matters most.",
+      "acceptance": [
+        "Above the memory budget, the view stays live in an explicit degraded mode: a visible banner, server-side narrowing (label/field selectors, namespace) and a deterministic cap on retained rows. Never a hard error.",
+        "Use the Table API or PartialObjectMetadata to cut bytes per object. Paginate initial lists (`limit`/`continue`) with progress.",
+        "Measure 50,000 pods at 100 events/s: p95 input latency under 100 ms with at least 20% margin, and a bounded memory plateau.",
+        "Tests cover crossing the threshold in both directions."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P0"
+    },
+    {
+      "id": "Q13",
+      "title": "Enforce a startup-time budget with lazy imports",
+      "epic": "E13",
+      "milestone": "v0.3.0",
+      "requires": [],
+      "scope": "`kuberich --version` takes 1.10 s and 94 MB RSS on the development machine. The CLI imports the whole UI and `kubernetes_asyncio`; `import kuberich.ui.app` alone takes about 0.93 s. Terminal users expect instant startup.",
+      "acceptance": [
+        "`--version`, `--help`, `info` and `config check` finish in under 150 ms and under 40 MB on the reference machine. Those paths never import Textual or `kubernetes_asyncio`.",
+        "TUI time to first paint is measured and budgeted (target under 600 ms before any network call).",
+        "`kubernetes_asyncio` models load lazily. A CI regression check uses `-X importtime` thresholds."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "Q14",
+      "title": "Reach kubeconfig compatibility parity with kubectl",
+      "epic": "E13",
+      "milestone": "v0.3.0",
+      "requires": [],
+      "scope": "KubeRich has its own kubeconfig and authentication loader. It rejects legacy `auth-provider` (including OIDC, which kubectl still supports), basic auth and encrypted client keys, and it uses a custom SNI `SSLContext` subclass. Users whose kubeconfig works with kubectl can fail on their first launch. That is the worst possible first impression.",
+      "acceptance": [
+        "A compatibility matrix against the supported kubectl versions for every kubeconfig field: clusters, users, contexts, extensions, exec, `auth-provider` oidc, `proxy-url`, `tls-server-name`, certificate files and data, `token`/`tokenFile`, impersonation and merged `KUBECONFIG` lists.",
+        "Every configuration kubectl accepts either works or fails with an actionable message that names the field. OIDC `auth-provider` is supported (including refresh), or the app generates an exec-plugin migration path.",
+        "Evaluate reusing the per-client loader of `kubernetes_asyncio` (no global state) and record the decision in an ADR.",
+        "A secret-free fixture corpus of real-world shapes: EKS, AKS, GKE, Rancher, OpenShift, k3s, kind, Teleport and Tailscale."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P0"
+    },
+    {
+      "id": "Q15",
+      "title": "Add per-view error boundaries and a redacted bug-report bundle",
+      "epic": "E13",
+      "milestone": "v0.3.0",
+      "requires": [],
+      "scope": "The render and observation loops each run inside one `try/except` that hands any exception to Textual's handler, and that handler exits the app. A projection bug in one resource kind ends the whole session, including active shells and port forwards.",
+      "acceptance": [
+        "A failing projection or render shows an inline error panel with Retry. Other views, shells and forwards keep running.",
+        "Fatal errors still restore the terminal and print the path of a redacted crash report.",
+        "`kuberich bug-report` writes a redacted bundle (version, platform, terminal, config-check result, recent diagnostic log). It never includes kubeconfig contents or secrets.",
+        "Fault-injection tests for both paths; the troubleshooting guide documents them."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "Q16",
+      "title": "Strengthen critical-module tests with property-based and mutation testing",
+      "epic": "E13",
+      "milestone": "v0.3.0",
+      "requires": [],
+      "scope": "100% line and branch coverage proves that code ran, not that the assertions are strong. Weak oracles still pass.",
+      "acceptance": [
+        "Hypothesis property tests for parsers and validators: quantities, selectors, kubeconfig catalog, redaction, aliases, keyboard maps, terminal history and log JSON.",
+        "A scheduled mutation-testing job (mutmut or cosmic-ray) on the critical deterministic modules publishes its score. Target at least 85% of mutants killed, with survivors triaged.",
+        "`docs/quality.md` documents the approach. Once the score is stable, evaluate replacing the 100% line mandate with a mutation-score gate."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "Q17",
+      "title": "Replace manual phase qualification with one reproducible command",
+      "epic": "E13",
+      "milestone": "v0.3.0",
+      "requires": [],
+      "scope": "Each phase has a large manual qualifier issue (#65, #75, #82, #86) with thousands of words of evidence, and CI repeats work (#189). Qualification is expensive, slow and hard to reproduce.",
+      "acceptance": [
+        "`uv run python scripts/qualify.py <phase>` runs or collects every gate: lint, types, test tiers, coverage, packaging, PTY, kind and installs. It writes one machine-readable report and a short Markdown summary for the release PR.",
+        "Phase gate issues become short checklists that point to the report.",
+        "Coordinate with #189 so post-merge and release runs reuse exact-tree results safely."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "Q18",
+      "title": "Remove the legacy kubetrol identity",
+      "epic": "E13",
+      "milestone": "v0.3.0",
+      "requires": [],
+      "scope": "`pyproject.toml` publishes a second console script, `kubetrol`. Configuration paths still fall back to `kubetrol`, and old coverage artifacts refer to `src/kubetrol`. (Links in open issues were fixed during the 2026-10-19 backlog review.)",
+      "acceptance": [
+        "In 0.3.0 the `kubetrol` entry point prints a deprecation warning; 0.4.0 removes it.",
+        "Legacy configuration migrates with a one-time notice.",
+        "No remaining references in source, docs or packaging."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P2"
+    },
+    {
+      "id": "Q19",
+      "title": "Support the Wayland clipboard",
+      "epic": "E13",
+      "milestone": "v0.3.0",
+      "requires": [],
+      "scope": "`domain/clipboard.py` chooses X11 only when `DISPLAY` is set and `WAYLAND_DISPLAY` is not. Wayland, the default on GNOME and KDE, falls back to OSC52, which many terminals disable.",
+      "acceptance": [
+        "A `wl-copy` backend with the same byte limits and argv safety.",
+        "The detection order is documented, and errors suggest a fallback.",
+        "Tests use fake executables."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P2"
+    },
+    {
+      "id": "D15",
+      "title": "Register the revised 0.3–0.9 phase plan in the release policy",
+      "epic": "E13",
+      "milestone": "v0.3.0",
+      "requires": [],
+      "scope": "On 2026-10-19 the maintainer approved a new phase plan on GitHub. `docs/releases.md`, the roadmap, `docs/backlog.json`/`backlog.md` and `scripts/release_policy.py` still describe the previous mapping, and they reject unmapped minors such as 0.6.",
+      "acceptance": [
+        "The release policy, validator, checked-in backlog and roadmap match GitHub, with tests.",
+        "#81 is recorded as closed (not planned), and the K9sAlpha row is removed from parity docs.",
+        "Phase extras move with their issues: #124 to 0.8.x, #189 and #208 to 0.3.x; #193 stays in 0.2.x."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P0"
+    },
+    {
+      "id": "W04",
+      "title": "Define the documentation structure and a plain-language style guide",
+      "epic": "E11",
+      "milestone": "v0.3.0",
+      "requires": [],
+      "scope": "The docs are not pleasant to read:",
+      "acceptance": [
+        "Adopt Diátaxis (tutorials, how-to guides, reference, explanation). The user documentation is at most 20 pages, listed in one navigation file.",
+        "`docs/STYLE.md` sets the rules: plain English, second person, present tense, short sentences; one task per page, at most 250 lines per page; a banned-term list with replacements (e.g. \"owned\" → \"started by KubeRich\", \"bounded\" → \"limited to N\", \"captured\" → \"selected\"); no issue numbers, run IDs or evidence in user pages",
+        "The PR maps every existing document to keep, merge, move or delete."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P0"
+    },
+    {
+      "id": "W05",
+      "title": "Rewrite the README as a concise product page",
+      "epic": "E11",
+      "milestone": "v0.3.0",
+      "requires": [
+        "W04"
+      ],
+      "scope": "Rewrite the README as a concise product page",
+      "acceptance": [
+        "At most 90 lines: a one-sentence value statement, a real screenshot or GIF, installation of the published version only, a 60-second quick start, a plain feature list and links.",
+        "No \"next-release source\" notes, no process text, no hedging paragraphs.",
+        "Renders correctly on GitHub and PyPI."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P0"
+    },
+    {
+      "id": "W06",
+      "title": "Consolidate user guides into a small task-based set with generated reference",
+      "epic": "E11",
+      "milestone": "v0.3.0",
+      "requires": [
+        "W04"
+      ],
+      "scope": "About 45 user-facing guides overlap (command-navigation, terminal-navigation, navigation-preferences, resource-views, resource-workspace, pod-table and more). Readers cannot tell where to start.",
+      "acceptance": [
+        "Target set: Install; Quick start; Everyday workflow; Navigate and search; Logs; Shells and attach; Port forwarding; Files; Edit and change resources; Workload operations; Contexts and authentication (EKS/AKS/GKE sections); Configuration and themes; Plugins; Troubleshooting and FAQ",
+        "Reference pages (keys, commands, CLI flags, configuration schema) are generated from code and checked in CI.",
+        "Every page follows `docs/STYLE.md`. Removed URLs redirect on the docs site.",
+        "The website rebuilds and the link check passes."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P0"
+    },
+    {
+      "id": "W07",
+      "title": "Replace architecture.md with a short overview and ADRs",
+      "epic": "E11",
+      "milestone": "v0.3.0",
+      "requires": [
+        "W04"
+      ],
+      "scope": "`docs/architecture.md` is a 1,237-line decision log with the newest entries first. It is not an architecture overview, and new contributors cannot learn the system from it.",
+      "acceptance": [
+        "`docs/architecture.md` is at most 300 lines and covers: layers (domain, services, adapters, ui); data flow (watch → store → projection → table); the concurrency and lifecycle model; security boundaries; Mermaid diagrams",
+        "Decisions move to `docs/adr/NNNN-title.md`, one per decision, from a template. The old log is archived, not deleted.",
+        "CONTRIBUTING.md links to the overview, and each layer section names its main modules."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "W08",
+      "title": "Move acceptance evidence and history out of the documentation tree",
+      "epic": "E11",
+      "milestone": "v0.3.0",
+      "requires": [
+        "W04"
+      ],
+      "scope": "Process material lives next to the user docs:",
+      "acceptance": [
+        "Evidence lives in PR descriptions and release assets, or in one `docs/internal/` area excluded from the website and search.",
+        "A short \"Status\" page replaces `first-preview.md`.",
+        "Validators are updated, and no user-facing page links to evidence."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "W09",
+      "title": "Rewrite the changelog and release notes for users",
+      "epic": "E11",
+      "milestone": "v0.3.0",
+      "requires": [
+        "W04"
+      ],
+      "scope": "Rewrite the changelog and release notes for users",
+      "acceptance": [
+        "Use the Keep a Changelog format: one plain-language line per change, user benefit first, at most 25 words per entry.",
+        "Remove internal process and qualification details. Add a release-notes template.",
+        "Rewrite every published 0.x entry in the new format without losing a user-visible change."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "W10",
+      "title": "Reduce AGENTS.md, CONTRIBUTING.md and issue templates to current essentials",
+      "epic": "E11",
+      "milestone": "v0.3.0",
+      "requires": [
+        "W04"
+      ],
+      "scope": "`AGENTS.md` has become a diary of dated authorizations and model names. Every planned issue copies the same \"Delivery contract\" block. `quality.md` is 863 lines long.",
+      "acceptance": [
+        "`AGENTS.md` is at most 60 lines of current, timeless instructions: no dates, no model names. The history is kept privately.",
+        "`CONTRIBUTING.md` is at most 150 lines and `quality.md` at most 250 lines.",
+        "Issue templates (bug, feature, task) link the delivery contract instead of copying it."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "W11",
+      "title": "Add documentation quality checks: prose lint, links and page budgets",
+      "epic": "E11",
+      "milestone": "v0.3.0",
+      "requires": [
+        "W04"
+      ],
+      "scope": "Add documentation quality checks: prose lint, links and page budgets",
+      "acceptance": [
+        "Vale (or equivalent) enforces the `docs/STYLE.md` rules, including banned terms.",
+        "Markdown lint, internal and external link checks, and per-page line budgets.",
+        "Screenshots are regenerated from the real application.",
+        "All of these are required checks for documentation changes."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "D16",
+      "title": "Qualify the foundations checkpoint",
+      "epic": "E09",
+      "milestone": "v0.3.0",
+      "requires": [
+        "Q08",
+        "Q09",
+        "Q10",
+        "Q11",
+        "Q12",
+        "Q13",
+        "Q14",
+        "Q15",
+        "Q16",
+        "Q17",
+        "Q18",
+        "Q19",
+        "D15",
+        "W04",
+        "W05",
+        "W06",
+        "W07",
+        "W08",
+        "W09",
+        "W10",
+        "W11",
+        "D07"
+      ],
+      "scope": "Every v0.3.0 task: Q08 #211, Q09 #210, Q10 #209, Q11 #212, Q12 #213, Q13 #214, Q14 #215, Q15 #216, Q16 #217, Q17 #218, Q18 #219, Q19 #220, D15 #221, W04 #222–W11 #229, #189 and #208. Also requires the 0.2.0 gate #65.",
+      "acceptance": [
+        "The qualification command from Q17 #218 passes on the complete Linux/macOS matrix.",
+        "Structural targets are met: `app.py` ≤ 800 lines, zero private access from tests, no private Textual APIs, startup budget met, 50k-resource measurement within budget.",
+        "Documentation checks pass and the README stays within its budget.",
+        "No publication happens here. Publication needs separate maintainer approval."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P0"
+    },
+    {
+      "id": "O08",
+      "title": "Show Prometheus-compatible historical metrics with terminal charts",
+      "epic": "E07",
+      "milestone": "v0.4.0",
+      "requires": [
+        "O01"
+      ],
+      "scope": "Lens shows CPU, memory, network and filesystem history on its overview, node and pod pages, backed by Prometheus. KubeRich shows no metrics yet; #68 plans metrics-server only. Without history, users still need a separate dashboard.",
+      "acceptance": [
+        "Detect Prometheus, VictoriaMetrics or Thanos (in-cluster service proxy or a configured URL) per context, with explicit availability states.",
+        "Terminal charts (braille or sparklines) for cluster, node, workload, pod and container: CPU, memory, network and filesystem. Ranges from 15m to 24h. Numeric values are always shown, so color is never the only signal.",
+        "Query concurrency and caching are limited. Queries are cancelled on context switch and never block the UI.",
+        "kind fixtures with kube-prometheus-stack and VictoriaMetrics. Behavior is clear when no metrics backend exists."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "O09",
+      "title": "Add curated views for every remaining Lens resource family",
+      "epic": "E07",
+      "milestone": "v0.4.0",
+      "requires": [],
+      "scope": "Only 15 families have curated columns. These fall back to generic tables:",
+      "acceptance": [
+        "Curated columns, typed sorting, details and drill-downs for every family above.",
+        "An Events view with a warnings filter that groups by reason and object.",
+        "Coordinate with #80 (policy) and #71 (RBAC) to avoid duplicate work.",
+        "A checked parity list against the Lens resource menu."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "M09",
+      "title": "Install, upgrade and uninstall Helm charts from repositories",
+      "epic": "E05",
+      "milestone": "v0.5.0",
+      "requires": [
+        "M06"
+      ],
+      "scope": "#66 covers browsing, inspecting and rolling back releases. Lens also manages chart repositories, installs and upgrades charts with values editing, and uninstalls releases.",
+      "acceptance": [
+        "Manage repositories (add, update, remove; OCI registries). Search charts and versions.",
+        "Install and upgrade with a values editor, a rendered diff against the live state, and a dry run before apply.",
+        "Uninstall with a review step. Read-only mode blocks every write.",
+        "Every helm call uses an argument vector with explicit kubeconfig, context and namespace.",
+        "kind tests with a local chart repository."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "M10",
+      "title": "Create resources from templates with server-side dry run",
+      "epic": "E05",
+      "milestone": "v0.5.0",
+      "requires": [],
+      "scope": "Create resources from templates with server-side dry run",
+      "acceptance": [
+        "Built-in templates for common resources, plus user templates from the config directory.",
+        "Create from a template, a file or the clipboard, with schema-aware validation, a server-side dry run, a review step and apply.",
+        "Read-only mode blocks creation. Tests against a disposable cluster."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "L01",
+      "title": "Build a cluster catalog with a pinned hotbar",
+      "epic": "E14",
+      "milestone": "v0.6.0",
+      "requires": [],
+      "scope": "Lens's catalog collects clusters from many kubeconfigs and lets users pin clusters, namespaces and workloads in a hotbar. KubeRich only has a contexts table.",
+      "acceptance": [
+        "The catalog reads contexts from the `KUBECONFIG` list and configured directories, and watches them for changes.",
+        "Each cluster shows labels, a color or icon, notes, connection state and last use.",
+        "Pin clusters, namespaces, resources or commands to hotbar slots 1–9 for instant jumps.",
+        "Per-cluster settings: default namespace, read-only, theme and metrics source.",
+        "No kubeconfig changes without an explicit action (rename and delete belong to #63)."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "L02",
+      "title": "Open context-scoped local terminal tabs",
+      "epic": "E14",
+      "milestone": "v0.6.0",
+      "requires": [],
+      "scope": "Open context-scoped local terminal tabs",
+      "acceptance": [
+        "Open local shell tabs pinned to the selected context and namespace (through a temporary `KUBECONFIG` or environment). The user's kubeconfig is never changed.",
+        "Multiple tabs, which survive view navigation and close cleanly.",
+        "Each tab clearly shows which context it targets.",
+        "Opt-in: download a kubectl that matches the server minor version into the cache, verifying its checksum."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "L03",
+      "title": "Show one resource kind across multiple clusters",
+      "epic": "E14",
+      "milestone": "v0.6.0",
+      "requires": [
+        "L01"
+      ],
+      "scope": "Neither K9s nor Lens shows the same resource kind across several clusters in one table. This is a differentiator for platform teams.",
+      "acceptance": [
+        "Select N contexts and see one merged table with a Context column, plus per-context status and errors.",
+        "Actions go to the right context, and the confirmation names that context.",
+        "Compare mode: the same object name across clusters, for example image versions of one Deployment.",
+        "Limited concurrency and memory, measured."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "L04",
+      "title": "Discover EKS, AKS and GKE clusters from local cloud CLIs",
+      "epic": "E14",
+      "milestone": "v0.6.0",
+      "requires": [
+        "L01"
+      ],
+      "scope": "Discover EKS, AKS and GKE clusters from local cloud CLIs",
+      "acceptance": [
+        "Optional, read-only discovery through `aws`, `az` and `gcloud` for configured profiles, subscriptions and projects.",
+        "Kubeconfig entries are generated only after confirmation, and only into a KubeRich-managed file. The user's kubeconfig is never written implicitly.",
+        "Contract tests with fake CLIs. The docs describe provider authentication helpers."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P2"
+    },
+    {
+      "id": "L05",
+      "title": "Ship curated resource packs for GitOps and popular CRDs",
+      "epic": "E14",
+      "milestone": "v0.6.0",
+      "requires": [],
+      "scope": "Ship curated resource packs for GitOps and popular CRDs",
+      "acceptance": [
+        "Data-driven packs (columns, health rules, actions, relationships) for Flux, Argo CD, cert-manager, Karpenter, Gateway API, External Secrets, KEDA and Istio basics.",
+        "GitOps actions (reconcile or sync, suspend, resume) go through the normal review flow.",
+        "The pack format can later be shipped by extensions (X01 #243).",
+        "kind tests with the real CRDs installed."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "L06",
+      "title": "Add a resource change timeline and revision diffs",
+      "epic": "E14",
+      "milestone": "v0.6.0",
+      "requires": [],
+      "scope": "Add a resource change timeline and revision diffs",
+      "acceptance": [
+        "A per-object timeline from session watch events (limited in size), Events and ReplicaSet/ControllerRevision history.",
+        "Diff any two revisions, live against last-applied, live against a local file, and across clusters (with L03 #237).",
+        "Secrets are always redacted. Diffs can be exported."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "L07",
+      "title": "Implement native exec, attach, port-forward and copy over WebSocket",
+      "epic": "E14",
+      "milestone": "v0.6.0",
+      "requires": [],
+      "scope": "Shells, attach, port forwarding and file copy start kubectl. That adds a required external binary, version skew and startup latency.",
+      "acceptance": [
+        "Native WebSocket (channel protocol v5) for exec, attach and port-forward, plus tar-based copy.",
+        "kubectl stays available as a configurable fallback.",
+        "The existing safety rules and limits still apply.",
+        "kind tests across the supported Kubernetes minors. Latency is measured against kubectl."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "D17",
+      "title": "Qualify the multi-cluster workspace checkpoint",
+      "epic": "E09",
+      "milestone": "v0.6.0",
+      "requires": [
+        "L01",
+        "L02",
+        "L03",
+        "L04",
+        "L05",
+        "L06",
+        "L07",
+        "D09"
+      ],
+      "scope": "L01 #235–L07 #241, plus every earlier phase gate (#82).",
+      "acceptance": [
+        "The qualification command passes on the full matrix, with multi-cluster tests on at least three disposable clusters.",
+        "Measured memory and latency for the catalog and multi-cluster views are published.",
+        "No publication happens here."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P0"
+    },
+    {
+      "id": "X01",
+      "title": "Provide a stable in-process Python extension API",
+      "epic": "E15",
+      "milestone": "v0.7.0",
+      "requires": [
+        "Q08"
+      ],
+      "scope": "Today's plugins are external commands, as in K9s. Python's real advantage is in-process extensions that add views, columns and actions with full type safety. That is how KubeRich can beat the Lens extension ecosystem.",
+      "acceptance": [
+        "A versioned, typed API through the `kuberich.extensions` entry points: custom views, columns, actions (with review), resource packs (L05 #239), commands and status widgets.",
+        "Extensions declare their capabilities in a manifest, and the user confirms them. Write capabilities are disabled in read-only mode.",
+        "A crashing extension is isolated by the error boundaries from Q15 #216.",
+        "Reference extensions, documentation and an API stability policy."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P0"
+    },
+    {
+      "id": "X02",
+      "title": "Add an extension index with pinned, verified installation",
+      "epic": "E15",
+      "milestone": "v0.7.0",
+      "requires": [
+        "X01"
+      ],
+      "scope": "Add an extension index with pinned, verified installation",
+      "acceptance": [
+        "`kuberich ext search|install|update|remove`.",
+        "A public index pins versions and hashes. Extensions install into an isolated environment (uv), with provenance verification.",
+        "Nothing installs automatically, and each extension's permissions are reviewed."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "X03",
+      "title": "Build a security center for image, configuration and RBAC risk",
+      "epic": "E15",
+      "milestone": "v0.7.0",
+      "requires": [
+        "O04",
+        "O05",
+        "O07"
+      ],
+      "scope": "The Lens Pro Security Center scans images and RBAC for CVEs and misconfigurations. KubeRich plans the separate pieces (#71, #72, #74) but no unified view, and this one would be free.",
+      "acceptance": [
+        "One dashboard for: image vulnerabilities (local Trivy or Grype, or Trivy Operator CRDs when present); misconfigurations (#72, kube-linter); RBAC risk (#71)",
+        "Severity filters and drill-down to resources. Findings export through #73.",
+        "No silent binary downloads, and an offline-friendly cache."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "X04",
+      "title": "Expose a read-only MCP server for the active session",
+      "epic": "E15",
+      "milestone": "v0.7.0",
+      "requires": [],
+      "scope": "Expose a read-only MCP server for the active session",
+      "acceptance": [
+        "`kuberich mcp` exposes read-only tools over stdio for an explicit context and namespace: list, get, describe, events, log tail and metrics.",
+        "Secrets are redacted, and there are no write tools in the first version.",
+        "Opt-in and documented. Contract tests use a real MCP client."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "X05",
+      "title": "Add an opt-in bring-your-own AI assistant panel",
+      "epic": "E15",
+      "milestone": "v0.7.0",
+      "requires": [
+        "X04"
+      ],
+      "scope": "Lens Prism offers an AI copilot for debugging. KubeRich can match it without a hosted backend.",
+      "acceptance": [
+        "Explain the selected resource, error, events or logs through a user-configured provider (OpenAI-compatible, Anthropic, local Ollama) or a local agent CLI.",
+        "Before anything is sent, the user sees exactly the redacted context. Secrets are never sent.",
+        "Suggested commands are proposals that go through the normal review flow.",
+        "Disabled by default. No KubeRich-hosted service."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P2"
+    },
+    {
+      "id": "D18",
+      "title": "Qualify the ecosystem and intelligence checkpoint",
+      "epic": "E09",
+      "milestone": "v0.7.0",
+      "requires": [
+        "X01",
+        "X02",
+        "X03",
+        "X04",
+        "X05",
+        "D17"
+      ],
+      "scope": "X01 #243–X05 #247, plus D17 #242.",
+      "acceptance": [
+        "The qualification command passes. The reference extensions install from the index on clean hosts.",
+        "A redaction audit of the MCP and AI paths, with negative controls.",
+        "No publication happens here."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P0"
+    },
+    {
+      "id": "U07",
+      "title": "Make the interface accessible",
+      "epic": "E12",
+      "milestone": "v0.8.0",
+      "requires": [],
+      "scope": "Make the interface accessible",
+      "acceptance": [
+        "High-contrast and color-vision-safe themes, verified by contrast checks (WCAG AA).",
+        "State is never shown by color alone.",
+        "A reduced-motion mode and a screen-reader-friendly linear mode where feasible.",
+        "An audit confirms everything works with the keyboard only. Documentation included."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P1"
+    },
+    {
+      "id": "Q20",
+      "title": "Freeze configuration schema v1 with migrations and a deprecation policy",
+      "epic": "E10",
+      "milestone": "v0.9.0",
+      "requires": [],
+      "scope": "Freeze configuration schema v1 with migrations and a deprecation policy",
+      "acceptance": [
+        "A versioned schema with automatic, reversible migrations from every 0.x format.",
+        "A published deprecation policy for 1.x. Migration fixtures for every released format.",
+        "`kuberich config check` shows the schema version and the migration it would apply."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P0"
+    },
+    {
+      "id": "Q21",
+      "title": "Freeze the extension API and plugin manifest with compatibility tests",
+      "epic": "E10",
+      "milestone": "v0.9.0",
+      "requires": [
+        "X01"
+      ],
+      "scope": "Freeze the extension API and plugin manifest with compatibility tests",
+      "acceptance": [
+        "Extension API and plugin manifest v1 are documented. Public types are snapshot-tested.",
+        "Reference extensions pass the compatibility suite. SemVer rules for 1.x are documented.",
+        "A change that breaks an exported type or manifest field fails CI."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P0"
+    },
+    {
+      "id": "Q22",
+      "title": "Run a K9s and Lens parity dry run and file every gap",
+      "epic": "E10",
+      "milestone": "v0.9.0",
+      "requires": [],
+      "scope": "Run a K9s and Lens parity dry run and file every gap",
+      "acceptance": [
+        "A matrix covering the public K9s feature set and Lens (open source plus publicly documented Pro features: catalog, hotbar, metrics, Helm, security center, AI, extensions, terminal).",
+        "Every row is delivered, filed as a gap issue, or recorded as an explicit difference with its terminal equivalent.",
+        "Completed before #88 starts."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
+      "priority": "P0"
+    },
+    {
+      "id": "D19",
+      "title": "Qualify the 1.0 release candidate",
+      "epic": "E09",
+      "milestone": "v0.9.0",
+      "requires": [
+        "Q20",
+        "Q21",
+        "Q22",
+        "Q05",
+        "W02",
+        "W03",
+        "D11"
+      ],
+      "scope": "Q20 #250, Q21 #251, Q22 #252, #87, #90 and #91, plus every earlier gate, including #86 (Windows).",
+      "acceptance": [
+        "The qualification command passes on every advertised platform, Windows included.",
+        "Upgrades from every published 0.x release preserve preferences.",
+        "No publication happens here."
+      ],
+      "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
       "priority": "P0"
     }
   ],
@@ -1674,10 +2512,10 @@
     "D05",
     "Q03",
     "D06",
+    "D10",
     "C05",
     "B06",
     "S06",
-    "D10",
     "M05",
     "U01",
     "U02",
@@ -1689,8 +2527,28 @@
     "M08",
     "U06",
     "D07",
-    "M06",
-    "M07",
+    "Q10",
+    "Q09",
+    "Q08",
+    "Q11",
+    "Q12",
+    "Q13",
+    "Q14",
+    "Q15",
+    "Q16",
+    "Q17",
+    "Q18",
+    "Q19",
+    "D15",
+    "W04",
+    "W05",
+    "W06",
+    "W07",
+    "W08",
+    "W09",
+    "W10",
+    "W11",
+    "D16",
     "O01",
     "O02",
     "O03",
@@ -1698,22 +2556,47 @@
     "O05",
     "O06",
     "O07",
+    "O08",
+    "O09",
     "D08",
+    "M06",
+    "M07",
     "A01",
     "A02",
     "A03",
     "A04",
     "A05",
     "Q07",
+    "M09",
+    "M10",
     "D09",
+    "L01",
+    "L02",
+    "L03",
+    "L04",
+    "L05",
+    "L06",
+    "L07",
+    "D17",
+    "X01",
+    "X02",
+    "X03",
+    "X04",
+    "X05",
+    "D18",
     "D12",
     "D13",
     "D14",
+    "U07",
     "D11",
     "Q05",
-    "Q06",
     "W02",
-    "W03"
+    "W03",
+    "Q20",
+    "Q21",
+    "Q22",
+    "D19",
+    "Q06"
   ],
   "delivery": {
     "first_public_version": "0.1.0",
@@ -1724,9 +2607,13 @@
       "D04",
       "D06",
       "D07",
+      "D16",
       "D08",
       "D09",
-      "D11"
+      "D17",
+      "D18",
+      "D11",
+      "D19"
     ],
     "feature_first": false,
     "expanded_docs_order": [
@@ -1758,23 +2645,47 @@
         "version": "0.2.0",
         "qualification_gate": "D07",
         "extra_issues": [
-          124,
           193
         ]
       },
       {
         "version": "0.3.0",
+        "qualification_gate": "D16",
+        "extra_issues": [
+          189,
+          208
+        ]
+      },
+      {
+        "version": "0.4.0",
         "qualification_gate": "D08",
         "extra_issues": []
       },
       {
-        "version": "0.4.0",
+        "version": "0.5.0",
         "qualification_gate": "D09",
         "extra_issues": []
       },
       {
-        "version": "0.5.0",
+        "version": "0.6.0",
+        "qualification_gate": "D17",
+        "extra_issues": []
+      },
+      {
+        "version": "0.7.0",
+        "qualification_gate": "D18",
+        "extra_issues": []
+      },
+      {
+        "version": "0.8.0",
         "qualification_gate": "D11",
+        "extra_issues": [
+          124
+        ]
+      },
+      {
+        "version": "0.9.0",
+        "qualification_gate": "D19",
         "extra_issues": []
       },
       {
@@ -1823,10 +2734,10 @@
       "D05",
       "Q03",
       "D06",
+      "D10",
       "C05",
       "B06",
       "S06",
-      "D10",
       "M05",
       "U01",
       "U02",
@@ -1838,8 +2749,28 @@
       "M08",
       "U06",
       "D07",
-      "M06",
-      "M07",
+      "Q10",
+      "Q09",
+      "Q08",
+      "Q11",
+      "Q12",
+      "Q13",
+      "Q14",
+      "Q15",
+      "Q16",
+      "Q17",
+      "Q18",
+      "Q19",
+      "D15",
+      "W04",
+      "W05",
+      "W06",
+      "W07",
+      "W08",
+      "W09",
+      "W10",
+      "W11",
+      "D16",
       "O01",
       "O02",
       "O03",
@@ -1847,22 +2778,47 @@
       "O05",
       "O06",
       "O07",
+      "O08",
+      "O09",
       "D08",
+      "M06",
+      "M07",
       "A01",
       "A02",
       "A03",
       "A04",
       "A05",
       "Q07",
+      "M09",
+      "M10",
       "D09",
+      "L01",
+      "L02",
+      "L03",
+      "L04",
+      "L05",
+      "L06",
+      "L07",
+      "D17",
+      "X01",
+      "X02",
+      "X03",
+      "X04",
+      "X05",
+      "D18",
       "D12",
       "D13",
       "D14",
+      "U07",
       "D11",
       "Q05",
-      "Q06",
       "W02",
-      "W03"
+      "W03",
+      "Q20",
+      "Q21",
+      "Q22",
+      "D19",
+      "Q06"
     ]
   }
 }
