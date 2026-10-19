@@ -1192,6 +1192,11 @@ class KubeRichApp(App[None]):
                 self._selection_notice = None
         self._set_status(message)
 
+    def _set_notice(self, message: str) -> None:
+        """Show a message that survives re-renders of the current view."""
+        self._selection_notice = self.workspace.store.observation, message
+        self._set_status(message)
+
     def _show_sort(self) -> None:
         self.query_one("#resource-view", Vertical).border_subtitle = (
             self.resources.sort_summary
@@ -1550,12 +1555,12 @@ class KubeRichApp(App[None]):
         """Review deleting the finished pods visible in the current pod view."""
         snapshot = self.workspace.store.observation.snapshot
         if self._resource_name != "pods" or self.custom_table.display or snapshot is None:
-            self._set_status("Open a connected :pods view to clean up finished pods.")
+            self._set_notice("Open a connected :pods view to clean up finished pods.")
             return
         visible = {row.key.value for row in self.resources.ordered_rows}
         found = finished_pods(item for item in snapshot.items if item.uid in visible)
         if not found.candidates:
-            self._set_status("No completed or failed pods in this view.")
+            self._set_notice("No completed or failed pods in this view.")
             return
         if found.remaining:
             self.notify(f"Showing the first {MAX_BATCH}; {found.remaining} more remain.")
@@ -1598,10 +1603,7 @@ class KubeRichApp(App[None]):
         done = "Renamed" if plan.change is ContextChange.RENAME else "Deleted"
         if plan.new_name is not None and connected == plan.name:
             self._start_connection(plan.new_name, remember=False)
-        self._selection_notice = (
-            self.workspace.store.observation,
-            f"{done} {plan.name}. Backup: {result.backup}",
-        )
+        self._set_notice(f"{done} {plan.name}. Backup: {result.backup}")
         self._render_ready.set()
 
     def action_workload(self, operation: WorkloadAction, argument: str = "") -> None:
@@ -1929,8 +1931,7 @@ class KubeRichApp(App[None]):
         observation = self.workspace.store.observation.connection
         if observation.state not in USABLE_CONNECTIONS:
             message = "Connect to a context before selecting a namespace."
-            self._selection_notice = self.workspace.store.observation, message
-            self._set_status(message)
+            self._set_notice(message)
         elif not isinstance(self.screen, ModalScreen):
             self._select_resource("namespaces", restore=self._namespace_state)
 
