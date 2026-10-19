@@ -18,6 +18,8 @@ policy = {
         "RELEASE_GATES",
         "PHASE_GATES",
         "TASK_ISSUE_IDS",
+        "ADDITIONAL_ISSUE_NUMBERS",
+        "PHASE_EXTRAS",
     }
 }
 plan = json.loads((ROOT / "docs/backlog.json").read_text())
@@ -72,7 +74,8 @@ for ident, task in tasks.items():
         ident
     )
 assert policy["QUALIFICATION_GATES"] <= set(execution)
-assert set(tasks) == set(policy["TASK_ISSUE_IDS"])
+additional = policy["ADDITIONAL_ISSUE_NUMBERS"]
+assert set(tasks) == set(policy["TASK_ISSUE_IDS"]) | {k for k in additional if k[0] != "E"}
 assert tasks["D10"]["milestone"] == "v0.1.0" and tasks["D10"]["requires"] == ["D06"]
 phases = delivery["release_phases"]
 assert [(phase["version"], phase["qualification_gate"]) for phase in phases] == list(
@@ -84,8 +87,7 @@ for phase in phases:
     assert len(extra) == len(set(extra)) and all(
         type(number) is int and number > 0 for number in extra
     )
-assert {53, 54, 123} <= set(phases[0]["extra_issues"])
-assert 124 in phases[1]["extra_issues"]
+    assert policy["PHASE_EXTRAS"].get(phase["version"], set()) <= set(extra), phase["version"]
 extras = delivery["publication_extra_issues"]
 assert len(extras) == len(set(extras)) and all(
     type(number) is int and number > 0 for number in extras
@@ -138,6 +140,7 @@ if index.exists():
     assert len({item["number"] for item in issues["issues"].values()}) == len(issues["issues"])
     expected = dict(zip(policy["TASK_ISSUE_IDS"], range(13, 92), strict=True))
     expected.update({f"E{number:02}": number for number in range(1, 13)})
+    expected.update(additional)
     for identifier, item in issues["issues"].items():
         assert type(item["number"]) is int and item["number"] == expected[identifier]
         assert item["url"] == f"https://github.com/carloshm91/kuberich/issues/{item['number']}"

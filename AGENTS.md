@@ -68,20 +68,10 @@ implementation; do not claim to switch models without actual environment support
   do not claim parity from planned work or an unverifiable paid feature catalog.
 - Work on one implementation issue at a time. Select the first unblocked issue
   in the earliest unfinished product milestone; see docs/backlog.md.
-- The maintainer's current cadence is two to three product implementation issues
-  per working day, with a maximum of three in America/Cancun. Finish and verify
-  each issue before advancing; larger issues can carry into the next block.
-  The maintainer completed the four-issue block #58 through #61, then explicitly
-  authorized all six remaining 0.2.0 engineering tasks on 2026-10-18:
-  #62, #63, #64, #124, #193 and #65, in dependency order. This supersedes the
-  three-issue cap for this block. Prepare publication after full qualification;
-  a target date does not waive checks or authorize unreviewed artifacts.
-  On 2026-10-18 the maintainer then requested stopping after the currently active
-  ticket #62. Complete its verification and protected delivery, then stop without
-  starting #63 or another ticket until the maintainer resumes work.
-  Owner-dependent final hosting work remains tracked in #89 and gates later
-  publication; independently unblocked 0.2.0 product preparation may proceed
-  after the current prerequisite PR is verified and merged.
+- On 2026-10-19 the maintainer approved the revised phase plan (#221) and
+  authorized finishing v0.2.0 in order: #221, #63, #64, #193, #65 (#124 moved
+  to v0.8.0). Finish and verify each issue before advancing; publication of any
+  artifact still needs explicit approval. Final hosting work stays in #89.
 - Use a short-lived issue branch, an issue-linked pull request, required checks,
   and squash merging. Keep main releasable.
 - While hosted Actions cannot start because of the account quota/billing block,

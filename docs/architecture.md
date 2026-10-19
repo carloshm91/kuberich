@@ -340,7 +340,7 @@ native behavior. See [acceptance limits](acceptance/live-render-performance.md).
 
 ## Phased immutable release decisions: Refs #89
 
-Release readiness validates the entire pinned 79-task graph and canonical issue
+Release readiness validates the entire reviewed task graph and canonical issue
 index before any issue request, then selects an explicitly reviewed major/minor
 phase and cumulative gates. Early-delivered mapped extras retain their own
 prerequisites. D10 follows D06 for initial 0.1 activation; unknown phase lines

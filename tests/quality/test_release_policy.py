@@ -636,7 +636,9 @@ def test_engineering_versions_refuse_preflight_before_any_external_request(versi
     assert calls == []
 
 
-@pytest.mark.parametrize("incomplete", [None, 123, 124, 193, 47, 40, 154, 88, 89])
+@pytest.mark.parametrize(
+    "incomplete", [None, 123, 124, 193, 47, 40, 154, 88, 89, 189, 211, 230, 243, 253]
+)
 def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomplete):
     plan = json.loads((ROOT / "docs/backlog.json").read_text())
     index = json.loads((ROOT / "docs/github-issues.json").read_text())
@@ -665,6 +667,14 @@ def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomp
             123,
             124,
             193,
+            189,
+            208,
+            230,
+            242,
+            248,
+            253,
+            90,
+            91,
             149,
             150,
             154,
@@ -673,7 +683,8 @@ def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomp
             162,
             166,
         } <= set(calls)
-        assert {90, 91}.isdisjoint(calls)
+        # Closed-as-not-planned K9sAlpha research is no longer a release prerequisite.
+        assert 81 not in calls
         assert len(calls) == len(set(calls))
     else:
         with pytest.raises(ValueError, match=f"#{incomplete}"):
@@ -687,7 +698,13 @@ def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomp
         ("0.1.0rc2", 51),
         ("0.1.7", 51),
         ("0.2.0", 65),
-        ("0.5.2rc1", 86),
+        ("0.3.0", 230),
+        ("0.4.1", 75),
+        ("0.5.2rc1", 82),
+        ("0.6.0", 242),
+        ("0.7.0", 248),
+        ("0.8.0", 86),
+        ("0.9.0rc1", 253),
         ("1.0.0", 88),
     ],
 )
@@ -704,10 +721,14 @@ def test_actual_phase_includes_selected_and_prior_qualifiers(version, phase_gate
     assert milestone_readiness(api, version, plan, index) == 89
     assert {40, 49, 50, 51, 52, 53, 54, 123, phase_gate} <= set(calls)
     assert len(calls) == len(set(calls))
-    if Version(version).release[:2] == (0, 1):
+    minor = Version(version).release[:2]
+    if minor == (0, 1):
         assert {65, 75, 82, 86, 87, 88, 124, 193}.isdisjoint(calls)
     else:
-        assert {65, 124, 193, 89} <= set(calls)
+        assert {65, 193, 89} <= set(calls)
+    # Keyboard/mouse protocol work #124 moved from 0.2 to the 0.8 platform phase.
+    assert (124 in calls) == (minor >= (0, 8))
+    assert (230 in calls) == (minor >= (0, 3))
     assert (89 in calls) == (Version(version).base_version != "0.1.0")
 
 
@@ -722,9 +743,13 @@ def test_actual_phase_includes_selected_and_prior_qualifiers(version, phase_gate
         ("0.2.0", 51),
         ("0.2.0", 65),
         ("0.2.0", 123),
-        ("0.2.0", 124),
         ("0.2.0", 193),
+        ("0.3.0", 189),
+        ("0.3.0", 211),
         ("0.5.0", 82),
+        ("0.6.0", 235),
+        ("0.8.0", 124),
+        ("0.9.0", 87),
         ("1.0.0", 87),
     ],
 )
@@ -743,7 +768,7 @@ def test_actual_phase_refuses_unfinished_current_or_prior_work(version, incomple
         )
 
 
-@pytest.mark.parametrize("version", ["0.6.0", "0.99.0rc1", "1.1.0", "2.0.0"])
+@pytest.mark.parametrize("version", ["0.10.0", "0.99.0rc1", "1.1.0", "2.0.0"])
 def test_unreviewed_minor_does_not_inherit_an_earlier_phase(version):
     calls = []
     with pytest.raises(ValueError, match="explicitly reviewed"):
