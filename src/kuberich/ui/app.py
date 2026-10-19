@@ -29,12 +29,13 @@ from textual.widgets import Button, DataTable, Input, Static
 from kuberich.adapters.credentials import CredentialLogin, ExecToken, auth_problem
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.adapters.terminal import current_terminal_size
-from kuberich.config.catalog import KubeCatalog
+from kuberich.config.catalog import KubeCatalog, kubeconfig_paths, load_catalog
 from kuberich.config.forwarding import ForwardPreferences, forwarding_from
 from kuberich.config.navigation import NavigationPreferences, navigation_from
 from kuberich.config.schema import Settings
 from kuberich.domain.aggregate_logs import workload_kind
 from kuberich.domain.appearance import Appearance, effective_theme
+from kuberich.domain.cleanup import finished_pods
 from kuberich.domain.clipboard import ClipboardBackend, clipboard_backend, clipboard_bytes, osc52
 from kuberich.domain.connections import (
     DEFAULT_CONNECTION,
@@ -45,6 +46,7 @@ from kuberich.domain.custom import CustomLayout
 from kuberich.domain.forward_presets import annotation_preset, resolve_mappings
 from kuberich.domain.interactions import InteractionCommand
 from kuberich.domain.keyboard import effective_keymap
+from kuberich.domain.kubeconfig_edit import ContextChange
 from kuberich.domain.logs import log_containers
 from kuberich.domain.namespaces import NamespaceRow
 from kuberich.domain.navigation import (
@@ -61,6 +63,7 @@ from kuberich.domain.processes import ProcessStatus
 from kuberich.domain.registry import RESOURCE_ALIASES, ResourceRow, resource_selection
 from kuberich.domain.resources import ApiResource, ResourceRecord
 from kuberich.domain.targets import ResourceTarget
+from kuberich.domain.view_actions import ViewState, action_available
 from kuberich.domain.views import USABLE_CONNECTIONS, ResourceSelection, ViewObservation, ViewStatus
 from kuberich.domain.workloads import WorkloadAction, applicable
 from kuberich.errors import AppError, ExecutableUnavailable
@@ -117,12 +120,14 @@ from kuberich.ui.chrome import (
     WorkspaceFrame,
     WorkspaceHeader,
     WorkspaceLabel,
+    header_identity,
     workload_shortcuts,
 )
 from kuberich.ui.commands import CommandInput, NavigationInput
 from kuberich.ui.configuration_data import ConfigurationScreen
 from kuberich.ui.containers import ContainerScreen
-from kuberich.ui.contexts import ContextTable
+from kuberich.ui.context_admin import ContextEditResult, ContextEditScreen
+from kuberich.ui.contexts import ContextTable, context_rows
 from kuberich.ui.custom import CustomTable
 from kuberich.ui.editing import EditingScreen
 from kuberich.ui.handoff import terminal_handoff
@@ -204,7 +209,8 @@ class HelpScreen(CommandWorkspace):
                         "Commands: po/pod/pods [NS or *], ctx [NAME], ns [NAME or *], "
                         "status, retry, login, back, forward, shell/exec, pf/portforwards, "
                         "portforward, annotate, edit (Shift+E), scale, restart, rollback, rollout, "
-                        "delete, deletebatch, trigger, suspend, resume, writes, help, quit.\n"
+                        "delete, deletebatch, cleanup, trigger, suspend, resume, writes, help, quit.\n"
+                        "In :ctx, :rename NEW renames and Ctrl+D deletes the selected context.\n"
                         "Resources: deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, "
                         "no, pvc, pv, sc. Namespaced resources accept [NS or *].\n"
                         "Discovered: :resource NAME[.GROUP][/VERSION] [NS or *]. "
@@ -350,6 +356,7 @@ class KubeRichApp(App[None]):
             self.processes, self._process_environment, self._process_directory
         )
         self._clipboard_task: asyncio.Task[None] | None = None
+        self._catalog_task: asyncio.Task[None] | None = None
         self._clipboard_pending: tuple[bytes, ClipboardBackend] | None = None
         self._clipboard_closing = False
         self.preferences = preferences
@@ -407,7 +414,7 @@ class KubeRichApp(App[None]):
         self._pod_projection = PodProjection()
         self._namespace_projection = NamespaceProjection()
         self.chrome = WorkspaceChrome(
-            self._header_identity,
+            partial(header_identity, self.workspace.store, self.sessions),
             f"KubeRich: {version('kuberich')} · {self._mode}",
             presentation,
             self.navigation_keymap,
@@ -562,31 +569,6 @@ class KubeRichApp(App[None]):
         if self.custom_table.display:
             return self.custom_table
         return self.resources if self._resource_name == "pods" else self.standard_table
-
-    def _header_identity(self) -> tuple[str, str, str, str, str]:
-        view = self.workspace.store.observation
-        entry = self.sessions.catalog.contexts.get(view.context or "")
-        context = entry.data if entry is not None else {}
-        cluster, user = context.get("cluster"), context.get("user")
-        overrides = self.sessions.request.overrides
-        cluster, user = overrides.cluster or cluster, overrides.user or user
-        selected = self.sessions.client
-        subject = (
-            selected.context.user.data.get("as") if selected is not None else overrides.as_user
-        )
-        if isinstance(subject, str):
-            user = f"{user or '—'} (as {subject})"
-        return (
-            view.context or "—",
-            cluster if isinstance(cluster, str) else "—",
-            user if isinstance(user, str) else "—",
-            "—"
-            if view.context is None or view.status is ViewStatus.CONNECTING
-            else view.connection.namespace or "All",
-            "Connecting"
-            if view.status is ViewStatus.CONNECTING
-            else view.connection.state.name.replace("_", " ").title(),
-        )
 
     def _update_trail(self) -> None:
         if not self.screen_stack:
@@ -995,10 +977,10 @@ class KubeRichApp(App[None]):
                     await self._pod_projection.project(None)
                     await self._namespace_projection.project(None)
                     await self._standard_projection.project(None)
-                    context_rows = self._context_rows(view.context)
-                    ctx_result = await apply_filter(context_rows, query, "contexts")
+                    ctx_rows = context_rows(self.sessions.catalog, view.context)
+                    ctx_result = await apply_filter(ctx_rows, query, "contexts")
                     count, filtered, problem = (
-                        len(context_rows),
+                        len(ctx_rows),
                         len(ctx_result.rows),
                         ctx_result.problem,
                     )
@@ -1138,23 +1120,6 @@ class KubeRichApp(App[None]):
                     self._update_trail()
         except Exception as error:
             self._handle_exception(error)
-
-    def _context_rows(self, selected: str | None) -> tuple[ContextRow, ...]:
-        rows = []
-        for name, entry in self.sessions.catalog.contexts.items():
-            cluster, user, namespace = (
-                entry.data.get(key) for key in ("cluster", "user", "namespace")
-            )
-            rows.append(
-                ContextRow(
-                    name,
-                    cluster if isinstance(cluster, str) else "—",
-                    user if isinstance(user, str) else "—",
-                    namespace if isinstance(namespace, str) else "default",
-                    name == selected,
-                )
-            )
-        return tuple(rows)
 
     def _show_view(self, view: ViewObservation) -> None:
         observation = view.connection
@@ -1352,6 +1317,9 @@ class KubeRichApp(App[None]):
                 await _finish_owned(
                     asyncio.gather(self.interactions._favorite_task, return_exceptions=True)
                 )
+            if self._catalog_task is not None:
+                self._catalog_task.cancel()
+                await _finish_owned(asyncio.gather(self._catalog_task, return_exceptions=True))
             self._clipboard_pending = None
             if self._clipboard_task is not None:
                 self._clipboard_task.cancel()
@@ -1518,7 +1486,17 @@ class KubeRichApp(App[None]):
         if not isinstance(self.screen, ModalScreen):
             self.push_screen(MutationHistoryScreen(self.mutations))
 
-    def action_resource_operation(self, action: ResourceAction, *, batch: bool = False) -> None:
+    def action_resource_operation(
+        self,
+        action: ResourceAction,
+        *,
+        batch: bool = False,
+        uids: tuple[str, ...] | None = None,
+        labels: tuple[str, ...] | None = None,
+    ) -> None:
+        if self._resource_name == "contexts" and action is ResourceAction.DELETE:
+            self._edit_context(ContextChange.DELETE)
+            return
         try:
             self.commands.policy.require(Action.MUTATE)
         except AppError as error:
@@ -1536,11 +1514,12 @@ class KubeRichApp(App[None]):
             )
             self.interactions.selection.prune(visible_uids)
             marked = self.interactions.selection.marked
-            uids = (
-                tuple(uid for uid in visible_uids if uid in marked)
-                if marked
-                else tuple(key.value for key in self._active_table.rows if key.value is not None)
-            )
+            if uids is None:
+                uids = (
+                    tuple(uid for uid in visible_uids if uid in marked)
+                    if marked
+                    else tuple(key.value for key in self._active_table.rows if key.value)
+                )
             if len(uids) > MAX_BATCH:
                 self._set_status(
                     "Filter this view to at most 100 rows before choosing a delete batch."
@@ -1563,7 +1542,65 @@ class KubeRichApp(App[None]):
         except AppError as error:
             self._set_status(str(error))
             return
-        self.push_screen(ResourceOperationScreen(tuple(sources), self.mutations, batch=batch))
+        self.push_screen(
+            ResourceOperationScreen(tuple(sources), self.mutations, batch=batch, labels=labels)
+        )
+
+    def action_cleanup_pods(self) -> None:
+        """Review deleting the finished pods visible in the current pod view."""
+        snapshot = self.workspace.store.observation.snapshot
+        if self._resource_name != "pods" or self.custom_table.display or snapshot is None:
+            self._set_status("Open a connected :pods view to clean up finished pods.")
+            return
+        visible = {row.key.value for row in self.resources.ordered_rows}
+        found = finished_pods(item for item in snapshot.items if item.uid in visible)
+        if not found.candidates:
+            self._set_status("No completed or failed pods in this view.")
+            return
+        if found.remaining:
+            self.notify(f"Showing the first {MAX_BATCH}; {found.remaining} more remain.")
+        self.action_resource_operation(
+            ResourceAction.DELETE,
+            batch=True,
+            uids=tuple(item.uid for item in found.candidates),
+            labels=tuple(item.label for item in found.candidates),
+        )
+
+    def _edit_context(self, change: ContextChange, new_name: str = "") -> None:
+        name = self.context_table.capture_viewport().selected
+        if self._resource_name != "contexts" or name is None:
+            self._set_status("Open :ctx and select a context first.")
+            return
+        try:
+            self.commands.policy.require(Action.MUTATE)
+            paths = kubeconfig_paths(self.sessions.request, self._process_environment)
+        except AppError as error:
+            self._set_status(str(error))
+            return
+        client = self.sessions.client
+        connected = client.context.name if client is not None else None
+        screen = ContextEditScreen(paths, change, name, new_name=new_name, connected=connected)
+        self.push_screen(screen, partial(self._context_saved, connected))
+
+    def _context_saved(self, connected: str | None, result: ContextEditResult | None) -> None:
+        if result is not None:
+            self._catalog_task = asyncio.create_task(self._reload_catalog(connected, result))
+
+    async def _reload_catalog(self, connected: str | None, result: ContextEditResult) -> None:
+        plan = result.plan
+        try:
+            catalog = await asyncio.to_thread(
+                load_catalog, self.sessions.request, self._process_environment
+            )
+        except AppError as error:
+            self._set_status(f"Saved, but reloading contexts failed: {error}")
+            return
+        self.sessions.catalog = catalog
+        done = "Renamed" if plan.change is ContextChange.RENAME else "Deleted"
+        self._set_status(f"{done} {plan.name}. Backup: {result.backup}")
+        if plan.new_name is not None and connected == plan.name:
+            self._start_connection(plan.new_name, remember=False)
+        self._render_ready.set()
 
     def action_workload(self, operation: WorkloadAction, argument: str = "") -> None:
         try:
@@ -2163,62 +2200,13 @@ class KubeRichApp(App[None]):
         self.screen_stack[0].set_class(event.size.height < 16, "short")
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
-        if action == "review_delete" and (
-            self.custom_table.display or self._resource_name in {"contexts", "namespaces"}
-        ):
-            return False
-        if action == "configuration_data" and (
-            self.custom_table.display or self._resource_name not in {"configmaps", "secrets"}
-        ):
-            return False
-        if action == "logs_all" and (
-            self.custom_table.display
-            or self._resource_name
-            not in {
-                "pods",
-                "deployments",
-                "replicasets",
-                "statefulsets",
-                "daemonsets",
-                "jobs",
-                "cronjobs",
-                "replicationcontrollers",
-            }
-        ):
-            return False
-        if self.custom_table.display and action == "edit":
-            return False
-        if action == "port_forward" and self._resource_name not in {"pods", "services"}:
-            return False
-        if (
-            action in {"logs", "shell", "attach", "upload", "download"}
-            and self._resource_name != "pods"
-        ):
-            return False
-        if action in {
-            "mark_selection",
-            "mark_range",
-            "copy_selection",
-            "focus_filter",
-            "focus_command",
-            "history_back",
-            "history_forward",
-            "inspect_yaml",
-            "inspect_details",
-            "inspect_events",
-            "configuration_data",
-            "edit",
-            "logs",
-            "logs_all",
-            "shell",
-            "attach",
-            "upload",
-            "download",
-            "port_forward",
-            "review_delete",
-        }:
-            return not isinstance(self.screen, ModalScreen) and not isinstance(self.focused, Input)
-        return True
+        view = ViewState(
+            self._resource_name,
+            generic=self.custom_table.display,
+            modal=isinstance(self.screen, ModalScreen),
+            typing=isinstance(self.focused, Input),
+        )
+        return action_available(action, view)
 
     def action_mark_selection(self) -> None:
         self.interactions.apply(InteractionCommand("mark"))
@@ -2518,6 +2506,8 @@ class KubeRichApp(App[None]):
                 )
             elif command.command is Command.CONTEXTS:
                 self._context_selected(command.argument)
+            elif command.command is Command.RENAME:
+                self._edit_context(ContextChange.RENAME, command.argument)
             else:
                 self._namespace_selected(command.argument)
             return
@@ -2553,6 +2543,10 @@ class KubeRichApp(App[None]):
             self._configure_columns()
         elif command is Command.LOGS_ALL:
             self.action_logs_all()
+        elif command is Command.RENAME:
+            self._edit_context(ContextChange.RENAME)
+        elif command is Command.CLEANUP:
+            self.action_cleanup_pods()
         elif command is Command.LOGIN:
             self.action_login()
         elif command is Command.BACK:

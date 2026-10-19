@@ -52,6 +52,8 @@ class Command(Enum):
     REFRESH = auto()
     COLUMNS = auto()
     LOGS_ALL = auto()
+    RENAME = auto()
+    CLEANUP = auto()
     UNAVAILABLE = auto()
 
 
@@ -75,6 +77,8 @@ _ACTIONS = {
             "rollback",
             "apply",
             "patch",
+            "rename",
+            "cleanup",
         ),
         Action.MUTATE,
     ),
@@ -120,6 +124,8 @@ ALIASES = {
     "refresh": Command.REFRESH,
     "columns": Command.COLUMNS,
     "logsall": Command.LOGS_ALL,
+    "rename": Command.RENAME,
+    "cleanup": Command.CLEANUP,
 }
 
 RESERVED_COMMANDS = frozenset(
@@ -359,10 +365,11 @@ class CommandService:
             Command.PODS,
             Command.SCALE,
             Command.ROLLBACK,
+            Command.RENAME,
         }:
             return Command.UNAVAILABLE
         argument = parts[1]
-        if command is Command.CONTEXTS:
+        if command in {Command.CONTEXTS, Command.RENAME}:
             validate_argument(argument)
         elif command in {Command.SCALE, Command.ROLLBACK}:
             from kuberich.domain.workloads import replica_count

@@ -9,6 +9,7 @@ import pytest
 from kuberich.config.schema import Settings
 from kuberich.services.commands import Command
 from kuberich.ui.app import HelpScreen, KubeRichApp
+from kuberich.ui.chrome import header_identity
 from kuberich.ui.presentation import Presentation
 
 
@@ -162,7 +163,10 @@ async def test_effective_identity_and_refresh_update_ages_without_polling_or_los
         async with app.run_test(size=(100, 30)) as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
             await pilot.pause()
-            assert app._header_identity()[1:3] == ("owned", "owned (as viewer)")
+            assert header_identity(app.workspace.store, app.sessions)[1:3] == (
+                "owned",
+                "owned (as viewer)",
+            )
             count = len(calls)
             before = app.resources.get_row("api-uid")
             identity = app.sessions.observation.identity
