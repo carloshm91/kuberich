@@ -7,6 +7,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Rename or delete a kubeconfig context from `:ctx` after a review, with a backup,
+  and clean up completed and failed pods with `:cleanup`
+  ([#63](https://github.com/carloshm91/kuberich/issues/63),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Add named/container-qualified TCP forward mappings, local/context presets,
   explicitly trusted annotation shortcuts, kubectl transport selection and
   bounded reconnects with captured-resource and process cleanup checks
@@ -72,6 +77,12 @@ Release entries are written in release PRs and linked to their Git tags.
   responsiveness check exposed repeated parsing/collection work
   ([#58](https://github.com/carloshm91/kuberich/issues/58),
   [Carlos J. Herrera](https://github.com/carloshm91)).
+
+### Security
+
+- Update the locked aiohttp runtime dependency from 3.14.3 to 3.14.5, which fixes
+  CVE-2026-111063, CVE-2026-111064 and GHSA-2g87-pp6c-29x5
+  ([Carlos J. Herrera](https://github.com/carloshm91)).
 
 ## 0.1.0 — 2026-10-12
 

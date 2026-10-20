@@ -1,5 +1,16 @@
 # Quality and coverage
 
+## Context edits and pod cleanup: M08 #63
+
+`domain/kubeconfig_edit.py`, `domain/cleanup.py` and `domain/view_actions.py`
+join the 100% line/branch inventory. Fixture tests cover merged files, ambiguous
+ownership, a file changed after review, backup removal on failure, symbolic
+links and file modes. Headless UI tests drive rename, delete, the current-context
+confirmation, Escape/Cancel, read-only refusal and a lost cleanup race. An owned
+kind trial drives `:cleanup` through the real UI: running pods are never listed,
+a replaced pod refuses the whole batch, a changed pod returns a conflict while
+the other pod is deleted. See [acceptance evidence](acceptance/context-cleanup.md).
+
 ## Forwarding presets: S08 #62
 
 The required Python 3.13 runtime child retained a 152.761-ms pause, including
@@ -433,13 +444,15 @@ sdist-to-wheel equivalence and actual isolated uv tool/pip-backed pipx installs.
 Each interpreter runs installed CLI/navigation/shell trials outside the checkout.
 Installer evidence is retained under `artifacts/packaging`; installed dependencies
 are measured independently of the development lock. Tool subprocesses own their
-process group and reap children on timeout. Application jobs allow 60 minutes
+process group and reap children on timeout. Application jobs allow 75 minutes
 for the measured full suite, cold pip-backed installs and owned cluster checks,
 including the setup/body cancellation qualification added in Q01 #38. Main
 run 37964239155's Linux 3.12 job took 39 minutes 11 seconds before S06's extra
 rehearsal, native installs and churn/lifecycle cases; the former 45-minute budget
 left 5 minutes 49 seconds for that work and host/setup variation. S06 raises
-only the job deadline; every check remains required.
+only the job deadline; every check remains required. PR #258's Linux 3.12 job reached
+the 60-minute limit after the finished-pod cleanup cluster check was added
+(47 minutes for the suite alone), so the deadline is now 75 minutes.
 
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate

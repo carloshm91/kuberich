@@ -20,13 +20,14 @@ using the platform path separator, then `~/.kube/config` is used if the variable
 is unset or empty. Missing entries in an environment list are skipped; a missing
 explicit file returns exit 3. Duplicate paths are read once. The first file to
 supply a current context or named entry wins; relative credential/CA/helper paths
-resolve against that entry's originating file. Nothing rewrites these files or
-the current context. Loading the catalogue runs no helpers and makes no requests.
+resolve against that entry's originating file. Selecting or switching a context
+never rewrites these files or the current context. Loading the catalogue runs no
+helpers and makes no requests.
 
 Without configuration/current context the workspace stays disconnected. F2
-shows the loaded contexts; it does not reload changed files. Restart after editing
-kubeconfig. An explicit unknown context produces a configuration state without
-falling back to another context.
+shows the loaded contexts; it does not reload files changed by other tools.
+Restart after editing kubeconfig elsewhere. An explicit unknown context produces
+a configuration state without falling back to another context.
 
 - **c / F2**, `:ctx` or `:context`: browse the local context workspace table;
   `/` filters, Enter connects and Escape restores the preceding resource view.
@@ -56,6 +57,39 @@ changes advance the generation; selected scopes are remembered per context for
 this process without writing preferences. Responses from an earlier connection attempt
 cannot update the screen. No SDK global defaults are changed. Normal/error quit
 awaits cleanup and restores the terminal.
+
+## Rename or delete a context
+
+Open `:ctx` and move the cursor to a context. Then:
+
+- `:rename NEW` renames it. `:rename` alone opens the form with an empty name.
+- **Ctrl+D** or `:delete` deletes it.
+
+Nothing is saved until you choose Review and then Confirm. Review shows the
+kubeconfig file that will change and what will change in it. Cancel, or Escape,
+leaves the file as it was.
+
+- Only the context entry changes. Its cluster and user entries stay, because
+  other contexts may still use them.
+- If the context is the file's `current-context`, a rename updates that value
+  too. A delete removes it, and you must type `DELETE CURRENT` to confirm. Other
+  deletes ask you to type `DELETE`.
+- You cannot delete the context KubeRich is using now. Switch to another
+  context first. Renaming it reconnects with the new name.
+- Before saving, KubeRich writes a backup next to the file, for example
+  `config.kuberich-20261019T101500000000.bak`. Only you can read the backup.
+  To undo a change, copy the backup over the file.
+- The new file replaces the old one in a single step, so a crash cannot leave
+  it half-written. The file keeps its permissions. If the path is a symbolic
+  link, the file it points to is changed and the link stays.
+- If the file changed after Review, nothing is saved. Review again.
+- The file is written again from its parsed contents. Comments and custom
+  formatting are lost; Review warns you when the file has comments.
+
+KubeRich refuses to guess when the change is unclear. This happens when the
+same context name appears in more than one `KUBECONFIG` file, or when a
+different file sets it as `current-context`. Edit those files yourself.
+`--readonly` blocks rename and delete.
 
 ## Credentials and TLS
 

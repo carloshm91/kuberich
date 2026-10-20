@@ -8,6 +8,7 @@ from rich.text import Text
 from textual.binding import BindingType
 from textual.coordinate import Coordinate
 
+from kuberich.config.catalog import KubeCatalog
 from kuberich.domain.navigation import ContextRow
 from kuberich.security.presentation import safe_text
 from kuberich.ui.keybindings import table_bindings
@@ -15,6 +16,22 @@ from kuberich.ui.pods import Viewport
 from kuberich.ui.presentation import FrameTable
 
 CONTEXT_COLUMNS = ("CURRENT", "NAME", "CLUSTER", "AUTHINFO", "NAMESPACE")
+
+
+def context_rows(catalog: KubeCatalog, selected: str | None) -> tuple[ContextRow, ...]:
+    rows = []
+    for name, entry in catalog.contexts.items():
+        cluster, user, namespace = (entry.data.get(key) for key in ("cluster", "user", "namespace"))
+        rows.append(
+            ContextRow(
+                name,
+                cluster if isinstance(cluster, str) else "—",
+                user if isinstance(user, str) else "—",
+                namespace if isinstance(namespace, str) else "default",
+                name == selected,
+            )
+        )
+    return tuple(rows)
 
 
 class ContextTable(FrameTable[Text]):

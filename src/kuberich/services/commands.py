@@ -52,6 +52,8 @@ class Command(Enum):
     REFRESH = auto()
     COLUMNS = auto()
     LOGS_ALL = auto()
+    RENAME = auto()
+    CLEANUP = auto()
     UNAVAILABLE = auto()
 
 
@@ -75,6 +77,8 @@ _ACTIONS = {
             "rollback",
             "apply",
             "patch",
+            "rename",
+            "cleanup",
         ),
         Action.MUTATE,
     ),
@@ -120,6 +124,8 @@ ALIASES = {
     "refresh": Command.REFRESH,
     "columns": Command.COLUMNS,
     "logsall": Command.LOGS_ALL,
+    "rename": Command.RENAME,
+    "cleanup": Command.CLEANUP,
 }
 
 RESERVED_COMMANDS = frozenset(
@@ -278,8 +284,10 @@ def suggestions(
         head = verb + " "
     candidates = sorted(
         set(head + value for value in values),
-        # Preserve familiar :c → context and existing local command completions.
+        # Preserve familiar :c → context and existing local command completions;
+        # newer view-specific commands come last and appear once typed further.
         key=lambda value: (
+            not separator and ALIASES.get(value) in {Command.RENAME, Command.CLEANUP},
             not separator and (value not in ALIASES or value == "columns"),
             not separator
             and ALIASES.get(value)
@@ -359,10 +367,11 @@ class CommandService:
             Command.PODS,
             Command.SCALE,
             Command.ROLLBACK,
+            Command.RENAME,
         }:
             return Command.UNAVAILABLE
         argument = parts[1]
-        if command is Command.CONTEXTS:
+        if command in {Command.CONTEXTS, Command.RENAME}:
             validate_argument(argument)
         elif command in {Command.SCALE, Command.ROLLBACK}:
             from kuberich.domain.workloads import replica_count

@@ -64,6 +64,7 @@ uv run python -m scripts.verify_mutations_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_editing_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_workloads_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_operations_kind --kind /absolute/path/to/kind
+uv run python -m scripts.verify_cleanup_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_transfers_kind --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
 uv run python -m scripts.verify_custom_resources_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_aggregate_logs_kind --kind /absolute/path/to/kind

@@ -10,8 +10,36 @@ from textual.events import Resize
 from textual.theme import Theme
 from textual.widgets import Static
 
+from kuberich.domain.views import ViewStatus, ViewStore
 from kuberich.security.presentation import safe_text
+from kuberich.services.sessions import SessionService
 from kuberich.ui.presentation import DEFAULT_PRESENTATION, Presentation
+
+
+def header_identity(store: ViewStore, sessions: SessionService) -> tuple[str, str, str, str, str]:
+    """Context, cluster, user, namespace and connection state for the header."""
+    view = store.observation
+    entry = sessions.catalog.contexts.get(view.context or "")
+    context = entry.data if entry is not None else {}
+    cluster, user = context.get("cluster"), context.get("user")
+    overrides = sessions.request.overrides
+    cluster, user = overrides.cluster or cluster, overrides.user or user
+    selected = sessions.client
+    subject = selected.context.user.data.get("as") if selected is not None else overrides.as_user
+    if isinstance(subject, str):
+        user = f"{user or '—'} (as {subject})"
+    return (
+        view.context or "—",
+        cluster if isinstance(cluster, str) else "—",
+        user if isinstance(user, str) else "—",
+        "—"
+        if view.context is None or view.status is ViewStatus.CONNECTING
+        else view.connection.namespace or "All",
+        "Connecting"
+        if view.status is ViewStatus.CONNECTING
+        else view.connection.state.name.replace("_", " ").title(),
+    )
+
 
 KUBERICH_LOGO = r"""   __ __
   / //_/_  KubeRich
@@ -135,6 +163,8 @@ SERVICE_SHORTCUTS = (
 )
 CTX_SHORTCUTS = (
     ("Enter", "Connect"),
+    (":rename", "Rename"),
+    ("Ctrl+D", "Delete"),
     ("j/k", "Down / up"),
     ("g/G", "First / last"),
     ("/", "Filter"),

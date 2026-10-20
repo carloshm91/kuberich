@@ -33,6 +33,22 @@ Ordinary-URL reads must verify the remaining redirect/cache responses before
 claiming final custom-domain acceptance. No zone/DNS/cache change was made by
 that inspection.
 
+## Source checkpoint toward 0.2.0: context edits and pod cleanup
+
+In `:ctx`, `:rename NEW` renames the selected context and Ctrl+D or `:delete`
+deletes it. Review shows the file and the change first; a backup is written
+before the file is replaced. In a pods view, `:cleanup` reviews deleting the
+completed and failed pods shown. Published 0.1.0 remains unchanged.
+
+```sh
+uv run pytest tests/unit/test_kubeconfig_edit.py tests/unit/test_cleanup.py tests/contract/test_kubeconfig_files.py tests/ui/test_context_cleanup.py
+uv run python -m scripts.verify_cleanup_kind --kind /absolute/path/to/kind
+```
+
+See [context edits](context-sessions.md#rename-or-delete-a-context),
+[finished-pod cleanup](resource-operations.md#clean-up-finished-pods) and
+[acceptance evidence](acceptance/context-cleanup.md).
+
 ## Source checkpoint toward 0.2.0: forwarding presets
 
 The next-release source adds named/container-qualified TCP mappings, local and

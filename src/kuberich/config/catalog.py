@@ -61,9 +61,10 @@ def text(value: Any) -> str:
     return validate_argument(value)
 
 
-def _read_yaml(path: Path) -> dict[str, Any]:
+def parse_kubeconfig(raw: bytes) -> dict[str, Any]:
+    """Parse bounded, alias-free kubeconfig YAML with unique string keys."""
     try:
-        contents = regular_bytes(path).decode("utf-8")
+        contents = raw.decode("utf-8")
         depth = 0
         for count, event in enumerate(yaml.parse(contents)):
             if isinstance(event, AliasEvent) or count > 65536:
@@ -78,10 +79,16 @@ def _read_yaml(path: Path) -> dict[str, Any]:
         return mapping(data) if data is not None else {}
     except (yaml.YAMLError, UnicodeError, RecursionError, ValueError):
         raise AppError("Invalid kubeconfig YAML; check syntax and UTF-8 encoding.") from None
+
+
+def _read_yaml(path: Path) -> dict[str, Any]:
+    try:
+        raw = regular_bytes(path)
     except OSError:
         raise AppError(
             "Cannot read kubeconfig; check the file and permissions.", ExitCode.LOCAL_IO
         ) from None
+    return parse_kubeconfig(raw)
 
 
 @dataclass(frozen=True, repr=False)
@@ -135,7 +142,8 @@ class KubeCatalog:
         )
 
 
-def load_catalog(request: ConnectionRequest, environment: Mapping[str, str]) -> KubeCatalog:
+def kubeconfig_paths(request: ConnectionRequest, environment: Mapping[str, str]) -> list[Path]:
+    """Return the kubeconfig files in kubectl precedence order, without duplicates."""
     if request.kubeconfig is not None:
         paths = [Path(request.kubeconfig).expanduser()]
     elif environment.get("KUBECONFIG"):
@@ -148,9 +156,13 @@ def load_catalog(request: ConnectionRequest, environment: Mapping[str, str]) -> 
         paths = [Path.home() / ".kube/config"]
     if len(paths) > 32:
         raise AppError("KUBECONFIG supports at most 32 file entries.")
+    return list(dict.fromkeys(paths))
+
+
+def load_catalog(request: ConnectionRequest, environment: Mapping[str, str]) -> KubeCatalog:
     current = None
     sections: dict[str, dict[str, Entry]] = {"contexts": {}, "clusters": {}, "users": {}}
-    for path in dict.fromkeys(paths):
+    for path in kubeconfig_paths(request, environment):
         if not path.exists():
             if request.kubeconfig is not None:
                 raise AppError(

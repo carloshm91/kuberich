@@ -49,9 +49,14 @@ class ResourceOperationScreen(ModalScreen[None]):
         manager: MutationManager,
         *,
         batch: bool = False,
+        labels: tuple[str, ...] | None = None,
     ) -> None:
         super().__init__()
         self.sources, self.manager, self.is_batch = sources, manager, batch
+        # Labelled batches (finished-pod cleanup) start with every listed target selected.
+        if labels is not None and (not batch or len(labels) != len(sources)):
+            raise AppError("Batch labels must describe every target.")
+        self.labels = labels
         self.action = sources[0].action
         self.source: ResourceOperationService | BatchDeleteService | None = None
         self.intent: ResourceIntent | MutationIntent | BatchIntent | None = None
@@ -74,16 +79,21 @@ class ResourceOperationScreen(ModalScreen[None]):
                 )
                 if self.is_batch:
                     yield Static(
-                        "Space toggles exact targets; nothing is selected automatically.",
+                        "Every listed target is selected; Space removes one."
+                        if self.labels is not None
+                        else "Space toggles exact targets; nothing is selected automatically.",
                         markup=False,
                     )
                     yield SelectionList[int](
                         *(
                             (
                                 safe_text(
-                                    f"{s.target.namespace or '(cluster)'}/{s.target.name} · UID {s.target.uid}"
+                                    self.labels[i]
+                                    if self.labels is not None
+                                    else f"{s.target.namespace or '(cluster)'}/{s.target.name} · UID {s.target.uid}"
                                 ),
                                 i,
+                                self.labels is not None,
                             )
                             for i, s in enumerate(self.sources)
                         ),
