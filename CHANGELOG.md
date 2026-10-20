@@ -84,6 +84,10 @@ Release entries are written in release PRs and linked to their Git tags.
   CVE-2026-111063, CVE-2026-111064 and GHSA-2g87-pp6c-29x5
   ([Carlos J. Herrera](https://github.com/carloshm91)).
 
+- Update the locked certifi dependency from 2026.7.22 to 2026.10.19, which removes
+  the emSign root certificates named in PYSEC-2026-4320
+  ([Carlos J. Herrera](https://github.com/carloshm91)).
+
 ## 0.1.0 — 2026-10-12
 
 [Published release](https://github.com/carloshm91/kuberich/releases/tag/v0.1.0).
