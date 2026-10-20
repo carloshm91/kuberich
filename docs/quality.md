@@ -444,13 +444,15 @@ sdist-to-wheel equivalence and actual isolated uv tool/pip-backed pipx installs.
 Each interpreter runs installed CLI/navigation/shell trials outside the checkout.
 Installer evidence is retained under `artifacts/packaging`; installed dependencies
 are measured independently of the development lock. Tool subprocesses own their
-process group and reap children on timeout. Application jobs allow 60 minutes
+process group and reap children on timeout. Application jobs allow 75 minutes
 for the measured full suite, cold pip-backed installs and owned cluster checks,
 including the setup/body cancellation qualification added in Q01 #38. Main
 run 37964239155's Linux 3.12 job took 39 minutes 11 seconds before S06's extra
 rehearsal, native installs and churn/lifecycle cases; the former 45-minute budget
 left 5 minutes 49 seconds for that work and host/setup variation. S06 raises
-only the job deadline; every check remains required.
+only the job deadline; every check remains required. PR #258's Linux 3.12 job reached
+the 60-minute limit after the finished-pod cleanup cluster check was added
+(47 minutes for the suite alone), so the deadline is now 75 minutes.
 
 Future critical modules include mutation guards, tool-specific command builders,
 and resource-state transition/reconnect decisions. Keep those decisions separate
