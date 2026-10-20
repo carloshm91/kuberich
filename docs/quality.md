@@ -1,5 +1,15 @@
 # Quality and coverage
 
+## Reactive preferences: U06 #64
+
+`config/context_settings.py` joins the 100% line/branch inventory, with the
+already critical `domain/appearance.py` and `services/access.py`. Unit tests
+cover strict context settings, precedence, transparent surfaces and a policy
+that can only become stricter. Headless UI tests reload through the real poll,
+keep the last valid file, apply a column view to a live table and keep flags,
+environment and theme overrides ahead of the file. See
+[acceptance evidence](acceptance/reactive-preferences.md).
+
 ## Resource jumps: U06 #64
 
 `domain/jumps.py` and `config/jumps.py` join the 100% line/branch inventory.

@@ -120,8 +120,9 @@ A matching context preference takes precedence over a global preference, even
 after a new global save. A save requested for a captured resource/context cannot
 silently apply to another view. If its scope or server columns change before the
 request, reopen the editor. A requested file save finishes before closing, also
-during graceful exit. An external preference change is refused; restart to load
-it. Saving preserves original settings, themes and unknown fields and never
+during graceful exit. A save is refused if the file changed on disk since it
+was loaded. KubeRich loads a valid change within two seconds; save again after
+that. Saving preserves original settings, themes and unknown fields and never
 persists runtime `--readonly`, connection or environment overrides.
 
 Saved files and new preference directories use the existing private permissions.
@@ -186,9 +187,11 @@ paths require `kuberich config migrate` before a save.
 The existing 64 KiB file bound applies. There are at most 128 global resource
 views, 128 context entries and 128 views per context; session view memory uses a
 bounded cache. Views contain display preferences, not kubeconfig contents,
-credentials or resource data. Restart after manual configuration edits. Reactive
-reload, resource jumps, extended filters and Vim multi-key/count commands remain
-separate work.
+credentials or resource data. Saved column views, aliases and favorites apply
+while KubeRich runs; key binding and mouse changes need a restart. See
+[changing preferences](configuration.md#changing-preferences-while-kuberich-runs)
+and [resource jumps](resource-jumps.md). Extended filters and Vim multi-key/count
+commands remain separate work.
 
 See [commands](command-navigation.md), [themes](themes.md),
 [standard resources](standard-resources.md) and

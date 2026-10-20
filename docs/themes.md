@@ -79,9 +79,30 @@ primary/accent/status colors need 3:1 against the background. These numeric chec
 and actual terminal tests complement readable state words; they do not certify
 every terminal palette, font or color quantization. Limits are 32 custom themes,
 128 context preferences and the existing 64 KiB total preference-file bound.
-Transparent colors, arbitrary framework CSS variables, icon preferences and
-reactive file reload remain outside this initial palette format. Restart after
-editing the file manually.
+Framework CSS variables and icon preferences are not supported.
+
+Set `background`, `surface` or `panel` to `'default'` to use the terminal's own
+background, for example a transparent or blurred terminal window. Contrast checks
+skip those colors because KubeRich cannot know the terminal's background. Pick a
+`foreground` that is readable on it.
+
+```yaml
+appearance:
+  themes:
+    glass:
+      primary: '#5fd7ff'
+      foreground: '#ffffff'
+      background: 'default'
+      dark: true
+```
+
+Saved changes apply while KubeRich runs; see
+[changing preferences](configuration.md#changing-preferences-while-kuberich-runs).
+
+### Full resource titles
+
+Set `appearance.full_gvr_titles: true` to show the API version in the title of
+every resource view, for example `pods · v1`. Custom resources always show it.
 
 An unavailable selection falls back to `k9s` with a warning. An invalid appearance
 section uses working defaults, retains the original file and disables saves until

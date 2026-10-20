@@ -122,13 +122,64 @@ Runtime choices never rewrite preferences. `--write` explicitly overrides a vali
 file/environment read-only setting for this invocation. Read-only blocks commands
 through a shared service decision, including the native shell service.
 See the [launch contract](k9s-cli.md) for aliases, availability and command-specific
-option handling. Context-specific preference precedence arrives with context support;
-the current flat schema applies global settings only.
+option handling. Per-context settings are described below.
+
+## Per-context settings
+
+A `context_settings` section can make one kubeconfig context stricter or change
+how often its tables refresh:
+
+```yaml
+schema_version: 1
+context_settings:
+  schema_version: 1
+  contexts:
+    production:
+      read_only: true
+    staging:
+      refresh_seconds: 5
+```
+
+Each context accepts only `read_only` and `refresh_seconds`. A context can turn
+read-only mode on, but it cannot turn it off. `refresh_seconds` uses the same
+0.1–3600 range as the global setting. Names are the kubeconfig context names, up
+to 128 contexts.
+
+The settings apply when you switch to that context and stop when you leave it.
+The order is:
+
+1. Command-line flags and `KUBERICH_*` environment variables.
+2. The settings of the current context.
+3. The global values in the preference file.
+4. The defaults.
+
+`--readonly` or a read-only file keeps every context read-only. `--write` does
+not lift a context's `read_only: true`.
+
+## Changing preferences while KubeRich runs
+
+KubeRich checks the preference file every two seconds. When you save a valid
+change, it applies the new themes, colors, aliases, jumps, context settings,
+plugins, shell and refresh interval, and shows "Preferences reloaded." Your
+current view, filter and selection stay as they are.
+
+- Key binding and mouse changes are read but apply after a restart. The notice
+  says so.
+- Log settings apply after a restart.
+- Turning `read_only` off in the file does not end read-only mode in a running
+  session. Restart to leave it.
+- Plugin files are read again when the preference file changes.
+- If the file is invalid, KubeRich keeps the last valid preferences and shows the
+  error once. Run `kuberich config check` to see it again.
+- If the file is deleted, the current preferences stay active.
+
+Fields that KubeRich does not know are kept in the file and ignored. Startup,
+reload and `kuberich config check` name them, so a typo is easy to spot.
 
 `shell` is a list of 1–32 nonempty strings, with an executable first and
 literal arguments after it. Strings and shell expressions are rejected. For
 example, `shell: ["/bin/bash", "-l"]` selects bash only in images that contain it.
-The list is captured at launch; restart after changing it. Diagnostics omit this
+A saved change applies to the next shell you open. Diagnostics omit this
 argument list. See [native shells](container-shell.md).
 
 ## Schema, compatibility and writes

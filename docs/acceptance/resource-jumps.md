@@ -3,7 +3,7 @@
 This adds configured jumps from a selected row to a related view. It does not
 publish a package or change the 0.1.0 distribution. Reactive reload, per-context
 overrides, transparent colors, full GVR titles and unsupported-field reporting
-remain part of #64 and follow in a separate pull request.
+are covered in [reactive preferences](reactive-preferences.md).
 
 ## Behavior
 

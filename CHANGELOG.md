@@ -12,6 +12,12 @@ Release entries are written in release PRs and linked to their Git tags.
   ([#193](https://github.com/carloshm91/kuberich/issues/193),
   [Carlos J. Herrera](https://github.com/carloshm91)).
 
+- Reload the preference file while KubeRich runs. An invalid file keeps the
+  last valid preferences. Add per-context `read_only` and `refresh_seconds`,
+  the terminal background as a palette color, full API titles, and notices for
+  unknown fields ([#64](https://github.com/carloshm91/kuberich/issues/64),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Jump from the selected row to a related view with `:jump`, using jumps you
   define in the preference file. Templates only read fields from the row
   ([#64](https://github.com/carloshm91/kuberich/issues/64),

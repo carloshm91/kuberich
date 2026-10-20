@@ -20,6 +20,9 @@ COLORS = frozenset(
         "success",
     }
 )
+SURFACES = ("background", "surface", "panel")
+# The terminal's own background shows through; its contrast cannot be checked.
+TRANSPARENT = "default"
 
 
 def theme_name(value: object) -> str:
@@ -58,6 +61,7 @@ class Appearance:
     themes: tuple[CustomTheme, ...] = ()
     contexts: tuple[tuple[str, str], ...] = ()
     check_updates: bool = False
+    full_gvr_titles: bool = False
 
     def mapping(self) -> dict[str, object]:
         return {
@@ -65,6 +69,7 @@ class Appearance:
             "themes": {theme.name: theme.mapping() for theme in self.themes},
             "contexts": dict(self.contexts),
             "check_updates": self.check_updates,
+            **({"full_gvr_titles": True} if self.full_gvr_titles else {}),
         }
 
 
@@ -74,16 +79,19 @@ def parse_appearance(value: object, builtins: Collection[str] = ()) -> Appearanc
         "themes",
         "contexts",
         "check_updates",
+        "full_gvr_titles",
     }:
         raise AppError(
-            "appearance must contain only schema_version, themes, contexts and check_updates."
+            "appearance must contain only schema_version, themes, contexts, check_updates"
+            " and full_gvr_titles."
         )
     if type(value.get("schema_version", 1)) is not int or value.get("schema_version", 1) != 1:
         raise AppError("Unsupported appearance.schema_version; use version 1.")
     enabled = value.get("check_updates", False)
     themes, contexts = value.get("themes", {}), value.get("contexts", {})
-    if type(enabled) is not bool:
-        raise AppError("appearance.check_updates must be true or false.")
+    full = value.get("full_gvr_titles", False)
+    if type(enabled) is not bool or type(full) is not bool:
+        raise AppError("appearance.check_updates and full_gvr_titles must be true or false.")
     if (
         not isinstance(themes, dict)
         or len(themes) > 32
@@ -109,21 +117,27 @@ def parse_appearance(value: object, builtins: Collection[str] = ()) -> Appearanc
             raise AppError("Custom theme dark must be true or false.")
         colors = {key: color for key, color in fields.items() if key != "dark"}
         if any(
-            not isinstance(color, str) or re.fullmatch(r"#[0-9a-fA-F]{6}", color) is None
-            for color in colors.values()
+            not isinstance(color, str)
+            or (
+                re.fullmatch(r"#[0-9a-fA-F]{6}", color) is None
+                and not (color == TRANSPARENT and key in SURFACES)
+            )
+            for key, color in colors.items()
         ):
             raise AppError(
-                "Theme colors must be quoted six-digit hexadecimal values, such as '#ffffff'."
+                "Theme colors must be quoted six-digit hexadecimal values, such as '#ffffff';"
+                " background, surface and panel also accept 'default'."
             )
         foreground = str(colors["foreground"])
         if any(
             contrast(foreground, str(colors.get(surface, colors["background"]))) < 4.5
-            for surface in ("background", "surface", "panel")
+            for surface in SURFACES
+            if colors.get(surface, colors["background"]) != TRANSPARENT
         ):
             raise AppError(
                 "Theme foreground needs at least 4.5:1 contrast against background, surface and panel."
             )
-        if any(
+        if colors["background"] != TRANSPARENT and any(
             contrast(str(color), str(colors["background"])) < 3
             for key, color in colors.items()
             if key in {"primary", "accent", "warning", "error", "success"}
@@ -150,7 +164,7 @@ def parse_appearance(value: object, builtins: Collection[str] = ()) -> Appearanc
         raise AppError(
             "A context preference selects an unavailable theme; choose a registered theme."
         )
-    return Appearance(tuple(parsed), tuple(sorted(scoped)), enabled)
+    return Appearance(tuple(parsed), tuple(sorted(scoped)), enabled, full)
 
 
 def effective_theme(

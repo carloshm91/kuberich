@@ -13,11 +13,7 @@ from typing import NoReturn
 from platformdirs import user_data_path
 
 from kuberich.config.launch import CONNECTION_OPTIONS, PENDING_OPTIONS, require_available
-from kuberich.config.navigation import (
-    NavigationPreferences,
-    navigation_from,
-    validate_resource_views,
-)
+from kuberich.config.navigation import NavigationPreferences, navigation_from
 from kuberich.config.paths import config_location, log_location
 from kuberich.config.schema import ConfigDocument, resolve_settings
 from kuberich.config.store import migrate_config, read_config, write_config
@@ -33,7 +29,6 @@ from kuberich.services.appearance import PreferenceSource
 from kuberich.services.commands import Command, CommandService, PluginCommand, ScopedCommand
 from kuberich.ui.launch import run_terminal
 from kuberich.ui.presentation import Presentation
-from kuberich.ui.theme_catalog import BUILTINS, appearance_from
 
 
 class _Parser(argparse.ArgumentParser):
@@ -410,20 +405,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
             )
         elif arguments.subcommand == "config":
-            from kuberich.adapters.plugin_files import load_plugins
-            from kuberich.config.forwarding import forwarding_from
-            from kuberich.config.jumps import jumps_from
-            from kuberich.config.plugins import plugins_from
+            from kuberich.ui.config_check import unsupported_fields, validate_preferences
 
-            validate_resource_views(navigation)
-            forwarding_from(document)
-            jumps_from(document)
-            plugin_preferences = plugins_from(document, location.path.parent)
-            for context in (None, *(name for name, _ in plugin_preferences.contexts)):
-                load_plugins(plugin_preferences, context, navigation.keys)
-            appearance = appearance_from(document)
-            if settings.theme not in BUILTINS | {theme.name for theme in appearance.themes}:
-                raise AppError("Selected theme is unavailable; choose k9s or a registered theme.")
+            validate_preferences(document, location, settings)
+            if (unsupported := unsupported_fields(document)) is not None:
+                print(unsupported, file=sys.stderr)
             print("KubeRich preferences are valid. No files were changed.")
         else:
             with diagnostic_logging(log_file, settings.log_level) as logger:
@@ -446,6 +432,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                             settings.theme
                             if "KUBERICH_THEME" in os.environ or "KUBETROL_THEME" in os.environ
                             else None,
+                            dict(os.environ),
+                            overrides,
                         ),
                     )
                 except Exception:

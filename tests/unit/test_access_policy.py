@@ -1,6 +1,5 @@
 """Service-level guards cannot be bypassed by avoiding a UI shortcut."""
 
-from dataclasses import FrozenInstanceError
 from typing import Any
 
 import pytest
@@ -37,10 +36,32 @@ def test_unknown_action_is_fail_closed_even_in_write_mode(value: Any) -> None:
         AccessPolicy(False).require(value)
 
 
-def test_readonly_cannot_be_changed_mid_action() -> None:
+def test_readonly_cannot_be_assigned_mid_action() -> None:
     policy = AccessPolicy(True)
-    with pytest.raises(FrozenInstanceError):
+    with pytest.raises(AttributeError):
         policy.read_only = False  # type: ignore[misc]
+    assert repr(policy) == "AccessPolicy(read_only=True)"
+
+
+def test_context_restriction_tightens_until_the_context_changes() -> None:
+    policy = AccessPolicy(False)
+    policy.restrict(True)
+    with pytest.raises(AppError, match="Read-only mode blocks"):
+        policy.require(Action.MUTATE)
+    policy.restrict(False)
+    policy.require(Action.MUTATE)
+    with pytest.raises(AppError, match="must be true or false"):
+        policy.restrict(1)  # type: ignore[arg-type]
+
+
+def test_base_read_only_is_never_lifted() -> None:
+    policy = AccessPolicy(True)
+    policy.restrict(False)
+    assert policy.read_only
+    writable = AccessPolicy(False)
+    writable.tighten()
+    writable.restrict(False)
+    assert writable.read_only
 
 
 @pytest.mark.parametrize(
