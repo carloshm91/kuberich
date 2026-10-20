@@ -10,11 +10,10 @@ from dataclasses import replace
 from functools import partial
 from importlib.metadata import version
 from pathlib import Path
-from typing import ClassVar, cast
+from typing import ClassVar
 from uuid import UUID
 
 from platformdirs import user_cache_path
-from rich.text import Text
 from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding, BindingType
@@ -113,7 +112,6 @@ from kuberich.ui.chrome import (
     POD_SHORTCUTS,
     RESOURCE_SHORTCUTS,
     SERVICE_SHORTCUTS,
-    TEXT_SHORTCUTS,
     Breadcrumbs,
     WorkspaceBars,
     WorkspaceChrome,
@@ -131,8 +129,10 @@ from kuberich.ui.contexts import ContextTable, context_rows
 from kuberich.ui.custom import CustomTable
 from kuberich.ui.editing import EditingScreen
 from kuberich.ui.handoff import terminal_handoff
+from kuberich.ui.help import HelpScreen
 from kuberich.ui.inspection import InspectionScreen, Page
 from kuberich.ui.interactions import Interactions
+from kuberich.ui.jumps import JumpController
 from kuberich.ui.keybindings import NavigationHelpScreen, navigation_help
 from kuberich.ui.logs import LogScreen
 from kuberich.ui.mutations import AnnotationScreen, MutationHistoryScreen
@@ -148,113 +148,12 @@ from kuberich.ui.shutdown import TerminalSignals
 from kuberich.ui.standard import StandardTable
 from kuberich.ui.style_cache import ColorStylesCache, ComponentStylesheet
 from kuberich.ui.terminal import ShellScreen
-from kuberich.ui.text_navigation import ReadOnlyScroll
 from kuberich.ui.theme_catalog import appearance_from, invert_theme, themes_for
 from kuberich.ui.transfers import TransferScreen
 from kuberich.ui.views import ViewPreferences, ViewScreen
 from kuberich.ui.workloads import WorkloadScreen
 
 DISCONNECTED_STATUS = "Disconnected · No resource data"
-
-
-class HelpScreen(CommandWorkspace):
-    """Scrollable help keeps its close control accessible in small terminals."""
-
-    AUTO_FOCUS = "#help-scroll"
-
-    def __init__(self, navigation: str = "", aliases: str = "") -> None:
-        super().__init__()
-        self.navigation, self.aliases = navigation, aliases
-
-    def compose(self) -> ComposeResult:
-        yield WorkspaceHeader(
-            cast(KubeRichApp, self.app).chrome, TEXT_SHORTCUTS, binding_profile="text"
-        )
-        with WorkspaceBars():
-            mode = (
-                "Read-only"
-                if cast(KubeRichApp, self.app).commands.policy.read_only
-                else "Read/write"
-            )
-            yield Static(
-                f"Keyboard help · {mode} · j/k · g/G · : command",
-                markup=False,
-                classes="help-caption",
-            )
-            yield from self.command_bar()
-        with WorkspaceFrame(id="help-dialog"):
-            yield Static("Keyboard help", id="help-title", markup=False)
-            with ReadOnlyScroll(id="help-scroll"):
-                yield Static(
-                    Text(
-                        "/                 Focus filter\n"
-                        ":                 Focus command\n"
-                        "? or F1           Open help\n"
-                        "c / F2            Contexts (:ctx)\n"
-                        "n / F3            Namespaces (:ns)\n"
-                        "r / F4            Retry connection (:retry)\n"
-                        ":login            Explicit credential helper login and reconnect\n"
-                        ":themes / :about  Appearance, preferences and version notice\n"
-                        "i / F5            Connection status (:status)\n"
-                        "Letter shortcuts work outside text inputs.\n"
-                        "PageUp / PageDown Scroll help\n"
-                        "Tab in command    Accept selected suggestion\n"
-                        "Up / Down + Enter Select and submit suggestion\n"
-                        "Tab / Shift+Tab   Move focus when no suggestion\n"
-                        "Alt+Left / Right  Navigation back / forward\n"
-                        "Escape            Back / leave input\n"
-                        "Escape in table   Clear active filter\n"
-                        "q / Ctrl+Q        Quit (q outside inputs)\n"
-                        "Ctrl+C            Quit\n\n"
-                        "Commands: po/pod/pods [NS or *], ctx [NAME], ns [NAME or *], "
-                        "status, retry, login, back, forward, shell/exec, pf/portforwards, "
-                        "portforward, annotate, edit (Shift+E), scale, restart, rollback, rollout, "
-                        "delete, deletebatch, cleanup, trigger, suspend, resume, writes, help, quit.\n"
-                        "In :ctx, :rename NEW renames and Ctrl+D deletes the selected context.\n"
-                        "Resources: deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, "
-                        "no, pvc, pv, sc. Namespaced resources accept [NS or *].\n"
-                        "Discovered: :resource NAME[.GROUP][/VERSION] [NS or *]. "
-                        "Unique discovered aliases work directly; ambiguous names require a group.\n"
-                        ":refresh renews discovery on the current client. "
-                        ":columns shows server keys; :columns cN ... / default / none.\n"
-                        "Generic resources are read-only; :views configures and explicitly saves columns/sort.\n"
-                        "Filter: plain case-insensitive text; re:PATTERN for regex. "
-                        "Searches namespace, name, readiness, status and restarts. "
-                        "Invalid or timed-out regex shows all pods and an error.\n"
-                        "Filters also accept !re:, fuzzy:, label: and allowlisted field:.\n"
-                        "Alt+Up/Down recall commands/filters; :!! repeats through normal review.\n"
-                        ":wide, :errors, :mark/:range/:selectall/:selectnone; :copy/:copyns/:copytext.\n"
-                        ":favorites; :favorite add/remove NAMESPACE explicitly saves preferences.\n"
-                        ":headless/:crumbsless/:fullscreen toggle session presentation.\n\n"
-                        "Context sessions and live pod synchronization are available. "
-                        "Pod rows, container logs and embedded shells are available.\n"
-                        "l                 Selected pod logs (regular / init)\n"
-                        "Shift+L / :logsall Aggregate Pod/workload logs (8 readers); c sources, s display filter, J plain/JSON.\n"
-                        "Logs: / search, p pause, f follow, ? effective controls.\n"
-                        "Enter             Pod containers → container logs\n"
-                        "x / :shell        Choose a pod's container for its shell\n"
-                        "Shift+F           Start pod/Service TCP port-forward\n"
-                        ":pf               List owned forwards; s stops selected\n"
-                        "Forwards survive view/namespace changes; context/retry/exit stops them.\n"
-                        "Containers: s/x shell, a attach, u upload, d download, Enter/l logs, Esc pods.\n"
-                        ":attach / :upload / :download choose a container first.\n"
-                        "Shell: Ctrl+] return, Ctrl+C interrupt, Ctrl+Q quit.\n"
-                        "d                 Resource details\n"
-                        "y / e             YAML / related events\n"
-                        "Viewer: m managedFields, / search, n/N matches, Ctrl+Y copy.\n"
-                        "Header click      Sort / reverse column\n"
-                        "Arrows / PageUp / PageDown navigate the table.\n\n"
-                        + self.navigation
-                        + "\n\n"
-                        + self.aliases
-                    ),
-                    id="help-content",
-                )
-            yield Button("Back", id="close-help", variant="primary", compact=True)
-
-    @on(Button.Pressed, "#close-help")
-    def close_help(self) -> None:
-        self.dismiss()
 
 
 class KubeRichApp(App[None]):
@@ -439,6 +338,7 @@ class KubeRichApp(App[None]):
         self.status = WorkspaceLabel(DISCONNECTED_STATUS, id="status", markup=False)
         self.view_preferences = ViewPreferences(self)
         self.plugins = PluginController(self)
+        self.jumps = JumpController(self)
 
     def _theme_context(self) -> str | None:
         return (
@@ -2511,6 +2411,8 @@ class KubeRichApp(App[None]):
                 self._context_selected(command.argument)
             elif command.command is Command.RENAME:
                 self._edit_context(ContextChange.RENAME, command.argument)
+            elif command.command is Command.JUMP:
+                self.jumps.open(command.argument)
             else:
                 self._namespace_selected(command.argument)
             return
@@ -2550,6 +2452,8 @@ class KubeRichApp(App[None]):
             self._edit_context(ContextChange.RENAME)
         elif command is Command.CLEANUP:
             self.action_cleanup_pods()
+        elif command is Command.JUMP:
+            self.jumps.open()
         elif command is Command.LOGIN:
             self.action_login()
         elif command is Command.BACK:
@@ -2624,6 +2528,7 @@ class KubeRichApp(App[None]):
             self.workspace.discovery,
             self.navigation.aliases,
             tuple(plugin.name for plugin in self.plugins.plugins),
+            self.jumps.names,
         )
 
     @on(Input.Changed, "#command")

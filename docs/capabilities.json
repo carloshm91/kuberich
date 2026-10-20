@@ -738,7 +738,7 @@
       ],
       "source": "internal/view/custom_jump.go",
       "status": "planned",
-      "difference": "C05/B06 provide discovery-qualified aliases and explicit versions, live generic tables with typed server columns or metadata fallback, bounded session-local column selection, captured YAML/details, scope/history routing and owned discovery/removal refresh. Generic mutations, persistent custom preferences/hotkeys and reactive jump chains retain M05/U02/U06; full parity is not claimed. U02 #57 implements bounded per-owner navigation keys, literal aliases and explicit version-pinned column width/alignment/order/visibility and typed-sort saves. Server schemas invalidate stale layouts. This source checkpoint does not claim broader navigation/filter/jump/plugin parity.",
+      "difference": "C05/B06 provide discovery-qualified aliases and explicit versions, live generic tables with typed server columns or metadata fallback, bounded session-local column selection, captured YAML/details, scope/history routing and owned discovery/removal refresh. Generic mutations, persistent custom preferences/hotkeys and reactive jump chains retain M05/U02/U06; full parity is not claimed. U02 #57 implements bounded per-owner navigation keys, literal aliases and explicit version-pinned column width/alignment/order/visibility and typed-sort saves. Server schemas invalidate stale layouts. This source checkpoint does not claim broader navigation/filter/jump/plugin parity. U06 #64 adds configured jumps between discovered resources, including explicit non-preferred versions.",
       "partial_evidence": [
         "docs/resource-discovery.md",
         "docs/acceptance/custom-resources.md",
@@ -761,7 +761,9 @@
         "tests/ui/test_view_layout_lifecycle.py",
         "tests/terminal/test_preferences.py",
         "tests/packaging/test_distribution.py",
-        "scripts/verify_standalone.py"
+        "scripts/verify_standalone.py",
+        "docs/resource-jumps.md",
+        "tests/ui/test_jumps.py"
       ],
       "public_summary": "Discovered APIs support served versions, typed printer columns and inspection. Next-release source persists schema-pinned views; generic mutations and relationship jumps remain planned.",
       "public_status": "partial"
@@ -1202,9 +1204,16 @@
       ],
       "source": "internal/config/json/schemas/jumps.json",
       "status": "planned",
-      "difference": "",
-      "public_summary": "Configurable resource relationship jumps with templates, selectors and namespace routing are planned.",
-      "public_status": "planned"
+      "difference": "U06 #64 implements named jumps from a source GVR to a target GVR with namespace, label and field templates. Templates only read literal field paths; values are restricted to selector-safe characters and validated as local label/field filters. The target view opens with the filter in the filter box rather than a server-side selector. Reactive reload and per-context jump overrides remain planned.",
+      "public_summary": "Define jumps in the preference file and use :jump to open a related view, such as a Deployment's pods, with a filter already set. Templates only read fields from the row.",
+      "public_status": "partial",
+      "partial_evidence": [
+        "docs/resource-jumps.md",
+        "docs/acceptance/resource-jumps.md",
+        "tests/unit/test_jumps.py",
+        "tests/ui/test_jumps.py",
+        "tests/unit/test_cli_config.py"
+      ]
     },
     {
       "id": "EXT04",

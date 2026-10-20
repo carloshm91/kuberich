@@ -412,10 +412,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         elif arguments.subcommand == "config":
             from kuberich.adapters.plugin_files import load_plugins
             from kuberich.config.forwarding import forwarding_from
+            from kuberich.config.jumps import jumps_from
             from kuberich.config.plugins import plugins_from
 
             validate_resource_views(navigation)
             forwarding_from(document)
+            jumps_from(document)
             plugin_preferences = plugins_from(document, location.path.parent)
             for context in (None, *(name for name, _ in plugin_preferences.contexts)):
                 load_plugins(plugin_preferences, context, navigation.keys)

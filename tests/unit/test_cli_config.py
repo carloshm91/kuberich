@@ -236,3 +236,18 @@ def test_config_check_validates_registered_theme_references_without_rewriting(tm
     assert main(["--config", str(path), "config", "check"]) == 0
     assert "valid" in capsys.readouterr().out
     assert path.read_bytes() == before
+
+
+def test_config_check_validates_jumps_without_rewriting(tmp_path, capsys):
+    path = tmp_path / "preferences.yaml"
+    path.write_text(
+        "schema_version: 1\njumps:\n  definitions:\n    pods:\n      source: apps/v1/deployments\n"
+        "      target: v1/pods\n      labels: '{{ spec.selector.matchLabels | upper }}'\n"
+    )
+    before = path.read_bytes()
+    assert main(["--config", str(path), "config", "check"]) == 2
+    assert "field paths" in capsys.readouterr().err
+    assert path.read_bytes() == before
+    path.write_text(before.decode().replace(" | upper", ""))
+    assert main(["--config", str(path), "config", "check"]) == 0
+    assert "valid" in capsys.readouterr().out

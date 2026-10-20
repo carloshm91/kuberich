@@ -1,5 +1,15 @@
 # Quality and coverage
 
+## Resource jumps: U06 #64
+
+`domain/jumps.py` and `config/jumps.py` join the 100% line/branch inventory.
+Unit tests cover strict definitions, field-path-only templates, missing and
+unsafe values, label-map expansion, namespace scope and cluster-scoped targets.
+Headless UI tests open a non-preferred discovered version and a built-in pod
+view, restore the previous filter with `:back` and report missing or invalid
+jumps without changing the view. See
+[acceptance evidence](acceptance/resource-jumps.md).
+
 ## Context edits and pod cleanup: M08 #63
 
 `domain/kubeconfig_edit.py`, `domain/cleanup.py` and `domain/view_actions.py`
