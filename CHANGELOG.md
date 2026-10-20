@@ -7,6 +7,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Install from Homebrew with prebuilt bottles on macOS Apple Silicon, macOS Intel
+  and Linux x86_64; other systems still build from source
+  ([#193](https://github.com/carloshm91/kuberich/issues/193),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Jump from the selected row to a related view with `:jump`, using jumps you
   define in the preference file. Templates only read fields from the row
   ([#64](https://github.com/carloshm91/kuberich/issues/64),

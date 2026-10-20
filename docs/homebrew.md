@@ -40,11 +40,43 @@ These are candidate checks, not currently available public installation commands
 Tap CI additionally requires online audit on Linux and macOS. The formula declares
 Python 3.14, kubectl and libyaml. Its private environment disables system site
 packages; functional tests check CLI/config/info, typing/TCSS assets and dependency
-consistency. Source builds need build tools and can take several minutes; no bottle
-or standalone binary is promised. Runtime sources are pinned. Homebrew's standard
+consistency. Source builds need build tools and can take several minutes. Runtime
+sources are pinned. Homebrew's standard
 helper still resolves isolated build backends, so this is not a fully hermetic
 compiler/build environment. Dependency licenses and original notices remain their
 own, including Pyte's LGPL source and replacement rights.
+
+## Bottles
+
+Bottles are prebuilt archives for `arm64_sonoma`, `sequoia` and `x86_64_linux`.
+They are added to a version after its source formula is merged in the tap. The
+formula keeps its source URL and resources, so other systems build from source.
+
+Before a release, the native installation workflow builds a bottle from the local
+candidate on each of the three hosts. On each host it installs the published
+previous version from the public tap and runs `brew upgrade`. The upgrade must
+pour the candidate bottle without fetching Python resources. The test then runs
+the terminal, checks that preferences and the caller's kubeconfig are unchanged,
+and measures cold and warm installs. The bottles stay in the run's artifacts and
+are never published.
+
+After the source formula for a release is merged, the maintainer runs the
+**Homebrew bottles** workflow from main:
+
+1. `operation: build` builds and pours each bottle on its own host and records
+   timings and checksums.
+2. `operation: publish` does the same, then waits for approval in the `release`
+   environment. It runs `scripts.homebrew bottles`, which checks every
+   `brew bottle --json` record against its archive and the current tap formula.
+   It uploads the archives once to the tap release `kuberich-v<version>` and
+   opens a pull request that only adds the `bottle do` block.
+3. After that pull request is merged, `operation: verify` installs from the tap
+   on each host and requires Homebrew to pour the bottle.
+
+Bottle archives are never replaced. A retry reuses uploaded archives with the same
+checksum and refuses different ones. A published bottle release cannot get new
+files. Bottles are stored in the tap repository because completed source
+releases are immutable.
 
 ## Reviewed updates after approved publication
 
