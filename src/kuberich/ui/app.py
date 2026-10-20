@@ -1726,7 +1726,7 @@ class KubeRichApp(App[None]):
         if isinstance(self.screen, ModalScreen):
             return None
         if self._resource_name == "contexts":
-            self._set_status(
+            self._set_notice(
                 "Contexts are local configuration. Enter connects to the selected context."
             )
             return None
@@ -1734,7 +1734,7 @@ class KubeRichApp(App[None]):
         scope, snapshot, client = view.scope, view.snapshot, self.sessions.client
         uid = uid if uid is not None else self._active_table.capture_viewport().selected
         if scope is None or snapshot is None or client is None or uid is None:
-            self._set_status("Select a connected resource before opening a viewer.")
+            self._set_notice("Select a connected resource before opening a viewer.")
             return None
         record = next((item for item in snapshot.items if item.uid == uid), None)
         if record is None or record.uid is None:

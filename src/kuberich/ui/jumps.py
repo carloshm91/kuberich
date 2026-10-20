@@ -34,7 +34,7 @@ class JumpController:
     def open(self, name: str | None = None) -> None:
         app = self.app
         if self.error is not None:
-            app._set_status(f"Jumps are unavailable: {self.error} Run kuberich config check.")
+            app._set_notice(f"Jumps are unavailable: {self.error} Run kuberich config check.")
             return
         captured = app._capture_target()
         if captured is None:
@@ -45,7 +45,7 @@ class JumpController:
         if name is not None:
             choices = tuple(jump for jump in choices if jump.name == name)
         if len(choices) != 1:
-            app._set_status(
+            app._set_notice(
                 f"No jump named {name} for {source}."
                 if name is not None
                 else f"No jump is configured for {source}."
@@ -56,7 +56,7 @@ class JumpController:
         try:
             self._open(choices[0], record)
         except AppError as error:
-            app._set_status(str(error))
+            app._set_notice(str(error))
 
     def _open(self, jump: JumpDefinition, record: "ResourceRecord") -> None:
         """Render from the captured row, then open the target view with its filter."""
