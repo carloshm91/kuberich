@@ -16,17 +16,64 @@ jobs:
     timeout-minutes: 5
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
+      test_matrix: ${{ steps.plan.outputs.test_matrix }}
       native_matrix: ${{ steps.plan.outputs.native_matrix }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Select the complete matrix for this event
         id: plan
         run: python3 -m scripts.ci_policy
-  application:
+  tests:
     needs: plan
+    name: Tests (${{ matrix.os }}, Python ${{ matrix.python }}, part ${{ matrix.part }} of ${{ matrix.parts }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.test_matrix) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Install uv and select Python
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: '0.10.4'
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+      - name: Install the locked development environment
+        run: uv sync --locked --group dev
+      - name: Install real terminal transport test tools on Linux
+        if: ${{ matrix.os == 'ubuntu-24.04' }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes openssh-server tmux xclip xvfb
+          sudo install -d -m 0755 /run/sshd
+      - name: Install real terminal transport test tools on macOS
+        if: ${{ matrix.os == 'macos-latest' }}
+        run: |
+          brew install tmux
+          test -x /usr/sbin/sshd
+      - name: Run this part of the behavioral, gate-regression and clean-distribution checks
+        env:
+          KUBERICH_TEST_PART: ${{ matrix.part }}/${{ matrix.parts }}
+        run: |
+          uv run pytest --cov=kuberich --cov-branch --cov-report=
+          mkdir -p part
+          mv .coverage part/coverage-part.data
+          if [ -d artifacts ]; then cp -R artifacts part/; fi
+      - name: Keep this part's coverage and evidence for the application job
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-part-${{ matrix.os }}-python-${{ matrix.python }}-${{ matrix.part }}
+          path: part
+          if-no-files-found: error
+          retention-days: 7
+  application:
+    needs: [plan, tests]
     name: Application (${{ matrix.os }}, Python ${{ matrix.python }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 75
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
@@ -57,14 +104,19 @@ jobs:
         run: |
           uv run ruff check .
           uv run ruff format --check .
-          uv run mypy --strict src/kuberich scripts/check_coverage.py scripts/check_quality_gate.py scripts/ci_policy.py scripts/check_supply_chain.py scripts/supply_chain.py scripts/dependency_inventory.py scripts/release.py scripts/release_policy.py scripts/release_notes.py scripts/homebrew.py scripts/owned_kind.py scripts/verify_kind_lifecycle.py scripts/verify_quickstart.py scripts/standard_kind.py scripts/verify_port_forwards_kind.py scripts/verify_mutations_kind.py scripts/verify_editing_kind.py scripts/verify_workloads_kind.py scripts/verify_operations_kind.py scripts/verify_cleanup_kind.py scripts/verify_credential_interop_kind.py scripts/verify_transfers_kind.py scripts/verify_custom_resources_kind.py scripts/verify_aggregate_logs_kind.py scripts/merge_runtime_coverage.py scripts/build_standalone.py scripts/standalone.py scripts/standalone_python.py scripts/check_standalone.py scripts/verify_standalone.py scripts/verify_shell_kind.py scripts/navigation_kind.py
+          uv run mypy --strict src/kuberich scripts/check_coverage.py scripts/check_quality_gate.py scripts/ci_policy.py scripts/combine_test_parts.py scripts/check_supply_chain.py scripts/supply_chain.py scripts/dependency_inventory.py scripts/release.py scripts/release_policy.py scripts/release_notes.py scripts/homebrew.py scripts/owned_kind.py scripts/verify_kind_lifecycle.py scripts/verify_quickstart.py scripts/standard_kind.py scripts/verify_port_forwards_kind.py scripts/verify_mutations_kind.py scripts/verify_editing_kind.py scripts/verify_workloads_kind.py scripts/verify_operations_kind.py scripts/verify_cleanup_kind.py scripts/verify_credential_interop_kind.py scripts/verify_transfers_kind.py scripts/verify_custom_resources_kind.py scripts/verify_aggregate_logs_kind.py scripts/merge_runtime_coverage.py scripts/build_standalone.py scripts/standalone.py scripts/standalone_python.py scripts/check_standalone.py scripts/verify_standalone.py scripts/verify_shell_kind.py scripts/navigation_kind.py
       - name: Verify plaintext clipboard on the owned ephemeral macOS runner
         if: ${{ matrix.os == 'macos-latest' }}
         env:
           KUBERICH_NATIVE_CLIPBOARD_TEST: '1'
         run: uv run pytest -q tests/contract/test_clipboard.py::test_owned_hosted_macos_plaintext_roundtrip
-      - name: Run behavioral, gate-regression and clean-distribution checks
-        run: uv run pytest --cov=kuberich --cov-branch --cov-report=term-missing --cov-report=xml --cov-report=json
+      - name: Download every test part of this job
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: test-part-${{ matrix.os }}-python-${{ matrix.python }}-*
+          path: parts
+      - name: Combine coverage and evidence from every test part
+        run: uv run python -m scripts.combine_test_parts --parts parts --prefix "test-part-${{ matrix.os }}-python-${{ matrix.python }}-"
       - name: Verify required runtime controls and merge successful replay branch coverage
         run: uv run python -m scripts.merge_runtime_coverage
       - name: Verify context sessions, resource views and watches on an owned disposable cluster
@@ -220,7 +272,7 @@ jobs:
   quality-gate:
     name: Quality gate
     if: ${{ always() }}
-    needs: [plan, application, standalone]
+    needs: [plan, tests, application, standalone]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:

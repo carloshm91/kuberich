@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.ci_policy import matrix, native_matrix
+from scripts.ci_policy import matrix, native_matrix, part_matrix
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -34,12 +34,14 @@ def run_gate(
 
 def successful_results() -> dict:
     return {
+        "tests": {"result": "success"},
         "application": {"result": "success"},
         "standalone": {"result": "success"},
         "plan": {
             "result": "success",
             "outputs": {
                 "matrix": json.dumps(matrix("pull_request", "refs/pull/143/merge")),
+                "test_matrix": json.dumps(part_matrix("pull_request", "refs/pull/143/merge")),
                 "native_matrix": json.dumps(native_matrix("pull_request", "refs/pull/143/merge")),
             },
         },
@@ -52,7 +54,7 @@ def test_successful_complete_matrix_passes() -> None:
     assert "complete application matrix succeeded" in result.stdout
 
 
-@pytest.mark.parametrize("job", ["plan", "application", "standalone"])
+@pytest.mark.parametrize("job", ["plan", "tests", "application", "standalone"])
 @pytest.mark.parametrize("state", ["failure", "cancelled", "skipped", None])
 def test_unsuccessful_matrix_cannot_pass(job: str, state: str | None) -> None:
     results = successful_results()
@@ -105,6 +107,7 @@ def test_complete_plan_with_wrong_linux_runner_cannot_pass(event, ref, runner) -
     results = successful_results()
     planned = matrix(event, ref)
     results["plan"]["outputs"]["matrix"] = json.dumps(planned)
+    results["plan"]["outputs"]["test_matrix"] = json.dumps(part_matrix(event, ref))
     assert run_gate(json.dumps(results), event, ref).returncode == 0
     planned["include"][0]["os"] = runner
     results["plan"]["outputs"]["matrix"] = json.dumps(planned)
@@ -132,5 +135,23 @@ def test_a_successful_native_job_cannot_hide_an_incomplete_native_plan(corruptio
         else:
             planned["include"].pop()
         results["plan"]["outputs"]["native_matrix"] = json.dumps(planned)
+    result = run_gate(json.dumps(results))
+    assert result.returncode == 1 and "Quality gate failed" in result.stderr
+
+
+@pytest.mark.parametrize("corruption", ["missing", "invalid", "missing-part", "other-event"])
+def test_successful_test_parts_cannot_hide_an_incomplete_part_plan(corruption):
+    results = successful_results()
+    planned = part_matrix("pull_request", "refs/pull/143/merge")
+    if corruption == "missing":
+        results["plan"]["outputs"].pop("test_matrix")
+    elif corruption == "invalid":
+        results["plan"]["outputs"]["test_matrix"] = "{invalid"
+    else:
+        if corruption == "missing-part":
+            planned["include"].pop()
+        else:
+            planned = part_matrix("push", "refs/heads/main")
+        results["plan"]["outputs"]["test_matrix"] = json.dumps(planned)
     result = run_gate(json.dumps(results))
     assert result.returncode == 1 and "Quality gate failed" in result.stderr

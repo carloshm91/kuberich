@@ -4,9 +4,9 @@ import json
 import os
 import sys
 
-from scripts.ci_policy import matrix, native_matrix
+from scripts.ci_policy import matrix, native_matrix, part_matrix
 
-REQUIRED_JOBS = {"plan", "application", "standalone"}
+REQUIRED_JOBS = {"plan", "tests", "application", "standalone"}
 
 
 def main() -> int:
@@ -24,6 +24,11 @@ def main() -> int:
         planned = json.loads(outputs["matrix"])
         if planned != expected:
             raise ValueError("the verified event's complete matrix must be planned")
+        parts = outputs.get("test_matrix")
+        if not isinstance(parts, str) or json.loads(parts) != part_matrix(
+            os.environ["GITHUB_EVENT_NAME"], os.environ["GITHUB_REF"]
+        ):
+            raise ValueError("every application job's complete set of test parts must be planned")
         native_output = outputs.get("native_matrix")
         if not isinstance(native_output, str) or json.loads(native_output) != native_matrix(
             os.environ["GITHUB_EVENT_NAME"], os.environ["GITHUB_REF"]

@@ -555,6 +555,33 @@ assets, and edits to non-executable continuations do not establish new coverage.
 No changed executable lines means N/A. The negative-control tests verify 0%,
 80%, the exact 90% boundary, a docs-only diff, and an unavailable base.
 
+### Parallel test parts
+
+CI splits the pytest run into four parts per operating system and Python
+version. Each part runs on its own runner and keeps whole test files together.
+`tests/support/part_timings.json` lists how long each file took, so the parts
+take about the same time. A file that is not in the list counts as ten seconds.
+To run one part locally:
+
+```sh
+KUBERICH_TEST_PART=2/4 uv run pytest --cov=kuberich --cov-branch --cov-report=
+```
+
+The matching Application job then downloads all four parts and runs
+`scripts/combine_test_parts.py`. It fails when a part is missing, a part has no
+coverage data, evidence contains a symbolic link, or two parts wrote different
+bytes to the same evidence file. It writes `.coverage`, `coverage.json` and
+`coverage.xml`, and the runtime coverage merge and every coverage gate run on
+the combined result exactly as above. The Quality gate also checks that the
+planner listed every part for every Application job.
+
+When test files change a lot, refresh the timing list from a full JUnit report:
+
+```sh
+uv run pytest --junitxml=junit.xml
+uv run python -m scripts.part_timings junit.xml
+```
+
 Coverage JSON/XML, changed-line JSON, actual UI SVGs, PTY transcripts/restoration
 summaries and candidate distributions are retained
 for seven days, including available evidence after failures. They are test

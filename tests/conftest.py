@@ -1,6 +1,7 @@
 """Isolate all test families from default kubeconfig and in-cluster authentication."""
 
 import ipaddress
+import os
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -11,10 +12,24 @@ from kubernetes_asyncio import client
 from kuberich.adapters import credentials, kubernetes
 from kuberich.config import catalog
 from tests.support.clusters import reject_ambient_credentials
+from tests.support.parts import assign, load_timings, parse_part
 
 _CLIENT = client.ApiClient
 _READ = catalog.regular_bytes
 _EXECUTE = credentials._execute
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """With KUBERICH_TEST_PART=INDEX/COUNT, keep only the files assigned to that part."""
+    if not (value := os.environ.get("KUBERICH_TEST_PART")):
+        return
+    index, count = parse_part(value)
+    names = {item: item.path.resolve().relative_to(ROOT).as_posix() for item in items}
+    parts = assign(names.values(), count, load_timings())
+    deselected = [item for item in items if parts[names[item]] != index]
+    items[:] = [item for item in items if parts[names[item]] == index]
+    config.hook.pytest_deselected(items=deselected)
 
 
 @pytest.fixture

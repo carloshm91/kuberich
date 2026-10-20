@@ -8,6 +8,7 @@ from pathlib import Path
 PYTHONS = ("3.12", "3.13", "3.14")
 LINUX_RUNNER = "ubuntu-24.04"
 MACOS_RUNNER = "macos-latest"
+TEST_PARTS = 4
 NATIVE_JOBS = (
     {
         "os": "ubuntu-22.04",
@@ -57,12 +58,25 @@ def matrix(event: str, ref: str) -> dict[str, list[dict[str, str]]]:
     return {"include": jobs}
 
 
+def part_matrix(event: str, ref: str) -> dict[str, list[dict[str, str]]]:
+    """Every application job runs its tests in TEST_PARTS parallel parts first."""
+    return {
+        "include": [
+            {**job, "part": str(part), "parts": str(TEST_PARTS)}
+            for job in matrix(event, ref)["include"]
+            for part in range(1, TEST_PARTS + 1)
+        ]
+    }
+
+
 def main() -> int:
     try:
         selected = matrix(os.environ["GITHUB_EVENT_NAME"], os.environ["GITHUB_REF"])
+        parts = part_matrix(os.environ["GITHUB_EVENT_NAME"], os.environ["GITHUB_REF"])
         native = native_matrix(os.environ["GITHUB_EVENT_NAME"], os.environ["GITHUB_REF"])
         with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
             output.write(f"matrix={json.dumps(selected, separators=(',', ':'))}\n")
+            output.write(f"test_matrix={json.dumps(parts, separators=(',', ':'))}\n")
             output.write(f"native_matrix={json.dumps(native, separators=(',', ':'))}\n")
     except (KeyError, ValueError, OSError) as error:
         print(f"Quality planning failed: {error}", file=sys.stderr)

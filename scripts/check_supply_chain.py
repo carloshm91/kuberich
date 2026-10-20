@@ -51,6 +51,7 @@ INPUT_FILES = (
     "scripts/release_notes.py",
     "scripts/ci_policy.py",
     "scripts/check_quality_gate.py",
+    "scripts/combine_test_parts.py",
     "scripts/build_standalone.py",
     "scripts/standalone.py",
     "scripts/standalone_python.py",
