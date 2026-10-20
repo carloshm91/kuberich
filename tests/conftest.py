@@ -22,7 +22,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
     """With KUBERICH_TEST_PART=INDEX/COUNT, keep only the files assigned to that part."""
-    if not (value := os.environ.get("KUBERICH_TEST_PART")):
+    # Child pytest runs started by evidence tests must see their whole selection.
+    if not (value := os.environ.pop("KUBERICH_TEST_PART", None)):
         return
     index, count = parse_part(value)
     names = {item: item.path.resolve().relative_to(ROOT).as_posix() for item in items}

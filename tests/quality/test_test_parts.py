@@ -74,6 +74,28 @@ def test_the_collection_hook_keeps_only_the_files_of_one_part() -> None:
     assert "deselected" in result.stdout
 
 
+def test_the_part_applies_to_this_run_only(monkeypatch: pytest.MonkeyPatch) -> None:
+    from types import SimpleNamespace
+
+    from tests.conftest import pytest_collection_modifyitems
+
+    deselected: list[object] = []
+    hook = SimpleNamespace(pytest_deselected=lambda items: deselected.extend(items))
+
+    class Item:
+        def __init__(self, name: str) -> None:
+            self.path = ROOT / name
+
+    items = [Item(name) for name in FILES[:2]]
+    monkeypatch.setenv("KUBERICH_TEST_PART", "1/2")
+    pytest_collection_modifyitems(SimpleNamespace(hook=hook), items)  # type: ignore[arg-type]
+    assert len(items) == len(deselected) == 1
+    # Child pytest runs started by evidence tests keep their whole selection.
+    assert "KUBERICH_TEST_PART" not in os.environ
+    pytest_collection_modifyitems(SimpleNamespace(hook=hook), items)  # type: ignore[arg-type]
+    assert len(items) == 1
+
+
 def test_an_invalid_part_value_stops_collection() -> None:
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "--collect-only", "-q", "tests/quality"],
