@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "kuberich"
-version = "0.1.0"
+version = "0.2.0"
 description = "A Kubernetes terminal UI built with Python and Textual"
 readme = "README.md"
 requires-python = ">=3.12,<3.15"

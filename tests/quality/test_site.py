@@ -3,7 +3,6 @@
 import hashlib
 import json
 import re
-import shutil
 import xml.etree.ElementTree as ET
 from html.parser import HTMLParser
 from pathlib import Path
@@ -13,16 +12,12 @@ from markdown_it import MarkdownIt
 
 from scripts.build_site import GUIDES, MARKER, REFERENCES, ROOT, build, heading_ids, user_content
 from scripts.check_site import verify
-
-
-def copy_source(destination: Path) -> Path:
-    for relative in ("website", "docs", "src"):
-        shutil.copytree(ROOT / relative, destination / relative)
-    (destination / "scripts").mkdir()
-    shutil.copyfile(ROOT / "scripts/build_site.py", destination / "scripts/build_site.py")
-    shutil.copyfile(ROOT / "scripts/site_reference.py", destination / "scripts/site_reference.py")
-    shutil.copyfile(ROOT / "pyproject.toml", destination / "pyproject.toml")
-    return destination
+from tests.support.site_source import (
+    copy_source,
+    published_source,
+    set_version,
+    unpublished_version,
+)
 
 
 def refresh(output: Path, path: Path) -> None:
@@ -34,10 +29,11 @@ def refresh(output: Path, path: Path) -> None:
 
 
 def test_builds_both_surfaces_deterministically_and_rebuilds_owned_output(tmp_path):
+    source = published_source(tmp_path / "source")
     first, second = tmp_path / "first", tmp_path / "second"
-    assert build(first) == build(second)
-    assert build(first) == build(second)
-    evidence = verify(first)
+    assert build(first, source) == build(second, source)
+    assert build(first, source) == build(second, source)
+    evidence = verify(first, source)
     assert evidence["pages"] == 2 * (len(GUIDES) + len(REFERENCES)) + 5
     assert evidence["local_links_and_assets"] > 500
     for name in ("www/docs/quickstart.html", "docs/quickstart.html"):
@@ -69,16 +65,7 @@ def test_site_version_does_not_imply_published_packages(tmp_path, version, label
     (source / "docs/published-releases.json").write_text(
         json.dumps({"schema_version": 1, "releases": {}})
     )
-    project = source / "pyproject.toml"
-    project.write_text(
-        re.sub(
-            r'^version = "[^"]+"',
-            f'version = "{version}"',
-            project.read_text(),
-            count=1,
-            flags=re.M,
-        )
-    )
+    set_version(source, version)
     output = tmp_path / "output"
     manifest = build(output, source)
     assert manifest["version"] == version and manifest["publication_performed"] is False
@@ -94,27 +81,27 @@ def test_site_version_does_not_imply_published_packages(tmp_path, version, label
 
 
 def test_published_inventory_does_not_activate_a_later_candidate(tmp_path):
-    source = copy_source(tmp_path / "source")
-    project = source / "pyproject.toml"
-    project.write_text(project.read_text().replace('version = "0.1.0"', 'version = "0.2.0"', 1))
+    later = unpublished_version()
+    source = copy_source(tmp_path / "source", later)
     output = tmp_path / "output"
     manifest = build(output, source)
-    assert manifest["version"] == "0.2.0" and manifest["publication_performed"] is False
+    assert manifest["version"] == later and manifest["publication_performed"] is False
     assert "docs/published-releases.json" in manifest["sources"]
     for name in ("www/index.html", "docs/installation.html"):
         html = (output / name).read_text()
-        assert "Prepared release" in html and "0.2.0" in html
+        assert "Prepared release" in html and later in html
         assert "Public PyPI/Homebrew packages are not available" in html
     verify(output, source)
 
 
 def test_public_launch_prepares_indexable_both_surfaces_without_deploying(tmp_path):
+    source = published_source(tmp_path / "source")
     output = tmp_path / "public"
-    manifest = build(output, public_launch=True)
+    manifest = build(output, source, public_launch=True)
     assert manifest["indexing"] == "public"
     assert manifest["private_preparation"] is False
     assert manifest["publication_performed"] is False
-    assert verify(output)["pages"] == len(GUIDES) + len(REFERENCES) + 4
+    assert verify(output, source)["pages"] == len(GUIDES) + len(REFERENCES) + 4
     assert not (output / "www/docs").exists()
     landing = (output / "www/index.html").read_text()
     assert 'href="https://docs.kuberich.com/"' in landing
@@ -145,8 +132,9 @@ def test_public_launch_prepares_indexable_both_surfaces_without_deploying(tmp_pa
 
 @pytest.mark.parametrize("fault", ["canonical", "guide-link", "redirect", "duplicate"])
 def test_public_documentation_host_policy_rejects_inventoried_drift(tmp_path, fault):
+    source = published_source(tmp_path / "source")
     output = tmp_path / "output"
-    build(output, public_launch=True)
+    build(output, source, public_launch=True)
     if fault == "redirect":
         path = output / "www/_redirects"
         path.write_text(path.read_text().replace("docs.kuberich.com", "wrong.example"))
@@ -171,7 +159,7 @@ def test_public_documentation_host_policy_rejects_inventoried_drift(tmp_path, fa
         path.write_text(text)
     refresh(output, path)
     with pytest.raises(ValueError, match=r"canonical|Broken|redirects|dedicated"):
-        verify(output)
+        verify(output, source)
 
 
 @pytest.mark.parametrize("version", ["0.1.0", "0.2.0", "0.0.1.dev0"])
@@ -182,10 +170,7 @@ def test_public_indexing_refuses_unpublished_versions_before_replacing_owned_out
     output = tmp_path / "output"
     build(output, source)
     original = (output / MARKER).read_bytes()
-    project = source / "pyproject.toml"
-    project.write_text(
-        project.read_text().replace('version = "0.1.0"', f'version = "{version}"', 1)
-    )
+    set_version(source, version)
     (source / "docs/published-releases.json").write_text(
         json.dumps({"schema_version": 1, "releases": {}})
     )
@@ -201,8 +186,9 @@ def test_public_indexing_refuses_unpublished_versions_before_replacing_owned_out
 def test_checker_refuses_indexing_drift_with_refreshed_output_digests(
     tmp_path, public_launch, fault
 ):
+    source = published_source(tmp_path / "source")
     output = tmp_path / "output"
-    build(output, public_launch=public_launch)
+    build(output, source, public_launch=public_launch)
     if fault in {"state", "mode", "version"}:
         marker = output / MARKER
         manifest = json.loads(marker.read_text())
@@ -211,7 +197,7 @@ def test_checker_refuses_indexing_drift_with_refreshed_output_digests(
         elif fault == "mode":
             manifest["indexing"] = {}
         else:
-            manifest["version"] = "0.2.0"
+            manifest["version"] = unpublished_version()
         marker.write_text(json.dumps(manifest))
     else:
         path = (
@@ -235,7 +221,7 @@ def test_checker_refuses_indexing_drift_with_refreshed_output_digests(
         path.write_text(text)
         refresh(output, path)
     with pytest.raises(ValueError, match=r"indexing|robots|headers|version"):
-        verify(output)
+        verify(output, source)
 
 
 @pytest.mark.parametrize(
