@@ -5,11 +5,12 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ## Unreleased
 
-Changes after the 0.2.0 candidate will be collected here.
+Changes after 0.2.0 will be collected here.
 
-## 0.2.0 — prepared candidate
+## 0.2.0 — 2026-10-21
 
-Publication is pending. [Authored release notes](docs/release-notes/0.2.0.md)
+[Published release](https://github.com/carloshm91/kuberich/releases/tag/v0.2.0).
+[Authored release notes](docs/release-notes/0.2.0.md)
 describe this phase, installation, upgrades and known limits. The entries below
 retain development history.
 

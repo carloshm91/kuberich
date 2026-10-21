@@ -7,8 +7,9 @@ The Apache-2.0 source repository is public by the maintainer's approval in
 project remains private. Source opening did not publish packages, a tap, a
 website, tags or GitHub Releases. The first release-preparation PR sets metadata
 to `0.1.0`; its TestPyPI/PyPI uploads, immutable tag/GitHub Release and checked
-Homebrew activation completed on 2026-10-12. Final site/domain activation remains
-separate work.
+Homebrew activation completed on 2026-10-12. Version 0.2.0, with Homebrew
+bottles, was published on 2026-10-21. Site updates for each release need
+separate approval.
 
 The maintainer changed the release policy on 2026-10-09 to usable, qualified
 **0.x phases**, beginning with **0.1.0**. This supersedes #154's earlier

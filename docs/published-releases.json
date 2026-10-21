@@ -8,6 +8,14 @@
       "pypi": "https://pypi.org/project/kuberich/0.1.0/",
       "github": "https://github.com/carloshm91/kuberich/releases/tag/v0.1.0",
       "homebrew_formula_commit": "ec62f339cdb71bf379724fcb2753326dd26ad570"
+    },
+    "0.2.0": {
+      "tag": "v0.2.0",
+      "source_commit": "344222174a85868bb7836ecd1fcc91e15f65d269",
+      "published_at": "2026-10-21T12:55:47Z",
+      "pypi": "https://pypi.org/project/kuberich/0.2.0/",
+      "github": "https://github.com/carloshm91/kuberich/releases/tag/v0.2.0",
+      "homebrew_formula_commit": "cbe421cac5331407771b7b82279d69b533665cd2"
     }
   }
 }
