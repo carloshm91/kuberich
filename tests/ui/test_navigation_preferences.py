@@ -112,8 +112,11 @@ async def apply_view(screen, pilot, columns, sort="name", descending=False, mode
     screen.sort_input.value = sort
     screen.reverse.value = descending
     screen.set_focus(screen.query_one("#view-" + mode, Button))
+    previous = screen._save_task
     await pilot.press("enter")
-    if screen._save_task is not None:
+    # The button posts its Pressed message; let the handler start a new save first.
+    await pilot.pause()
+    if screen._save_task is not previous and screen._save_task is not None:
         await wait_for(screen._save_task.done)
     await pilot.pause()
 
