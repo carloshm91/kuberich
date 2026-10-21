@@ -64,7 +64,12 @@ From 0.2.0, Homebrew installs a prebuilt bottle on these systems:
 
 A bottle only unpacks files, so it takes seconds instead of minutes. Other
 systems, such as Linux ARM64 or macOS 14 on Intel, still build from source. A
-source build can take several minutes. `brew upgrade kuberich` from 0.1.0 moves
+source build can take several minutes.
+
+Homebrew itself publishes prebuilt dependencies, such as Python and kubectl,
+only for Apple Silicon with macOS 15 or newer and for Linux. On macOS 14 or an
+Intel Mac, Homebrew may build those dependencies from source first, which can
+take much longer than installing KubeRich. `brew upgrade kuberich` from 0.1.0 moves
 to the bottle and keeps your preferences. Homebrew has no downgrade command; the
 old version stays in the Cellar until `brew cleanup` removes it.
 
