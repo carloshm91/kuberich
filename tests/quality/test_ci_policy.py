@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from scripts.ci_policy import main, matrix, native_matrix
+from scripts.ci_policy import TEST_PARTS, main, matrix, native_matrix, part_matrix
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -32,6 +32,12 @@ def test_event_preserves_every_linux_minor_and_declared_mac_coverage(event, ref,
     assert [job["python"] for job in jobs if job["os"] == "macos-latest"] == mac_versions
     assert {job["os"] for job in jobs} <= {"ubuntu-24.04", "macos-latest"}
     assert len({(job["os"], job["python"]) for job in jobs}) == len(jobs)
+    parts = part_matrix(event, ref)["include"]
+    assert parts == [
+        {**job, "part": str(part), "parts": str(TEST_PARTS)}
+        for job in jobs
+        for part in range(1, TEST_PARTS + 1)
+    ]
 
 
 @pytest.mark.parametrize(
@@ -86,14 +92,16 @@ def test_plan_cli_and_aggregate_use_the_same_actual_event(tmp_path):
     )
     assert process.returncode == 0, process.stderr
     outputs = dict(line.split("=", 1) for line in output.read_text().splitlines())
-    assert set(outputs) == {"matrix", "native_matrix"}
+    assert set(outputs) == {"matrix", "test_matrix", "native_matrix"}
     assert json.loads(outputs["matrix"]) == matrix("workflow_dispatch", "refs/heads/main")
+    assert json.loads(outputs["test_matrix"]) == part_matrix("workflow_dispatch", "refs/heads/main")
     assert json.loads(outputs["native_matrix"]) == native_matrix(
         "workflow_dispatch", "refs/heads/main"
     )
     environment["KUBERICH_JOB_RESULTS"] = json.dumps(
         {
             "plan": {"result": "success", "outputs": outputs},
+            "tests": {"result": "success"},
             "application": {"result": "success"},
             "standalone": {"result": "success"},
         }
@@ -126,19 +134,40 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert workflow["on"]["pull_request"] is None
     assert workflow["permissions"] == {"contents": "read"}
     assert "github.event_name" in workflow["concurrency"]["group"]
-    plan, application, gate = (
-        workflow["jobs"][name] for name in ("plan", "application", "quality-gate")
+    plan, tests, application, gate = (
+        workflow["jobs"][name] for name in ("plan", "tests", "application", "quality-gate")
     )
     assert plan["steps"][-1]["run"] == "python3 -m scripts.ci_policy"
-    assert application["needs"] == "plan"
+    assert tests["needs"] == "plan"
+    assert tests["strategy"] == {
+        "fail-fast": False,
+        "matrix": "${{ fromJSON(needs.plan.outputs.test_matrix) }}",
+    }
+    part = "\n".join(step.get("run", "") for step in tests["steps"])
+    assert "pytest --cov=kuberich --cov-branch" in part
+    assert next(step for step in tests["steps"] if "pytest" in step.get("run", ""))["env"] == {
+        "KUBERICH_TEST_PART": "${{ matrix.part }}/${{ matrix.parts }}"
+    }
+    kept = next(
+        step
+        for step in tests["steps"]
+        if step.get("uses", "").startswith("actions/upload-artifact@")
+    )
+    assert kept["with"]["name"] == (
+        "test-part-${{ matrix.os }}-python-${{ matrix.python }}-${{ matrix.part }}"
+    )
+    assert kept["with"]["if-no-files-found"] == "error"
+    assert application["needs"] == ["plan", "tests"]
     assert application["strategy"] == {
         "fail-fast": False,
         "matrix": "${{ fromJSON(needs.plan.outputs.matrix) }}",
     }
-    assert "if" not in application and "continue-on-error" not in application
+    for job in (tests, application):
+        assert "if" not in job and "continue-on-error" not in job
+        assert all("continue-on-error" not in step for step in job["steps"])
     commands = "\n".join(step.get("run", "") for step in application["steps"])
     for required in (
-        "pytest --cov=kuberich --cov-branch",
+        "scripts.combine_test_parts --parts parts",
         "scripts.merge_runtime_coverage",
         "scripts/check_coverage.py coverage.json",
         "diff-cover coverage.xml",
@@ -163,14 +192,14 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     ):
         assert required in commands
     assert (
-        commands.index("pytest --cov=kuberich --cov-branch")
+        commands.index("scripts.combine_test_parts")
         < commands.index("python -m scripts.merge_runtime_coverage")
         < commands.index("scripts/check_coverage.py coverage.json")
     )
     assert "scripts/merge_runtime_coverage.py" in commands
     assert "git rev-parse HEAD^" in commands
     assert gate["name"] == "Quality gate" and gate["if"] == "${{ always() }}"
-    assert set(gate["needs"]) == {"plan", "application", "standalone"}
+    assert set(gate["needs"]) == {"plan", "tests", "application", "standalone"}
     assert gate["steps"][-1]["run"] == "python3 -m scripts.check_quality_gate"
     linux_tools = next(
         step for step in application["steps"] if "apt-get install" in step.get("run", "")
@@ -200,6 +229,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
             "quality.yml",
             {
                 "plan": "ubuntu-24.04",
+                "tests": "${{ matrix.os }}",
                 "application": "${{ matrix.os }}",
                 "standalone": "${{ matrix.os }}",
                 "quality-gate": "ubuntu-24.04",

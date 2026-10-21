@@ -1,5 +1,6 @@
 """Explicit synthetic resource semantics and an owned full discovery fixture."""
 
+import copy
 from contextlib import asynccontextmanager
 
 from aiohttp import web
@@ -119,7 +120,8 @@ def manifest(definition, *, name="owned-one", namespace="team", uid=None, overri
     value.pop("spec")
     value.update(apiVersion=api(definition).api_version, kind=api(definition).kind)
     value["metadata"]["creationTimestamp"] = "2026-10-01T00:00:00Z"
-    fixture = FIXTURES[STANDARD_RESOURCES.index(definition)]
+    # Callers may edit the result, so never share nested fixture data between tests.
+    fixture = copy.deepcopy(FIXTURES[STANDARD_RESOURCES.index(definition)])
     value.update({key: val for key, val in fixture.items() if key != "metadata"})
     value["metadata"].update(fixture.get("metadata", {}))
     if overrides:

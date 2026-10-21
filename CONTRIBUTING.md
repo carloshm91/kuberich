@@ -108,6 +108,8 @@ Main pushes repeat Linux; manual Application quality dispatches on main qualify
 all six combinations before release. Every selected environment retains the full
 suite and independent coverage gates. Do not use a manual dispatch as a substitute
 for PR checks or a routine development matrix as release qualification.
+Each environment runs pytest in four parallel parts and combines their coverage
+before the gates; see [parallel test parts](docs/quality.md#parallel-test-parts).
 
 The [observed CI comparison](docs/acceptance/private-ci.md) verifies seven native
 jobs per matching-source PR/main pair plus four planner/aggregate jobs. These
