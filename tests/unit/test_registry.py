@@ -18,7 +18,7 @@ from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
 from kuberich.services.commands import CommandService, ResourceCommand, suggestions
 from kuberich.services.filtering import filter_rows
-from tests.support.standard import api, row_record
+from tests.support.standard import api, manifest, row_record
 
 EXPECTED = (
     ("10", "12", "11", "9"),
@@ -37,6 +37,12 @@ EXPECTED = (
     ("2Gi", "ReadWriteOnce", "Retain", "Bound", "team/owned-claim", "owned"),
     ("kubernetes.io/no-provisioner", "Retain", "Immediate", "false"),
 )
+
+
+def test_an_edited_manifest_never_changes_the_next_one():
+    (services,) = (definition for definition in STANDARD_RESOURCES if definition.name == "services")
+    manifest(services)["spec"]["ports"] = [{"port": 80}]
+    assert manifest(services)["spec"]["ports"] == [{"port": 8080}]
 
 
 @pytest.mark.parametrize(
