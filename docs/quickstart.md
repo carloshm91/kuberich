@@ -1,9 +1,10 @@
 # First installation and trial
 
-KubeRich 0.1.0 has live pods, namespace/context tables, inline
+KubeRich 0.2.0 has live pods, namespace/context tables, inline
 command completion, local filters, 15 [standard resource tables](standard-resources.md),
 resource details/YAML/events, generic CRD tables, single/aggregate logs and
-embedded container shells. Public PyPI, Homebrew and standalone installations
+embedded container shells. It also adds themes, local plugins and
+navigation preferences. Public PyPI, Homebrew and standalone installations
 are available. See
 [installation and upgrades](installation.md) for channels and measured scope.
 Guarded annotations, manifest editing, workload scale/restart/rollback and managed
@@ -160,12 +161,11 @@ Uninstall with `uv tool uninstall kuberich` or, for pipx, `pipx uninstall kuberi
 Preferences/logs remain separate from the installed application. Running through
 the checkout does not create a uv tool installation to uninstall.
 
-PyPI and the public Homebrew tap are available first-release channels.
-First 0.1.0 uses an identified local upgrade baseline, without inventing
-a previous public version; later trials use the actual published predecessor.
+PyPI and the public Homebrew tap are available. Upgrades to 0.2.0 were tested
+from the published 0.1.0 packages.
 See [upgrade constraints](distribution.md#upgrade-and-uninstall-contract).
 Four qualified standalone Linux/macOS archives are available in the
-[0.1.0 release](https://github.com/carloshm91/kuberich/releases/tag/v0.1.0).
+[0.2.0 release](https://github.com/carloshm91/kuberich/releases/tag/v0.2.0).
 
 ## If something fails
 

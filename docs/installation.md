@@ -1,7 +1,7 @@
 # Installation and upgrades
 
-**0.1.0 is published** on [PyPI](https://pypi.org/project/kuberich/0.1.0/),
-[GitHub Releases](https://github.com/carloshm91/kuberich/releases/tag/v0.1.0) and
+**0.2.0 is published** on [PyPI](https://pypi.org/project/kuberich/0.2.0/),
+[GitHub Releases](https://github.com/carloshm91/kuberich/releases/tag/v0.2.0) and
 the [project Homebrew tap](https://github.com/kuberich/homebrew-tap).
 
 Choose one installation method. Every method provides the `kuberich` command;
@@ -14,7 +14,7 @@ or [pipx](https://pipx.pypa.io/stable/installation/) environment. For a supplied
 candidate, run outside the source checkout:
 
 ```sh
-uv tool install --python 3.12 /absolute/path/to/kuberich-0.1.0-py3-none-any.whl
+uv tool install --python 3.12 /absolute/path/to/kuberich-0.2.0-py3-none-any.whl
 kuberich --version
 kuberich config check
 ```
@@ -22,7 +22,7 @@ kuberich config check
 Alternatively:
 
 ```sh
-pipx install --python python3.12 /absolute/path/to/kuberich-0.1.0-py3-none-any.whl
+pipx install --python python3.12 /absolute/path/to/kuberich-0.2.0-py3-none-any.whl
 ```
 
 Use the actual trusted file path. If the manager reports a missing executable
@@ -71,15 +71,15 @@ old version stays in the Cellar until `brew cleanup` removes it.
 ## Standalone Linux and macOS archives
 
 A standalone archive includes its own Python runtime. The
-[GitHub Release](https://github.com/carloshm91/kuberich/releases/tag/v0.1.0)
+[GitHub Release](https://github.com/carloshm91/kuberich/releases/tag/v0.2.0)
 contains these four archives and `DOWNLOAD-SHA256SUMS`:
 
 | System | Architecture | Archive |
 | --- | --- | --- |
-| Linux | x86_64 | `kuberich-0.1.0-linux-x86_64.tar.gz` |
-| Linux | ARM64 | `kuberich-0.1.0-linux-arm64.tar.gz` |
-| macOS | Intel | `kuberich-0.1.0-macos-x86_64.tar.gz` |
-| macOS | Apple Silicon | `kuberich-0.1.0-macos-arm64.tar.gz` |
+| Linux | x86_64 | `kuberich-0.2.0-linux-x86_64.tar.gz` |
+| Linux | ARM64 | `kuberich-0.2.0-linux-arm64.tar.gz` |
+| macOS | Intel | `kuberich-0.2.0-macos-x86_64.tar.gz` |
+| macOS | Apple Silicon | `kuberich-0.2.0-macos-arm64.tar.gz` |
 
 Linux archives require glibc 2.35 or newer; Alpine/musl and Windows are outside
 this release. macOS archives have a measured deployment floor of 14. Native
@@ -94,9 +94,9 @@ Compare the selected archive's SHA-256 with its exact line in the supplied
 Extract into a new directory, retaining the complete `kuberich/` tree:
 
 ```sh
-mkdir kuberich-0.1.0
-tar -xzf /absolute/path/to/ARCHIVE.tar.gz -C kuberich-0.1.0
-./kuberich-0.1.0/kuberich/kuberich --version
+mkdir kuberich-0.2.0
+tar -xzf /absolute/path/to/ARCHIVE.tar.gz -C kuberich-0.2.0
+./kuberich-0.2.0/kuberich/kuberich --version
 ```
 
 Replace `ARCHIVE.tar.gz` with the selected filename. The launcher depends on its
@@ -144,9 +144,8 @@ pipx upgrade kuberich
 brew upgrade kuberich/tap/kuberich
 ```
 
-The first public release has no previous public KubeRich version. Its owned
-upgrade trials use identified immutable local versions and the manager's actual
-upgrade command. Later releases must also qualify the genuine published baseline.
+Upgrades from 0.1.0 to 0.2.0 were tested with uv, pipx and Homebrew, starting
+from the published 0.1.0 packages. Preferences and kubeconfig stay unchanged.
 To replace a supplied local wheel, use the same manager with its explicit new
 file/install constraint; a reinstall is not proof of a normal channel upgrade.
 

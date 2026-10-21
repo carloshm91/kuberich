@@ -33,9 +33,11 @@ uv tool install kuberich
 pipx install kuberich
 ```
 
-Version 0.1.0 is published and verified. See [installation](installation.md) for
-platform scope and the [release](https://github.com/carloshm91/kuberich/releases/tag/v0.1.0)
-for four native archives, checksums and provenance.
+Version 0.2.0 is the latest published and verified release. See
+[installation](installation.md) for platform scope and the
+[release](https://github.com/carloshm91/kuberich/releases/tag/v0.2.0) for four
+native archives, checksums and provenance. From 0.2.0, the Homebrew tap also
+provides bottles for macOS Apple Silicon, macOS Intel and Linux x86_64.
 
 ## Development artifacts: D01 #34
 
@@ -179,8 +181,8 @@ failed, cancelled or skipped native jobs and incomplete/wrong-target plans.
 Both Linux jobs run the extracted executable's real selected-container/TLS/RBAC
 shell scenarios on owned kind clusters. These four jobs and all six source
 environments passed the completed [D06 checkpoint](acceptance/workload-checkpoint.md).
-Version `0.1.0` passed its complete exact-main qualification and is published on
-PyPI, GitHub Releases and the project Homebrew tap.
+Versions `0.1.0` and `0.2.0` passed their complete exact-main qualification and
+are published on PyPI, GitHub Releases and the project Homebrew tap.
 
 ## Homebrew implementation
 
@@ -199,7 +201,8 @@ D06 #51 must retain actual local baseline-to-candidate update evidence for every
 promised manager, including an explicitly identified immutable local baseline
 for first 0.1.0. There is no previous public KubeRich release to claim. Later
 releases must exercise the actual previous supported published artifact, with
-public channel checks under #89.
+public channel checks under #89. The 0.2.0 upgrade trials started from the
+published 0.1.0 packages.
 
 An unpinned published installation uses its actual
 manager update/uninstall path:
@@ -239,8 +242,9 @@ behavior while preserving user configuration; no unqualified platform is promise
 - Verify checksums, dependency inventory, and artifact provenance.
 - Publish only tested artifacts; retain known limitations and support evidence.
 
-Version 0.1.0 has actual OIDC publication and public-channel installation evidence;
-final website/domain verification remains in the first-channel activation task.
+Versions 0.1.0 and 0.2.0 have actual OIDC publication and public-channel
+installation evidence. The first-channel activation task also verified the
+website and custom domains.
 
 ## Sources
 

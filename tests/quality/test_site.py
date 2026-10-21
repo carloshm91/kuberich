@@ -14,6 +14,7 @@ from scripts.build_site import GUIDES, MARKER, REFERENCES, ROOT, build, heading_
 from scripts.check_site import verify
 from tests.support.site_source import (
     copy_source,
+    latest_published,
     published_source,
     set_version,
     unpublished_version,
@@ -49,7 +50,7 @@ def test_builds_both_surfaces_deterministically_and_rebuilds_owned_output(tmp_pa
         installation = (first / surface / "installation.html").read_text()
         assert "brew install kuberich/tap/kuberich" in installation
         assert "pipx upgrade kuberich" in installation
-        assert "kuberich-0.1.0-linux-arm64.tar.gz" in installation
+        assert f"kuberich-{latest_published()}-linux-arm64.tar.gz" in installation
         assert "macOS 26" in installation and "glibc 2.35" in installation
         assert "terminal-compatibility.html" in installation
         assert "Public release" in installation

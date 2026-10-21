@@ -137,8 +137,8 @@ add capabilities. The first planned public product is qualified 0.1.0, followed
 by explicitly reviewed cumulative 0.x phases. An incompatible 0.x change needs a
 reviewed minor and migration notes; 1.0 introduces stable contracts. Release PRs
 commit authored version notes and tested install/upgrade limits; unknown minor
-lines require a reviewed plan mapping. Version 0.1.0 is published; later releases
-retain the [exact release procedure](docs/releases.md).
+lines require a reviewed plan mapping. Versions 0.1.0 and 0.2.0 are published;
+later releases retain the [exact release procedure](docs/releases.md).
 
 ## Safety and attribution
 

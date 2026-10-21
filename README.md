@@ -14,10 +14,11 @@ All capabilities are open source, with no paid feature tiers.
 *Actual application render using fictional resources and an owned local API.
 No customer contexts, credentials or production resources are used in this demo.*
 
-## First release
+## Latest release
 
-**0.1.0 is available** from [PyPI](https://pypi.org/project/kuberich/0.1.0/),
-the project Homebrew tap and [GitHub Releases](https://github.com/carloshm91/kuberich/releases/tag/v0.1.0).
+**0.2.0 is available** from [PyPI](https://pypi.org/project/kuberich/0.2.0/),
+the project Homebrew tap and [GitHub Releases](https://github.com/carloshm91/kuberich/releases/tag/v0.2.0).
+See the [0.2.0 release notes](https://github.com/carloshm91/kuberich/blob/main/docs/release-notes/0.2.0.md).
 
 ```sh
 brew install kuberich/tap/kuberich
@@ -47,18 +48,17 @@ K9s parity are later milestones.
 
 Use `--readonly` for your first connection; the default preference permits writes.
 Effectful actions require captured targets and the corresponding Kubernetes
-permissions; reviewed changes also require confirmation. Next-release source adds
-explicit local [command plugins](https://github.com/carloshm91/kuberich/blob/main/docs/plugins.md)
-with [tested examples and compatibility limits](https://github.com/carloshm91/kuberich/blob/main/docs/plugin-compatibility.md);
-published 0.1.0 does not load plugins. Metrics and advanced node/debug operations
+permissions; reviewed changes also require confirmation. You can add explicit
+local [command plugins](https://github.com/carloshm91/kuberich/blob/main/docs/plugins.md)
+with [tested examples and compatibility limits](https://github.com/carloshm91/kuberich/blob/main/docs/plugin-compatibility.md).
+Metrics and advanced node/debug operations
 remain planned; see the maintained
 [resource views](https://github.com/carloshm91/kuberich/blob/main/docs/standard-resources.md) and [release phases](https://github.com/carloshm91/kuberich/blob/main/docs/releases.md).
 
 ## Run from source
 
-The next-release source also includes configurable themes and
+KubeRich includes configurable themes and
 [navigation, aliases and saved resource views](https://github.com/carloshm91/kuberich/blob/main/docs/navigation-preferences.md).
-These additions are not part of the published 0.1.0 packages.
 
 With [uv](https://docs.astral.sh/uv/getting-started/installation/) and Python 3.12,
 3.13 or 3.14, run from a trusted checkout:
@@ -102,7 +102,8 @@ containers; Ctrl+] closes the owned session. See the
 The maintained Markdown guides generate both website surfaces. CLI/resource
 references come from application declarations; authored explanations are reviewed
 with the behavior they describe. The public [website](https://kuberich.com/) and
-[documentation](https://docs.kuberich.com/) serve the approved 0.1.0 release.
+[documentation](https://docs.kuberich.com/) serve the approved 0.1.0 release until
+the 0.2.0 site update is approved.
 Merged source guides describe subsequent development explicitly; their next
 public deployment is qualified and approved separately.
 
@@ -139,7 +140,7 @@ Please follow the [code of conduct](https://github.com/carloshm91/kuberich/blob/
 [NOTICE](https://github.com/carloshm91/kuberich/blob/main/NOTICE) and the [licensing guide](https://github.com/carloshm91/kuberich/blob/main/docs/licensing.md) explain attribution
 and derivative permissions.
 
-The source checkout for the next release adds [deliberate ConfigMap and Secret
+KubeRich also includes [deliberate ConfigMap and Secret
 data inspection](https://github.com/carloshm91/kuberich/blob/main/docs/configuration-data.md), including guarded Secret editing.
 It also adds [theme preview, context palettes, inversion and optional version
-notices](https://github.com/carloshm91/kuberich/blob/main/docs/themes.md). These features are not part of the published 0.1.0 package.
+notices](https://github.com/carloshm91/kuberich/blob/main/docs/themes.md).

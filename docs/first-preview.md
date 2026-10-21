@@ -1,7 +1,7 @@
 # Current preview
 
-**KubeRich 0.1.0 is published** on [PyPI](https://pypi.org/project/kuberich/0.1.0/),
-[GitHub Releases](https://github.com/carloshm91/kuberich/releases/tag/v0.1.0) and
+**KubeRich 0.2.0 is published** on [PyPI](https://pypi.org/project/kuberich/0.2.0/),
+[GitHub Releases](https://github.com/carloshm91/kuberich/releases/tag/v0.2.0) and
 [Homebrew](https://github.com/kuberich/homebrew-tap).
 
 ```sh
@@ -15,40 +15,40 @@ kuberich config check
 Choose one installation method. Start with
 `kuberich --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly`, using
 your intended context and namespace. The [installation guide](installation.md)
-covers pipx, standalone archives, updates and removal. The
-[website](https://kuberich.com/) and [documentation](https://docs.kuberich.com/)
-now serve the verified public 0.1.0 content. The maintainer approved the protected
-deployment, which passed on 2026-10-13 UTC. Independent custom-domain HTTPS reads
-matched all 42 published files and all 26 direct guide URLs to the checked build.
-The landing links to the dedicated documentation host; four legacy `/docs`
-routes return the expected 301 redirects. Both custom 404 routes passed too.
-The former development-version and unavailable-package notices are gone.
+covers pipx, standalone archives, updates and removal. To move from 0.1.0, run
+`uv tool upgrade kuberich`, `pipx upgrade kuberich` or
+`brew upgrade kuberich/tap/kuberich`. Your preferences and kubeconfig stay as
+they are.
 
-Final hosting acceptance remains open. Read-only verification on 2026-10-19
-confirmed the HTTPS `www` redirect to the apex, but HTTP `www` still returned
-522 without a redirect. Both docs-host assets now return `index, follow`; three
-unchanged apex-host assets retain the earlier `noindex, nofollow` header. Their
-bodies match the approved build. The HTML pages already serve `index, follow`.
-Ordinary-URL reads must verify the remaining redirect/cache responses before
-claiming final custom-domain acceptance. No zone/DNS/cache change was made by
-that inspection.
+The [release notes](release-notes/0.2.0.md) list what is new: themes,
+navigation and column preferences, local plugins, ConfigMap and Secret data,
+resource jumps, live preference reload, context edits, pod cleanup and
+forwarding presets. Homebrew installs a prebuilt bottle on macOS Apple Silicon,
+macOS Intel and Linux x86_64.
 
-## 0.2.0 candidate prepared
+The [website](https://kuberich.com/) and [documentation](https://docs.kuberich.com/)
+still show the 0.1.0 content. Their 0.2.0 update needs separate approval.
 
-The source version is now 0.2.0 and its [release notes](release-notes/0.2.0.md)
-are written. Publication is still pending: the full release qualification must
-pass on the exact main commit, and the hosting checks above must pass before
-any 0.2.0 package, tag or bottle is published. Until then, installs get 0.1.0.
+## 0.2.0 validation
 
-## Source checkpoint toward 0.2.0: live preferences
+The exact release commit passed all six Python combinations on Linux and macOS,
+the four standalone archive builds and the Homebrew source and bottle installs.
+Coverage was 98.78% of lines and 95.93% of branches, with 100% for the critical
+modules. Three consecutive rounds passed the contract tests and every local
+test-cluster scenario, including cleanup. The published wheel has the same
+SHA-256 as the locally built one. Installs from PyPI with uv and pipx, and
+upgrades from the published 0.1.0 packages, passed in clean environments.
+
+Real EKS, AKS and GKE clusters are not certified yet; those trials stay opt-in.
+
+## Included in 0.2.0: live preferences
 
 Edit and save the preference file while KubeRich runs. Themes, aliases, column
 views, jumps and plugins update within two seconds, and the current view stays.
 An invalid file keeps the last valid preferences. A `context_settings` section
 can make one context read-only or change its refresh interval. Palettes can use
 `'default'` to show the terminal's own background, and
-`appearance.full_gvr_titles` shows the API version in titles. Published 0.1.0
-remains unchanged.
+`appearance.full_gvr_titles` shows the API version in titles.
 
 ```sh
 uv run pytest tests/ui/test_live_preferences.py tests/unit/test_context_settings.py
@@ -57,13 +57,12 @@ uv run pytest tests/ui/test_live_preferences.py tests/unit/test_context_settings
 See [configuration](configuration.md#changing-preferences-while-kuberich-runs)
 and [acceptance evidence](acceptance/reactive-preferences.md).
 
-## Source checkpoint toward 0.2.0: resource jumps
+## Included in 0.2.0: resource jumps
 
 Define jumps in the preference file, select a row and type `:jump` or
 `:jump NAME`. The related view opens with a label or field filter already set,
 for example from a Deployment to its pods or from a node to its pods.
-`kuberich config check` validates the definitions. Published 0.1.0 remains
-unchanged.
+`kuberich config check` validates the definitions.
 
 ```sh
 uv run pytest tests/unit/test_jumps.py tests/ui/test_jumps.py tests/unit/test_cli_config.py
@@ -72,12 +71,12 @@ uv run pytest tests/unit/test_jumps.py tests/ui/test_jumps.py tests/unit/test_cl
 See [resource jumps](resource-jumps.md) and
 [acceptance evidence](acceptance/resource-jumps.md).
 
-## Source checkpoint toward 0.2.0: context edits and pod cleanup
+## Included in 0.2.0: context edits and pod cleanup
 
 In `:ctx`, `:rename NEW` renames the selected context and Ctrl+D or `:delete`
 deletes it. Review shows the file and the change first; a backup is written
 before the file is replaced. In a pods view, `:cleanup` reviews deleting the
-completed and failed pods shown. Published 0.1.0 remains unchanged.
+completed and failed pods shown.
 
 ```sh
 uv run pytest tests/unit/test_kubeconfig_edit.py tests/unit/test_cleanup.py tests/contract/test_kubeconfig_files.py tests/ui/test_context_cleanup.py
@@ -88,13 +87,12 @@ See [context edits](context-sessions.md#rename-or-delete-a-context),
 [finished-pod cleanup](resource-operations.md#clean-up-finished-pods) and
 [acceptance evidence](acceptance/context-cleanup.md).
 
-## Source checkpoint toward 0.2.0: forwarding presets
+## Included in 0.2.0: forwarding presets
 
 The next-release source adds named/container-qualified TCP mappings, local and
 exact-context presets, explicit local permission for annotation shortcuts,
 kubectl child transport selection and optional bounded reconnects. Non-loopback
 binds still need separate confirmation; resource listing never starts a listener.
-Published 0.1.0 remains unchanged.
 
 ```sh
 uv run pytest tests/unit/test_forward_presets.py tests/contract/test_forward_reconnect.py tests/ui/test_forward_presets.py
@@ -118,13 +116,13 @@ maximum gap with the original 150-ms limit and active GC; fresh full platform/na
 qualification remains required. The maintainer requested stopping after this
 ticket's verified delivery, before starting the next implementation issue.
 
-## Source checkpoint toward 0.2.0: terminal navigation
+## Included in 0.2.0: terminal navigation
 
 The next source checkpoint adds command/filter recall, inverse/fuzzy/metadata
 filters, wide/errors controls, bounded UID ranges and explicit namespace
 favorites. Read-only workspaces share chrome and nested command routing;
 container status refreshes from the owned Pod watch. Native macOS/X Window System writers and
-OSC52/tmux clipboard requests have explicit UTF-8 bounds. Published 0.1.0 is unchanged.
+OSC52/tmux clipboard requests have explicit UTF-8 bounds.
 
 ```sh
 uv run pytest tests/unit/test_interactions.py tests/unit/test_selectors.py tests/unit/test_metadata_filtering.py
@@ -142,14 +140,14 @@ OSC52 receipts. The [implementation PR](https://github.com/carloshm91/kuberich/p
 retains the successful protected platform/native and coverage qualification.
 See [behavior and limits](terminal-navigation.md).
 
-## Source checkpoint toward 0.2.0: plugin compatibility and examples
+## Included in 0.2.0: plugin compatibility and examples
 
 The source classifies all 50 pinned community plugin files and 108 commands,
 including two executable helpers. It adds three original reviewed definitions
 for Pod inspection, an interactive local kubectl exec and finite background
 event collection; 18 synthetic argv adaptations record their changed semantics.
 Upstream scripts/virtual views/legacy tools are not automatically imported,
-installed or claimed as native features. The published 0.1.0 package is unchanged.
+installed or claimed as native features.
 
 ```sh
 uv run pytest tests/contract/test_plugin_examples.py tests/unit/test_plugins.py
@@ -160,14 +158,13 @@ See [compatibility and examples](plugin-compatibility.md) and
 [acceptance evidence](acceptance/plugin-compatibility.md). Runtime prerequisites,
 read-only trust, output/Stop behavior and separate service identities are explicit.
 
-## Source checkpoint toward 0.2.0: plugin execution
+## Included in 0.2.0: plugin execution
 
 The next-release source adds `:plugins`, `:plugin NAME`, typed Review/Run forms,
 resource-scoped shortcuts and `:pluginjobs`. Capture, background and native
 foreground commands use owned processes, explicit read-only trust, bounded
 captured output and private single-context credentials. Context/UID invalidation
-and exit drain processes before removing connection files. The published 0.1.0
-package is unchanged; no package/tag/site publication is part of this checkpoint.
+and exit drain processes before removing connection files.
 
 ```sh
 uv run pytest tests/contract/test_plugins.py tests/ui/test_plugins.py
@@ -180,12 +177,12 @@ Foreground local plugins deliberately use native terminal handoff; pod/container
 shells remain embedded. Arbitrary local programs are not sandboxed, and direct
 foreground output cannot be redacted by KubeRich.
 
-## Source checkpoint toward 0.2.0: plugin configuration
+## Included in 0.2.0: plugin configuration
 
 The source validates explicitly configured global/context plugin files, exact
 resource scopes, shortcut overrides, typed inputs and captured literal variables.
 This configuration checkpoint executes no command; interactive invocation and
-owned process execution follow in the next task. Published 0.1.0 is unchanged.
+owned process execution follow in the next task.
 
 ```sh
 uv run pytest tests/unit/test_plugins.py tests/contract/test_plugin_files.py
@@ -195,7 +192,7 @@ The offline CLI test also runs `kuberich --config <owned-fixture> config check`,
 verifies no sentinel command was executed and confirms the file is unchanged.
 See [configuration and trust](plugins.md) and [evidence](acceptance/plugin-contract.md).
 
-## Source checkpoint toward 0.2.0: navigation preferences
+## Included in 0.2.0: navigation preferences
 
 The next-release source supports per-view navigation keys, literal command aliases
 and resource-specific column order, visibility, width, alignment and typed sort.
@@ -210,12 +207,11 @@ uv run pytest tests/ui/test_navigation_preferences.py tests/terminal/test_prefer
 ```
 
 The source PTY verifies actual remapped keys, alias completion, private saves,
-reopening and terminal restoration against an owned local API. Published 0.1.0
-packages remain unchanged. Expanded filters, resource jumps, reactive reload and
+reopening and terminal restoration against an owned local API. Expanded filters, resource jumps, reactive reload and
 plugins remain later work. See [the guide](navigation-preferences.md) and
 [measured acceptance](acceptance/navigation-preferences.md).
 
-## Source checkpoint toward 0.2.0: appearance
+## Included in 0.2.0: appearance
 
 The next-release source provides `:themes`, `:theme` and `:about`, custom opaque
 palettes, environment/context/global precedence, explicit preference saves and
@@ -233,9 +229,9 @@ including NO_COLOR, preview/cancel, a real save, 40-column About and terminal
 restoration. Owned HTTP/cache and Pilot cases cover errors, cancellation,
 precedence and private persistence. [Appearance acceptance](acceptance/appearance.md)
 records measured scope; the issue-linked PR retains exact-head platform gates.
-These features are not in the published 0.1.0 package. No real cloud was used.
+No real cloud was used.
 
-## Source checkpoint toward 0.2.0: configuration data
+## Included in 0.2.0: configuration data
 
 The next-release source adds Enter / `v` on ConfigMaps and Secrets: a key/size
 index with values hidden by default, explicit per-key reveal/copy, UTF-8/Base64
@@ -248,7 +244,7 @@ uv sync --locked --group dev
 uv run kuberich --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly
 ```
 
-These commands run the checkout, not an upgrade to the published 0.1.0 package.
+These commands run the checkout.
 Owned-loopback Pilot and real PTY verification cover the controls; disposable-kind
 verification covers actual Secret/ConfigMap reads and guarded edits. Measured
 final acceptance is retained in [configuration-data evidence](acceptance/configuration-data.md).
@@ -267,17 +263,14 @@ captured attach and guarded file transfers are implemented. Reviewed changes
 include annotation updates, manifest dry-run/Apply, scale/restart/rollback,
 deletion and Job/CronJob operations.
 
-Metrics, user plugins and advanced node/debug operations remain planned.
-Complete K9s parity and stable 1.0 compatibility are later milestones.
-The next planned public phase, 0.2.0, includes themes, configurable navigation
-and views, external plugins, deliberate secret editing, terminal refinements
-and verified Homebrew bottles to reduce installation compilation. These remain
-planned until implemented and qualified; 0.1.0 currently installs from source
-through Homebrew.
+Version 0.2.0 adds themes, configurable navigation and views, local plugins,
+deliberate Secret editing, terminal refinements and Homebrew bottles. Metrics and
+advanced node/debug operations remain planned. Complete K9s parity and stable 1.0
+compatibility are later milestones.
 The [guided workflow](everyday-workflow.md) describes the current controls,
 and the [release phases](releases.md) explain what belongs to each version.
 
-## Current validation
+## 0.1.0 validation
 
 The website and documentation contain fictional examples and actual application
 renders from owned fixtures. Both generated surfaces passed checks across
