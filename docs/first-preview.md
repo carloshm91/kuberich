@@ -33,6 +33,21 @@ Ordinary-URL reads must verify the remaining redirect/cache responses before
 claiming final custom-domain acceptance. No zone/DNS/cache change was made by
 that inspection.
 
+## Source checkpoint toward 0.2.0: resource jumps
+
+Define jumps in the preference file, select a row and type `:jump` or
+`:jump NAME`. The related view opens with a label or field filter already set,
+for example from a Deployment to its pods or from a node to its pods.
+`kuberich config check` validates the definitions. Published 0.1.0 remains
+unchanged.
+
+```sh
+uv run pytest tests/unit/test_jumps.py tests/ui/test_jumps.py tests/unit/test_cli_config.py
+```
+
+See [resource jumps](resource-jumps.md) and
+[acceptance evidence](acceptance/resource-jumps.md).
+
 ## Source checkpoint toward 0.2.0: context edits and pod cleanup
 
 In `:ctx`, `:rename NEW` renames the selected context and Ctrl+D or `:delete`

@@ -72,6 +72,7 @@ GUIDES = (
     Guide("resource-workspace.md", "The workspace", "Browse"),
     Guide("standard-resources.md", "Resource views", "Browse"),
     Guide("resource-inspection.md", "Details, YAML & events", "Browse"),
+    Guide("resource-jumps.md", "Jump to related resources", "Browse"),
     Guide("container-navigation.md", "Container selection", "Observe & connect"),
     Guide("log-viewer.md", "Container logs", "Observe & connect"),
     Guide("container-shell.md", "Embedded shells", "Observe & connect"),

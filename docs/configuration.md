@@ -9,7 +9,8 @@ The next-release source adds [theme preview and context preferences](themes.md),
 including the explicit local save controls and an opt-in cached version notice.
 The published 0.1.0 package does not include those controls. `config check` in the
 source validates custom palette fields, contrast and registered theme references;
-invalid appearance settings leave files unchanged.
+invalid appearance settings leave files unchanged. It also checks
+[jump definitions](resource-jumps.md).
 
 ## Legacy preview compatibility
 

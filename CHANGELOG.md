@@ -7,6 +7,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Added
 
+- Jump from the selected row to a related view with `:jump`, using jumps you
+  define in the preference file. Templates only read fields from the row
+  ([#64](https://github.com/carloshm91/kuberich/issues/64),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Rename or delete a kubeconfig context from `:ctx` after a review, with a backup,
   and clean up completed and failed pods with `:cleanup`
   ([#63](https://github.com/carloshm91/kuberich/issues/63),

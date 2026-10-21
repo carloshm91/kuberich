@@ -28,6 +28,7 @@ read-only policy handle `--command` / `-c` at launch. Arguments preserve casing.
 | `status`, `retry` | Open connection details / reconnect |
 | `resource NAME[.GROUP][/VERSION] [NAMESPACE or *]` | Browse a discovered API family or an explicit served version |
 | `cleanup` | In a pod view: review deleting the completed and failed pods shown; see [cleanup](resource-operations.md#clean-up-finished-pods) |
+| `jump`, `jump NAME` | Open a related view from the selected row, with a filter already set; see [jumps](resource-jumps.md) |
 | `refresh` | Renew discovery and the selected resource watch on the current client |
 | `columns`, `columns cN ...`, `columns default`, `columns none` | Inspect/configure transient generic server columns |
 | `views` | Configure resource columns, widths, alignment and typed sort; explicitly save globally or by context in next-release source |

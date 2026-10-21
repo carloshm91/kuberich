@@ -54,6 +54,7 @@ class Command(Enum):
     LOGS_ALL = auto()
     RENAME = auto()
     CLEANUP = auto()
+    JUMP = auto()
     UNAVAILABLE = auto()
 
 
@@ -126,6 +127,7 @@ ALIASES = {
     "logsall": Command.LOGS_ALL,
     "rename": Command.RENAME,
     "cleanup": Command.CLEANUP,
+    "jump": Command.JUMP,
 }
 
 RESERVED_COMMANDS = frozenset(
@@ -229,6 +231,7 @@ def suggestions(
     discovery: Discovery | None = None,
     aliases: Aliases = (),
     plugins: tuple[str, ...] = (),
+    jumps: tuple[str, ...] = (),
 ) -> tuple[str, ...]:
     """Literal local candidates only; no regex, credentials or transport work."""
     text = text.removeprefix(":")
@@ -262,6 +265,8 @@ def suggestions(
             values = contexts
         elif effective == "plugin":
             values = plugins
+        elif command is Command.JUMP:
+            values = jumps
         elif command in {Command.NAMESPACES, Command.PODS} or (
             effective in RESOURCE_ALIASES and RESOURCE_ALIASES[effective].namespaced
         ):
@@ -287,7 +292,7 @@ def suggestions(
         # Preserve familiar :c → context and existing local command completions;
         # newer view-specific commands come last and appear once typed further.
         key=lambda value: (
-            not separator and ALIASES.get(value) in {Command.RENAME, Command.CLEANUP},
+            not separator and ALIASES.get(value) in {Command.RENAME, Command.CLEANUP, Command.JUMP},
             not separator and (value not in ALIASES or value == "columns"),
             not separator
             and ALIASES.get(value)
@@ -368,11 +373,15 @@ class CommandService:
             Command.SCALE,
             Command.ROLLBACK,
             Command.RENAME,
+            Command.JUMP,
         }:
             return Command.UNAVAILABLE
         argument = parts[1]
         if command in {Command.CONTEXTS, Command.RENAME}:
             validate_argument(argument)
+        elif command is Command.JUMP:
+            if re.fullmatch(r"[a-z][a-z0-9_-]{0,63}", argument) is None:
+                raise AppError("Use :jump NAME with one configured jump name.")
         elif command in {Command.SCALE, Command.ROLLBACK}:
             from kuberich.domain.workloads import replica_count
 
