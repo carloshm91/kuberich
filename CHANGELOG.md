@@ -5,6 +5,14 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ## Unreleased
 
+Changes after the 0.2.0 candidate will be collected here.
+
+## 0.2.0 — prepared candidate
+
+Publication is pending. [Authored release notes](docs/release-notes/0.2.0.md)
+describe this phase, installation, upgrades and known limits. The entries below
+retain development history.
+
 ### Added
 
 - Install from Homebrew with prebuilt bottles on macOS Apple Silicon, macOS Intel

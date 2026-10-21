@@ -33,6 +33,13 @@ Ordinary-URL reads must verify the remaining redirect/cache responses before
 claiming final custom-domain acceptance. No zone/DNS/cache change was made by
 that inspection.
 
+## 0.2.0 candidate prepared
+
+The source version is now 0.2.0 and its [release notes](release-notes/0.2.0.md)
+are written. Publication is still pending: the full release qualification must
+pass on the exact main commit, and the hosting checks above must pass before
+any 0.2.0 package, tag or bottle is published. Until then, installs get 0.1.0.
+
 ## Source checkpoint toward 0.2.0: live preferences
 
 Edit and save the preference file while KubeRich runs. Themes, aliases, column

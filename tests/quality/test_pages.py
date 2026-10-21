@@ -12,6 +12,7 @@ import yaml
 from scripts import pages
 from scripts.build_site import ROOT, build
 from tests.support.release_server import release_server
+from tests.support.site_source import published_source
 
 SHA = "a" * 40
 ACCOUNT = "b" * 32
@@ -220,7 +221,7 @@ def test_live_verification_reads_real_owned_http_and_detects_drift_without_crede
     tmp_path, monkeypatch, fault, public_launch
 ):
     output = tmp_path / "site"
-    build(output, public_launch=public_launch)
+    build(output, published_source(tmp_path / "source"), public_launch=public_launch)
     requests = []
     required = dict(
         line.strip().split(": ", 1)
@@ -339,9 +340,11 @@ def test_both_actual_node_uploads_receive_scoped_argv_and_receipt_matches_checke
         + ", JSON.stringify(process.argv.slice(2))+'\\n');"
     )
     output, receipt, wrangler = publication_fixture(tmp_path, monkeypatch, script)
+    source = ROOT
     if public_launch:
-        build(output, public_launch=True)
-    result = pages.publish(output, receipt, wrangler, ROOT)
+        source = published_source(tmp_path / "source")
+        build(output, source, public_launch=True)
+    result = pages.publish(output, receipt, wrangler, source)
     assert result["status"] == "verified" and result["publication_performed"] is True
     assert json.loads(receipt.read_text()) == result
     arguments = [json.loads(line) for line in argument_file.read_text().splitlines()]
