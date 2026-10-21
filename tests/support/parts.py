@@ -7,6 +7,17 @@ from pathlib import Path
 TIMINGS = Path(__file__).with_name("part_timings.json")
 MAX_PARTS = 16
 UNKNOWN_SECONDS = 10.0
+# These files share session fixtures that write retained evidence with fresh commits and
+# timestamps. They run in one part so the parts never write different copies.
+GROUPS = (
+    frozenset(
+        {
+            "tests/packaging/test_homebrew_formula.py",
+            "tests/packaging/test_release_candidate.py",
+            "tests/packaging/test_supply_chain.py",
+        }
+    ),
+)
 
 
 def parse_part(value: str) -> tuple[int, int]:
@@ -34,12 +45,28 @@ def load_timings(path: Path = TIMINGS) -> dict[str, float]:
     return {name: float(seconds) for name, seconds in value.items()}
 
 
-def assign(files: Iterable[str], count: int, timings: Mapping[str, float]) -> dict[str, int]:
-    """Give each file one part, slowest first into the lightest part; the result is stable."""
+def assign(
+    files: Iterable[str],
+    count: int,
+    timings: Mapping[str, float],
+    groups: Iterable[frozenset[str]] = GROUPS,
+) -> dict[str, int]:
+    """Give each group or lone file one part, slowest first into the lightest part.
+
+    The result is stable.
+    """
+    names = set(files)
+    units = [tuple(sorted(names & group)) for group in groups if names & group]
+    grouped = {name for unit in units for name in unit}
+    units += [(name,) for name in names - grouped]
+
+    def seconds(unit: tuple[str, ...]) -> float:
+        return sum(timings.get(name, UNKNOWN_SECONDS) for name in unit)
+
     loads = [0.0] * count
     parts = {}
-    for name in sorted(set(files), key=lambda item: (-timings.get(item, UNKNOWN_SECONDS), item)):
+    for unit in sorted(units, key=lambda item: (-seconds(item), item)):
         lightest = min(range(count), key=lambda part: (loads[part], part))
-        loads[lightest] += timings.get(name, UNKNOWN_SECONDS)
-        parts[name] = lightest + 1
+        loads[lightest] += seconds(unit)
+        parts.update(dict.fromkeys(unit, lightest + 1))
     return parts

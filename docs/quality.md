@@ -561,6 +561,9 @@ CI splits the pytest run into four parts per operating system and Python
 version. Each part runs on its own runner and keeps whole test files together.
 `tests/support/part_timings.json` lists how long each file took, so the parts
 take about the same time. A file that is not in the list counts as ten seconds.
+Test files that share fixtures which write evidence, such as the release
+candidate and supply-chain files, always run in the same part. `GROUPS` in
+`tests/support/parts.py` lists them.
 To run one part locally:
 
 ```sh

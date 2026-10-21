@@ -10,7 +10,14 @@ import pytest
 
 from scripts import combine_test_parts, part_timings
 from scripts.combine_test_parts import DATA, collect, combine
-from tests.support.parts import MAX_PARTS, UNKNOWN_SECONDS, assign, load_timings, parse_part
+from tests.support.parts import (
+    GROUPS,
+    MAX_PARTS,
+    UNKNOWN_SECONDS,
+    assign,
+    load_timings,
+    parse_part,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 FILES = [f"tests/unit/test_{index}.py" for index in range(9)]
@@ -54,6 +61,26 @@ def test_unknown_files_get_a_default_duration_and_a_part() -> None:
     parts = assign(["tests/new.py", "tests/slow.py"], 2, {"tests/slow.py": UNKNOWN_SECONDS + 1})
     assert parts == {"tests/slow.py": 1, "tests/new.py": 2}
     assert assign(["tests/new.py"], 1, {}) == {"tests/new.py": 1}
+
+
+def test_files_that_share_evidence_fixtures_run_in_one_part() -> None:
+    group = frozenset(FILES[:3])
+    timings = {name: 1.0 for name in FILES}
+    parts = assign(FILES, 4, timings, (group,))
+    assert len({parts[name] for name in group}) == 1
+    assert sorted(parts) == sorted(FILES) and set(parts.values()) == {1, 2, 3, 4}
+    # A group counts with its summed duration, so the other parts share the rest.
+    assert sum(parts[name] == parts[FILES[0]] for name in FILES) == 3
+    # Only collected members of a group are assigned.
+    assert assign(FILES[1:2], 2, timings, (group,)) == {FILES[1]: 1}
+
+
+def test_the_checked_in_groups_name_existing_test_files_once() -> None:
+    names = [name for group in GROUPS for name in group]
+    assert names and len(names) == len(set(names))
+    assert all((ROOT / name).is_file() for name in names)
+    parts = assign(load_timings(), 4, load_timings())
+    assert all(len({parts[name] for name in group}) == 1 for group in GROUPS)
 
 
 def test_the_collection_hook_keeps_only_the_files_of_one_part() -> None:
