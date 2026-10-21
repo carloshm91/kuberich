@@ -21,6 +21,7 @@ env:
   BOTTLE_VERSION: ${{ inputs.version }}
   HOMEBREW_NO_ANALYTICS: '1'
   HOMEBREW_NO_INSTALL_CLEANUP: '1'
+  HOMEBREW_NO_AUTOREMOVE: '1'
 jobs:
   build:
     name: Build bottle (${{ matrix.tag }})
@@ -69,25 +70,35 @@ jobs:
           HOMEBREW_NO_AUTO_UPDATE: '1'
         run: |
           root="https://github.com/kuberich/homebrew-tap/releases/download/kuberich-v$BOTTLE_VERSION"
-          brew bottle --json --root-url="$root" kuberich/tap/kuberich
-          test -f "kuberich--$BOTTLE_VERSION.${{ matrix.tag }}.bottle.tar.gz"
-          test -f "kuberich--$BOTTLE_VERSION.${{ matrix.tag }}.bottle.json"
-      - name: Pour the exact bottle on this host
-        working-directory: bottles
+          brew bottle --json --no-rebuild --root-url="$root" kuberich/tap/kuberich
+          brew uninstall --force kuberich/tap/kuberich
+          mv "kuberich--$BOTTLE_VERSION.${{ matrix.tag }}.bottle.tar.gz" \
+            "kuberich-$BOTTLE_VERSION.${{ matrix.tag }}.bottle.tar.gz"
+          sed "s|$root|file://$PWD|" "kuberich--$BOTTLE_VERSION.${{ matrix.tag }}.bottle.json" \
+            > "$RUNNER_TEMP/kuberich--$BOTTLE_VERSION.${{ matrix.tag }}.bottle.json"
+          shasum -a 256 ./*.tar.gz | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Pour the exact bottle on this host from local storage
         env:
           HOMEBREW_NO_AUTO_UPDATE: '1'
         run: |
-          brew uninstall --force kuberich/tap/kuberich
-          brew install "./kuberich--$BOTTLE_VERSION.${{ matrix.tag }}.bottle.tar.gz" 2>&1 | tee pour.log
-          grep -q "Pouring kuberich--$BOTTLE_VERSION.${{ matrix.tag }}.bottle.tar.gz" pour.log
+          tap="$(brew --repository kuberich/tap)"
+          # Homebrew loads formulae for `brew bottle --merge` only from a trusted tap.
+          # The trust stays on this disposable runner.
+          brew trust --formula kuberich/tap/kuberich
+          brew bottle --merge --write --no-commit "$RUNNER_TEMP"/kuberich--*.bottle.json
+          start=$SECONDS
+          brew install kuberich/tap/kuberich 2>&1 | tee "$RUNNER_TEMP/pour.log"
+          echo "- bottle pour: $((SECONDS - start)) s" >> "$GITHUB_STEP_SUMMARY"
+          grep -Eq "Pouring kuberich--?$BOTTLE_VERSION\\.${{ matrix.tag }}\\.bottle\\.tar\\.gz" "$RUNNER_TEMP/pour.log"
+          if grep -q "Resource kuberich--" "$RUNNER_TEMP/pour.log"; then
+            echo "The bottle install fetched Python resources." >&2
+            exit 1
+          fi
           test "$(kuberich --version)" = "kuberich $BOTTLE_VERSION"
           brew test kuberich/tap/kuberich
           brew uninstall --force kuberich/tap/kuberich
-          rm pour.log
-          mv "kuberich--$BOTTLE_VERSION.${{ matrix.tag }}.bottle.tar.gz" \
-            "kuberich-$BOTTLE_VERSION.${{ matrix.tag }}.bottle.tar.gz"
-          shasum -a 256 ./*.tar.gz | tee -a "$GITHUB_STEP_SUMMARY"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+          git -C "$tap" checkout -- Formula
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: bottle-${{ matrix.tag }}
           path: bottles/
@@ -138,7 +149,9 @@ jobs:
           start=$SECONDS
           brew install kuberich/tap/kuberich 2>&1 | tee install.log
           echo "- \`${{ matrix.os }}\` install with dependencies: $((SECONDS - start)) s" >> "$GITHUB_STEP_SUMMARY"
-          grep -q "Pouring kuberich--$BOTTLE_VERSION\." install.log
+          grep -Eq "Pouring kuberich--?$BOTTLE_VERSION\\." install.log
           test "$(kuberich --version)" = "kuberich $BOTTLE_VERSION"
+          # Users install without trust; `brew test` loads the formula only once trusted.
+          brew trust --formula kuberich/tap/kuberich
           brew test kuberich/tap/kuberich
           brew uninstall kuberich/tap/kuberich

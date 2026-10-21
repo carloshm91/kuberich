@@ -73,6 +73,10 @@ After the source formula for a release is merged, the maintainer runs the
 3. After that pull request is merged, `operation: verify` installs from the tap
    on each host and requires Homebrew to pour the bottle.
 
+Users install from the tap without extra steps. Newer Homebrew versions run
+`brew test` and `brew bottle --merge` on a third-party formula only after
+`brew trust`, so the workflows trust the formula on their temporary hosts.
+
 Bottle archives are never replaced. A retry reuses uploaded archives with the same
 checksum and refuses different ones. A published bottle release cannot get new
 files. Bottles are stored in the tap repository because completed source

@@ -3,6 +3,7 @@
 import json
 import os
 import platform
+import re
 import shutil
 import sys
 import time
@@ -40,6 +41,7 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
             "HOMEBREW_NO_ANALYTICS": "1",
             "HOMEBREW_NO_AUTO_UPDATE": "1",
             "HOMEBREW_NO_INSTALL_CLEANUP": "1",
+            "HOMEBREW_NO_AUTOREMOVE": "1",
         }
     )
     prefix = Path(run([brew, "--prefix"], outside, environment=environment).stdout.strip())
@@ -107,6 +109,8 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
         assert preferences.read_bytes() == before and caller.read_bytes() == caller_before
         return run([str(binary), "--version"], outside, environment=environment).stdout
 
+    help_trust = run([brew, "help", "trust"], outside, check=False, environment=environment)
+    trusts = help_trust.returncode == 0
     try:
         source, bundle, sha = source_candidate(tmp_path / "candidate", version)
         prepared = tmp_path / "prepared"
@@ -116,6 +120,9 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
         run(["git", "clone", "--quiet", TAP_URL, str(tap)], outside)
         run(["git", "checkout", "--quiet", "-B", "main", PUBLISHED], tap)
         assert f"# Source version: {PUBLISHED_VERSION}\n" in (tap / FORMULA).read_text()
+        if trusts:
+            # Newer Homebrew loads third-party formulae for `brew test` only once trusted.
+            execute(["trust", "--formula", "kuberich/tap/kuberich"])
 
         # Build the bottle from the candidate source formula, timing each part separately.
         (tap / FORMULA).write_text(candidate)
@@ -127,7 +134,7 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
         )
         root_url = bottles.resolve().as_uri()
         execute(
-            ["bottle", "--json", f"--root-url={root_url}", "kuberich/tap/kuberich"],
+            ["bottle", "--json", "--no-rebuild", f"--root-url={root_url}", "kuberich/tap/kuberich"],
             600,
             None,
             bottles,
@@ -149,7 +156,8 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
         execute(["style", "kuberich/tap/kuberich"])
         upgrade = execute(["upgrade", "kuberich/tap/kuberich"], 900, "bottle_upgrade")
         log = upgrade.stdout + upgrade.stderr
-        assert f"Pouring kuberich--{version}.{tag}.bottle.tar.gz" in log
+        # Homebrew names the poured archive with one or two dashes depending on its source.
+        assert re.search(rf"Pouring kuberich--?{re.escape(version)}\.{tag}\.bottle\.tar\.gz", log)
         # A poured bottle downloads no Python resources and compiles nothing.
         assert "Resource kuberich--" not in log and "files.pythonhosted.org" not in log
         assert (prefix / "Cellar/kuberich" / PUBLISHED_VERSION).is_dir()
@@ -180,6 +188,9 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
     finally:
         if (prefix / "Cellar/kuberich").exists():
             execute(["uninstall", "--force", "kuberich/tap/kuberich"])
+        if trusts:
+            untrust = [brew, "untrust", "--formula", "kuberich/tap/kuberich"]
+            run(untrust, outside, check=False, environment=environment)
         if tap.exists():
             shutil.rmtree(tap)
     assert not (prefix / "bin/kuberich").exists() and not (prefix / "Cellar/kuberich").exists()

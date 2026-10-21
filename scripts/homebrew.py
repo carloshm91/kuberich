@@ -189,7 +189,9 @@ def bottle_records(
         ((tag, item),) = bottle["tags"].items()
         name = f"kuberich-{version}.{tag}.bottle.tar.gz"
         archive = directory / name
-        cellar = item.get("cellar", bottle.get("cellar"))
+        # `brew bottle --json` writes `any` and `any_skip_relocation` without the Ruby colon.
+        cellar = str(item.get("cellar", bottle.get("cellar")))
+        cellar = ":" + cellar if cellar in ("any", "any_skip_relocation") else cellar
         if (
             tag not in BOTTLE_TAGS
             or tag in records

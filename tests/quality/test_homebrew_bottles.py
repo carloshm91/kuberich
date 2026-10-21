@@ -59,11 +59,12 @@ def write_bottles(directory, revision="c" * 40, tags=BOTTLE_TAGS, **changes):
             "filename": name,
             "local_filename": name.replace("-", "--", 1),
             "sha256": hashlib.sha256(tag.encode()).hexdigest(),
-            "cellar": CELLARS.get(tag, ":any"),
         }
+        # Homebrew writes the cellar once per record, without the Ruby colon.
+        cellar = CELLARS.get(tag, ":any").removeprefix(":")
         record = {
             "formula": {"pkg_version": VERSION, "tap_git_revision": revision},
-            "bottle": {"root_url": ROOT_URL, "rebuild": 0, "tags": {tag: item}},
+            "bottle": {"root_url": ROOT_URL, "cellar": cellar, "rebuild": 0, "tags": {tag: item}},
         }
         change = changes.get(tag)
         if change is not None:
@@ -107,6 +108,7 @@ def _tag(record):
         (_set(("bottle", "root_url"), "https://evil.invalid"), "first 1.0.1 bottle"),
         (_set(("bottle", "rebuild"), 1), "first 1.0.1 bottle"),
         (lambda record: record["bottle"]["tags"].update(extra={}), "first 1.0.1 bottle"),
+        (_set(("bottle", "cellar"), "/tmp/Cellar"), "verified archive"),
         (lambda record: _tag(record).update(cellar="/tmp/Cellar"), "verified archive"),
         (lambda record: _tag(record).update(sha256="0" * 64), "verified archive"),
         (lambda record: _tag(record).update(sha256="not-a-digest"), "verified archive"),
