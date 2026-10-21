@@ -7,6 +7,7 @@ name: Native installation qualification
       - scripts/homebrew.py
       - packaging/homebrew/**
       - tests/packaging/test_homebrew_native.py
+      - tests/packaging/test_homebrew_bottle_native.py
       - tests/support/source_candidate.py
 permissions:
   contents: read
@@ -53,5 +54,46 @@ jobs:
           path: |
             artifacts/installation/**
             artifacts/terminal/upgraded-homebrew-*
+          if-no-files-found: error
+          retention-days: 7
+  bottle:
+    name: Homebrew bottle (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14, macos-15-intel]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7
+        with:
+          version: '0.10.4'
+          python-version: '3.12'
+          enable-cache: true
+      - run: uv sync --locked --group dev
+      - name: Select the owned runner's Homebrew
+        run: |
+          if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+            echo /home/linuxbrew/.linuxbrew/bin >> "$GITHUB_PATH"
+            /home/linuxbrew/.linuxbrew/bin/brew --version
+          else
+            brew --version
+          fi
+      - name: Build a candidate bottle and pour it on upgrade from the published release
+        env:
+          KUBERICH_QUALIFY_HOMEBREW_BOTTLES: '1'
+        run: uv run pytest -q --tb=short tests/packaging/test_homebrew_bottle_native.py
+      - name: Retain candidate bottles, timings and poured behavior
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: bottle-${{ matrix.os }}
+          path: |
+            artifacts/installation/**
+            artifacts/terminal/bottle-homebrew-*
           if-no-files-found: error
           retention-days: 7

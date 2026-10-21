@@ -70,6 +70,8 @@ def test_native_source_install_real_version_upgrade_and_uninstall(tmp_path):
         assert result.returncode == 0, result.stdout + result.stderr
         return result
 
+    help_trust = run([brew, "help", "trust"], outside, check=False, environment=environment)
+    trusts = help_trust.returncode == 0
     try:
         current = Version(PROJECT["version"])
         # Development qualification uses two private RC fixtures. A prepared
@@ -105,6 +107,9 @@ def test_native_source_install_real_version_upgrade_and_uninstall(tmp_path):
                 ],
                 tap,
             )
+            if index == 0 and trusts:
+                # Newer Homebrew loads third-party formulae for audit and test only once trusted.
+                execute(["trust", "--formula", "kuberich/tap/kuberich"])
             execute(["style", "kuberich/tap/kuberich"], 180)
             execute(["audit", "--strict", "--online", "kuberich/tap/kuberich"], 300)
             execute(
@@ -146,6 +151,9 @@ def test_native_source_install_real_version_upgrade_and_uninstall(tmp_path):
     finally:
         if (prefix / "Cellar/kuberich").exists():
             execute(["uninstall", "--force", "kuberich/tap/kuberich"], 180)
+        if trusts:
+            untrust = [brew, "untrust", "--formula", "kuberich/tap/kuberich"]
+            run(untrust, outside, check=False, environment=environment)
         if tap.exists():
             shutil.rmtree(tap)
     assert not (prefix / "bin/kuberich").exists() and not (prefix / "Cellar/kuberich").exists()

@@ -51,11 +51,22 @@ brew install kuberich/tap/kuberich
 kuberich --version
 ```
 
-The initial formula builds from source and declares Python 3.14, kubectl and
-libyaml. Homebrew manages these dependencies; a separate Python environment is
-unnecessary. A source installation can take several minutes; this release has
-no prebuilt Homebrew bottle. The published formula passed style, online audit,
-source installation, CLI tests and uninstall on Linux and macOS.
+The formula declares Python 3.14, kubectl and libyaml. Homebrew manages these
+dependencies; a separate Python environment is unnecessary.
+
+From 0.2.0, Homebrew installs a prebuilt bottle on these systems:
+
+| System | Architecture | Bottle |
+| --- | --- | --- |
+| macOS 14 (Sonoma) or newer | Apple Silicon | `arm64_sonoma` |
+| macOS 15 (Sequoia) or newer | Intel | `sequoia` |
+| Linux | x86_64 | `x86_64_linux` |
+
+A bottle only unpacks files, so it takes seconds instead of minutes. Other
+systems, such as Linux ARM64 or macOS 14 on Intel, still build from source. A
+source build can take several minutes. `brew upgrade kuberich` from 0.1.0 moves
+to the bottle and keeps your preferences. Homebrew has no downgrade command; the
+old version stays in the Cellar until `brew cleanup` removes it.
 
 ## Standalone Linux and macOS archives
 

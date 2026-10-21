@@ -16,13 +16,32 @@ from packaging.version import Version
 
 from scripts.check_supply_chain import ROOT, read_json, selected_requirements
 from scripts.release import GitHub, dispatch_identity, request, verify_bundle
-from scripts.release_policy import HASH, REPOSITORY, publication_tag, release_tag, require_sha
+from scripts.release_policy import (
+    HASH,
+    OWNER,
+    REPOSITORY,
+    publication_tag,
+    release_tag,
+    require_sha,
+)
 from scripts.supply_chain import digest
 
 TAP = "kuberich/homebrew-tap"
 TAP_OWNER = "kuberich"
 FORMULA = "Formula/kuberich.rb"
 SCAFFOLD = ROOT / "packaging/homebrew"
+# Bottles are built on macOS 14 ARM, macOS 15 Intel and Ubuntu 24.04 x86_64 hosts.
+BOTTLE_TAGS = ("arm64_sonoma", "sequoia", "x86_64_linux")
+BOTTLE_CELLARS = {
+    ":any",
+    ":any_skip_relocation",
+    "/opt/homebrew/Cellar",
+    "/usr/local/Cellar",
+    "/home/linuxbrew/.linuxbrew/Cellar",
+}
+BOTTLE_BLOCK = re.compile(r"\n  bottle do\n(?:    [^\n]*\n)+  end\n")
+LICENSE = '  license "Apache-2.0"\n'
+BOTTLE_WORKFLOW = ".github/workflows/bottles.yml"
 
 
 def source_url(value: str) -> str:
@@ -144,10 +163,94 @@ def prepare(bundle: Path, root: Path, output: Path) -> dict[str, Any]:
     return {"candidate": True, "formula": str(path), "resources": len(resources(bundle, root))}
 
 
+def bottle_root(version: str) -> str:
+    """Each version's bottles live in the tap's own release for that version."""
+    return f"https://github.com/{TAP}/releases/download/kuberich-{publication_tag(version)}"
+
+
+def bottle_records(
+    directory: Path, version: str, root_url: str, tags: tuple[str, ...] = BOTTLE_TAGS
+) -> dict[str, dict[str, str]]:
+    """Read `brew bottle --json` output for the expected tags and check each archive."""
+    records: dict[str, dict[str, str]] = {}
+    for path in sorted(directory.glob("*.bottle.json")):
+        value = read_json(path)
+        if not isinstance(value, dict) or list(value) != ["kuberich/tap/kuberich"]:
+            raise ValueError(f"{path.name} is not a kuberich bottle record")
+        entry = value["kuberich/tap/kuberich"]
+        bottle = entry["bottle"]
+        if (
+            entry["formula"]["pkg_version"] != version
+            or bottle["root_url"] != root_url
+            or bottle.get("rebuild", 0) != 0
+            or len(bottle["tags"]) != 1
+        ):
+            raise ValueError(f"{path.name} is not a first {version} bottle for {root_url}")
+        ((tag, item),) = bottle["tags"].items()
+        name = f"kuberich-{version}.{tag}.bottle.tar.gz"
+        archive = directory / name
+        # `brew bottle --json` writes `any` and `any_skip_relocation` without the Ruby colon.
+        cellar = str(item.get("cellar", bottle.get("cellar")))
+        cellar = ":" + cellar if cellar in ("any", "any_skip_relocation") else cellar
+        if (
+            tag not in BOTTLE_TAGS
+            or tag in records
+            or item["filename"] != name
+            or cellar not in BOTTLE_CELLARS
+            or not HASH.fullmatch(item["sha256"])
+            or archive.is_symlink()
+            or not archive.is_file()
+            or digest(archive) != item["sha256"]
+        ):
+            raise ValueError(f"Bottle {tag} does not match a verified archive")
+        records[tag] = {
+            "filename": name,
+            "sha256": item["sha256"],
+            "cellar": cellar,
+            "revision": entry["formula"]["tap_git_revision"],
+        }
+    if sorted(records) != sorted(tags):
+        raise ValueError(f"Require exactly one bottle for each of {', '.join(tags)}")
+    return records
+
+
+def bottle_block(records: dict[str, dict[str, str]], root_url: str) -> str:
+    """Render the bottle block with the alignment `brew style` expects."""
+    tags = [tag for tag in BOTTLE_TAGS if tag in records]
+    if not tags or len(tags) != len(records):
+        raise ValueError("Bottle tags must be supported")
+    cellars = {}
+    for tag in tags:
+        value = records[tag]["cellar"]
+        if value not in BOTTLE_CELLARS or not HASH.fullmatch(records[tag]["sha256"]):
+            raise ValueError(f"Bottle {tag} needs a known cellar and a SHA-256")
+        cellars[tag] = f"cellar: {value if value.startswith(':') else ruby(value)},"
+    width = max(map(len, cellars.values()))
+    label = max(map(len, tags)) + 1
+    lines = "".join(
+        f"    sha256 {cellars[tag].ljust(width)} {(tag + ':').ljust(label)}"
+        f" {ruby(records[tag]['sha256'])}\n"
+        for tag in tags
+    )
+    return f"  bottle do\n    root_url {ruby(root_url)}\n{lines}  end\n"
+
+
+def with_bottles(text: str, records: dict[str, dict[str, str]], root_url: str) -> str:
+    if BOTTLE_BLOCK.search(text) or text.count(LICENSE) != 1:
+        raise ValueError("Add bottles once, to a source formula")
+    return text.replace(LICENSE, LICENSE + "\n" + bottle_block(records, root_url), 1)
+
+
 class TapGitHub:
-    def __init__(self, token: str, base: str = "https://api.github.com/") -> None:
+    def __init__(
+        self,
+        token: str,
+        base: str = "https://api.github.com/",
+        uploads: str = "https://uploads.github.com/",
+    ) -> None:
         self.token = token
         self.base = base.rstrip("/") + "/"
+        self.uploads = uploads.rstrip("/") + "/"
 
     def __call__(self, path: str, method: str = "GET", value: Any = None) -> Any:
         prefix = f"repos/{TAP}"
@@ -160,6 +263,15 @@ class TapGitHub:
             method,
             None if value is None else json.dumps(value).encode(),
             self.token,
+        )
+
+    def upload(self, release: int, path: Path) -> Any:
+        return request(
+            f"{self.uploads}repos/{TAP}/releases/{release}/assets?name={quote(path.name, safe='')}",
+            "POST",
+            path.read_bytes(),
+            self.token,
+            "application/octet-stream",
         )
 
 
@@ -182,14 +294,27 @@ def propose(api: TapGitHub, text: str, sha: str, version: str) -> str:
     ):
         raise ValueError("Require the owner-approved public tap with main")
     current = api(f"{prefix}/contents/{FORMULA}?ref=main")
+    bottles = False
     if current is not None:
         old = base64.b64decode("".join(current["content"].splitlines()), validate=True).decode()
         match = re.search(r"^# Source version: ([^\n]+)$", old, re.M)
         if match is None or Version(version) <= Version(match[1]):
-            if old != text:
+            if old == text:
+                return "unchanged"
+            # The only same-version change is adding bottles to the published source formula.
+            bottles = (
+                match is not None
+                and match[1] == version
+                and not BOTTLE_BLOCK.search(old)
+                and BOTTLE_BLOCK.sub("", text, count=1) == old
+            )
+            if not bottles:
                 raise ValueError("Homebrew update cannot downgrade or replace an existing version")
-            return "unchanged"
-    branch = f"release/kuberich-{version}-{sha[:12]}"
+    if bottles:
+        title, branch = f"add kuberich {version} bottles", f"bottles/kuberich-{version}-{sha[:12]}"
+    else:
+        title, branch = f"update kuberich to {version}", f"release/kuberich-{version}-{sha[:12]}"
+    title = "build(homebrew): " + title
     files = {FORMULA: text}
     # Initial CI belongs to the maintainer-owned scaffold; the update token
     # only changes the formula and needs no workflow-write permission.
@@ -213,7 +338,7 @@ def propose(api: TapGitHub, text: str, sha: str, version: str) -> str:
             {
                 "tree": tree,
                 "parents": [main],
-                "message": f"build(homebrew): update kuberich to {version}\n\nSource: {sha}\n\nSigned-off-by: Carlos Herrera <carloshm91@gmail.com>",
+                "message": f"{title}\n\nSource: {sha}\n\nSigned-off-by: Carlos Herrera <carloshm91@gmail.com>",
                 "author": {"name": "Carlos Herrera", "email": "carloshm91@gmail.com"},
             },
         )["sha"]
@@ -236,10 +361,15 @@ def propose(api: TapGitHub, text: str, sha: str, version: str) -> str:
         f"{prefix}/pulls",
         "POST",
         {
-            "title": f"build(homebrew): update kuberich to {version}",
+            "title": title,
             "head": branch,
             "base": "main",
-            "body": f"Install the published immutable {version} sdist and audited hashed runtime resources.\n\nSource: `{sha}`. Run Linux/macOS tap checks before maintainer review and squash merge.\n\nGenerated by KubeRich's approved release job; no automatic merge.",
+            "body": (
+                f"Add verified {version} bottles for {', '.join(BOTTLE_TAGS)}; other systems build from source."
+                if bottles
+                else f"Install the published immutable {version} sdist and audited hashed runtime resources."
+            )
+            + f"\n\nSource: `{sha}`. Run Linux/macOS tap checks before maintainer review and squash merge.\n\nGenerated by KubeRich's approved release job; no automatic merge.",
         },
     )
     return str(pull["html_url"])
@@ -293,19 +423,99 @@ def publish(bundle: Path, root: Path, source_api: GitHub, tap_api: TapGitHub) ->
     return propose(tap_api, formula(bundle, root, archive["url"]), sha, version)
 
 
+def store_bottles(
+    api: TapGitHub, directory: Path, records: dict[str, dict[str, str]], version: str
+) -> str:
+    """Upload bottles to the tap release for this version; existing bytes are never replaced."""
+    tag = f"kuberich-{publication_tag(version)}"
+    prefix = f"repos/{TAP}"
+    # A draft has no tag yet, so look for it in the release list.
+    matches = [item for item in api(f"{prefix}/releases?per_page=100") if item["tag_name"] == tag]
+    if len(matches) > 1:
+        raise ValueError("Ambiguous bottle release")
+    release = (
+        matches[0]
+        if matches
+        else api(
+            f"{prefix}/releases",
+            "POST",
+            {
+                "tag_name": tag,
+                "target_commitish": "main",
+                "name": f"kuberich {version} bottles",
+                "body": f"Homebrew bottles for kuberich {version}: `brew install kuberich/tap/kuberich`.",
+                "draft": True,
+                "prerelease": False,
+            },
+        )
+    )
+    expected = {item["filename"]: f"sha256:{item['sha256']}" for item in records.values()}
+    existing = set()
+    for asset in api(f"{prefix}/releases/{int(release['id'])}/assets?per_page=100"):
+        if expected.get(asset["name"]) != asset.get("digest"):
+            raise ValueError("Existing bottle storage differs; it cannot be replaced")
+        existing.add(asset["name"])
+    missing = sorted(set(expected) - existing)
+    if missing and not release["draft"]:
+        raise ValueError("Published bottle storage cannot receive new content")
+    for name in missing:
+        if api.upload(int(release["id"]), directory / name).get("digest") != expected[name]:
+            raise ValueError("Uploaded bottle digest differs from the built archive")
+    if release["draft"]:
+        release = api(f"{prefix}/releases/{int(release['id'])}", "PATCH", {"draft": False})
+    return str(release["html_url"])
+
+
+def publish_bottles(directory: Path, api: TapGitHub) -> dict[str, str]:
+    """Store verified bottles, then propose adding them to the published formula."""
+    expected = {
+        "GITHUB_REPOSITORY": REPOSITORY,
+        "GITHUB_EVENT_NAME": "workflow_dispatch",
+        "GITHUB_REF": "refs/heads/main",
+        "GITHUB_ACTOR": OWNER,
+    }
+    if any(os.environ.get(key) != value for key, value in expected.items()) or not os.environ.get(
+        "GITHUB_WORKFLOW_REF", ""
+    ).startswith(f"{REPOSITORY}/{BOTTLE_WORKFLOW}@"):
+        raise ValueError("Bottle publication requires a maintainer dispatch from main")
+    prefix = f"repos/{TAP}"
+    main = api(f"{prefix}/git/ref/heads/main")["object"]["sha"]
+    require_sha(main)
+    current = api(f"{prefix}/contents/{FORMULA}?ref={main}")
+    text = base64.b64decode("".join(current["content"].splitlines()), validate=True).decode()
+    version = re.search(r"^# Source version: ([^\n]+)$", text, re.M)
+    sha = re.search(r"^# Source commit: ([0-9a-f]{40})$", text, re.M)
+    if version is None or sha is None:
+        raise ValueError("The tap formula lacks its source version and commit")
+    root_url = bottle_root(version[1])
+    records = bottle_records(directory, version[1], root_url)
+    if {item["revision"] for item in records.values()} != {main}:
+        raise ValueError("Bottles must be built from the current tap formula")
+    release = store_bottles(api, directory, records, version[1])
+    return {
+        "release": release,
+        "pull_request": propose(api, with_bottles(text, records, root_url), sha[1], version[1]),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("operation", choices=("prepare", "publish"))
+    parser.add_argument("operation", choices=("prepare", "publish", "bottles"))
     parser.add_argument("--source", type=Path, default=ROOT)
-    parser.add_argument("--bundle", type=Path, required=True)
+    parser.add_argument("--bundle", type=Path)
+    parser.add_argument("--bottles", type=Path, default=Path("bottles"))
     parser.add_argument("--output", type=Path, default=Path("artifacts/homebrew-candidate"))
     args = parser.parse_args()
     try:
+        if args.operation != "bottles" and args.bundle is None:
+            raise ValueError("--bundle is required")
         if args.operation == "prepare":
             result: Any = prepare(args.bundle, args.source, args.output)
+        elif not os.environ.get("HOMEBREW_TAP_TOKEN"):
+            raise ValueError("Configure a token limited to the approved tap repository")
+        elif args.operation == "bottles":
+            result = publish_bottles(args.bottles, TapGitHub(os.environ["HOMEBREW_TAP_TOKEN"]))
         else:
-            if not os.environ.get("HOMEBREW_TAP_TOKEN"):
-                raise ValueError("Configure a token limited to the approved tap repository")
             result = {
                 "pull_request": publish(
                     args.bundle,

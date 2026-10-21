@@ -117,6 +117,9 @@ without the owner's explicit authorization. The maintainer has purchased
    exact artifacts and public install/upgrade/uninstall behavior. Tap automation
    proposes a checked formula PR; the maintainer reviews and merges it after
    native tap checks.
+   From 0.2.0, after the source formula is merged, build, publish and verify
+   bottles with the Homebrew bottles workflow, as described in
+   [Homebrew](homebrew.md#bottles).
 9. After verified artifact activation, record the exact published version in
    `docs/published-releases.json` and update installation/upgrade guides through
    a checked PR. Regenerate and browser/quickstart-verify the site for that

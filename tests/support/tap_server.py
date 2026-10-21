@@ -1,6 +1,7 @@
 """Actual owned Git object/branch operations behind a loopback tap API."""
 
 import base64
+import hashlib
 import json
 import subprocess
 from urllib.parse import parse_qs, unquote, urlsplit
@@ -14,6 +15,7 @@ class TapServer(ReleaseServer):
         super().__init__(directory)
         self.command("update-ref", "refs/heads/main", self.sha)
         self.pulls = []
+        self.releases = []
         self.fail_pull = False
         self.private = False
         self.owner = {"login": "kuberich", "type": "Organization"}
@@ -49,12 +51,28 @@ class TapServer(ReleaseServer):
             return {"tree": {"sha": self.command("show", "--format=%T", "--no-patch", sha).strip()}}
         if route == prefix + "/pulls":
             return self.pulls
+        if route == prefix + "/releases":
+            return self.releases
+        if route == prefix + "/releases/1/assets":
+            return [
+                {"name": name, "digest": "sha256:" + hashlib.sha256(data).hexdigest()}
+                for name, data in self.assets.items()
+            ]
         return super().get(path)
 
     def post(self, path, body, content_type):
+        prefix = f"/repos/{TAP}"
+        if content_type.startswith("application/octet-stream"):
+            assert path.startswith(prefix + "/releases/1/assets?name=")
+            return super().post(path, body, content_type)
         self.posts.append((path, body))
         value = json.loads(body)
-        prefix = f"/repos/{TAP}"
+        if path == prefix + "/releases":
+            self.releases.append({**value, "id": 1, "html_url": "https://github.com/owned/r/1"})
+            return 201, self.releases[-1]
+        if path == prefix + "/releases/1":
+            self.releases[0].update(value)
+            return 200, self.releases[0]
         if path == prefix + "/git/blobs":
             assert value["encoding"] == "utf-8"
             return 201, {
