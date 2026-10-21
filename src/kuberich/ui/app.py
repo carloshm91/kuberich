@@ -134,6 +134,7 @@ from kuberich.ui.inspection import InspectionScreen, Page
 from kuberich.ui.interactions import Interactions
 from kuberich.ui.jumps import JumpController
 from kuberich.ui.keybindings import NavigationHelpScreen, navigation_help
+from kuberich.ui.live_preferences import LivePreferences
 from kuberich.ui.logs import LogScreen
 from kuberich.ui.mutations import AnnotationScreen, MutationHistoryScreen
 from kuberich.ui.namespaces import NamespaceTable
@@ -248,7 +249,6 @@ class KubeRichApp(App[None]):
         self.sessions.before_close = self._close_client_operations
         self._terminal_signals = TerminalSignals(self)
         self._shell = settings.shell
-        self._refresh_seconds = settings.refresh_seconds
         self._process_environment = dict(os.environ)
         self._process_directory = Path.cwd()
         self._native_clipboard = NativeClipboard(
@@ -259,6 +259,7 @@ class KubeRichApp(App[None]):
         self._clipboard_pending: tuple[bytes, ClipboardBackend] | None = None
         self._clipboard_closing = False
         self.preferences = preferences
+        self.live_preferences = LivePreferences(self, settings)
         self._global_theme = preferences.document.settings.theme if preferences else settings.theme
         self._theme_override = preferences.theme_override if preferences else None
         self.appearance = Appearance()
@@ -357,6 +358,7 @@ class KubeRichApp(App[None]):
             self.available_themes,
         )
         self._applied_context = context
+        self.live_preferences.apply(context)
         if unavailable:
             self._appearance_warning = "Selected theme is unavailable; using k9s."
 
@@ -654,23 +656,13 @@ class KubeRichApp(App[None]):
         self.namespace_table.setup()
         self.context_table.setup()
         self.standard_table.setup()
-        self.set_interval(self._refresh_seconds, self._refresh_tables)
         self.query_one("#resource-view", Vertical).border_title = "Resources · no connection"
         self.screen.set_class(self.size.width < 70, "compact")
         self.screen.set_class(self.size.height < 16, "short")
         self.set_focus(self.resources)
         self._set_status(DISCONNECTED_STATUS)
         self._build_info = self.header.query_one("#build-info", Static)
-        if self._appearance_warning:
-            self.notify(
-                self._appearance_warning + " Run kuberich config check; working defaults retained.",
-                severity="warning",
-            )
-        if self._navigation_warning:
-            self.notify(
-                self._navigation_warning + " Run kuberich config check; working defaults retained.",
-                severity="warning",
-            )
+        self.live_preferences.start((self._appearance_warning, self._navigation_warning))
         self._start_update_check()
         if self._initial_command is not Command.QUIT:
             subscription = self.workspace.subscribe()
@@ -1073,7 +1065,8 @@ class KubeRichApp(App[None]):
             f"{self._resource_name}({scope})[{self._active_table.row_count}]"
             + (
                 f" · {view.scope.resource.api_version}"
-                if self.custom_table.display and view.scope is not None
+                if (self.custom_table.display or self.appearance.full_gvr_titles)
+                and view.scope is not None
                 else ""
             )
             + f" · {view.status.name.lower()}"
@@ -1230,6 +1223,7 @@ class KubeRichApp(App[None]):
                 self._clipboard_task.cancel()
                 await _finish_owned(asyncio.gather(self._clipboard_task, return_exceptions=True))
             await self._native_clipboard.close()
+            await self.live_preferences.close()
             await self.plugins.close()
             await self.mutations.close()
             await self.forwards.close()

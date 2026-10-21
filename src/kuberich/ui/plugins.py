@@ -398,6 +398,11 @@ class PluginController:
         self._loaders.add(self._loader)
         self._loader.add_done_callback(self._loaders.discard)
 
+    def reload(self) -> None:
+        """Read plugin definitions again after the preference file changed."""
+        self._loaded = False
+        self.refresh()
+
     async def _load(self, context: str | None) -> None:
         preferences = self.app.preferences
         assert preferences is not None

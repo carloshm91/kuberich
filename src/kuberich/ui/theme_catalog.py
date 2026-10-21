@@ -3,7 +3,7 @@
 from textual.theme import BUILTIN_THEMES, Theme
 
 from kuberich.config.schema import ConfigDocument
-from kuberich.domain.appearance import Appearance, contrast, parse_appearance
+from kuberich.domain.appearance import TRANSPARENT, Appearance, contrast, parse_appearance
 from kuberich.ui.chrome import K9S_THEME
 
 MONO_THEME = Theme(
@@ -39,7 +39,10 @@ def appearance_from(document: ConfigDocument) -> Appearance:
 def themes_for(appearance: Appearance) -> tuple[Theme, ...]:
     custom = []
     for definition in appearance.themes:
-        colors = dict(definition.colors)
+        colors = {
+            key: "ansi_default" if color == TRANSPARENT else color
+            for key, color in definition.colors
+        }
         custom.append(
             Theme(
                 name=definition.name,
@@ -54,6 +57,8 @@ def themes_for(appearance: Appearance) -> tuple[Theme, ...]:
                 surface=colors.get("surface", colors["background"]),
                 panel=colors.get("panel", colors["background"]),
                 dark=definition.dark,
+                # Native colors keep the terminal background; RGB colors are unchanged.
+                ansi="ansi_default" in colors.values(),
                 text_alpha=1.0,
                 variables={
                     "text": colors["foreground"],
@@ -64,6 +69,15 @@ def themes_for(appearance: Appearance) -> tuple[Theme, ...]:
                         key=lambda color: contrast(color, colors["primary"]),
                     ),
                     "block-cursor-text-style": "none",
+                    # Native themes name the colors of floating notices and tooltips.
+                    **(
+                        {
+                            "ansi-background": "ansi_black" if definition.dark else "ansi_white",
+                            "ansi-foreground": "ansi_white" if definition.dark else "ansi_black",
+                        }
+                        if "ansi_default" in colors.values()
+                        else {}
+                    ),
                 },
             )
         )

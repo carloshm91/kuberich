@@ -33,6 +33,23 @@ Ordinary-URL reads must verify the remaining redirect/cache responses before
 claiming final custom-domain acceptance. No zone/DNS/cache change was made by
 that inspection.
 
+## Source checkpoint toward 0.2.0: live preferences
+
+Edit and save the preference file while KubeRich runs. Themes, aliases, column
+views, jumps and plugins update within two seconds, and the current view stays.
+An invalid file keeps the last valid preferences. A `context_settings` section
+can make one context read-only or change its refresh interval. Palettes can use
+`'default'` to show the terminal's own background, and
+`appearance.full_gvr_titles` shows the API version in titles. Published 0.1.0
+remains unchanged.
+
+```sh
+uv run pytest tests/ui/test_live_preferences.py tests/unit/test_context_settings.py
+```
+
+See [configuration](configuration.md#changing-preferences-while-kuberich-runs)
+and [acceptance evidence](acceptance/reactive-preferences.md).
+
 ## Source checkpoint toward 0.2.0: resource jumps
 
 Define jumps in the preference file, select a row and type `:jump` or

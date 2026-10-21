@@ -13,7 +13,7 @@ from kuberich.domain.appearance import (
     theme_name,
 )
 from kuberich.errors import AppError
-from kuberich.ui.theme_catalog import BUILTINS, appearance_from, themes_for
+from kuberich.ui.theme_catalog import BUILTINS, appearance_from, invert_theme, themes_for
 
 PALETTE = {"primary": "#5fd7ff", "foreground": "#ffffff", "background": "#000000"}
 
@@ -86,6 +86,11 @@ def test_theme_identifiers_are_bounded_ascii(value):
         {"contexts": {"bad\x80": "k9s"}},
         {"contexts": {"demo": "missing"}},
         {"contexts": {"demo": 1}},
+        {"full_gvr_titles": "yes"},
+        {"themes": {"demo": {**PALETTE, "foreground": "default"}}},
+        {"themes": {"demo": {**PALETTE, "primary": "default"}}},
+        {"themes": {"demo": {**PALETTE, "background": "Default"}}},
+        {"themes": {"demo": {**PALETTE, "background": "default", "surface": "#ffffff"}}},
     ],
 )
 def test_invalid_appearance_is_actionable_and_original_values_are_unmodified(value):
@@ -119,6 +124,23 @@ def test_all_supported_colors_convert_without_css_or_loss():
         resolve_settings(
             replace(ConfigDocument(), extensions={"appearance": {}}), {}, {"appearance": {}}
         )
+
+
+def test_transparent_surfaces_use_the_terminal_background():
+    raw = {
+        "themes": {
+            "glass": {**PALETTE, "background": "default", "surface": "default", "accent": "#111111"}
+        },
+        "full_gvr_titles": True,
+    }
+    value = parse_appearance(raw, BUILTINS)
+    assert value.full_gvr_titles and parse_appearance(value.mapping(), BUILTINS) == value
+    assert "full_gvr_titles" not in Appearance().mapping()
+    theme = themes_for(value)[-1]
+    assert theme.ansi and theme.background == theme.surface == theme.panel == "ansi_default"
+    assert not themes_for(parse_appearance({"themes": {"solid": PALETTE}}, BUILTINS))[-1].ansi
+    inverted = invert_theme(theme)
+    assert inverted.background == "#ffffff" and not inverted.ansi
 
 
 def test_inversion_repairs_text_surfaces_and_accents_without_mutating_base_colors():

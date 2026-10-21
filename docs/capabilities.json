@@ -1153,7 +1153,7 @@
       ],
       "source": "internal/config/styles.go",
       "status": "planned",
-      "difference": "U01 implements explicit built-in/custom theme preview and global/context persistence, runtime inversion with contrast repair, original About and a real optional bounded/cached/offline-safe stable release check. Reactive reload, transparent colors and icon preferences remain U06; full skin parity is not claimed.",
+      "difference": "U01 implements explicit built-in/custom theme preview and global/context persistence, runtime inversion with contrast repair, original About and a real optional bounded/cached/offline-safe stable release check. U06 adds terminal-default (transparent) background/surface/panel colors, full API titles and reload of saved palettes. Icon preferences are not implemented; full skin parity is not claimed.",
       "partial_evidence": [
         "docs/resource-workspace.md",
         "docs/acceptance/resource-workspace.md",
@@ -1167,9 +1167,11 @@
         "tests/ui/test_appearance.py",
         "tests/terminal/test_themes.py",
         "tests/packaging/test_distribution.py",
-        "scripts/verify_standalone.py"
+        "scripts/verify_standalone.py",
+        "docs/acceptance/reactive-preferences.md",
+        "tests/ui/test_live_preferences.py"
       ],
-      "public_summary": "Source checkout: custom/global/context opaque palettes, preview/save and session inversion. Published 0.1.0 supports configured built-ins; transparent palettes, icons and reactive reload remain planned.",
+      "public_summary": "Source checkout: custom/global/context palettes, the terminal's own background as a palette color, preview/save, live reload and session inversion. Published 0.1.0 supports configured built-ins; icon preferences are planned.",
       "public_status": "partial"
     },
     {
@@ -1225,8 +1227,14 @@
       ],
       "source": "internal/config/k9s.go",
       "status": "planned",
-      "difference": "All schema fields are enumerated in the source inventory; compatible semantics do not imply identical config files.",
-      "public_summary": "Preferences are loaded and validated locally. Reactive reload, wider feature gates and connection/log/metric threshold configuration are planned.",
+      "difference": "All schema fields are enumerated in the source inventory; compatible semantics do not imply identical config files. U06 reloads a validated preference file while the app runs, keeps the last valid file and adds per-context read-only/refresh settings. Feature gates and connection/log/metric thresholds remain F03/O01.",
+      "partial_evidence": [
+        "docs/configuration.md",
+        "docs/acceptance/reactive-preferences.md",
+        "tests/ui/test_live_preferences.py",
+        "tests/unit/test_context_settings.py"
+      ],
+      "public_summary": "Source checkout reloads saved preferences while KubeRich runs and keeps the last valid file when a change is invalid. Contexts can be made read-only or given their own refresh interval. Wider feature gates and connection/log/metric thresholds are planned.",
       "public_status": "partial"
     },
     {

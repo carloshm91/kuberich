@@ -1,12 +1,13 @@
 """Explicit local preference persistence, separate from effective runtime overrides."""
 
 import asyncio
+from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 
 from kuberich.adapters.editing import file_worker
 from kuberich.config.navigation import NavigationPreferences, parse_navigation
 from kuberich.config.paths import ConfigLocation
-from kuberich.config.schema import ConfigDocument
+from kuberich.config.schema import ENV_FIELDS, ConfigDocument, Settings, resolve_settings
 from kuberich.config.store import read_config, write_config
 from kuberich.domain.appearance import Appearance, parse_appearance, theme_name
 from kuberich.errors import AppError
@@ -18,7 +19,33 @@ class PreferenceSource:
     location: ConfigLocation
     document: ConfigDocument
     theme_override: str | None = None
+    environment: Mapping[str, str] = field(default_factory=dict, repr=False)
+    overrides: Mapping[str, object] = field(default_factory=dict, repr=False)
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False, repr=False)
+
+    @property
+    def pinned(self) -> frozenset[str]:
+        """Settings chosen by command-line flags or environment variables."""
+        return frozenset(
+            {
+                name
+                for variable, name in ENV_FIELDS.items()
+                if variable in self.environment
+                or variable.replace("KUBERICH_", "KUBETROL_", 1) in self.environment
+            }
+            | self.overrides.keys()
+        )
+
+    def settings(self, document: ConfigDocument) -> Settings:
+        return resolve_settings(document, self.environment, self.overrides)
+
+    async def replace(self, updated: ConfigDocument, original: ConfigDocument) -> bool:
+        """Adopt a validated file unless a save already replaced the document."""
+        async with self._lock:
+            if self.document is not original:
+                return False
+            self.document = updated
+            return True
 
     async def save(self, appearance: Appearance, theme: str, context: str | None) -> None:
         theme_name(theme)
@@ -59,7 +86,9 @@ class PreferenceSource:
             existed = self.location.path.exists()
             current = read_config(self.location.path)
             if current.to_mapping() != original.to_mapping():
-                raise AppError("Preferences changed on disk; restart to reload before saving.")
+                raise AppError(
+                    "Preferences changed on disk; wait for them to reload, then save again."
+                )
             write_config(self.location.path, updated, overwrite=existed)
 
         async with self._lock:

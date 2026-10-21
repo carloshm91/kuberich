@@ -10,6 +10,7 @@ from kuberich.errors import AppError
 from kuberich.services.commands import GenericResourceCommand
 
 if TYPE_CHECKING:
+    from kuberich.config.schema import ConfigDocument
     from kuberich.domain.resources import ResourceRecord
     from kuberich.ui.app import KubeRichApp
 
@@ -22,10 +23,13 @@ class JumpController:
         self.jumps = Jumps()
         self.error: str | None = None
         if app.preferences is not None:
-            try:
-                self.jumps = jumps_from(app.preferences.document)
-            except AppError as error:
-                self.error = str(error)
+            self.configure(app.preferences.document)
+
+    def configure(self, document: "ConfigDocument") -> None:
+        try:
+            self.jumps, self.error = jumps_from(document), None
+        except AppError as error:
+            self.jumps, self.error = Jumps(), str(error)
 
     @property
     def names(self) -> tuple[str, ...]:

@@ -251,3 +251,19 @@ def test_config_check_validates_jumps_without_rewriting(tmp_path, capsys):
     path.write_text(before.decode().replace(" | upper", ""))
     assert main(["--config", str(path), "config", "check"]) == 0
     assert "valid" in capsys.readouterr().out
+
+
+def test_config_check_validates_context_settings_and_names_unsupported_fields(tmp_path, capsys):
+    path = tmp_path / "preferences.yaml"
+    path.write_text(
+        "schema_version: 1\nlegacy_option: 1\ncontext_settings:\n  contexts:\n"
+        "    prod:\n      read_only: false\n"
+    )
+    assert main(["--config", str(path), "config", "check"]) == 2
+    assert "cannot turn read-only off" in capsys.readouterr().err
+    path.write_text(path.read_text().replace("false", "true"))
+    before = path.read_bytes()
+    assert main(["--config", str(path), "config", "check"]) == 0
+    output = capsys.readouterr()
+    assert "valid" in output.out and "ignored: legacy_option." in output.err
+    assert path.read_bytes() == before
