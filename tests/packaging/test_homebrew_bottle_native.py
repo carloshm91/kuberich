@@ -164,7 +164,8 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
         assert installed() == f"kuberich {version}\n"
         execute(["test", "kuberich/tap/kuberich"])
         binary = str(prefix / "bin/kuberich")
-        assert "Usage" in run([binary, "--help"], outside, environment=environment).stdout
+        help_text = run([binary, "--help"], outside, environment=environment).stdout
+        assert help_text.startswith("usage: kuberich")
         for name, trial in (("navigation", terminal_navigation), ("shell", terminal_shell)):
             directory = outside / name
             directory.mkdir()
