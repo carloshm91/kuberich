@@ -43,7 +43,12 @@ PHASE_GATES = {
     "1.0.0": "Q06",
 }
 # Phase-specific extras that must stay attached to their reviewed phase.
-PHASE_EXTRAS = {"0.1.0": {53, 54, 123}, "0.2.0": {193}, "0.8.0": {124}}
+PHASE_EXTRAS = {
+    "0.1.0": {53, 54, 123},
+    "0.2.0": {193},
+    "0.3.0": {189, 208, 270},
+    "0.8.0": {124},
+}
 # Original plan issue creation order, #13 through #91. Phase changes cannot remap IDs.
 TASK_ISSUE_IDS = (
     "F00",
