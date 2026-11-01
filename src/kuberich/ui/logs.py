@@ -217,6 +217,14 @@ class LogScreen(CommandWorkspace):
         self._save_task: asyncio.Task[None] | None = None
         self._layout_lock = asyncio.Lock()
 
+    @property
+    def active_count(self) -> int:
+        """Count unfinished owned controller, reader, renderer and export operations."""
+        return sum(
+            task is not None and not task.done()
+            for task in (self._controller, self._read_task, self._renderer, self._save_task)
+        )
+
     def compose(self) -> ComposeResult:
         if self.chrome is not None:
             yield WorkspaceHeader(self.chrome, LOG_SHORTCUTS, binding_profile="logs")

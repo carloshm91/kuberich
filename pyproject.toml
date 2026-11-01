@@ -164,6 +164,7 @@ critical_modules = [
     "src/kuberich/ui/style_cache.py",
     "src/kuberich/ui/table_cache.py",
     "src/kuberich/ui/state.py",
+    "src/kuberich/ui/log_cache.py",
     "src/kuberich/config/schema.py",
     "src/kuberich/config/navigation.py",
     "src/kuberich/config/plugins.py",

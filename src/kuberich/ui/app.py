@@ -504,6 +504,11 @@ class KubeRichApp(App[None]):
         self._submit_command(text)
 
     @property
+    def retained_aggregate_log_view_count(self) -> int:
+        """Count registered aggregate views, including detached views still draining exports."""
+        return len(self._aggregate_screens)
+
+    @property
     def _active_table(self) -> PodTable | NamespaceTable | ContextTable | StandardTable:
         if self._resource_name == "contexts":
             return self.context_table

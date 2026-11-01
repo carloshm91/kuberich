@@ -21,6 +21,7 @@ from kuberich.domain.processes import (
     ProcessStatus,
     capture_command,
 )
+from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
 from kuberich.services.processes import ProcessRunner
 from tests.support.tiers import runtime_environment
@@ -39,18 +40,22 @@ OUTPUT_LIMIT = 256 * 1024
 async def command(
     argv: Sequence[str], environment: Mapping[str, str] | None = None, *, deadline: float = DEADLINE
 ) -> ProcessResult:
+    specification = capture_command(
+        argv,
+        environment=os.environ if environment is None else environment,
+        directory=ROOT,
+        mode=ProcessMode.CAPTURE,
+        purpose=ProcessPurpose.PLUGIN,
+    )
     async with ProcessRunner(AccessPolicy(False), output_limit=OUTPUT_LIMIT) as runner:
-        result = await runner.capture(
-            capture_command(
-                argv,
-                environment=os.environ if environment is None else environment,
-                directory=ROOT,
-                mode=ProcessMode.CAPTURE,
-                purpose=ProcessPurpose.PLUGIN,
-            ),
-            timeout=deadline,
-        )
-    assert runner.active_count == 0 and runner._closed, "Runtime process owner did not drain"
+        result = await runner.capture(specification, timeout=deadline)
+    assert runner.active_count == 0, "Runtime process owner did not drain"
+    try:
+        runner.require(specification, ProcessMode.CAPTURE, None)
+    except AppError as error:
+        assert str(error) == "Process runner is closed."
+    else:
+        raise AssertionError("Closed runtime owner accepted another operation")
     return result
 
 
@@ -111,7 +116,7 @@ async def finish_child(request: dict[str, Any]) -> None:
     cleanup = (
         {
             "app_running": app.is_running,
-            "aggregate_registry": len(app._aggregate_screens),
+            "aggregate_registry": app.retained_aggregate_log_view_count,
             "api_log_streams": api.active,
             "api_watches": api.watch_active,
         }

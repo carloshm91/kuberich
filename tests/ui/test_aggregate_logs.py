@@ -20,8 +20,8 @@ from kuberich.config.schema import Settings
 from kuberich.domain.aggregate_logs import AggregateHistory, LogSource
 from kuberich.domain.logs import LogDecoder
 from kuberich.domain.views import ViewStatus
-from kuberich.services.processes import _finish_owned
 from kuberich.services.resources import parse_owned
+from kuberich.ui import aggregate_logs as log_module
 from kuberich.ui.aggregate_logs import AggregateLogScreen, LogSourcesScreen
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.containers import ContainerScreen
@@ -35,7 +35,15 @@ from tests.support.aggregate_runtime import (
 )
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.standard import roots
+from tests.support.workers import CoroutineCalls
 from tests.support.workspace import wait_for, workspace_api
+
+
+@pytest.fixture
+def save_calls(monkeypatch):
+    calls = CoroutineCalls()
+    monkeypatch.setattr(log_module, "save_logs", calls.observe(log_module.save_logs))
+    return calls
 
 
 async def ns(request):
@@ -57,7 +65,7 @@ def rendered(screen):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
 async def test_public_aggregate_controls_reuse_history_with_json_filter_export_and_restore(
-    tmp_path, size
+    tmp_path, size, save_calls
 ):
     api = AggregateApi(count=2)
     api.pods["pod-00"]["spec"].update(
@@ -109,14 +117,20 @@ async def test_public_aggregate_controls_reuse_history_with_json_filter_export_a
             await pilot.press("enter")
             await wait_for(lambda: screen.aggregate.filter is not None)
             await pilot.press("ctrl+y")
-            await wait_for(lambda: screen._copy_task is not None and screen._copy_task.done())
+            await wait_for(lambda: app.clipboard == screen.aggregate.export())
             assert app.clipboard == screen.aggregate.export()
             assert api.requests == baseline
             await pilot.press("ctrl+s")
             destination = tmp_path / "aggregate.jsonl"
             app.screen.query_one("#log-value", Input).value = str(destination)
             await pilot.press("enter")
-            await wait_for(lambda: destination.exists() and screen._save_task.done())
+            await wait_for(
+                lambda: (
+                    destination.exists()
+                    and save_calls.latest is not None
+                    and save_calls.latest.done()
+                )
+            )
             assert destination.read_text() == screen.aggregate.export()
             assert destination.stat().st_mode & 0o777 == 0o600
             await pilot.press("question_mark")
@@ -144,9 +158,7 @@ async def test_public_aggregate_controls_reuse_history_with_json_filter_export_a
             await pilot.press("escape")
             await wait_for(lambda: api.active == 0)
             assert app.resources.capture_viewport() == before
-            assert (
-                screen._controller.done() and screen._renderer.done() and screen._read_task.done()
-            )
+            assert screen.active_count == 0
             # Existing Pod Enter -> container list -> one selected log viewer stays intact.
             await pilot.press("enter")
             await wait_for(lambda: isinstance(app.screen, ContainerScreen))
@@ -167,7 +179,7 @@ async def test_typed_command_and_hidden_context_replacement_drain_all_readers(tm
         app = app_for(tmp_path, url)
         async with app.run_test() as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
-            app._submit_command(":logsall")
+            await app.run_command(":logsall")
             await wait_for(lambda: isinstance(app.screen, AggregateLogScreen) and api.active == 1)
             screen = app.screen
             await pilot.press("ctrl+s")
@@ -175,8 +187,8 @@ async def test_typed_command_and_hidden_context_replacement_drain_all_readers(tm
             # Covered aggregate must be stale/drained before the captured SDK closes.
             task = app.workspace.connect("kuberich-test-two")
             await task
-            assert screen.closed and not screen.owner._owned
-            assert screen._read_task.done() and screen._renderer.done()
+            assert screen.closed and screen.owner.controller_count == 0
+            assert screen.active_count == 0
             await wait_for(lambda: api.active == 0)
             assert "Reception stopped" in str(screen.status.content)
             assert "0/8 readers" in str(screen.status.content)
@@ -196,7 +208,7 @@ async def test_source_picker_uid_recreation_expired_selection_and_manual_space(t
         app = app_for(tmp_path, url)
         async with app.run_test() as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
-            app._submit_command(":rs")
+            await app.run_command(":rs")
             await wait_for(lambda: app.standard_table.row_count == 1)
             await pilot.press("f1")
             help_text = str(app.screen.query_one("#help-content", Static).content)
@@ -239,16 +251,23 @@ async def test_source_picker_uid_recreation_expired_selection_and_manual_space(t
 
 
 @pytest.mark.asyncio
-async def test_detached_export_is_drained_before_context_client_cleanup(tmp_path, monkeypatch):
+async def test_detached_export_is_drained_before_context_client_cleanup(
+    tmp_path, monkeypatch, save_calls
+):
     api = AggregateApi(count=1)
     entered, release, finished = asyncio.Event(), asyncio.Event(), asyncio.Event()
 
     async def held_save(path, text):
         entered.set()
-        await _finish_owned(asyncio.create_task(release.wait()))
+        # Model an already-started write that finishes even when its waiter is cancelled.
+        while not release.is_set():
+            try:
+                await release.wait()
+            except asyncio.CancelledError:
+                continue
         finished.set()
 
-    monkeypatch.setattr("kuberich.ui.aggregate_logs.save_logs", held_save)
+    monkeypatch.setattr(log_module, "save_logs", save_calls.observe(held_save))
     async with workspace_api(ns, api.handler) as url:
         app = app_for(tmp_path, url)
         async with app.run_test() as pilot:
@@ -264,10 +283,10 @@ async def test_detached_export_is_drained_before_context_client_cleanup(tmp_path
             try:
                 escape = asyncio.create_task(pilot.press("escape"))
                 await wait_for(lambda: screen not in app.screen_stack)
-                assert app._aggregate_screens == {screen}
+                assert app.retained_aggregate_log_view_count == 1
                 before = api.requests.copy()
                 app.action_logs_all()
-                assert app._aggregate_screens == {screen} and api.requests == before
+                assert app.retained_aggregate_log_view_count == 1 and api.requests == before
                 assert "closing" in str(app.status.content)
                 connecting = app.workspace.connect("kuberich-test-two")
                 await asyncio.sleep(0.1)
@@ -276,8 +295,8 @@ async def test_detached_export_is_drained_before_context_client_cleanup(tmp_path
                 release.set()
             await connecting
             await escape
-            assert finished.is_set() and screen._save_task.done()
-            assert not app._aggregate_screens
+            assert finished.is_set() and save_calls.latest is not None and save_calls.latest.done()
+            assert app.retained_aggregate_log_view_count == 0
 
 
 @pytest.mark.asyncio
@@ -288,7 +307,7 @@ async def test_picker_overflow_explicit_reopen_empty_manual_selection_and_back_b
         app = app_for(tmp_path, url)
         async with app.run_test() as pilot:
             await wait_for(lambda: app.resources.row_count == 10)
-            app._submit_command(":rs")
+            await app.run_command(":rs")
             await wait_for(lambda: app.standard_table.row_count == 1)
             await pilot.press("L")
             await wait_for(lambda: isinstance(app.screen, AggregateLogScreen) and api.active == 8)
@@ -320,16 +339,16 @@ async def test_empty_sources_and_generic_core_route_guard(tmp_path):
         app = app_for(tmp_path, url)
         async with app.run_test() as pilot:
             await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
-            app._submit_command(":rs")
+            await app.run_command(":rs")
             await wait_for(lambda: app.standard_table.row_count == 1)
             await pilot.press("L")
             await wait_for(lambda: isinstance(app.screen, AggregateLogScreen))
             await pilot.press("c", "enter", "r", "space", "a")
             assert app.screen.table.row_count == 0 and not api.requests
             await pilot.press("escape", "escape")
-            app._submit_command(":resource pods")
+            await app.run_command(":resource pods")
             await wait_for(lambda: app.custom_table.display)
-            app._submit_command(":logsall")
+            await app.run_command(":logsall")
             await pilot.pause()
             assert len(app.screen_stack) == 1 and "Generic resources" in str(app.status.content)
 
@@ -517,8 +536,12 @@ async def exercise_aggregate_runtime(tmp_path, request):
                 ):
                     phase = f"warm {warm_number} Escape/drain"
                     await pilot.press("escape")
-                    await wait_for(lambda: not app._aggregate_screens and api.active == 0)
-                    assert screen.closed and screen.owner.closed and not screen.owner._owned
+                    await wait_for(
+                        lambda: app.retained_aggregate_log_view_count == 0 and api.active == 0
+                    )
+                    assert (
+                        screen.closed and screen.owner.closed and screen.owner.controller_count == 0
+                    )
                     phase = f"warm {warm_number} resize"
                     await pilot.resize_terminal(*size)
                     phase = f"warm {warm_number} theme"
@@ -572,7 +595,7 @@ async def exercise_aggregate_runtime(tmp_path, request):
                     phase = f"round {iteration} initial layout"
                     screen.aggregate = screen.history = history
                     batches = screen.body.render_batches
-                    screen._display_changed()
+                    screen.search_changed()
                     await wait_for(
                         lambda batches=batches: (
                             screen.body.render_batches > batches and len(screen.body.rows) == 5000
@@ -589,7 +612,7 @@ async def exercise_aggregate_runtime(tmp_path, request):
                     await pilot.press("ctrl+s")
                     app.screen.query_one("#log-value", Input).value = str(destination)
                     await pilot.press("enter")
-                    await wait_for(lambda: screen._save_task.done())
+                    await wait_for(lambda: "Cannot save logs" in str(screen.status.content))
                     assert "Cannot save logs" in str(screen.status.content)
                     assert destination.read_text() == "keep-existing"
                     if request["mode"] != "coverage":
@@ -616,10 +639,10 @@ async def exercise_aggregate_runtime(tmp_path, request):
                     completed_rounds += 1
                 phase = "leave/drain viewer"
                 await pilot.press("escape")
-                await wait_for(lambda: not app._aggregate_screens)
+                await wait_for(lambda: app.retained_aggregate_log_view_count == 0)
                 await wait_for(lambda: api.active == 0 and api.watch_active == background_watches)
                 assert len(app.screen_stack) == 1
-                assert screen.closed and screen.owner.closed and not screen.owner._owned
+                assert screen.closed and screen.owner.closed and screen.owner.controller_count == 0
                 assert all(
                     state.task is None or state.task.done()
                     for state in screen.owner.states.values()
@@ -627,11 +650,11 @@ async def exercise_aggregate_runtime(tmp_path, request):
                 after_close = {
                     "viewer_closed": screen.closed,
                     "owner_closed": screen.owner.closed,
-                    "owner_tasks": len(screen.owner._owned),
+                    "owner_tasks": screen.owner.controller_count,
                     "active_readers": sum(
                         state.status == "active" for state in screen.owner.states.values()
                     ),
-                    "registry_size": len(app._aggregate_screens),
+                    "registry_size": app.retained_aggregate_log_view_count,
                     "api_log_streams": api.active,
                     "api_watches": api.watch_active,
                     "background_watches": background_watches,
