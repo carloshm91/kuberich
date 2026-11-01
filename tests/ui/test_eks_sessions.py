@@ -44,7 +44,7 @@ async def test_aws_wait_and_sso_errors_preserve_navigation_and_cleanup(tmp_path,
                 await wait_for(lambda: (tmp_path / "pid").exists())
                 assert app.sessions.observation.state is ConnectionState.CONNECTING
             else:
-                await app._connection_task
+                await wait_for(lambda: app.state.connection is ConnectionState.AUTH_ERROR)
                 assert app.sessions.observation.state is ConnectionState.AUTH_ERROR
                 await pilot.press("colon", *"status", "enter")
                 assert isinstance(app.screen, ConnectionScreen)
@@ -58,7 +58,7 @@ async def test_aws_wait_and_sso_errors_preserve_navigation_and_cleanup(tmp_path,
             async with asyncio.timeout(5):
                 await pilot.press("c")
                 await wait_for(lambda: app.context_table.row_count == 2)
-                assert app._resource_name == "contexts" and len(app.screen_stack) == 1
+                assert app.state.view_kind == "contexts" and len(app.screen_stack) == 1
                 await pilot.press("ctrl+q")
         assert app.sessions.client is None
         if failure == "waiting":

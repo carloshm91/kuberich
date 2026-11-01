@@ -69,9 +69,15 @@ async def test_generic_table_typed_sort_literal_headers_and_compatible_reconfigu
         )
         await pilot.pause()
         assert table.selected_uid == before and table.sort_column == "name"
+        table.move_cursor(row=1)
+        assert table.selected_uid == "owned-two"
         stale = replace(replacement, resource=custom_resource(version="v1beta1"))
         table.configure_layout(stale, 2)
-        assert table._pending_viewport is None
         assert not await table.apply_rows((), 2, lambda: False)
+        fresh_rows = tuple(
+            stale.row(captured(changed_headers, (True,), name=name)) for name in ("ten", "two")
+        )
+        await table.apply_rows(fresh_rows, 2, lambda: True)
+        assert table.selected_uid == "owned-ten"  # A new GVR cannot restore the old cursor.
         await table.apply_rows((), 2, lambda: True)
         assert not table.row_count

@@ -26,6 +26,17 @@ from kuberich.services.watches import ListWatch
 MAX_SUBSCRIPTIONS = 8
 
 
+@dataclass(frozen=True)
+class WorkspaceOwnership:
+    """Registered lifecycle ownership, without exposing tasks or cached data."""
+
+    watch_count: int
+    operation_count: int
+    subscription_count: int
+    discovery_count: int
+    close_complete: bool
+
+
 class ViewSubscription(AsyncIterator[ViewObservation]):
     """One replaceable pending observation; no event history or producer queue."""
 
@@ -109,6 +120,17 @@ class WorkspaceService:
         self._discovery: tuple[KubernetesSession, Discovery] | None = None
         self._closed = False
         self._closing: asyncio.Task[None] | None = None
+
+    @property
+    def ownership(self) -> WorkspaceOwnership:
+        """Snapshot registered owners, including completed tasks not yet retired."""
+        return WorkspaceOwnership(
+            watch_count=int(self._watch is not None),
+            operation_count=int(self._operation is not None),
+            subscription_count=len(self._subscriptions),
+            discovery_count=int(self._discovery is not None),
+            close_complete=self._closing is not None and self._closing.done(),
+        )
 
     def _require_open(self) -> None:
         if self._closed:

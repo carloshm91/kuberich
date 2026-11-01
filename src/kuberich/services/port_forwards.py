@@ -397,6 +397,11 @@ class ForwardManager:
         return tuple(self._records.values())
 
     @property
+    def session_count(self) -> int:
+        """Registered forward sessions, including completed jobs awaiting retirement."""
+        return len(self._live)
+
+    @property
     def active_count(self) -> int:
         return sum(not record.task.done() for record in self._live.values())
 

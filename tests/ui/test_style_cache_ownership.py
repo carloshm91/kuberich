@@ -5,11 +5,10 @@ import weakref
 
 import pytest
 from textual._styles_cache import StylesCache
-from textual.app import App
 from textual.color import Color
 from textual.widgets import Static
 
-from kuberich.ui.app import KubeRichApp
+from kuberich.ui import app as app_module
 from tests.support.aggregate_logs import AggregateApi
 from tests.support.workspace import wait_for, workspace_api
 from tests.ui.test_aggregate_logs import app_for, ns
@@ -21,7 +20,7 @@ async def test_retired_render_cache_is_not_owned_by_background_colors(
     tmp_path, monkeypatch, native_control
 ):
     if native_control:
-        monkeypatch.setattr(KubeRichApp, "_register_child", App._register_child)
+        monkeypatch.setattr(app_module, "ColorStylesCache", StylesCache)
     api = AggregateApi(count=1)
     async with workspace_api(ns, api.handler) as url:
         app = app_for(tmp_path, url)

@@ -240,6 +240,13 @@ class AggregateLogScreen(LogScreen):
         self._copy_task: asyncio.Task[None] | None = None
         self._stopped = stopped
 
+    @property
+    def active_count(self) -> int:
+        """Include the aggregate copy operation in the base viewer's unfinished work."""
+        return super().active_count + int(
+            self._copy_task is not None and not self._copy_task.done()
+        )
+
     def on_mount(self) -> None:
         # Textual dispatches base-class mount handlers after this one.
         self.query_one("#log-container", Button).label = "Sources"
