@@ -78,16 +78,21 @@ def test_same_uid_cannot_change_name_and_prior_snapshots_remain_immutable() -> N
 
 
 @pytest.mark.parametrize("limit", ["items", "bytes"])
-def test_state_limit_rejection_is_atomic(monkeypatch: pytest.MonkeyPatch, limit: str) -> None:
+def test_state_limit_keeps_bounded_retained_data_and_advances_checkpoint(
+    monkeypatch: pytest.MonkeyPatch, limit: str
+) -> None:
     state = WatchState(snapshot(item()))
     before = state.snapshot
     if limit == "items":
         monkeypatch.setattr(watches, "MAX_RESOURCE_ITEMS", 1)
     else:
         monkeypatch.setattr(watches, "MAX_RESOURCE_BYTES", 1)
-    with pytest.raises(AppError, match="limit"):
-        state.apply(watch_event(pod_resource(), event(name="second")))
-    assert state.snapshot == before
+    assert state.apply(watch_event(pod_resource(), event(name="second")))
+    assert state.snapshot.items == before.items
+    assert not state.snapshot.collection.complete and state.snapshot.collection.limited
+    assert state.resource_version == "opaque-event"
+    assert not state.apply(watch_event(pod_resource(), event(name="third", version="next")))
+    assert state.resource_version == "next" and state.snapshot.items == before.items
 
 
 def test_replay_memory_and_repeated_recreation_are_bounded(monkeypatch: pytest.MonkeyPatch) -> None:

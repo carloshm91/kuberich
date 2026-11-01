@@ -1,7 +1,7 @@
 """Own context/resource history and restoration through explicit workspace ports."""
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from textual.app import App
 from textual.screen import ModalScreen
@@ -12,6 +12,7 @@ from kuberich.domain.custom import CustomLayout
 from kuberich.domain.navigation import NamespaceChoice, NavigationHistory, NavigationState, Viewport
 from kuberich.domain.pods import PodColumn
 from kuberich.domain.registry import RESOURCE_ALIASES, resource_selection
+from kuberich.domain.resource_queries import ResourceQuery, query_command
 from kuberich.domain.view_routes import ViewKind, ViewRoute
 from kuberich.domain.views import USABLE_CONNECTIONS, ResourceSelection, ViewObservation
 from kuberich.errors import AppError
@@ -281,7 +282,12 @@ class WorkspaceNavigation:
             self.host.set_focus(self.views.table)
             return
         try:
-            self.workspace.select_resource(generic or resource_selection(resource))
+            selection = generic or resource_selection(resource)
+            if restore is not None:
+                selection = replace(selection, query=restore.server_query)
+                if generic is not None:
+                    generic = selection
+            self.workspace.select_resource(selection)
             if scope is not None:
                 self.workspace.select_namespace(scope.namespace)
         except AppError as error:
@@ -317,7 +323,13 @@ class WorkspaceNavigation:
                     if was_namespace_view and self._namespace_parent is not None
                     else None
                 )
-                self.workspace.select_resource(generic or ResourceSelection("pods"))
+                parent = self._namespace_parent if was_namespace_view else current
+                pod_query = (
+                    parent.server_query
+                    if parent is not None and parent.resource == "pods"
+                    else ResourceQuery()
+                )
+                self.workspace.select_resource(generic or ResourceSelection(query=pod_query))
                 self.workspace.select_namespace(choice.namespace)
                 if was_namespace_view:
                     self._namespace_state = current
@@ -438,6 +450,42 @@ class WorkspaceNavigation:
         favorites = self.favorites(connection.identity.context if connection.identity else "")
         return ("*", *sorted(set(connection.namespaces) | set(current) | set(favorites)))
 
+    def server(self, text: str) -> None:
+        """Replace the owned server query only on an explicit command."""
+        if self.resource_name == "contexts":
+            self.notice(
+                "Server selectors apply to Kubernetes resources; open a resource view first."
+            )
+            return
+        current = self.workspace.selection.query
+        if not text:
+            self.notice(
+                f"Server query · label: {current.label_selector or 'none'}"
+                f" · field: {current.field_selector or 'none'}"
+                f" · {'compact metadata' if current.compact else 'full objects'}"
+                " · :server label/field EXPR · clear · compact · full"
+            )
+            return
+        previous = self.capture()
+        try:
+            query = query_command(current, text)
+            if query == current:
+                self.server("")
+                return
+            self.workspace.set_query(query)
+        except AppError as error:
+            self.notice(str(error))
+            return
+        if previous is not None:
+            self.history.visit(previous)
+        generic = self.generic_selection
+        self.display(
+            self.resource_name,
+            generic=replace(generic, query=query) if generic is not None else None,
+        )
+        self.clear_rows()
+        self.views.request()
+
     def capture(self) -> NavigationState | None:
         view = self.workspace.store.observation
         if self.resource_name != "contexts" and (
@@ -466,6 +514,7 @@ class WorkspaceNavigation:
             if self.views.tables.custom.display
             and self.views.tables.custom.resource_layout is not None
             else (),
+            self.workspace.selection.query,
         )
 
     def remember(self) -> None:
@@ -494,16 +543,20 @@ class WorkspaceNavigation:
             self.views.request()
             return
         scope = NamespaceChoice(state.namespace)
+        selection = replace(
+            state.generic or resource_selection(state.resource), query=state.server_query
+        )
+        generic = selection if state.generic is not None else None
         current = self.workspace.store.observation
         if state.context == current.context and current.connection.state in USABLE_CONNECTIONS:
-            self.workspace.select_resource(state.generic or resource_selection(state.resource))
+            self.workspace.select_resource(selection)
             self.workspace.select_namespace(state.namespace)
-            self.display(state.resource, generic=state.generic)
+            self.display(state.resource, generic=generic)
             self.clear_rows()
             self.header.update_identity()
         else:
-            self.workspace.selection = state.generic or resource_selection(state.resource)
-            self.display(state.resource, generic=state.generic)
+            self.workspace.selection = selection
+            self.display(state.resource, generic=generic)
             self.connect(state.context, scope=scope, remember=False)
         self.filter_input.value = state.query
         self._restore_state = self.workspace.store.observation.revision, state

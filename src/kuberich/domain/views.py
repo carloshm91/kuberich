@@ -9,6 +9,7 @@ from kuberich.domain.connections import (
     HttpProblem,
     SessionObservation,
 )
+from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.resources import ApiResource, ResourceSnapshot, api_segment
 from kuberich.domain.targets import SessionIdentity
 from kuberich.domain.watches import SyncStatus, SyncUpdate
@@ -23,6 +24,7 @@ class ResourceSelection:
     group: str = ""
     version: str | None = None
     server_columns: bool = False
+    query: ResourceQuery = field(default_factory=ResourceQuery)
 
     def __post_init__(self) -> None:
         api_segment(self.name)
@@ -32,6 +34,14 @@ class ResourceSelection:
             api_segment(self.version)
         if type(self.server_columns) is not bool:
             raise AppError("Server-column selection must be boolean.")
+        if not isinstance(self.query, ResourceQuery):
+            raise AppError("Resource selection requires a validated server query.")
+        if self.query.compact and (
+            not self.server_columns or (not self.group and self.name in {"pods", "services"})
+        ):
+            raise AppError(
+                "Native Pod/Service views require full objects; compact mode is for generic server columns."
+            )
 
 
 @dataclass(frozen=True)
@@ -39,9 +49,12 @@ class ResourceScope:
     session: SessionIdentity
     resource: ApiResource
     namespace: str | None
+    query: ResourceQuery = field(default_factory=ResourceQuery)
 
     def __post_init__(self) -> None:
         self.resource.path(self.namespace)
+        if not isinstance(self.query, ResourceQuery):
+            raise AppError("Resource scope requires a validated server query.")
 
 
 class ViewStatus(Enum):
@@ -86,6 +99,14 @@ class ViewObservation:
             return f"Loading {self.scope.resource.name}"
         count = len(self.snapshot.items)
         phase = "Live" if self.status is ViewStatus.LIVE else "Starting live updates"
+        if not self.snapshot.collection.complete:
+            phase += " · INCOMPLETE retained subset"
+            detail = (
+                " · limit reached; :server label/field or :ns to narrow"
+                if self.snapshot.collection.limited
+                else f" · loading page {self.snapshot.collection.pages}"
+            )
+            return f"{phase} · {count} retained {self.scope.resource.name}{detail}"
         return f"{phase} · {count} {self.scope.resource.name}"
 
 

@@ -8,7 +8,8 @@ from contextlib import aclosing
 
 from kuberich.adapters.kubernetes import decode_json
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, HttpProblem
-from kuberich.domain.resources import ApiResource
+from kuberich.domain.resource_queries import ResourceQuery
+from kuberich.domain.resources import ApiResource, ResourceSnapshot
 from kuberich.domain.tables import TABLE_ACCEPT, TableDecoder, TableUnavailable
 from kuberich.domain.watches import (
     Recovery,
@@ -47,11 +48,17 @@ class ListWatch:
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
         jitter: Callable[[], float] = random.random,
         monotonic: Callable[[], float] = time.monotonic,
+        query: ResourceQuery | None = None,
+        progress: bool = False,
     ) -> None:
         self.reader = reader
         self.sleep = sleep
         self.jitter = jitter
         self.monotonic = monotonic
+        self.query = ResourceQuery() if query is None else query
+        if not isinstance(self.query, ResourceQuery) or type(progress) is not bool:
+            raise AppError("List/watch requires a validated query and explicit progress mode.")
+        self.progress = progress
 
     async def _event(
         self,
@@ -85,17 +92,34 @@ class ListWatch:
     async def run(self, resource: ApiResource, namespace: str | None, sink: Sink) -> None:
         if not {"list", "watch"} <= resource.verbs:
             raise AppError("Live resources require advertised list and watch support.")
+        if self.query.compact and not resource.group and resource.name in {"pods", "services"}:
+            raise AppError("Pod/Service resources retain full objects; use :server full.")
         path = resource.path(namespace)
         state = None
         failures = 0
         await sink(SyncUpdate(SyncStatus.LOADING))
+
+        async def page(snapshot: ResourceSnapshot) -> None:
+            await _emit(sink, SyncUpdate(SyncStatus.LOADING, snapshot))
+
         while True:
             opened = None
             table = self.reader.uses_tables(resource)
             try:
                 if state is None:
                     try:
-                        state = WatchState(await self.reader.list(resource, namespace))
+                        snapshot = (
+                            await self.reader.list(
+                                resource,
+                                namespace,
+                                query=self.query,
+                                progress=page if self.progress else None,
+                            )
+                            if self.progress or not self.query.empty
+                            else await self.reader.list(resource, namespace)
+                        )
+                        state = WatchState(snapshot)
+                        del snapshot
                     except AppError:
                         raise ConnectionProblem(
                             ConnectionState.API_ERROR,
@@ -103,14 +127,33 @@ class ListWatch:
                         ) from None
                     await _emit(sink, SyncUpdate(SyncStatus.SNAPSHOT, state.snapshot))
                 table = self.reader.uses_tables(resource)
-                decoder = TableDecoder(resource, namespace) if table else None
-                stream = (
-                    self.reader.session.watch_bytes(
-                        path, state.resource_version, accept=TABLE_ACCEPT, include_object=True
-                    )
+                decoder = (
+                    TableDecoder(resource, namespace, metadata_only=self.query.compact)
                     if table
-                    else self.reader.session.watch_bytes(path, state.resource_version)
+                    else None
                 )
+                if table:
+                    stream = (
+                        self.reader.session.watch_bytes(
+                            path,
+                            state.resource_version,
+                            accept=TABLE_ACCEPT,
+                            include_object=True,
+                            query=self.query,
+                        )
+                        if not self.query.empty
+                        else self.reader.session.watch_bytes(
+                            path, state.resource_version, accept=TABLE_ACCEPT, include_object=True
+                        )
+                    )
+                else:
+                    stream = (
+                        self.reader.session.watch_bytes(
+                            path, state.resource_version, query=self.query
+                        )
+                        if not self.query.empty
+                        else self.reader.session.watch_bytes(path, state.resource_version)
+                    )
                 async with aclosing(stream):
                     async for payload in stream:
                         if payload is None:

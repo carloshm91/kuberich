@@ -4,13 +4,16 @@ from dataclasses import replace
 
 import pytest
 
+from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.resources import ResourceSnapshot, resource_record
 from kuberich.domain.targets import SessionIdentity
 from kuberich.domain.view_routes import ViewRoute
 from kuberich.domain.views import ResourceScope, ResourceSelection, ViewObservation, ViewStatus
+from kuberich.domain.watches import WatchState, watch_event
 from kuberich.ui.target_capture import TargetCapture, TargetSelection
 from tests.support.pods import pod, snapshot
 from tests.support.tables import custom_item, custom_resource
+from tests.support.watches import event
 
 
 class OwnedWorkspace:
@@ -33,6 +36,30 @@ class OwnedWorkspace:
             self.notices.append,
             self.statuses.append,
         )
+
+
+def test_capture_refuses_a_changed_server_query_and_a_retained_uid_evicted_for_size(monkeypatch):
+    from kuberich.domain import watches
+
+    workspace = OwnedWorkspace()
+    captured = workspace.capture.capture()
+    original_scope = workspace.view.scope
+    workspace.view = replace(
+        workspace.view, scope=replace(original_scope, query=ResourceQuery("app=api"))
+    )
+    assert not captured.current()
+    workspace.view = replace(workspace.view, scope=original_scope)
+    state = WatchState(workspace.view.snapshot)
+    monkeypatch.setattr(
+        watches, "MAX_RESOURCE_BYTES", state.snapshot.collection.retained_bytes + 10
+    )
+    newer = event("MODIFIED", "alpha", "large", uid="owned-alpha")
+    newer["object"]["spec"]["payload"] = "x" * 10_000
+    assert state.apply(watch_event(original_scope.resource, newer, "team"))
+    workspace.view = replace(workspace.view, snapshot=state.snapshot)
+    assert not captured.current()
+    assert {record.uid for record in state.snapshot.items} == {"owned-beta"}
+    assert not state.snapshot.collection.complete
 
 
 @pytest.mark.parametrize(

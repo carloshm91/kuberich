@@ -21,6 +21,12 @@ Release entries are written in release PRs and linked to their Git tags.
   introducing a plain-language style and a complete document migration map
   ([#222](https://github.com/carloshm91/kuberich/issues/222),
   [Carlos J. Herrera](https://github.com/carloshm91)).
+- Keep oversized resource collections live with explicit incomplete counts,
+  bounded retained rows, paginated progress and `:server` label/field selectors;
+  offer metadata-only payloads in generic views with full-object recovery
+  ([#213](https://github.com/carloshm91/kuberich/issues/213),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Keep offline diagnostics independent of terminal/SDK imports and defer cluster
   preparation until the first terminal refresh; enforce offline startup and
   actual-frame safety in CI. Report UI latency for 0.x while retaining the

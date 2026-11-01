@@ -40,6 +40,7 @@ class Command(Enum):
     RESUME = auto()
     REFRESH = auto()
     COLUMNS = auto()
+    SERVER = auto()
     LOGS_ALL = auto()
     RENAME = auto()
     CLEANUP = auto()

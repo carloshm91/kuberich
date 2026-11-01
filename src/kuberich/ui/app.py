@@ -443,6 +443,7 @@ class KubeRichApp(App[None]):
                     else self.navigator.context_selected(value)
                 ),
                 Command.COLUMNS: lambda value: self.navigator.columns(value or ""),
+                Command.SERVER: lambda value: self.navigator.server(value or ""),
                 Command.RENAME: lambda value: self._edit_context(ContextChange.RENAME, value or ""),
                 Command.JUMP: self.jumps.open,
                 Command.SCALE: lambda value: self.operations.workload(

@@ -208,10 +208,18 @@ class WorkspacePresenter:
                 and outcome.problem is None
             ):
                 self.host.query_one("#empty-title", WorkspaceLabel).update_text(
-                    f"No {kind} match this filter"
+                    f"No retained {kind} match this filter"
+                    if kind != "contexts"
+                    and view.snapshot is not None
+                    and not view.snapshot.collection.complete
+                    else f"No {kind} match this filter"
                 )
                 self.host.query_one("#empty-description", WorkspaceLabel).update_text(
-                    "Escape in the table clears the filter."
+                    "The collection is incomplete. :server label/field or :ns can narrow the server results."
+                    if kind != "contexts"
+                    and view.snapshot is not None
+                    and not view.snapshot.collection.complete
+                    else "Escape in the table clears the filter."
                 )
         self.navigator.after_render(view)
         self.update_trail()
@@ -257,11 +265,14 @@ class WorkspacePresenter:
             self.view_status(view, view.message)
             return
         usable = observation.state in USABLE_CONNECTIONS
+        incomplete = view.snapshot is not None and not view.snapshot.collection.complete
         self.host.query_one("#empty-title", WorkspaceLabel).update_text(
             "Stale resource data"
             if view.snapshot is not None and view.problem is not None
             else "Resource data unavailable"
             if usable and view.status is ViewStatus.FAILED
+            else f"No retained {self.views.route.display_key} in this incomplete collection"
+            if incomplete and view.snapshot is not None and not view.snapshot.items
             else f"No {self.views.route.display_key} in this scope"
             if view.snapshot is not None and not view.snapshot.items
             else f"{self.views.route.display_key.title()} ready"
@@ -271,7 +282,9 @@ class WorkspacePresenter:
             else "Connection unavailable"
         )
         self.host.query_one("#empty-description", WorkspaceLabel).update_text(
-            f"No {self.views.route.display_key} were returned. :ns namespaces · :ctx contexts."
+            "Collection incomplete; retained rows are only a subset. :server label/field or :ns to narrow."
+            if incomplete
+            else f"No {self.views.route.display_key} were returned. :ns namespaces · :ctx contexts."
             if view.status is ViewStatus.LIVE
             else "Keeping the last snapshot while reconnecting. Press i for details."
             if view.status is ViewStatus.STALE
@@ -285,7 +298,8 @@ class WorkspacePresenter:
             else observation.namespace or "all"
         )
         self.host.query_one("#resource-view", Vertical).border_title = safe_text(
-            f"{self.views.route.display_key}({scope})[{self.views.table.row_count}]"
+            ("INCOMPLETE · " if incomplete else "")
+            + f"{self.views.route.display_key}({scope})[{self.views.table.row_count}]"
             + (
                 f" · {view.scope.resource.api_version}"
                 if (self.views.tables.custom.display or self.full_gvr_titles())

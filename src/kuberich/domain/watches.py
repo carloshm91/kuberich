@@ -11,6 +11,7 @@ from kuberich.domain.resources import (
     MAX_RESOURCE_BYTES,
     MAX_RESOURCE_ITEMS,
     ApiResource,
+    CollectionState,
     ResourceRecord,
     ResourceSnapshot,
     resource_object,
@@ -102,6 +103,9 @@ class WatchState:
         self.namespace = snapshot.namespace
         self.resource_version = resource_text(snapshot.resource_version)
         self._columns = snapshot.columns
+        self._limited = snapshot.collection.limited
+        self._complete = snapshot.collection.complete
+        self._pages = snapshot.collection.pages
         self._records: dict[str, ResourceRecord] = {}
         self._names: dict[tuple[str | None, str], str] = {}
         self._bytes = 0
@@ -129,9 +133,10 @@ class WatchState:
             self.resource_version,
             tuple(self._records.values()),
             self._columns,
+            CollectionState(self._complete, self._limited, self._pages, self._bytes),
         )
 
-    def _put(self, uid: str, record: ResourceRecord) -> None:
+    def _put(self, uid: str, record: ResourceRecord) -> bool:
         identity = record.namespace, record.name
         if (
             self.resource.namespaced
@@ -149,12 +154,22 @@ class WatchState:
         if other is not None:
             size -= other.size_bytes
         if count > MAX_RESOURCE_ITEMS or size > MAX_RESOURCE_BYTES:
-            raise AppError("Live collection exceeds its item/memory limit.")
+            changed = not self._limited or current is not None or other is not None
+            self._limited, self._complete = True, False
+            # A newer record that no longer fits must invalidate the old UID;
+            # keeping its previous data would falsely present a current target.
+            for removed_uid, removed in ((uid, current), (other_uid, other)):
+                if removed is not None:
+                    del self._records[removed_uid]
+                    del self._names[removed.namespace, removed.name]
+                    self._bytes -= removed.size_bytes
+            return changed
         if other is not None:
             del self._records[other_uid]
         self._records[uid] = record
         self._names[identity] = uid
         self._bytes = size
+        return True
 
     def _remember(self, event: WatchEvent) -> None:
         key = (
@@ -195,7 +210,11 @@ class WatchState:
                 if current is not None and current.resource_version == record.resource_version:
                     self._remember(event)
                     return False
-                self._put(record.uid, record)
+                changed = self._put(record.uid, record)
+                if not changed:
+                    self.resource_version = event.resource_version
+                    self._remember(event)
+                    return False
             self._columns = record.server.columns if record.server is not None else ()
         self.resource_version = event.resource_version
         self._remember(event)
