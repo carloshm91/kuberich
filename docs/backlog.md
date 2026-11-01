@@ -22,7 +22,7 @@ foundations and documentation work starts before any new feature family.
 | --- | --- | --- |
 | 0.1.x | D06 #51 | Core workspace; also #53, #54 and #123 |
 | 0.2.x | D07 #65 | Extensibility; also Homebrew bottles #193 |
-| 0.3.x | D16 #230 | Foundations and documentation; also #189 and #208 |
+| 0.3.x | D16 #230 | Foundations and documentation; also #189, #208 and #272 |
 | 0.4.x | D08 #75 | Observability and metrics |
 | 0.5.x | D09 #82 | Operations, Helm and manifests |
 | 0.6.x | D17 #242 | Multi-cluster workspace |
@@ -132,6 +132,8 @@ Configurable themes, navigation/resource views, external plugins, deliberate con
 | [D07 #65](https://github.com/carloshm91/kuberich/issues/65) | Qualify the extensibility engineering checkpoint | [C05 #52](https://github.com/carloshm91/kuberich/issues/52), [B06 #53](https://github.com/carloshm91/kuberich/issues/53), [S06 #54](https://github.com/carloshm91/kuberich/issues/54), [M05 #55](https://github.com/carloshm91/kuberich/issues/55), [U01 #56](https://github.com/carloshm91/kuberich/issues/56), [U02 #57](https://github.com/carloshm91/kuberich/issues/57), [U03 #58](https://github.com/carloshm91/kuberich/issues/58), [U04 #59](https://github.com/carloshm91/kuberich/issues/59), [U05 #60](https://github.com/carloshm91/kuberich/issues/60), [B07 #61](https://github.com/carloshm91/kuberich/issues/61), [S08 #62](https://github.com/carloshm91/kuberich/issues/62), [M08 #63](https://github.com/carloshm91/kuberich/issues/63), [U06 #64](https://github.com/carloshm91/kuberich/issues/64), [D06 #51](https://github.com/carloshm91/kuberich/issues/51) |
 
 ## v0.3.0
+
+The [plugin output correction #272](https://github.com/carloshm91/kuberich/issues/272) is also required before qualification.
 
 Foundations and quality: decompose the application shell, decouple tests, remove private framework dependencies, degrade gracefully on large clusters, enforce a startup budget, reach kubeconfig parity with kubectl, add error boundaries and fast test tiers, and rewrite the documentation. No new feature families.
 
