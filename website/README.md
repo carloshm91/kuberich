@@ -70,10 +70,16 @@ Automated accessibility does not establish screen-reader certification.
    Update `public_summary` and `public_status` for reader-facing availability
    (available, partial, planned or unverified). Keep internal task IDs and historic
    acceptance records out of public guide prose and generated reference text.
-2. For a new user guide, enroll its source, readable title and section in
-   `GUIDES` in `scripts/build_site.py`. This allowlist owns both surfaces and their
-   navigation. Keep acceptance reports, architecture and maintainer-only procedures
-   out of that list. Existing verification/rehearsal sections stay source-only.
+2. Edit `docs/navigation.json` to change user navigation on both surfaces. It
+   lists the four Diátaxis types and 19 canonical user pages, including the index
+   and three generated references. The maximum is 20 pages. Keep acceptance
+   reports, architecture and maintainer-only procedures outside user navigation.
+   Follow [the documentation style](../docs/STYLE.md) and update every document's
+   disposition in `docs/documentation-plan.json` when a source changes purpose.
+   During the structure transition, a canonical page can combine its listed
+   source fragments; they are rendered once and included in the source receipt.
+   Consolidating the remaining long prose and meeting the 250-line limit are
+   separate guide/reference rewrites, not completed by this navigation change.
 3. CLI and standard-resource declaration changes appear automatically in the
    reference on the next build. `scripts/site_reference.py` constructs the parser
    and reads the registry in an isolated subprocess against the selected checkout;
@@ -91,6 +97,16 @@ Automated accessibility does not establish screen-reader certification.
 The references display the source version, retain unavailable options and planned
 capability differences, and link to maintained sources. Generated Markdown exists
 only in memory during the build. No generated HTML/reference file is hand edited.
+
+Retired guide paths have explicit `legacy_routes` in `docs/navigation.json`.
+The builder rewrites internal links to real canonical headings and emits local
+301 rules for both extensionless and `.html` paths. A retired path redirects to
+its stable section anchor. URL fragments are not sent to the server, so an old
+external link's fragment cannot select a deeper heading after that redirect.
+Primary-page anchors and rewritten internal deep links keep their exact targets.
+When a later rewrite removes a source fragment, preserve the route and update
+its `heading` to the corresponding canonical heading. The checker rejects
+missing target anchors, unexpected pages, changed routes and source drift.
 
 ## Media
 

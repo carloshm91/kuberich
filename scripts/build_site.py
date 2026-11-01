@@ -7,16 +7,16 @@ import re
 import shutil
 import sys
 import tomllib
-from dataclasses import dataclass
 from html import escape
 from pathlib import Path
 from string import Template
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 from markdown_it import MarkdownIt
 from markdown_it.token import Token
 from packaging.version import Version
 
+from scripts.documentation import Guide, Navigation, load_navigation
 from scripts.site_reference import generated_guides
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -46,55 +46,9 @@ def robots_content(public_launch: bool) -> str:
     return "User-agent: *\nAllow: /\n" if public_launch else "User-agent: *\nDisallow: /\n"
 
 
-@dataclass(frozen=True)
-class Guide:
-    source: str
-    title: str
-    group: str
-
-    @property
-    def filename(self) -> str:
-        return self.source.removesuffix(".md") + ".html"
-
-
-GUIDES = (
-    Guide("installation.md", "Installation & upgrades", "Get started"),
-    Guide("quickstart.md", "Install & first launch", "Get started"),
-    Guide("everyday-workflow.md", "An everyday workflow", "Get started"),
-    Guide("configuration.md", "Preferences & migration", "Get started"),
-    Guide("themes.md", "Themes & version notices", "Get started"),
-    Guide("navigation-preferences.md", "Keys, aliases & saved views", "Get started"),
-    Guide("plugins.md", "Local command plugins", "Get started"),
-    Guide("plugin-compatibility.md", "Plugin compatibility & examples", "Get started"),
-    Guide("context-sessions.md", "Contexts & kubeconfig", "Get started"),
-    Guide("command-navigation.md", "Commands & keys", "Browse"),
-    Guide("terminal-navigation.md", "Navigation & clipboard", "Browse"),
-    Guide("resource-workspace.md", "The workspace", "Browse"),
-    Guide("standard-resources.md", "Resource views", "Browse"),
-    Guide("resource-inspection.md", "Details, YAML & events", "Browse"),
-    Guide("resource-jumps.md", "Jump to related resources", "Browse"),
-    Guide("container-navigation.md", "Container selection", "Observe & connect"),
-    Guide("log-viewer.md", "Container logs", "Observe & connect"),
-    Guide("container-shell.md", "Embedded shells", "Observe & connect"),
-    Guide("container-attach-copy.md", "Attach & file transfer", "Observe & connect"),
-    Guide("port-forwards.md", "Port forwarding", "Observe & connect"),
-    Guide("mutations.md", "Guarded changes", "Change deliberately"),
-    Guide("editing.md", "Manifest editing", "Change deliberately"),
-    Guide("configuration-data.md", "ConfigMap & Secret data", "Change deliberately"),
-    Guide("workloads.md", "Scale & rollout", "Change deliberately"),
-    Guide("resource-operations.md", "Delete & Jobs", "Change deliberately"),
-    Guide("eks-authentication.md", "AWS / EKS", "Authentication"),
-    Guide("aks-authentication.md", "Azure / AKS", "Authentication"),
-    Guide("kubeconfig-interoperability.md", "GKE, OIDC, certificates & proxies", "Authentication"),
-    Guide("terminal-compatibility.md", "Terminal, SSH & tmux", "Reference"),
-    Guide("troubleshooting.md", "Troubleshooting", "Reference"),
-)
-
-REFERENCES = (
-    Guide("cli-reference.md", "Command-line options", "Reference"),
-    Guide("resource-reference.md", "Resource registry", "Reference"),
-    Guide("capability-reference.md", "Capability progress", "Reference"),
-)
+NAVIGATION = load_navigation(ROOT)
+GUIDES = NAVIGATION.guides
+REFERENCES = NAVIGATION.references
 
 
 def digest(path: Path) -> str:
@@ -125,7 +79,7 @@ def heading_ids(tokens: list[Token]) -> list[tuple[str, str]]:
         title = "".join(
             t.content for t in tokens[index + 1].children or [] if t.type != "html_inline"
         )
-        base = slug(title)
+        base = str(token.attrGet("id") or slug(title))
         count = used.get(base, 0)
         used[base] = count + 1
         identifier = base if count == 0 else f"{base}-{count}"
@@ -135,38 +89,54 @@ def heading_ids(tokens: list[Token]) -> list[tuple[str, str]]:
     return sections
 
 
-def rewrite_links(tokens: list[Token], source: Path, root: Path) -> None:
-    selected = {guide.source: guide.filename for guide in (*GUIDES, *REFERENCES)}
+def rewrite_links(
+    tokens: list[Token], source: Path, root: Path, catalog: Navigation | None = None
+) -> None:
+    catalog = catalog or load_navigation(root)
+    selected = catalog.source_pages
+    legacy = {route.source: route for route in catalog.legacy_routes}
     for token in tokens:
         if token.children:
-            rewrite_links(token.children, source, root)
+            rewrite_links(token.children, source, root, catalog)
         if token.type != "link_open":
             continue
         href = str(token.attrGet("href") or "")
         parsed = urlsplit(href)
-        if parsed.scheme or parsed.netloc or not parsed.path:
+        if parsed.scheme or parsed.netloc or (not parsed.path and not parsed.fragment):
             continue
-        target = (source.parent / parsed.path).resolve()
+        target = (source.parent / parsed.path).resolve() if parsed.path else source.resolve()
         relative = target.relative_to(root.resolve()).as_posix()
-        if relative.startswith("docs/") and relative.removeprefix("docs/") in selected:
-            result = selected[relative.removeprefix("docs/")]
+        fragment = unquote(parsed.fragment)
+        name = relative.removeprefix("docs/")
+        if relative.startswith("docs/") and name in selected:
+            guide = selected[name]
+            result = guide.filename
+            if name in guide.sources[1:]:
+                fragment = (
+                    name.removesuffix(".md") + "--" + fragment if fragment else legacy[name].anchor
+                )
+            elif name in legacy:
+                fragment = legacy[name].anchor
         else:
             # Non-launch developer evidence remains in the source repository.
             result = f"{REPOSITORY}/blob/main/{relative}"
-        if parsed.fragment:
-            result += "#" + parsed.fragment
+        if parsed.query:
+            result += "?" + parsed.query
+        if fragment:
+            result += "#" + fragment
         token.attrSet("href", result)
 
 
-def navigation(current: str) -> str:
+def navigation(current: str, catalog: Navigation | None = None) -> str:
+    catalog = catalog or NAVIGATION
     parts = [
         '<details class="docs-menu" open><summary>Browse documentation</summary>'
         '<nav class="docs-nav" aria-label="Documentation"><h2>Overview</h2>'
     ]
     active = ' aria-current="page"' if current == "index.html" else ""
-    parts.append(f'<a href="index.html"{active}>Start here</a>')
+    parts.append(f'<a href="index.html"{active}>{escape(catalog.index_title)}</a>')
     group = ""
-    for guide in (*GUIDES, *REFERENCES):
+    for guide in catalog.pages:
         if guide.group != group:
             group = guide.group
             parts.append(f"<h2>{escape(group)}</h2>")
@@ -247,6 +217,71 @@ def page_frame(
     return Template((root / "website/frame.html").read_text()).substitute(values)
 
 
+def composed_guide(root: Path, guide: Guide, md: MarkdownIt, catalog: Navigation) -> list[Token]:
+    tokens: list[Token] = []
+    for index, name in enumerate(guide.sources):
+        source = root / "docs" / name
+        fragment = md.parse(user_content(source.read_text()))
+        heading_ids(fragment)
+        titles = [
+            number
+            for number, token in enumerate(fragment)
+            if token.type == "heading_open" and token.tag == "h1"
+        ]
+        if len(titles) != 1:
+            raise ValueError(f"A documentation fragment must have one title: {name}")
+        if index == 0:
+            title = Token("text", "", 0)
+            title.content = guide.title
+            fragment[titles[0] + 1].content = guide.title
+            fragment[titles[0] + 1].children = [title]
+        else:
+            prefix = name.removesuffix(".md") + "--"
+            for token in fragment:
+                if token.type == "heading_open":
+                    token.attrSet("id", prefix + str(token.attrGet("id")))
+                if token.type in {"heading_open", "heading_close"}:
+                    token.tag = f"h{min(int(token.tag[1:]) + 1, 6)}"
+        rewrite_links(fragment, source, root, catalog)
+        tokens.extend(fragment)
+    identifiers = {str(token.attrGet("id")) for token in tokens if token.type == "heading_open"}
+    aliases: dict[str, list[str]] = {}
+    for route in catalog.legacy_routes:
+        if route.target != guide.source:
+            continue
+        if route.heading not in identifiers:
+            raise ValueError(f"Legacy documentation heading is missing: {route.source}")
+        if route.anchor in identifiers:
+            if route.anchor != route.heading:
+                raise ValueError("Legacy documentation anchor conflicts with an existing heading")
+            continue
+        if any(route.anchor in values for values in aliases.values()):
+            if route.anchor not in aliases.get(route.heading, []):
+                raise ValueError("Legacy documentation anchor has conflicting targets")
+            continue
+        aliases.setdefault(route.heading, []).append(route.anchor)
+    result: list[Token] = []
+    for token in tokens:
+        if token.type == "heading_open":
+            for identifier in aliases.get(str(token.attrGet("id")), []):
+                anchor = Token("link_open", "a", 1)
+                anchor.attrSet("id", identifier)
+                anchor.attrSet("aria-hidden", "true")
+                result.extend((anchor, Token("link_close", "a", -1)))
+        result.append(token)
+    return result
+
+
+def legacy_redirects(catalog: Navigation, *, prefix: str = "/") -> str:
+    pages = {page.source: page for page in catalog.pages}
+    lines: list[str] = []
+    for route in catalog.legacy_routes:
+        source = route.source.removesuffix(".md")
+        target = prefix + pages[route.target].filename + "#" + route.anchor
+        lines.extend(f"{prefix}{name} {target} 301" for name in (source, source + ".html"))
+    return "\n".join(lines) + ("\n" if lines else "")
+
+
 def guide_html(
     root: Path,
     guide: Guide,
@@ -255,16 +290,21 @@ def guide_html(
     standalone: bool,
     generated: str | None = None,
     public_launch: bool = False,
+    catalog: Navigation | None = None,
 ) -> str:
+    catalog = catalog or load_navigation(root)
     source = root / "docs" / guide.source
     md = MarkdownIt("commonmark", {"html": False}).enable("table")
-    tokens = md.parse(generated if generated is not None else user_content(source.read_text()))
+    tokens = (
+        md.parse(generated) if generated is not None else composed_guide(root, guide, md, catalog)
+    )
     sections = heading_ids(tokens)
     for token in tokens:
         if token.type == "table_open":
             # Wide references scroll locally on mobile and must accept keyboard focus.
             token.attrSet("tabindex", "0")
-    rewrite_links(tokens, source, root)
+    if generated is not None:
+        rewrite_links(tokens, source, root, catalog)
     toc = (
         '<nav class="doc-toc" aria-label="On this page">'
         + "".join(f'<a href="#{identifier}">{escape(title)}</a>' for identifier, title in sections)
@@ -272,7 +312,7 @@ def guide_html(
     )
     rendered = md.renderer.render(tokens, md.options, {}).replace("<pre>", '<pre tabindex="0">')
     content = (
-        f'<main id="main" tabindex="-1" class="docs-shell">{navigation(guide.filename)}'
+        f'<main id="main" tabindex="-1" class="docs-shell">{navigation(guide.filename, catalog)}'
         '<article class="doc-body">'
         f'{preview_banner(version, root)}<p class="eyebrow">{escape(guide.group).upper()}</p>'
         f"{rendered.split('</h1>', 1)[0]}</h1>{toc}{rendered.split('</h1>', 1)[1]}"
@@ -281,8 +321,12 @@ def guide_html(
             f'Generated from <a href="{REPOSITORY}/blob/main/scripts/site_reference.py">'
             "application declarations and the maintained capability inventory</a>."
             if generated is not None
-            else f'Built from the maintained <a href="{REPOSITORY}/blob/main/docs/{guide.source}">'
-            "source guide on GitHub</a>."
+            else "Built from the maintained source guides on GitHub: "
+            + ", ".join(
+                f'<a href="{REPOSITORY}/blob/main/docs/{name}">{escape(name.removesuffix(".md").replace("-", " "))}</a>'
+                for name in guide.sources
+            )
+            + "."
         )
         + "</div></article></main>"
     )
@@ -299,13 +343,14 @@ def guide_html(
 
 
 def docs_index(root: Path, version: str, *, standalone: bool, public_launch: bool = False) -> str:
+    catalog = load_navigation(root)
     links = "".join(
         f'<li><a href="{guide.filename}">{escape(guide.title)}</a> '
         f'<span class="muted">/ {escape(guide.group)}</span></li>'
-        for guide in (*GUIDES, *REFERENCES)
+        for guide in catalog.pages
     )
     content = (
-        f'<main id="main" tabindex="-1" class="docs-shell">{navigation("index.html")}'
+        f'<main id="main" tabindex="-1" class="docs-shell">{navigation("index.html", catalog)}'
         f'<article class="doc-body">{preview_banner(version, root)}<p class="eyebrow">DOCUMENTATION</p>'
         '<h1>Get to know your workspace.</h1><p class="index-summary">Choose an installation '
         "method, select an intended context, and explore in read-only mode. These guides describe "
@@ -319,7 +364,7 @@ def docs_index(root: Path, version: str, *, standalone: bool, public_launch: boo
         "then use the individual guides for each operation.</li>"
         "<li><strong>Something failed:</strong> identify the visible state in "
         '<a href="troubleshooting.html">troubleshooting</a> or check '
-        '<a href="terminal-compatibility.html">terminal compatibility</a>.</li></ol>'
+        '<a href="troubleshooting.html#legacy-terminal-compatibility">terminal compatibility</a>.</li></ol>'
         "<p>Use a trusted kubeconfig and the intended provider helper session. "
         "KubeRich preserves kubeconfig and owns each connection separately. "
         "All tutorial names are fictional; captures use owned local test resources.</p>"
@@ -361,10 +406,13 @@ def prepare_output(output: Path, root: Path) -> None:
 
 
 def source_inputs(root: Path) -> list[Path]:
+    catalog = load_navigation(root)
     inputs = [
         root / "pyproject.toml",
         root / "scripts/build_site.py",
         root / "scripts/site_reference.py",
+        root / "scripts/documentation.py",
+        root / "docs/navigation.json",
         root / "docs/capabilities.json",
         root / "docs/published-releases.json",
     ]
@@ -372,11 +420,12 @@ def source_inputs(root: Path) -> list[Path]:
     inputs += sorted((root / "src/kuberich").rglob("*.py"))
     inputs += sorted((root / "website").glob("*.html"))
     inputs += sorted((root / "website/assets").glob("*"))
-    inputs += [root / "docs" / guide.source for guide in GUIDES]
+    inputs += [root / "docs" / name for guide in catalog.guides for name in guide.sources]
     return inputs
 
 
 def build(output: Path, root: Path = ROOT, *, public_launch: bool = False) -> dict[str, object]:
+    catalog = load_navigation(root)
     inputs = source_inputs(root)
     for path in inputs:
         if not path.is_file() or path.is_symlink():
@@ -402,12 +451,15 @@ def build(output: Path, root: Path = ROOT, *, public_launch: bool = False) -> di
         if public_launch and not standalone:
             (destination / "_redirects").write_text(DOCS_REDIRECTS)
             continue
+        (destination / "_redirects").write_text(
+            legacy_redirects(catalog, prefix="/" if standalone else "/docs/")
+        )
         docs_dir = destination if standalone else destination / "docs"
         docs_dir.mkdir(exist_ok=True)
         (docs_dir / "index.html").write_text(
             docs_index(root, version, standalone=standalone, public_launch=public_launch)
         )
-        for guide in (*GUIDES, *REFERENCES):
+        for guide in catalog.pages:
             (docs_dir / guide.filename).write_text(
                 guide_html(
                     root,
@@ -416,6 +468,7 @@ def build(output: Path, root: Path = ROOT, *, public_launch: bool = False) -> di
                     standalone=standalone,
                     generated=references.get(guide.source),
                     public_launch=public_launch,
+                    catalog=catalog,
                 )
             )
     landing = Template((root / "website/landing.html").read_text()).substitute(
@@ -459,6 +512,7 @@ def build(output: Path, root: Path = ROOT, *, public_launch: bool = False) -> di
         "indexing": "public" if public_launch else "preview",
         "application_qualification": "docs/acceptance/workload-checkpoint.md",
         "publication_performed": False,
+        "documentation_pages": catalog.user_page_count,
         "sources": {p.relative_to(root).as_posix(): digest(p) for p in inputs},
         "files": {
             p.relative_to(output).as_posix(): digest(p)

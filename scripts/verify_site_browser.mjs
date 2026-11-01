@@ -150,7 +150,7 @@ try {
   const staticPage = await noJs.newPage();
   await staticPage.goto(`${origin}/www/`);
   await staticPage.getByRole("link", { name: "Get started" }).click();
-  assert.match(await staticPage.getByRole("heading", { level: 1 }).textContent(), /installation and upgrades/i);
+  assert.match(await staticPage.getByRole("heading", { level: 1 }).textContent(), /install and upgrade/i);
   await staticPage.getByRole("navigation", { name: "Documentation", exact: true }).getByRole("link", { name: "Command-line options", exact: true }).click();
   assert.match(await staticPage.getByRole("heading", { level: 1 }).textContent(), /Command-line reference/);
   await noJs.close();

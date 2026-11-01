@@ -7,6 +7,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Organize user documentation into 19 pages with tutorial, how-to, reference and
+  explanation navigation. Keep the existing guidance and old guide routes while
+  introducing a plain-language style and a complete document migration map
+  ([#222](https://github.com/carloshm91/kuberich/issues/222),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
 - Add parallel development test layers and an early full unit/contract/UI signal
   before the complete platform and coverage checks
   ([#209](https://github.com/carloshm91/kuberich/issues/209),
