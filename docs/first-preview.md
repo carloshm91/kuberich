@@ -136,6 +136,25 @@ published application remains 0.2.0. Native/full required checks remain pending.
 uv run pytest tests/contract/test_clipboard.py tests/contract/test_x11_readiness.py tests/unit/test_clipboard.py
 ```
 
+### Development checkpoint: Wayland clipboard
+
+The unreleased checkout can copy through `wl-copy` in local Wayland sessions.
+Automatic detection prefers Wayland over XWayland and keeps OSC52 over SSH.
+The helper receives plaintext on stdin and closes on replacement or application
+exit. The native 1 MiB limit and terminal 64 KiB limit still apply.
+
+```sh
+uv run pytest tests/unit/test_clipboard.py tests/contract/test_clipboard.py \
+  tests/contract/test_wayland_clipboard.py tests/ui/test_clipboard.py -n 2 \
+  --cov=kuberich --cov-branch --cov-report=json --cov-report=xml
+```
+
+This focused command passed 56 tests with one explicit hosted-macOS skip and
+100% line/branch coverage in both clipboard modules. Its helpers simulate
+`wl-copy`; no real compositor or developer clipboard was used. See
+[Wayland verification](acceptance/wayland-clipboard.md) for the measured scope.
+Full-package and supported-platform checks remain required before delivery.
+
 ## Included in 0.2.0: live preferences
 
 Edit and save the preference file while KubeRich runs. Themes, aliases, column
