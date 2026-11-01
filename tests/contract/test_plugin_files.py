@@ -6,7 +6,7 @@ from dataclasses import replace
 import pytest
 import yaml
 
-from kuberich.adapters.plugin_files import _file, load_plugins
+from kuberich.adapters.plugin_files import load_plugins
 from kuberich.cli import main
 from kuberich.config.plugins import PluginLayer, PluginPreferences, parse_plugins
 from kuberich.config.store import migrate_config, read_config
@@ -33,6 +33,12 @@ def write(path, commands=None, **extension):
 
 def preferences(directory, **raw):
     return parse_plugins({"schema_version": 1, **raw}, directory)
+
+
+def configured_file(path):
+    """Load a file through explicit configuration, including directory entries."""
+    location = path.parent if path.is_dir() else path
+    return load_plugins(preferences(path.parent, locations=[str(location)]), None)
 
 
 def test_global_commands_validate_namespace_owner_shortcuts_even_without_namespace_scopes(tmp_path):
@@ -103,7 +109,7 @@ def test_missing_symlink_fifo_and_yaml_directory_are_never_followed(tmp_path):
             load_plugins(preferences(tmp_path, locations=[str(path)]), None)
     # A directory entry ending in YAML must not become an implicit recursive search.
     with pytest.raises(AppError):
-        _file(directory)
+        configured_file(directory)
     configured = tmp_path / "with-link"
     configured.mkdir()
     (configured / "unsafe.yaml").symlink_to(tmp_path / "real.yaml")
@@ -115,12 +121,12 @@ def test_empty_file_and_external_recursive_locations_are_rejected(tmp_path):
     path = tmp_path / "plugin.yaml"
     path.write_text("")
     with pytest.raises(AppError):
-        _file(path)
+        configured_file(path)
     write(path, locations=["another.yaml"])
     with pytest.raises(AppError, match="External"):
-        _file(path)
+        configured_file(path)
     path.write_text("schema_version: 1\nplugins: {schema_version: 1}\n")
-    assert _file(path) == ()
+    assert configured_file(path) == ()
 
 
 def test_duplicate_names_limits_and_scope_aware_key_collisions(tmp_path):
@@ -180,7 +186,7 @@ def test_directory_permissions_and_file_errors_are_translated(tmp_path, monkeypa
     assert "private-detail" not in str(error.value)
     monkeypatch.setattr(os, "open", denied)
     with pytest.raises(AppError, match="configured plugin file") as error:
-        _file(tmp_path / "file.yaml")
+        configured_file(tmp_path / "file.yaml")
     assert "private-detail" not in str(error.value)
 
 
@@ -207,7 +213,7 @@ def test_rejected_files_always_close_the_original_descriptor(tmp_path, monkeypat
         monkeypatch.setattr(os, "fdopen", failed_fdopen)
     for _ in range(20):
         with pytest.raises(AppError):
-            _file(path)
+            configured_file(path)
         with pytest.raises(OSError):
             os.fstat(descriptors[-1])
 

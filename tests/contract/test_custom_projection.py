@@ -9,7 +9,7 @@ import pytest
 from kuberich.domain.custom import CustomLayout
 from kuberich.domain.registry import order_resources
 from kuberich.domain.resources import ResourceSnapshot, ServerColumn, resource_record
-from kuberich.services.pods import CustomProjection
+from kuberich.services.pods import CustomProjection, ResourceProjection
 from tests.support.tables import custom_resource
 from tests.unit.test_custom_layout import captured, observed_clock
 
@@ -24,28 +24,28 @@ async def test_generic_projection_rejects_wrong_version_and_prunes_replaced_uids
     assert rows[0].uid == record.uid and (await projection.project(snapshot))[0] is rows[0]
     changed = replace(record, uid="replacement")
     assert (await projection.project(replace(snapshot, items=(changed,))))[0].uid == "replacement"
-    assert record.uid not in projection._cache
+    restored = await projection.project(snapshot)
+    assert restored[0] is not rows[0]
     assert (
         await projection.project(replace(snapshot, resource=replace(resource, version="v1beta1")))
         == ()
     )
-    assert not projection._cache
+    assert (await projection.project(snapshot))[0] is not restored[0]
     assert await projection.project(None) == ()
 
 
 @pytest.mark.asyncio
 async def test_generic_projection_repeated_cancellation_drains_owned_worker(monkeypatch):
     resource = custom_resource()
-    projection = CustomProjection(CustomLayout.build(resource, ()))
+    layout = CustomLayout.build(resource, ())
     entered, release = threading.Event(), threading.Event()
-    original = projection._project
 
-    def held(snapshot):
+    def held(record):
         entered.set()
         assert release.wait(5)
-        return original(snapshot)
+        return layout.row(record)
 
-    monkeypatch.setattr(projection, "_project", held)
+    projection = ResourceProjection(resource.name, held, resource.group, version=resource.version)
     task = asyncio.create_task(
         projection.project(ResourceSnapshot(resource, "team", "owned/list", (captured((), ()),)))
     )

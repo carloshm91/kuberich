@@ -6,7 +6,8 @@ from dataclasses import replace
 
 import pytest
 
-from kuberich.services.pods import PodProjection
+from kuberich.domain.pods import pod_row
+from kuberich.services.pods import PodProjection, ResourceProjection
 from tests.support.pods import pod, snapshot
 from tests.support.workspace import wait_for
 
@@ -22,8 +23,15 @@ async def test_projection_reuses_unchanged_records_and_prunes_removed_uids():
     assert updates[0].restarts == 12 and updates[1] is rows[1]
     assert updates[2].uid == "replacement" and updates[2] is not rows[1]
     final = await projection.project(replace(newer, items=(newer.items[2],)))
-    assert final == (updates[2],) and len(projection._cache) == 1
-    assert await projection.project(None) == () and not projection._cache
+    assert final == (updates[2],)
+    returned = await projection.project(newer)
+    assert all(returned[index] is not updates[index] for index in (0, 1))
+    assert returned[2] is updates[2]
+    assert await projection.project(None) == ()
+    assert all(
+        before is not after
+        for before, after in zip(returned, await projection.project(newer), strict=True)
+    )
     assert await projection.project(original)
     assert (
         await projection.project(
@@ -43,7 +51,6 @@ async def test_projection_reuses_unchanged_records_and_prunes_removed_uids():
 @pytest.mark.parametrize("fail", [False, True])
 async def test_repeated_cancellation_waits_for_owned_decode_thread(tmp_path, monkeypatch, fail):
     started, release, finished = threading.Event(), threading.Event(), threading.Event()
-    projection = PodProjection()
 
     def blocked(value):
         started.set()
@@ -51,11 +58,11 @@ async def test_repeated_cancellation_waits_for_owned_decode_thread(tmp_path, mon
             assert release.wait(5)
             if fail:
                 raise RuntimeError("owned-decoding-failure")
-            return ()
+            return pod_row(value)
         finally:
             finished.set()
 
-    monkeypatch.setattr(projection, "_project", blocked)
+    projection = ResourceProjection("pods", blocked)
     task = asyncio.create_task(projection.project(snapshot(pod())))
     try:
         await wait_for(started.is_set)
@@ -73,11 +80,10 @@ async def test_repeated_cancellation_waits_for_owned_decode_thread(tmp_path, mon
 
 @pytest.mark.asyncio
 async def test_projection_failure_is_owned_and_visible(monkeypatch):
-    projection = PodProjection()
 
     def broken(value):
         raise RuntimeError("owned-projection-error")
 
-    monkeypatch.setattr(projection, "_project", broken)
+    projection = ResourceProjection("pods", broken)
     with pytest.raises(RuntimeError, match="owned-projection-error"):
         await projection.project(snapshot(pod()))

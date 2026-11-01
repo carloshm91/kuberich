@@ -61,14 +61,14 @@ async def test_closed_connection_and_repeated_receipt_cancellation_are_owned(tmp
     async with source_fixture(tmp_path) as (source, api, _):
         intent = await source.prepare_annotation("key", "value")
         entered, release = threading.Event(), threading.Event()
-        original = mutations._receipt
+        original = mutations.decode_json
 
-        def receipt(data, captured):
+        def receipt(data):
             entered.set()
             assert release.wait(3)
-            original(data, captured)
+            return original(data)
 
-        monkeypatch.setattr(mutations, "_receipt", receipt)
+        monkeypatch.setattr(mutations, "decode_json", receipt)
         task = asyncio.create_task(source.execute(source.confirm(intent)))
         try:
             async with asyncio.timeout(2):

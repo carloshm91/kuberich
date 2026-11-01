@@ -105,8 +105,6 @@ def test_repeated_impersonation_groups_are_captured_in_order_for_launch(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     arguments = ["--as", "fixture", "--as-group", "group one", "--as-group", "group-two"]
-    parsed = cli._parser().parse_args(arguments)
-    assert parsed.as_group == ["group one", "group-two"]
     captured = []
     monkeypatch.setattr(
         cli, "run_terminal", lambda *args, **kwargs: captured.append(kwargs["connection"])
@@ -162,7 +160,10 @@ def test_inspection_commands_do_not_load_broken_preferences_or_credentials(
     output = capsys.readouterr()
     assert output.err == "" and "opaque-secret" not in output.out
     if arguments == ["help"]:
-        assert output.out == cli._parser().format_help()
+        with pytest.raises(SystemExit) as stopped:
+            cli.main(["--help"])
+        assert stopped.value.code == 0
+        assert output.out == capsys.readouterr().out
     else:
         expected = version("kuberich") if len(arguments) > 1 else f"kuberich {version('kuberich')}"
         assert output.out == expected + "\n"
@@ -179,11 +180,13 @@ def test_inspection_commands_refuse_runtime_options_instead_of_ignoring_them(
     assert "do not accept" in capsys.readouterr().err
 
 
-def test_help_matches_reviewable_contract_snapshot() -> None:
+def test_help_matches_reviewable_contract_snapshot(capsys) -> None:
     # argparse 3.13+ lists aliases with one trailing metavar; keep native formatting.
     name = "launch-help-py312.txt" if sys.version_info < (3, 13) else "launch-help-py313plus.txt"
     expected = (Path(__file__).parent / "snapshots" / name).read_text()
-    assert cli._parser().format_help() == expected
+    assert cli.main(["help"]) == 0
+    output = capsys.readouterr()
+    assert output.out == expected and output.err == ""
 
 
 @pytest.mark.parametrize(
