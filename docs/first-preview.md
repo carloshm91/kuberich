@@ -61,6 +61,11 @@ uv run pytest tests/unit tests/contract tests/ui -m fast -n 12
 Use fewer workers on smaller machines. These are developer checks on owned
 fixtures, and do not require access to your Kubernetes contexts.
 
+The development source also corrects plugin review from qualified custom-resource
+views. Matching commands can review the selected UID after the view is live;
+previous resource names and API versions remain refused while a new view loads.
+This correction is not included in the installed 0.2.0 release.
+
 ## Included in 0.2.0: live preferences
 
 Edit and save the preference file while KubeRich runs. Themes, aliases, column
