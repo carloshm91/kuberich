@@ -16,6 +16,39 @@ mandatory in every mode. The deliberate 700 ms control always exercises the
 strict check. No higher threshold or style shortcut is part of this delivery.
 Earlier failed strict references below remain failed and are not relabeled.
 
+## Approved 0.x reference
+
+The normal five-sample qualifier completes on delivery source `03a705f`, Linux
+x86_64 / CPython 3.12.12, in 8.85 seconds. All 20 offline observations pass the
+original wall-time and RSS limits; every command peaks at **22,020,096 bytes**.
+All four import profiles avoid Textual and the Kubernetes SDK and satisfy the
+unchanged aggregate and cumulative import limits.
+
+| Path | Five ordinary wall-time samples | Aggregate import self time |
+| --- | --- | --- |
+| `--version` | 97.065–97.887 ms | 78.343 ms |
+| `--help` | 71.432–76.080 ms | 53.971 ms |
+| `info` | 128.445–134.675 ms | 105.945 ms |
+| `config check` | 98.868–101.715 ms | 81.017 ms |
+
+The five actual first frames are **666.305765, 670.686652, 678.802489,
+684.447498 and 661.460981 ms**. Every observation explicitly reports
+`budget_met: false` and `budget_enforced: false` against the unchanged 600 ms
+target. Each includes the mounted six-column resource table at viewport region
+`[2, 11, 116, 2]`, zero SDK models, no early-work violations, successful client
+cleanup and terminal restoration. Both the deliberately late frame and explicit
+Textual import are rejected by their original strict controls. The qualifier
+reports that mandatory startup contracts passed and that the advisory UI target
+was **not met**. It does not claim strict 600 ms qualification.
+
+The owned qualifier process exits zero and is reaped; production/tool/lock
+inputs remain unchanged throughout the run. Raw source stamps, measurements,
+profiles and PTY transcripts are retained under
+`artifacts/startup214/reference-09-advisory-delivery/`. Focused checks on this
+delivery pass 156 startup/import/editor cases and 353 prerequisite integration
+cases. These subsets do not establish whole-package coverage; complete current
+platform, runtime, coverage and package gates remain required before delivery.
+
 ## Behavioral evidence
 
 An earlier functional-only source snapshot passes **1604 tests**, with the one
