@@ -1,8 +1,8 @@
 # Local command plugins
 
-Plugin configuration is available in the next-release source. The published
-0.1.0 package does not load or execute plugins. The next-release source loads definitions, presents typed input/review forms
-and runs explicitly selected commands through the owned process services.
+KubeRich 0.2.0 loads explicit plugin definitions, presents typed input/review
+forms and runs selected commands through the owned process services. The
+[current preview](first-preview.md) describes corrections in development source.
 
 Plugins are trusted local programs running with your user privileges. They can
 read files, use inherited credentials, contact services and change a cluster.
@@ -189,6 +189,12 @@ need only context/scope values; `NAME`, container and column values require an
 actual selected row. A selected row is captured before asynchronous loading and
 checked again by GET and UID before starting. Guards cannot make a later external
 program's server operations atomic.
+
+The development source corrects plugin review in qualified custom-resource views. A view opened with
+`:widgets.example.test/v1` matches the exact scope `example.test/v1/widgets`;
+the qualified navigation name does not change the canonical API resource name.
+Wait for the current resource and version to load before reviewing a plugin.
+The selected UID and captured group/version remain part of the review guards.
 
 The local contexts list has no Kubernetes resource scope or plugin hotkeys.
 Explicit `:plugins` / `:plugin NAME` there can review global commands against the

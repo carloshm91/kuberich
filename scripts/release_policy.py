@@ -46,7 +46,7 @@ PHASE_GATES = {
 PHASE_EXTRAS = {
     "0.1.0": {53, 54, 123},
     "0.2.0": {193},
-    "0.3.0": {189, 208, 270, 281, 291},
+    "0.3.0": {189, 208, 270, 278, 281, 291},
     "0.8.0": {124},
 }
 # Original plan issue creation order, #13 through #91. Phase changes cannot remap IDs.

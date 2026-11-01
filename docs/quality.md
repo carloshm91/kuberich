@@ -112,6 +112,13 @@ mechanisms, distinct cwd, TLS/CONNECT proxy and private-file/session cleanup.
 No provider/current-context trial or publication is inferred from these checks.
 See [execution evidence](acceptance/plugin-execution.md).
 
+Qualified generic plugin regressions use the real startup and command-bar routes
+against an owned loopback API. They prepare a review for the selected custom UID
+without executing a plugin, and retain explicit refusals for a previous resource
+name or API version. The pending-selection fixture holds only the public workspace
+port; it does not assign private App fields. Run them with
+`uv run pytest tests/ui/test_generic_plugins.py`.
+
 ## Plugin configuration: U03 #58
 
 The required 3.13 failure retained a 152.010-ms genuine runtime pause, including
