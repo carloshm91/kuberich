@@ -1,5 +1,42 @@
 # Quality and coverage
 
+## Startup and import boundaries
+
+The Application matrix runs `python -m scripts.check_startup` serially against
+exact source, retaining five fresh observations of every offline command,
+four import profiles and five actual frames on an owned 120×36 PTY. No case is
+omitted when a latency target is missed in advisory mode.
+
+On 2026-11-01 the maintainer made every startup latency objective advisory for
+0.x: **150 ms** offline wall time, **150,000 µs** aggregate self and maximum
+cumulative import time, and **600 ms** actual UI first paint. Each sample/profile
+and aggregate reports its actual values, original target, `budget_met` and
+`budget_enforced`. An unmet objective is never called a strict pass.
+`--strict-startup` enforces all original limits; `--strict-paint` preserves the
+existing UI-only opt-in. Actual source major 1 and later, including prereleases,
+always enforce every limit. No version override or higher threshold is used.
+
+Offline RSS must remain below **40,000,000 bytes**. Valid elapsed observations,
+clean output, installed/source identity, complete import profiles and absence
+of Textual/the Kubernetes SDK remain hard requirements in every mode. The real
+selected table must be mounted with columns and geometry inside the original
+viewport before any SDK/helper/network work. Deadline, terminal restoration,
+client ownership and cleanup failures always block. Configured validation and
+all production/critical/changed-line coverage gates remain unchanged.
+
+Both original negative controls remain required: the deliberate 700 ms frame
+uses the unchanged strict check, and an explicit Textual import must fail even
+in advisory mode. Synthetic controls also verify strict offline/import timing,
+stable prerelease enforcement, RSS and functional failures. The original macOS
+`info` observation of 161.144125 ms remains a failed old-policy result; its later
+102.170084 ms diagnostic is not promoted into a pass. See the
+[startup acceptance record](acceptance/startup-budget.md).
+
+Inputs stay frozen during qualification. Raw stdout/stderr, import profiles,
+ANSI transcripts and original failures are retained. All tables keep eager
+composition; the ineffective inactive-DOM prototype remains removed. Historical
+source evidence does not qualify a changed head, native artifact or platform.
+
 ## Public test boundaries
 
 Tests use real Pilot input or `app.run_command(text)` and read the frozen

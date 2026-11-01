@@ -933,6 +933,16 @@
       "baseline_sha256": "5878cdfe6b3b2ce140c2305157f065824586e3de747b446be3bed23324cd9638"
     },
     {
+      "source": "docs/acceptance/startup-budget.md",
+      "audience": "evidence",
+      "action": "move",
+      "destinations": [
+        "docs/internal/acceptance/startup-budget.md"
+      ],
+      "reason": "Retain startup contract measurements and explicit advisory target limits outside user navigation.",
+      "baseline_sha256": null
+    },
+    {
       "source": "docs/acceptance/table-order-performance.md",
       "audience": "evidence",
       "action": "move",

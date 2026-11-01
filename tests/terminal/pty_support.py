@@ -148,6 +148,9 @@ class TerminalSession:
     def __enter__(self) -> "TerminalSession":
         return self
 
+    def read(self, timeout: float = 0.1) -> None:
+        self._read(timeout)
+
     def _read(self, timeout: float = 0.1) -> None:
         descriptors = [self.master]
         if self.completion is None:

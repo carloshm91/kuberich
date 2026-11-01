@@ -27,6 +27,7 @@ class SessionService:
         self.generation = 0
         self.scopes: dict[str, str | None] = {}
         self.lock = asyncio.Lock()
+        self.before_connect: Callable[[], Awaitable[object]] | None = None
         self.before_close: Callable[[KubernetesSession], Awaitable[None]] | None = None
 
     async def connect(
@@ -48,6 +49,8 @@ class SessionService:
                     if self.request.all_namespaces
                     else self.request.namespace or selected.namespace,
                 )
+                if self.before_connect is not None:
+                    await self.before_connect()
                 self.client = KubernetesSession(selected, self.request.timeout)
                 if authenticate is None:
                     await self.client.open()

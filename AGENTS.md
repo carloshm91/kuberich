@@ -72,6 +72,16 @@ implementation; do not claim to switch models without actual environment support
   authorized finishing v0.2.0 in order: #221, #63, #64, #193, #65 (#124 moved
   to v0.8.0). Finish and verify each issue before advancing; publication of any
   artifact still needs explicit approval. Final hosting work stays in #89.
+- On 2026-11-01 the maintainer made all startup latency objectives advisory
+  for 0.x: offline 150 ms wall time, 150,000 us aggregate/cumulative imports,
+  and 600 ms actual UI paint. Report every measured value and unmet target;
+  do not increase limits or relabel original failures. `--strict-startup`
+  enforces every original latency limit; `--strict-paint` retains UI-only
+  compatibility. Actual source major 1 and later, including prereleases,
+  always enforce all limits. Offline RSS below 40,000,000 bytes, absence of
+  forbidden Textual/SDK imports, valid output/source/frames, geometry, deadlines and
+  owned cleanup remain mandatory. Negative latency controls stay strict.
+  Prioritize useful product work rather than more 0.3 latency optimization.
 - Use a short-lived issue branch, an issue-linked pull request, required checks,
   and squash merging. Keep main releasable.
 - While hosted Actions cannot start because of the account quota/billing block,

@@ -20,6 +20,18 @@ version or merged feature does not authorize publication.
 The maintainer revised the phase plan on 2026-10-19 ([#221](https://github.com/carloshm91/kuberich/issues/221)):
 foundations and a documentation rewrite come before new feature families.
 
+On **2026-11-01**, the maintainer made all startup latency objectives advisory
+for 0.x: offline **150 ms** wall time, **150,000 µs** aggregate/cumulative imports
+and **600 ms** real UI paint. Retain every actual observation and explicit
+met/enforced flags, including missed targets. `python -m scripts.check_startup
+--strict-startup` enforces all original limits; `--strict-paint` retains UI-only
+compatibility. Actual source major 1 and later, including prereleases, always
+enforce every limit under Q06 #88. No higher threshold or version override is
+substituted. Offline RSS below **40,000,000 bytes**, forbidden-import absence,
+valid output/source/frame geometry, deadlines and owned cleanup remain hard
+requirements. Original failed measurements remain failures for their source and
+policy; a changed policy requires new-head verification before delivery.
+
 | Public line | Gate (plus every earlier gate) | Phase scope |
 | --- | --- | --- |
 | 0.1.x | D06 #51, including D04 #40, D05 #49 and Q03 #50 | Core workspace; also #53, #54 and #123 |

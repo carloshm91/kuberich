@@ -1,5 +1,7 @@
 """Explicit SDK session, private TLS material and bounded namespace discovery."""
 
+from __future__ import annotations
+
 import asyncio
 import base64
 import binascii
@@ -13,12 +15,8 @@ from math import ceil
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from time import monotonic
-from typing import Any, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn
 from urllib.parse import urlsplit
-
-import aiohttp
-from aiohttp_socks import ProxyConnectionError, ProxyConnector, ProxyError, ProxyTimeoutError
-from kubernetes_asyncio import client
 
 from kuberich.adapters.credentials import CredentialLogin, ExecToken, auth_problem
 from kuberich.config.catalog import ContextConfig, Entry, mapping, regular_bytes, text
@@ -33,6 +31,10 @@ from kuberich.domain.credential_helpers import bearer_token
 from kuberich.domain.exec_credentials import encrypted_key
 from kuberich.domain.proxies import effective_proxy, tls_failure
 from kuberich.errors import AppError
+
+if TYPE_CHECKING:
+    import aiohttp
+    from kubernetes_asyncio import client
 
 
 def decode_json(data: bytes) -> dict[str, Any]:
@@ -166,6 +168,8 @@ async def _finish_task[T](task: asyncio.Task[T]) -> T:
 def _prepare(
     context: ContextConfig, directory: Path, environment: dict[str, str] | None = None
 ) -> tuple[client.Configuration, dict[str, Any]]:
+    from kubernetes_asyncio import client
+
     configuration = client.Configuration()
     cluster, user = context.cluster.data, context.user.data
     configuration.host = _endpoint(cluster.get("server"))
@@ -255,6 +259,9 @@ class KubernetesSession:
         return None if proxy and proxy.startswith("socks5:") else proxy
 
     async def _new_pool(self, configuration: client.Configuration) -> aiohttp.ClientSession:
+        import aiohttp
+        from aiohttp_socks import ProxyConnector
+
         proxy = configuration.proxy
         context = await _finish_task(
             asyncio.create_task(
@@ -449,6 +456,9 @@ class KubernetesSession:
                 raise auth_problem(
                     "The selected user has no exec helper to authenticate with :login."
                 )
+            import aiohttp
+            from kubernetes_asyncio import client
+
             self.api = client.ApiClient(configuration=configuration)
             # Qualify this pinned SDK boundary in transport tests. Preserve the
             # SDK-created TLS connector but refuse ambient netrc/proxy identity.
@@ -482,6 +492,8 @@ class KubernetesSession:
     async def _response(
         self, path: str, params: dict[str, str] | None, accept: str, timeout: float | None
     ) -> AsyncIterator[aiohttp.ClientResponse]:
+        import aiohttp
+
         api, configuration, credentials = self.api, self.configuration, self.credentials
         if api is None or configuration is None:
             raise ConnectionProblem(ConnectionState.DISCONNECTED, "The selected session is closed.")
@@ -536,6 +548,9 @@ class KubernetesSession:
         accept: str = "application/json",
     ) -> dict[str, Any]:
         """Owned read-only transport; callers construct discovered API paths."""
+        import aiohttp
+        from aiohttp_socks import ProxyConnectionError, ProxyError, ProxyTimeoutError
+
         try:
             async with asyncio.timeout(self.timeout):
                 async with self._response(path, params, accept, self.timeout) as response:
@@ -577,6 +592,9 @@ class KubernetesSession:
         self, path: str, params: dict[str, str], *, follow: bool
     ) -> AsyncGenerator[bytes | None, None]:
         """None reports open headers; quiet follows have no artificial body deadline."""
+        import aiohttp
+        from aiohttp_socks import ProxyConnectionError, ProxyError, ProxyTimeoutError
+
         try:
             async with self._response(
                 path, params, "*/*", None if follow else self.timeout
@@ -650,6 +668,9 @@ class KubernetesSession:
         include_object: bool = False,
     ) -> AsyncGenerator[bytes | None, None]:
         """Pull one bounded complete frame; its consumer owns parsing and validation."""
+        import aiohttp
+        from aiohttp_socks import ProxyConnectionError, ProxyError, ProxyTimeoutError
+
         duration = self.watch_seconds
         # Allow headers and graceful server expiry before the client deadline.
         # A server which never finishes still times out, including with no events.
@@ -710,6 +731,8 @@ class KubernetesSession:
             ) from None
 
     async def namespaces(self) -> tuple[str, ...]:
+        from aiohttp_socks import ProxyTimeoutError
+
         try:
             async with asyncio.timeout(self.timeout):
                 names: set[str] = set()
