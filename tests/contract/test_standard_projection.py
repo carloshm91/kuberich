@@ -23,14 +23,16 @@ async def test_standard_projection_is_group_scoped_incremental_and_uid_bound(def
     assert (await projection.project(snapshot))[0] is rows[0]
     replacement = row_record(definition, uid="replacement")
     updated = await projection.project(replace(snapshot, items=(replacement,)))
-    assert updated[0].uid == "replacement" and first.uid not in projection._cache
+    assert updated[0].uid == "replacement"
+    restored = await projection.project(snapshot)
+    assert restored[0] is not rows[0]
     assert (
         await projection.project(
             replace(snapshot, resource=replace(snapshot.resource, group="wrong.example"))
         )
         == ()
     )
-    assert not projection._cache
+    assert (await projection.project(snapshot))[0] is not restored[0]
     assert await projection.project(snapshot)
     assert (
         await projection.project(

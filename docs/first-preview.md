@@ -65,6 +65,17 @@ The development source also corrects plugin review from qualified custom-resourc
 views. Matching commands can review the selected UID after the view is live;
 previous resource names and API versions remain refused while a new view loads.
 This correction is not included in the installed 0.2.0 release.
+
+The integrated development source also passes the full-package check against
+private test dependencies. Workspace tests now use public command/state boundaries
+while retaining captured-target, cancellation and bounded-cache behavior. Full
+platform, runtime and coverage qualification remains pending for this foundation
+work; the installed release remains 0.2.0.
+
+```sh
+uv run python scripts/check_private_access.py
+```
+
 ## Development: runtime latency observations
 
 For 0.x development, runtime latency observations retain their original targets

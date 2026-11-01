@@ -21,6 +21,7 @@ from kuberich.ui.logs import LogScreen
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
 from tests.support.resources import collection
+from tests.support.shells import observe_shells
 from tests.support.workspace import stable_watch, wait_for, workspace_api
 
 
@@ -207,6 +208,7 @@ async def test_delayed_preparation_captures_target_and_owns_cancellation(
     tmp_path, action, monkeypatch
 ):
     started, release = asyncio.Event(), asyncio.Event()
+    calls = observe_shells(monkeypatch)
     value = pod("api")
     value["spec"]["containers"].append({"name": "worker"})
     executed = []
@@ -233,15 +235,17 @@ async def test_delayed_preparation_captures_target_and_owns_cancellation(
             containers = app.screen
             await pilot.press("s")
             await started.wait()
-            task = app.screen._session_task
+            task = calls.latest
+            assert task is not None and not task.done()
             containers.action_shell()
-            assert app.screen._session_task is task
+            await asyncio.sleep(0)
+            assert calls.tasks == [task]
             if action == "cancel":
                 await pilot.press("ctrl+right_square_bracket")
                 await wait_for(lambda: app.screen is containers)
                 assert task.done()
             elif action == "scope":
-                app._namespace_selected("default")
+                await app.workspace.select_namespace("default")
             else:
                 await pilot.press("up")
             release.set()
@@ -322,6 +326,7 @@ async def test_unexpected_handoff_failure_reaches_app_cleanup_and_drains_shell(
     tmp_path, monkeypatch
 ):
     value = pod("api")
+    calls = observe_shells(monkeypatch)
     paths = []
 
     async def handler(request):
@@ -342,6 +347,7 @@ async def test_unexpected_handoff_failure_reaches_app_cleanup_and_drains_shell(
                 await pilot.press("enter")
                 containers = app.screen
                 containers.action_shell()
-                await wait_for(lambda: app._exception is not None)
+                await wait_for(lambda: calls.latest is not None and calls.latest.done())
         assert paths and not paths[0].exists()
+        assert calls.latest is not None and calls.latest.done()
         assert app.sessions.client is None

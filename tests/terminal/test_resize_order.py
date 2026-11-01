@@ -21,7 +21,7 @@ class ResizeApp(KubeRichApp):
         self.post_message(Resize(size,size))
     def on_resize(self,event):
         if self.injected:
-            self.call_after_refresh(lambda: self._set_status('PHYSICAL SIZE '+str(self.size.width)+' '+str(self.size.height)))
+            self.call_after_refresh(lambda: self.status.update('PHYSICAL SIZE '+str(self.size.width)+' '+str(self.size.height)))
 
 app=ResizeApp(Settings(),logging.getLogger('owned-resize'))
 app.run()

@@ -1,6 +1,6 @@
 """Server formatter limits, immutable metadata and complete-object watch decisions."""
 
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, replace
 
 import pytest
 
@@ -21,7 +21,8 @@ def test_table_metadata_is_separate_immutable_bounded_and_not_in_resource_yaml()
     assert record.name == "one" and record.uid == "owned-one"
     assert record.server.cells == ("one", 3, True)
     assert record.server.columns[1].type == "integer"
-    assert record.size_bytes > len(record._manifest)
+    assert record.server.size_bytes > 0
+    assert record.size_bytes == replace(record, server=None).size_bytes + record.server.size_bytes
     assert "columnDefinitions" not in record.manifest
     payload["rows"][0]["object"]["spec"]["level"] = 90
     payload["rows"][0]["cells"][1] = 90

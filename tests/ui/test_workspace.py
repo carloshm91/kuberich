@@ -10,18 +10,29 @@ from aiohttp import web
 from textual.widgets import Static
 
 from kuberich.config.schema import Settings
-from kuberich.domain.connections import ConnectionRequest
+from kuberich.domain.connections import ConnectionRequest, ConnectionState
 from kuberich.domain.views import ViewStatus
+from kuberich.services.workspace import ViewSubscription
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.scopes import ConnectionScreen
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.resources import collection, item
+from tests.support.workers import CoroutineCalls
 from tests.support.workspace import stable_watch, wait_for, workspace_api
+
+
+@pytest.fixture
+def observers(monkeypatch):
+    calls = CoroutineCalls()
+    monkeypatch.setattr(ViewSubscription, "__anext__", calls.observe(ViewSubscription.__anext__))
+    return calls
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
-async def test_visible_stale_recovery_status_details_and_namespace_change(tmp_path, size):
+async def test_visible_stale_recovery_status_details_and_namespace_change(
+    tmp_path, size, observers
+):
     failing = asyncio.Event()
     failing.set()
 
@@ -63,8 +74,9 @@ async def test_visible_stale_recovery_status_details_and_namespace_change(tmp_pa
             await pilot.pause()
             assert "1 pods" in str(app.status.content) and "Live" in str(app.status.content)
             await pilot.press("colon", *"ns default", "enter")
-            await app._connection_task
-            await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
+            await wait_for(
+                lambda: app.state.namespace == "default" and app.state.status is ViewStatus.LIVE
+            )
             await pilot.pause()
             assert app.workspace.store.observation.snapshot.items[0].namespace == "default"
             assert str(app.query_one("#namespace", Static).content) == "Namespace: default"
@@ -72,12 +84,16 @@ async def test_visible_stale_recovery_status_details_and_namespace_change(tmp_pa
             assert "Live" in str(app.status.content)
             app.save_screenshot(filename=f"workspace-live-{size[0]}.svg", path=str(evidence))
             await pilot.press("ctrl+q")
-        assert app.sessions.client is None and app._view_task.done()
-        assert app.workspace._watch is None and not app.workspace._subscriptions
+        assert app.sessions.client is None
+        assert observers.tasks and all(task.done() for task in observers.tasks)
+        assert (
+            app.workspace.ownership.watch_count == app.workspace.ownership.subscription_count == 0
+        )
+        assert app.workspace.ownership.close_complete
 
 
 @pytest.mark.asyncio
-async def test_ui_rejects_a_delayed_old_subscription_observation(tmp_path):
+async def test_ui_rejects_a_delayed_old_subscription_observation(tmp_path, monkeypatch):
     async def handler(request):
         return namespaces("team", "default")
 
@@ -85,11 +101,21 @@ async def test_ui_rejects_a_delayed_old_subscription_observation(tmp_path):
         app = KubeRichApp(
             Settings(), logging.Logger("late-view"), catalog=catalog_fixture(tmp_path, url)
         )
+        subscriptions = []
+        subscribe = app.workspace.subscribe
+
+        def capture_subscription():
+            subscription = subscribe()
+            subscriptions.append(subscription)
+            return subscription
+
+        monkeypatch.setattr(app.workspace, "subscribe", capture_subscription)
         async with app.run_test() as pilot:
             await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
             await pilot.pause()
             current = app.workspace.store.observation
-            subscription = next(iter(app.workspace._subscriptions))
+            assert len(subscriptions) == 1
+            subscription = subscriptions[0]
             subscription.offer(replace(current, revision=current.revision - 1, context="obsolete"))
             await pilot.pause()
             assert str(app.query_one("#context", Static).content) == "Context: kuberich-test-one"
@@ -99,24 +125,29 @@ async def test_ui_rejects_a_delayed_old_subscription_observation(tmp_path):
 
 @pytest.mark.asyncio
 async def test_unexpected_subscription_render_error_reaches_sanitized_hook_and_cleans_up(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, observers
 ):
     async def handler(request):
         return namespaces("team")
-
-    def broken(view):
-        raise RuntimeError("opaque-render-value")
 
     async with workspace_api(handler) as url:
         app = KubeRichApp(
             Settings(), logging.Logger("render-failure"), catalog=catalog_fixture(tmp_path, url)
         )
-        monkeypatch.setattr(app, "_show_view", broken)
+        update = app.status.update_text
+
+        def broken(content):
+            if app.state.connection is ConnectionState.CONNECTED:
+                raise RuntimeError("opaque-render-value")
+            update(content)
+
+        monkeypatch.setattr(app.status, "update_text", broken)
         with pytest.raises(RuntimeError, match="opaque-render-value"):
             async with app.run_test() as pilot:
                 await pilot.pause()
         assert app.return_code == 1 and app.sessions.client is None
-        assert app._view_task.done() and app.workspace._watch is None
+        assert observers.tasks and all(task.done() for task in observers.tasks)
+        assert app.workspace.ownership.watch_count == 0 and app.workspace.ownership.close_complete
 
 
 @pytest.mark.asyncio
@@ -147,8 +178,9 @@ async def test_denied_pod_list_is_an_error_then_manual_allowed_namespace_recover
             evidence.mkdir(parents=True, exist_ok=True)
             app.save_screenshot(filename="workspace-denied-100.svg", path=str(evidence))
             await pilot.press("colon", *"ns allowed", "enter")
-            await app._connection_task
-            await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
+            await wait_for(
+                lambda: app.state.namespace == "allowed" and app.state.status is ViewStatus.LIVE
+            )
             await pilot.pause()
             assert app.workspace.store.observation.snapshot.items[0].namespace == "allowed"
             assert "Live" in str(app.status.content)
@@ -158,7 +190,7 @@ async def test_denied_pod_list_is_an_error_then_manual_allowed_namespace_recover
 @pytest.mark.asyncio
 @pytest.mark.parametrize("size,count", [((40, 12), 0), ((100, 30), 1)])
 async def test_quiet_renewal_preserves_live_preview_copy_and_selected_context(
-    tmp_path, monkeypatch, size, count
+    tmp_path, monkeypatch, size, count, observers
 ):
     versions, displayed = [], []
 
@@ -185,13 +217,13 @@ async def test_quiet_renewal_preserves_live_preview_copy_and_selected_context(
             # short ordinary-header versus quiet-body deadlines have contract tests.
             connection=ConnectionRequest(timeout=1.0),
         )
-        show = app._show_view
+        show = app.status.update_text
 
-        def record(view):
-            displayed.append(view)
-            show(view)
+        def record(content):
+            displayed.append(str(content))
+            show(content)
 
-        monkeypatch.setattr(app, "_show_view", record)
+        monkeypatch.setattr(app.status, "update_text", record)
         async with app.run_test(size=size) as pilot:
             await wait_for(lambda: len(versions) >= 3)
             await pilot.pause()
@@ -205,12 +237,21 @@ async def test_quiet_renewal_preserves_live_preview_copy_and_selected_context(
             assert f"Live · {count} pods" in str(app.status.content)
             assert len(set(versions)) == 1
             assert displayed and all(
-                view.status not in {ViewStatus.STALE, ViewStatus.FAILED, ViewStatus.RELISTING}
-                for view in displayed
+                not any(
+                    marker in content
+                    for marker in (
+                        "Stale resource data",
+                        "Resource data unavailable",
+                        "Reloading snapshot",
+                    )
+                )
+                for content in displayed
             )
             assert app.resources.row_count == count
             evidence = Path("artifacts/ui").resolve()
             evidence.mkdir(parents=True, exist_ok=True)
             app.save_screenshot(filename=f"workspace-quiet-live-{size[0]}.svg", path=str(evidence))
             await pilot.press("ctrl+q")
-        assert app.sessions.client is None and app._view_task.done()
+        assert app.sessions.client is None
+        assert observers.tasks and all(task.done() for task in observers.tasks)
+        assert app.workspace.ownership.close_complete

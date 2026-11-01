@@ -66,6 +66,11 @@ class ConfigurationScreen(ModalScreen[None]):
         self.viewer = TextArea(read_only=True, soft_wrap=False, id="configuration-value")
         self.status = Static("Loading key metadata…", markup=False, id="configuration-status")
 
+    @property
+    def operation_count(self) -> int:
+        """Registered reads, including completed reads until their retirement callback."""
+        return len(self._tasks)
+
     def compose(self) -> ComposeResult:
         target = self.service.target
         with Vertical(id="configuration-view"):

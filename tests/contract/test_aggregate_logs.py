@@ -35,7 +35,7 @@ async def finish(owner, task, api):
     await asyncio.gather(task, return_exceptions=True)
     await owner.close()
     await wait_for(lambda: api.active == 0 and api.watch_active == 0)
-    assert not owner._owned and all(
+    assert owner.controller_count == 0 and all(
         state.task is None or state.task.done() for state in owner.states.values()
     )
 
@@ -305,7 +305,7 @@ async def test_many_tiny_lines_slow_source_heartbeat_and_two_levels_of_retention
                         "per_source_lines": list(map(len, history.by_source.values())),
                         "per_source_bytes": list(history.sizes.values()),
                         "after_close": {
-                            "owner_tasks": len(owner._owned),
+                            "owner_tasks": owner.controller_count,
                             "api_log_streams": api.active,
                             "api_watches": api.watch_active,
                         },
@@ -390,7 +390,7 @@ async def test_parent_or_generation_replacement_refuses_before_membership(tmp_pa
         with pytest.raises((AppError, ConnectionProblem)):
             await owner.run(LogOptions(), retain, lambda message: None)
         assert len(paths) == (0 if change == "stale" else 1)
-        assert not api.requests and not owner._owned
+        assert not api.requests and owner.controller_count == 0
         await owner.close()
 
 
@@ -569,7 +569,7 @@ async def test_unexpected_consumer_failure_drains_all_watchers_and_readers(tmp_p
         task = asyncio.create_task(owner.run(LogOptions(), retain, lambda message: None))
         with pytest.raises(RuntimeError, match="owned consumer failure"):
             await task
-        assert owner.closed and not owner._owned
+        assert owner.closed and owner.controller_count == 0
         with pytest.raises(AppError, match="owner has stopped"):
             owner.choose(None)
         await finish(owner, task, api)

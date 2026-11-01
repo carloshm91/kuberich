@@ -112,29 +112,43 @@ async def test_json_transport_repeated_cancel_retains_parser_ownership(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("parser", ["compatibility", "domain"])
-@pytest.mark.parametrize("fail", [False, True])
+@pytest.mark.parametrize("failure_type", [None, ValueError, RuntimeError])
 async def test_uncancelled_parser_preserves_result_and_original_error(
-    monkeypatch, parser, fail, collected_loop_errors
+    tmp_path, monkeypatch, parser, failure_type, collected_loop_errors
 ):
     result = {"owned": "value"}
-    failure = ValueError("owned-parser-failure")
+    failure = failure_type("owned-parser-failure") if failure_type else None
+    calls = []
 
     def operation(*args):
-        if fail:
+        calls.append(args)
+        if failure is not None:
             raise failure
         return result
 
+    async def handler(request):
+        return web.Response(body=b'{"owned":"value"}')
+
+    async def check(awaitable):
+        if parser == "compatibility" and isinstance(failure, ValueError):
+            with pytest.raises(ConnectionProblem) as problem:
+                await awaitable
+            assert problem.value.state is ConnectionState.API_ERROR
+            assert str(problem.value) == "Invalid or oversized Kubernetes JSON response."
+        elif failure is not None:
+            with pytest.raises(type(failure)) as problem:
+                await awaitable
+            assert problem.value is failure
+        else:
+            assert await awaitable is result
+
     if parser == "compatibility":
         monkeypatch.setattr(kubernetes, "decode_json", operation)
-        awaitable = kubernetes._decode_owned(b'{"owned":"value"}')
+        async with reader_fixture(tmp_path, handler) as reader:
+            await check(reader.session.get_json("/api"))
     else:
-        awaitable = parse_owned(operation)
-    if fail:
-        with pytest.raises(ValueError) as problem:
-            await awaitable
-        assert problem.value is failure
-    else:
-        assert await awaitable is result
+        await check(parse_owned(operation))
+    assert len(calls) == 1
 
 
 @pytest.mark.asyncio

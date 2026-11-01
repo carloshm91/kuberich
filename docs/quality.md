@@ -36,6 +36,24 @@ whole-package/changed-line floors remain unchanged; type-only imports stay in th
 denominator. Local source startup evidence does not qualify native artifacts or
 other platforms. See [the startup acceptance record](acceptance/startup-budget.md).
 
+
+## Public test boundaries
+
+Tests use real Pilot input or `app.run_command(text)` and read the frozen
+`app.state` snapshot for workspace selection and connection status. The command
+API uses the same root and captured-workspace routing as the command bar; it
+returns after dispatch, so tests still await the relevant public result.
+
+Run the static check `uv run python scripts/check_private_access.py` to reject private imports,
+attributes, aliases and reflection into any production KubeRich namespace from
+tests, including embedded terminal fixture programs. The required CI step uses
+the same checker. Test-owned doubles and standard/framework namespaces retain
+their separate ownership; this does not waive the pinned framework boundary tests.
+
+Cancellation and retention assertions observe actual coroutine callers at public
+service, renderer and I/O ports. Read-only numeric diagnostics distinguish active
+operations from registered owners where necessary. They expose no tasks, mutable
+caches or resource payloads, and do not replace real cleanup, UID or scope checks.
 ## Supported native runner images
 
 Native Apple Silicon builds and Homebrew installation checks select `macos-15`;

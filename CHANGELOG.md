@@ -7,6 +7,10 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Replace the README with a concise product introduction, published installation,
+  a read-only quick start and a plain feature list
+  ([#223](https://github.com/carloshm91/kuberich/issues/223),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
 - Report runtime heartbeat latency as advisory for 0.x while retaining unchanged
   strict opt-in and stable-release limits, real blocking negative controls and
   every functional, resource, cleanup and coverage requirement

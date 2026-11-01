@@ -11,6 +11,7 @@ from kuberich.ui.logs import LogScreen
 from kuberich.ui.scopes import ScopeScreen
 from tests.support.pods import NOW, pod
 from tests.support.resources import collection
+from tests.support.root_calls import root_calls as root_calls
 from tests.support.watches import frame
 from tests.support.workspace import wait_for, workspace_api
 from tests.ui.test_logs import app_for, ns, open_logs
@@ -20,7 +21,7 @@ from tests.ui.test_logs import app_for, ns, open_logs
 @pytest.mark.parametrize("cover", ["selector", "logs", "nested"])
 @pytest.mark.parametrize("quit_covered", [False, True])
 async def test_covered_workspace_receives_changes_without_painting_and_resumes_latest(
-    tmp_path, monkeypatch, cover, quit_covered
+    tmp_path, monkeypatch, cover, quit_covered, root_calls
 ):
     events = asyncio.Queue()
     clock = [NOW]
@@ -85,7 +86,7 @@ async def test_covered_workspace_receives_changes_without_painting_and_resumes_l
                 )
             )
             clock[0] += timedelta(minutes=2)
-            app._refresh_tables()
+            root_calls.tick(app)
             await pilot.pause()
             assert app.resources.row_count == 1
             assert app.resources.selected_uid == "owned-first"
@@ -108,5 +109,8 @@ async def test_covered_workspace_receives_changes_without_painting_and_resumes_l
                 assert str(app.resources.get_cell("owned-first", "age")) == "2m"
                 assert app.resources.selected_uid == "owned-first"
             await pilot.press("ctrl+q")
-        assert app._render_task.done() and app._view_task.done()
-        assert not app._pod_projection._cache and app.sessions.client is None
+        assert root_calls.renders.latest.done() and root_calls.observations.latest.done()
+        assert (
+            all(owner.cached_count == 0 for owner in root_calls.projections)
+            and app.sessions.client is None
+        )

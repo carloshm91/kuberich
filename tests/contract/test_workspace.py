@@ -23,7 +23,7 @@ from kuberich.services.resources import ResourceReader
 from kuberich.services.sessions import SessionService
 from kuberich.services.watches import ListWatch
 from kuberich.services.workspace import MAX_SUBSCRIPTIONS, WorkspaceService
-from tests.support.connections import catalog_fixture, namespaces
+from tests.support.connections import catalog_fixture, certificate, namespaces
 from tests.support.resources import collection, item, pod_resource
 from tests.support.watches import bookmark, error_event, frame
 from tests.support.workspace import stable_watch, wait_for, workspace_api
@@ -35,19 +35,34 @@ def make_snapshot(resource=None, namespace="team", version="opaque-snapshot"):
     return ResourceSnapshot(resource, namespace, version, (record,))
 
 
+def capture_watch_tasks(monkeypatch):
+    """Observe actual task ownership at the public watch-adapter boundary."""
+    tasks = []
+    original = ListWatch.run
+
+    async def run(self, *args, **kwargs):
+        tasks.append(asyncio.current_task())
+        return await original(self, *args, **kwargs)
+
+    monkeypatch.setattr(ListWatch, "run", run)
+    return tasks
+
+
 def assert_closed(workspace):
     assert workspace.sessions.client is None
-    assert workspace._watch is None and workspace._operation is None
+    assert workspace.ownership.watch_count == workspace.ownership.operation_count == 0
     assert workspace.task is None or workspace.task.done()
-    assert workspace._closing.done()
-    assert workspace._discovery is None and not workspace._subscriptions
+    assert workspace.ownership.close_complete
+    assert workspace.ownership.discovery_count == workspace.ownership.subscription_count == 0
     assert workspace.store.observation.status is ViewStatus.DISCONNECTED
 
 
 @pytest.mark.asyncio
 async def test_real_scopes_alias_resource_switch_and_context_replacement_use_only_current_client(
     tmp_path,
+    monkeypatch,
 ):
+    watch_tasks = capture_watch_tasks(monkeypatch)
     reads = []
 
     async def namespace_handler(request):
@@ -91,7 +106,7 @@ async def test_real_scopes_alias_resource_switch_and_context_replacement_use_onl
             await wait_for(lambda: owner.store.observation.status is ViewStatus.LIVE)
             assert owner.store.observation.scope.namespace is None
             assert owner.store.observation.scope.resource.name == "pods"
-            old_watch = owner._watch
+            old_watch = watch_tasks[-1]
             await owner.connect("kuberich-test-Two")
             await wait_for(lambda: owner.store.observation.status is ViewStatus.LIVE)
             last = owner.store.observation
@@ -134,6 +149,7 @@ async def test_rapid_switches_coalesce_and_cancel_once_while_old_watch_finishes_
         await asyncio.Event().wait()
 
     monkeypatch.setattr(ListWatch, "run", controlled)
+    watch_tasks = capture_watch_tasks(monkeypatch)
 
     async def handler(request):
         return namespaces("team", "default")
@@ -145,7 +161,7 @@ async def test_rapid_switches_coalesce_and_cancel_once_while_old_watch_finishes_
         try:
             await owner.connect("kuberich-test-one")
             await started.wait()
-            old_watch = owner._watch
+            old_watch = watch_tasks[-1]
             first_driver = owner.select_namespace("default")
             await cleaning.wait()
             assert owner.store.observation.snapshot is None
@@ -211,7 +227,7 @@ async def test_old_discovery_ignoring_cancellation_is_not_cached_or_bound_to_new
             await wait_for(lambda: owner.store.observation.status is ViewStatus.LIVE)
             assert api.rest_client.pool_manager.closed
             assert owner.store.observation.context == "kuberich-test-Two"
-            assert owner._discovery[0] is owner.sessions.client is calls[1]
+            assert owner.discovery is not None and owner.sessions.client is calls[1]
             assert len(calls) == 2
         finally:
             release.set()
@@ -219,7 +235,8 @@ async def test_old_discovery_ignoring_cancellation_is_not_cached_or_bound_to_new
 
 
 @pytest.mark.asyncio
-async def test_switch_cancels_real_paginated_read_before_a_late_second_page(tmp_path):
+async def test_switch_cancels_real_paginated_read_before_a_late_second_page(tmp_path, monkeypatch):
+    watch_tasks = capture_watch_tasks(monkeypatch)
     started, release = asyncio.Event(), asyncio.Event()
     paths = []
 
@@ -246,7 +263,7 @@ async def test_switch_cancels_real_paginated_read_before_a_late_second_page(tmp_
         try:
             await owner.connect("kuberich-test-one")
             await started.wait()
-            old = owner._watch
+            old = watch_tasks[-1]
             transition = owner.select_namespace("default")
             assert owner.store.observation.snapshot is None
             release.set()
@@ -357,8 +374,9 @@ async def test_real_410_discards_current_snapshot_and_recovery_replaces_it(tmp_p
 @pytest.mark.asyncio
 @pytest.mark.parametrize("status", [401, 403, 404])
 async def test_denied_watch_surfaces_failure_without_hot_retries_or_fake_empty_state(
-    tmp_path, status
+    tmp_path, status, monkeypatch
 ):
+    watch_tasks = capture_watch_tasks(monkeypatch)
     watches = []
 
     async def handler(request):
@@ -380,7 +398,7 @@ async def test_denied_watch_surfaces_failure_without_hot_retries_or_fake_empty_s
             assert isinstance(owner.store.observation.problem, HttpProblem)
             assert owner.store.observation.problem.status == status
             assert owner.store.observation.snapshot.items
-            assert owner._watch.done() and len(watches) == 1
+            assert watch_tasks[-1].done() and len(watches) == 1
             assert "opaque-private" not in owner.store.observation.message
         finally:
             await owner.close()
@@ -403,7 +421,7 @@ async def test_closed_and_disconnected_scope_admission_and_bounded_subscriptions
     subscriptions[0].close()
     subscriptions[0].close()
     subscriptions.append(owner.subscribe())
-    assert len(owner._subscriptions) == MAX_SUBSCRIPTIONS
+    assert owner.ownership.subscription_count == MAX_SUBSCRIPTIONS
     reader = subscriptions[-1]
     assert (await anext(reader)).status is ViewStatus.DISCONNECTED
     waiting = asyncio.create_task(anext(reader))
@@ -436,7 +454,15 @@ async def test_slow_subscriber_coalesces_pending_updates_and_releases_superseded
         subscription.offer(latest)
     assert reference() is None
     assert (await anext(subscription)) is latest
-    assert subscription._pending is None and not subscription._ready.is_set()
+    consumed = weakref.ref(latest)
+    del latest
+    assert consumed() is None
+    waiting = asyncio.create_task(anext(subscription))
+    await asyncio.sleep(0)
+    assert not waiting.done()
+    waiting.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await waiting
     await owner.close()
 
 
@@ -444,27 +470,34 @@ async def test_slow_subscriber_coalesces_pending_updates_and_releases_superseded
 async def test_repeated_cancellation_during_client_preparation_and_cancelled_close_wait_for_worker(
     tmp_path, monkeypatch
 ):
-    from kuberich.adapters import kubernetes
-
     started, release, finished = threading.Event(), threading.Event(), threading.Event()
-    original = kubernetes._prepare
+    _, material = certificate(tmp_path)
+    original = Path.write_bytes
 
-    def controlled(context, directory, environment=None):
+    def controlled(path, data):
+        assert path.name == "certificate-authority"
         started.set()
         release.wait(timeout=5)
         try:
-            return original(context, directory, environment)
+            return original(path, data)
         finally:
             finished.set()
 
-    monkeypatch.setattr(kubernetes, "_prepare", controlled)
+    monkeypatch.setattr(Path, "write_bytes", controlled)
 
     async def handler(request):
         return namespaces("team")
 
     async with workspace_api(handler) as url:
         owner = WorkspaceService(
-            SessionService(catalog_fixture(tmp_path, url), ConnectionRequest())
+            SessionService(
+                catalog_fixture(
+                    tmp_path,
+                    url,
+                    cluster={"certificate-authority-data": material["certificate-authority-data"]},
+                ),
+                ConnectionRequest(),
+            )
         )
         task = owner.connect("kuberich-test-one")
         assert await asyncio.to_thread(started.wait, 5)
@@ -486,7 +519,9 @@ async def test_repeated_cancellation_during_client_preparation_and_cancelled_clo
 
 
 @pytest.mark.asyncio
-async def test_repeated_open_close_leaves_no_owned_tasks_or_sessions(tmp_path):
+async def test_repeated_open_close_leaves_no_owned_tasks_or_sessions(tmp_path, monkeypatch):
+    watch_tasks = capture_watch_tasks(monkeypatch)
+
     async def handler(request):
         return namespaces("team")
 
@@ -502,7 +537,7 @@ async def test_repeated_open_close_leaves_no_owned_tasks_or_sessions(tmp_path):
             assert identity not in identities
             identities.add(identity)
             api = owner.sessions.client.api
-            task = owner._watch
+            task = watch_tasks[-1]
             directory = Path(owner.sessions.client.directory.name)
             await owner.close()
             assert task.done() and api.rest_client.pool_manager.closed and not directory.exists()
@@ -566,16 +601,16 @@ async def test_unknown_resource_failure_can_recover_using_the_same_client_discov
         try:
             await owner.connect("kuberich-test-one")
             await wait_for(lambda: owner.store.observation.status is ViewStatus.LIVE)
-            cache = owner._discovery
+            cache = owner.discovery
             await owner.select_resource(ResourceSelection("absent"))
             assert owner.store.observation.status is ViewStatus.FAILED
             assert (
                 owner.store.observation.scope is None and owner.store.observation.snapshot is None
             )
-            assert owner._watch is None
+            assert owner.ownership.watch_count == 0
             await owner.select_resource(ResourceSelection("pods"))
             await wait_for(lambda: owner.store.observation.status is ViewStatus.LIVE)
-            assert owner._discovery is cache
+            assert owner.discovery is cache
         finally:
             await owner.close()
 
@@ -606,7 +641,7 @@ async def test_discovery_denial_is_distinct_from_connection_and_retry_uses_a_fre
             failed = owner.store.observation
             assert failed.connection.state is ConnectionState.CONNECTED
             assert failed.status is ViewStatus.FAILED and failed.problem.status == 403
-            assert owner._watch is None and owner._discovery is None
+            assert owner.ownership.watch_count == 0 and owner.discovery is None
             api = owner.sessions.client.api
             await owner.connect("kuberich-test-one")
             await wait_for(lambda: owner.store.observation.status is ViewStatus.LIVE)
@@ -655,7 +690,7 @@ async def test_authentication_failure_remains_visible_without_resource_tasks(tmp
             await owner.connect("kuberich-test-one")
             assert owner.store.observation.connection.state is ConnectionState.AUTH_ERROR
             assert owner.store.observation.status is ViewStatus.FAILED
-            assert owner.sessions.client is None and owner._watch is None
+            assert owner.sessions.client is None and owner.ownership.watch_count == 0
             assert "401" in owner.store.observation.message
         finally:
             await owner.close()
@@ -672,6 +707,7 @@ async def test_watch_protocol_or_unexpected_failure_is_owned_and_propagates_prog
         raise failure
 
     monkeypatch.setattr(ListWatch, "run", broken)
+    watch_tasks = capture_watch_tasks(monkeypatch)
 
     async def handler(request):
         return namespaces("team")
@@ -682,10 +718,10 @@ async def test_watch_protocol_or_unexpected_failure_is_owned_and_propagates_prog
         )
         try:
             await owner.connect("kuberich-test-one")
-            await wait_for(lambda: owner._watch.done())
+            await wait_for(lambda: bool(watch_tasks) and watch_tasks[-1].done())
             if isinstance(failure, RuntimeError):
                 with pytest.raises(RuntimeError, match="opaque-sensitive"):
-                    await owner._watch
+                    await watch_tasks[-1]
             assert owner.store.observation.status is ViewStatus.FAILED
             assert "opaque-sensitive" not in owner.store.observation.message
         finally:
@@ -722,6 +758,8 @@ async def test_unexpected_client_close_failure_is_not_suppressed_and_subscribers
     monkeypatch.setattr(owner.sessions, "close", failed_close)
     with pytest.raises(RuntimeError, match="owned-close"):
         await owner.close()
-    assert subscription._closed and not owner._subscriptions
+    assert owner.ownership.subscription_count == 0
+    with pytest.raises(StopAsyncIteration):
+        await anext(subscription)
     with pytest.raises(RuntimeError, match="owned-close"):
         await owner.close()

@@ -135,15 +135,17 @@ def test_unrepresentable_document_is_refused_before_any_write(tmp_path):
 
 
 def test_durability_failure_after_commit_is_reported_honestly(tmp_path, monkeypatch):
-    import kuberich.adapters.kubeconfig_files as files
-
     path = kubeconfig(tmp_path / "config", "alpha", "beta")
     plan = plan_for([path], ContextChange.DELETE, "beta")
 
-    def broken(directory):
-        raise OSError("owned fsync failure")
+    original = os.fsync
 
-    monkeypatch.setattr(files, "_fsync_directory", broken)
+    def broken(descriptor):
+        if stat.S_ISDIR(os.fstat(descriptor).st_mode):
+            raise OSError("owned fsync failure")
+        return original(descriptor)
+
+    monkeypatch.setattr(os, "fsync", broken)
     with pytest.raises(AppError, match="durability"):
         save_plan(plan, NOW)
     assert "beta" not in path.read_text() and len(backups(tmp_path)) == 1
