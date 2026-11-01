@@ -10,7 +10,9 @@ from textual.widgets import Button, Input, Static
 from kuberich.config.schema import Settings
 from kuberich.domain.port_forwards import ForwardState
 from kuberich.domain.registry import RESOURCE_ALIASES
+from kuberich.domain.views import ResourceSelection
 from kuberich.services.commands import ResourceCommand
+from kuberich.services.port_forwards import ForwardManager
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.port_forwards import ForwardPrompt, ForwardScreen
 from tests.support.connections import catalog_fixture
@@ -28,9 +30,9 @@ async def test_start_filter_stop_return_and_context_cleanup_keep_listener_owners
             logging.getLogger("owned-forward-ui"),
             catalog=catalog_fixture(tmp_path, url),
             initial_command=ResourceCommand(RESOURCE_ALIASES["svc"], "team"),
+            environment=executable(tmp_path),
+            directory=tmp_path,
         )
-        app._process_environment = executable(tmp_path)
-        app._process_directory = tmp_path
         async with app.run_test(size=size) as pilot:
             await wait_for(lambda: app.standard_table.row_count == 1)
             await pilot.pause()
@@ -54,7 +56,7 @@ async def test_start_filter_stop_return_and_context_cleanup_keep_listener_owners
             ready = app.forwards.infos[0]
             assert (
                 screen.table.row_count == 1
-                and screen._shown[str(ready.identity)].target.namespace == "team"
+                and screen.table.get_row(str(ready.identity))[1].plain == "team"
             )
             assert not screen.query_one("#forward-list-stop", Button).disabled
             await pilot.pause()
@@ -69,7 +71,7 @@ async def test_start_filter_stop_return_and_context_cleanup_keep_listener_owners
             await wait_for(lambda: screen.table.row_count == 1)
             await pilot.press("escape")
             assert len(app.screen_stack) == 1 and app.standard_table.capture_viewport() == before
-            app._namespace_selected("other")
+            await app.run_command("ns other")
             await wait_for(lambda: app.sessions.observation.namespace == "other")
             await asyncio.sleep(0.05)
             assert app.forwards.infos[0].state is ForwardState.READY
@@ -79,9 +81,9 @@ async def test_start_filter_stop_return_and_context_cleanup_keep_listener_owners
             await wait_for(lambda: app.forwards.infos[0].state is ForwardState.STOPPED)
             assert not app.forwards.active_count
             await pilot.press("escape")
-            app._select_resource("services")
+            await app.run_command("services")
             await wait_for(
-                lambda: app.standard_table.row_count == 1 and app._resource_name == "services"
+                lambda: app.standard_table.row_count == 1 and app.state.view_kind == "services"
             )
             await pilot.press("F")
             await wait_for(lambda: isinstance(app.screen, ForwardPrompt))
@@ -108,40 +110,47 @@ async def test_start_filter_stop_return_and_context_cleanup_keep_listener_owners
 
 @pytest.mark.asyncio
 async def test_readonly_listing_and_input_routing_are_safe(tmp_path):
-    app = KubeRichApp(
-        Settings(read_only=True),
-        logging.getLogger("owned-forward-readonly"),
-        catalog=catalog_fixture(tmp_path, "http://127.0.0.1:1"),
-    )
-    async with app.run_test() as pilot:
-        await pilot.pause()
-        app.action_port_forward()
-        assert "Read-only" in str(app.status.content) and not app.forwards.infos
-        app.action_port_forwards()
-        await wait_for(lambda: isinstance(app.screen, ForwardScreen))
-        assert app.screen.table.row_count == 0
-        await pilot.press("s")
-        assert not app.forwards.infos
-        app.screen.action_filter()
-        await pilot.press("s")
-        assert app.screen.query_one("#forward-list-filter", Input).value == "s"
-        await pilot.press("escape")
-        assert len(app.screen_stack) == 1
-        app._display_resource("deployments")
-        assert app.check_action("port_forward", ()) is False
+    async with standard_api(tmp_path) as (url, _reads):
+        app = KubeRichApp(
+            Settings(read_only=True),
+            logging.getLogger("owned-forward-readonly"),
+            catalog=catalog_fixture(tmp_path, url),
+            initial_command=ResourceCommand(RESOURCE_ALIASES["svc"], "team"),
+        )
+        async with app.run_test() as pilot:
+            await wait_for(lambda: app.standard_table.row_count == 1)
+            await pilot.pause()
+            app.action_port_forward()
+            assert "Read-only" in str(app.status.content) and not app.forwards.infos
+            app.action_port_forwards()
+            await wait_for(lambda: isinstance(app.screen, ForwardScreen))
+            assert app.screen.table.row_count == 0
+            await pilot.press("s")
+            assert not app.forwards.infos
+            app.screen.action_filter()
+            await pilot.press("s")
+            assert app.screen.query_one("#forward-list-filter", Input).value == "s"
+            await pilot.press("escape")
+            assert len(app.screen_stack) == 1
+            await app.run_command("deployments")
+            assert app.state.view_kind == "deployments"
+            assert app.check_action("port_forward", ()) is False
 
 
 @pytest.mark.asyncio
-async def test_cancel_stale_selection_and_non_loopback_intent_do_not_start_work(tmp_path):
+@pytest.mark.parametrize("changed_scope", ["namespace", "resource"])
+async def test_cancel_stale_selection_and_non_loopback_intent_do_not_start_work(
+    tmp_path, changed_scope
+):
     async with standard_api(tmp_path) as (url, _reads):
         app = KubeRichApp(
             Settings(),
             logging.getLogger("owned-forward-intent"),
             catalog=catalog_fixture(tmp_path, url),
             initial_command=ResourceCommand(RESOURCE_ALIASES["svc"], "team"),
+            environment=executable(tmp_path),
+            directory=tmp_path,
         )
-        app._process_environment = executable(tmp_path)
-        app._process_directory = tmp_path
         async with app.run_test() as pilot:
             await wait_for(lambda: app.standard_table.row_count == 1)
             await pilot.press("F")
@@ -157,8 +166,20 @@ async def test_cancel_stale_selection_and_non_loopback_intent_do_not_start_work(
             assert len(app.screen_stack) == 1
             await pilot.press("F")
             await wait_for(lambda: isinstance(app.screen, ForwardPrompt))
-            app._select_resource("deployments")
-            await wait_for(lambda: app._resource_name == "deployments")
+            # A scope update may arrive while the dialog holds its original target.
+            if changed_scope == "namespace":
+                await app.workspace.select_namespace("other")
+                await wait_for(
+                    lambda: app.state.scope is not None and app.state.scope.namespace == "other"
+                )
+            else:
+                await app.workspace.select_resource(ResourceSelection("deployments", "apps"))
+                await wait_for(
+                    lambda: (
+                        app.state.scope is not None
+                        and app.state.scope.resource.name == "deployments"
+                    )
+                )
             await pilot.press("enter")
             assert "target changed" in str(
                 app.screen.query_one("#forward-feedback", Static).content
@@ -168,7 +189,7 @@ async def test_cancel_stale_selection_and_non_loopback_intent_do_not_start_work(
 
 
 @pytest.mark.asyncio
-async def test_session_updates_preserve_selected_row_and_both_scroll_axes(tmp_path):
+async def test_session_updates_preserve_selected_row_and_both_scroll_axes(tmp_path, monkeypatch):
     from dataclasses import replace
     from uuid import uuid4
 
@@ -181,6 +202,8 @@ async def test_session_updates_preserve_selected_row_and_both_scroll_axes(tmp_pa
         logging.getLogger("owned-forward-table"),
         catalog=catalog_fixture(tmp_path, "http://127.0.0.1:1"),
     )
+    records = []
+    monkeypatch.setattr(ForwardManager, "infos", property(lambda self: tuple(records)))
     async with app.run_test(size=(40, 12)) as pilot:
         await pilot.pause()
         for index in range(32):
@@ -192,7 +215,7 @@ async def test_session_updates_preserve_selected_row_and_both_scroll_axes(tmp_pa
                 f"pod-{index:02}",
                 f"uid-{index:02}",
             )
-            app.forwards._record_changed(
+            records.append(
                 ForwardInfo(
                     uuid4(), target, parse_mappings(":80"), "127.0.0.1", state=ForwardState.STOPPED
                 )
@@ -207,9 +230,7 @@ async def test_session_updates_preserve_selected_row_and_both_scroll_axes(tmp_pa
         await pilot.pause()
         selected = screen.table.coordinate_to_cell_key(screen.table.cursor_coordinate).row_key.value
         position = (screen.table.scroll_x, screen.table.scroll_y)
-        app.forwards._record_changed(
-            replace(app.forwards.infos[1], message="Updated public status")
-        )
+        records[1] = replace(records[1], message="Updated public status")
         screen.refresh_sessions()
         await pilot.pause()
         assert (
