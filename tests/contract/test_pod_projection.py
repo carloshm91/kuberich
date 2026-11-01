@@ -23,11 +23,12 @@ async def test_projection_reuses_unchanged_records_and_prunes_removed_uids():
     assert updates[0].restarts == 12 and updates[1] is rows[1]
     assert updates[2].uid == "replacement" and updates[2] is not rows[1]
     final = await projection.project(replace(newer, items=(newer.items[2],)))
-    assert final == (updates[2],)
+    assert final == (updates[2],) and projection.cached_count == 1
     returned = await projection.project(newer)
     assert all(returned[index] is not updates[index] for index in (0, 1))
     assert returned[2] is updates[2]
     assert await projection.project(None) == ()
+    assert projection.cached_count == 0
     assert all(
         before is not after
         for before, after in zip(returned, await projection.project(newer), strict=True)

@@ -15,6 +15,7 @@ from kuberich.ui.app import KubeRichApp
 from kuberich.ui.configuration_data import ConfigurationScreen
 from kuberich.ui.inspection import InspectionScreen
 from tests.support.connections import catalog_fixture
+from tests.support.root_calls import root_calls as root_calls
 from tests.support.standard import api, manifest, standard_api
 from tests.support.watches import frame
 from tests.support.workspace import wait_for
@@ -33,7 +34,7 @@ def app_for(tmp_path, url, initial=None):
 async def loaded(app, resource):
     await wait_for(
         lambda: (
-            app._resource_name == resource
+            app.state.view_kind == resource
             and app.workspace.store.observation.status is ViewStatus.LIVE
             and app.standard_table.row_count > 0
         )
@@ -49,7 +50,7 @@ async def command(app, pilot, value):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("definition", STANDARD_RESOURCES, ids=[d.name for d in STANDARD_RESOURCES])
 async def test_every_resource_has_discovered_list_watch_detail_and_correct_hints(
-    tmp_path, definition
+    tmp_path, definition, root_calls
 ):
     async with standard_api(tmp_path) as (url, reads):
         app = app_for(tmp_path, url)
@@ -103,7 +104,11 @@ async def test_every_resource_has_discovered_list_watch_detail_and_correct_hints
             await pilot.press("l")
             assert len(app.screen_stack) == 1 and app.check_action("logs", ()) is False
             assert app.check_action("shell", ()) is False
-        assert app.sessions.client is None and app._render_task.done() and app._view_task.done()
+        assert (
+            app.sessions.client is None
+            and root_calls.renders.latest.done()
+            and root_calls.observations.latest.done()
+        )
 
 
 @pytest.mark.asyncio
@@ -159,7 +164,7 @@ async def test_scopes_filter_sort_vim_history_context_return_and_stable_geometry
             assert app.standard_table.capture_viewport() == before
             await pilot.press("c")
             await wait_for(lambda: app.context_table.row_count > 0)
-            assert app._resource_name == "contexts"
+            assert app.state.view_kind == "contexts"
             await pilot.press("escape")
             await loaded(app, "deployments")
             assert app.workspace.selection.group == "apps"

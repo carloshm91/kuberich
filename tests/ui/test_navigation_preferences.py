@@ -15,6 +15,7 @@ from kuberich.config.navigation import navigation_from
 from kuberich.config.paths import ConfigLocation
 from kuberich.config.schema import parse_document
 from kuberich.config.store import read_config, write_config
+from kuberich.domain.connections import ConnectionState
 from kuberich.domain.registry import RESOURCE_ALIASES
 from kuberich.domain.resource_preferences import ColumnSpec, ViewSpec, printer_signature
 from kuberich.domain.views import ViewStatus
@@ -31,6 +32,7 @@ from tests.support.custom import GROUP, custom_api
 from tests.support.pods import pod
 from tests.support.resources import collection
 from tests.support.standard import standard_api
+from tests.support.workers import CoroutineCalls
 from tests.support.workspace import stable_watch, wait_for, workspace_api
 from tests.ui.test_custom_resources import loaded as custom_loaded
 from tests.ui.test_standard_resources import command
@@ -112,12 +114,13 @@ async def apply_view(screen, pilot, columns, sort="name", descending=False, mode
     screen.sort_input.value = sort
     screen.reverse.value = descending
     screen.set_focus(screen.query_one("#view-" + mode, Button))
-    previous = screen._save_task
+    saves = CoroutineCalls()
+    screen.apply = saves.observe(screen.apply)
     await pilot.press("enter")
-    # The button posts its Pressed message; let the handler start a new save first.
+    # The button posts its message; observe the actual public apply callback.
     await pilot.pause()
-    if screen._save_task is not previous and screen._save_task is not None:
-        await wait_for(screen._save_task.done)
+    if saves.latest is not None:
+        await wait_for(saves.latest.done)
     await pilot.pause()
 
 
@@ -173,8 +176,8 @@ async def test_effective_keys_aliases_help_and_literal_text_keep_native_fallback
                 await pilot.press("escape")
                 if field is app.filter_input:
                     await pilot.press("escape")
-            assert app._suggestions("wor") == ("work",)
-            assert "work other" in app._suggestions("work o")
+            assert app.command_input.provider("wor") == ("work",)
+            assert "work other" in app.command_input.provider("work o")
             await command(app, pilot, "work other")
             await wait_for(
                 lambda: (
@@ -186,7 +189,7 @@ async def test_effective_keys_aliases_help_and_literal_text_keep_native_fallback
             assert len(app.screen_stack) == 1 and "read-only" in str(app.status.content).casefold()
             assert path.read_bytes() == original
             await command(app, pilot, "local")
-            await wait_for(lambda: app._resource_name == "contexts")
+            await wait_for(lambda: app.state.view_kind == "contexts")
             app.action_views()
             assert len(app.screen_stack) == 1 and "Kubernetes resource" in str(app.status.content)
     assert shortcut_keys(
@@ -212,7 +215,7 @@ async def test_invalid_overrides_leave_working_navigation_and_file_intact(
         async with app.run_test() as pilot:
             await pods_loaded(app)
             await pilot.press("G", "g", "j")
-            assert app.resources.selected_uid == "uid-001" and app._navigation_invalid
+            assert app.resources.selected_uid == "uid-001"
             screen = await editor(app, pilot)
             assert screen.query_one("#view-global", Button).disabled
             await pilot.press("escape")
@@ -524,7 +527,7 @@ async def test_session_only_editor_and_explicit_save_guards_without_context_or_p
     async with app.run_test(size=(40, 12)) as pilot:
         await wait_for(lambda: isinstance(app.screen, ViewScreen))
         screen = app.screen
-        assert app._connection_task is None
+        assert app.state.connection is ConnectionState.DISCONNECTED
         assert screen.query_one("#view-global", Button).disabled
         with pytest.raises(AppError, match="Correct navigation"):
             await screen.apply(ViewSpec((ColumnSpec("name"),)), "global")
@@ -542,7 +545,7 @@ async def test_session_only_editor_and_explicit_save_guards_without_context_or_p
         with pytest.raises(AppError, match="Select a context"):
             await screen.apply(ViewSpec((ColumnSpec("name"),)), "context")
         await pilot.press("escape")
-        app._display_resource("contexts")
+        await app.run_command("ctx")
         app.view_preferences.remember_sort()
     assert path.exists()
 
@@ -554,10 +557,20 @@ async def test_requested_save_is_owned_across_duplicate_requests_escape_and_grac
 ):
     entered, release = asyncio.Event(), asyncio.Event()
     calls = []
+    saves = CoroutineCalls()
+    unmounting = asyncio.Event()
+    original_unmount = ViewScreen.on_unmount
+
+    async def observed_unmount(screen):
+        unmounting.set()
+        await original_unmount(screen)
+
+    monkeypatch.setattr(ViewScreen, "on_unmount", observed_unmount)
     app, path = app_for(tmp_path)
     real_save = app.preferences.save_navigation
 
     async def held_save(navigation):
+        saves.capture()
         calls.append(navigation)
         entered.set()
         await release.wait()
@@ -565,12 +578,10 @@ async def test_requested_save_is_owned_across_duplicate_requests_escape_and_grac
 
     monkeypatch.setattr(app.preferences, "save_navigation", held_save)
     ready, exit_owner = asyncio.Event(), asyncio.Event()
-    screens = []
 
     async def trial():
         async with app.run_test() as pilot:
             screen = await editor(app, pilot)
-            screens.append(screen)
             screen.columns_input.value = "name:19"
             screen.sort_input.value = "name"
             button = screen.query_one("#view-global", Button)
@@ -586,13 +597,12 @@ async def test_requested_save_is_owned_across_duplicate_requests_escape_and_grac
     owner = asyncio.create_task(trial())
     try:
         await asyncio.wait_for(ready.wait(), 5)
-        screen = screens[0]
         if closing:
             exit_owner.set()
-            await wait_for(lambda: screen._view_stopped)
-            assert not owner.done() and not screen._save_task.done()
+            await asyncio.wait_for(unmounting.wait(), 5)
+            assert not owner.done() and not saves.latest.done()
         release.set()
-        await wait_for(screen._save_task.done)
+        await wait_for(saves.latest.done)
         if not closing:
             await wait_for(lambda: len(app.screen_stack) == 1)
             exit_owner.set()
@@ -618,8 +628,16 @@ async def test_session_layout_cache_is_bounded_across_real_resource_navigation(
             for name in ("deploy", "cm", "sec"):
                 await command(app, pilot, name)
                 await standard_loaded(app, RESOURCE_ALIASES[name].name)
-            assert len(app.view_preferences._states) == 2
-            assert {key for _, key in app.view_preferences._states} == {
-                "v1/configmaps",
-                "v1/secrets",
-            }
+                screen = await editor(app, pilot)
+                await apply_view(screen, pilot, "name:19")
+            # Both retained resource preferences survive navigation; the evicted
+            # oldest preference returns to defaults through the real UI.
+            for name in ("cm", "sec"):
+                await command(app, pilot, name)
+                await standard_loaded(app, RESOURCE_ALIASES[name].name)
+                await pilot.pause()
+                assert app.standard_table.view_spec.columns == (ColumnSpec("name", 19),)
+            await command(app, pilot, "deploy")
+            await standard_loaded(app, "deployments")
+            await pilot.pause()
+            assert app.standard_table.view_spec.columns != (ColumnSpec("name", 19),)
