@@ -638,7 +638,7 @@ def test_engineering_versions_refuse_preflight_before_any_external_request(versi
 
 
 @pytest.mark.parametrize(
-    "incomplete", [None, 123, 124, 193, 47, 40, 154, 88, 89, 189, 211, 230, 243, 253]
+    "incomplete", [None, 123, 124, 193, 47, 40, 154, 88, 89, 189, 211, 230, 243, 253, 281]
 )
 def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomplete):
     plan = json.loads((ROOT / "docs/backlog.json").read_text())
@@ -674,6 +674,7 @@ def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomp
             242,
             248,
             253,
+            281,
             90,
             91,
             149,
@@ -730,6 +731,7 @@ def test_actual_phase_includes_selected_and_prior_qualifiers(version, phase_gate
     # Keyboard/mouse protocol work #124 moved from 0.2 to the 0.8 platform phase.
     assert (124 in calls) == (minor >= (0, 8))
     assert (230 in calls) == (minor >= (0, 3))
+    assert (281 in calls) == (minor >= (0, 3))
     assert (89 in calls) == (Version(version).base_version != "0.1.0")
 
 
@@ -747,6 +749,7 @@ def test_actual_phase_includes_selected_and_prior_qualifiers(version, phase_gate
         ("0.2.0", 193),
         ("0.3.0", 189),
         ("0.3.0", 211),
+        ("0.3.0", 281),
         ("0.5.0", 82),
         ("0.6.0", 235),
         ("0.8.0", 124),
@@ -793,6 +796,7 @@ def test_unreviewed_minor_does_not_inherit_an_earlier_phase(version):
         "missing_launch",
         "missing_history",
         "missing_early_generic",
+        "missing_x11_readiness",
         "duplicate_extra",
         "boolean_extra",
         "unknown_future_dependency",
@@ -829,6 +833,8 @@ def test_malformed_entire_plan_fails_before_any_external_issue_request(mutation)
         delivery["release_phases"][0]["extra_issues"].remove(
             123 if mutation == "missing_history" else 53
         )
+    elif mutation == "missing_x11_readiness":
+        delivery["release_phases"][2]["extra_issues"].remove(281)
     elif mutation == "duplicate_extra":
         delivery["release_phases"][0]["extra_issues"].append(53)
     elif mutation == "boolean_extra":
