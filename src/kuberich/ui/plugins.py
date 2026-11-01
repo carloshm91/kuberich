@@ -296,7 +296,9 @@ class PluginJobs(ModalScreen[None]):
     def __init__(self, manager: PluginManager) -> None:
         super().__init__()
         self.manager = manager
-        self._snapshot: tuple[tuple[int, str], ...] = ()
+        self._snapshot: tuple[tuple[int, str, int | None], ...] = ()
+        self._opened_job: int | None = None
+        self._output_snapshot: tuple[int, str, int | None, str] | None = None
         self._stopping: asyncio.Task[None] | None = None
 
     def compose(self) -> ComposeResult:
@@ -315,8 +317,9 @@ class PluginJobs(ModalScreen[None]):
         self.set_interval(0.2, self.refresh_jobs)
 
     def refresh_jobs(self) -> None:
-        snapshot = tuple((job.number, job.status) for job in self.manager.jobs)
+        snapshot = tuple((job.number, job.status, job.returncode) for job in self.manager.jobs)
         if snapshot == self._snapshot:
+            self._refresh_output()
             return
         self._snapshot = snapshot
         table = self.query_one(FrameTable)
@@ -337,6 +340,23 @@ class PluginJobs(ModalScreen[None]):
                 key=str(job.number),
             )
         table.move_cursor(row=min(row, max(0, table.row_count - 1)))
+        self._refresh_output()
+
+    def _refresh_output(self) -> None:
+        if self._opened_job is None:
+            return
+        job = next((job for job in self.manager.jobs if job.number == self._opened_job), None)
+        if job is None:
+            self._opened_job = None
+            self._output_snapshot = None
+            self.query_one("#plugin-job-text", Static).update("Job is no longer in history.")
+            return
+        snapshot = (job.number, job.status, job.returncode, job.output)
+        if snapshot != self._output_snapshot:
+            self._output_snapshot = snapshot
+            self.query_one("#plugin-job-text", Static).update(
+                safe_text(f"{job.status} · exit {job.returncode}\n{job.output}", multiline=True)
+            )
 
     def selected_job(self) -> PluginJob | None:
         table = self.query_one(FrameTable)
@@ -350,9 +370,8 @@ class PluginJobs(ModalScreen[None]):
         event.stop()
         job = self.selected_job()
         if job is not None:
-            self.query_one("#plugin-job-text", Static).update(
-                safe_text(f"{job.status} · exit {job.returncode}\n{job.output}", multiline=True)
-            )
+            self._opened_job = job.number
+            self._refresh_output()
 
     @on(Button.Pressed, "#plugin-job-stop")
     def stop_job(self) -> None:

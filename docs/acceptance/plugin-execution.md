@@ -141,3 +141,35 @@ tools can act on other resources or connections deliberately: plugins are truste
 unsandboxed local code, not a Kubernetes permission or filesystem sandbox. Local
 UID preflight does not make a later external write atomic. No tag, version bump,
 package, tap, website or DNS publication is performed by this implementation.
+
+## Opened background job output
+
+Required standalone macOS x86_64 run `41282379945`, job `124777431135`,
+source `207bc71374965e143443ee771f86579402c0bc8c`, first failed the visible
+`PLUGIN_BACKGROUND` assertion. The table showed Succeeded while the opened
+detail still showed Running with exit 0 and no output. Artifact `13074266572`
+has verified SHA-256
+`d8f095ef9ab240b1adb4e4303a0399843b66676371d5dd9294362e841a3cce66`.
+Its original ANSI and failure JSON remain available. Darwin teardown then
+masked that error with EPERM; its separate correction is tracked in #208.
+
+The #272 correction refreshes the opened numeric job identity independently
+from the table cursor. Output and exit changes are observed even without a
+status transition; retired history drops the detail payload. Unchanged values
+do not update the widget. Existing output redaction, limits and terminal
+assertions remain unchanged.
+
+Both new regressions fail on unchanged main `d990a5e` for the actual stale
+output, then pass with the correction. One uses a real child held by explicit
+files until its running detail is open; the other checks output-only/exit
+changes, cursor independence, no-op updates and history retirement. Two early
+fixture failures were retained separately: inline multiline arguments were
+correctly refused by plugin validation, so the child is now an explicit script
+file. No validation rule or deadline changed.
+
+Local Linux/Python 3.12 verification passed 326 plugin, real-terminal and
+release-policy cases in 53.01 seconds. The two UI cases additionally passed
+in 12.90 seconds with an explicit output-only assertion. All 21 changed
+executable application lines were covered. These focused selections do not
+establish global coverage, macOS behavior or standalone release qualification;
+the required source/native CI checks remain separate.

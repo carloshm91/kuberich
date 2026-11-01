@@ -199,8 +199,10 @@ profile for namespace-scoped/global commands, including custom namespace keys.
 
 - `capture`: waits for the one-shot command and shows status, exit code and bounded
   output. Cancel stops and drains the process group before returning.
-- `background`: stays owned after Back closes the form. Use `:pluginjobs`, Enter
-  for its completed output, or Stop selected. Output is collected until completion
+- `background`: continues after Back closes the form. Use `:pluginjobs` and Enter
+  to open its result, or Stop selected. The opened result updates its status,
+  exit code and completed output automatically. Moving to another row keeps the
+  opened result until you press Enter again. Output is collected until completion
   rather than streamed; stopping/cancelling can discard in-flight captured output.
   There are at most four active jobs and 32 retained jobs.
 - `foreground`: deliberately suspends Textual and gives the native terminal to
