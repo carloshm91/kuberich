@@ -13,6 +13,12 @@ Release entries are written in release PRs and linked to their Git tags.
   ([#216](https://github.com/carloshm91/kuberich/issues/216),
   [Carlos J. Herrera](https://github.com/carloshm91)).
 
+- Add one phase-verification command that runs the existing checks or collects
+  full exact-source hosted results, preserving failures and reporting missing
+  platform or repetition evidence explicitly
+  ([#218](https://github.com/carloshm91/kuberich/issues/218),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 ### Changed
 
 - Replace the README with a concise product introduction, published installation,

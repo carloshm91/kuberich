@@ -658,6 +658,24 @@ assets, and edits to non-executable continuations do not establish new coverage.
 No changed executable lines means N/A. The negative-control tests verify 0%,
 80%, the exact 90% boundary, a docs-only diff, and an unavailable base.
 
+### One phase verification report
+
+`uv run python scripts/qualify.py 0.3.0` coordinates the existing local commands
+and records their actual results in one JSON report and a short Markdown summary.
+It runs the complete suite once, with all layers and branch coverage, followed
+by the existing runtime, production/critical and changed-line gates. It keeps
+original logs, skipped-case details and canonical evidence before and after the
+run. A unique external mode-0700 parent owns a new basetemp child for every pytest
+stage. Do not edit candidate inputs or start competing timing checks during it.
+
+Use `--collect-only --quality-run ID --repository-run ID` to collect the actual
+full exact-source hosted results through the existing release validators. This
+never converts development-only, queued, failed or missing jobs into success.
+Native facilities and contract/owned-cluster repetitions remain pending until
+satisfied; the coordinator cannot authorize publication. See
+[phase verification](releases.md#reproduce-phase-verification) for tools, reports,
+exit statuses and the separate sustained-performance/provider requirements.
+
 ### Test layers and local parallel runs
 
 Tests receive a layer marker from their directory: `unit`, `contract`, `ui`,

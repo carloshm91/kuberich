@@ -84,6 +84,57 @@ fixes, compatibility/migrations, installation, upgrade/uninstall and known limit
 an optional owner-reviewed generated preview before publisher approval. Retries
 compare the complete body and never regenerate or rewrite published notes.
 
+## Reproduce phase verification
+
+Run the checked-in coordinator on a clean, committed candidate. It uses the
+existing checks and never publishes packages, tags, sites or releases:
+
+```sh
+uv run python scripts/qualify.py 0.3.0 --output artifacts/qualification/candidate
+```
+
+The default runs lint, formatting and the workflow's strict type command, then
+one complete test run with branch coverage. That run includes the actual terminal,
+packaging and installation cases. The existing runtime, production/critical and
+changed-line coverage validators, build, metadata and supply-chain checks follow.
+The changed-coverage base is the branch merge base, or `HEAD^` on main; use
+`--base FULL_COMMIT` to select a distinct ancestor explicitly.
+
+To collect completed hosted verification without rerunning those checks locally:
+
+```sh
+uv run python scripts/qualify.py 0.3.0 --collect-only \
+  --quality-run FULL_MATRIX_RUN_ID --repository-run REPOSITORY_RUN_ID \
+  --output artifacts/qualification/collected
+```
+
+The existing release validators require the exact current source, main branch,
+full workflow-dispatch matrix, native runners and completed successful jobs.
+Queued jobs stay pending; a newer failed run blocks an older success. This is
+read-only reporting, not result reuse or a substitute for publication preflight.
+
+Real cluster trials run only when both `--kind /absolute/path/to/kind` and
+`--kubectl /absolute/path/to/kubectl` are supplied. Existing verifiers validate
+and create their own disposable clusters. They never use your active context.
+Add `--repetitions 3` for the required contract/cluster repetitions; without the
+tools or all repetitions, those requirements remain pending. Native facilities,
+explicit skips, full platform checks and separate sustained-performance/provider
+reviews remain visible. A local pass does not establish the native matrix.
+
+Each fresh output directory contains `report.json` and `summary.md`. Local runs
+also keep original command logs and before/after copies of canonical evidence. The report records
+the exact source, comparison base, process cleanup and every skip. Pytest stages
+use new child directories under a unique physical external directory with mode
+0700; installation checks therefore cannot import the checkout by accident.
+Source changes, failures and timeouts stop execution. SIGINT/SIGTERM drain the
+current owned group and preserve evidence; earlier outputs are never overwritten.
+
+Exit 0 means every listed verification gate passed; exit 2 means evidence remains
+pending, and exit 1 means verification failed. Cancellation returns 130 or 143.
+The short phase-gate checklist should link the exact report and remaining items,
+while retaining earlier failed and historical evidence. A report does not approve
+publication, close feature prerequisites or replace live release readiness.
+
 ## Publication approval
 
 Prepare the concrete, tested artifacts, public channel changes and website for
