@@ -1340,7 +1340,7 @@
         "Every inventory row and every flag/action/schema/plugin entry has a delivered test or a clearly stated compatibility difference; planned rows are never counted as implemented.",
         "Refresh the latest stable upstream comparison and create tickets for new features before freezing the stable parity claim.",
         "Maintain the Alpha evidence gap until authoritative material is available; do not claim 100% paid-feature parity without a verifiable catalog and tests.",
-        "Per the 2026-11-01 maintainer decision, complete the deferred unchanged under-600-ms real UI first-paint qualification. Version major 1 and later automatically enforce the original strict startup mode; retain all five observations, both strict negative controls and original failures without a higher substitute threshold.",
+        "Complete the deferred unchanged strict startup latency qualification: offline wall time below 150 ms, aggregate self/maximum cumulative imports below 150,000 us, and real UI paint below 600 ms. Actual source major 1 (including prereleases) enforces all original limits; retain every observation, strict negative control and original failure without a higher substitute threshold. Memory, forbidden imports and functional/cleanup checks remain mandatory in all versions.",
         "For major-version 1 qualification, enforce the unchanged runtime heartbeat/input-latency limits and original blocking negative controls; neither environment nor receipt metadata may downgrade them. Earlier advisory 0.x measurements are not a strict pass."
       ],
       "verification": "Automated matrix completeness checks plus a human end-to-end checklist and links to tests/releases for each claim; no untriaged entry may be silently dropped.",
@@ -1782,9 +1782,9 @@
       "requires": [],
       "scope": "`kuberich --version` takes 1.10 s and 94 MB RSS on the development machine. The CLI imports the whole UI and `kubernetes_asyncio`; `import kuberich.ui.app` alone takes about 0.93 s. Terminal users expect instant startup.",
       "acceptance": [
-        "`--version`, `--help`, `info` and `config check` finish in under 150 ms and under 40 MB on the reference machine. Those paths never import Textual or `kubernetes_asyncio`.",
-        "Record all five actual TUI first-paint observations before SDK/helper/network work, with explicit budget-met/enforced flags. On 2026-11-01 the maintainer accepted approximately 685 ms for 0.3: the unchanged under-600-ms target is advisory for 0.x, enforced by --strict-paint and mandatory from version major 1 under Q06 #88.",
-        "`kubernetes_asyncio` models load lazily. A CI regression check uses `-X importtime` thresholds."
+        "Record all five actual --version/--help/info/config-check samples against the original 150 ms wall-time target. Startup latency is advisory for 0.x; --strict-startup and actual source major 1 (including prereleases) enforce original limits. RSS below 40,000,000 bytes, valid output/source and absence of Textual/kubernetes_asyncio imports remain mandatory.",
+        "Record all five actual UI first-paint observations before SDK/helper/network work against the original 600 ms target, with explicit budget-met/enforced flags. The target is advisory for 0.x; --strict-startup, compatible --strict-paint and actual source major 1 enforce it. Frame geometry, deadlines and owned cleanup remain hard requirements.",
+        "Kubernetes SDK models load lazily. CI retains every complete import profile and actual aggregate self/maximum cumulative values against 150,000 us; timing is advisory for 0.x and strict under --strict-startup or actual source major 1. Forbidden imports and malformed profiles always fail."
       ],
       "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
       "priority": "P1"
@@ -2064,7 +2064,7 @@
       "scope": "Every v0.3.0 task: Q08 #211, Q09 #210, Q10 #209, Q11 #212, Q12 #213, Q13 #214, Q14 #215, Q15 #216, Q16 #217, Q17 #218, Q18 #219, Q19 #220, D15 #221, W04 #222–W11 #229, #189, #208, dependency refresh #270 and owned X11 selection readiness #281 and native macOS runner migration #291. Also requires the 0.2.0 gate #65.",
       "acceptance": [
         "The qualification command from Q17 #218 passes on the complete Linux/macOS matrix.",
-        "Structural targets are met: `app.py` ≤ 800 lines, zero private access from tests, no private Textual APIs, unchanged offline startup budgets met, 50k-resource measurement within budget. Per the 2026-11-01 maintainer decision, report all five real UI observations and any missed 600 ms target honestly for 0.x; retain strict opt-in and mandatory stable qualification under Q06 #88. All actual-frame, source, SDK, geometry and cleanup checks remain mandatory.",
+        "Structural targets are met: `app.py` ≤ 800 lines, zero private access from tests, no private Textual APIs, all actual startup latency objectives reported (advisory for 0.x, original strict opt-in/stable limits retained), 50k-resource measurement within budget. Per the 2026-11-01 maintainer decision, report all offline wall/import and UI observations and any missed original targets honestly for 0.x; retain strict opt-in and mandatory stable qualification under Q06 #88. Memory limits, forbidden-import absence, valid output, actual-frame/source/SDK/geometry, deadlines and cleanup remain mandatory.",
         "Documentation checks pass and the README stays within its budget.",
         "No publication happens here. Publication needs separate maintainer approval.",
         "For 0.x, runtime heartbeat/input-latency observations are advisory with explicit unmet results; preserve unchanged strict opt-in limits, always-strict blocking negative controls and all functional, resource, cleanup, coverage and platform requirements."

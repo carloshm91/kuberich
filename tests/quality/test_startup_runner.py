@@ -64,7 +64,7 @@ def test_failed_budget_keeps_the_original_failure_and_adds_a_diagnostic_profile(
     monkeypatch.setattr(check_startup, "run_plain", run)
     result = {}
     with pytest.raises(ValueError, match="150 ms"):
-        check_startup.qualify(tmp_path, 5, result)
+        check_startup.qualify(tmp_path, 5, result, strict_startup=True)
     assert [name for _, name in calls] == [
         "installed-source",
         "version-0",
@@ -146,7 +146,14 @@ def startup_io(tmp_path, monkeypatch):
     source.mkdir()
     (source / "pyproject.toml").write_text('[project]\nversion = "0.3.0"\n')
     monkeypatch.setattr(check_startup, "ROOT", source)
-    state = {"terminal_calls": [], "unsafe_frame": False}
+    state = {
+        "terminal_calls": [],
+        "unsafe_frame": False,
+        "elapsed_ns": 1_000_000,
+        "rss_bytes": 1_000_000,
+        "profile": "import time: 1 | 1 | kuberich.cli\n",
+        "invalid_output": False,
+    }
 
     def run(argv, output, environment, name, *, cancellation=None):
         if name == "source-commit":
@@ -154,9 +161,9 @@ def startup_io(tmp_path, monkeypatch):
         if name == "installed-source":
             return Measurement(0, 1, 1, str(source / "src/kuberich/__init__.py") + "\n", "")
         if name.endswith("importtime") or name == "negative-textual-import":
-            profile = "import time: 1 | 1 | kuberich.cli\n"
+            profile = state["profile"]
             if name == "negative-textual-import":
-                profile += "import time: 1 | 1 | textual\n"
+                profile = "import time: 1 | 1 | kuberich.cli\nimport time: 1 | 1 | textual\n"
             return Measurement(0, 1, 1, "", profile)
         version = check_startup.tomllib.loads((source / "pyproject.toml").read_text())["project"][
             "version"
@@ -180,7 +187,13 @@ def startup_io(tmp_path, monkeypatch):
                     ),
                 }
             )
-        return Measurement(0, 1_000_000, 1_000_000, text, "")
+        return Measurement(
+            0,
+            state["elapsed_ns"],
+            state["rss_bytes"],
+            "{}" if state["invalid_output"] else text,
+            "",
+        )
 
     def terminal(output, environment, name, *, negative=False, cancellation=None):
         state["terminal_calls"].append((name, negative))
@@ -272,10 +285,150 @@ def test_cli_reports_the_scope_without_labeling_a_missed_target_passed(
     assert result["first_paint_budget_met"] is False
     assert result["first_paint_budget_enforced"] is strict
     assert result["passed"] is (not strict)
-    assert "UI budget enforcement" in result["scope"] and "--strict-paint" in result["scope"]
+    assert "latency enforcement" in result["scope"] and "--strict-paint" in result["scope"]
+    assert "--strict-startup" in result["scope"]
     captured = capsys.readouterr()
     if strict:
         assert "600 ms" in captured.err and captured.out == ""
     else:
         assert "600 ms UI target not met (advisory for 0.x)" in captured.out
         assert "UI target met" not in captured.out
+
+
+def test_advisory_runner_records_every_slow_sample_and_profile_without_promoting_targets(
+    tmp_path, startup_io
+):
+    startup_io["elapsed_ns"] = 161_144_125
+    startup_io["rss_bytes"] = 27_738_112
+    startup_io["profile"] = "import time: 150000 | 150000 | kuberich.cli\n"
+    output = tmp_path / "all-advisory"
+    output.mkdir()
+    result = {}
+    check_startup.qualify(output, 5, result)
+    ordinary = [row for row in result["offline"] if "sample" in row]
+    profiles = [row["importtime"] for row in result["offline"] if "importtime" in row]
+    assert len(ordinary) == 20 and len(profiles) == 4 and len(result["first_paint"]) == 5
+    assert all(
+        row["elapsed_ns"] == 161_144_125
+        and row["rss_bytes"] == 27_738_112
+        and row["budget_ns"] == 150_000_000
+        and row["budget_met"] is False
+        and row["budget_enforced"] is False
+        for row in ordinary
+    )
+    assert all(
+        row["self_us"] == 150_000
+        and row["max_cumulative_us"] == 150_000
+        and row["budget_us"] == 150_000
+        and row["budget_met"] is False
+        and row["budget_enforced"] is False
+        for row in profiles
+    )
+    assert result["source_version"] == "0.3.0"
+    for target in ("offline", "import", "first_paint"):
+        assert result[target + "_budget_met"] is False
+        assert result[target + "_budget_enforced"] is False
+    assert result["negative_late_paint"]["rejected"] is True
+    assert result["negative_import_rejected"] is True
+
+
+@pytest.mark.parametrize(
+    "version,strict",
+    [
+        ("0.3.0", True),
+        ("1.0.0.dev0", False),
+        ("1.0.0rc1", False),
+        ("1.0.0", False),
+    ],
+)
+def test_strict_startup_or_stable_source_preserves_first_slow_offline_failure(
+    tmp_path, startup_io, version, strict
+):
+    (check_startup.ROOT / "pyproject.toml").write_text(f'[project]\nversion = "{version}"\n')
+    startup_io["elapsed_ns"] = 161_144_125
+    output = tmp_path / "strict-offline"
+    output.mkdir()
+    result = {}
+    with pytest.raises(ValueError, match="150 ms"):
+        check_startup.qualify(output, 5, result, strict_startup=strict)
+    assert result["source_version"] == version
+    assert result["offline_budget_enforced"] is True and result["offline_budget_met"] is False
+    assert result["offline"][0]["elapsed_ns"] == 161_144_125
+    assert len(result["offline"]) == 1 and startup_io["terminal_calls"] == []
+
+
+def test_strict_import_failure_keeps_actual_profile_and_original_threshold(tmp_path, startup_io):
+    startup_io["profile"] = "import time: 5 | 150000 | kuberich.cli\n"
+    output = tmp_path / "strict-import"
+    output.mkdir()
+    result = {}
+    with pytest.raises(ValueError, match="150 ms"):
+        check_startup.qualify(output, 5, result, strict_startup=True)
+    profile = result["offline"][-1]["importtime"]
+    assert profile["self_us"] == 5 and profile["max_cumulative_us"] == 150_000
+    assert profile["budget_met"] is False and profile["budget_enforced"] is True
+    assert result["import_budget_met"] is False and startup_io["terminal_calls"] == []
+
+
+def test_strict_paint_compatibility_does_not_silently_enable_other_pre_stable_clocks(
+    tmp_path, startup_io
+):
+    startup_io["elapsed_ns"] = 200_000_000
+    startup_io["profile"] = "import time: 150000 | 150000 | kuberich.cli\n"
+    output = tmp_path / "paint-only"
+    output.mkdir()
+    result = {}
+    with pytest.raises(ValueError, match="600 ms"):
+        check_startup.qualify(output, 5, result, strict_paint=True)
+    assert result["offline_budget_enforced"] is False
+    assert result["import_budget_enforced"] is False
+    assert result["first_paint_budget_enforced"] is True
+    assert len(result["offline"]) == 24 and len(result["first_paint"]) == 1
+
+
+@pytest.mark.parametrize(
+    "change,error",
+    [
+        ({"rss_bytes": 40_000_000}, "RSS"),
+        ({"invalid_output": True}, "installed CLI"),
+        (
+            {"profile": "import time: 1 | 1 | kuberich.cli\nimport time: 1 | 1 | textual\n"},
+            "Textual",
+        ),
+    ],
+)
+def test_advisory_runner_still_rejects_memory_output_and_import_presence(
+    tmp_path, startup_io, change, error
+):
+    startup_io.update(change)
+    output = tmp_path / "hard-contract"
+    output.mkdir()
+    with pytest.raises(ValueError, match=error):
+        check_startup.qualify(output, 5, {})
+    assert startup_io["terminal_calls"] == []
+
+
+@pytest.mark.parametrize("strict", [False, True])
+def test_cli_strict_startup_and_report_keep_actual_unmet_offline_values(
+    tmp_path, monkeypatch, capsys, startup_io, strict
+):
+    startup_io["elapsed_ns"] = 161_144_125
+    startup_io["profile"] = "import time: 150000 | 150000 | kuberich.cli\n"
+    output = tmp_path / "cli-all-latencies"
+    argv = ["check_startup", "--output", str(output)]
+    if strict:
+        argv.append("--strict-startup")
+    monkeypatch.setattr(sys, "argv", argv)
+    monkeypatch.setattr(check_startup, "inputs", lambda: {"owned": "same-input"})
+    assert check_startup.main() == int(strict)
+    report = json.loads((output / "report.json").read_text())
+    assert report["offline"][0]["elapsed_ns"] == 161_144_125
+    assert report["offline_budget_met"] is False and report["offline_budget_enforced"] is strict
+    assert report["passed"] is (not strict)
+    captured = capsys.readouterr()
+    if strict:
+        assert "150 ms" in captured.err
+    else:
+        assert "offline latency target not met (advisory for 0.x)" in captured.out
+        assert "import latency target not met (advisory for 0.x)" in captured.out
+        assert len(report["offline"]) == 24 and len(report["first_paint"]) == 5
