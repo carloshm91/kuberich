@@ -441,6 +441,7 @@ async def test_cancel_validation_and_competing_file_failures_do_not_save_or_trap
             path, parse_document({"schema_version": 1, "opaque": "competing"}), overwrite=True
         )
         await apply_view(screen, pilot, "name:24", mode="global")
+        await wait_for(lambda: "changed on disk" in str(screen.feedback.content))
         assert "changed on disk" in str(screen.feedback.content)
         await pilot.press("escape")
         assert len(app.screen_stack) == 1 and app.focused is app.resources
