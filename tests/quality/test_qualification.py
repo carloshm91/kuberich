@@ -738,8 +738,9 @@ def test_markdown_names_actual_source_and_target_without_promoting_preview_metad
 
 
 @pytest.mark.parametrize("cleanup_seconds,completed", [(30, False), (219, True)])
+@pytest.mark.parametrize("cancel_before_wait", [False, True])
 def test_held_owned_verifier_cleanup_survives_the_old_thirty_second_cutoff(
-    checkout, tmp_path, cleanup_seconds, completed
+    checkout, tmp_path, cleanup_seconds, completed, cancel_before_wait
 ):
     ready, release, cleaned = (
         tmp_path / name for name in ("cleanup-ready", "cleanup-release", "cleanup-done")
@@ -761,11 +762,34 @@ def test_held_owned_verifier_cleanup_survives_the_old_thirty_second_cutoff(
     runner = owned_runner(checkout, tmp_path, [stage])
     clock = time.monotonic
     checks = 0
+    draining = False
     advanced = threading.Event()
+    cleanup_ready = threading.Event()
+    original_wait = runner.wait
+    original_drain = runner.drain
+
+    def wait_after_cleanup_starts(timeout, gate):
+        if cancel_before_wait:
+            assert cleanup_ready.wait(5), "Owned child did not enter cleanup before wait"
+        return original_wait(timeout, gate)
+
+    runner.wait = wait_after_cleanup_starts
+
+    def drain_with_cleanup_clock(gate):
+        nonlocal draining
+        # Wait's own deadline must not consume the first cleanup-clock sample,
+        # even when the real child entered its signal handler before wait began.
+        draining = True
+        try:
+            return original_drain(gate)
+        finally:
+            draining = False
+
+    runner.drain = drain_with_cleanup_clock
 
     def cleanup_clock():
         nonlocal checks
-        if ready.exists():
+        if draining and ready.exists():
             checks += 1
             if checks >= 2:
                 advanced.set()
@@ -777,9 +801,17 @@ def test_held_owned_verifier_cleanup_survives_the_old_thirty_second_cutoff(
     def close():
         try:
             deadline = clock() + 5
-            while not (tmp_path / "running").exists() and clock() < deadline:
+            while (
+                not ((tmp_path / "running").exists() and runner.current is not None)
+                and clock() < deadline
+            ):
                 time.sleep(0.01)
+            assert (tmp_path / "running").exists() and runner.current is not None
             runner.stop(signal.SIGTERM, None)
+            while not ready.exists() and clock() < deadline:
+                time.sleep(0.01)
+            if ready.exists():
+                cleanup_ready.set()
             advanced.wait(5)
             if not completed:
                 while (
