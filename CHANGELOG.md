@@ -49,7 +49,8 @@ Release entries are written in release PRs and linked to their Git tags.
 - Accept explicit Basic credentials and kubectl's empty optional connection
   fields, retain credential schemes for reads/writes/delegation and print a
   reviewed OIDC exec migration fragment without copying existing tokens or
-  changing kubeconfig files
+  changing kubeconfig files. Mask prepared Basic credential values in captured
+  plugin stdout and stderr
   ([#215](https://github.com/carloshm91/kuberich/issues/215),
   [Carlos J. Herrera](https://github.com/carloshm91)).
 

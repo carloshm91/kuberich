@@ -93,3 +93,34 @@ source hashes and independently verified Argon reviews remain under
 `artifacts/kubeconfig215/`. All production mtimes precede the final pytest start;
 there were no source edits during that run. No real context, provider login,
 publication, account, DNS or global configuration changed.
+
+## Captured plugin output correction
+
+An owned plugin reading its real staged Basic configuration reproduced an
+unlabelled password leak in captured output. The pre-fix regression failed at
+the password-absence assertion after successful authentication, mode-0600/0700
+checks, output collection, file removal and child reaping. An earlier fixture
+attempt was refused by the existing multiline-argument policy; it is retained
+separately and is not counted as the reproduction.
+
+The existing captured-value hints now include the prepared Basic password,
+decoded credential pair, full header and bare base64. They come from the frozen
+delegated configuration. A bare username is not added as a secret hint, including
+when the password is empty. Existing bearer handling, output bounds, control
+escaping and process/file ownership are unchanged. Foreground output still goes
+directly to the terminal and is outside captured-output redaction.
+
+The affected Linux / CPython 3.12.12 cohort passes **256 tests in 43.74 seconds**,
+including ten real capture/background combinations covering Unicode and short
+passwords, either empty credential half, and anonymous access. Each new case
+checks both output streams, ordinary output, actual authentication, private-file
+modes/removal and child reaping. Existing bearer, cancellation and UI plugin
+contracts remain in the same passing cohort. The source and test hashes remained
+unchanged throughout the run.
+
+The plugin service covers **218/218 lines and 67/70 branches**; Basic policy
+covers **27/27 lines and 14/14 branches**. All four changed executable lines are
+covered. These are focused results, not whole-package or platform qualification;
+real providers, native artifacts and macOS were not exercised. Original failures,
+commands, input hashes and coverage remain under
+`artifacts/issue215-basic-plugin/`.
