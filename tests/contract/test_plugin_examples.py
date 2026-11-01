@@ -93,7 +93,7 @@ def test_census_covers_every_pinned_source_and_all_workflows_without_bundling_sc
     archive = (ROOT / history["archive"]).read_bytes()
     content = archive[source["byte_start"] : source["byte_end"]]
     assert hashlib.sha256(content).hexdigest() == source["sha256"]
-    assert history["source_commit"] == "a14d1ab65201a214fe178c0f01d1d4e9bcc59a1d"
+    assert history["source_commit"] == "919f617eacd6882370964c0400ae56a0128ff77e"
     guide = content.decode()
     for record in records:
         assert record["url"] == expected[record["source"]]["url"]

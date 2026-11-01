@@ -12,10 +12,14 @@ Release entries are written in release PRs and linked to their Git tags.
   routes and exact superseded text outside the website
   ([#224](https://github.com/carloshm91/kuberich/issues/224),
   [Carlos J. Herrera](https://github.com/carloshm91)).
-
 - Replace the README with a concise product introduction, published installation,
   a read-only quick start and a plain feature list
   ([#223](https://github.com/carloshm91/kuberich/issues/223),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+- Report runtime heartbeat latency as advisory for 0.x while retaining unchanged
+  strict opt-in and stable-release limits, real blocking negative controls and
+  every functional, resource, cleanup and coverage requirement
+  ([#230](https://github.com/carloshm91/kuberich/issues/230),
   [Carlos J. Herrera](https://github.com/carloshm91)).
 - Organize user documentation into 19 pages with tutorial, how-to, reference and
   explanation navigation. Keep the existing guidance and old guide routes while
@@ -31,6 +35,13 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Fixed
 
+- Allow plugin review from qualified custom-resource views while retaining captured
+  UID, canonical resource and API-version loading guards
+  ([#278](https://github.com/carloshm91/kuberich/issues/278),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+- Keep native macOS builds and installation checks on supported runners
+  ([#291](https://github.com/carloshm91/kuberich/issues/291),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
 - Wait for actual selection receipt in isolated X11 clipboard qualification,
   including delayed owners, absent selections and cancelled readers
   ([#281](https://github.com/carloshm91/kuberich/issues/281),

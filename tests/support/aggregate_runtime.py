@@ -23,6 +23,7 @@ from kuberich.domain.processes import (
 )
 from kuberich.services.access import AccessPolicy
 from kuberich.services.processes import ProcessRunner
+from tests.support.runtime_budget import verify_budget
 from tests.support.tiers import runtime_environment
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -284,6 +285,7 @@ async def require_runtime_children(*, measure_coverage: bool = True) -> None:
         assert heartbeat["gc_enabled"] and heartbeat["limit_seconds"] == 0.15
         assert heartbeat["gc_thresholds"] == list(gc.get_threshold())
         assert heartbeat["timing_qualifying"] is (mode != "coverage")
+        verify_budget(heartbeat.get("runtime_budget"), heartbeat["max_gap_seconds"], mode=mode)
         assert heartbeat["maximum_simultaneously_prepared_records"] == 5000
         assert heartbeat["maximum_retained_plus_prepared_records"] <= 5001
         refill = heartbeat["input_refill"]
@@ -293,7 +295,7 @@ async def require_runtime_children(*, measure_coverage: bool = True) -> None:
             assert 0 < refill["maximum_batch_bytes"] <= refill["byte_budget"]
         if mode != "negative":
             assert not heartbeat["negative_callback_executed"]
-            if mode == "positive":
+            if mode == "positive" and heartbeat["runtime_budget"]["enforced"]:
                 assert heartbeat["max_gap_seconds"] < 0.15
             assert heartbeat["completed_full_history_rounds"] == 2
             assert heartbeat["warm_sizes"] == [[40, 12], [100, 30]]

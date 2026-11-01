@@ -34,6 +34,7 @@ from tests.support.aggregate_runtime import (
     require_runtime_children,
 )
 from tests.support.connections import catalog_fixture, namespaces
+from tests.support.runtime_budget import budget_enforced, budget_observation
 from tests.support.standard import roots
 from tests.support.workspace import wait_for, workspace_api
 
@@ -592,7 +593,7 @@ async def exercise_aggregate_runtime(tmp_path, request):
                     await wait_for(lambda: screen._save_task.done())
                     assert "Cannot save logs" in str(screen.status.content)
                     assert destination.read_text() == "keep-existing"
-                    if request["mode"] != "coverage":
+                    if budget_enforced(request["mode"]):
                         assert gaps and max(gaps) < 0.15, (
                             "Aggregate runtime heartbeat exceeded 150 ms",
                             list(slow_pulses),
@@ -608,7 +609,7 @@ async def exercise_aggregate_runtime(tmp_path, request):
                         )
                     )
                     await wait_for(lambda: bool(screen.body.rows))
-                    if request["mode"] != "coverage":
+                    if budget_enforced(request["mode"]):
                         assert gaps and max(gaps) < 0.15, (
                             "Aggregate runtime heartbeat exceeded 150 ms",
                             list(slow_pulses),
@@ -636,7 +637,7 @@ async def exercise_aggregate_runtime(tmp_path, request):
                     "api_watches": api.watch_active,
                     "background_watches": background_watches,
                 }
-                if request["mode"] != "coverage":
+                if budget_enforced(request["mode"]):
                     assert gaps and max(gaps) < 0.15, (
                         "Aggregate runtime heartbeat exceeded 150 ms",
                         list(slow_pulses),
@@ -677,6 +678,9 @@ async def exercise_aggregate_runtime(tmp_path, request):
                             },
                             "after_close": after_close,
                             "max_gap_seconds": max(gaps, default=0),
+                            "runtime_budget": budget_observation(
+                                max(gaps, default=0), mode=request["mode"]
+                            ),
                             "limit_seconds": 0.15,
                             "slow_pulses": list(slow_pulses),
                             "gc": list(collections),

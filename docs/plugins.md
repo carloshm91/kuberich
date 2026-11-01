@@ -101,6 +101,21 @@ Plugins need an active connection and cannot execute as startup commands.
 KubeRich rechecks a selected resource's UID before launch, but cannot make an
 external tool's later server requests atomic.
 
+## Select a resource
+
+The development source fixes plugin review in custom-resource views opened with
+an explicit group/version. `:widgets.example.test/v1` matches the exact plugin
+scope `example.test/v1/widgets`; navigation syntax does not change the canonical
+API resource name. Wait for the current resource and version to load before
+Review. The selected UID and group/version remain part of the review guards.
+
+The local contexts list has no Kubernetes resource scope or plugin hotkeys.
+Explicit `:plugins` or `:plugin NAME` there can review global commands against the
+connected context; highlighting another context does not connect it or supply a
+resource `NAME`. Resource-specific commands wait for their matching API view.
+The namespace table uses its own shortcut profile, including custom namespace
+keys.
+
 ## Choose how output appears
 
 - `capture` waits for one command and shows its result and limited output.

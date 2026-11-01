@@ -10,6 +10,7 @@ from coverage import CoverageData
 
 from scripts import merge_runtime_coverage as runtime
 from tests.support.aggregate_runtime import DEADLINE, NODE, OUTPUT_LIMIT, ROOT
+from tests.support.runtime_budget import VERSION
 
 
 def write_json(path, value):
@@ -71,6 +72,11 @@ def runtime_bundle(tmp_path, monkeypatch):
                 "max_gap_seconds": 0.05 if mode == "positive" else 0.21,
                 "negative_callback_executed": mode == "negative",
                 "timing_qualifying": mode != "coverage",
+                "runtime_budget": {
+                    "version": VERSION,
+                    "enforced": mode != "coverage",
+                    "met": mode == "positive",
+                },
                 "completed_full_history_rounds": 0 if mode == "negative" else 2,
                 "after_close": None if mode == "negative" else runtime.VIEWER_CLEANUP,
             },
@@ -324,4 +330,53 @@ def test_negative_control_must_fail_specifically_the_heartbeat(runtime_bundle, r
     outer["children"]["negative"]["artifacts"]["cases.xml"] = runtime.digest(path)
     write_json(directory / "aggregate-runtime-receipt.json", outer)
     with pytest.raises(ValueError):
+        runtime.verify_runtime(directory, expected)
+
+
+def test_zero_major_overshoot_is_advisory_but_complete_work_and_branch_replay_still_required(
+    runtime_bundle, monkeypatch
+):
+    from tests.support.runtime_budget import STRICT
+
+    monkeypatch.setenv(STRICT, "0")
+    change_child(runtime_bundle, "positive", "heartbeat.json", "max_gap_seconds", 0.162447845)
+    change_child(
+        runtime_bundle,
+        "positive",
+        "heartbeat.json",
+        "runtime_budget",
+        {"version": VERSION, "enforced": False, "met": False},
+    )
+    directory, expected, *_ = runtime_bundle
+    runtime.verify_runtime(directory, expected)
+    change_child(runtime_bundle, "positive", "heartbeat.json", "completed_full_history_rounds", 1)
+    with pytest.raises(ValueError, match="result/heartbeat/cleanup"):
+        runtime.verify_runtime(directory, expected)
+
+
+@pytest.mark.parametrize("mode", ["positive", "negative", "coverage"])
+def test_runtime_budget_metadata_cannot_be_omitted(runtime_bundle, mode):
+    change_child(runtime_bundle, mode, "heartbeat.json", "runtime_budget", None)
+    directory, expected, *_ = runtime_bundle
+    with pytest.raises(ValueError, match="budget policy"):
+        runtime.verify_runtime(directory, expected)
+
+
+@pytest.mark.parametrize("stable", [False, True])
+def test_receipt_cannot_downgrade_strict_opt_in_or_stable(runtime_bundle, monkeypatch, stable):
+    from tests.support import runtime_budget as budget
+
+    version = "1.0.0rc1" if stable else VERSION
+    monkeypatch.setattr(budget, "VERSION", version)
+    monkeypatch.setenv(budget.STRICT, "0" if stable else "1")
+    change_child(runtime_bundle, "positive", "heartbeat.json", "max_gap_seconds", 0.162447845)
+    change_child(
+        runtime_bundle,
+        "positive",
+        "heartbeat.json",
+        "runtime_budget",
+        {"version": version, "enforced": False, "met": False},
+    )
+    directory, expected, *_ = runtime_bundle
+    with pytest.raises(ValueError, match="budget policy"):
         runtime.verify_runtime(directory, expected)

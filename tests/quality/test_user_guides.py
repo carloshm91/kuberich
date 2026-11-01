@@ -3,6 +3,7 @@
 import hashlib
 import json
 import re
+import subprocess
 
 import pytest
 
@@ -40,13 +41,19 @@ def test_every_user_page_fits_budget_and_checked_reference_is_current():
 def test_superseded_guides_preserve_exact_source_bytes_outside_website():
     record = json.loads((ROOT / "engineering/guide-history/source-map.json").read_text())
     archive = (ROOT / record["archive"]).read_bytes()
-    assert record["source_commit"] == "a14d1ab65201a214fe178c0f01d1d4e9bcc59a1d"
+    assert record["source_commit"] == "919f617eacd6882370964c0400ae56a0128ff77e"
     assert len(record["documents"]) == 30
     baseline = json.loads((ROOT / "docs/documentation-plan.json").read_text())
     mapped = {item["source"]: item for item in baseline["documents"]}
     for source in record["documents"]:
         content = archive[source["byte_start"] : source["byte_end"]]
         assert hashlib.sha256(content).hexdigest() == source["sha256"]
+        assert content == subprocess.check_output(
+            ["git", "show", record["source_commit"] + ":" + source["source"]],
+            cwd=ROOT,
+            stderr=subprocess.PIPE,
+            timeout=10,
+        )
         assert mapped[source["source"]]["baseline_sha256"] == source["sha256"]
         assert record["archive"] in mapped[source["source"]]["destinations"]
     assert not any("guide-history" in guide.source for guide in load_navigation(ROOT).pages)
