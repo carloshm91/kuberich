@@ -62,6 +62,10 @@ From 0.2.0, Homebrew installs a prebuilt bottle on these systems:
 | macOS 15 (Sequoia) or newer | Intel | `sequoia` |
 | Linux | x86_64 | `x86_64_linux` |
 
+Development builds for the next release use macOS 15 Apple Silicon runners and
+`arm64_sequoia` bottles. Published 0.2.0 Sonoma bottles keep their original files;
+when no compatible bottle exists, Homebrew builds from source.
+
 A bottle only unpacks files, so it takes seconds instead of minutes. Other
 systems, such as Linux ARM64 or macOS 14 on Intel, still build from source. A
 source build can take several minutes.

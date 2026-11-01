@@ -267,7 +267,7 @@ def test_native_verification_always_covers_four_real_os_architectures(event, ref
         ("ubuntu-22.04", "linux-x86_64"),
         ("ubuntu-22.04-arm", "linux-arm64"),
         ("macos-15-intel", "macos-x86_64"),
-        ("macos-14", "macos-arm64"),
+        ("macos-15", "macos-arm64"),
     }
     assert len(selected) == 4
     for job in selected:
