@@ -141,3 +141,107 @@ source/native/owned-cluster run must qualify the final source; earlier passing
 native archives and the two passing source environments belong to the earlier
 tree. The original full local baseline on `2af1b83` completed with 5,774 passes
 and three skips in 4,317.23 seconds; it does not qualify these later corrections.
+
+## Owned terminal failure cleanup: #208
+
+The original macOS failure above first rejected a clipped `token` label. Its
+subsequent three-second owner wait and denied `killpg` replaced that assertion.
+The same masking boundary recurred in required standalone macOS x86_64 run
+`41282379945`, job `124777431135`. That later trial first rejected missing
+`PLUGIN_BACKGROUND`; the application output-refresh correction belongs to #272.
+The terminal harness keeps both visible assertions and their original deadlines.
+
+The later original artifact `13074266572` was downloaded and independently
+verified against SHA-256
+`d8f095ef9ab240b1adb4e4303a0399843b66676371d5dd9294362e841a3cce66`.
+Its original failure receipt had no application completion record, followed by a
+three-second owner wait and Darwin `EPERM`. The retained raw log, archive and
+extracted ANSI/JSON remain under `artifacts/wayland220` in the integration
+checkout; the archive is `standalone-macos-original.zip` and the extracted
+receipt is `macos-original/terminal/failure-1793516195943669000.json`.
+
+### Ownership and failure policy
+
+The disposable session owner captures the actual application exit and terminal
+modes before waiting for an acknowledgement. The parent releases it only after
+a fresh, bounded process-group observation finds just that owner. This pins the
+session identity while group termination may still be necessary. Every real
+TERM/KILL verifies the original unreaped `Popen`, PID, process group and session;
+the test process and its own group are refused. After reaping, only a read-only
+signal-zero probe is permitted. An owner exit or `EPERM` alone never proves
+group disappearance: only `ESRCH` does.
+
+Cleanup retains the existing three-second TERM and three-second KILL phases.
+Membership observation that exhausts a phase advances to its existing escalation
+step; it does not report an empty group. Successful KILL disables acknowledgement
+because it also kills the guard. Darwin's short disappearance checks stay inside
+the current phase deadline. A live or persistently denied group remains a failed
+cleanup even if the known direct-child fallback can reap the owner.
+
+Failure cleanup drains bounded raw terminal output without invoking the failed
+screen observer. It records observed completion, owner status, group status,
+termination stages, acknowledgement, descriptor closure and errors separately.
+The original exception object and traceback propagate, with a note identifying
+cleanup and its receipt. Cleanup-only errors raise a group of the real errors.
+Evidence-write failure cannot skip cleanup or replace a body exception. Each
+allocated descriptor receives at most one close attempt, including constructor
+failure and repeated teardown, so a reused descriptor number is never closed.
+
+The receipt retains completion both before and after cleanup. No exit status or
+terminal restoration is invented when completion was not observed. Existing
+successful `finish()` checks still require actual before/after terminal modes,
+alternate-screen closure, cursor restoration and reporting-mode restoration.
+
+### Owned controls and limits
+
+The controls exercise a real disposable session with Linux and injected Darwin
+errno sequences. They distinguish verified disappearance, an actually live group,
+persistent denial and changed ownership. They preserve the exact first
+`AssertionError`, cancellation and `KeyboardInterrupt` through acknowledgement,
+polling, evidence and descriptor failures. Real owner hangs reproduce the original
+three-second wait followed by successful or denied KILL after the application has
+already been reaped, without creating an orphan as a fixture side effect.
+
+A second real group member proves that acknowledgement waits for a fresh
+owner-only observation after that member has actually been reaped. Further
+controls cover an early reaped owner, closed acknowledgement pipe, completed but
+KILL-escalated guard, constructor allocation failures and repeated teardown with
+an unrelated recycled descriptor. They never send a signal to another group.
+
+The source and genuinely installed wheel cohort passed **21 tests in 68.01
+seconds**, covering navigation, shutdown, shell handoff, resize, plugin modes,
+installation outside the checkout and original terminal-restoration controls.
+The final cleanup/observer cohort passed **74 tests in 30.64 seconds**. Ruff,
+formatting and strict typing of the terminal helper and standalone verifier
+passed. Logs and JUnit XML are retained under `artifacts/issue208`; the
+source/installed result precedes the final narrow phase-timeout and post-KILL
+acknowledgement controls.
+
+An initial final-control run retained **73 passes and one failure**: an expired
+membership observation at the TERM boundary was recorded as an error instead of
+advancing to the existing KILL phase. The correction retains that timed-out
+stage, performs actual escalation, and still requires a reaped owner and verified
+group disappearance. No deadline was raised. The corrected 74-case result above
+includes this regression and the original denied/live controls.
+
+The added errno controls are not native Darwin qualification. This Linux host
+cannot qualify the actual macOS kernel behavior; protected native required checks
+remain necessary. Test-support changes add no production code or feature-parity
+claim, and these targeted results do not replace the full application coverage,
+installed-platform or release gates. No real Kubernetes context was accessed.
+
+### Platform sources
+
+Apple's pinned XNU source
+[`kern_sig.c`](https://github.com/apple-oss-distributions/xnu/blob/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/bsd/kern/kern_sig.c)
+distinguishes an absent group (`ESRCH`) from a POSIX group iteration with no
+eligible target (`EPERM`), excluding zombie processes from signal delivery.
+This supports conservative handling; it does not prove the exact kernel race
+behind either retained incident. Apple's
+[`kill(2)`](https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/kill.2.html)
+documents that signal zero performs checks without delivering a signal.
+Python's
+[`subprocess`](https://docs.python.org/3.12/library/subprocess.html)
+documentation explains waiting, reaping and the need to drain child output;
+[`BaseException.add_note`](https://docs.python.org/3.12/library/exceptions.html#BaseException.add_note)
+keeps cleanup evidence beside the preserved original exception.
