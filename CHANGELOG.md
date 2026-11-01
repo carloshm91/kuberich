@@ -7,6 +7,10 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Replace the README with a concise product introduction, published installation,
+  a read-only quick start and a plain feature list
+  ([#223](https://github.com/carloshm91/kuberich/issues/223),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
 - Organize user documentation into 19 pages with tutorial, how-to, reference and
   explanation navigation. Keep the existing guidance and old guide routes while
   introducing a plain-language style and a complete document migration map
