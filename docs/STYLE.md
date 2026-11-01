@@ -41,11 +41,11 @@ tables, code blocks, included fragments, and generated Markdown. Do not hide an
 oversized page in imports or very long lines. Wrap ordinary prose at about
 80–100 characters; commands and reference tables may need longer lines.
 
-The task guides and generated references follow these budgets. Superseded source
-text is preserved outside public navigation in the engineering history. The
-architecture overview and ADRs are maintained separately.
-Acceptance-history and contribution migrations remain incomplete;
-`docs/documentation-plan.json` records their individual dispositions.
+The task guides and generated references follow these budgets. Superseded guides,
+architecture logs and acceptance records are preserved in `docs/internal/`,
+outside public navigation. The architecture overview and ADRs are maintained
+separately. Contributor-policy cleanup remains a separate task;
+`docs/documentation-plan.json` records each document's disposition.
 
 Keep development policies, ADRs, acceptance records, delivery logs, and source
 audits out of user navigation and website search. The architecture overview and

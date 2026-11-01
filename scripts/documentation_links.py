@@ -45,6 +45,56 @@ def git_bytes(root: Path, *arguments: str) -> bytes:
         raise ValueError("The recorded documentation source is unavailable") from error
 
 
+def recorded_source(root: Path, record: object, *, immutable: bool) -> tuple[Path, str, str]:
+    if not isinstance(record, dict):
+        raise ValueError("Preserved documentation source must be an object")
+    name, source = repository_path(record.get("path")), repository_path(record.get("source"))
+    commit, checksum = record.get("commit"), record.get("sha256")
+    if not isinstance(commit, str) or re.fullmatch(r"[0-9a-f]{40}", commit) is None:
+        raise ValueError("A historical source needs an exact commit")
+    if not isinstance(checksum, str) or re.fullmatch(r"[0-9a-f]{64}", checksum) is None:
+        raise ValueError("A historical source needs its SHA-256")
+    path = root / name
+    if path.is_symlink() or not path.is_file():
+        raise ValueError("Missing or unsafe historical documentation source")
+    if not path.resolve().is_relative_to(root.resolve()) or path.stat().st_size > MAX_HISTORY_BYTES:
+        raise ValueError("Historical documentation source exceeds its path/size boundary")
+    size = int(git_bytes(root, "cat-file", "-s", f"{commit}:{source}"))
+    if size > MAX_HISTORY_BYTES:
+        raise ValueError("Historical Git blob exceeds its size boundary")
+    original = git_bytes(root, "cat-file", "blob", f"{commit}:{source}")
+    if hashlib.sha256(original).hexdigest() != checksum:
+        raise ValueError("Historical Git blob differs from its recorded SHA-256")
+    if immutable and path.read_bytes() != original:
+        raise ValueError("Historical documentation bytes changed")
+    return path, source, commit
+
+
+def operational_paths(root: Path) -> set[Path]:
+    plan = json.loads((root / "docs/documentation-plan.json").read_text())
+    records = plan.get("operational_sources", [])
+    if not isinstance(records, list):
+        raise ValueError("Operational documentation sources must be a list")
+    allowed = {
+        "docs/internal/backlog.json",
+        "docs/internal/github-issues.json",
+        "docs/internal/k9s-source-inventory.json",
+    }
+    paths = set()
+    for record in records:
+        path, source, _ = recorded_source(root, record, immutable=False)
+        if (
+            path in paths
+            or path.relative_to(root).as_posix() not in allowed
+            or source != "docs/" + path.name
+        ):
+            raise ValueError(
+                "Only the three operational JSON inputs can retain editable working bytes"
+            )
+        paths.add(path)
+    return paths
+
+
 def original_contexts(root: Path) -> dict[Path, OriginalContext]:
     plan = json.loads((root / "docs/documentation-plan.json").read_text())
     records = plan.get("preserved_sources", [])
@@ -53,33 +103,9 @@ def original_contexts(root: Path) -> dict[Path, OriginalContext]:
     result: dict[Path, OriginalContext] = {}
     trees: dict[str, frozenset[str]] = {}
     for record in records:
-        if not isinstance(record, dict):
-            raise ValueError("Preserved documentation source must be an object")
-        name, source = repository_path(record.get("path")), repository_path(record.get("source"))
-        commit, checksum = record.get("commit"), record.get("sha256")
-        if not isinstance(commit, str) or re.fullmatch(r"[0-9a-f]{40}", commit) is None:
-            raise ValueError("A historical source needs an exact commit")
-        if not isinstance(checksum, str) or re.fullmatch(r"[0-9a-f]{64}", checksum) is None:
-            raise ValueError("A historical source needs its SHA-256")
-        path = root / name
-        if path in result or path.is_symlink() or not path.is_file():
-            raise ValueError("Missing, duplicate or unsafe historical documentation source")
-        if (
-            not path.resolve().is_relative_to(root.resolve())
-            or path.stat().st_size > MAX_HISTORY_BYTES
-        ):
-            raise ValueError("Historical documentation source exceeds its path/size boundary")
-        content = path.read_bytes()
-        if not name.endswith(".md") or not source.endswith(".md"):
-            raise ValueError("Historical documentation must be Markdown")
-        if hashlib.sha256(content).hexdigest() != checksum:
-            raise ValueError("Historical documentation bytes changed")
-        size = int(git_bytes(root, "cat-file", "-s", f"{commit}:{source}"))
-        if (
-            size > MAX_HISTORY_BYTES
-            or git_bytes(root, "cat-file", "blob", f"{commit}:{source}") != content
-        ):
-            raise ValueError("Historical documentation differs from its recorded source")
+        path, source, commit = recorded_source(root, record, immutable=True)
+        if path in result:
+            raise ValueError("Duplicate historical documentation source")
         if commit not in trees:
             names = (
                 git_bytes(root, "ls-tree", "-r", "--name-only", "-z", commit).decode().split("\0")
@@ -90,7 +116,32 @@ def original_contexts(root: Path) -> dict[Path, OriginalContext]:
             )
             trees[commit] = frozenset(paths)
         result[path] = OriginalContext(source, commit, trees[commit])
+    operational = operational_paths(root)
+    if operational & result.keys():
+        raise ValueError("A source cannot be both immutable history and an editable input")
+    relocations = relocation_sources(root)
+    if len(set(relocations.values())) != len(relocations):
+        raise ValueError("Historical transfers must have distinct destinations")
+    if any(
+        root / destination not in result.keys() | operational
+        for destination in relocations.values()
+    ):
+        raise ValueError("A historical transfer needs byte-verified original source evidence")
     return result
+
+
+def relocation_sources(root: Path) -> dict[str, str]:
+    plan = json.loads((root / "docs/documentation-plan.json").read_text())
+    records = plan.get("relocations", {})
+    if not isinstance(records, dict):
+        raise ValueError("Historical relocations must be an object")
+    return {repository_path(source): repository_path(target) for source, target in records.items()}
+
+
+def relocated_source(root: Path, source: str) -> str:
+    """Resolve an unchanged historical metadata path through the explicit transfer map."""
+    name = repository_path(source)
+    return relocation_sources(root).get(name, name)
 
 
 def links(tokens: list[Token]) -> list[str]:

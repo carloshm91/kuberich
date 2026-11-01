@@ -92,4 +92,4 @@ Framework and API references: [Textual DataTable](https://textual.textualize.io/
 [sidecar semantics](https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/).
 
 Measured delivery evidence and unavailable platform checks are recorded in
-[B02 acceptance](acceptance/B02.md).
+[B02 acceptance](internal/acceptance/B02.md).

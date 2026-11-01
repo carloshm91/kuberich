@@ -25,7 +25,7 @@ context must not keep an unintended tunnel alive.
 ## Source and related decisions
 
 This record extracts an implemented decision from the [previous architecture
-log](../../engineering/architecture-history/README.md). It does not requalify its historical
+log](../internal/architecture-history/README.md). It does not requalify its historical
 measurements.
 
 - [src/kuberich/domain/forward_presets.py](../../src/kuberich/domain/forward_presets.py)

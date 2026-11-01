@@ -73,7 +73,7 @@ embedded shells, terminal restoration and uninstall cleanup.
 
 `pipx` is a locked development-test dependency, not a runtime requirement.
 Both managers use the explicit interpreter of their Linux/macOS matrix job.
-The [D01 acceptance report](acceptance/distribution-artifacts.md) records measured
+The [D01 acceptance report](internal/acceptance/distribution-artifacts.md) records measured
 results and unavailable platform checks. Local artifact installation does not
 publish packages or create a release.
 
@@ -156,7 +156,7 @@ Linux checks use a Python-free environment and exact-archive owned-kind exec;
 Mac checks sandbox-deny outside Python and checkout/interpreter reads, including
 Python invoked through the permitted system shell. Actual Mac hosts were macOS
 14 ARM and macOS 15 Intel. Physical Python absence and macOS 14 Intel trials
-remain unclaimed. The [D05 acceptance evidence](acceptance/standalone-executables.md)
+remain unclaimed. The [D05 acceptance evidence](internal/acceptance/standalone-executables.md)
 retains original execution records, archive digests and compatibility limits.
 Required full candidate checks and publication remain separate.
 
@@ -180,7 +180,7 @@ an actual macOS 14 Intel host trial. The required aggregate refuses missing,
 failed, cancelled or skipped native jobs and incomplete/wrong-target plans.
 Both Linux jobs run the extracted executable's real selected-container/TLS/RBAC
 shell scenarios on owned kind clusters. These four jobs and all six source
-environments passed the completed [D06 checkpoint](acceptance/workload-checkpoint.md).
+environments passed the completed [D06 checkpoint](internal/acceptance/workload-checkpoint.md).
 Versions `0.1.0` and `0.2.0` passed their complete exact-main qualification and
 are published on PyPI, GitHub Releases and the project Homebrew tap.
 

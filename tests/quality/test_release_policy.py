@@ -575,8 +575,8 @@ def test_workflow_has_readonly_dry_run_serialization_and_owner_protected_oidc():
 
 @pytest.mark.parametrize("version", ["1.0.0", "1.0.0rc1", "1.0.1"])
 def test_release_and_patch_require_closed_milestone_prerequisites(version):
-    plan = json.loads((ROOT / "docs/backlog.json").read_text())
-    index = json.loads((ROOT / "docs/github-issues.json").read_text())
+    plan = json.loads((ROOT / "docs/internal/backlog.json").read_text())
+    index = json.loads((ROOT / "docs/internal/github-issues.json").read_text())
     incomplete = None
     calls = []
 
@@ -596,8 +596,8 @@ def test_release_and_patch_require_closed_milestone_prerequisites(version):
     "mutation", ["no_milestone", "no_gate", "duplicate_gate", "wrong_issue", "pr"]
 )
 def test_missing_or_ambiguous_release_readiness_cannot_pass(mutation):
-    plan = json.loads((ROOT / "docs/backlog.json").read_text())
-    index = json.loads((ROOT / "docs/github-issues.json").read_text())
+    plan = json.loads((ROOT / "docs/internal/backlog.json").read_text())
+    index = json.loads((ROOT / "docs/internal/github-issues.json").read_text())
     issue = {"number": 149, "state": "closed"}
     if mutation == "no_milestone":
         plan["milestones"] = []
@@ -641,8 +641,8 @@ def test_engineering_versions_refuse_preflight_before_any_external_request(versi
     "incomplete", [None, 123, 124, 193, 47, 40, 154, 88, 89, 189, 211, 230, 243, 253, 270, 281]
 )
 def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomplete):
-    plan = json.loads((ROOT / "docs/backlog.json").read_text())
-    index = json.loads((ROOT / "docs/github-issues.json").read_text())
+    plan = json.loads((ROOT / "docs/internal/backlog.json").read_text())
+    index = json.loads((ROOT / "docs/internal/github-issues.json").read_text())
     calls = []
 
     def api(path):
@@ -712,8 +712,8 @@ def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomp
     ],
 )
 def test_actual_phase_includes_selected_and_prior_qualifiers(version, phase_gate):
-    plan = json.loads((ROOT / "docs/backlog.json").read_text())
-    index = json.loads((ROOT / "docs/github-issues.json").read_text())
+    plan = json.loads((ROOT / "docs/internal/backlog.json").read_text())
+    index = json.loads((ROOT / "docs/internal/github-issues.json").read_text())
     calls = []
 
     def api(path):
@@ -761,8 +761,8 @@ def test_actual_phase_includes_selected_and_prior_qualifiers(version, phase_gate
     ],
 )
 def test_actual_phase_refuses_unfinished_current_or_prior_work(version, incomplete):
-    plan = json.loads((ROOT / "docs/backlog.json").read_text())
-    index = json.loads((ROOT / "docs/github-issues.json").read_text())
+    plan = json.loads((ROOT / "docs/internal/backlog.json").read_text())
+    index = json.loads((ROOT / "docs/internal/github-issues.json").read_text())
     with pytest.raises(ValueError, match=f"#{incomplete}"):
         milestone_readiness(
             lambda path: {
@@ -782,8 +782,8 @@ def test_unreviewed_minor_does_not_inherit_an_earlier_phase(version):
         milestone_readiness(
             calls.append,
             version,
-            json.loads((ROOT / "docs/backlog.json").read_text()),
-            json.loads((ROOT / "docs/github-issues.json").read_text()),
+            json.loads((ROOT / "docs/internal/backlog.json").read_text()),
+            json.loads((ROOT / "docs/internal/github-issues.json").read_text()),
         )
     assert calls == []
 
@@ -818,8 +818,8 @@ def test_unreviewed_minor_does_not_inherit_an_earlier_phase(version):
     ],
 )
 def test_malformed_entire_plan_fails_before_any_external_issue_request(mutation):
-    plan = json.loads((ROOT / "docs/backlog.json").read_text())
-    index = json.loads((ROOT / "docs/github-issues.json").read_text())
+    plan = json.loads((ROOT / "docs/internal/backlog.json").read_text())
+    index = json.loads((ROOT / "docs/internal/github-issues.json").read_text())
     delivery = plan["delivery"]
     if mutation == "missing_mapping":
         del delivery["release_phases"]

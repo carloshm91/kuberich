@@ -8,7 +8,7 @@ cover strict context settings, precedence, transparent surfaces and a policy
 that can only become stricter. Headless UI tests reload through the real poll,
 keep the last valid file, apply a column view to a live table and keep flags,
 environment and theme overrides ahead of the file. See
-[acceptance evidence](acceptance/reactive-preferences.md).
+[acceptance evidence](internal/acceptance/reactive-preferences.md).
 
 ## Resource jumps: U06 #64
 
@@ -18,7 +18,7 @@ unsafe values, label-map expansion, namespace scope and cluster-scoped targets.
 Headless UI tests open a non-preferred discovered version and a built-in pod
 view, restore the previous filter with `:back` and report missing or invalid
 jumps without changing the view. See
-[acceptance evidence](acceptance/resource-jumps.md).
+[acceptance evidence](internal/acceptance/resource-jumps.md).
 
 ## Context edits and pod cleanup: M08 #63
 
@@ -29,7 +29,7 @@ links and file modes. Headless UI tests drive rename, delete, the current-contex
 confirmation, Escape/Cancel, read-only refusal and a lost cleanup race. An owned
 kind trial drives `:cleanup` through the real UI: running pods are never listed,
 a replaced pod refuses the whole batch, a changed pod returns a conflict while
-the other pod is deleted. See [acceptance evidence](acceptance/context-cleanup.md).
+the other pod is deleted. See [acceptance evidence](internal/acceptance/context-cleanup.md).
 
 ## Forwarding presets: S08 #62
 
@@ -43,7 +43,7 @@ key order and counters. A second required macOS check exposed clipped key names
 on the first metadata paint. A held idle-width-scan control reproduces that
 clipping; explicit metadata widths preserve complete names and hidden values.
 Original failed logs/artifacts and fresh complete platform/native checks remain
-required. See [forwarding acceptance](acceptance/forward-presets.md).
+required. See [forwarding acceptance](internal/acceptance/forward-presets.md).
 
 Named/container-qualified port resolution, annotation precedence and local
 opt-in/transport/retry preferences join the critical deterministic inventory.
@@ -83,7 +83,7 @@ cleanup. A real CLI PTY repeats the interactive example with hostile literal
 container input and checks native terminal restoration. No upstream program or
 maintainer cluster is executed. Existing critical/full-package/changed-line and
 complete platform/native gates remain unchanged. See
-[acceptance evidence](acceptance/plugin-compatibility.md).
+[acceptance evidence](internal/acceptance/plugin-compatibility.md).
 
 ## Plugin execution: U04 #59
 
@@ -102,7 +102,7 @@ background output from source, an installed wheel and each exact native archive.
 Owned kind verifies real client-go plugin authentication with four credential
 mechanisms, distinct cwd, TLS/CONNECT proxy and private-file/session cleanup.
 No provider/current-context trial or publication is inferred from these checks.
-See [execution evidence](acceptance/plugin-execution.md).
+See [execution evidence](internal/acceptance/plugin-execution.md).
 
 ## Plugin configuration: U03 #58
 
@@ -121,7 +121,7 @@ cancellation. Actual files and offline CLI tests cover explicit-only discovery,
 per-context precedence, invalid/duplicate/oversize YAML, symlinks/special files,
 permission failures and retained preference bytes. No plugin is executed by a
 configuration check. Interactive/process behavior remains U04; see
-[contract acceptance](acceptance/plugin-contract.md).
+[contract acceptance](internal/acceptance/plugin-contract.md).
 
 ## Terminal interactions: B07 #61
 
@@ -143,7 +143,7 @@ the existing context qualification cluster for status patches, captured UID
 recreation and nested namespace/context/Escape cleanup; its fixture is deliberately
 unscheduled and makes no running-container/restart/exec claim. Existing separate
 shell, RBAC, runtime/performance and full platform checks remain required.
-See [acceptance](acceptance/terminal-navigation.md).
+See [acceptance](internal/acceptance/terminal-navigation.md).
 
 ## Navigation preferences: U02 #57
 
@@ -160,7 +160,7 @@ HTTP and source/installed console/module PTYs exercise actual controls and
 restart persistence; the four-target native verifier exercises configured
 first/last, a literal alias and the view editor with native terminal restoration.
 Whole-package, changed-line, native and owned-kind checks remain mandatory.
-See [acceptance evidence](acceptance/navigation-preferences.md).
+See [acceptance evidence](internal/acceptance/navigation-preferences.md).
 
 ## Appearance and release notices: U01 #56
 
@@ -172,7 +172,7 @@ credential absence, deadlines and repeated cancellation. Pilot covers working
 fallbacks, preview/cancel, scope, saves and child-before-parent teardown. Source,
 installed console/module and actual native PTYs exercise presentation/About;
 all existing whole-package/platform/owned-kind gates remain required.
-See [measured acceptance](acceptance/appearance.md).
+See [measured acceptance](internal/acceptance/appearance.md).
 
 ## Configuration data: M05 #55
 
@@ -183,7 +183,7 @@ Secret editor disclosure. Pilot and real source/installed PTYs verify deliberate
 reveal/hide, encoding, small-window return and terminal restoration. The existing
 mandatory editing-kind verifier also checks real Secret reads, dry-run/Apply,
 read-only, conflicts, RBAC and immutable-field rejection. Measurements and honest
-limits belong in [acceptance](acceptance/configuration-data.md).
+limits belong in [acceptance](internal/acceptance/configuration-data.md).
 
 ## Required gates
 
@@ -205,7 +205,7 @@ artifacts from the exact manual qualification run. Public candidate preparation
 and verification reject missing native archives or mismatched source/runtime
 records; source-only bundles remain explicitly local development candidates.
 Parser fixtures exercise fail-closed decisions, not real native execution. See
-[core qualification](acceptance/core-checkpoint.md) for original retained matrix,
+[core qualification](internal/acceptance/core-checkpoint.md) for original retained matrix,
 audit and installer results. First-phase and public-release qualification remain
 separate gates.
 
@@ -274,7 +274,7 @@ source/installed PTY and owned-kind trials exercise local review while output
 continues, alternate-screen isolation, resize, stale scope and session cleanup.
 Separate fresh-process allocation and uninstrumented mounted-widget stress
 checks retain receipts under `artifacts/terminal/history-*.json`; traced Python
-allocation is not RSS or a latency result. See [history acceptance](acceptance/terminal-history.md).
+allocation is not RSS or a latency result. See [history acceptance](internal/acceptance/terminal-history.md).
 Captured container specification/status decisions in `domain/containers.py`
 join the critical 100% line/branch inventory in #129.
 Standard resource summary, quantity and ordering decisions in
@@ -763,10 +763,10 @@ does not freeze the hosted image revision, kernel or apt packages. Record actual
 image/tool versions with each hosted qualification. Preserve original
 `ubuntu-latest` receipts and require separate future Ubuntu 26.04 qualification
 before changing this contract. Local policy/site checks do not establish a new
-hosted/native result; [acceptance evidence](acceptance/ubuntu-runner-pin.md)
+hosted/native result; [acceptance evidence](internal/acceptance/ubuntu-runner-pin.md)
 records the pinned candidate's measured status.
 
-The [CI usage audit](acceptance/private-ci.md) retains 227 original run/job
+The [CI usage audit](internal/acceptance/private-ci.md) retains 227 original run/job
 observations, reproduces the historical private totals and measures the resumed
 development matrix. Its matching-source PR/main pair executed seven native jobs
 and four short planner/aggregate jobs. Completed elapsed time, active/unallocated
