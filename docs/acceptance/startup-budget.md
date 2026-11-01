@@ -164,6 +164,42 @@ retaining **161/161 CLI lines and 50/50 branches**. Precise logger annotations
 remain; six type-only bootstrap lines stay uncovered in the denominator. Strict
 typing passes over 162 sources. A fresh coordinated reference is still required.
 
+The seventh canonical reference passed all 20 offline observations again:
+
+| Path | Five ordinary wall-time samples | Peak RSS | Aggregate import self time |
+| --- | --- | --- | --- |
+| `--version` | 97.585–98.734 ms | 21,757,952 bytes | 78.443 ms |
+| `--help` | 71.429–73.749 ms | 21,757,952 bytes | 54.631 ms |
+| `info` | 128.949–137.160 ms | 21,757,952 bytes | 105.067 ms |
+| `config check` | 99.665–100.372 ms | 21,757,952 bytes | 82.462 ms |
+
+It then rejected actual first paint at **687.126287 ms**, with the visible header
+at 637.405989 ms. The real six-column resources table was mounted and inside the
+viewport; shutdown completed and SDK/helper/network guards stayed clear.
+Import/constructor/mount timestamps remained near the preceding measurements.
+Inactive-DOM deferral provided no measured improvement over 681.614565 ms, so its
+registration owner, prototype-only tests and App routing hooks were removed.
+The original eager composition and model setup are restored. The failed
+prototype and all earlier raw evidence remain retained; it is not a startup pass.
+
+A bounded, isolated import diagnostic on that source identifies the otherwise
+unused read-only editor/document graph beneath scroll navigation. The unchanged
+editor subclass moves to a dedicated module, with canonical inspection imports
+and the existing lazy public compatibility export. No further timing result is
+inferred from that change without a new canonical reference.
+
+Rollback exposed a real late-quit race: a queued refresh could release connection
+preparation after `App.exit`, before asynchronous shutdown. The original cohort
+retains its **173 passes and 10 failures**. A minimal App-owned stopped flag now
+rejects that late release inside the existing owned connection boundary. The
+corrected inspection/navigation/App/startup cohort passes **183 tests**, including
+all 30 actual startup PTYs. Three additional real editor/scroll navigation
+controls pass, preserving Vim edges, half pages, literal read-only content and
+canonical compatibility imports. The moved editor class has **12/12 lines**
+covered; lightweight scrolling has **28/29 lines**, with its type-only export in
+the denominator. Strict typing passes over 162 sources. Whole current-source
+coverage and a new coordinated timing reference remain required.
+
 ## Reproduction and limits
 
 From a development checkout with its locked environment:

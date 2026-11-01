@@ -128,7 +128,6 @@ from kuberich.ui.shutdown import TerminalSignals
 from kuberich.ui.standard import StandardTable
 from kuberich.ui.style_cache import ColorStylesCache, ComponentStylesheet
 from kuberich.ui.theme_catalog import appearance_from, invert_theme, themes_for
-from kuberich.ui.view_mounts import ViewMounts
 from kuberich.ui.views import ViewPreferences, ViewScreen
 
 if TYPE_CHECKING:
@@ -155,7 +154,7 @@ class KubeRichApp(App[None]):
     CSS_PATH = Path(__file__).with_name("kuberich.tcss")
     ENABLE_COMMAND_PALETTE = False
     AUTO_FOCUS = "#resources"
-    _view_mounts: ViewMounts | None = None
+    _startup_stopped = False
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("slash", "focus_filter", "Filter", key_display="/", priority=True),
         Binding("colon", "focus_command", "Cmd", key_display=":", priority=True),
@@ -596,16 +595,6 @@ class KubeRichApp(App[None]):
     def _workspace_status(self) -> str:
         return self.workspace.store.observation.message
 
-    def _initial_table(self) -> Widget:
-        initial = self._initial_command
-        if initial is Command.CONTEXTS and self.sessions.catalog.names:
-            return self.context_table
-        if initial is Command.NAMESPACES:
-            return self.namespace_table
-        if isinstance(initial, ResourceCommand):
-            return self.standard_table
-        return self.resources
-
     def compose(self) -> ComposeResult:
         yield self.header
         with WorkspaceBars():
@@ -617,9 +606,11 @@ class KubeRichApp(App[None]):
                 yield self.command_input
         with WorkspaceFrame(id="resource-view"):
             yield Button("0  All namespaces", id="all-namespaces", compact=True)
-            initial_table = self._initial_table()
-            initial_table.display = True
-            yield initial_table
+            yield self.resources
+            yield self.namespace_table
+            yield self.context_table
+            yield self.standard_table
+            yield self.custom_table
             with Vertical(id="empty-state"):
                 yield WorkspaceLabel("No cluster connection", id="empty-title", markup=False)
                 yield WorkspaceLabel(
@@ -645,23 +636,11 @@ class KubeRichApp(App[None]):
 
     def on_mount(self) -> None:
         first_paint = asyncio.Event()
-        mounts = self._view_mounts = ViewMounts(
-            self,
-            self.query_one("#resource-view", Vertical),
-            (
-                self.resources,
-                self.namespace_table,
-                self.context_table,
-                self.standard_table,
-                self.custom_table,
-            ),
-            self.query_one("#empty-state"),
-            self._handle_exception,
-        )
 
         async def before_connect() -> None:
             await first_paint.wait()
-            await mounts.wait_ready()
+            if self._startup_stopped:
+                raise asyncio.CancelledError
 
         self.sessions.before_connect = before_connect
         self.call_after_refresh(first_paint.set)
@@ -690,12 +669,11 @@ class KubeRichApp(App[None]):
         self.query_one("#resource-view", Vertical).border_title = "Resources · no connection"
         self.screen.set_class(self.size.width < 70, "compact")
         self.screen.set_class(self.size.height < 16, "short")
-        self.set_focus(self._initial_table())
+        self.set_focus(self.resources)
         self._set_status(DISCONNECTED_STATUS)
         self._build_info = self.header.query_one("#build-info", Static)
         self.live_preferences.start((self._appearance_warning, self._navigation_warning))
         if self._initial_command is not Command.QUIT:
-            self.call_after_refresh(mounts.start)
             self.call_after_refresh(self._start_update_check)
             subscription = self.workspace.subscribe()
             self._view_task = asyncio.create_task(self._observe_view(subscription))
@@ -1257,9 +1235,8 @@ class KubeRichApp(App[None]):
         return_code: int = 0,
         message: RenderableType | None = None,
     ) -> None:
+        self._startup_stopped = True
         self._updates_stopped = True
-        if self._view_mounts is not None:
-            self._view_mounts.stop()
         super().exit(result=result, return_code=return_code, message=message)
 
     async def on_unmount(self) -> None:
@@ -1269,8 +1246,6 @@ class KubeRichApp(App[None]):
             self._update_task.cancel()
             await _finish_owned(asyncio.gather(self._update_task, return_exceptions=True))
         try:
-            if self._view_mounts is not None:
-                await self._view_mounts.close()
             if self._nested_route_task is not None:
                 if not self._nested_route_task.done() and not self._nested_route_task.cancelling():
                     self._nested_route_task.cancel()
@@ -1935,19 +1910,6 @@ class KubeRichApp(App[None]):
     def _display_resource(
         self, resource: str, *, focus: bool = True, generic: ResourceSelection | None = None
     ) -> None:
-        table = (
-            self.context_table
-            if resource == "contexts"
-            else self.namespace_table
-            if resource == "namespaces"
-            else self.custom_table
-            if generic is not None
-            else self.resources
-            if resource == "pods"
-            else self.standard_table
-        )
-        if self._view_mounts is not None:
-            self._view_mounts.ensure(table)
         self._resource_name = resource
         self._generic_selection = generic
         self._column_notice = None

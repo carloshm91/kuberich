@@ -88,7 +88,8 @@ def test_tui_import_keeps_connection_http_and_sdk_graphs_deferred(tmp_path):
             "'kuberich.ui.context_admin','kuberich.ui.workloads','kuberich.ui.mutations',"
             "'kuberich.domain.editing','kuberich.services.editing','kuberich.services.inspection',"
             "'kuberich.services.transfers','kuberich.services.aggregate_logs','kuberich.services.logs',"
-            "'kuberich.services.attach','kuberich.services.shell','kuberich.services.workloads'})))",
+            "'kuberich.services.attach','kuberich.services.shell','kuberich.services.workloads',"
+            "'kuberich.ui.read_only_text','textual.widgets._text_area','textual.document'})))",
         ],
         cwd=tmp_path,
         env=clean_environment(tmp_path),
@@ -98,6 +99,51 @@ def test_tui_import_keeps_connection_http_and_sdk_graphs_deferred(tmp_path):
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert result.stderr == "" and json.loads(result.stdout) == []
+
+
+def test_scroll_navigation_does_not_import_editor_and_legacy_text_export_is_canonical(tmp_path):
+    script = r"""
+import importlib.abc,json,sys
+attempts=[]
+allow_editor=False
+class Imports(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == 'textual.widgets._text_area' or fullname.startswith('textual.document'):
+            attempts.append(fullname)
+            if not allow_editor:
+                raise AssertionError('Scrolling attempted an unused editor import')
+sys.meta_path.insert(0, Imports())
+from kuberich.ui import text_navigation
+from kuberich.ui.text_navigation import ReadOnlyScroll
+assert ReadOnlyScroll.BINDING_PROFILE == 'text'
+assert not attempts
+allow_editor=True
+from kuberich.ui.read_only_text import ReadOnlyText
+assert text_navigation.ReadOnlyText is ReadOnlyText
+assert attempts
+try:
+    text_navigation.unknown_owned_export
+except AttributeError:
+    pass
+else:
+    raise AssertionError('Unknown navigation export was accepted')
+print(json.dumps({'deferred':True,'canonical':True,'unknown_rejected':True}))
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=tmp_path,
+        env=clean_environment(tmp_path),
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stderr == ""
+    assert json.loads(result.stdout) == {
+        "deferred": True,
+        "canonical": True,
+        "unknown_rejected": True,
+    }
 
 
 def test_regex_engine_loads_only_for_actual_regex_and_on_the_owned_filter_worker(tmp_path):

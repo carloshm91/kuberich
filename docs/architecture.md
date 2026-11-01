@@ -31,20 +31,20 @@ No generic facade, screen proxy or upstream loader is introduced.
 `SessionService.before_connect` is an optional asynchronous readiness port,
 independent of Textual. Its wait is inside the existing connection ownership and
 cancellation boundary, before client construction, credential helpers or network
-work. The terminal's public `call_after_refresh` callback starts an owned
-registration task, yielding before registering inactive DOM nodes even with
-Python's eager task factory. The actual selected initial table is eagerly
-composed, while the original eager column-model setup remains unchanged for all
-tables. On-demand routes register their real target synchronously before
-configure/focus; background registration yields between the remaining tables.
-Readiness requires the actual first refresh and complete registration. A public
-`App.exit` override stops new registrations immediately and preserves the
-framework's result, message and return code. Shutdown drains every native
-completion. This adapter covers the existing nonblocking resource tables, not
-arbitrary third-party handlers that can block Textual's queued teardown.
+work. The terminal releases it through the public `call_after_refresh` callback.
+All five actual tables keep their existing eager composition and column-model
+setup. A public `App.exit` override stops new optional update checks and marks
+startup stopped immediately, preserving the framework's result, message and
+return code. The readiness callback checks that state after its refresh wait,
+so a queued refresh cannot begin SDK preparation after quit.
 Initial command/history ordering remains synchronous, while quit and context
 replacement drain or supersede the pending connection normally. Optional release
 checks are also queued after refresh and remain disabled by default.
+
+Read-only scrolling and its navigation bindings do not import Textual's editor
+and document graph. Inspection imports the unchanged read-only `TextArea`
+subclass from its own module. The original `ReadOnlyText` import remains a literal
+lazy compatibility export; it resolves to that same canonical class.
 
 The startup qualifier observes the actual CLI in fresh interpreters and the real
 application on an owned 120×36 PTY. It retains both the public refresh callback and

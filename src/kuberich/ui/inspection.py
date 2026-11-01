@@ -24,7 +24,7 @@ from kuberich.ui.chrome import (
 )
 from kuberich.ui.commands import NavigationInput
 from kuberich.ui.nested import CommandWorkspace
-from kuberich.ui.text_navigation import ReadOnlyText
+from kuberich.ui.read_only_text import ReadOnlyText
 
 Page = Literal["yaml", "details", "events"]
 

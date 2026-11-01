@@ -17,11 +17,11 @@ quit and cancellation before readiness.
 
 Every accepted first frame includes a mounted real selected resource table with
 columns and geometry inside the original viewport; header delivery alone cannot
-satisfy it. Public lifecycle controls cover on-demand registration before input,
-stable selection/geometry, duplicate owners and cancellation of owned completion
-waits. A blocked third-party Mount handler is a separate documented framework
-limit, not claimed as cancellable by this adapter. The critical CLI/navigation
-coverage and
+satisfy it. All original tables retain eager composition. A deferred-DOM
+prototype showed no startup improvement and was removed rather than retaining
+extra ownership machinery. Fresh children also reject unused editor imports
+while preserving the canonical read-only text class and inspection behavior.
+The critical CLI/navigation coverage and
 whole-package/changed-line floors remain unchanged; type-only imports stay in the
 denominator. Local source startup evidence does not qualify native artifacts or
 other platforms. See [the startup acceptance record](acceptance/startup-budget.md).
