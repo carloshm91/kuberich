@@ -5,6 +5,14 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ## Unreleased
 
+### Added
+
+- Retry a failed resource view without closing the workspace. Create a private,
+  redacted diagnostic bundle with `kuberich bug-report`; fatal UI errors restore
+  the terminal before printing a local crash-report path
+  ([#216](https://github.com/carloshm91/kuberich/issues/216),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 ### Changed
 
 - Replace the README with a concise product introduction, published installation,

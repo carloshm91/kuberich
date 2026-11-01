@@ -43,6 +43,19 @@ Real EKS, AKS and GKE clusters are not certified yet; those trials stay opt-in.
 
 ## Next development phase: 0.3.0
 
+Development source adds an inline Retry panel for resource-view presentation
+failures and a local `kuberich bug-report` command. Report files are private and
+redacted; the diagnostic command does not read kubeconfig or connect to a
+cluster. Fatal UI errors restore the terminal before printing a crash-report
+path. These changes
+are not part of the installed 0.2.0 release. Integrated platform, package and
+whole-application qualification remain pending.
+
+```sh
+uv run kuberich bug-report --output ./kuberich-report.json
+uv run pytest tests/ui/test_view_errors.py tests/contract/test_bug_report_cli.py tests/unit/test_diagnostic_reports.py
+```
+
 The foundations phase is in progress. Its first task adds full unit/contract/UI
 test selection, local xdist workers and a fast CI signal before full qualification.
 Worker ownership, failure propagation, coverage combination and timing isolation

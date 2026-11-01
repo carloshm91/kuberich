@@ -10,7 +10,7 @@ from aiohttp import web
 from textual.widgets import Static
 
 from kuberich.config.schema import Settings
-from kuberich.domain.connections import ConnectionRequest, ConnectionState
+from kuberich.domain.connections import ConnectionRequest
 from kuberich.domain.views import ViewStatus
 from kuberich.services.workspace import ViewSubscription
 from kuberich.ui.app import KubeRichApp
@@ -127,27 +127,83 @@ async def test_ui_rejects_a_delayed_old_subscription_observation(tmp_path, monke
 async def test_unexpected_subscription_render_error_reaches_sanitized_hook_and_cleans_up(
     tmp_path, monkeypatch, observers
 ):
+    from tests.support.watches import frame
+
     async def handler(request):
         return namespaces("team")
 
-    async with workspace_api(handler) as url:
+    streams = []
+    closed = asyncio.Event()
+    delivered = []
+    next_observation = ViewSubscription.__anext__
+
+    async def observed(subscription):
+        value = await next_observation(subscription)
+        delivered.append(value)
+        return value
+
+    monkeypatch.setattr(ViewSubscription, "__anext__", observed)
+
+    async def resources(request):
+        if "watch" not in request.query:
+            return web.json_response(collection(item("initial")))
+        response = web.StreamResponse()
+        await response.prepare(request)
+        streams.append(response)
+        try:
+            while request.transport is not None and not request.transport.is_closing():
+                await asyncio.sleep(0.005)
+        finally:
+            closed.set()
+        return response
+
+    async with workspace_api(handler, resources) as url:
         app = KubeRichApp(
             Settings(), logging.Logger("render-failure"), catalog=catalog_fixture(tmp_path, url)
         )
         update = app.status.update_text
+        failed = False
 
         def broken(content):
-            if app.state.connection is ConnectionState.CONNECTED:
+            if failed:
                 raise RuntimeError("opaque-render-value")
             update(content)
 
         monkeypatch.setattr(app.status, "update_text", broken)
-        with pytest.raises(RuntimeError, match="opaque-render-value"):
-            async with app.run_test() as pilot:
-                await pilot.pause()
-        assert app.return_code == 1 and app.sessions.client is None
+        async with app.run_test() as pilot:
+            await wait_for(lambda: app.state.status is ViewStatus.LIVE and bool(streams))
+            await pilot.pause()
+            owner = observers.latest
+            client = app.sessions.client
+            assert owner is not None and not owner.done() and client is not None
+            failed = True
+            app.request_render()
+            panel = app.query_one("#view-error")
+            await wait_for(lambda: panel.has_class("failed"))
+            assert "opaque-render-value" not in app.export_screenshot()
+            failed = False
+            monkeypatch.setattr(app.status, "update_text", update)
+            changed = item("after-error")
+            changed["metadata"]["resourceVersion"] = "after-error-version"
+            await streams[0].write(frame({"type": "ADDED", "object": changed}))
+            await wait_for(
+                lambda: any(
+                    value.snapshot is not None and len(value.snapshot.items) == 2
+                    for value in delivered
+                )
+            )
+            assert owner is observers.latest and not owner.done()
+            assert app.sessions.client is client and len(streams) == 1
+            assert await pilot.click("#view-error-retry")
+            await wait_for(lambda: not panel.has_class("failed") and app.resources.row_count == 2)
+            assert "2 pods" in str(app.status.content)
+        assert app.sessions.client is None and app.processes.active_count == 0
         assert observers.tasks and all(task.done() for task in observers.tasks)
-        assert app.workspace.ownership.watch_count == 0 and app.workspace.ownership.close_complete
+        assert (
+            app.workspace.ownership.watch_count == app.workspace.ownership.subscription_count == 0
+        )
+        assert app.workspace.ownership.close_complete
+        await wait_for(closed.is_set)
 
 
 @pytest.mark.asyncio

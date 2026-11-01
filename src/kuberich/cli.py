@@ -189,6 +189,12 @@ def _parser() -> argparse.ArgumentParser:
     commands.add_parser(
         "info", help="show safe local paths, preferences and installed versions", allow_abbrev=False
     )
+    report = commands.add_parser(
+        "bug-report", help="write a private redacted diagnostic bundle", allow_abbrev=False
+    )
+    report.add_argument(
+        "--output", type=_argument, help="new report file; existing files are refused"
+    )
     config = commands.add_parser(
         "config", help="initialize, validate or migrate local preferences", allow_abbrev=False
     )
@@ -347,7 +353,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "Migrated preferences to KubeRich. Original Kubetrol preferences were retained."
                 )
             return 0
-        document = read_config(location.path, missing_ok=not location.explicit)
         overrides = {
             key: value
             for key, value in {
@@ -358,6 +363,35 @@ def main(argv: Sequence[str] | None = None) -> int:
             }.items()
             if value is not None
         }
+        if arguments.subcommand == "bug-report":
+            from kuberich.config.paths import preference_path
+            from kuberich.diagnostics.reports import ConfigStatus, write_report
+            from kuberich.ui.config_check import validate_preferences
+
+            report_log = None
+            report_status: ConfigStatus = "invalid"
+            try:
+                report_document = read_config(location.path, missing_ok=not location.explicit)
+                report_settings = resolve_settings(report_document, os.environ, overrides)
+                validate_preferences(report_document, location, report_settings)
+                report_status = "valid" if location.path.exists() else "missing"
+                report_log = log_location(
+                    report_settings,
+                    location.path,
+                    from_file="log_file" not in overrides
+                    and "KUBERICH_LOG_FILE" not in os.environ
+                    and "KUBETROL_LOG_FILE" not in os.environ,
+                )
+            except AppError:
+                pass
+            destination = write_report(
+                config_status=report_status,
+                log_path=report_log,
+                output=preference_path(arguments.output) if arguments.output is not None else None,
+            )
+            print(f"Created diagnostic report: {sanitize_text(str(destination))}")
+            return 0
+        document = read_config(location.path, missing_ok=not location.explicit)
         settings = resolve_settings(document, os.environ, overrides)
         if (
             arguments.initial_command is not None

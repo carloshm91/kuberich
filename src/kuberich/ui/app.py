@@ -94,6 +94,7 @@ from kuberich.ui.chrome import (
 )
 from kuberich.ui.commands import CommandInput, NavigationInput
 from kuberich.ui.contexts import ContextTable
+from kuberich.ui.controllers.base import RenderRequest
 from kuberich.ui.controllers.filtering import FilterOptions
 from kuberich.ui.custom import CustomTable
 from kuberich.ui.foreground import ForegroundGate
@@ -115,6 +116,7 @@ from kuberich.ui.standard import StandardTable
 from kuberich.ui.state import AppState, app_state
 from kuberich.ui.style_cache import ColorStylesCache, ComponentStylesheet
 from kuberich.ui.target_capture import CapturedResource, TargetCapture, TargetSelection
+from kuberich.ui.view_errors import ViewErrorPanel
 from kuberich.ui.views import ViewPreferences, ViewScreen
 from kuberich.ui.workspace_commands import CompletionSources, WorkspaceCommands, bind_commands
 from kuberich.ui.workspace_navigation import WorkspaceNavigation
@@ -287,6 +289,7 @@ class KubeRichApp(App[None]):
             history=self.interactions.history,
         )
         self.status = WorkspaceLabel(DISCONNECTED_STATUS, id="status", markup=False)
+        self.view_error = ViewErrorPanel(self.action_retry_view)
         self.view_preferences = ViewPreferences(self)
         self.views = RootViews(
             RootTables(
@@ -309,6 +312,7 @@ class KubeRichApp(App[None]):
             namespace_projection=lambda: NamespaceProjection(),
             standard_projection=lambda definition: StandardProjection(definition),
             custom_projection=lambda layout: CustomProjection(layout),
+            recover=self._view_rendered,
         )
         self.navigator = WorkspaceNavigation(
             self,
@@ -343,6 +347,7 @@ class KubeRichApp(App[None]):
             lambda: self.appearance.full_gvr_titles,
             self._observation_changed,
             self._handle_exception,
+            recover=self.views.renderer.fail,
         )
         self.plugins = PluginController(self)
         self.input_dispatch = InputDispatcher(self, self.plugins.bindings, self.plugins.open)
@@ -549,6 +554,20 @@ class KubeRichApp(App[None]):
     def request_render(self) -> None:
         self.views.request()
 
+    def action_retry_view(self) -> None:
+        self.views.renderer.retry()
+
+    def _view_rendered(self, request: RenderRequest, error: Exception | None) -> None:
+        if not request.current():
+            return
+        self.view_error.show_failure(self.views.renderer.is_failed(request))
+        if error is not None:
+            with suppress(AppError):
+                self._diagnostic_logger.error(
+                    "Resource view rendering failed.",
+                    exc_info=(type(error), error, error.__traceback__),
+                )
+
     def _update_trail(self) -> None:
         self.presenter.update_trail()
 
@@ -578,6 +597,7 @@ class KubeRichApp(App[None]):
                 yield self.command_input
         with WorkspaceFrame(id="resource-view"):
             yield Button("0  All namespaces", id="all-namespaces", compact=True)
+            yield self.view_error
             yield self.resources
             yield self.namespace_table
             yield self.context_table

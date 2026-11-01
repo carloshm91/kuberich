@@ -11,11 +11,12 @@
       "capability": "All 26 explicitly registered launch flags; help/version/info and completion",
       "tasks": [
         "F05",
-        "D13"
+        "D13",
+        "Q15"
       ],
       "source": "cmd/root.go",
       "status": "planned",
-      "difference": "F05 implements local inspection, policy, presentation, initial views, periodic table repaint and invocation connection overrides. All audited flags are recognized; splash/inversion/export remain explicitly unavailable under U01/O06 and shell completion remains D13.",
+      "difference": "F05 implements local inspection, policy, presentation, initial views, periodic table repaint and invocation connection overrides. All audited flags are recognized; splash/inversion/export remain explicitly unavailable under U01/O06 and shell completion remains D13. Q15 adds a local redacted bug-report bundle, recoverable resource-view errors and private post-restoration crash reports.",
       "partial_evidence": [
         "docs/k9s-cli.md",
         "tests/unit/test_launch_contract.py",
@@ -28,9 +29,13 @@
         "tests/unit/test_connection_overrides.py",
         "tests/ui/test_launch_options.py",
         "scripts/verify_shell_kind.py",
-        "docs/acceptance/connection-overrides.md"
+        "docs/acceptance/connection-overrides.md",
+        "docs/troubleshooting.md",
+        "tests/contract/test_bug_report_cli.py",
+        "tests/ui/test_view_errors.py",
+        "tests/unit/test_diagnostic_reports.py"
       ],
-      "public_summary": "Help, version, local diagnostics, read-only policy, presentation flags, startup views and connection overrides are available. Splash, inversion, resource export settings and shell completion are unavailable.",
+      "public_summary": "Help, version, local diagnostics, read-only policy, presentation flags, startup views and connection overrides are available. Splash, inversion, resource export settings and shell completion are unavailable. Development source also provides local redacted diagnostic bundles and recoverable view errors.",
       "public_status": "partial"
     },
     {
@@ -365,7 +370,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40×12 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
