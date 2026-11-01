@@ -48,7 +48,7 @@ new initial-route PTYs verify actual mounted tables, columns and viewport bounds
 before any SDK/helper/network work. These are functional controls, not new timing
 qualification.
 
-The latest affected functional cohort passes **1901 tests in 313.73 seconds**
+The inactive-DOM candidate's affected functional cohort passes **1901 tests in 313.73 seconds**
 using three workers with performance/runtime-control markers explicitly excluded.
 All 540 source, test, tool and configuration inputs remain byte-identical during
 that run. A coherent diff, including the new registration owner, covers
@@ -144,6 +144,25 @@ entry/return at 582.612714/587.037384 ms. The actual refresh remains the measure
 endpoint. Neither negative control ran after this first failure. No later
 startup pass is inferred for the inactive-DOM prototype without a fresh canonical
 reference, and no threshold or clock subtraction has changed.
+
+The sixth canonical reference, on signed candidate `1c84901`, stopped before
+measuring the new DOM behavior. Five version samples completed in
+101.348–109.516 ms and five help samples in 78.974–82.438 ms. The first two info
+samples took 142.898 and 146.705 ms; the third failed at **153.155201 ms** against
+the unchanged 150 ms limit. Peak RSS remained 21,757,952 bytes. Its automatic
+diagnostic import profile is retained, but cannot replace that failed sample.
+No config-check, first-paint or negative-control result is inferred.
+
+The following correction skips unused default connection construction only for
+inspection commands, after connection flags have already been rejected. Terminal
+connection validation stays before configuration I/O in its original position.
+The bootstrap's annotation-only `Logger` import is also deferred under existing
+future annotations. All seven fresh offline routes now reject logging,
+connection-request, override and target imports as well as Textual/SDK imports.
+The complete focused offline/configuration/migration cohort passes **589 tests**,
+retaining **161/161 CLI lines and 50/50 branches**. Precise logger annotations
+remain; six type-only bootstrap lines stay uncovered in the denominator. Strict
+typing passes over 162 sources. A fresh coordinated reference is still required.
 
 ## Reproduction and limits
 

@@ -278,29 +278,31 @@ def main(argv: Sequence[str] | None = None) -> int:
         from kuberich.config.paths import config_location, log_location
         from kuberich.config.schema import ConfigDocument, resolve_settings
         from kuberich.config.store import migrate_config, write_config
-        from kuberich.domain.connection_overrides import ConnectionOverrides
-        from kuberich.domain.connections import ConnectionRequest, request_duration
 
-        connection = ConnectionRequest(
-            arguments.kubeconfig,
-            arguments.context,
-            arguments.namespace,
-            bool(arguments.all_namespaces),
-            request_duration(arguments.request_timeout)
-            if arguments.request_timeout is not None
-            else 10.0,
-            ConnectionOverrides(
-                cluster=arguments.cluster,
-                user=arguments.user,
-                token=arguments.token,
-                certificate_authority=arguments.certificate_authority,
-                client_certificate=arguments.client_certificate,
-                client_key=arguments.client_key,
-                insecure=arguments.insecure,
-                as_user=arguments.as_user,
-                as_groups=tuple(arguments.as_group or ()),
-            ).capture_paths(Path.cwd()),
-        )
+        if arguments.subcommand is None:
+            from kuberich.domain.connection_overrides import ConnectionOverrides
+            from kuberich.domain.connections import ConnectionRequest, request_duration
+
+            connection = ConnectionRequest(
+                arguments.kubeconfig,
+                arguments.context,
+                arguments.namespace,
+                bool(arguments.all_namespaces),
+                request_duration(arguments.request_timeout)
+                if arguments.request_timeout is not None
+                else 10.0,
+                ConnectionOverrides(
+                    cluster=arguments.cluster,
+                    user=arguments.user,
+                    token=arguments.token,
+                    certificate_authority=arguments.certificate_authority,
+                    client_certificate=arguments.client_certificate,
+                    client_key=arguments.client_key,
+                    insecure=arguments.insecure,
+                    as_user=arguments.as_user,
+                    as_groups=tuple(arguments.as_group or ()),
+                ).capture_paths(Path.cwd()),
+            )
         location = config_location(arguments.config, os.environ)
         if arguments.subcommand == "config" and arguments.operation == "init":
             if runtime:

@@ -27,9 +27,10 @@ import sys
 from pathlib import Path
 
 attempts = []
+forbidden = set(json.loads(sys.argv[3])) if len(sys.argv) > 3 else set()
 class OfflineImports(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, path=None, target=None):
-        if fullname.split('.')[0] in {'textual', 'kubernetes_asyncio'}:
+        if fullname.split('.')[0] in {'textual', 'kubernetes_asyncio'} or fullname in forbidden:
             attempts.append(fullname)
             raise AssertionError('Offline command attempted a terminal or SDK import')
 
@@ -44,7 +45,8 @@ finally:
     Path(sys.argv[1]).write_text(json.dumps({
         'attempts': attempts,
         'loaded': sorted(name for name in sys.modules
-                         if name.split('.')[0] in {'textual', 'kubernetes_asyncio'}),
+                         if name.split('.')[0] in {'textual', 'kubernetes_asyncio'}
+                         or name in forbidden),
     }))
 raise SystemExit(code)
 """
@@ -108,7 +110,21 @@ def test_offline_commands_never_attempt_terminal_or_sdk_imports(tmp_path, argume
     path.write_text("schema_version: 1\n")
     report = tmp_path / "imports.json"
     result = subprocess.run(
-        [sys.executable, "-c", OFFLINE, str(report), json.dumps(arguments)],
+        [
+            sys.executable,
+            "-c",
+            OFFLINE,
+            str(report),
+            json.dumps(arguments),
+            json.dumps(
+                [
+                    "logging",
+                    "kuberich.domain.connections",
+                    "kuberich.domain.connection_overrides",
+                    "kuberich.domain.targets",
+                ]
+            ),
+        ],
         cwd=tmp_path,
         env=clean_environment(tmp_path),
         capture_output=True,

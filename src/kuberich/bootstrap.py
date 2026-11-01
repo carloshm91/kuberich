@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 from contextlib import AbstractContextManager
-from logging import Logger
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from logging import Logger
+
     from kuberich.config.schema import ConfigDocument, Settings
     from kuberich.domain.connections import ConnectionRequest
     from kuberich.services.appearance import PreferenceSource
