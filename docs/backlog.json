@@ -1339,7 +1339,8 @@
       "acceptance": [
         "Every inventory row and every flag/action/schema/plugin entry has a delivered test or a clearly stated compatibility difference; planned rows are never counted as implemented.",
         "Refresh the latest stable upstream comparison and create tickets for new features before freezing the stable parity claim.",
-        "Maintain the Alpha evidence gap until authoritative material is available; do not claim 100% paid-feature parity without a verifiable catalog and tests."
+        "Maintain the Alpha evidence gap until authoritative material is available; do not claim 100% paid-feature parity without a verifiable catalog and tests.",
+        "For major-version 1 qualification, enforce the unchanged runtime heartbeat/input-latency limits and original blocking negative controls; neither environment nor receipt metadata may downgrade them. Earlier advisory 0.x measurements are not a strict pass."
       ],
       "verification": "Automated matrix completeness checks plus a human end-to-end checklist and links to tests/releases for each claim; no untriaged entry may be silently dropped.",
       "priority": "P0"
@@ -2064,7 +2065,8 @@
         "The qualification command from Q17 #218 passes on the complete Linux/macOS matrix.",
         "Structural targets are met: `app.py` ≤ 800 lines, zero private access from tests, no private Textual APIs, startup budget met, 50k-resource measurement within budget.",
         "Documentation checks pass and the README stays within its budget.",
-        "No publication happens here. Publication needs separate maintainer approval."
+        "No publication happens here. Publication needs separate maintainer approval.",
+        "For 0.x, runtime heartbeat/input-latency observations are advisory with explicit unmet results; preserve unchanged strict opt-in limits, always-strict blocking negative controls and all functional, resource, cleanup, coverage and platform requirements."
       ],
       "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
       "priority": "P0"

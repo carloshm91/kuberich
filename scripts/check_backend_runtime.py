@@ -11,6 +11,7 @@ from coverage import __version__ as coverage_version
 
 from scripts.merge_runtime_coverage import document, measured_gap, require
 from tests.support.backend_runtime import DEADLINE, NODE, OUTPUT_LIMIT
+from tests.support.runtime_budget import verify_budget
 
 ARTIFACTS = {
     "cases.xml",
@@ -100,6 +101,7 @@ def verify_backend_runtime(
         verify_workload(heartbeat, expected)
         require(heartbeat.get("timing_qualifying") is True, "Backend runtime was not measured")
         gap = measured_gap(heartbeat.get("max_gap_seconds"))
+        verify_budget(heartbeat.get("runtime_budget"), gap, mode=mode)
         cases = ElementTree.parse(child / "cases.xml").getroot().findall(".//testcase")
         require(
             len(cases) == 1
@@ -114,7 +116,7 @@ def verify_backend_runtime(
                 and result.get("status") == "SUCCEEDED"
                 and not failures
                 and heartbeat.get("negative_callback_executed") is False
-                and gap < 0.15,
+                and (not heartbeat["runtime_budget"]["enforced"] or gap < 0.15),
                 "Backend runtime exceeded 150 ms or failed its functional workload",
             )
         else:
@@ -129,6 +131,9 @@ def verify_backend_runtime(
             )
     parent = document(directory / "aggregate-tiny-lines-heartbeat.json")
     verify_workload(parent, expected)
+    verify_budget(
+        parent.get("runtime_budget"), measured_gap(parent.get("max_gap_seconds")), mode="coverage"
+    )
     require(parent.get("timing_qualifying") is False, "Covered backend timing cannot qualify")
     require(parent.get("negative_callback_executed") is False, "Covered workload was interrupted")
     if require_parent_coverage:
