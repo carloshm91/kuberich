@@ -154,3 +154,12 @@ The optional UI ownership checker reproduces it and intentionally exits nonzero
 until that stable-release work is finished. Pinned Textual compatibility work
 includes native style-cache/registration and sanitized exception hooks; preserving
 their tested behavior does not certify their removal or a framework upgrade.
+
+The initial disconnected workspace keeps `Resources · no connection` and
+`No cluster connection` after projection, modal return, resizing and filtering.
+The combined-source trial exposed three SSH/tmux checks that expected a transient
+empty-pod title instead. Their settled-frame oracle now checks the disconnected
+title and description at each boundary and rejects the misleading pod count;
+Unicode input, focus, resize, exit and terminal-restoration checks remain intact.
+The interrupted trial is retained as incomplete evidence, with three failures,
+1,733 passing cases and one explicit skip. It does not qualify coverage or a release.
