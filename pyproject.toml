@@ -39,7 +39,7 @@ dependencies = [
 
 [project.scripts]
 kuberich = "kuberich.cli:main"
-kubetrol = "kuberich.cli:main"
+kubetrol = "kuberich.cli:legacy_main"
 
 [project.urls]
 Homepage = "https://github.com/carloshm91/kuberich"

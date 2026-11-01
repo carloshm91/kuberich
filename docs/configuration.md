@@ -15,10 +15,11 @@ invalid appearance settings leave files unchanged. It also checks
 ## Legacy preview compatibility
 
 KubeRich uses `kuberich` for its package, Python imports and canonical command.
-The `kubetrol` console command remains an alias to the same entry point for the
-initial preview. Its help/version identify KubeRich. The old Python module and
-distribution are not duplicate packages; use `python -m kuberich` for module
-launch. Removing the alias requires a later minor release and migration notes.
+The 0.3 source retains the `kubetrol` console command as a deprecated alias.
+It prints a fixed warning to stderr, then runs the same CLI. Help/version stdout
+and command exit codes are unchanged. Use `kuberich` or `python -m kuberich`;
+the previous console alias is scheduled for removal in 0.4.0. The old Python
+module and distribution are not duplicate packages.
 
 Default preference selection is CLI `--config`, then `KUBERICH_CONFIG`, then
 `KUBETROL_CONFIG`, then the platform's KubeRich file. If no KubeRich file exists,
@@ -41,7 +42,8 @@ Default new logs use KubeRich's new platform directory.
 
 An existing destination is never replaced, including a competing creation during
 the commit. Repeating a completed migration validates the current file and makes
-no change. Explicit `--config` or configuration environment paths cannot be
+no change; the migration-success notice appears only when a file is created.
+Explicit `--config` or configuration environment paths cannot be
 relocated implicitly by this command. It does not move kubeconfig, credentials,
 diagnostic logs or tool installations.
 

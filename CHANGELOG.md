@@ -35,6 +35,7 @@ Release entries are written in release PRs and linked to their Git tags.
   ([#217](https://github.com/carloshm91/kuberich/issues/217),
   [Carlos J. Herrera](https://github.com/carloshm91)).
 
+- The legacy `kubetrol` command warns to use `kuberich`; it remains available through 0.3 and is scheduled for removal in 0.4.0 ([#219](https://github.com/carloshm91/kuberich/issues/219)).
 - Organize user documentation into 19 pages with tutorial, how-to, reference and
   explanation navigation. Keep the existing guidance and old guide routes while
   introducing a plain-language style and a complete document migration map

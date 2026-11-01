@@ -71,6 +71,14 @@ compatible fixes use a patch, compatible capabilities a minor, and incompatible
 public changes a major. New minor/major lines need an explicit plan mapping
 before the readiness validator permits publication.
 
+The 0.3 source keeps the previous `kubetrol` command with a fixed stderr warning;
+use `kuberich` for scripts and interactive launches. Actual alias removal is a
+0.4.0 qualification requirement, not a completed 0.3 change. The explicit
+`kuberich config migrate` command keeps previous preferences and prints its
+success notice only when the new file is created. Loading or inspecting settings
+does not migrate them automatically. Legacy environment and log-file compatibility
+are preserved; historical published notes and evidence keep their exact bytes.
+
 `pyproject.toml`'s `project.version` is the sole version source; the CLI reads
 installed metadata. A PR does not automatically bump a version. Stable tags are
 `vX.Y.Z`; canonical optional candidates are `X.Y.ZrcN`, tagged `vX.Y.Z-rc.N`.
