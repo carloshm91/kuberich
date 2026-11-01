@@ -27,6 +27,9 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Fixed
 
+- Keep native macOS builds and installation checks on supported runners
+  ([#291](https://github.com/carloshm91/kuberich/issues/291),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
 - Wait for actual selection receipt in isolated X11 clipboard qualification,
   including delayed owners, absent selections and cancelled readers
   ([#281](https://github.com/carloshm91/kuberich/issues/281),

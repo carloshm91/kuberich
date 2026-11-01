@@ -2060,7 +2060,7 @@
         "W11",
         "D07"
       ],
-      "scope": "Every v0.3.0 task: Q08 #211, Q09 #210, Q10 #209, Q11 #212, Q12 #213, Q13 #214, Q14 #215, Q15 #216, Q16 #217, Q17 #218, Q18 #219, Q19 #220, D15 #221, W04 #222–W11 #229, #189, #208, dependency refresh #270 and owned X11 selection readiness #281. Also requires the 0.2.0 gate #65.",
+      "scope": "Every v0.3.0 task: Q08 #211, Q09 #210, Q10 #209, Q11 #212, Q12 #213, Q13 #214, Q14 #215, Q15 #216, Q16 #217, Q17 #218, Q18 #219, Q19 #220, D15 #221, W04 #222–W11 #229, #189, #208, dependency refresh #270 and owned X11 selection readiness #281 and native macOS runner migration #291. Also requires the 0.2.0 gate #65.",
       "acceptance": [
         "The qualification command from Q17 #218 passes on the complete Linux/macOS matrix.",
         "Structural targets are met: `app.py` ≤ 800 lines, zero private access from tests, no private Textual APIs, unchanged offline startup budgets met, 50k-resource measurement within budget. Per the 2026-11-01 maintainer decision, report all five real UI observations and any missed 600 ms target honestly for 0.x; retain strict opt-in and mandatory stable qualification under Q06 #88. All actual-frame, source, SDK, geometry and cleanup checks remain mandatory.",
@@ -2656,7 +2656,8 @@
           189,
           208,
           270,
-          281
+          281,
+          291
         ]
       },
       {
