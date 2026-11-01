@@ -3,7 +3,6 @@
 import asyncio
 import os
 import shutil
-import subprocess
 import sys
 from unittest.mock import AsyncMock
 
@@ -21,6 +20,7 @@ from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
 from kuberich.services.clipboard import NativeClipboard
 from kuberich.services.processes import ProcessRunner
+from tests.support.clipboard import owned_x11_display, read_x11_selection
 
 
 @pytest.mark.asyncio
@@ -64,48 +64,26 @@ async def test_real_process_stdin_is_literal_private_and_closed(tmp_path):
 async def test_owned_x11_roundtrip_replacement_and_owner_cleanup(tmp_path):
     if sys.platform != "linux" or not shutil.which("Xvfb") or not shutil.which("xclip"):
         pytest.skip("Owned Xvfb/xclip qualification runs on Linux with both tools")
-    # -displayfd atomically allocates an unused display; never uses the user's DISPLAY.
-    read_fd, write_fd = os.pipe()
-    server = subprocess.Popen(
-        ["Xvfb", "-displayfd", str(write_fd), "-nolisten", "tcp"],
-        pass_fds=(write_fd,),
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    os.close(write_fd)
-    try:
-        display = await asyncio.wait_for(asyncio.to_thread(os.read, read_fd, 32), 10)
-        env = {**os.environ, "DISPLAY": ":" + display.decode().strip()}
-        async with ProcessRunner(AccessPolicy(True)) as runner:
-            clipboard = NativeClipboard(runner, env, tmp_path)
-            for data in [
+    async with owned_x11_display() as env, ProcessRunner(AccessPolicy(True)) as runner:
+        clipboard = NativeClipboard(runner, env, tmp_path)
+        for phase, data in enumerate(
+            [
                 b"",
                 "é 中文\n\x1b]52;c;inert\x07\x00".encode(),
                 b"{\\rtf1 plain}",
                 b"%!PS-Adobe-3.0 EPSF-3.0",
                 b"replacement",
-            ]:
-                await clipboard.write(data, B.X11)
-                child = await asyncio.create_subprocess_exec(
-                    "xclip",
-                    "-selection",
-                    "clipboard",
-                    "-o",
-                    env=env,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                )
-                stdout, stderr = await asyncio.wait_for(child.communicate(), 5)
-                assert child.returncode == 0, stderr
-                assert stdout == data
-                assert clipboard.owner is not None and clipboard.owner.running
-            await clipboard.close()
-            await clipboard.close()
-            assert runner.active_count == 0
-    finally:
-        os.close(read_fd)
-        server.terminate()
-        await asyncio.to_thread(server.wait, 10)
+            ]
+        ):
+            await clipboard.write(data, B.X11)
+            stdout = await read_x11_selection(
+                runner, env, tmp_path, data, receipt=tmp_path / f"selection-{phase}.json"
+            )
+            assert stdout == data
+            assert clipboard.owner is not None and clipboard.owner.running
+        await clipboard.close()
+        await clipboard.close()
+        assert runner.active_count == 0
 
 
 @pytest.mark.asyncio
