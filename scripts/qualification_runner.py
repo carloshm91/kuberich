@@ -203,7 +203,12 @@ class Runner:
         if self.cancelled is not None:
             raise InterruptedError("Qualification cancelled before the next command.")
         gate = next(item for item in self.report["gates"] if item["name"] == stage.name)
-        gate.update(status="running", command=list(stage.command), started=time.time())
+        gate.update(
+            status="running",
+            reason="Local command started.",
+            command=list(stage.command),
+            started=time.time(),
+        )
         self.save()
         started = time.monotonic()
         self.interrupted = False
@@ -257,6 +262,8 @@ class Runner:
         finally:
             self.current = None
             gate.update(elapsed_seconds=time.monotonic() - started, log=path.name)
+            if gate["reason"] == "Local command started.":
+                gate["reason"] = f"Local command {gate['status']}; see its retained log."
             self.save()
         try:
             self.unchanged()
