@@ -16,7 +16,10 @@ assert args[2]=='--namespace='+os.environ['KUBERICH_NAMESPACE']
 private=Path(os.environ['KUBECONFIG'])
 assert private.is_file() and private.stat().st_mode & 0o777 == 0o600
 kind='shell' if 'exec' in args else 'events' if 'events' in args else 'inspect'
-Path(os.environ['EXAMPLE_RECEIPT']+'-'+kind).write_text(json.dumps({'argv':args,'private':str(private)}))
+receipt=Path(os.environ['EXAMPLE_RECEIPT']+'-'+kind)
+pending=receipt.with_name(receipt.name+'.'+str(os.getpid())+'.tmp')
+pending.write_text(json.dumps({'argv':args,'private':str(private)}))
+pending.replace(receipt)
 if kind=='shell':
     assert '--stdin' in args and '--tty' in args and args[-2:]==['--','sh']
     print('EXAMPLE_SHELL_READY',flush=True)

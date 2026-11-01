@@ -598,6 +598,21 @@ Run timing comparisons
 without a second test command competing on the same host; separate pytest commands
 own separate locks and cannot reserve CPU from each other.
 
+The fast-tier rollout found two fixture ownership races: manually supplied widget
+rows competed with the full workspace's initial observation, and plugin receipts
+could be read after creation but before writing finished. Widget tests now mount
+the real tables in a dedicated Textual host, while API/workspace cases retain the
+full application. The plugin stand-in publishes complete receipts atomically.
+Directory rollback controls explicitly cover both source entry orders.
+
+Profiling also identified repeated palette generation and redundant shortcut
+updates on the real header. Shortcut panels use one current palette snapshot per
+render and the existing owned-text projection guard; theme, content, external
+mutation and layout behavior retain native rendering. The normal positive timing
+control passed three consecutive trials at 136.55, 138.29 and 131.48 ms; injected
+negative controls exceeded 200 ms and failed as required. These targeted trials
+are separate from the required three complete parallel suite runs.
+
 Application quality first runs the complete fast tier on Linux/Python 3.12.
 Failure prevents the expensive full test/native matrices from starting and
 fails the protected aggregate. Success then runs every existing source/native

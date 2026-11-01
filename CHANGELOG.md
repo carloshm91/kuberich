@@ -14,6 +14,13 @@ Release entries are written in release PRs and linked to their Git tags.
 - Keep the Kubernetes SDK's date parser on the qualified 2.x major version so
   fresh installs use the reviewed runtime dependency range.
 
+### Fixed
+
+- Reuse one palette snapshot for each shortcut panel render and avoid layout
+  updates for unchanged header text during navigation, resizing and theme changes
+  ([#209](https://github.com/carloshm91/kuberich/issues/209),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 ## 0.2.0 — 2026-10-21
 
 [Published release](https://github.com/carloshm91/kuberich/releases/tag/v0.2.0).

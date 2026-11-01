@@ -268,7 +268,7 @@ class WorkspaceLabel(Static):
         self._last_projection = projection
 
 
-class ViewActions(Static):
+class ViewActions(WorkspaceLabel):
     """Reflow shortcuts when their own panel changes size, including logo changes."""
 
     def __init__(self, shortcuts: tuple[tuple[str, str], ...]) -> None:
@@ -283,6 +283,7 @@ class ViewActions(Static):
         columns = max(1, width // 24)
         rows = max(1, self.content_region.height)
         output = Text()
+        secondary = self.app.get_css_variables()["secondary"] if self.shortcuts else ""
         for row in range(min(rows, 6)):
             if row:
                 output.append("\n")
@@ -291,11 +292,11 @@ class ViewActions(Static):
                 if index < len(self.shortcuts):
                     key, label = self.shortcuts[index]
                     cell = safe_text(f"<{key}> {label}")
-                    cell.stylize(self.app.get_css_variables()["secondary"], 0, len(key) + 2)
+                    cell.stylize(secondary, 0, len(key) + 2)
                     cell.truncate(max(1, width // columns - 1), overflow="ellipsis")
                     cell.pad_right(max(0, width // columns - len(cell)))
                     output.append_text(cell)
-        self.update(output)
+        self.update_text(output)
 
 
 class WorkspaceHeader(Horizontal):
