@@ -13,6 +13,7 @@ from scripts.startup_policy import (
     check_importtime,
     check_paint,
     enforce_paint_budget,
+    enforce_startup_budget,
     observe_paint,
     rss_bytes,
 )
@@ -161,12 +162,79 @@ def test_first_paint_includes_both_actual_refresh_and_visible_pty_delivery():
 )
 def test_only_pre_stable_ui_latency_is_advisory_unless_explicitly_strict(version, strict, enforced):
     assert enforce_paint_budget(version, strict=strict) is enforced
+    assert enforce_startup_budget(version, strict=strict) is enforced
 
 
 @pytest.mark.parametrize("strict", [False, True])
 def test_invalid_version_cannot_select_an_advisory_mode(strict):
     with pytest.raises(ValueError):
         enforce_paint_budget("invalid-owned-version", strict=strict)
+    with pytest.raises(ValueError):
+        enforce_startup_budget("invalid-owned-version", strict=strict)
+
+
+@pytest.mark.parametrize("case", ["version", "help", "info", "config-check"])
+@pytest.mark.parametrize("elapsed", [150_000_000, 161_144_125, 300_000_000])
+def test_only_valid_offline_latency_can_be_advisory_and_the_strict_limit_is_unchanged(
+    case, elapsed
+):
+    measured = replace(sample(case), elapsed_ns=elapsed)
+    check_cli(case, measured, "0.2.0", enforce_latency=False)
+    with pytest.raises(ValueError, match="150 ms"):
+        check_cli(case, measured, "0.2.0", enforce_latency=True)
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"exit_code": 1},
+        {"exit_code": False},
+        {"stderr": "unexpected warning"},
+        {"elapsed_ns": 0},
+        {"elapsed_ns": True},
+        {"elapsed_ns": -1},
+        {"rss_bytes": 0},
+        {"rss_bytes": True},
+        {"rss_bytes": 40_000_000},
+        {"stdout": "not the installed CLI"},
+    ],
+)
+def test_advisory_clock_never_relaxes_memory_output_or_valid_measurements(change):
+    with pytest.raises(ValueError):
+        check_cli("version", replace(sample("version"), **change), "0.2.0", enforce_latency=False)
+
+
+@pytest.mark.parametrize(
+    "profile",
+    [
+        "import time: 150000 | 150000 | kuberich.cli\n",
+        "import time: 5 | 150000 | kuberich.cli\n",
+    ],
+)
+def test_advisory_import_reports_original_targets_and_strict_mode_rejects_them(profile):
+    result = check_importtime(profile, enforce_latency=False)
+    assert result["budget_met"] is False and result["budget_enforced"] is False
+    assert result["budget_us"] == 150_000 and result["max_cumulative_us"] == 150_000
+    with pytest.raises(ValueError, match="150 ms"):
+        check_importtime(profile, enforce_latency=True)
+
+
+@pytest.mark.parametrize(
+    "profile",
+    [
+        "",
+        "unexpected diagnostic",
+        "import time: -1 | 1 | kuberich.cli",
+        "import time: 20 | 10 | kuberich.cli",
+        "import time: 1 | 1 | owned_only",
+        PROFILE + "import time: 1 | 1 | kuberich.cli\n",
+        PROFILE + "import time: 1 | 1 | textual.widgets\n",
+        PROFILE + "import time: 1 | 1 | kubernetes_asyncio.client.models.v1_pod\n",
+    ],
+)
+def test_advisory_import_clock_cannot_relax_presence_or_profile_validity(profile):
+    with pytest.raises(ValueError):
+        check_importtime(profile, enforce_latency=False)
 
 
 def test_observation_records_slow_real_frame_while_strict_check_still_rejects_600ms():
