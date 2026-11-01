@@ -245,3 +245,23 @@ Python's
 documentation explains waiting, reaping and the need to drain child output;
 [`BaseException.add_note`](https://docs.python.org/3.12/library/exceptions.html#BaseException.add_note)
 keeps cleanup evidence beside the preserved original exception.
+
+### Current parent integration: terminal cleanup
+
+The local parent integration on 2026-11-01 passed **96 focused cases in 36.00
+seconds** on Linux/CPython 3.12.12. The selection combines the complete owner
+cleanup and observer controls, terminal-lease restoration controls, actual
+external shutdown and native handoff scenarios, and the three existing
+SSH/tmux workspace resize, Unicode, focus and quit trials. All 875 tracked input
+hashes and the checkout commit stayed unchanged until the test child was reaped.
+
+The original cleanup patch and the retained public terminal-read port preserve
+all existing assertions and deadlines. A normal merge then retained the
+published cleanup PR's ancestry without changing any tested file bytes. The
+production package, settled-frame transport assertions, phase-qualifier clock,
+clipboard queue, Wayland/X11 behavior and runtime/phase policy are unchanged.
+
+These are Linux results with controlled Darwin errno injections. They do not
+qualify the actual Darwin kernel, native macOS packages or every terminal.
+Required full/native platform checks remain pending for this parent integration;
+no real provider, Kubernetes cluster, host clipboard or compositor was used.
