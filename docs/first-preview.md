@@ -69,6 +69,10 @@ correctness as a release blocker. All workload, resource, memory, cleanup and
 coverage checks remain required. Strict runtime limits remain available with
 `KUBERICH_STRICT_RUNTIME_BUDGETS=1` and become mandatory for major-version 1
 candidates; the deliberate blocking negative controls always remain strict.
+Focused policy, receipt and release controls passed 423 cases. Three actual
+aggregate-UI, HTTP-backend and mounted-terminal cases also passed, retaining both
+always-strict blocking controls and full positive workload/cleanup checks. These
+are local prerequisite checks, not full platform or coverage qualification.
 The [quality policy](quality.md#runtime-latency-policy-for-0x-and-stable-qualification)
 explains the exact observation and validation contract.
 
