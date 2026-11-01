@@ -32,7 +32,7 @@ NATIVE_JOBS = (
         "kubectl_sha256": "",
     },
     {
-        "os": "macos-14",
+        "os": "macos-15",
         "target": "macos-arm64",
         "tool_arch": "arm64",
         "kind_sha256": "",

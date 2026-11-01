@@ -1,5 +1,13 @@
 # Quality and coverage
 
+## Supported native runner images
+
+Native Apple Silicon builds and Homebrew installation checks select `macos-15`;
+Intel keeps `macos-15-intel`. GitHub retires its macOS 14 images on 2026-11-02.
+New Apple Silicon bottles use their actual `arm64_sequoia` tag; published Sonoma
+metadata remains readable. New-image build and installation results must pass
+before claiming qualification or publishing artifacts.
+
 ## Reactive preferences: U06 #64
 
 `config/context_settings.py` joins the 100% line/branch inventory, with the
