@@ -115,9 +115,10 @@ class PluginController:
             raise AppError("Select a connected context before running a plugin.")
         local_contexts = app._resource_name == "contexts"
         resource = None if local_contexts else view.scope.resource
-        if resource is not None and resource.name != app._resource_name:
-            raise AppError("The resource view is loading; wait before reviewing a plugin.")
         generic = app._generic_selection
+        expected_name = generic.name if generic is not None else app._resource_name
+        if resource is not None and resource.name != expected_name:
+            raise AppError("The resource view is loading; wait before reviewing a plugin.")
         if (
             resource is not None
             and generic is not None

@@ -1254,6 +1254,7 @@
         "docs/acceptance/plugin-execution.md",
         "tests/contract/test_plugins.py",
         "tests/ui/test_plugins.py",
+        "tests/ui/test_generic_plugins.py",
         "tests/unit/test_credential_child.py",
         "tests/terminal/test_handoff.py",
         "tests/packaging/test_distribution.py",

@@ -1340,7 +1340,8 @@
         "Every inventory row and every flag/action/schema/plugin entry has a delivered test or a clearly stated compatibility difference; planned rows are never counted as implemented.",
         "Refresh the latest stable upstream comparison and create tickets for new features before freezing the stable parity claim.",
         "Maintain the Alpha evidence gap until authoritative material is available; do not claim 100% paid-feature parity without a verifiable catalog and tests.",
-        "Per the 2026-11-01 maintainer decision, complete the deferred unchanged under-600-ms real UI first-paint qualification. Version major 1 and later automatically enforce the original strict startup mode; retain all five observations, both strict negative controls and original failures without a higher substitute threshold."
+        "Per the 2026-11-01 maintainer decision, complete the deferred unchanged under-600-ms real UI first-paint qualification. Version major 1 and later automatically enforce the original strict startup mode; retain all five observations, both strict negative controls and original failures without a higher substitute threshold.",
+        "For major-version 1 qualification, enforce the unchanged runtime heartbeat/input-latency limits and original blocking negative controls; neither environment nor receipt metadata may downgrade them. Earlier advisory 0.x measurements are not a strict pass."
       ],
       "verification": "Automated matrix completeness checks plus a human end-to-end checklist and links to tests/releases for each claim; no untriaged entry may be silently dropped.",
       "priority": "P0"
@@ -2065,7 +2066,8 @@
         "The qualification command from Q17 #218 passes on the complete Linux/macOS matrix.",
         "Structural targets are met: `app.py` ≤ 800 lines, zero private access from tests, no private Textual APIs, unchanged offline startup budgets met, 50k-resource measurement within budget. Per the 2026-11-01 maintainer decision, report all five real UI observations and any missed 600 ms target honestly for 0.x; retain strict opt-in and mandatory stable qualification under Q06 #88. All actual-frame, source, SDK, geometry and cleanup checks remain mandatory.",
         "Documentation checks pass and the README stays within its budget.",
-        "No publication happens here. Publication needs separate maintainer approval."
+        "No publication happens here. Publication needs separate maintainer approval.",
+        "For 0.x, runtime heartbeat/input-latency observations are advisory with explicit unmet results; preserve unchanged strict opt-in limits, always-strict blocking negative controls and all functional, resource, cleanup, coverage and platform requirements."
       ],
       "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
       "priority": "P0"
@@ -2656,6 +2658,7 @@
           189,
           208,
           270,
+          278,
           281,
           291
         ]

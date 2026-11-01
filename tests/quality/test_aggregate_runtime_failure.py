@@ -9,6 +9,7 @@ import pytest
 
 from kuberich.domain.processes import ProcessResult, ProcessStatus
 from tests.support import aggregate_runtime
+from tests.support.runtime_budget import VERSION
 
 
 @pytest.fixture
@@ -53,6 +54,8 @@ def incomplete_child(monkeypatch, tmp_path):
                 "limit_seconds": 0.15,
                 "gc_thresholds": list(gc.get_threshold()),
                 "timing_qualifying": True,
+                "max_gap_seconds": 0.05,
+                "runtime_budget": {"version": VERSION, "enforced": True, "met": True},
                 "maximum_simultaneously_prepared_records": 5000,
                 "maximum_retained_plus_prepared_records": 5000,
                 "input_refill": {"byte_budget": 8192, "records": 0},
