@@ -17,6 +17,7 @@ from coverage import __version__ as coverage_version
 from coverage.exceptions import CoverageException
 
 from tests.support.aggregate_runtime import DEADLINE, NODE, OUTPUT_LIMIT, ROOT, source_stamp
+from tests.support.runtime_budget import verify_budget
 
 RUNTIME_ARTIFACTS = {
     "cases.xml",
@@ -194,6 +195,7 @@ def verify_runtime(directory: Path, expected: dict[str, Any]) -> tuple[dict[str,
             "Runtime warm/retention/GC contract is invalid",
         )
         gap = measured_gap(heartbeat.get("max_gap_seconds"))
+        verify_budget(heartbeat.get("runtime_budget"), gap, mode=mode)
         cases = ElementTree.parse(child / "cases.xml").getroot().findall(".//testcase")
         require(
             len(cases) == 1
@@ -208,7 +210,7 @@ def verify_runtime(directory: Path, expected: dict[str, Any]) -> tuple[dict[str,
                 and result.get("status") == "SUCCEEDED"
                 and not failures
                 and heartbeat.get("negative_callback_executed") is False
-                and (mode == "coverage" or gap < 0.15)
+                and (not heartbeat["runtime_budget"]["enforced"] or gap < 0.15)
                 and heartbeat.get("maximum_retained_plus_prepared_records") == 5001
                 and heartbeat.get("completed_full_history_rounds") == 2
                 and heartbeat.get("after_close") == VIEWER_CLEANUP,

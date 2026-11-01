@@ -12,6 +12,7 @@ from scripts import check_backend_runtime as verifier
 from scripts import merge_runtime_coverage
 from tests.support import backend_runtime
 from tests.support.aggregate_runtime import ROOT
+from tests.support.runtime_budget import VERSION
 
 
 def write(path, value):
@@ -74,6 +75,11 @@ def backend_bundle(tmp_path):
             {
                 **functional,
                 "timing_qualifying": True,
+                "runtime_budget": {
+                    "version": VERSION,
+                    "enforced": mode != "coverage",
+                    "met": mode == "positive",
+                },
                 "negative_callback_executed": mode == "negative",
                 "max_gap_seconds": 0.02 if mode == "positive" else 0.21,
             },
@@ -105,6 +111,7 @@ def backend_bundle(tmp_path):
         {
             **functional,
             "timing_qualifying": False,
+            "runtime_budget": {"version": VERSION, "enforced": False, "met": False},
             "negative_callback_executed": False,
             "max_gap_seconds": 0.7,
             "instrumentation": {"coverage_active": True, "coverage_core": "CTracer"},
@@ -262,3 +269,52 @@ def test_required_gate_rejects_missing_backend_controls_before_touching_coverage
     assert merge_runtime_coverage.main() == 1
     assert "Runtime coverage merge failed" in capsys.readouterr().out
     assert parent_data.read_bytes() == b"preserved parent coverage"
+
+
+def test_backend_overshoot_still_requires_complete_workload_and_drained_owners(
+    backend_bundle, monkeypatch
+):
+    from tests.support.runtime_budget import STRICT
+
+    monkeypatch.setenv(STRICT, "0")
+    change(backend_bundle, "positive", "heartbeat.json", "max_gap_seconds", 0.162447845)
+    change(
+        backend_bundle,
+        "positive",
+        "heartbeat.json",
+        "runtime_budget",
+        {"version": VERSION, "enforced": False, "met": False},
+    )
+    directory, expected, _ = backend_bundle
+    verifier.verify_backend_runtime(directory, expected)
+    change(backend_bundle, "positive", "heartbeat.json", "after_close", {"owner_tasks": 1})
+    with pytest.raises(ValueError, match="cleanup"):
+        verifier.verify_backend_runtime(directory, expected)
+
+
+@pytest.mark.parametrize("mode", ["positive", "negative"])
+def test_backend_budget_metadata_is_required(backend_bundle, mode):
+    change(backend_bundle, mode, "heartbeat.json", "runtime_budget", None)
+    directory, expected, _ = backend_bundle
+    with pytest.raises(ValueError, match="budget policy"):
+        verifier.verify_backend_runtime(directory, expected)
+
+
+@pytest.mark.parametrize("stable", [False, True])
+def test_backend_receipt_cannot_downgrade_strict_or_stable(backend_bundle, monkeypatch, stable):
+    from tests.support import runtime_budget as budget
+
+    version = "1.0.0rc1" if stable else VERSION
+    monkeypatch.setattr(budget, "VERSION", version)
+    monkeypatch.setenv(budget.STRICT, "0" if stable else "1")
+    change(backend_bundle, "positive", "heartbeat.json", "max_gap_seconds", 0.162447845)
+    change(
+        backend_bundle,
+        "positive",
+        "heartbeat.json",
+        "runtime_budget",
+        {"version": version, "enforced": False, "met": False},
+    )
+    directory, expected, _ = backend_bundle
+    with pytest.raises(ValueError, match="budget policy"):
+        verifier.verify_backend_runtime(directory, expected)

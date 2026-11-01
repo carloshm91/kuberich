@@ -362,12 +362,40 @@ pre-open 400 evidence changes, manual admission, same-name UID churn, expired
 selection, source/status bounds, noise/slow-source heartbeat and detached-export
 cleanup before context-client close. Source and fresh-installed console/module
 PTYs exercise actual controls, resize, exit and terminal restoration.
+### Runtime latency policy for 0.x and stable qualification
+
+For 0.x, runtime heartbeat and input-latency targets are advisory observations,
+not release blockers. The original 150 ms heartbeat limit remains unchanged.
+Receipts report the actual gap and `runtime_budget.version`, `enforced` and
+`met`; an overshoot records `met: false` rather than a strict pass. Set
+`KUBERICH_STRICT_RUNTIME_BUDGETS=1` to enforce the original limit explicitly.
+Major-version 1 and later, including prerelease candidates, always enforce it;
+setting the variable to `0` cannot downgrade stable qualification. Values other
+than `0` and `1` are errors. The version comes from the tested source metadata.
+
+The ordinary UI/backend aggregate and terminal-render workloads still execute.
+Every functional assertion, complete round, retention/memory bound, source
+identity, process deadline, output bound and ownership/cleanup check remains
+mandatory, as do production line/branch/changed-line and critical coverage gates.
+The deliberate 200 ms blocking callbacks always run in strict mode and must fail
+the original 150 ms assertion. The branch-covered replay remains explicitly
+nonqualifying for timing; it cannot replace ordinary uninstrumented observations.
+The existing receipt validators reject missing/falsely met observations and
+attempts to disable required enforcement. No test or platform lane is skipped.
+
+The original documentation-only run `41325919244` measured 162.447845 ms against
+the 150 ms target. That failed original remains retained. This policy is the
+maintainer-approved distinction between 0.x latency observations and functional
+correctness, not a claim that the old result met its target. Strict runtime
+latency and the separate strict UI first-paint target remain stable 1.0 goals.
+
 The separate actual-HTTP tiny-line backend case retains 32,770 received lines,
 a responsive slow source, 600 aggregate/300 per-source retained lines, byte limits,
 the 30-second receive deadline and drained ownership under the full parent branch
 coverage run. Two mandatory owned fresh children run that exact same workload
 without coverage/trace/profile instrumentation or development-only IRI imports.
-The positive child must meet the unchanged 150-ms maximum heartbeat. The negative
+The positive child reports the unchanged 150-ms maximum heartbeat target and
+enforces it in strict/stable mode. The negative
 child must fail specifically that assertion after a deliberate 200-ms callback;
 it must still deliver the complete bounded workload and drain all owners.
 Normal GC stays enabled at its original thresholds. Each child owns its process
@@ -399,7 +427,7 @@ runtime caches through four same-app Pod/ReplicaSet viewer reopens, source-picke
 admission cycles, theme changes and 40/100-column geometries under the heartbeat;
 it never clears library caches. It then measures two full 5,000-record layout/
 format/timestamp/copy/save and Current/Previous cycles, with the unchanged 150-ms
-limit, at most 5,000 prepared records and 5,001 retained-plus-prepared records.
+strict/stable target, at most 5,000 prepared records and 5,001 retained-plus-prepared records.
 Public Escape and final application/API cleanup must drain all owned work.
 The first 0.1.0 candidate's Ubuntu/Python 3.13 normal-runtime child measured
 183.688 ms while opening a source picker; a generation-two collection occupied
@@ -422,8 +450,8 @@ coverage, retaining every non-time behavior assertion. Its timing is explicitly
 nonqualifying: ordinary paired Python 3.12 evidence measured 177.48 ms with the
 pinned coverage 7.16.2 CTracer versus 112.49 ms without instrumentation; CSS
 reparse/update cost nearly doubled. Installed runtimes have no coverage tracer.
-The runtime children keep the original 150-ms assertions and the deliberate
-200-ms negative control. The parent requires all three results, actual coverage
+The runtime children keep the original strict-mode 150-ms assertions and the
+always-strict deliberate 200-ms negative control. The parent requires all three results, actual coverage
 version/core and trace/profile type facts, exact source/input hashes, unique
 nonces, XML and import inventories;
 timeouts, missing/stale evidence and other failures fail closed. Each child owns
@@ -624,7 +652,7 @@ out of their timing observations. Every fast run executes both the full positive
 scenario and its deliberately failing negative control. A run requesting coverage
 also performs the instrumented replay; its branch data is mandatory for the full
 coverage gate. A fast-only receipt cannot pass that gate. This keeps coverage
-measurement in the full tier and retains the same 150 ms timing limit.
+measurement in the full tier and retains the same 150 ms strict/stable target.
 Run timing comparisons
 without a second test command competing on the same host; separate pytest commands
 own separate locks and cannot reserve CPU from each other.
@@ -683,8 +711,8 @@ selection and the protected hosted checks before merge. The
 [implementation verification record](https://github.com/carloshm91/kuberich/pull/269)
 retains the final repeat results, exact candidate identities, original failures
 and hosted artifact links. Interrupted or failed originals do not count as passes.
-The normal runtime heartbeat controls retain their 150 ms limit and deliberate
-blocking negative controls. Real provider certification remains opt-in.
+The normal runtime heartbeat observations retain their 150 ms target, mandatory
+strict/stable enforcement and always-strict deliberate blocking negative controls. Real provider certification remains opt-in.
 
 ### Parallel test parts
 
