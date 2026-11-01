@@ -140,6 +140,9 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     )
     assert plan["steps"][-1]["run"] == "python3 -m scripts.ci_policy"
     assert fast["needs"] == "plan"
+    assert "uv run python scripts/check_private_access.py" in [
+        step.get("run") for step in fast["steps"]
+    ]
     fast_command = next(step["run"] for step in fast["steps"] if "pytest" in step.get("run", ""))
     for option in ("-m fast", "--dist loadgroup", "--max-worker-restart=0", "--maxfail=1"):
         assert option in fast_command
