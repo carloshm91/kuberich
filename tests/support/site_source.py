@@ -46,6 +46,7 @@ def copy_source(destination: Path, version: str | None = None) -> Path:
     (destination / "scripts").mkdir()
     shutil.copyfile(ROOT / "scripts/build_site.py", destination / "scripts/build_site.py")
     shutil.copyfile(ROOT / "scripts/site_reference.py", destination / "scripts/site_reference.py")
+    shutil.copyfile(ROOT / "scripts/site_schema.py", destination / "scripts/site_schema.py")
     shutil.copyfile(ROOT / "scripts/documentation.py", destination / "scripts/documentation.py")
     shutil.copyfile(ROOT / "pyproject.toml", destination / "pyproject.toml")
     if version is not None:

@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "source_commit": "a14d1ab65201a214fe178c0f01d1d4e9bcc59a1d",
+  "archive": "engineering/guide-history/user-guides-before-consolidation.md",
+  "documents": [
+    {
+      "source": "docs/quickstart.md",
+      "sha256": "4dc118263a12e0e7f87f2de6b5bdedacf180c9c3a68c0ed2ec281d1c9d771cd8",
+      "byte_start": 448,
+      "byte_end": 10987
+    },
+    {
+      "source": "docs/everyday-workflow.md",
+      "sha256": "f9b42a5d17798f59c0c17448658955beff7711a3a0bfa148d6560b96ceb87cc2",
+      "byte_start": 11114,
+      "byte_end": 19694
+    },
+    {
+      "source": "docs/installation.md",
+      "sha256": "2c35b7849376fbd2df96bdc8fd05aa54171e41272250e71429c3e471933ffe5a",
+      "byte_start": 19816,
+      "byte_end": 27698
+    },
+    {
+      "source": "docs/context-sessions.md",
+      "sha256": "afad310cf5f1c291ec414398580efa85d2ee3b374ba1b26e18c97d87845db0b5",
+      "byte_start": 27824,
+      "byte_end": 39785
+    },
+    {
+      "source": "docs/eks-authentication.md",
+      "sha256": "87c8fa0b1dfdf08517fa871881c7b22ae5ade7058f99331a03338efcefba68b7",
+      "byte_start": 39913,
+      "byte_end": 44894
+    },
+    {
+      "source": "docs/aks-authentication.md",
+      "sha256": "841a277c1fd580ebb73249e79f69bb77262e432f7bdec41b49672f895a74bdd1",
+      "byte_start": 45022,
+      "byte_end": 51601
+    },
+    {
+      "source": "docs/kubeconfig-interoperability.md",
+      "sha256": "03dd3d805158084d000c564b636f7cd527630d1c4090d83c27a7514b2c780c73",
+      "byte_start": 51738,
+      "byte_end": 59398
+    },
+    {
+      "source": "docs/command-navigation.md",
+      "sha256": "d8faf531e8f3e3d64b0107dfd0c5646c0efa9dcee831cab6e33b41c1ac1e1783",
+      "byte_start": 59526,
+      "byte_end": 69064
+    },
+    {
+      "source": "docs/terminal-navigation.md",
+      "sha256": "34537ea6f688b23814985c823b2ed04395835794c6d20ea2257ad7afb6792a11",
+      "byte_start": 69193,
+      "byte_end": 79263
+    },
+    {
+      "source": "docs/resource-inspection.md",
+      "sha256": "7029ad9dc44c2daf4c0b3845224e0525684aafc43b357bb5d37a6c3a8fcd34f6",
+      "byte_start": 79392,
+      "byte_end": 83654
+    },
+    {
+      "source": "docs/resource-jumps.md",
+      "sha256": "4e0ac45e6c6cde526708a956aad5735b25c5d5092d47ef4f1bc146b13b8a3753",
+      "byte_start": 83778,
+      "byte_end": 86548
+    },
+    {
+      "source": "docs/log-viewer.md",
+      "sha256": "377294fe0c890f8caaeb3d0f4b3a3d0ea3c11109f90902ca51fa4e32c2e33e16",
+      "byte_start": 86668,
+      "byte_end": 98834
+    },
+    {
+      "source": "docs/container-navigation.md",
+      "sha256": "a74ff6e717eba656ff7ca466c9201e9c64ffc5894708c0de9301d6ea23970a8c",
+      "byte_start": 98964,
+      "byte_end": 101471
+    },
+    {
+      "source": "docs/container-shell.md",
+      "sha256": "904656b07adba547937c9395c417402ea58f1bc44ee53115921d1f88a741c0c3",
+      "byte_start": 101596,
+      "byte_end": 110338
+    },
+    {
+      "source": "docs/container-attach-copy.md",
+      "sha256": "f2278b9a4949831c0d9f06f2e0ebef7b9b1bc77b9a5f2a9502add6977bfb83d2",
+      "byte_start": 110469,
+      "byte_end": 117806
+    },
+    {
+      "source": "docs/port-forwards.md",
+      "sha256": "28c338e5821eeb7de0aeee9a3d171d14d5c3670c9ff26b1a08931af4aa3b96be",
+      "byte_start": 117929,
+      "byte_end": 127071
+    },
+    {
+      "source": "docs/editing.md",
+      "sha256": "da15de68a20076b95cfd1254edf1ac29df4219b08b4fdad4db25dc69fc0c4732",
+      "byte_start": 127188,
+      "byte_end": 130794
+    },
+    {
+      "source": "docs/mutations.md",
+      "sha256": "877ba0fc26c9779106b98b148b03d46ec8fbc8ad4a2b3b2249b06b2cece8ee4d",
+      "byte_start": 130913,
+      "byte_end": 134431
+    },
+    {
+      "source": "docs/configuration-data.md",
+      "sha256": "891f8470afd470a9382c4f3a0703961bd71e09f7fa36c5b3a689dd2c44326fbf",
+      "byte_start": 134559,
+      "byte_end": 138087
+    },
+    {
+      "source": "docs/workloads.md",
+      "sha256": "7676830b975b845376bc93d99edfba2bdb296856e697611c0e4cd6920a56305e",
+      "byte_start": 138206,
+      "byte_end": 141531
+    },
+    {
+      "source": "docs/resource-operations.md",
+      "sha256": "641a2c646381995b8df5e887d3a1372cb065e2a00829b22357b480bb7c63bedd",
+      "byte_start": 141660,
+      "byte_end": 149049
+    },
+    {
+      "source": "docs/configuration.md",
+      "sha256": "e8977ad4b432621cdb5bbfccd79197f76e61236c3247c00dbb497c7953d3608c",
+      "byte_start": 149172,
+      "byte_end": 163344
+    },
+    {
+      "source": "docs/themes.md",
+      "sha256": "f615a0ee468648956fc9e2bdf9bdb068631e4cbfd04d770e5797e03fba6148a5",
+      "byte_start": 163460,
+      "byte_end": 169904
+    },
+    {
+      "source": "docs/navigation-preferences.md",
+      "sha256": "673dce8087d56aaf54c8626b56f56b4090b4d466f9a72b0d228e0d264a0f759d",
+      "byte_start": 170036,
+      "byte_end": 179705
+    },
+    {
+      "source": "docs/plugins.md",
+      "sha256": "9ed948147921716ea927fb57587dab8f942e69232c6e5e9b780ca8589e0c2dd1",
+      "byte_start": 179822,
+      "byte_end": 191950
+    },
+    {
+      "source": "docs/plugin-compatibility.md",
+      "sha256": "b317e7369d8404590fbee2df1670aa54722949be3d25f009ee4a0f0929ba88fa",
+      "byte_start": 192080,
+      "byte_end": 226699
+    },
+    {
+      "source": "docs/troubleshooting.md",
+      "sha256": "0e9ab72dc817b0462b91db61fb3e524631641ee08ca247d90820a6164c6dcef4",
+      "byte_start": 226824,
+      "byte_end": 235464
+    },
+    {
+      "source": "docs/terminal-compatibility.md",
+      "sha256": "dd4fa26fe25fe64f9d8dc078305fbb99de44553875bfbdc9d9dffd8bb0124096",
+      "byte_start": 235596,
+      "byte_end": 242850
+    },
+    {
+      "source": "docs/resource-workspace.md",
+      "sha256": "123c264c12ba6738603966c73c78af197d83ca8ae91beb24fdba672c782071be",
+      "byte_start": 242978,
+      "byte_end": 249892
+    },
+    {
+      "source": "docs/standard-resources.md",
+      "sha256": "5773e28d36ff06f92c93543ea8611df5bd5660d36f7a88cfda8411b5ce55e65a",
+      "byte_start": 250020,
+      "byte_end": 258903
+    }
+  ]
+}

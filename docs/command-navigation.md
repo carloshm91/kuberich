@@ -1,148 +1,124 @@
-# Commands, filtering and navigation
+# Navigate and search
 
-The workspace has live pod and namespace views. Selected pods support [inspection](resource-inspection.md),
-[logs](log-viewer.md) and [embedded shells](container-shell.md); other resource
-tables are described in [standard resources](standard-resources.md).
+Use the command and filter bars to move between views without leaving the
+workspace. Press `?` in a table for its current keys. Letters stay literal while
+an input has focus; Escape returns focus to the view.
 
-See [terminal navigation and remote clipboard](terminal-navigation.md) for the
-next-release key matrix, wide/errors/selection controls, nested commands, favorites
-and explicit clipboard backends.
+## Open a view
 
-## Commands
+Press `:`, type a command, and press Enter. For example, `:pods`, `:deploy`,
+`:ns`, and `:ctx` open their tables. `:pods demo-apps` selects that namespace;
+`:pods *` selects all namespaces. The names in this guide are fictional.
 
-Press `:` outside an input, type a command and press Enter. The same parser and
-read-only policy handle `--command` / `-c` at launch. Arguments preserve casing.
+The [generated command and key reference](cli-reference.md) lists registered
+aliases and defaults. [Resource reference](resource-reference.md) lists standard
+resource aliases. For a discovered resource, use
+`:resource NAME.GROUP/VERSION` or an unambiguous discovered alias. A cluster-scoped
+resource does not accept a namespace argument.
 
-| Command | Behavior |
+At launch, `--command 'pods demo-apps'` selects a starting view. Commands that need
+a selected row or confirmation are unavailable at launch.
+
+## Accept a suggestion
+
+The command bar shows one suggested suffix on the same line. Tab accepts it for
+editing. Up/Down cycle up to eight candidates; Enter then accepts and submits the
+selected candidate once. Enter without arrow selection submits what you typed,
+so bare `:ns` opens namespaces and `:ctx` opens contexts.
+
+Suggestions come from loaded commands, configured aliases, contexts, and cached
+resource and namespace names. Typing a suggestion makes no API or authentication
+request. An unavailable namespace can still be entered explicitly. Escape clears
+the command input. Moving the cursor away from its end hides the suffix.
+
+Alt+Up/Alt+Down recall previous commands and filters separately. Histories keep
+up to 32 entries for this session. `:!!` repeats the last accepted command through
+its normal checks and review; it never confirms a write or plugin automatically.
+
+## Move through a table
+
+Use arrows or `j`/`k`, `g`/Shift+G for first/last, and Ctrl+B/Ctrl+F for pages.
+In tables, `J` moves half a page down and Ctrl+U half a page up. `h`/Alt+L scroll
+horizontally. Home/End move horizontally; Ctrl+Home/Ctrl+End select first/last rows.
+A capital letter is one uppercase key; Vim counts and multi-key grammar are not
+implemented. Resource and namespace `s`/Shift+S cycle or reverse typed sorting.
+
+Container `s` opens a shell. Resource `l` opens logs and Ctrl+D opens deletion
+review in write mode. Logs and text documents use their independent movement
+keys. Keys depend on the focused view; the embedded shell passes them to the
+remote program. [Configuration](configuration.md) explains additional key bindings.
+
+## Filter resources
+
+Press `/`, enter one query family, then Enter to focus the table. Escape in the
+table clears the filter. Filters run locally over the rows already read; they
+do not narrow the API request or grant access to hidden resources.
+
+| Query | Matching rule |
 | --- | --- |
-| `po`, `pod`, `pods` | Focus the available pod view |
-| `po NAMESPACE`, `po *` | Select a pod namespace or all namespaces |
-| `ctx`, `context`, `contexts` | Open the local context workspace table |
-| `ctx NAME` | Connect directly to that context |
-| `rename NEW`, `delete` | In the context table: review renaming or deleting the selected kubeconfig context; see [contexts](context-sessions.md#rename-or-delete-a-context) |
-| `ns`, `namespace`, `namespaces` | Open the live namespace workspace table |
-| `ns NAME`, `ns *` | Select that namespace or all namespaces |
-| `shell`, `exec` | Open the selected pod’s container picker; `s`/`x` launches its shell |
-| `attach` | Choose a running container; `a` connects to its existing main process |
-| `upload`, `download` | Choose a container; `u`/`d` opens explicit copy review |
-| `status`, `retry` | Open connection details / reconnect |
-| `resource NAME[.GROUP][/VERSION] [NAMESPACE or *]` | Browse a discovered API family or an explicit served version |
-| `cleanup` | In a pod view: review deleting the completed and failed pods shown; see [cleanup](resource-operations.md#clean-up-finished-pods) |
-| `jump`, `jump NAME` | Open a related view from the selected row, with a filter already set; see [jumps](resource-jumps.md) |
-| `refresh` | Renew discovery and the selected resource watch on the current client |
-| `columns`, `columns cN ...`, `columns default`, `columns none` | Inspect/configure transient generic server columns |
-| `views` | Configure resource columns, widths, alignment and typed sort; explicitly save globally or by context in next-release source |
-| `plugins`, `plugin NAME`, `pluginjobs` | Next-release source: list/review explicitly configured local commands and inspect/stop owned jobs; see [plugins](plugins.md) |
-| `back`, `forward` | Restore the previous / next navigation state |
-| `help`, `?` | Show actual keyboard actions and limits |
-| `quit`, `q`, `exit` | Exit and restore the terminal |
+| `api` | Case-insensitive literal substring |
+| `re:api\|worker` | Unicode regular expression |
+| `!re:api\|worker` | Inverse regular expression |
+| `fuzzy:apwrk` | Characters occurring in order |
+| `label:app=api,tier in (frontend,worker),!debug` | Label terms combined with AND |
+| `field:metadata.name=demo-api` | Supported field equality |
 
-For example, `uv run kuberich --context YOUR_CONTEXT --command 'po YOUR_NAMESPACE'`
-connects once and starts the requested pod scope without first watching another
-namespace. `--command 'ctx NAME'` selects that context before authentication.
-Unsupported commands report unavailable; they never display a substitute table.
-Inspection commands remain usable in read-only mode. Embedded shells are available
-in write mode; startup `--command shell`/`exec` is refused because a deliberately
-selected pod is required. Attach and copies also require interactive selection;
-see [attach and file transfer](container-attach-copy.md). Guarded mutations have
-their own review workflows. Local plugins are available in next-release source
-through explicit [configuration and review](plugins.md); published 0.1.0 is unchanged.
-The shared policy rejects effectful commands in read-only mode.
+Label terms support equality, inequality, `in`, `notin`, existence, and absence.
+Field terms support equality and inequality for metadata name/namespace, Pod
+phase/node/scheduler/hostNetwork, Node unschedulable, and Job successful count.
+Arbitrary JSON paths, annotations, and Secret data are excluded.
 
-## Completion
+Queries accept up to 256 characters and eight selector terms. Regex matching has
+a 50 ms total budget; metadata filters have 250 ms. Invalid or timed-out filters
+show an error and all rows, never a misleading partial result. Sorting remains
+unchanged. Age is excluded from ordinary resource text matching.
 
-The dedicated `:` bar shows the selected prefix match as an inline suggested
-suffix in muted italic styling. Up/Down cycle up to eight local candidates;
-there is no dropdown. The suffix is display text until accepted. Tab accepts it
-for editing; Enter after Up/Down accepts and submits the selected candidate once.
-Enter without arrow selection submits the typed text, so bare `:ns` opens the
-namespace table and `:ctx` opens the context picker. Editing the query, leaving
-the input or changing scope discards prior arrow selection. Matching ignores
-case; the accepted context name retains its original case. At 40×12 the native
-one-line input scrolls horizontally with its cursor.
-Inputs/candidates are bounded to 256 characters; only the suffix that fits in the
-remaining input width is visible. Empty input retains its placeholder. Suggestions
-never resize the bar or cover resources. Right moves the editing cursor rather
-than accepting a completion.
+`:errors` shows observable failures or unready resources. Unknown health is counted
+separately; a resource without known conditions is not assumed healthy.
 
-Candidates come from local command aliases, the current client's discovered
-resource catalogue, the loaded kubeconfig catalogue and
-the active session's namespace cache. Typing, selecting and accepting suggestions
-does not authenticate or make API requests. A context switch immediately drops
-the old namespace candidates. When namespace listing is denied, only the known
-current namespace and `*` are suggested; enter a permitted namespace directly.
-Disconnected/connecting sessions have no namespace suggestions.
+## Inspect a resource
 
-Tab moves focus when no candidate applies. Shift+Tab always moves focus backward.
-Moving the input cursor away from its end hides suggestions; returning to the end
-restores applicable candidates. Escape leaves the input and clears command text;
-filter text remains until Escape in the table. Help restores the prior focus.
+On a selected row, `d` opens details, `y` YAML, and `e` events. These are read
+snapshots with redacted values. `/` searches text, `n`/Shift+N move between matches,
+and Escape returns. `m` toggles managed fields where offered. ConfigMap and Secret
+values have a separate [deliberate reveal workflow](editing.md#inspect-configuration-data).
 
-## Filters
+`:wide` temporarily expands available columns. `:views` changes columns, widths,
+alignment, and sort; Apply affects this session, while Global or Context saves
+preferences explicitly. A hidden field may still be used in sorting or filtering.
+Hiding a column is not a confidentiality control.
 
-Press `/` outside an input. Plain text performs case-insensitive literal matching
-across namespace, name, readiness, status and restart count. `re:PATTERN` selects
-case-insensitive Unicode regex matching with the `regex` package's VERSION1
-dialect. For example, `api` finds matching names and `re:api|worker` matches either.
-Age is excluded because it changes continuously. These are local filters over
-the current snapshot, rather than server-side label/field selectors.
+## Mark rows and copy
 
-Filtering updates while typing and continues through live pod changes. Enter
-returns to the table; Escape there clears the filter. Status reports visible/total
-counts. A valid filter with no matches shows **No pods match this filter**.
-Invalid or excessive regex patterns show a clear error and all current pods;
-they never masquerade as a successfully empty scope.
+Space marks a resource; Shift+Up/Shift+Down extend a range. `:mark`, `:range`,
+`:selectall`, and `:selectnone` provide command alternatives. Up to 100 UIDs can be
+marked. Marks disappear with rows or scope changes, and replacement objects do
+not inherit them. `:deletebatch` reviews marked rows when marks exist.
 
-Queries are limited to 256 characters. Matching runs off the UI loop, with a total
-50 ms regex budget per snapshot; a timeout discards partial results and reports
-the error. The engine releases the GIL during matching and supports an actual
-match timeout. Cancellation awaits the owned worker. Scope/query identity guards
-reject late results; rapid input coalesces into the latest render request.
-Next-release source adds inverse regex, fuzzy subsequences, bounded local label/field selectors and separate memory-only filter recall; see [terminal navigation](terminal-navigation.md).
-Maximum-workload latency and memory still need sustained performance validation.
-These bounds alone do not establish a maximum supported workload.
+`:copy` copies selected names, `:copyns` namespaces, and `:copytext` table text.
+Ctrl+Y copies the selected name in the root table. Copy is always explicit.
+Clipboard limits and SSH/tmux setup are in [troubleshooting](troubleshooting.md#clipboard).
 
-## Navigation history
+## Return and adjust the workspace
 
-Alt+Left / Alt+Right, or `:back` / `:forward`, restore context, namespace, filter,
-sort direction/column, selected pod UID and viewport. History retains at most 32
-states in each direction for this invocation. New manual navigation clears the
-forward stack. Missing/deleted UIDs use the table's deterministic row fallback.
-History can return from a failed context; authentication/read failures remain
-visible. Restoring a context owns a new connection and cancels the previous watch.
-Only the matching revision can restore a saved viewport. History is not persisted,
-and next-release source adds explicit per-context namespace favorites and last-command recall; see [terminal navigation](terminal-navigation.md).
+Alt+Left/Alt+Right or `:back`/`:forward` restore the previous/next view, context,
+namespace, filter, sorting, selection, and viewport. History keeps up to 32 states
+per direction and is not saved across launches.
 
-## Verification
+`:headless` hides shortcuts and the logo, `:crumbsless` hides identity and the trail,
+and `:fullscreen` hides headers, trails, and frame borders. Command, search, and
+status remain available. These controls do not save preferences.
 
-```sh
-uv run pytest tests/unit/test_navigation.py tests/unit/test_filtering.py tests/ui/test_navigation.py
-uv run pytest tests/terminal/test_navigation.py tests/packaging/test_distribution.py
-```
+In nested containers, inspection, and log views, `:` uses that view's command bar.
+Accepted scope changes close the old reads before switching. Escape leaves an
+input before going back. Help restores the preceding focus.
 
-The command grammar and deterministic navigation domain enforce 100% line/branch
-coverage. Pilot exercises actual loopback HTTP sessions, input focus, cached
-literal completions, no keystroke I/O, small screens, stale scopes, filter errors,
-history restoration and exit during a blocked owned worker. Real PTYs exercise
-rapid Tab/Enter input, filters, scope commands, history, resize and terminal
-restoration. The same trial runs against freshly installed console/module entry
-points outside the checkout. Disposable-kind qualification exercises real regex
-filtering, namespace completion and restored selection/sorting.
+## Save favorite namespaces and jumps
 
-Sources: [Textual Input](https://textual.textualize.io/widgets/input/),
-[bindings](https://textual.textualize.io/guide/input/#bindings),
-[queued callbacks](https://textual.textualize.io/api/message_pump/#textual.message_pump.MessagePump.call_later),
-[regex timeout and threading](https://pypi.org/project/regex/).
+`:favorite add demo-apps` and `:favorite remove demo-apps` save names under the
+current context. `:favorites` filters the namespace table to them; `:ns` shows all
+namespaces. Favorites do not create rows or grant namespace-list permission.
 
-Measured delivery evidence and unavailable platform checks:
-[navigation verification](acceptance/B03.md).
-
-Namespaces share these filter bounds for name/status. See [workspace layout, live namespaces and Escape routes](resource-workspace.md).
-
-The next-release source also provides `:themes` / `:theme` for local appearance
-and `:about` for branding/version-check state. See [themes](themes.md) for
-preview, save, precedence and release availability.
-
-The next-release source also offers [navigation preferences](navigation-preferences.md):
-per-view keys, literal aliases with effective completion and explicitly saved
-resource layouts. Published 0.1.0 packages retain their original fixed keys.
+A configured `:jump` opens a related resource view with a filter from the selected
+row. If several match, use `:jump NAME`. Templates read fields; they run no code.
+See [configuration](configuration.md#define-a-resource-jump) for an example.

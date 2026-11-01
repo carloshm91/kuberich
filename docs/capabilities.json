@@ -30,7 +30,7 @@
         "scripts/verify_shell_kind.py",
         "docs/acceptance/connection-overrides.md"
       ],
-      "public_summary": "Help, version, local diagnostics, read-only policy, presentation flags, startup views and connection overrides are available. Splash, inversion, resource export settings and shell completion are unavailable.",
+      "public_summary": "Launch flags provide help, version, local diagnostics, read-only policy, presentation controls, session color inversion, startup views, and connection overrides. Splash, general resource export, and shell completion are unavailable.",
       "public_status": "partial"
     },
     {
@@ -66,7 +66,7 @@
         "tests/packaging/test_distribution.py",
         "scripts/verify_credential_interop_kind.py"
       ],
-      "public_summary": "Select explicit kubeconfig files, context, namespace, cluster/user overrides and connection options. Each context owns its connection and captured delegated identity.",
+      "public_summary": "Select kubeconfig files, context, namespace, connection overrides, and user settings explicitly. Each context uses its own connection and passes that identity to delegated tools.",
       "public_status": "partial"
     },
     {
@@ -148,7 +148,7 @@
         "tests/packaging/test_distribution.py",
         "scripts/verify_credential_interop_kind.py"
       ],
-      "public_summary": "CA/client certificates, TLS names, timeouts, captured proxy settings and repeated impersonation are supported. SOCKS5 has documented streaming limitations. A permission browser is planned.",
+      "public_summary": "CA and client certificates, TLS names, timeouts, proxy settings, and repeated impersonation are supported. SOCKS5 streaming has limitations; an interactive permission browser is unavailable.",
       "public_status": "partial"
     },
     {
@@ -173,7 +173,7 @@
         "tests/ui/test_context_cleanup.py",
         "docs/acceptance/context-cleanup.md"
       ],
-      "public_summary": "Ordinary context switching preserves kubeconfig. You can rename or delete a context after a review, with a backup. Persisted per-context view preferences are planned.",
+      "public_summary": "Selecting a context leaves kubeconfig unchanged. Renaming or deleting a context uses explicit review and a backup. Local per-context display preferences can be saved.",
       "public_status": "partial"
     },
     {
@@ -213,7 +213,7 @@
         "tests/ui/test_custom_table.py",
         "tests/terminal/test_custom_resources.py"
       ],
-      "public_summary": "Discovery selects served API versions and exposes unambiguous aliases. Generic tables support server columns, metadata fallback and temporary column selection. Generic mutations and relationship jumps are planned.",
+      "public_summary": "Discovery chooses served API versions and unambiguous aliases. Generic tables provide server columns, metadata fallback, and configurable layouts. Generic mutations and automatic relationship discovery are unavailable.",
       "public_status": "partial"
     },
     {
@@ -244,7 +244,7 @@
         "tests/contract/test_pod_projection.py",
         "tests/terminal/test_pods.py"
       ],
-      "public_summary": "Live views own bounded list/watch continuity, stale-state retention and reconnect/relist behavior. Refresh renews discovery and the selected resource stream. Complete maximum-workload qualification remains separate.",
+      "public_summary": "Live lists and watches keep a last snapshot during temporary failures and reconnect or relist as needed. Refresh renews discovery and the selected resource stream. A stale snapshot does not establish current server state.",
       "public_status": "partial"
     },
     {
@@ -290,7 +290,7 @@
         "tests/terminal/test_interactions.py",
         "scripts/navigation_kind.py"
       ],
-      "public_summary": "Next-release source adds shared nested command bars in captured resource/container/log workspaces. Invalid/read-only commands retain streams; accepted scope changes drain covered owners before replacing clients. Resource actions preserve the originating UID. Completion remains inline and local; embedded-shell keys retain remote ownership.",
+      "public_summary": "Nested resource, container, and log views share inline command bars. Invalid commands keep the current view; scope changes close old reads before switching. Actions keep the selected resource identity.",
       "public_status": "partial"
     },
     {
@@ -316,7 +316,7 @@
         "tests/terminal/test_interactions.py",
         "scripts/navigation_kind.py"
       ],
-      "public_summary": "Next-release source adds inverse Unicode regex, case-insensitive fuzzy subsequences, bounded local label/allowlisted field filters and memory-only command/filter entry recall. Regex keeps its 50-ms total budget; metadata filters use a separate 250-ms budget and one-snapshot cache. Server-side selector parity and persistent filter history are not claimed.",
+      "public_summary": "Local filters support literal text, regular expressions, inverse regex, fuzzy subsequences, and supported label/field terms. Queries have size and time limits. Command and filter recall lasts for this session.",
       "public_status": "partial"
     },
     {
@@ -351,7 +351,7 @@
         "tests/terminal/test_interactions.py",
         "scripts/navigation_kind.py"
       ],
-      "public_summary": "Next-release source adds bounded command recall with draft restoration, policy-rechecked last-command repeat and explicitly saved per-context namespace favorites. Scope/view history remains separately bounded and memory-only; favorites do not grant namespace-list permissions or create API rows.",
+      "public_summary": "Commands and filters have separate histories with unfinished-draft restoration. Repeating a command uses its normal checks. Namespace favorites can be saved per context; view history stays memory-only.",
       "public_status": "partial"
     },
     {
@@ -365,7 +365,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40×12 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -395,7 +395,7 @@
         "tests/terminal/test_interactions.py",
         "scripts/navigation_kind.py"
       ],
-      "public_summary": "Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
+      "public_summary": "Text/help and log navigation have independent key profiles. Mouse reporting requires opt-in. Container state refreshes from the pod watch while preserving selection. Clipboard behavior depends on the outer terminal.",
       "public_status": "partial"
     },
     {
@@ -438,7 +438,7 @@
         "tests/terminal/test_interactions.py",
         "scripts/navigation_kind.py"
       ],
-      "public_summary": "Next-release source adds transient wide columns (Pod Node/IP/QoS), observable-errors filtering with an explicit unknown count, bounded UID marks/ranges in filtered/sorted order and marked-row batch review. Existing typed sorting, configuration saves, read-only/default-Cancel/UID guards remain enforced. Health interpretation is a deliberate known-condition subset.",
+      "public_summary": "Wide mode adds available columns. Error filtering distinguishes known failures from unknown health. Up to 100 resource UIDs can be marked for a separate batch review.",
       "public_status": "partial"
     },
     {
@@ -476,7 +476,7 @@
         "tests/terminal/test_interactions.py",
         "scripts/navigation_kind.py"
       ],
-      "public_summary": "Next-release source extends shared header/frame chrome to read-only inspection/help and provides session header/trail/fullscreen toggles without persisting preferences. Per-view navigation keys and nested command/search Escape destinations retain focused-input ownership.",
+      "public_summary": "Inspection and help share the workspace frame. Session controls hide headers, trails, or frame borders without saving preferences. Escape and navigation depend on the focused view.",
       "public_status": "partial"
     },
     {
@@ -497,7 +497,7 @@
         "tests/terminal/test_inspection.py",
         "scripts/verify_contexts_kind.py"
       ],
-      "public_summary": "Selected resources expose captured details, redacted YAML and UID-related events with local search. Inspection is a snapshot; reopen it to refresh. Automatic viewer refresh is planned.",
+      "public_summary": "Selected resources provide details, redacted YAML, and related events with local search. Inspection is a read snapshot; reopen it to refresh.",
       "public_status": "partial"
     },
     {
@@ -529,7 +529,7 @@
         "tests/terminal/test_interactions.py",
         "scripts/navigation_kind.py"
       ],
-      "public_summary": "Next-release source writes bounded native plaintext via macOS AppKit/system osascript or foreground-owned X Window System xclip and bounded base64 OSC52 with tmux framing. Explicit name/namespace/table-text controls preserve existing redacted views. Native/headless 1-MiB and terminal 64-KiB UTF-8 limits refuse rather than truncate. Owned Xvfb/ephemeral hosted macOS roundtrips and outer PTY receipts do not claim every physical-terminal paste acknowledgement.",
+      "public_summary": "Explicit copy uses local macOS native text, X Window System xclip, or terminal OSC52 with tmux framing. Native text accepts up to 1 MiB and terminal copy 64 KiB. A sent request does not prove an outer terminal accepted it.",
       "public_status": "partial"
     },
     {
@@ -579,7 +579,7 @@
         "tests/packaging/test_distribution.py",
         "scripts/verify_standalone.py"
       ],
-      "public_summary": "Source checkout: original About and opt-in cached stable-release notices; published 0.1.0 displays its version/brand without these new controls.",
+      "public_summary": "About shows the installed version and license. Stable-release notices are opt-in and can use a cached result; they never install an update.",
       "public_status": "partial"
     },
     {
@@ -627,7 +627,7 @@
         "tests/ui/test_context_workspace.py",
         "tests/unit/test_container_rows.py"
       ],
-      "public_summary": "Pods and namespaces have live dedicated views. Pod Enter opens captured regular/init/sidecar container rows; selected-container logs and existing ephemeral attach/file-copy checks have separate scope.",
+      "public_summary": "Pods and namespaces have live tables. Pod Enter opens regular, init, sidecar, and existing ephemeral container rows. State updates from the pod watch; Enter on a container opens its logs.",
       "public_status": "partial"
     },
     {
@@ -649,7 +649,7 @@
         "tests/terminal/test_standard_resources.py",
         "scripts/standard_kind.py"
       ],
-      "public_summary": "Standard workload tables and reviewed scale/restart/revision rollback are available for supported controllers. Automatic owner/ReplicaSet drill-down is planned.",
+      "public_summary": "Standard workload tables support scaling, restart, and explicit revision rollback for applicable controllers after review. Automatic controller-to-pod drill-down is unavailable.",
       "public_status": "partial"
     },
     {
@@ -724,7 +724,7 @@
         "tests/ui/test_configuration_data.py",
         "scripts/verify_editing_kind.py"
       ],
-      "public_summary": "Source checkout: explicit ConfigMap/Secret reveal/copy and guarded Secret editing; published 0.1.0 keeps data redacted. Permission browsing remains planned.",
+      "public_summary": "ConfigMap and Secret values stay hidden until a deliberate reveal or copy. Manifest editing requires local disclosure, validation, and Apply. An interactive permission browser is unavailable.",
       "public_status": "partial"
     },
     {
@@ -765,7 +765,7 @@
         "docs/resource-jumps.md",
         "tests/ui/test_jumps.py"
       ],
-      "public_summary": "Discovered APIs support served versions, typed printer columns and inspection. Next-release source persists schema-pinned views; generic mutations and relationship jumps remain planned.",
+      "public_summary": "Discovered APIs provide served-version selection, typed printer columns, inspection, and saved schema-pinned layouts. Generic resource mutation is unavailable; configured jumps can open related views.",
       "public_status": "partial"
     },
     {
@@ -795,7 +795,7 @@
         "tests/terminal/test_aggregate_logs.py",
         "scripts/verify_aggregate_logs_kind.py"
       ],
-      "public_summary": "Read current/previous container logs, select sources and aggregate supported workload logs. Owned readers track membership and preserve per-source identity.",
+      "public_summary": "Read current or previous container output and aggregate supported workload logs. Readers follow controller membership and identify each source independently.",
       "public_status": "available"
     },
     {
@@ -815,7 +815,7 @@
         "scripts/verify_contexts_kind.py",
         "docs/acceptance/S02.md"
       ],
-      "public_summary": "Logs support head/tail/time windows, timestamps, wrapping, reception pause and independent viewport following. Retained history is bounded; rotated API output may be unavailable.",
+      "public_summary": "Logs support head, tail, and time windows, timestamps, wrapping, pause, and independent viewport following. History has line and byte limits; rotated server output may be unavailable.",
       "public_status": "available"
     },
     {
@@ -837,8 +837,9 @@
         "tests/terminal/test_logs.py",
         "docs/acceptance/S02.md"
       ],
-      "public_summary": "Retained log search, match navigation, marks, clear/fullscreen, redacted copy and exclusive private-file save are available. Richer filtering and saved-export browsing are planned.",
-      "public_status": "partial"
+      "public_summary": "Search, match navigation, marks, clear, fullscreen, redacted copy, and saving a new private file work on kept output. A saved-export browser is unavailable.",
+      "public_status": "partial",
+      "public_title": "Log search, marks, copy, save, and history limits"
     },
     {
       "id": "SES01",
@@ -882,7 +883,7 @@
         "tests/ui/test_terminal_history.py",
         "tests/quality/test_terminal_history_stress.py"
       ],
-      "public_summary": "A selected container can open an embedded kubectl shell with captured scope and local bounded history/search/copy. Write mode, kubectl and exec permission are required. Advanced terminal protocols are outside the initial scope.",
+      "public_summary": "A selected container opens an embedded kubectl shell with local history, search, and copy. Write mode, kubectl, and exec permission are required. Advanced terminal protocols are unsupported.",
       "public_status": "partial"
     },
     {
@@ -927,7 +928,7 @@
         "tests/terminal/test_port_forwards.py",
         "scripts/verify_port_forwards_kind.py"
       ],
-      "public_summary": "Manage pod/Service numeric TCP forwards with explicit bind intent, readiness, listing and stop. Resource/context/exit cleanup owns local processes; external forwards are not discovered.",
+      "public_summary": "Manage Pod and Service TCP forwards with explicit bind addresses, readiness, listing, and Stop. Context changes and exit close local sessions. Other terminals' forwards are not discovered.",
       "public_status": "partial"
     },
     {
@@ -939,7 +940,7 @@
       "source": "README.md",
       "status": "planned",
       "difference": "S08 #62 adds literal named/container-qualified mappings, local/context presets and explicit local opt-in for auto annotations. Optional bounded reconnects recheck UID and clean the old process/listener/private file before restarting. Transport modes set kubectl child flags; negotiated protocol and real-provider certification are not claimed.",
-      "public_summary": "Next-release source adds named/container-qualified TCP mappings, reviewed local presets, opt-in annotation shortcuts, child transport selection and bounded UID-checked reconnects. Published 0.1.0 is unchanged.",
+      "public_summary": "TCP mappings support declared names and container qualification, local presets, explicit annotation shortcuts, transport selection, and up to three reconnect attempts.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/port-forwards.md",
@@ -979,7 +980,7 @@
         "tests/contract/test_mutation_faults.py",
         "scripts/verify_mutations_kind.py"
       ],
-      "public_summary": "Common read-only policy, captured targets, permission handling and one-use confirmations guard effectful operations. Kubernetes RBAC/admission remain authoritative; application read-only mode is not a sandbox.",
+      "public_summary": "Read-only policy, selected target identity, permission checks, and one-use confirmations guard changes. Kubernetes RBAC and admission remain authoritative; application read-only mode is not a sandbox.",
       "public_status": "partial"
     },
     {
@@ -1006,7 +1007,7 @@
         "tests/terminal/test_editing.py",
         "scripts/verify_editing_kind.py"
       ],
-      "public_summary": "Edit a selected supported manifest using an explicit local-disclosure review, trusted external editor, redacted diff, strict server dry-run and separate Apply. Secret editing is unavailable.",
+      "public_summary": "Edit supported manifests using a trusted editor after explicit local disclosure, then inspect a redacted diff, validate with a strict server dry-run, and choose Apply separately. This includes deliberate Secret editing.",
       "public_status": "partial"
     },
     {
@@ -1035,7 +1036,7 @@
         "tests/terminal/test_workloads.py",
         "scripts/verify_workloads_kind.py"
       ],
-      "public_summary": "Review scale, restart or an explicit retained-revision rollback for supported controllers. Rollout monitoring reports actual controller progress independently of API write confirmation. Owner drill-down is planned.",
+      "public_summary": "Review scale, restart, or one explicit available revision rollback for supported controllers. Rollout progress is independent of API write confirmation. Automatic owner drill-down is unavailable.",
       "public_status": "partial"
     },
     {
@@ -1083,7 +1084,7 @@
         "tests/packaging/test_distribution.py",
         "scripts/verify_operations_kind.py"
       ],
-      "public_summary": "Review supported Job/CronJob suspend/resume and create an independent manual Job from a captured CronJob template. Scheduled concurrency policy does not govern that manual run.",
+      "public_summary": "Review Job/CronJob suspension and resume, or create an independent manual Job from the selected CronJob template. The schedule and concurrency policy do not govern a manual run.",
       "public_status": "available"
     },
     {
@@ -1096,7 +1097,7 @@
       "source": "internal/view/secret.go",
       "status": "planned",
       "difference": "M05 adds explicit ConfigMap/Secret key metadata, reveal/copy and UTF-8/Base64 controls with fresh UID/version-bound reads, plus common guarded Secret editing. Permission browsing and environment provenance remain later work; full family parity is not claimed.",
-      "public_summary": "Source checkout: deliberate per-key reveal/copy, UTF-8/Base64 selection and guarded editing. Published 0.1.0 keeps data redacted; environment provenance remains planned.",
+      "public_summary": "ConfigMap and Secret data have per-key reveal/copy, UTF-8/Base64 choice, and explicit manifest editing. Tracing application environment values to all their sources is unavailable.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/configuration-data.md",
@@ -1106,7 +1107,8 @@
         "tests/ui/test_configuration_data.py",
         "tests/terminal/test_standard_resources.py",
         "scripts/verify_editing_kind.py"
-      ]
+      ],
+      "public_title": "Configuration data and environment sources"
     },
     {
       "id": "OPS07",
@@ -1171,7 +1173,7 @@
         "docs/acceptance/reactive-preferences.md",
         "tests/ui/test_live_preferences.py"
       ],
-      "public_summary": "Source checkout: custom/global/context palettes, the terminal's own background as a palette color, preview/save, live reload and session inversion. Published 0.1.0 supports configured built-ins; icon preferences are planned.",
+      "public_summary": "Themes support global/context palettes, terminal-default background, preview, explicit save, live reload, and session inversion. Icon preferences are unavailable.",
       "public_status": "partial"
     },
     {
@@ -1183,7 +1185,7 @@
       "source": "internal/config/views.go",
       "status": "planned",
       "difference": " U02 #57 implements bounded per-owner navigation keys, literal aliases and explicit version-pinned column width/alignment/order/visibility and typed-sort saves. Server schemas invalidate stale layouts. This source checkpoint does not claim broader navigation/filter/jump/plugin parity.",
-      "public_summary": "Next-release source supports per-view navigation keys, literal aliases and explicit global/context/resource column and sort preferences. Inputs retain literal editing and invalid overrides keep working defaults.",
+      "public_summary": "Configure additional navigation keys, literal aliases, and global/context resource columns and sort. Inputs keep normal text editing; invalid overrides leave working defaults.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/navigation-preferences.md",
@@ -1234,7 +1236,7 @@
         "tests/ui/test_live_preferences.py",
         "tests/unit/test_context_settings.py"
       ],
-      "public_summary": "Source checkout reloads saved preferences while KubeRich runs and keeps the last valid file when a change is invalid. Contexts can be made read-only or given their own refresh interval. Wider feature gates and connection/log/metric thresholds are planned.",
+      "public_summary": "Valid saved preferences reload while the application runs; an invalid file leaves the last working settings active. Contexts can add read-only mode or a refresh interval. Connection/log/metric threshold controls are unavailable.",
       "public_status": "partial"
     },
     {
@@ -1247,7 +1249,7 @@
       "source": "internal/config/plugin.go",
       "status": "planned",
       "difference": "U03/U04 implement the independent explicit schema and owned local execution. U05 records every pinned community command and tests original examples/argv adaptations; shell recipes, unavailable virtual views, legacy helpers and external tool/service certification remain explicit limits. Foreground plugins use unsandboxed native terminal handoff.",
-      "public_summary": "Next-release source loads explicit user definitions, context/resource scopes and shortcut overrides; typed review defaults to Cancel and Run is explicit. Published 0.1.0 is unchanged.",
+      "public_summary": "Load explicitly configured local plugin definitions with context/resource scopes and optional shortcuts. Typed review defaults to Cancel; Run is separate. No automatic plugin installation occurs.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/plugins.md",
@@ -1275,7 +1277,7 @@
       "source": "internal/view/env.go",
       "status": "planned",
       "difference": "U03/U04 implement the independent explicit schema and owned local execution. U05 records every pinned community command and tests original examples/argv adaptations; shell recipes, unavailable virtual views, legacy helpers and external tool/service certification remain explicit limits. Foreground plugins use unsandboxed native terminal handoff.",
-      "public_summary": "Next-release source runs captured literal argv/environment in capture, owned background and native foreground modes with private per-context credentials. This is not a drop-in K9s configuration format.",
+      "public_summary": "Plugins receive literal arguments and environment in capture, background, or native foreground mode, using a private per-context connection. K9s plugin YAML is not a drop-in format.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/plugins.md",
@@ -1303,7 +1305,7 @@
       "source": "internal/ui/dialog/plugin_inputs.go",
       "status": "planned",
       "difference": "U03/U04 implement the independent explicit schema and owned local execution. U05 records every pinned community command and tests original examples/argv adaptations; shell recipes, unavailable virtual views, legacy helpers and external tool/service certification remain explicit limits. Foreground plugins use unsandboxed native terminal handoff.",
-      "public_summary": "Next-release source provides typed input/default/choice forms, one-use reviews, cancellation, bounded sanitized capture, exit/timeout/overflow status and owned job Stop. Foreground output goes directly to the native terminal.",
+      "public_summary": "Plugins provide typed input, defaults, choices, one-use review, cancellation, size-limited sanitized output, result states, and job Stop. Foreground output goes directly to the native terminal.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/plugins.md",
@@ -1330,7 +1332,7 @@
       "source": "plugins/README.md",
       "status": "planned",
       "difference": "U05 classifies all 50 pinned files and 108 commands with source identities, dependencies and free inspection alternatives; 18 synthetic argv adaptations and three original capture/interactive/background manifests have executable contract tests. This is not drop-in import, external-tool certification or native workflow parity. Shell/PowerShell, virtual views and legacy helpers are classified explicitly.",
-      "public_summary": "Next-release source documents all 50 pinned community files, dependencies and limits, with three original examples and 18 tested argv adaptations. External tools/services remain separately installed and unqualified; published 0.1.0 has no plugins.",
+      "public_summary": "Translate plugin fields and variables explicitly and install required external tools separately. External services and tool features do not become native application capabilities.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/plugin-compatibility.md",
@@ -1376,7 +1378,7 @@
       "source": "internal/view/xray.go",
       "status": "planned",
       "difference": "",
-      "public_summary": "Resource relationship graphs, owner/node jumps, service endpoints and UsedBy views are planned.",
+      "public_summary": "Automatic relationship graphs, controller/node drill-down, service endpoint drill-down, and UsedBy views are unavailable. Explicit configured jumps are described separately.",
       "public_status": "planned"
     },
     {
@@ -1519,7 +1521,7 @@
         "tests/quality/test_standalone_release.py",
         "packaging/standalone/python-runtime.json"
       ],
-      "public_summary": "Local wheel/source and Python-manager installation are verified with separate native archive/Homebrew qualification. Public PyPI, GitHub downloads and the project-owned tap remain unavailable until release activation.",
+      "public_summary": "Install from PyPI, the project Homebrew tap, or GitHub Release archives. Linux/macOS and Python support depend on the selected channel and its documented platform requirements.",
       "public_status": "partial"
     },
     {

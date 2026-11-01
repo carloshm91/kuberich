@@ -41,11 +41,10 @@ tables, code blocks, included fragments, and generated Markdown. Do not hide an
 oversized page in imports or very long lines. Wrap ordinary prose at about
 80–100 characters; commands and reference tables may need longer lines.
 
-The structure rollout composes existing fragments without deleting their content.
-Some combined pages and the generated feature catalogue still need the separate
-guide and reference rewrites before they meet this prose and line budget.
-`docs/documentation-plan.json` records that transition. It is not a waiver for
-new oversized pages or a claim that legacy prose already follows this guide.
+The task guides and generated references follow these budgets. Superseded source
+text is preserved outside public navigation in the engineering history. Separate
+architecture, acceptance-history, and contribution migrations remain incomplete;
+`docs/documentation-plan.json` records their individual dispositions.
 
 Keep development policies, ADRs, acceptance records, delivery logs, and source
 audits out of user navigation and website search. The architecture overview and
@@ -129,6 +128,10 @@ Record every existing document's disposition in `docs/documentation-plan.json`:
 **keep**, **merge**, **move**, or **delete**. Preserve useful guidance and historical
 evidence before retiring a source. Update its inbound links and validators as
 part of the migration.
+
+Regenerate lookup pages with `uv run python -m scripts.site_reference --write`.
+`uv run python -m scripts.site_reference` checks for declaration drift; CI runs
+the same check through the documentation tests.
 
 Run the documentation checks for both local surfaces. Review links, navigation,
 and narrow-terminal examples. A successful build prepares static files; website

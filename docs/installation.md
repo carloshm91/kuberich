@@ -1,186 +1,116 @@
-# Installation and upgrades
+# Install and upgrade
 
-**0.2.0 is published** on [PyPI](https://pypi.org/project/kuberich/0.2.0/),
-[GitHub Releases](https://github.com/carloshm91/kuberich/releases/tag/v0.2.0) and
-the [project Homebrew tap](https://github.com/kuberich/homebrew-tap).
+Install the `kuberich` command on Linux or macOS. Choose one method so that
+upgrades and removal use the same package manager. Preferences and kubeconfig
+stay separate from the application.
 
-Choose one installation method. Every method provides the `kuberich` command;
-preferences and kubeconfig remain separate from the application installation.
-
-## Python on Linux or macOS
-
-Use CPython **3.12–3.14** and an isolated [uv tool](https://docs.astral.sh/uv/guides/tools/)
-or [pipx](https://pipx.pypa.io/stable/installation/) environment. For a supplied
-candidate, run outside the source checkout:
-
-```sh
-uv tool install --python 3.12 /absolute/path/to/kuberich-0.2.0-py3-none-any.whl
-kuberich --version
-kuberich config check
-```
-
-Alternatively:
-
-```sh
-pipx install --python python3.12 /absolute/path/to/kuberich-0.2.0-py3-none-any.whl
-```
-
-Use the actual trusted file path. If the manager reports a missing executable
-directory on PATH, add the directory it reports through your normal shell setup.
-KubeRich does not modify your shell startup files.
-
-For the public PyPI package, use:
-
-```sh
-uv tool install --python 3.12 kuberich
-# Alternative:
-pipx install --python python3.12 kuberich
-```
-
-These unpinned installs allow normal manager upgrades. A file-path installation
-or an exact version constraint does not automatically select future releases;
-see the upgrade section before changing installation methods.
-
-## Homebrew on Linux or macOS
-
-The project organization **kuberich** owns repository `kuberich/homebrew-tap`.
-Install with:
+## Homebrew
 
 ```sh
 brew install kuberich/tap/kuberich
 kuberich --version
 ```
 
-The formula declares Python 3.14, kubectl and libyaml. Homebrew manages these
-dependencies; a separate Python environment is unnecessary.
+The project tap is `kuberich/homebrew-tap`. Homebrew installs Python, kubectl, and
+libyaml as dependencies. Prebuilt bottles are available for macOS Apple Silicon
+(`arm64_sonoma`), macOS Intel (`sequoia`), and Linux x86_64 (`x86_64_linux`).
+Other supported Homebrew systems build from source. Dependencies may also need a
+source build on an older operating system; that can take several minutes.
 
-From 0.2.0, Homebrew installs a prebuilt bottle on these systems:
+## Python tools
 
-| System | Architecture | Bottle |
+Use CPython 3.12–3.14 and an isolated tool environment:
+
+```sh
+uv tool install --python 3.12 kuberich
+kuberich --version
+```
+
+Alternatively, use `pipx install --python python3.12 kuberich`. If the command is
+missing afterward, add the executable directory reported by your tool manager
+to PATH through your normal shell setup.
+
+To install a trusted local wheel, replace `kuberich` in the install command with
+its absolute file path. A file-path install or an exact version pin does not
+select future versions automatically.
+
+## Standalone archives
+
+[GitHub Releases](https://github.com/carloshm91/kuberich/releases) provides archives
+with a Python runtime included:
+
+| Platform | Architecture | Filename suffix |
 | --- | --- | --- |
-| macOS 14 (Sonoma) or newer | Apple Silicon | `arm64_sonoma` |
-| macOS 15 (Sequoia) or newer | Intel | `sequoia` |
-| Linux | x86_64 | `x86_64_linux` |
+| Linux | x86_64 | `linux-x86_64.tar.gz` |
+| Linux | ARM64 | `linux-arm64.tar.gz` |
+| macOS | Intel | `macos-x86_64.tar.gz` |
+| macOS | Apple Silicon | `macos-arm64.tar.gz` |
 
-A bottle only unpacks files, so it takes seconds instead of minutes. Other
-systems, such as Linux ARM64 or macOS 14 on Intel, still build from source. A
-source build can take several minutes.
+Select an archive from the same release as its `DOWNLOAD-SHA256SUMS` file. Linux
+archives require glibc 2.35 or newer. macOS archives require macOS 14 or newer;
+macOS 14 Intel has no physical-machine trial. Alpine/musl and Windows are outside
+the current archive support. macOS archives use ad-hoc signatures and are not
+Developer ID notarized.
 
-Homebrew itself publishes prebuilt dependencies, such as Python and kubectl,
-only for Apple Silicon with macOS 15 or newer and for Linux. On macOS 14 or an
-Intel Mac, Homebrew may build those dependencies from source first, which can
-take much longer than installing KubeRich. `brew upgrade kuberich` from 0.1.0 moves
-to the bottle and keeps your preferences. Homebrew has no downgrade command; the
-old version stays in the Cellar until `brew cleanup` removes it.
+1. Compare the archive's SHA-256 with its line in `DOWNLOAD-SHA256SUMS`. Use
+   `sha256sum FILE` on Linux or `shasum -a 256 FILE` on macOS. Reject a mismatch.
+2. Extract into a new directory. Keep the complete `kuberich/` tree.
+3. Run the launcher from that directory and check its version.
 
-## Standalone Linux and macOS archives
-
-A standalone archive includes its own Python runtime. The
-[GitHub Release](https://github.com/carloshm91/kuberich/releases/tag/v0.2.0)
-contains these four archives and `DOWNLOAD-SHA256SUMS`:
-
-| System | Architecture | Archive |
-| --- | --- | --- |
-| Linux | x86_64 | `kuberich-0.2.0-linux-x86_64.tar.gz` |
-| Linux | ARM64 | `kuberich-0.2.0-linux-arm64.tar.gz` |
-| macOS | Intel | `kuberich-0.2.0-macos-x86_64.tar.gz` |
-| macOS | Apple Silicon | `kuberich-0.2.0-macos-arm64.tar.gz` |
-
-Linux archives require glibc 2.35 or newer; Alpine/musl and Windows are outside
-this release. macOS archives have a measured deployment floor of 14. Native
-trials cover macOS 14 ARM and macOS 15 Intel; a physical macOS 14 Intel trial is
-not claimed. The archives use ad-hoc signatures; Developer ID notarization is
-not claimed.
-
-Compare the selected archive's SHA-256 with its exact line in the supplied
-`DOWNLOAD-SHA256SUMS`. On Linux, use `sha256sum ARCHIVE.tar.gz`; on macOS, use
-`shasum -a 256 ARCHIVE.tar.gz`. Reject different bytes before extracting.
-
-Extract into a new directory, retaining the complete `kuberich/` tree:
+For example, with the published 0.2.0 Linux x86_64 archive:
 
 ```sh
 mkdir kuberich-0.2.0
-tar -xzf /absolute/path/to/ARCHIVE.tar.gz -C kuberich-0.2.0
+tar -xzf kuberich-0.2.0-linux-x86_64.tar.gz -C kuberich-0.2.0
 ./kuberich-0.2.0/kuberich/kuberich --version
 ```
 
-Replace `ARCHIVE.tar.gz` with the selected filename. The launcher depends on its
-adjacent `_internal` files and notices; copying only the executable is insufficient.
-Move the whole directory to your preferred location, then use its absolute
-launcher path or create a symlink in a directory already on PATH.
-
-## Qualification scope
-
-The complete source matrix covers Ubuntu 24.04 x86_64 and macOS 26 ARM, each with
-CPython 3.12, 3.13 and 3.14. Native archive trials separately cover Ubuntu 22.04
-x86_64/ARM64, macOS 14 ARM and macOS 15 Intel. Homebrew trials cover Ubuntu 24.04
-x86_64, macOS 14 ARM and macOS 15 Intel with its declared Python dependency.
-Exact first-version results are retained with the release candidate; a supported
-runtime range does not establish every OS/architecture/terminal combination.
-
-Use an interactive UTF-8 terminal. SSH and tmux transport/restoration have owned
-automated trials; physical terminal-emulator, font and clipboard certification
-remains separate. See [terminal compatibility](terminal-compatibility.md).
+The `_internal` directory and notices must stay beside the launcher. Move the
+whole directory, then use its absolute launcher path or create your own symlink
+in a directory on PATH. Shells, attach, file transfers, and port forwarding also
+need kubectl on PATH.
 
 ## First launch
 
-Local version/help/config commands need no cluster. For the UI, select a trusted
-kubeconfig and an explicitly permitted context/namespace:
+Use an interactive UTF-8 terminal:
 
 ```sh
-kuberich --kubeconfig /absolute/path/to/kubeconfig --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly
+kuberich config check
+kuberich --context demo-lab --namespace demo-apps --readonly
 ```
 
-Use the actual path and names. The first-launch guide covers `:ctx`, `:ns`, `/`,
-pod → container → logs and shell return. Shells, attach, transfers and forwarding
-need kubectl on PATH and the corresponding Kubernetes permissions; read-only
-mode blocks effectful actions. Provider exec helpers remain external tools.
-See [first launch](quickstart.md), [EKS](eks-authentication.md) and
-[AKS](aks-authentication.md). Owned helper trials do not certify real clouds.
+Replace the fictional names with your intended scope. To select a specific
+Kubernetes file, add `--kubeconfig /absolute/path/to/kubeconfig`.
+`--config` instead selects KubeRich preferences. See [quick start](quickstart.md).
 
-## Upgrade and uninstall
+## Upgrade
 
-Update an unpinned managed installation with:
+Use the command for your installation method:
 
 ```sh
-uv tool upgrade kuberich
-# Or, for the method originally chosen:
-pipx upgrade kuberich
 brew upgrade kuberich/tap/kuberich
+uv tool upgrade kuberich
+pipx upgrade kuberich
 ```
 
-Upgrades from 0.1.0 to 0.2.0 were tested with uv, pipx and Homebrew, starting
-from the published 0.1.0 packages. Preferences and kubeconfig stay unchanged.
-To replace a supplied local wheel, use the same manager with its explicit new
-file/install constraint; a reinstall is not proof of a normal channel upgrade.
+Run only the applicable command. Upgrades keep preferences and kubeconfig.
+For a local-wheel install, explicitly install the new trusted wheel using the
+same manager. For an archive, verify and extract a new version into a separate
+directory, check its version, then switch your launcher. Keep the previous
+archive directory until the replacement works.
 
-For an archive update, verify a new archive, extract it into a new version
-directory and run its version/first-launch checks before switching your launcher.
-Keep the previous verified directory until the replacement works.
+Homebrew keeps old versions until `brew cleanup` removes them; it has no general
+downgrade command. An exact Python version pin needs an explicit version change.
 
-Remove the application with the chosen manager:
+## Remove the application
 
-```sh
-uv tool uninstall kuberich
-# Alternatives:
-pipx uninstall kuberich
-brew uninstall kuberich/tap/kuberich
-```
+Use `brew uninstall kuberich/tap/kuberich`, `uv tool uninstall kuberich`, or
+`pipx uninstall kuberich`, matching your install method. For an archive, remove
+its extracted directory and your own symlink.
 
-For an archive install, remove only its extracted directory and your own symlink.
-Preferences, logs and kubeconfig stay intact. Use `kuberich info` before uninstall
-to locate your preference/log paths; deleting those files is a separate choice.
+Removal leaves preferences, diagnostic logs, and kubeconfig intact. Run
+`kuberich info` beforehand if you want to locate preference and log files.
 
-## Troubleshooting
-
-| Symptom | Next step |
-| --- | --- |
-| Command not found | Check the manager's reported executable directory or the complete archive launcher path |
-| Unsupported Python | Select Python 3.12–3.14 explicitly; standalone archives include their runtime |
-| Executable format/library error | Match OS/architecture, verify the checksum and retain the full directory; check the documented native floor |
-| Package/tap unavailable | Check network access, the project tap name and your configured package index |
-| UI does not open | Use an interactive terminal and run `kuberich config check` |
-| kubectl works but KubeRich fails | Compare the exact context, kubeconfig, namespace, helper PATH and provider session; see the connection guides |
-
-Report the version, OS/architecture, installation method and a sanitized error.
-Do not include tokens or kubeconfig contents in reports.
+If installation fails, check the architecture, Python version, package index,
+PATH, and archive checksum. See [troubleshooting](troubleshooting.md) before
+reporting a sanitized error with your version and installation method.
