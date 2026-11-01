@@ -2,6 +2,8 @@
 
 import copy
 import json
+import subprocess
+import sys
 from datetime import date, timedelta
 from uuid import UUID
 
@@ -36,6 +38,25 @@ VULNERABLE = {
         }
     ]
 }
+
+
+def test_policy_import_keeps_schema_validation_out_of_unrelated_workers():
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-I",
+            "-c",
+            "import json,sys; sys.path.insert(0,sys.argv[1]); import scripts.supply_chain; "
+            "print(json.dumps([name for name in sys.modules if name in "
+            "('jsonschema','lark','rfc3987_syntax','cyclonedx.validation.json')]))",
+            str(ROOT),
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=10,
+    )
+    assert json.loads(result.stdout) == []
 
 
 @pytest.mark.parametrize("kind", ["missing", "directory", "symlink"])

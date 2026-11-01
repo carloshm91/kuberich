@@ -320,6 +320,7 @@ def test_each_native_artifact_must_be_retained_and_unambiguous(target, mutation)
     "run_id,job_name",
     [
         (12, "Verification plan"),
+        (12, "Fast tests"),
         (12, "Quality gate"),
         (12, "Application (ubuntu-24.04, Python 3.12)"),
         (12, "Application (ubuntu-24.04, Python 3.13)"),

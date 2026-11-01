@@ -167,7 +167,12 @@ async def test_readonly_explicit_classification_before_any_helper_lookup(
 @pytest.mark.asyncio
 async def test_background_waiter_cancel_keeps_owner_then_context_stop_reaps_descendants(tmp_path):
     pidfile = tmp_path / "pid"
-    script = f"import subprocess,sys,time; p=subprocess.Popen([sys.executable,'-c','import time;time.sleep(30)']);open({str(pidfile)!r},'w').write(str(p.pid));time.sleep(30)"
+    script = (
+        "import os,subprocess,sys,time;from pathlib import Path;"
+        "p=subprocess.Popen([sys.executable,'-c','import time;time.sleep(30)']);"
+        f"pid_path=Path({str(pidfile)!r});pending=pid_path.with_suffix(f'.{{os.getpid()}}.pending');"
+        "pending.write_text(str(p.pid));pending.replace(pid_path);time.sleep(30)"
+    )
     async with reader_fixture(tmp_path, handler) as reader:
         owner = source(reader, tmp_path)
         request = await owner.prepare(plugin(tmp_path, script, mode="background"), {})

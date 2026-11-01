@@ -101,6 +101,7 @@ def test_plan_cli_and_aggregate_use_the_same_actual_event(tmp_path):
     environment["KUBERICH_JOB_RESULTS"] = json.dumps(
         {
             "plan": {"result": "success", "outputs": outputs},
+            "fast": {"result": "success"},
             "tests": {"result": "success"},
             "application": {"result": "success"},
             "standalone": {"result": "success"},
@@ -134,17 +135,23 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert workflow["on"]["pull_request"] is None
     assert workflow["permissions"] == {"contents": "read"}
     assert "github.event_name" in workflow["concurrency"]["group"]
-    plan, tests, application, gate = (
-        workflow["jobs"][name] for name in ("plan", "tests", "application", "quality-gate")
+    plan, fast, tests, application, gate = (
+        workflow["jobs"][name] for name in ("plan", "fast", "tests", "application", "quality-gate")
     )
     assert plan["steps"][-1]["run"] == "python3 -m scripts.ci_policy"
-    assert tests["needs"] == "plan"
+    assert fast["needs"] == "plan"
+    fast_command = next(step["run"] for step in fast["steps"] if "pytest" in step.get("run", ""))
+    for option in ("-m fast", "--dist loadgroup", "--max-worker-restart=0", "--maxfail=1"):
+        assert option in fast_command
+    assert tests["needs"] == ["plan", "fast"]
+    assert workflow["jobs"]["standalone"]["needs"] == ["plan", "fast"]
     assert tests["strategy"] == {
         "fail-fast": False,
         "matrix": "${{ fromJSON(needs.plan.outputs.test_matrix) }}",
     }
     part = "\n".join(step.get("run", "") for step in tests["steps"])
     assert "pytest --cov=kuberich --cov-branch" in part
+    assert "-n 2 --dist loadgroup --max-worker-restart=0" in part
     assert next(step for step in tests["steps"] if "pytest" in step.get("run", ""))["env"] == {
         "KUBERICH_TEST_PART": "${{ matrix.part }}/${{ matrix.parts }}"
     }
@@ -199,7 +206,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert "scripts/merge_runtime_coverage.py" in commands
     assert "git rev-parse HEAD^" in commands
     assert gate["name"] == "Quality gate" and gate["if"] == "${{ always() }}"
-    assert set(gate["needs"]) == {"plan", "tests", "application", "standalone"}
+    assert set(gate["needs"]) == {"plan", "fast", "tests", "application", "standalone"}
     assert gate["steps"][-1]["run"] == "python3 -m scripts.check_quality_gate"
     linux_tools = next(
         step for step in application["steps"] if "apt-get install" in step.get("run", "")
@@ -229,6 +236,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
             "quality.yml",
             {
                 "plan": "ubuntu-24.04",
+                "fast": "ubuntu-24.04",
                 "tests": "${{ matrix.os }}",
                 "application": "${{ matrix.os }}",
                 "standalone": "${{ matrix.os }}",
@@ -270,7 +278,7 @@ def test_native_verification_always_covers_four_real_os_architectures(event, ref
 def test_native_matrix_is_required_and_cannot_skip_archive_or_runtime_failures():
     workflow = yaml.safe_load((ROOT / ".github/workflows/quality.yml").read_text())
     native = workflow["jobs"]["standalone"]
-    assert native["needs"] == "plan"
+    assert native["needs"] == ["plan", "fast"]
     assert "if" not in native and "continue-on-error" not in native
     assert native["strategy"] == {
         "fail-fast": False,

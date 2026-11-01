@@ -41,6 +41,26 @@ upgrades from the published 0.1.0 packages, passed in clean environments.
 
 Real EKS, AKS and GKE clusters are not certified yet; those trials stay opt-in.
 
+## Next development phase: 0.3.0
+
+The foundations phase is in progress. Its first task adds full unit/contract/UI
+test selection, local xdist workers and a fast CI signal before full qualification.
+Worker ownership, failure propagation, coverage combination and timing isolation
+have dedicated regressions. The complete fast selection passed locally with
+4,588 tests and one expected macOS-only clipboard skip in 158.00 seconds.
+The [quality guide](quality.md#test-layers-and-local-parallel-runs) records the
+same-candidate serial comparison, full-run measurements and verification policy.
+Three complete parallel runs, collection equivalence and the required hosted
+checks are required before this rollout merges. The installed release is 0.2.0.
+
+```sh
+uv sync --locked --group dev
+uv run pytest tests/unit tests/contract tests/ui -m fast -n 12
+```
+
+Use fewer workers on smaller machines. These are developer checks on owned
+fixtures, and do not require access to your Kubernetes contexts.
+
 ## Included in 0.2.0: live preferences
 
 Edit and save the preference file while KubeRich runs. Themes, aliases, column

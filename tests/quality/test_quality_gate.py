@@ -34,6 +34,7 @@ def run_gate(
 
 def successful_results() -> dict:
     return {
+        "fast": {"result": "success"},
         "tests": {"result": "success"},
         "application": {"result": "success"},
         "standalone": {"result": "success"},
@@ -54,7 +55,7 @@ def test_successful_complete_matrix_passes() -> None:
     assert "complete application matrix succeeded" in result.stdout
 
 
-@pytest.mark.parametrize("job", ["plan", "tests", "application", "standalone"])
+@pytest.mark.parametrize("job", ["plan", "fast", "tests", "application", "standalone"])
 @pytest.mark.parametrize("state", ["failure", "cancelled", "skipped", None])
 def test_unsuccessful_matrix_cannot_pass(job: str, state: str | None) -> None:
     results = successful_results()

@@ -441,8 +441,9 @@ def test_malformed_pax_size_cannot_silently_publish_an_empty_file(tmp_path):
     "race",
     ["replacement-failure", "replacement-success", "missing", "added", "replaced-child", "cancel"],
 )
+@pytest.mark.parametrize("reverse", [False, True])
 def test_directory_rollback_preserves_concurrent_paths_and_remains_anchored_to_its_owner(
-    tmp_path, monkeypatch, race
+    tmp_path, monkeypatch, race, reverse
 ):
     source = archive(
         tmp_path / "archive",
@@ -455,13 +456,28 @@ def test_directory_rollback_preserves_concurrent_paths_and_remains_anchored_to_i
     chosen, moved = tmp_path / "chosen", tmp_path / "moved-owned"
     destination = DownloadDestination(chosen, False)
     inventory = destination.extract(source, "root")
+    original_listdir = transfer_files.os.listdir
+    owner = os.stat("root", dir_fd=destination.stage)
+
+    def ordered_source(directory):
+        entries = original_listdir(directory)
+        if isinstance(directory, int):
+            identity = os.fstat(directory)
+            if (identity.st_dev, identity.st_ino) == (owner.st_dev, owner.st_ino):
+                assert set(entries) == {"a", "b"}
+                return sorted(entries, reverse=reverse)
+        return entries
+
+    monkeypatch.setattr(transfer_files.os, "listdir", ordered_source)
     original = transfer_files.os.link
     calls = 0
+    published_child = None
 
     def concurrently_change(*arguments, **options):
-        nonlocal calls
+        nonlocal calls, published_child
         calls += 1
         if calls == 1:
+            published_child = arguments[1]
             if race != "replacement-failure":
                 original(*arguments, **options)
             if race.startswith("replacement") or race == "missing":
@@ -472,8 +488,8 @@ def test_directory_rollback_preserves_concurrent_paths_and_remains_anchored_to_i
             elif race == "added":
                 (chosen / "concurrent-original").write_bytes(b"keep")
             elif race == "replaced-child":
-                (chosen / "a").rename(chosen / "renamed-copy")
-                (chosen / "a").write_bytes(b"keep")
+                (chosen / published_child).rename(chosen / "renamed-copy")
+                (chosen / published_child).write_bytes(b"keep")
             else:
                 destination.cancelled.set()
             if race == "replacement-failure":
@@ -491,7 +507,7 @@ def test_directory_rollback_preserves_concurrent_paths_and_remains_anchored_to_i
         if race.startswith("replacement") or race == "added":
             assert (chosen / "concurrent-original").read_bytes() == b"keep"
         elif race == "replaced-child":
-            assert (chosen / "a").read_bytes() == b"keep"
+            assert (chosen / published_child).read_bytes() == b"keep"
         else:
             assert not chosen.exists()
         if moved.exists():

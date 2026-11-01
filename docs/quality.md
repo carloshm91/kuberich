@@ -555,10 +555,134 @@ assets, and edits to non-executable continuations do not establish new coverage.
 No changed executable lines means N/A. The negative-control tests verify 0%,
 80%, the exact 90% boundary, a docs-only diff, and an unavailable base.
 
+### Test layers and local parallel runs
+
+Tests receive a layer marker from their directory: `unit`, `contract`, `ui`,
+`terminal`, `packaging` or `quality`. The `fast` marker selects **every** unit,
+contract and UI test. It does not select a smaller sample or omit slow cases.
+`kind` is registered for explicit disposable-cluster tests; the current real
+cluster scenarios still run through `scripts.verify_*_kind` in CI, not through
+a pretend pytest layer. No command may fall back to an ambient cluster.
+
+```sh
+# Quick development feedback; 12 workers on the six-core, 30 GiB reference host.
+uv run pytest tests/unit tests/contract tests/ui -m fast -n 12
+# One layer, or all layers with combined branch coverage.
+uv run pytest -m terminal -n 4
+uv run pytest -n 6 --cov=kuberich --cov-branch --cov-report=xml --cov-report=json
+uv run python -m scripts.merge_runtime_coverage
+uv run python scripts/check_coverage.py coverage.json
+```
+
+Individual layers have the following commands:
+
+| Layer | Command |
+| --- | --- |
+| Unit | `uv run pytest tests/unit -m unit -n 6` |
+| Contract | `uv run pytest tests/contract -m contract -n 6` |
+| UI | `uv run pytest tests/ui -m ui -n 6` |
+| Terminal | `uv run pytest tests/terminal -m terminal -n 4` |
+| Packaging | `uv run pytest tests/packaging -m packaging -n 2` |
+| Quality | `uv run pytest tests/quality -m quality -n 4` |
+
+The registered `kind` marker has no pytest cases yet. Run the real cluster
+verifiers from [disposable-cluster qualification](integration-testing.md), for
+example:
+
+```sh
+uv run python -m scripts.verify_kind_lifecycle --kind /absolute/path/to/kind
+```
+
+Those verifiers require the documented local Docker and pinned tool prerequisites.
+They create and verify their own cluster ownership and preserve the caller's
+default kubeconfig. Run the cluster trials sequentially.
+
+Use fewer workers on smaller machines. Serial execution remains available with
+`-n 0`. `loadgroup` scheduling and disabled worker restarts are defaults: tests
+within a file stay in one worker, and files sharing release-evidence fixtures
+stay together across files. Every worker gets its own pytest temporary directory;
+owned API listeners use ephemeral ports. Failed tests and crashed workers fail
+the run rather than being retried or skipped. Production coverage is combined
+by pytest-cov across workers before the same independent gates run.
+
+The two runtime heartbeat controls have a `performance` marker. Their subprocess
+orchestrators share the first group, with the backend controls before the UI
+coverage replay. A controller-owned reader/writer lock drains other tests while
+each uninstrumented timing child runs, including
+its setup and cleanup, then resumes parallel work. Coverage replays share the
+ordinary parallel work window. Runtime children explicitly load the asyncio and
+coverage plugins they need, keeping unrelated auto-discovered development plugins
+out of their timing observations. Every fast run executes both the full positive
+scenario and its deliberately failing negative control. A run requesting coverage
+also performs the instrumented replay; its branch data is mandatory for the full
+coverage gate. A fast-only receipt cannot pass that gate. This keeps coverage
+measurement in the full tier and retains the same 150 ms timing limit.
+Run timing comparisons
+without a second test command competing on the same host; separate pytest commands
+own separate locks and cannot reserve CPU from each other.
+
+The fast-tier rollout found fixture ownership races: manually supplied widget
+rows competed with the full workspace's initial observation, and plugin receipts
+could be read after creation but before writing finished. Widget tests now mount
+the real tables in a dedicated Textual host, while API/workspace cases retain the
+full application. Plugin and credential stand-ins publish complete receipts
+atomically before cancellation tests can observe them. This prevents cancellation
+between file creation and writing the PID, while retaining the real child-reaping
+and retry assertions. The same readiness contract applies to the source CLI PTY.
+Directory rollback controls explicitly cover both source entry orders.
+
+Supply-chain policy consumers load the full CycloneDX JSON validator only when
+they actually validate an SBOM. Collecting a digest or audit decision test must
+not load the IRI parser into every UI worker. A fresh-process regression enforces
+that import boundary; existing schema rejection tests still run the real strict
+validator. This reduces unrelated garbage-collector roots without changing
+validation, GC settings, workload sizes or coverage requirements.
+
+Profiling also identified repeated palette generation and redundant shortcut
+updates on the real header. Shortcut panels use one current palette snapshot per
+render and the existing owned-text projection guard; theme, content, external
+mutation and layout behavior retain native rendering. The normal positive timing
+control passed three consecutive trials at 136.55, 138.29 and 131.48 ms; injected
+negative controls exceeded 200 ms and failed as required. These targeted trials
+are separate from the required three complete parallel suite runs.
+
+Application quality first runs the complete fast tier on Linux/Python 3.12.
+Failure prevents the expensive full test/native matrices from starting and
+fails the protected aggregate. Success then runs every existing source/native
+environment, all test layers, runtime controls and coverage gates. This fast
+signal never substitutes for full qualification. Failed fast runs and test parts
+retain their available evidence too.
+
+### Measured parallel rollout
+
+The same-candidate fast-tier comparison on `3f31d1f` ran the same 4,589 case
+identities, including one explicit macOS-only skip, on Linux/Python 3.12.12 with
+six logical CPUs and 30 GiB RAM. Serial execution took 1,026.56 seconds; twelve
+workers took 156.22 seconds, a 6.57-fold improvement for this selection.
+No competing local test, build or browser command ran during that comparison.
+The later implementation candidate `79dbec4` passed the same fast selection in
+158.00 seconds.
+
+Its first retained complete parallel run passed 6,062 tests with four explicit
+platform/native-workflow skips in 1,039.01 seconds. Independent gates passed:
+98.7712% line coverage, 95.8896% branch coverage, 100% in all 68 critical modules
+and 100% changed-line coverage. Local skips require actual macOS sandbox/clipboard
+facilities or the owned native Homebrew workflows; these results do not establish
+their native installation qualification.
+
+This rollout requires three consecutive complete parallel runs, matching case
+selection and the protected hosted checks before merge. The
+[implementation verification record](https://github.com/carloshm91/kuberich/pull/269)
+retains the final repeat results, exact candidate identities, original failures
+and hosted artifact links. Interrupted or failed originals do not count as passes.
+The normal runtime heartbeat controls retain their 150 ms limit and deliberate
+blocking negative controls. Real provider certification remains opt-in.
+
 ### Parallel test parts
 
 CI splits the pytest run into four parts per operating system and Python
-version. Each part runs on its own runner and keeps whole test files together.
+version. Each part runs on its own runner with two xdist workers and keeps whole
+test files together.
 `tests/support/part_timings.json` lists how long each file took, so the parts
 take about the same time. A file that is not in the list counts as ten seconds.
 Test files that share fixtures which write evidence, such as the release

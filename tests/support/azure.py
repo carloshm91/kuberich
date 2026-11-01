@@ -23,7 +23,9 @@ def azure_entry(directory, *, login="azurecli", version=VERSION, command=None, m
         "'AZURE_FEDERATED_TOKEN_FILE','AZURE_AUTHORITY_HOST','KUBECACHEDIR']}}\n"
         "with Path('azure-calls').open('a') as stream: stream.write(json.dumps(record)+'\\n')\n"
         "control=json.loads(Path('azure-control').read_text())\n"
-        "Path('azure-pid').write_text(str(os.getpid()))\n"
+        # Existence is the cancellation handshake: publish only a complete PID.
+        "pending=Path(f'azure-pid.{os.getpid()}.pending')\n"
+        "pending.write_text(str(os.getpid()))\npending.replace('azure-pid')\n"
         "if control.get('error'):\n print(control['error'], file=sys.stderr)\n sys.exit(1)\n"
         "if control.get('sleep'): time.sleep(30)\n"
         "if control.get('prompt'):\n"

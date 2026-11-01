@@ -265,9 +265,10 @@ def test_quitting_during_exec_helper_reaps_process_and_restores_tty(tmp_path: Pa
     script = tmp_path / "helper.py"
     pid_path = tmp_path / "helper-pid"
     script.write_text(
-        "import os,time\nfrom pathlib import Path\nPath("
+        "import os,time\nfrom pathlib import Path\npid_path=Path("
         + repr(str(pid_path))
-        + ").write_text(str(os.getpid()))\ntime.sleep(30)"
+        + ")\npending=pid_path.with_suffix(f'.{os.getpid()}.pending')\n"
+        "pending.write_text(str(os.getpid()))\npending.replace(pid_path)\ntime.sleep(30)"
     )
     path = config(
         tmp_path / "owned-config",

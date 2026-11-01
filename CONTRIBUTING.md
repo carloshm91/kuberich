@@ -72,6 +72,7 @@ and the following commands. Python 3.12 through 3.14 is the qualified range:
 
 ```sh
 uv sync --locked --group dev
+uv run pytest tests/unit tests/contract tests/ui -m fast -n 12
 uv run ruff check .
 uv run ruff format --check .
 uv run mypy --strict src/kuberich scripts/check_coverage.py scripts/check_quality_gate.py
@@ -110,6 +111,11 @@ suite and independent coverage gates. Do not use a manual dispatch as a substitu
 for PR checks or a routine development matrix as release qualification.
 Each environment runs pytest in four parallel parts and combines their coverage
 before the gates; see [parallel test parts](docs/quality.md#parallel-test-parts).
+The full unit, contract and headless UI selection runs first as a required fast
+signal. Local tests also support xdist; use the
+[test layers](docs/quality.md#test-layers-and-local-parallel-runs) for commands
+and evidence ownership rules. The complete suite and coverage gates still run
+before merging.
 
 The [observed CI comparison](docs/acceptance/private-ci.md) verifies seven native
 jobs per matching-source PR/main pair plus four planner/aggregate jobs. These

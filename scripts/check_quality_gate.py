@@ -6,7 +6,7 @@ import sys
 
 from scripts.ci_policy import matrix, native_matrix, part_matrix
 
-REQUIRED_JOBS = {"plan", "tests", "application", "standalone"}
+REQUIRED_JOBS = {"plan", "fast", "tests", "application", "standalone"}
 
 
 def main() -> int:

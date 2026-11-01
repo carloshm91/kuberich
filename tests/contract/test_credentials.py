@@ -264,7 +264,8 @@ async def test_timeout_or_cancellation_kills_and_reaps_owned_helper(
 ) -> None:
     credentials = helper(
         tmp_path,
-        'import os, time\nfrom pathlib import Path\nPath("pid").write_text(str(os.getpid()))\ntime.sleep(30)',
+        'import os, time\nfrom pathlib import Path\npending=Path(f"pid.{os.getpid()}.pending")\n'
+        'pending.write_text(str(os.getpid()))\npending.replace("pid")\ntime.sleep(30)',
     )
     if not cancel:
         # The deliberate timeout path has its own deadline; successful helpers

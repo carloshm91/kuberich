@@ -18,6 +18,7 @@ _CLIENT = client.ApiClient
 _READ = catalog.regular_bytes
 _EXECUTE = credentials._execute
 ROOT = Path(__file__).resolve().parents[1]
+pytest_plugins = ["tests.support.tiers"]
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:

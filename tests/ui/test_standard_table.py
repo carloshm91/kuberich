@@ -1,16 +1,15 @@
 """Typed shared table under patches, large batches, sorting and identity replacement."""
 
 import asyncio
-import logging
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
 import pytest
 
-from kuberich.config.schema import Settings
 from kuberich.domain.registry import RESOURCE_ALIASES, resource_row
-from kuberich.ui.app import KubeRichApp
+from kuberich.ui.standard import StandardTable
 from tests.support.standard import row_record
+from tests.support.table_app import TableApp
 
 
 def rows(count=80):
@@ -31,10 +30,9 @@ def rows(count=80):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
 async def test_uid_scroll_sort_changes_deletion_and_replacement(size, monkeypatch):
-    app = KubeRichApp(Settings(), logging.Logger("shared-table", level=100))
+    app = TableApp(StandardTable())
     async with app.run_test(size=size) as pilot:
         table = app.standard_table
-        app._display_resource("deployments")
         app.query_one("#empty-state").display = False
         table.set_class(True, "populated")
         original = rows()
@@ -86,10 +84,9 @@ async def test_uid_scroll_sort_changes_deletion_and_replacement(size, monkeypatc
 
 @pytest.mark.asyncio
 async def test_bounded_batch_aborts_previous_generation_and_age_refresh(monkeypatch):
-    app = KubeRichApp(Settings(), logging.Logger("shared-table", level=100))
+    app = TableApp(StandardTable())
     async with app.run_test() as pilot:
         table = app.standard_table
-        app._display_resource("deployments")
         alive = [True]
         add = table.add_row
 

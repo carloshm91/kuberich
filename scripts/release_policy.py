@@ -21,7 +21,7 @@ APPLICATION_JOBS = (
         f"Standalone ({job['target']})": job["os"]
         for job in native_matrix("workflow_dispatch", "refs/heads/main")["include"]
     }
-    | {"Verification plan": LINUX_RUNNER, "Quality gate": LINUX_RUNNER}
+    | {"Verification plan": LINUX_RUNNER, "Fast tests": LINUX_RUNNER, "Quality gate": LINUX_RUNNER}
 )
 SHA = re.compile(r"[0-9a-f]{40}")
 HASH = re.compile(r"[0-9a-f]{64}")

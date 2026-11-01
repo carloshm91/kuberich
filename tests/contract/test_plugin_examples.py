@@ -243,6 +243,7 @@ async def test_original_capture_background_cancel_readonly_and_private_cleanup(t
             assert request is not None
             job = manager.start(held, request, confirmed=True)
             async with asyncio.timeout(5):
+                # The stand-in publishes the closed JSON receipt atomically.
                 while not (tmp_path / "receipt-events").exists():
                     await asyncio.sleep(0.01)
             await manager.stop(job)

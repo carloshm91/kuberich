@@ -6,7 +6,13 @@ from textual.app import App, ComposeResult
 from textual.theme import Theme
 from textual.widgets import Static
 
-from kuberich.ui.chrome import POD_SHORTCUTS, WorkspaceChrome, WorkspaceHeader, WorkspaceLabel
+from kuberich.ui.chrome import (
+    POD_SHORTCUTS,
+    ViewActions,
+    WorkspaceChrome,
+    WorkspaceHeader,
+    WorkspaceLabel,
+)
 
 
 class LabelsApp(App):
@@ -167,7 +173,7 @@ async def test_header_reuses_unchanged_fields_but_repaints_identity_and_theme_ch
     original = Static.update
 
     def observed(widget, *args, **kwargs):
-        if isinstance(widget, WorkspaceLabel):
+        if widget.id in {"context", "cluster", "user", "namespace", "connection"}:
             calls.append(widget.id)
         return original(widget, *args, **kwargs)
 
@@ -191,3 +197,54 @@ async def test_header_reuses_unchanged_fields_but_repaints_identity_and_theme_ch
         assert len(calls) == 11
         after = header.query_one("#context", WorkspaceLabel).content
         assert after.plain == before.plain and after != before
+
+
+@pytest.mark.asyncio
+async def test_shortcut_frame_uses_one_palette_and_updates_for_content_theme_and_empty(monkeypatch):
+    class ActionsApp(App):
+        CSS = "ViewActions { width: 80; height: 6; }"
+
+        def compose(self) -> ComposeResult:
+            yield ViewActions(tuple((str(i), f"Action {i}") for i in range(18)))
+
+    app = ActionsApp()
+    async with app.run_test(size=(100, 20)) as pilot:
+        await pilot.pause()
+        actions = app.query_one(ViewActions)
+        palette_calls, updates = [], []
+        variables, update = app.get_css_variables, Static.update
+
+        def palette():
+            palette_calls.append(True)
+            return variables()
+
+        def observed(widget, *args, **kwargs):
+            if widget is actions:
+                updates.append(args[0].copy())
+            return update(widget, *args, **kwargs)
+
+        monkeypatch.setattr(app, "get_css_variables", palette)
+        monkeypatch.setattr(Static, "update", observed)
+        for _ in range(20):
+            actions.render_shortcuts()
+        assert len(palette_calls) == 20 and not updates
+        assert "Action 17" in actions.content.plain
+        assert {span.style for span in actions.content.spans} == {variables()["secondary"]}
+
+        app.theme = "textual-light"
+        await pilot.pause()
+        palette_calls.clear()
+        actions.render_shortcuts()
+        assert len(palette_calls) == 1
+        assert {span.style for span in actions.content.spans} == {variables()["secondary"]}
+
+        actions.shortcuts = (("x", "Changed action 界"),)
+        actions.render_shortcuts()
+        assert (
+            "Changed action 界" in actions.content.plain
+            and "Action 17" not in actions.content.plain
+        )
+        palette_calls.clear()
+        actions.shortcuts = ()
+        actions.render_shortcuts()
+        assert not palette_calls and not actions.content.plain.strip()
