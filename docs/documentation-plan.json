@@ -114,12 +114,12 @@
     },
     {
       "source": "README.md",
-      "audience": "development",
+      "audience": "product entry",
       "action": "keep",
       "destinations": [
         "README.md"
       ],
-      "reason": "Retain this contributor or project contract outside the user navigation.",
+      "reason": "Keep a concise product entry with published installation and a quick start; contribution and release procedures live in their maintained guides.",
       "baseline_sha256": "ff79c4a7cd3b238d0ea630e78c1c0623bcbdd9d4a94067f4e518ed7b42d8502b"
     },
     {
