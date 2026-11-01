@@ -254,7 +254,7 @@ def test_generated_reference_snapshots_remain_part_of_the_source_receipt(tmp_pat
     source = published_source(tmp_path / "source")
     output = tmp_path / "output"
     build(output, source)
-    path = source / "docs/generated/config-reference.md"
+    path = source / "docs/config-reference.md"
     path.write_text(path.read_text() + "\nA changed generated snapshot.\n")
     with pytest.raises(ValueError, match="source drift"):
         verify(output, source)

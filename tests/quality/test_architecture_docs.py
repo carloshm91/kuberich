@@ -10,6 +10,7 @@ from markdown_it import MarkdownIt
 
 from scripts.build_site import ROOT, heading_ids
 from scripts.documentation import load_navigation, validate_documentation_plan
+from scripts.documentation_links import original_contexts, validate_repository_links
 
 
 class Identifiers(HTMLParser):
@@ -177,3 +178,13 @@ def test_every_new_architecture_document_has_an_explicit_disposition():
         "docs/adr/0000-template.md",
     ]
     validate_documentation_plan(ROOT, names)
+
+
+def test_archived_architecture_links_use_the_byte_verified_original_source_context():
+    record, _ = history()
+    archive = ROOT / record["archive"]
+    contexts = original_contexts(ROOT)
+    assert contexts[archive].source == "docs/architecture.md"
+    assert contexts[archive].commit == record["source_commit"]
+    assert not (archive.parent / "acceptance/plugin-execution.md").exists()
+    assert validate_repository_links(ROOT) > 0

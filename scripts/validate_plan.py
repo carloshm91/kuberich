@@ -2,8 +2,9 @@
 
 import ast
 import json
-import re
 from pathlib import Path
+
+from scripts.documentation_links import validate_repository_links
 
 ROOT = Path(__file__).resolve().parents[1]
 policy = {
@@ -114,24 +115,7 @@ flags = next(r for r in inventory["records"] if r["source"] == "cmd/root.go")["s
 cli_doc = (ROOT / "docs/k9s-cli.md").read_text()
 assert len(flags) == 26 and len(set(flags)) == len(flags)
 assert all(f"`--{flag}`" in cli_doc for flag in flags)
-for path in ROOT.rglob("*.md"):
-    if {
-        ".git",
-        ".venv",
-        ".pytest_cache",
-        ".mypy_cache",
-        ".ruff_cache",
-        "build",
-        "dist",
-        "artifacts",
-        "node_modules",
-    } & set(path.relative_to(ROOT).parts):
-        continue
-    for target in re.findall(r"\[[^\]\n]*\]\(([^\s)]+)\)", path.read_text()):
-        if re.match(r"[a-zA-Z][a-zA-Z0-9+.-]*:", target) or target.startswith("#"):
-            continue
-        local = target.split("#", 1)[0]
-        assert (path.parent / local).exists(), f"Broken link in {path}: {target}"
+link_count = validate_repository_links(ROOT)
 index = ROOT / "docs/github-issues.json"
 if index.exists():
     issues = json.loads(index.read_text())
@@ -145,5 +129,5 @@ if index.exists():
         assert type(item["number"]) is int and item["number"] == expected[identifier]
         assert item["url"] == f"https://github.com/carloshm91/kuberich/issues/{item['number']}"
 print(
-    f"Valid plan: {len(epics)} epics, {len(tasks)} tasks, {len(rows)} capability families, {len(flags)} CLI flags"
+    f"Valid plan: {len(epics)} epics, {len(tasks)} tasks, {len(rows)} capability families, {len(flags)} CLI flags, {link_count} local Markdown links"
 )

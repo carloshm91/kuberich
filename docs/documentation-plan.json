@@ -1578,41 +1578,41 @@
       "baseline_sha256": "8c62eba1186380ad032f085c8969739302f7516e9724bdbe9925bb69f2992925"
     },
     {
-      "source": "docs/generated/capability-reference.md",
+      "source": "docs/capability-reference.md",
       "audience": "generated reference",
       "action": "keep",
       "destinations": [
-        "docs/generated/capability-reference.md"
+        "docs/capability-reference.md"
       ],
       "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
       "baseline_sha256": null
     },
     {
-      "source": "docs/generated/cli-reference.md",
+      "source": "docs/cli-reference.md",
       "audience": "generated reference",
       "action": "keep",
       "destinations": [
-        "docs/generated/cli-reference.md"
+        "docs/cli-reference.md"
       ],
       "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
       "baseline_sha256": null
     },
     {
-      "source": "docs/generated/config-reference.md",
+      "source": "docs/config-reference.md",
       "audience": "generated reference",
       "action": "keep",
       "destinations": [
-        "docs/generated/config-reference.md"
+        "docs/config-reference.md"
       ],
       "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
       "baseline_sha256": null
     },
     {
-      "source": "docs/generated/resource-reference.md",
+      "source": "docs/resource-reference.md",
       "audience": "generated reference",
       "action": "keep",
       "destinations": [
-        "docs/generated/resource-reference.md"
+        "docs/resource-reference.md"
       ],
       "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
       "baseline_sha256": null
@@ -2191,5 +2191,13 @@
   ],
   "inventory_rule": "Every tracked Markdown file, every file under docs/, LICENSE, NOTICE, and contribution issue templates at the baseline commit; new structure contracts are mapped too.",
   "routing": "Each retired guide path redirects to its preserved source section. Internal links to active source fragments keep exact heading targets. Cloudflare cannot inspect an incoming URL fragment, so an external deep link on a retired path lands at the source section. Legacy route anchors stay explicit when later prose is consolidated.",
-  "architecture_state": "overview_and_numbered_adrs_active"
+  "architecture_state": "overview_and_numbered_adrs_active",
+  "preserved_sources": [
+    {
+      "path": "engineering/architecture-history/architecture-before-adrs.md",
+      "source": "docs/architecture.md",
+      "commit": "625086db1a75aab10ec28fe4d6440f7fb1d32849",
+      "sha256": "d5a8b04b2ec5f55cf703d9a9bc322d190425bd27828c69993784ba2c3fefe162"
+    }
+  ]
 }

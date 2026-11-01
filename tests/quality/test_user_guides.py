@@ -99,7 +99,7 @@ def test_docs_reject_invalid_aliases_oversize_pages_and_stale_reference(tmp_path
     elif fault == "line_budget":
         (source / "docs/quickstart.md").write_text("# Oversized\n" + "Text\n" * 250)
     else:
-        path = source / "docs/generated/config-reference.md"
+        path = source / "docs/config-reference.md"
         path.write_text(path.read_text() + "stale\n")
         with pytest.raises(ValueError, match="stale"):
             check_reference_files(source)
