@@ -65,6 +65,12 @@ captures scope and dependencies; update it when the plan changes materially.
 Documentation-only changes run documentation/repository checks; application
 coverage is not fabricated for a repository without application code.
 
+## Architecture
+
+Read the [architecture overview](docs/architecture.md) for layers, data flow,
+concurrency, cleanup, and security boundaries. Use the
+[decision index](docs/adr/README.md) and its template when changing a boundary.
+
 ## Toolchain
 
 The development package uses a src layout, pyproject.toml, a committed uv.lock,

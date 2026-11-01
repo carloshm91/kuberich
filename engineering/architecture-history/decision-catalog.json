@@ -1,0 +1,350 @@
+{
+  "schema_version": 1,
+  "decisions": [
+    {
+      "number": "0001",
+      "source": "docs/adr/0001-python-terminal-stack.md",
+      "title": "Build the terminal application with Python and Textual",
+      "modules": [
+        "pyproject.toml",
+        "src/kuberich/ui/app.py",
+        "src/kuberich/adapters/kubernetes.py",
+        "src/kuberich/adapters/emulator.py"
+      ]
+    },
+    {
+      "number": "0002",
+      "source": "docs/adr/0002-dependency-direction.md",
+      "title": "Keep domain decisions independent of terminal and SDK types",
+      "modules": [
+        "src/kuberich/domain/resources.py",
+        "src/kuberich/domain/targets.py",
+        "src/kuberich/services/workspace.py",
+        "src/kuberich/ui/app.py"
+      ]
+    },
+    {
+      "number": "0003",
+      "source": "docs/adr/0003-explicit-context-sessions.md",
+      "title": "Use a separate explicit connection for each selected context",
+      "modules": [
+        "src/kuberich/config/catalog.py",
+        "src/kuberich/domain/connections.py",
+        "src/kuberich/services/sessions.py",
+        "src/kuberich/adapters/kubernetes.py"
+      ]
+    },
+    {
+      "number": "0004",
+      "source": "docs/adr/0004-credential-helpers-and-delegation.md",
+      "title": "Preserve the configured credential identity when delegating tools",
+      "modules": [
+        "src/kuberich/adapters/credentials.py",
+        "src/kuberich/adapters/credential_child.py",
+        "src/kuberich/adapters/kubernetes.py",
+        "src/kuberich/domain/connection_overrides.py"
+      ]
+    },
+    {
+      "number": "0005",
+      "source": "docs/adr/0005-discovery-and-printer-schemas.md",
+      "title": "Resolve API identity through discovery and version-pinned layouts",
+      "modules": [
+        "src/kuberich/domain/resources.py",
+        "src/kuberich/domain/custom.py",
+        "src/kuberich/services/resources.py",
+        "src/kuberich/ui/custom.py"
+      ]
+    },
+    {
+      "number": "0006",
+      "source": "docs/adr/0006-list-watch-continuity.md",
+      "title": "Keep collection snapshots consistent and watch versions opaque",
+      "modules": [
+        "src/kuberich/domain/watches.py",
+        "src/kuberich/services/watches.py",
+        "src/kuberich/services/resources.py",
+        "src/kuberich/adapters/kubernetes.py"
+      ]
+    },
+    {
+      "number": "0007",
+      "source": "docs/adr/0007-active-view-generations.md",
+      "title": "Publish only observations belonging to the current view",
+      "modules": [
+        "src/kuberich/domain/views.py",
+        "src/kuberich/services/workspace.py",
+        "src/kuberich/services/sessions.py",
+        "src/kuberich/ui/app.py"
+      ]
+    },
+    {
+      "number": "0008",
+      "source": "docs/adr/0008-external-process-ownership.md",
+      "title": "Own external commands through one explicit process service",
+      "modules": [
+        "src/kuberich/domain/processes.py",
+        "src/kuberich/services/processes.py",
+        "src/kuberich/adapters/credentials.py",
+        "src/kuberich/services/access.py",
+        "src/kuberich/runtime.py"
+      ]
+    },
+    {
+      "number": "0009",
+      "source": "docs/adr/0009-native-terminal-handoff.md",
+      "title": "Lease and restore the native terminal for explicit foreground tools",
+      "modules": [
+        "src/kuberich/adapters/terminal.py",
+        "src/kuberich/ui/handoff.py",
+        "src/kuberich/ui/shutdown.py",
+        "src/kuberich/services/processes.py"
+      ]
+    },
+    {
+      "number": "0010",
+      "source": "docs/adr/0010-embedded-container-terminal.md",
+      "title": "Keep pod shells inside an owned embedded terminal",
+      "modules": [
+        "src/kuberich/adapters/pty.py",
+        "src/kuberich/adapters/emulator.py",
+        "src/kuberich/domain/terminal_history.py",
+        "src/kuberich/ui/terminal.py"
+      ]
+    },
+    {
+      "number": "0011",
+      "source": "docs/adr/0011-single-container-log-streams.md",
+      "title": "Separate log delivery, retained history, and viewport following",
+      "modules": [
+        "src/kuberich/domain/logs.py",
+        "src/kuberich/domain/log_view.py",
+        "src/kuberich/services/logs.py",
+        "src/kuberich/services/log_export.py",
+        "src/kuberich/ui/logs.py"
+      ]
+    },
+    {
+      "number": "0012",
+      "source": "docs/adr/0012-controller-owned-aggregate-logs.md",
+      "title": "Admit aggregate log sources through controller identity",
+      "modules": [
+        "src/kuberich/domain/aggregate_logs.py",
+        "src/kuberich/domain/log_json.py",
+        "src/kuberich/services/aggregate_logs.py",
+        "src/kuberich/ui/aggregate_logs.py"
+      ]
+    },
+    {
+      "number": "0013",
+      "source": "docs/adr/0013-reviewed-conditional-writes.md",
+      "title": "Bind each resource change to one reviewed conditional request",
+      "modules": [
+        "src/kuberich/domain/operations.py",
+        "src/kuberich/domain/editing.py",
+        "src/kuberich/services/mutations.py",
+        "src/kuberich/services/workloads.py",
+        "src/kuberich/services/operations.py"
+      ]
+    },
+    {
+      "number": "0014",
+      "source": "docs/adr/0014-reviewed-file-transfers.md",
+      "title": "Validate copied trees privately before destination publication",
+      "modules": [
+        "src/kuberich/domain/transfers.py",
+        "src/kuberich/services/transfers.py",
+        "src/kuberich/ui/transfers.py",
+        "src/kuberich/domain/processes.py"
+      ]
+    },
+    {
+      "number": "0015",
+      "source": "docs/adr/0015-managed-tcp-forwards.md",
+      "title": "Manage forwards as connection-owned TCP sessions",
+      "modules": [
+        "src/kuberich/domain/forward_presets.py",
+        "src/kuberich/config/forwarding.py",
+        "src/kuberich/services/port_forwards.py",
+        "src/kuberich/ui/port_forwards.py"
+      ]
+    },
+    {
+      "number": "0016",
+      "source": "docs/adr/0016-explicit-local-plugins.md",
+      "title": "Load and execute only explicitly configured local plugins",
+      "modules": [
+        "src/kuberich/domain/plugins.py",
+        "src/kuberich/config/plugins.py",
+        "src/kuberich/adapters/plugin_files.py",
+        "src/kuberich/services/plugins.py",
+        "src/kuberich/ui/plugins.py"
+      ]
+    },
+    {
+      "number": "0017",
+      "source": "docs/adr/0017-versioned-local-preferences.md",
+      "title": "Keep local preferences versioned and explicit to save",
+      "modules": [
+        "src/kuberich/config/schema.py",
+        "src/kuberich/config/store.py",
+        "src/kuberich/config/context_settings.py",
+        "src/kuberich/services/appearance.py",
+        "src/kuberich/ui/live_preferences.py"
+      ]
+    },
+    {
+      "number": "0018",
+      "source": "docs/adr/0018-focused-input-and-workspace-geometry.md",
+      "title": "Keep keyboard ownership and frame geometry predictable",
+      "modules": [
+        "src/kuberich/ui/commands.py",
+        "src/kuberich/ui/chrome.py",
+        "src/kuberich/ui/keybindings.py",
+        "src/kuberich/ui/nested.py",
+        "src/kuberich/ui/contexts.py"
+      ]
+    },
+    {
+      "number": "0019",
+      "source": "docs/adr/0019-saved-resource-view-contracts.md",
+      "title": "Pin saved navigation to actual resource and input contracts",
+      "modules": [
+        "src/kuberich/domain/aliases.py",
+        "src/kuberich/domain/keyboard.py",
+        "src/kuberich/domain/resource_preferences.py",
+        "src/kuberich/domain/jumps.py",
+        "src/kuberich/config/navigation.py"
+      ]
+    },
+    {
+      "number": "0020",
+      "source": "docs/adr/0020-data-only-theme-palettes.md",
+      "title": "Treat theme configuration as validated color data",
+      "modules": [
+        "src/kuberich/domain/appearance.py",
+        "src/kuberich/ui/appearance.py",
+        "src/kuberich/services/appearance.py"
+      ]
+    },
+    {
+      "number": "0021",
+      "source": "docs/adr/0021-opt-in-release-notices.md",
+      "title": "Make release discovery optional and non-executable",
+      "modules": [
+        "src/kuberich/domain/releases.py",
+        "src/kuberich/services/updates.py",
+        "src/kuberich/ui/appearance.py"
+      ]
+    },
+    {
+      "number": "0022",
+      "source": "docs/adr/0022-default-redaction-and-explicit-disclosure.md",
+      "title": "Redact ordinary views and require deliberate value disclosure",
+      "modules": [
+        "src/kuberich/security/presentation.py",
+        "src/kuberich/security/controls.py",
+        "src/kuberich/diagnostics/redaction.py",
+        "src/kuberich/services/configuration_data.py",
+        "src/kuberich/ui/configuration_data.py",
+        "src/kuberich/domain/clipboard.py",
+        "src/kuberich/services/clipboard.py"
+      ]
+    },
+    {
+      "number": "0023",
+      "source": "docs/adr/0023-widget-style-cache-ownership.md",
+      "title": "Scope rendering caches to their application and widget owners",
+      "modules": [
+        "src/kuberich/ui/style_cache.py",
+        "src/kuberich/ui/app.py",
+        "src/kuberich/ui/presentation.py"
+      ]
+    },
+    {
+      "number": "0024",
+      "source": "docs/adr/0024-transactional-css-parse-reuse.md",
+      "title": "Reuse complete stylesheet parses without partial publication",
+      "modules": [
+        "src/kuberich/ui/style_cache.py",
+        "src/kuberich/ui/app.py"
+      ]
+    },
+    {
+      "number": "0025",
+      "source": "docs/adr/0025-native-table-cache-retirement.md",
+      "title": "Release discarded native table cache rings promptly",
+      "modules": [
+        "src/kuberich/ui/table_cache.py",
+        "src/kuberich/ui/presentation.py"
+      ]
+    },
+    {
+      "number": "0026",
+      "source": "docs/adr/0026-incremental-rendering-and-cooperative-work.md",
+      "title": "Bound projection and rendering work without changing its meaning",
+      "modules": [
+        "src/kuberich/services/pods.py",
+        "src/kuberich/services/filtering.py",
+        "src/kuberich/ui/log_body.py",
+        "src/kuberich/ui/presentation.py",
+        "src/kuberich/ui/chrome.py"
+      ]
+    },
+    {
+      "number": "0027",
+      "source": "docs/adr/0027-frozen-runtime-delegation.md",
+      "title": "Separate frozen loader state from external program environments",
+      "modules": [
+        "scripts/build_standalone.py",
+        "src/kuberich/runtime.py",
+        "src/kuberich/adapters/credential_child.py",
+        "src/kuberich/services/processes.py"
+      ]
+    },
+    {
+      "number": "0028",
+      "source": "docs/adr/0028-identity-and-preference-migration.md",
+      "title": "Migrate application identity without duplicating runtime packages",
+      "modules": [
+        "pyproject.toml",
+        "src/kuberich/config/paths.py",
+        "src/kuberich/config/store.py",
+        "src/kuberich/config/schema.py"
+      ]
+    },
+    {
+      "number": "0029",
+      "source": "docs/adr/0029-immutable-release-activation.md",
+      "title": "Separate tested release preparation from artifact publication",
+      "modules": [
+        "scripts/release_policy.py",
+        "scripts/release.py",
+        "docs/releases.md"
+      ]
+    },
+    {
+      "number": "0030",
+      "source": "docs/adr/0030-owned-verification-fixtures.md",
+      "title": "Use explicit disposable fixtures and preserve original failures",
+      "modules": [
+        "tests/conftest.py",
+        "scripts/owned_kind.py",
+        "docs/quality.md",
+        "scripts/check_coverage.py"
+      ]
+    },
+    {
+      "number": "0031",
+      "source": "docs/adr/0031-standard-python-packaging.md",
+      "title": "Build standard Python artifacts with one explicit backend",
+      "modules": [
+        "pyproject.toml",
+        "uv.lock",
+        "tests/packaging/test_artifacts.py",
+        "tests/packaging/test_distribution.py",
+        "docs/installation.md"
+      ]
+    }
+  ]
+}
