@@ -331,7 +331,7 @@ def reference_files(root: Path) -> dict[str, str]:
 
 def check_reference_files(root: Path) -> None:
     for name, content in reference_files(root).items():
-        path = root / "docs/generated" / name
+        path = root / "docs" / name
         if not path.is_file() or path.is_symlink() or path.read_text() != content:
             raise ValueError(
                 f"Generated reference is stale: {name}; run python -m scripts.site_reference --write"
@@ -346,7 +346,7 @@ def main() -> int:
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     if args.write:
-        folder = root / "docs/generated"
+        folder = root / "docs"
         folder.mkdir(exist_ok=True)
         for name, content in reference_files(root).items():
             (folder / name).write_text(content)
