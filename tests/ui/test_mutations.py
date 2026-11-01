@@ -13,16 +13,24 @@ from kuberich.config.schema import Settings
 from kuberich.domain.mutations import MutationState
 from kuberich.domain.registry import RESOURCE_ALIASES
 from kuberich.services.commands import ResourceCommand
+from kuberich.services.mutations import MutationService
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.mutations import AnnotationScreen, MutationHistoryScreen
 from tests.support.connections import catalog_fixture
 from tests.support.mutations import mutation_api
+from tests.support.workers import CoroutineCalls
 from tests.support.workspace import wait_for
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("closing", ["retry", "exit", "escape"])
 async def test_preparation_is_drained_before_client_cleanup(tmp_path, monkeypatch, closing):
+    preparations = CoroutineCalls()
+    monkeypatch.setattr(
+        MutationService,
+        "prepare_annotation",
+        preparations.observe(MutationService.prepare_annotation),
+    )
     entered, released, finished = threading.Event(), threading.Event(), threading.Event()
     ready, finish_trial, closed = asyncio.Event(), asyncio.Event(), asyncio.Event()
     decode = kubernetes.decode_json
@@ -55,7 +63,7 @@ async def test_preparation_is_drained_before_client_cleanup(tmp_path, monkeypatc
                 close = old.close
 
                 async def checked_close():
-                    assert finished.is_set() and screen._operation_task.done()
+                    assert finished.is_set() and preparations.latest.done()
                     closed.set()
                     await close()
 
@@ -77,15 +85,17 @@ async def test_preparation_is_drained_before_client_cleanup(tmp_path, monkeypatc
                 pressing = asyncio.create_task(
                     pilot.press("f4" if closing == "retry" else "escape")
                 )
-            await wait_for(lambda: screen._operation_task.cancelling())
+            await wait_for(
+                lambda: preparations.latest is not None and preparations.latest.cancelling()
+            )
             another_drain = asyncio.create_task(screen.stop_owned())
             await asyncio.sleep(0)
-            assert screen._operation_task.cancelling() == 1
+            assert preparations.latest.cancelling() == 1
             assert not closed.is_set() and old.configuration is not None
             assert not finished.is_set() and not api.requests
             released.set()
             await another_drain
-            assert finished.is_set() and screen._operation_task.done()
+            assert finished.is_set() and preparations.latest.done()
             if pressing is not None:
                 await pressing
             if closing == "retry":
@@ -112,7 +122,7 @@ def app_fixture(tmp_path, url, *, read_only=False):
 
 async def prepare(app, pilot):
     await wait_for(lambda: app.standard_table.row_count == 1)
-    app._submit_command(":annotate")
+    await app.run_command(":annotate")
     await wait_for(lambda: isinstance(app.screen, AnnotationScreen))
     await pilot.pause()
     app.screen.query_one("#annotation-key", Input).value = "example.io/review"
@@ -168,7 +178,7 @@ async def test_review_enter_cancel_confirm_and_public_history(tmp_path, size, mo
             assert "Succeeded" in str(screen.query_one("#annotation-feedback", Static).content)
             await pilot.press("escape")
             await wait_for(lambda: len(app.screen_stack) == 1)
-            app._submit_command(":writes")
+            await app.run_command(":writes")
             await wait_for(lambda: isinstance(app.screen, MutationHistoryScreen))
             await pilot.pause()
             content = str(app.screen.query_one("#write-history-content", Static).content)
@@ -191,7 +201,7 @@ async def test_changed_fields_and_context_invalidate_confirmation(tmp_path):
             assert not api.requests and screen.intent is None
             screen.review()
             await wait_for(lambda: screen.intent is not None)
-            app._namespace_selected("other")
+            app.workspace.select_namespace("other")
             await wait_for(lambda: app.sessions.observation.namespace == "other")
             screen.confirm()
             assert not api.requests and "changed" in str(
@@ -206,11 +216,11 @@ async def test_readonly_action_is_rejected_but_history_is_allowed(tmp_path):
         app = app_fixture(tmp_path, url, read_only=True)
         async with app.run_test() as pilot:
             await wait_for(lambda: app.standard_table.row_count == 1)
-            app._submit_command(":annotate")
+            await app.run_command(":annotate")
             assert "Read-only" in str(app.status.content) and len(app.screen_stack) == 1
             app.action_annotate()
             assert not api.requests
-            app._submit_command(":writes")
+            await app.run_command(":writes")
             await wait_for(lambda: isinstance(app.screen, MutationHistoryScreen))
             await pilot.pause()
             assert "No writes" in str(

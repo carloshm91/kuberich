@@ -15,18 +15,31 @@ from kuberich.domain.mutations import MutationState
 from kuberich.domain.processes import ProcessResult, ProcessStatus
 from kuberich.domain.registry import RESOURCE_ALIASES
 from kuberich.services.commands import ResourceCommand
+from kuberich.services.editing import EditingService
+from kuberich.services.mutations import MutationManager
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.editing import EditingScreen
 from tests.support.connections import catalog_fixture
 from tests.support.editing import editing_api
+from tests.support.workers import CoroutineCalls
 from tests.support.workspace import wait_for
+
+
+@pytest.fixture
+def workers(monkeypatch):
+    calls = CoroutineCalls()
+    monkeypatch.setattr(EditingService, "open", calls.observe(EditingService.open))
+    monkeypatch.setattr(EditingService, "prepare", calls.observe(EditingService.prepare))
+    monkeypatch.setattr(EditingService, "validate", calls.observe(EditingService.validate))
+    monkeypatch.setattr(MutationManager, "wait", calls.observe(MutationManager.wait))
+    return calls
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("closing", ["retry", "exit", "escape"])
 @pytest.mark.parametrize("stage", ["read", "create"])
 async def test_pending_preparation_drains_before_client_or_screen_cleanup(
-    tmp_path, monkeypatch, closing, stage
+    tmp_path, monkeypatch, closing, stage, workers
 ):
     entered, released, finished = threading.Event(), threading.Event(), threading.Event()
     ready, finish_trial, closed = asyncio.Event(), asyncio.Event(), asyncio.Event()
@@ -71,7 +84,7 @@ async def test_pending_preparation_drains_before_client_or_screen_cleanup(
                 old, close = app.sessions.client, app.sessions.client.close
 
                 async def checked_close():
-                    assert finished.is_set() and screen._operation_task.done()
+                    assert finished.is_set() and workers.latest.done()
                     assert all(not path.parent.exists() for path in paths)
                     closed.set()
                     await close()
@@ -93,17 +106,17 @@ async def test_pending_preparation_drains_before_client_or_screen_cleanup(
                 pressing = asyncio.create_task(
                     pilot.press("f4" if closing == "retry" else "escape")
                 )
-            await wait_for(lambda: screen._operation_task.cancelling())
+            await wait_for(lambda: workers.latest is not None and workers.latest.cancelling())
             another_drain = asyncio.create_task(screen.stop_owned())
             await asyncio.sleep(0)
-            assert screen._operation_task.cancelling() == 1
+            assert workers.latest.cancelling() == 1
             assert not closed.is_set() and old.configuration is not None
             assert not finished.is_set() and not api.requests
             assert app.screen is screen
-            operation = screen._operation_task
+            operation = workers.latest
             screen.open_editor()
             screen.validate()
-            assert screen._operation_task is operation
+            assert workers.latest is operation
             released.set()
             await another_drain
             assert finished.is_set() and all(not path.parent.exists() for path in paths)
@@ -133,7 +146,7 @@ def app_fixture(tmp_path, url, *, read_only=False):
 
 async def open_screen(app, pilot):
     await wait_for(lambda: app.standard_table.row_count == 1)
-    app._submit_command(":edit")
+    await app.run_command(":edit")
     await wait_for(lambda: isinstance(app.screen, EditingScreen))
     await pilot.pause()
     return app.screen
@@ -142,7 +155,7 @@ async def open_screen(app, pilot):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
 async def test_editor_disclosure_diff_validation_cancel_and_separate_apply(
-    tmp_path, monkeypatch, size
+    tmp_path, monkeypatch, size, workers
 ):
     seen = []
 
@@ -175,7 +188,7 @@ async def test_editor_disclosure_diff_validation_cancel_and_separate_apply(
             await pilot.pause()
             screen.open_editor()
             await wait_for(lambda: screen.source.intent is not None)
-            await wait_for(lambda: not screen._busy())
+            await wait_for(lambda: workers.latest is not None and workers.latest.done())
             assert not api.requests and app.focused is screen.query_one("#edit-cancel", Button)
             assert "owned-label" in str(screen.query_one("#edit-diff", Static).content)
             assert "sensitive-editor-content" not in str(
@@ -191,10 +204,10 @@ async def test_editor_disclosure_diff_validation_cancel_and_separate_apply(
             await pilot.pause()
             screen.open_editor()
             await wait_for(lambda: screen.source.intent is not None)
-            await wait_for(lambda: not screen._busy())
+            await wait_for(lambda: workers.latest is not None and workers.latest.done())
             screen.validate()
             await wait_for(lambda: screen.source.validated is not None)
-            await wait_for(lambda: not screen._busy())
+            await wait_for(lambda: workers.latest is not None and workers.latest.done())
             assert len(api.requests) == 1 and "edited" not in api.value["data"]
             assert app.focused is screen.query_one("#edit-cancel", Button)
             screen.apply()
@@ -209,13 +222,13 @@ async def test_editor_disclosure_diff_validation_cancel_and_separate_apply(
             await pilot.press("escape")
             await wait_for(lambda: len(app.screen_stack) == 1)
             assert not seen[1].parent.exists()
-        assert app.sessions.client is None and not app.mutations._live
+        assert app.sessions.client is None and app.mutations.active_count == 0
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("mode", ["noop", "failure", "invalid", "validation-denied", "conflict"])
 async def test_editor_cancellation_failures_noops_denial_and_conflicts_are_safe(
-    tmp_path, monkeypatch, mode
+    tmp_path, monkeypatch, mode, workers
 ):
     async def editor(app, runner, command, *, guard):
         source = app.screen.source
@@ -242,21 +255,25 @@ async def test_editor_cancellation_failures_noops_denial_and_conflicts_are_safe(
             screen.query_one("#edit-disclosure", Checkbox).value = True
             await pilot.pause()
             screen.open_editor()
-            await wait_for(
-                lambda: screen._operation_task is not None and screen._operation_task.done()
-            )
+            await wait_for(lambda: workers.latest is not None and workers.latest.done())
             path = screen.source.file.path
             screen.apply()
             assert not api.requests
             if mode == "validation-denied":
                 api.validation_status = 403
                 screen.validate()
-                await wait_for(lambda: len(api.requests) == 1 and not screen._busy())
+                await wait_for(
+                    lambda: (
+                        len(api.requests) == 1
+                        and (workers.latest is not None and workers.latest.done())
+                    )
+                )
                 assert screen.query_one("#edit-apply", Button).disabled
             elif mode == "conflict":
                 api.value["metadata"]["resourceVersion"] = "concurrent"
+                workers.clear()
                 screen.validate()
-                await wait_for(lambda: not screen._busy())
+                await wait_for(lambda: workers.latest is not None and workers.latest.done())
                 assert "changed" in str(screen.query_one("#edit-feedback", Static).content)
                 assert not api.requests
             else:
@@ -273,7 +290,7 @@ async def test_readonly_commands_and_shortcut_never_open_editor(tmp_path):
         app = app_fixture(tmp_path, url, read_only=True)
         async with app.run_test() as pilot:
             await wait_for(lambda: app.standard_table.row_count == 1)
-            app._submit_command(":edit")
+            await app.run_command(":edit")
             app.action_edit()
             await pilot.press("E")
             assert len(app.screen_stack) == 1 and not api.requests
