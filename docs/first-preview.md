@@ -66,6 +66,19 @@ views. Matching commands can review the selected UID after the view is live;
 previous resource names and API versions remain refused while a new view loads.
 This correction is not included in the installed 0.2.0 release.
 
+## Development: owned X11 clipboard qualification
+
+The native clipboard trial now observes exact selection receipt on a disposable
+Xvfb display. A controlled delayed real writer reproduces the earlier immediate
+read failure; missing/wrong-selection and cancelled-reader controls keep their deadlines
+and require owned process cleanup. The clipboard cohort passed 32 cases with one
+explicit macOS-only skip on Linux. This changes developer qualification; the
+published application remains 0.2.0. Native/full required checks remain pending.
+
+```sh
+uv run pytest tests/contract/test_clipboard.py tests/contract/test_x11_readiness.py tests/unit/test_clipboard.py
+```
+
 ## Included in 0.2.0: live preferences
 
 Edit and save the preference file while KubeRich runs. Themes, aliases, column
