@@ -7,7 +7,15 @@ from pathlib import Path
 import pytest
 import yaml
 
-from scripts.startup_policy import Measurement, check_cli, check_importtime, check_paint, rss_bytes
+from scripts.startup_policy import (
+    Measurement,
+    check_cli,
+    check_importtime,
+    check_paint,
+    enforce_paint_budget,
+    observe_paint,
+    rss_bytes,
+)
 
 PROFILE = (
     "import time: self [us] | cumulative | imported package\n"
@@ -137,6 +145,54 @@ def test_incomplete_slow_or_forbidden_import_profiles_fail_closed(profile):
 
 def test_first_paint_includes_both_actual_refresh_and_visible_pty_delivery():
     assert check_paint(frame(), 100_000_000, 400_000_000) == 300_000_000
+
+
+@pytest.mark.parametrize(
+    "version,strict,enforced",
+    [
+        ("0.3.0", False, False),
+        ("0.9.0rc1", False, False),
+        ("0.3.0", True, True),
+        ("1.0.0.dev0", False, True),
+        ("1.0.0rc1", False, True),
+        ("1.0.0", False, True),
+        ("2.0.0", False, True),
+    ],
+)
+def test_only_pre_stable_ui_latency_is_advisory_unless_explicitly_strict(version, strict, enforced):
+    assert enforce_paint_budget(version, strict=strict) is enforced
+
+
+@pytest.mark.parametrize("strict", [False, True])
+def test_invalid_version_cannot_select_an_advisory_mode(strict):
+    with pytest.raises(ValueError):
+        enforce_paint_budget("invalid-owned-version", strict=strict)
+
+
+def test_observation_records_slow_real_frame_while_strict_check_still_rejects_600ms():
+    observed = {**frame(), "first_paint_ns": 800_000_000}
+    assert observe_paint(observed, 100_000_000, 700_000_000) == 700_000_000
+    with pytest.raises(ValueError, match="600 ms"):
+        check_paint(observed, 100_000_000, 700_000_000)
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"sdk_before_paint": ["kubernetes_asyncio"]},
+        {"sdk_models_at_exit": 1},
+        {"client_closed": False},
+        {"exit": 1},
+        {"viewport": [40, 12]},
+        {"shown_tables": []},
+        {"violations": ["unowned-network"]},
+        {"table_frames": {}},
+        {"first_paint_ns": None},
+    ],
+)
+def test_advisory_latency_cannot_relax_actual_frame_or_ownership_contracts(change):
+    with pytest.raises(ValueError):
+        observe_paint({**frame(), **change}, 100_000_000, 700_000_000)
 
 
 @pytest.mark.parametrize(

@@ -4,6 +4,8 @@ import json
 from dataclasses import dataclass
 from typing import Any, TypedDict
 
+from packaging.version import Version
+
 CLI_BUDGET_NS = 150_000_000
 RSS_BUDGET_BYTES = 40_000_000
 IMPORT_BUDGET_US = 150_000
@@ -107,7 +109,14 @@ def check_importtime(text: str) -> dict[str, Any]:
     return {"self_us": total, "modules": events}
 
 
-def check_paint(observation: dict[str, Any], launched_ns: int, visible_ns: int | None) -> int:
+def enforce_paint_budget(version: str, *, strict: bool = False) -> bool:
+    """The maintainer made only 0.x UI latency advisory on 2026-11-01."""
+    major = Version(version).major
+    return strict or major >= 1
+
+
+def observe_paint(observation: dict[str, Any], launched_ns: int, visible_ns: int | None) -> int:
+    """Require a real complete, safely closed frame in every release mode."""
     painted_ns = observation.get("first_paint_ns")
     frames = observation.get("table_frames")
     table = frames.get("resources") if isinstance(frames, dict) else None
@@ -145,7 +154,12 @@ def check_paint(observation: dict[str, Any], launched_ns: int, visible_ns: int |
         or observation.get("events") != [{"kind": "paint", "painted": True}]
     ):
         raise ValueError("Missing actual first-frame, shutdown or deferred-SDK evidence.")
-    elapsed = max(painted_ns, visible_ns) - launched_ns
+    return max(painted_ns, visible_ns) - launched_ns
+
+
+def check_paint(observation: dict[str, Any], launched_ns: int, visible_ns: int | None) -> int:
+    """Keep the unchanged strict 600 ms decision available in every release."""
+    elapsed = observe_paint(observation, launched_ns, visible_ns)
     if not 0 < elapsed < PAINT_BUDGET_NS:
         raise ValueError("Actual first paint exceeds the 600 ms startup budget.")
     return elapsed

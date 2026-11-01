@@ -20,6 +20,15 @@ version or merged feature does not authorize publication.
 The maintainer revised the phase plan on 2026-10-19 ([#221](https://github.com/carloshm91/kuberich/issues/221)):
 foundations and a documentation rewrite come before new feature families.
 
+On **2026-11-01**, the maintainer accepted the measured approximately 685 ms
+terminal startup for 0.3. The unchanged **600 ms** UI target is advisory for 0.x,
+with all five actual observations and explicit met/enforced flags retained.
+`python -m scripts.check_startup --strict-paint` still enforces it, and version
+major 1 and later enforce it automatically under the stable audit Q06 #88.
+A missed target is reported as missed; no higher threshold is substituted.
+Offline 150 ms / 40,000,000-byte / import boundaries and real-frame, SDK,
+geometry, source identity and cleanup checks remain release requirements.
+
 | Public line | Gate (plus every earlier gate) | Phase scope |
 | --- | --- | --- |
 | 0.1.x | D06 #51, including D04 #40, D05 #49 and Q03 #50 | Core workspace; also #53, #54 and #123 |

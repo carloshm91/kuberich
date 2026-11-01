@@ -4,6 +4,18 @@ The startup boundary keeps offline commands independent of the terminal framewor
 and Kubernetes SDK. It does not change configured validation or claim provider,
 macOS, native-archive or release qualification from Linux source tests.
 
+## Maintainer decision on 2026-11-01
+
+The maintainer accepted the measured approximately 685 ms UI startup for 0.3.
+For 0.x, the unchanged 600 ms target is advisory: record all five actual values
+and explicit budget-met/enforced flags, including any missed target. The
+qualifier's `--strict-paint` mode retains the original strict check; version
+major 1 and later enforce it automatically. Offline latency/RSS/import limits
+and every source, actual-frame, SDK, geometry and cleanup contract remain
+mandatory in every mode. The deliberate 700 ms control always exercises the
+strict check. No higher threshold or style shortcut is part of this delivery.
+Earlier failed strict references below remain failed and are not relabeled.
+
 ## Behavioral evidence
 
 An earlier functional-only source snapshot passes **1604 tests**, with the one
@@ -236,9 +248,18 @@ per offline path and five actual first frames; CI uses that same command without
 skip or budget options. All four paths must finish below **150 ms** and
 **40,000,000 bytes**. Every import profile must avoid Textual/SDK and keep both
 aggregate import self time and maximum cumulative time below **150,000 µs**.
-Actual first paint, including PTY delivery, must finish below **600 ms** before
-connection work. A deliberate 700 ms mount and an explicit Textual import must
-both be rejected. No failed observation is replaced by an unchanged retry.
+Actual first paint, including PTY delivery, must always precede connection work.
+The unchanged **600 ms** target is recorded for every sample and enforced with
+`--strict-paint` or automatically from version major 1. For an explicit strict
+run on 0.x, use a separate fresh output directory:
+
+```console
+uv run python -m scripts.check_startup --strict-paint --output artifacts/startup/strict-qualification
+```
+
+A deliberate 700 ms mount and an explicit Textual import must both be rejected
+in every mode. No failed observation is replaced by an unchanged retry, and an
+advisory miss is never reported as meeting the target.
 
 The qualifier verifies the editable source identity, freezes production/tool/lock
 inputs, records raw stdout/stderr, import profiles and ANSI transcripts, and uses

@@ -1,5 +1,6 @@
 """Fresh-process instrumentation owns and reaps its direct child on timeout."""
 
+import json
 import os
 import signal
 import subprocess
@@ -133,9 +134,148 @@ def test_git_failure_is_reported_without_escaping_the_owned_failure_path(tmp_pat
 
     monkeypatch.setattr(check_startup, "run_plain", run)
     assert check_startup.main() == 1
-    import json
-
     result = json.loads((output / "report.json").read_text())
     assert result["passed"] is False
     assert result["error"] == "controlled git failure"
     assert result["source_commit"] is None
+
+
+@pytest.fixture
+def startup_io(tmp_path, monkeypatch):
+    source = tmp_path / "owned-source"
+    source.mkdir()
+    (source / "pyproject.toml").write_text('[project]\nversion = "0.3.0"\n')
+    monkeypatch.setattr(check_startup, "ROOT", source)
+    state = {"terminal_calls": [], "unsafe_frame": False}
+
+    def run(argv, output, environment, name, *, cancellation=None):
+        if name == "source-commit":
+            return Measurement(0, 1, 1, "a" * 40 + "\n", "")
+        if name == "installed-source":
+            return Measurement(0, 1, 1, str(source / "src/kuberich/__init__.py") + "\n", "")
+        if name.endswith("importtime") or name == "negative-textual-import":
+            profile = "import time: 1 | 1 | kuberich.cli\n"
+            if name == "negative-textual-import":
+                profile += "import time: 1 | 1 | textual\n"
+            return Measurement(0, 1, 1, "", profile)
+        version = check_startup.tomllib.loads((source / "pyproject.toml").read_text())["project"][
+            "version"
+        ]
+        if name.startswith("version-"):
+            text = f"kuberich {version}\n"
+        elif name.startswith("help-"):
+            text = "usage: kuberich --context --readonly\n"
+        elif name.startswith("config-check-"):
+            text = "KubeRich preferences are valid. No files were changed.\n"
+        else:
+            assert name.startswith("info-")
+            text = json.dumps(
+                {
+                    "version": version,
+                    "terminal_ui_available": True,
+                    "cluster_connected": False,
+                    "preferences": {"theme": "k9s"},
+                    "dependencies": dict.fromkeys(
+                        ("textual", "kubernetes-asyncio", "platformdirs", "pyyaml"), "owned"
+                    ),
+                }
+            )
+        return Measurement(0, 1_000_000, 1_000_000, text, "")
+
+    def terminal(output, environment, name, *, negative=False, cancellation=None):
+        state["terminal_calls"].append((name, negative))
+        return {
+            "observation": {
+                "painted": True,
+                "first_paint_ns": 1_700_000_000,
+                "exit": 0,
+                "client_closed": True,
+                "viewport": [120, 36],
+                "shown_tables": ["resources"],
+                "table_frames": {
+                    "resources": {"mounted": True, "columns": 6, "region": [2, 11, 116, 2]}
+                },
+                "sdk_before_paint": ["kubernetes_asyncio"] if state["unsafe_frame"] else [],
+                "sdk_models_at_exit": 0,
+                "violations": [],
+                "events": [{"kind": "paint", "painted": True}],
+            },
+            "launched_ns": 1_000_000_000,
+            "visible_ns": 1_600_000_000,
+        }
+
+    monkeypatch.setattr(check_startup, "run_plain", run)
+    monkeypatch.setattr(check_startup, "run_terminal", terminal)
+    return state
+
+
+def test_advisory_runner_keeps_all_five_ui_samples_and_both_strict_negative_controls(
+    tmp_path, startup_io
+):
+    output = tmp_path / "advisory"
+    output.mkdir()
+    result = {}
+    check_startup.qualify(output, 5, result)
+    assert result["first_paint_budget_ns"] == 600_000_000
+    assert result["first_paint_budget_met"] is False
+    assert result["first_paint_budget_enforced"] is False
+    assert len(result["first_paint"]) == 5
+    assert all(
+        paint["elapsed_ns"] == 700_000_000
+        and paint["budget_met"] is False
+        and paint["budget_enforced"] is False
+        for paint in result["first_paint"]
+    )
+    assert startup_io["terminal_calls"] == [
+        *((f"paint-{number}", False) for number in range(5)),
+        ("negative-late-paint", True),
+    ]
+    assert result["negative_late_paint"]["rejected"] is True
+    assert result["negative_import_rejected"] is True
+
+
+@pytest.mark.parametrize("version,strict", [("0.3.0", True), ("1.0.0rc1", False), ("1.0.0", False)])
+def test_strict_or_stable_runner_preserves_the_original_first_failure(
+    tmp_path, startup_io, version, strict
+):
+    (check_startup.ROOT / "pyproject.toml").write_text(f'[project]\nversion = "{version}"\n')
+    output = tmp_path / "strict"
+    output.mkdir()
+    result = {}
+    with pytest.raises(ValueError, match="600 ms"):
+        check_startup.qualify(output, 5, result, strict_paint=strict)
+    assert result["first_paint_budget_enforced"] is True
+    assert result["first_paint_budget_met"] is False
+    assert startup_io["terminal_calls"] == [("paint-0", False)]
+
+
+def test_advisory_runner_still_rejects_prepaint_sdk_activity(tmp_path, startup_io):
+    startup_io["unsafe_frame"] = True
+    output = tmp_path / "unsafe"
+    output.mkdir()
+    with pytest.raises(ValueError, match="deferred-SDK"):
+        check_startup.qualify(output, 5, {})
+
+
+@pytest.mark.parametrize("strict,code", [(False, 0), (True, 1)])
+def test_cli_reports_the_scope_without_labeling_a_missed_target_passed(
+    tmp_path, monkeypatch, capsys, startup_io, strict, code
+):
+    output = tmp_path / "cli-policy"
+    arguments = ["check_startup", "--output", str(output)]
+    if strict:
+        arguments.append("--strict-paint")
+    monkeypatch.setattr(sys, "argv", arguments)
+    monkeypatch.setattr(check_startup, "inputs", lambda: {"owned": "same-input"})
+    assert check_startup.main() == code
+    result = json.loads((output / "report.json").read_text())
+    assert result["first_paint_budget_met"] is False
+    assert result["first_paint_budget_enforced"] is strict
+    assert result["passed"] is (not strict)
+    assert "UI budget enforcement" in result["scope"] and "--strict-paint" in result["scope"]
+    captured = capsys.readouterr()
+    if strict:
+        assert "600 ms" in captured.err and captured.out == ""
+    else:
+        assert "600 ms UI target not met (advisory for 0.x)" in captured.out
+        assert "UI target met" not in captured.out

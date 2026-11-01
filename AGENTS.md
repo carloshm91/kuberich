@@ -72,6 +72,14 @@ implementation; do not claim to switch models without actual environment support
   authorized finishing v0.2.0 in order: #221, #63, #64, #193, #65 (#124 moved
   to v0.8.0). Finish and verify each issue before advancing; publication of any
   artifact still needs explicit approval. Final hosting work stays in #89.
+- On 2026-11-01 the maintainer accepted the measured approximately 685 ms UI
+  startup for 0.3 and deferred strict 600 ms optimization to the stable 1.0 audit
+  (Q06 #88). For 0.x, report all five actual UI observations and explicit
+  budget-met/enforced flags; do not call the missed target passed. Keep the
+  unchanged `--strict-paint` qualifier mode, mandatory from version major 1.
+  Offline 150 ms/40 MB/import gates and actual-frame, SDK, geometry, ownership
+  and cleanup checks remain mandatory. Do not resume speculative style or
+  first-paint optimization for 0.3; prioritize the remaining product work.
 - Use a short-lived issue branch, an issue-linked pull request, required checks,
   and squash merging. Keep main releasable.
 - While hosted Actions cannot start because of the account quota/billing block,

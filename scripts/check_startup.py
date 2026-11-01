@@ -26,10 +26,13 @@ from typing import Any
 
 from scripts.startup_policy import (
     OFFLINE_CASES,
+    PAINT_BUDGET_NS,
     Measurement,
     check_cli,
     check_importtime,
     check_paint,
+    enforce_paint_budget,
+    observe_paint,
     rss_bytes,
 )
 
@@ -282,9 +285,22 @@ def interruptible() -> Iterator[Cancellation]:
 
 
 def qualify(
-    output: Path, samples: int, result: dict[str, Any], cancellation: Cancellation | None = None
+    output: Path,
+    samples: int,
+    result: dict[str, Any],
+    cancellation: Cancellation | None = None,
+    *,
+    strict_paint: bool = False,
 ) -> None:
     version = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
+    paint_enforced = enforce_paint_budget(version, strict=strict_paint)
+    result.update(
+        {
+            "first_paint_budget_ns": PAINT_BUDGET_NS,
+            "first_paint_budget_enforced": paint_enforced,
+            "first_paint_budget_met": None,
+        }
+    )
     env = environment(output)
     (output / "tmp").mkdir()
     (output / "preferences.yaml").write_text("schema_version: 1\n")
@@ -351,9 +367,14 @@ def qualify(
     for sample in range(samples):
         observed = run_terminal(output, env, f"paint-{sample}", cancellation=cancellation)
         paints.append(observed)
-        observed["elapsed_ns"] = check_paint(
+        observed["elapsed_ns"] = observe_paint(
             observed["observation"], observed["launched_ns"], observed["visible_ns"]
         )
+        observed["budget_met"] = observed["elapsed_ns"] < PAINT_BUDGET_NS
+        observed["budget_enforced"] = paint_enforced
+        result["first_paint_budget_met"] = all(paint["budget_met"] for paint in paints)
+        if paint_enforced:
+            check_paint(observed["observation"], observed["launched_ns"], observed["visible_ns"])
     late = run_terminal(
         output, env, "negative-late-paint", negative=True, cancellation=cancellation
     )
@@ -389,6 +410,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--samples", type=int, default=5, choices=range(3, 11))
+    parser.add_argument(
+        "--strict-paint",
+        action="store_true",
+        help="enforce the unchanged 600 ms UI target (mandatory for version 1.x and later)",
+    )
     arguments = parser.parse_args()
     output = arguments.output.absolute()
     output.mkdir(parents=True, exist_ok=False)
@@ -401,7 +427,10 @@ def main() -> int:
         "platform": [platform.system(), platform.release(), platform.machine()],
         "cpu_count": os.cpu_count(),
         "samples_per_case": arguments.samples,
-        "scope": "Fresh-process startup; no release or provider certification.",
+        "scope": (
+            "Fresh-process startup contracts; UI budget enforcement follows the version and "
+            "--strict-paint. No release or provider certification."
+        ),
     }
     code = 1
     try:
@@ -416,7 +445,13 @@ def main() -> int:
             if revision.exit_code or revision.stderr or len(revision.stdout.strip()) != 40:
                 raise ValueError("Missing exact Git source identity for startup qualification.")
             result["source_commit"] = revision.stdout.strip()
-            qualify(output, arguments.samples, result, cancellation)
+            qualify(
+                output,
+                arguments.samples,
+                result,
+                cancellation,
+                strict_paint=arguments.strict_paint,
+            )
             cancellation.check()
         if inputs() != before:
             raise ValueError("Startup source inputs changed during qualification.")
@@ -428,7 +463,10 @@ def main() -> int:
     finally:
         (output / "report.json").write_text(json.dumps(result, indent=2) + "\n")
     if code == 0:
-        print(f"Startup gate passed: {output / 'report.json'}")
+        paint_status = "met" if result["first_paint_budget_met"] else "not met (advisory for 0.x)"
+        print(
+            f"Startup contracts passed; 600 ms UI target {paint_status}: {output / 'report.json'}"
+        )
     return code
 
 
