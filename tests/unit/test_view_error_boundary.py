@@ -265,7 +265,7 @@ async def test_blocked_new_route_still_retires_previous_owner_and_reports_cleanu
     owner.start()
     owner.request()
     try:
-        await handled.wait()
+        await wait_for(handled.is_set)
         assert retired.is_set(), "Blocked presentation must not bypass inactive-owner retirement"
         assert current.calls == 0 and owner.is_failed(request)
         if cleanup_fails:
