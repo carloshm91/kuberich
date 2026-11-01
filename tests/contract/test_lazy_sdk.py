@@ -89,7 +89,8 @@ def test_tui_import_keeps_connection_http_and_sdk_graphs_deferred(tmp_path):
             "'kuberich.domain.editing','kuberich.services.editing','kuberich.services.inspection',"
             "'kuberich.services.transfers','kuberich.services.aggregate_logs','kuberich.services.logs',"
             "'kuberich.services.attach','kuberich.services.shell','kuberich.services.workloads',"
-            "'kuberich.ui.read_only_text','textual.widgets._text_area','textual.document'})))",
+            "'kuberich.ui.read_only_text','textual.widgets._text_area','textual.document',"
+            "'kuberich.ui.plugin_screens','kuberich.ui.port_forwards'})))",
         ],
         cwd=tmp_path,
         env=clean_environment(tmp_path),
@@ -143,6 +144,52 @@ print(json.dumps({'deferred':True,'canonical':True,'unknown_rejected':True}))
         "deferred": True,
         "canonical": True,
         "unknown_rejected": True,
+    }
+
+
+def test_plugin_owner_preserves_public_screen_aliases_without_eager_modal_imports(tmp_path):
+    script = r"""
+import importlib.abc,json,sys
+attempts=[]
+allow_screens=False
+class Imports(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == 'kuberich.ui.plugin_screens':
+            attempts.append(fullname)
+            if not allow_screens:
+                raise AssertionError('Plugin ownership attempted an unused modal import')
+sys.meta_path.insert(0, Imports())
+from kuberich.ui import plugins
+assert plugins.PluginController.__module__ == 'kuberich.ui.plugins'
+assert callable(plugins.load_plugins)
+assert not attempts
+allow_screens=True
+from kuberich.ui.plugin_screens import PluginCatalogue,PluginJobs,PluginScreen
+assert plugins.PluginCatalogue is PluginCatalogue
+assert plugins.PluginJobs is PluginJobs
+assert plugins.PluginScreen is PluginScreen
+try:
+    plugins.unknown_owned_export
+except AttributeError:
+    pass
+else:
+    raise AssertionError('Unknown plugin export was accepted')
+print(json.dumps({'deferred':True,'canonical':True,'loader_port':True}))
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=tmp_path,
+        env=clean_environment(tmp_path),
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert result.stderr == ""
+    assert json.loads(result.stdout) == {
+        "deferred": True,
+        "canonical": True,
+        "loader_port": True,
     }
 
 

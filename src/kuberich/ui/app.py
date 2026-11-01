@@ -120,9 +120,8 @@ from kuberich.ui.keybindings import NavigationHelpScreen, navigation_help
 from kuberich.ui.live_preferences import LivePreferences
 from kuberich.ui.namespaces import NamespaceTable
 from kuberich.ui.nested import CommandWorkspace
-from kuberich.ui.plugins import PluginController, PluginJobs, PluginScreen
+from kuberich.ui.plugins import PluginController
 from kuberich.ui.pods import PodTable, Viewport
-from kuberich.ui.port_forwards import ForwardPrompt, ForwardScreen
 from kuberich.ui.presentation import DEFAULT_PRESENTATION, Presentation
 from kuberich.ui.shutdown import TerminalSignals
 from kuberich.ui.standard import StandardTable
@@ -1136,6 +1135,7 @@ class KubeRichApp(App[None]):
         from kuberich.ui.logs import LogScreen
         from kuberich.ui.mutations import AnnotationScreen
         from kuberich.ui.operations import ResourceOperationScreen
+        from kuberich.ui.plugin_screens import PluginScreen
         from kuberich.ui.terminal import ShellScreen
         from kuberich.ui.transfers import TransferScreen
         from kuberich.ui.workloads import WorkloadScreen
@@ -1330,6 +1330,7 @@ class KubeRichApp(App[None]):
         time_format: str | None = None,
     ) -> str | None:
         from kuberich.ui.configuration_data import ConfigurationScreen
+        from kuberich.ui.plugin_screens import PluginScreen
 
         if any(
             isinstance(screen, (ConfigurationScreen, PluginScreen)) for screen in self.screen_stack
@@ -1343,6 +1344,7 @@ class KubeRichApp(App[None]):
 
     def export_screenshot(self, *, title: str | None = None, simplify: bool = False) -> str:
         from kuberich.ui.configuration_data import ConfigurationScreen
+        from kuberich.ui.plugin_screens import PluginScreen
 
         if any(
             isinstance(screen, (ConfigurationScreen, PluginScreen)) for screen in self.screen_stack
@@ -1406,6 +1408,8 @@ class KubeRichApp(App[None]):
         self._open_logs(containers_first=True)
 
     def action_port_forwards(self, selected: UUID | None = None) -> None:
+        from kuberich.ui.port_forwards import ForwardScreen
+
         if not isinstance(self.screen, ModalScreen):
             self.push_screen(
                 ForwardScreen(self.forwards, self.chrome, self.breadcrumbs.trail, selected=selected)
@@ -1619,6 +1623,8 @@ class KubeRichApp(App[None]):
             self.action_port_forwards(identity)
 
     def action_port_forward(self) -> None:
+        from kuberich.ui.port_forwards import ForwardPrompt
+
         try:
             self.commands.policy.require(Action.PORT_FORWARD)
         except AppError as error:
@@ -2510,6 +2516,8 @@ class KubeRichApp(App[None]):
         if command is Command.PLUGINS:
             self.plugins.open()
         elif command is Command.PLUGIN_JOBS:
+            from kuberich.ui.plugin_screens import PluginJobs
+
             self.push_screen(PluginJobs(self.plugins.manager))
         elif command is Command.THEMES:
             self.action_change_theme()

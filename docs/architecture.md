@@ -46,6 +46,14 @@ and document graph. Inspection imports the unchanged read-only `TextArea`
 subclass from its own module. The original `ReadOnlyText` import remains a literal
 lazy compatibility export; it resolves to that same canonical class.
 
+The plugin controller remains in its original module with the same loader,
+scoped hotkeys, manager and captured-target guards. Its actual catalogue,
+review and job screens live in a separate module and load in their requesting
+actions. The original three named screen imports resolve to the same canonical
+classes. Forwarding dialogs likewise import only in their explicit actions.
+These boundaries defer unused project screens; they do not alter mandatory
+Textual imports or postpone configured validation.
+
 The startup qualifier observes the actual CLI in fresh interpreters and the real
 application on an owned 120×36 PTY. It retains both the public refresh callback and
 visible PTY delivery times, rejects SDK/helper/network work before that refresh,

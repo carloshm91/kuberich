@@ -200,6 +200,28 @@ covered; lightweight scrolling has **28/29 lines**, with its type-only export in
 the denominator. Strict typing passes over 162 sources. Whole current-source
 coverage and a new coordinated timing reference remain required.
 
+The next import correction separates the three plugin modal classes from their
+original controller module. The loader injection port, hotkeys, manager and
+captured-source body remain unchanged; source comparisons verify the capture
+body and modal class blocks byte-for-byte. Original named imports remain literal
+aliases to the canonical screen classes. Forwarding dialogs import in their
+requesting actions.
+
+Two original cohorts retain **212 passes / one failure** and **217 passes / one
+failure**. Each failure came from a newly proposed assumption that default TUI
+imports could exclude Textual's selector widget. An import-origin trace instead
+shows that pinned `textual.app` loads it through `textual.command` and
+`textual.types`. That additional test specification was corrected to reject
+unused project plugin/forwarding modules. Original offline Textual/SDK, HTTP and
+first-paint gates remain unchanged; no upstream import workaround is introduced.
+Five corrected fresh-import/worker/alias controls pass on the same production
+source. All 217 actual plugin, forwarding and startup controls already pass.
+The moved screens cover **202/211 lines and 38/42 branches** in this subset;
+strict typing passes over 163 sources. An independent Argon review confirms the
+actual loader/manager/capture and screenshot identities; its claim that Select
+was unique to plugin screens was contradicted by the retained runtime trace.
+No selector-specific startup saving or passing timing result is claimed.
+
 ## Reproduction and limits
 
 From a development checkout with its locked environment:
