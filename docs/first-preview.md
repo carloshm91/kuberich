@@ -354,3 +354,12 @@ The [candidate evidence](acceptance/first-release-preparation.md) retains measur
 results and limits. [Historical engineering checkpoints](preview-history.md)
 remain available separately. Real cloud-provider and physical-terminal
 certification still require their later opt-in trials.
+
+### Wayland platform fixture correction
+
+The focused clipboard command above now passes 59 cases with one explicit
+macOS-only skip on Linux (17.32 seconds). It covers native failure/fallback
+behavior for X11, Wayland and macOS through an inert driver on every host.
+The first hosted macOS failure was a missing platform boundary in synthetic
+Linux fixtures; it is retained in run `41280079738`. No native host or compositor
+qualification is inferred from the synthetic cases.
