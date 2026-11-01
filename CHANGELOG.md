@@ -31,6 +31,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Fixed
 
+- Wait for actual selection receipt in isolated X11 clipboard qualification,
+  including delayed owners, absent selections and cancelled readers
+  ([#281](https://github.com/carloshm91/kuberich/issues/281),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Reuse one palette snapshot for each shortcut panel render and avoid layout
   updates for unchanged header text during navigation, resizing and theme changes
   ([#209](https://github.com/carloshm91/kuberich/issues/209),
