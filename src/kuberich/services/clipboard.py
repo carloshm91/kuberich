@@ -2,11 +2,13 @@
 
 import asyncio
 from collections.abc import Callable, Mapping
+from functools import partial
 from pathlib import Path
 
 from kuberich.domain.clipboard import ClipboardBackend
 from kuberich.domain.processes import ProcessMode, ProcessPurpose, ProcessStatus, capture_command
 from kuberich.errors import AppError
+from kuberich.services.ownership import finish_owned
 from kuberich.services.processes import ProcessRunner, ProcessSession, _finish_owned
 
 # Constant program: payload travels on stdin, never as code or command arguments.
@@ -16,6 +18,11 @@ var text = $.NSString.alloc.initWithDataEncoding(data, $.NSUTF8StringEncoding);
 var board = $.NSPasteboard.generalPasteboard; board.clearContents;
 if (!board.setStringForType(text, $.NSPasteboardTypeString)) { throw Error('Clipboard write failed'); }
 """
+
+WAYLAND_FAILURE = (
+    "Native clipboard write failed; install wl-copy and check the Wayland session, "
+    "or set KUBERICH_CLIPBOARD=osc52."
+)
 
 
 class NativeClipboard:
@@ -45,8 +52,12 @@ class NativeClipboard:
     ) -> None:
         await self.close()
         x11 = backend is ClipboardBackend.X11
+        wayland = backend is ClipboardBackend.WAYLAND
+        selection_owner = x11 or wayland
         command = capture_command(
-            ("xclip", "-quiet", "-selection", "clipboard")
+            ("wl-copy", "--foreground", "--type", "text/plain;charset=utf-8")
+            if wayland
+            else ("xclip", "-quiet", "-selection", "clipboard")
             if x11
             else (
                 "/usr/bin/osascript",
@@ -58,29 +69,109 @@ class NativeClipboard:
             environment=self.environment,
             directory=self.directory,
             purpose=ProcessPurpose.CLIPBOARD,
-            mode=ProcessMode.BACKGROUND if x11 else ProcessMode.CAPTURE,
+            mode=ProcessMode.BACKGROUND if selection_owner else ProcessMode.CAPTURE,
             input_data=data,
         )
-        if x11:
-            self.owner = await self.runner.background(command)
-            # X11 keeps a foreground selection owner alive. Detect startup
+        if selection_owner:
+            try:
+                self.owner = await self.runner.background(command)
+            except AppError:
+                if wayland:
+                    raise AppError(WAYLAND_FAILURE) from None
+                raise
+            # X11 and Wayland keep a foreground selection owner alive. Detect startup
             # rejection without waiting for that owner's intentional lifetime.
             await asyncio.sleep(0.05)
             if not self.owner.running:
                 result = await self.owner.wait()
                 if result.status is not ProcessStatus.SUCCEEDED:
-                    raise AppError("Native clipboard write failed; check the X11 display.")
+                    raise AppError(
+                        WAYLAND_FAILURE
+                        if wayland
+                        else "Native clipboard write failed; check the X11 display."
+                    )
             elif failed is not None:
-                self.monitor = asyncio.create_task(self._observe(self.owner, failed))
+                self.monitor = asyncio.create_task(self._observe(self.owner, failed, backend))
         else:
             result = await self.runner.capture(command, timeout=5)
             if result.status is not ProcessStatus.SUCCEEDED:
                 raise AppError("Native clipboard write failed; check local clipboard availability.")
 
-    async def _observe(self, owner: ProcessSession, failed: Callable[[AppError], None]) -> None:
+    async def _observe(
+        self,
+        owner: ProcessSession,
+        failed: Callable[[AppError], None],
+        backend: ClipboardBackend,
+    ) -> None:
         result = await owner.wait()
         if self.owner is owner and result.status not in {
             ProcessStatus.SUCCEEDED,
             ProcessStatus.CANCELLED,
         }:
-            failed(AppError("Native clipboard writer stopped; check the X11 display."))
+            failed(
+                AppError(
+                    WAYLAND_FAILURE
+                    if backend is ClipboardBackend.WAYLAND
+                    else "Native clipboard writer stopped; check the X11 display."
+                )
+            )
+
+
+class ClipboardQueue:
+    """Serialize native writes, retaining only the latest queued selection."""
+
+    def __init__(
+        self,
+        native: NativeClipboard,
+        failed: Callable[[bytes, AppError], None],
+    ) -> None:
+        self.native, self.failed = native, failed
+        self._pending: tuple[bytes, ClipboardBackend] | None = None
+        self._task: asyncio.Task[None] | None = None
+        self._closing: asyncio.Task[None] | None = None
+        self._stopped = False
+
+    @property
+    def active_count(self) -> int:
+        """Unfinished writer and cleanup ownership, without exposing task handles."""
+        return int(self._task is not None and not self._task.done()) + int(
+            self._closing is not None and not self._closing.done()
+        )
+
+    def submit(self, data: bytes, backend: ClipboardBackend) -> None:
+        if not self._stopped:
+            self._pending = data, backend
+            if self._task is None or self._task.done():
+                self._task = asyncio.create_task(self._write())
+
+    def stop(self) -> None:
+        """Refuse new writes and stale failure callbacks before async teardown."""
+        self._stopped = True
+        self._pending = None
+
+    def _failed(self, data: bytes, error: AppError) -> None:
+        if self._pending is None and not self._stopped:
+            self.failed(data, error)
+
+    async def _write(self) -> None:
+        while self._pending is not None:
+            data, backend = self._pending
+            self._pending = None
+            try:
+                await self.native.write(data, backend, failed=partial(self._failed, data))
+            except AppError as error:
+                self._failed(data, error)
+
+    async def _close(self) -> None:
+        if self._task is not None:
+            if not self._task.done() and not self._task.cancelling():
+                self._task.cancel()
+            await finish_owned(asyncio.gather(self._task, return_exceptions=True))
+            self._task = None
+        await self.native.close()
+
+    async def close(self) -> None:
+        self.stop()
+        if self._closing is None:
+            self._closing = asyncio.create_task(self._close())
+        await finish_owned(self._closing)

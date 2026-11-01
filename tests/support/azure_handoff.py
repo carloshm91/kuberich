@@ -18,6 +18,7 @@ from kuberich.config.catalog import load_catalog
 from kuberich.config.schema import Settings
 from kuberich.domain.connections import ConnectionRequest
 from kuberich.ui.app import KubeRichApp
+import kuberich.ui.app as app_module
 
 directory=Path.cwd()
 scenario=sys.argv[1]
@@ -32,10 +33,13 @@ async def handler(request):
         return response
     return web.json_response(roots.get(request.path, roots['collection']))
 
-class LoginApp(KubeRichApp):
-    async def _credential_login(self, credentials):
-        self.login_owner=asyncio.current_task()
-        return await super()._credential_login(credentials)
+login_owner = None
+original_handoff = app_module.terminal_handoff
+async def observe_handoff(*args, **kwargs):
+    global login_owner
+    login_owner = asyncio.current_task()
+    return await original_handoff(*args, **kwargs)
+app_module.terminal_handoff = observe_handoff
 
 async def main():
     server=web.Application(); server.router.add_get('/{path:.*}',handler)
@@ -45,8 +49,8 @@ async def main():
     data['clusters'][0]['cluster']['server']='http://127.0.0.1:'+str(runner.addresses[0][1])
     (directory/'azure-config').write_text(json.dumps(data))
     request=ConnectionRequest(kubeconfig=str(directory/'azure-config'))
-    app=LoginApp(Settings(read_only=True),logging.getLogger('azure-owned-terminal'),catalog=load_catalog(request,{}),connection=request)
-    def cancel(signum,frame): asyncio.get_running_loop().call_soon(app.login_owner.cancel)
+    app=KubeRichApp(Settings(read_only=True),logging.getLogger('azure-owned-terminal'),catalog=load_catalog(request,{}),connection=request)
+    def cancel(signum,frame): asyncio.get_running_loop().call_soon(login_owner.cancel)
     signal.signal(signal.SIGUSR1,cancel)
     (directory/'azure-parent.pid').write_text(str(os.getpid()))
     try:

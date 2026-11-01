@@ -224,6 +224,11 @@ class TerminalModel:
         # Stream checks every documented event; the adapter supplies them through routing.
         self.stream = pyte.Stream(cast(Screen, _Router(self)))
 
+    @property
+    def style_cache_sizes(self) -> tuple[int, int]:
+        """Retained immutable style entries in the normal and alternate buffers."""
+        return len(self.normal._row_cells), len(self.secondary._row_cells)
+
     def review_rows(self) -> tuple[TerminalRow, ...]:
         return (*self.history.rows, *(self.normal.row(y) for y in range(self.normal.lines)))
 

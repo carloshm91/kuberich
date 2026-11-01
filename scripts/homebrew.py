@@ -30,8 +30,10 @@ TAP = "kuberich/homebrew-tap"
 TAP_OWNER = "kuberich"
 FORMULA = "Formula/kuberich.rb"
 SCAFFOLD = ROOT / "packaging/homebrew"
-# Bottles are built on macOS 14 ARM, macOS 15 Intel and Ubuntu 24.04 x86_64 hosts.
-BOTTLE_TAGS = ("arm64_sonoma", "sequoia", "x86_64_linux")
+# New bottles use macOS 15 ARM/Intel and Ubuntu 24.04 x86_64 hosts.
+BOTTLE_TAGS = ("arm64_sequoia", "sequoia", "x86_64_linux")
+# Already published Sonoma metadata remains readable through explicit historical tags.
+SUPPORTED_BOTTLE_TAGS = ("arm64_sonoma", *BOTTLE_TAGS)
 BOTTLE_CELLARS = {
     ":any",
     ":any_skip_relocation",
@@ -193,7 +195,7 @@ def bottle_records(
         cellar = str(item.get("cellar", bottle.get("cellar")))
         cellar = ":" + cellar if cellar in ("any", "any_skip_relocation") else cellar
         if (
-            tag not in BOTTLE_TAGS
+            tag not in SUPPORTED_BOTTLE_TAGS
             or tag in records
             or item["filename"] != name
             or cellar not in BOTTLE_CELLARS
@@ -216,7 +218,7 @@ def bottle_records(
 
 def bottle_block(records: dict[str, dict[str, str]], root_url: str) -> str:
     """Render the bottle block with the alignment `brew style` expects."""
-    tags = [tag for tag in BOTTLE_TAGS if tag in records]
+    tags = [tag for tag in SUPPORTED_BOTTLE_TAGS if tag in records]
     if not tags or len(tags) != len(records):
         raise ValueError("Bottle tags must be supported")
     cellars = {}

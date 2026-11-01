@@ -2,11 +2,13 @@
 
 import gc
 import weakref
+from unittest.mock import Mock
 
 import pytest
 from textual.cache import LRUCache
 from textual.widgets import DataTable
 
+from kuberich.ui import presentation
 from kuberich.ui.presentation import FrameTable
 from kuberich.ui.table_cache import RenderCache
 
@@ -15,14 +17,38 @@ class RenderValue:
     pass
 
 
+@pytest.fixture
+def created_caches(monkeypatch):
+    created = []
+
+    def create(capacity):
+        cache = RenderCache(capacity)
+        monkeypatch.setattr(cache, "clear", Mock(wraps=cache.clear))
+        created.append(cache)
+        return cache
+
+    monkeypatch.setattr(presentation, "RenderCache", create)
+    return created
+
+
 @pytest.mark.parametrize("native_control", [True, False])
-def test_cleared_table_cache_releases_values_before_cyclic_collection(native_control):
-    cache = LRUCache(10000) if native_control else FrameTable()._cell_render_cache
+def test_cleared_table_cache_releases_values_before_cyclic_collection(
+    native_control, created_caches
+):
+    if native_control:
+        caches = [LRUCache(10000)]
+        clear = caches[0].clear
+    else:
+        table = FrameTable()
+        assert len(created_caches) == 6
+        caches = created_caches
+        clear = table.clear
     value = RenderValue()
     reference = weakref.ref(value)
-    cache["owned-render-value"] = value
+    for cache in caches:
+        cache["owned-render-value"] = value
     del value
-    cache.clear()
+    clear()
     if native_control:
         assert reference() is not None, "Control must reproduce the retired linked-list cycle"
         gc.collect()
@@ -101,17 +127,27 @@ def test_render_cache_releases_values_without_cyclic_collection(operation):
     assert reference() is None
 
 
-def test_only_owned_tables_replace_all_six_caches_without_reducing_capacities():
-    native, owned = DataTable(), FrameTable()
-    for name in (
+def test_only_owned_tables_replace_all_six_caches_without_reducing_capacities(created_caches):
+    native = DataTable()
+    names = (
         "_row_render_cache",
         "_cell_render_cache",
         "_row_renderable_cache",
         "_line_cache",
         "_offset_cache",
         "_ordered_row_cache",
-    ):
-        control, replacement = getattr(native, name), getattr(owned, name)
+    )
+    controls = [getattr(native, name) for name in names]
+    assert not created_caches
+    owned = FrameTable()
+    assert len(created_caches) == len(names) == 6
+    for control, replacement in zip(controls, created_caches, strict=True):
         assert type(control) is LRUCache
         assert type(replacement) is RenderCache
         assert replacement.maxsize == control.maxsize
+        replacement["owned-integration-probe"] = RenderValue()
+    before = [cache.clear.call_count for cache in created_caches]
+    owned.clear()
+    assert all(
+        cache.clear.call_count > count for cache, count in zip(created_caches, before, strict=True)
+    ), "All six constructed caches must be installed and reached by public clear()"

@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 from aiohttp import web
-from textual.widgets import Static
+from textual.widgets import DataTable, Static
 
 from kuberich.config.catalog import Entry
 from kuberich.config.schema import Settings
@@ -15,14 +15,18 @@ from kuberich.domain.views import ViewStatus
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.scopes import ConnectionScreen
 from tests.support.connections import catalog_fixture, namespaces
+from tests.support.workers import CoroutineCalls
 from tests.support.workspace import wait_for
 from tests.support.workspace import workspace_api as fake_api
 
 
 async def connected(app: KubeRichApp) -> None:
-    async with asyncio.timeout(3):
-        while app.sessions.observation.state is not ConnectionState.CONNECTED:
-            await asyncio.sleep(0.01)
+    await wait_for(
+        lambda: (
+            app.state.connection is ConnectionState.CONNECTED
+            and app.state.status is ViewStatus.LIVE
+        )
+    )
 
 
 @pytest.mark.asyncio
@@ -49,7 +53,7 @@ async def test_select_context_namespace_scroll_and_retry_without_rewriting_file(
             old = app.sessions.observation.identity
             await pilot.press("f2")
             await wait_for(lambda: app.context_table.row_count == 2)
-            assert app._resource_name == "contexts" and len(app.screen_stack) == 1
+            assert app.state.view_kind == "contexts" and len(app.screen_stack) == 1
             await pilot.press("f2", "f1")
             assert len(app.screen_stack) == 2
             assert await pilot.click("#close-help")
@@ -66,7 +70,7 @@ async def test_select_context_namespace_scroll_and_retry_without_rewriting_file(
             await pilot.pause()
             assert app.namespace_table.scroll_y > 0
             await pilot.press("0")
-            await app._connection_task
+            await connected(app)
             assert app.sessions.observation.namespace is None
             assert str(app.query_one("#namespace", Static).content) == "Namespace: All"
             await pilot.press("f4")
@@ -96,12 +100,17 @@ async def test_case_preserved_commands_and_manual_namespace_for_restricted_rbac(
             Settings(), logging.Logger("limited"), catalog=catalog_fixture(tmp_path, url)
         )
         async with app.run_test() as pilot:
-            await app._connection_task
+            await wait_for(lambda: app.state.connection is ConnectionState.LIMITED)
             assert app.sessions.observation.state is ConnectionState.LIMITED
             await pilot.press("colon")
             app.command_input.value = "ctx kuberich-test-Two"
             await pilot.press("enter")
-            await app._connection_task
+            await wait_for(
+                lambda: (
+                    app.state.context == "kuberich-test-Two"
+                    and app.state.connection is ConnectionState.LIMITED
+                )
+            )
             assert app.sessions.observation.identity.context == "kuberich-test-Two"
             await pilot.press("colon")
             app.command_input.value = "ns allowed"
@@ -116,18 +125,20 @@ async def test_case_preserved_commands_and_manual_namespace_for_restricted_rbac(
             app.command_input.value = "ns"
             await pilot.press("enter")
             await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.FAILED)
-            assert app._resource_name == "namespaces" and len(app.screen_stack) == 1
+            assert app.state.view_kind == "namespaces" and len(app.screen_stack) == 1
             assert "403" in str(app.status.content)
             await pilot.press("escape")
             await pilot.press("colon")
             app.command_input.value = "ctx"
             await pilot.press("enter")
-            assert app._resource_name == "contexts" and len(app.screen_stack) == 1
+            assert app.state.view_kind == "contexts" and len(app.screen_stack) == 1
             await pilot.press("escape", "q")
 
 
 @pytest.mark.asyncio
-async def test_delayed_probe_does_not_block_input_context_switch_or_quit(tmp_path: Path) -> None:
+async def test_delayed_probe_does_not_block_input_context_switch_or_quit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     started = asyncio.Event()
 
     async def handler(request):
@@ -139,6 +150,8 @@ async def test_delayed_probe_does_not_block_input_context_switch_or_quit(tmp_pat
         app = KubeRichApp(
             Settings(), logging.Logger("slow"), catalog=catalog_fixture(tmp_path, url)
         )
+        connections = CoroutineCalls()
+        monkeypatch.setattr(app.sessions, "connect", connections.observe(app.sessions.connect))
         async with app.run_test() as pilot:
             await started.wait()
             old = app.sessions.client.api
@@ -152,7 +165,9 @@ async def test_delayed_probe_does_not_block_input_context_switch_or_quit(tmp_pat
                     await asyncio.sleep(0.01)
             await pilot.press("ctrl+q")
         assert app.sessions.client is None
-        assert app._connection_task.done()
+        assert connections.tasks and all(task.done() for task in connections.tasks)
+        assert app.workspace.ownership.operation_count == 0
+        assert app.workspace.ownership.close_complete
 
 
 @pytest.mark.asyncio
@@ -165,10 +180,15 @@ async def test_no_config_context_namespace_retry_and_cancel_are_actionable() -> 
         assert "Connect to a context" in str(app.status.content)
         await pilot.press("f4")
         assert "No contexts" in str(app.status.content)
-        app._context_selected(None)
-        app._namespace_selected(None)
-        app._namespace_selected("default")
+        # Real anonymous row keys have no resource identity and must be ignored.
+        context_key = app.context_table.add_row(*("" for _ in app.context_table.columns))
+        namespace_key = app.namespace_table.add_row(*("" for _ in app.namespace_table.columns))
+        assert context_key.value is None and namespace_key.value is None
+        app.context_selected(DataTable.RowSelected(app.context_table, 0, context_key))
+        app.namespace_selected(DataTable.RowSelected(app.namespace_table, 0, namespace_key))
+        await app.run_command("ns default")
         assert "Connect to a context" in str(app.status.content)
+        assert app.sessions.client is None and app.workspace.ownership.operation_count == 0
 
 
 @pytest.mark.asyncio
@@ -188,14 +208,14 @@ async def test_navigation_without_function_keys_and_recovery_from_auth_failure(
         catalog.contexts["kuberich-test-one"].data["user"] = "rejected"
         app = KubeRichApp(Settings(), logging.Logger("navigation"), catalog=catalog)
         async with app.run_test(size=size) as pilot:
-            await app._connection_task
+            await wait_for(lambda: app.state.connection is ConnectionState.AUTH_ERROR)
             assert app.sessions.observation.state is ConnectionState.AUTH_ERROR
             await pilot.press("colon", *"status", "enter")
             assert isinstance(app.screen, ConnectionScreen)
             assert "401" in str(app.screen.query_one("#connection-details", Static).content)
             await pilot.press("escape", "c", "c")
             await wait_for(lambda: app.context_table.row_count == 2)
-            assert app._resource_name == "contexts" and len(app.screen_stack) == 1
+            assert app.state.view_kind == "contexts" and len(app.screen_stack) == 1
             app.context_table.move_cursor(row=app.context_table.get_row_index("kuberich-test-Two"))
             await pilot.press("enter")
             await connected(app)
@@ -208,22 +228,22 @@ async def test_navigation_without_function_keys_and_recovery_from_auth_failure(
             await wait_for(lambda: app.namespace_table.row_count == 2)
             app.namespace_table.move_cursor(row=app.namespace_table.get_row_index("namespace-team"))
             await pilot.press("enter")
-            await app._connection_task
+            await connected(app)
             assert app.sessions.observation.namespace == "team"
             identity = app.sessions.observation.identity
             await pilot.press("r")
-            await app._connection_task
+            await connected(app)
             assert app.sessions.observation.identity.connection_id != identity.connection_id
             assert app.sessions.observation.namespace == "team"
             await pilot.press("i", "escape", "colon", *"retry", "enter")
-            await app._connection_task
+            await connected(app)
             assert app.sessions.observation.state is ConnectionState.CONNECTED
             await pilot.press("slash", *"cnri")
             assert app.filter_input.value == "cnri" and len(app.screen_stack) == 1
             await pilot.press("escape", "colon", *"cnri")
             assert app.command_input.value == "cnri" and len(app.screen_stack) == 1
             await pilot.press("escape", "colon", *"ns", "enter")
-            assert app._resource_name == "namespaces" and len(app.screen_stack) == 1
+            assert app.state.view_kind == "namespaces" and len(app.screen_stack) == 1
             await pilot.press("escape", "colon", *"status unexpected", "enter")
             assert len(app.screen_stack) == 1
             evidence = Path("artifacts/ui").resolve()
@@ -246,7 +266,7 @@ async def test_explicit_unknown_context_error_then_choose_valid_context(tmp_path
             connection=ConnectionRequest(context="missing"),
         )
         async with app.run_test() as pilot:
-            await app._connection_task
+            await wait_for(lambda: app.state.connection is ConnectionState.CONFIG_ERROR)
             assert app.sessions.observation.state is ConnectionState.CONFIG_ERROR
             assert str(app.query_one("#empty-title", Static).content) == "Connection unavailable"
             await pilot.press("f2", "enter")
@@ -268,7 +288,7 @@ async def test_full_connection_message_is_accessible_and_literal_at_minimum_size
             Settings(), logging.Logger("error-details"), catalog=catalog_fixture(tmp_path, url)
         )
         async with app.run_test(size=(40, 12)) as pilot:
-            await app._connection_task
+            await wait_for(lambda: app.state.connection is ConnectionState.AUTH_ERROR)
             await pilot.press("f5")
             assert isinstance(app.screen, ConnectionScreen)
             assert (
@@ -280,7 +300,7 @@ async def test_full_connection_message_is_accessible_and_literal_at_minimum_size
             assert len(app.screen_stack) == 2
             assert await pilot.click("#connection-close")
             assert len(app.screen_stack) == 1
-            app._start_connection("bad\ncontext")
+            await app.run_command("ctx bad\ncontext")
             assert "unsupported control" in str(app.status.content)
             assert app.is_running
             await pilot.press("q")
@@ -307,9 +327,9 @@ async def test_late_result_from_a_cancelled_adapter_cannot_update_new_context(
     app = KubeRichApp(Settings(), logging.Logger("late"))
     monkeypatch.setattr(app.sessions, "connect", ignores_cancellation)
     async with app.run_test() as pilot:
-        app._start_connection("old")
+        await app.run_command("ctx old")
         await started.wait()
-        app._start_connection("new")
+        await app.run_command("ctx new")
         await pilot.pause()
         assert "Stale result" not in str(app.status.content)
         assert str(app.query_one("#context", Static).content) == "Context: new"
@@ -327,6 +347,6 @@ async def test_background_failure_preserves_error_hook_and_hides_exception_value
     monkeypatch.setattr(app.sessions, "connect", broken)
     with pytest.raises(RuntimeError, match="opaque-sensitive-background-value"):
         async with app.run_test() as pilot:
-            app._start_connection("owned")
+            await app.run_command("ctx owned")
             await pilot.pause()
     assert app.return_code == 1 and app.sessions.client is None

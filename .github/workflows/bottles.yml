@@ -32,7 +32,7 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - {os: macos-14, tag: arm64_sonoma}
+          - {os: macos-15, tag: arm64_sequoia}
           - {os: macos-15-intel, tag: sequoia}
           - {os: ubuntu-24.04, tag: x86_64_linux}
     steps:
@@ -138,7 +138,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14, macos-15-intel, ubuntu-24.04]
+        os: [macos-15, macos-15-intel, ubuntu-24.04]
     steps:
       - name: Install like a user and confirm the bottle is poured
         run: |

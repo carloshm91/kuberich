@@ -178,6 +178,11 @@ class MutationManager:
         self._closed = False
 
     @property
+    def active_count(self) -> int:
+        """Registered writes, including completed jobs awaiting result retirement."""
+        return len(self._live)
+
+    @property
     def records(self) -> tuple[MutationRecord, ...]:
         return tuple(self._records.values())
 

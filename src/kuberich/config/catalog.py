@@ -55,6 +55,18 @@ def mapping(value: Any) -> dict[str, Any]:
     return value
 
 
+def _extensions(value: Any, field: str) -> None:
+    if value is None:
+        return
+    if not isinstance(value, list) or len(value) > 2048:
+        raise AppError(f"{field} must be a list of at most 2048 named extensions.")
+    for item in value:
+        if not isinstance(item, dict) or not isinstance(item.get("name"), str):
+            raise AppError(f"{field} entries require a string name.")
+        # Extension payloads are opaque JSON, including Teleport string values.
+        # Only the explicitly named credential extension has runtime semantics.
+
+
 def text(value: Any) -> str:
     if not isinstance(value, str):
         raise AppError("Invalid kubeconfig string; check the selected configuration.")
@@ -121,16 +133,27 @@ class KubeCatalog:
             raise AppError("Selected context is not present in the loaded kubeconfig.")
         context = self.contexts[name]
         overrides = overrides or ConnectionOverrides()
-        cluster = overrides.cluster or text(context.data.get("cluster"))
+        try:
+            cluster = overrides.cluster or text(context.data.get("cluster"))
+        except AppError:
+            raise AppError("contexts.context.cluster must name a configured cluster.") from None
         if cluster not in self.clusters:
             raise AppError("Selected context references a missing cluster.")
         user = overrides.user or context.data.get("user")
-        if user is not None and text(user) not in self.users:
+        if user == "":
+            user = None
+        if user is not None and (not isinstance(user, str) or user not in self.users):
             raise ConnectionProblem(
                 ConnectionState.AUTH_ERROR,
-                "Selected context references unavailable credentials. Check its user entry.",
+                "Selected contexts.context.user references unavailable credentials. Check its users entry.",
             )
-        namespace = namespace_name(text(context.data.get("namespace", "default")))
+        try:
+            raw_namespace = context.data.get("namespace")
+            namespace = namespace_name(
+                text("default" if raw_namespace in (None, "") else raw_namespace)
+            )
+        except AppError:
+            raise AppError("contexts.context.namespace must be a valid namespace name.") from None
         cluster_data, user_data = overrides.apply(
             self.clusters[cluster].data, self.users[user].data if user is not None else {}
         )
@@ -170,8 +193,28 @@ def load_catalog(request: ConnectionRequest, environment: Mapping[str, str]) -> 
                 )
             continue
         data = _read_yaml(path)
-        if current is None and data.get("current-context"):
-            current = text(data["current-context"])
+        if data.get("apiVersion") not in (None, "", "v1"):
+            raise AppError("kubeconfig apiVersion must be v1.")
+        if data.get("kind") not in (None, "", "Config"):
+            raise AppError("kubeconfig kind must be Config.")
+        _extensions(data.get("extensions"), "kubeconfig.extensions")
+        preferences = data.get("preferences")
+        if preferences is not None:
+            if not isinstance(preferences, dict):
+                raise AppError("kubeconfig.preferences must be a mapping.")
+            if preferences.get("colors") is not None and type(preferences["colors"]) is not bool:
+                raise AppError("kubeconfig.preferences.colors must be true or false.")
+            _extensions(preferences.get("extensions"), "kubeconfig.preferences.extensions")
+        raw_current = data.get("current-context")
+        if raw_current not in (None, ""):
+            try:
+                validated_current = text(raw_current)
+            except AppError:
+                raise AppError(
+                    "kubeconfig.current-context must be a bounded string without controls."
+                ) from None
+            if current is None:
+                current = validated_current
         for section, payload in (
             ("contexts", "context"),
             ("clusters", "cluster"),
@@ -185,11 +228,21 @@ def load_catalog(request: ConnectionRequest, environment: Mapping[str, str]) -> 
             names: set[str] = set()
             for value in entries:
                 entry = mapping(value)
-                name = text(entry.get("name"))
+                try:
+                    name = text(entry.get("name"))
+                except AppError:
+                    raise AppError(
+                        f"{section}.name must be bounded text without controls."
+                    ) from None
                 if name in names:
                     raise AppError("Kubeconfig contains duplicate names within one file.")
                 names.add(name)
-                content = mapping(entry.get(payload))
+                content = entry.get(payload)
+                if content is None:
+                    content = {}
+                if not isinstance(content, dict):
+                    raise AppError(f"{section}.{payload} must be a mapping.")
+                _extensions(content.get("extensions"), f"{section}.{payload}.extensions")
                 sections[section].setdefault(name, Entry(content, path.absolute().parent))
                 if len(sections[section]) > 2048:
                     raise AppError("Merged kubeconfig sections support at most 2048 names.")

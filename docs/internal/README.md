@@ -34,6 +34,13 @@ architecture source-map JSON files keep their original `archive` values. Apply
 that map before opening the archive, using `relocated_source` from
 `scripts.documentation_links`. The original source-map bytes stay intact.
 
+A `-0.3` snapshot keeps later additions separately when an earlier report
+or metadata file has already been preserved. Both byte-exact versions remain;
+the relocation map selects the 0.3 engineering-phase version for current contributor links
+and guide-source readers. This does not turn a source checkpoint into release
+qualification or claim that a feature-branch blob is protected-main evidence.
+The suffix identifies an engineering phase, not a published or qualified release.
+
 ## Updating evidence
 
 Keep new verification evidence in its pull request or release assets when

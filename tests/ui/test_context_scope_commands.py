@@ -36,7 +36,7 @@ async def test_scoped_namespace_and_pod_commands_leave_context_filter_on_context
             await pilot.press("colon", *command, "enter")
             await wait_for(
                 lambda: (
-                    app._resource_name == "pods"
+                    app.state.view_kind == "pods"
                     and app.workspace.store.observation.status is ViewStatus.LIVE
                 )
             )
@@ -49,7 +49,7 @@ async def test_scoped_namespace_and_pod_commands_leave_context_filter_on_context
             )
             await pilot.press("c")
             await wait_for(
-                lambda: app._resource_name == "contexts" and app.context_table.row_count == 2
+                lambda: app.state.view_kind == "contexts" and app.context_table.row_count == 2
             )
             await pilot.pause()
             assert (

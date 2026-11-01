@@ -56,7 +56,7 @@ async def test_contexts_share_frame_filter_locally_return_and_connect_exact_row(
                 await pilot.press("colon", *alias, "enter")
                 await wait_for(lambda: app.context_table.row_count == 42)
                 await pilot.pause()
-                assert app._resource_name == "contexts" and len(app.screen_stack) == 1
+                assert app.state.view_kind == "contexts" and len(app.screen_stack) == 1
                 assert app.focused is app.context_table and app.filter_input.value == ""
                 assert app.query_one("#resource-view").region == frame
                 assert app.context_table.get_row("kuberich-test-one")[0].plain == "*"
@@ -68,7 +68,7 @@ async def test_contexts_share_frame_filter_locally_return_and_connect_exact_row(
                 )
                 await pilot.press("escape")
                 await wait_for(
-                    lambda: app._resource_name == "pods" and app.resources.row_count == 1
+                    lambda: app.state.view_kind == "pods" and app.resources.row_count == 1
                 )
                 await pilot.pause()
                 assert (
@@ -103,15 +103,15 @@ async def test_contexts_share_frame_filter_locally_return_and_connect_exact_row(
             )
             assert (
                 app.sessions.observation.identity.context == "Team-38"
-                and app._resource_name == "pods"
+                and app.state.view_kind == "pods"
             )
             await pilot.press("alt+left")
             await wait_for(
-                lambda: app._resource_name == "contexts" and app.context_table.row_count == 1
+                lambda: app.state.view_kind == "contexts" and app.context_table.row_count == 1
             )
             assert app.filter_input.value == "Team-38"
             await pilot.press("alt+right")
-            await wait_for(lambda: app._resource_name == "pods" and app.resources.row_count == 1)
+            await wait_for(lambda: app.state.view_kind == "pods" and app.resources.row_count == 1)
         assert app.sessions.client is None and (tmp_path / "fixture-config").read_bytes() == before
 
 
@@ -128,7 +128,11 @@ async def test_initial_context_table_without_current_context_runs_no_authenticat
     app = make_app(catalog, initial=Command.CONTEXTS)
     async with app.run_test() as pilot:
         await wait_for(lambda: app.context_table.row_count == 3)
-        assert app.sessions.client is None and app._connection_task is None and not marker.exists()
+        assert (
+            app.sessions.client is None
+            and app.state.connection is ConnectionState.DISCONNECTED
+            and not marker.exists()
+        )
         row = app.context_table.get_row("[red]Context[/red]")
         assert row[1].plain == "[red]Context[/red]" and not row[1].spans
         assert tuple(cell.plain for cell in row[2:]) == ("—", "—", "default")
@@ -141,14 +145,14 @@ async def test_initial_context_table_without_current_context_runs_no_authenticat
         await pilot.press("enter", "escape")
         await wait_for(lambda: app.context_table.row_count == 3)
         await pilot.press("escape")
-        assert app._resource_name == "pods"
+        assert app.state.view_kind == "pods"
         await pilot.press("c")
-        await wait_for(lambda: app._resource_name == "contexts")
+        await wait_for(lambda: app.state.view_kind == "contexts")
         await pilot.press("colon", *"ctx missing", "enter")
-        await app._connection_task
+        await wait_for(lambda: app.state.connection is ConnectionState.CONFIG_ERROR)
         assert (
             app.sessions.observation.state is ConnectionState.CONFIG_ERROR
-            and app._resource_name == "pods"
+            and app.state.view_kind == "pods"
         )
 
 
@@ -220,14 +224,20 @@ async def test_namespace_parent_and_context_retry_keep_filter_cursor_and_scope(t
             viewport = app.context_table.capture_viewport()
             identity = app.sessions.observation.identity
             await pilot.press("r")
-            await app._connection_task
+            await wait_for(
+                lambda: (
+                    app.sessions.observation.identity is not None
+                    and app.sessions.observation.identity.connection_id != identity.connection_id
+                    and app.state.connection is ConnectionState.CONNECTED
+                )
+            )
             await pilot.pause()
-            assert app._resource_name == "contexts" and app.filter_input.value == "owned"
+            assert app.state.view_kind == "contexts" and app.filter_input.value == "owned"
             assert app.context_table.capture_viewport() == viewport
             assert app.sessions.observation.identity.connection_id != identity.connection_id
             await pilot.press("escape", "escape")
             await wait_for(
-                lambda: app._resource_name == "namespaces" and app.namespace_table.row_count == 1
+                lambda: app.state.view_kind == "namespaces" and app.namespace_table.row_count == 1
             )
             assert (
                 app.filter_input.value == "team"
@@ -237,4 +247,4 @@ async def test_namespace_parent_and_context_retry_keep_filter_cursor_and_scope(t
             await wait_for(lambda: app.context_table.row_count == 2)
             assert app.filter_input.value == "" and app.focused is app.context_table
             await pilot.press("colon", *"po", "enter")
-            await wait_for(lambda: app._resource_name == "pods" and app.resources.row_count == 1)
+            await wait_for(lambda: app.state.view_kind == "pods" and app.resources.row_count == 1)

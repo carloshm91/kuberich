@@ -1,5 +1,6 @@
 """Deterministic PTY syscall failure/backpressure boundaries and child startup."""
 
+import asyncio
 import errno
 import os
 import runpy
@@ -14,6 +15,15 @@ from kuberich.errors import AppError
 
 @pytest.mark.asyncio
 async def test_partial_writes_backpressure_io_failures_and_eof(monkeypatch):
+    loop = asyncio.get_running_loop()
+    add_writer = loop.add_writer
+    writers = {}
+
+    def writer(descriptor, callback, *arguments):
+        writers[descriptor] = lambda: callback(*arguments)
+        add_writer(descriptor, callback, *arguments)
+
+    monkeypatch.setattr(loop, "add_writer", writer)
     endpoint = module.PtyEndpoint(10, 4)
     original_write = os.write
     calls = 0
@@ -30,7 +40,7 @@ async def test_partial_writes_backpressure_io_failures_and_eof(monkeypatch):
     monkeypatch.setattr(module.os, "write", write)
     endpoint.write(b"abcde")
     assert bytes(endpoint.pending) == b"cde"
-    endpoint._writable()
+    writers[endpoint.master]()
     assert not endpoint.pending
     monkeypatch.setattr(module.os, "write", lambda *_: 0)
     endpoint.write(b"x")
@@ -45,6 +55,15 @@ async def test_partial_writes_backpressure_io_failures_and_eof(monkeypatch):
     "error", [BlockingIOError(), OSError(errno.EIO, "eof"), OSError(errno.EBADF, "failure"), None]
 )
 async def test_reader_eof_blocking_and_safe_failure(error, monkeypatch):
+    loop = asyncio.get_running_loop()
+    add_reader = loop.add_reader
+    readers = {}
+
+    def reader(descriptor, callback, *arguments):
+        readers[descriptor] = lambda: callback(*arguments)
+        add_reader(descriptor, callback, *arguments)
+
+    monkeypatch.setattr(loop, "add_reader", reader)
     endpoint = module.PtyEndpoint(10, 4)
 
     def read(*_):
@@ -53,7 +72,7 @@ async def test_reader_eof_blocking_and_safe_failure(error, monkeypatch):
         return b""
 
     monkeypatch.setattr(module.os, "read", read)
-    endpoint._readable()
+    readers[endpoint.master]()
     if isinstance(error, BlockingIOError):
         assert not endpoint.eof
     elif isinstance(error, OSError) and error.errno != errno.EIO:

@@ -450,7 +450,7 @@ async def test_changed_snapshot_version_and_repeated_tokens_are_rejected(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("limit", ["items", "per_page_items", "bytes", "pages"])
-async def test_collection_limits_are_explicit_errors(
+async def test_collection_limits_are_explicit_bounded_incomplete_snapshots(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, limit: str
 ) -> None:
     count = 0
@@ -472,9 +472,14 @@ async def test_collection_limits_are_explicit_errors(
         )
 
     async with reader_fixture(tmp_path, handler) as reader:
-        with pytest.raises(ConnectionProblem) as error:
-            await reader.list(pod_resource())
-        assert error.value.state is ConnectionState.API_ERROR
+        snapshot = await reader.list(pod_resource())
+        assert not snapshot.collection.complete and snapshot.collection.limited
+        assert len(snapshot.items) == (0 if limit == "bytes" else 2 if limit == "pages" else 1)
+        assert snapshot.collection.pages == (2 if limit == "pages" else 1)
+        assert snapshot.collection.retained_bytes == sum(
+            record.size_bytes for record in snapshot.items
+        )
+        assert count == (2 if limit == "pages" else 1)
 
 
 @pytest.mark.asyncio

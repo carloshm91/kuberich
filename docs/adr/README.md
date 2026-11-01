@@ -39,6 +39,19 @@ The migration records describe source snapshot
 | 0030 | [Use explicit disposable fixtures and preserve original failures](0030-owned-verification-fixtures.md) |
 | 0031 | [Build standard Python artifacts with one explicit backend](0031-standard-python-packaging.md) |
 
+## Current foundations decisions
+
+The numbered migration records above preserve their source-era decisions. Later
+implemented decisions are kept separately without rewriting that history:
+
+| Record | Scope |
+| --- | --- |
+| [0032: Kubeconfig preparation](0032-kubeconfig-loader-contract.md) | Per-session credentials, Basic authentication, and explicit OIDC exec migration |
+| [Application composition](app-composition.md) | Integrated typed views, command metadata, navigation and operation owners; remaining stable-release work stays explicit |
+
+The composition record retains its existing filename; it is not renumbered into
+the historical migration. Its source checkpoints are not release qualification.
+
 ## Add or change a decision
 
 Copy the [template](0000-template.md), choose the next unused number, and give
@@ -52,5 +65,4 @@ and release history in their engineering records. Update the document dispositio
 map and this index in the same change.
 
 The [previous log](../internal/architecture-history/README.md) is preserved
-exactly with per-section hashes and active destinations. This migration does not
-relocate the separate acceptance-history collection.
+exactly with per-section hashes and active destinations. Acceptance history is kept in the same internal area, outside public navigation.

@@ -15,10 +15,10 @@ from scripts.site_reference import reference_files
 
 def test_history_moves_to_one_internal_area_with_exact_original_git_evidence():
     plan = json.loads((ROOT / "docs/documentation-plan.json").read_text())
-    assert len(plan["relocations"]) == 98
-    assert len(plan["preserved_sources"]) == 95
+    assert len(plan["relocations"]) == 100
+    assert len(plan["preserved_sources"]) == 102
     assert len(plan["operational_sources"]) == 3
-    assert len(original_contexts(ROOT)) == 95
+    assert len(original_contexts(ROOT)) == 102
     mapped = {item["source"]: item for item in plan["documents"]}
     for old, new in plan["relocations"].items():
         assert new.startswith("docs/internal/") and (ROOT / new).is_file()
@@ -28,8 +28,8 @@ def test_history_moves_to_one_internal_area_with_exact_original_git_evidence():
             assert not (ROOT / old).is_file()
     for record in plan["preserved_sources"] + plan["operational_sources"]:
         assert mapped[record["path"]]["baseline_sha256"] == record["sha256"]
-    assert len(mapped) == 313
-    assert validate_documentation_plan(ROOT, list(mapped)) == 313
+    assert len(mapped) == 329
+    assert validate_documentation_plan(ROOT, list(mapped)) == 329
     assert not (ROOT / "docs/status.md").exists()
 
 
@@ -86,3 +86,32 @@ def test_source_guard_keeps_current_operational_inputs_in_exact_release_inventor
     plan = json.loads((ROOT / "docs/internal/backlog.json").read_text())
     issues = json.loads((ROOT / "docs/internal/github-issues.json").read_text())
     assert plan["repository"] == issues["repository"] == "carloshm91/kuberich"
+
+
+def test_current_engineering_phase_snapshots_do_not_overwrite_earlier_history():
+    plan = json.loads((ROOT / "docs/documentation-plan.json").read_text())
+    versions = {
+        "docs/acceptance/forward-presets.md": "docs/internal/acceptance/forward-presets.md",
+        "docs/acceptance/plugin-execution.md": "docs/internal/acceptance/plugin-execution.md",
+        "docs/acceptance/resource-workspace.md": "docs/internal/acceptance/resource-workspace.md",
+        "engineering/guide-history/source-map.json": "docs/internal/guide-history/source-map.json",
+        "docs/first-preview.md": "docs/internal/first-preview-before-status.md",
+    }
+    contexts = original_contexts(ROOT)
+    mapped = {item["source"]: item for item in plan["documents"]}
+    for source, earlier in versions.items():
+        current = relocated_source(ROOT, source)
+        assert current != earlier and "0.3" in current
+        assert (ROOT / current).read_bytes() != (ROOT / earlier).read_bytes()
+        assert {current, earlier} <= set(mapped[source]["destinations"])
+        assert contexts[ROOT / current].source == contexts[ROOT / earlier].source == source
+    for name in (
+        "kubeconfig-compatibility.md",
+        "large-collections.md",
+        "property-mutation-tests.md",
+        "property-mutation-survivors.json",
+        "startup-budget.md",
+        "wayland-clipboard.md",
+    ):
+        path = "docs/internal/acceptance/" + name
+        assert (ROOT / path).is_file() and mapped[path]["action"] == "keep"

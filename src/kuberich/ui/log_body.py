@@ -20,6 +20,7 @@ from textual.scroll_view import ScrollView
 from textual.strip import Strip
 
 from kuberich.domain.log_view import LogEntry
+from kuberich.ui.log_cache import LogCacheInfo, log_cache_info
 
 VISIBLE_CACHE = 128
 
@@ -118,6 +119,11 @@ class LogBody(ScrollView, can_focus=True):
         self._layout_style = Style.null()
         self.render_batches = 0
         self.navigation_revision = 0
+
+    @property
+    def cache_info(self) -> LogCacheInfo:
+        """Return frozen cache sizes and visible-source validity without retained contents."""
+        return log_cache_info(self._cache, self._strips)
 
     @property
     def first_visible(self) -> tuple[int, int] | None:

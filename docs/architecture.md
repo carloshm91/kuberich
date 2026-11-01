@@ -68,22 +68,41 @@ select another context or mutate process-global SDK defaults.
 
 ### UI
 
-[App](../src/kuberich/ui/app.py) composes owners and routes root events.
-[Chrome](../src/kuberich/ui/chrome.py),
-[presentation](../src/kuberich/ui/presentation.py), and resource screens manage
-layout, focus, visible rows, and selection. Nested inspection/log/container
-screens keep their selected target explicit. The App still contains substantial
-composition and coordination; this overview does not claim a completed controller
-extraction.
+[App](../src/kuberich/ui/app.py) composes typed owners and routes root events.
+[View controllers](../src/kuberich/ui/controllers/base.py) project/filter/apply
+rows through one [render coordinator](../src/kuberich/ui/controllers/rendering.py).
+A lazy registry creates the selected adapter; the foreground gate uses actual
+root-screen suspend/resume events. [WorkspacePresenter](../src/kuberich/ui/workspace_presenter.py)
+owns observation/header delivery; [WorkspaceNavigation](../src/kuberich/ui/workspace_navigation.py)
+owns view history and scope restoration. [ResourceOperations](../src/kuberich/ui/resource_operations.py)
+uses immutable target capture and explicit process/mutation/forward owners.
+[Chrome](../src/kuberich/ui/chrome.py) and screens manage layout, focus, and selection.
+Nested inspection/log/container screens retain their selected target and command
+ports. [WorkspaceCommands](../src/kuberich/ui/workspace_commands.py) shares service
+parsing/policy and the [canonical command catalog](../src/kuberich/services/command_catalog.py).
+The App still contains substantial composition and coordination; complete
+private-boundary removal and the smaller-App target remain stable-release goals.
+See the implemented [application composition record](adr/app-composition.md).
+
+Presentation/rendering faults are isolated to their current view and scope.
+An inline Retry explicitly restarts that view; watches and unrelated forwards
+continue. Target invalidation, capture, retirement, and cleanup failures remain
+fatal ownership boundaries. Fatal reports are written after application cleanup
+and terminal restoration; they omit exception values, locals, and source lines.
 
 ### Bootstrap and local files
 
-[CLI](../src/kuberich/cli.py), [catalogue](../src/kuberich/config/catalog.py),
+[CLI](../src/kuberich/cli.py), [bootstrap](../src/kuberich/bootstrap.py),
+[catalogue](../src/kuberich/config/catalog.py),
 [preference schema](../src/kuberich/config/schema.py), and
 [store](../src/kuberich/config/store.py) select and validate local inputs.
-[Diagnostics](../src/kuberich/diagnostics/redaction.py) exclude private values.
+[Diagnostic reports](../src/kuberich/diagnostics/reports.py) contain metadata and a
+limited redacted application-log tail, without kubeconfig or preference bodies.
 Build, test, release, and site tools live under `scripts/`, outside installed
-runtime behavior. Local help/version/info/config-check require no cluster.
+runtime behavior. Help/version/info/config-check and bug-report stay offline,
+without importing Textual or the SDK. Actual client preparation loads the SDK
+inside its worker. UI first-paint timing is advisory for 0.x; offline budgets and
+functional/ownership gates remain required.
 
 ## Dependency direction
 
@@ -107,9 +126,18 @@ Each selected connection has explicit settings, a client identity, generation,
 and cleanup path. Namespace/resource changes keep that client and replace its
 active view. Context replacement, retry, or interactive reauthentication drains
 the previous connection's work before releasing its TLS and credential files.
+[The kubeconfig loader decision](adr/0032-kubeconfig-loader-contract.md) records
+Basic authentication, explicit secret-free OIDC migration, and why session-owned
+preparation remains necessary instead of the pinned SDK loader.
 
-Discovery selects actual served APIs and scope. Lists are complete paginated
-snapshots with an opaque collection resourceVersion. WatchState applies UID-based
+Discovery selects actual served APIs and scope. Lists use paginated snapshots
+with an opaque collection resourceVersion. Oversized lists keep a deterministic
+10,000-row/64-MiB payload subset while consuming the remaining pages for watch
+continuity; **INCOMPLETE** remains visible until a complete list replaces it.
+Explicit server selectors narrow LIST/WATCH; local filters do not. Generic compact
+mode can keep Table cells plus PartialObjectMetadata; inspection reads a full
+object, and missing-field jumps require full mode. These are payload bounds,
+not total-process memory guarantees. WatchState applies UID-based
 events; retryable interruptions resume an applied checkpoint, expiration relists,
 and permission/protocol failures remain errors. A temporary failure preserves
 rows marked stale rather than claiming a successful empty collection.
@@ -231,11 +259,14 @@ architecture links useful.
 | <a id="phased-immutable-release-decisions-refs-89"></a>Separate tested release preparation from artifact publication | [0029](adr/0029-immutable-release-activation.md) |
 | <a id="owned-crashloop-status-synchronization-refs-89"></a><a id="owned-crashloop-qualification-observation-refs-q03-50"></a>Use explicit disposable fixtures and preserve original failures | [0030](adr/0030-owned-verification-fixtures.md) |
 | Build standard Python artifacts with one explicit backend | [0031](adr/0031-standard-python-packaging.md) |
+| Own kubeconfig preparation and make migration explicit | [0032](adr/0032-kubeconfig-loader-contract.md) |
+| Compose typed views, commands, navigation, and operation owners | [Application composition](adr/app-composition.md) |
 
 ## Historical source
 
 The [previous log](internal/architecture-history/README.md) is preserved
 exactly with a source commit, checksum, and per-section destination map. It contains
 superseded planning and measured history, so it is not the current overview.
-Acceptance history has its own pending consolidation; this change does not claim
-that migration or a new platform/performance qualification is complete.
+[Internal records](internal/README.md) keep engineering acceptance history separate
+from current instructions. Historical results do not qualify a new candidate,
+platform, or performance result.

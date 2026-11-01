@@ -11,6 +11,7 @@ from kuberich.services.commands import Command
 from kuberich.ui.app import HelpScreen, KubeRichApp
 from kuberich.ui.chrome import header_identity
 from kuberich.ui.presentation import Presentation
+from tests.support.root_calls import root_calls as root_calls
 
 
 @pytest.mark.asyncio
@@ -123,7 +124,7 @@ async def test_long_refresh_interval_keeps_watch_updates_immediate(tmp_path):
 
 @pytest.mark.asyncio
 async def test_effective_identity_and_refresh_update_ages_without_polling_or_losing_focus(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, root_calls
 ):
     from aiohttp import web
 
@@ -180,4 +181,4 @@ async def test_effective_identity_and_refresh_update_ages_without_polling_or_los
             evidence.mkdir(parents=True, exist_ok=True)
             app.save_screenshot(filename="connection-overrides-refresh.svg", path=str(evidence))
             await pilot.press("escape", "q")
-        assert app.sessions.client is None and app._render_task.done()
+        assert app.sessions.client is None and root_calls.renders.latest.done()

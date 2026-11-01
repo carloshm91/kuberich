@@ -20,6 +20,11 @@ class Option(TypedDict):
     group: str
 
 
+class LocalCommand(TypedDict):
+    name: str
+    help: str
+
+
 class Resource(TypedDict):
     name: str
     group: str
@@ -46,6 +51,7 @@ class Setting(TypedDict):
 
 class Contracts(TypedDict):
     options: list[Option]
+    local_commands: list[LocalCommand]
     resources: list[Resource]
     commands: list[Command]
     interactions: list[str]
@@ -77,14 +83,18 @@ from kuberich.ui.inspection import InspectionScreen
 from kuberich.ui.terminal import ShellScreen
 parser = _parser()
 options = []
+local_commands = []
 def collect_options(current, prefix=""):
     for group in current._action_groups:
         for action in group._group_actions:
             if action.option_strings and action.help != argparse.SUPPRESS:
                 options.append({"flags": action.option_strings, "help": action.help or "", "group": prefix})
             if isinstance(action, argparse._SubParsersAction):
+                descriptions = {item.dest: item.help for item in action._choices_actions}
                 for name, child in action.choices.items():
-                    collect_options(child, (prefix + " " + name).strip())
+                    command = (prefix + " " + name).strip()
+                    local_commands.append({"name": command, "help": descriptions.get(name, "")})
+                    collect_options(child, command)
 collect_options(parser)
 resources = [{"name": item.name, "group": item.group, "namespaced": item.namespaced,
               "aliases": list(item.aliases), "columns": [column.key for column in item.columns]}
@@ -110,7 +120,7 @@ for label, owner in (("Workspace", KubeRichApp), ("Logs", LogScreen), ("Containe
     bindings[label] = [{"keys": ", ".join(keys), "action": action, "description": description}
                        for (action, description), keys in grouped.items()]
 settings = Settings()
-print(json.dumps({"options": options, "resources": resources,
+print(json.dumps({"options": options, "local_commands": local_commands, "resources": resources,
     "commands": [{"action": action, "aliases": sorted(aliases)} for action, aliases in sorted(commands.items())],
     "interactions": sorted(INTERACTION_VERBS),
     "keymaps": [{"profiles": profiles, "keys": dict(keys)} for keys, profiles in keymaps.items()],
@@ -166,6 +176,19 @@ def generated_guides(root: Path, version: str) -> dict[str, str]:
             + cell(option["help"])
             + " |"
         )
+    cli += [
+        "",
+        "## Local CLI commands",
+        "",
+        "Global options go before the command. Use `kuberich COMMAND --help` for its options.",
+        "",
+        "| Command | Description |",
+        "| --- | --- |",
+    ]
+    cli += [
+        f"| `kuberich {command['name']}` | {cell(command['help'])} |"
+        for command in data["local_commands"]
+    ]
     cli += [
         "",
         "## In-app commands",
