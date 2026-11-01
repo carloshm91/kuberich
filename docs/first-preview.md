@@ -43,6 +43,19 @@ Real EKS, AKS and GKE clusters are not certified yet; those trials stay opt-in.
 
 ## Next development phase: 0.3.0
 
+Development source adds an inline Retry panel for resource-view presentation
+failures and a local `kuberich bug-report` command. Report files are private and
+redacted; the diagnostic command does not read kubeconfig or connect to a
+cluster. Fatal UI errors restore the terminal before printing a crash-report
+path. These changes
+are not part of the installed 0.2.0 release. Integrated platform, package and
+whole-application qualification remain pending.
+
+```sh
+uv run kuberich bug-report --output ./kuberich-report.json
+uv run pytest tests/ui/test_view_errors.py tests/contract/test_bug_report_cli.py tests/unit/test_diagnostic_reports.py
+```
+
 The foundations phase is in progress. Its first task adds full unit/contract/UI
 test selection, local xdist workers and a fast CI signal before full qualification.
 Worker ownership, failure propagation, coverage combination and timing isolation
@@ -65,6 +78,32 @@ The development source also corrects plugin review from qualified custom-resourc
 views. Matching commands can review the selected UID after the view is live;
 previous resource names and API versions remain refused while a new view loads.
 This correction is not included in the installed 0.2.0 release.
+
+The integrated development source also passes the full-package check against
+private test dependencies. Workspace tests now use public command/state boundaries
+while retaining captured-target, cancellation and bounded-cache behavior. Full
+platform, runtime and coverage qualification remains pending for this foundation
+work; the installed release remains 0.2.0.
+
+```sh
+uv run python scripts/check_private_access.py
+```
+
+## Development: one phase verification command
+
+The development checkout now provides a coordinator for the existing checks:
+
+```sh
+uv run python scripts/qualify.py --help
+uv run python scripts/qualify.py 0.3.0 --collect-only
+```
+
+The first command explains the options. The second writes an honest pending
+report without starting tests or clusters. A local run executes the existing
+checks once and records their source, original logs, cleanup and remaining
+native/repetition requirements. Read the [phase verification guide](releases.md#reproduce-phase-verification)
+before running the full command. The installed application remains 0.2.0.
+
 ## Development: runtime latency observations
 
 For 0.x development, runtime latency observations retain their original targets
@@ -96,6 +135,25 @@ published application remains 0.2.0. Native/full required checks remain pending.
 ```sh
 uv run pytest tests/contract/test_clipboard.py tests/contract/test_x11_readiness.py tests/unit/test_clipboard.py
 ```
+
+### Development checkpoint: Wayland clipboard
+
+The unreleased checkout can copy through `wl-copy` in local Wayland sessions.
+Automatic detection prefers Wayland over XWayland and keeps OSC52 over SSH.
+The helper receives plaintext on stdin and closes on replacement or application
+exit. The native 1 MiB limit and terminal 64 KiB limit still apply.
+
+```sh
+uv run pytest tests/unit/test_clipboard.py tests/contract/test_clipboard.py \
+  tests/contract/test_wayland_clipboard.py tests/ui/test_clipboard.py -n 2 \
+  --cov=kuberich --cov-branch --cov-report=json --cov-report=xml
+```
+
+The original source checkpoint passed 56 tests with one explicit hosted-macOS skip and
+100% line/branch coverage in both clipboard modules. Its helpers simulate
+`wl-copy`; no real compositor or developer clipboard was used. See
+[Wayland verification](acceptance/wayland-clipboard.md) for the measured scope.
+Full-package and supported-platform checks remain required before delivery.
 
 ## Included in 0.2.0: live preferences
 
@@ -371,3 +429,49 @@ The [candidate evidence](acceptance/first-release-preparation.md) retains measur
 results and limits. [Historical engineering checkpoints](preview-history.md)
 remain available separately. Real cloud-provider and physical-terminal
 certification still require their later opt-in trials.
+
+### Wayland platform fixture correction
+
+The focused clipboard command above now passes 59 cases with one explicit
+macOS-only skip on Linux (17.32 seconds). It covers native failure/fallback
+behavior for X11, Wayland and macOS through an inert driver on every host.
+The first hosted macOS failure was a missing platform boundary in synthetic
+Linux fixtures; it is retained in run `41280079738`. No native host or compositor
+qualification is inferred from the synthetic cases.
+
+### Wayland parent integration
+
+The local parent integration preserves the application clipboard queue and the
+owned X11 receipt checks. Its 225 focused helper/process/queue/public-UI and
+documentation cases passed in 51.54 seconds. The critical clipboard domain
+retains 100% line and branch coverage; the native service including its queue
+measured 96.77% of lines and 91.18% of branches, with 94.74% changed-line coverage.
+The [acceptance record](acceptance/wayland-clipboard.md#parent-integration-verification)
+separates these results from the earlier source checkpoints. No real Wayland
+compositor, host clipboard or cluster was used. The installed version remains
+0.2.0; full supported-platform and package qualification remain pending.
+### Opened plugin job results
+
+After opening a running job in `:pluginjobs`, its status, exit code and completed
+output now update without pressing Enter again. Cursor movement keeps the opened
+job until another Enter; retired history releases its displayed result.
+
+The tested local regression command was:
+
+```sh
+uv run pytest tests/ui/test_plugin_jobs.py tests/ui/test_plugins.py \
+  tests/contract/test_plugins.py tests/terminal/test_plugins.py \
+  tests/quality/test_release_policy.py \
+  --basetemp artifacts/plugin272/tmp/regression-01 \
+  --cov=kuberich --cov-branch \
+  --cov-report=json:artifacts/plugin272/regression-coverage.json \
+  --cov-report=xml:artifacts/plugin272/regression-coverage.xml \
+  --junitxml=artifacts/plugin272/regression-tests.xml
+```
+
+The selection passed 326 cases on Linux/Python 3.12, including source CLI
+terminal restoration. The final two UI cases also passed after strengthening
+the output-only check. Changed application lines measured 100%; complete
+platform, package and coverage gates remain required. The original macOS
+failure and the unchanged-main negative controls are retained in
+[plugin execution evidence](acceptance/plugin-execution.md).

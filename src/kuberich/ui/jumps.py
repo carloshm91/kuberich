@@ -70,7 +70,14 @@ class JumpController:
             raise AppError("Wait for the current resource catalogue or use :refresh.")
         *group, version, plural = jump.target.split("/")
         target = discovery.resolve(plural, group="".join(group), version=version)
-        result = resolve_jump(jump, record.manifest, record.namespace, target.namespaced)
+        try:
+            result = resolve_jump(jump, record.manifest, record.namespace, target.namespaced)
+        except AppError:
+            if record.metadata_only:
+                raise AppError(
+                    "This jump needs fields absent from compact metadata; use :server full and select the row again."
+                ) from None
+            raise
         if (target.group, target.name) in _BUILT_IN and target == discovery.resolve(
             target.name, group=target.group
         ):

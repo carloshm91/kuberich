@@ -5,6 +5,25 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ## Unreleased
 
+### Added
+
+- Retry a failed resource view without closing the workspace. Create a private,
+  redacted diagnostic bundle with `kuberich bug-report`; fatal UI errors restore
+  the terminal before printing a local crash-report path
+  ([#216](https://github.com/carloshm91/kuberich/issues/216),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
+- Add one phase-verification command that runs the existing checks or collects
+  full exact-source hosted results, preserving failures and reporting missing
+  platform or repetition evidence explicitly
+  ([#218](https://github.com/carloshm91/kuberich/issues/218),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
+- Copy plaintext to local Wayland clipboards with `wl-copy`, with selection
+  cleanup and an actionable terminal fallback when the helper fails
+  ([#220](https://github.com/carloshm91/kuberich/issues/220),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 ### Changed
 
 - Consolidate user documentation into focused task guides and source-generated
@@ -21,10 +40,33 @@ Release entries are written in release PRs and linked to their Git tags.
   every functional, resource, cleanup and coverage requirement
   ([#230](https://github.com/carloshm91/kuberich/issues/230),
   [Carlos J. Herrera](https://github.com/carloshm91)).
+- Add bounded property tests for eight parser/state families and a separate
+  scheduled mutation campaign with raw outcomes and survivor review
+  ([#217](https://github.com/carloshm91/kuberich/issues/217),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
+- The legacy `kubetrol` command warns to use `kuberich`; it remains available through 0.3 and is scheduled for removal in 0.4.0 ([#219](https://github.com/carloshm91/kuberich/issues/219)).
 - Organize user documentation into 19 pages with tutorial, how-to, reference and
   explanation navigation. Keep the existing guidance and old guide routes while
   introducing a plain-language style and a complete document migration map
   ([#222](https://github.com/carloshm91/kuberich/issues/222),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+- Keep oversized resource collections live with explicit incomplete counts,
+  bounded retained rows, paginated progress and `:server` label/field selectors;
+  offer metadata-only payloads in generic views with full-object recovery
+  ([#213](https://github.com/carloshm91/kuberich/issues/213),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
+- Keep offline diagnostics independent of terminal/SDK imports and defer cluster
+  preparation until the first terminal refresh; enforce offline startup and
+  actual-frame safety in CI. Report UI latency for 0.x while retaining the
+  unchanged strict 600 ms check for 1.0 and explicit qualification
+  ([#214](https://github.com/carloshm91/kuberich/issues/214),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
+- Wait for observable startup logs in disposable-cluster qualification and retain
+  sanitized failure diagnostics within the existing readiness limit
+  ([#274](https://github.com/carloshm91/kuberich/issues/274),
   [Carlos J. Herrera](https://github.com/carloshm91)).
 - Add parallel development test layers and an early full unit/contract/UI signal
   before the complete platform and coverage checks
@@ -39,6 +81,17 @@ Release entries are written in release PRs and linked to their Git tags.
   UID, canonical resource and API-version loading guards
   ([#278](https://github.com/carloshm91/kuberich/issues/278),
   [Carlos J. Herrera](https://github.com/carloshm91)).
+- Accept explicit Basic credentials and kubectl's empty optional connection
+  fields, retain credential schemes for reads/writes/delegation and print a
+  reviewed OIDC exec migration fragment without copying existing tokens or
+  changing kubeconfig files
+  ([#215](https://github.com/carloshm91/kuberich/issues/215),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
+- Refresh opened plugin job output and exit status as they arrive, without
+  requiring another Enter or changing the job being read
+  ([#272](https://github.com/carloshm91/kuberich/issues/272),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
 - Keep native macOS builds and installation checks on supported runners
   ([#291](https://github.com/carloshm91/kuberich/issues/291),
   [Carlos J. Herrera](https://github.com/carloshm91)).
@@ -47,6 +100,10 @@ Release entries are written in release PRs and linked to their Git tags.
   ([#281](https://github.com/carloshm91/kuberich/issues/281),
   [Carlos J. Herrera](https://github.com/carloshm91)).
 
+- Preserve the first terminal-test failure when owned process-group cleanup is
+  denied, and record bounded cleanup and actual restoration evidence separately
+  ([#208](https://github.com/carloshm91/kuberich/issues/208),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
 - Reuse one palette snapshot for each shortcut panel render and avoid layout
   updates for unchanged header text during navigation, resizing and theme changes
   ([#209](https://github.com/carloshm91/kuberich/issues/209),

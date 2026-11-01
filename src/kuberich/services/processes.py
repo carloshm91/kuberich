@@ -25,18 +25,10 @@ from kuberich.errors import AppError, ExecutableUnavailable
 from kuberich.runtime import external_environment, pty_argv
 from kuberich.runtime import signal_process_group as _signal_group
 from kuberich.services.access import AccessPolicy, Action
+from kuberich.services.ownership import finish_owned
 
 TargetGuard = Callable[[], None]
-
-
-async def _finish_owned[T](task: asyncio.Future[T]) -> None:
-    """Repeated cancellation cannot abandon an already-started cleanup/spawn."""
-    while not task.done():
-        try:
-            await asyncio.shield(task)
-        except asyncio.CancelledError:
-            continue
-    task.result()
+_finish_owned = finish_owned
 
 
 def _executable(command: ProcessCommand) -> str:

@@ -933,6 +933,16 @@
       "baseline_sha256": "5878cdfe6b3b2ce140c2305157f065824586e3de747b446be3bed23324cd9638"
     },
     {
+      "source": "docs/acceptance/startup-budget.md",
+      "audience": "evidence",
+      "action": "move",
+      "destinations": [
+        "docs/internal/acceptance/startup-budget.md"
+      ],
+      "reason": "Retain startup contract measurements and explicit advisory target limits outside user navigation.",
+      "baseline_sha256": null
+    },
+    {
       "source": "docs/acceptance/table-order-performance.md",
       "audience": "evidence",
       "action": "move",
@@ -1003,6 +1013,16 @@
       "baseline_sha256": "790d519886eb1e44aadecb009ebec3dccf1318690d1813235aa236d21afd213e"
     },
     {
+      "source": "docs/acceptance/wayland-clipboard.md",
+      "audience": "evidence",
+      "action": "move",
+      "destinations": [
+        "docs/internal/acceptance/wayland-clipboard.md"
+      ],
+      "reason": "Retain native Wayland helper invocation, ownership and explicit compositor qualification limits outside user navigation.",
+      "baseline_sha256": null
+    },
+    {
       "source": "docs/acceptance/workload-checkpoint.md",
       "audience": "evidence",
       "action": "move",
@@ -1021,6 +1041,25 @@
       ],
       "reason": "Archive acceptance evidence outside the website and user search.",
       "baseline_sha256": "c8abc0fe1af36c46485e5f278b7643d4317b3ed6a5a6bcb86f295f680328f051"
+    },
+    {
+      "source": "docs/adr/0032-kubeconfig-loader-contract.md",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0032-kubeconfig-loader-contract.md"
+      ],
+      "reason": "Record the owned loader boundary and reviewed kubeconfig compatibility decisions.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/app-composition.md",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/app-composition.md"
+      ],
+      "reason": "Document the implemented view, command and lifecycle ownership and its remaining compatibility boundaries for contributors."
     },
     {
       "source": "docs/agent-setup.md",
@@ -1286,6 +1325,46 @@
       ],
       "reason": "Retain implementation, process or historical material outside the user navigation.",
       "baseline_sha256": "9cb914357c2b78bfc646c457157620942e9bcd04e6ad8408900bf8df49e97748"
+    },
+    {
+      "source": "docs/internal/acceptance/kubeconfig-compatibility.md",
+      "audience": "evidence",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/kubeconfig-compatibility.md"
+      ],
+      "reason": "Retain measured local kubeconfig contracts and explicit certification limits outside user navigation.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/acceptance/large-collections.md",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/large-collections.md"
+      ],
+      "reason": "Retain measured bounded-collection behavior and explicit incomplete-state limits outside user navigation.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/acceptance/property-mutation-survivors.json",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/property-mutation-survivors.json"
+      ],
+      "reason": "Retain the complete initial campaign survivor inventory without discounting results or claiming it qualifies later source changes.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/acceptance/property-mutation-tests.md",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/property-mutation-tests.md"
+      ],
+      "reason": "Retain the exact initial property and mutation campaign scope, original outcomes and unmet advisory target as development evidence.",
+      "baseline_sha256": null
     },
     {
       "source": "docs/k9s-cli.md",
@@ -1746,6 +1825,16 @@
       ],
       "reason": "Retain this contributor or project contract outside the user navigation.",
       "baseline_sha256": "70c3ecfdb848f5cb0d7cea1dcc88a92cfc67d7085945c774fae6aa017307dbf6"
+    },
+    {
+      "source": "tests/fixtures/connection_shapes/README.md",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "tests/fixtures/connection_shapes/README.md"
+      ],
+      "reason": "Document synthetic credential fixtures, primary shape sources and local-only qualification limits.",
+      "baseline_sha256": null
     },
     {
       "source": "website/README.md",

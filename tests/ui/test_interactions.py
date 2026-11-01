@@ -1,6 +1,7 @@
 """Real Pilot interaction matrix against an owned HTTP resource/watch fixture."""
 
 import asyncio
+from types import SimpleNamespace
 
 import pytest
 from aiohttp import web
@@ -12,7 +13,10 @@ from tests.support.connections import namespaces
 from tests.support.pods import pod
 from tests.support.resources import collection, legacy_roots
 from tests.support.watches import frame
+from tests.support.workers import CoroutineCalls
 from tests.support.workspace import stable_watch, wait_for, workspace_api
+from tests.ui.test_inspection import loads as loads
+from tests.ui.test_logs import log_calls as log_calls
 from tests.ui.test_navigation_preferences import app_for
 from tests.ui.test_standard_resources import command
 
@@ -29,7 +33,9 @@ async def ns(request):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(40, 12), (120, 35)])
-async def test_filters_wide_uid_ranges_copy_history_favorites_and_runtime_chrome(tmp_path, size):
+async def test_filters_wide_uid_ranges_copy_history_favorites_and_runtime_chrome(
+    tmp_path, size, monkeypatch
+):
     values = [pod("api"), pod("worker", ready=False), pod("unknown")]
     values[0]["metadata"]["labels"] = {"app": "api"}
     values[0]["spec"]["nodeName"] = "node-a"
@@ -55,7 +61,7 @@ async def test_filters_wide_uid_ranges_copy_history_favorites_and_runtime_chrome
                 await wait_for(
                     lambda names=names: (
                         [
-                            app.resources._rows[row.key.value].name
+                            str(app.resources.get_cell(row.key, "name"))
                             for row in app.resources.ordered_rows
                         ]
                         == names
@@ -96,8 +102,12 @@ async def test_filters_wide_uid_ranges_copy_history_favorites_and_runtime_chrome
             assert app.interactions.selection.marked == {"owned-api"}
             app.filter_input.value = ""
             await wait_for(lambda: app.resources.row_count == 3)
+            saves = CoroutineCalls()
+            monkeypatch.setattr(
+                app.preferences, "save_navigation", saves.observe(app.preferences.save_navigation)
+            )
             await command(app, pilot, "favorite add team")
-            await wait_for(lambda: app.interactions._favorite_task.done())
+            await wait_for(lambda: saves.latest is not None and saves.latest.done())
             assert dict(app.navigation.favorites)["kuberich-test-one"] == ("team",)
             assert "favorites" in path.read_text()
             await command(app, pilot, "favorites")
@@ -120,16 +130,18 @@ async def test_filters_wide_uid_ranges_copy_history_favorites_and_runtime_chrome
                 "headless",
             ):
                 await command(app, pilot, verb)
-            assert not app.interactions.fullscreen and not app._presentation.headless
+            assert not app.interactions.fullscreen and not app.chrome.presentation.headless
             assert app.focused is app.resources
             await command(app, pilot, "!!")
-            assert app._presentation.headless
+            assert app.chrome.presentation.headless
             assert app.interactions.history.entries[-1] == "headless"
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("failure", ["namespace", "permission"])
-async def test_live_container_rows_preserve_focus_and_nested_streams_are_drained(tmp_path, failure):
+async def test_live_container_rows_preserve_focus_and_nested_streams_are_drained(
+    tmp_path, failure, log_calls
+):
     updates = asyncio.Queue()
     value = pod("api")
     value["spec"]["containers"].append({"name": "worker", "image": "synthetic"})
@@ -157,14 +169,17 @@ async def test_live_container_rows_preserve_focus_and_nested_streams_are_drained
             screen = app.screen
             assert isinstance(screen, ContainerScreen)
             assert app.focused is screen.command_input
-            screen._set_status("Owned action feedback remains until the next action.")
+            screen.status.update("Owned action feedback remains until the next action.")
             value["metadata"]["resourceVersion"] = "updated"
             value["status"]["containerStatuses"].append(
                 {"name": "worker", "ready": True, "restartCount": 7, "state": {"running": {}}}
             )
             await updates.put({"type": "MODIFIED", "object": value})
             await wait_for(lambda: screen.table.get_row("worker")[4].plain == "7")
-            assert screen._selected_name() == "worker"
+            assert (
+                screen.table.coordinate_to_cell_key(screen.table.cursor_coordinate).row_key.value
+                == "worker"
+            )
             assert "Owned action feedback" in str(screen.status.content)
             assert app.focused is screen.command_input and screen.command_input.value == "draft"
             await pilot.press("escape", "enter")
@@ -195,21 +210,23 @@ async def test_live_container_rows_preserve_focus_and_nested_streams_are_drained
                     }
                 )
                 await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.FAILED)
-                await wait_for(
-                    lambda: screen.invalidated and logs.stale and logs._controller.done()
-                )
+                await wait_for(lambda: screen.invalidated and logs.stale and logs.active_count == 0)
                 assert not screen.table.row_count and not logs.history.entries
                 screen.observe_record(app.workspace.store.observation.snapshot.items[0])
                 assert not screen.table.row_count
                 await pilot.press("escape", "escape")
-            assert logs._controller.done() and logs._renderer.done()
+            assert (
+                logs.active_count == 0
+                and all(task.done() for task in log_calls.render.tasks)
+                and all(task.done() for task in log_calls.read.tasks)
+            )
             assert screen.invalidated
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
 async def test_readonly_document_and_help_have_independent_text_keys_and_shared_frame(
-    tmp_path, size
+    tmp_path, size, loads
 ):
     from textual.containers import VerticalScroll
 
@@ -272,7 +289,7 @@ async def test_readonly_document_and_help_have_independent_text_keys_and_shared_
                     len(app.screen_stack) == 1 and app.sessions.observation.namespace == "default"
                 )
             )
-            assert screen.invalidated and screen._load_task.done()
+            assert screen.invalidated and loads.latest.done()
             await pilot.press("question_mark")
             help_screen = app.screen
             assert isinstance(help_screen, HelpScreen)
@@ -348,21 +365,41 @@ async def test_container_projection_coalesces_and_client_close_drains_the_owned_
             await pilot.press("enter")
             screen = app.screen
             assert isinstance(screen, ContainerScreen)
+            assert screen.active_count == 0
             entered, release = threading.Event(), threading.Event()
-            original = module._project_containers
+            original = module.container_rows
             calls = []
+            decodes = CoroutineCalls()
+            native_to_thread = asyncio.to_thread
 
-            def controlled(item):
-                calls.append(item.resource_version)
-                if item.resource_version == "blocked":
+            async def observed_decode(function, *args, **kwargs):
+                decodes.capture()
+                return await native_to_thread(function, *args, **kwargs)
+
+            def controlled(manifest):
+                version = manifest["metadata"]["resourceVersion"]
+                calls.append(version)
+                if version == "blocked":
                     entered.set()
                     assert release.wait(10)
-                return original(item)
+                return original(manifest)
 
-            monkeypatch.setattr(module, "_project_containers", controlled)
+            monkeypatch.setattr(module, "container_rows", controlled)
+            monkeypatch.setattr(
+                module,
+                "asyncio",
+                SimpleNamespace(
+                    create_task=asyncio.create_task,
+                    to_thread=observed_decode,
+                    shield=asyncio.shield,
+                    CancelledError=asyncio.CancelledError,
+                    gather=asyncio.gather,
+                ),
+            )
             value["metadata"]["resourceVersion"] = "blocked"
             screen.observe_record(record(value))
             assert await asyncio.to_thread(entered.wait, 5)
+            assert screen.active_count == 1 and not decodes.latest.done()
             for version in ("intermediate", "latest"):
                 value["metadata"]["resourceVersion"] = version
                 screen.observe_record(record(value))
@@ -370,10 +407,10 @@ async def test_container_projection_coalesces_and_client_close_drains_the_owned_
             assert screen.command_input.value == "still-responsive"
             closing = asyncio.create_task(app.sessions.close())
             await wait_for(lambda: screen.invalidated)
-            assert not closing.done()
+            assert not closing.done() and screen.active_count == 1 and not decodes.latest.done()
             release.set()
             await closing
-            assert screen._rows_task.done() and not screen.table.row_count
+            assert screen.active_count == 0 and decodes.latest.done() and not screen.table.row_count
             assert calls == ["blocked"]  # Closing rejects every late/pending result.
             assert app.sessions.client is None
 
@@ -411,11 +448,12 @@ async def test_nested_delete_review_keeps_captured_uid_and_never_retargets_hidde
                 # this boundary deliberately rejects the captured origin guard.
                 screen.service.current = lambda: False
             await pilot.press("colon", *"delete", "enter")
-            await wait_for(lambda: app._nested_route_task.done())
             if stale:
+                await pilot.pause()
                 assert app.screen is screen
                 assert not isinstance(app.screen, ResourceOperationScreen)
             else:
+                await wait_for(lambda: isinstance(app.screen, ResourceOperationScreen))
                 assert isinstance(app.screen, ResourceOperationScreen)
                 assert app.screen.sources[0].target.uid == "owned-api-a"
                 assert app.focused.id == "operation-cancel"

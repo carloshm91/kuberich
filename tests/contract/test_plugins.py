@@ -14,6 +14,7 @@ from kuberich.domain.plugins import PluginSelection, parse_plugin
 from kuberich.domain.processes import ProcessResult, ProcessStatus
 from kuberich.domain.targets import ResourceTarget, SessionIdentity
 from kuberich.errors import AppError
+from kuberich.services import plugins as plugin_service
 from kuberich.services.access import AccessPolicy
 from kuberich.services.plugins import PluginManager, PluginSource
 from tests.support.pods import pod
@@ -151,7 +152,9 @@ async def test_readonly_explicit_classification_before_any_helper_lookup(
         manager = PluginManager(owner.policy)
         if not allowed:
             monkeypatch.setattr(
-                owner, "_capture", lambda *args: pytest.fail("capture/lookup must not occur")
+                plugin_service,
+                "capture_delegation",
+                lambda *args, **kwargs: pytest.fail("capture/lookup must not occur"),
             )
             with pytest.raises(AppError, match="Read-only"):
                 await owner.prepare(command, {})
@@ -306,7 +309,7 @@ async def test_capture_preparation_cancellation_drains_owned_worker_without_publ
         release.set()
         with pytest.raises(asyncio.CancelledError):
             await task
-        assert owner._prepared == {} and not list(
+        assert owner.pending_reviews == 0 and not list(
             Path(reader.session.directory.name).glob("plugin*")
         )
 
@@ -450,15 +453,17 @@ async def test_concurrent_preparations_reserve_the_bound_and_freeze_inputs_befor
     tmp_path, monkeypatch
 ):
     release = threading.Event()
+    entered = threading.Event()
     async with reader_fixture(tmp_path, handler) as reader:
         owner = source(reader, tmp_path)
-        original = owner._capture
+        original = plugin_service.capture_delegation
 
-        def delayed(command, values):
+        def delayed(*args, **kwargs):
+            entered.set()
             assert release.wait(5)
-            return original(command, values)
+            return original(*args, **kwargs)
 
-        monkeypatch.setattr(owner, "_capture", delayed)
+        monkeypatch.setattr(plugin_service, "capture_delegation", delayed)
         command = plugin(
             tmp_path, args=["-c", "print('ok')", "${INPUT_VALUE}"], inputs=[{"name": "value"}]
         )
@@ -466,7 +471,7 @@ async def test_concurrent_preparations_reserve_the_bound_and_freeze_inputs_befor
         tasks = [asyncio.create_task(owner.prepare(command, values)) for _ in range(8)]
         try:
             async with asyncio.timeout(5):
-                while owner._preparing != 8:
+                while owner.pending_reviews != 8 or not entered.is_set():
                     await asyncio.sleep(0.001)
             values["value"] = "changed-value"
             with pytest.raises(AppError, match="pending"):
@@ -476,8 +481,9 @@ async def test_concurrent_preparations_reserve_the_bound_and_freeze_inputs_befor
             requests = await asyncio.gather(*tasks, return_exceptions=True)
         assert not any(isinstance(request, BaseException) for request in requests)
         assert all(request.command.argv[-1] == "original-value" for request in requests)
-        assert owner._preparing == 0 and len(owner._prepared) == 8
+        assert owner.pending_reviews == 8
         owner.close()
+        assert owner.pending_reviews == 0
 
 
 @pytest.mark.asyncio

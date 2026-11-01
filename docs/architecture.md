@@ -1,5 +1,80 @@
 # Architecture decisions
 
+The [application composition proposal](adr/app-composition.md) records the typed
+view/controller boundaries, shared command metadata and root-screen lifecycle
+contract being introduced in the foundations phase. Its integration and behavioral
+qualification are still in progress.
+
+## Offline startup and first-frame readiness
+
+The CLI parses help/version without importing the terminal application. A small
+bootstrap seam keeps the existing installed-metadata, configuration, logging and
+launch ports while importing their implementations only when used. Offline
+configuration validation shares a pure catalog of the pinned framework's theme
+names; a parity test checks that catalog against Textual's public definitions.
+Every configured navigation, appearance, forwarding, jump, context and plugin
+validation remains in its original order. An absent extension can avoid its
+unused parser imports; explicit empty or invalid values still validate normally.
+The selected theme is always checked. An entirely empty set of resource views
+can additionally avoid unused command/registry imports.
+
+The Kubernetes adapter imports the actual SDK inside its owned preparation
+worker, after the session is allowed to connect. Constructing a client or importing
+an adapter does not import SDK models. Once a connection is prepared, the normal
+SDK initializes its model catalog; this does not introduce an upstream model
+loader or change Kubernetes serialization.
+
+HTTP/proxy libraries are likewise deferred to actual transport calls. Optional
+release checks load their HTTP module through the existing owned file worker,
+so cancellation drains preparation before the owner exits. Unused modal screen
+families load in their requesting actions, while root events and root-only view
+observations do not import terminal/log/editor screens. The existing public
+`HelpScreen` import remains a literal lazy compatibility export; constructor
+injection ports such as `PodProjection` and `CustomProjection` remain eager.
+No generic facade, screen proxy or upstream loader is introduced.
+
+`SessionService.before_connect` is an optional asynchronous readiness port,
+independent of Textual. Its wait is inside the existing connection ownership and
+cancellation boundary, before client construction, credential helpers or network
+work. The terminal releases it through the public `call_after_refresh` callback.
+All five actual tables keep their existing eager composition and column-model
+setup. A public `App.exit` override stops new optional update checks and marks
+startup stopped immediately, preserving the framework's result, message and
+return code. The readiness callback checks that state after its refresh wait,
+so a queued refresh cannot begin SDK preparation after quit.
+Initial command/history ordering remains synchronous, while quit and context
+replacement drain or supersede the pending connection normally. Optional release
+checks are also queued after refresh and remain disabled by default.
+
+Read-only scrolling and its navigation bindings do not import Textual's editor
+and document graph. Inspection imports the unchanged read-only `TextArea`
+subclass from its own module. The original `ReadOnlyText` import remains a literal
+lazy compatibility export; it resolves to that same canonical class.
+
+The plugin controller remains in its original module with the same loader,
+scoped hotkeys, manager and captured-target guards. Its actual catalogue,
+review and job screens live in a separate module and load in their requesting
+actions. The original three named screen imports resolve to the same canonical
+classes. Forwarding dialogs likewise import only in their explicit actions.
+These boundaries defer unused project screens; they do not alter mandatory
+Textual imports or postpone configured validation.
+
+The startup qualifier observes the actual CLI in fresh interpreters and the real
+application on an owned 120×36 PTY. It retains both the public refresh callback and
+visible PTY delivery times, rejects SDK/helper/network work before that refresh,
+and verifies the mounted selected table's columns and bounded geometry. It
+requires normal client cleanup and alternate-screen restoration. It never
+loads a maintainer kubeconfig or connects to a real provider. See the
+[startup acceptance record](acceptance/startup-budget.md).
+
+## Read-only workspace ownership
+
+`WorkspaceService.ownership` returns a frozen snapshot of registered watch,
+operation, subscription and discovery counts, plus close completion. Completed
+tasks remain counted until their owner retires them. It exposes no task, client
+or cached value. Tests observe actual watch tasks at the public `ListWatch.run`
+boundary and check subscription delivery and closure through async iteration.
+
 ## Native table-cache retirement and metadata geometry: prerequisite for S08 #62
 
 `FrameTable` uses a small native LRU subclass for its six rendering/ordering
@@ -1218,10 +1293,14 @@ session preferences and marks without moving Kubernetes operations into widgets.
 
 `ProcessCommand.input_data` is immutable, bounded and restricted to noninteractive
 clipboard-purpose commands. `ProcessRunner` registers ownership before writing
-stdin. Native clipboard data never enters argv/code/logs; X11 retains one owned
-foreground selection process, macOS uses a constant AppKit plaintext program,
+stdin. Native clipboard data never enters argv/code/logs; X11 and Wayland retain
+one foreground selection process, macOS uses a constant AppKit plaintext program,
 and OSC52/tmux emit only bounded base64 in trusted framing. No production backend
 reads a clipboard. Headless runs stay memory-only and ordinary PTYs force OSC52.
+Wayland uses literal `wl-copy --foreground --type text/plain;charset=utf-8`
+arguments, so the manager owns its process lifetime and plaintext type selection.
+Local detection prefers Wayland over XWayland; the automatic SSH preference and
+explicit terminal/native overrides retain their existing precedence.
 
 Read-only `CommandWorkspace` screens share the command provider/history. Invalid
 or forbidden commands retain the view; accepted scope transitions await covered

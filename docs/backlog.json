@@ -17,7 +17,7 @@
     },
     {
       "title": "v0.3.0",
-      "description": "Foundations and quality: decompose the application shell, decouple tests, remove private framework dependencies, degrade gracefully on large clusters, enforce a startup budget, reach kubeconfig parity with kubectl, add error boundaries and fast test tiers, and rewrite the documentation. No new feature families."
+      "description": "Foundations and quality: decompose the application shell, decouple tests, retain the tested framework compatibility pin, degrade gracefully on large clusters, enforce offline startup budgets, measure advisory 0.x UI startup, reach kubeconfig parity with kubectl, add error boundaries and fast test tiers, and rewrite the documentation. Framework cleanup and strict UI startup qualification remain stable-release work. No new feature families."
     },
     {
       "title": "v0.4.0",
@@ -136,7 +136,7 @@
     {
       "id": "E13",
       "title": "Foundations and engineering quality",
-      "milestone": "v0.3.0",
+      "milestone": "v1.0.0",
       "area": "foundation",
       "outcome": "A codebase that can absorb Lens-class features: small units, behavior-level tests, fast feedback, no private framework dependencies, large-cluster resilience, instant startup and kubeconfig parity."
     },
@@ -1333,14 +1333,18 @@
         "Q05",
         "D11",
         "Q22",
-        "D19"
+        "D19",
+        "Q11"
       ],
       "scope": "Reconcile the pinned source inventory, capability matrix, community plugin workflows and any publicly documented Alpha additions with implementation evidence.",
       "acceptance": [
         "Every inventory row and every flag/action/schema/plugin entry has a delivered test or a clearly stated compatibility difference; planned rows are never counted as implemented.",
         "Refresh the latest stable upstream comparison and create tickets for new features before freezing the stable parity claim.",
         "Maintain the Alpha evidence gap until authoritative material is available; do not claim 100% paid-feature parity without a verifiable catalog and tests.",
-        "For major-version 1 qualification, enforce the unchanged runtime heartbeat/input-latency limits and original blocking negative controls; neither environment nor receipt metadata may downgrade them. Earlier advisory 0.x measurements are not a strict pass."
+        "Per the 2026-11-01 maintainer decision, complete the deferred unchanged under-600-ms real UI first-paint qualification. Version major 1 and later automatically enforce the original strict startup mode; retain all five observations, both strict negative controls and original failures without a higher substitute threshold.",
+        "For major-version 1 qualification, enforce the unchanged runtime heartbeat/input-latency limits and original blocking negative controls; neither environment nor receipt metadata may downgrade them. Earlier advisory 0.x measurements are not a strict pass.",
+        "Complete deferred Q11 #212 framework compatibility/private-API work before stable publication. Review Q08 #211 size/ownership goals and its recorded remaining boundaries; do not mistake the pragmatic 0.3.0 delivery for completion of deferred cleanup.",
+        "Complete the deferred CI-reuse optimization #189 and fine macOS runtime diagnosis #275 before stable publication. They remain open follow-up work; the existing 0.x full qualification pipeline and thresholds are unchanged."
       ],
       "verification": "Automated matrix completeness checks plus a human end-to-end checklist and links to tests/releases for each claim; no untriaged entry may be silently dropped.",
       "priority": "P0"
@@ -1605,12 +1609,13 @@
         "D07",
         "D16"
       ],
-      "scope": "Qualify the exact phase candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Qualification does not publish; approved phased publication remains D10 #89.",
+      "scope": "Qualify the exact phase candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Qualification does not publish; approved phased publication remains D10 #89. Remove the deprecated kubetrol console alias for 0.4.0 and verify installed upgrades preserve user files.",
       "acceptance": [
         "Every scoped acceptance criterion has actual evidence; independent line/branch and changed-line coverage meet 90%, and designated deterministic critical modules meet 100%.",
         "Run the complete supported Linux/macOS Python matrix, owned API/terminal/cluster behavior and audited exact wheel/sdist; D05 standalone and extended-platform outputs are qualified where required by this checkpoint.",
         "Verify clean local installs, upgrade/uninstall, caller configuration invariance, hashes and provenance using the tested bytes. Retain unavailable platform/provider evidence as incomplete; deferring publication does not complete qualification.",
-        "Record measured results and capability status. Public PyPI/TestPyPI ownership/OIDC, main/environment protection, tap/registry activation, immutable public tags/artifacts, website/DNS and public-channel trials remain D10 #89."
+        "Record measured results and capability status. Public PyPI/TestPyPI ownership/OIDC, main/environment protection, tap/registry activation, immutable public tags/artifacts, website/DNS and public-channel trials remain D10 #89.",
+        "For 0.4.0 remove the deprecated kubetrol console-script declaration and shim introduced in Q18 #219. Verify fresh and upgraded installed artifacts expose only the canonical kuberich command, retain its stdout/exit behavior and preserve previous preference/log bytes. Do not claim this removal completed in 0.3."
       ],
       "verification": "Attach exact source/artifact pins, all supported platform results, independent coverage, owned-cluster/PTY/install/audit evidence. Close only after scoped engineering qualification; no public publication occurs here.",
       "priority": "P0"
@@ -1731,8 +1736,8 @@
         "A `ViewController` protocol: project, filter, apply rows, capture/restore viewport, available actions. Implementations for pods, namespaces, contexts, standard and custom resources. One generic render path.",
         "Commands are registered declaratively: handler, required capabilities, read-only policy, help text. Help, completion and `check_action` use the same registry.",
         "An event-driven resume replaces the modal busy-wait.",
-        "No cross-object private attribute access in `kuberich.ui`, enforced by lint.",
-        "`app.py` ≤ 800 lines, and no `kuberich.ui` module over 900 lines.",
+        "New extracted owners use explicit public ports. Record the remaining legacy UI/private-framework inventory honestly for #212; completing a zero-inventory cleanup is a stable-release goal, not a 0.3.0 blocker.",
+        "Deliver the useful view/command/input/navigation/appearance ownership decomposition with unchanged behavior. The 800-line App and 900-line module targets remain improvement goals for stable preparation; stop additional extraction solely to reach those numbers before 0.3.0.",
         "Behavior is unchanged: full suite green, terminal snapshots unchanged.",
         "A short ADR explains the structure."
       ],
@@ -1743,7 +1748,7 @@
       "id": "Q11",
       "title": "Remove private Textual API dependencies and relax the exact pin",
       "epic": "E13",
-      "milestone": "v0.3.0",
+      "milestone": "v1.0.0",
       "requires": [
         "Q08"
       ],
@@ -1763,11 +1768,11 @@
       "epic": "E13",
       "milestone": "v0.3.0",
       "requires": [],
-      "scope": "With `MAX_RESOURCE_ITEMS = 10000`, the view fails with \"Live collection exceeds its item/memory limit.\" Q03 #50 measured exactly 10,000 resources, with a p95 margin of 0.92 ms. All-namespace views on production clusters routinely exceed this, and that is exactly where a cluster tool matters most.",
+      "scope": "Keep large collections usable with bounded retained ownership, explicit incomplete membership and server-side narrowing. On 2026-11-01 the maintainer prioritized practical 0.3.0 behavior; numeric large-workload latency/margin goals remain advisory observations until stable certification.",
       "acceptance": [
         "Above the memory budget, the view stays live in an explicit degraded mode: a visible banner, server-side narrowing (label/field selectors, namespace) and a deterministic cap on retained rows. Never a hard error.",
         "Use the Table API or PartialObjectMetadata to cut bytes per object. Paginate initial lists (`limit`/`continue`) with progress.",
-        "Measure 50,000 pods at 100 events/s: p95 input latency under 100 ms with at least 20% margin, and a bounded memory plateau.",
+        "Retain bounded rows/payloads and watch ownership for a 50,000-object source. Report any 100-events/s, p95-under-100-ms, 20%-margin and memory-plateau measurements honestly as advisory 0.x goals; preserve stable certification in Q06 #88 without inventing a replacement threshold.",
         "Tests cover crossing the threshold in both directions."
       ],
       "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
@@ -1782,7 +1787,7 @@
       "scope": "`kuberich --version` takes 1.10 s and 94 MB RSS on the development machine. The CLI imports the whole UI and `kubernetes_asyncio`; `import kuberich.ui.app` alone takes about 0.93 s. Terminal users expect instant startup.",
       "acceptance": [
         "`--version`, `--help`, `info` and `config check` finish in under 150 ms and under 40 MB on the reference machine. Those paths never import Textual or `kubernetes_asyncio`.",
-        "TUI time to first paint is measured and budgeted (target under 600 ms before any network call).",
+        "Record all five actual TUI first-paint observations before SDK/helper/network work, with explicit budget-met/enforced flags. On 2026-11-01 the maintainer accepted approximately 685 ms for 0.3: the unchanged under-600-ms target is advisory for 0.x, enforced by --strict-paint and mandatory from version major 1 under Q06 #88.",
         "`kubernetes_asyncio` models load lazily. A CI regression check uses `-X importtime` thresholds."
       ],
       "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
@@ -1845,7 +1850,7 @@
       "acceptance": [
         "`uv run python scripts/qualify.py <phase>` runs or collects every gate: lint, types, test tiers, coverage, packaging, PTY, kind and installs. It writes one machine-readable report and a short Markdown summary for the release PR.",
         "Phase gate issues become short checklists that point to the report.",
-        "Coordinate with #189 so post-merge and release runs reuse exact-tree results safely."
+        "Retain the existing complete qualification pipeline. Exact-tree post-merge/release reuse remains the separately deferred stable optimization #189."
       ],
       "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
       "priority": "P1"
@@ -1856,11 +1861,11 @@
       "epic": "E13",
       "milestone": "v0.3.0",
       "requires": [],
-      "scope": "`pyproject.toml` publishes a second console script, `kubetrol`. Configuration paths still fall back to `kubetrol`, and old coverage artifacts refer to `src/kubetrol`. (Links in open issues were fixed during the 2026-10-19 backlog review.)",
+      "scope": "Deprecate the previous console name during 0.3 while preserving explicit, non-overwriting configuration migration and existing compatibility contracts. Actual console-alias removal belongs to the 0.4 qualification D08 #75; historical release/source evidence keeps its exact identity and paths.",
       "acceptance": [
-        "In 0.3.0 the `kubetrol` entry point prints a deprecation warning; 0.4.0 removes it.",
-        "Legacy configuration migrates with a one-time notice.",
-        "No remaining references in source, docs or packaging."
+        "In 0.3 the kubetrol console entry prints a fixed stderr deprecation notice naming kuberich and the planned 0.4.0 removal. Canonical stdout and exit behavior are unchanged.",
+        "Explicit config migrate atomically creates the new preferences without changing previous files; its success notice appears once on creation, while repeated migration and normal loading do not rewrite settings.",
+        "Current package, imports, new default paths and product branding use KubeRich. Only the intentional 0.3 compatibility shim, supported legacy environment/configuration/log contracts, their migration instructions/tests and immutable historical evidence retain the previous identity. No src/kubetrol package is shipped."
       ],
       "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
       "priority": "P2"
@@ -1890,7 +1895,7 @@
       "acceptance": [
         "The release policy, validator, checked-in backlog and roadmap match GitHub, with tests.",
         "#81 is recorded as closed (not planned), and the K9sAlpha row is removed from parity docs.",
-        "Phase extras move with their issues: #124 to 0.8.x, #189 and #208 to 0.3.x; #193 stays in 0.2.x."
+        "Phase extras move with their issues: #124 to 0.8.x and #208 to 0.3.x; #193 stays in 0.2.x. The maintainer deferred CI reuse #189 and fine macOS runtime diagnosis #275 to 1.0.x on 2026-11-01."
       ],
       "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
       "priority": "P0"
@@ -2040,7 +2045,6 @@
         "Q08",
         "Q09",
         "Q10",
-        "Q11",
         "Q12",
         "Q13",
         "Q14",
@@ -2060,10 +2064,10 @@
         "W11",
         "D07"
       ],
-      "scope": "Every v0.3.0 task: Q08 #211, Q09 #210, Q10 #209, Q11 #212, Q12 #213, Q13 #214, Q14 #215, Q15 #216, Q16 #217, Q17 #218, Q18 #219, Q19 #220, D15 #221, W04 #222–W11 #229, #189, #208, dependency refresh #270 and owned X11 selection readiness #281 and native macOS runner migration #291. Also requires the 0.2.0 gate #65.",
+      "scope": "Every v0.3.0 task: Q08 #211, Q09 #210, Q10 #209, Q12 #213, Q13 #214, Q14 #215, Q15 #216, Q16 #217, Q17 #218, Q18 #219, Q19 #220, D15 #221, W04 #222–W11 #229, #208, dependency refresh #270 and opened plugin output correction #272, observable log startup #274. Also requires the 0.2.0 gate #65. Required verification follow-ups also include generic resource plugin capture #278, owned X11 selection readiness #281 and migration from retired macOS 14 runners #291.",
       "acceptance": [
         "The qualification command from Q17 #218 passes on the complete Linux/macOS matrix.",
-        "Structural targets are met: `app.py` ≤ 800 lines, zero private access from tests, no private Textual APIs, startup budget met, 50k-resource measurement within budget.",
+        "Delivered ownership/controller changes pass their functional, cancellation and platform checks. Numeric App/module size and complete private-framework removal are tracked improvement goals for stable #88/#212, not 0.3.0 blockers. Offline startup budgets remain enforced; UI first-paint measurements remain explicit and advisory for 0.x. Keep relevant large-collection safeguards and honest measured limits.",
         "Documentation checks pass and the README stays within its budget.",
         "No publication happens here. Publication needs separate maintainer approval.",
         "For 0.x, runtime heartbeat/input-latency observations are advisory with explicit unmet results; preserve unchanged strict opt-in limits, always-strict blocking negative controls and all functional, resource, cleanup, coverage and platform requirements."
@@ -2532,7 +2536,6 @@
     "Q10",
     "Q09",
     "Q08",
-    "Q11",
     "Q12",
     "Q13",
     "Q14",
@@ -2598,6 +2601,7 @@
     "Q21",
     "Q22",
     "D19",
+    "Q11",
     "Q06"
   ],
   "delivery": {
@@ -2654,9 +2658,10 @@
         "version": "0.3.0",
         "qualification_gate": "D16",
         "extra_issues": [
-          189,
           208,
           270,
+          272,
+          274,
           278,
           281,
           291
@@ -2697,7 +2702,10 @@
       {
         "version": "1.0.0",
         "qualification_gate": "Q06",
-        "extra_issues": []
+        "extra_issues": [
+          189,
+          275
+        ]
       }
     ],
     "execution_order": [
@@ -2758,7 +2766,6 @@
       "Q10",
       "Q09",
       "Q08",
-      "Q11",
       "Q12",
       "Q13",
       "Q14",
@@ -2824,6 +2831,7 @@
       "Q21",
       "Q22",
       "D19",
+      "Q11",
       "Q06"
     ]
   }

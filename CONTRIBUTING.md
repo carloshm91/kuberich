@@ -75,6 +75,7 @@ uv sync --locked --group dev
 uv run pytest tests/unit tests/contract tests/ui -m fast -n 12
 uv run ruff check .
 uv run ruff format --check .
+uv run python scripts/check_private_access.py
 uv run mypy --strict src/kuberich scripts/check_coverage.py scripts/check_quality_gate.py
 uv run pytest --cov=kuberich --cov-branch --cov-report=xml --cov-report=json
 uv run python -m scripts.merge_runtime_coverage

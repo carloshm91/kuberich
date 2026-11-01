@@ -10,6 +10,7 @@ from aiohttp import web
 from kuberich.config.schema import Settings
 from kuberich.domain.views import ViewStatus
 from kuberich.errors import AppError
+from kuberich.services.inspection import InspectionService
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.chrome import WorkspaceFrame
 from kuberich.ui.inspection import InspectionScreen
@@ -17,8 +18,16 @@ from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
 from tests.support.resources import collection
 from tests.support.watches import frame
+from tests.support.workers import CoroutineCalls
 from tests.support.workspace import stable_watch, wait_for, workspace_api
 from tests.unit.test_inspection import event
+
+
+@pytest.fixture
+def loads(monkeypatch):
+    calls = CoroutineCalls()
+    monkeypatch.setattr(InspectionService, "load", calls.observe(InspectionService.load))
+    return calls
 
 
 def manifest(name="api", uid=None):
@@ -61,7 +70,9 @@ async def viewer_loaded(app):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
-async def test_yaml_details_events_search_copy_managed_scroll_and_return_keep_table(tmp_path, size):
+async def test_yaml_details_events_search_copy_managed_scroll_and_return_keep_table(
+    tmp_path, size, loads
+):
     async def handler(request):
         if "watch" in request.query:
             return await stable_watch(request)
@@ -130,8 +141,8 @@ async def test_yaml_details_events_search_copy_managed_scroll_and_return_keep_ta
             reopened = await viewer_loaded(app)
             assert reopened.page == "details"
             await pilot.press("escape")
-            await wait_for(lambda: reopened._load_task.done())
-        assert app.sessions.client is None and screen._load_task.done()
+            await wait_for(lambda: all(task.done() for task in loads.tasks))
+        assert app.sessions.client is None and loads.latest.done()
 
 
 @pytest.mark.asyncio
@@ -203,7 +214,7 @@ async def test_live_updates_under_viewer_uid_recreation_invalidates_and_blocks_c
             snapshot = app.workspace.store.observation.snapshot
             assert snapshot is not None
             assert snapshot.items[0].manifest["status"]["containerStatuses"][0]["restartCount"] == 9
-            assert app.resources._rows["owned-api"].restarts != 9
+            assert str(app.resources.get_cell("owned-api", "restarts")) != "9"
             assert screen.result is not None
             value["metadata"]["resourceVersion"] = "deleted-version"
             await updates.put({"type": "DELETED", "object": value})
@@ -222,13 +233,13 @@ async def test_live_updates_under_viewer_uid_recreation_invalidates_and_blocks_c
             await pilot.press("ctrl+y")
             assert app.clipboard == "" and "stale" in str(screen.status.content)
             await pilot.press("escape")
-            await wait_for(lambda: "new-api" in app.resources._rows)
-            assert "owned-api" not in app.resources._rows
+            await wait_for(lambda: "new-api" in app.resources.rows)
+            assert "owned-api" not in app.resources.rows
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("switch", [False, True])
-async def test_close_or_scope_switch_cancels_pending_read_and_no_late_data(tmp_path, switch):
+async def test_close_or_scope_switch_cancels_pending_read_and_no_late_data(tmp_path, switch, loads):
     started, release = asyncio.Event(), asyncio.Event()
 
     async def handler(request):
@@ -248,14 +259,14 @@ async def test_close_or_scope_switch_cancels_pending_read_and_no_late_data(tmp_p
             screen = app.screen
             await started.wait()
             if switch:
-                app._namespace_selected("default")
-                await wait_for(lambda: screen._load_task.done())
+                app.workspace.select_namespace("default")
+                await wait_for(lambda: loads.latest is not None and loads.latest.done())
                 assert screen.viewer.text == "" and "stale" in str(screen.status.content)
             else:
                 await pilot.press("escape")
-                await wait_for(lambda: screen._load_task.done())
+                await wait_for(lambda: loads.latest is not None and loads.latest.done())
             release.set()
-        assert screen._load_task.done() and app.sessions.client is None
+        assert loads.latest.done() and app.sessions.client is None
 
 
 @pytest.mark.asyncio
@@ -269,7 +280,7 @@ async def test_disconnected_view_has_clear_selection_message_and_no_modal():
 
 
 @pytest.mark.asyncio
-async def test_resource_permission_error_and_early_copy_do_not_use_table_manifest(tmp_path):
+async def test_resource_permission_error_and_early_copy_do_not_use_table_manifest(tmp_path, loads):
     release = asyncio.Event()
 
     async def handler(request):
@@ -288,7 +299,7 @@ async def test_resource_permission_error_and_early_copy_do_not_use_table_manifes
             screen = app.screen
             assert screen.result is None and app.clipboard == ""
             release.set()
-            await wait_for(lambda: screen._load_task.done())
+            await wait_for(lambda: loads.latest is not None and loads.latest.done())
             assert "Permission denied" in str(screen.status.content) and screen.viewer.text == ""
             await pilot.press("escape")
 
@@ -321,7 +332,9 @@ async def test_unexpected_inspection_failure_propagates_through_safe_app_cleanup
 
 
 @pytest.mark.asyncio
-async def test_scope_invalidation_then_close_drains_the_same_serializer_once(tmp_path, monkeypatch):
+async def test_scope_invalidation_then_close_drains_the_same_serializer_once(
+    tmp_path, monkeypatch, loads
+):
     import threading
 
     from kuberich.services import inspection
@@ -360,16 +373,15 @@ async def test_scope_invalidation_then_close_drains_the_same_serializer_once(tmp
         async with app.run_test() as pilot:
             await loaded(app)
             await pilot.press("y")
-            screen = app.screen
             await wait_for(started.is_set)
-            app._namespace_selected("default")
-            await wait_for(lambda: screen._load_task.cancelling() > 0)
+            app.workspace.select_namespace("default")
+            await wait_for(lambda: loads.latest is not None and loads.latest.cancelling() > 0)
 
             async def monitor():
                 try:
                     await unmounting.wait()
                     await asyncio.sleep(0.02)
-                    assert not screen._load_task.done() and not ended.is_set()
+                    assert not loads.latest.done() and not ended.is_set()
                 finally:
                     release.set()
 
@@ -380,7 +392,7 @@ async def test_scope_invalidation_then_close_drains_the_same_serializer_once(tmp
             finally:
                 release.set()
                 await asyncio.gather(check, return_exceptions=True)
-            assert ended.is_set() and screen._load_task.done()
+            assert ended.is_set() and loads.latest.done()
 
 
 @pytest.mark.asyncio

@@ -132,6 +132,11 @@ the process and reports Output Limit. Timeout, cancellation, nonzero exit, signa
 and start refusal have distinct results. Context replacement, target invalidation,
 and exit stop the related local processes before private connection cleanup.
 
+An opened background-job result updates its status, exit code, and completed
+output automatically. Moving to another job row keeps the opened result until
+you press Enter again. Output appears on completion rather than streaming;
+stopping or cancelling can discard output still being collected.
+
 ## Trust and read-only behavior
 
 Definitions default to `dangerous: true`, `confirm: true`, and

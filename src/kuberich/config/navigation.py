@@ -156,17 +156,19 @@ def parse_navigation(
 
 
 def navigation_from(document: ConfigDocument) -> NavigationPreferences:
+    if "navigation" not in document.extensions:
+        return NavigationPreferences()
+
     from kuberich.services.commands import RESERVED_COMMANDS
 
-    return (
-        parse_navigation(document.extensions["navigation"], RESERVED_COMMANDS)
-        if "navigation" in document.extensions
-        else NavigationPreferences()
-    )
+    return parse_navigation(document.extensions["navigation"], RESERVED_COMMANDS)
 
 
 def validate_resource_views(navigation: NavigationPreferences) -> None:
     """Validate known built-in fields offline; discovered schemas need the actual API."""
+    if not navigation.views and not any(views for _, views in navigation.contexts):
+        return
+
     from kuberich.domain.pods import PodColumn
     from kuberich.domain.registry import RESOURCE_ALIASES
 

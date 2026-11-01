@@ -24,6 +24,7 @@ Screen {
 #all-namespaces { height: 1; width: 1fr; border: none; background: $background; color: $accent; }
 
 #empty-state { height: 1fr; align: center middle; padding: 0 1; }
+#empty-state.populated { display: none; }
 #empty-title, #empty-description, #empty-hint { height: auto; text-align: center; }
 #empty-title { text-style: bold; color: $text; }
 #empty-description, #empty-hint { margin-top: 1; color: $text-muted; }

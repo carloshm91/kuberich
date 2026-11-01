@@ -3,6 +3,7 @@
 import asyncio
 import os
 import pty
+import shutil
 import signal
 import sys
 from dataclasses import replace
@@ -13,7 +14,6 @@ import pytest
 from kuberich import runtime
 from kuberich.domain.processes import ProcessMode, ProcessPurpose, ProcessStatus, capture_command
 from kuberich.errors import AppError
-from kuberich.services import processes
 from kuberich.services.access import AccessPolicy
 from kuberich.services.processes import ProcessRunner
 from tests.unit.test_processes import target
@@ -28,6 +28,22 @@ def command(tmp_path, code="print('owned')", mode=ProcessMode.CAPTURE, **changes
         purpose=ProcessPurpose.PLUGIN,
     )
     return replace(value, **changes)
+
+
+def intercept_protocols(monkeypatch, decorate):
+    """Decorate protocols at the event loop's public subprocess factory boundary."""
+    loop = asyncio.get_running_loop()
+    original = loop.subprocess_exec
+
+    async def spawn(protocol_factory, *args, **kwargs):
+        def factory():
+            protocol = protocol_factory()
+            decorate(protocol)
+            return protocol
+
+        return await original(factory, *args, **kwargs)
+
+    monkeypatch.setattr(loop, "subprocess_exec", spawn)
 
 
 @pytest.mark.asyncio
@@ -45,7 +61,7 @@ async def test_darwin_empty_group_denial_requires_confirmed_disappearance(
         raise ProcessLookupError("group removed")
 
     monkeypatch.setattr(os, "killpg", signal_group)
-    assert not await processes._signal_group(12345, signal.SIGCONT)
+    assert not await runtime.signal_process_group(12345, signal.SIGCONT)
     assert calls == [(12345, signal.SIGCONT), *[(12345, 0)] * (denied_probes + 1)]
 
 
@@ -66,7 +82,7 @@ async def test_group_permission_failure_cannot_be_reported_as_success(monkeypatc
 
     monkeypatch.setattr(os, "killpg", signal_group)
     with pytest.raises(PermissionError) as error:
-        await processes._signal_group(12345, signal.SIGTERM)
+        await runtime.signal_process_group(12345, signal.SIGTERM)
     assert error.value is failure
     assert calls == [
         (12345, signal.SIGTERM),
@@ -192,11 +208,18 @@ async def test_background_waiter_cancellation_does_not_abandon_or_stop_owner(tmp
 
 @pytest.mark.asyncio
 async def test_capture_cancellation_awaits_child_cleanup(tmp_path):
+    pid_file = tmp_path / "capture-child.pid"
+    code = (
+        "import os,time; from pathlib import Path; "
+        "path=Path('capture-child.pid.tmp'); path.write_text(str(os.getpid())); "
+        "path.replace('capture-child.pid'); time.sleep(60)"
+    )
     async with ProcessRunner(AccessPolicy(False)) as runner:
-        task = asyncio.create_task(runner.capture(command(tmp_path, "import time; time.sleep(60)")))
-        while not runner._sessions:
-            await asyncio.sleep(0.01)
-        pid = next(iter(runner._sessions)).pid
+        task = asyncio.create_task(runner.capture(command(tmp_path, code)))
+        async with asyncio.timeout(3):
+            while not pid_file.exists():
+                await asyncio.sleep(0.01)
+        pid = int(pid_file.read_text())
         task.cancel()
         with pytest.raises(asyncio.CancelledError):
             await task
@@ -230,10 +253,16 @@ async def test_read_only_blocks_every_effectful_process_before_executable_resolu
     def forbidden(*args):
         raise AssertionError("Policy must run before executable lookup")
 
-    monkeypatch.setattr(processes, "_executable", forbidden)
+    monkeypatch.setattr(shutil, "which", forbidden)
     runner = ProcessRunner(AccessPolicy(True))
     with pytest.raises(AppError, match="Read-only"):
-        runner.require(command(tmp_path, mode=mode, purpose=purpose), mode, None)
+        captured = command(tmp_path, mode=mode, purpose=purpose)
+        if mode is ProcessMode.CAPTURE:
+            await runner.capture(captured)
+        elif mode is ProcessMode.BACKGROUND:
+            await runner.background(captured)
+        else:
+            await runner.foreground(captured, descriptor=-1, claim=lambda pid: None)
     await runner.close()
 
 
@@ -418,18 +447,37 @@ async def test_foreground_refuses_a_pipe_before_launch(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_repeated_cancellation_cannot_cancel_owned_cleanup():
-    released = asyncio.Event()
-    pending = asyncio.create_task(released.wait())
-    owner = asyncio.create_task(processes._finish_owned(pending))
-    await asyncio.sleep(0)
-    owner.cancel()
-    await asyncio.sleep(0)
-    owner.cancel()
-    await asyncio.sleep(0)
-    released.set()
-    await owner
-    assert pending.result() is True
+async def test_repeated_cancellation_cannot_cancel_owned_cleanup(tmp_path, monkeypatch):
+    entered, released, finished = (asyncio.Event() for _ in range(3))
+    runner = ProcessRunner(AccessPolicy(False))
+    session = await runner.background(
+        command(tmp_path, "import time; time.sleep(60)", mode=ProcessMode.BACKGROUND)
+    )
+    original = session.close
+
+    async def held_close():
+        entered.set()
+        await released.wait()
+        result = await original()
+        finished.set()
+        return result
+
+    monkeypatch.setattr(session, "close", held_close)
+    closing = asyncio.create_task(runner.close())
+    try:
+        await entered.wait()
+        for _ in range(3):
+            closing.cancel()
+            await asyncio.sleep(0)
+            assert not closing.done() and not finished.is_set()
+    finally:
+        released.set()
+        with pytest.raises(asyncio.CancelledError):
+            await closing
+        await runner.close()
+    assert finished.is_set() and runner.active_count == 0
+    with pytest.raises(ProcessLookupError):
+        os.kill(session.pid, 0)
 
 
 @pytest.mark.asyncio
@@ -494,12 +542,13 @@ async def test_pipe_failure_is_typed_without_exposing_exception_values(tmp_path)
 async def test_delayed_transport_disconnect_falls_back_to_closing_owned_descriptors(
     tmp_path, monkeypatch
 ):
-    original = processes._Output.connection_lost
+    loop = asyncio.get_running_loop()
 
-    def delayed(self, exc):
-        asyncio.get_running_loop().call_later(1.05, original, self, exc)
+    def decorate(protocol):
+        original = protocol.connection_lost
+        protocol.connection_lost = lambda exc: loop.call_later(1.05, original, exc)
 
-    monkeypatch.setattr(processes._Output, "connection_lost", delayed)
+    intercept_protocols(monkeypatch, decorate)
     async with ProcessRunner(AccessPolicy(False)) as runner:
         result = await runner.capture(command(tmp_path))
         assert result.status is ProcessStatus.SUCCEEDED
@@ -510,16 +559,19 @@ async def test_delayed_transport_disconnect_falls_back_to_closing_owned_descript
 async def test_final_pipe_failures_after_process_exit_cannot_be_reported_as_success(
     tmp_path, monkeypatch, cause
 ):
-    original = processes._Output.connection_lost
+    def decorate(protocol):
+        original = protocol.connection_lost
 
-    def final_pipe(self, exc):
-        if cause == "overflow":
-            self.pipe_data_received(1, b"x" * 100)
-        else:
-            self.pipe_connection_lost(1, OSError("owned failure"))
-        original(self, exc)
+        def final_pipe(exc):
+            if cause == "overflow":
+                protocol.pipe_data_received(1, b"x" * 100)
+            else:
+                protocol.pipe_connection_lost(1, OSError("owned failure"))
+            original(exc)
 
-    monkeypatch.setattr(processes._Output, "connection_lost", final_pipe)
+        protocol.connection_lost = final_pipe
+
+    intercept_protocols(monkeypatch, decorate)
     async with ProcessRunner(AccessPolicy(False), output_limit=64) as runner:
         result = await runner.capture(command(tmp_path))
         expected = ProcessStatus.OUTPUT_LIMIT if cause == "overflow" else ProcessStatus.IO_ERROR

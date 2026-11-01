@@ -1,7 +1,9 @@
 """Cache immutable background styles without retaining removed widget renderers."""
 
 from collections import OrderedDict
+from dataclasses import dataclass
 from functools import lru_cache
+from hashlib import sha256
 from typing import Self
 
 from textual._styles_cache import StylesCache
@@ -30,6 +32,16 @@ class ColorStylesCache(StylesCache):
         )
 
 
+@dataclass(frozen=True, slots=True)
+class ParseState:
+    """Immutable parse publication and retention counts without triggering parsing."""
+
+    published_digest: str
+    rule_count: int
+    invalid_source_count: int
+    retained_cache_sizes: tuple[int, ...]
+
+
 class ComponentStylesheet(Stylesheet):
     """Reuse each widget's virtual component nodes during native CSS evaluation.
 
@@ -45,6 +57,23 @@ class ComponentStylesheet(Stylesheet):
             tuple[tuple[str, str], ...], LRUCache[tuple[object, ...], list[RuleSet]]
         ] = OrderedDict()
         self._parse_cache = self._cache_for_variables()
+
+    @property
+    def parse_state(self) -> ParseState:
+        """Observe committed rule semantics even after a pending source fails.
+
+        Unlike the inherited ``rules`` property, this read does not initiate a
+        parse. It exposes no mutable rules, source text or cache objects.
+        """
+        published = tuple(
+            (rule.css, rule.is_default_rules, rule.tie_breaker) for rule in self._rules
+        )
+        return ParseState(
+            sha256(repr(published).encode()).hexdigest(),
+            len(published),
+            len(self._invalid_css),
+            tuple(len(cache) for cache in self._variable_caches.values()),
+        )
 
     def _cache_for_variables(self) -> LRUCache[tuple[object, ...], list[RuleSet]]:
         key = tuple(sorted(self._variables.items()))

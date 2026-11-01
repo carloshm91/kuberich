@@ -115,20 +115,25 @@ def test_docs_reject_invalid_aliases_oversize_pages_and_stale_reference(tmp_path
         build(tmp_path / "output", source)
 
 
-@pytest.mark.parametrize("declaration", ["alias", "key", "flag", "schema"])
+@pytest.mark.parametrize("declaration", ["alias", "key", "flag", "subcommand", "schema"])
 def test_reference_drift_follows_actual_selected_checkout_declarations(tmp_path, declaration):
     source = copy_source(tmp_path / "source")
     changes = {
         "alias": (
-            "services/commands.py",
-            '    "about": Command.ABOUT,',
-            '    "probealias": Command.ABOUT,\n    "about": Command.ABOUT,',
+            "services/command_catalog.py",
+            '        ("about",),',
+            '        ("about", "probealias"),',
         ),
         "key": ("domain/keyboard.py", '("down", "j")', '("down", "b")'),
         "flag": (
             "cli.py",
             "    return parser",
             '    parser.add_argument("--probe-reference", help="Reference probe")\n    return parser',
+        ),
+        "subcommand": (
+            "cli.py",
+            "    return parser",
+            '    commands.add_parser("probe-command", help="Local reference probe")\n    return parser',
         ),
         "schema": (
             "domain/appearance.py",
@@ -227,3 +232,31 @@ def test_new_preference_extension_requires_a_real_schema_generator(tmp_path):
     )
     with pytest.raises(ValueError, match="schema parsers"):
         reference_files(source)
+
+
+def test_local_reference_contains_new_commands_and_current_behavior_guidance():
+    reference = reference_files(ROOT)["cli-reference.md"]
+    for command in ("bug-report", "config migrate", "kubeconfig oidc-migration"):
+        assert f"`kuberich {command}`" in reference
+    assert "`bug-report`: `-h`, `--help`" in reference
+    assert "`bug-report`: `--output`" in reference
+    assert "`server`" in reference
+    context = (ROOT / "docs/context-sessions.md").read_text()
+    assert "Basic authentication" in context and "## Kubeconfig compatibility" in context
+    assert "kubeconfig oidc-migration" in context
+    workspace = (ROOT / "docs/resource-workspace.md").read_text()
+    for contract in ("INCOMPLETE", ":server compact", ":server full", "PartialObjectMetadata"):
+        assert contract in workspace
+    troubleshooting = (ROOT / "docs/troubleshooting.md").read_text()
+    for contract in ("kuberich bug-report", "mode-0600", "**Retry**", "wl-copy"):
+        assert contract in troubleshooting
+    configuration = (ROOT / "docs/configuration.md").read_text()
+    assert "stderr" in configuration and "scheduled for removal in 0.4.0" in configuration
+    assert "success notice appears only when a" in configuration
+    plugins = (ROOT / "docs/plugins.md").read_text()
+    assert "opened background-job result updates" in plugins
+    assert "press Enter again" in plugins
+    inventory = json.loads((ROOT / "docs/capabilities.json").read_text())
+    rows = {row["id"]: row for row in inventory["rows"]}
+    assert "Wayland wl-copy" in rows["UI08"]["public_summary"]
+    assert "Inspection and help share the workspace frame" in rows["UI06"]["public_summary"]

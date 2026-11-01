@@ -13,7 +13,7 @@ from textual.widgets import Button, Checkbox, DataTable, Static
 
 from kuberich.errors import AppError
 from kuberich.security.presentation import safe_text
-from kuberich.services.processes import _finish_owned
+from kuberich.services.ownership import finish_owned
 from kuberich.ui.keybindings import table_bindings
 from kuberich.ui.presentation import FrameTable
 
@@ -152,7 +152,7 @@ class ThemeScreen(ModalScreen[None]):
     async def on_unmount(self) -> None:
         self._ready = False
         if self._save_task is not None:
-            await _finish_owned(self._save_task)
+            await finish_owned(self._save_task)
 
 
 class AboutScreen(ModalScreen[None]):

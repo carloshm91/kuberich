@@ -16,7 +16,7 @@ from tests.support.parts import assign, load_timings, parse_part
 
 _CLIENT = client.ApiClient
 _READ = catalog.regular_bytes
-_EXECUTE = credentials._execute
+_INVOCATION = credentials.ExecToken.invocation
 ROOT = Path(__file__).resolve().parents[1]
 pytest_plugins = ["tests.support.tiers"]
 
@@ -82,15 +82,16 @@ def isolated_kubernetes(
             )
         return _CLIENT(*args, **kwargs)
 
-    async def owned_execute(argv, environment, directory, timeout):
-        if not directory.resolve().is_relative_to(tmp_path.resolve()):
+    def owned_invocation(self, *, interactive=False):
+        command = _INVOCATION(self, interactive=interactive)
+        if not command.directory.resolve().is_relative_to(tmp_path.resolve()):
             raise AssertionError("Credential helpers require an owned temporary working directory.")
-        return await _EXECUTE(argv, environment, directory, timeout)
+        return command
 
     monkeypatch.setattr(catalog, "regular_bytes", owned_read)
     monkeypatch.setattr(kubernetes, "regular_bytes", owned_read)
     monkeypatch.setattr(client, "ApiClient", owned_client)
-    monkeypatch.setattr(credentials, "_execute", owned_execute)
+    monkeypatch.setattr(credentials.ExecToken, "invocation", owned_invocation)
     for module in (sdk_config, sdk_config.kube_config, sdk_config.incluster_config):
         for name in (
             "load_config",

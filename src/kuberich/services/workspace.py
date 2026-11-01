@@ -8,6 +8,7 @@ from kuberich.adapters.credentials import CredentialLogin
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, namespace_name
 from kuberich.domain.navigation import NamespaceChoice
+from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.resources import Discovery
 from kuberich.domain.views import (
     USABLE_CONNECTIONS,
@@ -24,6 +25,17 @@ from kuberich.services.sessions import SessionService
 from kuberich.services.watches import ListWatch
 
 MAX_SUBSCRIPTIONS = 8
+
+
+@dataclass(frozen=True)
+class WorkspaceOwnership:
+    """Registered lifecycle ownership, without exposing tasks or cached data."""
+
+    watch_count: int
+    operation_count: int
+    subscription_count: int
+    discovery_count: int
+    close_complete: bool
 
 
 class ViewSubscription(AsyncIterator[ViewObservation]):
@@ -109,6 +121,17 @@ class WorkspaceService:
         self._discovery: tuple[KubernetesSession, Discovery] | None = None
         self._closed = False
         self._closing: asyncio.Task[None] | None = None
+
+    @property
+    def ownership(self) -> WorkspaceOwnership:
+        """Snapshot registered owners, including completed tasks not yet retired."""
+        return WorkspaceOwnership(
+            watch_count=int(self._watch is not None),
+            operation_count=int(self._operation is not None),
+            subscription_count=len(self._subscriptions),
+            discovery_count=int(self._discovery is not None),
+            close_complete=self._closing is not None and self._closing.done(),
+        )
 
     def _require_open(self) -> None:
         if self._closed:
@@ -212,6 +235,10 @@ class WorkspaceService:
         ):
             return self._discovery[1]
         return None
+
+    def set_query(self, query: ResourceQuery) -> asyncio.Task[None]:
+        """Changing API selectors invalidates the old scope before cleanup awaits."""
+        return self.select_resource(replace(self.selection, query=query))
 
     def refresh_discovery(self) -> asyncio.Task[None]:
         context = self._current_context()
@@ -327,6 +354,7 @@ class WorkspaceService:
                 observation.identity,
                 resource,
                 observation.namespace if resource.namespaced else None,
+                selection.resource.query,
             )
             self.store.bind(selection.revision, scope)
             self._publish()
@@ -365,7 +393,9 @@ class WorkspaceService:
                 self._publish()
 
         try:
-            await ListWatch(reader).run(scope.resource, scope.namespace, receive)
+            await ListWatch(reader, query=scope.query, progress=True).run(
+                scope.resource, scope.namespace, receive
+            )
         except ConnectionProblem as problem:
             self._fail(revision, problem)
         except AppError:

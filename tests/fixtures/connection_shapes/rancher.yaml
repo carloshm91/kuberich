@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Config
+current-context: demo-rancher
+clusters:
+- name: demo-rancher
+  cluster:
+    server: https://api.example.invalid/k8s/clusters/c-demo
+    certificate-authority-data: <owned-certificate-authority-data>
+users:
+- name: demo-rancher
+  user:
+    token: synthetic-rancher-token
+contexts:
+- name: demo-rancher
+  context:
+    cluster: demo-rancher
+    user: demo-rancher
+    namespace: ''

@@ -76,9 +76,11 @@ async def test_selected_running_container_uses_an_embedded_pty_and_keeps_detach_
     binary.chmod(0o700)
     async with workspace_api(ns, handler) as url:
         app = KubeRichApp(
-            Settings(), logging.Logger("attach", level=100), catalog=catalog_fixture(tmp_path, url)
+            Settings(),
+            logging.Logger("attach", level=100),
+            catalog=catalog_fixture(tmp_path, url),
+            environment={**os.environ, "PATH": str(tmp_path)},
         )
-        app._process_environment = {**os.environ, "PATH": str(tmp_path)}
         async with app.run_test(size=(80, 25)) as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
             viewport = app.resources.capture_viewport()
@@ -116,7 +118,7 @@ async def test_selected_running_container_uses_an_embedded_pty_and_keeps_detach_
                     and b":/q\x03" in (tmp_path / "input").read_bytes()
                 )
             )
-            assert app.screen is screen and not app._exit
+            assert app.screen is screen and app.is_running
             if ending == "detach":
                 await pilot.press("ctrl+p", "ctrl+q")
             elif ending == "back":
@@ -139,7 +141,7 @@ async def test_selected_running_container_uses_an_embedded_pty_and_keeps_detach_
                         and "Attach closed" in str(containers.status.content)
                     )
                 )
-                assert not app._exit and not path.exists()
+                assert app.is_running and not path.exists()
                 assert "Attach closed" in str(containers.status.content)
                 if ending == "detach":
                     assert b"\x10\x11" in (tmp_path / "input").read_bytes()

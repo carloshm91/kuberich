@@ -11,11 +11,13 @@ import kuberich.ui.standard as standard_ui
 from kuberich.config.schema import Settings
 from kuberich.domain.views import ViewStatus
 from kuberich.services.commands import GenericResourceCommand
-from kuberich.services.pods import CustomProjection
+from kuberich.services.pods import ResourceProjection
 from kuberich.ui.app import KubeRichApp
+from kuberich.ui.custom import CustomTable
 from kuberich.ui.inspection import InspectionScreen
 from tests.support.connections import catalog_fixture
 from tests.support.custom import GROUP, CustomAPI, custom_api
+from tests.support.root_calls import root_calls as root_calls
 from tests.support.workspace import wait_for
 from tests.ui.test_standard_resources import command
 
@@ -43,7 +45,9 @@ async def loaded(app, *, name="widgets", version="v1", namespace="team", count=3
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
-async def test_server_columns_scope_typed_sort_filter_inspection_and_history(tmp_path, size):
+async def test_server_columns_scope_typed_sort_filter_inspection_and_history(
+    tmp_path, size, root_calls
+):
     async with custom_api() as (url, owner):
         app = app_for(tmp_path, url)
         async with app.run_test(size=size) as pilot:
@@ -127,7 +131,11 @@ async def test_server_columns_scope_typed_sort_filter_inspection_and_history(tmp
             )
             await command(app, pilot, "wdg")
             await loaded(app, namespace="default")
-        assert app.sessions.client is None and app._render_task.done() and app._view_task.done()
+        assert (
+            app.sessions.client is None
+            and root_calls.renders.latest.done()
+            and root_calls.observations.latest.done()
+        )
         assert any("as=Table" in (accept or "") for _, _, accept in owner.reads)
 
 
@@ -191,7 +199,7 @@ async def test_mixed_date_column_keeps_equal_timestamp_order_and_cursor_after_wa
     ],
 )
 async def test_initial_projection_preserves_public_selection_between_batches(
-    tmp_path, monkeypatch, keys, selected, column, size, horizontal
+    tmp_path, monkeypatch, keys, selected, column, size, horizontal, root_calls
 ):
     entered, resume = asyncio.Event(), asyncio.Event()
     original = standard_ui.asyncio
@@ -244,7 +252,7 @@ async def test_initial_projection_preserves_public_selection_between_batches(
                 "owned-ten",
                 "owned-two",
             ]
-        assert app.sessions.client is None and app._render_task.done()
+        assert app.sessions.client is None and root_calls.renders.latest.done()
     assert not owner.streams
 
 
@@ -255,7 +263,7 @@ async def test_schema_refresh_preference_removal_alias_ambiguity_and_core_recove
         async with app.run_test() as pilot:
             await loaded(app)
             client = app.sessions.client
-            assert "wdg" not in app._suggestions("wd")
+            assert "wdg" not in app.command_input.provider("wd")
             await command(app, pilot, "wdg")
             assert "ambiguous" in str(app.status.content)
             assert app.custom_table.row_count == 3
@@ -339,12 +347,14 @@ async def test_recreated_gvr_with_identical_columns_renews_scope_kind_and_uid(tm
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("ambiguous", [False, True])
-async def test_deferred_unavailable_startup_reports_failure_and_recovers(tmp_path, ambiguous):
+async def test_deferred_unavailable_startup_reports_failure_and_recovers(
+    tmp_path, ambiguous, root_calls
+):
     async with custom_api(CustomAPI(ambiguous=ambiguous)) as (url, _owner):
         app = app_for(tmp_path, url, GenericResourceCommand("wdg" if ambiguous else "missing"))
         async with app.run_test() as pilot:
             await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
-            app._refresh_tables()
+            root_calls.tick(app)
             await pilot.pause()
             assert ("ambiguous" if ambiguous else "not discovered") in str(app.status.content)
             assert app.resources.display and not app.custom_table.display
@@ -398,29 +408,50 @@ async def test_plain_json_fallback_and_rbac_keep_useful_metadata_and_navigation(
 
 @pytest.mark.asyncio
 async def test_owned_generic_projection_rejects_replaced_context_and_gvr_reply(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, root_calls
 ):
     async with custom_api(CustomAPI(sensitive=True)) as (url, _owner):
         app = app_for(tmp_path, url)
         async with app.run_test() as pilot:
             await loaded(app)
             assert app.custom_table.get_cell("owned-ten", "c4").text == "[REDACTED]"
-            assert "synthetic-column-secret" not in str(app.custom_table._rows)
+            assert "synthetic-column-secret" not in str(
+                [app.custom_table.get_row(key) for key in app.custom_table.rows]
+            )
             entered, release = threading.Event(), threading.Event()
-            original = CustomProjection._project
+            rendered = []
+            original_apply = CustomTable.apply_rows
 
-            def held(self, snapshot):
-                if snapshot.namespace == "team":
-                    entered.set()
-                    assert release.wait(5)
-                return original(self, snapshot)
+            async def observed_apply(table, rows, *args, **kwargs):
+                applied = await original_apply(table, rows, *args, **kwargs)
+                if applied:
+                    rendered[:] = rows
+                return applied
 
-            monkeypatch.setattr(CustomProjection, "_project", held)
-            app._render_ready.set()
+            monkeypatch.setattr(CustomTable, "apply_rows", observed_apply)
+
+            def projection(layout):
+                def held(record):
+                    if record.namespace == "team":
+                        entered.set()
+                        assert release.wait(5)
+                    return layout.row(record)
+
+                return ResourceProjection(
+                    layout.resource.name,
+                    held,
+                    layout.resource.group,
+                    version=layout.resource.version,
+                )
+
+            monkeypatch.setattr("kuberich.ui.app.CustomProjection", projection)
+            # A fresh public column configuration owns a new decoder with this renderer.
+            await app.run_command("columns default")
+            root_calls.tick(app)
             assert await asyncio.to_thread(entered.wait, 5)
             try:
                 old_client = app.sessions.client
-                app._context_selected("kuberich-test-Two")
+                await app.run_command("ctx kuberich-test-Two")
                 await wait_for(
                     lambda: (
                         app.workspace.store.observation.context == "kuberich-test-Two"
@@ -428,7 +459,7 @@ async def test_owned_generic_projection_rejects_replaced_context_and_gvr_reply(
                     )
                 )
                 assert app.sessions.client is not old_client
-                app._submit_command("gadgets.owned.example.test/v1beta1")
+                await app.run_command("gadgets.owned.example.test/v1beta1")
                 await wait_for(
                     lambda: (
                         app.workspace.store.observation.scope is not None
@@ -441,33 +472,42 @@ async def test_owned_generic_projection_rejects_replaced_context_and_gvr_reply(
             await loaded(app, name="gadgets", version="v1beta1", namespace=None)
             await pilot.pause()
             assert app.custom_table.resource_layout.resource.kind == "Gadget"
-            assert all(row.namespace == "—" for row in app.custom_table._rows.values())
+            assert {row.uid for row in rendered} == {key.value for key in app.custom_table.rows}
+            assert all(row.namespace == "—" for row in rendered)
             assert "c4" in app.custom_table.columns
-            assert app._generic_selection.version == "v1beta1"
+            assert app.workspace.selection.version == "v1beta1"
 
 
 @pytest.mark.asyncio
 async def test_column_change_while_projection_is_held_rejects_old_positional_rows(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, root_calls
 ):
     async with custom_api() as (url, _owner):
         app = app_for(tmp_path, url)
         async with app.run_test() as pilot:
             await loaded(app)
             entered, release = threading.Event(), threading.Event()
-            original = CustomProjection._project
 
-            def held(self, snapshot):
-                if not entered.is_set():
-                    entered.set()
-                    assert release.wait(5)
-                return original(self, snapshot)
+            def projection(layout):
+                def held(record):
+                    if not entered.is_set():
+                        entered.set()
+                        assert release.wait(5)
+                    return layout.row(record)
 
-            monkeypatch.setattr(CustomProjection, "_project", held)
-            app._render_ready.set()
+                return ResourceProjection(
+                    layout.resource.name,
+                    held,
+                    layout.resource.group,
+                    version=layout.resource.version,
+                )
+
+            monkeypatch.setattr("kuberich.ui.app.CustomProjection", projection)
+            await app.run_command("columns default")
+            root_calls.tick(app)
             assert await asyncio.to_thread(entered.wait, 5)
             try:
-                app._submit_command("columns c3")
+                await app.run_command("columns c3")
                 assert "c2" not in app.custom_table.columns
             finally:
                 release.set()
@@ -480,7 +520,7 @@ async def test_column_change_while_projection_is_held_rejects_old_positional_row
                 "age",
             )
             assert app.custom_table.get_cell("owned-ten", "c3").text == "true"
-            assert not app._render_task.done()
+            assert not root_calls.renders.latest.done()
 
 
 @pytest.mark.asyncio
@@ -505,10 +545,9 @@ async def test_context_workspace_escape_during_generic_reconnect_keeps_qualified
             try:
                 app.action_contexts()
                 await wait_for(lambda: app.context_table.row_count == 2)
-                assert app._context_parent is None
                 await pilot.press("escape")
-                assert app.custom_table.display and app._resource_name == "widgets." + GROUP
-                assert app._generic_selection.group == GROUP
+                assert app.custom_table.display and app.state.view_kind == "widgets." + GROUP
+                assert app.workspace.selection.group == GROUP
             finally:
                 release.set()
             await loaded(app)
@@ -527,7 +566,7 @@ async def test_explicit_core_group_uses_generic_layout_and_builtin_command_recov
                 )
             )
             await pilot.pause()
-            assert app._resource_name == "pods.core" and not app.resources.display
+            assert app.state.view_kind == "pods.core" and not app.resources.display
             assert tuple(key.value for key in app.custom_table.columns) == (
                 "namespace",
                 "name",
@@ -559,9 +598,9 @@ async def test_explicit_core_command_owns_one_table_and_keeps_inspection_read_on
             )
             await pilot.pause()
             table = app.custom_table
-            assert app._resource_name == name + ".core"
+            assert app.state.view_kind == name + ".core"
             assert app.workspace.store.observation.scope.resource.group == ""
-            assert table.display and app._active_table is table
+            assert table.display and app.focused is table
             assert not any(
                 widget.display
                 for widget in (

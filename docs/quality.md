@@ -1,5 +1,65 @@
 # Quality and coverage
 
+## Startup and import boundaries
+
+The Application matrix runs `python -m scripts.check_startup` serially against the
+exact source checkout, with five fresh observations of each offline command and
+five actual first frames on an owned 120×36 PTY. Every offline observation must
+satisfy the unchanged 150 ms / 40,000,000-byte CLI budgets.
+`-X importtime` additionally rejects terminal/SDK imports and 150,000 µs aggregate
+self or maximum cumulative import time. A deliberately late mount and explicit
+Textual import must fail their controls. Inputs remain frozen during a run; raw
+output, profiles, ANSI transcripts and failure reports are uploaded even on failure.
+
+On 2026-11-01 the maintainer accepted the measured approximately 685 ms first
+paint for 0.3 and deferred strict optimization to the stable audit. For 0.x,
+every actual UI sample records elapsed time and explicit `budget_met` /
+`budget_enforced` flags against the unchanged 600 ms target. The qualifier's
+`--strict-paint` mode enforces that target on demand; version major 1 and later
+enforce it automatically. Its deliberate 700 ms negative control always uses
+the original strict check, including in advisory mode. A missed target remains
+reported as missed. Only latency is advisory: every source, actual-frame,
+SDK/import, geometry, ownership and cleanup failure still blocks every mode.
+
+The SDK prepares only after the public refresh readiness port. Functional tests
+cover owned credential/network/update reads, initial views, context replacement,
+quit and cancellation before readiness.
+
+Every accepted first frame includes a mounted real selected resource table with
+columns and geometry inside the original viewport; header delivery alone cannot
+satisfy it. All original tables retain eager composition. A deferred-DOM
+prototype showed no startup improvement and was removed rather than retaining
+extra ownership machinery. Fresh children also reject unused editor imports
+while preserving the canonical read-only text class and inspection behavior.
+The critical CLI/navigation coverage and
+whole-package/changed-line floors remain unchanged; type-only imports stay in the
+denominator. Local source startup evidence does not qualify native artifacts or
+other platforms. See [the startup acceptance record](acceptance/startup-budget.md).
+
+
+## Public test boundaries
+
+Tests use real Pilot input or `app.run_command(text)` and read the frozen
+`app.state` snapshot for workspace selection and connection status. The command
+API uses the same root and captured-workspace routing as the command bar; it
+returns after dispatch, so tests still await the relevant public result.
+
+Run the static check `uv run python scripts/check_private_access.py` to reject private imports,
+attributes, aliases and reflection into any production KubeRich namespace from
+tests, including embedded terminal fixture programs. The required CI step uses
+the same checker. Test-owned doubles and standard/framework namespaces retain
+their separate ownership; this does not waive the pinned framework boundary tests.
+
+Cancellation and retention assertions observe actual coroutine callers at public
+service, renderer and I/O ports. Read-only numeric diagnostics distinguish active
+operations from registered owners where necessary. They expose no tasks, mutable
+caches or resource payloads, and do not replace real cleanup, UID or scope checks.
+## Property and mutation testing
+
+Property tests run with `uv run pytest tests/unit/property`. The weekly/manual mutation job targets 85% actual kills.
+[Property/mutation evidence](internal/acceptance/property-mutation-tests.md) retains survivors, incomplete runs and tool errors.
+Coverage gates stay unchanged; reconsider the critical-line mandate only after stable mutation evidence.
+
 ## Supported native runner images
 
 Native Apple Silicon builds and Homebrew installation checks select `macos-15`;
@@ -597,6 +657,24 @@ comparison. Only executable lines represented by coverage are counted; comments,
 assets, and edits to non-executable continuations do not establish new coverage.
 No changed executable lines means N/A. The negative-control tests verify 0%,
 80%, the exact 90% boundary, a docs-only diff, and an unavailable base.
+
+### One phase verification report
+
+`uv run python scripts/qualify.py 0.3.0` coordinates the existing local commands
+and records their actual results in one JSON report and a short Markdown summary.
+It runs the complete suite once, with all layers and branch coverage, followed
+by the existing runtime, production/critical and changed-line gates. It keeps
+original logs, skipped-case details and canonical evidence before and after the
+run. A unique external mode-0700 parent owns a new basetemp child for every pytest
+stage. Do not edit candidate inputs or start competing timing checks during it.
+
+Use `--collect-only --quality-run ID --repository-run ID` to collect the actual
+full exact-source hosted results through the existing release validators. This
+never converts development-only, queued, failed or missing jobs into success.
+Native facilities and contract/owned-cluster repetitions remain pending until
+satisfied; the coordinator cannot authorize publication. See
+[phase verification](releases.md#reproduce-phase-verification) for tools, reports,
+exit statuses and the separate sustained-performance/provider requirements.
 
 ### Test layers and local parallel runs
 

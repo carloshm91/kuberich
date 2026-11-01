@@ -20,18 +20,27 @@ version or merged feature does not authorize publication.
 The maintainer revised the phase plan on 2026-10-19 ([#221](https://github.com/carloshm91/kuberich/issues/221)):
 foundations and a documentation rewrite come before new feature families.
 
+On **2026-11-01**, the maintainer accepted the measured approximately 685 ms
+terminal startup for 0.3. The unchanged **600 ms** UI target is advisory for 0.x,
+with all five actual observations and explicit met/enforced flags retained.
+`python -m scripts.check_startup --strict-paint` still enforces it, and version
+major 1 and later enforce it automatically under the stable audit Q06 #88.
+A missed target is reported as missed; no higher threshold is substituted.
+Offline 150 ms / 40,000,000-byte / import boundaries and real-frame, SDK,
+geometry, source identity and cleanup checks remain release requirements.
+
 | Public line | Gate (plus every earlier gate) | Phase scope |
 | --- | --- | --- |
 | 0.1.x | D06 #51, including D04 #40, D05 #49 and Q03 #50 | Core workspace; also #53, #54 and #123 |
 | 0.2.x | D07 #65 | Extensibility; also Homebrew bottles #193 |
-| 0.3.x | D16 #230 | Foundations and documentation; also #189, #208, dependency refresh #270, generic plugin capture #278 and X11 selection readiness #281 and native macOS runners #291 |
+| 0.3.x | D16 #230 | Foundations and documentation; also #208, dependency refresh #270, plugin output #272, log readiness #274, generic plugin capture #278, X11 selection readiness #281 and native macOS runners #291 |
 | 0.4.x | D08 #75 | Observability and metrics |
 | 0.5.x | D09 #82 | Operations, Helm and manifests |
 | 0.6.x | D17 #242 | Multi-cluster workspace |
 | 0.7.x | D18 #248 | Extensions, security center and AI |
 | 0.8.x | D11 #86 | Platforms (Windows) and accessibility; also #124 |
 | 0.9.x | D19 #253 | Release candidate, including Q05 #87 and versioned docs |
-| 1.0.x | Q06 #88 | Stable release and K9s/Lens parity audit |
+| 1.0.x | Q06 #88 | Stable release and K9s/Lens parity audit; also deferred CI reuse #189 and fine macOS runtime diagnosis #275 |
 
 The [plan](backlog.md) keeps every dependency. A phase is ready only when its
 gate and every earlier gate are closed. An unmapped minor, such as 0.10 or 1.1,
@@ -62,6 +71,14 @@ compatible fixes use a patch, compatible capabilities a minor, and incompatible
 public changes a major. New minor/major lines need an explicit plan mapping
 before the readiness validator permits publication.
 
+The 0.3 source keeps the previous `kubetrol` command with a fixed stderr warning;
+use `kuberich` for scripts and interactive launches. Actual alias removal is a
+0.4.0 qualification requirement, not a completed 0.3 change. The explicit
+`kuberich config migrate` command keeps previous preferences and prints its
+success notice only when the new file is created. Loading or inspecting settings
+does not migrate them automatically. Legacy environment and log-file compatibility
+are preserved; historical published notes and evidence keep their exact bytes.
+
 `pyproject.toml`'s `project.version` is the sole version source; the CLI reads
 installed metadata. A PR does not automatically bump a version. Stable tags are
 `vX.Y.Z`; canonical optional candidates are `X.Y.ZrcN`, tagged `vX.Y.Z-rc.N`.
@@ -74,6 +91,61 @@ fixes, compatibility/migrations, installation, upgrade/uninstall and known limit
 [The notes contract](release-notes/README.md) freezes these exact source bytes and
 an optional owner-reviewed generated preview before publisher approval. Retries
 compare the complete body and never regenerate or rewrite published notes.
+
+## Reproduce phase verification
+
+Run the checked-in coordinator on a clean, committed candidate. It uses the
+existing checks and never publishes packages, tags, sites or releases:
+
+```sh
+uv run python scripts/qualify.py 0.3.0 --output artifacts/qualification/candidate
+```
+
+The default runs lint, formatting and every strict type target in the workflow, then
+one complete test run with branch coverage. That run includes the actual terminal,
+packaging and installation cases. The existing runtime, production/critical and
+changed-line coverage validators, build, metadata and supply-chain checks follow.
+The changed-coverage base is the branch merge base, or `HEAD^` on main; use
+`--base FULL_COMMIT` to select a distinct ancestor explicitly.
+
+To collect completed hosted verification without rerunning those checks locally:
+
+```sh
+uv run python scripts/qualify.py 0.3.0 --collect-only \
+  --quality-run FULL_MATRIX_RUN_ID --repository-run REPOSITORY_RUN_ID \
+  --output artifacts/qualification/collected
+```
+
+The existing release validators require the exact current source, main branch,
+full workflow-dispatch matrix, native runners and completed successful jobs.
+Queued jobs stay pending; a newer failed run blocks an older success. This is
+read-only reporting, not result reuse or a substitute for publication preflight.
+
+Real cluster trials run only when both `--kind /absolute/path/to/kind` and
+`--kubectl /absolute/path/to/kubectl` are supplied. Existing verifiers validate
+and create their own disposable clusters. They never use your active context.
+Add `--repetitions 3` for the required contract/cluster repetitions; without the
+tools or all repetitions, those requirements remain pending. Native facilities,
+explicit skips, full platform checks and separate sustained-performance/provider
+reviews remain visible. A local pass does not establish the native matrix.
+
+Each fresh output directory contains `report.json` and `summary.md`. Local runs
+also keep original command logs and before/after copies of canonical evidence. The report records
+the exact source, comparison base, process cleanup and every skip. Pytest stages
+use new child directories under a unique physical external directory with mode
+0700; installation checks therefore cannot import the checkout by accident.
+Source changes, failures and timeouts stop execution. SIGINT/SIGTERM drain the
+captured group even if its leader has exited. Forced termination or an unverified
+remaining group prevents a pass. Real-cluster stages preserve the existing bounded
+node inspections/deletion cleanup allowance; ordinary stage grace stays unchanged.
+Reports distinguish leader reaping from verified group cleanup. Earlier outputs
+are never overwritten.
+
+Exit 0 means every listed verification gate passed; exit 2 means evidence remains
+pending, and exit 1 means verification failed. Cancellation returns 130 or 143.
+The short phase-gate checklist should link the exact report and remaining items,
+while retaining earlier failed and historical evidence. A report does not approve
+publication, close feature prerequisites or replace live release readiness.
 
 ## Publication approval
 

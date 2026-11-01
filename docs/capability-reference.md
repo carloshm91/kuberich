@@ -11,7 +11,8 @@ Real cloud accounts, terminals, and provider policies can need additional setup.
 ### All 26 explicitly registered launch flags; help/version/info and completion
 **partial** — Launch flags provide help, version, local diagnostics, read-only policy, presentation
 controls, session color inversion, startup views, and connection overrides. Splash, general resource
-export, and shell completion are unavailable.
+export, and shell completion are unavailable. Development source also provides local redacted
+diagnostic bundles and recoverable view errors.
 ### Context/kubeconfig/cluster/user/namespace selection and connection overrides
 **partial** — Select kubeconfig files, context, namespace, connection overrides, and user settings
 explicitly. Each context uses its own connection and passes that identity to delegated tools.
@@ -60,9 +61,10 @@ or frame borders without saving preferences. Escape and navigation depend on the
 **partial** — Selected resources provide details, redacted YAML, and related events with local
 search. Inspection is a read snapshot; reopen it to refresh.
 ### Copy resource/namespace/text with native clipboard and OSC52 over SSH/tmux
-**partial** — Explicit copy uses local macOS native text, X Window System xclip, or terminal OSC52
-with tmux framing. Native text accepts up to 1 MiB and terminal copy 64 KiB. A sent request does not
-prove an outer terminal accepted it.
+**partial** — Explicit copy uses local macOS native text, Wayland wl-copy, X Window System xclip, or
+terminal OSC52 with tmux framing. Wayland takes precedence locally; automatic SSH mode selects
+OSC52. Native text accepts up to 1 MiB and terminal copy 64 KiB. Text stays on stdin for native
+helpers. A sent request does not prove a compositor or outer terminal accepted it.
 ### Save resources/logs, screen-dump browser and export path settings
 **partial** — Logs can be saved to an explicit new private file without overwrite. A saved-export
 browser, general resource export and richer export formats are planned.

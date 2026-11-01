@@ -14,7 +14,6 @@ from kuberich.config.schema import ConfigDocument, Settings
 from kuberich.config.store import read_config
 from kuberich.errors import AppError
 from kuberich.ui.config_check import unsupported_fields, validate_preferences
-from kuberich.ui.theme_catalog import appearance_from, invert_theme, themes_for
 
 if TYPE_CHECKING:
     from kuberich.ui.app import KubeRichApp
@@ -58,11 +57,13 @@ class LivePreferences:
             self.refresh_seconds = refresh
             if self._refresh_timer is not None:
                 self._refresh_timer.stop()
-                self._refresh_timer = self.app.set_interval(refresh, self.app._refresh_tables)
+                self._refresh_timer = self.app.set_interval(
+                    refresh, self.app.presenter.refresh_ages
+                )
 
     def start(self, warnings: tuple[str | None, ...]) -> None:
         app = self.app
-        self._refresh_timer = app.set_interval(self.refresh_seconds, app._refresh_tables)
+        self._refresh_timer = app.set_interval(self.refresh_seconds, app.presenter.refresh_ages)
         notices = (*warnings, self.error)
         for warning in notices:
             if warning:
@@ -123,16 +124,7 @@ class LivePreferences:
         restart = (navigation.keys, navigation.mouse) != (app.navigation.keys, app.navigation.mouse)
         app.navigation, app._navigation_invalid = navigation, False
         app.commands = replace(app.commands, aliases=navigation.aliases)
-        previous = {theme.name for theme in app.appearance.themes}
-        app.appearance, app._appearance_invalid = appearance_from(document), False
-        custom = {theme.name for theme in app.appearance.themes}
-        themes = [theme for theme in themes_for(app.appearance) if theme.name in custom]
-        for name in previous - custom:
-            app.unregister_theme(name)
-        for theme in themes:
-            app.register_theme(invert_theme(theme) if app.chrome.presentation.invert else theme)
-        if app.preferences.theme_override is None:
-            app._global_theme = settings.theme
+        app.appearance_controller.adopt(document, settings.theme)
         if settings.read_only:
             app.commands.policy.tighten()
         app._shell = settings.shell
@@ -143,8 +135,8 @@ class LivePreferences:
         )
         app.jumps.configure(document)
         app.plugins.reload()
-        app._apply_theme()
-        app._render_ready.set()  # Saved column views apply to the current table.
+        app.appearance_controller.apply()
+        app.request_render()  # Saved column views apply to the current table.
         return restart
 
     async def close(self) -> None:

@@ -35,7 +35,7 @@ async def test_device_prompt_exposes_safe_login_hint_and_headless_refuses_handof
             catalog=catalog_fixture(tmp_path, url, entry),
         )
         async with app.run_test(size=(120, 30)) as pilot:
-            await app._connection_task
+            await wait_for(lambda: app.state.connection is ConnectionState.AUTH_ERROR)
             assert app.sessions.observation.state is ConnectionState.AUTH_ERROR
             await pilot.press("colon", *"status", "enter")
             assert isinstance(app.screen, ConnectionScreen)
@@ -45,7 +45,12 @@ async def test_device_prompt_exposes_safe_login_hint_and_headless_refuses_handof
             output.mkdir(parents=True, exist_ok=True)
             app.save_screenshot(filename="azure-login-recovery.svg", path=str(output))
             await pilot.press("escape", "colon", *"login", "enter")
-            await app._connection_task
+            await wait_for(
+                lambda: (
+                    app.state.connection is ConnectionState.AUTH_ERROR
+                    and "native terminal" in app.sessions.observation.message
+                )
+            )
             assert app.sessions.observation.state is ConnectionState.AUTH_ERROR
             assert "native terminal" in app.sessions.observation.message
             await pilot.press("c")
@@ -93,14 +98,15 @@ async def test_explicit_login_reuses_normal_session_contract_and_safe_outcomes(
             catalog=catalog_fixture(tmp_path, url, entry),
         )
         async with app.run_test() as pilot:
-            await app._connection_task
+            await wait_for(lambda: app.state.connection is ConnectionState.AUTH_ERROR)
             assert app.sessions.observation.state is ConnectionState.AUTH_ERROR and not invoked
             await pilot.press("colon", *"login", "enter")
-            await app._connection_task
-            assert len(invoked) == 1
-            assert app.sessions.observation.state is (
+            expected_state = (
                 ConnectionState.CONNECTED if result == "success" else ConnectionState.AUTH_ERROR
             )
+            await wait_for(lambda: len(invoked) == 1 and app.state.connection is expected_state)
+            assert len(invoked) == 1
+            assert app.sessions.observation.state is expected_state
             assert all(
                 value not in app.sessions.observation.message for value in ("private-", TOKEN)
             )
@@ -143,11 +149,16 @@ async def test_context_replacement_cancels_login_and_rejects_late_credentials(
         )
         app = KubeRichApp(Settings(), logging.Logger("azure-contract"), catalog=catalog)
         async with app.run_test() as pilot:
-            await app._connection_task
+            await wait_for(lambda: app.state.connection is ConnectionState.AUTH_ERROR)
             app.action_login()
             await started.wait()
-            app._start_connection("kuberich-test-Two")
-            await app._connection_task
+            await app.run_command("ctx kuberich-test-Two")
+            await wait_for(
+                lambda: (
+                    app.state.context == "kuberich-test-Two"
+                    and app.state.connection is ConnectionState.CONNECTED
+                )
+            )
             assert cancelled.is_set()
             assert app.sessions.observation.identity.context == "kuberich-test-Two"
             assert (
@@ -162,7 +173,7 @@ async def test_login_without_a_context_uses_local_catalogue_navigation():
     app = KubeRichApp(Settings(), logging.Logger("azure-contract"), catalog=KubeCatalog())
     async with app.run_test() as pilot:
         await pilot.press("colon", *"login", "enter")
-        assert app.sessions.client is None and app._connection_task is None
+        assert app.sessions.client is None and app.state.connection is ConnectionState.DISCONNECTED
         assert "No contexts found" in str(app.status.content)
 
 
@@ -181,9 +192,14 @@ async def test_current_login_cancellation_exposes_retry_instead_of_remaining_con
         catalog=catalog_fixture(tmp_path, "http://127.0.0.1:1", entry),
     )
     async with app.run_test() as pilot:
-        await app._connection_task
+        await wait_for(lambda: app.state.connection is ConnectionState.AUTH_ERROR)
         await pilot.press("colon", *"login", "enter")
-        await app._connection_task
+        await wait_for(
+            lambda: (
+                app.state.connection is ConnectionState.AUTH_ERROR
+                and "cancelled" in str(app.status.content)
+            )
+        )
         assert app.sessions.observation.state is ConnectionState.AUTH_ERROR
         assert "cancelled" in str(app.status.content) and ":login" in str(app.status.content)
         assert app.workspace.store.observation.connection.state is ConnectionState.AUTH_ERROR

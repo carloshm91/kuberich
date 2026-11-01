@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Config
+current-context: demo-tailscale
+clusters:
+- name: demo-tailscale
+  cluster:
+    server: https://api.example.invalid
+users:
+- name: tailscale-auth
+  user:
+    token: unused
+contexts:
+- name: demo-tailscale
+  context:
+    cluster: demo-tailscale
+    user: tailscale-auth
+    namespace: ''

@@ -180,7 +180,7 @@ def test_wheel_metadata_entry_point_and_assets(artifacts: tuple[Path, Path]) -> 
         entry_points = configparser.ConfigParser()
         entry_points.read_string(archive.read(entry_name).decode())
         assert entry_points["console_scripts"]["kuberich"] == "kuberich.cli:main"
-        assert entry_points["console_scripts"]["kubetrol"] == "kuberich.cli:main"
+        assert entry_points["console_scripts"]["kubetrol"] == "kuberich.cli:legacy_main"
         assert not any(name.startswith(("tests/", ".venv/", ".github/")) for name in names)
 
 
@@ -189,8 +189,11 @@ def test_installed_legacy_console_alias_uses_current_metadata(installed_wheel) -
     for executable in ("kuberich", "kubetrol"):
         result = run([str(binary / executable), "--version"], directory, 10)
         assert result.stdout == f"kuberich {PROJECT['version']}\n"
+        assert ("deprecated" in result.stderr) is (executable == "kubetrol")
+        assert ("0.4.0" in result.stderr) is (executable == "kubetrol")
         result = run([str(binary / executable), "--help"], directory, 10)
         assert "usage: kuberich" in result.stdout and "--context" in result.stdout
+        assert ("deprecated" in result.stderr) is (executable == "kubetrol")
 
 
 @pytest.mark.parametrize("executable", ["kuberich", "kubetrol"])
@@ -242,6 +245,17 @@ def test_installed_default_preferences_migrate_without_losing_legacy_state(
     assert "Original Kubetrol preferences were retained" in migrated.stdout
     assert source.read_bytes() == original
     assert "opaque-private-field: owned-private-value" in destination.read_text()
+    migrated_bytes = destination.read_bytes()
+    repeated = run(
+        [*command, "config", "migrate"],
+        tmp_path,
+        10,
+        environment=environment,
+        unset_environment=unset,
+    )
+    assert "already exist" in repeated.stdout
+    assert "Original Kubetrol preferences were retained" not in repeated.stdout
+    assert destination.read_bytes() == migrated_bytes and source.read_bytes() == original
     after = run([*command, "info"], tmp_path, 10, environment=environment, unset_environment=unset)
     data = json.loads(after.stdout)
     assert data["config_file"] == str(destination) and not data["migration_pending"]

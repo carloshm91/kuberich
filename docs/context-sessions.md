@@ -29,8 +29,10 @@ Without a configured current context, the workspace stays disconnected.
 Static tokens, token files, CA certificates, and client certificate/key pairs are
 supported. Exec credential helpers can return tokens or paired TLS certificates
 using `client.authentication.k8s.io/v1` or `v1beta1`. Version v1 requires
-`interactiveMode`. Legacy `auth-provider` and basic credentials are unsupported;
-regenerate those entries with a current provider tool or use a supported method.
+`interactiveMode`. Explicit `username`/`password` Basic authentication is also
+supported, including an empty half, without a password prompt. Basic credentials
+stay separate from bearer tokens; mixed credential mechanisms are refused.
+Legacy `auth-provider` entries need migration to a supported helper.
 
 A kubeconfig helper runs as your local user, including in read-only mode. Trust
 the executable, arguments, environment, and kubeconfig before opening a session.
@@ -78,6 +80,21 @@ also supports compatible OIDC helpers. Provider login policy, keyrings, browser
 forwarding, and real-account compatibility depend on your environment; local
 helper support does not certify every EKS, AKS, or GKE account.
 
+## Migrate a legacy OIDC entry
+
+Print a proposed exec fragment from an explicitly selected kubeconfig:
+
+```sh
+kuberich --kubeconfig /absolute/path/to/kubeconfig --context demo-lab kubeconfig oidc-migration
+```
+
+This command stays offline, runs no helper, and changes no file. Install
+int128/kubelogin separately, review its issuer, client, CA, and scopes, then apply
+the fragment yourself. Replace any fixed client-secret placeholder in a private
+configuration. Existing ID, refresh, and client-secret values are never copied;
+the helper handles future sign-in and refresh. Relative issuer CA paths resolve
+against the file that supplied the user entry.
+
 ## TLS, proxies, and overrides
 
 TLS verification is enabled by default. `tls-server-name`, configured CA data,
@@ -95,6 +112,43 @@ context changes and to the private connection passed to kubectl.
 Shells, attach, transfers, forwards, and plugins use a private connection file.
 Changing the source kubeconfig after connection cannot redirect those actions.
 Provider helpers remain external programs and may update their own caches.
+
+## Kubeconfig compatibility
+
+The v1 field inventory is identical in upstream kubectl/client-go 1.35, 1.36 and
+1.37. The table applies to all three schemas; local contracts and the separately
+pinned integration client establish only the behavior actually tested. Cluster
+version skew and real provider sign-in still need their own qualification.
+
+| Fields | Behavior |
+| --- | --- |
+| `apiVersion`, `kind` | Accept omitted/empty values or `v1`/`Config`; other values name the invalid field |
+| `clusters`, `users`, `contexts`, named `name` and payload | First whole named entry wins across merged files; each entry keeps its source directory |
+| `current-context`, `KUBECONFIG` list | First nonempty current context wins; explicit file overrides the list; no source write |
+| `preferences.colors`, `preferences.extensions` | Accepted deprecated metadata; does not change terminal preferences |
+| Top-level, cluster, user and context `extensions`; `name`, `extension` | Named opaque metadata, including scalar payloads; reserved cluster exec extension is passed only when requested |
+| Context `cluster`, `user`, `namespace` | Explicit aliases; empty user is anonymous, empty namespace means `default` |
+| Cluster `server` | HTTP(S), including URL path prefixes; embedded credentials/query/fragment refused by field |
+| `tls-server-name`, `insecure-skip-tls-verify` | Explicit verification name/policy; insecure transport remains visible |
+| `certificate-authority`, `certificate-authority-data` | Source-relative paths; nonempty inline data wins, empty data falls back to file |
+| `proxy-url` | HTTP(S)/SOCKS5; session proxy environment when omitted/empty; no silent proxy bypass |
+| `disable-compression` | Boolean accepted and kept for delegation; the HTTP client already requests identity encoding |
+| User `client-certificate`, `client-key`, `client-certificate-data`, `client-key-data` | Paired private session copies; encrypted keys refused before a passphrase prompt |
+| `token`, `tokenFile` | Size-limited bearer values; last successful file value wins, refresh and one read-only 401 retry |
+| `username`, `password` | Explicit Basic identity, including empty half; no implicit prompt or netrc fallback |
+| `as`, `as-uid`, `as-groups`, `as-user-extra` | Validated repeated impersonation attributes; subject required |
+| `exec.command`, `exec.args`, `exec.env.name/value` | Literal argv/environment and source directory; helper with output/time limits |
+| `exec.apiVersion`, `exec.interactiveMode` | v1/v1beta1 and explicit native login policy; unsupported versions name the field |
+| `exec.installHint` | Metadata accepted; KubeRich displays fixed safe installation guidance |
+| `exec.provideClusterInfo` | Boolean; only true supplies effective cluster metadata and reserved extension |
+| `auth-provider.name`, `.config` | Field-specific migration hint; OIDC fragment generation preserves checked metadata only |
+| OIDC `idp-issuer-url`, `client-id`, `idp-certificate-authority`, `idp-certificate-authority-data` | Validated issuer/client metadata and source-relative CA become literal helper options |
+| OIDC `client-secret`, `id-token`, `refresh-token`, `extra-scopes` | Secret placeholder and manual scope review; existing credential values never copied |
+
+Mixed credential mechanisms are refused with their field names; choose the
+intended identity or use an explicit invocation override. File/argument/YAML
+bounds remain application limits. Unsupported fields never trigger another user,
+context, helper or ambient credential fallback.
 
 ## Recover a connection
 

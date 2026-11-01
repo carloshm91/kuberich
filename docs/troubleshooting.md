@@ -18,6 +18,38 @@ If the command is missing, check your install manager's executable directory and
 PATH. If its version is unexpected, identify the executable your shell resolves
 and upgrade through that installation method. Keep an archive's complete directory.
 
+## A resource view cannot be rendered
+
+An inline error panel means that this view's presentation failed. Use **Retry**
+in that panel to try again, or choose another resource. Watch updates do not
+repeatedly retry the failed view. Displayed rows may be incomplete; the selected
+resource and identity checks still apply to operations. Other views and active
+port forwards keep running. A new context or resource scope clears the old fault.
+
+If the whole application exits unexpectedly, it restores the terminal and prints
+the location of a private crash report. If the report cannot be written, the
+message says so. A normal quit, interrupt or disconnected terminal does not
+create a crash report.
+
+## Create a diagnostic report
+
+```sh
+kuberich bug-report
+# Choose a new destination explicitly:
+kuberich bug-report --output ./kuberich-report.json
+```
+
+The command writes a mode-0600 JSON file with the installed version, Python and
+platform, terminal dimensions when available, preference-check status and a
+size-limited redacted tail of the application's own diagnostic log. It also works
+when preferences are invalid; the report records that result. Existing files,
+symbolic links and special-file destinations are refused.
+
+Reports do not load kubeconfig, contact a cluster, run credential helpers or
+include preference contents. Crash reports omit exception values, local
+variables, source lines and full traceback paths. Review the file before sharing
+it; it stays local until you choose to attach it to a bug report.
+
 ## Find the intended context
 
 `--config` selects application preferences. `--kubeconfig` selects Kubernetes
@@ -44,7 +76,7 @@ changing helper environment or kubeconfig.
 | Expired EKS/SSO credentials | Complete the intended AWS profile login externally, then `:retry` |
 | Azure CLI login required | Establish the intended `az login` session for azurecli mode |
 | Interactive helper required | Use `:login` in a native terminal; it runs the declared entry |
-| Legacy credentials unsupported | Regenerate a supported exec/token/certificate entry |
+| Legacy auth-provider unsupported | Use a current provider helper or the explicit OIDC migration command |
 | TLS error | Check CA, server hostname, and client certificates; do not disable verification |
 | Timeout or Unreachable | Check VPN, server/proxy reachability, and request deadline |
 | Config error | Correct the named configuration problem or choose another context |
@@ -106,14 +138,22 @@ SSH and tmux need working PTY and resize forwarding. See the
 ## Clipboard
 
 Copy is explicit; the application never reads your clipboard to acknowledge it.
-`KUBERICH_CLIPBOARD=auto` selects local macOS native text, local X Window System
-xclip, or terminal OSC52 over SSH/without a native session. `native` requires an
-available native backend; `osc52` explicitly requests the terminal route.
-X Window System needs xclip and DISPLAY; it is not selected for Wayland sessions.
+`KUBERICH_CLIPBOARD=auto` selects OSC52 over SSH, then local macOS native text,
+Wayland `wl-copy` when WAYLAND_DISPLAY is set, X Window System `xclip` when DISPLAY
+is set, and otherwise OSC52. Wayland takes precedence when both display variables
+are present. `native` requires a native session and skips the automatic SSH
+preference; `osc52` explicitly selects your terminal.
+
+Local Wayland needs `wl-copy` on PATH and a working compositor; X Window System
+needs `xclip`. Missing or failed helpers can fall back to OSC52 in automatic mode
+within its byte limit. Forced-native failures ask you to check the helper or use
+`KUBERICH_CLIPBOARD=osc52`. Compositor acceptance still depends on your session.
 
 Native text accepts up to 1 MiB; OSC52 accepts 64 KiB. Invalid or oversized text
 is refused rather than truncated. Headless copies stay in application memory.
-X Window System selection persistence after exit depends on a clipboard manager.
+Wayland and X Window System selection persistence after exit depends on a
+clipboard manager. Native helper text travels on stdin, with no MIME guessing
+or newline trimming.
 
 The outer terminal must allow clipboard writes. In tmux, allow passthrough for
 the intended pane using your own server configuration; KubeRich does not change
