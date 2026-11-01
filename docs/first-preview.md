@@ -149,7 +149,7 @@ uv run pytest tests/unit/test_clipboard.py tests/contract/test_clipboard.py \
   --cov=kuberich --cov-branch --cov-report=json --cov-report=xml
 ```
 
-This focused command passed 56 tests with one explicit hosted-macOS skip and
+The original source checkpoint passed 56 tests with one explicit hosted-macOS skip and
 100% line/branch coverage in both clipboard modules. Its helpers simulate
 `wl-copy`; no real compositor or developer clipboard was used. See
 [Wayland verification](acceptance/wayland-clipboard.md) for the measured scope.
@@ -438,3 +438,15 @@ behavior for X11, Wayland and macOS through an inert driver on every host.
 The first hosted macOS failure was a missing platform boundary in synthetic
 Linux fixtures; it is retained in run `41280079738`. No native host or compositor
 qualification is inferred from the synthetic cases.
+
+### Wayland parent integration
+
+The local parent integration preserves the application clipboard queue and the
+owned X11 receipt checks. Its 225 focused helper/process/queue/public-UI and
+documentation cases passed in 51.54 seconds. The critical clipboard domain
+retains 100% line and branch coverage; the native service including its queue
+measured 96.77% of lines and 91.18% of branches, with 94.74% changed-line coverage.
+The [acceptance record](acceptance/wayland-clipboard.md#parent-integration-verification)
+separates these results from the earlier source checkpoints. No real Wayland
+compositor, host clipboard or cluster was used. The installed version remains
+0.2.0; full supported-platform and package qualification remain pending.

@@ -13,7 +13,7 @@ OSC52 over SSH. Local macOS uses AppKit; other local sessions prefer
 and explicit `osc52` selects the terminal. Automatic failure fallback retains
 its terminal byte limit, while forced-native failures remain visible.
 
-## Local verification
+## Original source verification
 
 On Linux with CPython 3.12.12 and Textual 8.2.8:
 
@@ -56,3 +56,31 @@ The invocation follows the upstream
 foreground mode keeps process ownership with the caller, while an explicit MIME
 type avoids content guessing. KubeRich never reads clipboard contents to confirm
 a copy.
+
+## Parent integration verification
+
+The 2026-11-01 parent integration retains the existing application clipboard
+queue, public injected writer boundary and owned X11 selection-receipt fixture.
+Its focused selection passed **225 tests in 51.54 seconds**, using two workers
+and a fresh child of an owned mode-0700 temporary directory. All 875 tracked
+input hashes and the checkout commit stayed unchanged until the child was reaped.
+
+The critical clipboard domain measured **43/43 lines and 18/18 branches**.
+The native service, including the retained queue, measured **90/93 lines
+(96.77%) and 31/34 branches (91.18%)**. Changed executable-line coverage was
+**18/19 lines (94.74%)** against the verified parent. Early-exit helpers followed
+the late-monitor path under coverage, so this result does not establish complete
+native-service branch coverage. Whole-package coverage was measured but this
+focused selection does not satisfy the global coverage gate.
+
+The selection covers the clipboard, queue, ownership and process unit tests;
+Wayland helper/process contracts; literal stdin, constant macOS writer and fake
+X11-owner contracts; inert clipboard/public-state UI tests; and documentation
+structure controls. Strict typing passed all 234 workflow-selected source files;
+Ruff, formatting, the whole-package private-access scan and plan validation passed.
+
+These are controlled helper invocation and cleanup results, including missing
+executables, errors, replacement, cancellation and fallback. They use no real
+Wayland compositor, live host clipboard, Xvfb display, Kubernetes context or
+provider. KubeRich remains write-only and does not invoke `wl-paste`. Native,
+full-suite, full-package and platform qualification remain separate requirements.
