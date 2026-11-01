@@ -15,10 +15,11 @@ from kuberich.config.schema import Settings
 from kuberich.domain.pods import PodColumn, pod_row
 from kuberich.domain.views import ViewStatus
 from kuberich.ui.app import KubeRichApp
-from kuberich.ui.pods import PodCell
+from kuberich.ui.pods import PodCell, PodTable
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import NOW, pod, record
 from tests.support.resources import collection
+from tests.support.table_app import TableApp
 from tests.support.watches import frame
 from tests.support.workspace import stable_watch, wait_for, workspace_api
 
@@ -33,7 +34,7 @@ def rows(count=80):
 
 
 def make_app():
-    return KubeRichApp(Settings(), logging.Logger("pod-table", level=100))
+    return TableApp(PodTable())
 
 
 def visible_rows(app):

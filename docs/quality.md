@@ -555,10 +555,61 @@ assets, and edits to non-executable continuations do not establish new coverage.
 No changed executable lines means N/A. The negative-control tests verify 0%,
 80%, the exact 90% boundary, a docs-only diff, and an unavailable base.
 
+### Test layers and local parallel runs
+
+Tests receive a layer marker from their directory: `unit`, `contract`, `ui`,
+`terminal`, `packaging` or `quality`. The `fast` marker selects **every** unit,
+contract and UI test. It does not select a smaller sample or omit slow cases.
+`kind` is registered for explicit disposable-cluster tests; the current real
+cluster scenarios still run through `scripts.verify_*_kind` in CI, not through
+a pretend pytest layer. No command may fall back to an ambient cluster.
+
+```sh
+# Quick development feedback; 12 workers on the six-core, 30 GiB reference host.
+uv run pytest tests/unit tests/contract tests/ui -m fast -n 12
+# One layer, or all layers with combined branch coverage.
+uv run pytest -m terminal -n 4
+uv run pytest -n 6 --cov=kuberich --cov-branch --cov-report=xml --cov-report=json
+uv run python -m scripts.merge_runtime_coverage
+uv run python scripts/check_coverage.py coverage.json
+```
+
+Use fewer workers on smaller machines. Serial execution remains available with
+`-n 0`. `loadgroup` scheduling and disabled worker restarts are defaults: tests
+within a file stay in one worker, and files sharing release-evidence fixtures
+stay together across files. Every worker gets its own pytest temporary directory;
+owned API listeners use ephemeral ports. Failed tests and crashed workers fail
+the run rather than being retried or skipped. Production coverage is combined
+by pytest-cov across workers before the same independent gates run.
+
+The two runtime heartbeat controls have a `performance` marker. Their subprocess
+orchestrators share the first group, with the backend controls before the UI
+coverage replay. A controller-owned reader/writer lock drains other tests while
+each uninstrumented timing child runs, including
+its setup and cleanup, then resumes parallel work. Coverage replays share the
+ordinary parallel work window. Runtime children explicitly load the asyncio and
+coverage plugins they need, keeping unrelated auto-discovered development plugins
+out of their timing observations. Every fast run executes both the full positive
+scenario and its deliberately failing negative control. A run requesting coverage
+also performs the instrumented replay; its branch data is mandatory for the full
+coverage gate. A fast-only receipt cannot pass that gate. This keeps coverage
+measurement in the full tier and retains the same 150 ms timing limit.
+Run timing comparisons
+without a second test command competing on the same host; separate pytest commands
+own separate locks and cannot reserve CPU from each other.
+
+Application quality first runs the complete fast tier on Linux/Python 3.12.
+Failure prevents the expensive full test/native matrices from starting and
+fails the protected aggregate. Success then runs every existing source/native
+environment, all test layers, runtime controls and coverage gates. This fast
+signal never substitutes for full qualification. Failed fast runs and test parts
+retain their available evidence too.
+
 ### Parallel test parts
 
 CI splits the pytest run into four parts per operating system and Python
-version. Each part runs on its own runner and keeps whole test files together.
+version. Each part runs on its own runner with two xdist workers and keeps whole
+test files together.
 `tests/support/part_timings.json` lists how long each file took, so the parts
 take about the same time. A file that is not in the list counts as ten seconds.
 Test files that share fixtures which write evidence, such as the release

@@ -23,8 +23,35 @@ jobs:
       - name: Select the complete matrix for this event
         id: plan
         run: python3 -m scripts.ci_policy
-  tests:
+  fast:
     needs: plan
+    name: Fast tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: '0.10.4'
+          python-version: '3.12'
+          enable-cache: true
+      - run: uv sync --locked --group dev
+      - name: Install the owned X11 clipboard test tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes xclip xvfb
+      - name: Run every unit, contract and UI test before the full qualification
+        run: uv run pytest tests/unit tests/contract tests/ui -m fast -n 4 --dist loadgroup --max-worker-restart=0 --maxfail=1 --junitxml=artifacts/fast-tests.xml
+      - name: Retain the fast result, including failures
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fast-tests
+          path: artifacts
+          if-no-files-found: error
+          retention-days: 7
+  tests:
+    needs: [plan, fast]
     name: Tests (${{ matrix.os }}, Python ${{ matrix.python }}, part ${{ matrix.part }} of ${{ matrix.parts }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
@@ -58,11 +85,15 @@ jobs:
         env:
           KUBERICH_TEST_PART: ${{ matrix.part }}/${{ matrix.parts }}
         run: |
-          uv run pytest --cov=kuberich --cov-branch --cov-report=
+          uv run pytest --cov=kuberich --cov-branch --cov-report= -n 2 --dist loadgroup --max-worker-restart=0 --junitxml=artifacts/tests-${{ matrix.part }}.xml --durations=20
+      - name: Collect coverage and evidence, including a failed part
+        if: ${{ always() }}
+        run: |
           mkdir -p part
-          mv .coverage part/coverage-part.data
+          if [ -f .coverage ]; then mv .coverage part/coverage-part.data; fi
           if [ -d artifacts ]; then cp -R artifacts part/; fi
       - name: Keep this part's coverage and evidence for the application job
+        if: ${{ always() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: test-part-${{ matrix.os }}-python-${{ matrix.python }}-${{ matrix.part }}
@@ -209,7 +240,7 @@ jobs:
           if-no-files-found: error
           retention-days: 7
   standalone:
-    needs: plan
+    needs: [plan, fast]
     name: Standalone (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
@@ -272,7 +303,7 @@ jobs:
   quality-gate:
     name: Quality gate
     if: ${{ always() }}
-    needs: [plan, tests, application, standalone]
+    needs: [plan, fast, tests, application, standalone]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:

@@ -23,6 +23,7 @@ from kuberich.domain.processes import (
 )
 from kuberich.services.access import AccessPolicy
 from kuberich.services.processes import ProcessRunner
+from tests.support.tiers import runtime_environment
 
 ROOT = Path(__file__).resolve().parents[2]
 NODE = (
@@ -163,10 +164,11 @@ async def finish_child(request: dict[str, Any]) -> None:
     )
 
 
-async def require_runtime_children() -> None:
+async def require_runtime_children(*, measure_coverage: bool = True) -> None:
     source = await source_stamp()
     receipts = {}
-    for mode in ("positive", "negative", "coverage"):
+    modes = ("positive", "negative", "coverage") if measure_coverage else ("positive", "negative")
+    for mode in modes:
         directory = ROOT / "artifacts/ui/aggregate-runtime" / mode
         directory.mkdir(parents=True, exist_ok=True)
         # Remove only this owner's fixed outputs; nonce and source checks also
@@ -202,6 +204,7 @@ async def require_runtime_children() -> None:
             REQUEST: str(request_path),
             "COVERAGE_FILE": str(directory / "coverage.data"),
             "PYTEST_ADDOPTS": "",
+            "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
         }
         coverage_arguments = (
             (
@@ -214,19 +217,26 @@ async def require_runtime_children() -> None:
             if mode == "coverage"
             else ()
         )
-        result = await command(
-            (
-                sys.executable,
-                "-m",
-                "pytest",
-                NODE,
-                "-q",
-                "--tb=short",
-                *coverage_arguments,
-                f"--junitxml={directory / 'cases.xml'}",
-            ),
-            environment,
-        )
+        with runtime_environment(environment, exclusive=mode != "coverage") as child_environment:
+            result = await command(
+                (
+                    sys.executable,
+                    "-m",
+                    "pytest",
+                    "-p",
+                    "pytest_asyncio.plugin",
+                    "-p",
+                    "pytest_cov.plugin",
+                    "-o",
+                    "addopts=--strict-config --strict-markers",
+                    NODE,
+                    "-q",
+                    "--tb=short",
+                    *coverage_arguments,
+                    f"--junitxml={directory / 'cases.xml'}",
+                ),
+                child_environment,
+            )
         (directory / "stdout.log").write_bytes(result.stdout)
         (directory / "stderr.log").write_bytes(result.stderr)
         assert result.status in {ProcessStatus.SUCCEEDED, ProcessStatus.FAILED}, (
@@ -323,5 +333,9 @@ async def require_runtime_children() -> None:
             },
         }
     (ROOT / "artifacts/ui/aggregate-runtime-receipt.json").write_text(
-        json.dumps({"source": source, "children": receipts}, indent=2) + "\n"
+        json.dumps(
+            {"source": source, "coverage_requested": measure_coverage, "children": receipts},
+            indent=2,
+        )
+        + "\n"
     )

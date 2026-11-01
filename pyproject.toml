@@ -29,6 +29,8 @@ dependencies = [
     "packaging>=26.3,<27",
     "platformdirs>=4.12.3,<5",
     "pyte==0.8.2",
+    # Keep the SDK's transitive date parser on its qualified major release.
+    "python-dateutil>=2.9.0.post0,<3",
     "pyyaml>=6.0.3,<7",
     "regex>=2026.9.29,<2027",
     # Scoped rendering adaptations use private APIs qualified against this version.
@@ -58,6 +60,7 @@ dev = [
     "pytest>=9.1.1,<10",
     "pytest-asyncio>=1.4.0,<2",
     "pytest-cov>=7.1.0,<8",
+    "pytest-xdist>=3.8,<4",
     "ruff>=0.16.10,<0.17",
     "twine>=7.0.0,<8",
     "types-pyyaml>=6.0.12,<7",
@@ -106,9 +109,24 @@ mypy_path = ["scripts/typing"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = ["--strict-config", "--strict-markers"]
+addopts = [
+    "--strict-config", "--strict-markers", "--dist=loadgroup",
+    "--no-loadscope-reorder", "--max-worker-restart=0",
+]
 asyncio_mode = "strict"
 asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "unit: deterministic domain and configuration tests",
+    "contract: owned API, process and adapter contracts",
+    "ui: headless Textual behavior tests",
+    "terminal: real PTY and transport tests",
+    "packaging: built artifacts and isolated installations",
+    "quality: verification tooling and release boundary tests",
+    "kind: opt-in disposable Kubernetes cluster tests",
+    "fast: the complete unit, contract and UI selection",
+    "performance: timing controls that reserve a quiet window within a parallel run",
+    "runtime_control: subprocess orchestration whose timing children own the reference window",
+]
 
 [tool.coverage.run]
 branch = true

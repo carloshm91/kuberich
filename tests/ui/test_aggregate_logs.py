@@ -13,6 +13,7 @@ from functools import partial
 from pathlib import Path
 
 import pytest
+from coverage import Coverage
 from textual.widgets import Input, OptionList, Static
 
 from kuberich.config.schema import Settings
@@ -334,11 +335,13 @@ async def test_empty_sources_and_generic_core_route_guard(tmp_path):
 
 
 @pytest.mark.asyncio
+@pytest.mark.performance
+@pytest.mark.runtime_control(order=1)
 async def test_full_retained_history_format_heartbeat_clipboard_bound_save_failure_and_previous(
     tmp_path,
 ):
     if MODE not in os.environ:
-        await require_runtime_children()
+        await require_runtime_children(measure_coverage=Coverage.current() is not None)
         return
     request = await child_request()
     try:

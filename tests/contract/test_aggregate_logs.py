@@ -226,6 +226,8 @@ async def test_live_intermediate_ownership_uid_replacement_and_no_hidden_replay(
 
 
 @pytest.mark.asyncio
+@pytest.mark.performance
+@pytest.mark.runtime_control(order=0)
 async def test_many_tiny_lines_slow_source_heartbeat_and_two_levels_of_retention(tmp_path):
     request = await child_request() if MODE in os.environ else None
     negative_executed = False

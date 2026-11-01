@@ -13,6 +13,7 @@ from coverage import __version__ as coverage_version
 
 from kuberich.domain.processes import ProcessStatus
 from tests.support.aggregate_runtime import ROOT, command, source_stamp
+from tests.support.tiers import runtime_environment
 
 NODE = (
     "tests/contract/test_aggregate_logs.py::"
@@ -117,21 +118,29 @@ async def require_backend_children() -> None:
             MODE: mode,
             REQUEST: str(request_path),
             "PYTEST_ADDOPTS": "",
+            "PYTEST_DISABLE_PLUGIN_AUTOLOAD": "1",
         }
-        result = await command(
-            (
-                sys.executable,
-                "-m",
-                "pytest",
-                NODE,
-                "-q",
-                "--tb=short",
-                "--no-cov",
-                f"--junitxml={directory / 'cases.xml'}",
-            ),
-            environment,
-            deadline=DEADLINE,
-        )
+        with runtime_environment(environment, exclusive=True) as child_environment:
+            result = await command(
+                (
+                    sys.executable,
+                    "-m",
+                    "pytest",
+                    "-p",
+                    "pytest_asyncio.plugin",
+                    "-p",
+                    "pytest_cov.plugin",
+                    "-o",
+                    "addopts=--strict-config --strict-markers",
+                    NODE,
+                    "-q",
+                    "--tb=short",
+                    "--no-cov",
+                    f"--junitxml={directory / 'cases.xml'}",
+                ),
+                child_environment,
+                deadline=DEADLINE,
+            )
         (directory / "stdout.log").write_bytes(result.stdout)
         (directory / "stderr.log").write_bytes(result.stderr)
         assert result.status in {ProcessStatus.SUCCEEDED, ProcessStatus.FAILED}, (
