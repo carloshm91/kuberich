@@ -10,6 +10,7 @@ from kuberich.domain.interactions import CommandHistory, InteractionCommand, Ran
 from kuberich.domain.resource_preferences import ColumnSpec, ViewSpec
 from kuberich.errors import AppError
 from kuberich.services.metadata_filtering import MetadataFilter
+from kuberich.services.ownership import finish_owned
 from kuberich.ui.chrome import Breadcrumbs, WorkspaceFrame, WorkspaceHeader
 
 if TYPE_CHECKING:
@@ -34,11 +35,15 @@ class Interactions:
         self.fullscreen = False
         self._favorite_task: asyncio.Task[None] | None = None
 
+    async def close(self) -> None:
+        if self._favorite_task is not None:
+            await finish_owned(asyncio.gather(self._favorite_task, return_exceptions=True))
+
     def apply(self, command: InteractionCommand) -> None:
         app, verb = self.app, command.verb
         try:
             if verb == "!!":
-                app._submit_command(self.history.repeat(), repeat=True)
+                app.command_routes.submit(self.history.repeat(), repeat=True)
                 return
             if verb == "favorite":
                 if self._favorite_task is not None and not self._favorite_task.done():
@@ -108,7 +113,7 @@ class Interactions:
 
     def changed(self) -> None:
         self.revision += 1
-        self.app._render_ready.set()
+        self.app.request_render()
 
     async def _save_favorite(self, updated: NavigationPreferences) -> None:
         app = self.app
@@ -170,10 +175,12 @@ class Interactions:
         if verb == "fullscreen":
             self.fullscreen = not self.fullscreen
         else:
-            app._presentation = replace(
-                app._presentation, **{verb: not getattr(app._presentation, verb)}
+            app.chrome = replace(
+                app.chrome,
+                presentation=replace(
+                    app.chrome.presentation, **{verb: not getattr(app.chrome.presentation, verb)}
+                ),
             )
-            app.chrome = replace(app.chrome, presentation=app._presentation)
         for screen in app.screen_stack:
             if hasattr(screen, "chrome"):
                 screen.chrome = app.chrome
@@ -184,7 +191,7 @@ class Interactions:
                 header.layout_header()
                 header.display = not hidden
             for trail in screen.query(Breadcrumbs):
-                trail.display = not hidden and not app._presentation.crumbsless
+                trail.display = not hidden and not app.chrome.presentation.crumbsless
             for frame in screen.query(WorkspaceFrame):
                 frame.set_class(hidden, "fullscreen")
         app._set_status(f"{verb} toggled · command and search remain available")

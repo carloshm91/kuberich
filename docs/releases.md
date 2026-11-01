@@ -33,14 +33,14 @@ geometry, source identity and cleanup checks remain release requirements.
 | --- | --- | --- |
 | 0.1.x | D06 #51, including D04 #40, D05 #49 and Q03 #50 | Core workspace; also #53, #54 and #123 |
 | 0.2.x | D07 #65 | Extensibility; also Homebrew bottles #193 |
-| 0.3.x | D16 #230 | Foundations and documentation; also #189, #208, dependency refresh #270, generic plugin capture #278 and X11 selection readiness #281 and native macOS runners #291 |
+| 0.3.x | D16 #230 | Foundations and documentation; also #208, dependency refresh #270, plugin output #272, log readiness #274, generic plugin capture #278, X11 selection readiness #281 and native macOS runners #291 |
 | 0.4.x | D08 #75 | Observability and metrics |
 | 0.5.x | D09 #82 | Operations, Helm and manifests |
 | 0.6.x | D17 #242 | Multi-cluster workspace |
 | 0.7.x | D18 #248 | Extensions, security center and AI |
 | 0.8.x | D11 #86 | Platforms (Windows) and accessibility; also #124 |
 | 0.9.x | D19 #253 | Release candidate, including Q05 #87 and versioned docs |
-| 1.0.x | Q06 #88 | Stable release and K9s/Lens parity audit |
+| 1.0.x | Q06 #88 | Stable release and K9s/Lens parity audit; also deferred CI reuse #189 and fine macOS runtime diagnosis #275 |
 
 The [plan](backlog.md) keeps every dependency. A phase is ready only when its
 gate and every earlier gate are closed. An unmapped minor, such as 0.10 or 1.1,

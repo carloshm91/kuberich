@@ -333,6 +333,11 @@ class ShellScreen(ModalScreen[str]):
                 )
             )
 
+    @property
+    def stop_requested(self) -> bool:
+        """Whether terminal input has stopped and its owned session needs draining."""
+        return self._shell_closing
+
     def validate_target(self) -> None:
         try:
             self.shell.require_current()

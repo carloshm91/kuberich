@@ -16,20 +16,29 @@ On 2026-10-19 the maintainer approved a revised phase plan
 artifact, tag or website still needs explicit approval. After #65, the v0.3.0
 foundations and documentation work starts before any new feature family.
 
+The maintainer clarified the 0.3.0 scope on 2026-11-01: deliver the tested
+ownership changes and real behavior/installation fixes without additional
+extraction solely for file-size targets. Q11 #212 remains required for stable
+1.0.0; the tested Textual pin and remaining private-boundary inventory stay
+explicit. Offline startup, functionality, platform and coverage gates remain
+enforced. CI reuse #189 and fine macOS timing diagnosis #275 also remain stable
+follow-ups; the existing full 0.x pipeline is unchanged. UI first-paint
+measurements are advisory for 0.x and strict for 1.0.
+
 ## Release phases
 
 | Public line | Gate (plus every earlier gate) | Phase scope |
 | --- | --- | --- |
 | 0.1.x | D06 #51 | Core workspace; also #53, #54 and #123 |
 | 0.2.x | D07 #65 | Extensibility; also Homebrew bottles #193 |
-| 0.3.x | D16 #230 | Foundations and documentation; also #189, #208, dependency refresh #270, generic plugin capture #278 and X11 selection readiness #281 and native macOS runners #291 |
+| 0.3.x | D16 #230 | Foundations and documentation; also #208, dependency refresh #270, plugin output #272, log readiness #274, generic plugin capture #278, X11 selection readiness #281 and native macOS runners #291 |
 | 0.4.x | D08 #75 | Observability and metrics |
 | 0.5.x | D09 #82 | Operations, Helm and manifests |
 | 0.6.x | D17 #242 | Multi-cluster workspace |
 | 0.7.x | D18 #248 | Extensions, security center and AI |
 | 0.8.x | D11 #86 | Platforms (Windows) and accessibility; also #124 |
 | 0.9.x | D19 #253 | Release candidate |
-| 1.0.x | Q06 #88 | Stable release and K9s/Lens parity audit |
+| 1.0.x | Q06 #88 | Stable release and K9s/Lens parity audit; also deferred CI reuse #189 and fine macOS runtime diagnosis #275 |
 
 D10 #89 owns first public activation; patches and later phases require it
 closed. Common launch issues #149/#150/#154/#155/#157/#162/#166 stay required.
@@ -52,7 +61,7 @@ Q07 #81 is closed as not planned and is not a prerequisite. See the
 | [E10 #10](https://github.com/carloshm91/kuberich/issues/10) | Integration, performance, and compatibility qualification | v1.0.0 |
 | [E11 #11](https://github.com/carloshm91/kuberich/issues/11) | User documentation and contribution experience | v0.9.0 |
 | [E12 #12](https://github.com/carloshm91/kuberich/issues/12) | Extended platforms, accessibility and ecosystem delivery | v0.8.0 |
-| [E13 #254](https://github.com/carloshm91/kuberich/issues/254) | Foundations and engineering quality | v0.3.0 |
+| [E13 #254](https://github.com/carloshm91/kuberich/issues/254) | Foundations and engineering quality | v1.0.0 |
 | [E14 #255](https://github.com/carloshm91/kuberich/issues/255) | Multi-cluster workspace beyond Lens | v0.6.0 |
 | [E15 #256](https://github.com/carloshm91/kuberich/issues/256) | Ecosystem and intelligence | v0.7.0 |
 
@@ -133,14 +142,13 @@ Configurable themes, navigation/resource views, external plugins, deliberate con
 
 ## v0.3.0
 
-Foundations and quality: decompose the application shell, decouple tests, remove private framework dependencies, degrade gracefully on large clusters, enforce a startup budget, reach kubeconfig parity with kubectl, add error boundaries and fast test tiers, and rewrite the documentation. No new feature families.
+Foundations and quality: decompose the application shell, decouple tests, retain the tested framework compatibility pin, degrade gracefully on large clusters, enforce offline startup budgets, measure advisory 0.x UI startup, reach kubeconfig parity with kubectl, add error boundaries and fast test tiers, and rewrite the documentation. Framework cleanup and strict UI startup qualification remain stable-release work. No new feature families.
 
 | Issue | Task | Blocked by |
 | --- | --- | --- |
 | [Q10 #209](https://github.com/carloshm91/kuberich/issues/209) | Add fast, parallel test tiers | None |
 | [Q09 #210](https://github.com/carloshm91/kuberich/issues/210) | Decouple UI tests from private application state | [Q10 #209](https://github.com/carloshm91/kuberich/issues/209) |
 | [Q08 #211](https://github.com/carloshm91/kuberich/issues/211) | Decompose KubeRichApp into view controllers and a declarative command registry | [Q09 #210](https://github.com/carloshm91/kuberich/issues/210) |
-| [Q11 #212](https://github.com/carloshm91/kuberich/issues/212) | Remove private Textual API dependencies and relax the exact pin | [Q08 #211](https://github.com/carloshm91/kuberich/issues/211) |
 | [Q12 #213](https://github.com/carloshm91/kuberich/issues/213) | Degrade gracefully for collections beyond 10,000 resources | None |
 | [Q13 #214](https://github.com/carloshm91/kuberich/issues/214) | Enforce a startup-time budget with lazy imports | None |
 | [Q14 #215](https://github.com/carloshm91/kuberich/issues/215) | Reach kubeconfig compatibility parity with kubectl | None |
@@ -158,7 +166,7 @@ Foundations and quality: decompose the application shell, decouple tests, remove
 | [W09 #227](https://github.com/carloshm91/kuberich/issues/227) | Rewrite the changelog and release notes for users | [W04 #222](https://github.com/carloshm91/kuberich/issues/222) |
 | [W10 #228](https://github.com/carloshm91/kuberich/issues/228) | Reduce AGENTS.md, CONTRIBUTING.md and issue templates to current essentials | [W04 #222](https://github.com/carloshm91/kuberich/issues/222) |
 | [W11 #229](https://github.com/carloshm91/kuberich/issues/229) | Add documentation quality checks: prose lint, links and page budgets | [W04 #222](https://github.com/carloshm91/kuberich/issues/222) |
-| [D16 #230](https://github.com/carloshm91/kuberich/issues/230) | Qualify the foundations checkpoint | [Q08 #211](https://github.com/carloshm91/kuberich/issues/211), [Q09 #210](https://github.com/carloshm91/kuberich/issues/210), [Q10 #209](https://github.com/carloshm91/kuberich/issues/209), [Q11 #212](https://github.com/carloshm91/kuberich/issues/212), [Q12 #213](https://github.com/carloshm91/kuberich/issues/213), [Q13 #214](https://github.com/carloshm91/kuberich/issues/214), [Q14 #215](https://github.com/carloshm91/kuberich/issues/215), [Q15 #216](https://github.com/carloshm91/kuberich/issues/216), [Q16 #217](https://github.com/carloshm91/kuberich/issues/217), [Q17 #218](https://github.com/carloshm91/kuberich/issues/218), [Q18 #219](https://github.com/carloshm91/kuberich/issues/219), [Q19 #220](https://github.com/carloshm91/kuberich/issues/220), [D15 #221](https://github.com/carloshm91/kuberich/issues/221), [W04 #222](https://github.com/carloshm91/kuberich/issues/222), [W05 #223](https://github.com/carloshm91/kuberich/issues/223), [W06 #224](https://github.com/carloshm91/kuberich/issues/224), [W07 #225](https://github.com/carloshm91/kuberich/issues/225), [W08 #226](https://github.com/carloshm91/kuberich/issues/226), [W09 #227](https://github.com/carloshm91/kuberich/issues/227), [W10 #228](https://github.com/carloshm91/kuberich/issues/228), [W11 #229](https://github.com/carloshm91/kuberich/issues/229), [D07 #65](https://github.com/carloshm91/kuberich/issues/65) |
+| [D16 #230](https://github.com/carloshm91/kuberich/issues/230) | Qualify the foundations checkpoint | [Q08 #211](https://github.com/carloshm91/kuberich/issues/211), [Q09 #210](https://github.com/carloshm91/kuberich/issues/210), [Q10 #209](https://github.com/carloshm91/kuberich/issues/209), [Q12 #213](https://github.com/carloshm91/kuberich/issues/213), [Q13 #214](https://github.com/carloshm91/kuberich/issues/214), [Q14 #215](https://github.com/carloshm91/kuberich/issues/215), [Q15 #216](https://github.com/carloshm91/kuberich/issues/216), [Q16 #217](https://github.com/carloshm91/kuberich/issues/217), [Q17 #218](https://github.com/carloshm91/kuberich/issues/218), [Q18 #219](https://github.com/carloshm91/kuberich/issues/219), [Q19 #220](https://github.com/carloshm91/kuberich/issues/220), [D15 #221](https://github.com/carloshm91/kuberich/issues/221), [W04 #222](https://github.com/carloshm91/kuberich/issues/222), [W05 #223](https://github.com/carloshm91/kuberich/issues/223), [W06 #224](https://github.com/carloshm91/kuberich/issues/224), [W07 #225](https://github.com/carloshm91/kuberich/issues/225), [W08 #226](https://github.com/carloshm91/kuberich/issues/226), [W09 #227](https://github.com/carloshm91/kuberich/issues/227), [W10 #228](https://github.com/carloshm91/kuberich/issues/228), [W11 #229](https://github.com/carloshm91/kuberich/issues/229), [D07 #65](https://github.com/carloshm91/kuberich/issues/65) |
 
 Dependency refresh [#270](https://github.com/carloshm91/kuberich/issues/270) is also
 a required extra for this phase and its qualifier. It covers the development,
@@ -259,7 +267,8 @@ Stable release: every phase complete, including Windows; stable configuration an
 
 | Issue | Task | Blocked by |
 | --- | --- | --- |
-| [Q06 #88](https://github.com/carloshm91/kuberich/issues/88) | Audit complete feature parity and resolve every remaining gap | [Q05 #87](https://github.com/carloshm91/kuberich/issues/87), [D11 #86](https://github.com/carloshm91/kuberich/issues/86), [Q22 #252](https://github.com/carloshm91/kuberich/issues/252), [D19 #253](https://github.com/carloshm91/kuberich/issues/253) |
+| [Q11 #212](https://github.com/carloshm91/kuberich/issues/212) | Remove private Textual API dependencies and relax the exact pin | [Q08 #211](https://github.com/carloshm91/kuberich/issues/211) |
+| [Q06 #88](https://github.com/carloshm91/kuberich/issues/88) | Audit complete feature parity and resolve every remaining gap | [Q05 #87](https://github.com/carloshm91/kuberich/issues/87), [D11 #86](https://github.com/carloshm91/kuberich/issues/86), [Q22 #252](https://github.com/carloshm91/kuberich/issues/252), [D19 #253](https://github.com/carloshm91/kuberich/issues/253), [Q11 #212](https://github.com/carloshm91/kuberich/issues/212) |
 
 Each task has scope, acceptance criteria and verification in its issue and
 [backlog.json](backlog.json). Qualification dependencies remain explicit in that

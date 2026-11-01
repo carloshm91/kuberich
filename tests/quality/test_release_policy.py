@@ -639,7 +639,29 @@ def test_engineering_versions_refuse_preflight_before_any_external_request(versi
 
 @pytest.mark.parametrize(
     "incomplete",
-    [None, 123, 124, 193, 47, 40, 154, 88, 89, 189, 211, 230, 243, 253, 270, 278, 281, 291],
+    [
+        None,
+        123,
+        124,
+        193,
+        47,
+        40,
+        154,
+        88,
+        89,
+        189,
+        211,
+        230,
+        243,
+        253,
+        270,
+        272,
+        274,
+        275,
+        278,
+        281,
+        291,
+    ],
 )
 def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomplete):
     plan = json.loads((ROOT / "docs/backlog.json").read_text())
@@ -677,6 +699,10 @@ def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomp
             242,
             248,
             253,
+            272,
+            274,
+            275,
+            278,
             281,
             291,
             90,
@@ -739,6 +765,11 @@ def test_actual_phase_includes_selected_and_prior_qualifiers(version, phase_gate
     assert (278 in calls) == (minor >= (0, 3))
     assert (281 in calls) == (minor >= (0, 3))
     assert (291 in calls) == (minor >= (0, 3))
+    assert (212 in calls) == (minor >= (1, 0))
+    assert (189 in calls) == (minor >= (1, 0))
+    assert (275 in calls) == (minor >= (1, 0))
+    assert (272 in calls) == (minor >= (0, 3))
+    assert (274 in calls) == (minor >= (0, 3))
     assert (89 in calls) == (Version(version).base_version != "0.1.0")
 
 
@@ -754,7 +785,10 @@ def test_actual_phase_includes_selected_and_prior_qualifiers(version, phase_gate
         ("0.2.0", 65),
         ("0.2.0", 123),
         ("0.2.0", 193),
-        ("0.3.0", 189),
+        ("1.0.0", 189),
+        ("1.0.0", 275),
+        ("0.3.0", 272),
+        ("0.3.0", 274),
         ("0.3.0", 211),
         ("0.3.0", 270),
         ("0.3.0", 278),
@@ -765,6 +799,7 @@ def test_actual_phase_includes_selected_and_prior_qualifiers(version, phase_gate
         ("0.8.0", 124),
         ("0.9.0", 87),
         ("1.0.0", 87),
+        ("1.0.0", 212),
     ],
 )
 def test_actual_phase_refuses_unfinished_current_or_prior_work(version, incomplete):
@@ -810,6 +845,10 @@ def test_unreviewed_minor_does_not_inherit_an_earlier_phase(version):
         "missing_x11_readiness",
         "missing_generic_plugin_capture",
         "missing_macos_runner",
+        "missing_plugin_output",
+        "missing_log_readiness",
+        "missing_stable_ci_reuse",
+        "missing_stable_diagnosis",
         "duplicate_extra",
         "boolean_extra",
         "unknown_future_dependency",
@@ -850,6 +889,14 @@ def test_malformed_entire_plan_fails_before_any_external_issue_request(mutation)
         delivery["release_phases"][2]["extra_issues"].remove(291)
     elif mutation == "missing_generic_plugin_capture":
         delivery["release_phases"][2]["extra_issues"].remove(278)
+    elif mutation in {"missing_plugin_output", "missing_log_readiness"}:
+        delivery["release_phases"][2]["extra_issues"].remove(
+            272 if mutation == "missing_plugin_output" else 274
+        )
+    elif mutation in {"missing_stable_ci_reuse", "missing_stable_diagnosis"}:
+        delivery["release_phases"][-1]["extra_issues"].remove(
+            189 if mutation == "missing_stable_ci_reuse" else 275
+        )
     elif mutation == "missing_x11_readiness":
         delivery["release_phases"][2]["extra_issues"].remove(281)
     elif mutation == "duplicate_extra":

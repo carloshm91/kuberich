@@ -64,3 +64,52 @@ async def test_layout_and_rendered_evidence(
         help_svg = app.export_screenshot(title=f"KubeRich {name} help")
         (output / f"help-{name}.svg").write_text(help_svg)
         assert "Keyboard&#160;help" in help_svg or "Keyboard help" in help_svg
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("route", ["pods", "ctx"])
+async def test_empty_state_css_tracks_rows_and_actual_terminal_resize(tmp_path, route):
+    from aiohttp import web
+
+    from tests.support.connections import catalog_fixture, namespaces
+    from tests.support.pods import pod
+    from tests.support.resources import collection
+    from tests.support.workspace import stable_watch, wait_for, workspace_api
+
+    async def namespace_handler(request):
+        return namespaces("team", "default")
+
+    async def resources(request):
+        if "watch" in request.query:
+            return await stable_watch(request)
+        return web.json_response(collection(pod("api")))
+
+    async with workspace_api(namespace_handler, resources) as url:
+        app = KubeRichApp(
+            Settings(), logging.Logger("owned-empty-layout"), catalog=catalog_fixture(tmp_path, url)
+        )
+        async with app.run_test(size=(40, 12)) as pilot:
+            await wait_for(lambda: app.resources.row_count == 1)
+            await app.run_command(route)
+            table = app.context_table if route == "ctx" else app.resources
+            await wait_for(lambda: table.row_count > 0)
+            await pilot.pause()
+            empty = app.query_one("#empty-state")
+            assert not empty.display
+            await pilot.resize_terminal(100, 30)
+            await pilot.pause()
+            assert not empty.display  # Populated rows stay visible in a tall terminal.
+            app.filter_input.value = "owned-no-match"
+            await wait_for(lambda: table.row_count == 0)
+            await pilot.pause()
+            assert empty.display
+            await pilot.resize_terminal(40, 12)
+            await pilot.pause()
+            assert not empty.display
+            await pilot.resize_terminal(100, 30)
+            await pilot.pause()
+            assert empty.display  # The empty state returns without another data event.
+            app.filter_input.value = ""
+            await wait_for(lambda: table.row_count > 0)
+            await pilot.pause()
+            assert not empty.display

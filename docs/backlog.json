@@ -17,7 +17,7 @@
     },
     {
       "title": "v0.3.0",
-      "description": "Foundations and quality: decompose the application shell, decouple tests, remove private framework dependencies, degrade gracefully on large clusters, enforce a startup budget, reach kubeconfig parity with kubectl, add error boundaries and fast test tiers, and rewrite the documentation. No new feature families."
+      "description": "Foundations and quality: decompose the application shell, decouple tests, retain the tested framework compatibility pin, degrade gracefully on large clusters, enforce offline startup budgets, measure advisory 0.x UI startup, reach kubeconfig parity with kubectl, add error boundaries and fast test tiers, and rewrite the documentation. Framework cleanup and strict UI startup qualification remain stable-release work. No new feature families."
     },
     {
       "title": "v0.4.0",
@@ -136,7 +136,7 @@
     {
       "id": "E13",
       "title": "Foundations and engineering quality",
-      "milestone": "v0.3.0",
+      "milestone": "v1.0.0",
       "area": "foundation",
       "outcome": "A codebase that can absorb Lens-class features: small units, behavior-level tests, fast feedback, no private framework dependencies, large-cluster resilience, instant startup and kubeconfig parity."
     },
@@ -1333,7 +1333,8 @@
         "Q05",
         "D11",
         "Q22",
-        "D19"
+        "D19",
+        "Q11"
       ],
       "scope": "Reconcile the pinned source inventory, capability matrix, community plugin workflows and any publicly documented Alpha additions with implementation evidence.",
       "acceptance": [
@@ -1341,7 +1342,9 @@
         "Refresh the latest stable upstream comparison and create tickets for new features before freezing the stable parity claim.",
         "Maintain the Alpha evidence gap until authoritative material is available; do not claim 100% paid-feature parity without a verifiable catalog and tests.",
         "Per the 2026-11-01 maintainer decision, complete the deferred unchanged under-600-ms real UI first-paint qualification. Version major 1 and later automatically enforce the original strict startup mode; retain all five observations, both strict negative controls and original failures without a higher substitute threshold.",
-        "For major-version 1 qualification, enforce the unchanged runtime heartbeat/input-latency limits and original blocking negative controls; neither environment nor receipt metadata may downgrade them. Earlier advisory 0.x measurements are not a strict pass."
+        "For major-version 1 qualification, enforce the unchanged runtime heartbeat/input-latency limits and original blocking negative controls; neither environment nor receipt metadata may downgrade them. Earlier advisory 0.x measurements are not a strict pass.",
+        "Complete deferred Q11 #212 framework compatibility/private-API work before stable publication. Review Q08 #211 size/ownership goals and its recorded remaining boundaries; do not mistake the pragmatic 0.3.0 delivery for completion of deferred cleanup.",
+        "Complete the deferred CI-reuse optimization #189 and fine macOS runtime diagnosis #275 before stable publication. They remain open follow-up work; the existing 0.x full qualification pipeline and thresholds are unchanged."
       ],
       "verification": "Automated matrix completeness checks plus a human end-to-end checklist and links to tests/releases for each claim; no untriaged entry may be silently dropped.",
       "priority": "P0"
@@ -1732,8 +1735,8 @@
         "A `ViewController` protocol: project, filter, apply rows, capture/restore viewport, available actions. Implementations for pods, namespaces, contexts, standard and custom resources. One generic render path.",
         "Commands are registered declaratively: handler, required capabilities, read-only policy, help text. Help, completion and `check_action` use the same registry.",
         "An event-driven resume replaces the modal busy-wait.",
-        "No cross-object private attribute access in `kuberich.ui`, enforced by lint.",
-        "`app.py` ≤ 800 lines, and no `kuberich.ui` module over 900 lines.",
+        "New extracted owners use explicit public ports. Record the remaining legacy UI/private-framework inventory honestly for #212; completing a zero-inventory cleanup is a stable-release goal, not a 0.3.0 blocker.",
+        "Deliver the useful view/command/input/navigation/appearance ownership decomposition with unchanged behavior. The 800-line App and 900-line module targets remain improvement goals for stable preparation; stop additional extraction solely to reach those numbers before 0.3.0.",
         "Behavior is unchanged: full suite green, terminal snapshots unchanged.",
         "A short ADR explains the structure."
       ],
@@ -1744,7 +1747,7 @@
       "id": "Q11",
       "title": "Remove private Textual API dependencies and relax the exact pin",
       "epic": "E13",
-      "milestone": "v0.3.0",
+      "milestone": "v1.0.0",
       "requires": [
         "Q08"
       ],
@@ -1846,7 +1849,7 @@
       "acceptance": [
         "`uv run python scripts/qualify.py <phase>` runs or collects every gate: lint, types, test tiers, coverage, packaging, PTY, kind and installs. It writes one machine-readable report and a short Markdown summary for the release PR.",
         "Phase gate issues become short checklists that point to the report.",
-        "Coordinate with #189 so post-merge and release runs reuse exact-tree results safely."
+        "Retain the existing complete qualification pipeline. Exact-tree post-merge/release reuse remains the separately deferred stable optimization #189."
       ],
       "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
       "priority": "P1"
@@ -1891,7 +1894,7 @@
       "acceptance": [
         "The release policy, validator, checked-in backlog and roadmap match GitHub, with tests.",
         "#81 is recorded as closed (not planned), and the K9sAlpha row is removed from parity docs.",
-        "Phase extras move with their issues: #124 to 0.8.x, #189 and #208 to 0.3.x; #193 stays in 0.2.x."
+        "Phase extras move with their issues: #124 to 0.8.x and #208 to 0.3.x; #193 stays in 0.2.x. The maintainer deferred CI reuse #189 and fine macOS runtime diagnosis #275 to 1.0.x on 2026-11-01."
       ],
       "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
       "priority": "P0"
@@ -2041,7 +2044,6 @@
         "Q08",
         "Q09",
         "Q10",
-        "Q11",
         "Q12",
         "Q13",
         "Q14",
@@ -2061,10 +2063,10 @@
         "W11",
         "D07"
       ],
-      "scope": "Every v0.3.0 task: Q08 #211, Q09 #210, Q10 #209, Q11 #212, Q12 #213, Q13 #214, Q14 #215, Q15 #216, Q16 #217, Q17 #218, Q18 #219, Q19 #220, D15 #221, W04 #222–W11 #229, #189, #208, dependency refresh #270 and owned X11 selection readiness #281 and native macOS runner migration #291. Also requires the 0.2.0 gate #65.",
+      "scope": "Every v0.3.0 task: Q08 #211, Q09 #210, Q10 #209, Q12 #213, Q13 #214, Q14 #215, Q15 #216, Q16 #217, Q17 #218, Q18 #219, Q19 #220, D15 #221, W04 #222–W11 #229, #208, dependency refresh #270 and opened plugin output correction #272, observable log startup #274. Also requires the 0.2.0 gate #65. Required verification follow-ups also include generic resource plugin capture #278, owned X11 selection readiness #281 and migration from retired macOS 14 runners #291.",
       "acceptance": [
         "The qualification command from Q17 #218 passes on the complete Linux/macOS matrix.",
-        "Structural targets are met: `app.py` ≤ 800 lines, zero private access from tests, no private Textual APIs, unchanged offline startup budgets met, 50k-resource measurement within budget. Per the 2026-11-01 maintainer decision, report all five real UI observations and any missed 600 ms target honestly for 0.x; retain strict opt-in and mandatory stable qualification under Q06 #88. All actual-frame, source, SDK, geometry and cleanup checks remain mandatory.",
+        "Delivered ownership/controller changes pass their functional, cancellation and platform checks. Numeric App/module size and complete private-framework removal are tracked improvement goals for stable #88/#212, not 0.3.0 blockers. Offline startup budgets remain enforced; UI first-paint measurements remain explicit and advisory for 0.x. Keep relevant large-collection safeguards and honest measured limits.",
         "Documentation checks pass and the README stays within its budget.",
         "No publication happens here. Publication needs separate maintainer approval.",
         "For 0.x, runtime heartbeat/input-latency observations are advisory with explicit unmet results; preserve unchanged strict opt-in limits, always-strict blocking negative controls and all functional, resource, cleanup, coverage and platform requirements."
@@ -2533,7 +2535,6 @@
     "Q10",
     "Q09",
     "Q08",
-    "Q11",
     "Q12",
     "Q13",
     "Q14",
@@ -2599,6 +2600,7 @@
     "Q21",
     "Q22",
     "D19",
+    "Q11",
     "Q06"
   ],
   "delivery": {
@@ -2655,9 +2657,10 @@
         "version": "0.3.0",
         "qualification_gate": "D16",
         "extra_issues": [
-          189,
           208,
           270,
+          272,
+          274,
           278,
           281,
           291
@@ -2698,7 +2701,10 @@
       {
         "version": "1.0.0",
         "qualification_gate": "Q06",
-        "extra_issues": []
+        "extra_issues": [
+          189,
+          275
+        ]
       }
     ],
     "execution_order": [
@@ -2759,7 +2765,6 @@
       "Q10",
       "Q09",
       "Q08",
-      "Q11",
       "Q12",
       "Q13",
       "Q14",
@@ -2825,6 +2830,7 @@
       "Q21",
       "Q22",
       "D19",
+      "Q11",
       "Q06"
     ]
   }

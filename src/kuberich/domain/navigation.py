@@ -11,6 +11,15 @@ MAX_HISTORY = 32
 
 
 @dataclass(frozen=True)
+class Viewport:
+    selected: str | None
+    index: int
+    x: float
+    y: float
+    top: str | None
+
+
+@dataclass(frozen=True)
 class ContextRow:
     name: str
     cluster: str

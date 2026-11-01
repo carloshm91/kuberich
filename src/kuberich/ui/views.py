@@ -31,7 +31,7 @@ from kuberich.domain.resource_preferences import (
 from kuberich.domain.views import ViewObservation
 from kuberich.errors import AppError
 from kuberich.security.presentation import safe_text
-from kuberich.services.processes import _finish_owned
+from kuberich.services.ownership import finish_owned
 from kuberich.ui.commands import NavigationInput
 from kuberich.ui.custom import CustomTable
 from kuberich.ui.namespaces import NamespaceTable
@@ -208,7 +208,7 @@ class ViewScreen(ModalScreen[None]):
     async def on_unmount(self) -> None:
         self._view_stopped = True
         if self._save_task is not None:
-            await _finish_owned(self._save_task)
+            await finish_owned(self._save_task)
 
 
 class ViewPreferences:
@@ -352,7 +352,7 @@ class ViewPreferences:
                 except AppError as error:
                     problems.append(str(error))
             if problems:
-                self.app._column_notice = (
+                self.app.navigator.set_column_notice(
                     problems[0] + " Working defaults or the valid global view are retained."
                 )
             state = _SessionView(choices, descriptor.signature, effective, descriptor.fields)
@@ -484,8 +484,8 @@ class ViewPreferences:
                     else "View saved globally; context overrides still take precedence."
                 )
             if self._current(descriptor):
-                self.app._column_notice = message
-                self.app._render_ready.set()
+                self.app.navigator.set_column_notice(message)
+                self.app.request_render()
             return message
 
         self.app.push_screen(

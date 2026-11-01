@@ -14,8 +14,9 @@ from kuberich.domain.plugins import Plugin
 from kuberich.domain.processes import ProcessCommand, ProcessMode, ProcessResult
 from kuberich.errors import AppError
 from kuberich.security.presentation import safe_text
+from kuberich.services.ownership import finish_owned
 from kuberich.services.plugins import PluginJob, PluginManager, PluginRequest, PluginSource
-from kuberich.services.processes import ProcessRunner, TargetGuard, _finish_owned
+from kuberich.services.processes import ProcessRunner, TargetGuard
 from kuberich.ui.handoff import terminal_handoff
 from kuberich.ui.port_forwards import ForwardInput
 from kuberich.ui.presentation import FrameTable
@@ -263,7 +264,7 @@ class PluginScreen(ModalScreen[None]):
     async def stop_owned(self) -> None:
         if self.operation is not None and not self.operation.done():
             self.operation.cancel()
-            await _finish_owned(asyncio.gather(self.operation, return_exceptions=True))
+            await finish_owned(asyncio.gather(self.operation, return_exceptions=True))
         self.source.discard(self.review)
         if self.job is not None and self.job.mode is not ProcessMode.BACKGROUND:
             await self.manager.stop(self.job)
@@ -359,4 +360,4 @@ class PluginJobs(ModalScreen[None]):
 
     async def on_unmount(self) -> None:
         if self._stopping is not None:
-            await _finish_owned(asyncio.gather(self._stopping, return_exceptions=True))
+            await finish_owned(asyncio.gather(self._stopping, return_exceptions=True))

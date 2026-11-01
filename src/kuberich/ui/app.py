@@ -6,23 +6,22 @@ import asyncio
 import logging
 import os
 import sys
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from contextlib import suppress
-from dataclasses import replace
 from functools import partial
 from importlib.metadata import version
 from pathlib import Path
+from types import MappingProxyType
 from typing import TYPE_CHECKING, ClassVar
 from uuid import UUID
 
-from platformdirs import user_cache_path
 from rich.console import RenderableType
 from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, Vertical
 from textual.dom import DOMNode
-from textual.events import DescendantFocus, Event, Key, Paste, Resize
+from textual.events import DescendantFocus, Event, Resize
 from textual.geometry import Size
 from textual.screen import ModalScreen
 from textual.widget import Widget
@@ -35,7 +34,7 @@ from kuberich.config.catalog import KubeCatalog, kubeconfig_paths, load_catalog
 from kuberich.config.forwarding import ForwardPreferences, forwarding_from
 from kuberich.config.navigation import NavigationPreferences, navigation_from
 from kuberich.config.schema import Settings
-from kuberich.domain.appearance import Appearance, effective_theme
+from kuberich.domain.appearance import Appearance
 from kuberich.domain.cleanup import finished_pods
 from kuberich.domain.clipboard import ClipboardBackend, clipboard_backend, clipboard_bytes, osc52
 from kuberich.domain.connections import (
@@ -43,64 +42,48 @@ from kuberich.domain.connections import (
     ConnectionRequest,
 )
 from kuberich.domain.credential_helpers import helper_start_failure
-from kuberich.domain.custom import CustomLayout
-from kuberich.domain.forward_presets import annotation_preset, resolve_mappings
 from kuberich.domain.interactions import InteractionCommand
 from kuberich.domain.keyboard import effective_keymap
 from kuberich.domain.kubeconfig_edit import ContextChange
-from kuberich.domain.namespaces import NamespaceRow
 from kuberich.domain.navigation import (
-    MAX_HISTORY,
-    ContextRow,
     NamespaceChoice,
     NavigationHistory,
     NavigationState,
 )
 from kuberich.domain.operations import MAX_BATCH, ResourceAction
-from kuberich.domain.pods import PodColumn, PodRow
-from kuberich.domain.port_forwards import suggested_port
 from kuberich.domain.processes import ProcessStatus
-from kuberich.domain.registry import RESOURCE_ALIASES, ResourceRow, resource_selection
-from kuberich.domain.resources import ApiResource, ResourceRecord
-from kuberich.domain.targets import ResourceTarget
-from kuberich.domain.view_actions import ViewState, action_available
-from kuberich.domain.views import USABLE_CONNECTIONS, ResourceSelection, ViewObservation, ViewStatus
-from kuberich.domain.workloads import WorkloadAction, applicable
+from kuberich.domain.targets import SessionIdentity
+from kuberich.domain.view_actions import ViewState
+from kuberich.domain.view_routes import ViewKind
+from kuberich.domain.views import ResourceSelection
+from kuberich.domain.workloads import WorkloadAction
 from kuberich.errors import AppError, ExecutableUnavailable
-from kuberich.security.arguments import validate_argument
-from kuberich.security.presentation import safe_text
 from kuberich.services.access import AccessPolicy, Action
 from kuberich.services.appearance import PreferenceSource
-from kuberich.services.clipboard import NativeClipboard
+from kuberich.services.clipboard import ClipboardQueue, NativeClipboard
+from kuberich.services.command_catalog import COMMAND_CATALOG, BoundCommands
 from kuberich.services.commands import (
     Command,
     CommandService,
     GenericResourceCommand,
-    PluginCommand,
     ResolvedCommand,
-    ResourceCommand,
-    ScopedCommand,
-    suggestions,
 )
-from kuberich.services.filtering import FilterResult, apply_filter
-from kuberich.services.mutations import MutationManager, MutationService
+from kuberich.services.mutations import MutationManager
+from kuberich.services.ownership import finish_owned
 from kuberich.services.pods import (
     CustomProjection,
     NamespaceProjection,
     PodProjection,
     StandardProjection,
 )
-from kuberich.services.port_forwards import ForwardManager, ForwardService
-from kuberich.services.processes import ProcessRunner, _finish_owned
+from kuberich.services.port_forwards import ForwardManager
+from kuberich.services.processes import ProcessRunner
 from kuberich.services.sessions import SessionService
 from kuberich.services.updates import UpdateResult, UpdateService
-from kuberich.services.workspace import ViewSubscription, WorkspaceService
+from kuberich.services.workspace import WorkspaceService
+from kuberich.ui.appearance_controller import AppearanceController
 from kuberich.ui.chrome import (
-    CTX_SHORTCUTS,
-    NS_SHORTCUTS,
     POD_SHORTCUTS,
-    RESOURCE_SHORTCUTS,
-    SERVICE_SHORTCUTS,
     Breadcrumbs,
     WorkspaceBars,
     WorkspaceChrome,
@@ -108,30 +91,37 @@ from kuberich.ui.chrome import (
     WorkspaceHeader,
     WorkspaceLabel,
     header_identity,
-    workload_shortcuts,
 )
 from kuberich.ui.commands import CommandInput, NavigationInput
-from kuberich.ui.contexts import ContextTable, context_rows
+from kuberich.ui.contexts import ContextTable
+from kuberich.ui.controllers.filtering import FilterOptions
 from kuberich.ui.custom import CustomTable
+from kuberich.ui.foreground import ForegroundGate
 from kuberich.ui.handoff import terminal_handoff
+from kuberich.ui.input_dispatch import InputDispatcher
 from kuberich.ui.interactions import Interactions
 from kuberich.ui.jumps import JumpController
 from kuberich.ui.keybindings import NavigationHelpScreen, navigation_help
 from kuberich.ui.live_preferences import LivePreferences
 from kuberich.ui.namespaces import NamespaceTable
-from kuberich.ui.nested import CommandWorkspace
+from kuberich.ui.nested import CommandWorkspace, NestedCommands
 from kuberich.ui.plugins import PluginController
-from kuberich.ui.pods import PodTable, Viewport
+from kuberich.ui.pods import PodTable
 from kuberich.ui.presentation import DEFAULT_PRESENTATION, Presentation
+from kuberich.ui.resource_operations import OperationContext, ResourceOperations
+from kuberich.ui.root_views import RootTables, RootViews
 from kuberich.ui.shutdown import TerminalSignals
 from kuberich.ui.standard import StandardTable
 from kuberich.ui.state import AppState, app_state
 from kuberich.ui.style_cache import ColorStylesCache, ComponentStylesheet
-from kuberich.ui.theme_catalog import appearance_from, invert_theme, themes_for
+from kuberich.ui.target_capture import CapturedResource, TargetCapture, TargetSelection
 from kuberich.ui.views import ViewPreferences, ViewScreen
+from kuberich.ui.workspace_commands import CompletionSources, WorkspaceCommands, bind_commands
+from kuberich.ui.workspace_navigation import WorkspaceNavigation
+from kuberich.ui.workspace_presenter import WorkspacePresenter
+from kuberich.ui.workspace_screen import WorkspaceScreen
 
 if TYPE_CHECKING:
-    from kuberich.ui.aggregate_logs import AggregateLogScreen
     from kuberich.ui.context_admin import ContextEditResult
     from kuberich.ui.inspection import Page
 
@@ -205,27 +195,19 @@ class KubeRichApp(App[None]):
         directory: Path | None = None,
         clipboard: NativeClipboard | None = None,
     ) -> None:
+        self._foreground = ForegroundGate(lambda: self.views.request())
         super().__init__()
         self.stylesheet = ComponentStylesheet(variables=self.get_css_variables())
         self.title = "KubeRich"
         self.sub_title = "Local preview"
         self._diagnostic_logger = logger
-        self._presentation = presentation
         self._initial_command = initial_command
         self.sessions = SessionService(
             catalog if catalog is not None else KubeCatalog(), connection
         )
-        self._connection_task: asyncio.Task[None] | None = None
         self.workspace = WorkspaceService(self.sessions, on_error=self._handle_exception)
-        self._view_task: asyncio.Task[None] | None = None
-        self._render_task: asyncio.Task[None] | None = None
-        self._render_ready = asyncio.Event()
-        self._aggregate_screens: set[AggregateLogScreen] = set()
-        self._input_completion: asyncio.Future[None] | None = None
-        self._nested_route_task: asyncio.Task[None] | None = None
         self.history = NavigationHistory()
         self.interactions = Interactions(self)
-        self._restore_state: tuple[int, NavigationState] | None = None
         self.navigation = NavigationPreferences()
         self._navigation_warning: str | None = None
         self._navigation_invalid = False
@@ -239,50 +221,33 @@ class KubeRichApp(App[None]):
         self.commands = CommandService(AccessPolicy(settings.read_only), self.navigation.aliases)
         self.processes = ProcessRunner(self.commands.policy)
         self.forwards = ForwardManager(self.processes, changed=self._forward_changed)
-        self._auto_forward_contexts: set[str] = set()
         self.mutations = MutationManager()
         self.sessions.before_close = self._close_client_operations
         self._terminal_signals = TerminalSignals(self)
         self._shell = settings.shell
         self._process_environment = dict(os.environ) if environment is None else dict(environment)
         self._process_directory = Path.cwd() if directory is None else Path(directory)
-        self._native_clipboard = (
+        native_clipboard = (
             clipboard
             if clipboard is not None
             else NativeClipboard(self.processes, self._process_environment, self._process_directory)
         )
-        self._clipboard_task: asyncio.Task[None] | None = None
         self._catalog_task: asyncio.Task[None] | None = None
-        self._clipboard_pending: tuple[bytes, ClipboardBackend] | None = None
-        self._clipboard_closing = False
+        self.clipboard_queue = ClipboardQueue(native_clipboard, self._clipboard_failed)
         self.preferences = preferences
         self.live_preferences = LivePreferences(self, settings)
-        self._global_theme = preferences.document.settings.theme if preferences else settings.theme
-        self._theme_override = preferences.theme_override if preferences else None
-        self.appearance = Appearance()
-        self._appearance_warning: str | None = None
-        self._appearance_invalid = False
-        if preferences is not None:
-            try:
-                self.appearance = appearance_from(preferences.document)
-            except AppError as error:
-                self._appearance_warning = str(error)
-                self._appearance_invalid = True
-        for theme in themes_for(self.appearance):
-            self.register_theme(theme)
-        if presentation.invert:
-            for theme in tuple(self.available_themes.values()):
-                self.register_theme(invert_theme(theme))
-        self._applied_context: str | None = None
-        self._apply_theme()
-        self._updates = updates or UpdateService(
-            version("kuberich"),
-            user_cache_path("kuberich", appauthor=False) / "latest-release.json",
+        self.appearance_controller = AppearanceController(
+            self,
+            settings,
+            preferences,
+            self._theme_context,
+            self.live_preferences.apply,
+            lambda: self.chrome.build,
+            self._handle_exception,
+            invert=presentation.invert,
+            updates=updates,
         )
-        self._update_task: asyncio.Task[None] | None = None
-        self._updates_stopped = False
-        self._build_info: Static | None = None
-        self.update_result = UpdateResult("Version checks disabled; opt in under :themes.")
+        self.appearance_controller.apply()
         self._mode = ("Read-only" if settings.read_only else "Local preview") + (
             " · inverted" if presentation.invert else ""
         )
@@ -293,23 +258,8 @@ class KubeRichApp(App[None]):
         self.context_table.display = False
         self.standard_table = StandardTable()
         self.standard_table.display = False
-        self._standard_projection = StandardProjection(self.standard_table.definition)
         self.custom_table = CustomTable()
         self.custom_table.display = False
-        self._custom_projection: CustomProjection | None = None
-        self._custom_layouts: dict[tuple[str, str, str, str], CustomLayout] = {}
-        self._generic_selection: ResourceSelection | None = None
-        self._pending_generic: GenericResourceCommand | None = None
-        self._column_notice: str | None = None
-        self._resource_name = "pods"
-        self._context_parent: NavigationState | None = None
-        self._context_state: NavigationState | None = None
-        self._namespace_parent: NavigationState | None = None
-        self._namespace_state: NavigationState | None = None
-        self._namespace_route = False
-        self._selection_notice: tuple[ViewObservation, str] | None = None
-        self._pod_projection = PodProjection()
-        self._namespace_projection = NamespaceProjection()
         self.chrome = WorkspaceChrome(
             partial(header_identity, self.workspace.store, self.sessions),
             f"KubeRich: {version('kuberich')} · {self._mode}",
@@ -331,12 +281,190 @@ class KubeRichApp(App[None]):
             history=self.interactions.filter_history,
         )
         self.command_input = CommandInput(
-            self._suggestions, focus_table, self._submit_command, history=self.interactions.history
+            lambda value: self.command_routes.suggestions(value),
+            focus_table,
+            lambda value: self.command_routes.submit(value),
+            history=self.interactions.history,
         )
         self.status = WorkspaceLabel(DISCONNECTED_STATUS, id="status", markup=False)
         self.view_preferences = ViewPreferences(self)
+        self.views = RootViews(
+            RootTables(
+                self.resources,
+                self.namespace_table,
+                self.context_table,
+                self.standard_table,
+                self.custom_table,
+            ),
+            self._foreground,
+            lambda: self.sessions.catalog,
+            self.view_preferences,
+            self.interactions.filter,
+            self._filter_options,
+            lambda request: self.presenter.available_actions(request),
+            lambda: self.presenter.capture(),
+            lambda request, outcome: self.presenter.publish(request, outcome),
+            self._handle_exception,
+            pod_projection=lambda: PodProjection(),
+            namespace_projection=lambda: NamespaceProjection(),
+            standard_projection=lambda definition: StandardProjection(definition),
+            custom_projection=lambda layout: CustomProjection(layout),
+        )
+        self.navigator = WorkspaceNavigation(
+            self,
+            self.sessions,
+            self.workspace,
+            self.views,
+            self.history,
+            self.filter_input,
+            self.command_input,
+            self.header,
+            self.view_preferences,
+            self.commands.policy,
+            self._set_status,
+            self._set_notice,
+            self._apply_theme,
+            self._update_trail,
+            self._disable_namespace_favorites,
+            lambda context: dict(self.navigation.favorites).get(context, ()),
+        )
+        self.presenter = WorkspacePresenter(
+            self,
+            self.workspace,
+            self.views,
+            self.interactions,
+            self.navigator,
+            self.header,
+            self.breadcrumbs,
+            self.filter_input,
+            self.status,
+            self.commands.policy,
+            self.forwards,
+            lambda: self.appearance.full_gvr_titles,
+            self._observation_changed,
+            self._handle_exception,
+        )
         self.plugins = PluginController(self)
+        self.input_dispatch = InputDispatcher(self, self.plugins.bindings, self.plugins.open)
         self.jumps = JumpController(self)
+        self.targets = TargetCapture(
+            lambda: self.workspace.store.observation,
+            lambda: self.sessions.client,
+            self._target_selection,
+            self._set_notice,
+            self._set_status,
+        )
+        self.operations = ResourceOperations(
+            self,
+            self.targets.capture,
+            self._operation_context,
+            self.commands.policy,
+            self.mutations,
+            self.forwards,
+            self.processes,
+            self._set_status,
+            session_current=self._session_current,
+            forwarding=self._forwarding_preferences,
+            delete_context=lambda: self._edit_context(ContextChange.DELETE),
+            stop_plugins=self.plugins.manager.stop_for_client,
+        )
+        self.command_routes = WorkspaceCommands(
+            self,
+            lambda value: self.commands.resolve(value, self.workspace.discovery),
+            self.workspace,
+            self.navigator,
+            self.views,
+            self.interactions,
+            self._bind_commands(),
+            self.plugins.open,
+            lambda: CompletionSources(
+                self.sessions.catalog.names,
+                self.navigation.aliases,
+                tuple(plugin.name for plugin in self.plugins.plugins),
+                self.jumps.names,
+            ),
+        )
+        self.nested_commands = NestedCommands(
+            self.command_routes.suggestions, self.interactions.history, self.route_nested
+        )
+
+    def _bind_commands(self) -> BoundCommands:
+        return bind_commands(
+            self.commands.policy,
+            {
+                Command.EMPTY: lambda: self._set_status(self._workspace_status()),
+                Command.HELP: self.action_show_help,
+                Command.THEMES: self.action_change_theme,
+                Command.ABOUT: self.action_about,
+                Command.VIEWS: self.action_views,
+                Command.PLUGINS: self.plugins.open,
+                Command.PLUGIN_JOBS: self.action_plugin_jobs,
+                Command.QUIT: self.exit,
+                Command.STATUS: self.action_connection_details,
+                Command.RETRY: self.navigator.retry,
+                Command.LOGIN: self.action_login,
+                Command.BACK: self.navigator.history_back,
+                Command.FORWARD: self.navigator.history_forward,
+                Command.SHELL: self.action_shell,
+                Command.ATTACH: self.action_attach,
+                Command.UPLOAD: self.action_upload,
+                Command.DOWNLOAD: self.action_download,
+                Command.PORT_FORWARD: self.operations.port_forward,
+                Command.PORT_FORWARDS: self.operations.port_forwards,
+                Command.ANNOTATE: self.operations.annotate,
+                Command.EDIT: self.operations.edit,
+                Command.WRITES: self.operations.writes,
+                Command.RESTART: partial(self.operations.workload, WorkloadAction.RESTART),
+                Command.ROLLOUT: partial(self.operations.workload, WorkloadAction.STATUS),
+                Command.DELETE: partial(self.action_resource_operation, ResourceAction.DELETE),
+                Command.DELETE_BATCH: partial(
+                    self.action_resource_operation, ResourceAction.DELETE, batch=True
+                ),
+                Command.TRIGGER: partial(self.action_resource_operation, ResourceAction.TRIGGER),
+                Command.SUSPEND: partial(self.action_resource_operation, ResourceAction.SUSPEND),
+                Command.RESUME: partial(self.action_resource_operation, ResourceAction.RESUME),
+                Command.REFRESH: self.navigator.refresh_discovery,
+                Command.LOGS_ALL: self.operations.logs_all,
+                Command.CLEANUP: self.action_cleanup_pods,
+                Command.UNAVAILABLE: lambda: self._set_status(
+                    "Command unavailable in this preview. Use :help for available views and actions."
+                ),
+            },
+            {
+                Command.PODS: self._command_pods,
+                Command.NAMESPACES: lambda value: (
+                    self.navigator.namespaces()
+                    if value is None
+                    else self.navigator.namespace_selected(value)
+                ),
+                Command.CONTEXTS: lambda value: (
+                    self.navigator.contexts()
+                    if value is None
+                    else self.navigator.context_selected(value)
+                ),
+                Command.COLUMNS: lambda value: self.navigator.columns(value or ""),
+                Command.RENAME: lambda value: self._edit_context(ContextChange.RENAME, value or ""),
+                Command.JUMP: self.jumps.open,
+                Command.SCALE: lambda value: self.operations.workload(
+                    WorkloadAction.SCALE, value or ""
+                ),
+                Command.ROLLBACK: lambda value: self.operations.workload(
+                    WorkloadAction.ROLLBACK, value or ""
+                ),
+            },
+        )
+
+    def _command_pods(self, argument: str | None) -> None:
+        if argument is not None:
+            self.navigator.namespace_selected(argument)
+        else:
+            self.navigator.select_resource("pods")
+            self._set_status(self._workspace_status())
+
+    def action_plugin_jobs(self) -> None:
+        from kuberich.ui.plugin_screens import PluginJobs
+
+        self.push_screen(PluginJobs(self.plugins.manager))
 
     def _theme_context(self) -> str | None:
         return (
@@ -345,125 +473,22 @@ class KubeRichApp(App[None]):
             or self.sessions.catalog.current
         )
 
+    @property
+    def appearance(self) -> Appearance:
+        return self.appearance_controller.appearance
+
+    @property
+    def update_result(self) -> UpdateResult:
+        return self.appearance_controller.update_result
+
     def _apply_theme(self, context: str | None = None) -> None:
-        context = context or self._theme_context()
-        self.theme, unavailable = effective_theme(
-            self._global_theme,
-            self.appearance,
-            context,
-            self._theme_override,
-            self.available_themes,
-        )
-        self._applied_context = context
-        self.live_preferences.apply(context)
-        if unavailable:
-            self._appearance_warning = "Selected theme is unavailable; using k9s."
+        self.appearance_controller.apply(context)
 
     def action_change_theme(self) -> None:
-        from kuberich.ui.appearance import ThemeScreen
-
-        if not isinstance(self.screen, ModalScreen):
-            context = self._theme_context()
-            self.push_screen(
-                ThemeScreen(
-                    tuple(sorted(self.available_themes)),
-                    self.theme,
-                    context,
-                    self.appearance.check_updates,
-                    self._preview_theme,
-                    self._apply_theme,
-                    self._save_theme,
-                    writable=self.preferences is not None and not self._appearance_invalid,
-                )
-            )
-
-    def _preview_theme(self, name: str) -> None:
-        self.theme = name
-
-    async def _save_theme(self, name: str, context: str | None, check_updates: bool) -> str:
-        if self.preferences is None:
-            raise AppError("Launch through the CLI to save local preferences.")
-        if self._appearance_invalid:
-            raise AppError(
-                "Correct appearance settings with kuberich config check before saving; the file is retained."
-            )
-        if name not in self.available_themes or (
-            context is not None and context != self._theme_context()
-        ):
-            raise AppError("Theme or context changed; close and select it again.")
-        appearance = replace(
-            self.appearance,
-            check_updates=check_updates if context is None else self.appearance.check_updates,
-        )
-        await self.preferences.save(appearance, name, context)
-        self.appearance = appearance_from(self.preferences.document)
-        self._global_theme = self.preferences.document.settings.theme
-        self._apply_theme()
-        self._start_update_check()
-        return f"Saved {'globally' if context is None else 'for this context'} · effective theme: {self.theme} · environment > context > global"
+        self.appearance_controller.open_themes()
 
     def action_about(self) -> None:
-        from kuberich.ui.appearance import AboutScreen
-
-        if not isinstance(self.screen, ModalScreen):
-            message = self._notice_text()
-            self.push_screen(
-                AboutScreen(
-                    version("kuberich") + (" · inverted" if self._presentation.invert else ""),
-                    message,
-                )
-            )
-
-    def _notice_text(self) -> str:
-        result = self.update_result
-        return (
-            result.message
-            + (" · cached within 24 hours" if result.cached else "")
-            + ("\n" + result.release.url if result.release else "")
-        )
-
-    def _start_update_check(self) -> None:
-        if self._updates_stopped:
-            return
-        if not self.appearance.check_updates:
-            if self._update_task is not None:
-                self._update_task.cancel()
-            self.update_result = UpdateResult("Version checks disabled; opt in under :themes.")
-            if self._build_info is not None and self._build_info.is_attached:
-                self._build_info.update(self.chrome.build)
-            return
-        if self._update_task is None or self._update_task.done():
-            self.update_result = UpdateResult("Checking public stable releases…")
-            self._update_task = asyncio.create_task(self._check_update())
-            self._update_task.add_done_callback(self._update_finished)
-
-    async def _check_update(self) -> None:
-        from kuberich.ui.appearance import AboutScreen
-
-        result = await self._updates.check()
-        if self._updates_stopped or not self.appearance.check_updates:
-            return
-        self.update_result = result
-        message = self._notice_text()
-        for screen in tuple(self.screen_stack):
-            if isinstance(screen, AboutScreen):
-                screen.update_notice(message)
-        if (
-            self.is_running
-            and result.release is not None
-            and self._build_info is not None
-            and self._build_info.is_attached
-        ):
-            self._build_info.update(self.chrome.build + " · ↑" + result.release.version)
-            self.notify(result.message + " · :about for release notes")
-
-    def _update_finished(self, task: asyncio.Task[None]) -> None:
-        if task.cancelled():
-            if not self._updates_stopped and self.appearance.check_updates:
-                self._start_update_check()
-            return
-        if isinstance(error := task.exception(), Exception):
-            self._handle_exception(error)
+        self.appearance_controller.open_about()
 
     @property
     def state(self) -> AppState:
@@ -498,144 +523,45 @@ class KubeRichApp(App[None]):
         if self.focused is self.command_input:
             self.command_input.value = ""
             self.set_focus(self._active_table)
-        self._submit_command(text)
+        self.command_routes.submit(text)
 
     @property
     def retained_aggregate_log_view_count(self) -> int:
-        """Count registered aggregate views, including detached views still draining exports."""
-        return len(self._aggregate_screens)
+        return self.operations.retained_aggregate_count
+
+    def get_default_screen(self) -> WorkspaceScreen:
+        return WorkspaceScreen(self._foreground)
+
+    @property
+    def _resource_name(self) -> str:
+        return self.views.route.display_key
+
+    @property
+    def _generic_selection(self) -> ResourceSelection | None:
+        route = self.views.route
+        return route.selection if route.kind is ViewKind.CUSTOM else None
 
     @property
     def _active_table(self) -> PodTable | NamespaceTable | ContextTable | StandardTable:
-        if self._resource_name == "contexts":
-            return self.context_table
-        if self._resource_name == "namespaces":
-            return self.namespace_table
-        if self.custom_table.display:
-            return self.custom_table
-        return self.resources if self._resource_name == "pods" else self.standard_table
+        return self.views.table
+
+    def request_render(self) -> None:
+        self.views.request()
 
     def _update_trail(self) -> None:
-        if not self.screen_stack:
-            return
-        trail = (
-            ("namespaces", "pods")
-            if self._namespace_route and self._resource_name == "pods"
-            else (self._resource_name,)
-        )
-        self.breadcrumbs.trail = trail
-        destination = (
-            "Leave input"
-            if isinstance(self.focused, Input)
-            else "Clear filter"
-            if self.filter_input.value
-            else "Namespaces"
-            if self._namespace_route and self._resource_name == "pods"
-            else (
-                self._namespace_parent.resource.title()
-                if self._namespace_parent is not None
-                else "Pods"
-            )
-            if self._resource_name == "namespaces"
-            else self._context_parent.resource.title()
-            if self._resource_name == "contexts" and self._context_parent is not None
-            else "Pods"
-            if self._resource_name == "contexts"
-            else f"Stay in {self._resource_name}"
-        )
-        self.breadcrumbs.destination = destination
-        self.breadcrumbs.show_trail()
+        self.presenter.update_trail()
 
     def on_descendant_focus(self, event: DescendantFocus) -> None:
         self._update_trail()
 
     def _set_status(self, message: str) -> None:
-        prefix = "Read-only · " if self.commands.policy.read_only else ""
-        insecure = (
-            "Insecure transport · " if self.workspace.store.observation.connection.insecure else ""
-        )
-        forwards = (
-            f" · Forwards: {self.forwards.active_count}" if self.forwards.active_count else ""
-        )
-        self.status.update_text(safe_text(prefix + insecure + message + forwards))
+        self.presenter.status(message)
 
     def _forward_changed(self) -> None:
-        self._render_ready.set()
+        self.views.request()
 
     async def on_event(self, event: Event) -> None:
-        if (
-            self.screen_stack
-            and isinstance(self.screen, ModalScreen)
-            and isinstance(event, (Key, Paste))
-            and not event.is_forwarded
-        ):
-            from kuberich.ui.terminal import ShellScreen
-
-            if isinstance(self.screen, ShellScreen):
-                if isinstance(event, Key):
-                    if event.key == "ctrl+q" and not (
-                        self.screen.attach_mode and self.screen.detach_pending
-                    ):
-                        self.exit()
-                    else:
-                        self.screen.key(event)
-                else:
-                    self.screen.paste(event)
-                event.stop()
-                event.prevent_default()
-                return
-        if (
-            isinstance(event, Key)
-            and not event.is_forwarded
-            and self.screen_stack
-            and isinstance(self.screen, CommandWorkspace)
-            and event.key == "colon"
-            and not isinstance(self.focused, Input)
-        ):
-            self.screen.focus_command()
-            event.stop()
-            event.prevent_default()
-            return
-        if (
-            isinstance(event, Key)
-            and not event.is_forwarded
-            and self.screen_stack
-            and not isinstance(self.screen, ModalScreen)
-            and isinstance(self.focused, DataTable)
-        ):
-            plugin = dict(self.plugins.bindings()).get(event.key)
-            if plugin is not None:
-                self.plugins.open(plugin)
-                event.stop()
-                event.prevent_default()
-                return
-        focused = (
-            self.focused
-            if isinstance(event, Key) and not event.is_forwarded and self.screen_stack
-            else None
-        )
-        input_key = (
-            isinstance(event, Key)
-            and not event.is_forwarded
-            and isinstance(focused, Input)
-            and event.key not in {"ctrl+q", "ctrl+c"}
-        )
-        await super().on_event(event)
-        if input_key and isinstance(focused, Input):
-            # Forwarded printable keys use the widget's queue. Drain that key before
-            # a subsequent editing binding or Enter reads the input's value.
-            completion: asyncio.Future[None] = asyncio.get_running_loop().create_future()
-            self._input_completion = completion
-
-            def settle() -> None:
-                if not completion.done():
-                    completion.set_result(None)
-
-            try:
-                if focused.call_later(settle):
-                    await completion
-            finally:
-                self._input_completion = None
+        await self.input_dispatch.dispatch(event, super().on_event)
 
     def _workspace_status(self) -> str:
         return self.workspace.store.observation.message
@@ -716,63 +642,22 @@ class KubeRichApp(App[None]):
         self.screen.set_class(self.size.height < 16, "short")
         self.set_focus(self.resources)
         self._set_status(DISCONNECTED_STATUS)
-        self._build_info = self.header.query_one("#build-info", Static)
-        self.live_preferences.start((self._appearance_warning, self._navigation_warning))
+        self.appearance_controller.attach_build_info(self.header.query_one("#build-info", Static))
+        self.live_preferences.start((self.appearance_controller.warning, self._navigation_warning))
         if self._initial_command is not Command.QUIT:
-            self.call_after_refresh(self._start_update_check)
-            subscription = self.workspace.subscribe()
-            self._view_task = asyncio.create_task(self._observe_view(subscription))
-            self._render_task = asyncio.create_task(self._render_views())
-            context = self.sessions.request.context or self.sessions.catalog.current
-            initial = self._initial_command
-            if initial is Command.NAMESPACES:
-                self.workspace.selection = ResourceSelection("namespaces")
-                self._display_resource("namespaces")
-            scope = None
-            if isinstance(initial, ScopedCommand):
-                if initial.command is Command.CONTEXTS:
-                    context = initial.argument
-                else:
-                    scope = NamespaceChoice(None if initial.argument == "*" else initial.argument)
-            if isinstance(initial, ResourceCommand):
-                self.workspace.selection = initial.definition.selection
-                self._display_resource(initial.definition.name)
-                if initial.scope is not None:
-                    scope = NamespaceChoice(None if initial.scope == "*" else initial.scope)
-            if isinstance(initial, GenericResourceCommand):
-                self._pending_generic = initial
-            if (
-                context is not None
-                and initial is not Command.THEMES
-                and initial is not Command.ABOUT
-                and initial is not Command.VIEWS
-            ):
-                self._start_connection(context, scope=scope)
-            if (
-                not isinstance(initial, (ScopedCommand, ResourceCommand, GenericResourceCommand))
-                and initial is not Command.NAMESPACES
-            ):
-                self._apply_command(initial)
+            self.call_after_refresh(self.appearance_controller.start_updates)
+            self.presenter.start()
+            self.views.start()
+            self.navigator.initialize(self._initial_command, self.command_routes.apply)
         else:
             self.exit()
 
-    async def _interaction_filter[T: PodRow | NamespaceRow | ContextRow | ResourceRow](
-        self, rows: tuple[T, ...], query: str, kind: str
-    ) -> FilterResult[T]:
-        view = self.workspace.store.observation
-        records = view.snapshot.items if view.snapshot else ()
-        result = await self.interactions.filter.apply(
-            rows, records, query, kind, errors=self.interactions.errors
+    def _filter_options(self, context: str | None) -> FilterOptions:
+        return FilterOptions(
+            self.interactions.errors,
+            self.interactions.favorites,
+            dict(self.navigation.favorites).get(context or "", ()),
         )
-        if kind == "namespaces" and self.interactions.favorites and result.problem is None:
-            names = dict(self.navigation.favorites).get(view.context or "", ())
-            result = replace(result, rows=tuple(row for row in result.rows if row.name in names))
-        if self.interactions.errors and result.problem is None:
-            result = replace(
-                result,
-                problem=f"Errors only · {len(result.rows)}/{len(rows)} {kind} · {result.unknown} unknown omitted",
-            )
-        return result
 
     def _start_connection(
         self,
@@ -782,458 +667,28 @@ class KubeRichApp(App[None]):
         remember: bool = True,
         authenticate: CredentialLogin | None = None,
     ) -> None:
-        try:
-            validate_argument(context)
-        except AppError as error:
-            self._set_status(str(error))
-            return
-        if remember:
-            self._remember_view()
-        if context != self.workspace.store.observation.context:
-            self._namespace_parent = self._namespace_state = None
-            self._namespace_route = False
-            self._custom_layouts.clear()
-        self._apply_theme(context)
-        self._connection_task = self.workspace.connect(
-            context, scope=scope, authenticate=authenticate
-        )
-        self._clear_rows()
-        self.header.update_identity()
-        self._update_trail()
-        self._set_status("Connecting · F2 contexts · F4 retry · Ctrl+Q quit")
+        self.navigator.connect(context, scope=scope, remember=remember, authenticate=authenticate)
 
-    def _refresh_tables(self) -> None:
-        if not self.is_running or isinstance(self.screen, ModalScreen):
-            return
-        self.resources.refresh_ages()
-        self.namespace_table.refresh_ages()
-        self.standard_table.refresh_ages()
-        self.custom_table.refresh_ages()
-        self._render_ready.set()
-
-    async def _observe_view(self, subscription: ViewSubscription) -> None:
-        header_identity: tuple[str, str, str, str, str] | None = None
-        try:
-            async for observation in subscription:
-                if observation.context is None:
-                    continue
-                if (
-                    self.is_running
-                    and observation.revision == self.workspace.store.observation.revision
-                ):
-                    self._render_ready.set()
-                    self.plugins.refresh()
-                    self.plugins.manager.invalidate()
-                    self.command_input.refresh_choices()
-                    if self._pending_generic is not None and self.workspace.discovery is not None:
-                        pending, self._pending_generic = self._pending_generic, None
-                        self._apply_generic(pending)
-                    if self._theme_context() != self._applied_context:
-                        self._apply_theme()
-                    identity = self.chrome.identity()
-                    if identity != header_identity:
-                        for header in self.query(WorkspaceHeader):
-                            header.update_identity()
-                        header_identity = identity
-                    for screen in tuple(self.screen_stack):
-                        if not isinstance(screen, ModalScreen):
-                            continue
-                        from kuberich.ui.configuration_data import ConfigurationScreen
-                        from kuberich.ui.containers import ContainerScreen
-                        from kuberich.ui.inspection import InspectionScreen
-                        from kuberich.ui.logs import LogScreen
-                        from kuberich.ui.terminal import ShellScreen
-
-                        if isinstance(
-                            screen,
-                            (
-                                InspectionScreen,
-                                LogScreen,
-                                ContainerScreen,
-                                ShellScreen,
-                                ConfigurationScreen,
-                            ),
-                        ):
-                            screen.validate_target()
-                            if (
-                                isinstance(screen, ContainerScreen)
-                                and observation.snapshot is not None
-                            ):
-                                record = next(
-                                    (
-                                        item
-                                        for item in observation.snapshot.items
-                                        if item.uid == screen.stream.target.uid
-                                    ),
-                                    None,
-                                )
-                                if record is not None:
-                                    screen.observe_record(record)
-                            if (
-                                (
-                                    isinstance(screen, (ContainerScreen, InspectionScreen))
-                                    and screen.invalidated
-                                )
-                                or (isinstance(screen, LogScreen) and screen.stale)
-                                or (isinstance(screen, ShellScreen) and screen._shell_closing)
-                            ):
-                                await screen.stop_owned()
-        except Exception as error:
-            self._handle_exception(error)
-        finally:
-            subscription.close()
-
-    async def _render_views(self) -> None:
-        try:
-            while True:
-                await self._render_ready.wait()
-                self._render_ready.clear()
-                if not self.is_running:
-                    return
-                # Domain subscriptions stay live while a detail view covers the
-                # workspace. Project and paint only the latest state on return.
-                while isinstance(self.screen, ModalScreen):
-                    await asyncio.sleep(0.05)
-                    if not self.is_running:
-                        return
-                view = self.workspace.store.observation
-                query = self.filter_input.value
-                interaction_revision = self.interactions.revision
-                kind = self._resource_name
-
-                def current(
-                    view: ViewObservation = view,
-                    query: str = query,
-                    kind: str = kind,
-                    layout: CustomLayout | None = None,
-                    interaction_revision: int = interaction_revision,
-                ) -> bool:
-                    return (
-                        self.is_running
-                        and not isinstance(self.screen, ModalScreen)
-                        and view is self.workspace.store.observation
-                        and query == self.filter_input.value
-                        and kind == self._resource_name
-                        and interaction_revision == self.interactions.revision
-                        and (layout is None or layout == self.custom_table.resource_layout)
-                    )
-
-                if kind == "namespaces":
-                    self.view_preferences.prepare(view)
-                    await self._pod_projection.project(None)
-                    await self._standard_projection.project(None)
-                    ns_rows = await self._namespace_projection.project(view.snapshot)
-                    ns_result = await self._interaction_filter(ns_rows, query, "namespaces")
-                    count, filtered, problem = len(ns_rows), len(ns_result.rows), ns_result.problem
-                    applied = await self.namespace_table.apply_rows(
-                        ns_result.rows, view.revision, current
-                    )
-                elif kind == "contexts":
-                    await self._pod_projection.project(None)
-                    await self._namespace_projection.project(None)
-                    await self._standard_projection.project(None)
-                    ctx_rows = context_rows(self.sessions.catalog, view.context)
-                    ctx_result = await apply_filter(ctx_rows, query, "contexts")
-                    count, filtered, problem = (
-                        len(ctx_rows),
-                        len(ctx_result.rows),
-                        ctx_result.problem,
-                    )
-                    applied = await self.context_table.apply_rows(ctx_result.rows, current)
-                elif kind == "pods":
-                    self.view_preferences.prepare(view)
-                    await self._namespace_projection.project(None)
-                    await self._standard_projection.project(None)
-                    rows = await self._pod_projection.project(view.snapshot)
-                    result = await self._interaction_filter(rows, query, "pods")
-                    count, filtered, problem = len(rows), len(result.rows), result.problem
-                    applied = await self.resources.apply_rows(result.rows, view.revision, current)
-                elif self.custom_table.display:
-                    await self._pod_projection.project(None)
-                    await self._namespace_projection.project(None)
-                    await self._standard_projection.project(None)
-                    snapshot = view.snapshot
-                    layout = self.custom_table.resource_layout
-                    if snapshot is not None:
-                        key = (
-                            view.context or "",
-                            snapshot.resource.group,
-                            snapshot.resource.version,
-                            snapshot.resource.name,
-                        )
-                        layout = self._custom_layouts.get(key)
-                        if (
-                            layout is None
-                            or layout.resource != snapshot.resource
-                            or layout.headers != snapshot.columns
-                        ):
-                            layout = CustomLayout.build(snapshot.resource, snapshot.columns)
-                        layout = self.view_preferences.prepare(view, layout) or layout
-                        self._remember_layout(key, layout)
-                        if self.custom_table.resource_layout != layout:
-                            self.custom_table.configure_layout(layout, view.revision)
-                            self._custom_projection = CustomProjection(layout)
-                        self.view_preferences.configure_custom(view)
-                    custom_rows = (
-                        await self._custom_projection.project(snapshot)
-                        if self._custom_projection is not None
-                        else ()
-                    )
-                    custom_result = await self._interaction_filter(custom_rows, query, kind)
-                    count, filtered, problem = (
-                        len(custom_rows),
-                        len(custom_result.rows),
-                        custom_result.problem,
-                    )
-                    applied = await self.custom_table.apply_rows(
-                        custom_result.rows, view.revision, partial(current, layout=layout)
-                    )
-                else:
-                    self.view_preferences.prepare(view)
-                    await self._pod_projection.project(None)
-                    await self._namespace_projection.project(None)
-                    standard_rows = await self._standard_projection.project(view.snapshot)
-                    standard_result = await self._interaction_filter(standard_rows, query, kind)
-                    count, filtered, problem = (
-                        len(standard_rows),
-                        len(standard_result.rows),
-                        standard_result.problem,
-                    )
-                    applied = await self.standard_table.apply_rows(
-                        standard_result.rows, view.revision, current
-                    )
-                if applied:
-                    if view.revision != self.interactions.scope_revision:
-                        self.interactions.selection.marked = frozenset()
-                        self.interactions.selection.anchor = None
-                        self.interactions.scope_revision = view.revision
-                    self.interactions.selection.prune(
-                        tuple(
-                            row.key.value
-                            for row in self._active_table.ordered_rows
-                            if row.key.value is not None
-                        )
-                    )
-                    self.interactions.paint_selection()
-                    self._show_view(view)
-                    if (
-                        query
-                        or self.interactions.errors
-                        or (kind == "namespaces" and self.interactions.favorites)
-                    ):
-                        detail = (
-                            "Local kubeconfig catalogue" if kind == "contexts" else view.message
-                        )
-                        self._set_view_status(
-                            view, problem or f"Filter active · {filtered}/{count} {kind} · {detail}"
-                        )
-                        if (
-                            count
-                            and not filtered
-                            and (view.status is ViewStatus.LIVE or kind == "contexts")
-                            and problem is None
-                        ):
-                            self.query_one("#empty-title", WorkspaceLabel).update_text(
-                                f"No {kind} match this filter"
-                            )
-                            self.query_one("#empty-description", WorkspaceLabel).update_text(
-                                "Escape in the table clears the filter."
-                            )
-                    if (
-                        self._restore_state is not None
-                        and self._restore_state[0] == view.revision
-                        and (view.snapshot is not None or kind == "contexts")
-                    ):
-                        state = self._restore_state[1]
-                        if isinstance(
-                            self._active_table, (PodTable, StandardTable, NamespaceTable)
-                        ):
-                            if self._resource_name == "pods":
-                                self.resources.restore_sort(
-                                    PodColumn(state.column), state.descending
-                                )
-                            elif (
-                                isinstance(self._active_table, (StandardTable, NamespaceTable))
-                                and not self.custom_table.display
-                            ):
-                                self._active_table.restore_sort(state.column, state.descending)
-                        if self.custom_table.display:
-                            compatible = (
-                                self.custom_table.resource_layout is not None
-                                and self.custom_table.resource_layout.headers == state.headers
-                            )
-                            self.custom_table.restore_sort(
-                                state.column if compatible else "name",
-                                state.descending if compatible else False,
-                            )
-                        self._active_table.restore_viewport(
-                            Viewport(state.selected, state.index, state.x, state.y, state.top)
-                        )
-                        self._restore_state = None
-                    if self._column_notice is not None:
-                        self._set_status(self._column_notice)
-                    self._update_trail()
-        except Exception as error:
-            self._handle_exception(error)
-
-    def _show_view(self, view: ViewObservation) -> None:
-        observation = view.connection
-        self.header.update_identity()
-        if self._resource_name == "contexts":
-            self.query_one("#resource-view", Vertical).border_title = safe_text(
-                f"contexts[{self.context_table.row_count}]"
-            )
-            self.query_one("#empty-state").display = not bool(self.context_table.row_count)
-            self.context_table.set_class(bool(self.context_table.row_count), "populated")
-            self.query_one("#empty-title", WorkspaceLabel).update_text(
-                "No contexts match this filter"
-            )
-            self.query_one("#empty-description", WorkspaceLabel).update_text(
-                "Escape in the table clears the filter."
-            )
-            self._show_sort()
-            self._set_view_status(
-                view, "Local kubeconfig contexts · Enter connect · Esc previous view"
-            )
-            return
-        usable = observation.state in USABLE_CONNECTIONS
-        self.query_one("#empty-title", WorkspaceLabel).update_text(
-            "Stale resource data"
-            if view.snapshot is not None and view.problem is not None
-            else "Resource data unavailable"
-            if usable and view.status is ViewStatus.FAILED
-            else f"No {self._resource_name} in this scope"
-            if view.snapshot is not None and not view.snapshot.items
-            else f"{self._resource_name.title()} ready"
-            if view.status is ViewStatus.LIVE
-            else "Loading resources"
-            if usable
-            else "Connection unavailable"
-        )
-        self.query_one("#empty-description", WorkspaceLabel).update_text(
-            f"No {self._resource_name} were returned. :ns namespaces · :ctx contexts."
-            if view.status is ViewStatus.LIVE
-            else "Keeping the last snapshot while reconnecting. Press i for details."
-            if view.status is ViewStatus.STALE
-            else "Press i for status · r retry · :ctx choose context."
-        )
-        scope = (
-            "all"
-            if self._resource_name == "namespaces"
-            else "cluster"
-            if view.scope is not None and not view.scope.resource.namespaced
-            else observation.namespace or "all"
-        )
-        self.query_one("#resource-view", Vertical).border_title = safe_text(
-            f"{self._resource_name}({scope})[{self._active_table.row_count}]"
-            + (
-                f" · {view.scope.resource.api_version}"
-                if (self.custom_table.display or self.appearance.full_gvr_titles)
-                and view.scope is not None
-                else ""
-            )
-            + f" · {view.status.name.lower()}"
-        )
-        self.query_one("#empty-state").display = not bool(self._active_table.row_count)
-        self._active_table.set_class(bool(self._active_table.row_count), "populated")
-        self._show_sort()
-        self._set_view_status(view, view.message)
-
-    def _set_view_status(self, view: ViewObservation, message: str) -> None:
-        if self._selection_notice is not None:
-            notice_view, notice = self._selection_notice
-            if notice_view is view:
-                message = notice
-            else:
-                self._selection_notice = None
-        self._set_status(message)
+    def _observation_changed(self) -> None:
+        self.plugins.refresh()
+        self.plugins.manager.invalidate()
+        self.command_input.refresh_choices()
+        self.navigator.resolve_pending()
+        if self._theme_context() != self.appearance_controller.applied_context:
+            self._apply_theme()
 
     def _set_notice(self, message: str) -> None:
-        """Show a message that survives re-renders of the current view."""
-        self._selection_notice = self.workspace.store.observation, message
-        self._set_status(message)
-
-    def _show_sort(self) -> None:
-        self.query_one("#resource-view", Vertical).border_subtitle = (
-            self.resources.sort_summary
-            if self._resource_name == "pods"
-            else "Name ↑ · Enter connect · * selected session"
-            if self._resource_name == "contexts"
-            else self.namespace_table.sort_summary + " · Enter use namespace · 0 all"
-            if self._resource_name == "namespaces"
-            else self.custom_table.sort_summary
-            if self.custom_table.display
-            else self.standard_table.sort_summary
-        )
+        self.presenter.notice(message)
 
     @on(PodTable.SortChanged)
     @on(StandardTable.SortChanged)
     @on(NamespaceTable.SortChanged)
     def sort_changed(self) -> None:
         self.view_preferences.remember_sort()
-        self._show_sort()
+        self.presenter.show_sort()
 
     async def _close_client_operations(self, client: KubernetesSession) -> None:
-        from kuberich.ui.configuration_data import ConfigurationScreen
-        from kuberich.ui.containers import ContainerScreen
-        from kuberich.ui.editing import EditingScreen
-        from kuberich.ui.inspection import InspectionScreen
-        from kuberich.ui.logs import LogScreen
-        from kuberich.ui.mutations import AnnotationScreen
-        from kuberich.ui.operations import ResourceOperationScreen
-        from kuberich.ui.plugin_screens import PluginScreen
-        from kuberich.ui.terminal import ShellScreen
-        from kuberich.ui.transfers import TransferScreen
-        from kuberich.ui.workloads import WorkloadScreen
-
-        closing = asyncio.gather(
-            *(
-                screen.stop_owned()
-                for screen in tuple(self.screen_stack)
-                if isinstance(screen, (InspectionScreen, ContainerScreen, LogScreen, ShellScreen))
-                and (
-                    screen.service.client
-                    if isinstance(screen, InspectionScreen)
-                    else screen.shell.client
-                    if isinstance(screen, ShellScreen)
-                    else screen.stream.client
-                )
-                is client
-            ),
-            self.plugins.manager.stop_for_client(client),
-            self.mutations.stop_for_client(client),
-            self.forwards.stop_for_client(client),
-            *(
-                screen.stop_owned()
-                for screen in tuple(self.screen_stack)
-                if isinstance(screen, ConfigurationScreen) and screen.service.client is client
-            ),
-            *(
-                screen.stop_owned()
-                for screen in tuple(self._aggregate_screens)
-                if screen.owner.client is client
-            ),
-            *(
-                screen.stop_owned()
-                for screen in tuple(self.screen_stack)
-                if isinstance(
-                    screen,
-                    (AnnotationScreen, EditingScreen, WorkloadScreen, TransferScreen, PluginScreen),
-                )
-                and screen.source.client is client
-            ),
-            *(
-                screen.stop_owned()
-                for screen in tuple(self.screen_stack)
-                if isinstance(screen, ResourceOperationScreen)
-                and screen.sources[0].client is client
-            ),
-        )
-        try:
-            await asyncio.shield(closing)
-        except asyncio.CancelledError:
-            await _finish_owned(closing)
-            raise
+        await self.operations.close_for_client(client)
 
     def copy_to_clipboard(self, text: str) -> None:
         backend = clipboard_backend(
@@ -1247,24 +702,9 @@ class KubeRichApp(App[None]):
             if self._driver is not None:
                 self._driver.write(osc52(data, tmux=bool(self._process_environment.get("TMUX"))))
         elif backend is not ClipboardBackend.MEMORY:
-            self._clipboard_pending = data, backend
-            if self._clipboard_task is None or self._clipboard_task.done():
-                self._clipboard_task = asyncio.create_task(self._write_clipboard())
-
-    async def _write_clipboard(self) -> None:
-        while self._clipboard_pending is not None:
-            data, backend = self._clipboard_pending
-            self._clipboard_pending = None
-            try:
-                await self._native_clipboard.write(
-                    data, backend, failed=partial(self._clipboard_failed, data)
-                )
-            except AppError as error:
-                self._clipboard_failed(data, error)
+            self.clipboard_queue.submit(data, backend)
 
     def _clipboard_failed(self, data: bytes, error: AppError) -> None:
-        if self._clipboard_pending is not None or self._clipboard_closing:
-            return
         if self._process_environment.get("KUBERICH_CLIPBOARD", "auto") == "auto":
             try:
                 sequence = osc52(data, tmux=bool(self._process_environment.get("TMUX")))
@@ -1282,48 +722,28 @@ class KubeRichApp(App[None]):
         message: RenderableType | None = None,
     ) -> None:
         self._startup_stopped = True
-        self._updates_stopped = True
+        self.appearance_controller.stop()
         super().exit(result=result, return_code=return_code, message=message)
 
     async def on_unmount(self) -> None:
-        self._clipboard_closing = True
-        self._updates_stopped = True
-        if self._update_task is not None:
-            self._update_task.cancel()
-            await _finish_owned(asyncio.gather(self._update_task, return_exceptions=True))
+        self.clipboard_queue.stop()
+        self.appearance_controller.stop()
+        await self.appearance_controller.close()
         try:
-            if self._nested_route_task is not None:
-                if not self._nested_route_task.done() and not self._nested_route_task.cancelling():
-                    self._nested_route_task.cancel()
-                await _finish_owned(asyncio.gather(self._nested_route_task, return_exceptions=True))
-            if self.interactions._favorite_task is not None:
-                await _finish_owned(
-                    asyncio.gather(self.interactions._favorite_task, return_exceptions=True)
-                )
+            await self.command_routes.close()
+            await self.interactions.close()
             if self._catalog_task is not None:
                 self._catalog_task.cancel()
-                await _finish_owned(asyncio.gather(self._catalog_task, return_exceptions=True))
-            self._clipboard_pending = None
-            if self._clipboard_task is not None:
-                self._clipboard_task.cancel()
-                await _finish_owned(asyncio.gather(self._clipboard_task, return_exceptions=True))
-            await self._native_clipboard.close()
+                await finish_owned(asyncio.gather(self._catalog_task, return_exceptions=True))
+            await self.clipboard_queue.close()
             await self.live_preferences.close()
             await self.plugins.close()
             await self.mutations.close()
             await self.forwards.close()
             await self.processes.close()
             await self.workspace.close()
-            if self._view_task is not None:
-                await asyncio.gather(self._view_task, return_exceptions=True)
-            if self._render_task is not None:
-                self._render_task.cancel()
-                await asyncio.gather(self._render_task, return_exceptions=True)
-            await self._pod_projection.project(None)
-            await self._namespace_projection.project(None)
-            await self._standard_projection.project(None)
-            if self._custom_projection is not None:
-                await self._custom_projection.project(None)
+            await self.presenter.close()
+            await self.views.close()
         finally:
             self._terminal_signals.restore()
 
@@ -1410,18 +830,7 @@ class KubeRichApp(App[None]):
         self._inspect("events")
 
     def _inspect(self, page: Page) -> None:
-        from kuberich.services.inspection import InspectionService
-        from kuberich.ui.inspection import InspectionScreen
-
-        selection = self._capture_target()
-        if selection is not None:
-            client, resource, _, target, current = selection
-            self.push_screen(
-                InspectionScreen(
-                    InspectionService(client, resource, target, self.commands.policy, current),
-                    page,
-                )
-            )
+        self.operations.inspect(page)
 
     def action_logs(self) -> None:
         self._open_logs()
@@ -1454,39 +863,13 @@ class KubeRichApp(App[None]):
         self._open_logs(containers_first=True)
 
     def action_port_forwards(self, selected: UUID | None = None) -> None:
-        from kuberich.ui.port_forwards import ForwardScreen
-
-        if not isinstance(self.screen, ModalScreen):
-            self.push_screen(
-                ForwardScreen(self.forwards, self.chrome, self.breadcrumbs.trail, selected=selected)
-            )
+        self.operations.port_forwards(selected)
 
     def action_annotate(self) -> None:
-        from kuberich.ui.mutations import AnnotationScreen
-
-        try:
-            self.commands.policy.require(Action.MUTATE)
-        except AppError as error:
-            self._set_status(str(error))
-            return
-        selection = self._capture_target()
-        if selection is not None:
-            client, resource, _, target, current = selection
-            source = MutationService(client, resource, target, self.commands.policy, current)
-            try:
-                source.require_current()
-            except AppError:
-                self._set_status(
-                    "This captured resource API cannot be modified here. Select a patchable resource."
-                )
-                return
-            self.push_screen(AnnotationScreen(source, self.mutations))
+        self.operations.annotate()
 
     def action_writes(self) -> None:
-        from kuberich.ui.mutations import MutationHistoryScreen
-
-        if not isinstance(self.screen, ModalScreen):
-            self.push_screen(MutationHistoryScreen(self.mutations))
+        self.operations.writes()
 
     def action_resource_operation(
         self,
@@ -1496,59 +879,17 @@ class KubeRichApp(App[None]):
         uids: tuple[str, ...] | None = None,
         labels: tuple[str, ...] | None = None,
     ) -> None:
-        from kuberich.services.operations import ResourceOperationService
-        from kuberich.ui.operations import ResourceOperationScreen
-
-        if self._resource_name == "contexts" and action is ResourceAction.DELETE:
-            self._edit_context(ContextChange.DELETE)
-            return
-        try:
-            self.commands.policy.require(Action.MUTATE)
-        except AppError as error:
-            self._set_status(str(error))
-            return
-        selection = self._capture_target()
-        if selection is None:
-            return
-        selections = [selection]
-        if batch:
-            visible_uids = tuple(
-                row.key.value
-                for row in self._active_table.ordered_rows
-                if row.key.value is not None
-            )
-            self.interactions.selection.prune(visible_uids)
-            marked = self.interactions.selection.marked
-            if uids is None:
-                uids = (
-                    tuple(uid for uid in visible_uids if uid in marked)
-                    if marked
-                    else tuple(key.value for key in self._active_table.rows if key.value)
-                )
-            if len(uids) > MAX_BATCH:
-                self._set_status(
-                    "Filter this view to at most 100 rows before choosing a delete batch."
-                )
-                return
-            selections = []
-            for uid in uids:
-                captured = self._capture_target(uid)
-                if captured is None:
-                    return
-                selections.append(captured)
-        sources = []
-        try:
-            for client, resource, _, target, current in selections:
-                source = ResourceOperationService(
-                    client, resource, target, self.commands.policy, current, action
-                )
-                source.require_current()
-                sources.append(source)
-        except AppError as error:
-            self._set_status(str(error))
-            return
-        self.push_screen(
-            ResourceOperationScreen(tuple(sources), self.mutations, batch=batch, labels=labels)
+        table = self._active_table
+        visible = tuple(row.key.value for row in table.ordered_rows if row.key.value is not None)
+        all_uids = tuple(key.value for key in table.rows if key.value)
+        self.operations.operate(
+            action,
+            batch=batch,
+            uids=uids,
+            labels=labels,
+            visible_uids=visible,
+            all_uids=all_uids,
+            selection=self.interactions.selection,
         )
 
     def action_cleanup_pods(self) -> None:
@@ -1606,312 +947,62 @@ class KubeRichApp(App[None]):
         if plan.new_name is not None and connected == plan.name:
             self._start_connection(plan.new_name, remember=False)
         self._set_notice(f"{done} {plan.name}. Backup: {result.backup}")
-        self._render_ready.set()
+        self.views.request()
 
     def action_workload(self, operation: WorkloadAction, argument: str = "") -> None:
-        from kuberich.services.workloads import WorkloadService
-        from kuberich.ui.workloads import WorkloadScreen
-
-        try:
-            self.commands.policy.require(
-                Action.READ if operation is WorkloadAction.STATUS else Action.MUTATE
-            )
-        except AppError as error:
-            self._set_status(str(error))
-            return
-        selection = self._capture_target()
-        if selection is not None:
-            client, resource, _, target, current = selection
-            try:
-                applicable(resource, operation)
-            except AppError as error:
-                self._set_status(str(error))
-                return
-            self.push_screen(
-                WorkloadScreen(
-                    WorkloadService(client, resource, target, self.commands.policy, current),
-                    self.mutations,
-                    operation,
-                    argument,
-                )
-            )
+        self.operations.workload(operation, argument)
 
     def action_edit(self) -> None:
-        from kuberich.services.editing import EditingService
-        from kuberich.ui.editing import EditingScreen
-
-        try:
-            self.commands.policy.require(Action.MUTATE)
-        except AppError as error:
-            self._set_status(str(error))
-            return
-        selection = self._capture_target()
-        if selection is not None:
-            client, resource, _, target, current = selection
-            source = EditingService(client, resource, target, self.commands.policy, current)
-            try:
-                source.require_current()
-            except AppError:
-                self._set_status("Select a readable, patchable resource before editing.")
-                return
-            self.push_screen(
-                EditingScreen(
-                    source,
-                    self.mutations,
-                    self.processes,
-                    self._process_environment,
-                    self._process_directory,
-                )
-            )
-
-    def _forward_started(self, identity: UUID | None) -> None:
-        if identity is not None:
-            self.action_port_forwards(identity)
+        self.operations.edit()
 
     def action_port_forward(self) -> None:
-        from kuberich.ui.port_forwards import ForwardPrompt
-
-        try:
-            self.commands.policy.require(Action.PORT_FORWARD)
-        except AppError as error:
-            self._set_status(str(error))
-            return
-        selection = self._capture_target()
-        if selection is None:
-            return
-        client, _, record, target, selected = selection
-
-        def current_connection() -> bool:
-            identity = self.sessions.observation.identity
-            return (
-                self.sessions.client is client
-                and identity is not None
-                and identity.connection_id == target.session.connection_id
-            )
-
-        source = ForwardService(
-            client,
-            target,
-            self.commands.policy,
-            current_connection,
-            environment=self._process_environment,
-            directory=self._process_directory,
-        )
-        try:
-            source.require_current()
-        except AppError as error:
-            self._set_status(str(error))
-            return
-        remote = suggested_port(target.resource, record.manifest)
-        try:
-            options = (
-                forwarding_from(self.preferences.document)
-                if self.preferences
-                else ForwardPreferences()
-            ).for_context(target.session.context)
-            annotated = annotation_preset(record.manifest, target.resource)
-            presets = options.presets
-            initial = f"0:{remote}"
-            if annotated is not None:
-                preset, automatic = annotated
-                if automatic and (
-                    options.auto_annotations
-                    or target.session.context in self._auto_forward_contexts
-                ):
-                    identity = self.forwards.start(
-                        source,
-                        resolve_mappings(preset.ports, target.resource, record.manifest),
-                        intent=preset.intent,
-                    )
-                    self._forward_started(identity)
-                    return
-                presets = (preset, *presets)
-                initial = preset.ports
-        except AppError as error:
-            self._set_status(str(error))
-            return
-        self.push_screen(
-            ForwardPrompt(
-                self.forwards,
-                source,
-                selected,
-                initial=initial,
-                manifest=record.manifest,
-                initial_intent=annotated[0].intent if annotated is not None else None,
-                presets=presets,
-                trust_annotations=lambda: self._auto_forward_contexts.add(target.session.context),
-            ),
-            self._forward_started,
-        )
+        self.operations.port_forward()
 
     def _open_logs(self, *, containers_first: bool = False, uid: str | None = None) -> None:
-        from kuberich.domain.logs import log_containers
-        from kuberich.services.attach import AttachService
-        from kuberich.services.logs import LogStream
-        from kuberich.services.shell import ShellService
-        from kuberich.services.transfers import TransferService
-        from kuberich.ui.containers import ContainerScreen
-        from kuberich.ui.logs import LogScreen
-
-        selection = self._capture_target(uid)
-        if selection is None:
-            return
-        client, resource, record, target, current = selection
-        try:
-            if resource.group or resource.name != "pods" or not record.namespace:
-                raise AppError("Select a namespaced pod to open container logs.")
-            containers = log_containers(record.manifest)
-            if not containers:
-                raise AppError("The selected pod has no regular/init/ephemeral containers.")
-        except AppError as error:
-            self._set_status(str(error))
-            return
-        stream = LogStream(client, target, self.commands.policy, current)
-        self.push_screen(
-            ContainerScreen(
-                stream,
-                record.manifest,
-                shell=ShellService(
-                    client,
-                    target,
-                    self.commands.policy,
-                    current,
-                    shell=self._shell,
-                    environment=self._process_environment,
-                    directory=self._process_directory,
-                ),
-                processes=self.processes,
-                attach=AttachService(
-                    client,
-                    target,
-                    self.commands.policy,
-                    current,
-                    environment=self._process_environment,
-                    directory=self._process_directory,
-                ),
-                transfers=TransferService(
-                    client,
-                    target,
-                    self.commands.policy,
-                    current,
-                    environment=self._process_environment,
-                    directory=self._process_directory,
-                ),
-                chrome=self.chrome,
-                trail=self.breadcrumbs.trail,
-            )
-            if containers_first
-            else LogScreen(stream, containers, chrome=self.chrome, trail=self.breadcrumbs.trail)
-        )
+        self.operations.open_logs(containers_first=containers_first, uid=uid)
 
     def action_logs_all(self) -> None:
-        from kuberich.domain.aggregate_logs import workload_kind
-        from kuberich.services.aggregate_logs import AggregateLogs
-        from kuberich.ui.aggregate_logs import AggregateLogScreen
+        self.operations.logs_all()
 
-        if self._aggregate_screens:
-            self._set_status(
-                "Previous aggregate logs are closing; wait for owned cleanup to finish."
-            )
-            return
-        if self.custom_table.display:
-            self._set_status(
-                "Generic resources retain read-only inspection; use an ordinary Pod/workload view for aggregate logs."
-            )
-            return
-        selection = self._capture_target()
-        if selection is None:
-            return
-        client, resource, _, target, current = selection
-        try:
-            workload_kind(target)
-            owner = AggregateLogs(client, resource, target, self.commands.policy, current)
-        except AppError as error:
-            self._set_status(str(error))
-            return
-        screen = AggregateLogScreen(
-            owner,
-            chrome=self.chrome,
-            trail=self.breadcrumbs.trail,
-            stopped=lambda: self._aggregate_screens.discard(screen),
+    def _capture_target(self, uid: str | None = None) -> CapturedResource[KubernetesSession] | None:
+        return self.targets.capture(uid)
+
+    def _target_selection(self) -> TargetSelection:
+        modal = isinstance(self.screen, ModalScreen)
+        return TargetSelection(
+            self.views.route,
+            None
+            if modal or self.views.route.kind is ViewKind.CONTEXTS
+            else self.views.table.capture_viewport().selected,
+            modal,
         )
-        self._aggregate_screens.add(screen)
-        self.push_screen(screen)
 
-    def _capture_target(
-        self,
-        uid: str | None = None,
-    ) -> (
-        tuple[KubernetesSession, ApiResource, ResourceRecord, ResourceTarget, Callable[[], bool]]
-        | None
-    ):
-        if isinstance(self.screen, ModalScreen):
-            return None
-        if self._resource_name == "contexts":
-            self._set_notice(
-                "Contexts are local configuration. Enter connects to the selected context."
-            )
-            return None
-        view = self.workspace.store.observation
-        scope, snapshot, client = view.scope, view.snapshot, self.sessions.client
-        uid = uid if uid is not None else self._active_table.capture_viewport().selected
-        if scope is None or snapshot is None or client is None or uid is None:
-            self._set_notice("Select a connected resource before opening a viewer.")
-            return None
-        record = next((item for item in snapshot.items if item.uid == uid), None)
-        if record is None or record.uid is None:
-            self._set_status("The selected target is stale; select the resource again.")
-            return None
-        target = ResourceTarget(
-            scope.session,
-            scope.resource.group,
-            scope.resource.name,
-            record.namespace,
-            record.name,
-            record.uid,
+    def _operation_context(self) -> OperationContext:
+        return OperationContext(
+            self.chrome,
+            self.breadcrumbs.trail,
+            self._shell,
+            MappingProxyType(dict(self._process_environment)),
+            self._process_directory,
+            self.views.route,
+            isinstance(self.screen, ModalScreen),
         )
-        checked_snapshot = snapshot
-        present = True
-        revision = view.revision
 
-        def current() -> bool:
-            nonlocal checked_snapshot, present
-            observation = self.workspace.store.observation
-            if (
-                self.sessions.client is not client
-                or observation.scope != scope
-                or observation.revision != revision
-                or observation.snapshot is None
-                or observation.status is ViewStatus.FAILED
-            ):
-                return False
-            # Every watch update owns a new immutable snapshot. Validate its
-            # membership once, including a missing UID; log lines may ask many
-            # times before the next update. Scope/client guards always run.
-            if observation.snapshot is not checked_snapshot:
-                checked_snapshot = observation.snapshot
-                present = any(item.uid == target.uid for item in checked_snapshot.items)
-            return present
+    def _session_current(self, client: KubernetesSession, identity: SessionIdentity) -> bool:
+        observed = self.sessions.observation.identity
+        return (
+            self.sessions.client is client
+            and observed is not None
+            and observed.connection_id == identity.connection_id
+        )
 
-        return client, scope.resource, record, target, current
+    def _forwarding_preferences(self) -> ForwardPreferences:
+        return (
+            forwarding_from(self.preferences.document) if self.preferences else ForwardPreferences()
+        )
 
     def action_contexts(self) -> None:
-        if not self.sessions.catalog.names:
-            self._set_status("No contexts found. Configure KUBECONFIG or use --kubeconfig.")
-        elif not isinstance(self.screen, ModalScreen):
-            if self._resource_name == "contexts":
-                self.set_focus(self.context_table)
-                return
-            self._context_parent = self._capture_view()
-            self._remember_view()
-            self._display_resource("contexts")
-            self.filter_input.value = (
-                self._context_state.query if self._context_state is not None else ""
-            )
-            if self._context_state is not None:
-                self._restore_state = self.workspace.store.observation.revision, self._context_state
-            self.command_input.reset_choice()
-            self._render_ready.set()
+        self.navigator.contexts()
 
     @on(DataTable.RowSelected, "#contexts")
     def context_selected(self, event: DataTable.RowSelected) -> None:
@@ -1926,77 +1017,21 @@ class KubeRichApp(App[None]):
             self.push_screen(ConnectionScreen(self._workspace_status()))
 
     def _context_selected(self, value: str | None) -> None:
-        if value is not None:
-            self._context_state = (
-                self._capture_view() if self._resource_name == "contexts" else self._context_state
-            )
-            self._remember_view()
-            self.workspace.selection = ResourceSelection("pods")
-            self._display_resource("pods")
-            self.filter_input.value = ""
-            self._start_connection(value, remember=False)
+        self.navigator.context_selected(value)
 
     def _clear_rows(self) -> None:
-        self._restore_state = None
-        if self._resource_name == "contexts":
-            self.command_input.reset_choice()
-            self._render_ready.set()
-            return
-        table = self._active_table
-        assert not isinstance(table, ContextTable)
-        table.reset(self.workspace.store.observation.revision)
-        self._active_table.remove_class("populated")
-        self.query_one("#empty-state").display = True
-        self.query_one("#empty-title", WorkspaceLabel).update_text("Loading resources")
-        self.command_input.reset_choice()
+        self.navigator.clear_rows()
 
     def action_namespaces(self) -> None:
+        self.navigator.namespaces()
+
+    def _disable_namespace_favorites(self) -> None:
         self.interactions.favorites = False
-        observation = self.workspace.store.observation.connection
-        if observation.state not in USABLE_CONNECTIONS:
-            message = "Connect to a context before selecting a namespace."
-            self._set_notice(message)
-        elif not isinstance(self.screen, ModalScreen):
-            self._select_resource("namespaces", restore=self._namespace_state)
 
     def _display_resource(
         self, resource: str, *, focus: bool = True, generic: ResourceSelection | None = None
     ) -> None:
-        self._resource_name = resource
-        self._generic_selection = generic
-        self._column_notice = None
-        namespaces = resource == "namespaces"
-        self.namespace_table.display = namespaces
-        self.context_table.display = resource == "contexts"
-        self.resources.display = resource == "pods"
-        self.standard_table.display = generic is None and resource in RESOURCE_ALIASES
-        self.custom_table.display = generic is not None
-        if self.standard_table.display:
-            definition = RESOURCE_ALIASES[resource]
-            if self.standard_table.definition != definition:
-                self.standard_table.configure(definition)
-                self._standard_projection = StandardProjection(definition)
-        self.query_one("#all-namespaces").display = namespaces
-        self.header.shortcuts = (
-            CTX_SHORTCUTS
-            if resource == "contexts"
-            else NS_SHORTCUTS
-            if namespaces
-            else RESOURCE_SHORTCUTS
-            if generic is not None
-            else POD_SHORTCUTS
-            if resource == "pods"
-            else SERVICE_SHORTCUTS
-            if resource == "services"
-            else workload_shortcuts(resource, self.commands.policy.read_only)
-        )
-        self.header.binding_profile = (
-            "contexts" if resource == "contexts" else "namespaces" if namespaces else "resources"
-        )
-        self.header.render_shortcuts()
-        if focus and len(self.screen_stack) == 1:
-            self.set_focus(self._active_table)
-        self._update_trail()
+        self.navigator.display(resource, focus=focus, generic=generic)
 
     def _select_resource(
         self,
@@ -2006,186 +1041,22 @@ class KubeRichApp(App[None]):
         scope: NamespaceChoice | None = None,
         generic: ResourceSelection | None = None,
     ) -> None:
-        current = self._capture_view()
-        if self._resource_name == "contexts":
-            self._context_state = current
-        if resource == self._resource_name and generic == self._generic_selection and scope is None:
-            self.set_focus(self._active_table)
-            return
-        try:
-            self._connection_task = self.workspace.select_resource(
-                generic or resource_selection(resource)
-            )
-            if scope is not None:
-                self._connection_task = self.workspace.select_namespace(scope.namespace)
-        except AppError as error:
-            self._set_status(str(error))
-            return
-        if current is not None:
-            self.history.visit(current)
-            if current.resource == "namespaces":
-                self._namespace_state = current
-                self._namespace_route = True
-            elif resource == "namespaces":
-                self._namespace_parent = current
-        self._display_resource(resource, generic=generic)
-        self._clear_rows()
-        self.filter_input.value = restore.query if restore is not None else ""
-        if restore is not None:
-            self._restore_state = self.workspace.store.observation.revision, restore
-        self._render_ready.set()
+        self.navigator.select_resource(resource, restore=restore, scope=scope, generic=generic)
 
     def _namespace_selected(self, value: str | None) -> None:
-        if value is not None:
-            try:
-                choice = NamespaceChoice(None if value == "*" else value)
-                current = self._capture_view()
-                was_namespace_view = self._resource_name == "namespaces"
-                was_context_view = self._resource_name == "contexts"
-                if was_context_view:
-                    self._context_state = current
-                generic = (
-                    self._generic_selection
-                    if self.custom_table.display
-                    else self._namespace_parent.generic
-                    if was_namespace_view and self._namespace_parent is not None
-                    else None
-                )
-                self.workspace.select_resource(generic or ResourceSelection("pods"))
-                self._connection_task = self.workspace.select_namespace(choice.namespace)
-                if was_namespace_view:
-                    self._namespace_state = current
-                    self._namespace_route = True
-                if current is not None:
-                    self.history.visit(current)
-                self._display_resource(
-                    (generic.name + "." + (generic.group or "core"))
-                    if generic is not None
-                    else "pods",
-                    generic=generic,
-                    focus=was_namespace_view
-                    or was_context_view
-                    or not isinstance(self.focused, Input),
-                )
-                self._clear_rows()
-                if was_namespace_view or was_context_view:
-                    self.filter_input.value = ""
-                self.header.update_identity()
-                self._set_status(self._workspace_status())
-            except AppError as error:
-                self._set_status(str(error))
+        self.navigator.namespace_selected(value)
 
     def action_retry(self) -> None:
-        context = (
-            self.workspace.store.observation.context
-            or self.sessions.request.context
-            or self.sessions.catalog.current
-        )
-        if context is not None:
-            self._start_connection(context)
-        else:
-            self.action_contexts()
-
-    def _remember_layout(self, key: tuple[str, str, str, str], layout: CustomLayout) -> None:
-        self._custom_layouts.pop(key, None)
-        self._custom_layouts[key] = layout
-        while len(self._custom_layouts) > MAX_HISTORY:
-            del self._custom_layouts[next(iter(self._custom_layouts))]
+        self.navigator.retry()
 
     def _apply_generic(self, command: GenericResourceCommand) -> None:
-        try:
-            discovery = self.workspace.discovery
-            if discovery is None:
-                raise AppError("Wait for the current resource catalogue or use :refresh.")
-            resource = discovery.resolve(command.name, group=command.group, version=command.version)
-            if command.scope is not None and not resource.namespaced:
-                raise AppError("This resource is cluster-scoped; omit the namespace argument.")
-            selection = ResourceSelection(
-                resource.name, resource.group, command.version, server_columns=True
-            )
-            scope = (
-                NamespaceChoice(None if command.scope == "*" else command.scope)
-                if command.scope is not None
-                else None
-            )
-            self._select_resource(
-                resource.name + "." + (resource.group or "core"),
-                scope=scope,
-                generic=selection,
-            )
-            if self._generic_selection == selection:
-                key = (
-                    self.workspace.store.observation.context or "",
-                    resource.group,
-                    resource.version,
-                    resource.name,
-                )
-                layout = self._custom_layouts.get(key) or CustomLayout.build(resource, ())
-                self.custom_table.configure_layout(
-                    layout, self.workspace.store.observation.revision
-                )
-                self._custom_projection = CustomProjection(layout)
-        except AppError as error:
-            self._column_notice = str(error)
-            self._set_status(self._column_notice)
+        self.navigator.generic(command)
 
     def _refresh_discovery(self) -> None:
-        state = self._capture_view()
-        try:
-            self._connection_task = self.workspace.refresh_discovery()
-        except AppError as error:
-            self._set_status(str(error))
-            return
-        self._clear_rows()
-        if state is not None:
-            self._restore_state = self.workspace.store.observation.revision, state
-        self._column_notice = None
-        self.command_input.refresh_choices()
-        self._render_ready.set()
+        self.navigator.refresh_discovery()
 
     def _configure_columns(self, argument: str = "") -> None:
-        layout = self.custom_table.resource_layout if self.custom_table.display else None
-        if layout is None:
-            self._set_status("Select a discovered resource before configuring server columns.")
-            return
-        try:
-            if not argument:
-                available = ", ".join(
-                    f"c{i + 1}={safe_text(column.name).plain}"
-                    for i, column in enumerate(layout.headers)
-                    if column.format != "name" and column.name.casefold() != "age"
-                )
-                self._column_notice = (
-                    "Columns: "
-                    + (available or "metadata only")
-                    + " · :columns default / none / cN ..."
-                )
-            else:
-                configured = (
-                    CustomLayout.build(layout.resource, layout.headers)
-                    if argument == "default"
-                    else layout.configure(() if argument == "none" else tuple(argument.split()))
-                )
-                self.custom_table.configure_layout(
-                    configured, self.workspace.store.observation.revision
-                )
-                self._custom_projection = CustomProjection(configured)
-                self.view_preferences.columns_changed(configured)
-                view = self.workspace.store.observation
-                self._remember_layout(
-                    (
-                        view.context or "",
-                        configured.resource.group,
-                        configured.resource.version,
-                        configured.resource.name,
-                    ),
-                    configured,
-                )
-                self._column_notice = "Custom columns updated for this session."
-                self._render_ready.set()
-        except AppError as error:
-            self._column_notice = str(error)
-        self._set_status(self._column_notice or self._workspace_status())
+        self.navigator.columns(argument)
 
     def action_login(self) -> None:
         context = (
@@ -2233,7 +1104,7 @@ class KubeRichApp(App[None]):
             modal=isinstance(self.screen, ModalScreen),
             typing=isinstance(self.focused, Input),
         )
-        return action_available(action, view)
+        return COMMAND_CATALOG.available(action, view)
 
     def action_mark_selection(self) -> None:
         self.interactions.apply(InteractionCommand("mark"))
@@ -2268,7 +1139,9 @@ class KubeRichApp(App[None]):
             )
             self.push_screen(
                 HelpScreen(
-                    navigation_help(self.navigation_keymap, self.header.binding_profile), aliases
+                    navigation_help(self.navigation_keymap, self.header.binding_profile),
+                    aliases,
+                    COMMAND_CATALOG.help_rows(),
                 )
             )
 
@@ -2318,449 +1191,46 @@ class KubeRichApp(App[None]):
             self.filter_input.value = ""
             self._set_status(self._workspace_status())
             self._update_trail()
-        elif self._resource_name == "contexts":
-            self._context_state = self._capture_view()
-            if self._context_parent is not None:
-                self._restore_navigation(self._context_parent)
-            else:
-                selection = self.workspace.selection
-                self._display_resource(
-                    selection.name + "." + (selection.group or "core")
-                    if selection.server_columns
-                    else selection.name,
-                    generic=selection if selection.server_columns else None,
-                )
-                self._render_ready.set()
-        elif (self._resource_name == "pods" or self.custom_table.display) and self._namespace_route:
-            self.action_namespaces()
-        elif self._resource_name == "namespaces":
-            self._namespace_route = False
-            if self._namespace_parent is not None:
-                self._restore_navigation(self._namespace_parent)
-            else:
-                self._select_resource("pods")
         else:
-            self.filter_input.value = ""
-            self._set_status(self._workspace_status())
+            self.navigator.back()
 
     @on(Input.Changed, "#filter")
     def filter_changed(self, event: Input.Changed) -> None:
-        self._render_ready.set()
+        self.views.request()
         self._update_trail()
 
     @on(Input.Submitted, "#command")
     def command_submitted(self, event: Input.Submitted) -> None:
-        self._submit_command(event.value)
+        self.command_routes.submit(event.value)
 
     def route_nested(self, origin: CommandWorkspace, value: str) -> None:
-        from kuberich.ui.containers import ContainerScreen
-        from kuberich.ui.inspection import InspectionScreen
-        from kuberich.ui.logs import LogScreen
-
-        if self._nested_route_task is not None and not self._nested_route_task.done():
-            self.notify("A workspace transition is already in progress.")
-            return
-        try:
-            command = self.commands.resolve(value, self.workspace.discovery)
-            if isinstance(command, InteractionCommand) and command.verb == "!!":
-                value = self.interactions.history.repeat()
-                command = self.commands.resolve(value, self.workspace.discovery)
-            if command is Command.EMPTY or command is Command.UNAVAILABLE:
-                if command is Command.UNAVAILABLE:
-                    self.notify("Command is unavailable; the current view is retained.")
-                return
-        except AppError as error:
-            self.notify(str(error), severity="error")
-            return
-        if isinstance(command, InteractionCommand) and command.verb in {
-            "headless",
-            "crumbsless",
-            "fullscreen",
-            "favorite",
-        }:
-            self.interactions.apply(command)
-            self.interactions.history.record(value)
-            return
-        if isinstance(command, InteractionCommand) and command.verb in {
-            "copy",
-            "copyns",
-            "copytext",
-        }:
-            try:
-                source = (
-                    origin.service
-                    if isinstance(origin, InspectionScreen)
-                    else origin.stream
-                    if isinstance(origin, (ContainerScreen, LogScreen))
-                    else None
-                )
-                if source is None:
-                    raise AppError("This view has no captured resource to copy.")
-                source.require_current()
-                if command.verb == "copytext" and isinstance(origin, (InspectionScreen, LogScreen)):
-                    origin.action_copy()
-                else:
-                    self.copy_to_clipboard(
-                        (source.target.namespace or "")
-                        if command.verb == "copyns"
-                        else source.target.name
-                    )
-                self.interactions.history.record(value)
-            except AppError as error:
-                self.notify(str(error), severity="error")
-            return
-        self._nested_route_task = asyncio.create_task(self._route_nested(origin, command, value))
-
-    async def _route_nested(
-        self, origin: CommandWorkspace, command: ResolvedCommand, value: str
-    ) -> None:
-        from kuberich.ui.containers import ContainerScreen
-        from kuberich.ui.inspection import InspectionScreen
-        from kuberich.ui.logs import LogScreen
-
-        source = (
-            origin.service
-            if isinstance(origin, InspectionScreen)
-            else origin.stream
-            if isinstance(origin, (ContainerScreen, LogScreen))
-            else None
-        )
-        local = {
-            Command.HELP,
-            Command.THEMES,
-            Command.ABOUT,
-            Command.VIEWS,
-            Command.PLUGINS,
-            Command.PLUGIN_JOBS,
-            Command.STATUS,
-            Command.PORT_FORWARDS,
-            Command.WRITES,
-        }
-        navigation = {
-            Command.CONTEXTS,
-            Command.NAMESPACES,
-            Command.PODS,
-            Command.BACK,
-            Command.FORWARD,
-            Command.QUIT,
-            Command.RETRY,
-            Command.LOGIN,
-            Command.REFRESH,
-        }
-        action = command.command if isinstance(command, ScopedCommand) else command
-        requires_target = (
-            not isinstance(command, (ResourceCommand, GenericResourceCommand, InteractionCommand))
-            and action not in local | navigation
-        )
-        try:
-            if requires_target:
-                if source is None:
-                    raise AppError("This command requires a captured resource view.")
-                source.require_current()
-            if command is Command.BACK:
-                await origin.dismiss()
-                self.interactions.history.record(value)
-                return
-            # Drain covered owners before changing namespace/context or targeting a root action.
-            for screen in reversed(tuple(self.screen_stack[1:])):
-                if not isinstance(screen, CommandWorkspace):
-                    raise AppError(
-                        "Close the current review before navigating to another workspace."
-                    )
-                if isinstance(screen, (ContainerScreen, LogScreen, InspectionScreen)):
-                    await screen.stop_owned()
-            if requires_target and source is not None:
-                source.require_current()
-            for screen in reversed(tuple(self.screen_stack[1:])):
-                await screen.dismiss()
-            if requires_target and source is not None:
-                table = self._active_table
-                if source.target.uid not in table.rows:
-                    raise AppError("The captured resource is no longer visible; select it again.")
-                table.move_cursor(row=table.get_row_index(source.target.uid), scroll=False)
-            self.interactions.history.record(value)
-            self._apply_command(command)
-        except AppError as error:
-            self.notify(str(error), severity="error")
-
-    def _submit_command(self, value: str, *, repeat: bool = False) -> None:
-        self._column_notice = None
-        try:
-            command = self.commands.resolve(value, self.workspace.discovery)
-        except AppError as error:
-            if self.custom_table.display:
-                self._column_notice = str(error)
-            self._set_status(str(error))
-            return
-        if (
-            not repeat
-            and command is not Command.UNAVAILABLE
-            and not (isinstance(command, InteractionCommand) and command.verb == "!!")
-        ):
-            self.interactions.history.record(value)
-        self._apply_command(command)
-
-    def _apply_command(self, command: ResolvedCommand) -> None:
-        if isinstance(command, InteractionCommand):
-            self.interactions.apply(command)
-            return
-        if isinstance(command, PluginCommand):
-            self.plugins.open(command.name)
-            return
-        if isinstance(command, GenericResourceCommand):
-            self._apply_generic(command)
-            return
-        if isinstance(command, ResourceCommand):
-            scope = (
-                NamespaceChoice(None if command.scope == "*" else command.scope)
-                if command.scope is not None
-                else None
-            )
-            self._select_resource(command.definition.name, scope=scope)
-            return
-        action_command = command.command if isinstance(command, ScopedCommand) else command
-        if self.custom_table.display and action_command in {
-            Command.LOGS_ALL,
-            Command.SHELL,
-            Command.ATTACH,
-            Command.UPLOAD,
-            Command.DOWNLOAD,
-            Command.PORT_FORWARD,
-            Command.ANNOTATE,
-            Command.EDIT,
-            Command.DELETE,
-            Command.DELETE_BATCH,
-            Command.TRIGGER,
-            Command.SUSPEND,
-            Command.RESUME,
-            Command.SCALE,
-            Command.RESTART,
-            Command.ROLLBACK,
-        }:
-            self._column_notice = "Generic resources are read-only in this checkpoint."
-            self._set_status(self._column_notice)
-            return
-        if isinstance(command, ScopedCommand):
-            if command.command is Command.COLUMNS:
-                self._configure_columns(command.argument)
-            elif command.command in {Command.SCALE, Command.ROLLBACK}:
-                self.action_workload(
-                    WorkloadAction.SCALE
-                    if command.command is Command.SCALE
-                    else WorkloadAction.ROLLBACK,
-                    command.argument,
-                )
-            elif command.command is Command.CONTEXTS:
-                self._context_selected(command.argument)
-            elif command.command is Command.RENAME:
-                self._edit_context(ContextChange.RENAME, command.argument)
-            elif command.command is Command.JUMP:
-                self.jumps.open(command.argument)
-            else:
-                self._namespace_selected(command.argument)
-            return
-        if command is Command.PLUGINS:
-            self.plugins.open()
-        elif command is Command.PLUGIN_JOBS:
-            from kuberich.ui.plugin_screens import PluginJobs
-
-            self.push_screen(PluginJobs(self.plugins.manager))
-        elif command is Command.THEMES:
-            self.action_change_theme()
-        elif command is Command.VIEWS:
-            self.action_views()
-        elif command is Command.ABOUT:
-            self.action_about()
-        elif command is Command.HELP:
-            self.action_show_help()
-        elif command is Command.QUIT:
-            self.exit()
-        elif command is Command.UNAVAILABLE:
-            self._set_status(
-                "Command unavailable in this preview. Use :help for available views and actions."
-            )
-        elif command is Command.CONTEXTS:
-            self.action_contexts()
-        elif command is Command.NAMESPACES:
-            self.action_namespaces()
-        elif command is Command.STATUS:
-            self.action_connection_details()
-        elif command is Command.RETRY:
-            self.action_retry()
-        elif command is Command.REFRESH:
-            self._refresh_discovery()
-        elif command is Command.COLUMNS:
-            self._configure_columns()
-        elif command is Command.LOGS_ALL:
-            self.action_logs_all()
-        elif command is Command.RENAME:
-            self._edit_context(ContextChange.RENAME)
-        elif command is Command.CLEANUP:
-            self.action_cleanup_pods()
-        elif command is Command.JUMP:
-            self.jumps.open()
-        elif command is Command.LOGIN:
-            self.action_login()
-        elif command is Command.BACK:
-            self.action_history_back()
-        elif command is Command.FORWARD:
-            self.action_history_forward()
-        elif command is Command.PODS:
-            self._select_resource("pods")
-            self._set_status(self._workspace_status())
-        elif command is Command.SHELL:
-            self.action_shell()
-        elif command is Command.ATTACH:
-            self.action_attach()
-        elif command is Command.UPLOAD:
-            self.action_upload()
-        elif command is Command.DOWNLOAD:
-            self.action_download()
-        elif command is Command.PORT_FORWARD:
-            self.action_port_forward()
-        elif command is Command.PORT_FORWARDS:
-            self.action_port_forwards()
-        elif command is Command.ANNOTATE:
-            self.action_annotate()
-        elif command is Command.WRITES:
-            self.action_writes()
-        elif command is Command.EDIT:
-            self.action_edit()
-        elif command in {
-            Command.DELETE,
-            Command.DELETE_BATCH,
-            Command.TRIGGER,
-            Command.SUSPEND,
-            Command.RESUME,
-        }:
-            self.action_resource_operation(
-                {
-                    Command.DELETE: ResourceAction.DELETE,
-                    Command.DELETE_BATCH: ResourceAction.DELETE,
-                    Command.TRIGGER: ResourceAction.TRIGGER,
-                    Command.SUSPEND: ResourceAction.SUSPEND,
-                    Command.RESUME: ResourceAction.RESUME,
-                }[command],
-                batch=command is Command.DELETE_BATCH,
-            )
-        elif command in {Command.SCALE, Command.RESTART, Command.ROLLBACK, Command.ROLLOUT}:
-            self.action_workload(
-                {
-                    Command.SCALE: WorkloadAction.SCALE,
-                    Command.RESTART: WorkloadAction.RESTART,
-                    Command.ROLLBACK: WorkloadAction.ROLLBACK,
-                    Command.ROLLOUT: WorkloadAction.STATUS,
-                }[command]
-            )
-        else:
-            self._set_status(self._workspace_status())
-
-    def _namespace_choices(self) -> tuple[str, ...]:
-        connection = self.workspace.store.observation.connection
-        if connection.state not in USABLE_CONNECTIONS:
-            return ()
-        current = (connection.namespace,) if connection.namespace is not None else ()
-        favorites = dict(self.navigation.favorites).get(
-            connection.identity.context if connection.identity else "", ()
-        )
-        return ("*", *sorted(set(connection.namespaces) | set(current) | set(favorites)))
-
-    def _suggestions(self, value: str) -> tuple[str, ...]:
-        return suggestions(
-            value,
-            self.sessions.catalog.names,
-            self._namespace_choices(),
-            self.workspace.discovery,
-            self.navigation.aliases,
-            tuple(plugin.name for plugin in self.plugins.plugins),
-            self.jumps.names,
-        )
+        self.command_routes.route(origin, value)
 
     @on(Input.Changed, "#command")
     def command_changed(self) -> None:
         self.command_input.refresh_choices()
 
     def _capture_view(self) -> NavigationState | None:
-        view = self.workspace.store.observation
-        if self._resource_name != "contexts" and (
-            view.context is None or view.connection.state not in USABLE_CONNECTIONS
-        ):
-            return None
-        viewport = self._active_table.capture_viewport()
-        return NavigationState(
-            view.context or "",
-            view.connection.namespace,
-            self.filter_input.value,
-            self._active_table.sort_column
-            if isinstance(self._active_table, (StandardTable, NamespaceTable))
-            else self.resources.sort_column,
-            self._active_table.descending
-            if isinstance(self._active_table, (StandardTable, NamespaceTable))
-            else self.resources.descending,
-            viewport.selected,
-            viewport.index,
-            viewport.x,
-            viewport.y,
-            viewport.top,
-            self._resource_name,
-            self._generic_selection,
-            self.custom_table.resource_layout.headers
-            if self.custom_table.display and self.custom_table.resource_layout is not None
-            else (),
-        )
+        return self.navigator.capture()
 
     def _remember_view(self) -> None:
-        current = self._capture_view()
-        if current is not None:
-            self.history.visit(current)
+        self.navigator.remember()
 
     def _navigate_history(self, *, forward: bool = False) -> None:
-        current = self._capture_view()
-        view = self.workspace.store.observation
-        if current is None and view.context is not None:
-            current = NavigationState(view.context, view.connection.namespace)
-        state = self.history.move(current, forward=forward) if current is not None else None
-        if state is None:
-            self._set_status(
-                "No next view in history." if forward else "No previous view in history."
-            )
-            return
-        self._restore_navigation(state)
+        self.navigator.move(forward=forward)
 
     def _restore_navigation(self, state: NavigationState) -> None:
-        if state.resource == "contexts":
-            if self._resource_name != "contexts":
-                self._context_parent = self._capture_view()
-            self._display_resource("contexts")
-            self.filter_input.value = state.query
-            self._restore_state = self.workspace.store.observation.revision, state
-            self._render_ready.set()
-            return
-        scope = NamespaceChoice(state.namespace)
-        current = self.workspace.store.observation
-        if state.context == current.context and current.connection.state in USABLE_CONNECTIONS:
-            self.workspace.select_resource(state.generic or resource_selection(state.resource))
-            self._connection_task = self.workspace.select_namespace(state.namespace)
-            self._display_resource(state.resource, generic=state.generic)
-            self._clear_rows()
-            self.header.update_identity()
-        else:
-            self.workspace.selection = state.generic or resource_selection(state.resource)
-            self._display_resource(state.resource, generic=state.generic)
-            self._start_connection(state.context, scope=scope, remember=False)
-        self.filter_input.value = state.query
-        self._restore_state = self.workspace.store.observation.revision, state
+        self.navigator.restore(state)
 
     def action_history_back(self) -> None:
-        self._navigate_history()
+        self.navigator.history_back()
 
     def action_history_forward(self) -> None:
-        self._navigate_history(forward=True)
+        self.navigator.history_forward()
 
     def _handle_exception(self, error: Exception) -> None:
         """Narrow Textual 8.x boundary: log safely while preserving its cleanup/testing."""
-        if self._input_completion is not None and not self._input_completion.done():
-            self._input_completion.set_result(None)
+        self.input_dispatch.release_pending()
         with suppress(AppError):
             self._diagnostic_logger.error(
                 "Terminal interface failed.", exc_info=(type(error), error, error.__traceback__)

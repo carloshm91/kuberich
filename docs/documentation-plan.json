@@ -1033,6 +1033,15 @@
       "baseline_sha256": "c8abc0fe1af36c46485e5f278b7643d4317b3ed6a5a6bcb86f295f680328f051"
     },
     {
+      "source": "docs/adr/app-composition.md",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/app-composition.md"
+      ],
+      "reason": "Document the implemented view, command and lifecycle ownership and its remaining compatibility boundaries for contributors."
+    },
+    {
       "source": "docs/agent-setup.md",
       "audience": "development",
       "action": "move",
