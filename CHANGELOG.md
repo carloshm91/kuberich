@@ -24,6 +24,7 @@ Release entries are written in release PRs and linked to their Git tags.
 - Allow plugin review from qualified custom-resource views while retaining captured
   UID, canonical resource and API-version loading guards
   ([#278](https://github.com/carloshm91/kuberich/issues/278),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
 - Keep native macOS builds and installation checks on supported runners
   ([#291](https://github.com/carloshm91/kuberich/issues/291),
   [Carlos J. Herrera](https://github.com/carloshm91)).
