@@ -8,6 +8,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, cast
+from unittest.mock import patch
 
 import yaml
 from aiohttp import web
@@ -144,6 +145,22 @@ async def representation_gateway(
         await runner.cleanup()
 
 
+async def refresh_browser(app: KubeRichApp) -> None:
+    # Observe and await the actual service operation scheduled by the command.
+    operations: list[asyncio.Task[None]] = []
+    original = app.workspace.refresh_discovery
+
+    def scheduled() -> asyncio.Task[None]:
+        operation = original()
+        operations.append(operation)
+        return operation
+
+    with patch.object(app.workspace, "refresh_discovery", side_effect=scheduled):
+        await app.run_command("refresh")
+    assert len(operations) == 1
+    await operations[0]
+
+
 async def verify_browser(
     cluster: OwnedCluster,
     extensions: client.ApiextensionsV1Api,
@@ -173,10 +190,10 @@ async def verify_browser(
         table.set_sort("c2")
         await pilot.press("G")
         selected = table.selected_uid
-        app._submit_command("columns c2")
+        await app.run_command("columns c2")
         await pilot.pause()
         assert "c3" not in table.columns and table.selected_uid == selected
-        app._submit_command("columns c99")
+        await app.run_command("columns c99")
         await pilot.pause()
         assert "retained" in str(app.status.content) and "c3" not in table.columns
         app.action_inspect_yaml()
@@ -191,9 +208,9 @@ async def verify_browser(
             and GROUP + "/v1beta1" in app.screen.viewer.text
         )
         await pilot.press("escape")
-        app._submit_command("wdg")
+        await app.run_command("wdg")
         assert "ambiguous" in str(app.status.content)
-        app._submit_command("gadgets." + OTHER_GROUP)
+        await app.run_command("gadgets." + OTHER_GROUP)
 
         async def cluster_loaded() -> bool:
             view = app.workspace.store.observation
@@ -217,16 +234,16 @@ async def verify_browser(
             and table.selected_uid == selected
             and "c3" not in table.columns
         )
-        app._submit_command("widgets." + GROUP + " *")
+        await app.run_command("widgets." + GROUP + " *")
         await wait_for(loaded)
         assert (
             app.workspace.store.observation.scope is not None
             and app.workspace.store.observation.scope.namespace is None
         )
-        app._submit_command("widgets." + GROUP + "/v1beta1 " + NAMESPACE)
+        await app.run_command("widgets." + GROUP + "/v1beta1 " + NAMESPACE)
         await wait_for(loaded)
         connection = app.sessions.client
-        app._submit_command("refresh")
+        await app.run_command("refresh")
         await wait_for(loaded)
         assert app.sessions.client is connection
         await custom.patch_namespaced_custom_object(
@@ -248,9 +265,7 @@ async def verify_browser(
         await extensions.delete_custom_resource_definition("widgets." + GROUP)
 
         async def removed() -> bool:
-            app._submit_command("refresh")
-            if app._connection_task is not None:
-                await app._connection_task
+            await refresh_browser(app)
             return app.workspace.discovery is not None and not any(
                 resource.group == GROUP for resource in app.workspace.discovery.resources
             )
@@ -296,9 +311,7 @@ async def verify_browser(
         )
 
         async def rediscovered() -> bool:
-            app._submit_command("refresh")
-            if app._connection_task is not None:
-                await app._connection_task
+            await refresh_browser(app)
             return app.workspace.discovery is not None and any(
                 resource.group == GROUP and resource.kind == "Secret"
                 for resource in app.workspace.discovery.resources
@@ -332,7 +345,7 @@ async def verify_browser(
         await pilot.press("escape")
         await extensions.delete_custom_resource_definition("widgets." + GROUP)
         await wait_for(removed)
-        app._submit_command("po")
+        await app.run_command("po")
 
         async def core_loaded() -> bool:
             view = app.workspace.store.observation

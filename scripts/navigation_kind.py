@@ -152,7 +152,7 @@ async def verify_container_navigation(
                 )
             )
             assert second.invalidated and second.table.row_count == 0
-            app._submit_command("po " + namespace)
+            await app.run_command("po " + namespace)
             await _until(
                 lambda: (
                     app.workspace.store.observation.status is ViewStatus.LIVE
@@ -172,7 +172,7 @@ async def verify_container_navigation(
                 )
             )
             assert third.invalidated and old.rest_client.pool_manager.closed
-            app._submit_command("po " + namespace)
+            await app.run_command("po " + namespace)
             await _until(lambda: app.resources.selected_uid == replacement.metadata.uid)
             await pilot.press("enter", "escape")
             assert len(app.screen_stack) == 1
