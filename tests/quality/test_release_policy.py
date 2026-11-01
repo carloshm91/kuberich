@@ -702,7 +702,6 @@ def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomp
             272,
             274,
             275,
-            278,
             281,
             291,
             90,
