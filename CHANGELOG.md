@@ -5,6 +5,13 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ## Unreleased
 
+### Added
+
+- Copy plaintext to local Wayland clipboards with `wl-copy`, with selection
+  cleanup and an actionable terminal fallback when the helper fails
+  ([#220](https://github.com/carloshm91/kuberich/issues/220),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 ### Changed
 
 - Add parallel development test layers and an early full unit/contract/UI signal

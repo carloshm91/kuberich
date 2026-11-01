@@ -505,11 +505,12 @@
       "capability": "Copy resource/namespace/text with native clipboard and OSC52 over SSH/tmux",
       "tasks": [
         "B07",
-        "Q02"
+        "Q02",
+        "Q19"
       ],
       "source": "internal/view/clipboard.go",
       "status": "planned",
-      "difference": "B04 and S02 copy redacted inspection/log text using Textual OSC52. Native clipboard and physical host clipboard receipt remain B07 #61. Q02 #33 exercises redacted log-copy controls over SSH/tmux, but does not certify the host clipboard receiving OSC52; native clipboard and physical-emulator/manual checks remain B07 #61. B07 #61: Next-release source writes bounded native plaintext via macOS AppKit/system osascript or foreground-owned X11 xclip and bounded base64 OSC52 with tmux framing. Explicit name/namespace/table-text controls preserve existing redacted views. Native/headless 1-MiB and terminal 64-KiB UTF-8 limits refuse rather than truncate. Owned Xvfb/ephemeral hosted macOS roundtrips and outer PTY receipts do not claim every physical-terminal paste acknowledgement.",
+      "difference": "B04 and S02 copy redacted inspection/log text using Textual OSC52. Q02 #33 exercises redacted log-copy controls over SSH/tmux, without certifying the physical host clipboard. B07 #61 adds bounded native plaintext via macOS AppKit/system osascript or foreground-owned X11 xclip and bounded base64 OSC52 with tmux framing. Q19 #220 adds foreground-owned wl-copy with an explicit UTF-8 plaintext MIME type, local Wayland-before-X11 selection and actionable terminal fallback. Explicit name/namespace/table-text controls preserve existing redacted views. Native/headless 1-MiB and terminal 64-KiB UTF-8 limits refuse rather than truncate. Wayland invocation and process ownership use real fake-executable contracts; real Wayland compositor receipt is not certified. Owned Xvfb/ephemeral hosted macOS roundtrips and outer PTY receipts do not claim every physical-terminal paste acknowledgement.",
       "partial_evidence": [
         "docs/resource-inspection.md",
         "docs/log-viewer.md",
@@ -527,9 +528,13 @@
         "tests/unit/test_metadata_filtering.py",
         "tests/ui/test_interactions.py",
         "tests/terminal/test_interactions.py",
-        "scripts/navigation_kind.py"
+        "scripts/navigation_kind.py",
+        "tests/unit/test_clipboard.py",
+        "tests/contract/test_wayland_clipboard.py",
+        "tests/ui/test_clipboard.py",
+        "docs/acceptance/wayland-clipboard.md"
       ],
-      "public_summary": "Next-release source writes bounded native plaintext via macOS AppKit/system osascript or foreground-owned X Window System xclip and bounded base64 OSC52 with tmux framing. Explicit name/namespace/table-text controls preserve existing redacted views. Native/headless 1-MiB and terminal 64-KiB UTF-8 limits refuse rather than truncate. Owned Xvfb/ephemeral hosted macOS roundtrips and outer PTY receipts do not claim every physical-terminal paste acknowledgement.",
+      "public_summary": "Next-release source writes native plaintext with macOS AppKit, Wayland wl-copy or X Window System xclip, and sends OSC52 over SSH/tmux. Copied text stays on stdin for native helpers. Local Wayland takes precedence over X Window System; automatic SSH mode still selects OSC52. Native/headless 1-MiB and terminal 64-KiB UTF-8 limits refuse rather than truncate. Real Wayland compositor receipt and every physical-terminal paste acknowledgement are not certified.",
       "public_status": "partial"
     },
     {

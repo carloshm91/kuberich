@@ -17,6 +17,11 @@ var board = $.NSPasteboard.generalPasteboard; board.clearContents;
 if (!board.setStringForType(text, $.NSPasteboardTypeString)) { throw Error('Clipboard write failed'); }
 """
 
+WAYLAND_FAILURE = (
+    "Native clipboard write failed; install wl-copy and check the Wayland session, "
+    "or set KUBERICH_CLIPBOARD=osc52."
+)
+
 
 class NativeClipboard:
     def __init__(
@@ -45,8 +50,12 @@ class NativeClipboard:
     ) -> None:
         await self.close()
         x11 = backend is ClipboardBackend.X11
+        wayland = backend is ClipboardBackend.WAYLAND
+        selection_owner = x11 or wayland
         command = capture_command(
-            ("xclip", "-quiet", "-selection", "clipboard")
+            ("wl-copy", "--foreground", "--type", "text/plain;charset=utf-8")
+            if wayland
+            else ("xclip", "-quiet", "-selection", "clipboard")
             if x11
             else (
                 "/usr/bin/osascript",
@@ -58,29 +67,49 @@ class NativeClipboard:
             environment=self.environment,
             directory=self.directory,
             purpose=ProcessPurpose.CLIPBOARD,
-            mode=ProcessMode.BACKGROUND if x11 else ProcessMode.CAPTURE,
+            mode=ProcessMode.BACKGROUND if selection_owner else ProcessMode.CAPTURE,
             input_data=data,
         )
-        if x11:
-            self.owner = await self.runner.background(command)
-            # X11 keeps a foreground selection owner alive. Detect startup
+        if selection_owner:
+            try:
+                self.owner = await self.runner.background(command)
+            except AppError:
+                if wayland:
+                    raise AppError(WAYLAND_FAILURE) from None
+                raise
+            # X11 and Wayland keep a foreground selection owner alive. Detect startup
             # rejection without waiting for that owner's intentional lifetime.
             await asyncio.sleep(0.05)
             if not self.owner.running:
                 result = await self.owner.wait()
                 if result.status is not ProcessStatus.SUCCEEDED:
-                    raise AppError("Native clipboard write failed; check the X11 display.")
+                    raise AppError(
+                        WAYLAND_FAILURE
+                        if wayland
+                        else "Native clipboard write failed; check the X11 display."
+                    )
             elif failed is not None:
-                self.monitor = asyncio.create_task(self._observe(self.owner, failed))
+                self.monitor = asyncio.create_task(self._observe(self.owner, failed, backend))
         else:
             result = await self.runner.capture(command, timeout=5)
             if result.status is not ProcessStatus.SUCCEEDED:
                 raise AppError("Native clipboard write failed; check local clipboard availability.")
 
-    async def _observe(self, owner: ProcessSession, failed: Callable[[AppError], None]) -> None:
+    async def _observe(
+        self,
+        owner: ProcessSession,
+        failed: Callable[[AppError], None],
+        backend: ClipboardBackend,
+    ) -> None:
         result = await owner.wait()
         if self.owner is owner and result.status not in {
             ProcessStatus.SUCCEEDED,
             ProcessStatus.CANCELLED,
         }:
-            failed(AppError("Native clipboard writer stopped; check the X11 display."))
+            failed(
+                AppError(
+                    WAYLAND_FAILURE
+                    if backend is ClipboardBackend.WAYLAND
+                    else "Native clipboard writer stopped; check the X11 display."
+                )
+            )

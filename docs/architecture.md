@@ -1218,10 +1218,14 @@ session preferences and marks without moving Kubernetes operations into widgets.
 
 `ProcessCommand.input_data` is immutable, bounded and restricted to noninteractive
 clipboard-purpose commands. `ProcessRunner` registers ownership before writing
-stdin. Native clipboard data never enters argv/code/logs; X11 retains one owned
-foreground selection process, macOS uses a constant AppKit plaintext program,
+stdin. Native clipboard data never enters argv/code/logs; X11 and Wayland retain
+one foreground selection process, macOS uses a constant AppKit plaintext program,
 and OSC52/tmux emit only bounded base64 in trusted framing. No production backend
 reads a clipboard. Headless runs stay memory-only and ordinary PTYs force OSC52.
+Wayland uses literal `wl-copy --foreground --type text/plain;charset=utf-8`
+arguments, so the manager owns its process lifetime and plaintext type selection.
+Local detection prefers Wayland over XWayland; the automatic SSH preference and
+explicit terminal/native overrides retain their existing precedence.
 
 Read-only `CommandWorkspace` screens share the command provider/history. Invalid
 or forbidden commands retain the view; accepted scope transitions await covered

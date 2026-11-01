@@ -30,7 +30,25 @@ from tests.unit.test_processes import command
         ({"SSH_TTY": "/dev/owned"}, "linux", False, B.OSC52),
         ({}, "darwin", False, B.MACOS),
         ({"DISPLAY": ":77"}, "linux", False, B.X11),
-        ({"DISPLAY": ":77", "WAYLAND_DISPLAY": "owned"}, "linux", False, B.OSC52),
+        ({"DISPLAY": ":77", "WAYLAND_DISPLAY": "owned"}, "linux", False, B.WAYLAND),
+        ({"WAYLAND_DISPLAY": "owned"}, "linux", False, B.WAYLAND),
+        ({"DISPLAY": ":77", "WAYLAND_DISPLAY": ""}, "linux", False, B.X11),
+        ({"WAYLAND_DISPLAY": "owned"}, "linux", True, B.MEMORY),
+        ({"WAYLAND_DISPLAY": "owned", "SSH_TTY": "owned"}, "linux", False, B.OSC52),
+        ({"WAYLAND_DISPLAY": "owned", "SSH_CONNECTION": "owned"}, "linux", False, B.OSC52),
+        (
+            {"WAYLAND_DISPLAY": "owned", "KUBERICH_CLIPBOARD": "osc52"},
+            "linux",
+            False,
+            B.OSC52,
+        ),
+        (
+            {"WAYLAND_DISPLAY": "owned", "KUBERICH_CLIPBOARD": "native", "SSH_TTY": "owned"},
+            "linux",
+            False,
+            B.WAYLAND,
+        ),
+        ({"WAYLAND_DISPLAY": "owned", "DISPLAY": ":77"}, "darwin", False, B.MACOS),
         ({}, "linux", False, B.OSC52),
         ({"KUBERICH_CLIPBOARD": "native", "SSH_TTY": "owned"}, "darwin", False, B.MACOS),
     ],
@@ -49,7 +67,13 @@ def test_unavailable_or_invalid_explicit_backend_is_visible(env):
 
 @pytest.mark.parametrize(
     "backend,limit",
-    [(B.MEMORY, MAX_NATIVE_BYTES), (B.MACOS, MAX_NATIVE_BYTES), (B.OSC52, MAX_OSC52_BYTES)],
+    [
+        (B.MEMORY, MAX_NATIVE_BYTES),
+        (B.MACOS, MAX_NATIVE_BYTES),
+        (B.WAYLAND, MAX_NATIVE_BYTES),
+        (B.X11, MAX_NATIVE_BYTES),
+        (B.OSC52, MAX_OSC52_BYTES),
+    ],
 )
 def test_byte_bound_and_invalid_unicode(backend, limit):
     assert len(clipboard_bytes("é" * (limit // 2), backend)) == limit
