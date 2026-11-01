@@ -73,6 +73,9 @@ class RenderCoordinator:
                     return
                 self._ready.clear()
                 request = self.capture()
+                # Inactive ownership must retire even when header presentation
+                # already blocked the newly selected route before its first render.
+                await self.views.retire_inactive(request.route)
                 if self.is_failed(request):
                     if self.recover is not None:
                         self.recover(request, None)
@@ -82,7 +85,6 @@ class RenderCoordinator:
                     self.recover(request, None)
                 # Ownership failures remain fatal; only view construction,
                 # projection and rendering are recoverable here.
-                await self.views.retire_inactive(request.route)
                 try:
                     driver = self.views.resolve(request.route)
                     outcome = await driver.render(request)

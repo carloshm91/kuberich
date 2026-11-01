@@ -222,3 +222,57 @@ async def test_closed_or_obsolete_presentation_faults_are_ignored_and_legacy_fau
     legacy.fail(request, ValueError("fatal"))
     assert len(fatal) == 1 and isinstance(fatal[0], ValueError)
     await legacy.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("cleanup_fails", [False, True])
+async def test_blocked_new_route_still_retires_previous_owner_and_reports_cleanup_failure(
+    cleanup_fails,
+):
+    retired = asyncio.Event()
+    handled = asyncio.Event()
+    current = Driver()
+    request = RenderRequest(ViewObservation(context="demo"), "", lambda: True, ViewRoute.contexts())
+    fatal = []
+
+    async def retire():
+        retired.set()
+        if cleanup_fails:
+            raise RuntimeError("private-retirement-failure")
+
+    def failed(error):
+        fatal.append(error)
+        handled.set()
+
+    def recovered(value, error):
+        if error is None:
+            handled.set()
+
+    foreground = ForegroundGate(lambda: None)
+    foreground.resume()
+    registry = ViewRegistry(
+        {
+            ViewKind.PODS: lambda: ViewEntry(Driver(), retire),
+            ViewKind.CONTEXTS: lambda: ViewEntry(current),
+        }
+    )
+    registry.resolve(ViewRoute.pods())
+    owner = RenderCoordinator(
+        foreground, registry, lambda: request, lambda *_: None, failed, recover=recovered
+    )
+    # Header presentation can fail synchronously before the newly selected route renders.
+    owner.fail(request, ValueError("private-header-failure"))
+    owner.start()
+    owner.request()
+    try:
+        await handled.wait()
+        assert retired.is_set(), "Blocked presentation must not bypass inactive-owner retirement"
+        assert current.calls == 0 and owner.is_failed(request)
+        if cleanup_fails:
+            assert len(fatal) == 1 and isinstance(fatal[0], RuntimeError)
+            await wait_for(lambda: owner.active_count == 0)
+        else:
+            assert fatal == [] and owner.active_count == 1
+    finally:
+        await owner.close()
+    assert owner.active_count == 0
