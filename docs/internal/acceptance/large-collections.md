@@ -106,6 +106,24 @@ These checks exercise real Kubernetes negotiation and pagination with small
 fixtures. They do not measure oversized-cluster throughput or replace the
 existing deterministic cap, watch, cancellation or full-platform qualification.
 
+The initial real probe failed before the compact watch: Kubernetes 1.36.4's
+ConfigMap printer declares Data as string but sends its count as an integer.
+A separate shape-only observation confirmed a valid Table and
+PartialObjectMetadata followed by ordinary JSON fallback. Both failed originals
+and the diagnostic source/hash remain retained; no payload values were printed.
+The [upstream column definition](https://github.com/kubernetes/kubernetes/blob/v1.36.4/pkg/printers/internalversion/printers.go#L338)
+and [printer](https://github.com/kubernetes/kubernetes/blob/v1.36.4/pkg/printers/internalversion/printers.go#L2420)
+show that mismatch explicitly.
+
+The decoder normalizes only exact signed-64-bit integers advertised as strings
+to decimal text. This preserves visible generic values and homogeneous declared
+string sort keys. Booleans, floats, date mismatches, nested values and out-of-range
+integers retain their refusal behavior, as do all metadata/scope/payload bounds.
+ConfigMap and Secret server-cell redaction remains unchanged. A regression with
+the observed printer shape failed before this correction; range, projection and
+stable sorting controls accompany it. Raw evidence is retained under
+`artifacts/issue213-wire-kind/`.
+
 ## Limits and stable certification
 
 The retained 64 MiB bound accounts for resource payloads and printer cells, not

@@ -5,11 +5,15 @@ from dataclasses import FrozenInstanceError, replace
 import pytest
 
 from kuberich.domain import tables
-from kuberich.domain.resources import ResourceSnapshot
+from kuberich.domain.custom import CustomLayout
+from kuberich.domain.inspection import REDACTED
+from kuberich.domain.registry import order_resources
+from kuberich.domain.resources import ResourceSnapshot, api_resource
 from kuberich.domain.tables import TableDecoder, TableUnavailable, is_table
 from kuberich.domain.views import ResourceSelection
 from kuberich.domain.watches import EventType, WatchState
 from kuberich.errors import AppError
+from tests.support.resources import descriptor
 from tests.support.tables import custom_item, custom_resource, server_table
 from tests.support.watches import bookmark, error_event
 
@@ -57,6 +61,53 @@ def test_typed_server_cells_preserve_null_boolean_numeric_and_literal_values(kin
     assert record.server.cells == (value,)
 
 
+def test_observed_configmap_printer_count_normalizes_without_losing_compact_identity_or_sorting():
+    configmaps = api_resource("v1", descriptor("configmaps", kind="ConfigMap"))
+    projected = []
+    for name, count in (("z-two", 2), ("ten", 10), ("a-two", "2")):
+        obj = {
+            "apiVersion": "meta.k8s.io/v1",
+            "kind": "PartialObjectMetadata",
+            "metadata": custom_item(name, uid="owned-" + name)["metadata"],
+        }
+        payload = server_table(obj)
+        # Actual Kubernetes 1.36.4 ConfigMap printer: Data declares string,
+        # but the count is an int64. Preserve the published string schema.
+        payload["columnDefinitions"] = [
+            {"name": "Name", "type": "string", "format": "name"},
+            {"name": "Data", "type": "string"},
+            {"name": "Age", "type": "string"},
+        ]
+        payload["rows"][0]["cells"] = [name, count, "0s"]
+        record = TableDecoder(configmaps, "team", metadata_only=True).records(payload)[0]
+        assert record.metadata_only and record.uid == "owned-" + name
+        assert record.namespace == "team" and "data" not in record.manifest
+        assert record.server.cells == (name, str(count), "0s")
+        assert record.server.columns[1].type == "string"
+        opaque = CustomLayout.build(configmaps, record.server.columns).row(record)
+        assert opaque.values[2].text == REDACTED and opaque.values[2].sort is None
+        # A nonopaque generic resource consumes the same server-printer shape.
+        generic = TableDecoder(custom_resource(), "team", metadata_only=True).records(payload)[0]
+        row = CustomLayout.build(custom_resource(), generic.server.columns).row(generic)
+        assert row.values[2].text == str(count) and row.values[2].sort == str(count)
+        projected.append(row)
+    assert [row.name for row in order_resources(tuple(projected), 2)] == ["ten", "a-two", "z-two"]
+    assert [row.name for row in order_resources(tuple(projected), 2, True)] == [
+        "a-two",
+        "z-two",
+        "ten",
+    ]
+
+
+@pytest.mark.parametrize("value", [-(2**63), 0, 2**63 - 1])
+def test_string_printer_integer_normalization_preserves_both_int64_bounds(value):
+    payload = server_table(custom_item())
+    payload["columnDefinitions"] = [{"name": "Count", "type": "string"}]
+    payload["rows"][0]["cells"] = [value]
+    record = TableDecoder(custom_resource(), "team").records(payload)[0]
+    assert record.server.cells == (str(value),)
+
+
 @pytest.mark.parametrize(
     "column",
     [
@@ -102,7 +153,13 @@ def test_total_utf8_header_metadata_is_bounded(monkeypatch):
 @pytest.mark.parametrize(
     "kind,value",
     [
-        ("string", 1),
+        ("string", True),
+        ("string", 1.5),
+        ("string", float("inf")),
+        ("string", 2**63),
+        ("string", -(2**63) - 1),
+        ("string", []),
+        ("date", 1),
         ("string", "x" * 65537),
         ("boolean", 1),
         ("integer", True),
