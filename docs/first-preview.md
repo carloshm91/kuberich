@@ -76,6 +76,37 @@ work; the installed release remains 0.2.0.
 uv run python scripts/check_private_access.py
 ```
 
+## Development: runtime latency observations
+
+For 0.x development, runtime latency observations retain their original targets
+and report whether they met them. Small overshoots do not replace functional
+correctness as a release blocker. All workload, resource, memory, cleanup and
+coverage checks remain required. Strict runtime limits remain available with
+`KUBERICH_STRICT_RUNTIME_BUDGETS=1` and become mandatory for major-version 1
+candidates; the deliberate blocking negative controls always remain strict.
+Focused policy, receipt and release controls passed 423 cases. Three actual
+aggregate-UI, HTTP-backend and mounted-terminal cases also passed, retaining both
+always-strict blocking controls and full positive workload/cleanup checks. These
+are local prerequisite checks, not full platform or coverage qualification.
+The [quality policy](quality.md#runtime-latency-policy-for-0x-and-stable-qualification)
+explains the exact observation and validation contract.
+
+```sh
+uv run pytest tests/quality/test_runtime_budget.py tests/quality/test_runtime_coverage.py tests/quality/test_backend_runtime.py
+```
+
+## Development: owned X11 clipboard qualification
+
+The native clipboard trial now observes exact selection receipt on a disposable
+Xvfb display. A controlled delayed real writer reproduces the earlier immediate
+read failure; missing/wrong-selection and cancelled-reader controls keep their deadlines
+and require owned process cleanup. The clipboard cohort passed 32 cases with one
+explicit macOS-only skip on Linux. This changes developer qualification; the
+published application remains 0.2.0. Native/full required checks remain pending.
+
+```sh
+uv run pytest tests/contract/test_clipboard.py tests/contract/test_x11_readiness.py tests/unit/test_clipboard.py
+```
 
 ## Included in 0.2.0: live preferences
 

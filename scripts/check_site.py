@@ -19,10 +19,12 @@ from scripts.build_site import (
     SITE_ORIGIN,
     digest,
     is_published,
+    legacy_redirects,
     robots_content,
     site_headers,
     source_inputs,
 )
+from scripts.documentation import load_navigation
 
 
 class Page(HTMLParser):
@@ -68,6 +70,7 @@ class Page(HTMLParser):
 
 def verify(output: Path, source: Path = ROOT) -> dict[str, int]:
     root = output.resolve()
+    catalog = load_navigation(source)
     manifest = json.loads((root / MARKER).read_text())
     if manifest.get("generator") != GENERATOR or manifest.get("publication_performed") is not False:
         raise ValueError("Invalid local build manifest")
@@ -82,6 +85,8 @@ def verify(output: Path, source: Path = ROOT) -> dict[str, int]:
     version = str(tomllib.loads((source / "pyproject.toml").read_text())["project"]["version"])
     if manifest.get("version") != version:
         raise ValueError("Site version differs from its source")
+    if manifest.get("documentation_pages") != catalog.user_page_count:
+        raise ValueError("Documentation page count differs from canonical navigation")
     if public_launch and (Version(version).is_devrelease or not is_published(version, source)):
         raise ValueError("Public indexing requires a verified published release")
     inputs = source_inputs(source)
@@ -116,6 +121,31 @@ def verify(output: Path, source: Path = ROOT) -> dict[str, int]:
         if page.canonical != canonical:
             raise ValueError("Page canonical URL differs from its public host")
         pages[path.resolve()] = page
+    canonical_pages = {"index.html", *(guide.filename for guide in catalog.pages)}
+    doc_folders = [root / "docs"]
+    if not public_launch:
+        doc_folders.append(root / "www/docs")
+    targets = {guide.source: guide.filename for guide in catalog.pages}
+    for folder in doc_folders:
+        actual_pages = {path.name for path in folder.glob("*.html")} - {"404.html"}
+        if actual_pages != canonical_pages:
+            raise ValueError("Unexpected or missing canonical documentation page")
+        for route in catalog.legacy_routes:
+            route_target = (folder / targets[route.target]).resolve()
+            if route_target not in pages or any(
+                identifier not in pages[route_target].ids
+                for identifier in (route.anchor, route.heading)
+            ):
+                raise ValueError("Legacy documentation redirect has a missing target or anchor")
+    for surface in ("docs", "www"):
+        expected = (
+            DOCS_REDIRECTS
+            if public_launch and surface == "www"
+            else legacy_redirects(catalog, prefix="/" if surface == "docs" else "/docs/")
+        )
+        redirects = root / surface / "_redirects"
+        if not redirects.is_file() or redirects.read_text() != expected:
+            raise ValueError("Documentation redirects differ from canonical navigation")
     checked = 0
     for path, page in pages.items():
         for target in page.links + page.assets:
@@ -152,12 +182,6 @@ def verify(output: Path, source: Path = ROOT) -> dict[str, int]:
             svg = (root / surface / "assets" / name).read_text()
             if "@font-face" in svg or 'url("https:' in svg or "<script" in svg:
                 raise ValueError("Screenshot includes external/active content")
-    redirects = root / "www/_redirects"
-    if public_launch:
-        if not redirects.is_file() or redirects.read_text() != DOCS_REDIRECTS:
-            raise ValueError("Public documentation redirects differ from the selected policy")
-    elif redirects.exists():
-        raise ValueError("Preview output cannot redirect local documentation")
     return {"pages": len(pages), "local_links_and_assets": checked, "files": len(actual)}
 
 
