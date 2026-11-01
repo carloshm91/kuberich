@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Config
+current-context: demo-openshift
+clusters:
+- name: demo-openshift
+  cluster:
+    server: https://api.example.invalid
+    certificate-authority-data: <owned-certificate-authority-data>
+users:
+- name: demo-openshift
+  user:
+    token: synthetic-openshift-token
+contexts:
+- name: demo-openshift
+  context:
+    cluster: demo-openshift
+    user: demo-openshift
+    namespace: ''

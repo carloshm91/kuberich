@@ -93,7 +93,7 @@ async def guarded_request(
                 ("Content-Type", content_type),
                 *client.impersonation,
             ]
-            if token := configuration.api_key.get("BearerToken"):
+            if token := client.authorization_header():
                 headers.append(("Authorization", token))
             authorize()
             started = True
