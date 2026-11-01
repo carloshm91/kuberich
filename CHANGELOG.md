@@ -1,565 +1,189 @@
 # Changelog
 
-User-visible changes are grouped under Added, Changed, Fixed, and Security.
-Release entries are written in release PRs and linked to their Git tags.
+User-visible changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+See [release policy](docs/releases.md) for the project's versioning rules.
 
-## Unreleased
-
-### Changed
-
-- Keep historical engineering evidence in one internal area and replace the
-  development log with a short status page. Planning inputs stay editable and
-  retain the same release checks
-  ([#226](https://github.com/carloshm91/kuberich/issues/226),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Replace the architecture decision log with a concise overview, focused ADRs,
-  and an exact historical archive
-  ([#225](https://github.com/carloshm91/kuberich/issues/225),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Consolidate user documentation into focused task guides and source-generated
-  command, key, resource, and configuration references. Preserve previous guide
-  routes and exact superseded text outside the website
-  ([#224](https://github.com/carloshm91/kuberich/issues/224),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Replace the README with a concise product introduction, published installation,
-  a read-only quick start and a plain feature list
-  ([#223](https://github.com/carloshm91/kuberich/issues/223),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-- Organize user documentation into 19 pages with tutorial, how-to, reference and
-  explanation navigation. Keep the existing guidance and old guide routes while
-  introducing a plain-language style and a complete document migration map
-  ([#222](https://github.com/carloshm91/kuberich/issues/222),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-- Add parallel development test layers and an early full unit/contract/UI signal
-  before the complete platform and coverage checks
-  ([#209](https://github.com/carloshm91/kuberich/issues/209),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-- Keep the Kubernetes SDK's date parser on the qualified 2.x major version so
-  fresh installs use the reviewed runtime dependency range.
-
-### Fixed
-
-- Wait for actual selection receipt in isolated X11 clipboard qualification,
-  including delayed owners, absent selections and cancelled readers
-  ([#281](https://github.com/carloshm91/kuberich/issues/281),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Reuse one palette snapshot for each shortcut panel render and avoid layout
-  updates for unchanged header text during navigation, resizing and theme changes
-  ([#209](https://github.com/carloshm91/kuberich/issues/209),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-### Security
-
-- Update the development installer's FileLock, the standalone builder's
-  Setuptools, and the deployment tool's Wrangler/Miniflare/Undici graph to
-  patched versions. Keep application runtime requirements unchanged
-  ([#270](https://github.com/carloshm91/kuberich/issues/270),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-## 0.2.0 — 2026-10-21
-
-[Published release](https://github.com/carloshm91/kuberich/releases/tag/v0.2.0).
-[Authored release notes](docs/release-notes/0.2.0.md)
-describe this phase, installation, upgrades and known limits. The entries below
-retain development history.
-
-### Added
-
-- Install from Homebrew with prebuilt bottles on macOS Apple Silicon, macOS Intel
-  and Linux x86_64; other systems still build from source
-  ([#193](https://github.com/carloshm91/kuberich/issues/193),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Reload the preference file while KubeRich runs. An invalid file keeps the
-  last valid preferences. Add per-context `read_only` and `refresh_seconds`,
-  the terminal background as a palette color, full API titles, and notices for
-  unknown fields ([#64](https://github.com/carloshm91/kuberich/issues/64),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Jump from the selected row to a related view with `:jump`, using jumps you
-  define in the preference file. Templates only read fields from the row
-  ([#64](https://github.com/carloshm91/kuberich/issues/64),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Rename or delete a kubeconfig context from `:ctx` after a review, with a backup,
-  and clean up completed and failed pods with `:cleanup`
-  ([#63](https://github.com/carloshm91/kuberich/issues/63),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Add named/container-qualified TCP forward mappings, local/context presets,
-  explicitly trusted annotation shortcuts, kubectl transport selection and
-  bounded reconnects with captured-resource and process cleanup checks
-  ([#62](https://github.com/carloshm91/kuberich/issues/62),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Add session command/filter recall, inverse/fuzzy/local metadata filters, namespace
-  favorites, wide/errors controls, bounded UID ranges, read-only text navigation,
-  nested command bars and live captured-container refresh with owned cleanup.
-  Copy names/namespaces/text through bounded native macOS/X11 or OSC52/tmux
-  backends; mouse reporting requires explicit opt-in
-  ([#61](https://github.com/carloshm91/kuberich/issues/61),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Document the pinned 50-file/108-command plugin compatibility census, external
-  dependencies and alternatives; verify 18 explicit argv adaptations and three
-  original capture/interactive/background manifests. Accept valid hyphenated CRD
-  plural scopes and identify unsupported boolean inversion accurately
-  ([#60](https://github.com/carloshm91/kuberich/issues/60),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Run explicitly configured local plugins with typed Review/Run forms,
-  scope-aware shortcuts, capture/background/native foreground modes, bounded
-  sanitized output, visible job controls and captured credential-helper identity
-  ([#59](https://github.com/carloshm91/kuberich/issues/59)).
-
-- Validate explicitly configured local plugin files, context/resource scope,
-  shortcut overrides, typed inputs and literal captured variables without running
-  commands during configuration checks. Explicit execution uses separate review
-  ([#58](https://github.com/carloshm91/kuberich/issues/58),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Configure per-view navigation keys and literal command aliases with effective
-  help/completion. Apply or explicitly save resource column order, visibility,
-  widths, alignment and typed sort globally/per context; retain working fallbacks
-  after invalid overrides or changed server columns
-  ([#57](https://github.com/carloshm91/kuberich/issues/57),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Preview and save built-in/custom themes globally or per context, retain working
-  defaults after invalid appearance overrides, and invert session colors with
-  contrast repair. Add original About content and an opt-in cached, bounded,
-  offline-safe public-release notice ([#56](https://github.com/carloshm91/kuberich/issues/56),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Inspect ConfigMap and Secret keys with values hidden by default, explicit
-  reveal/copy, text/Base64 controls and fresh identity/version-bound reads.
-  Edit Secrets through the private-draft, redacted-review and separate
-  dry-run/Apply workflow ([#55](https://github.com/carloshm91/kuberich/issues/55),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-### Fixed
-
-- Release retired table-render cache entries promptly when views change, retaining
-  native LRU behavior and capacity. Size configuration-key columns from their
-  captured metadata so initial paints do not truncate names while idle layout is
-  pending ([#62](https://github.com/carloshm91/kuberich/issues/62),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Preserve configured plugin file locations and working directories during
-  explicit preference migration. Reuse bounded exact CSS parses when revisiting
-  themes, retaining native errors and independent app ownership after a required
-  responsiveness check exposed repeated parsing/collection work
-  ([#58](https://github.com/carloshm91/kuberich/issues/58),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-### Security
-
-- Update the locked aiohttp runtime dependency from 3.14.3 to 3.14.5, which fixes
-  CVE-2026-111063, CVE-2026-111064 and GHSA-2g87-pp6c-29x5
-  ([Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Update the locked certifi dependency from 2026.7.22 to 2026.10.19, which removes
-  the emSign root certificates named in PYSEC-2026-4320
-  ([Carlos J. Herrera](https://github.com/carloshm91)).
-
-## 0.1.0 — 2026-10-12
-
-[Published release](https://github.com/carloshm91/kuberich/releases/tag/v0.1.0).
-[Authored release notes](docs/release-notes/0.1.0.md)
-describe this phase, installation, upgrades and known limits. The entries below
-retain development history; dated qualification statements are superseded by
-the [completed workload checkpoint](docs/internal/acceptance/workload-checkpoint.md).
-
-### Added
-
-- Add a guided everyday workflow, troubleshooting, installation/upgrade coverage
-  and reader-facing capability summaries. Refresh the flat landing page and README;
-  tutorial names and screenshot resources are fictional or owned disposable fixtures.
-  Clean public guides and generated CLI references of internal tracking codes
-  ([#150](https://github.com/carloshm91/kuberich/issues/150),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Review the last 1,000 normal-screen shell rows inside the terminal, with
-  deliberate local paging, literal Unicode search and explicit redacted row
-  selection/copy. Keep remote output, cursor and editors live and return with
-  Enter or Escape. Report discarded history and release session-owned buffers
-  on exit or target invalidation.
-
-### Fixed
-
-- Give reproducible CycloneDX reports a content-derived serial number required
-  by GitHub's SBOM attestation parser. Reject missing identifiers before publication
-  ([#89](https://github.com/carloshm91/kuberich/issues/89),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Separate read-only branch-protection access from release publication credentials;
-  give qualification reads their explicit Actions/checks/PR/issues permissions.
-  Explain missing owner setup before network/publication
-  ([#89](https://github.com/carloshm91/kuberich/issues/89),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Reduce temporary component-style allocations during focus and theme changes,
-  preserving native CSS and the existing response-time gate. Pin the qualified
-  Textual version used by scoped rendering adaptations
-  ([#150](https://github.com/carloshm91/kuberich/issues/150),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Preserve credential-helper success, size-limit errors and spawn cancellation
-  during the macOS process-group teardown race. Reuse the existing bounded group
-  signal guard; only confirmed disappearance permits transient teardown denial
-  ([#150](https://github.com/carloshm91/kuberich/issues/150),
-  [Carlos J. Herrera](https://github.com/carloshm91)).
-
-- Keep shell output cleanup safe while Textual removes its footer controls;
-  queued PTY output cannot query a History button that has already left the DOM.
+## [Unreleased]
 
 ### Changed
 
-- Reuse retained log geometry across append, eviction and wrap changes while
-  preserving literal search, marks and navigation. Update fixed-height log
-  metadata without repeatedly recalculating the covered workspace layout.
-
-- Retain up to 10,000 log lines within the existing 4 MiB byte limit. Reuse
-  bounded wrap layouts, wake display controls promptly and defer covered
-  workspace painting while live observations and target validation continue.
-  Add a reproducible owned-loopback CLI/PTY load observer; performance
-  qualification remains open.
-
-- Give pending input, target changes and cancellation a turn during dense log
-  delivery, preserving source order, consumer backpressure and bounded retention.
-  Require normal-runtime backend latency controls alongside the original
-  branch-covered HTTP workload and final ownership checks.
-
-- Format retained aggregate log views and exports in bounded owned turns,
-  preserving captured source identities, arrival order and plain/JSON controls.
-  Collect parser outcomes before returning cancellation, including late errors
-  on Python 3.14, while preserving ordinary error propagation.
-
-- Decode and validate live resource events in one owned worker, preserving
-  bounded framing, pull backpressure, Table fallback and safe error messages.
-  Drain JSON read/watch workers through repeated cancellation before cleanup.
-
-- Avoid duplicate workspace label updates and wide equality on reused immutable
-  resource rows; repaint safe owned cell edits through native row regions while
-  retaining full native geometry and unknown-content handling.
-
-- Keep established Pod, standard and discovered resource order through unrelated
-  live edits. Reorder changed typed sort values, identity ties and membership while
-  retaining selection/scroll and generation-safe recovery.
-
-- Avoid scanning every retained row when a single-line resource cell changes
-  within a column whose header determines its width. Preserve native sizing,
-  rendering and selection across ordinary and discovered resource tables.
-
-- Pin every Linux CI host to Ubuntu 24.04 while retaining all interpreter/native,
-  coverage and owned-cluster checks. Reject stale runner/job/artifact identities
-  during release qualification and candidate retries.
-
-- Refine the landing and initial docs with a shared flat presentation and mobile
-  guide navigation. Generate CLI/resource/capability references from maintained
-  contracts, reject stale source receipts, and rebuild both unpublished surfaces
-  on each PR. Keep unavailable features and release/provider limits explicit.
-
-- Prepare first public 0.1.0 and cumulative reviewed 0.x phases, superseding
-  the earlier first-public-1.0-only policy without changing development metadata.
-  Require selected/prior gates and all traced dependencies, immutable authored
-  notes with optional reviewed previews, actual upgrade evidence and the planned
-  organization-owned `kuberich/tap/kuberich` channel. Current public packages remain
-  unavailable; full qualification and activation stay under #89.
-
-- License KubeRich under Apache-2.0 and include contributor attribution NOTICE
-  in Python artifacts. Align source Homebrew metadata and contribution guidance;
-  earlier MIT grants and third-party licenses remain unchanged.
-
-- Rename the private product/package/import/CLI to KubeRich / `kuberich`.
-  Retain the `kubetrol` console alias and legacy preference environment variables;
-  read existing preferences in place and provide explicit non-overwriting migration.
-  Update UI identity and installation/release tooling without a version bump.
-
-### Added
-
-- Build standalone Linux x86_64/ARM64 and macOS Intel/ARM64 bundles with an
-  included Python runtime, terminal assets, certificates and dependency notices.
-  Verify archive-bound CLI, browsing, credential-helper and shell behavior, and
-  preserve checksums/provenance for release preparation. Public downloads remain
-  pending the first qualified release.
-
-- Aggregate regular/init/ephemeral container and workload-Pod logs with stable
-  source/UID prefixes, verified controller membership, bounded reader admission,
-  per-source/aggregate retention, source picker/filter and plain/JSON exports.
-  Enroll newly started containers without replaying ended streams; drain even
-  dismissed export work before context-client cleanup.
-- Preserve useful JSON log fields and scalar types while redacting decoded
-  credential keys/strings within strict depth/expansion/control bounds.
-
-- Prepare a protected main-only Cloudflare Pages publication of both development
-  website surfaces, preserving checked artifact bytes and verifying live HTTPS
-  digests, response headers and 404s. Retain source/deployment and partial-failure
-  receipts. Application packages and custom-domain/DNS setup remain separate.
-- Browse dynamically discovered resource families and explicit served versions
-  through qualified commands and completion. Show typed server columns with
-  metadata fallback, session-local column selection, captured YAML/details,
-  stable history and discovery refresh/removal recovery. Keep generic mutation
-  and persistent view preferences under their later owners.
-
-- Resolve preferred custom-resource versions and ambiguous aliases from live
-  discovery. Read arbitrary discovered types through bounded LIST/WATCH/GET,
-  retaining server Table columns and full manifests with scoped JSON fallback.
-  Refresh installed/removed APIs without replacing the context client.
-
-- Attach to a captured running regular/init/ephemeral container inside the terminal
-  workspace, with detach, faithful return status and retained selection.
-- Review explicit bidirectional file/directory copies with frozen upload snapshots,
-  bounded streaming downloads, inspected private tar extraction, no-follow local
-  destinations, default Cancel, explicit overwrite and honest interrupted-upload
-  outcomes. Keep uploads/attach gated in read-only mode and downloads explicit.
-
-- Refresh token-file and exec certificate credentials with captured helper identity,
-  private TLS pool replacement and generic explicit native login. Qualify HTTP
-  CONNECT/SOCKS5 proxies, original/overridden TLS names and delegated Kubernetes
-  logs, exec and port-forward connections; document GKE/OIDC migration and limits.
-  Reject encrypted private keys before OpenSSL can request a terminal password.
-  Drain credential file preparation through repeated cancellation before cleanup.
-
-- Delete captured resources and explicitly selected batches with UID/version,
-  propagation/grace and count confirmation; retain independent and pending outcomes.
-  Trigger manual Jobs and suspend/resume Jobs/CronJobs with guarded review.
-
-- Prepare a responsive private landing and source-generated initial user guides,
-  actual local UI captures, browser/accessibility checks and reviewed hosting steps.
-  Website/DNS and package publication remain separate approved launch actions.
-
-- Review and confirm workload scale/restart/explicit revision rollback; monitor
-  actual rollout progress with HPA, paused/OnDelete, narrow RBAC and UID/version guards.
-
-- Edit selected manifests with a trusted native editor, private owned drafts,
-  redacted preview, strict server dry-run, separate Apply and version/UID refusal.
-
-- Guarded annotation changes with captured one-use confirmation, atomic UID/version
-  conditions, common read-only policy and bounded public write-outcome history.
-
-- Managed pod/Service TCP forwards with dynamic or explicit local ports,
-  observed readiness, IPv4/IPv6 bind intent, session listing/stop and owned cleanup.
-
-- Live discovered workload, batch, network, configuration, node and storage
-  tables with typed sorting, scoped commands, retained navigation and redacted details.
-
-- Verify disposable kind node/API identity before fixture writes and clean owned
-  clusters on SIGINT/SIGTERM, including setup cancellation and repeated signals.
-
-- Verified Homebrew source formula generation, isolated candidate installation
-  and immutable reviewed update-PR automation.
-
-- Prepare exact local release candidates and a maintainer-reviewed OIDC pipeline
-  that consumes tested artifacts without rebuilding, enforces real main/matrix/
-  milestone qualification, and recovers partial uploads without replacing bytes.
-
-- Audit locked and freshly installed runtimes, validate artifact-linked CycloneDX
-  SBOMs and original license notices, and reject incomplete security evidence,
-  floating CI actions and undocumented or expired vulnerability exceptions.
-
-### Changed
-
-- Reduce repeated private macOS CI work while retaining full selected-job suites,
-  independent coverage gates and mandatory six-environment release qualification.
-
-- Describe embedded shells accurately in CLI help and provide one current
-  installation/trial guide with a reproducible installed-wheel kind rehearsal.
-
-- Restrict wheel/source artifacts to runtime/build assets, metadata, license and
-  release notes. Development tests/scripts/lock, caches and undeclared private
-  configuration/credential files stay outside the distribution.
-- Use an original `ktrol` ASCII logo in the upper-right shared workspace header,
-  with a compact wordmark below 120 columns and the existing hidden-header options.
+- Find the published version and installation links on a short status page ([#226](https://github.com/carloshm91/kuberich/issues/226)).
+- Follow focused task guides with references generated from commands, keys and configuration ([#222](https://github.com/carloshm91/kuberich/issues/222), [#224](https://github.com/carloshm91/kuberich/issues/224)).
+- Find installation steps and product features in a shorter README ([#223](https://github.com/carloshm91/kuberich/issues/223)).
+- Install with the supported Kubernetes SDK date-parser version.
+- Read shorter release notes focused on changes you can use ([#227](https://github.com/carloshm91/kuberich/issues/227)).
 
 ### Fixed
 
-- Verify disappearance after macOS reports a permission error for an exiting
-  subprocess group. Preserve real permission failures and owned child cleanup.
-- Preserve rejected namespace-command feedback through repaints of the same
-  connecting view; show new connection progress or errors when its state changes.
-
-- Preserve SSH hangup status on macOS when terminal attributes remain readable
-  after the driver has stopped accepting output; probe without emitting bytes.
-- Restore owned terminal sessions after external SIGHUP/SIGTERM, reap native and
-  embedded children on SSH loss, and preserve hangup status when the remote TTY
-  is revoked. tmux sessions remain available for reattachment.
-- Recover following text and private cursor queries after malformed CSI in the
-  same shell packet; retain rendered normal/alternate text and bounded cursors
-  while shrinking the terminal.
-- Ignore deferred shortcut rendering after its header view has been removed,
-  avoiding a terminal failure when resize and view return overlap.
-- Resolve native resize events against the current physical TTY so a delayed
-  older event cannot leave the interface and embedded child at the wrong size.
-- Distinguish recognized AWS helper login/role failures from API 401/403 without
-  exposing provider output; share expiring-token refreshes and ignore delayed
-  401 invalidation of newer cache revisions, including identical token bytes.
-- Preserve a session's captured AWS environment, working directory and helper
-  executable in delegated shells. Actual EKS qualification remains deferred to Q05 #87.
-- Reflow header shortcuts when the logo changes width during terminal resizing.
-- Keep frame margins, header columns and interaction/footer rows stable across
-  pod, namespace, container and log navigation, focus changes and mouse clicks.
-- Render the selected command completion inline in the dedicated `:` bar,
-  without a dropdown; retain Tab/cycling acceptance and literal Enter behavior.
-
-- Open container shells inside a full-screen Textual terminal with a persistent
-  context/pod/container frame. Ctrl+C reaches the remote program; Ctrl+] returns
-  to the retained container view, and Ctrl+Q closes the owned session and quits.
-
-- Preserve exit 143 after SIGTERM during a native shell instead of reporting a
-  terminal failure after successful cleanup and restoration.
-
-- Enter after arrow navigation submits the highlighted command/namespace/context
-  suggestion once; editing or changing scope discards the old selection.
-
-- Keep quiet resource watches live through normal renewal without false timeout
-  warnings or growing retries; still expose genuine outages with bounded recovery.
-- Replace “Session connected” with “Resource data ready”, distinguish loading
-  from a successful empty collection, and spell out context/namespace shortcut hints.
-
-- Accept null optional exec credential args/env lists, including doctl's `env: null`,
-  with regression tests for authentication and switching away from an auth error.
-- Reach context/namespace pickers with `c`/`n` outside text inputs and connection
-  status/retry with `i`/`r` or `:status`/`:retry` when a terminal intercepts function keys.
-
-### Added
-
-- Required isolated SSH/tmux terminal and fresh-wheel trials for resize, Unicode,
-  color fallback, log navigation, native handoff, embedded protocols, cancellation
-  during shell preparation, signal restoration and real connection loss.
-- Native Azure kubelogin contracts and explicit `:login`, with mode-aware terminal
-  stdin, private credential stdout, safe provider hints, captured delegated Azure
-  identity and retry after cancellation. Actual Entra/AKS certification remains
-  opt-in Q05 #87; generic exec TLS certificate rotation remains C08 #47.
-- Exec token validation independent of argument length, allowing bounded large
-  JWTs without accepting header controls or whitespace.
-- Invocation-scoped cluster/user aliases, token and CA/client certificate overrides,
-  repeated impersonation groups and the same captured identity in API streams and
-  delegated container shells. Effective identity is visible in the header.
-- Effective `--refresh`/`-r` table repaint interval, retaining live watches and
-  cursor/filter state without periodic API polling.
-- Rectangular dedicated command bar, with compact side borders in short terminals.
-- Local context table through `:ctx`/`c`/F2 with cluster, auth-info and namespace;
-  filtering and browsing preserve the resource workspace and kubeconfig.
-- Container image, readiness, state/reason, restart count, configured probes,
-  CPU/memory requests/limits and ports from the captured pod snapshot.
-
-- K9s-inspired black/cyan/yellow workspace and a default `k9s` theme, with
-  context/cluster/user/version header, top inputs, view shortcuts and Escape trails.
-- Live namespace NAME/STATUS/AGE table via `:ns` / `n`, Enter-to-pods and `0` for
-  all namespaces; returning retains namespace filtering, UID cursor and viewport.
-- Common full-workspace container/log layouts with top log search, retaining the
-  embedded shell, captured targets and existing stream cleanup.
-
-- Embedded selected-container shells via kubectl exec, with `x`/`:shell` on pods,
-  `s`/`x` on containers and a configurable literal shell argument list.
-- Private connection snapshots pinned to the prepared session, pod-UID checks,
-  read-only enforcement and return to the retained table after exit or failure.
-
-- Shared bounded local-process runner and native terminal handoff foundation,
-  with captured scope/arguments, enforced read-only policy and owned cleanup.
-  The embedded shell reuses process policy, captured arguments and cleanup.
-
-- Enter on a pod opens its regular/init container table, including single-container
-  pods; Enter on a container opens its logs. Esc returns through both views, while
-  `d` keeps resource details and `l` keeps the direct log shortcut.
-
-- Container log viewer with regular/init selection, current/previous output,
-  head/tail/time windows, timestamps, wrapping, literal search and Vim navigation.
-- Separate reception pause and viewport follow, bounded virtualized history,
-  clear/marks/column lock/fullscreen, redacted copy/save and awaited cleanup.
-
-- Backend current/previous regular/init container logs with captured UID/context,
-  tail/since/timestamp options, incremental UTF-8 framing and explicit errors.
-- Owned cancellation, quiet-follow semantics, bounded redacted lines/retention
-  and consumer backpressure, integrated into the S02 terminal log viewer.
-
-- Read-only captured-UID pod YAML, details and related events, with managedFields
-  visibility, literal search, redacted copying and return to the live table.
-- Clear denied/missing reads, same-name recreation rejection, viewer invalidation
-  and awaited request/serializer cleanup, with API, Pilot, PTY and install checks.
-
-- Shared initial/interactive pod/context/namespace commands, bounded literal
-  suggestions with Tab acceptance, and local Unicode text/regex filtering.
-- Navigation back/forward preserving scope, filter, typed sorting, UID selection
-  and viewport; stale-result rejection and awaited worker cleanup.
-
-- Live UID keyed pod rows with readiness, init/sidecar/waiting/termination reasons,
-  restarts, continuously updating age, typed sorting and stable selection/scroll.
-- Incremental cell/row patches, cancellation-safe background projection, distinct
-  loading/empty/error states and visible data at 40×12, with real API/PTY/install evidence.
-
-- Active pod synchronization with live counts and loading/stale/error status,
-  generation-bound snapshots, coalesced scope changes and bounded UI subscriptions.
-- Awaited cleanup and late-result rejection, with rapid-switch, real-API, Pilot
-  and PTY recovery/exit tests. Pod table rows are delivered in B02.
-
-- Backend list/watch synchronization with stable UID state, idempotent events,
-  bookmarks, opaque checkpoints, bounded retries and full relists after expiry.
-- Real streaming/backpressure/cancellation tests and disposable-kind create,
-  modify, delete and same-name recreation qualification. UI pod rows are delivered in B02.
-
-- Backend API discovery with core/named groups, modern/legacy negotiation,
-  aliases and explicit partial results, plus scoped atomic paginated snapshots,
-  collection versions and one full restart for expired continuation tokens.
-- Resource normalization/HTTP cancellation tests and real disposable-kind
-  paginated resource qualification. Terminal pod rows are delivered in B02.
-
-- Isolated kubeconfig/context sessions, namespace discovery and selectors,
-  TLS/client-certificate/static-token authentication and bounded noninteractive
-  exec-token helpers, with distinct connection states and owned cleanup.
-- Real HTTP/TLS/helper, Pilot, terminal and disposable-kind verification for the
-  context checkpoint. Live resource views and provider qualification remain upcoming.
-
-- Help/version subcommands and short version output, all audited launch flags
-  with explicit unavailable-feature errors, and a diagnostic data-directory path.
-- Header/logo/scope visibility, initial terminal help/quit, and read-only/write
-  invocation overrides with shared CLI/UI command policy and persistent status.
-- Launch-contract/alias/precedence tests, reviewed help snapshot, visibility Pilot
-  evidence and real-terminal initial help/quit restoration checks.
-
-- Real terminal workspace with context/namespace/connection indicators, an empty
-  resource table, filter/command inputs, keyboard/mouse navigation, scrollable
-  help, responsive layouts, built-in themes and packaged styles.
-- Pilot/layout tests and real PTY evidence for navigation, resize, Unicode paste,
-  rapid command input, normal/error terminal restoration and installed entry points.
-
-- Versioned YAML preferences with typed defaults, explicit environment/CLI
-  precedence, legacy migration, retained unknown fields and atomic private writes.
-- Safe local `info`, `config init`/`check`, config/log path flags and stable
-  errors that do not echo configuration values or rejected arguments.
-- Private rotating diagnostic logs, process ownership, bounded records, credential
-  redaction and debug locations without exception values or console tracebacks.
-- Project roadmap, architecture, quality requirements, and release methodology.
-- Contribution and security policies, issue templates, and a structured backlog.
-- Installable Python development package with `kuberich --help`, `--version`,
-  module invocation and a default terminal launch.
-- Locked Textual/Kubernetes dependencies, developer tooling, and clean-artifact
-  installation tests for Python 3.12 through 3.14 on Linux and macOS.
-- Independent production line/branch coverage gates, 90% changed-line coverage,
-  100% critical-module coverage, and regression checks for invalid/missing evidence.
-- A Linux/macOS application quality matrix and aggregate status that rejects
-  failed, cancelled, or skipped dependencies; private-repository merge checks
-  remain manually verified until GitHub branch protection is available.
-
-No public application release has been published. Development installation is
-available from a source checkout; PyPI and Homebrew publication come later.
+- Navigate, resize and change themes without repeatedly updating unchanged headers ([#209](https://github.com/carloshm91/kuberich/issues/209)).
 
 ### Security
 
-- Immutable service-level action policy that refuses unknown actions and blocks
-  mutation, exec, attach and unclassified plugins in read-only mode; actual
-  cluster-service enforcement must be qualified as those operations ship.
+- Build and deploy with patched FileLock, Setuptools and Cloudflare tooling dependencies ([#270](https://github.com/carloshm91/kuberich/issues/270)).
 
-- Shared bounded literal display text, credential redaction and control escaping,
-  with explicit multiline behavior and preserved actionable error context.
-- Immutable argument vectors and client/context/UID target captures with stale
-  target rejection; operation enforcement remains part of upcoming services.
-- Test-wide ambient Kubernetes credential traps and a qualified owned local
-  fixture loader that preserves configuration files and SDK defaults.
-- Focused trust-boundary model and documented integration responsibilities
-  for authentication helpers, plugins, terminal sinks and release artifacts.
+## [0.2.0] - 2026-10-21
+
+[Release notes](docs/release-notes/0.2.0.md). Changes by [Carlos J. Herrera](https://github.com/carloshm91) and [Dependabot](https://github.com/apps/dependabot).
+
+### Added
+
+- Install prebuilt Homebrew bottles on macOS Apple Silicon, macOS Intel and Linux x86_64 ([#193](https://github.com/carloshm91/kuberich/issues/193)).
+- Build from source with Homebrew when a matching bottle is unavailable ([#193](https://github.com/carloshm91/kuberich/issues/193)).
+- Reload preferences while KubeRich runs; invalid files keep your last working settings ([#64](https://github.com/carloshm91/kuberich/issues/64)).
+- Choose read-only mode and refresh intervals per context ([#64](https://github.com/carloshm91/kuberich/issues/64)).
+- Use your terminal background in themes, show full API titles and see unknown-setting notices ([#64](https://github.com/carloshm91/kuberich/issues/64)).
+- Open related resources with configured `:jump` commands using fields from the selected row ([#64](https://github.com/carloshm91/kuberich/issues/64)).
+- Rename or delete kubeconfig contexts after confirmation, with a backup ([#63](https://github.com/carloshm91/kuberich/issues/63)).
+- Review and remove completed or failed pods with `:cleanup` ([#63](https://github.com/carloshm91/kuberich/issues/63)).
+- Forward named ports, including ports selected by container name ([#62](https://github.com/carloshm91/kuberich/issues/62)).
+- Save global or per-context port-forward presets and explicitly trust annotation shortcuts ([#62](https://github.com/carloshm91/kuberich/issues/62)).
+- Select kubectl's forwarding transport and reconnect previously ready forwards within your configured retry limit ([#62](https://github.com/carloshm91/kuberich/issues/62)).
+- Recall commands and filters, including inside container and log views ([#61](https://github.com/carloshm91/kuberich/issues/61)).
+- Use inverse, fuzzy and metadata filters, plus wide and error-focused resource views ([#61](https://github.com/carloshm91/kuberich/issues/61)).
+- Mark favorite namespaces and select resource ranges by UID ([#61](https://github.com/carloshm91/kuberich/issues/61)).
+- Copy names, namespaces or selected text through macOS, X11 or OSC52, including tmux ([#61](https://github.com/carloshm91/kuberich/issues/61)).
+- Enable terminal mouse reporting explicitly when you want mouse controls ([#61](https://github.com/carloshm91/kuberich/issues/61)).
+- Refresh container information while keeping your selection, and navigate text in read-only views ([#61](https://github.com/carloshm91/kuberich/issues/61)).
+- Find compatibility notes, dependencies and alternatives for 50 K9s plugin files covering 108 commands ([#60](https://github.com/carloshm91/kuberich/issues/60)).
+- Start from 18 command adaptations and three capture, interactive and background plugin examples ([#60](https://github.com/carloshm91/kuberich/issues/60)).
+- Use hyphenated custom-resource scopes; reject unsupported plugin fields and boolean inversion before commands run ([#58](https://github.com/carloshm91/kuberich/issues/58), [#60](https://github.com/carloshm91/kuberich/issues/60)).
+- Confirm local plugins through typed forms and resource-specific shortcuts ([#59](https://github.com/carloshm91/kuberich/issues/59)).
+- Run configured plugins with captured output, background jobs or a full terminal ([#59](https://github.com/carloshm91/kuberich/issues/59)).
+- Inspect redacted plugin output, stop jobs and run commands with the credentials from your selected context ([#59](https://github.com/carloshm91/kuberich/issues/59)).
+- Load only explicitly configured plugin files, with scoped inputs and literal selected-resource variables ([#58](https://github.com/carloshm91/kuberich/issues/58)).
+- Check plugin configuration without executing commands; running a plugin needs separate confirmation ([#58](https://github.com/carloshm91/kuberich/issues/58)).
+- Customize per-view navigation keys and command aliases, with matching help and completion ([#57](https://github.com/carloshm91/kuberich/issues/57)).
+- Save column order, visibility, widths, alignment and typed sorting globally or per context ([#57](https://github.com/carloshm91/kuberich/issues/57)).
+- Keep working column defaults after invalid overrides or changes to server-provided columns ([#57](https://github.com/carloshm91/kuberich/issues/57)).
+- Preview and save built-in or custom themes globally or per context ([#56](https://github.com/carloshm91/kuberich/issues/56)).
+- Invert colors with contrast correction and keep working defaults after invalid theme settings ([#56](https://github.com/carloshm91/kuberich/issues/56)).
+- Open About and optionally check cached release notices without requiring an internet connection at startup ([#56](https://github.com/carloshm91/kuberich/issues/56)).
+- Inspect ConfigMap and Secret keys with values hidden until you reveal or copy them ([#55](https://github.com/carloshm91/kuberich/issues/55)).
+- Switch between text and Base64 values while rejecting reads from replaced or changed resources ([#55](https://github.com/carloshm91/kuberich/issues/55)).
+- Edit Secrets through private drafts, redacted previews, server dry-run and a separate Apply confirmation ([#55](https://github.com/carloshm91/kuberich/issues/55)).
+
+### Fixed
+
+- Release table memory promptly when changing views ([#62](https://github.com/carloshm91/kuberich/issues/62)).
+- Read complete configuration-key names on the first paint ([#62](https://github.com/carloshm91/kuberich/issues/62)).
+- Keep plugin file locations and working directories when migrating preferences ([#58](https://github.com/carloshm91/kuberich/issues/58)).
+- Switch back to earlier themes without repeatedly parsing their styles ([#58](https://github.com/carloshm91/kuberich/issues/58)).
+
+### Security
+
+- Use aiohttp 3.14.5 with fixes for CVE-2026-111063, CVE-2026-111064 and GHSA-2g87-pp6c-29x5.
+- Use certifi 2026.10.19 without the emSign roots removed by PYSEC-2026-4320.
+
+## [0.1.0] - 2026-10-12
+
+[Release notes](docs/release-notes/0.1.0.md). Changes by [Carlos J. Herrera](https://github.com/carloshm91) and [Dependabot](https://github.com/apps/dependabot).
+
+### Added
+
+- Follow everyday workflows, troubleshooting and installation guides with command, resource and feature references ([#150](https://github.com/carloshm91/kuberich/issues/150)).
+- Read the project website and guides on desktop or mobile screens ([#150](https://github.com/carloshm91/kuberich/issues/150)).
+- Browse the last 1,000 shell-history rows with local paging, Unicode search and redacted selection or copy.
+- Keep shell output and editors running during history review; return with Enter or Escape and see discarded-history notices.
+- Install standalone Linux x86_64/ARM64 or macOS Intel/ARM64 archives with Python, certificates, terminal assets and license notices included.
+- Combine regular, init, ephemeral and workload-container logs with source and UID prefixes.
+- Pick or filter log sources and enroll newly started containers without replaying finished streams.
+- Keep JSON log fields and scalar types while hiding recognized credentials.
+- Browse discovered APIs, choose served resource versions and resolve preferred versions or ambiguous aliases.
+- Read server-provided columns with metadata fallback and choose columns for the current session.
+- Refresh added or removed APIs without replacing your context; keep available discovery results when some groups fail.
+- Attach to running regular, init or ephemeral containers, detach and return to your previous selection with their exit status.
+- Confirm uploads and downloads of files or directories, with Cancel selected by default and explicit overwrite choices.
+- Upload a fixed local snapshot; download with checked archive paths, types, sizes and local destinations.
+- See interrupted-upload outcomes instead of treating a partial transfer as success.
+- Refresh token-file and exec certificate credentials without changing the selected helper identity.
+- Use HTTP CONNECT or SOCKS5 proxies and explicit TLS server names for API access and delegated kubectl commands.
+- Find GKE/OIDC migration guidance and reject encrypted private keys before an unexpected password prompt.
+- Confirm individual or batch deletions with UID/version checks, propagation and grace settings, and separate per-resource outcomes.
+- Create manual Jobs and suspend or resume Jobs and CronJobs after confirmation.
+- Confirm workload scaling, restarts and rollback to an explicit revision.
+- Follow rollout progress with HPA, paused-workload, OnDelete and permission limits shown.
+- Edit manifests in a trusted editor using private drafts, redacted previews, server dry-run and separate Apply confirmation.
+- Confirm annotation changes once, reject replaced or changed resources and inspect recent write outcomes.
+- Forward pod or Service TCP ports with chosen or dynamically allocated local ports and IPv4/IPv6 bind settings.
+- See forwarding readiness, list active sessions and stop a selected forward.
+- Browse workload, batch, network, configuration, node and storage tables with typed sorting and redacted details.
+- Install from the project Homebrew tap on Linux and macOS.
+- Use configured Azure kubelogin helpers and request interactive sign-in with `:login`.
+- Accept long exec-helper tokens while rejecting header controls and whitespace.
+- Override cluster/user aliases, tokens, CA files and client certificates for one invocation.
+- Set repeated impersonation groups and keep the same selected identity in API streams, container shells and the header.
+- Set table repaint intervals with `--refresh` or `-r` while preserving live watches, filters and the cursor.
+- Browse local contexts with cluster, user and namespace details through `:ctx`, `c` or F2 without changing kubeconfig.
+- Inspect the selected pod's container images, readiness, reasons, restarts, probes, requests, limits and ports.
+- Use the `k9s` theme with visible context, cluster, user, version, shortcuts and Escape trails.
+- Browse namespace status and age with `:ns` or `n`; Enter opens pods and `0` selects all namespaces.
+- Keep namespace filtering, selection and scroll when returning to the namespace table.
+- Move through pods, containers, logs and embedded shells in one responsive terminal workspace with scrollable help.
+- Navigate tables and help with keyboard or terminal mouse controls.
+- Open selected-container shells with `x` or `:shell`, including configurable literal shell arguments.
+- Press Enter on a pod for its regular/init containers, then Enter for logs; Escape returns through both views.
+- Read current or previous container logs with head, tail, time-window and timestamp options, wrapping and literal search.
+- Navigate logs with Vim keys, clear history, set marks, lock columns or open fullscreen.
+- Pause log reception separately from viewport following, then copy redacted text or save selected output.
+- Inspect pod YAML, details and related events, toggle managedFields and search or copy redacted text.
+- See missing or denied reads, reject same-name replacements and close viewers when their target is no longer valid.
+- Select pods, contexts and namespaces through commands with Tab completion and Unicode text or regex filters.
+- Navigate backward or forward while preserving scope, filters, typed sorting, resource selection and viewport.
+- Track pod readiness, init/sidecar states, waiting or termination reasons, restarts and continuously updated ages.
+- Read live resource counts and distinguish loading, empty, stale and error states in terminals as small as 40×12.
+- Recover resource watches after disconnects or expired server checkpoints.
+- Browse complete paginated resource collections without losing rows between pages.
+- Connect with kubeconfig contexts, TLS certificates, static tokens or configured exec credential helpers.
+- Launch `kuberich` or `python -m kuberich` and inspect `--help`, `--version` or the short version output.
+- Use versioned YAML preferences with environment/CLI overrides, unknown-field preservation and private atomic saves.
+- Inspect `info`, initialize or check configuration offline, and choose configuration or log paths.
+- Install Python packages on Linux or macOS with CPython 3.12–3.14.
+
+### Changed
+
+- Keep up to 10,000 log lines within a 4 MiB memory limit.
+- Export aggregate logs as plain text or JSON while preserving source identities and arrival order.
+- Use KubeRich under Apache-2.0 with contributor notices; earlier grants and third-party licenses stay unchanged.
+- Use `kuberich` while keeping the `kubetrol` alias, existing preferences and legacy environment variables.
+- Migrate development preferences explicitly without overwriting existing files.
+- Install packages that exclude development tools, tests, caches and private configuration.
+- See a compact `ktrol` header wordmark when terminal space is limited.
+- Choose compact headers or hide the header, logo or scope information with launch options.
+
+### Fixed
+
+- Change focus or themes without repeatedly recalculating unchanged styles ([#150](https://github.com/carloshm91/kuberich/issues/150)).
+- Keep credential-helper success and real errors intact during macOS process cleanup ([#150](https://github.com/carloshm91/kuberich/issues/150)).
+- Close shell history controls or resize the workspace during shutdown without late-render crashes.
+- Keep log search, marks and navigation stable as lines arrive, expire or wrap.
+- Handle input, target changes and cancellation during dense log delivery, including behind covered views.
+- Apply live table updates without repeatedly processing unchanged rows or blocking input.
+- Keep resource order, selection and scroll stable across unrelated edits; reorder rows only when sorting or membership changes.
+- Keep rejected namespace-command feedback visible until connection state changes.
+- Restore the terminal and preserve hangup status after SSH loss; tmux sessions remain available for reattachment.
+- Restore terminal sessions after SIGHUP or SIGTERM, including exit status 143 for interrupted native shells.
+- Recover text and cursor handling after malformed terminal escape sequences, including during resizing.
+- Keep the current terminal size, header shortcuts and workspace geometry correct across resizing, focus changes and view navigation.
+- Distinguish AWS login/role failures from API 401/403 errors without exposing provider output.
+- Share expiring-token refreshes and ignore delayed failures from an older token revision.
+- Keep the selected AWS environment, working directory and helper executable in delegated shells.
+- Complete commands inline inside a dedicated bordered `:` bar, with Tab acceptance and literal Enter behavior.
+- Keep container shells inside the workspace; Ctrl+C reaches the program, Ctrl+] returns and Ctrl+Q quits.
+- Submit the highlighted command, context or namespace once after arrow navigation; editing discards the old selection.
+- Keep quiet resource watches connected without false timeout warnings while reporting genuine outages.
+- Distinguish ready resource data from loading or an empty collection, with clear context and namespace shortcuts.
+- Accept null optional exec-helper argument or environment lists, including doctl's `env: null`.
+- Use `c`/`n`, `i`/`r`, `:status` or `:retry` when your terminal intercepts function keys.
+- Prevent late results from an old context replacing your current view when switching quickly.
+
+### Security
+
+- Start read-only to block cluster changes, shells and attach sessions, with stale-target checks before actions.
+- Hide recognized credentials and escape hostile markup or control sequences before displaying remote text.
+- Pass selected resource names as literal process arguments and reject replaced targets before running an action.
+- Keep rotating diagnostic logs private and redact credentials without echoing rejected arguments or exception values.
+- Verify downloads with checksums, dependency reports, license notices and stable SBOM identifiers ([#89](https://github.com/carloshm91/kuberich/issues/89)).
+
+[Unreleased]: https://github.com/carloshm91/kuberich/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/carloshm91/kuberich/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/carloshm91/kuberich/releases/tag/v0.1.0

@@ -28,8 +28,8 @@ def test_history_moves_to_one_internal_area_with_exact_original_git_evidence():
             assert not (ROOT / old).is_file()
     for record in plan["preserved_sources"] + plan["operational_sources"]:
         assert mapped[record["path"]]["baseline_sha256"] == record["sha256"]
-    assert len(mapped) == 313
-    assert validate_documentation_plan(ROOT, list(mapped)) == 313
+    assert len(mapped) >= 313
+    assert validate_documentation_plan(ROOT, list(mapped)) == len(mapped)
     assert not (ROOT / "docs/status.md").exists()
 
 

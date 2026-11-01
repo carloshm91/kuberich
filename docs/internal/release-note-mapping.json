@@ -1,0 +1,3312 @@
+{
+  "schema_version": 1,
+  "description": "Existing user changes map to concise current entries. Maintainer-only process and qualification records are explicitly classified; original bytes remain recoverable in the exact source Git blobs. This is a documentation migration map, not release qualification.",
+  "sources": [
+    {
+      "path": "CHANGELOG.md",
+      "commit": "919f617eacd6882370964c0400ae56a0128ff77e",
+      "sha256": "8a7d0d45c78d618c5efbe0a161359ad884e8ec396b73230a9679c2f1231f3e53"
+    },
+    {
+      "path": "docs/release-notes/0.1.0.md",
+      "commit": "919f617eacd6882370964c0400ae56a0128ff77e",
+      "sha256": "b10928dd91bf6144de3501651e7bc87f352928dd7842b5b6f90c84a4506f1f40"
+    },
+    {
+      "path": "docs/release-notes/0.2.0.md",
+      "commit": "919f617eacd6882370964c0400ae56a0128ff77e",
+      "sha256": "f7655548833b06f52afe1762aed3d692cf36d82ede0fa18a39fc921a2dc0df89"
+    }
+  ],
+  "entries": [
+    {
+      "id": "bottles",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "ea1a213bb29fcb6898280f15d54c4fa99412d7fe7a808d65378efdcd8f0cb67a"
+    },
+    {
+      "id": "bottle-fallback",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "c6808dd599c5fe3c21f81fc4a288973dffa516a122fba37354c2466acdbef8c1"
+    },
+    {
+      "id": "live-settings",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "a234f6a7381e3dc741108563c1b44fd8232e0e54f742a9b2123b4ccb9bbc9cc4"
+    },
+    {
+      "id": "context-settings",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "30865486b9c23c30e8310a2e0280c44a944976d7b31e54e0eaa56ca7d4393534"
+    },
+    {
+      "id": "appearance-settings",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "5758ef5ed7bfd6a9a3a89181f26398e36cd26d449d546aba822d06ccbdef2e59"
+    },
+    {
+      "id": "jumps",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "26cbb29e5f5c8a6418f2cb560a73d7442b26aadbe6e2f93562a80e60fb1934e5"
+    },
+    {
+      "id": "context-edit",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "08935a335069f6332fbfb26b5993007285a5ad5e8e49e2286ba79873f71156de"
+    },
+    {
+      "id": "pod-cleanup",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "faec7f8e73cd7bab721f9453277b9adfbaf8e04e95ae399a2a6490732b5ddacf"
+    },
+    {
+      "id": "forward-names",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "4cd52470ce902a0a406cd288fb8f9fe1371a85eb401571ab7ac8bcbed5ff5c93"
+    },
+    {
+      "id": "forward-presets",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "b0f003cf3fc082dc44f3c7b449ccb4627249a472b9c0c2efc6c70bafca4195d1"
+    },
+    {
+      "id": "forward-reconnect",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "41c786f8d1a70bfc6744d37fac9e3cf4ea3e76f3d34374d22a2d3aec020c07c0"
+    },
+    {
+      "id": "recall",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "678b97bf3ed466fdb315e26cc1e969b37367ebd02a7ad52e8bf02df04bdf7d84"
+    },
+    {
+      "id": "filter-modes",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "e7420e414e0d9df1326a3e13bf99834f317dc5a15dec8f6b60701dfb170d399d"
+    },
+    {
+      "id": "namespace-favorites",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "2ba8b89bec65eca4a473386371e1cb9cc554883dfa7fe2df5466212a9569693a"
+    },
+    {
+      "id": "copy",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "f3f081397e4cb3343e1b0a9685d529aff5b4313a5043ad0360c7938b3e868908"
+    },
+    {
+      "id": "mouse",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "c498cf906775c8ec25f680d2d24854ea5bab89810ed043f292a1114f11d12bdd"
+    },
+    {
+      "id": "container-refresh",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "71029d0e99157e37031dc1c18515def2523a7d63fa8425be4848bc8499095cc5"
+    },
+    {
+      "id": "plugin-catalog",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "44ffae33169889d8efee738ef15d4de6e3256c65b81bd764c0caebbf13fe77a1"
+    },
+    {
+      "id": "plugin-adaptations",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "08ad3e3a6fefd7a2ba11313cfdb2cc1d13427404f10302874241575038e48fc7"
+    },
+    {
+      "id": "plugin-validation",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "a47aecff6125c99e3cd4a98c3494085cfef414afe1482b5f614eee7372f823ea"
+    },
+    {
+      "id": "plugin-forms",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "cf9da5a8d663f1ec2d6466315d23067aef2ec88a00a6e4f823365cf9f63597bf"
+    },
+    {
+      "id": "plugin-modes",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "fe89e73b9aaf65c50d6c6bd1852184af5c51f8b63a53c0a273728c73a9ca2457"
+    },
+    {
+      "id": "plugin-jobs",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "be7a4f794b53540001b0731ed2337a671206723d342daa1de90bfe6ed7973c17"
+    },
+    {
+      "id": "plugin-files",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "46185bcc2a7e6cafc4209f0a2d92cfa881a64e3984983557f427a5a37d8d22dc"
+    },
+    {
+      "id": "plugin-check",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "72d92ad0f539d66bfafe28767b399951594c232dfd5e9a2ce0a4d5fef676a84b"
+    },
+    {
+      "id": "keys-aliases",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "4242a4412ca636fcecb1354dc6315c24b15a96babdb3fa8f99dea0c3b9c4fd01"
+    },
+    {
+      "id": "columns",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "9f089cc732a1aec4cf1c94cc81630515a244328407ab82b93e0d8296ee319064"
+    },
+    {
+      "id": "column-fallback",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "0452137a97cd10320f9d05bc964f1105d0a2947367ade7e2420e8e9e3d0a1b1f"
+    },
+    {
+      "id": "themes",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "90fc75b3644c08188acd9f6eb84e7227fb8a5ccd3ec7a0bce691e420d72c1332"
+    },
+    {
+      "id": "theme-contrast",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "bbe46864a3c7b4de7f0fbf6541c850335fc5fe22e248825dc6a7d3567b4f0c28"
+    },
+    {
+      "id": "release-notice",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "05e29bab1e0684e3ee33590881750c5ba906f10559d1ec6a235f133a1665193a"
+    },
+    {
+      "id": "config-data",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "9f3f0c3362fc54ee7be6b78fe1289be2168a4193e075cc6a3457dbe0f2811d65"
+    },
+    {
+      "id": "data-format",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "9265abc49368865439a3d23c7061c2aaf766406d8203e06e1c3267f3bc317501"
+    },
+    {
+      "id": "secret-edit",
+      "version": "0.2.0",
+      "category": "Added",
+      "markdown_sha256": "a5cb238d5e47dc7941d51917cd2f8b141de482907b1a0eb4969252bb90621795"
+    },
+    {
+      "id": "table-memory",
+      "version": "0.2.0",
+      "category": "Fixed",
+      "markdown_sha256": "4930e47f276da38998f4217349b7692e7b25bfb68d3d04f771695483c6a022dd"
+    },
+    {
+      "id": "key-width",
+      "version": "0.2.0",
+      "category": "Fixed",
+      "markdown_sha256": "90f7add51d388d1272d6bc6d5631c35dcc4e2e33323c929e18a062d2a8045fd9"
+    },
+    {
+      "id": "plugin-migration",
+      "version": "0.2.0",
+      "category": "Fixed",
+      "markdown_sha256": "544e3425e1221328d609e49f94905e8757d0c2fcb3225cda01f7a2bbe4f10aa4"
+    },
+    {
+      "id": "theme-revisit",
+      "version": "0.2.0",
+      "category": "Fixed",
+      "markdown_sha256": "ae83a10a28ce5b14ed6df7feb17527aca1a79529a75a0b1afcc9f68954f9f165"
+    },
+    {
+      "id": "aiohttp",
+      "version": "0.2.0",
+      "category": "Security",
+      "markdown_sha256": "83b25f581c6d1500ce7110828f75e8ff0bb91e7e8ae87813abdcd158b6b242a7"
+    },
+    {
+      "id": "certifi",
+      "version": "0.2.0",
+      "category": "Security",
+      "markdown_sha256": "2d03b73cb3e2663d86ad94063257f78c385429bf5abbe090c8d9584d4e49e662"
+    },
+    {
+      "id": "first-guides",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "ec8dc7d597446f455a07e3913a3c9e1328043bb9bbfe69b2c2eb474fb1863611"
+    },
+    {
+      "id": "first-site",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "cf9df96adda782ec21be0e356aee4a032c0e5a60a64971899270dfbddb9097d2"
+    },
+    {
+      "id": "shell-history",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "fabc8472f720edff4c9d5d088c30ea9befb87b141eb425da382e945fb04dfcf9"
+    },
+    {
+      "id": "shell-return",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "6e3b0ca1c8f975c2a2e4bf807c7f56ec61b344d6a80cd4c4628faa26d7099f96"
+    },
+    {
+      "id": "archives",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "4182f06291449f31b32d803f6633fba0dda8b2cebd4470daeffab69d6baf639d"
+    },
+    {
+      "id": "aggregate",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "2e8e84155ab4ed92539e19f50c76128c41004f598250101629db3fa20dc911aa"
+    },
+    {
+      "id": "aggregate-sources",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "1ce9a83493c3f0028685d8b26e91d28af61a3d10c03834cf7bfd5a1425f4aba2"
+    },
+    {
+      "id": "json-logs",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "90c4b18590bfacf15346e9f74be84cbb93feaff6b7f4c9295ca305866413fb1f"
+    },
+    {
+      "id": "discovered",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "ed481dc7aa8606fce44bebc4f59938c0f0febc84ef73d8310f6979ce2413ef99"
+    },
+    {
+      "id": "server-columns",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "23b6bdaf4be64f68d1950ebc22de54cf7ce2f3f259027aff0c4442d78fb6b032"
+    },
+    {
+      "id": "api-refresh",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "7897ee2389cbd6a0e75b368bc062b1df88df61bd2045c6993bccfc19d303f3b7"
+    },
+    {
+      "id": "attach",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "2d0288dc3d5e6bd488774552326c7c35baac3b3580e75b1660b307fa2be46046"
+    },
+    {
+      "id": "file-transfer",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "ddf145322e57b39f55a1336d5e07b15f0aef67aae75b5c149ce2bae6e6b5f160"
+    },
+    {
+      "id": "file-snapshots",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "d1d7353871a1390ec2ee1563b9d16af3f7b7315f2a5e68315ff828605ac5aed7"
+    },
+    {
+      "id": "file-interruption",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "33bf6307ca18ef2ca6891a85bad830a7ee7f3db5c9d816893d6bf046be5cfa9f"
+    },
+    {
+      "id": "auth-refresh",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "0b49fb37b5695a2bfb81c7241e892be6834c8d742bed9690f41797761d86cbe7"
+    },
+    {
+      "id": "proxies",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "f7d734ff698ef0039cb28ce16656f6e2c1be16dc9fe9e9c24f78aae7fb628866"
+    },
+    {
+      "id": "auth-limits",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "f73a02e98e1c189432c5aa1962ae30a5a6df3c02ac08d8e32ee72ddb56a37a56"
+    },
+    {
+      "id": "delete",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "834b2885887257848d9870209ded12a2e0a379e26b7f2c3de4ce10f7f0fda68a"
+    },
+    {
+      "id": "jobs",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "fd5c2da9628b2963aaabd057c741b3446e75575a9ec8c082f5f847f1988a4b71"
+    },
+    {
+      "id": "workloads",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "7d8a56135a3793531273c7e8909ed0287fec34a299b7e5e8d9815ac793ef3e61"
+    },
+    {
+      "id": "rollouts",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "2d5e89dac696b263d6348c998c4151bc40eafd80f0f344a7676535d87184167e"
+    },
+    {
+      "id": "manifest-edit",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "9e88d4bfb139e2fd8e830f01b5b7fa0cb3ce8fd848314a2faecdba7a45472875"
+    },
+    {
+      "id": "annotations",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "e8df934c36ba4dd793d20abf7078866f4ef260b052b6714e18ce8d845b68c4f4"
+    },
+    {
+      "id": "forwards",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "1be5ad44209254437b5f1e64bd61e2fb39520e59e7b66b85336538437edf1d07"
+    },
+    {
+      "id": "forward-sessions",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "123a0cbc2700d709f407554c90e2a372e60888cc81b39d78bf10ae73d97ef158"
+    },
+    {
+      "id": "resource-families",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "36af927a93ecb9094fa29324caad0a96c037a3bdf1a211b1c6c0bc6612bac4fe"
+    },
+    {
+      "id": "brew-source",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "9c29167b7d94e9a614d6305dfc924d889ab504ec05f8f85cb807195549cc7c94"
+    },
+    {
+      "id": "azure-login",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "0567709799476e3bc9647f8851b7819c717d51141614eaf665a05a9315629bcb"
+    },
+    {
+      "id": "exec-tokens",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "789d49b4576202529af8c8bf4ab5e6e29c7bd458f6f567c72fe45c968faa4a13"
+    },
+    {
+      "id": "identity",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "879a8ac5165d539f019f21c508b79901dd0cf37d83d89de10370558abb774a65"
+    },
+    {
+      "id": "impersonation",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "b9c67a0cf01c66dc2cf6d11d04184369c2b394ca2607208f9f3487ead1862463"
+    },
+    {
+      "id": "refresh",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "457c682c7a21a3daf9644092a4e1f1390c4d9f8e82774a5ef69fa592345d164a"
+    },
+    {
+      "id": "contexts",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "148fa10c409e0e4e2c8e3eef957ac786ad46e63380d96233ebca9d47f3af337f"
+    },
+    {
+      "id": "container-details",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "692ac8f0ecf960334bbe881aaa34e218cf4c89af172cfc8d9af00ea94b10b456"
+    },
+    {
+      "id": "workspace-theme",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "b92afe8ac2f58be8cebebd53bae092844f42b9fb0dbfae1e1e49b9f5074b8547"
+    },
+    {
+      "id": "namespaces",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "0235a64a196d437c7b30c127e7bdf60bb2bc5a858108ad69a198dea02c774a62"
+    },
+    {
+      "id": "namespace-return",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "924ea49d5cda38e2094c50e9542975b5fc9db8402ec01e77986a5a781d0cdf99"
+    },
+    {
+      "id": "workspace",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "965007e3508f19dc7c4f1f0b54542ed7aefe1c0eb271d87e9fdc335aaa02f8dd"
+    },
+    {
+      "id": "mouse-navigation",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "5bdec0379c74d738da5c633e077871124a988912668e6dc0ffab97f389516cce"
+    },
+    {
+      "id": "shell-launch",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "5852c1be26564ae8dc30beda09ca6b9610ad8418a0f9dda2c1707eb31c2f5ee8"
+    },
+    {
+      "id": "enter-flow",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "e0b62156ee80cd5329988a2424926a50b7a259a831360fe43120c5c25e09e76e"
+    },
+    {
+      "id": "logs",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "a9692aa96db373b39f98000ac808fafec9812157b3bf91ecb90d3a63aba47185"
+    },
+    {
+      "id": "log-controls",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "045cc5b8da9507d0f841211c963d3f8c1d91f8ba503e89a6f40a3c71b8013e5f"
+    },
+    {
+      "id": "log-pause",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "39ec5e380990fe6fe14fe0aef3584aad2daa1d94b56daf6e18193a6f93124acd"
+    },
+    {
+      "id": "resource-documents",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "f3223cacd8d680033d7ad10f973f45d901e5343ba3abc5d17442de94c597478b"
+    },
+    {
+      "id": "resource-errors",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "db9f4b29314daa5f45d391e264769ae083517d8d41ff4295ff46e3a9ac959301"
+    },
+    {
+      "id": "commands",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "163ad165595501682d18e37c6c24c9d525309bcdd5df436d6b380b68f3794640"
+    },
+    {
+      "id": "history",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "7262633c16160d4cb4c4e81cf0f9b927119b20d129b550e9c8006a03e7f02f6f"
+    },
+    {
+      "id": "pods",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "0320dbabd9a47156930c983380b10a2f53ccf9ed7b27332aba70fc5d055c61ac"
+    },
+    {
+      "id": "small-terminal",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "5cd0a0b54dfccf3f5eb127114ad4e30db022fe7543404abea8d5df74f58871e5"
+    },
+    {
+      "id": "watch-recovery",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "3d265e1c5c4ed0b2f7296ae9b9bcf2ae23948861b638d7bd7a16f2305cc0f081"
+    },
+    {
+      "id": "pagination",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "3cbaed7b5425944731947e319eff8b78a9a69b0959db94c5f28ac7fae8a4a9eb"
+    },
+    {
+      "id": "connections",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "7819714c3de7b03506bd43ac3084000f4111ac9c0ea21e852934fd6e3ce5e8e4"
+    },
+    {
+      "id": "cli",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "a5a47e57b16391335c068070621a201b068fc2e93083c42943427365e204f274"
+    },
+    {
+      "id": "settings",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "e9b296be662f270fac92235b8217ee3291c5111f8b69a954c0a113d3410bc4f2"
+    },
+    {
+      "id": "offline",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "b5b217727b51f7fc5fda1e2654758eea8699ca289db95c3159eb44acbca50d6c"
+    },
+    {
+      "id": "python-platforms",
+      "version": "0.1.0",
+      "category": "Added",
+      "markdown_sha256": "36c5a06fe1e9cc33a11087999a8ff71dc76b10db7bfb171482aee2f4d50a7b39"
+    },
+    {
+      "id": "log-history",
+      "version": "0.1.0",
+      "category": "Changed",
+      "markdown_sha256": "2de9d4a2f394ae111f70ef60dbc16bd1bb7c8dc05133b4870e176e138f0cf038"
+    },
+    {
+      "id": "aggregate-export",
+      "version": "0.1.0",
+      "category": "Changed",
+      "markdown_sha256": "cf1806f97c90ce97ae3aaab91aa6a49e5ae54ed05d8ec0f24e57a61537e79f34"
+    },
+    {
+      "id": "license",
+      "version": "0.1.0",
+      "category": "Changed",
+      "markdown_sha256": "495518e82149e48d04bb7319a717426f4fffd0bdce1ebc829b07c31f06993680"
+    },
+    {
+      "id": "rename",
+      "version": "0.1.0",
+      "category": "Changed",
+      "markdown_sha256": "80348379f4ea20103204e7fc060b90de7514e703a365068b0b1fa25d8e67a7b4"
+    },
+    {
+      "id": "settings-migration",
+      "version": "0.1.0",
+      "category": "Changed",
+      "markdown_sha256": "a93c7ce40850247b26d7878208dd00fd7eb099b85018688a193464a0a874bdf9"
+    },
+    {
+      "id": "packages",
+      "version": "0.1.0",
+      "category": "Changed",
+      "markdown_sha256": "a10b7be280a9871797ee937034beef8f76284b4adbc882db70c6fd552fff7bef"
+    },
+    {
+      "id": "logo",
+      "version": "0.1.0",
+      "category": "Changed",
+      "markdown_sha256": "55b0862f40a22d9e3efb204477034c93d68e3f2fb8121bf8588998d04ac22650"
+    },
+    {
+      "id": "header-controls",
+      "version": "0.1.0",
+      "category": "Changed",
+      "markdown_sha256": "fd8a33c21b6a05c68f5e23375aab08e1d124ae84b46ef92bc23d41df00f84dcc"
+    },
+    {
+      "id": "style-speed",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "7b408bbc278831982d445d65346ada8421ea13aa7b649474c9373e5d80a71e7f"
+    },
+    {
+      "id": "credential-cleanup",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "c8786f5981acd36d1a7f191c0aee82987a8716b0f3c1bc42c7a99852842c7059"
+    },
+    {
+      "id": "shell-exit",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "9b84f61bee6d99c8ae7c33925788a0594391283a1ddfdff4cebfbc8e6de78b33"
+    },
+    {
+      "id": "log-layout",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "884aa9ed865714919e2389e683805b221c2d070e911a43c20246e167397f73ad"
+    },
+    {
+      "id": "log-responsive",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "bbafa7ac8b3e45ef4a8e5bf25a69c3ce73ebe8b90fd60cedadfff1bee6a0f457"
+    },
+    {
+      "id": "resource-responsive",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "58564237517efcba624d1d2c720864571ef6fe1a1a30d54151506eca672a642d"
+    },
+    {
+      "id": "resource-order",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "a70d73cdfcf1cab1a42137d0cfbdaa9c2209c28937e812b380d6ee143eb7f301"
+    },
+    {
+      "id": "namespace-feedback",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "c5d8fa8feb495567472ea782d1e319da911cb7869402fa3ecbd94b914150e615"
+    },
+    {
+      "id": "ssh",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "e7d1a564280f279fe00c0296ea8348c49a36145a936058da0afc31a059682ffa"
+    },
+    {
+      "id": "signals",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "c3823e93f8a9469ec1a3885a2be271def2ede50dd15142b69b753ae9371ded86"
+    },
+    {
+      "id": "escape-recovery",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "97bf6727b63efb75b283109846ea5dc7a1e4138d61b1a6326952f37b80414752"
+    },
+    {
+      "id": "resize",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "55d50ab5a2205bce1a9722ac2fd25c0ddb6f756373d146fba8330723b88e6d62"
+    },
+    {
+      "id": "aws-errors",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "a573b78040f7b96ac89355756fbbf86762e7b70f39a2f9d8d1cb28b3df936ec2"
+    },
+    {
+      "id": "aws-refresh",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "91bf1b0be32911e9b18288a8ffb3673c1c98a9a808777db4d20e843ada1cd8d4"
+    },
+    {
+      "id": "aws-delegation",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "8cdb77f3103f42206cdc946af3ec191cb236997cf8d9447b65af8aea61cdad8a"
+    },
+    {
+      "id": "inline-command",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "f086154280783a00d6ab7eab2cd6dd75aac494da684712d2128824722a1f9e6a"
+    },
+    {
+      "id": "shell-workspace",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "1fb80e924e7c84ebec493d0b8f2ec59c1d36a465769e47bc1be9359a6ec45033"
+    },
+    {
+      "id": "selected-suggestion",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "c2f33eb6c64f998b52822261c73135f52b5ceecc99a7f418883735d9ed4cade2"
+    },
+    {
+      "id": "quiet-watches",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "7ff1400cbd2bbb44ef5b0c49abb655b0eb202c3c85618c225c58213e3908db2c"
+    },
+    {
+      "id": "connection-state",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "acbf8129bb0ef39ceb35401b21f747523c96f0966df92e506609ff7ba4b3a54c"
+    },
+    {
+      "id": "null-exec",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "46badd16be9258feb46b86b405435908e81d09d66928a78e483d8561c6e6ccd7"
+    },
+    {
+      "id": "fallback-keys",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "14b0f00c996157aebea162d37272e71b31fbaa615b11862acd3cb3b6eed9af17"
+    },
+    {
+      "id": "context-generation",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "markdown_sha256": "7c7bd38c1b3eef351845597059263717d5bf40005fd885834af22dae20d70ff3"
+    },
+    {
+      "id": "readonly",
+      "version": "0.1.0",
+      "category": "Security",
+      "markdown_sha256": "6443a2bf1a7cbef00f0b89457df8c8205ac5e3aab30ef8804af5b6ad8c990e4e"
+    },
+    {
+      "id": "redaction",
+      "version": "0.1.0",
+      "category": "Security",
+      "markdown_sha256": "278a2f96c1f83762396b8b2f9745a080d2e36ebef618da5aef023f36b53d4c38"
+    },
+    {
+      "id": "literal-arguments",
+      "version": "0.1.0",
+      "category": "Security",
+      "markdown_sha256": "f7b6e829b94c2a9afaae32a82eecfc67827bdafb7ab1b751a33a7d6930fc275e"
+    },
+    {
+      "id": "private-logs",
+      "version": "0.1.0",
+      "category": "Security",
+      "markdown_sha256": "db7ae6436ea68c513588330890e4c0517e77d0a1f0058a8979d6816fe08d4a30"
+    },
+    {
+      "id": "download-records",
+      "version": "0.1.0",
+      "category": "Security",
+      "markdown_sha256": "5d4c6c2b3d87a67af2c57dd98f722bd126a527c22cac133d6bfbc5d6ecbdfcbd"
+    }
+  ],
+  "source_blocks": [
+    {
+      "id": "C011",
+      "source": "CHANGELOG.md",
+      "version": "0.2.0",
+      "category": "Added",
+      "line_start": 51,
+      "line_end": 54,
+      "sha256": "b95d532e621af6fe0bde6869d41b50d65262c75de77d2a142074dab4b0dc492a",
+      "disposition": "user_change",
+      "targets": [
+        "bottles",
+        "bottle-fallback"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C012",
+      "source": "CHANGELOG.md",
+      "version": "0.2.0",
+      "category": "Added",
+      "line_start": 56,
+      "line_end": 60,
+      "sha256": "71bbc619be13e92df27230d9afa0c8f3331c7c8fd654750aeb4c4d91d5e6a701",
+      "disposition": "user_change",
+      "targets": [
+        "live-settings",
+        "context-settings",
+        "appearance-settings"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C013",
+      "source": "CHANGELOG.md",
+      "version": "0.2.0",
+      "category": "Added",
+      "line_start": 62,
+      "line_end": 65,
+      "sha256": "220458fc68d6c04b79ee90f7606ccaefd1054014720c81e01c2a53f00af4ac08",
+      "disposition": "user_change",
+      "targets": [
+        "jumps"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C014",
+      "source": "CHANGELOG.md",
+      "version": "0.2.0",
+      "category": "Added",
+      "line_start": 67,
+      "line_end": 70,
+      "sha256": "2930a3ae40b81d51fbd7ac592f5d53a1d89691963caee816f359dd6fa64baab5",
+      "disposition": "user_change",
+      "targets": [
+        "context-edit",
+        "pod-cleanup"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C015",
+      "source": "CHANGELOG.md",
+      "version": "0.2.0",
+      "category": "Added",
+      "line_start": 72,
+      "line_end": 76,
+      "sha256": "73a855e77c5cb580be07ee5137ab07f3d796d73a3115eaffd69c28dee32a01a9",
+      "disposition": "user_change",
+      "targets": [
+        "forward-names",
+        "forward-presets",
+        "forward-reconnect"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C016",
+      "source": "CHANGELOG.md",
+      "version": "0.2.0",
+      "category": "Added",
+      "line_start": 78,
+      "line_end": 84,
+      "sha256": "015a298f8df56b7f0d4d7e324ec277522ebe83d642d2e568fddb08ca532953e3",
+      "disposition": "user_change",
+      "targets": [
+        "recall",
+        "filter-modes",
+        "namespace-favorites",
+        "copy",
+        "mouse",
+        "container-refresh"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C017",
+      "source": "CHANGELOG.md",
+      "version": "0.2.0",
+      "category": "Added",
+      "line_start": 86,
+      "line_end": 91,
+      "sha256": "551179dcbf25821686b2d4b77974b9f12f387049bd90c6a78d97c015abb7ff31",
+      "disposition": "user_change",
+      "targets": [
+        "plugin-catalog",
+        "plugin-adaptations",
+        "plugin-validation"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C018",
+      "source": "CHANGELOG.md",
+      "version": "0.2.0",
+      "category": "Added",
+      "line_start": 93,
+      "line_end": 96,
+      "sha256": "75bc9f0c0f039fe270882d021b162b1ff11024fffaa2484734d9c1ae9ab8cc0f",
+      "disposition": "user_change",
+      "targets": [
+        "plugin-forms",
+        "plugin-modes",
+        "plugin-jobs"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C019",
+      "source": "CHANGELOG.md",
+      "version": "0.2.0",
+      "category": "Added",
+      "line_start": 98,
+      "line_end": 102,
+      "sha256": "bb81ff06afb4bf1c73e25108461b326009bbae6f55cf0088fad3192db064cdf6",
+      "disposition": "user_change",
+      "targets": [
+        "plugin-validation",
+        "plugin-files",
+        "plugin-check"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C020",
+      "source": "CHANGELOG.md",
+      "version": "0.2.0",
+      "category": "Added",
+      "line_start": 104,
+      "line_end": 109,
+      "sha256": "afebc5008102a90dae8704e4b13fd79935105577b6b79814c0c1b069c9edebcc",
+      "disposition": "user_change",
+      "targets": [
+        "keys-aliases",
+        "columns",
+        "column-fallback"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C021",
+      "source": "CHANGELOG.md",
+      "version": "0.2.0",
+      "category": "Added",
+      "line_start": 111,
+      "line_end": 115,
+      "sha256": "db006b7677bcff0f0b4626fcf0e4c32fa32daa8a7a91e2b34df00b54532d8a42",
+      "disposition": "user_change",
+      "targets": [
+        "themes",
+        "theme-contrast",
+        "release-notice"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C022",
+      "source": "CHANGELOG.md",
+      "version": "0.2.0",
+      "category": "Added",
+      "line_start": 117,
+      "line_end": 121,
+      "sha256": "39c3b7de46a62c4cbb24ead7648b48c771dbb4d543f8c6f58db92eaa1e2e3b16",
+      "disposition": "user_change",
+      "targets": [
+        "config-data",
+        "data-format",
+        "secret-edit"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C023",
+      "source": "CHANGELOG.md",
+      "version": "0.2.0",
+      "category": "Fixed",
+      "line_start": 125,
+      "line_end": 129,
+      "sha256": "efbb3408bb5c41b73f2ec1ef9114854ea682e45c88f58c2e09d729c33da1ebc3",
+      "disposition": "user_change",
+      "targets": [
+        "table-memory",
+        "key-width"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C024",
+      "source": "CHANGELOG.md",
+      "version": "0.2.0",
+      "category": "Fixed",
+      "line_start": 131,
+      "line_end": 136,
+      "sha256": "2a6965b3607df4ade4c439fd3dc8dd009809ebbf8639a6b61db345121ce0241b",
+      "disposition": "user_change",
+      "targets": [
+        "plugin-migration",
+        "theme-revisit"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C025",
+      "source": "CHANGELOG.md",
+      "version": "0.2.0",
+      "category": "Security",
+      "line_start": 140,
+      "line_end": 142,
+      "sha256": "fe72883b0a17a5d3c818bf0eb7c002b937c10906346d72bf60f65c2a30b586ae",
+      "disposition": "user_change",
+      "targets": [
+        "aiohttp"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C026",
+      "source": "CHANGELOG.md",
+      "version": "0.2.0",
+      "category": "Security",
+      "line_start": 144,
+      "line_end": 146,
+      "sha256": "66c600c7b46b69db8ff16875d2a420e52ac51e8f9796bd4e8eabf4334135f581",
+      "disposition": "user_change",
+      "targets": [
+        "certifi"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C027",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 158,
+      "line_end": 163,
+      "sha256": "81ab09bd6ce5101364a7c96ffdfb252f84641d4699547c0b170cb16637bd03d0",
+      "disposition": "user_change",
+      "targets": [
+        "first-guides",
+        "first-site"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C028",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 165,
+      "line_end": 169,
+      "sha256": "9ec62d204b5cd51b48e9a7e5645363213af5caac184f1d92024eeb5e6c510596",
+      "disposition": "user_change",
+      "targets": [
+        "shell-history",
+        "shell-return"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C029",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 173,
+      "line_end": 176,
+      "sha256": "6ae6f80159c0336ad3e6973dcbf23f69219695a483c3ba8850d995c6150ffd76",
+      "disposition": "user_change",
+      "targets": [
+        "download-records"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C030",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 178,
+      "line_end": 182,
+      "sha256": "9e54b2352e9d0bafd2620df0a00b17369c68eb28663c9eac8e89b10213cae6d4",
+      "disposition": "internal_process",
+      "reason": "Release API credentials and owner setup are maintainer publication controls."
+    },
+    {
+      "id": "C031",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 184,
+      "line_end": 188,
+      "sha256": "5f1dc84b08dae3dd55309b3219a16a0d1baaa855b3a5ec4fdf0711f6c4b7a74d",
+      "disposition": "user_change",
+      "targets": [
+        "style-speed"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C032",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 190,
+      "line_end": 194,
+      "sha256": "5362cb7684f1aaeb1560b89c0134f32e390f0533808c441c3afb0273a07b1487",
+      "disposition": "user_change",
+      "targets": [
+        "credential-cleanup"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C033",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 196,
+      "line_end": 197,
+      "sha256": "b6cde6cb5a2e8ec8beb5e9bb1686ea32e9b8fc94d0464c4511a6cb2548170ad7",
+      "disposition": "user_change",
+      "targets": [
+        "shell-exit"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C034",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Changed",
+      "line_start": 201,
+      "line_end": 203,
+      "sha256": "370faf5b87125cbbb621f79a2e4dd390cb2f8732a972745474f9b311331ce311",
+      "disposition": "user_change",
+      "targets": [
+        "log-layout"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C035",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Changed",
+      "line_start": 205,
+      "line_end": 209,
+      "sha256": "1a30bda3d3e68338e1f8da4532bf411fc4ca4227d351e5f85171132a4f696e42",
+      "disposition": "user_change",
+      "targets": [
+        "log-history",
+        "log-responsive"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C036",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Changed",
+      "line_start": 211,
+      "line_end": 214,
+      "sha256": "45a6345efbc0611c38e43480628ae8a93f59cab007f30f124b7627600553efb2",
+      "disposition": "user_change",
+      "targets": [
+        "log-responsive"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C037",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Changed",
+      "line_start": 216,
+      "line_end": 219,
+      "sha256": "d14f8d428be5a3da6070c07a4c54af702556576a2853d8fb1f9058dac020b3d3",
+      "disposition": "user_change",
+      "targets": [
+        "aggregate-export"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C038",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Changed",
+      "line_start": 221,
+      "line_end": 223,
+      "sha256": "d2d8accba26622e196926fc4f086d823e1413a11d38a45ab62f133c8093f8718",
+      "disposition": "user_change",
+      "targets": [
+        "resource-responsive"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C039",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Changed",
+      "line_start": 225,
+      "line_end": 227,
+      "sha256": "79e7487f8eb66a4fd9a0227d393507612b50a23b52a9e5a2b94328b0de314e2d",
+      "disposition": "user_change",
+      "targets": [
+        "resource-responsive"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C040",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Changed",
+      "line_start": 229,
+      "line_end": 231,
+      "sha256": "c8bb05f65bec07555bf90fd18bb9966483403aa9dceb5d86ea9743a125b7ce63",
+      "disposition": "user_change",
+      "targets": [
+        "resource-order"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C041",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Changed",
+      "line_start": 233,
+      "line_end": 235,
+      "sha256": "fd201a1cfdfdb62434862d1f75cc1baf9976bd7730be805fc9c2166ef832332b",
+      "disposition": "user_change",
+      "targets": [
+        "resource-responsive"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C042",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Changed",
+      "line_start": 237,
+      "line_end": 239,
+      "sha256": "56538f63608465adf50ae150330f1369e6c5e96cd7c27060007721e9d2083ad6",
+      "disposition": "internal_process",
+      "reason": "Runner selection and qualification identity checks are CI policy."
+    },
+    {
+      "id": "C043",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Changed",
+      "line_start": 241,
+      "line_end": 244,
+      "sha256": "f58d5835bd2871aec1cc11f233c300773fbd868abc6174175779e1288a96db72",
+      "disposition": "user_change",
+      "targets": [
+        "first-guides",
+        "first-site"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C044",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Changed",
+      "line_start": 246,
+      "line_end": 251,
+      "sha256": "46b7d28ef46be2fe35f680f242264ad7a0299faf5221854a2b4483716194ad17",
+      "disposition": "internal_process",
+      "reason": "Phase planning, publication gates and prerelease preparation are release process, not a shipped feature."
+    },
+    {
+      "id": "C045",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Changed",
+      "line_start": 253,
+      "line_end": 255,
+      "sha256": "d78a7773e827a17fc60a6cf092b5b48b72cfcb9f242262b7b7054388b95b9e5f",
+      "disposition": "user_change",
+      "targets": [
+        "license"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C046",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Changed",
+      "line_start": 257,
+      "line_end": 260,
+      "sha256": "856d8425981abb419bee5f0cd05ffc5a81d1d66710067360af8aea5609618290",
+      "disposition": "user_change",
+      "targets": [
+        "rename",
+        "settings-migration"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C047",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 264,
+      "line_end": 268,
+      "sha256": "91c2187731bb5dcb44d4d657eff7c9f3348948f14f19248788a925a53f6b347e",
+      "disposition": "user_change",
+      "targets": [
+        "archives"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C048",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 270,
+      "line_end": 274,
+      "sha256": "1b442cd34e28232cdea9eb9c922ecaa88618c8a8089be59789bc8314909572b9",
+      "disposition": "user_change",
+      "targets": [
+        "aggregate",
+        "aggregate-sources"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C049",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 275,
+      "line_end": 276,
+      "sha256": "0cc1b922addb92459a05744e6acdfd7f9a0512a36cde6e57b74f291efe0a42aa",
+      "disposition": "user_change",
+      "targets": [
+        "json-logs"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C050",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 278,
+      "line_end": 281,
+      "sha256": "cf07c4414b80a83369851081e6d4976ee920e0525187afc503f305202a2f082d",
+      "disposition": "internal_process",
+      "reason": "Cloudflare deployment and owner authorization are publication process."
+    },
+    {
+      "id": "C051",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 282,
+      "line_end": 286,
+      "sha256": "3669ac6bb6cb5c5eeb0247c07ceeecc4fad5dd126a78b5bf935da785238f209d",
+      "disposition": "user_change",
+      "targets": [
+        "discovered",
+        "server-columns",
+        "api-refresh"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C052",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 288,
+      "line_end": 291,
+      "sha256": "587a770c3780b77aeb414038a5252fa757362a4660afa30c918e6fb168b52251",
+      "disposition": "user_change",
+      "targets": [
+        "discovered",
+        "server-columns",
+        "api-refresh"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C053",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 293,
+      "line_end": 294,
+      "sha256": "f3d7ae7eb1b0cc416a9a3b007424cd167f11b44293edd5d1e987344a5e345a6d",
+      "disposition": "user_change",
+      "targets": [
+        "attach"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C054",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 295,
+      "line_end": 298,
+      "sha256": "59529ab73e262123e7eeb5a2b298603a03710b0f25f0bb18eeb36783ca711d77",
+      "disposition": "user_change",
+      "targets": [
+        "file-transfer",
+        "file-snapshots",
+        "file-interruption"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C055",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 300,
+      "line_end": 305,
+      "sha256": "ee7d1567b492c6a48e749ddfe9a100080b4c02ef111c156db6eea03345b4b2fc",
+      "disposition": "user_change",
+      "targets": [
+        "auth-refresh",
+        "proxies",
+        "auth-limits"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C056",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 307,
+      "line_end": 309,
+      "sha256": "c969794a44aeddce60c4f6e7f416d74b4e50b6068fac4c4b08aecb03d580dac3",
+      "disposition": "user_change",
+      "targets": [
+        "delete",
+        "jobs"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C057",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 311,
+      "line_end": 313,
+      "sha256": "c5477099c73b9eb481be7e8fc2b68d2bd7ed75dfd7d9501655d5a9ab8e9c0fc6",
+      "disposition": "user_change",
+      "targets": [
+        "first-guides",
+        "first-site"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C058",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 315,
+      "line_end": 316,
+      "sha256": "3c71c464ac50340b924dccfa6a5769ad9b2a5541a1ac54e80fb6847b623396ef",
+      "disposition": "user_change",
+      "targets": [
+        "workloads",
+        "rollouts"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C059",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 318,
+      "line_end": 319,
+      "sha256": "ba6d1d429c51056b71bb65f925826f7a5af218c29c831c8fef2c895880aa1d5a",
+      "disposition": "user_change",
+      "targets": [
+        "manifest-edit"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C060",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 321,
+      "line_end": 322,
+      "sha256": "11785855aa6dd9d7d7b0b10c8d88576ab8ad5e732fa8cd6b26e0a921d4b8b201",
+      "disposition": "user_change",
+      "targets": [
+        "annotations"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C061",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 324,
+      "line_end": 325,
+      "sha256": "21769b8d16e40eb4ff2141c47f74d9179839060292aee3e6460751f0a296a7bb",
+      "disposition": "user_change",
+      "targets": [
+        "forwards",
+        "forward-sessions"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C062",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 327,
+      "line_end": 328,
+      "sha256": "809dc24a05657788e5f70e4fe60ec7b40da460244af57d2045b7d0fedef884a9",
+      "disposition": "user_change",
+      "targets": [
+        "resource-families"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C063",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 330,
+      "line_end": 331,
+      "sha256": "fa546131db26f418c633c41189e2d352d01237521f608aa9e32d9e27418db5d1",
+      "disposition": "internal_process",
+      "reason": "Disposable-cluster fixture cleanup is test infrastructure."
+    },
+    {
+      "id": "C064",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 333,
+      "line_end": 334,
+      "sha256": "9b58a11e2004947172d7fe92b05fd59cf7dddd5f4874367e856ced286a703f61",
+      "disposition": "user_change",
+      "targets": [
+        "brew-source"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C065",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 336,
+      "line_end": 338,
+      "sha256": "23bf09faed3e4f3ed92c6c3b5fc435c4fa72eb320c75563292fdbdb1660302fc",
+      "disposition": "internal_process",
+      "reason": "Candidate/OIDC/upload recovery describes the release pipeline."
+    },
+    {
+      "id": "C066",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 340,
+      "line_end": 342,
+      "sha256": "49607dd435dfb4e51c9311f3c6f27c6cc911ffebba24defedb27143caa7c94fa",
+      "disposition": "user_change",
+      "targets": [
+        "download-records"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C067",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Changed",
+      "line_start": 346,
+      "line_end": 347,
+      "sha256": "af1dc2ca4626161f19d0d87514db72cfca70098be0171178cd589f1e7b45b8f0",
+      "disposition": "internal_process",
+      "reason": "Private CI cost and matrix scheduling are maintainer process."
+    },
+    {
+      "id": "C068",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Changed",
+      "line_start": 349,
+      "line_end": 350,
+      "sha256": "abaf0758dd3f6264c6f1572b6d5c91279df0c62d88b7587b0f3e18751a382432",
+      "disposition": "user_change",
+      "targets": [
+        "first-guides"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C069",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Changed",
+      "line_start": 352,
+      "line_end": 354,
+      "sha256": "a75a24b303f07ee6c82e94e7a22191f7a725ccbf02ccbd696f2a2a175237a878",
+      "disposition": "user_change",
+      "targets": [
+        "packages"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C070",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Changed",
+      "line_start": 355,
+      "line_end": 356,
+      "sha256": "fc66de44d5a0e65dede911d9213cce21e6fbd4dd11d9cc925e30322609a6fb20",
+      "disposition": "user_change",
+      "targets": [
+        "logo",
+        "header-controls"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C071",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 360,
+      "line_end": 361,
+      "sha256": "1e3f9de85e1b18785174eaa3f4d2d42dbf71bedbdcee9257b781c9e2cbf3f2b6",
+      "disposition": "user_change",
+      "targets": [
+        "credential-cleanup"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C072",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 362,
+      "line_end": 363,
+      "sha256": "d0f5d1469dd522c15f6e0067ef7863f5d5f7153532b5d14a14b2f0c503c9af26",
+      "disposition": "user_change",
+      "targets": [
+        "namespace-feedback"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C073",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 365,
+      "line_end": 366,
+      "sha256": "ec8d256d77f8f984da58562948cb44ed73203bd64e3aaf96f6955638737dc241",
+      "disposition": "user_change",
+      "targets": [
+        "ssh"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C074",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 367,
+      "line_end": 369,
+      "sha256": "df3029152410807c10a351cd2d99c4e473b5ecf5a39839a6f571003d194d1717",
+      "disposition": "user_change",
+      "targets": [
+        "ssh",
+        "signals"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C075",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 370,
+      "line_end": 372,
+      "sha256": "745f825ee7f2846c6f75a88229cc4ff6fb37afb10dfcf14711e2165dea567c6e",
+      "disposition": "user_change",
+      "targets": [
+        "escape-recovery"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C076",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 373,
+      "line_end": 374,
+      "sha256": "29a399eed23053fc4c942e41626b57287c8dead6ebcee81355aab82dd7d34db1",
+      "disposition": "user_change",
+      "targets": [
+        "shell-exit"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C077",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 375,
+      "line_end": 376,
+      "sha256": "fc730daa175ca72f13e85a8fc8868c932db46ab3a609e754c2995725823b68b9",
+      "disposition": "user_change",
+      "targets": [
+        "resize"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C078",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 377,
+      "line_end": 379,
+      "sha256": "a392405194f5636119fa2e114eb6c0694c50741d0de4b779746318e9db4d34f1",
+      "disposition": "user_change",
+      "targets": [
+        "aws-errors",
+        "aws-refresh"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C079",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 380,
+      "line_end": 381,
+      "sha256": "82f2ded272cae08bad3ee7260be31a5e5358092a8dd5fa8b21889e377273f28c",
+      "disposition": "user_change",
+      "targets": [
+        "aws-delegation"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C080",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 382,
+      "line_end": 382,
+      "sha256": "2e9138f73bab550a8df1e4522e5b9e0d999a2df05da1a9b93508c84885deb634",
+      "disposition": "user_change",
+      "targets": [
+        "resize"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C081",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 383,
+      "line_end": 384,
+      "sha256": "c47f9af81442c72a661b86aeed34d18b71c913a8daf5e1084016ac2ce1ee9b9f",
+      "disposition": "user_change",
+      "targets": [
+        "resize"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C082",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 385,
+      "line_end": 386,
+      "sha256": "4a18c7b879ebc63850af3f656a803b26f241e8743895ba9428348e62c39f51a6",
+      "disposition": "user_change",
+      "targets": [
+        "inline-command"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C083",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 388,
+      "line_end": 390,
+      "sha256": "f75f9017127d1a18b43bbaf72d09f65b4b44939ca9b92c532c51363273f967cc",
+      "disposition": "user_change",
+      "targets": [
+        "shell-workspace"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C084",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 392,
+      "line_end": 393,
+      "sha256": "91e820013835e468569834a7aa320cc50a58c3226d9fb6bdeb8b45e1f148287d",
+      "disposition": "user_change",
+      "targets": [
+        "signals"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C085",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 395,
+      "line_end": 396,
+      "sha256": "b69d6bcf164b65dc18c9745c4f83f3336b9bc283999b632df9c67204369f8bfb",
+      "disposition": "user_change",
+      "targets": [
+        "selected-suggestion"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C086",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 398,
+      "line_end": 399,
+      "sha256": "1f31a1c057156baafc61269cbfbb221a4abb03cde744f729d7ead72144366709",
+      "disposition": "user_change",
+      "targets": [
+        "quiet-watches"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C087",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 400,
+      "line_end": 401,
+      "sha256": "8faf0aff9eda5646a427fa0ae08c0db10fcdf0d758e6ee86ef0f499c892713b9",
+      "disposition": "user_change",
+      "targets": [
+        "connection-state"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C088",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 403,
+      "line_end": 404,
+      "sha256": "d99e3d7bc7534ceb778e41b21bf64903b7d897af26bae4e3d823619bee8f6ace",
+      "disposition": "user_change",
+      "targets": [
+        "null-exec"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C089",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Fixed",
+      "line_start": 405,
+      "line_end": 406,
+      "sha256": "34fad5cd47067d8571f62e21f9d5d2073472473a51274eca99243d205ada512e",
+      "disposition": "user_change",
+      "targets": [
+        "fallback-keys"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C090",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 410,
+      "line_end": 412,
+      "sha256": "58a3b830d08b0fad73e60ea9577a2ee49c5776be11db1d6d052f29abe3581105",
+      "disposition": "internal_process",
+      "reason": "Terminal/install qualification scenarios are test evidence."
+    },
+    {
+      "id": "C091",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 413,
+      "line_end": 416,
+      "sha256": "81bc3d546ee99c111e679f95abb69faf0c9af68336f6753568f059fe4e7622e7",
+      "disposition": "user_change",
+      "targets": [
+        "azure-login"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C092",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 417,
+      "line_end": 418,
+      "sha256": "1194a2154f2f002a9de61749e6e8a444997d96f0ae0fe8873cbfcecf20240fc5",
+      "disposition": "user_change",
+      "targets": [
+        "exec-tokens"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C093",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 419,
+      "line_end": 421,
+      "sha256": "bbcb08676ed111fb3b994cb7bf5c9e85c8d8cc3a91698eddf78ae2b143eeb246",
+      "disposition": "user_change",
+      "targets": [
+        "identity",
+        "impersonation"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C094",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 422,
+      "line_end": 423,
+      "sha256": "b4f39eeff0e3e7fce23d7707d714c303b13623b3f17dadad0b44ac62bfd3cf46",
+      "disposition": "user_change",
+      "targets": [
+        "refresh"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C095",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 424,
+      "line_end": 424,
+      "sha256": "30de739f9ff92a4426613fab64e44b432cf75bff64ee297450c0cd98156cb78b",
+      "disposition": "user_change",
+      "targets": [
+        "inline-command"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C096",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 425,
+      "line_end": 426,
+      "sha256": "d641f623299a545aa0b5556914967e48be36f25d1c1fbb45833f03cae5a00627",
+      "disposition": "user_change",
+      "targets": [
+        "contexts"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C097",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 427,
+      "line_end": 428,
+      "sha256": "1948c5b88ca94d5cae1bef5f221cbadb0fd22b695098cb853dd36a93dca4e397",
+      "disposition": "user_change",
+      "targets": [
+        "container-details"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C098",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 430,
+      "line_end": 431,
+      "sha256": "ed2fa2ddd1fc0e608e6551ae76903134231369706a7be962062196f2ad6a8513",
+      "disposition": "user_change",
+      "targets": [
+        "workspace-theme"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C099",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 432,
+      "line_end": 433,
+      "sha256": "22f4366b684c3d89aa8c955d8714c1acd7cbd0b715d170faa13291a64d2505ae",
+      "disposition": "user_change",
+      "targets": [
+        "namespaces",
+        "namespace-return"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C100",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 434,
+      "line_end": 435,
+      "sha256": "2512568fa3bf15cd0f1381ae9471fb87ac844948fc47f8867e84ea5920881ad7",
+      "disposition": "user_change",
+      "targets": [
+        "workspace"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C101",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 437,
+      "line_end": 438,
+      "sha256": "c636ef2bf5091e4db430c1ff30b59cca450ed12cc6737edc8a164482a1d9d9b8",
+      "disposition": "user_change",
+      "targets": [
+        "shell-launch"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C102",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 439,
+      "line_end": 440,
+      "sha256": "312ff52572032023174422ccfbcbe1b26e80eac0a56b1da2ca1c92c73b476a39",
+      "disposition": "user_change",
+      "targets": [
+        "readonly"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C103",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 442,
+      "line_end": 444,
+      "sha256": "3f1c31473c34705688b14b1e1fcd9e1cf6650d4e9fc18026a83495fb0f1d2a76",
+      "disposition": "user_change",
+      "targets": [
+        "readonly"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C104",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 446,
+      "line_end": 448,
+      "sha256": "a0dad25b13f0f6c0c691fee0544146f151e6a6ba8c30b2d886540a797c287fbf",
+      "disposition": "user_change",
+      "targets": [
+        "enter-flow"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C105",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 450,
+      "line_end": 451,
+      "sha256": "6d6a84d9272e101ea5625ffa45d070f32bb6f37e43238f1c5c159975f955a8f0",
+      "disposition": "user_change",
+      "targets": [
+        "logs",
+        "log-controls"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C106",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 452,
+      "line_end": 453,
+      "sha256": "cfc263cf4da1b21d8876bd048b74a2464cbab2c9bcd17a6b3726b2b593ba531e",
+      "disposition": "user_change",
+      "targets": [
+        "log-controls",
+        "log-pause"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C107",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 455,
+      "line_end": 456,
+      "sha256": "1d60bb193c6bfc7a63a610c3e35d793cc57ddbda35aeceab615be523f3aab667",
+      "disposition": "user_change",
+      "targets": [
+        "logs"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C108",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 457,
+      "line_end": 458,
+      "sha256": "831327d4a6c6da62bca26777feb9553f5ea1fbea6497815b486cbc8d8f7fd7de",
+      "disposition": "user_change",
+      "targets": [
+        "log-pause"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C109",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 460,
+      "line_end": 461,
+      "sha256": "59f9436188759287965e191aa51019e85869d049ba8cd2dcd787e93c79aa2e5f",
+      "disposition": "user_change",
+      "targets": [
+        "resource-documents"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C110",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 462,
+      "line_end": 463,
+      "sha256": "10fbcc9bb8ae6d0dc6078c13f662bbd0f336d5b3501e677b1bd41f42f6b53956",
+      "disposition": "user_change",
+      "targets": [
+        "resource-errors"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C111",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 465,
+      "line_end": 466,
+      "sha256": "6ca73130bcb35d2f6bca0b26dd91fd75af6f2752ed119b68545b80a5699647d6",
+      "disposition": "user_change",
+      "targets": [
+        "commands"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C112",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 467,
+      "line_end": 468,
+      "sha256": "60aadeb3f1360313625ca59ba5d3959cee90495188044667d30dee8051a1ba7f",
+      "disposition": "user_change",
+      "targets": [
+        "history"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C113",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 470,
+      "line_end": 471,
+      "sha256": "9a77575ab096eb8cc80d7b6c36ea7205d435ca40c630a66e8ab205c857783c55",
+      "disposition": "user_change",
+      "targets": [
+        "pods"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C114",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 472,
+      "line_end": 473,
+      "sha256": "0df3d195ccd04bd06be5e5883b00ac5898ef49f2d50e1c871c6c619cf22efc1a",
+      "disposition": "user_change",
+      "targets": [
+        "small-terminal"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C115",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 475,
+      "line_end": 476,
+      "sha256": "835e0fca7918cc74f5b264141234b365123dbf2b7c99cfdbcf65fe28c0e31737",
+      "disposition": "user_change",
+      "targets": [
+        "small-terminal"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C116",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 477,
+      "line_end": 478,
+      "sha256": "c90e00fe9179aff80a55fcf7a4fd0a0e677423136958aa8996cf4e44b17e9031",
+      "disposition": "user_change",
+      "targets": [
+        "context-generation"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C117",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 480,
+      "line_end": 481,
+      "sha256": "b3c4592a0677387ddc74928016af84db3f8e9ef2c21051e50dc1671f64ea03e6",
+      "disposition": "user_change",
+      "targets": [
+        "watch-recovery"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C118",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 482,
+      "line_end": 483,
+      "sha256": "deb00f894698861ae729b72dea02175389d2e5793d484d7b270a0a9dff7134a4",
+      "disposition": "internal_process",
+      "reason": "Disposable-cluster and stream qualification is test evidence; watch behavior is separately mapped."
+    },
+    {
+      "id": "C119",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 485,
+      "line_end": 487,
+      "sha256": "ff56006397938c786d8ed10a21a33430e47e11a641049739a6e209d8263e0ad9",
+      "disposition": "user_change",
+      "targets": [
+        "discovered",
+        "api-refresh",
+        "pagination"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C120",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 488,
+      "line_end": 489,
+      "sha256": "6fa2631b345784b9728114719119d7377faa2ee1ee7649a9a7d930c0632b93bc",
+      "disposition": "internal_process",
+      "reason": "Discovery HTTP/kind verification is test evidence; resource discovery is separately mapped."
+    },
+    {
+      "id": "C121",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 491,
+      "line_end": 493,
+      "sha256": "3633c3597272e962352a8b6662a70ad40334b1663552e90d7b6647adbe318028",
+      "disposition": "user_change",
+      "targets": [
+        "auth-refresh",
+        "connections"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C122",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 494,
+      "line_end": 495,
+      "sha256": "208eeff9580f611935c0a6ca14bc00dfc2c1e805e190a83e4df3cbf9192088e5",
+      "disposition": "internal_process",
+      "reason": "Context HTTP/helper/terminal trials are test evidence; available authentication is separately mapped."
+    },
+    {
+      "id": "C123",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 497,
+      "line_end": 498,
+      "sha256": "217873148a374efc63591409ca839670252af709cf7231c5d87ec0d8fd6f9b8f",
+      "disposition": "user_change",
+      "targets": [
+        "cli"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C124",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 499,
+      "line_end": 500,
+      "sha256": "11dde65c8c73bd8e39c0841042677e1ae888042aa454b8c6b721f818e3941e89",
+      "disposition": "user_change",
+      "targets": [
+        "workspace-theme",
+        "header-controls",
+        "readonly"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C125",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 501,
+      "line_end": 502,
+      "sha256": "76f172b925b5519ced6b4a0aff70be0cf21103633f9a4df1da5b668e911da650",
+      "disposition": "internal_process",
+      "reason": "Launch/alias/Pilot/PTY qualification is test evidence; CLI behavior is separately mapped."
+    },
+    {
+      "id": "C126",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 504,
+      "line_end": 506,
+      "sha256": "589996b381aaaa6a1d15ebbb9690688f3bb4f889f210eba57096012d87490137",
+      "disposition": "user_change",
+      "targets": [
+        "workspace",
+        "mouse-navigation"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C127",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 507,
+      "line_end": 508,
+      "sha256": "0f0aff63a1930e065481d1d765c35f5dde2c5c46f85a31c5c20926134cbf1410",
+      "disposition": "internal_process",
+      "reason": "Layout, paste, restoration and install trials are test evidence; workspace behavior is separately mapped."
+    },
+    {
+      "id": "C128",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 510,
+      "line_end": 511,
+      "sha256": "a20d1d6e63ebf3b03ff7c8f4d969a0fe4df25b97be3da6af5749289881d557d9",
+      "disposition": "user_change",
+      "targets": [
+        "settings"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C129",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 512,
+      "line_end": 513,
+      "sha256": "46675279940485788e3b4ded95c369e069dafaf7eef1a30bb645dd542bc8a423",
+      "disposition": "user_change",
+      "targets": [
+        "offline"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C130",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 514,
+      "line_end": 515,
+      "sha256": "ae5e4518b5758860597bdbf37766ad507b434e891578e1f60c21d774d0daad88",
+      "disposition": "user_change",
+      "targets": [
+        "private-logs"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C131",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 516,
+      "line_end": 516,
+      "sha256": "d5e09fa8b3624301d72d3f9a9e88e72a8b8a92a61328f3ba7dc720ec7e43a0a4",
+      "disposition": "internal_process",
+      "reason": "Roadmap, architecture and quality policy are contributor planning."
+    },
+    {
+      "id": "C132",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 517,
+      "line_end": 517,
+      "sha256": "1a9a66f4c4318043850735e28499fa25ce295e432abd480dc0d2a6ac44e392b8",
+      "disposition": "internal_process",
+      "reason": "Issue templates, backlog and contribution policies are repository process."
+    },
+    {
+      "id": "C133",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 518,
+      "line_end": 519,
+      "sha256": "892aa1b93a6bd76681684687b6f2f4629db13d20317d6f3ced1708fcbc4fd64e",
+      "disposition": "user_change",
+      "targets": [
+        "cli"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C134",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 520,
+      "line_end": 521,
+      "sha256": "524e1d5dc021e3d3d1a0a8c79fb227fd369effd619a204367d7ccae6da2d9e2d",
+      "disposition": "user_change",
+      "targets": [
+        "python-platforms"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C135",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 522,
+      "line_end": 523,
+      "sha256": "3e65dc66a70e3e866c767f9ca8ec433b641d59e77c199e3c83a115e9a38253d1",
+      "disposition": "internal_process",
+      "reason": "Coverage percentages and missing-evidence gates are qualification policy."
+    },
+    {
+      "id": "C136",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Added",
+      "line_start": 524,
+      "line_end": 526,
+      "sha256": "12429ad32e4d451c2f1d2f27ecade662eb9ceca6f748d510751d966d447bce02",
+      "disposition": "internal_process",
+      "reason": "CI matrices and merge enforcement are repository process."
+    },
+    {
+      "id": "C137",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Security",
+      "line_start": 533,
+      "line_end": 535,
+      "sha256": "3df3a6cfff2db89fc655b97cfed390943f171de36aca71c08d603c1b6fa55fef",
+      "disposition": "user_change",
+      "targets": [
+        "readonly"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C138",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Security",
+      "line_start": 537,
+      "line_end": 538,
+      "sha256": "ff05bb24a7363cfda3af29c72c56df81a1700fb0ecf4297514dbfd16685b43dd",
+      "disposition": "user_change",
+      "targets": [
+        "redaction"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C139",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Security",
+      "line_start": 539,
+      "line_end": 540,
+      "sha256": "7caaa00aadeca261d45bc78d619c98310b990de3268b0027ff1bb3aeae2e76b4",
+      "disposition": "user_change",
+      "targets": [
+        "literal-arguments"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "C140",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Security",
+      "line_start": 541,
+      "line_end": 542,
+      "sha256": "dc123bb11f1f3cf6fa19ceec3ace71518ea79a1f2b7582bf1cd2bc64cefaa3a6",
+      "disposition": "internal_process",
+      "reason": "Ambient-credential traps and fixture loaders are test isolation."
+    },
+    {
+      "id": "C141",
+      "source": "CHANGELOG.md",
+      "version": "0.1.0",
+      "category": "Security",
+      "line_start": 543,
+      "line_end": 544,
+      "sha256": "55e410d933538b08816dba8231da7288a44b514e5bdb81257cd2593ed655ca5f",
+      "disposition": "internal_process",
+      "reason": "The trust-boundary model is engineering design documentation."
+    },
+    {
+      "id": "N101",
+      "source": "docs/release-notes/0.1.0.md",
+      "version": "0.1.0",
+      "category": "Features",
+      "line_start": 5,
+      "line_end": 8,
+      "sha256": "adf8c2938b82a7856d08ae5d835645b2ae407834edf389f0b4489070ad39d024",
+      "disposition": "user_change",
+      "targets": [
+        "pods",
+        "contexts",
+        "namespaces",
+        "commands",
+        "history",
+        "resource-families",
+        "discovered",
+        "server-columns",
+        "resource-documents",
+        "enter-flow"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "N102",
+      "source": "docs/release-notes/0.1.0.md",
+      "version": "0.1.0",
+      "category": "Features",
+      "line_start": 10,
+      "line_end": 13,
+      "sha256": "7c1dd44bf7191127fc124a1ad2545d3a4275754a6859cdcc140dcac12d5bf79b",
+      "disposition": "user_change",
+      "targets": [
+        "logs",
+        "log-history",
+        "log-pause",
+        "aggregate",
+        "aggregate-export",
+        "shell-history",
+        "shell-return"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "N103",
+      "source": "docs/release-notes/0.1.0.md",
+      "version": "0.1.0",
+      "category": "Features",
+      "line_start": 15,
+      "line_end": 19,
+      "sha256": "bd0fbcf4bec11fc8bc6e35f7f33d5855a471ba93ef5fe516e77fd6a77f1660e7",
+      "disposition": "user_change",
+      "targets": [
+        "annotations",
+        "manifest-edit",
+        "workloads",
+        "delete",
+        "jobs",
+        "forwards",
+        "attach",
+        "file-transfer",
+        "archives",
+        "readonly"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "N104",
+      "source": "docs/release-notes/0.1.0.md",
+      "version": "0.1.0",
+      "category": "Fixes",
+      "line_start": 23,
+      "line_end": 26,
+      "sha256": "3a94664f55c034d7caeb3f2f1d959a7d7845fb91bbcb279d4a8a0dead151ef4b",
+      "disposition": "user_change",
+      "targets": [
+        "download-records"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "N105",
+      "source": "docs/release-notes/0.1.0.md",
+      "version": "0.1.0",
+      "category": "Fixes",
+      "line_start": 28,
+      "line_end": 30,
+      "sha256": "7a086c61b6cac3c6e5e2ea9232cb460a626f9015b28351f0933bdfc08085204f",
+      "disposition": "internal_process",
+      "reason": "Read-only release-validation credentials are maintainer publication controls."
+    },
+    {
+      "id": "N106",
+      "source": "docs/release-notes/0.1.0.md",
+      "version": "0.1.0",
+      "category": "Fixes",
+      "line_start": 32,
+      "line_end": 36,
+      "sha256": "c473c69beb96484fd1a45044784ae6a1d3865198171f4f7db8d7aa85a80e4b50",
+      "disposition": "user_change",
+      "targets": [
+        "shell-exit"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "N107",
+      "source": "docs/release-notes/0.1.0.md",
+      "version": "0.1.0",
+      "category": "Fixes",
+      "line_start": 38,
+      "line_end": 42,
+      "sha256": "df1438a64bf53e39583c7debaaaf4018e5c0ac1181df8711214cc70f13191e4f",
+      "disposition": "user_change",
+      "targets": [
+        "credential-cleanup"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "N108",
+      "source": "docs/release-notes/0.1.0.md",
+      "version": "0.1.0",
+      "category": "Fixes",
+      "line_start": 44,
+      "line_end": 47,
+      "sha256": "80ae454a4aa793a0d3f87b798adeaa4c8c1eb9d5d40a041d84a83db2d60b3ae2",
+      "disposition": "user_change",
+      "targets": [
+        "style-speed"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "N109",
+      "source": "docs/release-notes/0.1.0.md",
+      "version": "0.1.0",
+      "category": "Compatibility and migrations",
+      "line_start": 51,
+      "line_end": 55,
+      "sha256": "a8b70321ef4b9a74262963dc34031f58c6965af69844eaecd412d91a17294dd2",
+      "disposition": "user_change",
+      "targets": [
+        "python-platforms",
+        "archives"
+      ],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.1.0.md",
+          "section": "Compatibility and migrations"
+        }
+      ]
+    },
+    {
+      "id": "N110",
+      "source": "docs/release-notes/0.1.0.md",
+      "version": "0.1.0",
+      "category": "Compatibility and migrations",
+      "line_start": 57,
+      "line_end": 61,
+      "sha256": "3089948cce19a9c7478a9848a1f88bebe3b3e5ba1ee5a8237244e1173ce2bd11",
+      "disposition": "user_change",
+      "targets": [
+        "connections",
+        "settings-migration",
+        "auth-refresh",
+        "proxies"
+      ],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.1.0.md",
+          "section": "Compatibility and migrations"
+        }
+      ]
+    },
+    {
+      "id": "N111",
+      "source": "docs/release-notes/0.1.0.md",
+      "version": "0.1.0",
+      "category": "Compatibility and migrations",
+      "line_start": 63,
+      "line_end": 64,
+      "sha256": "25a5536d8eb7879d4ac86758bf0e2229d359987bb896c267988ec379789d486f",
+      "disposition": "user_change",
+      "targets": [],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.1.0.md",
+          "section": "Compatibility and migrations"
+        }
+      ]
+    },
+    {
+      "id": "N112",
+      "source": "docs/release-notes/0.1.0.md",
+      "version": "0.1.0",
+      "category": "Installation",
+      "line_start": 68,
+      "line_end": 69,
+      "sha256": "584e5f0ba3c1c0d04eb73b4f76fb6bc86f5531cf62dfbf5ef426ab654cdfbea9",
+      "disposition": "user_change",
+      "targets": [
+        "archives",
+        "brew-source"
+      ],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.1.0.md",
+          "section": "Installation"
+        }
+      ]
+    },
+    {
+      "id": "N113",
+      "source": "docs/release-notes/0.1.0.md",
+      "version": "0.1.0",
+      "category": "Installation",
+      "line_start": 71,
+      "line_end": 77,
+      "sha256": "6b2b0c44466fef63d545bb4b9ed45f1dff82fc2e5e9d268e84c4e9dd40a689f0",
+      "disposition": "user_change",
+      "targets": [],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.1.0.md",
+          "section": "Installation"
+        }
+      ]
+    },
+    {
+      "id": "N114",
+      "source": "docs/release-notes/0.1.0.md",
+      "version": "0.1.0",
+      "category": "Installation",
+      "line_start": 79,
+      "line_end": 82,
+      "sha256": "5af819b83f02f7272e4ae2a1b181187b9a65a3a2acfdfc4bfcd9bd477e1c15da",
+      "disposition": "user_change",
+      "targets": [
+        "archives",
+        "download-records"
+      ],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.1.0.md",
+          "section": "Installation"
+        }
+      ]
+    },
+    {
+      "id": "N115",
+      "source": "docs/release-notes/0.1.0.md",
+      "version": "0.1.0",
+      "category": "Installation",
+      "line_start": 84,
+      "line_end": 86,
+      "sha256": "46bc3adf8503e24b733423607704d1c8077eca9c4749c02e89ccba6781dd83a8",
+      "disposition": "user_change",
+      "targets": [
+        "readonly"
+      ],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.1.0.md",
+          "section": "Installation"
+        }
+      ]
+    },
+    {
+      "id": "N116",
+      "source": "docs/release-notes/0.1.0.md",
+      "version": "0.1.0",
+      "category": "Upgrade and uninstall",
+      "line_start": 90,
+      "line_end": 95,
+      "sha256": "830c03abc7753c4b37a5dbfeaa31ea0504620c6017dbcc519c149d5fd58cd267",
+      "disposition": "user_change",
+      "targets": [],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.1.0.md",
+          "section": "Upgrade and uninstall"
+        }
+      ]
+    },
+    {
+      "id": "N117",
+      "source": "docs/release-notes/0.1.0.md",
+      "version": "0.1.0",
+      "category": "Upgrade and uninstall",
+      "line_start": 97,
+      "line_end": 100,
+      "sha256": "e74f329568272330ba80c3479982357d9debdffb0a299de4039746533093b118",
+      "disposition": "user_change",
+      "targets": [],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.1.0.md",
+          "section": "Upgrade and uninstall"
+        }
+      ]
+    },
+    {
+      "id": "N118",
+      "source": "docs/release-notes/0.1.0.md",
+      "version": "0.1.0",
+      "category": "Known limits",
+      "line_start": 104,
+      "line_end": 113,
+      "sha256": "6538a66bda4d017f6f30637c9e5c3ad3649b635b8d8557ed85bb282129b8c151",
+      "disposition": "user_change",
+      "targets": [
+        "redaction"
+      ],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.1.0.md",
+          "section": "Known limits"
+        }
+      ]
+    },
+    {
+      "id": "N119",
+      "source": "docs/release-notes/0.1.0.md",
+      "version": "0.1.0",
+      "category": "Contributors and references",
+      "line_start": 117,
+      "line_end": 121,
+      "sha256": "18176b8b0b15a16f8459125c8371fdc0adbb4537952c780cd6e9a808f86e142f",
+      "disposition": "user_change",
+      "targets": [],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.1.0.md",
+          "section": "Contributors and references"
+        }
+      ]
+    },
+    {
+      "id": "N201",
+      "source": "docs/release-notes/0.2.0.md",
+      "version": "0.2.0",
+      "category": "Features",
+      "line_start": 5,
+      "line_end": 9,
+      "sha256": "45156c168605bebac1cee44283b08ff20ca5f8165b3de35237640aae0b47cfd8",
+      "disposition": "user_change",
+      "targets": [
+        "themes",
+        "theme-contrast",
+        "keys-aliases",
+        "columns",
+        "column-fallback"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "N202",
+      "source": "docs/release-notes/0.2.0.md",
+      "version": "0.2.0",
+      "category": "Features",
+      "line_start": 11,
+      "line_end": 16,
+      "sha256": "c1335ff0facae0a75971f326265e8c2c5557bc6e32e5fffe3a8eaca82aefdffc",
+      "disposition": "user_change",
+      "targets": [
+        "plugin-forms",
+        "plugin-modes",
+        "plugin-jobs",
+        "plugin-files",
+        "plugin-check",
+        "plugin-catalog",
+        "plugin-adaptations"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "N203",
+      "source": "docs/release-notes/0.2.0.md",
+      "version": "0.2.0",
+      "category": "Features",
+      "line_start": 18,
+      "line_end": 20,
+      "sha256": "1e5032098dc2c01715bbafba69ca28b9c1efebaf53ab41258d63120f2daa19fe",
+      "disposition": "user_change",
+      "targets": [
+        "config-data",
+        "data-format",
+        "secret-edit"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "N204",
+      "source": "docs/release-notes/0.2.0.md",
+      "version": "0.2.0",
+      "category": "Features",
+      "line_start": 22,
+      "line_end": 26,
+      "sha256": "782cfa24c1cb870d42b4fea94a7eda97c3fff8dc01c91ab0c85a44183bc57df5",
+      "disposition": "user_change",
+      "targets": [
+        "recall",
+        "filter-modes",
+        "namespace-favorites",
+        "copy",
+        "mouse",
+        "forward-names",
+        "forward-presets",
+        "forward-reconnect"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "N205",
+      "source": "docs/release-notes/0.2.0.md",
+      "version": "0.2.0",
+      "category": "Features",
+      "line_start": 28,
+      "line_end": 30,
+      "sha256": "17628fc2c8469f83b0704118f737b4da3074137886ba58caca995b32df182924",
+      "disposition": "user_change",
+      "targets": [
+        "context-edit",
+        "pod-cleanup"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "N206",
+      "source": "docs/release-notes/0.2.0.md",
+      "version": "0.2.0",
+      "category": "Features",
+      "line_start": 32,
+      "line_end": 37,
+      "sha256": "ba9835e3106d4d2a17549ee41991c0a3048354a9efbbf830f0ad642ee5a9e866",
+      "disposition": "user_change",
+      "targets": [
+        "jumps",
+        "live-settings",
+        "context-settings",
+        "appearance-settings"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "N207",
+      "source": "docs/release-notes/0.2.0.md",
+      "version": "0.2.0",
+      "category": "Features",
+      "line_start": 39,
+      "line_end": 40,
+      "sha256": "acf0250b67a170724a318b60ebd5bc11167c20343b5075cf4da527208e3b7cf8",
+      "disposition": "user_change",
+      "targets": [
+        "bottles",
+        "bottle-fallback"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "N208",
+      "source": "docs/release-notes/0.2.0.md",
+      "version": "0.2.0",
+      "category": "Fixes",
+      "line_start": 44,
+      "line_end": 49,
+      "sha256": "8099413ecfcceed5485b158a062e4ce0546dc0a7ac59cab492395fdc211bbbc9",
+      "disposition": "user_change",
+      "targets": [
+        "table-memory",
+        "key-width",
+        "plugin-migration",
+        "theme-revisit"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "N209",
+      "source": "docs/release-notes/0.2.0.md",
+      "version": "0.2.0",
+      "category": "Fixes",
+      "line_start": 51,
+      "line_end": 52,
+      "sha256": "c6d72db3ccfcfe073b7ef202e0b3126890000b8632a991ae54f48606d566f88d",
+      "disposition": "user_change",
+      "targets": [
+        "aiohttp",
+        "certifi"
+      ],
+      "destinations": []
+    },
+    {
+      "id": "N210",
+      "source": "docs/release-notes/0.2.0.md",
+      "version": "0.2.0",
+      "category": "Compatibility and migrations",
+      "line_start": 56,
+      "line_end": 59,
+      "sha256": "0d32711711c65040662c58ba8b7cf1aaf8ef51a29fef93d13089aea06059d47b",
+      "disposition": "user_change",
+      "targets": [],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.2.0.md",
+          "section": "Compatibility and migrations"
+        }
+      ]
+    },
+    {
+      "id": "N211",
+      "source": "docs/release-notes/0.2.0.md",
+      "version": "0.2.0",
+      "category": "Installation",
+      "line_start": 63,
+      "line_end": 64,
+      "sha256": "ee793299e62cb77464a4cc6cb86f40ee0b4afaa4fbeb78ae681193002edb7f67",
+      "disposition": "user_change",
+      "targets": [
+        "bottles"
+      ],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.2.0.md",
+          "section": "Installation"
+        }
+      ]
+    },
+    {
+      "id": "N212",
+      "source": "docs/release-notes/0.2.0.md",
+      "version": "0.2.0",
+      "category": "Installation",
+      "line_start": 66,
+      "line_end": 72,
+      "sha256": "6b2b0c44466fef63d545bb4b9ed45f1dff82fc2e5e9d268e84c4e9dd40a689f0",
+      "disposition": "user_change",
+      "targets": [],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.2.0.md",
+          "section": "Installation"
+        }
+      ]
+    },
+    {
+      "id": "N213",
+      "source": "docs/release-notes/0.2.0.md",
+      "version": "0.2.0",
+      "category": "Installation",
+      "line_start": 74,
+      "line_end": 77,
+      "sha256": "f5d6a75761a5ce36326fee58972b10bc28f9ee61260e6061d7f9d7e087790e14",
+      "disposition": "user_change",
+      "targets": [
+        "bottles",
+        "archives"
+      ],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.2.0.md",
+          "section": "Installation"
+        }
+      ]
+    },
+    {
+      "id": "N214",
+      "source": "docs/release-notes/0.2.0.md",
+      "version": "0.2.0",
+      "category": "Installation",
+      "line_start": 79,
+      "line_end": 79,
+      "sha256": "6ccb3b4590e67d2b0c6af8bc650a19ed33469d2076dbe4b71d5c3cdcea0118b6",
+      "disposition": "user_change",
+      "targets": [],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.2.0.md",
+          "section": "Installation"
+        }
+      ]
+    },
+    {
+      "id": "N215",
+      "source": "docs/release-notes/0.2.0.md",
+      "version": "0.2.0",
+      "category": "Upgrade and uninstall",
+      "line_start": 83,
+      "line_end": 85,
+      "sha256": "59eb08293cdbd26781338c5a2d475d34fe9fbcb8d1e317afe1423702529b05b6",
+      "disposition": "user_change",
+      "targets": [],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.2.0.md",
+          "section": "Upgrade and uninstall"
+        }
+      ]
+    },
+    {
+      "id": "N216",
+      "source": "docs/release-notes/0.2.0.md",
+      "version": "0.2.0",
+      "category": "Upgrade and uninstall",
+      "line_start": 87,
+      "line_end": 88,
+      "sha256": "d97d146559c3e08dfd9fa4020822e6b24cdfd29761108ebb1209446739d6f3e8",
+      "disposition": "user_change",
+      "targets": [],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.2.0.md",
+          "section": "Upgrade and uninstall"
+        }
+      ]
+    },
+    {
+      "id": "N217",
+      "source": "docs/release-notes/0.2.0.md",
+      "version": "0.2.0",
+      "category": "Known limits",
+      "line_start": 92,
+      "line_end": 96,
+      "sha256": "3c3e4ed5646f85e981bbc60e540f2b9dabc5b95b4ce48c72cf15dc62cd9af212",
+      "disposition": "user_change",
+      "targets": [],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.2.0.md",
+          "section": "Known limits"
+        }
+      ]
+    },
+    {
+      "id": "N218",
+      "source": "docs/release-notes/0.2.0.md",
+      "version": "0.2.0",
+      "category": "Contributors and references",
+      "line_start": 100,
+      "line_end": 103,
+      "sha256": "c5397afa8c99cac7e2555033c3ccea04598b0b8a6bab9042609316c002b91a5d",
+      "disposition": "user_change",
+      "targets": [],
+      "destinations": [
+        {
+          "path": "docs/release-notes/0.2.0.md",
+          "section": "Contributors and references"
+        }
+      ]
+    }
+  ]
+}
