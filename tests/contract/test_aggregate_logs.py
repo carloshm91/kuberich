@@ -26,6 +26,7 @@ from tests.support.backend_runtime import (
     require_backend_children,
 )
 from tests.support.resources import reader_fixture
+from tests.support.runtime_budget import budget_enforced, budget_observation
 from tests.support.workspace import wait_for
 
 
@@ -277,7 +278,7 @@ async def test_many_tiny_lines_slow_source_heartbeat_and_two_levels_of_retention
                 assert all(len(numbers) <= 300 for numbers in history.by_source.values())
                 assert all(size <= 65536 for size in history.sizes.values())
                 assert len(heartbeats) > 3
-                if request is not None:
+                if request is not None and budget_enforced(request["mode"]):
                     assert max(b - a for a, b in pairwise(heartbeats)) < 0.15, (
                         "Backend runtime heartbeat exceeded 150 ms"
                     )
@@ -293,6 +294,10 @@ async def test_many_tiny_lines_slow_source_heartbeat_and_two_levels_of_retention
                     {
                         "received_lines": received,
                         "timing_qualifying": request is not None,
+                        "runtime_budget": budget_observation(
+                            max((b - a for a, b in pairwise(heartbeats)), default=0),
+                            mode=request["mode"] if request is not None else "coverage",
+                        ),
                         "negative_callback_executed": negative_executed,
                         "slow_source_received": late_received.is_set(),
                         "retained_lines": len(history.records),

@@ -5,7 +5,6 @@ import json
 import re
 import xml.etree.ElementTree as ET
 from html.parser import HTMLParser
-from pathlib import Path
 
 import pytest
 from markdown_it import MarkdownIt
@@ -16,17 +15,10 @@ from tests.support.site_source import (
     copy_source,
     latest_published,
     published_source,
+    refresh,
     set_version,
     unpublished_version,
 )
-
-
-def refresh(output: Path, path: Path) -> None:
-    manifest = json.loads((output / MARKER).read_text())
-    manifest["files"][path.relative_to(output).as_posix()] = hashlib.sha256(
-        path.read_bytes()
-    ).hexdigest()
-    (output / MARKER).write_text(json.dumps(manifest))
 
 
 def test_builds_both_surfaces_deterministically_and_rebuilds_owned_output(tmp_path):
@@ -52,7 +44,7 @@ def test_builds_both_surfaces_deterministically_and_rebuilds_owned_output(tmp_pa
         assert "pipx upgrade kuberich" in installation
         assert f"kuberich-{latest_published()}-linux-arm64.tar.gz" in installation
         assert "macOS 26" in installation and "glibc 2.35" in installation
-        assert "terminal-compatibility.html" in installation
+        assert "troubleshooting.html#legacy-terminal-compatibility" in installation
         assert "Public release" in installation
         assert "PyPI/Homebrew packages are not available" not in installation
 
@@ -406,10 +398,11 @@ def test_public_guides_use_product_language_and_fictional_tutorials(tmp_path):
     build(output)
     inventory = json.loads((ROOT / "docs/capabilities.json").read_text())
     for guide in GUIDES:
-        authored = user_content((ROOT / "docs" / guide.source).read_text())
-        assert not re.search(
-            r"#[0-9]+|\b[A-Z][0-9]{2}\b|/(issues|pull)/", public_tracking_text(authored)
-        )
+        for fragment in guide.sources:
+            authored = user_content((ROOT / "docs" / fragment).read_text())
+            assert not re.search(
+                r"#[0-9]+|\b[A-Z][0-9]{2}\b|/(issues|pull)/", public_tracking_text(authored)
+            )
     for surface in ("www/docs", "docs"):
         for path in (output / surface).glob("*.html"):
             parser = VisibleText()

@@ -33,8 +33,8 @@ jobs:
         run: |
           set -euo pipefail
           uv sync --locked --group dev
-          uv run mypy --strict scripts/build_site.py scripts/check_site.py scripts/site_reference.py scripts/pages.py
-          uv run pytest tests/quality/test_site.py tests/quality/test_pages.py -q
+          uv run mypy --strict scripts/build_site.py scripts/check_site.py scripts/site_reference.py scripts/documentation.py scripts/pages.py
+          uv run pytest tests/quality/test_site.py tests/quality/test_pages.py tests/quality/test_documentation_structure.py -q
           site_args=()
           case "$KUBERICH_PUBLIC_LAUNCH" in
             true) site_args+=(--public-launch) ;;

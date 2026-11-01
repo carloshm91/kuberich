@@ -1,5 +1,6 @@
 """Owned site source copies with a chosen version, independent of the checkout's version."""
 
+import hashlib
 import json
 import re
 import shutil
@@ -7,7 +8,16 @@ from pathlib import Path
 
 from packaging.version import Version
 
-from scripts.build_site import ROOT
+from scripts.build_site import MARKER, ROOT
+
+
+def refresh(output: Path, path: Path) -> None:
+    """Rehash a deliberately altered output so a semantic negative control runs."""
+    manifest = json.loads((output / MARKER).read_text())
+    manifest["files"][path.relative_to(output).as_posix()] = hashlib.sha256(
+        path.read_bytes()
+    ).hexdigest()
+    (output / MARKER).write_text(json.dumps(manifest))
 
 
 def latest_published() -> str:
@@ -36,6 +46,7 @@ def copy_source(destination: Path, version: str | None = None) -> Path:
     (destination / "scripts").mkdir()
     shutil.copyfile(ROOT / "scripts/build_site.py", destination / "scripts/build_site.py")
     shutil.copyfile(ROOT / "scripts/site_reference.py", destination / "scripts/site_reference.py")
+    shutil.copyfile(ROOT / "scripts/documentation.py", destination / "scripts/documentation.py")
     shutil.copyfile(ROOT / "pyproject.toml", destination / "pyproject.toml")
     if version is not None:
         set_version(destination, version)

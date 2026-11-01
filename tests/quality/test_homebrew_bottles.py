@@ -33,7 +33,7 @@ TEXT = (
     '  url "https://files.pythonhosted.org/packages/a/kuberich-1.0.1.tar.gz"\n'
     '  license "Apache-2.0"\n\n  depends_on "python@3.14"\nend\n'
 )
-CELLARS = {"arm64_sonoma": ":any", "sequoia": "/usr/local/Cellar", "x86_64_linux": ":any"}
+CELLARS = {"arm64_sequoia": ":any", "sequoia": "/usr/local/Cellar", "x86_64_linux": ":any"}
 
 
 def commit_formula(server, text, parent, message):
@@ -86,6 +86,19 @@ def test_complete_bottle_records_are_read_with_their_archive_digests(tmp_path):
     }
 
 
+def test_published_sonoma_metadata_stays_readable_without_becoming_a_new_build(tmp_path):
+    tags = ("arm64_sonoma", "sequoia", "x86_64_linux")
+    directory = write_bottles(tmp_path, tags=tags)
+    original = {path.name: path.read_bytes() for path in directory.iterdir()}
+    records = bottle_records(directory, VERSION, ROOT_URL, tags)
+    assert records["arm64_sonoma"]["filename"] == (f"kuberich-{VERSION}.arm64_sonoma.bottle.tar.gz")
+    block = bottle_block(records, ROOT_URL)
+    assert "arm64_sonoma:" in block and "arm64_sequoia:" not in block
+    assert {path.name: path.read_bytes() for path in directory.iterdir()} == original
+    with pytest.raises(ValueError, match="Require exactly one bottle"):
+        bottle_records(directory, VERSION, ROOT_URL)
+
+
 def _set(path, value):
     def change(record):
         *parents, key = path
@@ -116,7 +129,7 @@ def _tag(record):
     ],
 )
 def test_bottle_records_must_match_the_version_storage_and_archive(tmp_path, change, message):
-    write_bottles(tmp_path, arm64_sonoma=change)
+    write_bottles(tmp_path, arm64_sequoia=change)
     with pytest.raises(ValueError, match=message):
         bottle_records(tmp_path, VERSION, ROOT_URL)
 
@@ -154,9 +167,9 @@ def test_the_bottle_block_is_aligned_and_removes_cleanly():
     assert bottle_block(records, ROOT_URL) == (
         "  bottle do\n"
         f'    root_url "{ROOT_URL}"\n'
-        f'    sha256 cellar: :any,                arm64_sonoma: "{"0" * 64}"\n'
-        f'    sha256 cellar: "/usr/local/Cellar", sequoia:      "{"1" * 64}"\n'
-        f'    sha256 cellar: :any,                x86_64_linux: "{"2" * 64}"\n'
+        f'    sha256 cellar: :any,                arm64_sequoia: "{"0" * 64}"\n'
+        f'    sha256 cellar: "/usr/local/Cellar", sequoia:       "{"1" * 64}"\n'
+        f'    sha256 cellar: :any,                x86_64_linux:  "{"2" * 64}"\n'
         "  end\n"
     )
     text = with_bottles(TEXT, records, ROOT_URL)
@@ -239,7 +252,7 @@ def test_bottle_storage_is_never_replaced_or_extended_after_publication(tap, tmp
     with pytest.raises(ValueError, match="Uploaded bottle digest differs"):
         publish_bottles(directory, api)
     server.corrupt_upload = False
-    server.assets[f"kuberich-{VERSION}.arm64_sonoma.bottle.tar.gz"] = b"other bytes"
+    server.assets[f"kuberich-{VERSION}.arm64_sequoia.bottle.tar.gz"] = b"other bytes"
     with pytest.raises(ValueError, match="cannot be replaced"):
         publish_bottles(directory, api)
     server.assets.clear()

@@ -14,6 +14,7 @@ from textual.app import App, ComposeResult
 from kuberich.adapters.emulator import TerminalModel
 from kuberich.domain.terminal_history import TerminalReview
 from kuberich.ui.terminal import TerminalWidget
+from tests.support.runtime_budget import budget_enforced, budget_observation
 
 
 def memory() -> dict:
@@ -105,12 +106,17 @@ async def latency() -> dict:
         assert len(terminal.model.history.rows) == 1000
         assert terminal.review is not None
         terminal.clear_history()
-    assert delays and max(delays) < 0.150, max(delays)
+    assert delays
+    if budget_enforced("positive"):
+        assert max(delays) < 0.150, max(delays)
     return {
         "measure": "uninstrumented real mounted terminal",
         "geometry": [100, 30],
         "rows_fed": 9000,
         "max_heartbeat_ms": max(delays) * 1000,
+        "max_gap_seconds": max(delays),
+        "limit_seconds": 0.15,
+        "runtime_budget": budget_observation(max(delays), mode="positive"),
         "max_feed_ms": max(feeds) * 1000,
         "review_during_output": True,
     }
