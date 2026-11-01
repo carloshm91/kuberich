@@ -83,6 +83,27 @@ of the 82,811-byte source/diff packet was verified by a unique nonce and an exac
 source quote. The review is supporting evidence, not a replacement for the
 owned HTTP, cancellation, memory-retention or Pilot tests.
 
+## Owned Kubernetes wire checks
+
+The owned context verifier creates three ConfigMaps with controlled payloads in
+a generated namespace. A unique owner-label selector isolates these fixtures
+from controller-created objects. Full JSON and compact Table lists use one-item
+pages and must preserve the same UIDs and namespace. Compact rows must contain
+actual PartialObjectMetadata, omit ConfigMap data and retain fewer payload bytes.
+Intermediate snapshots must report incomplete progress with a consistent
+resourceVersion; the three-page final snapshots must report complete membership.
+
+A role-label query excludes a deliberately nonmatching fixture. Adding a name
+field selector further excludes the other matching fixture. A fresh GET through
+the same Table reader must recover the original full data and UID. Namespace
+deletion is requested in `finally`; the existing owned-cluster boundary verifies
+node deletion and absence. The context receipt records the observed full and
+compact retained bytes alongside each assertion's result.
+
+These checks exercise real Kubernetes negotiation and pagination with small
+fixtures. They do not measure oversized-cluster throughput or replace the
+existing deterministic cap, watch, cancellation or full-platform qualification.
+
 ## Limits and stable certification
 
 The retained 64 MiB bound accounts for resource payloads and printer cells, not
