@@ -18,6 +18,12 @@ from scripts.release_policy import (
     successful_jobs,
 )
 
+# owned_kind finally: two inspections (ps + inspect, 30 s each), deletion
+# (90 s), and one command's existing two 2 s signal waits plus 5 s reap.
+OWNED_KIND_CLEANUP_SECONDS = 2 * 2 * 30 + 90 + 2 * 2 + 5
+SIGNAL_GRACE_SECONDS = 2
+REAP_GRACE_SECONDS = 5
+
 KIND_SCENARIOS = (
     ("contexts", "verify_contexts_kind", False),
     ("lifecycle", "verify_kind_lifecycle", False),
@@ -40,6 +46,7 @@ class Stage:
     name: str
     command: tuple[str, ...]
     timeout: int = 2700
+    cleanup_timeout: float = 30
 
 
 def phase(value: str) -> tuple[str, int]:
@@ -60,11 +67,14 @@ def type_command(root: Path) -> tuple[str, ...]:
         for line in str(step.get("run", "")).splitlines()
         if line.strip().startswith("uv run mypy --strict ")
     ]
-    if len(commands) != 1 or "src/kuberich" not in commands[0]:
-        raise ValueError(
-            "Expected the existing application workflow's complete strict type command."
-        )
-    return commands[0]
+    targets = tuple(dict.fromkeys(target for command in commands for target in command[4:]))
+    if (
+        not commands
+        or "src/kuberich" not in targets
+        or any(target.startswith("-") for target in targets)
+    ):
+        raise ValueError("Expected complete strict workflow target lists with shared options.")
+    return ("uv", "run", "mypy", "--strict", *targets)
 
 
 def local_stages(root: Path, output: Path, temporary: Path, workers: int, base: str) -> list[Stage]:
@@ -149,6 +159,7 @@ def cluster_stages(
                 "--evidence",
                 str(output / f"kind-{repetition}-{name}.json"),
             ),
+            cleanup_timeout=OWNED_KIND_CLEANUP_SECONDS,
         )
         for name, module, needs_kubectl in KIND_SCENARIOS
     ]
@@ -171,6 +182,7 @@ def cluster_stages(
                 "--evidence",
                 str(output / f"kind-{repetition}-quickstart.json"),
             ),
+            cleanup_timeout=OWNED_KIND_CLEANUP_SECONDS,
         )
     )
     return stages
@@ -225,6 +237,17 @@ def summary(report: dict[str, Any]) -> str:
         f"# Phase {report['phase']} verification",
         "",
         f"Source: `{report['source']['commit']}`. Gate: #{report['phase_gate']}.",
+        "",
+        f"Actual source version: **{report.get('source_version', 'unknown')}**. Target phase: **{report['phase']}**.",
+        *(
+            [
+                "",
+                "Engineering preview report for the target phase; the actual source version differs.",
+            ]
+            if report.get("source_version") not in {None, report["phase"]}
+            and Version(str(report["source_version"])).major == 0
+            else []
+        ),
         "",
         f"Result: **{report['status']}**. Publication is not authorized by this report.",
         "",

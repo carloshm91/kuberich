@@ -684,3 +684,201 @@ def test_repetition_pipeline_uses_three_real_tiny_suites_fresh_temps_and_capture
     ]
     assert len(set(temps)) == 3 and all(not Path(path).is_relative_to(checkout) for path in temps)
     assert (output / "after/dist/kuberich-0.3.0-py3-none-any.whl").read_text() == "candidate wheel"
+
+
+def test_all_three_actual_parent_strict_commands_keep_every_target(tmp_path):
+    path = tmp_path / QUALITY_WORKFLOW
+    path.parent.mkdir(parents=True)
+    commands = "\n".join(
+        (
+            "uv run mypy --strict scripts/check_private_access.py",
+            "uv run mypy --strict src/kuberich scripts/check_coverage.py scripts/qualify.py",
+            "uv run mypy --strict scripts/check_startup.py scripts/startup_policy.py scripts/startup_probe.py scripts/check_coverage.py",
+        )
+    )
+    path.write_text(yaml.safe_dump({"jobs": {"application": {"steps": [{"run": commands}]}}}))
+    assert catalog.type_command(tmp_path) == (
+        "uv",
+        "run",
+        "mypy",
+        "--strict",
+        "scripts/check_private_access.py",
+        "src/kuberich",
+        "scripts/check_coverage.py",
+        "scripts/qualify.py",
+        "scripts/check_startup.py",
+        "scripts/startup_policy.py",
+        "scripts/startup_probe.py",
+    )
+
+
+def test_kind_cleanup_budget_covers_the_existing_finally_contract(tmp_path):
+    stages = catalog.cluster_stages(
+        tmp_path, Path("/owned/kind"), Path("/owned/kubectl"), Path("/owned/app.whl"), 1
+    )
+    assert all(stage.cleanup_timeout == 219 for stage in stages)
+    assert catalog.OWNED_KIND_CLEANUP_SECONDS == 2 * 2 * 30 + 90 + 2 * 2 + 5
+    assert catalog.Stage("ordinary", ()).cleanup_timeout == 30
+
+
+def test_markdown_names_actual_source_and_target_without_promoting_preview_metadata():
+    report = {
+        "phase": "0.3.0",
+        "source_version": "0.2.0",
+        "phase_gate": 230,
+        "source": {"commit": "a" * 40},
+        "status": "pending",
+        "gates": [],
+    }
+    text = catalog.summary(report)
+    assert "Actual source version: **0.2.0**" in text
+    assert "Target phase: **0.3.0**" in text and "Engineering preview" in text
+    report["source_version"] = "0.3.0"
+    assert "Engineering preview" not in catalog.summary(report)
+
+
+@pytest.mark.parametrize("cleanup_seconds,completed", [(30, False), (219, True)])
+def test_held_owned_verifier_cleanup_survives_the_old_thirty_second_cutoff(
+    checkout, tmp_path, cleanup_seconds, completed
+):
+    ready, release, cleaned = (
+        tmp_path / name for name in ("cleanup-ready", "cleanup-release", "cleanup-done")
+    )
+    code = (
+        "import signal,time; from pathlib import Path\n"
+        "def close(*args):\n"
+        " signal.signal(signal.SIGINT,signal.SIG_IGN)\n"
+        f" Path({str(ready)!r}).write_text('deleting')\n"
+        f" while not Path({str(release)!r}).exists(): time.sleep(.01)\n"
+        f" Path({str(cleaned)!r}).write_text('absence verified'); raise SystemExit(0)\n"
+        "signal.signal(signal.SIGINT,close)\n"
+        f"Path({str(tmp_path / 'running')!r}).write_text('running')\n"
+        "time.sleep(60)\n"
+    )
+    stage = catalog.Stage(
+        "held-cleanup", (sys.executable, "-c", code), cleanup_timeout=cleanup_seconds
+    )
+    runner = owned_runner(checkout, tmp_path, [stage])
+    clock = time.monotonic
+    checks = 0
+    advanced = threading.Event()
+
+    def cleanup_clock():
+        nonlocal checks
+        if ready.exists():
+            checks += 1
+            if checks >= 2:
+                advanced.set()
+                return clock() + 31
+        return clock()
+
+    runner.clock = cleanup_clock
+
+    def close():
+        try:
+            deadline = clock() + 5
+            while not (tmp_path / "running").exists() and clock() < deadline:
+                time.sleep(0.01)
+            runner.stop(signal.SIGTERM, None)
+            advanced.wait(5)
+            if not completed:
+                while (
+                    runner.current is not None
+                    and runner.current.poll() is None
+                    and clock() < deadline
+                ):
+                    time.sleep(0.01)
+        finally:
+            release.write_text("release owned cleanup")
+
+    thread = threading.Thread(target=close)
+    thread.start()
+    try:
+        with pytest.raises(RuntimeError):
+            runner.run(stage)
+    finally:
+        release.write_text("final release")
+        thread.join(timeout=6)
+    assert not thread.is_alive() and advanced.is_set()
+    gate = runner.report["gates"][0]
+    assert gate["group_drained"] and gate["process_reaped"] and gate["status"] == "failed"
+    assert cleaned.exists() is completed
+    assert bool(gate.get("forced_group_kill")) is not completed
+
+
+@pytest.mark.parametrize("cancel", [False, True])
+def test_exited_leader_cannot_abandon_same_group_descendant_or_signal_unrelated_group(
+    checkout, tmp_path, cancel
+):
+    # The isolated helper is its own Linux child subreaper so these real fault
+    # controls can reap orphans without changing the pytest controller's state.
+    helper = tmp_path / "descendant_owner.py"
+    helper.write_text("""import ctypes,json,os,signal,subprocess,sys,threading,time
+from pathlib import Path
+sys.path.insert(0,sys.argv[1])
+from scripts.qualification import Stage
+from scripts.qualification_runner import Runner,pending,snapshot
+root,work=Path(sys.argv[2]),Path(sys.argv[3]); cancel=sys.argv[4]=='True'
+if sys.platform.startswith('linux'):
+    assert ctypes.CDLL(None).prctl(36,1,0,0,0)==0
+out=root/'artifacts/descendants'; out.mkdir(parents=True)
+external=work/'external'; external.mkdir(mode=0o700)
+pidfile,ready=work/'descendant.pid',work/'leader-ready'
+program="import os,signal,time; from pathlib import Path\\nchild=os.fork()\\nif child==0:\\n signal.signal(signal.SIGINT,signal.SIG_IGN); signal.signal(signal.SIGTERM,signal.SIG_IGN)\\n Path("+repr(str(pidfile))+").write_text(str(os.getpid()))\\n time.sleep(60); os._exit(0)\\nwhile not Path("+repr(str(pidfile))+").exists(): time.sleep(.01)\\n"
+if cancel:
+    program+="signal.signal(signal.SIGINT,lambda *args: exit(0))\\nPath("+repr(str(ready))+").write_text('ready')\\ntime.sleep(60)\\n"
+else:
+    program+="raise SystemExit(0)\\n"
+program=program.replace('\\\\n','\\n')
+stage=Stage('descendant',(sys.executable,'-c',program),cleanup_timeout=.3)
+report={'phase':'0.3.0','phase_gate':230,'source':snapshot(root),'source_version':'0.3.0','status':'running','gates':[pending(stage.name)],'external_temp_owner':{'physical_parent':str(external)}}
+runner=Runner(root,out,report)
+reaped=threading.Event()
+def collect():
+    deadline=time.monotonic()+10
+    while not pidfile.exists() and time.monotonic()<deadline: time.sleep(.01)
+    if not pidfile.exists(): return
+    pid=int(pidfile.read_text())
+    while time.monotonic()<deadline:
+        try:
+            os.waitpid(pid,0); reaped.set(); return
+        except ChildProcessError:
+            try: os.kill(pid,0)
+            except ProcessLookupError: reaped.set(); return
+            time.sleep(.01)
+def stop():
+    deadline=time.monotonic()+5
+    while not ready.exists() and time.monotonic()<deadline: time.sleep(.01)
+    if ready.exists(): runner.stop(signal.SIGTERM,None)
+reader=threading.Thread(target=collect);reader.start()
+closer=threading.Thread(target=stop) if cancel else None
+if closer: closer.start()
+decoy=subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)'],start_new_session=True)
+try:
+    try: runner.run(stage)
+    except RuntimeError: pass
+    else: raise AssertionError('Forced descendant termination cannot qualify a stage')
+    reader.join(timeout=3); assert reaped.is_set(), 'actual descendant was abandoned'
+    gate=report['gates'][0]
+    assert gate['process_reaped'] and gate['group_drained']
+    assert gate['status']=='failed'
+    assert gate['forced_group_kill'] and decoy.poll() is None
+    if closer: closer.join(timeout=3); assert not closer.is_alive()
+    (work/'result.json').write_text(json.dumps({'gate':gate,'unrelated_alive':True,'descendant_reaped':True}))
+finally:
+    if report['gates'][0].get('pid'):
+        try: os.killpg(report['gates'][0]['pid'],signal.SIGKILL)
+        except ProcessLookupError: pass
+    decoy.terminate();decoy.wait(timeout=5)
+    reader.join(timeout=3)
+""")
+    result = subprocess.run(
+        [sys.executable, str(helper), str(ROOT), str(checkout), str(tmp_path), str(cancel)],
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    observation = json.loads((tmp_path / "result.json").read_text())
+    assert observation["unrelated_alive"] and observation["descendant_reaped"]
+    assert observation["gate"]["returncode"] == 0 and observation["gate"]["group_drained"]

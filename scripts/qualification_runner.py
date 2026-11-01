@@ -12,8 +12,7 @@ import sys
 import tempfile
 import time
 import tomllib
-from collections.abc import Sequence
-from contextlib import suppress
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from types import FrameType
 from typing import Any
@@ -24,6 +23,8 @@ from packaging.version import Version
 
 from scripts.ci_policy import LINUX_RUNNER
 from scripts.qualification import (
+    REAP_GRACE_SECONDS,
+    SIGNAL_GRACE_SECONDS,
     Stage,
     cluster_stages,
     latest_run,
@@ -80,11 +81,20 @@ def skips(path: Path) -> list[dict[str, str]]:
 class Runner:
     """One owned process group at a time; originals survive failure and signals."""
 
-    def __init__(self, root: Path, output: Path, report: dict[str, Any]) -> None:
+    def __init__(
+        self,
+        root: Path,
+        output: Path,
+        report: dict[str, Any],
+        *,
+        clock: Callable[[], float] = time.monotonic,
+    ) -> None:
         self.root, self.output, self.report = root, output, report
+        self.clock = clock
         self.current: subprocess.Popen[bytes] | None = None
         self.cancelled: int | None = None
         self.interrupted = False
+        self.cleanup_timeout = 30.0
 
     def save(self) -> None:
         temporary = self.output / "report.tmp"
@@ -92,50 +102,99 @@ class Runner:
         temporary.replace(self.output / "report.json")
         (self.output / "summary.md").write_text(summary(self.report))
 
+    def signal_group(self, value: int) -> bool:
+        process = self.current
+        if process is None:
+            return False
+        if process.pid <= 1 or process.pid == os.getpgrp():
+            raise ValueError("Refuse to signal an ambient or invalid process group.")
+        try:
+            os.killpg(process.pid, value)
+            return True
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            if sys.platform != "darwin":
+                raise
+            # Match runtime.signal_process_group: only confirmed ESRCH can
+            # explain XNU's exiting-group EPERM; a live/denied group is failure.
+            for _ in range(5):
+                time.sleep(0.01)
+                try:
+                    os.killpg(process.pid, 0)
+                except ProcessLookupError:
+                    return False
+                except PermissionError:
+                    continue
+                raise
+            raise
+
     def stop(self, signum: int, frame: FrameType | None) -> None:
         if self.cancelled is not None:
             return
         self.cancelled = signum
         self.report["cancel_signal"] = signum
-        if self.current is not None and self.current.poll() is None:
-            with suppress(ProcessLookupError):
-                os.killpg(self.current.pid, signal.SIGINT)
-                self.interrupted = True
+        if self.current is not None:
+            self.signal_group(signal.SIGCONT)
+            self.interrupted = self.signal_group(signal.SIGINT)
 
     def unchanged(self) -> None:
         if snapshot(self.root) != self.report["source"]:
             raise ValueError("Tracked candidate inputs changed during qualification.")
 
-    def drain(self) -> None:
+    def drain(self, gate: dict[str, Any]) -> None:
         process = self.current
-        if process is None or process.poll() is not None:
+        if process is None:
             return
-        if not self.interrupted:
-            with suppress(ProcessLookupError):
-                os.killpg(process.pid, signal.SIGINT)
-                self.interrupted = True
-        try:
-            process.wait(timeout=30)
-        except subprocess.TimeoutExpired:
-            with suppress(ProcessLookupError):
-                os.killpg(process.pid, signal.SIGKILL)
-            process.wait(timeout=10)
+        gate.update(
+            group_cleanup_attempted=True,
+            group_drained=False,
+            cleanup_timeout_seconds=self.cleanup_timeout,
+        )
+        if not self.interrupted and self.signal_group(0):
+            self.signal_group(signal.SIGCONT)
+            self.interrupted = self.signal_group(signal.SIGINT)
+        deadline = self.clock() + self.cleanup_timeout
+        leader_exited: float | None = None
+        while self.signal_group(0):
+            now = self.clock()
+            if process.poll() is not None:
+                leader_exited = now if leader_exited is None else leader_exited
+                if now - leader_exited >= SIGNAL_GRACE_SECONDS:
+                    break
+            if now >= deadline:
+                break
+            time.sleep(0.02)
+        if self.signal_group(0):
+            gate["forced_group_kill"] = self.signal_group(signal.SIGKILL)
+            deadline = self.clock() + REAP_GRACE_SECONDS
+            while self.signal_group(0) and self.clock() < deadline:
+                process.poll()
+                time.sleep(0.02)
+        process.wait(timeout=REAP_GRACE_SECONDS)
+        gate.update(process_reaped=True, group_drained=not self.signal_group(0))
+        if not gate["group_drained"]:
+            raise RuntimeError(
+                "Owned process group remains after bounded cleanup; qualification failed."
+            )
 
     def wait(self, timeout: int, gate: dict[str, Any]) -> int:
         assert self.current is not None
-        deadline = time.monotonic() + timeout
+        deadline = self.clock() + timeout
         while True:
             try:
-                return self.current.wait(timeout=0.1)
+                code = self.current.wait(timeout=0.1)
+                self.drain(gate)
+                return code
             except subprocess.TimeoutExpired:
-                if self.cancelled is not None or time.monotonic() >= deadline:
+                if self.cancelled is not None or self.clock() >= deadline:
                     gate["timed_out"] = self.cancelled is None
                     gate["reason"] = (
                         "Command deadline exceeded; original retained."
                         if self.cancelled is None
-                        else "Cancelled; owned group drained."
+                        else "Cancelled; owned group cleanup required."
                     )
-                    self.drain()
+                    self.drain(gate)
                     assert self.current.returncode is not None
                     return self.current.returncode
 
@@ -148,6 +207,7 @@ class Runner:
         self.save()
         started = time.monotonic()
         self.interrupted = False
+        self.cleanup_timeout = stage.cleanup_timeout
         environment = dict(os.environ)
         environment["PYTEST_ADDOPTS"] = ""
         environment["PYTEST_DEBUG_TEMPROOT"] = self.report["external_temp_owner"]["physical_parent"]
@@ -181,12 +241,16 @@ class Runner:
                 gate["evidence"] = str(evidence)
             gate["status"] = (
                 "passed"
-                if code == 0 and self.cancelled is None and not gate.get("timed_out")
+                if code == 0
+                and self.cancelled is None
+                and not gate.get("timed_out")
+                and not gate.get("forced_group_kill")
                 else "failed"
             )
         except BaseException:
             gate["status"] = "failed"
-            self.drain()
+            if not gate.get("group_cleanup_attempted"):
+                self.drain(gate)
             if self.current is not None:
                 gate["process_reaped"] = self.current.poll() is not None
             raise

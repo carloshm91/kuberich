@@ -93,7 +93,7 @@ existing checks and never publishes packages, tags, sites or releases:
 uv run python scripts/qualify.py 0.3.0 --output artifacts/qualification/candidate
 ```
 
-The default runs lint, formatting and the workflow's strict type command, then
+The default runs lint, formatting and every strict type target in the workflow, then
 one complete test run with branch coverage. That run includes the actual terminal,
 packaging and installation cases. The existing runtime, production/critical and
 changed-line coverage validators, build, metadata and supply-chain checks follow.
@@ -127,7 +127,11 @@ the exact source, comparison base, process cleanup and every skip. Pytest stages
 use new child directories under a unique physical external directory with mode
 0700; installation checks therefore cannot import the checkout by accident.
 Source changes, failures and timeouts stop execution. SIGINT/SIGTERM drain the
-current owned group and preserve evidence; earlier outputs are never overwritten.
+captured group even if its leader has exited. Forced termination or an unverified
+remaining group prevents a pass. Real-cluster stages preserve the existing bounded
+node inspections/deletion cleanup allowance; ordinary stage grace stays unchanged.
+Reports distinguish leader reaping from verified group cleanup. Earlier outputs
+are never overwritten.
 
 Exit 0 means every listed verification gate passed; exit 2 means evidence remains
 pending, and exit 1 means verification failed. Cancellation returns 130 or 143.
