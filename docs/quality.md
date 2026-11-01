@@ -598,11 +598,14 @@ Run timing comparisons
 without a second test command competing on the same host; separate pytest commands
 own separate locks and cannot reserve CPU from each other.
 
-The fast-tier rollout found two fixture ownership races: manually supplied widget
+The fast-tier rollout found fixture ownership races: manually supplied widget
 rows competed with the full workspace's initial observation, and plugin receipts
 could be read after creation but before writing finished. Widget tests now mount
 the real tables in a dedicated Textual host, while API/workspace cases retain the
-full application. The plugin stand-in publishes complete receipts atomically.
+full application. Plugin and credential stand-ins publish complete receipts
+atomically before cancellation tests can observe them. This prevents cancellation
+between file creation and writing the PID, while retaining the real child-reaping
+and retry assertions. The same readiness contract applies to the source CLI PTY.
 Directory rollback controls explicitly cover both source entry orders.
 
 Profiling also identified repeated palette generation and redundant shortcut
