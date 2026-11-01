@@ -13,6 +13,7 @@ MAX_OSC52_BYTES = 64 * 1024
 class ClipboardBackend(StrEnum):
     MEMORY = "memory"
     MACOS = "macos"
+    WAYLAND = "wayland"
     X11 = "x11"
     OSC52 = "osc52"
 
@@ -31,10 +32,15 @@ def clipboard_backend(
         return ClipboardBackend.OSC52
     if platform == "darwin":
         return ClipboardBackend.MACOS
-    if environment.get("DISPLAY") and not environment.get("WAYLAND_DISPLAY"):
+    if environment.get("WAYLAND_DISPLAY"):
+        return ClipboardBackend.WAYLAND
+    if environment.get("DISPLAY"):
         return ClipboardBackend.X11
     if preference == "native":
-        raise AppError("Native clipboard is unavailable; select osc52 or an X11/macOS session.")
+        raise AppError(
+            "Native clipboard is unavailable; use a Wayland, X11 or macOS session, "
+            "or set KUBERICH_CLIPBOARD=osc52."
+        )
     return ClipboardBackend.OSC52
 
 

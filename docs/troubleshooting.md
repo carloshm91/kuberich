@@ -129,8 +129,15 @@ Terminal emulators and tmux can consume function keys or Alt combinations. Use
 `:ctx` and `:ns` when F2/F3 are intercepted, and `:back`/`:forward` when Alt navigation
 is unavailable. Consult the current view's `?` help.
 
-Copy sends redacted text through terminal OSC52 support. SSH/tmux forwarding and
-the terminal's clipboard permission determine whether the host receives it.
+Local Wayland copying requires `wl-copy` on PATH and a working `WAYLAND_DISPLAY`.
+If the helper is missing or the compositor refuses it, install/check `wl-copy` or
+set `KUBERICH_CLIPBOARD=osc52` before starting KubeRich. When both Wayland and
+X Window System variables are set, Wayland takes precedence. Automatic mode
+can send a terminal fallback for text within the 64 KiB OSC52 limit; forced-native
+mode reports the failure.
+
+Over SSH, automatic mode sends redacted text through terminal OSC52 support.
+SSH/tmux forwarding and your terminal's clipboard permission determine receipt.
 The application showing a copy result does not certify the host clipboard.
 Use a reviewed explicit file export where supported if clipboard integration is
 unavailable. [Terminal compatibility](terminal-compatibility.md) describes the scope.

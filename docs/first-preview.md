@@ -61,6 +61,25 @@ uv run pytest tests/unit tests/contract tests/ui -m fast -n 12
 Use fewer workers on smaller machines. These are developer checks on owned
 fixtures, and do not require access to your Kubernetes contexts.
 
+### Development checkpoint: Wayland clipboard
+
+The unreleased checkout can copy through `wl-copy` in local Wayland sessions.
+Automatic detection prefers Wayland over XWayland and keeps OSC52 over SSH.
+The helper receives plaintext on stdin and closes on replacement or application
+exit. The native 1 MiB limit and terminal 64 KiB limit still apply.
+
+```sh
+uv run pytest tests/unit/test_clipboard.py tests/contract/test_clipboard.py \
+  tests/contract/test_wayland_clipboard.py tests/ui/test_clipboard.py -n 2 \
+  --cov=kuberich --cov-branch --cov-report=json --cov-report=xml
+```
+
+This focused command passed 56 tests with one explicit hosted-macOS skip and
+100% line/branch coverage in both clipboard modules. Its helpers simulate
+`wl-copy`; no real compositor or developer clipboard was used. See
+[Wayland verification](acceptance/wayland-clipboard.md) for the measured scope.
+Full-package and supported-platform checks remain required before delivery.
+
 ## Included in 0.2.0: live preferences
 
 Edit and save the preference file while KubeRich runs. Themes, aliases, column
@@ -335,3 +354,12 @@ The [candidate evidence](acceptance/first-release-preparation.md) retains measur
 results and limits. [Historical engineering checkpoints](preview-history.md)
 remain available separately. Real cloud-provider and physical-terminal
 certification still require their later opt-in trials.
+
+### Wayland platform fixture correction
+
+The focused clipboard command above now passes 59 cases with one explicit
+macOS-only skip on Linux (17.32 seconds). It covers native failure/fallback
+behavior for X11, Wayland and macOS through an inert driver on every host.
+The first hosted macOS failure was a missing platform boundary in synthetic
+Linux fixtures; it is retained in run `41280079738`. No native host or compositor
+qualification is inferred from the synthetic cases.

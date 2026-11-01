@@ -3,12 +3,15 @@
 import asyncio
 import base64
 import logging
+from types import SimpleNamespace
 
 import pytest
 from textual.drivers.headless_driver import HeadlessDriver
 
 from kuberich.config.schema import Settings
+from kuberich.domain.clipboard import ClipboardBackend
 from kuberich.errors import AppError
+from kuberich.services.clipboard import NativeClipboard
 from kuberich.ui.app import KubeRichApp
 
 
@@ -37,21 +40,38 @@ class ClipboardApp(KubeRichApp):
 @pytest.mark.parametrize(
     "preference,oversize", [("auto", False), ("auto", True), ("native", False)]
 )
+@pytest.mark.parametrize("session", ["x11", "wayland", "macos"])
 async def test_native_failure_falls_back_only_when_allowed_and_bounded(
-    monkeypatch, preference, oversize
+    monkeypatch, preference, oversize, session
 ):
     monkeypatch.setenv("KUBERICH_CLIPBOARD", preference)
     monkeypatch.setenv("DISPLAY", ":owned-adapter-boundary")
     for variable in ("WAYLAND_DISPLAY", "SSH_TTY", "SSH_CONNECTION", "TMUX"):
         monkeypatch.delenv(variable, raising=False)
+    if session == "wayland":
+        monkeypatch.setenv("WAYLAND_DISPLAY", "owned-wayland-test")
+    # Scope the platform to this adapter fixture, without changing Python's
+    # platform for Textual, asyncio or the other host-native controls.
+    monkeypatch.setattr(
+        "kuberich.ui.app.sys",
+        SimpleNamespace(platform="darwin" if session == "macos" else "linux"),
+    )
     app = ClipboardApp()
     notices = []
     monkeypatch.setattr(app, "notify", lambda message, **kwargs: notices.append(str(message)))
 
-    async def failed(data, backend, **kwargs):
+    async def failed(self, data, backend, **kwargs):
+        assert (
+            backend
+            is {
+                "x11": ClipboardBackend.X11,
+                "wayland": ClipboardBackend.WAYLAND,
+                "macos": ClipboardBackend.MACOS,
+            }[session]
+        )
         raise AppError("Native clipboard is unavailable in this owned fixture.")
 
-    monkeypatch.setattr(app._native_clipboard, "write", failed)
+    monkeypatch.setattr(NativeClipboard, "write", failed)
     async with app.run_test(headless=False):
         text = "x" * 65537 if oversize else "inert\x1b]52;c;literal\x07中文"
         app.copy_to_clipboard(text)
