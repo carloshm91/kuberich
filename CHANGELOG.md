@@ -30,6 +30,14 @@ Release entries are written in release PRs and linked to their Git tags.
   ([#209](https://github.com/carloshm91/kuberich/issues/209),
   [Carlos J. Herrera](https://github.com/carloshm91)).
 
+### Security
+
+- Update the development installer's FileLock, the standalone builder's
+  Setuptools, and the deployment tool's Wrangler/Miniflare/Undici graph to
+  patched versions. Keep application runtime requirements unchanged
+  ([#270](https://github.com/carloshm91/kuberich/issues/270),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 ## 0.2.0 — 2026-10-21
 
 [Published release](https://github.com/carloshm91/kuberich/releases/tag/v0.2.0).
