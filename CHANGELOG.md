@@ -7,6 +7,10 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Collect separate, bounded diagnostic evidence after a verified aggregate-log
+  heartbeat failure, preserving the original failure and qualification limits
+  ([#275](https://github.com/carloshm91/kuberich/issues/275),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
 - Add parallel development test layers and an early full unit/contract/UI signal
   before the complete platform and coverage checks
   ([#209](https://github.com/carloshm91/kuberich/issues/209),

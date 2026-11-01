@@ -135,6 +135,34 @@ def change_child(bundle, mode, name, field, value):
     write_json(directory / "aggregate-runtime-receipt.json", outer)
 
 
+@pytest.mark.parametrize("mode", ["positive", "negative", "coverage"])
+@pytest.mark.parametrize("name", ["request.json", "source-receipt.json", "heartbeat.json"])
+def test_diagnostic_receipts_are_rejected_even_when_their_hash_is_updated(
+    runtime_bundle, mode, name
+):
+    change_child(runtime_bundle, mode, name, "diagnostic_only", True)
+    directory, expected, *_ = runtime_bundle
+    with pytest.raises(ValueError, match="Diagnostic observations"):
+        runtime.verify_runtime(directory, expected)
+
+
+@pytest.mark.parametrize("field", ["diagnostics", "sampler-module"])
+def test_unmarked_sampler_evidence_is_not_qualifying(runtime_bundle, field):
+    if field == "diagnostics":
+        change_child(runtime_bundle, "positive", "heartbeat.json", "diagnostics", {"samples": []})
+    else:
+        change_child(
+            runtime_bundle,
+            "positive",
+            "source-receipt.json",
+            "module_inventory",
+            ["kuberich", "textual", "tests.support.runtime_diagnostics"],
+        )
+    directory, expected, *_ = runtime_bundle
+    with pytest.raises(ValueError):
+        runtime.verify_runtime(directory, expected)
+
+
 @pytest.mark.asyncio
 async def test_merge_uses_actual_branch_union_preserves_parent_and_never_reads_negative(
     runtime_bundle, monkeypatch

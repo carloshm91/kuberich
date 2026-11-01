@@ -4,6 +4,7 @@ import gc
 import hashlib
 import json
 import os
+import re
 import sys
 import uuid
 from collections.abc import Mapping, Sequence
@@ -34,6 +35,7 @@ MODE = "KUBERICH_TEST_AGGREGATE_RUNTIME"
 REQUEST = "KUBERICH_TEST_AGGREGATE_REQUEST"
 DEADLINE = 120
 OUTPUT_LIMIT = 256 * 1024
+DIAGNOSTIC = "KUBERICH_TEST_AGGREGATE_DIAGNOSTIC"
 
 
 async def command(
@@ -90,12 +92,23 @@ async def source_stamp() -> dict[str, Any]:
 
 async def child_request() -> dict[str, Any]:
     mode = os.environ[MODE]
-    assert mode in {"positive", "negative", "coverage"}, "Unexpected runtime child mode"
+    assert mode in {"positive", "negative", "coverage", "diagnostic"}, (
+        "Unexpected runtime child mode"
+    )
     request_path = Path(os.environ[REQUEST]).resolve()
-    expected_directory = (ROOT / "artifacts/ui/aggregate-runtime" / mode).resolve()
-    assert request_path.name == "request.json" and request_path.parent == expected_directory
     request = json.loads(request_path.read_text())
     assert isinstance(request, dict), "Runtime request must be an object"
+    expected_directory = (ROOT / "artifacts/ui/aggregate-runtime" / mode).resolve()
+    if mode == "diagnostic":
+        assert isinstance(request.get("nonce"), str) and re.fullmatch(
+            "[0-9a-f]{32}", request["nonce"]
+        )
+        expected_directory /= request["nonce"]
+        assert request.get("diagnostic_only") is True
+        assert request.get("timing_qualifying") is False
+    else:
+        assert request.get("diagnostic_only", False) is False
+    assert request_path.name == "request.json" and request_path.parent == expected_directory
     assert request["mode"] == mode and request["node"] == NODE
     assert request["source"] == await source_stamp(), (
         "Runtime child source changed before execution"
@@ -155,6 +168,8 @@ async def finish_child(request: dict[str, Any]) -> None:
         "process_group": os.getpgrp(),
         "after_app_close": cleanup,
     }
+    if request["mode"] == "diagnostic":
+        receipt.update(diagnostic_only=True, timing_qualifying=False)
     (directory / "source-receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
     assert source == request["source"], "Runtime child source changed during execution"
     assert grammar_absent, "Development-only IRI parser contaminated runtime measurement"
@@ -278,9 +293,35 @@ async def require_runtime_children(*, measure_coverage: bool = True) -> None:
         if mode != "negative":
             # A failed child may not have reached refill or later rounds. Keep
             # its actual failure visible before checking successful-work counters.
-            assert (
-                result.status is ProcessStatus.SUCCEEDED and result.returncode == 0 and not failures
-            ), result.stdout.decode()
+            try:
+                assert (
+                    result.status is ProcessStatus.SUCCEEDED
+                    and result.returncode == 0
+                    and not failures
+                ), result.stdout.decode()
+            except AssertionError as original:
+                if (
+                    mode == "positive"
+                    and result.status is ProcessStatus.FAILED
+                    and result.returncode == 1
+                    and os.environ.get(DIAGNOSTIC) == "on-failure"
+                    and len(failures) == 1
+                    and "Aggregate runtime heartbeat exceeded 150 ms"
+                    in failures[0].attrib.get("message", "")
+                    and heartbeat.get("negative_callback_executed") is False
+                    and heartbeat.get("timing_qualifying") is True
+                    and heartbeat.get("limit_seconds") == 0.15
+                    and type(heartbeat.get("max_gap_seconds")) in (int, float)
+                    and heartbeat["max_gap_seconds"] >= 0.15
+                ):
+                    try:
+                        evidence = await collect_diagnostic(request, environment)
+                        original.add_note(f"Nonqualifying diagnostic evidence: {evidence}")
+                    except BaseException as error:
+                        original.add_note(
+                            f"Nonqualifying diagnostic collection failed: {type(error).__name__}"
+                        )
+                raise
         assert heartbeat["gc_enabled"] and heartbeat["limit_seconds"] == 0.15
         assert heartbeat["gc_thresholds"] == list(gc.get_threshold())
         assert heartbeat["timing_qualifying"] is (mode != "coverage")
@@ -339,3 +380,65 @@ async def require_runtime_children(*, measure_coverage: bool = True) -> None:
         )
         + "\n"
     )
+
+
+async def collect_diagnostic(original: dict[str, Any], environment: dict[str, str]) -> Path:
+    """Collect once after a verified failure; never write a qualifying receipt."""
+    nonce = uuid.uuid4().hex
+    directory = ROOT / "artifacts/ui/aggregate-runtime/diagnostic" / nonce
+    directory.mkdir(parents=True, exist_ok=False)
+    failed_directory = Path(original["directory"])
+    request = {
+        **original,
+        "mode": "diagnostic",
+        "nonce": nonce,
+        "directory": str(directory),
+        "diagnostic_only": True,
+        "timing_qualifying": False,
+        "original_failure": {
+            "nonce": original["nonce"],
+            "source": original["source"],
+            "sha256": {
+                name: hashlib.sha256((failed_directory / name).read_bytes()).hexdigest()
+                for name in (
+                    "heartbeat.json",
+                    "source-receipt.json",
+                    "cases.xml",
+                    "stdout.log",
+                    "stderr.log",
+                )
+            },
+        },
+    }
+    path = directory / "request.json"
+    path.write_text(json.dumps(request, indent=2) + "\n")
+    with runtime_environment(environment, exclusive=True) as child_environment:
+        result = await command(
+            (sys.executable, "-m", "tests.support.runtime_diagnostics", "--request", str(path)),
+            child_environment,
+        )
+    (directory / "collector-stdout.log").write_bytes(result.stdout)
+    (directory / "collector-stderr.log").write_bytes(result.stderr)
+    assert result.status is ProcessStatus.SUCCEEDED and result.returncode == 0, (
+        "Nonqualifying diagnostic collector failed"
+    )
+    receipt = json.loads((directory / "source-receipt.json").read_text())
+    supervisor = json.loads((directory / "supervisor.json").read_text())
+    probe = json.loads((directory / "probe.json").read_text())
+    assert receipt["nonce"] == nonce and receipt["mode"] == "diagnostic"
+    assert receipt["diagnostic_only"] is True and receipt["timing_qualifying"] is False
+    assert receipt["source_before"] == receipt["source_after"] == original["source"]
+    assert receipt["after_app_close"] == {
+        "app_running": False,
+        "aggregate_registry": 0,
+        "api_log_streams": 0,
+        "api_watches": 0,
+    }
+    assert supervisor["diagnostic_only"] is True and supervisor["timing_qualifying"] is False
+    assert supervisor["owner_reaped"] and supervisor["signals_stopped_before_reap"]
+    assert not supervisor["errors"]
+    assert probe["closed"] and probe["acknowledged"] and not probe["thread_alive"]
+    assert probe["handler_restored"] and probe["descriptors_closed"]
+    assert not probe["errors"], "Nonqualifying diagnostic probe did not drain"
+    assert original["source"] == await source_stamp(), "Source changed during diagnostics"
+    return directory
