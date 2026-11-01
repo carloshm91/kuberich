@@ -19,7 +19,12 @@ from kuberich.domain.connections import ConnectionProblem, ConnectionRequest, Co
 from kuberich.domain.logs import LogBuffer, LogOptions
 from kuberich.domain.pods import pod_row, utc_now
 from kuberich.domain.resource_queries import ResourceQuery
-from kuberich.domain.resources import ApiResource, ResourceSnapshot, resource_record
+from kuberich.domain.resources import (
+    MAX_RESOURCE_BYTES,
+    ApiResource,
+    ResourceSnapshot,
+    resource_record,
+)
 from kuberich.domain.targets import ResourceTarget
 from kuberich.domain.views import ResourceSelection, ViewStatus
 from kuberich.domain.watches import EventType, SyncStatus, SyncUpdate
@@ -384,35 +389,76 @@ async def verify_collection_queries(
         assert compact.collection.retained_bytes < full.collection.retained_bytes
         for result, progress in ((full, full_progress), (compact, compact_progress)):
             assert result.collection.complete and not result.collection.limited
-            assert result.collection.pages == 3 and result.namespace == namespace
-            assert result.resource_version and result.collection.retained_bytes > 0
-            assert [len(update.items) for update in progress] == [1, 2]
-            assert [update.collection.pages for update in progress] == [1, 2]
+            assert progress and result.collection.pages == len(progress) + 1
+            assert result.namespace == namespace
+            assert result.resource_version
+            assert 0 < result.collection.retained_bytes <= MAX_RESOURCE_BYTES
+            assert [len(update.items) for update in progress] == sorted(
+                len(update.items) for update in progress
+            )
+            assert [update.collection.pages for update in progress] == list(
+                range(1, result.collection.pages)
+            )
             assert all(
                 not update.collection.complete
                 and not update.collection.limited
                 and update.namespace == namespace
                 and update.resource_version == result.resource_version
+                and {(row.uid, row.name, row.namespace) for row in update.items} <= identities
                 and update.collection.retained_bytes == sum(row.size_bytes for row in update.items)
                 for update in progress
             )
             assert result.collection.retained_bytes == sum(row.size_bytes for row in result.items)
+        selected_progress: list[ResourceSnapshot] = []
+        narrowed_progress: list[ResourceSnapshot] = []
+
+        async def observe_selected(snapshot: ResourceSnapshot) -> None:
+            selected_progress.append(snapshot)
+
+        async def observe_narrowed(snapshot: ResourceSnapshot) -> None:
+            narrowed_progress.append(snapshot)
+
         selected = await tables.list(
             resource,
             namespace,
             page_size=1,
             query=ResourceQuery(owner_label + ",role=selected", compact=True),
+            progress=observe_selected,
         )
         assert {row.name for row in selected.items} == {"wire-0", "wire-1"}
-        assert selected.collection.complete and selected.collection.pages == 2
         narrowed = await tables.list(
             resource,
             namespace,
             page_size=1,
             query=ResourceQuery(owner_label + ",role=selected", "metadata.name=wire-0", True),
+            progress=observe_narrowed,
         )
         assert [row.uid for row in narrowed.items] == [expected["wire-0"]]
-        assert narrowed.collection.complete and narrowed.collection.pages == 1
+        for result, progress in ((selected, selected_progress), (narrowed, narrowed_progress)):
+            assert result.collection.complete and not result.collection.limited
+            assert result.collection.pages == len(progress) + 1
+            assert result.namespace == namespace and result.resource_version
+            assert 0 < result.collection.retained_bytes <= MAX_RESOURCE_BYTES
+            assert all(
+                row.uid == expected[row.name] and row.namespace == namespace and row.metadata_only
+                for row in result.items
+            )
+            assert result.collection.retained_bytes == sum(row.size_bytes for row in result.items)
+            assert [update.collection.pages for update in progress] == list(
+                range(1, result.collection.pages)
+            )
+            assert [len(update.items) for update in progress] == sorted(
+                len(update.items) for update in progress
+            )
+            assert all(
+                not update.collection.complete
+                and not update.collection.limited
+                and update.namespace == namespace
+                and update.resource_version == result.resource_version
+                and set(row.uid for row in update.items) <= set(row.uid for row in result.items)
+                and update.collection.retained_bytes == sum(row.size_bytes for row in update.items)
+                for update in progress
+            )
         fresh = await tables.get(resource, "wire-0", namespace)
         assert (fresh.uid, fresh.namespace) == (expected["wire-0"], namespace)
         assert not fresh.metadata_only and fresh.manifest["data"] == payload
@@ -481,6 +527,14 @@ async def verify_collection_queries(
         "query_fixture_count": len(expected),
         "query_full_retained_bytes": full.collection.retained_bytes,
         "query_compact_retained_bytes": compact.collection.retained_bytes,
+        "query_full_pages": full.collection.pages,
+        "query_full_progress_pages": len(full_progress),
+        "query_compact_pages": compact.collection.pages,
+        "query_compact_progress_pages": len(compact_progress),
+        "query_label_pages": selected.collection.pages,
+        "query_label_progress_pages": len(selected_progress),
+        "query_field_pages": narrowed.collection.pages,
+        "query_field_progress_pages": len(narrowed_progress),
     }
 
 

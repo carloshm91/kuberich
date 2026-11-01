@@ -91,7 +91,8 @@ from controller-created objects. Full JSON and compact Table lists use one-item
 pages and must preserve the same UIDs and namespace. Compact rows must contain
 actual PartialObjectMetadata, omit ConfigMap data and retain fewer payload bytes.
 Intermediate snapshots must report incomplete progress with a consistent
-resourceVersion; the three-page final snapshots must report complete membership.
+resourceVersion; final snapshots must report complete membership and progress
+must demonstrate actual pagination.
 
 A role-label query excludes a deliberately nonmatching fixture. Adding a name
 field selector further excludes the other matching fixture. A fresh GET through
@@ -101,6 +102,12 @@ the compact watch is then cancelled and awaited. Namespace
 deletion is requested in `finally`; the existing owned-cluster boundary verifies
 node deletion and absence. The context receipt records the observed full and
 compact retained bytes alongside each assertion's result.
+Filtered pages may be empty while continuation is still present; completeness
+therefore follows server exhaustion rather than matched-row count. The verifier
+checks actual progress/page accounting and records narrowed-query page counts.
+An owned HTTP regression retains an empty terminal Table page in both full and
+compact mode, as allowed by the
+[Kubernetes ListOptions contract](https://github.com/kubernetes/apimachinery/blob/v0.36.4/pkg/apis/meta/v1/types.go#L358-L365).
 
 These checks exercise real Kubernetes negotiation and pagination with small
 fixtures. They do not measure oversized-cluster throughput or replace the
