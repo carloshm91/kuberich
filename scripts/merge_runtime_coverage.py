@@ -101,6 +101,13 @@ def verify_runtime(directory: Path, expected: dict[str, Any]) -> tuple[dict[str,
             for name in ("source-receipt.json", "request.json", "heartbeat.json")
         )
         require(
+            not any(
+                document.get("diagnostic_only", False) for document in (source, request, heartbeat)
+            )
+            and "diagnostics" not in heartbeat,
+            "Diagnostic observations cannot qualify runtime controls",
+        )
+        require(
             source.get("nonce") == request.get("nonce") == nonce
             and source.get("mode") == request.get("mode") == mode
             and request.get("source")
@@ -114,6 +121,7 @@ def verify_runtime(directory: Path, expected: dict[str, Any]) -> tuple[dict[str,
         modules = source.get("module_inventory")
         require(
             isinstance(modules, list)
+            and "tests.support.runtime_diagnostics" not in modules
             and all(isinstance(name, str) for name in modules)
             and source.get("development_iri_grammar_absent") is True
             and not any(

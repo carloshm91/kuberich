@@ -377,3 +377,92 @@ required before Q03 closes. Existing oversized-frame rejection, bounded source
 admission/replay/410 and real-kind forward/context tests remain complementary;
 this controlled HTTP/process cohort does not certify a cloud provider or replace
 the actual-cluster contracts. No production behavior or performance limit changed.
+
+## Nonqualifying macOS stall diagnostics: #275
+
+Required PR #273 macOS source run `41283877454`, job `124782009238`, failed
+the unchanged 150-ms aggregate-log wall-clock gate. Its original verified
+artifact `13075210194` has SHA-256
+`f8aadbc180eec7b46ec64df881ee173c4f62183894532a36166d81fd2a1da887`.
+The checkout receipt names Actions merge commit `c021f71f66e278223f6ff47b93568df0a47dffe8`;
+its tree `1d82461cb9607fddd72c1c285bca476be36f9c56` exactly matches
+the failing PR source `4bfe856feb8f7b387087f02ba162907bd24dafff`. All 232
+stamped input hashes were independently matched before instrumentation changes.
+
+The two failing intervals were 322.547 ms and 172.742 ms, with respectively
+0.829 ms and 5.201 ms whole-process CPU. Neither overlaps recorded slow GC.
+The mutable phase label identifies the phase when the pulse resumes, rather
+than a particular blocking callback. The original record contains no stack,
+switch or fault samples; it does not establish a scheduling or blocking cause.
+Original heartbeat and source receipts are retained under `artifacts/issue275`.
+
+### Collection boundary
+
+An explicit CI on-failure opt-in can collect one fresh diagnostic child only
+after the original positive child fails its heartbeat assertion, with verified
+source, nonce, instrumentation and failed-case identity. The original assertion
+object and traceback propagate. Diagnostic collection failures become separate
+notes, and the original job still fails. No retry passes the original gate.
+The child has a separate source-stamped nonce/directory and explicit
+`diagnostic_only: true`, `timing_qualifying: false` receipts. Ordinary runtime
+and coverage verification reject diagnostic flags, sampler imports and evidence.
+
+Qualifying positive/negative/coverage modes start no sampler. Their 150-ms wall
+limit, GC policy, retained history, input budget, two rounds and negative callback
+remain unchanged. Diagnostic execution retains that assertion too; it does not
+convert a diagnostic pass into qualification or merge its coverage.
+
+The diagnostic child adds per-interval raw process switch/fault deltas and
+optional thread deltas, plus the existing wall/process/main-thread clocks. The
+process values include instrumentation work. A ten-millisecond Python witness
+records only bounded filename/function/line metadata; it requires the GIL.
+An independent owner observes heartbeat/witness progress and requests at most
+eight C faulthandler snapshots. Its original unreaped `Popen`, PID, SID and PGID
+must match before every signal. Sampling stops before reaping.
+
+Event and fault pipes are nonblocking and drained. Numeric/stack rings retain at
+most 1,024/64 records without stopping live progress emission. Stack retention
+is at most 1 MiB; pipe loss is explicitly possible even below that cap. A lost
+or coalesced signal is not counted as a completed dump, and a missing frame
+proves no cause. The supervisor's capture/TERM/KILL cutoffs are absolute
+105/110/115 seconds from its start, within the existing 120-second outer bound.
+No application or job deadline increases.
+
+Shutdown first stops the independent signal requester, then drains the witness.
+Unregister/restoration faults cannot skip independent descriptor cleanup. A live
+writer or unverified handler retains its descriptor and reports failure rather
+than allowing descriptor reuse. The exact original body exception survives;
+cleanup-only failures fail collection. Failed cleanup stays failed on repetition.
+
+### Controls and limits
+
+The lifecycle, receipt-rejection, original-failure and CI-policy cohort passed
+**160 tests in 15.11 seconds**, including real early exit, failed setup, a full
+nonblocking faulthandler sink, ring saturation, repeated cancellation and actual
+unregister/restoration faults. An initial strict workflow-policy failure was
+retained; adding the single explicit opt-in to its exact expected environment
+keeps the policy strict. Ruff, formatting and strict helper/verifier types passed.
+
+Three separately reserved causal witness controls use one owned C wait through
+`PyDLL` (GIL held), `CDLL` (GIL released), and an owned STOP/CONT suspension.
+The C wait retries `EINTR` against its original monotonic deadline. Explicit clock
+alignment bounds exclude uncertain interval edges. These controls test sampler
+capabilities, not application performance. The final reserved control run passed
+**3 cases in 1.38 seconds**. Their original receipts, stacks,
+native wait inputs and test reports remain under `artifacts/issue275`.
+
+The original macOS cause remains unresolved. No hosted diagnostic collection,
+corrected-source timing qualification or release qualification is claimed here.
+Python 3.12 faulthandler shows Python call sites, not native C stacks; process
+counters cannot isolate the main thread where thread rusage is unavailable.
+Diagnostic instrumentation perturbs execution, and missing samples cannot by
+themselves prove GIL ownership or OS descheduling. The required ordinary native
+checks and a demonstrated correction remain necessary before #275 closes.
+
+The mechanism follows Python's public
+[`faulthandler`](https://docs.python.org/3.12/library/faulthandler.html),
+[`resource`](https://docs.python.org/3.12/library/resource.html) and
+[`ctypes`](https://docs.python.org/3.12/library/ctypes.html#ctypes.PyDLL) contracts.
+CPython's pinned
+[`faulthandler.c`](https://github.com/python/cpython/blob/v3.12.10/Modules/faulthandler.c)
+provides the C signal-handler boundary; it does not establish the original cause.

@@ -153,7 +153,8 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert "pytest --cov=kuberich --cov-branch" in part
     assert "-n 2 --dist loadgroup --max-worker-restart=0" in part
     assert next(step for step in tests["steps"] if "pytest" in step.get("run", ""))["env"] == {
-        "KUBERICH_TEST_PART": "${{ matrix.part }}/${{ matrix.parts }}"
+        "KUBERICH_TEST_PART": "${{ matrix.part }}/${{ matrix.parts }}",
+        "KUBERICH_TEST_AGGREGATE_DIAGNOSTIC": "on-failure",
     }
     kept = next(
         step

@@ -344,6 +344,15 @@ async def test_full_retained_history_format_heartbeat_clipboard_bound_save_failu
         await require_runtime_children(measure_coverage=Coverage.current() is not None)
         return
     request = await child_request()
+    if request["mode"] == "diagnostic":
+        from tests.support.runtime_diagnostics import exercise_diagnostic
+
+        await exercise_diagnostic(
+            request,
+            lambda: exercise_aggregate_runtime(tmp_path, request),
+            lambda: finish_child(request),
+        )
+        return
     try:
         await exercise_aggregate_runtime(tmp_path, request)
     finally:
@@ -473,6 +482,8 @@ async def exercise_aggregate_runtime(tmp_path, request):
                     now = asyncio.get_running_loop().time()
                     gaps.append(now - before)
                     cpu, main = time.process_time(), time.thread_time()
+                    if diagnostic is not None:
+                        diagnostic.pulse(before, now, cpu - cpu_before, main - main_before, phase)
                     if now - before > 0.05:
                         slow_pulses.append(
                             {
@@ -488,6 +499,9 @@ async def exercise_aggregate_runtime(tmp_path, request):
                     cpu_before, main_before = cpu, main
 
             gc.callbacks.append(collect)
+            diagnostic = request.get("_diagnostic_probe")
+            if diagnostic is not None:
+                diagnostic.arm()
             heartbeat = asyncio.create_task(pulse())
             completed_rounds = 0
             after_close = None
@@ -661,7 +675,12 @@ async def exercise_aggregate_runtime(tmp_path, request):
                             "warm_picker_cycles": warm_picker_cycles,
                             "warm_theme_changes": warm_theme_changes,
                             "negative_callback_executed": negative_callback_executed,
-                            "timing_qualifying": request["mode"] != "coverage",
+                            "timing_qualifying": request["mode"] in {"positive", "negative"},
+                            **(
+                                {"diagnostics": diagnostic.report()}
+                                if diagnostic is not None
+                                else {}
+                            ),
                             "gc_enabled": gc.isenabled(),
                             "gc_thresholds": gc.get_threshold(),
                             "requested_full_history_rounds": 2,

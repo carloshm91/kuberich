@@ -84,6 +84,7 @@ jobs:
       - name: Run this part of the behavioral, gate-regression and clean-distribution checks
         env:
           KUBERICH_TEST_PART: ${{ matrix.part }}/${{ matrix.parts }}
+          KUBERICH_TEST_AGGREGATE_DIAGNOSTIC: on-failure
         run: |
           uv run pytest --cov=kuberich --cov-branch --cov-report= -n 2 --dist loadgroup --max-worker-restart=0 --junitxml=artifacts/tests-${{ matrix.part }}.xml --durations=20
       - name: Collect coverage and evidence, including a failed part
