@@ -24,6 +24,11 @@ Release entries are written in release PRs and linked to their Git tags.
   every functional, resource, cleanup and coverage requirement
   ([#230](https://github.com/carloshm91/kuberich/issues/230),
   [Carlos J. Herrera](https://github.com/carloshm91)).
+- Add bounded property tests for eight parser/state families and a separate
+  scheduled mutation campaign with raw outcomes and survivor review
+  ([#217](https://github.com/carloshm91/kuberich/issues/217),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Organize user documentation into 19 pages with tutorial, how-to, reference and
   explanation navigation. Keep the existing guidance and old guide routes while
   introducing a plain-language style and a complete document migration map

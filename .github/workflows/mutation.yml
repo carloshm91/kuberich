@@ -1,0 +1,75 @@
+name: Mutation testing
+'on':
+  schedule:
+    - cron: '23 5 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: false
+defaults:
+  run:
+    shell: bash
+jobs:
+  mutation:
+    name: Critical parser mutation campaign
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: '0.10.4'
+          python-version: '3.12'
+          enable-cache: true
+      - name: Install the locked property and optional mutation tools
+        run: uv sync --locked --group dev --group mutation
+      - name: Verify the property baseline and outcome-report controls
+        run: |
+          uv run mypy --strict scripts/report_mutations.py
+          uv run pytest tests/unit/property tests/quality/test_mutation_report.py -q
+      - name: Run the bounded campaign on the declared critical parser scope
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/mutations
+          mutation_tmp=$(mktemp -d "${RUNNER_TEMP}/kuberich-mutations-XXXXXX")
+          chmod 700 "$mutation_tmp"
+          export TMPDIR="$mutation_tmp"
+          timeout --signal=TERM --kill-after=30s 30m \
+            uv run --group mutation mutmut run --max-children 2 \
+            2>&1 | tee artifacts/mutations/campaign.log
+      - name: Retain actual outcomes and publish the kill-only score
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/mutations
+          uv run --group mutation mutmut results --all True > artifacts/mutations/results.txt
+          uv run --group mutation mutmut export-cicd-stats
+          report_status=0
+          uv run python scripts/report_mutations.py \
+            mutants/mutmut-cicd-stats.json artifacts/mutations/report.json --metadata mutants \
+            | tee artifacts/mutations/report.log || report_status=$?
+          {
+            echo '### Critical parser mutation results'
+            echo 'Raw outcomes and surviving mutants are retained in the artifact.'
+            echo 'The 85% target uses actual kills; timeouts and unassessed mutants never count as kills.'
+            echo '```json'
+            if [ -f artifacts/mutations/report.json ]; then
+              cat artifacts/mutations/report.json
+            else
+              echo '{"completed_without_tool_errors": false, "reason": "Mutation statistics unavailable; inspect the failed baseline/tool log."}'
+            fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$report_status"
+      - name: Retain results, mutant metadata and sources even on failure
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mutation-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            artifacts/mutations
+            mutants
+          if-no-files-found: error
+          retention-days: 14
