@@ -332,6 +332,45 @@ def main(argv: Sequence[str] | None = None) -> int:
                     as_groups=tuple(arguments.as_group or ()),
                 ).capture_paths(Path.cwd()),
             )
+        overrides = {
+            key: value
+            for key, value in {
+                "log_file": arguments.log_file,
+                "log_level": arguments.log_level,
+                "refresh_seconds": arguments.refresh_seconds,
+                "read_only": False if arguments.write else arguments.read_only,
+            }.items()
+            if value is not None
+        }
+        if arguments.subcommand == "bug-report":
+            from kuberich.config.paths import preference_path
+            from kuberich.diagnostics.reports import ConfigStatus, write_report
+            from kuberich.ui.config_check import validate_preferences
+
+            report_log = None
+            report_status: ConfigStatus = "invalid"
+            try:
+                location = config_location(arguments.config, os.environ)
+                report_document = read_config(location.path, missing_ok=not location.explicit)
+                report_settings = resolve_settings(report_document, os.environ, overrides)
+                validate_preferences(report_document, location, report_settings)
+                report_status = "valid" if location.path.exists() else "missing"
+                report_log = log_location(
+                    report_settings,
+                    location.path,
+                    from_file="log_file" not in overrides
+                    and "KUBERICH_LOG_FILE" not in os.environ
+                    and "KUBETROL_LOG_FILE" not in os.environ,
+                )
+            except AppError:
+                pass
+            destination = write_report(
+                config_status=report_status,
+                log_path=report_log,
+                output=preference_path(arguments.output) if arguments.output is not None else None,
+            )
+            print(f"Created diagnostic report: {sanitize_text(str(destination))}")
+            return 0
         location = config_location(arguments.config, os.environ)
         if arguments.subcommand == "config" and arguments.operation == "init":
             if runtime:
@@ -352,44 +391,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print(
                     "Migrated preferences to KubeRich. Original Kubetrol preferences were retained."
                 )
-            return 0
-        overrides = {
-            key: value
-            for key, value in {
-                "log_file": arguments.log_file,
-                "log_level": arguments.log_level,
-                "refresh_seconds": arguments.refresh_seconds,
-                "read_only": False if arguments.write else arguments.read_only,
-            }.items()
-            if value is not None
-        }
-        if arguments.subcommand == "bug-report":
-            from kuberich.config.paths import preference_path
-            from kuberich.diagnostics.reports import ConfigStatus, write_report
-            from kuberich.ui.config_check import validate_preferences
-
-            report_log = None
-            report_status: ConfigStatus = "invalid"
-            try:
-                report_document = read_config(location.path, missing_ok=not location.explicit)
-                report_settings = resolve_settings(report_document, os.environ, overrides)
-                validate_preferences(report_document, location, report_settings)
-                report_status = "valid" if location.path.exists() else "missing"
-                report_log = log_location(
-                    report_settings,
-                    location.path,
-                    from_file="log_file" not in overrides
-                    and "KUBERICH_LOG_FILE" not in os.environ
-                    and "KUBETROL_LOG_FILE" not in os.environ,
-                )
-            except AppError:
-                pass
-            destination = write_report(
-                config_status=report_status,
-                log_path=report_log,
-                output=preference_path(arguments.output) if arguments.output is not None else None,
-            )
-            print(f"Created diagnostic report: {sanitize_text(str(destination))}")
             return 0
         document = read_config(location.path, missing_ok=not location.explicit)
         settings = resolve_settings(document, os.environ, overrides)
