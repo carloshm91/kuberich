@@ -34,7 +34,7 @@ class EditingHandler(MutationHandler):
         self.reply(candidate)
 
 
-EDITOR = """import json, os, pathlib, stat, sys, yaml
+EDITOR = """import json, os, pathlib, signal, stat, sys, termios, yaml
 path=pathlib.Path(sys.argv[-1])
 assert sys.argv[-2]=="--"
 assert os.isatty(0)
@@ -43,6 +43,20 @@ assert stat.S_IMODE(path.parent.stat().st_mode)==0o700
 value=yaml.safe_load(path.read_text())
 assert value["metadata"]["resourceVersion"]=="opaque/version-7"
 pathlib.Path(sys.argv[1]).write_text(str(path))
+inherited_ignored=signal.getsignal(signal.SIGINT)==signal.SIG_IGN
+signal.signal(signal.SIGINT,signal.default_int_handler)
+print("OWNED EDITOR START",flush=True)
+# Printing can precede the parent's tcsetpgrp. A real read proves foreground
+# ownership before the fixture announces readiness for a signal-generating key.
+assert sys.stdin.readline().strip()=="start"
+assert os.tcgetpgrp(0)==os.getpgrp()
+mode=termios.tcgetattr(0)
+assert mode[3]&termios.ISIG and mode[3]&termios.ICANON and mode[3]&termios.ECHO
+pathlib.Path(sys.argv[1]+".signals").write_text(json.dumps({
+    "inherited_sigint_ignored":inherited_ignored,
+    "python_sigint_handler":signal.getsignal(signal.SIGINT) is signal.default_int_handler,
+    "foreground":os.tcgetpgrp(0)==os.getpgrp(),
+    "isig":bool(mode[3]&termios.ISIG),"canonical":bool(mode[3]&termios.ICANON)}))
 try:
     action=input("OWNED FOREGROUND EDITOR: enter e/n/f/m > ")
 except KeyboardInterrupt:
@@ -88,7 +102,9 @@ def terminal_editing(command, directory, evidence, *, scenario="success"):
             terminal.wait_for_screen("Ready · allow local disclosure")
             terminal.send(b"\x1b[Z\x1b[Z \t\r")
             try:
-                terminal.wait_for(b"OWNED FOREGROUND EDITOR")
+                terminal.wait_for(b"OWNED EDITOR START")
+                ready = terminal.send(b"start\r")
+                terminal.wait_for(b"OWNED FOREGROUND EDITOR", since=ready)
             except AssertionError:
                 (directory / "failed-editor-screen.txt").write_text(
                     "\n".join(terminal.screen.display)
