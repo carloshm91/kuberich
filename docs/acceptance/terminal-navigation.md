@@ -180,3 +180,42 @@ This changes test infrastructure and release prerequisites, with no production
 application changes. Changed production coverage is not applicable; these
 results do not replace complete coverage, native macOS or protected required CI.
 No original failure is erased, and no package, website or release is published.
+
+### Owned X11 server-generation continuity
+
+The third full local attempt on source `340d3f31bd7a168382d5b39b6953e030c203cd32`
+retained 7,003 passes, two failures and four explicit skips. The X11 failure was
+on the final replacement payload: the first four phases matched exactly after
+7, 7, 8 and 7 reads; the final phase made 124 unsuccessful reads. Its bounded
+receipt reported exit code 1, zero stdout bytes and 35 stderr bytes. The other
+failure concerned editor interruption and remains separate. These originals
+remain failed qualification evidence.
+
+A controlled witness on that source exposed an unpinned display lifetime.
+While a real native selection owner was serving the expected bytes, the test
+placed a harmless root-window marker on its disposable Xvfb display. After that
+owner was closed and reaped, the same display lost the marker: Xvfb had reset
+when its last client left. The new generation regression failed on the original
+fixture in 1.39 seconds. It does not rely on a scheduling delay or a relaxed
+readiness assertion.
+
+Only the owned fixture now starts Xvfb with `-noreset`, keeping one server
+generation until its existing explicit shutdown. The original readiness budget,
+300 ms delayed writer, every original payload and owner/reader cleanup assertion
+are unchanged. The generation check uses libX11, already the required `xclip`
+runtime dependency; missing Linux tools or that library fail this control rather
+than silently skipping it. No extra executable or application dependency is added.
+
+The bounded corrected cohort passed **79 tests with one explicit hosted-macOS
+skip in 8.80 seconds**. It includes real original/delayed X11 roundtrips,
+generation continuity, absent/wrong selections, cancelled readers, fake native
+helpers, queue/UI behavior and descendant/cancellation cleanup. All 876 tracked
+input hashes and the checkout commit remained unchanged until the child was
+reaped. Raw original receipts, the failed generation witness and corrected
+results are retained under `artifacts/issue281-ordering`.
+
+The original full-run receipt did not capture writer stderr or server-generation
+events, so its exact reset timing cannot be reconstructed. The controlled result
+establishes and corrects the fixture-lifetime defect; it is not a retrospective
+trace of that race. Full and native platform qualification remain pending.
+No production code, host display, physical clipboard, provider or cluster was used.
