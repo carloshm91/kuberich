@@ -638,7 +638,8 @@ def test_engineering_versions_refuse_preflight_before_any_external_request(versi
 
 
 @pytest.mark.parametrize(
-    "incomplete", [None, 123, 124, 193, 47, 40, 154, 88, 89, 189, 211, 230, 243, 253, 270, 281, 291]
+    "incomplete",
+    [None, 123, 124, 193, 47, 40, 154, 88, 89, 189, 211, 230, 243, 253, 270, 278, 281, 291],
 )
 def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomplete):
     plan = json.loads((ROOT / "docs/backlog.json").read_text())
@@ -671,6 +672,7 @@ def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomp
             189,
             208,
             270,
+            278,
             230,
             242,
             248,
@@ -734,6 +736,7 @@ def test_actual_phase_includes_selected_and_prior_qualifiers(version, phase_gate
     assert (124 in calls) == (minor >= (0, 8))
     assert (230 in calls) == (minor >= (0, 3))
     assert (270 in calls) == (minor >= (0, 3))
+    assert (278 in calls) == (minor >= (0, 3))
     assert (281 in calls) == (minor >= (0, 3))
     assert (291 in calls) == (minor >= (0, 3))
     assert (89 in calls) == (Version(version).base_version != "0.1.0")
@@ -754,6 +757,7 @@ def test_actual_phase_includes_selected_and_prior_qualifiers(version, phase_gate
         ("0.3.0", 189),
         ("0.3.0", 211),
         ("0.3.0", 270),
+        ("0.3.0", 278),
         ("0.3.0", 281),
         ("0.3.0", 291),
         ("0.5.0", 82),
@@ -804,6 +808,7 @@ def test_unreviewed_minor_does_not_inherit_an_earlier_phase(version):
         "missing_early_generic",
         "missing_foundations_security",
         "missing_x11_readiness",
+        "missing_generic_plugin_capture",
         "missing_macos_runner",
         "duplicate_extra",
         "boolean_extra",
@@ -843,6 +848,8 @@ def test_malformed_entire_plan_fails_before_any_external_issue_request(mutation)
         )
     elif mutation == "missing_macos_runner":
         delivery["release_phases"][2]["extra_issues"].remove(291)
+    elif mutation == "missing_generic_plugin_capture":
+        delivery["release_phases"][2]["extra_issues"].remove(278)
     elif mutation == "missing_x11_readiness":
         delivery["release_phases"][2]["extra_issues"].remove(281)
     elif mutation == "duplicate_extra":
