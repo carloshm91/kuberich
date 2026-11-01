@@ -22,7 +22,7 @@ foundations and documentation work starts before any new feature family.
 | --- | --- | --- |
 | 0.1.x | D06 #51 | Core workspace; also #53, #54 and #123 |
 | 0.2.x | D07 #65 | Extensibility; also Homebrew bottles #193 |
-| 0.3.x | D16 #230 | Foundations and documentation; also #189, #208 and #272 |
+| 0.3.x | D16 #230 | Foundations and documentation; also #189, #208, #272 and #274 |
 | 0.4.x | D08 #75 | Observability and metrics |
 | 0.5.x | D09 #82 | Operations, Helm and manifests |
 | 0.6.x | D17 #242 | Multi-cluster workspace |
@@ -133,7 +133,7 @@ Configurable themes, navigation/resource views, external plugins, deliberate con
 
 ## v0.3.0
 
-The [plugin output correction #272](https://github.com/carloshm91/kuberich/issues/272) is also required before qualification.
+The [plugin output correction #272](https://github.com/carloshm91/kuberich/issues/272) is also required before qualification. [Log startup qualification #274](https://github.com/carloshm91/kuberich/issues/274) must retain its real failure diagnostics and observable readiness condition.
 
 Foundations and quality: decompose the application shell, decouple tests, remove private framework dependencies, degrade gracefully on large clusters, enforce a startup budget, reach kubeconfig parity with kubectl, add error boundaries and fast test tiers, and rewrite the documentation. No new feature families.
 

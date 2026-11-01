@@ -2,8 +2,10 @@
 
 import argparse
 import asyncio
+import hashlib
 import json
 import logging
+import os
 from datetime import timedelta
 from pathlib import Path
 from uuid import uuid4
@@ -527,9 +529,46 @@ async def verify_quiet_renewal(reader, resource, catalog, path, context) -> dict
     }
 
 
-async def verify_logs(reader, snapshot, sessions):
+async def verify_logs(reader, snapshot, sessions, *, readiness_timeout=90, evidence_dir=None):
+    """Require observable startup within the original fixture-readiness budget."""
+    if not 0 < readiness_timeout <= 90:
+        raise ValueError("Log readiness timeout must be positive and at most 90 seconds.")
+    state = {"pod_ready": False, "attempts": 0, "tail_count": 0, "all_count": 0}
+    try:
+        return await _verify_logs(reader, snapshot, sessions, state, readiness_timeout)
+    except BaseException as error:
+        if evidence_dir is not None:
+            try:
+                folder = Path(evidence_dir)
+                if folder.is_symlink():
+                    raise OSError("Failure evidence directory must not be a symlink.")
+                folder.mkdir(parents=True, exist_ok=True)
+                source = os.environ.get("GITHUB_SHA", "")
+                run = os.environ.get("GITHUB_RUN_ID", "")
+                receipt = {
+                    "result": "failed",
+                    "error_type": type(error).__name__,
+                    "verifier_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                    "workflow_event_sha": source
+                    if len(source) == 40 and all(c in "0123456789abcdef" for c in source)
+                    else None,
+                    "github_run_id": run if run.isascii() and run.isdecimal() else None,
+                    "readiness_timeout_seconds": readiness_timeout,
+                    **state,
+                }
+                with (folder / f"kind-log-failure-{uuid4().hex}.json").open("x") as output:
+                    json.dump(receipt, output, indent=2)
+                    output.write("\n")
+            except OSError as receipt_error:
+                error.add_note(
+                    f"Log failure evidence could not be written: {type(receipt_error).__name__}."
+                )
+        raise
+
+
+async def _verify_logs(reader, snapshot, sessions, state, readiness_timeout):
     """Real current/previous log API and cancellation on this owned kind only."""
-    async with asyncio.timeout(90):
+    async with asyncio.timeout(readiness_timeout):
         while True:
             record = next(item for item in snapshot.items if item.name.startswith("coredns-"))
             status = record.manifest.get("status", {})
@@ -540,27 +579,43 @@ async def verify_logs(reader, snapshot, sessions):
                 break
             await asyncio.sleep(0.2)
             snapshot = await reader.list(snapshot.resource, "kube-system")
-    print("Owned CoreDNS log fixture is Running and Ready.")
-    container = record.manifest["spec"]["containers"][0]["name"]
-    identity = sessions.observation.identity
-    target = ResourceTarget(identity, "", "pods", "kube-system", record.name, record.uid, container)
-    service = LogStream(
-        reader.session,
-        target,
-        AccessPolicy(True),
-        lambda: sessions.client is reader.session and sessions.observation.identity == identity,
-    )
-    buffer = LogBuffer()
+        state["pod_ready"] = True
+        print("Owned CoreDNS log fixture is Running and Ready.")
+        container = record.manifest["spec"]["containers"][0]["name"]
+        identity = sessions.observation.identity
+        target = ResourceTarget(
+            identity, "", "pods", "kube-system", record.name, record.uid, container
+        )
+        service = LogStream(
+            reader.session,
+            target,
+            AccessPolicy(True),
+            lambda: sessions.client is reader.session and sessions.observation.identity == identity,
+        )
+        while True:
+            # A Ready pod need not have flushed its startup output. Each attempt
+            # replaces its buffer instead of accumulating duplicate snapshots.
+            state["attempts"] += 1
+            buffer = LogBuffer()
 
-    async def retain(line):
-        buffer.append(line)
+            async def retain(line, buffer=buffer):
+                buffer.append(line)
 
-    count = await service.run(LogOptions(follow=False, tail_lines=10, timestamps=True), retain)
-    assert count and buffer.lines and all(line.text[:4].isdigit() for line in buffer.lines)
-    all_count = await service.run(LogOptions(follow=False, tail_lines=-1), retain)
-    assert all_count >= count
-    # Startup output need not be present among the last ten lines of a ready pod.
-    assert any("CoreDNS" in line.text for line in buffer.lines)
+            count = await service.run(
+                LogOptions(follow=False, tail_lines=10, timestamps=True), retain
+            )
+            state["tail_count"] = count
+            if count:
+                assert buffer.lines and all(line.text[:4].isdigit() for line in buffer.lines)
+            all_count = await service.run(LogOptions(follow=False, tail_lines=-1), retain)
+            state["all_count"] = all_count
+            state["retained_lines"] = len(buffer.lines)
+            assert all_count >= count
+            # Startup output need not be among the last ten lines of a ready pod.
+            state["startup_observed"] = any("CoreDNS" in line.text for line in buffer.lines)
+            if count and state["startup_observed"]:
+                break
+            await asyncio.sleep(0.2)
     assert await service.run(LogOptions(follow=False, since_seconds=3600), retain)
     assert await service.run(
         LogOptions(follow=False, since_time=utc_now() - timedelta(hours=1)), retain
@@ -599,10 +654,13 @@ async def verify_logs(reader, snapshot, sessions):
         "real_follow_log_cancellation_awaited": True,
         "real_previous_log_unavailable": True,
         "real_log_retention_lines": len(buffer.lines),
+        "real_log_readiness_attempts": state["attempts"],
     }
 
 
-async def verify(path: Path, context: str) -> dict[str, object]:
+async def verify(
+    path: Path, context: str, *, evidence_dir: Path | None = None
+) -> dict[str, object]:
     request = ConnectionRequest(kubeconfig=str(path), context=context, timeout=15)
     catalog = load_catalog(request, {})
     before = path.read_bytes()
@@ -640,7 +698,7 @@ async def verify(path: Path, context: str) -> dict[str, object]:
         assert deployments.api_version == "apps/v1"
         deployment_snapshot = await reader.list(deployments, "kube-system", page_size=1)
         assert deployment_snapshot.resource_version and deployment_snapshot.items
-        log_evidence = await verify_logs(reader, scoped_pods, sessions)
+        log_evidence = await verify_logs(reader, scoped_pods, sessions, evidence_dir=evidence_dir)
         watch_evidence = await verify_watch(reader, discovery.find("configmaps"))
         quiet_evidence = await verify_quiet_renewal(
             reader, discovery.find("secrets"), catalog, path, context
@@ -691,7 +749,9 @@ def main() -> None:
     parser.add_argument("--evidence", default="artifacts/cluster/context-sessions.json")
     arguments = parser.parse_args()
     with owned_cluster(arguments.kind) as cluster:
-        evidence = asyncio.run(verify(cluster.path, cluster.context))
+        evidence = asyncio.run(
+            verify(cluster.path, cluster.context, evidence_dir=Path(arguments.evidence).parent)
+        )
         output = Path(arguments.evidence)
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(

@@ -7,6 +7,10 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Wait for observable startup logs in disposable-cluster qualification and retain
+  sanitized failure diagnostics within the existing readiness limit
+  ([#274](https://github.com/carloshm91/kuberich/issues/274),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
 - Add parallel development test layers and an early full unit/contract/UI signal
   before the complete platform and coverage checks
   ([#209](https://github.com/carloshm91/kuberich/issues/209),
