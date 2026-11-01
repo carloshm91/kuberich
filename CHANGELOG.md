@@ -19,6 +19,11 @@ Release entries are written in release PRs and linked to their Git tags.
   ([#218](https://github.com/carloshm91/kuberich/issues/218),
   [Carlos J. Herrera](https://github.com/carloshm91)).
 
+- Copy plaintext to local Wayland clipboards with `wl-copy`, with selection
+  cleanup and an actionable terminal fallback when the helper fails
+  ([#220](https://github.com/carloshm91/kuberich/issues/220),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 ### Changed
 
 - Replace the README with a concise product introduction, published installation,

@@ -147,19 +147,29 @@ the root table copies its selection's name. Existing inspection/log/review copy
 actions retain redaction. Explicit Secret-value copying keeps its separate
 reveal/copy policy; values are never included in a failure message.
 
-`KUBERICH_CLIPBOARD=auto` (default) selects native plaintext on local macOS,
-foreground-owned xclip on local X Window System, and OSC52 over SSH or without a native
-session. `native` requires an available macOS and X Window System backend; `osc52` explicitly
-selects the terminal. Native X Window System requires xclip on PATH and DISPLAY, and is not
-selected for Wayland sessions. Native macOS uses the system osascript/AppKit
-plaintext API; no Python clipboard package is needed. Missing auto helpers can
-fall back to a bounded terminal request; forced-native failures are visible.
+`KUBERICH_CLIPBOARD=auto` (default) chooses a backend in this order:
+
+1. Over SSH, send an OSC52 request to your terminal.
+2. On local macOS, use the system osascript/AppKit plaintext API.
+3. If `WAYLAND_DISPLAY` is set, use `wl-copy` on PATH. Wayland takes precedence
+   over X Window System when both display variables are set.
+4. If `DISPLAY` is set, use `xclip` on PATH.
+5. Otherwise, send an OSC52 request to your terminal.
+
+`native` requires a macOS, Wayland or X Window System session and skips the
+automatic SSH preference. `osc52` always selects your terminal. Missing or failed
+helpers in `auto` mode can fall back to a terminal request within the OSC52 byte
+limit. Forced-native failures explain how to check the helper and select
+`KUBERICH_CLIPBOARD=osc52`. No Python clipboard package is needed.
 
 Native/headless copies accept at most 1 MiB UTF-8; OSC52 accepts at most 64 KiB.
 Oversize or invalid UTF-8 is refused rather than truncated. The application only
 writes clipboards; it never reads them to acknowledge a copy. Headless/Pilot
-copies remain memory-only. Native X Window System keeps an owned selection process until
-replacement or exit; persistence after exit depends on a clipboard manager.
+copies remain memory-only. Wayland uses `wl-copy --foreground --type
+text/plain;charset=utf-8`; text travels only on stdin, without MIME guessing or
+newline trimming. Wayland and X Window System keep a selection process until
+replacement or exit; persistence after exit depends on your clipboard manager.
+KubeRich does not certify that every Wayland compositor accepts the request.
 
 OSC52 payloads are base64 framed, so copied escape sequences stay inert data.
 Inside tmux the request uses tmux passthrough framing. A user-managed tmux server

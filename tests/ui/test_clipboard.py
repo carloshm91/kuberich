@@ -10,6 +10,7 @@ import pytest
 from textual.drivers.headless_driver import HeadlessDriver
 
 from kuberich.config.schema import Settings
+from kuberich.domain.clipboard import ClipboardBackend
 from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
 from kuberich.services.clipboard import NativeClipboard
@@ -53,18 +54,24 @@ class ClipboardApp(KubeRichApp):
 @pytest.mark.parametrize(
     "preference,oversize", [("auto", False), ("auto", True), ("native", False)]
 )
+@pytest.mark.parametrize("session", ["x11", "wayland"])
 async def test_native_failure_falls_back_only_when_allowed_and_bounded(
-    monkeypatch, preference, oversize
+    monkeypatch, preference, oversize, session
 ):
     monkeypatch.setenv("KUBERICH_CLIPBOARD", preference)
     monkeypatch.setenv("DISPLAY", ":owned-adapter-boundary")
     for variable in ("WAYLAND_DISPLAY", "SSH_TTY", "SSH_CONNECTION", "TMUX"):
         monkeypatch.delenv(variable, raising=False)
+    if session == "wayland":
+        monkeypatch.setenv("WAYLAND_DISPLAY", "owned-wayland-test")
     app = ClipboardApp()
     notices = []
     monkeypatch.setattr(app, "notify", lambda message, **kwargs: notices.append(str(message)))
 
     async def failed(data, backend, **kwargs):
+        assert backend is (
+            ClipboardBackend.WAYLAND if session == "wayland" else ClipboardBackend.X11
+        )
         raise AppError("Native clipboard is unavailable in this owned fixture.")
 
     monkeypatch.setattr(app.native_clipboard, "write", failed)
