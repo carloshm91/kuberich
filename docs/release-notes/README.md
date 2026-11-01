@@ -2,6 +2,11 @@
 
 Ordinary merges update Unreleased. A public release PR adds
 `docs/release-notes/X.Y.Z.md` (or `X.Y.ZrcN.md`) and the matching source/lock version.
+Copy [TEMPLATE.md](TEMPLATE.md), replace VERSION and write one user benefit per
+change entry, with at most 25 words. Keep CI IDs, timing/coverage measurements
+and implementation-process details in the internal record or pull request.
+The changelog uses Keep a Changelog groups; release notes retain the six useful
+sections required by the existing frozen-note contract below.
 Start with `# KubeRich X.Y.Z`, then provide these nonempty sections:
 
 - `## Features`: actual user behavior and issue links.

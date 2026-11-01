@@ -3177,6 +3177,26 @@
       ],
       "reason": "Explain immutable evidence locations and original-source link contexts outside the public documentation.",
       "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/release-note-mapping.json",
+      "audience": "internal migration mapping",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/release-note-mapping.json"
+      ],
+      "reason": "Keep the user-note migration trace or author template outside user navigation; do not publish internal process evidence as user prose.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/release-notes/TEMPLATE.md",
+      "audience": "contributor release template",
+      "action": "keep",
+      "destinations": [
+        "docs/release-notes/TEMPLATE.md"
+      ],
+      "reason": "Keep the user-note migration trace or author template outside user navigation; do not publish internal process evidence as user prose.",
+      "baseline_sha256": null
     }
   ],
   "inventory_rule": "Every tracked Markdown file, every file under docs/, LICENSE, NOTICE, and contribution issue templates at the baseline commit; new structure contracts are mapped too.",
