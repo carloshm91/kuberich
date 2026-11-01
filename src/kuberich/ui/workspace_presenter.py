@@ -238,6 +238,24 @@ class WorkspacePresenter:
             self.show_sort()
             self.view_status(view, "Local kubeconfig contexts · Enter connect · Esc previous view")
             return
+        if (
+            view.status is ViewStatus.DISCONNECTED
+            and view.context is None
+            and view.scope is None
+            and view.snapshot is None
+        ):
+            self.host.query_one(
+                "#resource-view", Vertical
+            ).border_title = "Resources · no connection"
+            self.host.query_one("#empty-title", WorkspaceLabel).update_text("No cluster connection")
+            self.host.query_one("#empty-description", WorkspaceLabel).update_text(
+                "Live resources are not connected in this preview."
+            )
+            self.host.query_one("#empty-state").set_class(False, "populated")
+            self.views.table.set_class(False, "populated")
+            self.show_sort()
+            self.view_status(view, view.message)
+            return
         usable = observation.state in USABLE_CONNECTIONS
         self.host.query_one("#empty-title", WorkspaceLabel).update_text(
             "Stale resource data"
