@@ -2,40 +2,40 @@
 
 ## Startup and import boundaries
 
-The Application matrix runs `python -m scripts.check_startup` serially against the
-exact source checkout, with five fresh observations of each offline command and
-five actual first frames on an owned 120×36 PTY. Every offline observation must
-satisfy the unchanged 150 ms / 40,000,000-byte CLI budgets.
-`-X importtime` additionally rejects terminal/SDK imports and 150,000 µs aggregate
-self or maximum cumulative import time. A deliberately late mount and explicit
-Textual import must fail their controls. Inputs remain frozen during a run; raw
-output, profiles, ANSI transcripts and failure reports are uploaded even on failure.
+The Application matrix runs `python -m scripts.check_startup` serially against
+exact source, retaining five fresh observations of every offline command,
+four import profiles and five actual frames on an owned 120×36 PTY. No case is
+omitted when a latency target is missed in advisory mode.
 
-On 2026-11-01 the maintainer accepted the measured approximately 685 ms first
-paint for 0.3 and deferred strict optimization to the stable audit. For 0.x,
-every actual UI sample records elapsed time and explicit `budget_met` /
-`budget_enforced` flags against the unchanged 600 ms target. The qualifier's
-`--strict-paint` mode enforces that target on demand; version major 1 and later
-enforce it automatically. Its deliberate 700 ms negative control always uses
-the original strict check, including in advisory mode. A missed target remains
-reported as missed. Only latency is advisory: every source, actual-frame,
-SDK/import, geometry, ownership and cleanup failure still blocks every mode.
+On 2026-11-01 the maintainer made every startup latency objective advisory for
+0.x: **150 ms** offline wall time, **150,000 µs** aggregate self and maximum
+cumulative import time, and **600 ms** actual UI first paint. Each sample/profile
+and aggregate reports its actual values, original target, `budget_met` and
+`budget_enforced`. An unmet objective is never called a strict pass.
+`--strict-startup` enforces all original limits; `--strict-paint` preserves the
+existing UI-only opt-in. Actual source major 1 and later, including prereleases,
+always enforce every limit. No version override or higher threshold is used.
 
-The SDK prepares only after the public refresh readiness port. Functional tests
-cover owned credential/network/update reads, initial views, context replacement,
-quit and cancellation before readiness.
+Offline RSS must remain below **40,000,000 bytes**. Valid elapsed observations,
+clean output, installed/source identity, complete import profiles and absence
+of Textual/the Kubernetes SDK remain hard requirements in every mode. The real
+selected table must be mounted with columns and geometry inside the original
+viewport before any SDK/helper/network work. Deadline, terminal restoration,
+client ownership and cleanup failures always block. Configured validation and
+all production/critical/changed-line coverage gates remain unchanged.
 
-Every accepted first frame includes a mounted real selected resource table with
-columns and geometry inside the original viewport; header delivery alone cannot
-satisfy it. All original tables retain eager composition. A deferred-DOM
-prototype showed no startup improvement and was removed rather than retaining
-extra ownership machinery. Fresh children also reject unused editor imports
-while preserving the canonical read-only text class and inspection behavior.
-The critical CLI/navigation coverage and
-whole-package/changed-line floors remain unchanged; type-only imports stay in the
-denominator. Local source startup evidence does not qualify native artifacts or
-other platforms. See [the startup acceptance record](acceptance/startup-budget.md).
+Both original negative controls remain required: the deliberate 700 ms frame
+uses the unchanged strict check, and an explicit Textual import must fail even
+in advisory mode. Synthetic controls also verify strict offline/import timing,
+stable prerelease enforcement, RSS and functional failures. The original macOS
+`info` observation of 161.144125 ms remains a failed old-policy result; its later
+102.170084 ms diagnostic is not promoted into a pass. See the
+[startup acceptance record](acceptance/startup-budget.md).
 
+Inputs stay frozen during qualification. Raw stdout/stderr, import profiles,
+ANSI transcripts and original failures are retained. All tables keep eager
+composition; the ineffective inactive-DOM prototype remains removed. Historical
+source evidence does not qualify a changed head, native artifact or platform.
 
 ## Public test boundaries
 

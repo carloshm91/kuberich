@@ -13,6 +13,7 @@ from kuberich.adapters.editing import file_worker
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.diagnostics.redaction import sanitize_text
 from kuberich.domain.connections import ConnectionProblem
+from kuberich.domain.kubeconfig_auth import basic_credentials, basic_header
 from kuberich.domain.plugins import Plugin, PluginSelection, plugin_command
 from kuberich.domain.processes import ProcessCommand, ProcessMode, ProcessResult
 from kuberich.domain.resources import ApiResource, api_segment, resource_record
@@ -113,6 +114,9 @@ class PluginSource:
             if re.search("token|password|secret|credential|key", key, re.I) and len(value) >= 4
         ]
         hints.extend(str(value) for value in inputs.values() if len(str(value)) >= 4)
+        if basic := basic_credentials(configuration["users"][0]["user"]):
+            header = basic_header(basic)
+            hints.extend((basic[1], ":".join(basic), header, header.removeprefix("Basic ")))
         if self.client.configuration is not None:
             for value in self.client.configuration.api_key.values():
                 hints.extend((value, value.removeprefix("Bearer ")))

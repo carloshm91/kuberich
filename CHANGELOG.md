@@ -53,9 +53,9 @@ Release entries are written in release PRs and linked to their Git tags.
   [Carlos J. Herrera](https://github.com/carloshm91)).
 
 - Keep offline diagnostics independent of terminal/SDK imports and defer cluster
-  preparation until the first terminal refresh; enforce offline startup and
-  actual-frame safety in CI. Report UI latency for 0.x while retaining the
-  unchanged strict 600 ms check for 1.0 and explicit qualification
+  preparation until the first terminal refresh. Report all startup latency targets
+  honestly for 0.x, retaining original strict opt-in/stable limits and mandatory
+  memory, source, output, import, frame and cleanup requirements
   ([#214](https://github.com/carloshm91/kuberich/issues/214),
   [Carlos J. Herrera](https://github.com/carloshm91)).
 - Add parallel development test layers and an early full unit/contract/UI signal
@@ -74,7 +74,8 @@ Release entries are written in release PRs and linked to their Git tags.
 - Accept explicit Basic credentials and kubectl's empty optional connection
   fields, retain credential schemes for reads/writes/delegation and print a
   reviewed OIDC exec migration fragment without copying existing tokens or
-  changing kubeconfig files
+  changing kubeconfig files. Mask prepared Basic credential values in captured
+  plugin stdout and stderr
   ([#215](https://github.com/carloshm91/kuberich/issues/215),
   [Carlos J. Herrera](https://github.com/carloshm91)).
 
@@ -90,6 +91,10 @@ Release entries are written in release PRs and linked to their Git tags.
   ([#281](https://github.com/carloshm91/kuberich/issues/281),
   [Carlos J. Herrera](https://github.com/carloshm91)).
 
+- Preserve the first terminal-test failure when owned process-group cleanup is
+  denied, and record bounded cleanup and actual restoration evidence separately
+  ([#208](https://github.com/carloshm91/kuberich/issues/208),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
 - Reuse one palette snapshot for each shortcut panel render and avoid layout
   updates for unchanged header text during navigation, resizing and theme changes
   ([#209](https://github.com/carloshm91/kuberich/issues/209),
