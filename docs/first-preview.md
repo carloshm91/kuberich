@@ -450,3 +450,28 @@ The [acceptance record](acceptance/wayland-clipboard.md#parent-integration-verif
 separates these results from the earlier source checkpoints. No real Wayland
 compositor, host clipboard or cluster was used. The installed version remains
 0.2.0; full supported-platform and package qualification remain pending.
+### Opened plugin job results
+
+After opening a running job in `:pluginjobs`, its status, exit code and completed
+output now update without pressing Enter again. Cursor movement keeps the opened
+job until another Enter; retired history releases its displayed result.
+
+The tested local regression command was:
+
+```sh
+uv run pytest tests/ui/test_plugin_jobs.py tests/ui/test_plugins.py \
+  tests/contract/test_plugins.py tests/terminal/test_plugins.py \
+  tests/quality/test_release_policy.py \
+  --basetemp artifacts/plugin272/tmp/regression-01 \
+  --cov=kuberich --cov-branch \
+  --cov-report=json:artifacts/plugin272/regression-coverage.json \
+  --cov-report=xml:artifacts/plugin272/regression-coverage.xml \
+  --junitxml=artifacts/plugin272/regression-tests.xml
+```
+
+The selection passed 326 cases on Linux/Python 3.12, including source CLI
+terminal restoration. The final two UI cases also passed after strengthening
+the output-only check. Changed application lines measured 100%; complete
+platform, package and coverage gates remain required. The original macOS
+failure and the unchanged-main negative controls are retained in
+[plugin execution evidence](acceptance/plugin-execution.md).

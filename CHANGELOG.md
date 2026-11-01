@@ -78,6 +78,10 @@ Release entries are written in release PRs and linked to their Git tags.
   ([#215](https://github.com/carloshm91/kuberich/issues/215),
   [Carlos J. Herrera](https://github.com/carloshm91)).
 
+- Refresh opened plugin job output and exit status as they arrive, without
+  requiring another Enter or changing the job being read
+  ([#272](https://github.com/carloshm91/kuberich/issues/272),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
 - Keep native macOS builds and installation checks on supported runners
   ([#291](https://github.com/carloshm91/kuberich/issues/291),
   [Carlos J. Herrera](https://github.com/carloshm91)).
