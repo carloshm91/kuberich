@@ -89,11 +89,11 @@ class HandoffApp(KubeRichApp):
         try:
             result = await terminal_handoff(self, self.processes, spec)
         except asyncio.CancelledError:
-            self._set_status('RETURN CANCELLED #' + str(self.attempt))
+            self.status.update('RETURN CANCELLED #' + str(self.attempt))
         except AppError:
-            self._set_status('RETURN ERROR #' + str(self.attempt))
+            self.status.update('RETURN ERROR #' + str(self.attempt))
         else:
-            self._set_status('RETURN ' + result.status.name + ' #' + str(self.attempt))
+            self.status.update('RETURN ' + result.status.name + ' #' + str(self.attempt))
 
 app = HandoffApp()
 (directory/'owned-parent.pid').write_text(str(os.getpid()))

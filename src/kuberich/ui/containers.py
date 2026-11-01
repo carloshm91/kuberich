@@ -104,6 +104,11 @@ class ContainerScreen(CommandWorkspace):
             id="container-status",
         )
 
+    @property
+    def active_count(self) -> int:
+        """Unfinished owned projections, including cancellation drainage."""
+        return int(self._rows_task is not None and not self._rows_task.done())
+
     def compose(self) -> ComposeResult:
         target = self.stream.target
         if self.chrome is not None:

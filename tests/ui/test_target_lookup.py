@@ -10,6 +10,7 @@ from kuberich.config.schema import Settings
 from kuberich.domain.views import ViewStatus
 from kuberich.domain.watches import SyncStatus, SyncUpdate
 from kuberich.ui.app import KubeRichApp
+from kuberich.ui.inspection import InspectionScreen
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
 from tests.support.resources import collection
@@ -43,7 +44,7 @@ async def test_membership_is_checked_once_per_snapshot_and_immediately_rejects_n
             logging.Logger("target-cache", level=100),
             catalog=catalog_fixture(tmp_path, url),
         )
-        async with app.run_test():
+        async with app.run_test() as pilot:
             await wait_for(
                 lambda: (
                     app.workspace.store.observation.status is ViewStatus.LIVE
@@ -64,9 +65,12 @@ async def test_membership_is_checked_once_per_snapshot_and_immediately_rejects_n
             counted = publish(initial.items)
             uid = initial.items[-1].uid
             assert uid is not None
-            captured = app._capture_target(uid)
-            assert captured is not None
-            current = captured[-1]
+            app.resources.move_cursor(row=app.resources.get_row_index(uid))
+            app.action_inspect_details()
+            assert isinstance(app.screen, InspectionScreen)
+            assert app.screen.service.target.uid == uid
+            current = app.screen.service.current
+            await pilot.pause()
             assert all(current() for _ in range(1000))
             assert counted.iterations == 1  # The initial explicit capture.
 

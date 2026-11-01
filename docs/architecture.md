@@ -1,5 +1,13 @@
 # Architecture decisions
 
+## Read-only workspace ownership
+
+`WorkspaceService.ownership` returns a frozen snapshot of registered watch,
+operation, subscription and discovery counts, plus close completion. Completed
+tasks remain counted until their owner retires them. It exposes no task, client
+or cached value. Tests observe actual watch tasks at the public `ListWatch.run`
+boundary and check subscription delivery and closure through async iteration.
+
 ## Native table-cache retirement and metadata geometry: prerequisite for S08 #62
 
 `FrameTable` uses a small native LRU subclass for its six rendering/ordering

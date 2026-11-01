@@ -117,6 +117,11 @@ class WatchState:
         self._versions[self.resource_version] = None
 
     @property
+    def replay_sizes(self) -> tuple[int, int]:
+        """Numbers of retained event identities and versions, without their contents."""
+        return len(self._events), len(self._versions)
+
+    @property
     def snapshot(self) -> ResourceSnapshot:
         return ResourceSnapshot(
             self.resource,

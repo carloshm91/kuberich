@@ -24,6 +24,11 @@ class ResourceProjection[T: PodRow | NamespaceRow | ResourceRow]:
         self._version = version
         self._cache: dict[str, tuple[ResourceRecord, T]] = {}
 
+    @property
+    def cached_count(self) -> int:
+        """Record/row pairs retained for incremental projection reuse."""
+        return len(self._cache)
+
     def _project(self, snapshot: ResourceSnapshot) -> tuple[T, ...]:
         cache: dict[str, tuple[ResourceRecord, T]] = {}
         for record in snapshot.items:

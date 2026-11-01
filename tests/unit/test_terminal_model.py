@@ -2,7 +2,7 @@
 
 import pytest
 
-from kuberich.adapters.emulator import TerminalModel, _Router
+from kuberich.adapters.emulator import TerminalModel
 from kuberich.domain.terminal import terminal_key, terminal_paste, terminal_size
 from kuberich.errors import AppError
 
@@ -122,7 +122,7 @@ def test_modes_reports_and_hostile_control_strings_are_bounded():
     assert len(replies) == 3 and model.screen.title == ""
     model.feed(b"\x1b[38;5;999m\x1b[?9999h\x00\x7f")
     with pytest.raises(AttributeError):
-        _Router(model).__getattr__("not_an_event")
+        _ = model.stream.listener.not_an_event
 
 
 def test_saved_cursor_and_combining_cell_memory_remain_bounded():

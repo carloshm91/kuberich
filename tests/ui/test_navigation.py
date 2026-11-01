@@ -21,6 +21,7 @@ from kuberich.ui.commands import NavigationInput
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
 from tests.support.resources import collection
+from tests.support.root_calls import root_calls as root_calls
 from tests.support.workspace import stable_watch, wait_for, workspace_api
 
 
@@ -111,7 +112,7 @@ async def test_disconnected_namespace_candidates_are_absent_and_help_matches_act
 @pytest.mark.asyncio
 @pytest.mark.parametrize("query", ["", "api"])
 async def test_namespace_rejection_survives_same_view_repaint_until_connection_changes(
-    tmp_path, query
+    tmp_path, query, root_calls
 ):
     requested, release = asyncio.Event(), asyncio.Event()
 
@@ -134,7 +135,7 @@ async def test_namespace_rejection_survives_same_view_repaint_until_connection_c
                 await pilot.pause()
                 await pilot.press("colon", "n", "s", "enter")
                 assert "Connect to a context before selecting" in str(app.status.content)
-                app._refresh_tables()
+                root_calls.tick(app)
                 await pilot.pause()
                 assert "Connect to a context before selecting" in str(app.status.content)
                 release.set()
@@ -154,7 +155,7 @@ async def test_namespace_rejection_survives_same_view_repaint_until_connection_c
 @pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
 async def test_cached_scope_completions_filter_errors_and_history_restore_without_keystroke_io(
-    tmp_path, size, monkeypatch
+    tmp_path, size, monkeypatch, root_calls
 ):
     monkeypatch.delenv("NO_COLOR", raising=False)
     reads = []
@@ -258,7 +259,11 @@ async def test_cached_scope_completions_filter_errors_and_history_restore_withou
             await pilot.press("colon")
             await paste_command(app, pilot, "ns t")
             app.save_screenshot(filename=f"command-suggestions-{size[0]}.svg", path=str(evidence))
-        assert app._view_task.done() and app._render_task.done() and app.sessions.client is None
+        assert (
+            root_calls.observations.latest.done()
+            and root_calls.renders.latest.done()
+            and app.sessions.client is None
+        )
 
 
 @pytest.mark.asyncio
@@ -282,8 +287,8 @@ async def test_namespace_suggestions_are_invalidated_before_a_new_context_can_au
             app.command_input.value = "ns old"
             await pilot.pause()
             assert app.command_input.choices == ("ns old-only",)
-            app._start_connection("kuberich-test-Two")
-            await pilot.pause()
+            app.workspace.connect("kuberich-test-Two")
+            await wait_for(lambda: not app.command_input.choices)
             assert not app.command_input.choices and not app.command_input.inline_completion
             await pilot.press("tab")
             assert app.command_input.value == "ns old" and app.focused is app.resources
@@ -336,7 +341,7 @@ async def test_scoped_initial_commands_connect_once_directly_to_the_requested_sc
 
 @pytest.mark.asyncio
 async def test_delayed_filter_cannot_repopulate_an_old_scope_and_latest_query_wins(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, root_calls
 ):
     started, release, ended = (threading.Event() for _ in range(3))
     original = filtering.filter_rows
@@ -392,12 +397,17 @@ async def test_delayed_filter_cannot_repopulate_an_old_scope_and_latest_query_wi
                 release.set()
             await wait_for(lambda: app.resources.row_count == 2)
             assert current_names(app) == ["api", "api-worker"]
-            assert all(row.namespace == "default" for row in app.resources._rows.values())
-        assert ended.is_set() and app._render_task.done()
+            assert all(
+                str(app.resources.get_cell(key, "namespace")) == "default"
+                for key in app.resources.rows
+            )
+        assert ended.is_set() and root_calls.renders.latest.done()
 
 
 @pytest.mark.asyncio
-async def test_exit_drains_the_filter_thread_and_closes_the_current_client(tmp_path, monkeypatch):
+async def test_exit_drains_the_filter_thread_and_closes_the_current_client(
+    tmp_path, monkeypatch, root_calls
+):
     started, release, ended = (threading.Event() for _ in range(3))
 
     def controlled(rows, query):
@@ -418,8 +428,8 @@ async def test_exit_drains_the_filter_thread_and_closes_the_current_client(tmp_p
 
         async def release_after_cancellation():
             try:
-                await wait_for(lambda: app._render_task.cancelling() > 0)
-                assert not app._render_task.done() and not ended.is_set()
+                await wait_for(lambda: root_calls.renders.latest.cancelling() > 0)
+                assert not root_calls.renders.latest.done() and not ended.is_set()
             finally:
                 release.set()
 
@@ -435,7 +445,7 @@ async def test_exit_drains_the_filter_thread_and_closes_the_current_client(tmp_p
             release.set()
             if monitor is not None:
                 await monitor
-        assert ended.is_set() and app._render_task.done() and app.sessions.client is None
+        assert ended.is_set() and root_calls.renders.latest.done() and app.sessions.client is None
 
 
 @pytest.mark.asyncio
@@ -452,7 +462,7 @@ async def test_input_failure_releases_the_key_barrier_and_does_not_hang_exit():
         with pytest.raises(RuntimeError, match="owned-key-handler-failure"):
             async with app.run_test() as pilot:
                 await pilot.press("slash", "x")
-    assert app._input_completion is None and app.return_code == 1
+    assert not app.is_running and app.return_code == 1
 
 
 @pytest.mark.asyncio
@@ -554,15 +564,15 @@ async def test_limited_namespace_listing_suggests_only_known_current_scope_and_a
         app = make_app(catalog_fixture(tmp_path, url))
         async with app.run_test() as pilot:
             await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
-            assert app._namespace_choices() == ("*", "team")
-            app._namespace_selected("*")
+            assert app.command_input.provider("ns ") == ("ns *", "ns team")
+            await app.run_command("ns *")
             await wait_for(
                 lambda: (
                     app.workspace.store.observation.status is ViewStatus.LIVE
                     and app.workspace.store.observation.scope.namespace is None
                 )
             )
-            assert app._namespace_choices() == ("*",)
+            assert app.command_input.provider("ns ") == ("ns *",)
             await pilot.press("colon")
             await paste_command(app, pilot, "ns def")
             assert not app.command_input.choices
@@ -626,7 +636,7 @@ async def test_filter_does_not_misrepresent_an_empty_or_stale_scope(tmp_path):
                 lambda: app.resources.row_count == 0 and "Filter active" in str(app.status.content)
             )
             assert "Stale resource data" in str(app.query_one("#empty-title", Static).content)
-            app._namespace_selected("default")
+            app.workspace.select_namespace("default")
             await wait_for(
                 lambda: (
                     app.workspace.store.observation.status is ViewStatus.LIVE
@@ -684,8 +694,13 @@ async def test_edit_scope_and_focus_changes_discard_arrow_selection(tmp_path, re
             if reset == "edit":
                 await pilot.press("e")  # Same candidate tuple; query identity still changed.
             elif reset == "scope":
-                app._namespace_selected("default")
-                await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
+                app.action_all_namespaces()
+                await wait_for(
+                    lambda: (
+                        app.workspace.store.observation.status is ViewStatus.LIVE
+                        and app.workspace.store.observation.scope.namespace is None
+                    )
+                )
             else:
                 app.set_focus(app.resources)
                 await pilot.pause()

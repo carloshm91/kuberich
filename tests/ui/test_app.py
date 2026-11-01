@@ -202,9 +202,18 @@ async def test_mouse_selects_a_row_and_arrows_preserve_widget_navigation() -> No
 @pytest.mark.asyncio
 async def test_unregistered_theme_retains_a_navigable_default() -> None:
     app = make_app(Settings(theme="not-registered"))
+    notes: list[tuple[str, str]] = []
+    app.notify = lambda message, *, severity="information", **_: notes.append(  # type: ignore[method-assign]
+        (str(message), severity)
+    )
     async with app.run_test() as pilot:
         assert app.theme == "k9s"
-        assert app._appearance_warning == "Selected theme is unavailable; using k9s."
+        assert notes == [
+            (
+                "Selected theme is unavailable; using k9s. Run kuberich config check; working defaults retained.",
+                "warning",
+            )
+        ]
         await pilot.press("colon", "a", "b", "o", "u", "t", "enter")
         assert isinstance(app.screen, AboutScreen)
         await pilot.press("escape", "q")

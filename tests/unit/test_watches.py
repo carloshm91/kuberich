@@ -98,7 +98,7 @@ def test_replay_memory_and_repeated_recreation_are_bounded(monkeypatch: pytest.M
             watch_event(pod_resource(), event(uid=f"uid-{number}", version=f"rv-{number}"))
         )
     assert len(state.snapshot.items) == 1 and state.snapshot.items[0].uid == "uid-9"
-    assert len(state._events) <= 2 and len(state._versions) <= 2
+    assert max(state.replay_sizes) <= 2
 
 
 @pytest.mark.parametrize(

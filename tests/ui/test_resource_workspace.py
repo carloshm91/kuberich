@@ -23,6 +23,7 @@ from tests.support.distribution import PROJECT
 from tests.support.pods import pod
 from tests.support.resources import collection
 from tests.support.watches import frame
+from tests.support.workers import CoroutineCalls
 from tests.support.workspace import stable_watch, wait_for, workspace_api
 from tests.ui.test_navigation import make_app
 from tests.unit.test_namespaces import RESOURCE, namespace
@@ -50,6 +51,10 @@ async def test_top_input_namespace_table_drilldown_escape_and_actual_view_hints(
 
     async with workspace_api(ns, resources) as url:
         app = make_app(catalog_fixture(tmp_path, url))
+        renders = CoroutineCalls()
+        monkeypatch.setattr(
+            app.namespace_table, "apply_rows", renders.observe(app.namespace_table.apply_rows)
+        )
         async with app.run_test(size=size) as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
             assert app.theme == "k9s"
@@ -77,7 +82,7 @@ async def test_top_input_namespace_table_drilldown_escape_and_actual_view_hints(
             out.mkdir(parents=True, exist_ok=True)
             app.save_screenshot(filename=f"workspace-namespaces-{size[0]}.svg", path=str(out))
             await pilot.press("enter")
-            await wait_for(lambda: app.resources.row_count == 1 and app._resource_name == "pods")
+            await wait_for(lambda: app.resources.row_count == 1 and app.state.view_kind == "pods")
             assert app.workspace.store.observation.connection.namespace == "team-38"
             assert app.filter_input.value == ""
             assert "namespaces > pods" in str(app.breadcrumbs.content)
@@ -138,7 +143,7 @@ async def test_top_input_namespace_table_drilldown_escape_and_actual_view_hints(
             assert logs.query_one(WorkspaceHeader).display
             await pilot.press("escape", "escape", "escape")
             await wait_for(
-                lambda: app.namespace_table.row_count == 40 and app._resource_name == "namespaces"
+                lambda: app.namespace_table.row_count == 40 and app.state.view_kind == "namespaces"
             )
             await pilot.pause()
             assert app.filter_input.value == "re:team-"
@@ -148,18 +153,19 @@ async def test_top_input_namespace_table_drilldown_escape_and_actual_view_hints(
             await pilot.press("0")
             await wait_for(
                 lambda: (
-                    app._resource_name == "pods"
+                    app.state.view_kind == "pods"
                     and app.workspace.store.observation.connection.namespace is None
                 )
             )
             await pilot.press("escape")
             await wait_for(
-                lambda: app._resource_name == "namespaces" and app.namespace_table.row_count == 40
+                lambda: app.state.view_kind == "namespaces" and app.namespace_table.row_count == 40
             )
             assert app.namespace_table.selected_uid == uid
             await pilot.press("escape")
-            await wait_for(lambda: app._resource_name == "pods")
-        assert app.sessions.client is None and app._render_task.done()
+            await wait_for(lambda: app.state.view_kind == "pods")
+        assert app.sessions.client is None
+        assert renders.tasks and all(task.done() for task in renders.tasks)
 
 
 @pytest.mark.asyncio
@@ -217,7 +223,7 @@ async def test_namespace_api_errors_and_updates_preserve_live_identity_and_do_no
                 )
                 await pilot.press("colon", *"ns allowed", "enter")
                 await wait_for(
-                    lambda: app._resource_name == "pods" and app.resources.row_count == 1
+                    lambda: app.state.view_kind == "pods" and app.resources.row_count == 1
                 )
             elif state == "stale":
                 await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.STALE)
@@ -234,10 +240,11 @@ async def test_namespace_api_errors_and_updates_preserve_live_identity_and_do_no
                 assert "namespace-team" not in app.namespace_table.rows
                 await pilot.press("enter")
                 await wait_for(
-                    lambda: app._resource_name == "pods" and app.resources.row_count == 1
+                    lambda: app.state.view_kind == "pods" and app.resources.row_count == 1
                 )
             await pilot.press("ctrl+q")
-        assert app.workspace._watch is None and app.sessions.client is None
+        assert app.workspace.ownership.watch_count == 0 and app.sessions.client is None
+        assert app.workspace.ownership.close_complete
 
 
 @pytest.mark.asyncio
@@ -248,10 +255,11 @@ async def test_initial_namespaces_history_and_connecting_scope_guard_preserve_ro
         return namespaces("team", "default")
 
     async def resources(request):
+        namespace = request.path.split("/")[4] if "/namespaces/" in request.path else "team"
         return (
             await stable_watch(request)
             if "watch" in request.query
-            else web.json_response(collection(pod("api")))
+            else web.json_response(collection(pod("api", namespace=namespace)))
         )
 
     async with workspace_api(ns, resources) as url:
@@ -260,26 +268,37 @@ async def test_initial_namespaces_history_and_connecting_scope_guard_preserve_ro
             await wait_for(lambda: app.namespace_table.row_count == 2)
             assert app.resources.row_count == 0 and app.focused is app.namespace_table
             await pilot.press("escape")
-            await wait_for(lambda: app._resource_name == "pods" and app.resources.row_count == 1)
+            await wait_for(lambda: app.state.view_kind == "pods" and app.resources.row_count == 1)
             await pilot.press("colon", *"ns", "enter")
             await wait_for(lambda: app.namespace_table.row_count == 2)
+            app.filter_input.value = "team"
+            await wait_for(lambda: app.namespace_table.row_count == 1)
             await pilot.press("colon", *"po", "enter")
             await wait_for(lambda: app.resources.row_count == 1)
             await pilot.press("alt+left")
             await wait_for(
-                lambda: app._resource_name == "namespaces" and app.namespace_table.row_count == 2
+                lambda: app.state.view_kind == "namespaces" and app.namespace_table.row_count == 1
             )
+            assert app.filter_input.value == "team"
             await pilot.press("alt+right")
-            await wait_for(lambda: app._resource_name == "pods" and app.resources.row_count == 1)
+            await wait_for(lambda: app.state.view_kind == "pods" and app.resources.row_count == 1)
             app.action_namespaces()
-            app._start_connection("kuberich-test-Two")
-            app._submit_command("po")
-            assert app._resource_name == "namespaces"
-            app._namespace_selected("default")
+            await app.run_command("ctx kuberich-test-Two")
+            await app.run_command("po")
+            assert app.state.view_kind == "pods"
+            await app.run_command("ns default")
             await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
             await pilot.pause()
             assert app.workspace.store.observation.context == "kuberich-test-Two"
-            assert not app._namespace_route and app._namespace_state is None
+            await pilot.press("escape")
+            assert app.state.view_kind == "pods", (
+                "A new context must not retain an old namespace back route"
+            )
+            await app.run_command("ns")
+            assert app.filter_input.value == "", (
+                "A new context must not restore the old namespace filter"
+            )
+            await wait_for(lambda: app.namespace_table.row_count == 2)
             assert len(app.screen_stack) == 1
             assert app.command_input.region.y < app.query_one("#resource-view").region.y
 
@@ -399,8 +418,8 @@ async def test_delayed_namespace_list_cannot_repopulate_table_after_context_swit
             await wait_for(lambda: app.resources.row_count == 1)
             app.action_namespaces()
             await asyncio.wait_for(started.wait(), 5)
-            app._select_resource("pods")
-            app._start_connection("kuberich-test-Two")
+            await app.run_command("po")
+            await app.run_command("ctx kuberich-test-Two")
             release.set()
             await wait_for(
                 lambda: (
@@ -411,6 +430,7 @@ async def test_delayed_namespace_list_cannot_repopulate_table_after_context_swit
             await pilot.pause()
             assert app.namespace_table.row_count == 0
             assert "namespace-obsolete" not in app.namespace_table.rows
-            assert app._resource_name == "pods" and len(app.screen_stack) == 1
+            assert app.state.view_kind == "pods" and len(app.screen_stack) == 1
             await pilot.press("ctrl+q")
-        assert app.workspace._watch is None and app.sessions.client is None
+        assert app.workspace.ownership.watch_count == 0 and app.sessions.client is None
+        assert app.workspace.ownership.close_complete

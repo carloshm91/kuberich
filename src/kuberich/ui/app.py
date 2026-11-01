@@ -4,7 +4,7 @@ import asyncio
 import logging
 import os
 import sys
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from contextlib import suppress
 from dataclasses import replace
 from functools import partial
@@ -147,6 +147,7 @@ from kuberich.ui.presentation import DEFAULT_PRESENTATION, Presentation
 from kuberich.ui.scopes import ConnectionScreen
 from kuberich.ui.shutdown import TerminalSignals
 from kuberich.ui.standard import StandardTable
+from kuberich.ui.state import AppState, app_state
 from kuberich.ui.style_cache import ColorStylesCache, ComponentStylesheet
 from kuberich.ui.terminal import ShellScreen
 from kuberich.ui.theme_catalog import appearance_from, invert_theme, themes_for
@@ -209,6 +210,9 @@ class KubeRichApp(App[None]):
         connection: ConnectionRequest = DEFAULT_CONNECTION,
         preferences: PreferenceSource | None = None,
         updates: UpdateService | None = None,
+        environment: Mapping[str, str] | None = None,
+        directory: Path | None = None,
+        clipboard: NativeClipboard | None = None,
     ) -> None:
         super().__init__()
         self.stylesheet = ComponentStylesheet(variables=self.get_css_variables())
@@ -249,10 +253,12 @@ class KubeRichApp(App[None]):
         self.sessions.before_close = self._close_client_operations
         self._terminal_signals = TerminalSignals(self)
         self._shell = settings.shell
-        self._process_environment = dict(os.environ)
-        self._process_directory = Path.cwd()
-        self._native_clipboard = NativeClipboard(
-            self.processes, self._process_environment, self._process_directory
+        self._process_environment = dict(os.environ) if environment is None else dict(environment)
+        self._process_directory = Path.cwd() if directory is None else Path(directory)
+        self._native_clipboard = (
+            clipboard
+            if clipboard is not None
+            else NativeClipboard(self.processes, self._process_environment, self._process_directory)
         )
         self._clipboard_task: asyncio.Task[None] | None = None
         self._catalog_task: asyncio.Task[None] | None = None
@@ -461,6 +467,46 @@ class KubeRichApp(App[None]):
             return
         if isinstance(error := task.exception(), Exception):
             self._handle_exception(error)
+
+    @property
+    def state(self) -> AppState:
+        """Return a fresh, frozen semantic snapshot of the root workspace state.
+
+        Safe to read before mounting or when the active table is empty without mutating
+        application state. ``context``, ``namespace`` and ``scope`` report the underlying
+        workspace observation.
+        """
+        return app_state(
+            self._resource_name,
+            self.workspace.store.observation,
+            self._active_table.capture_viewport().selected,
+        )
+
+    async def run_command(self, text: str) -> None:
+        """Dispatch ``text`` through the active root or nested command-bar route.
+
+        Completion is dispatch-only. Nested transitions, their history entries, and
+        asynchronous connection or watch changes may finish later and are observed via
+        visible UI state. This never waits for a network connection or a long-lived stream.
+        Ignored when no screen is mounted or when a non-command modal screen is active.
+        """
+        if not self.screen_stack:
+            return
+        if isinstance(self.screen, CommandWorkspace):
+            self.screen.leave_command()
+            self.route_nested(self.screen, text)
+            return
+        if isinstance(self.screen, ModalScreen):
+            return
+        if self.focused is self.command_input:
+            self.command_input.value = ""
+            self.set_focus(self._active_table)
+        self._submit_command(text)
+
+    @property
+    def retained_aggregate_log_view_count(self) -> int:
+        """Count registered aggregate views, including detached views still draining exports."""
+        return len(self._aggregate_screens)
 
     @property
     def _active_table(self) -> PodTable | NamespaceTable | ContextTable | StandardTable:

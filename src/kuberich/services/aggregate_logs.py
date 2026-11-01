@@ -122,6 +122,11 @@ class AggregateLogs:
         self._notice: Callable[[str], None] = lambda message: None
         self._fault: Exception | None = None
 
+    @property
+    def controller_count(self) -> int:
+        """Membership/control jobs still retained, including jobs being drained."""
+        return len(self._owned)
+
     def require_current(self) -> None:
         if self.closed:
             raise AppError("The aggregate owner has stopped; close and reopen the viewer.")

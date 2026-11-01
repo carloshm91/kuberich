@@ -5,6 +5,7 @@ import base64
 import logging
 
 import pytest
+from textual.widgets import DataTable
 
 from kuberich.config.schema import Settings
 from kuberich.domain.registry import RESOURCE_ALIASES
@@ -41,14 +42,14 @@ async def opened(app, pilot):
 
 @pytest.mark.asyncio
 async def test_key_names_fit_first_paint_before_native_idle_measurement(tmp_path, monkeypatch):
-    original = ConfigurationKeyTable._update_dimensions
+    original = DataTable._update_dimensions
 
     def delayed_content_measurement(table, new_rows):
         # Preserve native geometry but hold the deferred content-width scan.
         # The metadata read may complete between mount/paint and that idle scan.
-        original(table, ())
+        original(table, () if isinstance(table, ConfigurationKeyTable) else new_rows)
 
-    monkeypatch.setattr(ConfigurationKeyTable, "_update_dimensions", delayed_content_measurement)
+    monkeypatch.setattr(DataTable, "_update_dimensions", delayed_content_measurement)
     async with data_api() as (url, api):
         key = "configuration-token.longname"
         api.value["data"] = {key: base64.b64encode(TEXT.encode()).decode()}
@@ -96,7 +97,7 @@ async def test_hidden_keys_reveal_encoding_copy_controls_and_table_return(tmp_pa
             await wait_for(lambda: "binary" in str(screen.status.content))
             assert screen.viewer.text == ""
             await pilot.press("escape")
-            await wait_for(lambda: not screen._tasks)
+            await wait_for(lambda: screen.operation_count == 0)
             assert screen.index is None and screen.viewer.text == ""
             assert app.focused is app.standard_table
             assert "<svg" in app.export_screenshot()
@@ -112,7 +113,7 @@ async def test_navigation_and_busy_disclosure_do_not_discard_owned_metadata_relo
         async with app.run_test() as pilot:
             screen = await opened(app, pilot)
             await pilot.press("down")
-            selected = screen._selected().identity
+            selected = screen.index.keys[screen.keys.cursor_row].identity
             api.hold = True
             api.started.clear()
             await pilot.press("R")
@@ -128,7 +129,10 @@ async def test_navigation_and_busy_disclosure_do_not_discard_owned_metadata_relo
                 )
             )
             await pilot.pause()
-            assert screen._selected().identity == selected and not screen._tasks
+            assert (
+                screen.index.keys[screen.keys.cursor_row].identity == selected
+                and screen.operation_count == 0
+            )
             assert screen.viewer.text == "" and screen.encoded
             await pilot.press("question_mark")
             assert "Navigation · data" in app.screen.text
@@ -184,10 +188,10 @@ async def test_held_read_is_hidden_on_mode_change_and_drained_before_client_clos
             await asyncio.wait_for(api.started.wait(), 5)
             await pilot.press("x")
             api.release.set()
-            await wait_for(lambda: not screen._tasks)
+            await wait_for(lambda: screen.operation_count == 0)
             assert not screen.revealed and screen.viewer.text == ""
-            await app._close_client_operations(screen.service.client)
-            assert screen._data_stopped and not screen._tasks and screen.index is None
+            await app.sessions.close()
+            assert screen.operation_count == 0 and screen.index is None
             screen.action_reveal()
             assert "stopped" in str(screen.status.content)
 
@@ -208,7 +212,7 @@ async def test_empty_and_refused_data_stay_hidden_and_back_button_restores_table
             await pilot.press("v")
             await wait_for(lambda: isinstance(app.screen, ConfigurationScreen))
             screen = app.screen
-            await wait_for(lambda: not screen._tasks)
+            await wait_for(lambda: screen.operation_count == 0)
             assert not screen.viewer.text and app.clipboard == ""
             assert "sensitive-invalid" not in str(screen.status.content)
             assert screen.keys.row_count == 0
@@ -236,7 +240,7 @@ async def test_long_value_preview_is_bounded_and_oversized_clipboard_is_refused(
             await pilot.click("#configuration-encoding")
             assert screen.encoded
             await pilot.click("#configuration-reload")
-            await wait_for(lambda: screen.index is not None and not screen._tasks)
+            await wait_for(lambda: screen.index is not None and screen.operation_count == 0)
             assert not screen.viewer.text
 
 
@@ -259,6 +263,6 @@ async def test_changed_scope_clears_revealed_value_and_cancels_held_copy(tmp_pat
             screen.service.current = lambda: False
             screen.validate_target()
             api.release.set()
-            await wait_for(lambda: not screen._tasks)
+            await wait_for(lambda: screen.operation_count == 0)
             assert not screen.viewer.text and screen.index is None and not app.clipboard
             assert "changed" in str(screen.status.content)
