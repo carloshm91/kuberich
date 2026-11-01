@@ -7,6 +7,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Report runtime heartbeat latency as advisory for 0.x while retaining unchanged
+  strict opt-in and stable-release limits, real blocking negative controls and
+  every functional, resource, cleanup and coverage requirement
+  ([#230](https://github.com/carloshm91/kuberich/issues/230),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
 - Organize user documentation into 19 pages with tutorial, how-to, reference and
   explanation navigation. Keep the existing guidance and old guide routes while
   introducing a plain-language style and a complete document migration map

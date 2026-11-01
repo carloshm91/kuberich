@@ -65,6 +65,24 @@ The development source also corrects plugin review from qualified custom-resourc
 views. Matching commands can review the selected UID after the view is live;
 previous resource names and API versions remain refused while a new view loads.
 This correction is not included in the installed 0.2.0 release.
+## Development: runtime latency observations
+
+For 0.x development, runtime latency observations retain their original targets
+and report whether they met them. Small overshoots do not replace functional
+correctness as a release blocker. All workload, resource, memory, cleanup and
+coverage checks remain required. Strict runtime limits remain available with
+`KUBERICH_STRICT_RUNTIME_BUDGETS=1` and become mandatory for major-version 1
+candidates; the deliberate blocking negative controls always remain strict.
+Focused policy, receipt and release controls passed 423 cases. Three actual
+aggregate-UI, HTTP-backend and mounted-terminal cases also passed, retaining both
+always-strict blocking controls and full positive workload/cleanup checks. These
+are local prerequisite checks, not full platform or coverage qualification.
+The [quality policy](quality.md#runtime-latency-policy-for-0x-and-stable-qualification)
+explains the exact observation and validation contract.
+
+```sh
+uv run pytest tests/quality/test_runtime_budget.py tests/quality/test_runtime_coverage.py tests/quality/test_backend_runtime.py
+```
 
 ## Development: owned X11 clipboard qualification
 
