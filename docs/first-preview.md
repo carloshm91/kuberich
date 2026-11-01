@@ -46,11 +46,12 @@ Real EKS, AKS and GKE clusters are not certified yet; those trials stay opt-in.
 The foundations phase is in progress. Its first task adds full unit/contract/UI
 test selection, local xdist workers and a fast CI signal before full qualification.
 Worker ownership, failure propagation, coverage combination and timing isolation
-have dedicated regressions. The initial complete fast selection passed locally
-in 160.80 seconds, with one expected macOS-only clipboard skip. Collection checks
-confirm that the scoped command selects the same cases as `pytest -m fast`.
-Full repeated-run and platform qualification remain
-pending; this work does not publish a new version or change the installed 0.2.0.
+have dedicated regressions. The complete fast selection passed locally with
+4,588 tests and one expected macOS-only clipboard skip in 158.00 seconds.
+The [quality guide](quality.md#test-layers-and-local-parallel-runs) records the
+same-candidate serial comparison, full-run measurements and verification policy.
+Three complete parallel runs, collection equivalence and the required hosted
+checks are required before this rollout merges. The installed release is 0.2.0.
 
 ```sh
 uv sync --locked --group dev

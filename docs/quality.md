@@ -574,6 +574,29 @@ uv run python -m scripts.merge_runtime_coverage
 uv run python scripts/check_coverage.py coverage.json
 ```
 
+Individual layers have the following commands:
+
+| Layer | Command |
+| --- | --- |
+| Unit | `uv run pytest tests/unit -m unit -n 6` |
+| Contract | `uv run pytest tests/contract -m contract -n 6` |
+| UI | `uv run pytest tests/ui -m ui -n 6` |
+| Terminal | `uv run pytest tests/terminal -m terminal -n 4` |
+| Packaging | `uv run pytest tests/packaging -m packaging -n 2` |
+| Quality | `uv run pytest tests/quality -m quality -n 4` |
+
+The registered `kind` marker has no pytest cases yet. Run the real cluster
+verifiers from [disposable-cluster qualification](integration-testing.md), for
+example:
+
+```sh
+uv run python -m scripts.verify_kind_lifecycle --kind /absolute/path/to/kind
+```
+
+Those verifiers require the documented local Docker and pinned tool prerequisites.
+They create and verify their own cluster ownership and preserve the caller's
+default kubeconfig. Run the cluster trials sequentially.
+
 Use fewer workers on smaller machines. Serial execution remains available with
 `-n 0`. `loadgroup` scheduling and disabled worker restarts are defaults: tests
 within a file stay in one worker, and files sharing release-evidence fixtures
@@ -629,6 +652,31 @@ fails the protected aggregate. Success then runs every existing source/native
 environment, all test layers, runtime controls and coverage gates. This fast
 signal never substitutes for full qualification. Failed fast runs and test parts
 retain their available evidence too.
+
+### Measured parallel rollout
+
+The same-candidate fast-tier comparison on `3f31d1f` ran the same 4,589 case
+identities, including one explicit macOS-only skip, on Linux/Python 3.12.12 with
+six logical CPUs and 30 GiB RAM. Serial execution took 1,026.56 seconds; twelve
+workers took 156.22 seconds, a 6.57-fold improvement for this selection.
+No competing local test, build or browser command ran during that comparison.
+The later implementation candidate `79dbec4` passed the same fast selection in
+158.00 seconds.
+
+Its first retained complete parallel run passed 6,062 tests with four explicit
+platform/native-workflow skips in 1,039.01 seconds. Independent gates passed:
+98.7712% line coverage, 95.8896% branch coverage, 100% in all 68 critical modules
+and 100% changed-line coverage. Local skips require actual macOS sandbox/clipboard
+facilities or the owned native Homebrew workflows; these results do not establish
+their native installation qualification.
+
+This rollout requires three consecutive complete parallel runs, matching case
+selection and the protected hosted checks before merge. The
+[implementation verification record](https://github.com/carloshm91/kuberich/pull/269)
+retains the final repeat results, exact candidate identities, original failures
+and hosted artifact links. Interrupted or failed originals do not count as passes.
+The normal runtime heartbeat controls retain their 150 ms limit and deliberate
+blocking negative controls. Real provider certification remains opt-in.
 
 ### Parallel test parts
 
