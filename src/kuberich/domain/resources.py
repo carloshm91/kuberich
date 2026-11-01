@@ -2,7 +2,7 @@
 
 import json
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from typing import Any
 
@@ -214,6 +214,7 @@ class ResourceRecord:
     created_at: datetime | None
     _manifest: bytes = field(repr=False)
     server: ServerRow | None = field(default=None, repr=False)
+    metadata_only: bool = False
 
     @property
     def manifest(self) -> dict[str, Any]:
@@ -272,6 +273,47 @@ def resource_record(
     return ResourceRecord(name, uid, scope, rv, created, manifest)
 
 
+def metadata_record(
+    resource: ApiResource, value: Any, namespace: str | None = None
+) -> ResourceRecord:
+    """Keep an explicitly negotiated metadata representation distinct from full data."""
+    data = resource_object(value)
+    if (
+        data.get("apiVersion") != "meta.k8s.io/v1"
+        or data.get("kind") != "PartialObjectMetadata"
+        or set(data) - {"apiVersion", "kind", "metadata"}
+    ):
+        raise AppError("Invalid negotiated PartialObjectMetadata representation.")
+    record = resource_record(resource, {"metadata": data.get("metadata")}, namespace)
+    return replace(
+        record,
+        _manifest=json.dumps(data, ensure_ascii=False, allow_nan=False).encode("utf-8"),
+        metadata_only=True,
+    )
+
+
+@dataclass(frozen=True)
+class CollectionState:
+    """Collection membership completeness, not a claim of full object contents."""
+
+    complete: bool = True
+    limited: bool = False
+    pages: int = 0
+    retained_bytes: int = 0
+
+    def __post_init__(self) -> None:
+        if (
+            type(self.complete) is not bool
+            or type(self.limited) is not bool
+            or (self.complete and self.limited)
+            or type(self.pages) is not int
+            or self.pages < 0
+            or type(self.retained_bytes) is not int
+            or self.retained_bytes < 0
+        ):
+            raise AppError("Invalid collection completeness/progress state.")
+
+
 @dataclass(frozen=True, repr=False)
 class ResourceSnapshot:
     resource: ApiResource
@@ -279,3 +321,4 @@ class ResourceSnapshot:
     resource_version: str | None
     items: tuple[ResourceRecord, ...]
     columns: tuple[ServerColumn, ...] = ()
+    collection: CollectionState = field(default_factory=CollectionState)

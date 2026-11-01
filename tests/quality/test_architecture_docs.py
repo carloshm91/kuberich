@@ -75,7 +75,9 @@ def test_short_overview_explains_the_actual_layers_data_flow_and_boundaries():
         "Cancel and await" in diagram and "Replace connection?" in diagram for diagram in diagrams
     )
     assert "still contains substantial" in text
-    assert "does not claim a completed controller" in text
+    assert "smaller-App target remain stable-release goals" in text
+    assert "WorkspacePresenter" in text and "WorkspaceCommands" in text
+    assert "Target invalidation, capture, retirement, and cleanup failures remain" in text
     assert "no hosted backend or Textual Web" in text
 
 
@@ -145,6 +147,10 @@ def test_architecture_and_decision_links_resolve_without_publishing_history():
     _, catalog = history()
     paths = [ROOT / "docs/architecture.md", ROOT / "docs/adr/README.md"]
     paths += [ROOT / item["source"] for item in catalog["decisions"]]
+    paths += [
+        ROOT / "docs/adr/app-composition.md",
+        ROOT / "docs/adr/0032-kubeconfig-loader-contract.md",
+    ]
     for path in paths:
         tokens, _ = rendered(path.read_text())
         for token in tokens:
@@ -188,3 +194,15 @@ def test_archived_architecture_links_use_the_byte_verified_original_source_conte
     assert contexts[archive].commit == record["source_commit"]
     assert not (archive.parent / "acceptance/plugin-execution.md").exists()
     assert validate_repository_links(ROOT) > 0
+
+
+def test_current_composition_and_kubeconfig_decisions_remain_in_the_active_index():
+    index = (ROOT / "docs/adr/README.md").read_text()
+    overview = (ROOT / "docs/architecture.md").read_text()
+    for name in ("app-composition.md", "0032-kubeconfig-loader-contract.md"):
+        assert f"]({name})" in index
+        assert f"](adr/{name})" in overview
+    assert "current view and scope" in overview and "inline Retry" in overview
+    assert "**INCOMPLETE**" in overview and "PartialObjectMetadata" in overview
+    assert "Basic authentication" in overview and "OIDC migration" in overview
+    assert "first-paint timing is advisory for 0.x" in overview

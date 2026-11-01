@@ -3,6 +3,7 @@
 import asyncio
 import base64
 import json
+import ssl
 import sys
 import threading
 from datetime import UTC, datetime, timedelta
@@ -410,12 +411,12 @@ async def test_repeated_cancellation_drains_real_certificate_preparation_before_
     _, material = certificate(tmp_path)
     write_certificate(tmp_path, material)
     started, release = threading.Event(), threading.Event()
-    original_context = kubernetes._ssl_context
+    original_context = ssl.create_default_context
 
-    def held_context(configuration, **kwargs):
+    def held_context(*args, **kwargs):
         started.set()
         assert release.wait(3)
-        return original_context(configuration, **kwargs)
+        return original_context(*args, **kwargs)
 
     async def handler(request):
         return namespaces("team")
@@ -425,7 +426,7 @@ async def test_repeated_cancellation_drains_real_certificate_preparation_before_
             catalog_fixture(tmp_path, server, exec_user(tmp_path)).select("kuberich-test-one"), 3
         )
         await session.open()
-        monkeypatch.setattr(kubernetes, "_ssl_context", held_context)
+        monkeypatch.setattr(ssl, "create_default_context", held_context)
         session.credentials.invalidate()
         refresh = asyncio.create_task(session.refresh_credentials())
         try:

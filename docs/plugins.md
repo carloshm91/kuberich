@@ -101,6 +101,21 @@ Plugins need an active connection and cannot execute as startup commands.
 KubeRich rechecks a selected resource's UID before launch, but cannot make an
 external tool's later server requests atomic.
 
+## Select a resource
+
+The development source fixes plugin review in custom-resource views opened with
+an explicit group/version. `:widgets.example.test/v1` matches the exact plugin
+scope `example.test/v1/widgets`; navigation syntax does not change the canonical
+API resource name. Wait for the current resource and version to load before
+Review. The selected UID and group/version remain part of the review guards.
+
+The local contexts list has no Kubernetes resource scope or plugin hotkeys.
+Explicit `:plugins` or `:plugin NAME` there can review global commands against the
+connected context; highlighting another context does not connect it or supply a
+resource `NAME`. Resource-specific commands wait for their matching API view.
+The namespace table uses its own shortcut profile, including custom namespace
+keys.
+
 ## Choose how output appears
 
 - `capture` waits for one command and shows its result and limited output.
@@ -116,6 +131,11 @@ to 65,536 bytes by default and configurable from 1,024 to 1,048,576. Overflow st
 the process and reports Output Limit. Timeout, cancellation, nonzero exit, signal,
 and start refusal have distinct results. Context replacement, target invalidation,
 and exit stop the related local processes before private connection cleanup.
+
+An opened background-job result updates its status, exit code, and completed
+output automatically. Moving to another job row keeps the opened result until
+you press Enter again. Output appears on completion rather than streaming;
+stopping or cancelling can discard output still being collected.
 
 ## Trust and read-only behavior
 

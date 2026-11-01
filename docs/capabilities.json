@@ -11,11 +11,12 @@
       "capability": "All 26 explicitly registered launch flags; help/version/info and completion",
       "tasks": [
         "F05",
-        "D13"
+        "D13",
+        "Q15"
       ],
       "source": "cmd/root.go",
       "status": "planned",
-      "difference": "F05 implements local inspection, policy, presentation, initial views, periodic table repaint and invocation connection overrides. All audited flags are recognized; splash/inversion/export remain explicitly unavailable under U01/O06 and shell completion remains D13.",
+      "difference": "F05 implements local inspection, policy, presentation, initial views, periodic table repaint and invocation connection overrides. All audited flags are recognized; splash/inversion/export remain explicitly unavailable under U01/O06 and shell completion remains D13. Q15 adds a local redacted bug-report bundle, recoverable resource-view errors and private post-restoration crash reports.",
       "partial_evidence": [
         "docs/k9s-cli.md",
         "tests/unit/test_launch_contract.py",
@@ -28,9 +29,13 @@
         "tests/unit/test_connection_overrides.py",
         "tests/ui/test_launch_options.py",
         "scripts/verify_shell_kind.py",
-        "docs/acceptance/connection-overrides.md"
+        "docs/acceptance/connection-overrides.md",
+        "docs/troubleshooting.md",
+        "tests/contract/test_bug_report_cli.py",
+        "tests/ui/test_view_errors.py",
+        "tests/unit/test_diagnostic_reports.py"
       ],
-      "public_summary": "Launch flags provide help, version, local diagnostics, read-only policy, presentation controls, session color inversion, startup views, and connection overrides. Splash, general resource export, and shell completion are unavailable.",
+      "public_summary": "Launch flags provide help, version, local diagnostics, read-only policy, presentation controls, session color inversion, startup views, and connection overrides. Splash, general resource export, and shell completion are unavailable. Development source also provides local redacted diagnostic bundles and recoverable view errors.",
       "public_status": "partial"
     },
     {
@@ -505,11 +510,12 @@
       "capability": "Copy resource/namespace/text with native clipboard and OSC52 over SSH/tmux",
       "tasks": [
         "B07",
-        "Q02"
+        "Q02",
+        "Q19"
       ],
       "source": "internal/view/clipboard.go",
       "status": "planned",
-      "difference": "B04 and S02 copy redacted inspection/log text using Textual OSC52. Native clipboard and physical host clipboard receipt remain B07 #61. Q02 #33 exercises redacted log-copy controls over SSH/tmux, but does not certify the host clipboard receiving OSC52; native clipboard and physical-emulator/manual checks remain B07 #61. B07 #61: Next-release source writes bounded native plaintext via macOS AppKit/system osascript or foreground-owned X11 xclip and bounded base64 OSC52 with tmux framing. Explicit name/namespace/table-text controls preserve existing redacted views. Native/headless 1-MiB and terminal 64-KiB UTF-8 limits refuse rather than truncate. Owned Xvfb/ephemeral hosted macOS roundtrips and outer PTY receipts do not claim every physical-terminal paste acknowledgement.",
+      "difference": "B04 and S02 copy redacted inspection/log text using Textual OSC52. Q02 #33 exercises redacted log-copy controls over SSH/tmux, without certifying the physical host clipboard. B07 #61 adds bounded native plaintext via macOS AppKit/system osascript or foreground-owned X11 xclip and bounded base64 OSC52 with tmux framing. Q19 #220 adds foreground-owned wl-copy with an explicit UTF-8 plaintext MIME type, local Wayland-before-X11 selection and actionable terminal fallback. Explicit name/namespace/table-text controls preserve existing redacted views. Native/headless 1-MiB and terminal 64-KiB UTF-8 limits refuse rather than truncate. Wayland invocation and process ownership use real fake-executable contracts; real Wayland compositor receipt is not certified. Owned Xvfb/ephemeral hosted macOS roundtrips and outer PTY receipts do not claim every physical-terminal paste acknowledgement.",
       "partial_evidence": [
         "docs/resource-inspection.md",
         "docs/log-viewer.md",
@@ -527,9 +533,13 @@
         "tests/unit/test_metadata_filtering.py",
         "tests/ui/test_interactions.py",
         "tests/terminal/test_interactions.py",
-        "scripts/navigation_kind.py"
+        "scripts/navigation_kind.py",
+        "tests/unit/test_clipboard.py",
+        "tests/contract/test_wayland_clipboard.py",
+        "tests/ui/test_clipboard.py",
+        "docs/acceptance/wayland-clipboard.md"
       ],
-      "public_summary": "Explicit copy uses local macOS native text, X Window System xclip, or terminal OSC52 with tmux framing. Native text accepts up to 1 MiB and terminal copy 64 KiB. A sent request does not prove an outer terminal accepted it.",
+      "public_summary": "Explicit copy uses local macOS native text, Wayland wl-copy, X Window System xclip, or terminal OSC52 with tmux framing. Wayland takes precedence locally; automatic SSH mode selects OSC52. Native text accepts up to 1 MiB and terminal copy 64 KiB. Text stays on stdin for native helpers. A sent request does not prove a compositor or outer terminal accepted it.",
       "public_status": "partial"
     },
     {
@@ -1256,6 +1266,7 @@
         "docs/acceptance/plugin-execution.md",
         "tests/contract/test_plugins.py",
         "tests/ui/test_plugins.py",
+        "tests/ui/test_generic_plugins.py",
         "tests/unit/test_credential_child.py",
         "tests/terminal/test_handoff.py",
         "tests/packaging/test_distribution.py",

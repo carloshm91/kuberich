@@ -17,6 +17,10 @@ libyaml as dependencies. Prebuilt bottles are available for macOS Apple Silicon
 Other supported Homebrew systems build from source. Dependencies may also need a
 source build on an older operating system; that can take several minutes.
 
+Development builds for the next release use macOS 15 Apple Silicon runners and
+`arm64_sequoia` bottles. Published 0.2.0 Sonoma bottles keep their existing files;
+when no compatible bottle exists, Homebrew builds from source.
+
 ## Python tools
 
 Use CPython 3.12–3.14 and an isolated tool environment:

@@ -82,7 +82,7 @@ def test_job_control_failure_restores_the_signal_mask(monkeypatch):
 
     monkeypatch.setattr(os, "tcsetpgrp", failed)
     with pytest.raises(OSError):
-        terminal._foreground(0, os.getpgrp())
+        terminal.TerminalLease(0).claim(os.getpgrp())
     assert signal.pthread_sigmask(signal.SIG_BLOCK, set()) == previous
 
 
@@ -248,12 +248,19 @@ def test_output_descriptor_closed_or_replaced_after_capture_is_left_alone(tmp_pa
 
 
 def test_unexpected_tty_inspection_errors_are_not_hidden(monkeypatch):
+    master, slave = pty.openpty()
+    owner = terminal.RevokedTerminalOutput((slave,))
+
     def unavailable(descriptor):
         raise termios.error(errno.EINVAL, "unexpected")
 
     monkeypatch.setattr(termios, "tcgetattr", unavailable)
-    with pytest.raises(termios.error, match="unexpected"):
-        terminal._revoked(27)
+    try:
+        with pytest.raises(termios.error, match="unexpected"):
+            owner.discard_revoked()
+    finally:
+        os.close(master)
+        os.close(slave)
 
 
 def test_unexpected_output_descriptor_errors_are_not_hidden(monkeypatch):

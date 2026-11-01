@@ -341,7 +341,7 @@ async def test_close_cancels_one_ambiguous_batch_write_and_keeps_remaining_unsen
             MutationState.CANCELLED,
         ]
         assert len(api.requests) == 1 and "owned-2" in api.values
-        assert not manager._live
+        assert manager.active_count == 0
         await manager.close()
 
 

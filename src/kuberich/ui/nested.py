@@ -1,26 +1,34 @@
-"""Shared command bar for captured read-only workspaces, without shell interception."""
+"""Shared command bar for captured workspaces through an explicit command port."""
 
-from typing import TYPE_CHECKING, cast
+from __future__ import annotations
+
+from collections.abc import Callable
+from dataclasses import dataclass
 
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.screen import ModalScreen
 from textual.widgets import Static
 
+from kuberich.domain.interactions import CommandHistory
 from kuberich.ui.commands import CommandInput
 
-if TYPE_CHECKING:
-    from kuberich.ui.app import KubeRichApp
+
+@dataclass(frozen=True)
+class NestedCommands:
+    suggestions: Callable[[str], tuple[str, ...]]
+    history: CommandHistory
+    route: Callable[[CommandWorkspace, str], None]
 
 
 class CommandWorkspace(ModalScreen[None]):
     command_input: CommandInput | None = None
 
     def command_bar(self) -> ComposeResult:
-        # Standalone widget harnesses do not own the application's command service.
-        if not hasattr(self.app, "_suggestions"):
+        # Standalone screens can omit the root workspace's command capabilities.
+        commands = getattr(self.app, "nested_commands", None)
+        if not isinstance(commands, NestedCommands):
             return
-        app = cast("KubeRichApp", self.app)
         previous = self.AUTO_FOCUS
 
         def focus_view() -> None:
@@ -28,11 +36,11 @@ class CommandWorkspace(ModalScreen[None]):
                 self.set_focus(self.query_one(previous))
 
         self.command_input = CommandInput(
-            app._suggestions,
+            commands.suggestions,
             focus_view,
-            lambda value: app.route_nested(self, value),
+            lambda value: commands.route(self, value),
             id="view-command",
-            history=app.interactions.history,
+            history=commands.history,
         )
         with Horizontal(classes="input-bar nested-command-bar"):
             yield Static(":", classes="input-label", markup=False)

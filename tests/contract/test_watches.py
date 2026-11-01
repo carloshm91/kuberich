@@ -322,13 +322,21 @@ async def test_invalid_frames_stop_without_showing_empty_success(
 
 
 @pytest.mark.asyncio
-async def test_live_state_bound_failure_is_explicit(
+async def test_live_state_bound_keeps_a_healthy_explicit_incomplete_watch(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from kuberich.domain import watches as domain
 
     monkeypatch.setattr(domain, "MAX_RESOURCE_ITEMS", 1)
     updates = []
+
+    class ObservedLimit(Exception):
+        pass
+
+    async def observe(update):
+        updates.append(update)
+        if update.snapshot is not None and update.snapshot.collection.limited:
+            raise ObservedLimit
 
     async def handler(request):
         return (
@@ -338,12 +346,11 @@ async def test_live_state_bound_failure_is_explicit(
         )
 
     async with reader_fixture(tmp_path, handler) as reader:
-        with pytest.raises(ConnectionProblem) as problem:
-            await ListWatch(reader).run(
-                pod_resource(), "team", lambda update: collect(updates, update)
-            )
-        assert problem.value.state is ConnectionState.API_ERROR
+        with pytest.raises(ObservedLimit):
+            await ListWatch(reader).run(pod_resource(), "team", observe)
     assert len(updates[-1].snapshot.items) == 1
+    assert updates[-1].status is SyncStatus.LIVE and updates[-1].problem is None
+    assert not updates[-1].snapshot.collection.complete
 
 
 @pytest.mark.asyncio

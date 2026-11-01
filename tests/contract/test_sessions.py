@@ -266,7 +266,11 @@ async def test_invalid_or_excessive_response_is_not_an_empty_cluster(
         ({"insecure-skip-tls-verify": 1}, {}, ConnectionState.CONFIG_ERROR),
         ({}, {"client-certificate-data": "eA=="}, ConnectionState.AUTH_ERROR),
         ({}, {"auth-provider": {"name": "oidc"}}, ConnectionState.AUTH_ERROR),
-        ({}, {"username": "synthetic", "password": "synthetic"}, ConnectionState.AUTH_ERROR),
+        (
+            {},
+            {"username": "synthetic:invalid", "password": "synthetic"},
+            ConnectionState.AUTH_ERROR,
+        ),
         ({}, {"exec": {}, "token": "synthetic"}, ConnectionState.AUTH_ERROR),
         ({}, {"exec": {}}, ConnectionState.AUTH_ERROR),
     ],
@@ -355,25 +359,25 @@ async def test_cancel_during_owned_filesystem_preparation_waits_for_thread(
 ) -> None:
     import threading
 
-    from kuberich.adapters import kubernetes
-
     started, release, finished = threading.Event(), threading.Event(), threading.Event()
     material_written = threading.Event()
-    original = kubernetes._prepare
+    original = Path.write_bytes
     _, material = certificate(tmp_path)
 
-    def delayed(context, directory, environment=None):
+    def delayed(path, data):
+        if not path.parent.name.startswith("kuberich-session-"):
+            return original(path, data)
         started.set()
         assert release.wait(timeout=5)
         try:
-            configuration, info = original(context, directory, environment)
-            assert Path(configuration.ssl_ca_cert).is_file()
+            result = original(path, data)
+            assert path.is_file()
             material_written.set()
-            return configuration, info
+            return result
         finally:
             finished.set()
 
-    monkeypatch.setattr(kubernetes, "_prepare", delayed)
+    monkeypatch.setattr(Path, "write_bytes", delayed)
 
     async def handler(request):
         return namespaces("default")

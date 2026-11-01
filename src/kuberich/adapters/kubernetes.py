@@ -1,5 +1,7 @@
 """Explicit SDK session, private TLS material and bounded namespace discovery."""
 
+from __future__ import annotations
+
 import asyncio
 import base64
 import binascii
@@ -13,12 +15,8 @@ from math import ceil
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from time import monotonic
-from typing import Any, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn
 from urllib.parse import urlsplit
-
-import aiohttp
-from aiohttp_socks import ProxyConnectionError, ProxyConnector, ProxyError, ProxyTimeoutError
-from kubernetes_asyncio import client
 
 from kuberich.adapters.credentials import CredentialLogin, ExecToken, auth_problem
 from kuberich.config.catalog import ContextConfig, Entry, mapping, regular_bytes, text
@@ -31,8 +29,14 @@ from kuberich.domain.connections import (
 )
 from kuberich.domain.credential_helpers import bearer_token
 from kuberich.domain.exec_credentials import encrypted_key
+from kuberich.domain.kubeconfig_auth import basic_credentials, basic_header
 from kuberich.domain.proxies import effective_proxy, tls_failure
+from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.errors import AppError
+
+if TYPE_CHECKING:
+    import aiohttp
+    from kubernetes_asyncio import client
 
 
 def decode_json(data: bytes) -> dict[str, Any]:
@@ -78,17 +82,28 @@ def _endpoint(value: Any) -> str:
 def _material(entry: Entry, name: str, directory: Path) -> str | None:
     inline = entry.data.get(name + "-data")
     filename = entry.data.get(name)
-    if inline is not None:
-        if not isinstance(inline, str) or len(inline) > 1400000:
-            raise AppError("Embedded TLS material must be bounded base64 text.")
-        data = base64.b64decode(inline, validate=True)
-    elif filename is not None:
-        data = regular_bytes(entry.directory / text(filename))
-    else:
-        return None
+    field = (
+        "clusters.cluster.certificate-authority"
+        if name == "certificate-authority"
+        else "users.user." + name
+    )
+    try:
+        if inline is not None and inline != "":
+            if not isinstance(inline, str) or len(inline) > 1400000:
+                raise ValueError
+            data = base64.b64decode(inline, validate=True)
+        elif filename is not None and filename != "":
+            data = regular_bytes(entry.directory / text(filename))
+        else:
+            return None
+    except (AppError, OSError, ValueError, binascii.Error):
+        raise ConnectionProblem(
+            ConnectionState.CONFIG_ERROR,
+            f"Cannot read {field}/{name}-data. Check bounded base64 data or the original file path and permissions.",
+        ) from None
     if name == "client-key" and encrypted_key(data):
         raise auth_problem(
-            "Encrypted client TLS keys are unsupported. Use an unencrypted kubeconfig key or an explicit exec helper that owns decryption."
+            "Encrypted client TLS keys in users.user.client-key/client-key-data are unsupported. Use an unencrypted kubeconfig key or an explicit exec helper that owns decryption."
         )
     path = directory / name
     path.write_bytes(data)
@@ -166,12 +181,29 @@ async def _finish_task[T](task: asyncio.Task[T]) -> T:
 def _prepare(
     context: ContextConfig, directory: Path, environment: dict[str, str] | None = None
 ) -> tuple[client.Configuration, dict[str, Any]]:
+    from kubernetes_asyncio import client
+
     configuration = client.Configuration()
     cluster, user = context.cluster.data, context.user.data
-    configuration.host = _endpoint(cluster.get("server"))
+    try:
+        configuration.host = _endpoint(cluster.get("server"))
+    except (AppError, ValueError):
+        raise ConnectionProblem(
+            ConnectionState.CONFIG_ERROR,
+            "clusters.cluster.server must be an HTTP(S) URL without credentials, query or fragment.",
+        ) from None
     insecure = cluster.get("insecure-skip-tls-verify", False)
     if type(insecure) is not bool:
-        raise AppError("insecure-skip-tls-verify must be true or false.")
+        raise ConnectionProblem(
+            ConnectionState.CONFIG_ERROR,
+            "clusters.cluster.insecure-skip-tls-verify must be true or false.",
+        )
+    compression = cluster.get("disable-compression")
+    if compression is not None and type(compression) is not bool:
+        raise ConnectionProblem(
+            ConnectionState.CONFIG_ERROR,
+            "clusters.cluster.disable-compression must be true or false.",
+        )
     configuration.verify_ssl = not insecure
     configuration.ssl_ca_cert = _material(context.cluster, "certificate-authority", directory)
     configuration.cert_file = _material(context.user, "client-certificate", directory)
@@ -179,26 +211,55 @@ def _prepare(
     if bool(configuration.cert_file) != bool(configuration.key_file):
         raise auth_problem("Client certificate and key must be supplied together.")
     if "tls-server-name" in cluster and cluster["tls-server-name"] != "":
-        configuration.tls_server_name = text(cluster["tls-server-name"])
-    configuration.proxy = effective_proxy(
-        configuration.host, cluster.get("proxy-url"), environment if environment is not None else {}
-    )
-    if any(key in user for key in ("auth-provider", "username", "password")):
-        raise auth_problem(
-            "Legacy auth-provider/basic credentials are unsupported. Regenerate GKE/AKS exec kubeconfig or configure an external OIDC exec helper; token/certificate users need no helper."
+        try:
+            configuration.tls_server_name = (
+                text(cluster["tls-server-name"]) if cluster["tls-server-name"] is not None else None
+            )
+        except AppError:
+            raise ConnectionProblem(
+                ConnectionState.CONFIG_ERROR,
+                "clusters.cluster.tls-server-name must be a bounded hostname without controls.",
+            ) from None
+    try:
+        configuration.proxy = effective_proxy(
+            configuration.host,
+            cluster.get("proxy-url"),
+            environment if environment is not None else {},
         )
+    except (AppError, ValueError):
+        raise ConnectionProblem(
+            ConnectionState.CONFIG_ERROR,
+            "clusters.cluster.proxy-url or captured proxy environment is invalid. Use an HTTP(S) or SOCKS5 URL and check NO_PROXY.",
+        ) from None
+    if user.get("auth-provider") is not None:
+        raise auth_problem(
+            "users.user.auth-provider is unsupported in-process. For oidc, run kuberich --kubeconfig PATH --context NAME kubeconfig oidc-migration and review its exec fragment. For GKE/AKS, regenerate the provider's exec kubeconfig."
+        )
+    basic = basic_credentials(user)
+    if user.get("exec") is not None and not isinstance(user["exec"], dict):
+        raise auth_problem("users.user.exec must be a mapping.")
     mechanisms = sum(
         (
-            "exec" in user,
-            "token" in user or "tokenFile" in user,
+            user.get("exec") is not None,
+            user.get("token") not in (None, "") or user.get("tokenFile") not in (None, ""),
             configuration.cert_file is not None,
+            basic is not None,
         )
     )
     if mechanisms > 1:
-        raise auth_problem("The selected user has conflicting credential mechanisms.")
-    if "token" in user:
-        configuration.api_key["BearerToken"] = "Bearer " + bearer_token(user["token"])
-    if "tokenFile" in user:
+        raise auth_problem(
+            "The selected users.user has conflicting credential mechanisms: exec, token/tokenFile, client-certificate/client-key or username/password. Use one identity or an explicit credential override."
+        )
+    if basic is not None:
+        configuration.username, configuration.password = basic
+    if user.get("token") not in (None, ""):
+        try:
+            configuration.api_key["BearerToken"] = "Bearer " + bearer_token(user["token"])
+        except ValueError:
+            raise auth_problem(
+                "users.user.token must be bounded bearer text without controls."
+            ) from None
+    if user.get("tokenFile") not in (None, ""):
         try:
             configuration.api_key["BearerToken"] = "Bearer " + bearer_token(
                 regular_bytes(context.user.directory / text(user["tokenFile"]))
@@ -219,7 +280,7 @@ def _prepare(
         info["tls-server-name"] = configuration.tls_server_name
     if configuration.proxy is not None:
         info["proxy-url"] = configuration.proxy
-    for extension in cluster.get("extensions", []):
+    for extension in cluster.get("extensions") or []:
         item = mapping(extension)
         if item.get("name") == "client.authentication.k8s.io/exec":
             info["config"] = item.get("extension")
@@ -232,11 +293,16 @@ class KubernetesSession:
     def __init__(self, context: ContextConfig, timeout: float) -> None:
         self.context = context
         self.timeout = timeout
-        self.token_file = (
-            context.user.directory / text(context.user.data["tokenFile"])
-            if "tokenFile" in context.user.data
-            else None
-        )
+        try:
+            self.token_file = (
+                context.user.directory / text(context.user.data["tokenFile"])
+                if context.user.data.get("tokenFile") not in (None, "")
+                else None
+            )
+        except AppError:
+            raise auth_problem(
+                "users.user.tokenFile must name a bounded credential file path."
+            ) from None
         self.directory = TemporaryDirectory(prefix="kuberich-session-")
         self.api: client.ApiClient | None = None
         self.configuration: client.Configuration | None = None
@@ -255,6 +321,9 @@ class KubernetesSession:
         return None if proxy and proxy.startswith("socks5:") else proxy
 
     async def _new_pool(self, configuration: client.Configuration) -> aiohttp.ClientSession:
+        import aiohttp
+        from aiohttp_socks import ProxyConnector
+
         proxy = configuration.proxy
         context = await _finish_task(
             asyncio.create_task(
@@ -383,6 +452,8 @@ class KubernetesSession:
                 cluster[destination] = value
         if "extensions" in self.context.cluster.data:
             cluster["extensions"] = copy.deepcopy(self.context.cluster.data["extensions"])
+        if self.context.cluster.data.get("disable-compression") is not None:
+            cluster["disable-compression"] = self.context.cluster.data["disable-compression"]
         user: dict[str, Any] = {}
         for source, destination in (
             ("cert_file", "client-certificate"),
@@ -399,6 +470,9 @@ class KubernetesSession:
             if "/" in command and not Path(command).is_absolute():
                 helper["command"] = str(self.credentials.entry.directory / command)
             user["exec"] = helper
+        elif configuration.username is not None or configuration.password is not None:
+            user["username"] = configuration.username or ""
+            user["password"] = configuration.password or ""
         elif token := configuration.api_key.get("BearerToken"):
             user["token"] = token.removeprefix("Bearer ")
             if self.token_file is not None:
@@ -433,11 +507,17 @@ class KubernetesSession:
             # repeated cancellation before close removes the owned directory.
             configuration, info = await _finish_task(preparation)
             self.configuration = configuration
-            self.impersonation = impersonation_headers(self.context.user.data)
+            try:
+                self.impersonation = impersonation_headers(self.context.user.data)
+            except AppError:
+                raise ConnectionProblem(
+                    ConnectionState.CONFIG_ERROR,
+                    "users.user.as/as-uid/as-groups/as-user-extra are invalid. Use an explicit subject and bounded string/list attributes.",
+                ) from None
             self.insecure = not configuration.verify_ssl or str(configuration.host).startswith(
                 "http:"
             )
-            if "exec" in self.context.user.data:
+            if self.context.user.data.get("exec") is not None:
                 self.credentials = ExecToken(
                     Entry(mapping(self.context.user.data["exec"]), self.context.user.directory),
                     info,
@@ -449,6 +529,9 @@ class KubernetesSession:
                 raise auth_problem(
                     "The selected user has no exec helper to authenticate with :login."
                 )
+            import aiohttp
+            from kubernetes_asyncio import client
+
             self.api = client.ApiClient(configuration=configuration)
             # Qualify this pinned SDK boundary in transport tests. Preserve the
             # SDK-created TLS connector but refuse ambient netrc/proxy identity.
@@ -466,7 +549,7 @@ class KubernetesSession:
             await self.close()
             raise ConnectionProblem(
                 ConnectionState.TLS_ERROR,
-                "Cannot load TLS certificates. Check the CA and client certificate/key pair.",
+                "Cannot load TLS certificates. Check clusters.cluster.certificate-authority/data and users.user.client-certificate/data/client-key/data.",
             ) from None
         except (AppError, OSError, ValueError, UnicodeError, binascii.Error, TypeError):
             await self.close()
@@ -478,10 +561,24 @@ class KubernetesSession:
             await self.close()
             raise
 
+    def authorization_header(self) -> str | None:
+        """Return the prepared identity only for this session's owned transport."""
+        configuration = self.configuration
+        if configuration is None:
+            return None
+        token: str | None = configuration.api_key.get("BearerToken")
+        if token:
+            return token
+        if configuration.username is not None or configuration.password is not None:
+            return basic_header((configuration.username or "", configuration.password or ""))
+        return None
+
     @asynccontextmanager
     async def _response(
         self, path: str, params: dict[str, str] | None, accept: str, timeout: float | None
     ) -> AsyncIterator[aiohttp.ClientResponse]:
+        import aiohttp
+
         api, configuration, credentials = self.api, self.configuration, self.credentials
         if api is None or configuration is None:
             raise ConnectionProblem(ConnectionState.DISCONNECTED, "The selected session is closed.")
@@ -490,7 +587,7 @@ class KubernetesSession:
             await self.refresh_credentials()
             revision = credentials.revision if credentials is not None else None
             headers = [("Accept", accept), ("Accept-Encoding", "identity"), *self.impersonation]
-            token = configuration.api_key.get("BearerToken")
+            token = self.authorization_header()
             if token:
                 headers.append(("Authorization", token))
             # Bound connection/header establishment separately from a watch's
@@ -536,6 +633,9 @@ class KubernetesSession:
         accept: str = "application/json",
     ) -> dict[str, Any]:
         """Owned read-only transport; callers construct discovered API paths."""
+        import aiohttp
+        from aiohttp_socks import ProxyConnectionError, ProxyError, ProxyTimeoutError
+
         try:
             async with asyncio.timeout(self.timeout):
                 async with self._response(path, params, accept, self.timeout) as response:
@@ -577,6 +677,9 @@ class KubernetesSession:
         self, path: str, params: dict[str, str], *, follow: bool
     ) -> AsyncGenerator[bytes | None, None]:
         """None reports open headers; quiet follows have no artificial body deadline."""
+        import aiohttp
+        from aiohttp_socks import ProxyConnectionError, ProxyError, ProxyTimeoutError
+
         try:
             async with self._response(
                 path, params, "*/*", None if follow else self.timeout
@@ -648,8 +751,12 @@ class KubernetesSession:
         max_bytes: int = 8 * 1024 * 1024,
         accept: str = "application/json",
         include_object: bool = False,
+        query: ResourceQuery | None = None,
     ) -> AsyncGenerator[bytes | None, None]:
         """Pull one bounded complete frame; its consumer owns parsing and validation."""
+        import aiohttp
+        from aiohttp_socks import ProxyConnectionError, ProxyError, ProxyTimeoutError
+
         duration = self.watch_seconds
         # Allow headers and graceful server expiry before the client deadline.
         # A server which never finishes still times out, including with no events.
@@ -660,8 +767,14 @@ class KubernetesSession:
             "allowWatchBookmarks": "true",
             "timeoutSeconds": str(duration),
         }
+        if query is not None:
+            if not isinstance(query, ResourceQuery):
+                raise AppError("Kubernetes watch requires a validated server query.")
+            params.update(query.parameters)
         if include_object:
-            params["includeObject"] = "Object"
+            params["includeObject"] = (
+                "Metadata" if query is not None and query.compact else "Object"
+            )
         try:
             async with self._response(path, params, accept, lifetime) as response:
                 yield None
@@ -710,6 +823,8 @@ class KubernetesSession:
             ) from None
 
     async def namespaces(self) -> tuple[str, ...]:
+        from aiohttp_socks import ProxyTimeoutError
+
         try:
             async with asyncio.timeout(self.timeout):
                 names: set[str] = set()

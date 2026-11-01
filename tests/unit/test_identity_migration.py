@@ -82,7 +82,9 @@ def test_migration_preserves_source_unknown_fields_and_log_destination_and_is_id
     assert stat.S_IMODE(destination.parent.stat().st_mode) == 0o700
     migrated = destination.read_bytes()
     assert cli.main(["config", "migrate"]) == 0
-    assert "already exist" in capsys.readouterr().out
+    repeated = capsys.readouterr()
+    assert "already exist" in repeated.out
+    assert "Original Kubetrol preferences were retained" not in repeated.out
     assert destination.read_bytes() == migrated and source.read_bytes() == original
     assert cli.main(["info"]) == 0
     information = json.loads(capsys.readouterr().out)

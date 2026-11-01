@@ -2,8 +2,11 @@
 
 import asyncio
 import logging
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
+from unittest.mock import patch
 from uuid import uuid4
 
 from kuberich.config.catalog import KubeCatalog
@@ -16,6 +19,18 @@ from kuberich.services.resources import ResourceReader
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.inspection import InspectionScreen
 from scripts.owned_kind import SHELL_IMAGE
+from tests.support.workers import CoroutineCalls
+
+
+@contextmanager
+def presentation_owners(app: KubeRichApp) -> Iterator[tuple[CoroutineCalls, CoroutineCalls]]:
+    """Observe the actual subscription/render callers at their public I/O ports."""
+    observations, renders = CoroutineCalls(), CoroutineCalls()
+    with (
+        patch.object(app.presenter, "observe", observations.observe(app.presenter.observe)),
+        patch.object(app.views.foreground, "wait", renders.observe(app.views.foreground.wait)),
+    ):
+        yield observations, renders
 
 
 def fixtures(namespace: str, volume: str, storage: str) -> tuple[dict[str, Any], ...]:
@@ -173,64 +188,68 @@ async def verify_standard_resources(
         initial_command=ResourceCommand(STANDARD_RESOURCES[0]),
     )
     evidence = []
-    async with app.run_test(size=(120, 35)) as pilot:
-        for definition in STANDARD_RESOURCES:
-            name, uid = targets[definition.name]
-            if app._resource_name != definition.name:
-                await pilot.press("colon")
-                app.command_input.value = definition.aliases[0]
-                await pilot.press("enter")
-            async with asyncio.timeout(30):
-                while (
-                    app.workspace.store.observation.status is not ViewStatus.LIVE
-                    or uid not in app.standard_table._rows
-                ):
-                    await asyncio.sleep(0.01)
-            app.standard_table.move_cursor(row=app.standard_table.get_row_index(uid))
-            await pilot.pause()
-            assert app.standard_table.selected_uid == uid
-            resource = resources[definition.name]
-            endpoint = resource.path(namespace if resource.namespaced else None) + "/" + name
-            # A real metadata change must arrive over the active WATCH for every family.
-            await write(
-                endpoint,
-                "PATCH",
-                {"metadata": {"annotations": {"kuberich-owned-standard": "watched"}}},
-            )
-            async with asyncio.timeout(30):
-                while app.workspace.store.observation.snapshot is None or not any(
-                    item.uid == uid
-                    and item.manifest["metadata"]
-                    .get("annotations", {})
-                    .get("kuberich-owned-standard")
-                    == "watched"
-                    for item in app.workspace.store.observation.snapshot.items
-                ):
-                    await asyncio.sleep(0.01)
-            assert app.standard_table.selected_uid == uid
-            await pilot.press("y")
-            async with asyncio.timeout(30):
-                while not isinstance(app.screen, InspectionScreen) or app.screen.result is None:
-                    await asyncio.sleep(0.01)
-            assert uid in app.screen.viewer.text
-            assert "private-fixture-payload" not in app.screen.viewer.text
-            await pilot.press("escape")
-            evidence.append(
-                {
-                    "resource": definition.name,
-                    "api_version": resource.api_version,
-                    "namespace_scoped": definition.namespaced,
-                    "real_list_watch_get": True,
-                    "uid_preserved": True,
-                    "column_count": len(definition.columns),
-                }
-            )
-        output = Path("artifacts/ui")
-        output.mkdir(parents=True, exist_ok=True)
-        app.save_screenshot(filename="standard-owned-kind.svg", path=str(output.resolve()))
+    with presentation_owners(app) as (observations, renders):
+        async with app.run_test(size=(120, 35)) as pilot:
+            for definition in STANDARD_RESOURCES:
+                name, uid = targets[definition.name]
+                if app._resource_name != definition.name:
+                    await pilot.press("colon")
+                    app.command_input.value = definition.aliases[0]
+                    await pilot.press("enter")
+                async with asyncio.timeout(30):
+                    while (
+                        app.workspace.store.observation.status is not ViewStatus.LIVE
+                        or uid not in app.standard_table._rows
+                    ):
+                        await asyncio.sleep(0.01)
+                app.standard_table.move_cursor(row=app.standard_table.get_row_index(uid))
+                await pilot.pause()
+                assert app.standard_table.selected_uid == uid
+                resource = resources[definition.name]
+                endpoint = resource.path(namespace if resource.namespaced else None) + "/" + name
+                # A real metadata change must arrive over the active WATCH for every family.
+                await write(
+                    endpoint,
+                    "PATCH",
+                    {"metadata": {"annotations": {"kuberich-owned-standard": "watched"}}},
+                )
+                async with asyncio.timeout(30):
+                    while app.workspace.store.observation.snapshot is None or not any(
+                        item.uid == uid
+                        and item.manifest["metadata"]
+                        .get("annotations", {})
+                        .get("kuberich-owned-standard")
+                        == "watched"
+                        for item in app.workspace.store.observation.snapshot.items
+                    ):
+                        await asyncio.sleep(0.01)
+                assert app.standard_table.selected_uid == uid
+                await pilot.press("y")
+                async with asyncio.timeout(30):
+                    while not isinstance(app.screen, InspectionScreen) or app.screen.result is None:
+                        await asyncio.sleep(0.01)
+                assert uid in app.screen.viewer.text
+                assert "private-fixture-payload" not in app.screen.viewer.text
+                await pilot.press("escape")
+                evidence.append(
+                    {
+                        "resource": definition.name,
+                        "api_version": resource.api_version,
+                        "namespace_scoped": definition.namespaced,
+                        "real_list_watch_get": True,
+                        "uid_preserved": True,
+                        "column_count": len(definition.columns),
+                    }
+                )
+            output = Path("artifacts/ui")
+            output.mkdir(parents=True, exist_ok=True)
+            app.save_screenshot(filename="standard-owned-kind.svg", path=str(output.resolve()))
     assert app.sessions.client is None
-    assert app._render_task is not None and app._render_task.done()
-    assert app._view_task is not None and app._view_task.done()
+    assert renders.tasks and all(task.done() for task in renders.tasks)
+    assert observations.tasks and all(task.done() for task in observations.tasks)
+    assert app.views.renderer.active_count == 0
+    assert app.workspace.ownership.subscription_count == 0
+    assert app.workspace.ownership.close_complete
     return {
         "standard_resources": evidence,
         "standard_secret_payload_hidden": True,

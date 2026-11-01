@@ -121,7 +121,7 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
         run(["git", "checkout", "--quiet", "-B", "main", PUBLISHED], tap)
         assert f"# Source version: {PUBLISHED_VERSION}\n" in (tap / FORMULA).read_text()
         if trusts:
-            # Newer Homebrew loads third-party formulae for `brew test` only once trusted.
+            # Trust only this owned formula for commands that load third-party definitions.
             execute(["trust", "--formula", "kuberich/tap/kuberich"])
 
         # Build the bottle from the candidate source formula, timing each part separately.
@@ -176,6 +176,9 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
 
         # Measure a cold pour (no cached archive) and a warm pour (cached archive).
         execute(["uninstall", "--force", "kuberich/tap/kuberich"])
+        if trusts:
+            # Homebrew revokes formula trust on uninstall; --cache loads it again.
+            execute(["trust", "--formula", "kuberich/tap/kuberich"])
         cached = Path(execute(["--cache", "kuberich/tap/kuberich"]).stdout.strip())
         assert cached.name.endswith(f".{tag}.bottle.tar.gz")
         cached.unlink(missing_ok=True)

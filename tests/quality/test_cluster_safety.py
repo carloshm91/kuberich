@@ -239,8 +239,30 @@ async def test_new_adapter_guard_rejects_remote_identity_or_proxy(
 
 
 @pytest.mark.asyncio
-async def test_new_helper_guard_rejects_unowned_working_directory(tmp_path: Path) -> None:
+async def test_new_helper_guard_rejects_unowned_working_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import asyncio
+
     from kuberich.adapters import credentials
+    from kuberich.config.catalog import Entry
+
+    async def forbidden(*args, **kwargs):
+        pytest.fail("An unowned helper directory must fail before any process starts.")
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", forbidden)
+    helper = credentials.ExecToken(
+        Entry(
+            {
+                "apiVersion": "client.authentication.k8s.io/v1",
+                "interactiveMode": "Never",
+                "command": "never-start",
+            },
+            tmp_path.parent,
+        ),
+        {},
+        1,
+    )
 
     with pytest.raises(AssertionError, match="owned temporary working directory"):
-        await credentials._execute(["never-start"], {}, tmp_path.parent, 1)
+        await helper.token()

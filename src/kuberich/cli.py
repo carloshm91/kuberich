@@ -1,34 +1,15 @@
 """Local configuration/diagnostics CLI; Kubernetes connections arrive separately."""
 
 import argparse
-import json
 import os
-import platform
 import sys
 from collections.abc import Sequence
-from importlib.metadata import version
-from pathlib import Path
-from typing import NoReturn
+from typing import Any, NoReturn
 
-from platformdirs import user_data_path
-
+from kuberich.bootstrap import diagnostic_logging, read_config, run_terminal, version
 from kuberich.config.launch import CONNECTION_OPTIONS, PENDING_OPTIONS, require_available
-from kuberich.config.navigation import NavigationPreferences, navigation_from
-from kuberich.config.paths import config_location, log_location
-from kuberich.config.schema import ConfigDocument, resolve_settings
-from kuberich.config.store import migrate_config, read_config, write_config
-from kuberich.diagnostics.logging import diagnostic_logging
 from kuberich.diagnostics.redaction import sanitize_text
-from kuberich.domain.connection_overrides import ConnectionOverrides
-from kuberich.domain.connections import ConnectionRequest, request_duration
-from kuberich.domain.interactions import InteractionCommand
 from kuberich.errors import AppError, ExitCode
-from kuberich.security.arguments import validate_argument
-from kuberich.services.access import AccessPolicy
-from kuberich.services.appearance import PreferenceSource
-from kuberich.services.commands import Command, CommandService, PluginCommand, ScopedCommand
-from kuberich.ui.launch import run_terminal
-from kuberich.ui.presentation import Presentation
 
 
 class _Parser(argparse.ArgumentParser):
@@ -38,7 +19,21 @@ class _Parser(argparse.ArgumentParser):
         self.exit(2, "kuberich: invalid command line; run kuberich --help.\n")
 
 
+class _VersionAction(argparse.Action):
+    def __call__(
+        self,
+        parser: argparse.ArgumentParser,
+        namespace: argparse.Namespace,
+        values: Any,
+        option_string: str | None = None,
+    ) -> NoReturn:
+        print(f"{parser.prog} {version('kuberich')}")
+        parser.exit()
+
+
 def _argument(value: str) -> str:
+    from kuberich.security.arguments import validate_argument
+
     try:
         return validate_argument(value)
     except AppError:
@@ -51,6 +46,16 @@ def _boolean(value: str) -> bool:
     return value.casefold() == "true"
 
 
+def legacy_main(argv: Sequence[str] | None = None) -> int:
+    """Retain the previous console name with a fixed 0.3 transition notice."""
+    print(
+        "Warning: kubetrol is deprecated; use kuberich instead. "
+        "This command will be removed in 0.4.0.",
+        file=sys.stderr,
+    )
+    return main(argv)
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = _Parser(
         prog="kuberich",
@@ -59,7 +64,14 @@ def _parser() -> argparse.ArgumentParser:
         allow_abbrev=False,
         formatter_class=lambda prog: argparse.HelpFormatter(prog, width=100),
     )
-    parser.add_argument("--version", action="version", version=f"%(prog)s {version('kuberich')}")
+    parser.add_argument(
+        "--version",
+        action=_VersionAction,
+        nargs=0,
+        dest=argparse.SUPPRESS,
+        default=argparse.SUPPRESS,
+        help="show program's version number and exit",
+    )
     parser.add_argument("--config", help="KubeRich preferences YAML (separate from kubeconfig)")
     parser.add_argument(
         "--kubeconfig",
@@ -187,6 +199,12 @@ def _parser() -> argparse.ArgumentParser:
     commands.add_parser(
         "info", help="show safe local paths, preferences and installed versions", allow_abbrev=False
     )
+    report = commands.add_parser(
+        "bug-report", help="write a private redacted diagnostic bundle", allow_abbrev=False
+    )
+    report.add_argument(
+        "--output", type=_argument, help="new report file; existing files are refused"
+    )
     config = commands.add_parser(
         "config", help="initialize, validate or migrate local preferences", allow_abbrev=False
     )
@@ -200,6 +218,15 @@ def _parser() -> argparse.ArgumentParser:
     operations.add_parser(
         "migrate",
         help="copy legacy defaults without deleting or overwriting files",
+        allow_abbrev=False,
+    )
+    kubeconfig = commands.add_parser(
+        "kubeconfig", help="inspect an explicitly selected kubeconfig locally", allow_abbrev=False
+    )
+    kube_operations = kubeconfig.add_subparsers(dest="operation", required=True)
+    kube_operations.add_parser(
+        "oidc-migration",
+        help="print a secret-free OIDC exec migration fragment without writing files",
         allow_abbrev=False,
     )
     return parser
@@ -252,6 +279,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             else:
                 print(version("kuberich") if arguments.short else f"kuberich {version('kuberich')}")
             return 0
+        if arguments.subcommand == "kubeconfig":
+            if arguments.config is not None or set(runtime) - {"kubeconfig", "context"}:
+                raise AppError("kubeconfig oidc-migration accepts only --kubeconfig and --context.")
+            from kuberich.config.oidc_migration import render_oidc_migration
+            from kuberich.domain.connections import ConnectionRequest
+
+            print(
+                render_oidc_migration(
+                    ConnectionRequest(kubeconfig=arguments.kubeconfig, context=arguments.context),
+                    os.environ,
+                ),
+                end="",
+            )
+            return 0
         if arguments.subcommand is not None and any(
             key in runtime
             for key in ("initial_command", "headless", "logoless", "crumbsless", "invert")
@@ -271,26 +312,36 @@ def main(argv: Sequence[str] | None = None) -> int:
             raise AppError(
                 "Connection flags apply only to terminal launch; diagnostics never load credentials."
             )
-        connection = ConnectionRequest(
-            arguments.kubeconfig,
-            arguments.context,
-            arguments.namespace,
-            bool(arguments.all_namespaces),
-            request_duration(arguments.request_timeout)
-            if arguments.request_timeout is not None
-            else 10.0,
-            ConnectionOverrides(
-                cluster=arguments.cluster,
-                user=arguments.user,
-                token=arguments.token,
-                certificate_authority=arguments.certificate_authority,
-                client_certificate=arguments.client_certificate,
-                client_key=arguments.client_key,
-                insecure=arguments.insecure,
-                as_user=arguments.as_user,
-                as_groups=tuple(arguments.as_group or ()),
-            ).capture_paths(Path.cwd()),
-        )
+        from pathlib import Path
+
+        from kuberich.config.paths import config_location, log_location
+        from kuberich.config.schema import ConfigDocument, resolve_settings
+        from kuberich.config.store import migrate_config, write_config
+
+        if arguments.subcommand is None:
+            from kuberich.domain.connection_overrides import ConnectionOverrides
+            from kuberich.domain.connections import ConnectionRequest, request_duration
+
+            connection = ConnectionRequest(
+                arguments.kubeconfig,
+                arguments.context,
+                arguments.namespace,
+                bool(arguments.all_namespaces),
+                request_duration(arguments.request_timeout)
+                if arguments.request_timeout is not None
+                else 10.0,
+                ConnectionOverrides(
+                    cluster=arguments.cluster,
+                    user=arguments.user,
+                    token=arguments.token,
+                    certificate_authority=arguments.certificate_authority,
+                    client_certificate=arguments.client_certificate,
+                    client_key=arguments.client_key,
+                    insecure=arguments.insecure,
+                    as_user=arguments.as_user,
+                    as_groups=tuple(arguments.as_group or ()),
+                ).capture_paths(Path.cwd()),
+            )
         location = config_location(arguments.config, os.environ)
         if arguments.subcommand == "config" and arguments.operation == "init":
             if runtime:
@@ -312,7 +363,6 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "Migrated preferences to KubeRich. Original Kubetrol preferences were retained."
                 )
             return 0
-        document = read_config(location.path, missing_ok=not location.explicit)
         overrides = {
             key: value
             for key, value in {
@@ -323,47 +373,92 @@ def main(argv: Sequence[str] | None = None) -> int:
             }.items()
             if value is not None
         }
+        if arguments.subcommand == "bug-report":
+            from kuberich.config.paths import preference_path
+            from kuberich.diagnostics.reports import ConfigStatus, write_report
+            from kuberich.ui.config_check import validate_preferences
+
+            report_log = None
+            report_status: ConfigStatus = "invalid"
+            try:
+                report_document = read_config(location.path, missing_ok=not location.explicit)
+                report_settings = resolve_settings(report_document, os.environ, overrides)
+                validate_preferences(report_document, location, report_settings)
+                report_status = "valid" if location.path.exists() else "missing"
+                report_log = log_location(
+                    report_settings,
+                    location.path,
+                    from_file="log_file" not in overrides
+                    and "KUBERICH_LOG_FILE" not in os.environ
+                    and "KUBETROL_LOG_FILE" not in os.environ,
+                )
+            except AppError:
+                pass
+            destination = write_report(
+                config_status=report_status,
+                log_path=report_log,
+                output=preference_path(arguments.output) if arguments.output is not None else None,
+            )
+            print(f"Created diagnostic report: {sanitize_text(str(destination))}")
+            return 0
+        document = read_config(location.path, missing_ok=not location.explicit)
         settings = resolve_settings(document, os.environ, overrides)
         if (
             arguments.initial_command is not None
             and not arguments.initial_command.strip().removeprefix(":").strip()
         ):
             raise AppError("--command must name an initial command; use help or quit.")
-        try:
-            navigation = navigation_from(document)
-        except AppError:
-            if arguments.subcommand == "config":
-                raise
-            navigation = NavigationPreferences()
-        initial = CommandService(AccessPolicy(settings.read_only), navigation.aliases).resolve(
-            arguments.initial_command or ""
-        )
-        action = initial.command if isinstance(initial, ScopedCommand) else initial
-        if isinstance(initial, (PluginCommand, InteractionCommand)) or action in {
-            Command.UNAVAILABLE,
-            Command.SHELL,
-            Command.ATTACH,
-            Command.UPLOAD,
-            Command.DOWNLOAD,
-            Command.ANNOTATE,
-            Command.EDIT,
-            Command.SCALE,
-            Command.RESTART,
-            Command.ROLLBACK,
-            Command.ROLLOUT,
-            Command.COLUMNS,
-            Command.LOGS_ALL,
-            Command.PORT_FORWARD,
-            Command.DELETE,
-            Command.DELETE_BATCH,
-            Command.TRIGGER,
-            Command.SUSPEND,
-            Command.RESUME,
-        }:
-            raise AppError(
-                "--command requires an available startup view; resource actions need an interactive resource selection. Available: po, ctx, ns, deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, no, pvc, pv, sc, status, retry, themes, about, help, quit.",
-                ExitCode.UNAVAILABLE,
+        navigation_migrated = False
+        if arguments.subcommand is None or "navigation" in document.extensions:
+            from kuberich.config.navigation import NavigationPreferences, navigation_from
+
+            try:
+                navigation = navigation_from(document)
+            except AppError:
+                if arguments.subcommand == "config":
+                    raise
+                navigation = NavigationPreferences()
+            navigation_migrated = navigation.migrated
+        if arguments.subcommand is None:
+            from kuberich.domain.interactions import InteractionCommand
+            from kuberich.services.access import AccessPolicy
+            from kuberich.services.commands import (
+                Command,
+                CommandService,
+                PluginCommand,
+                ScopedCommand,
             )
+
+            initial = CommandService(AccessPolicy(settings.read_only), navigation.aliases).resolve(
+                arguments.initial_command or ""
+            )
+            action = initial.command if isinstance(initial, ScopedCommand) else initial
+            if isinstance(initial, (PluginCommand, InteractionCommand)) or action in {
+                Command.UNAVAILABLE,
+                Command.SHELL,
+                Command.ATTACH,
+                Command.UPLOAD,
+                Command.DOWNLOAD,
+                Command.ANNOTATE,
+                Command.EDIT,
+                Command.SCALE,
+                Command.RESTART,
+                Command.ROLLBACK,
+                Command.ROLLOUT,
+                Command.COLUMNS,
+                Command.SERVER,
+                Command.LOGS_ALL,
+                Command.PORT_FORWARD,
+                Command.DELETE,
+                Command.DELETE_BATCH,
+                Command.TRIGGER,
+                Command.SUSPEND,
+                Command.RESUME,
+            }:
+                raise AppError(
+                    "--command requires an available startup view; resource actions need an interactive resource selection. Available: po, ctx, ns, deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, no, pvc, pv, sc, status, retry, themes, about, help, quit.",
+                    ExitCode.UNAVAILABLE,
+                )
         log_file = log_location(
             settings,
             location.path,
@@ -372,6 +467,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             and "KUBETROL_LOG_FILE" not in os.environ,
         )
         if arguments.subcommand == "info":
+            import json
+            import platform
+
+            from platformdirs import user_data_path
+
             print(
                 json.dumps(
                     {
@@ -387,7 +487,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         "log_file": sanitize_text(str(log_file)),
                         "config_exists": location.path.exists(),
                         "migration_pending": document.migrated
-                        or navigation.migrated
+                        or navigation_migrated
                         or location.migration_target is not None,
                         "config_migration_target": sanitize_text(str(location.migration_target))
                         if location.migration_target is not None
@@ -412,6 +512,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 print(unsupported, file=sys.stderr)
             print("KubeRich preferences are valid. No files were changed.")
         else:
+            from kuberich.services.appearance import PreferenceSource
+            from kuberich.ui.presentation import Presentation
+
             with diagnostic_logging(log_file, settings.log_level) as logger:
                 try:
                     logger.debug("Launching terminal interface.")

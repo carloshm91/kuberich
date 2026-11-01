@@ -140,6 +140,9 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     )
     assert plan["steps"][-1]["run"] == "python3 -m scripts.ci_policy"
     assert fast["needs"] == "plan"
+    assert "uv run python scripts/check_private_access.py" in [
+        step.get("run") for step in fast["steps"]
+    ]
     fast_command = next(step["run"] for step in fast["steps"] if "pytest" in step.get("run", ""))
     for option in ("-m fast", "--dist loadgroup", "--max-worker-restart=0", "--maxfail=1"):
         assert option in fast_command
@@ -267,7 +270,7 @@ def test_native_verification_always_covers_four_real_os_architectures(event, ref
         ("ubuntu-22.04", "linux-x86_64"),
         ("ubuntu-22.04-arm", "linux-arm64"),
         ("macos-15-intel", "macos-x86_64"),
-        ("macos-14", "macos-arm64"),
+        ("macos-15", "macos-arm64"),
     }
     assert len(selected) == 4
     for job in selected:

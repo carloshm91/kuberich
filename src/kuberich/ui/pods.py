@@ -2,7 +2,6 @@
 
 import asyncio
 from collections.abc import Callable
-from dataclasses import dataclass
 from typing import ClassVar
 
 from textual import on
@@ -11,21 +10,13 @@ from textual.coordinate import Coordinate
 from textual.message import Message
 from textual.widgets import DataTable
 
+from kuberich.domain.navigation import Viewport as Viewport
 from kuberich.domain.pods import PodColumn, PodRow, order, sort_value, utc_now
 from kuberich.domain.resource_preferences import ColumnSpec, ViewSpec, applicable_view
 from kuberich.ui.keybindings import table_bindings
 from kuberich.ui.presentation import FrameTable, TableCell
 
 PodCell = TableCell
-
-
-@dataclass(frozen=True)
-class Viewport:
-    selected: str | None
-    index: int
-    x: float
-    y: float
-    top: str | None
 
 
 class PodTable(FrameTable[PodCell]):

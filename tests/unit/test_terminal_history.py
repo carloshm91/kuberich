@@ -118,7 +118,7 @@ def test_session_owned_cell_cache_remains_bounded_and_never_mutates_frozen_style
     assert first.cells[0] is first.cells[1]
     for color in range(1100):
         model.feed(f"\x1b[38;2;{color // 256};{color % 256};0mX\r\n".encode())
-        assert len(model.normal._row_cells) <= 1024
+        assert max(model.style_cache_sizes) <= 1024
     assert first.cells[0].fg == "red" and first.text == "XXXXX"
     model.clear_history()
-    assert not model.history.rows and not model.normal._row_cells and not model.secondary._row_cells
+    assert not model.history.rows and model.style_cache_sizes == (0, 0)

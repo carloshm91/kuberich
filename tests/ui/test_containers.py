@@ -16,6 +16,7 @@ from tests.support.resources import collection
 from tests.support.watches import frame
 from tests.support.workspace import stable_watch, wait_for, workspace_api
 from tests.ui.test_logs import app_for, ns
+from tests.ui.test_logs import log_calls as log_calls
 
 
 @pytest.mark.asyncio
@@ -104,7 +105,7 @@ async def test_container_columns_render_matched_status_and_literal_redacted_spec
 @pytest.mark.parametrize("multiple", [False, True])
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
 async def test_enter_pod_containers_selected_logs_and_back_preserves_both_viewports(
-    tmp_path, multiple, size
+    tmp_path, multiple, size, log_calls
 ):
     requests = []
     value = pod("api")
@@ -165,7 +166,14 @@ async def test_enter_pod_containers_selected_logs_and_back_preserves_both_viewpo
                 assert app.screen.values == containers.names
                 await pilot.press("escape")
             await pilot.press("escape")
-            await wait_for(lambda: logs._controller.done() and logs._renderer.done())
+            await wait_for(
+                lambda: (
+                    logs.active_count == 0
+                    and all(
+                        task.done() for task in (*log_calls.read.tasks, *log_calls.render.tasks)
+                    )
+                )
+            )
             assert app.screen is containers
             assert containers.table.cursor_row == row and containers.table.scroll_y == scroll
             await pilot.press("l")
@@ -181,7 +189,9 @@ async def test_enter_pod_containers_selected_logs_and_back_preserves_both_viewpo
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("nested", [False, True])
-async def test_scope_change_invalidates_captured_containers_even_under_logs(tmp_path, nested):
+async def test_scope_change_invalidates_captured_containers_even_under_logs(
+    tmp_path, nested, log_calls
+):
     requests = []
     value = pod("api")
 
@@ -203,12 +213,14 @@ async def test_scope_change_invalidates_captured_containers_even_under_logs(tmp_
                 await pilot.press("enter")
                 logs = app.screen
                 await wait_for(lambda: logs.history.entries)
-            app._namespace_selected("default")
+            await app.workspace.select_namespace("default")
             await wait_for(lambda: containers.table.disabled)
             if nested:
                 await wait_for(lambda: logs.stale and not logs.history.entries)
                 await pilot.press("escape")
-                await wait_for(lambda: logs._read_task.done())
+                await wait_for(
+                    lambda: log_calls.read.latest is not None and log_calls.read.latest.done()
+                )
             count = len(requests)
             await pilot.press("l")
             assert app.screen is containers and len(requests) == count

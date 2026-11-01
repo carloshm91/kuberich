@@ -1,13 +1,23 @@
 """Bounded keyboard navigation state, independent of terminal widgets."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from kuberich.domain.connections import namespace_name
 from kuberich.domain.pods import PodColumn
+from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.resources import ServerColumn
 from kuberich.domain.views import ResourceSelection
 
 MAX_HISTORY = 32
+
+
+@dataclass(frozen=True)
+class Viewport:
+    selected: str | None
+    index: int
+    x: float
+    y: float
+    top: str | None
 
 
 @dataclass(frozen=True)
@@ -46,6 +56,7 @@ class NavigationState:
     resource: str = "pods"
     generic: ResourceSelection | None = None
     headers: tuple[ServerColumn, ...] = ()
+    server_query: ResourceQuery = field(default_factory=ResourceQuery)
 
 
 class NavigationHistory:

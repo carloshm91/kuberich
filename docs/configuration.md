@@ -16,8 +16,9 @@ Init creates defaults and refuses an existing file. Check validates without
 writing files, connecting, or running credential helpers. Global flags go before
 a local command: `kuberich --config /absolute/path/preferences.yaml config check`.
 
-The preference path comes from `--config`, `KUBERICH_CONFIG`, then the platform
-default. Linux uses `~/.config/kuberich/config.yaml` unless XDG_CONFIG_HOME is set;
+The preference path comes from `--config`, `KUBERICH_CONFIG`, `KUBETROL_CONFIG`,
+then the platform default with the legacy fallback described below. Linux uses
+`~/.config/kuberich/config.yaml` unless XDG_CONFIG_HOME is set;
 macOS uses `~/Library/Application Support/kuberich/config.yaml`.
 An absent default file uses defaults; an explicitly selected missing file fails.
 
@@ -158,11 +159,27 @@ and config check stay offline. Nothing is downloaded or installed automatically.
 
 ## Legacy files and diagnostic logs
 
-The `kubetrol` command remains an alias. `KUBETROL_*` preference variables are
-fallbacks after corresponding `KUBERICH_*` variables. If the new default preference
-file is absent, the old Kubetrol file is read without moving it. Run
-`kuberich config migrate` explicitly to create the new private file and keep the
-old one. Explicit preference paths cannot be relocated implicitly.
+The `kubetrol` console command is a deprecated alias in the 0.3 source. It prints
+a fixed warning to stderr, then runs the same CLI; help/version stdout and exit
+codes stay unchanged. Use `kuberich` or `python -m kuberich`. The previous console
+alias is scheduled for removal in 0.4.0; it is not a second Python package.
+
+`KUBETROL_*` preference variables remain fallbacks after corresponding
+`KUBERICH_*` variables. If the new default preference file is absent, the old
+Kubetrol file is read in place. An existing invalid file, directory, or symlink
+at the new path does not silently fall back. `info` reports the selected file,
+migration status, and destination without writing anything.
+
+Run `kuberich config migrate` explicitly with default paths and no runtime
+overrides to create a mode-0600 KubeRich file atomically. It keeps the old file,
+unknown fields, read-only policy, and effective settings. File-relative log paths
+become absolute so their destination stays the same. Existing destinations are
+never replaced, including a competing creation. A repeated migration validates
+the current file without rewriting it; the success notice appears only when a
+file is created. Explicit preference paths cannot be relocated implicitly.
+Migration does not move kubeconfig, credentials, logs, or tool installations.
+Existing legacy log/lock headers and archives remain accepted for explicit log
+paths; default new logs use KubeRich's directory.
 
 Normal launches write private, redacted diagnostic logs, about 1 MiB each with
 three archives. One writer can use a log path at a time; give simultaneous
