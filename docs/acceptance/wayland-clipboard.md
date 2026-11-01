@@ -23,7 +23,7 @@ uv run pytest tests/unit/test_clipboard.py tests/contract/test_clipboard.py \
   --cov=kuberich --cov-branch --cov-report=json --cov-report=xml
 ```
 
-The focused selection passed **56 tests**, with one explicit hosted-macOS-only
+The focused selection passed **59 tests**, with one explicit hosted-macOS-only
 clipboard skip. It measured **100% of 43 lines and 18 branches** in the critical
 clipboard domain, and **100% of 50 lines and 20 branches** in the native service.
 Coverage measured the full production package; this focused result does not
@@ -35,8 +35,15 @@ newlines. They also check replacement, a cancelled waiter, process reaping,
 repeated close, successful early/late exit, startup/late rejection, missing
 helpers and rejection above the byte limit before a child starts. An inert
 Textual driver checks automatic fallback, forced-native failure and oversize
-fallback refusal for Wayland and X Window System. The existing Linux Xvfb test
+fallback refusal for Wayland, X Window System and macOS. The existing Linux Xvfb test
 still performs its separate synthetic X11 roundtrip.
+
+The first hosted run exposed six macOS fixture failures: synthetic Linux sessions
+had inherited the host platform. The corrected fixture scopes its platform only
+to the application adapter and exercises all three native backends on every
+host; Python, Textual and the native macOS control retain their actual platform.
+The original failure remains in run `41280079738`; the corrected local selection
+passed 59 tests with one explicit macOS-only skip in 17.32 seconds.
 
 No developer clipboard, real Wayland compositor or Kubernetes context is used.
 Fake-executable contracts establish invocation and lifetime behavior; they do
