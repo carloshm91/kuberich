@@ -4,8 +4,10 @@ import argparse
 import asyncio
 import json
 import logging
+from contextlib import AsyncExitStack
 from datetime import timedelta
 from pathlib import Path
+from unittest.mock import patch
 from uuid import uuid4
 
 import yaml
@@ -22,10 +24,12 @@ from kuberich.domain.views import ResourceSelection, ViewStatus
 from kuberich.domain.watches import EventType, SyncStatus, SyncUpdate
 from kuberich.services.access import AccessPolicy
 from kuberich.services.logs import LogStream
+from kuberich.services.pods import PodProjection
 from kuberich.services.resources import ResourceReader
 from kuberich.services.sessions import SessionService
 from kuberich.services.watches import ListWatch
 from kuberich.services.workspace import WorkspaceService
+from kuberich.ui import app as app_module
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.containers import ContainerScreen
 from kuberich.ui.inspection import InspectionScreen
@@ -51,15 +55,18 @@ async def verify_pod_table(reader, resource, catalog, path, context):
         assert cells[3] == entry["cells"][2]
         assert row.restarts == int(str(entry["cells"][3]).split()[0])
         assert row.created_at is not None and cells[-1] != "—"
-    app = KubeRichApp(
-        Settings(read_only=True),
-        logging.Logger("owned-kind-pod-table"),
-        catalog=catalog,
-        connection=ConnectionRequest(
-            kubeconfig=str(path), context=context, namespace="kube-system", timeout=15
-        ),
-    )
-    async with app.run_test(size=(100, 30)) as pilot:
+    projection = PodProjection()
+    async with AsyncExitStack() as lifetime:
+        lifetime.enter_context(patch.object(app_module, "PodProjection", lambda: projection))
+        app = KubeRichApp(
+            Settings(read_only=True),
+            logging.Logger("owned-kind-pod-table"),
+            catalog=catalog,
+            connection=ConnectionRequest(
+                kubeconfig=str(path), context=context, namespace="kube-system", timeout=15
+            ),
+        )
+        pilot = await lifetime.enter_async_context(app.run_test(size=(100, 30)))
         async with asyncio.timeout(30):
             while (
                 app.workspace.store.observation.status is not ViewStatus.LIVE
@@ -67,6 +74,7 @@ async def verify_pod_table(reader, resource, catalog, path, context):
             ):
                 await asyncio.sleep(0.01)
         await pilot.pause()
+        assert projection.cached_count > 0
         assert not app.query_one("#empty-state").display
         frame = app.query_one("#resource-view").region
         identity = app.sessions.observation.identity
@@ -285,7 +293,8 @@ async def verify_pod_table(reader, resource, catalog, path, context):
                 await asyncio.sleep(0.01)
         assert app.resources.row_count > 0
         await pilot.press("ctrl+q")
-    assert app.sessions.client is None and app._view_task.done() and not app._pod_projection._cache
+    assert app.sessions.client is None
+    assert app.views.renderer.active_count == 0 and projection.cached_count == 0
     return {
         "real_pod_columns_match_server_table": True,
         "real_live_pod_widget": True,
