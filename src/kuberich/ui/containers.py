@@ -18,7 +18,8 @@ from kuberich.errors import AppError
 from kuberich.security.presentation import safe_text
 from kuberich.services.attach import AttachService
 from kuberich.services.logs import LogStream
-from kuberich.services.processes import ProcessRunner, _finish_owned
+from kuberich.services.ownership import finish_owned
+from kuberich.services.processes import ProcessRunner
 from kuberich.services.shell import ShellService
 from kuberich.services.transfers import TransferService
 from kuberich.ui.chrome import (
@@ -103,6 +104,11 @@ class ContainerScreen(CommandWorkspace):
             markup=False,
             id="container-status",
         )
+
+    @property
+    def active_count(self) -> int:
+        """Unfinished owned projections, including cancellation drainage."""
+        return int(self._rows_task is not None and not self._rows_task.done())
 
     def compose(self) -> ComposeResult:
         target = self.stream.target
@@ -204,7 +210,7 @@ class ContainerScreen(CommandWorkspace):
             try:
                 rows = await asyncio.shield(worker)
             except asyncio.CancelledError:
-                await _finish_owned(asyncio.gather(worker, return_exceptions=True))
+                await finish_owned(asyncio.gather(worker, return_exceptions=True))
                 raise
             self.validate_target()
             if self.invalidated or record is not self._last_record:
@@ -235,7 +241,7 @@ class ContainerScreen(CommandWorkspace):
         if self._rows_task is not None:
             if not self._rows_task.done() and not self._rows_task.cancelling():
                 self._rows_task.cancel()
-            await _finish_owned(asyncio.gather(self._rows_task, return_exceptions=True))
+            await finish_owned(asyncio.gather(self._rows_task, return_exceptions=True))
         self.names, self.rows = (), ()
         self.table.clear()
         self.table.disabled = True

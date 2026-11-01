@@ -4,15 +4,17 @@ import asyncio
 import logging
 import sys
 import threading
+from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from aiohttp import web
 from textual.widgets import Button, Checkbox, Input, Select, Static
 
+import kuberich.ui.plugins as plugin_ui
 from kuberich.config.paths import ConfigLocation
 from kuberich.config.schema import ConfigDocument, Settings
-from kuberich.domain.views import ResourceSelection
 from kuberich.errors import AppError
 from kuberich.services.appearance import PreferenceSource
 from kuberich.ui.app import KubeRichApp
@@ -20,7 +22,30 @@ from kuberich.ui.plugins import PluginCatalogue, PluginJobs, PluginScreen
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
 from tests.support.resources import collection
+from tests.support.workers import CoroutineCalls
 from tests.support.workspace import stable_watch, wait_for, workspace_api
+
+
+@pytest.fixture
+def plugin_tasks(monkeypatch):
+    calls = CoroutineCalls()
+
+    def created(coroutine):
+        task = asyncio.create_task(coroutine)
+        calls.tasks.append(task)
+        return task
+
+    monkeypatch.setattr(
+        plugin_ui,
+        "asyncio",
+        SimpleNamespace(
+            create_task=created,
+            gather=asyncio.gather,
+            shield=asyncio.shield,
+            Task=asyncio.Task,
+        ),
+    )
+    return calls
 
 
 async def ns(request):
@@ -136,7 +161,7 @@ async def test_typed_inputs_validation_change_invalidates_review_and_cancel_neve
         app = app_for(tmp_path, url, definitions=definitions)
         async with app.run_test(size=(100, 40)) as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
-            app._submit_command("plugin inputs")
+            await app.run_command("plugin inputs")
             await wait_for(lambda: isinstance(app.screen, PluginScreen))
             await pilot.pause()
             screen = app.screen
@@ -151,11 +176,10 @@ async def test_typed_inputs_validation_change_invalidates_review_and_cancel_neve
             await pilot.pause()
             screen.prepare()
             await wait_for(lambda: screen.review is not None)
-            first = screen.review
             screen.query_one("#plugin-input-0", Input).value = "not-number"
             await pilot.pause()
             assert screen.review is None and screen.query_one("#plugin-run", Button).disabled
-            assert first.nonce not in screen.source._prepared
+            assert screen.source.pending_reviews == 0
             screen.prepare()
             await wait_for(lambda: screen.operation.done())
             assert "finite number" in str(screen.query_one("#plugin-feedback").content)
@@ -181,7 +205,7 @@ async def test_background_survives_form_close_jobs_output_stop_and_context_clean
         app = app_for(tmp_path, url, definitions=definitions, readonly=readonly)
         async with app.run_test(size=(100, 35)) as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
-            app._submit_command("plugin work")
+            await app.run_command("plugin work")
             await wait_for(lambda: isinstance(app.screen, PluginScreen))
             await pilot.pause()
             screen = app.screen
@@ -192,7 +216,7 @@ async def test_background_survives_form_close_jobs_output_stop_and_context_clean
             job = screen.job
             await pilot.press("escape")
             assert job.running
-            app._submit_command("pluginjobs")
+            await app.run_command("pluginjobs")
             assert isinstance(app.screen, PluginJobs)
             jobs = app.screen
             await pilot.pause()
@@ -202,7 +226,7 @@ async def test_background_survives_form_close_jobs_output_stop_and_context_clean
             await wait_for(lambda: not job.running)
             assert job.status == "Cancelled"
             await pilot.press("escape")
-            app._submit_command("plugin work")
+            await app.run_command("plugin work")
             await wait_for(lambda: isinstance(app.screen, PluginScreen))
             await pilot.pause()
             app.screen.prepare()
@@ -210,40 +234,44 @@ async def test_background_survives_form_close_jobs_output_stop_and_context_clean
             app.screen.run_plugin()
             await wait_for(lambda: len(app.plugins.manager.jobs) == 2)
             await pilot.press("escape")
-            await app._close_client_operations(app.sessions.client)
+            await app.sessions.close()
             assert all(not item.running for item in app.plugins.manager.jobs)
 
 
 @pytest.mark.asyncio
-async def test_readonly_unknown_missing_scope_and_offline_catalogue_are_actionable(tmp_path):
+async def test_readonly_unknown_missing_scope_and_offline_catalogue_are_actionable(
+    tmp_path, plugin_tasks
+):
     definitions = {"unsafe": {"command": "missing"}}
     async with workspace_api(ns, api) as url:
         app = app_for(tmp_path, url, readonly=True, definitions=definitions)
         async with app.run_test() as pilot:
             await wait_for(lambda: app.resources.row_count == 1 and bool(app.plugins.plugins))
-            app._submit_command("plugin unsafe")
-            await wait_for(lambda: app.plugins._opening.done())
+            await app.run_command("plugin unsafe")
+            await wait_for(lambda: plugin_tasks.latest.done())
             assert "Read-only" in str(app.status.content) and len(app.screen_stack) == 1
-            app._submit_command("plugin missing")
-            await wait_for(lambda: app.plugins._opening.done())
+            await app.run_command("plugin missing")
+            await wait_for(lambda: plugin_tasks.latest.done())
             assert "not configured" in str(app.status.content)
             assert not app.plugins.manager.jobs
     app = KubeRichApp(Settings(), logging.Logger("offline", level=100))
     async with app.run_test() as pilot:
-        app._submit_command("plugins")
+        await app.run_command("plugins")
         await wait_for(lambda: isinstance(app.screen, PluginCatalogue))
         assert app.screen.query_one("#plugin-catalogue").row_count == 0
         await pilot.click("#plugin-back")
 
 
 @pytest.mark.asyncio
-async def test_invalid_explicit_manifest_refuses_catalogue_without_executing(tmp_path):
+async def test_invalid_explicit_manifest_refuses_catalogue_without_executing(
+    tmp_path, plugin_tasks
+):
     async with workspace_api(ns, api) as url:
         app = app_for(tmp_path, url, extension={"schema_version": 1, "locations": ["missing.yaml"]})
         async with app.run_test():
             await wait_for(lambda: app.resources.row_count == 1 and app.plugins.error is not None)
-            app._submit_command("plugins")
-            await wait_for(lambda: app.plugins._opening.done())
+            await app.run_command("plugins")
+            await wait_for(lambda: plugin_tasks.latest.done())
             assert "plugin" in str(app.status.content).lower() and len(app.screen_stack) == 1
             assert not app.plugins.manager.jobs
 
@@ -335,10 +363,10 @@ async def test_changed_fields_during_review_discard_the_old_proof_and_empty_jobs
             await pilot.pause()
             release.set()
             await wait_for(lambda: screen.operation.done())
-            assert screen.review is None and not screen.source._prepared
+            assert screen.review is None and screen.source.pending_reviews == 0
             assert "Inputs changed" in str(screen.query_one("#plugin-feedback").content)
             await pilot.press("escape")
-            app._submit_command("pluginjobs")
+            await app.run_command("pluginjobs")
             await pilot.pause()
             assert app.screen.selected_job() is None
             app.screen.stop_job()
@@ -346,7 +374,7 @@ async def test_changed_fields_during_review_discard_the_old_proof_and_empty_jobs
 
 
 @pytest.mark.asyncio
-async def test_offline_execution_and_native_foreground_refusal_are_visible(tmp_path):
+async def test_offline_execution_and_native_foreground_refusal_are_visible(tmp_path, plugin_tasks):
     async with workspace_api(ns, api) as url:
         app = app_for(
             tmp_path,
@@ -368,13 +396,13 @@ async def test_offline_execution_and_native_foreground_refusal_are_visible(tmp_p
     app = KubeRichApp(Settings(), logging.Logger("offline", level=100))
     async with app.run_test() as pilot:
         app.plugins.open("unknown")
-        await wait_for(lambda: app.plugins._opening.done())
+        await wait_for(lambda: plugin_tasks.latest.done())
         assert "connected context" in str(app.status.content)
 
 
 @pytest.mark.asyncio
 async def test_context_catalogue_does_not_inherit_pod_scope_or_keys_and_loading_gvr_is_refused(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, plugin_tasks
 ):
     definitions = {
         "pod": {"command": sys.executable, "scopes": ["v1/pods"], "shortcut": "z"},
@@ -384,23 +412,34 @@ async def test_context_catalogue_does_not_inherit_pod_scope_or_keys_and_loading_
         app = app_for(tmp_path, url, definitions=definitions)
         async with app.run_test() as pilot:
             await wait_for(lambda: app.resources.row_count == 1 and bool(app.plugins.plugins))
+            selections = []
             with monkeypatch.context() as patch:
-                patch.setattr(app, "_resource_name", "deployments")
+                # Hold the public selection port at its previous observation to
+                # exercise a late old snapshot after real command dispatch.
+                def pending_selection(selection):
+                    task = asyncio.create_task(asyncio.sleep(0))
+                    selections.append(task)
+                    return task
+
+                patch.setattr(app.workspace, "select_resource", pending_selection)
+                await app.run_command("deploy")
                 with pytest.raises(AppError, match="loading"):
                     app.plugins.capture_source()
-            with monkeypatch.context() as patch:
+                resource = app.workspace.store.observation.scope.resource
                 patch.setattr(
-                    app,
-                    "_generic_selection",
-                    ResourceSelection("pods", "other.example", "v2", True),
+                    type(app.workspace.discovery),
+                    "resolve",
+                    lambda *args, **kwargs: replace(resource, group="other.example", version="v2"),
                 )
+                await app.run_command("pods.other.example/v2")
                 with pytest.raises(AppError, match="version is loading"):
                     app.plugins.capture_source()
+                await asyncio.gather(*selections)
             await pilot.press("colon", *"ctx", "enter")
-            assert app._resource_name == "contexts" and app.plugins.resource() is None
+            assert app.state.view_kind == "contexts" and app.plugins.resource() is None
             assert app.plugins.bindings() == ()
             app.plugins.open("pod")
-            await wait_for(lambda: app.plugins._opening.done())
+            await wait_for(lambda: plugin_tasks.latest.done())
             assert len(app.screen_stack) == 1 and "does not apply" in str(app.status.content)
             app.plugins.open()
             await wait_for(lambda: isinstance(app.screen, PluginCatalogue))

@@ -8,15 +8,19 @@ from pathlib import Path
 
 import pytest
 from aiohttp import web
+from pyte.screens import Char
+from rich.color import Color
+from textual.app import App
 from textual.events import Key, Paste
 
 from kuberich.config.schema import Settings
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.containers import ContainerScreen
-from kuberich.ui.terminal import ShellScreen, _color
+from kuberich.ui.terminal import ShellScreen, TerminalWidget
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
 from tests.support.resources import collection
+from tests.support.shells import observe_shells
 from tests.support.watches import frame
 from tests.support.workspace import stable_watch, wait_for, workspace_api
 
@@ -40,7 +44,10 @@ while True:
 @pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
 @pytest.mark.parametrize("ending", ["back", "exit", "quit", "stale", "uid"])
-async def test_real_embedded_shell_keys_frame_paste_resize_and_owned_return(tmp_path, size, ending):
+async def test_real_embedded_shell_keys_frame_paste_resize_and_owned_return(
+    tmp_path, size, ending, monkeypatch
+):
+    calls = observe_shells(monkeypatch)
     value = pod("api")
     updates = asyncio.Queue()
 
@@ -68,8 +75,8 @@ async def test_real_embedded_shell_keys_frame_paste_resize_and_owned_return(tmp_
             Settings(),
             logging.Logger("embedded", level=100),
             catalog=catalog_fixture(tmp_path, url),
+            environment={**os.environ, "PATH": str(tmp_path)},
         )
-        app._process_environment = {**os.environ, "PATH": str(tmp_path)}
         async with app.run_test(size=size) as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
             viewport = app.resources.capture_viewport()
@@ -96,7 +103,7 @@ async def test_real_embedded_shell_keys_frame_paste_resize_and_owned_return(tmp_
             data = path.read_bytes()
             assert data.startswith(b"q:/jk\x1b\t\x03\x1bOA")
             assert b"\x1b[200~Unicode " + "á".encode() + b"\r\x1b[201~" in data
-            assert app.screen is screen and not app._exit
+            assert app.screen is screen and app.is_running
             await pilot.resize_terminal(80, 25)
             assert (screen.terminal.model.screen.columns, screen.terminal.model.screen.lines) == (
                 78,
@@ -130,7 +137,13 @@ async def test_real_embedded_shell_keys_frame_paste_resize_and_owned_return(tmp_
             else:
                 await pilot.press("ctrl+right_square_bracket")
             if ending != "quit":
-                await wait_for(lambda: screen._session_task is None)
+                await wait_for(
+                    lambda: (
+                        calls.latest is not None
+                        and calls.latest.done()
+                        and app.screen is containers
+                    )
+                )
                 assert app.screen is containers and isinstance(containers, ContainerScreen)
                 assert not list(credential_directory.glob("exec-*.json"))
                 if ending in {"back", "exit"}:
@@ -141,17 +154,38 @@ async def test_real_embedded_shell_keys_frame_paste_resize_and_owned_return(tmp_
         assert app.processes.active_count == 0 and app.sessions.client is None
 
 
-def test_color_boundaries_are_literal_and_invalid_colors_are_inert():
-    assert _color("brown") == "yellow" and _color("red") == "red"
-    assert _color("abcdef") == "#abcdef"
-    for value in ["default", "notacolor", "00000000", "zzzzzz"]:
-        assert _color(value) is None
+@pytest.mark.asyncio
+async def test_color_boundaries_are_literal_and_invalid_colors_are_inert():
+    app = App()
+    terminal = TerminalWidget()
+    async with app.run_test() as pilot:
+        await app.mount(terminal)
+        await pilot.pause()
+        for value, expected in [
+            ("brown", "yellow"),
+            ("red", "red"),
+            ("abcdef", "#abcdef"),
+            ("default", None),
+            ("notacolor", None),
+            ("00000000", None),
+            ("zzzzzz", None),
+        ]:
+            terminal.model.screen.buffer[0][0] = Char("x", fg=value, bg=value)
+            segment = next(iter(terminal.render_line(0)))
+            assert segment.text.startswith("x") and segment.style is not None
+            assert segment.style.color == (
+                Color.parse(expected) if expected is not None else terminal.rich_style.color
+            )
+            assert segment.style.bgcolor == (
+                Color.parse(expected) if expected is not None else terminal.rich_style.bgcolor
+            )
 
 
 @pytest.mark.asyncio
 async def test_immediate_close_after_mount_returns_without_starting_process(tmp_path, monkeypatch):
     # Delay preparation, then cancel the screen before the transport can be launched.
     value = pod("api")
+    calls = observe_shells(monkeypatch)
 
     async def ns(request):
         return namespaces("team")
@@ -172,11 +206,10 @@ async def test_immediate_close_after_mount_returns_without_starting_process(tmp_
             await pilot.press("enter")
             containers = app.screen
             containers.action_shell()
-            await wait_for(
-                lambda: isinstance(app.screen, ShellScreen) and app.screen._session_task is not None
-            )
+            await wait_for(lambda: isinstance(app.screen, ShellScreen) and calls.latest is not None)
             app.screen.close_shell()
             await wait_for(lambda: app.screen is containers)
+            assert calls.latest is not None and calls.latest.done()
             assert app.processes.active_count == 0
 
 

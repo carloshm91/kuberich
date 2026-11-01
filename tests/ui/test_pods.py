@@ -14,11 +14,13 @@ from textual.events import Paste
 from kuberich.config.schema import Settings
 from kuberich.domain.pods import PodColumn, pod_row
 from kuberich.domain.views import ViewStatus
+from kuberich.services.pods import ResourceProjection
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.pods import PodCell, PodTable
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import NOW, pod, record
 from tests.support.resources import collection
+from tests.support.root_calls import root_calls as root_calls
 from tests.support.table_app import TableApp
 from tests.support.watches import frame
 from tests.support.workspace import stable_watch, wait_for, workspace_api
@@ -96,11 +98,11 @@ async def test_incremental_changes_preserve_uid_and_scroll_anchor_and_literal_ce
         await pilot.press("home", "s", "s", "s")
         assert table.sort_column is PodColumn.RESTARTS
         assert table.selected_uid == selected
-        counts = [table._rows[uid].restarts for uid in visible_rows(app)]
+        counts = [int(str(table.get_cell(uid, "restarts"))) for uid in visible_rows(app)]
         assert counts == sorted(counts)
         await pilot.press("S")
         assert table.descending and table.selected_uid == selected
-        assert [table._rows[uid].restarts for uid in visible_rows(app)] == sorted(
+        assert [int(str(table.get_cell(uid, "restarts"))) for uid in visible_rows(app)] == sorted(
             counts, reverse=True
         )
         app.save_screenshot(filename=f"pods-sorted-{size[0]}.svg", path=str(evidence))
@@ -121,7 +123,7 @@ async def test_selected_deletion_recreation_and_empty_snapshot_are_deterministic
         recreated = replace(baseline[1], uid="owned-new-uid")
         await table.apply_rows((baseline[0], recreated, baseline[2], baseline[3]), 1, lambda: True)
         assert table.selected_uid == baseline[2].uid
-        assert baseline[1].uid not in table._rows and recreated.uid in table._rows
+        assert baseline[1].uid not in table.rows and recreated.uid in table.rows
         table.move_cursor(row=3)
         await table.apply_rows((baseline[0], recreated, baseline[2]), 1, lambda: True)
         assert table.selected_uid == baseline[2].uid
@@ -194,7 +196,9 @@ async def test_completed_patch_is_rejected_if_revision_changes_at_final_yield():
 
 
 @pytest.mark.asyncio
-async def test_http_watch_changes_reach_cells_and_scope_replacement_clears_old_uids(tmp_path):
+async def test_http_watch_changes_reach_cells_and_scope_replacement_clears_old_uids(
+    tmp_path, root_calls
+):
     events = asyncio.Queue()
     opened = asyncio.Event()
 
@@ -259,13 +263,15 @@ async def test_http_watch_changes_reach_cells_and_scope_replacement_clears_old_u
             assert "Namespace: default" in str(app.query_one("#namespace").content)
             await pilot.press("ctrl+q")
         assert (
-            not app._pod_projection._cache and app._view_task.done() and app.sessions.client is None
+            all(owner.cached_count == 0 for owner in root_calls.projections)
+            and root_calls.observations.latest.done()
+            and app.sessions.client is None
         )
 
 
 @pytest.mark.asyncio
 async def test_namespace_switch_remains_responsive_and_rejects_a_blocked_old_projection(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, root_calls
 ):
     started, release = threading.Event(), threading.Event()
 
@@ -279,18 +285,19 @@ async def test_namespace_switch_remains_responsive_and_rejects_a_blocked_old_pro
         return web.json_response(collection(pod("owned", namespace=scope, uid=f"owned-{scope}")))
 
     async with workspace_api(namespace_handler, resource_handler) as url:
-        app = KubeRichApp(
-            Settings(), logging.Logger("blocked-projection"), catalog=catalog_fixture(tmp_path, url)
-        )
-        project = app._pod_projection._project
 
         def blocked(value):
             if value.namespace == "team":
                 started.set()
                 assert release.wait(5)
-            return project(value)
+            return pod_row(value)
 
-        monkeypatch.setattr(app._pod_projection, "_project", blocked)
+        monkeypatch.setattr(
+            "kuberich.ui.app.PodProjection", lambda: ResourceProjection("pods", blocked)
+        )
+        app = KubeRichApp(
+            Settings(), logging.Logger("blocked-projection"), catalog=catalog_fixture(tmp_path, url)
+        )
         async with app.run_test() as pilot:
             try:
                 await wait_for(started.is_set)
@@ -310,6 +317,8 @@ async def test_namespace_switch_remains_responsive_and_rejects_a_blocked_old_pro
             finally:
                 release.set()
             await wait_for(lambda: visible_rows(app) == ["owned-default"])
-            assert "owned-team" not in app.resources._rows
+            assert "owned-team" not in app.resources.rows
             await pilot.press("ctrl+q")
-        assert app._view_task.done() and not app._pod_projection._cache
+        assert root_calls.observations.latest.done() and all(
+            owner.cached_count == 0 for owner in root_calls.projections
+        )

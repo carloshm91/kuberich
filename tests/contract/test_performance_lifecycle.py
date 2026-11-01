@@ -7,6 +7,7 @@ import os
 import sys
 import threading
 import time
+import weakref
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -28,6 +29,7 @@ from kuberich.services.watches import ListWatch
 from kuberich.services.workspace import WorkspaceService
 from tests.contract.test_performance_workload import workload
 from tests.contract.test_port_forwards import state, unavailable
+from tests.contract.test_workspace import capture_watch_tasks
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.performance_terminal import require_normal_gc
 from tests.support.port_forwards import manifest, source
@@ -144,7 +146,10 @@ def sample(report, index, baseline, **facts):
 @pytest.mark.asyncio
 async def test_repeated_context_churn_drains_live_forwards_and_coalesces_slow_subscriptions(
     tmp_path,
+    monkeypatch,
 ):
+    watch_tasks = capture_watch_tasks(monkeypatch)
+
     async def ns(request):
         return namespaces("team", "default")
 
@@ -185,11 +190,10 @@ async def test_repeated_context_churn_drains_live_forwards_and_coalesces_slow_su
                                     and owner.store.observation.snapshot.resource_version == "63"
                                 )
                             )
-                            client, watch = sessions.client, owner._watch
+                            client, watch = sessions.client, watch_tasks[-1]
                             pool = client.api.rest_client.pool_manager
                             directory = Path(client.directory.name)
                             assert len(owner.store.observation.snapshot.items) == 40
-                            assert subscription._pending is owner.store.observation
                             assert (await anext(subscription)) is owner.store.observation
                             identity = manager.start(
                                 source(ResourceReader(client), tmp_path),
@@ -208,20 +212,25 @@ async def test_repeated_context_churn_drains_live_forwards_and_coalesces_slow_su
                                 await state(manager, identity, ForwardState.STOPPED)
                             ).message == ("Stopped for connection change.")
                             assert (
-                                not manager._live
+                                manager.session_count == 0
                                 and manager.active_count == runner.active_count == 0
                             )
                             assert len(manager.infos) <= 32
-                            assert subscription._pending is owner.store.observation
+                            assert (await anext(subscription)) is owner.store.observation
                             await unavailable(ready.ports[0].local)
                             with pytest.raises(ProcessLookupError):
                                 os.kill(ready.pid, 0)
                             assert (tmp_path / "fixture-config").read_bytes() == before
+                            pending = weakref.ref(owner.store.observation)
                         finally:
                             await owner.close()
-                        assert not owner._subscriptions and sessions.client is None
-                        assert owner._watch is None and owner._operation is None
-                        assert owner._discovery is None and subscription._pending is None
+                        assert owner.ownership.subscription_count == 0 and sessions.client is None
+                        assert owner.ownership.watch_count == owner.ownership.operation_count == 0
+                        assert owner.ownership.discovery_count == 0
+                        with pytest.raises(StopAsyncIteration):
+                            await anext(subscription)
+                        assert pending() is None
+                        watch_tasks.clear()
                         assert owner.store.observation.snapshot is None
                     baseline = sample(
                         report,
@@ -350,7 +359,8 @@ async def test_repeated_startup_cancellation_reaps_children_and_private_configur
                             await closing
                         assert (await state(manager, identity, ForwardState.STOPPED)).ports == ()
                         assert (
-                            manager.active_count == runner.active_count == 0 and not manager._live
+                            manager.active_count == runner.active_count == 0
+                            and manager.session_count == 0
                         )
                         assert not list(directory.glob("forward-*.json"))
                         with pytest.raises(ProcessLookupError):

@@ -5,6 +5,18 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ## [Unreleased]
 
+These source changes are not yet published. Changes by [Carlos J. Herrera](https://github.com/carloshm91).
+
+### Added
+
+- Browse oversized collections with visible INCOMPLETE counts and pagination progress ([#213](https://github.com/carloshm91/kuberich/issues/213)).
+- Narrow API requests with `:server` selectors; switch generic views between compact metadata and full objects ([#213](https://github.com/carloshm91/kuberich/issues/213)).
+- Retry a failed resource view without closing the workspace or stopping other views and forwards ([#216](https://github.com/carloshm91/kuberich/issues/216)).
+- Create private, redacted reports with `kuberich bug-report`, including when preferences are invalid ([#216](https://github.com/carloshm91/kuberich/issues/216)).
+- Copy plaintext in local Wayland sessions with `wl-copy` and an explicit terminal fallback ([#220](https://github.com/carloshm91/kuberich/issues/220)).
+- Authenticate with explicit Basic credentials, including an empty username or password half ([#215](https://github.com/carloshm91/kuberich/issues/215)).
+- Generate an offline OIDC exec-migration fragment without copying existing tokens or changing kubeconfig ([#215](https://github.com/carloshm91/kuberich/issues/215)).
+
 ### Changed
 
 - Find the published version and installation links on a short status page ([#226](https://github.com/carloshm91/kuberich/issues/226)).
@@ -12,14 +24,19 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 - Find installation steps and product features in a shorter README ([#223](https://github.com/carloshm91/kuberich/issues/223)).
 - Install with the supported Kubernetes SDK date-parser version.
 - Read shorter release notes focused on changes you can use ([#227](https://github.com/carloshm91/kuberich/issues/227)).
+- Run offline inspection commands without importing the terminal UI or Kubernetes SDK ([#214](https://github.com/carloshm91/kuberich/issues/214)).
+
+### Deprecated
+
+- Use `kuberich` after the `kubetrol` alias warning; console-alias removal is planned for 0.4.0 ([#219](https://github.com/carloshm91/kuberich/issues/219)).
 
 ### Fixed
 
 - Navigate, resize and change themes without repeatedly updating unchanged headers ([#209](https://github.com/carloshm91/kuberich/issues/209)).
-
-### Security
-
-- Build and deploy with patched FileLock, Setuptools and Cloudflare tooling dependencies ([#270](https://github.com/carloshm91/kuberich/issues/270)).
+- Review plugins in custom-resource views using the selected API group, version and resource identity ([#278](https://github.com/carloshm91/kuberich/issues/278)).
+- Read completed plugin-job output and exit status without pressing Enter again or changing the opened result ([#272](https://github.com/carloshm91/kuberich/issues/272)).
+- Load kubeconfigs with kubectl-compatible empty optional fields while preserving the selected credential scheme ([#215](https://github.com/carloshm91/kuberich/issues/215)).
+- Migrate preferences explicitly while keeping old files; show a success notice only when a new file is created ([#219](https://github.com/carloshm91/kuberich/issues/219)).
 
 ## [0.2.0] - 2026-10-21
 

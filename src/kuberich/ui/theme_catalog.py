@@ -1,9 +1,10 @@
 """Textual conversion stays at the UI boundary; stored values contain no CSS."""
 
-from textual.theme import BUILTIN_THEMES, Theme
+from textual.theme import Theme
 
-from kuberich.config.schema import ConfigDocument
-from kuberich.domain.appearance import TRANSPARENT, Appearance, contrast, parse_appearance
+from kuberich.config.themes import BUILTINS as BUILTINS
+from kuberich.config.themes import appearance_from as appearance_from
+from kuberich.domain.appearance import TRANSPARENT, Appearance, contrast
 from kuberich.ui.chrome import K9S_THEME
 
 MONO_THEME = Theme(
@@ -29,11 +30,6 @@ MONO_THEME = Theme(
         "block-cursor-text-style": "none",
     },
 )
-BUILTINS = frozenset({*BUILTIN_THEMES, "k9s", "kuberich-mono"})
-
-
-def appearance_from(document: ConfigDocument) -> Appearance:
-    return parse_appearance(document.extensions.get("appearance", {}), BUILTINS)
 
 
 def themes_for(appearance: Appearance) -> tuple[Theme, ...]:

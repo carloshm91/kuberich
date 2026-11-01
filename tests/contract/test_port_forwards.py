@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import signal
+import socket
 from dataclasses import replace
 from pathlib import Path
 from uuid import uuid4
@@ -83,7 +84,7 @@ async def test_actual_owned_tcp_listener_scope_readiness_and_deliberate_stop(
         await manager.stop(identity)
         await manager.close()
         await manager.close()
-        assert not manager._live and all(
+        assert manager.session_count == 0 and all(
             not hasattr(history, "configuration") for history in manager.infos
         )
 
@@ -183,7 +184,7 @@ async def test_collisions_immediate_stop_context_barrier_and_bounded_history(tmp
             identity = fresh.start(captured, parse_mappings(":80"))
             await fresh.stop(identity)
             assert (await state(fresh, identity, ForwardState.STOPPED)).pid is None
-        assert len(fresh.infos) == 32 and fresh.active_count == 0 and not fresh._live
+        assert len(fresh.infos) == 32 and fresh.active_count == 0 and fresh.session_count == 0
         await fresh.close()
 
 
@@ -314,18 +315,21 @@ async def test_repeated_cancellation_drains_private_file_creation_and_cleanup(
 
 
 @pytest.mark.asyncio
-async def test_cancel_during_collision_probe_drains_the_owned_thread(tmp_path, monkeypatch):
+async def test_cancel_during_collision_probe_drains_the_owned_thread(
+    tmp_path, monkeypatch, unused_tcp_port
+):
     import threading
 
-    from kuberich.services import port_forwards
-
     started, release = threading.Event(), threading.Event()
+    original = socket.socket.bind
 
-    def delayed(address, mappings):
-        started.set()
-        assert release.wait(5)
+    def delayed(probe, address):
+        if address[1] == unused_tcp_port:
+            started.set()
+            assert release.wait(5)
+        return original(probe, address)
 
-    monkeypatch.setattr(port_forwards, "_available", delayed)
+    monkeypatch.setattr(socket.socket, "bind", delayed)
 
     async def handler(request):
         return web.json_response(manifest())
@@ -335,7 +339,7 @@ async def test_cancel_during_collision_probe_drains_the_owned_thread(tmp_path, m
         ProcessRunner(AccessPolicy(False)) as runner,
     ):
         manager = ForwardManager(runner)
-        manager.start(source(api, tmp_path), parse_mappings(":80"))
+        manager.start(source(api, tmp_path), parse_mappings(f"{unused_tcp_port}:80"))
         assert await asyncio.to_thread(started.wait, 3)
         closing = asyncio.create_task(manager.close())
         await asyncio.sleep(0.02)

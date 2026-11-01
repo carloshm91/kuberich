@@ -33,6 +33,47 @@ updates preserve the selected object and viewport where possible. A replacement
 with the same name has a different UID and does not inherit an old operation.
 Read permissions and cluster capabilities still decide which views are available.
 
+## Large collections and server selectors
+
+Large collections remain live with a deterministic kept subset of at most
+10,000 resources and 64 MiB of resource payloads, including server cells.
+These are payload limits, not a total-process memory guarantee. Pagination reports
+available rows and progress. An **INCOMPLETE** title identifies a limited or still
+loading collection, even when a selection notice replaces the status text.
+Counts and local filter results describe only those available rows.
+
+Use an explicit command to narrow the API collection:
+
+```text
+:server label app=api
+:server label app in (api,worker),!disabled
+:server field metadata.name=api-one
+:ns team
+:server
+:server clear
+```
+
+`:server` shows the active query. Label and field selectors combine; `clear`
+removes both selectors and preserves the payload mode. Selector changes restart
+the current LIST/WATCH scope. Back/forward retains the server query separately from
+the local `/` filter. Typing in `/`, including local `label:` and `field:` filters,
+never changes server selectors or sends a request for each keystroke.
+
+Selectors accept up to 256 characters and eight AND terms. Server field
+selectors use the existing field allowlist; Kubernetes may reject a field that
+the selected resource does not support. Namespace selection is another way to
+narrow results. A deletion below the row limit does not prove the missing
+rows disappeared: only a fresh complete list clears the incomplete state.
+
+In a generic resource view, `:server compact` requests Table rows with genuine
+`PartialObjectMetadata`, keeping identity and server-printer cells while reducing
+raw payloads. A server without that representation falls back to full JSON.
+`:server full` restores full objects while preserving selectors. Native views and
+core Pod/Service views retain full objects for their existing actions. Inspection
+always reads a fresh full object; a configured jump needing absent fields asks
+for `:server full`. Incomplete event lists and aggregate-log membership also
+identify their available subset explicitly.
+
 ## Standard and discovered views
 
 Standard views provide resource-specific summaries for workloads, networking,

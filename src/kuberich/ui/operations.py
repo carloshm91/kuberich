@@ -19,7 +19,7 @@ from kuberich.errors import AppError
 from kuberich.security.presentation import safe_text
 from kuberich.services.mutations import MutationManager
 from kuberich.services.operations import BatchDeleteService, BatchIntent, ResourceOperationService
-from kuberich.services.processes import _finish_owned
+from kuberich.services.ownership import finish_owned
 from kuberich.ui.mutations import result_text
 from kuberich.ui.port_forwards import ForwardInput
 
@@ -264,7 +264,7 @@ class ResourceOperationScreen(ModalScreen[None]):
         if self._operation_task is not None:
             if not self._operation_task.done() and not self._operation_task.cancelling():
                 self._operation_task.cancel()
-            await _finish_owned(asyncio.gather(self._operation_task, return_exceptions=True))
+            await finish_owned(asyncio.gather(self._operation_task, return_exceptions=True))
 
     async def on_unmount(self) -> None:
         await self.stop_owned()

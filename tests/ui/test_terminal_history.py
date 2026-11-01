@@ -18,6 +18,7 @@ from kuberich.ui.terminal import ShellScreen
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
 from tests.support.resources import collection
+from tests.support.shells import observe_shells
 from tests.support.workspace import stable_watch, wait_for, workspace_api
 
 CHILD = r"""
@@ -55,7 +56,8 @@ while True:
 
 
 @asynccontextmanager
-async def embedded(tmp_path):
+async def embedded(tmp_path, monkeypatch):
+    calls = observe_shells(monkeypatch)
     value = pod("api")
 
     async def ns(request):
@@ -71,9 +73,11 @@ async def embedded(tmp_path):
     binary.chmod(0o700)
     async with workspace_api(ns, handler) as url:
         app = KubeRichApp(
-            Settings(), logging.Logger("history", level=100), catalog=catalog_fixture(tmp_path, url)
+            Settings(),
+            logging.Logger("history", level=100),
+            catalog=catalog_fixture(tmp_path, url),
+            environment={**os.environ, "PATH": str(tmp_path)},
         )
-        app._process_environment = {**os.environ, "PATH": str(tmp_path)}
         async with app.run_test(size=(100, 30)) as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
             await pilot.press("enter", "s")
@@ -83,8 +87,9 @@ async def embedded(tmp_path):
                     and "LIVE PROMPT>" in "\n".join(app.screen.terminal.model.screen.display)
                 )
             )
-            yield app, pilot, app.screen
+            yield app, pilot, app.screen, calls
         assert app.processes.active_count == 0
+        assert calls.tasks and all(task.done() for task in calls.tasks)
         with pytest.raises(ProcessLookupError):
             os.kill(int((tmp_path / "pid").read_text()), 0)
 
@@ -98,8 +103,8 @@ async def wait_for_late_output(screen):
 
 
 @pytest.mark.asyncio
-async def test_live_history_search_selection_copy_and_return_use_real_pty(tmp_path):
-    async with embedded(tmp_path) as (app, pilot, screen):
+async def test_live_history_search_selection_copy_and_return_use_real_pty(tmp_path, monkeypatch):
+    async with embedded(tmp_path, monkeypatch) as (app, pilot, screen, _calls):
         terminal = screen.terminal
         assert len(terminal.model.history.rows) == 1000 and terminal.model.history.dropped > 0
         assert app.clipboard == ""
@@ -152,8 +157,10 @@ async def test_live_history_search_selection_copy_and_return_use_real_pty(tmp_pa
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("removed_id", ["shell-toolbar", "shell-history", "shell-controls"])
-async def test_pty_review_output_during_child_unmount_keeps_owned_cleanup(tmp_path, removed_id):
-    async with embedded(tmp_path) as (app, pilot, screen):
+async def test_pty_review_output_during_child_unmount_keeps_owned_cleanup(
+    tmp_path, removed_id, monkeypatch
+):
+    async with embedded(tmp_path, monkeypatch) as (app, pilot, screen, calls):
         await pilot.press("alt+pageup")
         assert screen.terminal.review is not None
         # Reproduce Textual's children-before-parent teardown interval while
@@ -164,15 +171,15 @@ async def test_pty_review_output_during_child_unmount_keeps_owned_cleanup(tmp_pa
         assert not removed.is_attached
         (tmp_path / "continue").touch()
         await wait_for_late_output(screen)
-        assert screen._session_task is not None and not screen._session_task.done()
+        assert calls.latest is not None and not calls.latest.done()
         await pilot.press("ctrl+right_square_bracket")
         await wait_for(lambda: app.screen is not screen)
         assert not screen.terminal.model.history.rows and screen.terminal.endpoint is None
 
 
 @pytest.mark.asyncio
-async def test_history_button_mouse_editor_and_repeated_cleanup(tmp_path):
-    async with embedded(tmp_path) as (app, pilot, screen):
+async def test_history_button_mouse_editor_and_repeated_cleanup(tmp_path, monkeypatch):
+    async with embedded(tmp_path, monkeypatch) as (app, pilot, screen, _calls):
         await pilot.press(*"alternate", "enter")
         await wait_for(lambda: "EDITOR ONLY" in "\n".join(screen.terminal.model.screen.display))
         await pilot.click("#shell-history")
@@ -220,8 +227,8 @@ async def test_history_button_mouse_editor_and_repeated_cleanup(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_stale_history_cannot_copy_and_owned_child_is_cancelled(tmp_path):
-    async with embedded(tmp_path) as (app, pilot, screen):
+async def test_stale_history_cannot_copy_and_owned_child_is_cancelled(tmp_path, monkeypatch):
+    async with embedded(tmp_path, monkeypatch) as (app, pilot, screen, _calls):
         await pilot.press("shift+pageup")
         app.workspace.connect("kuberich-test-two")
         screen.key(Key("y", "y"))

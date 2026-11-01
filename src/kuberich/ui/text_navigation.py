@@ -1,12 +1,14 @@
 """Read-only document and help navigation using independent configurable bindings."""
 
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from textual.binding import Binding, BindingType
 from textual.containers import VerticalScroll
-from textual.widgets import TextArea
 
 from kuberich.domain.keyboard import keys_for
+
+if TYPE_CHECKING:
+    from kuberich.ui.read_only_text import ReadOnlyText as ReadOnlyText
 
 _ACTIONS = {
     "down": "cursor_down",
@@ -29,16 +31,12 @@ def text_bindings() -> list[BindingType]:
     ]
 
 
-class ReadOnlyText(TextArea):
-    BINDING_PROFILE = "text"
-    BINDINGS: ClassVar[list[BindingType]] = text_bindings()
+def __getattr__(name: str) -> object:
+    if name == "ReadOnlyText":
+        from kuberich.ui.read_only_text import ReadOnlyText
 
-    def action_document_edge(self, last: bool) -> None:
-        self.move_cursor((self.document.line_count - 1, 0) if last else (0, 0))
-
-    def action_document_half(self, direction: int) -> None:
-        row, column = self.cursor_location
-        self.move_cursor((row + direction * max(1, self.content_region.height // 2), column))
+        return ReadOnlyText
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 class ReadOnlyScroll(VerticalScroll):

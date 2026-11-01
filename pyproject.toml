@@ -39,7 +39,7 @@ dependencies = [
 
 [project.scripts]
 kuberich = "kuberich.cli:main"
-kubetrol = "kuberich.cli:main"
+kubetrol = "kuberich.cli:legacy_main"
 
 [project.urls]
 Homepage = "https://github.com/carloshm91/kuberich"
@@ -53,6 +53,7 @@ dev = [
     "cryptography>=50.0.2,<51",
     "cyclonedx-bom>=7.5.0,<8",
     "diff-cover>=10.6.0,<11",
+    "hypothesis>=6.170.14,<7",
     "markdown-it-py>=4.2.0,<5",
     "mypy>=2.4.0,<3",
     "pip-audit>=2.10.1,<3",
@@ -66,6 +67,9 @@ dev = [
     "types-pyyaml>=6.0.12,<7",
     "types-regex>=2026.9.29.20261005,<2027",
     "zstandard==0.25.0",
+]
+mutation = [
+    "mutmut==3.8.1",
 ]
 standalone = [
     "pyinstaller==6.22.3",
@@ -107,6 +111,31 @@ strict = true
 files = ["src/kuberich"]
 mypy_path = ["scripts/typing"]
 
+[tool.mutmut]
+source_paths = ["src/"]
+only_mutate = [
+    "src/kuberich/domain/registry.py",
+    "src/kuberich/domain/selectors.py",
+    "src/kuberich/config/catalog.py",
+    "src/kuberich/diagnostics/redaction.py",
+    "src/kuberich/domain/aliases.py",
+    "src/kuberich/domain/keyboard.py",
+    "src/kuberich/domain/terminal_history.py",
+    "src/kuberich/domain/log_json.py",
+]
+pytest_add_cli_args = ["-q", "-x", "-m", "not performance and not runtime_control"]
+pytest_add_cli_args_test_selection = [
+    "tests/unit/property/",
+    "tests/unit/test_registry.py",
+    "tests/unit/test_selectors.py",
+    "tests/unit/test_catalog.py",
+    "tests/unit/test_security_text.py",
+    "tests/unit/test_navigation_preferences.py",
+    "tests/unit/test_terminal_history.py",
+    "tests/unit/test_logs.py",
+    "tests/unit/test_log_view.py",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = [
@@ -147,6 +176,9 @@ show_contexts = true
 [tool.kuberich.coverage]
 # Extend this reviewed list when deterministic security/state decisions are added.
 critical_modules = [
+    "src/kuberich/domain/resource_queries.py",
+    "src/kuberich/domain/kubeconfig_auth.py",
+    "src/kuberich/domain/oidc_migration.py",
     "src/kuberich/domain/jumps.py",
     "src/kuberich/config/jumps.py",
     "src/kuberich/domain/kubeconfig_edit.py",
@@ -163,6 +195,11 @@ critical_modules = [
     "src/kuberich/adapters/credential_child.py",
     "src/kuberich/ui/style_cache.py",
     "src/kuberich/ui/table_cache.py",
+    "src/kuberich/ui/foreground.py",
+    "src/kuberich/ui/target_capture.py",
+    "src/kuberich/ui/command_routing.py",
+    "src/kuberich/ui/state.py",
+    "src/kuberich/ui/log_cache.py",
     "src/kuberich/config/schema.py",
     "src/kuberich/config/navigation.py",
     "src/kuberich/config/plugins.py",
@@ -192,13 +229,17 @@ critical_modules = [
     "src/kuberich/domain/terminal_history.py",
     "src/kuberich/config/launch.py",
     "src/kuberich/services/access.py",
+    "src/kuberich/services/ownership.py",
     "src/kuberich/services/commands.py",
+    "src/kuberich/services/command_catalog.py",
     "src/kuberich/config/catalog.py",
     "src/kuberich/domain/connections.py",
     "src/kuberich/domain/resources.py",
     "src/kuberich/domain/tables.py",
     "src/kuberich/domain/custom.py",
     "src/kuberich/domain/watches.py",
+    "src/kuberich/domain/view_routes.py",
+    "src/kuberich/domain/commands.py",
     "src/kuberich/domain/views.py",
     "src/kuberich/domain/pods.py",
     "src/kuberich/domain/registry.py",

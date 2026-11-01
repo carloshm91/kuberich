@@ -26,6 +26,7 @@ from tests.support.backend_runtime import (
     require_backend_children,
 )
 from tests.support.resources import reader_fixture
+from tests.support.runtime_budget import budget_enforced, budget_observation
 from tests.support.workspace import wait_for
 
 
@@ -34,7 +35,7 @@ async def finish(owner, task, api):
     await asyncio.gather(task, return_exceptions=True)
     await owner.close()
     await wait_for(lambda: api.active == 0 and api.watch_active == 0)
-    assert not owner._owned and all(
+    assert owner.controller_count == 0 and all(
         state.task is None or state.task.done() for state in owner.states.values()
     )
 
@@ -277,7 +278,7 @@ async def test_many_tiny_lines_slow_source_heartbeat_and_two_levels_of_retention
                 assert all(len(numbers) <= 300 for numbers in history.by_source.values())
                 assert all(size <= 65536 for size in history.sizes.values())
                 assert len(heartbeats) > 3
-                if request is not None:
+                if request is not None and budget_enforced(request["mode"]):
                     assert max(b - a for a, b in pairwise(heartbeats)) < 0.15, (
                         "Backend runtime heartbeat exceeded 150 ms"
                     )
@@ -293,6 +294,10 @@ async def test_many_tiny_lines_slow_source_heartbeat_and_two_levels_of_retention
                     {
                         "received_lines": received,
                         "timing_qualifying": request is not None,
+                        "runtime_budget": budget_observation(
+                            max((b - a for a, b in pairwise(heartbeats)), default=0),
+                            mode=request["mode"] if request is not None else "coverage",
+                        ),
                         "negative_callback_executed": negative_executed,
                         "slow_source_received": late_received.is_set(),
                         "retained_lines": len(history.records),
@@ -300,7 +305,7 @@ async def test_many_tiny_lines_slow_source_heartbeat_and_two_levels_of_retention
                         "per_source_lines": list(map(len, history.by_source.values())),
                         "per_source_bytes": list(history.sizes.values()),
                         "after_close": {
-                            "owner_tasks": len(owner._owned),
+                            "owner_tasks": owner.controller_count,
                             "api_log_streams": api.active,
                             "api_watches": api.watch_active,
                         },
@@ -385,7 +390,7 @@ async def test_parent_or_generation_replacement_refuses_before_membership(tmp_pa
         with pytest.raises((AppError, ConnectionProblem)):
             await owner.run(LogOptions(), retain, lambda message: None)
         assert len(paths) == (0 if change == "stale" else 1)
-        assert not api.requests and not owner._owned
+        assert not api.requests and owner.controller_count == 0
         await owner.close()
 
 
@@ -564,7 +569,7 @@ async def test_unexpected_consumer_failure_drains_all_watchers_and_readers(tmp_p
         task = asyncio.create_task(owner.run(LogOptions(), retain, lambda message: None))
         with pytest.raises(RuntimeError, match="owned consumer failure"):
             await task
-        assert owner.closed and not owner._owned
+        assert owner.closed and owner.controller_count == 0
         with pytest.raises(AppError, match="owner has stopped"):
             owner.choose(None)
         await finish(owner, task, api)

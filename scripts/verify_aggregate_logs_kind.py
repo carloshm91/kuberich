@@ -20,6 +20,7 @@ from kuberich.domain.aggregate_logs import AggregateHistory
 from kuberich.domain.connections import ConnectionRequest
 from kuberich.domain.logs import LogLine, LogOptions
 from kuberich.domain.registry import RESOURCE_ALIASES
+from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.resources import ApiResource, ResourceRecord, ResourceSnapshot
 from kuberich.domain.targets import ResourceTarget
 from kuberich.services.access import AccessPolicy
@@ -90,7 +91,13 @@ class CrashWaitingReader(ResourceReader):
         self.pending = True
 
     async def list(
-        self, resource: ApiResource, namespace: str | None = None, *, page_size: int = 100
+        self,
+        resource: ApiResource,
+        namespace: str | None = None,
+        *,
+        page_size: int = 100,
+        query: ResourceQuery | None = None,
+        progress: Callable[[ResourceSnapshot], Awaitable[None]] | None = None,
     ) -> ResourceSnapshot:
         if (
             not self.pending
@@ -98,14 +105,16 @@ class CrashWaitingReader(ResourceReader):
             or resource.name != "pods"
             or namespace != self.namespace
         ):
-            return await super().list(resource, namespace, page_size=page_size)
+            return await super().list(
+                resource, namespace, page_size=page_size, query=query, progress=progress
+            )
 
         snapshot: ResourceSnapshot | None = None
 
         async def waiting() -> bool:
             nonlocal snapshot
             snapshot = await super(CrashWaitingReader, self).list(
-                resource, namespace, page_size=page_size
+                resource, namespace, page_size=page_size, query=query, progress=progress
             )
             self.evidence["list_attempts"] = self.evidence.get("list_attempts", 0) + 1
             return waiting_crash_record(snapshot, self.namespace, self.uid) is not None

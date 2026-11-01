@@ -18,6 +18,8 @@ from textual.widgets import Input, OptionList
 from kuberich.config.schema import Settings
 from kuberich.domain.log_view import WINDOWS, LogEntry
 from kuberich.domain.logs import LogLine
+from kuberich.services.logs import LogStream
+from kuberich.ui import logs
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.log_body import LogBody
 from kuberich.ui.logs import LogScreen
@@ -26,7 +28,24 @@ from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
 from tests.support.resources import collection
 from tests.support.watches import frame
+from tests.support.workers import CoroutineCalls
 from tests.support.workspace import stable_watch, wait_for, workspace_api
+
+
+class LogCalls:
+    def __init__(self):
+        self.read = CoroutineCalls()
+        self.render = CoroutineCalls()
+        self.save = CoroutineCalls()
+
+
+@pytest.fixture
+def log_calls(monkeypatch):
+    calls = LogCalls()
+    monkeypatch.setattr(LogStream, "run", calls.read.observe(LogStream.run))
+    monkeypatch.setattr(LogBody, "load", calls.render.observe(LogBody.load))
+    monkeypatch.setattr(logs, "save_logs", calls.save.observe(logs.save_logs))
+    return calls
 
 
 async def ns(request):
@@ -115,7 +134,7 @@ async def test_log_body_raw_controls_tab_spans_and_theme_without_new_layout(prep
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
-async def test_live_view_search_vim_modes_copy_save_resize_and_return(tmp_path, size):
+async def test_live_view_search_vim_modes_copy_save_resize_and_return(tmp_path, size, log_calls):
     closed = asyncio.Event()
     needle = "wrap-你好-e\u0301-" + "x" * 110
 
@@ -162,7 +181,7 @@ async def test_live_view_search_vim_modes_copy_save_resize_and_return(tmp_path, 
             assert screen.body.follow and screen.body.scroll_y > 0
             assert screen.body.show_vertical_scrollbar
             descriptor = screen.body.rows[-1][1][0]
-            batches, read_task = screen.body.render_batches, screen._read_task
+            batches, read_task = screen.body.render_batches, log_calls.read.latest
             app.theme = "textual-light"
             await pilot.pause()
             changed_style = screen.body.rich_style
@@ -174,7 +193,7 @@ async def test_live_view_search_vim_modes_copy_save_resize_and_return(tmp_path, 
                 for segment in themed_segments
             )
             assert screen.body.render_batches == batches
-            assert screen.body.rows[-1][1][0] is descriptor and screen._read_task is read_task
+            assert screen.body.rows[-1][1][0] is descriptor and log_calls.read.latest is read_task
             base_style = changed_style
             screen.body.post_message(
                 MouseScrollUp(screen.body, 1, 1, 0, -1, 0, False, False, False)
@@ -253,12 +272,15 @@ async def test_live_view_search_vim_modes_copy_save_resize_and_return(tmp_path, 
             assert screen.search.value == "jkgGhlpvtw" and app.focused is screen.body
             await pilot.press("slash", "ctrl+a", "ctrl+k", "enter")
             assert "No matching" in screen.message
+            log_calls.save.clear()
             await pilot.press("ctrl+s")
             destination = tmp_path / "retained.log"
             app.screen.query_one("#log-value", Input).value = str(destination)
             await pilot.press("enter")
             await wait_for(lambda: destination.exists())
-            await wait_for(lambda: screen._save_task.done())
+            await wait_for(
+                lambda: log_calls.save.latest is not None and log_calls.save.latest.done()
+            )
             assert destination.read_text() == screen.history.export()
             await pilot.press("question_mark")
             assert type(app.screen).__name__ == "LogHelpScreen"
@@ -273,7 +295,8 @@ async def test_live_view_search_vim_modes_copy_save_resize_and_return(tmp_path, 
             await pilot.press("escape")
             await wait_for(closed.is_set)
             assert app.resources.capture_viewport() == before
-        assert screen._controller.done() and screen._renderer.done() and screen._read_task.done()
+        assert screen.active_count == 0
+        assert all(task.done() for task in (*log_calls.read.tasks, *log_calls.render.tasks))
 
 
 async def choose(pilot, app, index):
@@ -283,7 +306,9 @@ async def choose(pilot, app, index):
 
 
 @pytest.mark.asyncio
-async def test_regular_init_previous_windows_since_validation_buttons_and_save_error(tmp_path):
+async def test_regular_init_previous_windows_since_validation_buttons_and_save_error(
+    tmp_path, log_calls
+):
     requests = []
     value = pod("api")
     value["spec"]["initContainers"] = [{"name": "init"}]
@@ -331,17 +356,18 @@ async def test_regular_init_previous_windows_since_validation_buttons_and_save_e
             field.value = "2026-10-05T14:00:00+02:00"
             await pilot.click("#log-accept")
             await wait_for(lambda: requests[-1].get("sinceTime") == "2026-10-05T12:00:00Z")
-            original = screen._read_task
+            original = log_calls.read.latest
             await pilot.press("o", "escape")
-            assert screen._read_task is original
+            assert log_calls.read.latest is original
             await pilot.press("o")
             await choose(pilot, app, len(WINDOWS))
             await pilot.click("#log-cancel")
-            assert screen._read_task is original
+            assert log_calls.read.latest is original
             await pilot.click("#log-wrap")
             await pilot.click("#log-timestamps")
             await pilot.click("#log-help")
             await pilot.click("#log-help-back")
+            log_calls.save.clear()
             await pilot.press("ctrl+s")
             field = app.screen.query_one("#log-value", Input)
             await pilot.press("enter")
@@ -380,7 +406,9 @@ async def test_denied_deleted_and_failed_log_reads_are_clear_and_can_close(tmp_p
 
 
 @pytest.mark.asyncio
-async def test_pause_backpressures_new_output_and_reading_history_keeps_receiving(tmp_path):
+async def test_pause_backpressures_new_output_and_reading_history_keeps_receiving(
+    tmp_path, log_calls
+):
     values = asyncio.Queue()
     closed = asyncio.Event()
 
@@ -441,16 +469,20 @@ async def test_pause_backpressures_new_output_and_reading_history_keeps_receivin
             await wait_for(lambda: screen.body.rows and screen.body.rows[0][0] == 45)
             await pilot.pause()
             assert screen.body.first_visible == (45, 0) and not screen.body.follow
-            assert not screen.history.marks and len(screen.body._cache) == 10000
+            assert not screen.history.marks and screen.body.cache_info.layout_count == 10000
             await pilot.press("ctrl+q")
         await wait_for(closed.is_set)
-        assert screen._read_task.done() and app.sessions.client is None
+        assert (
+            log_calls.read.latest is not None
+            and log_calls.read.latest.done()
+            and app.sessions.client is None
+        )
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("nested", [False, True])
 async def test_scope_switch_invalidates_even_under_a_container_dialog_and_drains_paused_read(
-    tmp_path, nested
+    tmp_path, nested, log_calls
 ):
     async def handler(request):
         if "watch" in request.query:
@@ -472,12 +504,14 @@ async def test_scope_switch_invalidates_even_under_a_container_dialog_and_drains
                 await pilot.press("c")
             app.workspace.select_namespace("other")
             await wait_for(lambda: screen.stale)
-            await wait_for(lambda: screen._read_task.done())
+            await wait_for(
+                lambda: log_calls.read.latest is not None and log_calls.read.latest.done()
+            )
             assert not screen.history.entries and not screen.body.rows
             if nested:
-                previous_read = screen._read_task
+                previous_read = log_calls.read.latest
                 await choose(pilot, app, 0)
-                assert screen._read_task is previous_read and "stale" in screen.message
+                assert log_calls.read.latest is previous_read and "stale" in screen.message
             screen.action_copy()
             assert app.clipboard == "" and "stale" in screen.message
             await pilot.press("question_mark")
@@ -486,7 +520,7 @@ async def test_scope_switch_invalidates_even_under_a_container_dialog_and_drains
 
 
 @pytest.mark.asyncio
-async def test_selected_uid_deletion_under_stream_rejects_replacement_output(tmp_path):
+async def test_selected_uid_deletion_under_stream_rejects_replacement_output(tmp_path, log_calls):
     updates = asyncio.Queue()
 
     async def handler(request):
@@ -522,14 +556,18 @@ async def test_selected_uid_deletion_under_stream_rejects_replacement_output(tmp
             await wait_for(lambda: screen.stale)
             await updates.put({"type": "ADDED", "object": pod("api", uid="replacement")})
             await wait_for(lambda: app.resources.row_count == 1)
-            await wait_for(lambda: screen._read_task.done())
-            assert screen.stale and not screen.history.entries and screen._read_task.done()
+            await wait_for(
+                lambda: log_calls.read.latest is not None and log_calls.read.latest.done()
+            )
+            assert screen.stale and not screen.history.entries and log_calls.read.latest.done()
             await pilot.press("escape")
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("snapshot", [False, True])
-async def test_quiet_open_and_empty_snapshot_show_distinct_states_and_close(tmp_path, snapshot):
+async def test_quiet_open_and_empty_snapshot_show_distinct_states_and_close(
+    tmp_path, snapshot, log_calls
+):
     async def handler(request):
         if "watch" in request.query:
             return await stable_watch(request)
@@ -555,27 +593,34 @@ async def test_quiet_open_and_empty_snapshot_show_distinct_states_and_close(tmp_
             await wait_for(lambda: screen.message == expected)
             assert not screen.history.entries and not screen.body.rows
             await pilot.press("m", "escape")
-        assert screen._read_task.done() and app.sessions.client is None
+        assert (
+            log_calls.read.latest is not None
+            and log_calls.read.latest.done()
+            and app.sessions.client is None
+        )
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("stage", ["read", "render", "save"])
 async def test_unexpected_failure_uses_app_cleanup_and_drains_viewer_tasks(
-    tmp_path, monkeypatch, stage
+    tmp_path, monkeypatch, stage, log_calls
 ):
     from kuberich.services.logs import LogStream
     from kuberich.ui import logs
     from kuberich.ui.log_body import LogBody
 
+    failed = asyncio.Event()
+
     async def broken(*args, **kwargs):
+        failed.set()
         raise RuntimeError("owned-log-failure")
 
     if stage == "read":
-        monkeypatch.setattr(LogStream, "run", broken)
+        monkeypatch.setattr(LogStream, "run", log_calls.read.observe(broken))
     elif stage == "render":
-        monkeypatch.setattr(LogBody, "load", broken)
+        monkeypatch.setattr(LogBody, "load", log_calls.render.observe(broken))
     else:
-        monkeypatch.setattr(logs, "save_logs", broken)
+        monkeypatch.setattr(logs, "save_logs", log_calls.save.observe(broken))
 
     async def handler(request):
         if "watch" in request.query:
@@ -596,22 +641,27 @@ async def test_unexpected_failure_uses_app_cleanup_and_drains_viewer_tasks(
                 screen = app.screen
                 if stage == "save":
                     await wait_for(lambda: len(screen.body.rows) == 1)
+                    log_calls.save.clear()
                     await pilot.press("ctrl+s")
                     app.screen.query_one("#log-value", Input).value = str(tmp_path / "save")
                     await pilot.press("enter")
                     await wait_for(
-                        lambda: screen._save_task is not None and screen._save_task.done()
+                        lambda: log_calls.save.latest is not None and log_calls.save.latest.done()
                     )
                 elif stage == "render":
-                    await wait_for(lambda: screen._renderer is not None and screen._renderer.done())
+                    await wait_for(failed.is_set)
                 else:
                     await wait_for(
-                        lambda: screen._read_task is not None and screen._read_task.done()
+                        lambda: log_calls.read.latest is not None and log_calls.read.latest.done()
                     )
         assert app.sessions.client is None and screen.closed
-        assert screen._controller.done() and screen._renderer.done()
-        assert screen._read_task is None or screen._read_task.done()
-        assert screen._save_task is None or screen._save_task.done()
+        assert screen.active_count == 0
+        assert all(
+            task.done()
+            for task in (*log_calls.read.tasks, *log_calls.render.tasks, *log_calls.save.tasks)
+        )
+        assert log_calls.read.latest is None or log_calls.read.latest.done()
+        assert log_calls.save.latest is None or log_calls.save.latest.done()
 
 
 @pytest.mark.asyncio
@@ -638,7 +688,7 @@ async def test_high_volume_batches_bound_history_layout_and_head_stops_at_oldest
                 lambda: len(screen.body.rows) == 10000 and screen.body.rows[0][0] == 5001
             )
             assert screen.history.buffer.dropped_lines == 5000
-            assert len(screen.body._cache) == 10000
+            assert screen.body.cache_info.layout_count == 10000
             assert screen.body.render_batches < 100
             assert "5000 dropped" in str(screen.status.content)
             await pilot.resize_terminal(100, 35)
@@ -646,8 +696,10 @@ async def test_high_volume_batches_bound_history_layout_and_head_stops_at_oldest
             visible_cache_peak = 0
             for _ in range(12):
                 await pilot.press("ctrl+f")
-                visible_cache_peak = max(visible_cache_peak, len(screen.body._strips))
-                assert len(screen.body._strips) <= 128
+                visible_cache_peak = max(
+                    visible_cache_peak, screen.body.cache_info.visible_strip_count
+                )
+                assert screen.body.cache_info.visible_strip_count <= 128
             assert visible_cache_peak == 128
             anchor = screen.body.first_visible
             await pilot.resize_terminal(40, 12)
@@ -668,11 +720,8 @@ async def test_high_volume_batches_bound_history_layout_and_head_stops_at_oldest
                     and screen.body.rows[0][0] == screen.history.entries[0].number
                 )
             )
-            assert screen.body._strips and len(screen.body._strips) <= 128
-            assert all(
-                number in screen.body._cache and line is screen.body._cache[number][1][offset]
-                for (number, offset), (line, _) in screen.body._strips.items()
-            )
+            assert 0 < screen.body.cache_info.visible_strip_count <= 128
+            assert screen.body.cache_info.current_sources
             await pilot.resize_terminal(100, 35)
             await pilot.press("g")
             await pilot.pause()
@@ -691,12 +740,8 @@ async def test_high_volume_batches_bound_history_layout_and_head_stops_at_oldest
                         "peak_visible_strips": visible_cache_peak,
                         "resize_anchor": anchor,
                         "head_retained_lines": len(screen.history.entries),
-                        "head_visible_strips": len(screen.body._strips),
-                        "head_identity_current": all(
-                            number in screen.body._cache
-                            and line is screen.body._cache[number][1][offset]
-                            for (number, offset), (line, _) in screen.body._strips.items()
-                        ),
+                        "head_visible_strips": screen.body.cache_info.visible_strip_count,
+                        "head_identity_current": screen.body.cache_info.current_sources,
                         "rendered_head_text": actual,
                     },
                     indent=2,

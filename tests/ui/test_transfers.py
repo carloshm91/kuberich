@@ -3,6 +3,7 @@
 import asyncio
 import logging
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from aiohttp import web
@@ -10,6 +11,7 @@ from textual.widgets import Button, Checkbox, Input, Static
 
 from kuberich.config.schema import Settings
 from kuberich.domain.transfers import TransferDirection
+from kuberich.services.transfers import TransferService
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.containers import ContainerScreen
 from kuberich.ui.transfers import TransferScreen
@@ -17,11 +19,22 @@ from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
 from tests.support.resources import collection
 from tests.support.transfers import executable
+from tests.support.workers import CoroutineCalls
 from tests.support.workspace import stable_watch, wait_for, workspace_api
 
 
+@pytest.fixture
+def transfer_tasks(monkeypatch):
+    preparing, executing = CoroutineCalls(), CoroutineCalls()
+    monkeypatch.setattr(TransferService, "prepare", preparing.observe(TransferService.prepare))
+    monkeypatch.setattr(TransferService, "execute", executing.observe(TransferService.execute))
+    return SimpleNamespace(preparing=preparing, executing=executing)
+
+
 @pytest.mark.asyncio
-async def test_changed_paths_during_pending_review_require_another_review(tmp_path, monkeypatch):
+async def test_changed_paths_during_pending_review_require_another_review(
+    tmp_path, monkeypatch, transfer_tasks
+):
     value = pod("api")
 
     async def ns(request):
@@ -34,9 +47,11 @@ async def test_changed_paths_during_pending_review_require_another_review(tmp_pa
 
     async with workspace_api(ns, handler) as url:
         app = KubeRichApp(
-            Settings(), logging.Logger("copy", level=100), catalog=catalog_fixture(tmp_path, url)
+            Settings(),
+            logging.Logger("copy", level=100),
+            catalog=catalog_fixture(tmp_path, url),
+            environment=executable(tmp_path / "tools"),
         )
-        app._process_environment = executable(tmp_path / "tools")
         async with app.run_test() as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
             await pilot.press("enter", "d")
@@ -51,6 +66,7 @@ async def test_changed_paths_during_pending_review_require_another_review(tmp_pa
 
             async def held_prepare(*args, **kwargs):
                 nonlocal calls
+                transfer_tasks.preparing.capture()
                 calls += 1
                 entered.set()
                 await release.wait()
@@ -59,10 +75,13 @@ async def test_changed_paths_during_pending_review_require_another_review(tmp_pa
             monkeypatch.setattr(screen.source, "prepare", held_prepare)
             screen.prepare()
             await entered.wait()
-            operation = screen._operation_task
+            operation = transfer_tasks.preparing.latest
             screen.prepare()
             screen.confirm()
-            assert screen._operation_task is operation and not screen._transferring
+            await asyncio.sleep(0)
+            assert transfer_tasks.preparing.tasks == [operation]
+            assert not transfer_tasks.executing.tasks and not screen.review
+            assert screen.query_one("#copy-confirm", Button).disabled
             screen.query_one("#copy-local", Input).value = str(tmp_path / "second")
             await pilot.pause()
             release.set()
@@ -78,7 +97,7 @@ async def test_changed_paths_during_pending_review_require_another_review(tmp_pa
 @pytest.mark.asyncio
 @pytest.mark.parametrize("failure", ["invalid-path", "missing-tar"])
 async def test_refused_review_or_failed_copy_displays_safe_feedback_and_retains_destination(
-    tmp_path, failure
+    tmp_path, failure, transfer_tasks
 ):
     value = pod("api")
 
@@ -92,9 +111,11 @@ async def test_refused_review_or_failed_copy_displays_safe_feedback_and_retains_
 
     async with workspace_api(ns, handler) as url:
         app = KubeRichApp(
-            Settings(), logging.Logger("copy", level=100), catalog=catalog_fixture(tmp_path, url)
+            Settings(),
+            logging.Logger("copy", level=100),
+            catalog=catalog_fixture(tmp_path, url),
+            environment=executable(tmp_path / "tools", failure=failure),
         )
-        app._process_environment = executable(tmp_path / "tools", failure=failure)
         local = tmp_path / "retained"
         local.write_bytes(b"keep original")
         async with app.run_test() as pilot:
@@ -109,16 +130,19 @@ async def test_refused_review_or_failed_copy_displays_safe_feedback_and_retains_
             screen.query_one("#copy-overwrite", Checkbox).value = True
             await pilot.pause()
             screen.prepare()
-            await screen._operation_task
+            await wait_for(lambda: transfer_tasks.preparing.latest is not None)
+            await transfer_tasks.preparing.latest
             if failure == "invalid-path":
                 assert "Review refused" in str(screen.query_one("#copy-feedback", Static).content)
                 assert screen.review is None and screen.query_one("#copy-confirm", Button).disabled
             else:
                 screen.confirm()
                 # A second confirmation cannot start another copy while this one is owned.
-                operation = screen._operation_task
+                await wait_for(lambda: transfer_tasks.executing.latest is not None)
+                operation = transfer_tasks.executing.latest
                 screen.confirm()
-                assert screen._operation_task is operation
+                await asyncio.sleep(0)
+                assert transfer_tasks.executing.tasks == [operation]
                 await operation
                 assert "Download incomplete" in str(
                     screen.query_one("#copy-feedback", Static).content
@@ -147,9 +171,11 @@ async def test_copy_review_never_transfers_on_enter_and_explicit_confirm_retains
 
     async with workspace_api(ns, handler) as url:
         app = KubeRichApp(
-            Settings(), logging.Logger("copy", level=100), catalog=catalog_fixture(tmp_path, url)
+            Settings(),
+            logging.Logger("copy", level=100),
+            catalog=catalog_fixture(tmp_path, url),
+            environment=executable(tmp_path / "tools"),
         )
-        app._process_environment = executable(tmp_path / "tools")
         local = tmp_path / "space local.bin"
         remote = tmp_path / "tools/remote/tmp/data.bin"
         (local if direction is TransferDirection.UPLOAD else remote).write_bytes(
@@ -218,8 +244,8 @@ async def test_readonly_keeps_explicit_download_and_blocks_upload_before_form(tm
             Settings(read_only=True),
             logging.Logger("copy", level=100),
             catalog=catalog_fixture(tmp_path, url),
+            environment=executable(tmp_path / "tools"),
         )
-        app._process_environment = executable(tmp_path / "tools")
         async with app.run_test() as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
             await pilot.press("enter", "u")
@@ -236,7 +262,7 @@ async def test_readonly_keeps_explicit_download_and_blocks_upload_before_form(tm
 @pytest.mark.asyncio
 @pytest.mark.parametrize("closing", ["escape", "quit", "retry"])
 async def test_escape_during_transfer_drains_child_before_source_client_cleanup(
-    tmp_path, monkeypatch, closing
+    tmp_path, monkeypatch, closing, transfer_tasks
 ):
     value = pod("api")
 
@@ -250,9 +276,11 @@ async def test_escape_during_transfer_drains_child_before_source_client_cleanup(
 
     async with workspace_api(ns, handler) as url:
         app = KubeRichApp(
-            Settings(), logging.Logger("copy", level=100), catalog=catalog_fixture(tmp_path, url)
+            Settings(),
+            logging.Logger("copy", level=100),
+            catalog=catalog_fixture(tmp_path, url),
+            environment=executable(tmp_path / "tools", failure="cancel-download"),
         )
-        app._process_environment = executable(tmp_path / "tools", failure="cancel-download")
         local = tmp_path / "chosen"
         async with app.run_test() as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
@@ -271,7 +299,7 @@ async def test_escape_during_transfer_drains_child_before_source_client_cleanup(
             original_close = old_client.close
 
             async def checked_close():
-                assert screen._operation_task.done() and screen.source.review is None
+                assert transfer_tasks.executing.latest.done() and screen.source.review is None
                 await original_close()
 
             monkeypatch.setattr(old_client, "close", checked_close)
@@ -283,9 +311,9 @@ async def test_escape_during_transfer_drains_child_before_source_client_cleanup(
                     await wait_for(lambda: isinstance(app.screen, ContainerScreen))
                     assert "cancelled" in str(app.screen.status.content).lower()
             if closing != "quit":
-                await wait_for(lambda: screen._operation_task.done())
+                await wait_for(lambda: transfer_tasks.executing.latest.done())
             if closing == "retry":
                 await wait_for(lambda: app.sessions.client is not old_client)
-        assert screen._operation_task.done() and screen.source.review is None
+        assert transfer_tasks.executing.latest.done() and screen.source.review is None
         assert not review.connection.path.exists() and not Path(review.temporary.name).exists()
         assert not local.exists()

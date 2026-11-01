@@ -3308,5 +3308,437 @@
         }
       ]
     }
-  ]
+  ],
+  "unreleased": {
+    "status": "Engineering-phase source snapshot; not a published or qualified 0.3 release. Its prepared-parent anchor still awaits matching protected main.",
+    "source": {
+      "path": "CHANGELOG.md",
+      "commit": "3c8745caff1da62f1884f1e130c9affbc7bb3a65",
+      "sha256": "ff385a15b758f0e7854b311638349a97d0ecc39b5a202509de8453170b01dc75"
+    },
+    "entries": [
+      {
+        "id": "collections",
+        "category": "Added",
+        "markdown_sha256": "24d409f09368f6c6ce0cf6759405e469c84b155b1a17b2d25245d075b93c6aa6"
+      },
+      {
+        "id": "server-query",
+        "category": "Added",
+        "markdown_sha256": "d454bb4d52d375778706533384c7910a907e8945839699b78fb5730bffd25c4a"
+      },
+      {
+        "id": "view-retry",
+        "category": "Added",
+        "markdown_sha256": "1d6ab45ef27aa6d264b24999686d17574b548fc0996ba6c698cb38d6e27b389e"
+      },
+      {
+        "id": "bug-report",
+        "category": "Added",
+        "markdown_sha256": "2a90219fdb8d00ebe4625c13744dcb47bea117338f3d173a1520854366070e2f"
+      },
+      {
+        "id": "wayland",
+        "category": "Added",
+        "markdown_sha256": "232e75fd38c6bee1a9f44d414b1bdbef6f2173be7f153c5284049fe436088e5d"
+      },
+      {
+        "id": "basic-auth",
+        "category": "Added",
+        "markdown_sha256": "b037df87eb4f38f16cdd2c2ef57537c5512d4def6b14264e70455baf77232634"
+      },
+      {
+        "id": "oidc-migration",
+        "category": "Added",
+        "markdown_sha256": "355c9bae321771268729a2add1760150c6945f54f48951eda492f5d19a044fe2"
+      },
+      {
+        "id": "status",
+        "category": "Changed",
+        "markdown_sha256": "ffafac5b41d6d33ea4bbb462deba6b64d95e1989ec352a82ca5e9989c6d74b3d"
+      },
+      {
+        "id": "guides",
+        "category": "Changed",
+        "markdown_sha256": "ba4567461f46392516be31e8640a43af8ad5f17ef16a11d90161ff5232321e22"
+      },
+      {
+        "id": "readme",
+        "category": "Changed",
+        "markdown_sha256": "6807ad32a538501a1cf62f647d2d951eb8ed7be371827d733443d9cb2a91d4e3"
+      },
+      {
+        "id": "date-parser",
+        "category": "Changed",
+        "markdown_sha256": "7652fd374c803d2e761be38353794c81ff011d65c77bd677c1a97b98787f8e5d"
+      },
+      {
+        "id": "notes",
+        "category": "Changed",
+        "markdown_sha256": "3ae05f0c57e9570c9cb7551c88d9510a5456199b4b94edfc3d01d24164ba67d2"
+      },
+      {
+        "id": "offline-imports",
+        "category": "Changed",
+        "markdown_sha256": "4d65346bf8f1217e697da1f4c1ebd67384c90f93d1e6653a927c5be650d1663b"
+      },
+      {
+        "id": "alias",
+        "category": "Deprecated",
+        "markdown_sha256": "ae06bf090d84254585b190d42d2c1bc217132d98c063bad195db996c5e12b684"
+      },
+      {
+        "id": "headers",
+        "category": "Fixed",
+        "markdown_sha256": "0b98a4cc46110443070fec192b00833d06b4813fcfed768c980cb3288653b386"
+      },
+      {
+        "id": "generic-plugin",
+        "category": "Fixed",
+        "markdown_sha256": "2ef3152d18e29115a8d4f9fe7ba67bfd806bd0160fcd3aae329f3017d2cbd06a"
+      },
+      {
+        "id": "job-output",
+        "category": "Fixed",
+        "markdown_sha256": "e8232391ec31f08241d25e39b67cd08a115f6e3593726487ac37bf9db6d13432"
+      },
+      {
+        "id": "optional-credentials",
+        "category": "Fixed",
+        "markdown_sha256": "5f26179996bde95916780d5e69e4df47f848c7336f08ddb4fed97c0f491667e6"
+      },
+      {
+        "id": "migration-notice",
+        "category": "Fixed",
+        "markdown_sha256": "70fd36218ee42c8ef9ec81b613b35ddef0dfd003190628152c827187d7e3d48b"
+      }
+    ],
+    "source_blocks": [
+      {
+        "id": "U001",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Added",
+        "line_start": 10,
+        "line_end": 15,
+        "sha256": "bef9a8f67188d0eb4d45479d65e2a9a2e07ed54c72e411a6f1464581100b8ef4",
+        "disposition": "user_change",
+        "targets": [
+          "view-retry",
+          "bug-report"
+        ],
+        "reason": "Keep the actual user behavior; engineering policy and qualification details stay internal."
+      },
+      {
+        "id": "U002",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Added",
+        "line_start": 16,
+        "line_end": 21,
+        "sha256": "fa950a4f4995da7724f612a612afd63e4deda4e56b8368072d3a8cccb3d08102",
+        "disposition": "internal_process",
+        "targets": [],
+        "reason": "Developer qualification orchestration; no installed application behavior changes."
+      },
+      {
+        "id": "U003",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Added",
+        "line_start": 22,
+        "line_end": 26,
+        "sha256": "8a59649848eb685503014d26e012b3f409ce76af230f28b83160ae4b6e2c0e9e",
+        "disposition": "user_change",
+        "targets": [
+          "wayland"
+        ],
+        "reason": "Keep the actual user behavior; engineering policy and qualification details stay internal."
+      },
+      {
+        "id": "U004",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Changed",
+        "line_start": 29,
+        "line_end": 34,
+        "sha256": "b8d7067fc11ae8bf36446705e8566f212a61e8644de8429f9b9f5e2a2902269b",
+        "disposition": "user_change",
+        "targets": [
+          "status"
+        ],
+        "reason": "Keep the actual user behavior; engineering policy and qualification details stay internal."
+      },
+      {
+        "id": "U005",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Changed",
+        "line_start": 35,
+        "line_end": 39,
+        "sha256": "5dd4c7dd1165697b7d10d34c50ee1789d946531e480915eb4093fd21ed0d9305",
+        "disposition": "internal_process",
+        "targets": [],
+        "reason": "Contributor architecture migration; user tasks are described elsewhere."
+      },
+      {
+        "id": "U006",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Changed",
+        "line_start": 40,
+        "line_end": 44,
+        "sha256": "4f5c1ed8bab043634cab61ce49a24947027489d5a5b612b370d8e496fa98868b",
+        "disposition": "user_change",
+        "targets": [
+          "guides"
+        ],
+        "reason": "Keep the actual user behavior; engineering policy and qualification details stay internal."
+      },
+      {
+        "id": "U007",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Changed",
+        "line_start": 45,
+        "line_end": 48,
+        "sha256": "503ec463574297d0441a1b1b450021f361a577aa42820addd81292a41b45362c",
+        "disposition": "user_change",
+        "targets": [
+          "readme"
+        ],
+        "reason": "Keep the actual user behavior; engineering policy and qualification details stay internal."
+      },
+      {
+        "id": "U008",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Changed",
+        "line_start": 49,
+        "line_end": 53,
+        "sha256": "d8e0e9d8f14aa10f289b093ffb5384d03083c4ac667a5609e3db8a83fba7d783",
+        "disposition": "internal_process",
+        "targets": [],
+        "reason": "Engineering heartbeat policy; no user latency guarantee or release qualification claim."
+      },
+      {
+        "id": "U009",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Changed",
+        "line_start": 54,
+        "line_end": 58,
+        "sha256": "c392e09a0a05182c26386a6e50395d36a69a1fe3c1197494d6ec40a57eeff20a",
+        "disposition": "internal_process",
+        "targets": [],
+        "reason": "Property/mutation verification infrastructure, not an installed application feature."
+      },
+      {
+        "id": "U010",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Changed",
+        "line_start": 59,
+        "line_end": 59,
+        "sha256": "2867a6d68f642ebf779561ce023f2efdef772a34d83db201503ecd0301cf37d4",
+        "disposition": "user_change",
+        "targets": [
+          "alias",
+          "migration-notice"
+        ],
+        "reason": "Keep the actual user behavior; engineering policy and qualification details stay internal."
+      },
+      {
+        "id": "U011",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Changed",
+        "line_start": 60,
+        "line_end": 64,
+        "sha256": "c9d274094047e7fd0eab05ba241f18d4117e3662156ebcd0ae2b5875312bdcfe",
+        "disposition": "user_change",
+        "targets": [
+          "guides"
+        ],
+        "reason": "Keep the actual user behavior; engineering policy and qualification details stay internal."
+      },
+      {
+        "id": "U012",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Changed",
+        "line_start": 65,
+        "line_end": 70,
+        "sha256": "31b0a40cd7895d51d25248eb20dd8c5511d6ad9f292e85ebd8781b5b9c50deab",
+        "disposition": "user_change",
+        "targets": [
+          "collections",
+          "server-query"
+        ],
+        "reason": "Keep the actual user behavior; engineering policy and qualification details stay internal."
+      },
+      {
+        "id": "U013",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Changed",
+        "line_start": 71,
+        "line_end": 77,
+        "sha256": "03a0521068b0e96f04d965aa09efa1ba742fbc87cf247601a8092125b5898132",
+        "disposition": "user_change",
+        "targets": [
+          "offline-imports"
+        ],
+        "reason": "Keep the actual user behavior; engineering policy and qualification details stay internal."
+      },
+      {
+        "id": "U014",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Changed",
+        "line_start": 78,
+        "line_end": 81,
+        "sha256": "60cdd4f6963a53765be1b72a32ef812bec6862a79437ad7a5624a937f79ee093",
+        "disposition": "internal_process",
+        "targets": [],
+        "reason": "Disposable-cluster test readiness and failure collection only."
+      },
+      {
+        "id": "U015",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Changed",
+        "line_start": 82,
+        "line_end": 85,
+        "sha256": "608c2f3b82a2e3f2e4f4b64bcb28e84af6a6012459cf84d7cc8610dec42f6cfd",
+        "disposition": "internal_process",
+        "targets": [],
+        "reason": "Development test selection and CI orchestration only."
+      },
+      {
+        "id": "U016",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Changed",
+        "line_start": 86,
+        "line_end": 88,
+        "sha256": "cffdef96cfb34dd8b271d8e95124dda8832842adc0894311162ecd38dc058001",
+        "disposition": "user_change",
+        "targets": [
+          "date-parser"
+        ],
+        "reason": "Keep the actual user behavior; engineering policy and qualification details stay internal."
+      },
+      {
+        "id": "U017",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Fixed",
+        "line_start": 91,
+        "line_end": 94,
+        "sha256": "5c69916a8ea6e226b598bc413afac547477749c95ee3bfb2367eb36ba20b4d1c",
+        "disposition": "user_change",
+        "targets": [
+          "generic-plugin"
+        ],
+        "reason": "Keep the actual user behavior; engineering policy and qualification details stay internal."
+      },
+      {
+        "id": "U018",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Fixed",
+        "line_start": 95,
+        "line_end": 101,
+        "sha256": "7f3d84a5da6795ef6c3858ad1b2e752f1ce059ba4c22a6ff5d6b85e5f798f41c",
+        "disposition": "user_change",
+        "targets": [
+          "basic-auth",
+          "oidc-migration",
+          "optional-credentials"
+        ],
+        "reason": "Keep the actual user behavior; engineering policy and qualification details stay internal."
+      },
+      {
+        "id": "U019",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Fixed",
+        "line_start": 102,
+        "line_end": 105,
+        "sha256": "9efe6d1813b125e987db787b91f71a50280027c8e5db536e64e5ac06dbc7f481",
+        "disposition": "user_change",
+        "targets": [
+          "job-output"
+        ],
+        "reason": "Keep the actual user behavior; engineering policy and qualification details stay internal."
+      },
+      {
+        "id": "U020",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Fixed",
+        "line_start": 106,
+        "line_end": 108,
+        "sha256": "852b6a488cb8d6e35845d364fcdaae7b5e704d375312a88de3c4eb04996c35bf",
+        "disposition": "internal_process",
+        "targets": [],
+        "reason": "Hosted native runner maintenance; published bottle assets remain unchanged."
+      },
+      {
+        "id": "U021",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Fixed",
+        "line_start": 109,
+        "line_end": 113,
+        "sha256": "a463dc61e7110491f633959ccc3c7b286b9a1118cce7f35a316f057074b68359",
+        "disposition": "internal_process",
+        "targets": [],
+        "reason": "Synthetic X11 qualification readiness, not a new clipboard feature."
+      },
+      {
+        "id": "U022",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Fixed",
+        "line_start": 114,
+        "line_end": 117,
+        "sha256": "7f2182d745d97ab4059c896009499d72ca99964751af6a739aefe9cf23f689b3",
+        "disposition": "internal_process",
+        "targets": [],
+        "reason": "Test-harness process cleanup and original-failure preservation only."
+      },
+      {
+        "id": "U023",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Fixed",
+        "line_start": 118,
+        "line_end": 122,
+        "sha256": "849ce12a0c34b2bf6f91bf624e89a5d477b6bd35e09dda6db35c58423304b8fb",
+        "disposition": "user_change",
+        "targets": [
+          "headers"
+        ],
+        "reason": "Keep the actual user behavior; engineering policy and qualification details stay internal."
+      },
+      {
+        "id": "U024",
+        "source": "CHANGELOG.md",
+        "version": "Unreleased",
+        "category": "Security",
+        "line_start": 125,
+        "line_end": 130,
+        "sha256": "02deedef20f8845163a4abb36bdeae96acde788f4f417494f8fe4db85ae5ce5d",
+        "disposition": "internal_process",
+        "targets": [],
+        "reason": "Development/packaging/deployment tooling security update; application runtime requirements unchanged."
+      }
+    ],
+    "additional_user_entries": [
+      "notes"
+    ],
+    "policy_parent_pending": "33491efd8305c33db2b26b2fed024d23237c197b changes startup-latency qualification policy; it is not integrated in this snapshot and creates no installed-version or latency-guarantee claim."
+  }
 }

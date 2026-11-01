@@ -87,7 +87,9 @@ def test_census_covers_every_pinned_source_and_all_workflows_without_bundling_sc
     assert TRANSLATIONS["baseline"] == CENSUS["baseline"]["commit"]
     cases = {(c["source"], c["upstream_command"]): c["id"] for c in TRANSLATIONS["cases"]}
     classified = {}
-    history = json.loads((ROOT / "docs/internal/guide-history/source-map.json").read_text())
+    history = json.loads(
+        (ROOT / relocated_source(ROOT, "engineering/guide-history/source-map.json")).read_text()
+    )
     source = next(
         item for item in history["documents"] if item["source"] == "docs/plugin-compatibility.md"
     )
@@ -95,7 +97,7 @@ def test_census_covers_every_pinned_source_and_all_workflows_without_bundling_sc
     archive = (ROOT / archive_name).read_bytes()
     content = archive[source["byte_start"] : source["byte_end"]]
     assert hashlib.sha256(content).hexdigest() == source["sha256"]
-    assert history["source_commit"] == "a14d1ab65201a214fe178c0f01d1d4e9bcc59a1d"
+    assert history["source_commit"] == "919f617eacd6882370964c0400ae56a0128ff77e"
     guide = content.decode()
     for record in records:
         assert record["url"] == expected[record["source"]]["url"]

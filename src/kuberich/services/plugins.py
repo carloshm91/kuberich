@@ -55,6 +55,11 @@ class PluginSource:
         self._preparing = 0
         self._closed = False
 
+    @property
+    def pending_reviews(self) -> int:
+        """Prepared reviews plus reservations whose filesystem work is still running."""
+        return len(self._prepared) + self._preparing
+
     def require(self, plugin: Plugin) -> None:
         plugin.require_access(self.policy.read_only)
         if self._closed or not self.current() or self.client.context.name != self.selection.context:

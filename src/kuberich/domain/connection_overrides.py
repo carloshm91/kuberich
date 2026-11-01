@@ -121,9 +121,12 @@ def _values(value: object) -> tuple[str, ...]:
 
 def impersonation_headers(user: dict[str, Any]) -> tuple[tuple[str, str], ...]:
     """Retain repeated groups/extras; validate before any authentication or request."""
-    subject, uid = user.get("as"), user.get("as-uid")
-    groups = _values(user.get("as-groups", []))
-    extras = user.get("as-user-extra", {})
+    raw_subject, raw_uid = user.get("as"), user.get("as-uid")
+    subject = None if raw_subject in (None, "") else raw_subject
+    uid = None if raw_uid in (None, "") else raw_uid
+    raw_groups, raw_extras = user.get("as-groups"), user.get("as-user-extra")
+    groups = _values([] if raw_groups is None else raw_groups)
+    extras = {} if raw_extras is None else raw_extras
     if not isinstance(extras, dict) or len(extras) > 16:
         raise AppError("Impersonation extras must be a bounded string/list mapping.")
     if subject is None:

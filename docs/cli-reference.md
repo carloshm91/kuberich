@@ -14,10 +14,14 @@ Press `?` in a view for its current actions. See [navigation](command-navigation
 | `version`: `-h`, `--help` | show this help message and exit |
 | `version`: `--short`, `-s` | print only the version number |
 | `info`: `-h`, `--help` | show this help message and exit |
+| `bug-report`: `-h`, `--help` | show this help message and exit |
+| `bug-report`: `--output` | new report file; existing files are refused |
 | `config init`: `-h`, `--help` | show this help message and exit |
 | `config check`: `-h`, `--help` | show this help message and exit |
 | `config migrate`: `-h`, `--help` | show this help message and exit |
 | `config`: `-h`, `--help` | show this help message and exit |
+| `kubeconfig oidc-migration`: `-h`, `--help` | show this help message and exit |
+| `kubeconfig`: `-h`, `--help` | show this help message and exit |
 | `-h`, `--help` | show this help message and exit |
 | `--version` | show program's version number and exit |
 | `--config` | KubeRich preferences YAML (separate from kubeconfig) |
@@ -47,6 +51,23 @@ Press `?` in a view for its current actions. See [navigation](command-navigation
 | `--client-key` | client private key file; requires --client-certificate |
 | `--client-certificate` | client certificate file; requires --client-key |
 | `--token` | bearer token override; never included in diagnostics |
+
+## Local CLI commands
+
+Global options go before the command. Use `kuberich COMMAND --help` for its options.
+
+| Command | Description |
+| --- | --- |
+| `kuberich help` | show launch help without loading configuration |
+| `kuberich version` | show installed version without loading configuration |
+| `kuberich info` | show safe local paths, preferences and installed versions |
+| `kuberich bug-report` | write a private redacted diagnostic bundle |
+| `kuberich config` | initialize, validate or migrate local preferences |
+| `kuberich config init` | create defaults without overwriting existing files |
+| `kuberich config check` | validate effective preferences without writing files |
+| `kuberich config migrate` | copy legacy defaults without deleting or overwriting files |
+| `kuberich kubeconfig` | inspect an explicitly selected kubeconfig locally |
+| `kuberich kubeconfig oidc-migration` | print a secret-free OIDC exec migration fragment without writing files |
 
 ## In-app commands
 
@@ -87,6 +108,7 @@ Resource aliases are in the [resource reference](resource-reference.md).
 | `rollback` | rollback |
 | `rollout` | rollout |
 | `scale` | scale |
+| `server` | server |
 | `exec`, `shell` | shell |
 | `status` | status |
 | `suspend` | suspend |

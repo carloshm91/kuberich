@@ -190,3 +190,55 @@ def test_rewritten_actual_notes_still_freeze_exactly_under_the_existing_contract
     assert result["authored_sha256"] == hashlib.sha256(content).hexdigest()
     template = (ROOT / "docs/release-notes/TEMPLATE.md").read_text()
     assert all(f"\n## {section}\n" in template for section in SECTIONS)
+
+
+def test_unreleased_core_changes_keep_exact_published_history_and_complete_dispositions():
+    mapping = json.loads((ROOT / "docs/internal/release-note-mapping.json").read_text())
+    published = {key: value for key, value in mapping.items() if key != "unreleased"}
+    assert (
+        hashlib.sha256((json.dumps(published, indent=2) + "\n").encode()).hexdigest()
+        == "a4f8318ce49baf9ba02766146ab40c662d50d3f6e645c0c42b2332e601df26c2"
+    )
+    assert len(published["source_blocks"]) == 168 and len(published["entries"]) == 134
+    snapshot = mapping["unreleased"]
+    assert "not a published or qualified" in snapshot["status"]
+    source = snapshot["source"]
+    raw = git_bytes(ROOT, "show", f"{source['commit']}:{source['path']}")
+    assert hashlib.sha256(raw).hexdigest() == source["sha256"]
+    lines = raw.decode().splitlines(keepends=True)
+    expected = set()
+    active = False
+    tokens = PARSER.parse(raw.decode())
+    for index, token in enumerate(tokens):
+        if token.type == "heading_open" and token.tag == "h2":
+            active = "Unreleased" in tokens[index + 1].content
+        if active and token.type == "list_item_open":
+            expected.add(token.map[0] + 1)
+    entries = {item["id"]: item for item in snapshot["entries"]}
+    current = {
+        hashlib.sha256(entry.encode()).hexdigest()
+        for _, _, entry in change_entries((ROOT / "CHANGELOG.md").read_text())
+    }
+    assert all(item["markdown_sha256"] in current for item in entries.values())
+    starts, identifiers, targets = set(), set(), set()
+    for block in snapshot["source_blocks"]:
+        assert block["id"] not in identifiers
+        identifiers.add(block["id"])
+        start, end = block["line_start"], block["line_end"]
+        assert 0 < start <= end <= len(lines)
+        assert (
+            hashlib.sha256("".join(lines[start - 1 : end]).encode()).hexdigest() == block["sha256"]
+        )
+        starts.add(start)
+        if block["disposition"] == "internal_process":
+            assert block["reason"] and block["targets"] == []
+        else:
+            assert block["disposition"] == "user_change" and block["targets"]
+            assert set(block["targets"]) <= entries.keys()
+            targets.update(block["targets"])
+    assert starts == expected and len(starts) == 24
+    assert targets | set(snapshot["additional_user_entries"]) == entries.keys()
+    assert set(snapshot["additional_user_entries"]) == {"notes"}
+    text = (ROOT / "CHANGELOG.md").read_text().split("## [0.2.0]", 1)[0]
+    assert "not yet published" in text and "0.4.0" in text
+    assert "--strict-startup" not in text and "600 ms" not in text

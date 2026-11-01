@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Config
+current-context: demo-k3s
+clusters:
+- name: demo-k3s
+  cluster:
+    server: https://api.example.invalid
+    certificate-authority: certificates/ca.pem
+users:
+- name: demo-k3s
+  user:
+    client-certificate: certificates/client.pem
+    client-key: certificates/client-key.pem
+contexts:
+- name: demo-k3s
+  context:
+    cluster: demo-k3s
+    user: demo-k3s
+    namespace: ''

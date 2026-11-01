@@ -4,8 +4,6 @@ import asyncio
 import time
 from dataclasses import dataclass
 
-import regex
-
 from kuberich.domain.namespaces import NamespaceRow
 from kuberich.domain.navigation import ContextRow
 from kuberich.domain.pods import PodRow
@@ -61,6 +59,8 @@ def filter_rows[T: PodRow | NamespaceRow | ContextRow | ResourceRow](
     if not query.startswith("re:"):
         needle = query.casefold()
         return FilterResult(tuple(row for row in rows if needle in search_text(row).casefold()))
+    import regex
+
     deadline = time.monotonic() + REGEX_SECONDS
     try:
         pattern = regex.compile(query[3:], regex.IGNORECASE | regex.VERSION1)

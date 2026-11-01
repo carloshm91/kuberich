@@ -108,7 +108,15 @@ class TableApp(App):
         return (
             order(rows, self.table.sort_column, self.table.descending)
             if self.kind == "pods"
-            else order_resources(rows, self.table._column_index(), self.table.descending)
+            else order_resources(
+                rows,
+                next(
+                    i
+                    for i, column in enumerate(self.table.definition.columns)
+                    if column.key == self.table.sort_column
+                ),
+                self.table.descending,
+            )
         )
 
 

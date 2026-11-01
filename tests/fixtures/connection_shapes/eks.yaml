@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Config
+current-context: demo-eks
+clusters:
+- name: demo-eks
+  cluster:
+    server: https://api.example.invalid
+    certificate-authority-data: <owned-certificate-authority-data>
+users:
+- name: demo-eks
+  user:
+    exec:
+      apiVersion: client.authentication.k8s.io/v1
+      command: aws
+      args:
+      - eks
+      - get-token
+      - --cluster-name
+      - demo
+      - --region
+      - us-east-1
+      interactiveMode: Never
+      env:
+      - name: AWS_PROFILE
+        value: demo
+contexts:
+- name: demo-eks
+  context:
+    cluster: demo-eks
+    user: demo-eks
+    namespace: ''

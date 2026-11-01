@@ -416,11 +416,31 @@ async def test_table_pagination_retains_atomicity_identity_and_metadata_bounds(
             assert requests == ["", "next", ""]
             assert result.resource_version == "new"
             assert [record.name for record in result.items] == ["replacement"]
+        elif fault == "memory":
+            resource = custom_resource()
+            attempted = TableDecoder(resource, "team").records(
+                server_table(custom_item("one", uid="one"), rv="original", token="next")
+            )[0]
+            assert attempted.uid == "one" and attempted.namespace == "team"
+            assert attempted.size_bytes > module.MAX_SNAPSHOT_BYTES
+            result = await reader.list(resource, "team")
+            assert requests == [""]  # Do not read the unretained continuation.
+            assert result.resource == resource and result.namespace == "team"
+            assert result.resource_version == "original"
+            assert [column.name for column in result.columns] == ["Name", "Level", "Enabled"]
+            assert result.items == ()  # No partial object or phantom selected UID.
+            assert not result.collection.complete and result.collection.limited
+            assert result.collection.pages == 1
+            assert result.collection.retained_bytes == sum(
+                record.size_bytes for record in result.items
+            )
+            assert result.collection.retained_bytes <= module.MAX_SNAPSHOT_BYTES
+            assert len(result.items) <= module.MAX_ITEMS
         else:
             with pytest.raises(ConnectionProblem) as error:
                 await reader.list(custom_resource(), "team")
             assert error.value.state is ConnectionState.API_ERROR
-        # Invalid full-object identity and memory are API errors, never fallback.
+        # Identity/schema errors never fall back; retention caps report limited membership.
         assert reader.uses_tables(custom_resource())
 
 
