@@ -1778,41 +1778,41 @@
       "baseline_sha256": null
     },
     {
-      "source": "docs/generated/capability-reference.md",
+      "source": "docs/capability-reference.md",
       "audience": "generated reference",
       "action": "keep",
       "destinations": [
-        "docs/generated/capability-reference.md"
+        "docs/capability-reference.md"
       ],
       "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
       "baseline_sha256": null
     },
     {
-      "source": "docs/generated/cli-reference.md",
+      "source": "docs/cli-reference.md",
       "audience": "generated reference",
       "action": "keep",
       "destinations": [
-        "docs/generated/cli-reference.md"
+        "docs/cli-reference.md"
       ],
       "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
       "baseline_sha256": null
     },
     {
-      "source": "docs/generated/config-reference.md",
+      "source": "docs/config-reference.md",
       "audience": "generated reference",
       "action": "keep",
       "destinations": [
-        "docs/generated/config-reference.md"
+        "docs/config-reference.md"
       ],
       "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
       "baseline_sha256": null
     },
     {
-      "source": "docs/generated/resource-reference.md",
+      "source": "docs/resource-reference.md",
       "audience": "generated reference",
       "action": "keep",
       "destinations": [
-        "docs/generated/resource-reference.md"
+        "docs/resource-reference.md"
       ],
       "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
       "baseline_sha256": null

@@ -462,7 +462,7 @@ def source_inputs(root: Path) -> list[Path]:
     inputs += sorted((root / "website").glob("*.html"))
     inputs += sorted((root / "website/assets").glob("*"))
     inputs += [root / "docs" / name for guide in catalog.guides for name in guide.sources]
-    inputs += [root / "docs/generated" / guide.source for guide in catalog.references]
+    inputs += [root / "docs" / guide.source for guide in catalog.references]
     return inputs
 
 
