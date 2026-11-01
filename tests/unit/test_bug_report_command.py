@@ -136,3 +136,64 @@ def test_command_refuses_existing_reports_with_a_safe_exit_and_preserves_bytes(t
     assert captured.out == "" and "choose a new file" in captured.err
     assert "previous-private-report" not in captured.err
     assert output.read_text() == "previous-private-report"
+
+
+@pytest.mark.parametrize("selection", ["explicit", "current-env", "legacy-env"])
+def test_report_describes_an_invalid_preference_selection_with_a_private_bundle(
+    tmp_path, monkeypatch, capsys, selection
+):
+    arguments = []
+    if selection == "explicit":
+        arguments = ["--config", ""]
+    else:
+        monkeypatch.setenv(
+            "KUBERICH_CONFIG" if selection == "current-env" else "KUBETROL_CONFIG", ""
+        )
+    output = tmp_path / "report.json"
+    assert main([*arguments, "bug-report", "--output", str(output)]) == 0
+    value = json.loads(output.read_text())
+    assert value["config_check"] == "invalid"
+    assert value["recent_log"] == {"status": "unavailable"}
+    assert stat.S_IMODE(output.stat().st_mode) == 0o600
+    captured = capsys.readouterr()
+    assert captured.err == "" and str(output) in captured.out
+
+
+@pytest.mark.parametrize("selection", ["explicit", "current-env", "legacy-env"])
+@pytest.mark.parametrize("command", [["info"], ["config", "check"]])
+def test_other_commands_still_refuse_an_invalid_preference_selection(
+    tmp_path, monkeypatch, capsys, selection, command
+):
+    arguments = []
+    if selection == "explicit":
+        arguments = ["--config", ""]
+    else:
+        monkeypatch.setenv(
+            "KUBERICH_CONFIG" if selection == "current-env" else "KUBETROL_CONFIG", ""
+        )
+    assert main([*arguments, *command]) == 2
+    captured = capsys.readouterr()
+    assert captured.out == "" and "Preference paths must be nonempty" in captured.err
+    assert not (tmp_path / "state/reports").exists()
+
+
+@pytest.mark.parametrize("destination", ["empty", "existing"])
+def test_invalid_selection_does_not_relax_report_destination_validation(
+    tmp_path, monkeypatch, capsys, destination
+):
+    monkeypatch.setenv("KUBERICH_CONFIG", "")
+    output = tmp_path / "report.json"
+    if destination == "existing":
+        output.write_text("previous-private-report")
+    if destination == "empty":
+        with pytest.raises(SystemExit) as caught:
+            main(["bug-report", "--output", ""])
+        assert caught.value.code == 2
+    else:
+        assert main(["bug-report", "--output", str(output)]) == 3
+    captured = capsys.readouterr()
+    assert captured.out == "" and captured.err
+    if destination == "existing":
+        assert output.read_text() == "previous-private-report"
+    else:
+        assert not output.exists()

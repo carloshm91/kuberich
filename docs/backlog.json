@@ -1729,7 +1729,8 @@
       "epic": "E13",
       "milestone": "v0.3.0",
       "requires": [
-        "Q09"
+        "Q09",
+        "Q13"
       ],
       "scope": "`src/kuberich/ui/app.py` has 2,726 lines. `KubeRichApp` has about 110 methods and more than 60 state fields:",
       "acceptance": [
@@ -2067,7 +2068,7 @@
       "scope": "Every v0.3.0 task: Q08 #211, Q09 #210, Q10 #209, Q12 #213, Q13 #214, Q14 #215, Q15 #216, Q16 #217, Q17 #218, Q18 #219, Q19 #220, D15 #221, W04 #222–W11 #229, #208, dependency refresh #270 and opened plugin output correction #272, observable log startup #274. Also requires the 0.2.0 gate #65. Required verification follow-ups also include generic resource plugin capture #278, owned X11 selection readiness #281 and migration from retired macOS 14 runners #291.",
       "acceptance": [
         "The qualification command from Q17 #218 passes on the complete Linux/macOS matrix.",
-        "Delivered ownership/controller changes pass their functional, cancellation and platform checks. Numeric App/module size and complete private-framework removal are tracked improvement goals for stable #88/#212, not 0.3.0 blockers. All startup latency objectives remain explicit and advisory for 0.x, with original strict opt-in and mandatory stable limits retained. Memory limits, forbidden-import absence, valid output, actual frames/source/SDK/geometry, deadlines and cleanup remain mandatory. Keep relevant large-collection safeguards and honest measured limits.",
+        "Delivered ownership/controller changes pass their functional, cancellation and platform checks. Numeric App/module size and complete private-framework removal are tracked improvement goals for stable #88/#212, not 0.3.0 blockers. All startup latency objectives remain explicit and advisory for 0.x, with original strict-startup/stable limits retained. Offline RSS limits and absence of forbidden imports remain mandatory, along with valid output/source/frame/cleanup contracts. Keep relevant large-collection safeguards and honest measured limits.",
         "Documentation checks pass and the README stays within its budget.",
         "No publication happens here. Publication needs separate maintainer approval.",
         "For 0.x, runtime heartbeat/input-latency observations are advisory with explicit unmet results; preserve unchanged strict opt-in limits, always-strict blocking negative controls and all functional, resource, cleanup, coverage and platform requirements."
@@ -2535,9 +2536,9 @@
     "D07",
     "Q10",
     "Q09",
+    "Q13",
     "Q08",
     "Q12",
-    "Q13",
     "Q14",
     "Q15",
     "Q16",
@@ -2765,9 +2766,9 @@
       "D07",
       "Q10",
       "Q09",
+      "Q13",
       "Q08",
       "Q12",
-      "Q13",
       "Q14",
       "Q15",
       "Q16",
