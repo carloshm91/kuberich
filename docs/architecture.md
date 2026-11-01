@@ -64,8 +64,11 @@ application on an owned 120×36 PTY. It retains both the public refresh callback
 visible PTY delivery times, rejects SDK/helper/network work before that refresh,
 and verifies the mounted selected table's columns and bounded geometry. It
 requires normal client cleanup and alternate-screen restoration. It never
-loads a maintainer kubeconfig or connects to a real provider. See the
-[startup acceptance record](acceptance/startup-budget.md).
+loads a maintainer kubeconfig or connects to a real provider. For 0.x its latency
+objectives are advisory; `--strict-startup` or actual source major 1 enforces all
+original limits, and `--strict-paint` retains UI-only compatibility. Memory,
+forbidden imports, valid observations and owned cleanup remain mandatory. See
+the [startup acceptance record](acceptance/startup-budget.md).
 
 ## Read-only workspace ownership
 

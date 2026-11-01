@@ -1,6 +1,7 @@
 """Real local children, captured HTTP targets, credential files and cancellation."""
 
 import asyncio
+import base64
 import os
 import sys
 import threading
@@ -521,3 +522,90 @@ async def test_completed_status_is_not_published_before_output_and_private_clean
         finally:
             release.set()
             await manager.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mode", ["capture", "background"])
+@pytest.mark.parametrize(
+    "user",
+    [
+        {"username": "fixture-user", "password": "opaque:é🔑-215"},
+        {"password": "opaque:é🔑-215"},
+        {"username": "a"},
+        {"username": "fixture-user", "password": "Q"},
+        {},
+    ],
+    ids=["paired", "password-only", "username-only", "short-password", "anonymous"],
+)
+async def test_prepared_basic_credentials_are_redacted_from_both_plugin_streams(
+    tmp_path, mode, user
+):
+    username, password = user.get("username", ""), user.get("password", "")
+    raw = username + ":" + password
+    encoded = base64.b64encode(raw.encode()).decode("ascii")
+    expected_header = "Basic " + encoded if username or password else None
+    secrets = (
+        tuple(value for value in (password, raw, encoded, expected_header) if value)
+        if expected_header is not None
+        else ()
+    )
+    calls = []
+
+    async def authenticated(request):
+        calls.append(request.headers.get("Authorization"))
+        assert calls[-1] == expected_header
+        return web.json_response(pod("api", uid="api-uid"))
+
+    pid_file = tmp_path / "plugin.pid"
+    script = """import base64,json,os,stat,sys
+from pathlib import Path
+Path(sys.argv[1]).write_text(str(os.getpid()))
+p=Path(os.environ['KUBECONFIG'])
+assert stat.S_IMODE(p.stat().st_mode)==0o600
+assert stat.S_IMODE(p.parent.stat().st_mode)==0o700
+user=json.loads(p.read_text())['users'][0]['user']
+assert 'token' not in user and 'exec' not in user
+username,password=user.get('username',''),user.get('password','')
+if username or password:
+    assert set(user)=={'username','password'}
+    raw=username+':'+password
+    encoded=base64.b64encode(raw.encode()).decode('ascii')
+    for value in ([password] if password else [])+[raw,encoded,'Basic '+encoded]:
+        print(value)
+        print(value,file=sys.stderr)
+else:
+    assert user=={}
+print('ordinary-user '+username)
+print('stdout-kept')
+print('stderr-kept',file=sys.stderr)
+"""
+    script_path = tmp_path / "inspect-basic.py"
+    script_path.write_text(script)
+    command = plugin(tmp_path, args=[str(script_path), str(pid_file)], mode=mode)
+    async with reader_fixture(tmp_path, authenticated, user=user) as reader:
+        directory = Path(reader.session.directory.name)
+        owner = source(reader, tmp_path)
+        manager = PluginManager(owner.policy)
+        try:
+            request = await owner.prepare(command, {})
+            assert request is not None
+            assert all(not path.exists() for path, _ in request.files)
+            job = manager.start(owner, request, confirmed=True)
+            await job.wait()
+            assert job.status == "Succeeded" and job.returncode == 0 and not job.running
+            assert job.runner.active_count == 0
+            assert all(not path.exists() for path, _ in request.files)
+            with pytest.raises(ProcessLookupError):
+                os.kill(int(pid_file.read_text()), 0)
+            assert calls == [expected_header]
+            assert "stdout-kept" in job.output and "stderr-kept" in job.output
+            if username:
+                assert "ordinary-user " + username in job.output
+            if password:
+                assert password not in job.output
+            assert all(secret not in job.output for secret in secrets)
+            assert job.output.count("[REDACTED]") >= 2 * len(secrets)
+        finally:
+            await manager.close()
+            owner.close()
+    assert not directory.exists()
