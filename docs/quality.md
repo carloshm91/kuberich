@@ -608,6 +608,13 @@ between file creation and writing the PID, while retaining the real child-reapin
 and retry assertions. The same readiness contract applies to the source CLI PTY.
 Directory rollback controls explicitly cover both source entry orders.
 
+Supply-chain policy consumers load the full CycloneDX JSON validator only when
+they actually validate an SBOM. Collecting a digest or audit decision test must
+not load the IRI parser into every UI worker. A fresh-process regression enforces
+that import boundary; existing schema rejection tests still run the real strict
+validator. This reduces unrelated garbage-collector roots without changing
+validation, GC settings, workload sizes or coverage requirements.
+
 Profiling also identified repeated palette generation and redundant shortcut
 updates on the real header. Shortcut panels use one current palette snapshot per
 render and the existing owned-text projection guard; theme, content, external

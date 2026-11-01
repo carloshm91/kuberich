@@ -13,8 +13,6 @@ from typing import Any
 from uuid import NAMESPACE_URL, uuid5
 
 import yaml
-from cyclonedx.schema import SchemaVersion
-from cyclonedx.validation.json import JsonStrictValidator
 from license_expression import get_spdx_licensing
 from packaging.markers import default_environment
 from packaging.requirements import Requirement
@@ -188,6 +186,11 @@ def sbom_serial(bom: dict[str, Any]) -> str:
 
 
 def validate_sbom(bom: dict[str, Any]) -> None:
+    # Policy and digest consumers do not need the validator's large import graph.
+    # Load it only for an actual schema check, including during test collection.
+    from cyclonedx.schema import SchemaVersion
+    from cyclonedx.validation.json import JsonStrictValidator
+
     if bom.get("specVersion") != "1.6" or bom.get("bomFormat") != "CycloneDX":
         raise ValueError("CycloneDX 1.6 SBOM required")
     if not bom.get("serialNumber"):
