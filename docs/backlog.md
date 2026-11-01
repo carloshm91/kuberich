@@ -22,7 +22,7 @@ foundations and documentation work starts before any new feature family.
 | --- | --- | --- |
 | 0.1.x | D06 #51 | Core workspace; also #53, #54 and #123 |
 | 0.2.x | D07 #65 | Extensibility; also Homebrew bottles #193 |
-| 0.3.x | D16 #230 | Foundations and documentation; also #189 and #208 |
+| 0.3.x | D16 #230 | Foundations and documentation; also #189, #208 and dependency refresh #270 |
 | 0.4.x | D08 #75 | Observability and metrics |
 | 0.5.x | D09 #82 | Operations, Helm and manifests |
 | 0.6.x | D17 #242 | Multi-cluster workspace |
@@ -159,6 +159,10 @@ Foundations and quality: decompose the application shell, decouple tests, remove
 | [W10 #228](https://github.com/carloshm91/kuberich/issues/228) | Reduce AGENTS.md, CONTRIBUTING.md and issue templates to current essentials | [W04 #222](https://github.com/carloshm91/kuberich/issues/222) |
 | [W11 #229](https://github.com/carloshm91/kuberich/issues/229) | Add documentation quality checks: prose lint, links and page budgets | [W04 #222](https://github.com/carloshm91/kuberich/issues/222) |
 | [D16 #230](https://github.com/carloshm91/kuberich/issues/230) | Qualify the foundations checkpoint | [Q08 #211](https://github.com/carloshm91/kuberich/issues/211), [Q09 #210](https://github.com/carloshm91/kuberich/issues/210), [Q10 #209](https://github.com/carloshm91/kuberich/issues/209), [Q11 #212](https://github.com/carloshm91/kuberich/issues/212), [Q12 #213](https://github.com/carloshm91/kuberich/issues/213), [Q13 #214](https://github.com/carloshm91/kuberich/issues/214), [Q14 #215](https://github.com/carloshm91/kuberich/issues/215), [Q15 #216](https://github.com/carloshm91/kuberich/issues/216), [Q16 #217](https://github.com/carloshm91/kuberich/issues/217), [Q17 #218](https://github.com/carloshm91/kuberich/issues/218), [Q18 #219](https://github.com/carloshm91/kuberich/issues/219), [Q19 #220](https://github.com/carloshm91/kuberich/issues/220), [D15 #221](https://github.com/carloshm91/kuberich/issues/221), [W04 #222](https://github.com/carloshm91/kuberich/issues/222), [W05 #223](https://github.com/carloshm91/kuberich/issues/223), [W06 #224](https://github.com/carloshm91/kuberich/issues/224), [W07 #225](https://github.com/carloshm91/kuberich/issues/225), [W08 #226](https://github.com/carloshm91/kuberich/issues/226), [W09 #227](https://github.com/carloshm91/kuberich/issues/227), [W10 #228](https://github.com/carloshm91/kuberich/issues/228), [W11 #229](https://github.com/carloshm91/kuberich/issues/229), [D07 #65](https://github.com/carloshm91/kuberich/issues/65) |
+
+Dependency refresh [#270](https://github.com/carloshm91/kuberich/issues/270) is also
+a required extra for this phase and its qualifier. It covers the development,
+standalone-build and deployment-tool lockfiles.
 
 ## v0.4.0
 

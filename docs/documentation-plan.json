@@ -513,6 +513,16 @@
       "baseline_sha256": "88bf43aaeddf90d5621ada47131598ba19c204a0d2e339c8eccfa47d083fe9bd"
     },
     {
+      "source": "docs/acceptance/dependency-refresh.md",
+      "audience": "evidence",
+      "action": "move",
+      "destinations": [
+        "docs/internal/acceptance/dependency-refresh.md"
+      ],
+      "reason": "Preserve dependency installation evidence outside public navigation; relocate it with the separate acceptance-history migration.",
+      "baseline_sha256": null
+    },
+    {
       "source": "docs/acceptance/dependency-security.md",
       "audience": "evidence",
       "action": "move",
