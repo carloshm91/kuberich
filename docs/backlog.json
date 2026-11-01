@@ -1728,7 +1728,8 @@
       "epic": "E13",
       "milestone": "v0.3.0",
       "requires": [
-        "Q09"
+        "Q09",
+        "Q13"
       ],
       "scope": "`src/kuberich/ui/app.py` has 2,726 lines. `KubeRichApp` has about 110 methods and more than 60 state fields:",
       "acceptance": [
@@ -2534,9 +2535,9 @@
     "D07",
     "Q10",
     "Q09",
+    "Q13",
     "Q08",
     "Q12",
-    "Q13",
     "Q14",
     "Q15",
     "Q16",
@@ -2764,9 +2765,9 @@
       "D07",
       "Q10",
       "Q09",
+      "Q13",
       "Q08",
       "Q12",
-      "Q13",
       "Q14",
       "Q15",
       "Q16",
