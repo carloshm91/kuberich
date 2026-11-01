@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "baseline_commit": "d990a5e0273465874df24e1e790887520abeacff",
-  "canonical_user_pages": 19,
-  "reserved_user_pages": 1,
-  "migration_state": "structure_active_prose_consolidation_pending",
-  "scope": "Activate canonical navigation and preserve the existing guide fragments. The subsequent guide, architecture, evidence and contribution tasks apply the proposed dispositions; this plan does not claim those migrations or the prose rewrite are complete.",
+  "canonical_user_pages": 20,
+  "reserved_user_pages": 0,
+  "migration_state": "user_guides_consolidated_internal_migrations_pending",
+  "scope": "Task guides and generated reference use canonical navigation. Original guide text is preserved outside the website. Architecture, acceptance-history and contribution migrations remain separate incomplete work.",
   "actions": {
     "keep": "Retain the document or canonical URL; later editing may shorten or clarify it.",
     "merge": "Move useful content into the listed destinations before retiring the source.",
@@ -1037,9 +1037,10 @@
       "audience": "user",
       "action": "merge",
       "destinations": [
-        "docs/context-sessions.md"
+        "docs/context-sessions.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "841a277c1fd580ebb73249e79f69bb77262e432f7bdec41b49672f895a74bdd1"
     },
     {
@@ -1088,9 +1089,10 @@
       "audience": "user",
       "action": "keep",
       "destinations": [
-        "docs/command-navigation.md"
+        "docs/command-navigation.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "d8faf531e8f3e3d64b0107dfd0c5646c0efa9dcee831cab6e33b41c1ac1e1783"
     },
     {
@@ -1098,9 +1100,10 @@
       "audience": "user",
       "action": "merge",
       "destinations": [
-        "docs/editing.md"
+        "docs/editing.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "891f8470afd470a9382c4f3a0703961bd71e09f7fa36c5b3a689dd2c44326fbf"
     },
     {
@@ -1108,9 +1111,10 @@
       "audience": "user",
       "action": "keep",
       "destinations": [
-        "docs/configuration.md"
+        "docs/configuration.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "e8977ad4b432621cdb5bbfccd79197f76e61236c3247c00dbb497c7953d3608c"
     },
     {
@@ -1118,9 +1122,10 @@
       "audience": "user",
       "action": "keep",
       "destinations": [
-        "docs/container-attach-copy.md"
+        "docs/container-attach-copy.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "f2278b9a4949831c0d9f06f2e0ebef7b9b1bc77b9a5f2a9502add6977bfb83d2"
     },
     {
@@ -1138,9 +1143,10 @@
       "audience": "user",
       "action": "merge",
       "destinations": [
-        "docs/log-viewer.md"
+        "docs/log-viewer.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "a74ff6e717eba656ff7ca466c9201e9c64ffc5894708c0de9301d6ea23970a8c"
     },
     {
@@ -1148,9 +1154,10 @@
       "audience": "user",
       "action": "keep",
       "destinations": [
-        "docs/container-shell.md"
+        "docs/container-shell.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "904656b07adba547937c9395c417402ea58f1bc44ee53115921d1f88a741c0c3"
     },
     {
@@ -1158,9 +1165,10 @@
       "audience": "user",
       "action": "keep",
       "destinations": [
-        "docs/context-sessions.md"
+        "docs/context-sessions.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "afad310cf5f1c291ec414398580efa85d2ee3b374ba1b26e18c97d87845db0b5"
     },
     {
@@ -1199,9 +1207,10 @@
       "audience": "user",
       "action": "keep",
       "destinations": [
-        "docs/editing.md"
+        "docs/editing.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "da15de68a20076b95cfd1254edf1ac29df4219b08b4fdad4db25dc69fc0c4732"
     },
     {
@@ -1209,9 +1218,10 @@
       "audience": "user",
       "action": "merge",
       "destinations": [
-        "docs/context-sessions.md"
+        "docs/context-sessions.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "87c8fa0b1dfdf08517fa871881c7b22ae5ade7058f99331a03338efcefba68b7"
     },
     {
@@ -1219,9 +1229,10 @@
       "audience": "user",
       "action": "keep",
       "destinations": [
-        "docs/everyday-workflow.md"
+        "docs/everyday-workflow.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "f9b42a5d17798f59c0c17448658955beff7711a3a0bfa148d6560b96ceb87cc2"
     },
     {
@@ -1260,9 +1271,10 @@
       "audience": "user",
       "action": "keep",
       "destinations": [
-        "docs/installation.md"
+        "docs/installation.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "2c35b7849376fbd2df96bdc8fd05aa54171e41272250e71429c3e471933ffe5a"
     },
     {
@@ -1310,9 +1322,10 @@
       "audience": "user",
       "action": "merge",
       "destinations": [
-        "docs/context-sessions.md"
+        "docs/context-sessions.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "03dd3d805158084d000c564b636f7cd527630d1c4090d83c27a7514b2c780c73"
     },
     {
@@ -1341,9 +1354,10 @@
       "audience": "user",
       "action": "keep",
       "destinations": [
-        "docs/log-viewer.md"
+        "docs/log-viewer.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "377294fe0c890f8caaeb3d0f4b3a3d0ea3c11109f90902ca51fa4e32c2e33e16"
     },
     {
@@ -1351,9 +1365,10 @@
       "audience": "user",
       "action": "merge",
       "destinations": [
-        "docs/editing.md"
+        "docs/editing.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "877ba0fc26c9779106b98b148b03d46ec8fbc8ad4a2b3b2249b06b2cece8ee4d"
     },
     {
@@ -1361,9 +1376,10 @@
       "audience": "user",
       "action": "merge",
       "destinations": [
-        "docs/configuration.md"
+        "docs/configuration.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "673dce8087d56aaf54c8626b56f56b4090b4d466f9a72b0d228e0d264a0f759d"
     },
     {
@@ -1391,9 +1407,10 @@
       "audience": "user",
       "action": "merge",
       "destinations": [
-        "docs/plugins.md"
+        "docs/plugins.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "b317e7369d8404590fbee2df1670aa54722949be3d25f009ee4a0f0929ba88fa"
     },
     {
@@ -1401,9 +1418,10 @@
       "audience": "user",
       "action": "keep",
       "destinations": [
-        "docs/plugins.md"
+        "docs/plugins.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "9ed948147921716ea927fb57587dab8f942e69232c6e5e9b780ca8589e0c2dd1"
     },
     {
@@ -1421,9 +1439,10 @@
       "audience": "user",
       "action": "keep",
       "destinations": [
-        "docs/port-forwards.md"
+        "docs/port-forwards.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "28c338e5821eeb7de0aeee9a3d171d14d5c3670c9ff26b1a08931af4aa3b96be"
     },
     {
@@ -1472,9 +1491,10 @@
       "audience": "user",
       "action": "keep",
       "destinations": [
-        "docs/quickstart.md"
+        "docs/quickstart.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "4dc118263a12e0e7f87f2de6b5bdedacf180c9c3a68c0ed2ec281d1c9d771cd8"
     },
     {
@@ -1542,9 +1562,10 @@
       "audience": "user",
       "action": "merge",
       "destinations": [
-        "docs/command-navigation.md"
+        "docs/command-navigation.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "7029ad9dc44c2daf4c0b3845224e0525684aafc43b357bb5d37a6c3a8fcd34f6"
     },
     {
@@ -1552,9 +1573,10 @@
       "audience": "user",
       "action": "merge",
       "destinations": [
-        "docs/command-navigation.md"
+        "docs/command-navigation.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "4e0ac45e6c6cde526708a956aad5735b25c5d5092d47ef4f1bc146b13b8a3753"
     },
     {
@@ -1562,9 +1584,10 @@
       "audience": "user",
       "action": "merge",
       "destinations": [
-        "docs/workloads.md"
+        "docs/workloads.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "641a2c646381995b8df5e887d3a1372cb065e2a00829b22357b480bb7c63bedd"
     },
     {
@@ -1592,9 +1615,10 @@
       "audience": "user",
       "action": "keep",
       "destinations": [
-        "docs/resource-workspace.md"
+        "docs/resource-workspace.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "123c264c12ba6738603966c73c78af197d83ca8ae91beb24fdba672c782071be"
     },
     {
@@ -1622,9 +1646,10 @@
       "audience": "user",
       "action": "merge",
       "destinations": [
-        "docs/resource-workspace.md"
+        "docs/resource-workspace.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "5773e28d36ff06f92c93543ea8611df5bd5660d36f7a88cfda8411b5ce55e65a"
     },
     {
@@ -1632,9 +1657,10 @@
       "audience": "user",
       "action": "merge",
       "destinations": [
-        "docs/troubleshooting.md"
+        "docs/troubleshooting.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "dd4fa26fe25fe64f9d8dc078305fbb99de44553875bfbdc9d9dffd8bb0124096"
     },
     {
@@ -1642,9 +1668,10 @@
       "audience": "user",
       "action": "merge",
       "destinations": [
-        "docs/command-navigation.md"
+        "docs/command-navigation.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "34537ea6f688b23814985c823b2ed04395835794c6d20ea2257ad7afb6792a11"
     },
     {
@@ -1662,9 +1689,10 @@
       "audience": "user",
       "action": "merge",
       "destinations": [
-        "docs/configuration.md"
+        "docs/configuration.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "f615a0ee468648956fc9e2bdf9bdb068631e4cbfd04d770e5797e03fba6148a5"
     },
     {
@@ -1672,9 +1700,10 @@
       "audience": "user",
       "action": "keep",
       "destinations": [
-        "docs/troubleshooting.md"
+        "docs/troubleshooting.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "0e9ab72dc817b0462b91db61fb3e524631641ee08ca247d90820a6164c6dcef4"
     },
     {
@@ -1692,9 +1721,10 @@
       "audience": "user",
       "action": "keep",
       "destinations": [
-        "docs/workloads.md"
+        "docs/workloads.md",
+        "engineering/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve this guide in the canonical user page; consolidate its prose in the user-guide rewrite.",
+      "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "7676830b975b845376bc93d99edfba2bdb296856e697611c0e4cd6920a56305e"
     },
     {
@@ -1726,6 +1756,66 @@
       ],
       "reason": "Retain this contributor or project contract outside the user navigation.",
       "baseline_sha256": "6760ef2d359a6c3e533aaf6edb78cbf8455de879f3acca5e3422c6843545b1ba"
+    },
+    {
+      "source": "engineering/guide-history/user-guides-before-consolidation.md",
+      "audience": "development history",
+      "action": "keep",
+      "destinations": [
+        "engineering/guide-history/user-guides-before-consolidation.md"
+      ],
+      "reason": "Preserve exact superseded guide text and source checksums outside user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "engineering/guide-history/source-map.json",
+      "audience": "development history",
+      "action": "keep",
+      "destinations": [
+        "engineering/guide-history/source-map.json"
+      ],
+      "reason": "Preserve exact superseded guide text and source checksums outside user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/generated/capability-reference.md",
+      "audience": "generated reference",
+      "action": "keep",
+      "destinations": [
+        "docs/generated/capability-reference.md"
+      ],
+      "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/generated/cli-reference.md",
+      "audience": "generated reference",
+      "action": "keep",
+      "destinations": [
+        "docs/generated/cli-reference.md"
+      ],
+      "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/generated/config-reference.md",
+      "audience": "generated reference",
+      "action": "keep",
+      "destinations": [
+        "docs/generated/config-reference.md"
+      ],
+      "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/generated/resource-reference.md",
+      "audience": "generated reference",
+      "action": "keep",
+      "destinations": [
+        "docs/generated/resource-reference.md"
+      ],
+      "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
+      "baseline_sha256": null
     }
   ],
   "inventory_rule": "Every tracked Markdown file, every file under docs/, LICENSE, NOTICE, and contribution issue templates at the baseline commit; new structure contracts are mapped too.",

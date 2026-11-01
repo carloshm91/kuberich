@@ -13,7 +13,18 @@
           "sources": [
             "quickstart.md"
           ],
-          "generated": false
+          "generated": false,
+          "retired_sources": [],
+          "anchors": {
+            "eks-and-aks-prerequisites": "open-an-explicit-context",
+            "first-installation-and-trial": "open-an-explicit-context",
+            "if-something-fails": "open-an-explicit-context",
+            "install-a-supplied-local-candidate": "open-an-explicit-context",
+            "install-the-public-release": "open-an-explicit-context",
+            "run-from-source": "open-an-explicit-context",
+            "try-a-shell-in-your-test-namespace": "change-scope",
+            "try-the-interface-in-order": "open-an-explicit-context"
+          }
         },
         {
           "source": "everyday-workflow.md",
@@ -21,7 +32,19 @@
           "sources": [
             "everyday-workflow.md"
           ],
-          "generated": false
+          "generated": false,
+          "retired_sources": [],
+          "anchors": {
+            "an-everyday-cluster-workflow": "start-with-the-workload",
+            "before-opening-the-workspace": "start-with-the-workload",
+            "choose-a-context-or-namespace": "start-with-the-workload",
+            "find-and-inspect-a-pod": "start-with-the-workload",
+            "finish-the-session": "start-with-the-workload",
+            "move-from-pod-to-container-to-logs": "start-with-the-workload",
+            "open-an-embedded-shell-deliberately": "start-with-the-workload",
+            "open-an-explicit-read-only-session": "start-with-the-workload",
+            "review-a-workload-change": "start-with-the-workload"
+          }
         }
       ]
     },
@@ -35,38 +58,144 @@
           "sources": [
             "installation.md"
           ],
-          "generated": false
+          "generated": false,
+          "retired_sources": [],
+          "anchors": {
+            "homebrew-on-linux-or-macos": "homebrew",
+            "installation-and-upgrades": "homebrew",
+            "python-on-linux-or-macos": "homebrew",
+            "qualification-scope": "homebrew",
+            "standalone-linux-and-macos-archives": "homebrew",
+            "troubleshooting": "homebrew",
+            "upgrade-and-uninstall": "homebrew"
+          }
         },
         {
           "source": "context-sessions.md",
           "title": "Contexts and authentication",
           "sources": [
-            "context-sessions.md",
+            "context-sessions.md"
+          ],
+          "generated": false,
+          "retired_sources": [
             "eks-authentication.md",
             "aks-authentication.md",
             "kubeconfig-interoperability.md"
           ],
-          "generated": false
+          "anchors": {
+            "aks-authentication": "aks",
+            "aks-authentication--aks-authentication": "aks",
+            "aks-authentication--explicit-login-and-retry": "aks",
+            "aks-authentication--implemented-local-contract": "aks",
+            "aks-authentication--optional-read-only-test-context-smoke": "aks",
+            "aks-authentication--qualification-limits": "aks",
+            "aks-authentication--sources": "provider-documentation",
+            "configuration-and-private-material": "authenticate",
+            "connection-states-and-bounds": "recover-a-connection",
+            "context-sessions": "select-configuration-and-scope",
+            "credentials-and-tls": "authenticate",
+            "eks-authentication": "eks",
+            "eks-authentication--eks-authentication": "eks",
+            "eks-authentication--opt-in-real-smoke": "eks",
+            "eks-authentication--sources": "provider-documentation",
+            "eks-authentication--supported-local-contracts": "eks",
+            "execcredential": "authenticate",
+            "explicit-login-and-retry": "aks",
+            "gke-oidc-and-legacy-migration": "authenticate",
+            "implemented-local-contract": "aks",
+            "kubeconfig-and-credential-interoperability": "authenticate",
+            "kubeconfig-interoperability--configuration-and-private-material": "authenticate",
+            "kubeconfig-interoperability--execcredential": "authenticate",
+            "kubeconfig-interoperability--gke-oidc-and-legacy-migration": "authenticate",
+            "kubeconfig-interoperability--kubeconfig-and-credential-interoperability": "authenticate",
+            "kubeconfig-interoperability--proxies-tls-and-delegated-tools": "tls-proxies-and-overrides",
+            "legacy-aks-authentication": "aks",
+            "legacy-eks-authentication": "eks",
+            "legacy-kubeconfig-interoperability": "authenticate",
+            "opt-in-real-smoke": "eks",
+            "optional-read-only-test-context-smoke": "aks",
+            "proxies-tls-and-delegated-tools": "tls-proxies-and-overrides",
+            "qualification": "select-configuration-and-scope",
+            "qualification-limits": "aks",
+            "rename-or-delete-a-context": "rename-or-delete-a-local-context",
+            "sources": "provider-documentation",
+            "start-and-select": "select-configuration-and-scope",
+            "supported-local-contracts": "eks"
+          }
         },
         {
           "source": "command-navigation.md",
           "title": "Navigate and search",
           "sources": [
-            "command-navigation.md",
+            "command-navigation.md"
+          ],
+          "generated": false,
+          "retired_sources": [
             "terminal-navigation.md",
             "resource-inspection.md",
             "resource-jumps.md"
           ],
-          "generated": false
+          "anchors": {
+            "additional-local-filters": "filter-resources",
+            "command-and-filter-recall": "accept-a-suggestion",
+            "commands": "open-a-view",
+            "commands-filtering-and-navigation": "filter-resources",
+            "completion": "accept-a-suggestion",
+            "consistent-workspaces-and-nested-commands": "return-and-adjust-the-workspace",
+            "define-a-jump": "save-favorite-namespaces-and-jumps",
+            "explicit-clipboard-writes": "mark-rows-and-copy",
+            "filters": "filter-resources",
+            "identity-and-errors": "inspect-a-resource",
+            "inspecting-a-pod": "inspect-a-resource",
+            "jump-to-related-resources": "save-favorite-namespaces-and-jumps",
+            "keys-belong-to-the-focused-view": "move-through-a-table",
+            "legacy-resource-inspection": "inspect-a-resource",
+            "legacy-resource-jumps": "save-favorite-namespaces-and-jumps",
+            "legacy-terminal-navigation": "move-through-a-table",
+            "namespace-favorites": "save-favorite-namespaces-and-jumps",
+            "navigation-history": "return-and-adjust-the-workspace",
+            "ordinary-view-redaction": "inspect-a-resource",
+            "resource-inspection--identity-and-errors": "inspect-a-resource",
+            "resource-inspection--inspecting-a-pod": "inspect-a-resource",
+            "resource-inspection--ordinary-view-redaction": "inspect-a-resource",
+            "resource-jumps--define-a-jump": "save-favorite-namespaces-and-jumps",
+            "resource-jumps--jump-to-related-resources": "save-favorite-namespaces-and-jumps",
+            "resource-jumps--templates": "save-favorite-namespaces-and-jumps",
+            "resource-jumps--use-a-jump": "save-favorite-namespaces-and-jumps",
+            "templates": "save-favorite-namespaces-and-jumps",
+            "terminal-navigation--additional-local-filters": "filter-resources",
+            "terminal-navigation--command-and-filter-recall": "accept-a-suggestion",
+            "terminal-navigation--consistent-workspaces-and-nested-commands": "return-and-adjust-the-workspace",
+            "terminal-navigation--explicit-clipboard-writes": "mark-rows-and-copy",
+            "terminal-navigation--keys-belong-to-the-focused-view": "move-through-a-table",
+            "terminal-navigation--namespace-favorites": "save-favorite-namespaces-and-jumps",
+            "terminal-navigation--terminal-navigation-and-remote-clipboard": "mark-rows-and-copy",
+            "terminal-navigation--wide-columns-and-marked-rows": "mark-rows-and-copy",
+            "terminal-navigation-and-remote-clipboard": "mark-rows-and-copy",
+            "use-a-jump": "save-favorite-namespaces-and-jumps",
+            "wide-columns-and-marked-rows": "mark-rows-and-copy"
+          }
         },
         {
           "source": "log-viewer.md",
           "title": "Read logs",
           "sources": [
-            "log-viewer.md",
+            "log-viewer.md"
+          ],
+          "generated": false,
+          "retired_sources": [
             "container-navigation.md"
           ],
-          "generated": false
+          "anchors": {
+            "all-container-and-workload-logs": "read-several-sources",
+            "container-log-viewer": "choose-the-output",
+            "container-navigation--pod-and-container-navigation": "choose-the-output",
+            "controls": "follow-pause-and-search",
+            "legacy-container-navigation": "choose-the-output",
+            "pod-and-container-navigation": "choose-the-output",
+            "retention-rendering-and-target-ownership": "follow-pause-and-search",
+            "try-the-workflow": "choose-the-output"
+          }
         },
         {
           "source": "container-shell.md",
@@ -74,7 +203,14 @@
           "sources": [
             "container-shell.md"
           ],
-          "generated": false
+          "generated": false,
+          "retired_sources": [],
+          "anchors": {
+            "captured-scope-and-return": "handle-a-failed-or-stale-session",
+            "requirements-and-preferences": "start-a-shell",
+            "review-output-without-sending-shell-commands": "review-terminal-history",
+            "selected-container-embedded-shell": "start-a-shell"
+          }
         },
         {
           "source": "container-attach-copy.md",
@@ -82,7 +218,15 @@
           "sources": [
             "container-attach-copy.md"
           ],
-          "generated": false
+          "generated": false,
+          "retired_sources": [],
+          "anchors": {
+            "attach-to-an-existing-process": "select-the-transfer",
+            "cancellation-and-remote-outcome": "cancel-or-retry-safely",
+            "container-attachment-and-file-transfer": "select-the-transfer",
+            "download-protection-and-limits": "understand-path-and-size-limits",
+            "review-an-upload-or-download": "review-the-exact-destination"
+          }
         },
         {
           "source": "port-forwards.md",
@@ -90,54 +234,168 @@
           "sources": [
             "port-forwards.md"
           ],
-          "generated": false
+          "generated": false,
+          "retired_sources": [],
+          "anchors": {
+            "connection-and-resource-lifetime": "list-and-stop-sessions",
+            "kubectl-transport-selection": "select-a-kubectl-transport",
+            "managed-tcp-port-forwards": "start-a-forward",
+            "presets-and-annotation-shortcuts": "save-a-preset"
+          }
         },
         {
           "source": "editing.md",
           "title": "Edit and change resources",
           "sources": [
-            "editing.md",
+            "editing.md"
+          ],
+          "generated": false,
+          "retired_sources": [
             "mutations.md",
             "configuration-data.md"
           ],
-          "generated": false
+          "anchors": {
+            "configuration-data--edit-a-configmap-or-secret": "inspect-configuration-data",
+            "configuration-data--inspect-configuration-data-deliberately": "inspect-configuration-data",
+            "configuration-data--limits-and-local-disclosure": "inspect-configuration-data",
+            "edit-a-configmap-or-secret": "inspect-configuration-data",
+            "edit-a-selected-manifest": "edit-a-manifest",
+            "guarded-resource-changes": "read-the-outcome-before-retrying",
+            "inspect-configuration-data-deliberately": "inspect-configuration-data",
+            "legacy-configuration-data": "inspect-configuration-data",
+            "legacy-mutations": "read-the-outcome-before-retrying",
+            "limits-and-local-disclosure": "inspect-configuration-data",
+            "mutations--guarded-resource-changes": "read-the-outcome-before-retrying"
+          }
         },
         {
           "source": "workloads.md",
           "title": "Operate workloads",
           "sources": [
-            "workloads.md",
+            "workloads.md"
+          ],
+          "generated": false,
+          "retired_sources": [
             "resource-operations.md"
           ],
-          "generated": false
+          "anchors": {
+            "delete-resources-and-operate-jobs": "run-or-suspend-jobs",
+            "legacy-resource-operations": "delete-one-or-several-resources",
+            "manual-jobs-and-suspension": "run-or-suspend-jobs",
+            "resource-operations--clean-up-finished-pods": "clean-up-finished-pods",
+            "resource-operations--delete-resources-and-operate-jobs": "run-or-suspend-jobs",
+            "resource-operations--manual-jobs-and-suspension": "run-or-suspend-jobs",
+            "resource-operations--results-and-batch-behavior": "delete-one-or-several-resources",
+            "resource-operations--review-and-confirmation": "delete-one-or-several-resources",
+            "results-and-batch-behavior": "delete-one-or-several-resources",
+            "review-and-confirmation": "delete-one-or-several-resources",
+            "workload-operations": "scale-replicas"
+          }
         },
         {
           "source": "configuration.md",
           "title": "Configuration and themes",
           "sources": [
-            "configuration.md",
+            "configuration.md"
+          ],
+          "generated": false,
+          "retired_sources": [
             "themes.md",
             "navigation-preferences.md"
           ],
-          "generated": false
+          "anchors": {
+            "about-and-optional-version-notices": "optional-update-notices",
+            "changing-preferences-while-kuberich-runs": "understand-precedence-and-reload",
+            "commands": "create-and-check-preferences",
+            "configure-a-resource-view": "set-keys-aliases-and-resource-layouts",
+            "configure-keys-and-aliases": "set-keys-aliases-and-resource-layouts",
+            "custom-palettes": "choose-and-save-a-theme",
+            "full-resource-titles": "choose-and-save-a-theme",
+            "legacy-navigation-preferences": "set-keys-aliases-and-resource-layouts",
+            "legacy-preview-compatibility": "legacy-files-and-diagnostic-logs",
+            "legacy-themes": "choose-and-save-a-theme",
+            "local-preferences-and-diagnostics": "create-and-check-preferences",
+            "logging-and-errors": "legacy-files-and-diagnostic-logs",
+            "navigation-aliases-and-saved-resource-views": "set-keys-aliases-and-resource-layouts",
+            "navigation-belongs-to-the-focused-view": "set-keys-aliases-and-resource-layouts",
+            "navigation-preferences--configure-a-resource-view": "set-keys-aliases-and-resource-layouts",
+            "navigation-preferences--configure-keys-and-aliases": "set-keys-aliases-and-resource-layouts",
+            "navigation-preferences--navigation-aliases-and-saved-resource-views": "set-keys-aliases-and-resource-layouts",
+            "navigation-preferences--navigation-belongs-to-the-focused-view": "set-keys-aliases-and-resource-layouts",
+            "navigation-preferences--saved-format-and-migration": "set-keys-aliases-and-resource-layouts",
+            "paths-and-precedence": "understand-precedence-and-reload",
+            "per-context-settings": "understand-precedence-and-reload",
+            "saved-format-and-migration": "set-keys-aliases-and-resource-layouts",
+            "schema-compatibility-and-writes": "create-and-check-preferences",
+            "themes--about-and-optional-version-notices": "optional-update-notices",
+            "themes--custom-palettes": "choose-and-save-a-theme",
+            "themes--full-resource-titles": "choose-and-save-a-theme",
+            "themes--themes-and-local-appearance": "choose-and-save-a-theme",
+            "themes--which-theme-wins": "choose-and-save-a-theme",
+            "themes-and-local-appearance": "choose-and-save-a-theme",
+            "which-theme-wins": "choose-and-save-a-theme"
+          }
         },
         {
           "source": "plugins.md",
           "title": "Run local plugins",
           "sources": [
-            "plugins.md",
+            "plugins.md"
+          ],
+          "generated": false,
+          "retired_sources": [
             "plugin-compatibility.md"
           ],
-          "generated": false
+          "anchors": {
+            "captured-variables": "insert-selected-values",
+            "complete-pinned-workflow-census": "add-a-definition",
+            "definition-fields": "add-a-definition",
+            "execution-modes-and-output": "choose-how-output-appears",
+            "explicit-configuration": "add-a-definition",
+            "fields-keep-translate-or-reject": "add-a-definition",
+            "legacy-plugin-compatibility": "trust-and-read-only-behavior",
+            "local-command-plugins": "add-a-definition",
+            "plugin-compatibility--complete-pinned-workflow-census": "add-a-definition",
+            "plugin-compatibility--fields-keep-translate-or-reject": "add-a-definition",
+            "plugin-compatibility--plugin-compatibility-and-original-examples": "add-a-definition",
+            "plugin-compatibility--three-original-workflows": "add-a-definition",
+            "plugin-compatibility--variables-and-shell-syntax": "insert-selected-values",
+            "plugin-compatibility--what-the-translation-tests-establish": "trust-and-read-only-behavior",
+            "plugin-compatibility-and-original-examples": "add-a-definition",
+            "three-original-workflows": "add-a-definition",
+            "typed-inputs-and-cancellation": "ask-for-input",
+            "variables-and-shell-syntax": "insert-selected-values",
+            "what-the-translation-tests-establish": "trust-and-read-only-behavior"
+          }
         },
         {
           "source": "troubleshooting.md",
           "title": "Troubleshooting and FAQ",
           "sources": [
-            "troubleshooting.md",
+            "troubleshooting.md"
+          ],
+          "generated": false,
+          "retired_sources": [
             "terminal-compatibility.md"
           ],
-          "generated": false
+          "anchors": {
+            "a-change-is-blocked-conflicted-or-uncertain": "recover-logs-shells-and-writes",
+            "a-context-is-missing-or-different": "find-the-intended-context",
+            "a-key-or-clipboard-action-does-not-work": "keys-and-terminal-compatibility",
+            "a-live-view-says-stale-or-reconnecting": "diagnose-an-empty-or-stale-table",
+            "authentication-fails-while-kubectl-works": "fix-authentication",
+            "check-the-local-installation": "check-the-installation",
+            "legacy-terminal-compatibility": "keys-and-terminal-compatibility",
+            "logs-or-a-shell-fail": "recover-logs-shells-and-writes",
+            "shutdown-and-reconnection": "keys-and-terminal-compatibility",
+            "terminal-compatibility": "keys-and-terminal-compatibility",
+            "terminal-compatibility--shutdown-and-reconnection": "keys-and-terminal-compatibility",
+            "terminal-compatibility--terminal-compatibility": "keys-and-terminal-compatibility",
+            "terminal-compatibility--tested-scope-and-limits": "keys-and-terminal-compatibility",
+            "tested-scope-and-limits": "keys-and-terminal-compatibility",
+            "the-session-is-connected-but-the-table-is-empty": "diagnose-an-empty-or-stale-table",
+            "troubleshooting": "check-the-installation"
+          }
         }
       ]
     },
@@ -149,10 +407,24 @@
           "source": "resource-workspace.md",
           "title": "Understand the workspace",
           "sources": [
-            "resource-workspace.md",
+            "resource-workspace.md"
+          ],
+          "generated": false,
+          "retired_sources": [
             "standard-resources.md"
           ],
-          "generated": false
+          "anchors": {
+            "container-details": "snapshot-inspection-and-live-containers",
+            "generic-discovered-resources": "standard-and-discovered-views",
+            "legacy-standard-resources": "standard-and-discovered-views",
+            "live-namespaces": "local-contexts-and-live-resources",
+            "local-contexts": "local-contexts-and-live-resources",
+            "resource-workspace": "identity-and-focus",
+            "sizes-and-remaining-work": "compact-layouts-and-themes",
+            "standard-resource-views": "standard-and-discovered-views",
+            "standard-resources--generic-discovered-resources": "standard-and-discovered-views",
+            "standard-resources--standard-resource-views": "standard-and-discovered-views"
+          }
         }
       ]
     },
@@ -162,9 +434,14 @@
       "pages": [
         {
           "source": "cli-reference.md",
-          "title": "Command-line options",
+          "title": "Commands and keys",
           "sources": [],
-          "generated": true
+          "generated": true,
+          "anchors": {
+            "command-line-reference": "commands-keys-and-launch-options",
+            "recognized-options-not-yet-available-exit-4": "launch-options",
+            "session-connection-overrides": "launch-options"
+          }
         },
         {
           "source": "resource-reference.md",
@@ -176,6 +453,17 @@
           "source": "capability-reference.md",
           "title": "Feature availability",
           "sources": [],
+          "generated": true,
+          "anchors": {
+            "log-search-filter-clear-marks-fullscreen-copy-save-and-bounded-buffering": "log-search-marks-copy-save-and-history-limits",
+            "configmap-secret-content-encoded-decoded-toggle-and-environment-provenance": "configuration-data-and-environment-sources",
+            "capabilities-and-limits": "feature-availability"
+          }
+        },
+        {
+          "source": "config-reference.md",
+          "title": "Configuration fields",
+          "sources": [],
           "generated": true
         }
       ]
@@ -186,91 +474,182 @@
       "source": "eks-authentication.md",
       "target": "context-sessions.md",
       "anchor": "legacy-eks-authentication",
-      "heading": "eks-authentication--eks-authentication"
+      "heading": "eks",
+      "fragments": {
+        "eks-authentication": "eks",
+        "supported-local-contracts": "eks",
+        "opt-in-real-smoke": "eks",
+        "sources": "provider-documentation"
+      }
     },
     {
       "source": "aks-authentication.md",
       "target": "context-sessions.md",
       "anchor": "legacy-aks-authentication",
-      "heading": "aks-authentication--aks-authentication"
+      "heading": "aks",
+      "fragments": {
+        "aks-authentication": "aks",
+        "implemented-local-contract": "aks",
+        "explicit-login-and-retry": "aks",
+        "qualification-limits": "aks",
+        "optional-read-only-test-context-smoke": "aks",
+        "sources": "provider-documentation"
+      }
     },
     {
       "source": "kubeconfig-interoperability.md",
       "target": "context-sessions.md",
       "anchor": "legacy-kubeconfig-interoperability",
-      "heading": "kubeconfig-interoperability--kubeconfig-and-credential-interoperability"
+      "heading": "authenticate",
+      "fragments": {
+        "kubeconfig-and-credential-interoperability": "authenticate",
+        "configuration-and-private-material": "authenticate",
+        "execcredential": "authenticate",
+        "proxies-tls-and-delegated-tools": "tls-proxies-and-overrides",
+        "gke-oidc-and-legacy-migration": "authenticate"
+      }
     },
     {
       "source": "terminal-navigation.md",
       "target": "command-navigation.md",
       "anchor": "legacy-terminal-navigation",
-      "heading": "terminal-navigation--terminal-navigation-and-remote-clipboard"
+      "heading": "move-through-a-table",
+      "fragments": {
+        "terminal-navigation-and-remote-clipboard": "mark-rows-and-copy",
+        "keys-belong-to-the-focused-view": "move-through-a-table",
+        "command-and-filter-recall": "accept-a-suggestion",
+        "additional-local-filters": "filter-resources",
+        "wide-columns-and-marked-rows": "mark-rows-and-copy",
+        "namespace-favorites": "save-favorite-namespaces-and-jumps",
+        "consistent-workspaces-and-nested-commands": "return-and-adjust-the-workspace",
+        "explicit-clipboard-writes": "mark-rows-and-copy"
+      }
     },
     {
       "source": "resource-inspection.md",
       "target": "command-navigation.md",
       "anchor": "legacy-resource-inspection",
-      "heading": "resource-inspection--inspecting-a-pod"
+      "heading": "inspect-a-resource",
+      "fragments": {
+        "inspecting-a-pod": "inspect-a-resource",
+        "identity-and-errors": "inspect-a-resource",
+        "ordinary-view-redaction": "inspect-a-resource"
+      }
     },
     {
       "source": "resource-jumps.md",
       "target": "command-navigation.md",
       "anchor": "legacy-resource-jumps",
-      "heading": "resource-jumps--jump-to-related-resources"
+      "heading": "save-favorite-namespaces-and-jumps",
+      "fragments": {
+        "jump-to-related-resources": "save-favorite-namespaces-and-jumps",
+        "define-a-jump": "save-favorite-namespaces-and-jumps",
+        "templates": "save-favorite-namespaces-and-jumps",
+        "use-a-jump": "save-favorite-namespaces-and-jumps"
+      }
     },
     {
       "source": "container-navigation.md",
       "target": "log-viewer.md",
       "anchor": "legacy-container-navigation",
-      "heading": "container-navigation--pod-and-container-navigation"
+      "heading": "choose-the-output",
+      "fragments": {
+        "pod-and-container-navigation": "choose-the-output"
+      }
     },
     {
       "source": "mutations.md",
       "target": "editing.md",
       "anchor": "legacy-mutations",
-      "heading": "mutations--guarded-resource-changes"
+      "heading": "read-the-outcome-before-retrying",
+      "fragments": {
+        "guarded-resource-changes": "read-the-outcome-before-retrying"
+      }
     },
     {
       "source": "configuration-data.md",
       "target": "editing.md",
       "anchor": "legacy-configuration-data",
-      "heading": "configuration-data--inspect-configuration-data-deliberately"
+      "heading": "inspect-configuration-data",
+      "fragments": {
+        "inspect-configuration-data-deliberately": "inspect-configuration-data",
+        "limits-and-local-disclosure": "inspect-configuration-data",
+        "edit-a-configmap-or-secret": "inspect-configuration-data"
+      }
     },
     {
       "source": "resource-operations.md",
       "target": "workloads.md",
       "anchor": "legacy-resource-operations",
-      "heading": "resource-operations--delete-resources-and-operate-jobs"
+      "heading": "delete-one-or-several-resources",
+      "fragments": {
+        "delete-resources-and-operate-jobs": "run-or-suspend-jobs",
+        "review-and-confirmation": "delete-one-or-several-resources",
+        "results-and-batch-behavior": "delete-one-or-several-resources",
+        "clean-up-finished-pods": "clean-up-finished-pods",
+        "manual-jobs-and-suspension": "run-or-suspend-jobs"
+      }
     },
     {
       "source": "themes.md",
       "target": "configuration.md",
       "anchor": "legacy-themes",
-      "heading": "themes--themes-and-local-appearance"
+      "heading": "choose-and-save-a-theme",
+      "fragments": {
+        "themes-and-local-appearance": "choose-and-save-a-theme",
+        "which-theme-wins": "choose-and-save-a-theme",
+        "custom-palettes": "choose-and-save-a-theme",
+        "full-resource-titles": "choose-and-save-a-theme",
+        "about-and-optional-version-notices": "optional-update-notices"
+      }
     },
     {
       "source": "navigation-preferences.md",
       "target": "configuration.md",
       "anchor": "legacy-navigation-preferences",
-      "heading": "navigation-preferences--navigation-aliases-and-saved-resource-views"
+      "heading": "set-keys-aliases-and-resource-layouts",
+      "fragments": {
+        "navigation-aliases-and-saved-resource-views": "set-keys-aliases-and-resource-layouts",
+        "navigation-belongs-to-the-focused-view": "set-keys-aliases-and-resource-layouts",
+        "configure-keys-and-aliases": "set-keys-aliases-and-resource-layouts",
+        "configure-a-resource-view": "set-keys-aliases-and-resource-layouts",
+        "saved-format-and-migration": "set-keys-aliases-and-resource-layouts"
+      }
     },
     {
       "source": "plugin-compatibility.md",
       "target": "plugins.md",
       "anchor": "legacy-plugin-compatibility",
-      "heading": "plugin-compatibility--plugin-compatibility-and-original-examples"
+      "heading": "trust-and-read-only-behavior",
+      "fragments": {
+        "plugin-compatibility-and-original-examples": "add-a-definition",
+        "fields-keep-translate-or-reject": "add-a-definition",
+        "variables-and-shell-syntax": "insert-selected-values",
+        "three-original-workflows": "add-a-definition",
+        "what-the-translation-tests-establish": "trust-and-read-only-behavior",
+        "complete-pinned-workflow-census": "add-a-definition"
+      }
     },
     {
       "source": "terminal-compatibility.md",
       "target": "troubleshooting.md",
       "anchor": "legacy-terminal-compatibility",
-      "heading": "terminal-compatibility--terminal-compatibility"
+      "heading": "keys-and-terminal-compatibility",
+      "fragments": {
+        "terminal-compatibility": "keys-and-terminal-compatibility",
+        "shutdown-and-reconnection": "keys-and-terminal-compatibility",
+        "tested-scope-and-limits": "keys-and-terminal-compatibility"
+      }
     },
     {
       "source": "standard-resources.md",
       "target": "resource-workspace.md",
       "anchor": "legacy-standard-resources",
-      "heading": "standard-resources--standard-resource-views"
+      "heading": "standard-and-discovered-views",
+      "fragments": {
+        "standard-resource-views": "standard-and-discovered-views",
+        "generic-discovered-resources": "standard-and-discovered-views"
+      }
     }
   ]
 }

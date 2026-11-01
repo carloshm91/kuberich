@@ -1,50 +1,96 @@
-# Workload operations
+# Operate a workload
 
-Select a workload in its resource table before opening an action. Commands capture
-the selected context, namespace, name and UID. They require an interactive
-selection rather than a `--command` startup view.
+Select a workload in its ordinary resource table, check the context and namespace,
+and use a command for the intended action. Changes require write mode and the
+corresponding Kubernetes permissions. Progress viewing also works read-only.
 
-| Command | Resources | Behavior |
-| --- | --- | --- |
-| `:scale` or `:scale 3` | Deployments, ReplicaSets, StatefulSets | Review replicas, then separately Confirm a guarded `/scale` patch. |
-| `:restart` | Deployments, StatefulSets, DaemonSets | Review a pod-template timestamp change, then Confirm. |
-| `:rollback` or `:rollback 1` | Deployments, StatefulSets, DaemonSets | Restore the template from one explicit retained controller revision. |
-| `:rollout` | Deployments, StatefulSets, DaemonSets | Read actual controller progress, including in read-only mode. |
+## Scale replicas
 
-Cancel has default focus. Input Enter prepares a review without writing. Review
-identifies the resource/version/effect; separate Confirm consumes one prepared
-change. Changed input invalidates the review. Counts range from 0 to 2147483647;
-zero stops replicas. StatefulSet scale-down review discloses PVC deletion when
-its actual retention policy requests it.
+Use `:scale` or `:scale 3` on a Deployment, ReplicaSet, or StatefulSet. Review the
+replica count, then choose Confirm separately. Zero replicas stops replicas;
+counts range from 0 to 2,147,483,647. StatefulSet scale-down review reports PVC
+deletion requested by its actual retention policy.
 
-Scale requires workload get and `/scale` get/patch access, without parent patch
-permission. Namespace HPA list access checks ownership; an HPA targeting this
-workload blocks manual scale. Absent autoscaling v2 falls back to v1; denied or
-invalid checks block preparation. An HPA can appear after the check: this is not
-a cross-resource atomic transaction. ReplicaSet owners can reconcile manual replicas.
+Scale needs workload GET and `/scale` GET/PATCH. It also checks namespace HPAs;
+an HPA targeting the workload blocks manual scale. A denied or invalid HPA check
+blocks review. The HPA check and scale request are separate, so an HPA can appear
+in between. An owning controller can reconcile a manually scaled ReplicaSet.
 
-Restart/rollback require parent get/patch. Paused Deployments refuse these actions.
-`OnDelete` StatefulSets/DaemonSets need deliberate pod deletion; automatic restart/
-rollback is refused. Rolling partitions are respected, without resetting strategy.
+## Restart or restore a revision
 
-Rollback reads Deployment ReplicaSets or StatefulSet/DaemonSet ControllerRevisions
-owned by the captured UID. One explicit positive retained revision is required;
-absent, ambiguous or unsupported history is refused. Its UID/version is checked
-again before writing. Only the template is restored; replicas and strategy stay
-current. Failed StatefulSet recovery may require deliberate removal of a failed
-pod after rollback; this action does not force-delete pods.
+`:restart` reviews a pod-template timestamp change on a Deployment, StatefulSet,
+or DaemonSet. `:rollback` or `:rollback 1` restores one explicit available controller
+revision's template. Replica counts and update strategy stay current.
 
-The [shared mutation guards](mutations.md) provide one-use confirmation, atomic
-UID/version tests and no automatic replay. Conflicts need a new review. `:writes`
-retains confirmed/uncertain outcomes without manifest values. Leaving a confirmed
-write view does not undo or repeat the request. Context change/exit drains it.
+Rollback reads revisions belonging to the selected controller UID and checks the
+chosen revision again before writing. Missing or ambiguous history is refused.
+Paused Deployments and `OnDelete` StatefulSets/DaemonSets refuse automatic
+restart/rollback. Rolling partitions remain in effect. Restoring a StatefulSet
+can still require deliberate removal of a failed pod; rollback does not force it.
 
-Monitoring reads observed generation, controller counters, Deployment deadline
-failure, paused state and StatefulSet revisions/partitions. API confirmation does
-not imply rollout completion. Cancel/Escape stops monitoring without claiming an
-undo. After five minutes it times out; reopen progress with `:rollout`.
+## Watch rollout progress
 
-Sources: [Deployment controllers](https://v1-36.docs.kubernetes.io/docs/concepts/workloads/controllers/deployment/),
-[StatefulSet controllers](https://v1-36.docs.kubernetes.io/docs/concepts/workloads/controllers/statefulset/),
-[DaemonSet controllers](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/).
-See [acceptance evidence](acceptance/workloads.md) for measured scope and limits.
+Use `:rollout` to read generation, controller counters, revisions, partitions,
+paused state, and reported Deployment deadline failure. A successful write does
+not mean rollout completed. Escape stops this monitor without undoing a change.
+The monitor times out after five minutes; reopen it for current progress.
+
+## Delete one or several resources
+
+Use `:delete` for the selected resource or `:deletebatch` for marked rows. Without
+marks, batch review offers the displayed filtered rows and selects none initially.
+Space toggles an item. Batches contain at most 100 exact targets and send one
+DELETE per target, never a collection-wide DELETE.
+
+Choose Review, select propagation and optional grace seconds, type `DELETE 1` or
+`DELETE COUNT` matching the review, then Confirm separately. Cancel has default
+focus. The review identifies context, resource, namespace, UID, and version.
+
+| Propagation | Consequence |
+| --- | --- |
+| Foreground | Dependent cleanup precedes completion of owner deletion |
+| Background | The owner may disappear before dependents finish |
+| Orphan | Dependents remain |
+
+Blank grace uses the server default. Zero grace does not bypass finalizers or
+prove remote processes and external storage are gone. Controllers can recreate
+deleted pods. Already-terminating resources are refused; finalizers are shown
+but never removed automatically. Deletion checks UID and resourceVersion on the
+server, so replacement or concurrent changes require a fresh review.
+
+**Accepted; deletion pending** reports API acceptance, not dependent cleanup.
+A follow-up read showing absence confirms only removal of that selected object.
+Batches run sequentially with independent results; earlier success is not rolled
+back when another item fails. Use `:writes` to read every outcome.
+
+## Clean up finished pods
+
+In `:pods`, narrow the view with a filter, then use `:cleanup`. Completed and
+failed pods are listed; running, pending, and already-deleting pods are excluded.
+Every listed pod starts selected; Space excludes it. Review and confirm with
+`DELETE COUNT`. At most 100 pods are handled per cleanup.
+
+If an object was deleted or replaced before confirmation, nothing is deleted;
+review again. A version conflict during execution affects that item while other
+items can succeed. Read-only mode blocks cleanup.
+
+## Run or suspend Jobs
+
+Use `:trigger` on a CronJob to review creating one manual Job from its current
+template. The review and result show the exact Job name, including an uncertain
+creation outcome. The manual Job is independent of the CronJob's schedule and
+concurrency policy and can run while the CronJob is suspended. Template TTL and
+suspension settings remain part of the new Job.
+
+`:suspend` and `:resume` change `spec.suspend` on a Job or CronJob. Suspending a
+CronJob stops future scheduled runs, not existing Jobs. Resuming can start missed
+runs. Suspending a Job terminates active pods; resuming can restart execution
+and reset its start time. Check these effects before Confirm.
+
+## Recover from a conflict or uncertain write
+
+Every action binds its review to the selected target and change. Input edits
+invalidate it; Confirm can be used once. No automatic retry follows a rejected,
+interrupted, or lost write response. Inspect current state before another review.
+`:writes` keeps recent results for this application session, not a persistent
+audit log. See [edit and change resources](editing.md) for shared result meanings.

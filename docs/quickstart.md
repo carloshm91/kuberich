@@ -1,201 +1,68 @@
-# First installation and trial
+# Open your first workspace
 
-KubeRich 0.2.0 has live pods, namespace/context tables, inline
-command completion, local filters, 15 [standard resource tables](standard-resources.md),
-resource details/YAML/events, generic CRD tables, single/aggregate logs and
-embedded container shells. It also adds themes, local plugins and
-navigation preferences. Public PyPI, Homebrew and standalone installations
-are available. See
-[installation and upgrades](installation.md) for channels and measured scope.
-Guarded annotations, manifest editing, workload scale/restart/rollback and managed
-pod/Service port forwarding, guarded deletion and Job operations are also available.
-Exec credentials, certificates and proxies have locally verified connection contracts;
-see [connection compatibility](kubeconfig-interoperability.md). Captured attach
-and file transfer are delivered; metrics, creating ephemeral debug containers
-and user plugins are planned. Embedded-shell history/search/copy is
-delivered: Alt+PageUp opens local review, `/` searches, `v` selects, `y` copies
-with recognized credential redaction and Enter/Escape returns to live output.
-This preview does not claim complete K9s parity or real EKS/AKS certification.
+Open a Kubernetes workspace in read-only mode, find a pod, and read its logs.
+You need an installed `kuberich` command, a trusted kubeconfig, and permission to
+read pods and their logs. See [installation](installation.md) if you have not
+installed the application.
 
-## Install the public release
+The names below are fictional. Replace `demo-lab` and `demo-apps` with a context
+and namespace you are allowed to read.
 
-On Linux or macOS, choose one method:
+## Open an explicit context
 
 ```sh
-brew install kuberich/tap/kuberich
-# Alternative with Python 3.12–3.14:
-uv tool install --python 3.12 kuberich
+kuberich --context demo-lab --namespace demo-apps --readonly
 ```
 
-Then run `kuberich --version`, `kuberich config check` and
-`kuberich --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly`.
-Use your intended context and namespace. The remaining examples use a source
-checkout; omit `uv run` when using the installed command.
+The header shows your context and namespace. The pod table fills after the first
+successful read. An empty table can mean the namespace has no pods; an error in
+the status area explains a connection or permission problem.
 
-## Run from source
+Read-only mode blocks resource changes, shells, attach, uploads, port forwarding,
+and plugins that you have not explicitly classified as safe for reads. It still
+runs the authentication helper declared in your kubeconfig. Use a kubeconfig you
+trust.
 
-Use Linux or macOS, Python 3.12–3.14 and uv. In a trusted source checkout:
+## Find a pod
 
-```sh
-git switch main
-git pull --ff-only
-uv sync --locked --group dev --python 3.12
-uv run kuberich --version
-uv run kuberich --help
-uv run kuberich config check
-uv run kuberich info
-```
+1. Press `/` and enter part of a pod name.
+2. Press Enter to return to the table.
+3. Use arrows or `j` and `k` to move between rows.
+4. Press `g` to select the first row or Shift+G for the last row.
 
-Version/help/config/info need no cluster. The UI needs an interactive terminal;
-redirecting its input/output is not a way to launch it. `--config` selects
-KubeRich preferences; `--kubeconfig` selects Kubernetes credentials/configuration.
+The filter updates as pods change. Press Escape in the table to clear it.
+The counter shows matching rows and the total rows in your current scope.
 
-Choose an explicitly permitted context/namespace. To list local context names:
+## Read one container's logs
 
-```sh
-kubectl config get-contexts -o name
-uv run kuberich --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly
-```
+1. Select a pod and press Enter.
+2. Check the container names and states, then press Enter on a container.
+3. Press `g` to read older output and Shift+G to follow new output again.
+4. Press `/`, enter visible text, and press Enter to search.
+5. Press Escape to return to containers, then Escape again to return to pods.
 
-For a separate trusted kubeconfig, use its absolute path consistently:
+The container table updates state and restart counts from the pod watch. Logs
+keep a limited history; Kubernetes may already have removed older server logs.
+See [read logs](log-viewer.md) for windows, previous instances, and workload logs.
 
-```sh
-kubectl --kubeconfig /absolute/path/to/kubeconfig config get-contexts -o name
-uv run kuberich --kubeconfig /absolute/path/to/kubeconfig --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly
-```
+## Change scope
 
-Replace the uppercase names. No `kubectl config use-context` is required.
-KubeRich preserves the source kubeconfig and captures each connection separately.
-`--readonly` blocks shells and effectful commands; the server still decides which
-reads your identity may perform.
+Type `:ns` and press Enter to open the namespace table. Select a namespace and
+press Enter. To enter a known namespace directly, use `:ns demo-apps`.
+Type `:ctx` to browse contexts. Enter connects to the selected context; highlighting
+one alone does not connect.
 
-## Try the interface in order
+The command bar suggests completions on the same line. Tab accepts the suggestion
+for editing. Bare `:ns` still opens the namespace table. See
+[navigate and search](command-navigation.md) for completion and history.
 
-1. Confirm the context/namespace and version in the header, and that real pods
-   appear. Empty, denied, connecting and disconnected are distinct states.
-2. Type `:ctx`, Enter. Contexts form a table. Use arrows and Enter to connect.
-   `:ctx EXACT_NAME` connects directly; Escape restores the prior view.
-3. Type `:ns`, Enter. Filter with `/`, type a namespace, Enter to return to its
-   table, then Enter on the selected row to open pods. `:ns EXACT_NAME` selects
-   it directly; `:ns *` selects all namespaces.
-4. On pods, `/` starts a local filter. Type text and Enter; Escape in the table
-   clears it. `re:api|worker` is the explicit regex form. Resize the terminal and
-   use arrows/PageUp/PageDown to browse. `s` sorts pods; Shift+S reverses order.
-5. Select a pod: `d` opens details, `y` YAML and `e` its events. Escape returns.
-   Inspection hides sensitive field sets by default; it is not an editor.
-6. Enter on a pod opens its container table. Enter on a container opens **that
-   container's logs**. In logs, `p` pauses, `f` follows, `g/G` goes first/last,
-   `/` searches, `n/N` moves through matches, `t` toggles timestamps and `w` wraps.
-   Escape returns to containers; another Escape returns to pods.
-7. In the `:` bar, type `c` and use Tab to accept the inline suggestion. Up/Down
-   cycles candidates. `:back` / `:forward` restores navigation history; `?` shows
-   the actual actions for the current view.
-8. Ctrl+Q quits and restores the terminal. `q` also quits outside inputs/shells.
+## Leave the workspace
 
-See [commands](command-navigation.md), [workspace](resource-workspace.md),
-[inspection](resource-inspection.md) and [logs](log-viewer.md) for full controls.
+Press Ctrl+Q to quit. KubeRich closes the requests and processes it started and
+restores your terminal. Selecting contexts and namespaces does not rewrite your
+kubeconfig or its current context.
 
-## Try a shell in your test namespace
-
-Install kubectl on PATH with a [version supported by the cluster](https://kubernetes.io/releases/version-skew-policy/#kubectl).
-The account needs pod reads and `pods/exec`; the chosen image must contain `sh`
-or your configured shell. Exit the read-only preview, then deliberately enable
-shell actions for this invocation:
-
-```sh
-uv run kuberich --kubeconfig /absolute/path/to/test-kubeconfig --context YOUR_TEST_CONTEXT --namespace YOUR_TEST_NAMESPACE --write
-```
-
-`--write` overrides a read-only preference without changing its file. Select the
-pod, Enter, select the container and press `s` or `x`. The shell occupies the
-embedded Textual terminal, with its captured context/pod/container shown above.
-It uses **kubectl exec**, not SSH into the pod or node.
-
-Inside it, `pwd` or `printf 'hello\n'` are enough for a basic trial. `exit` or
-Ctrl+D returns to containers; Ctrl+] closes the owned session locally. Ctrl+C
-interrupts the remote program; Ctrl+Q quits KubeRich. Escape, Tab, arrows, `:`,
-`/` and `q` are delivered to the remote program while the shell is open.
-After returning, Escape goes back to pods. Distroless/completed containers or an
-image without a shell need a suitable image; ephemeral debugging is not available
-yet. [Shell requirements and limits](container-shell.md).
-
-## EKS and AKS prerequisites
-
-Use the same trusted kubeconfig, user, helper PATH and provider login that work
-with explicit-context kubectl. KubeRich invokes the declared exec helper; it
-does not provision clusters or manage a separate credential database.
-
-- EKS: AWS CLI with the configured profile/role/session. If the profile uses SSO,
-  run `aws sso login --profile YOUR_PROFILE` externally, then `:retry`.
-- AKS: Azure kubelogin for its declared login mode; `azurecli` additionally needs
-  Azure CLI and the intended `az login` session. An Azure helper requiring
-  interaction can use the explicit `:login` action; it runs the declared helper.
-  KubeRich does not infer a different tenant/login mode or convert the kubeconfig.
-
-The local adapter/process contracts are verified with owned helpers and kind.
-Actual AWS/EKS and Microsoft Entra/AKS certification needs separate provider trials. Read
-[EKS](eks-authentication.md) and [AKS](aks-authentication.md) for supported
-versions/modes, refresh behavior and certification limits.
-
-## Install a supplied local candidate
-
-For a trusted wheel supplied by the maintainer, run outside the checkout:
-
-```sh
-uv tool install --python 3.12 /absolute/path/to/kuberich-VERSION-py3-none-any.whl
-kuberich --version
-kuberich --help
-kuberich config check
-kuberich info
-kuberich --kubeconfig /absolute/path/to/kubeconfig --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly
-```
-
-Use the actual filename/version. If uv reports its tool bin directory missing
-from PATH, add the directory it reports using your preferred shell setup. The
-rehearsal uses private tool directories and an absolute executable path; it never
-changes your shell configuration or existing tool installation.
-`pipx install --python python3.12 /absolute/path/to/WHEEL.whl` is the alternative
-already qualified by packaging checks. Do not install the same CLI with both.
-
-Uninstall with `uv tool uninstall kuberich` or, for pipx, `pipx uninstall kuberich`.
-Preferences/logs remain separate from the installed application. Running through
-the checkout does not create a uv tool installation to uninstall.
-
-PyPI and the public Homebrew tap are available. Upgrades to 0.2.0 were tested
-from the published 0.1.0 packages.
-See [upgrade constraints](distribution.md#upgrade-and-uninstall-contract).
-Four qualified standalone Linux/macOS archives are available in the
-[0.2.0 release](https://github.com/carloshm91/kuberich/releases/tag/v0.2.0).
-
-## If something fails
-
-| Symptom | Next check |
-| --- | --- |
-| kubectl works but KubeRich does not | Compare the exact `--kubeconfig`, `--context`, `--namespace`, user, helper PATH and provider session; run `:status`, then `:retry` |
-| Authentication failure / expired provider login | Complete the declared AWS/Azure login, then retry; never paste tokens or kubeconfig contents into reports |
-| Permission denied / 403 | Check the same identity's resource/namespace permission; denied namespace listing can still allow `:ns EXACT_NAME` |
-| No matching pods | Clear `/` filtering and confirm the namespace; a denied/stale view is not an empty healthy list |
-| Shell blocked | Use `--write` on your test scope; check `kubectl` on PATH, `pods/exec`, container state and the image shell |
-| F2/F3 intercepted by terminal/tmux | Use the portable `:ctx` / `:ns` commands |
-| UI won't open | Run in an interactive terminal; verify preferences with `config check` |
-
-For feedback, give the version, OS/terminal, exact keys, expected/observed behavior
-and a sanitized error/screenshot. `info` describes local preferences/dependencies;
-it is not a cluster-connectivity test. Automated coverage supports confidence;
-it does not prove compatibility with every cluster or terminal.
-
-## Maintainer rehearsal
-
-The reproducible private trial installs a real wheel into owned uv tool state,
-checks config/help/info, uses verified disposable kind, exercises contexts,
-namespace filtering/Enter, inspection, logs, read-only rejection and embedded
-shell/return/quit, then uninstalls while preserving preferences:
-
-```sh
-uv run python -m scripts.verify_quickstart --wheel /absolute/path/to/WHEEL.whl --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
-```
-
-It uses pinned kind 0.33.0/Kubernetes+kubectl 1.36.4 and Alpine fixture identities
-from [integration qualification](integration-testing.md). Linux results are
-recorded in [quickstart verification](acceptance/quickstart.md); actual macOS and public
-channel verification remain release requirements. No package/site publication is performed.
+If the connection fails, type `:status` for the full message and use
+[troubleshooting](troubleshooting.md). After correcting credentials or connectivity,
+`:retry` reconnects. Opening a shell is a separate deliberate step in
+[shells and attach](container-shell.md).

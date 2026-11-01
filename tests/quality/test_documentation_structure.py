@@ -33,7 +33,7 @@ def insert_after_title(path, text):
 
 def test_navigation_is_complete_diataxis_and_maps_the_baseline_documents():
     catalog = load_navigation(ROOT)
-    assert catalog.user_page_count == 19
+    assert catalog.user_page_count == 20
     assert {page.kind for page in catalog.pages} == {
         "tutorial",
         "how-to",
@@ -47,12 +47,14 @@ def test_navigation_is_complete_diataxis_and_maps_the_baseline_documents():
         for item in plan["documents"]
         if item["audience"] == "user"
     }
-    assert fragments == baseline_guides and len(fragments) == 30
+    retired = {name for page in catalog.guides for name in page.retired}
+    assert fragments | retired == baseline_guides and len(fragments | retired) == 30
+    assert len(fragments) == 15
     paths = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT, text=True).split("\0")
     paths += ["docs/STYLE.md", "docs/navigation.json", "docs/documentation-plan.json"]
     assert validate_documentation_plan(ROOT, paths) == len(plan["documents"])
     assert len((ROOT / "docs/STYLE.md").read_text().splitlines()) <= 250
-    assert plan["migration_state"] == "structure_active_prose_consolidation_pending"
+    assert plan["migration_state"] == "user_guides_consolidated_internal_migrations_pending"
 
 
 @pytest.mark.parametrize(
@@ -166,20 +168,16 @@ def test_canonical_pages_preserve_every_fragment_and_real_deep_links(tmp_path, p
     insert_after_title(
         source / "docs/quickstart.md",
         "## Primary stable anchor\n\n[Primary link](#primary-stable-anchor)\n\n"
-        "[Merged link](eks-authentication.md#secret-free-example)",
-    )
-    insert_after_title(
-        source / "docs/eks-authentication.md",
-        "## Secret-free example\n\n[Self link](#secret-free-example)",
+        "[Merged link](eks-authentication.md#supported-local-contracts)",
     )
     output = tmp_path / "output"
     manifest = build(output, source, public_launch=public)
-    assert manifest["documentation_pages"] == 19 and manifest["publication_performed"] is False
+    assert manifest["documentation_pages"] == 20 and manifest["publication_performed"] is False
     assert "docs/navigation.json" in manifest["sources"]
     assert "scripts/documentation.py" in manifest["sources"]
     surfaces = [output / "docs"] + ([] if public else [output / "www/docs"])
     for surface in surfaces:
-        assert len(list(surface.glob("*.html"))) - int((surface / "404.html").exists()) == 19
+        assert len(list(surface.glob("*.html"))) - int((surface / "404.html").exists()) == 20
         for guide in catalog.guides:
             html = (surface / guide.filename).read_text()
             for fragment in guide.sources:
@@ -188,20 +186,14 @@ def test_canonical_pages_preserve_every_fragment_and_real_deep_links(tmp_path, p
         quickstart = (surface / "quickstart.html").read_text()
         contexts = (surface / "context-sessions.html").read_text()
         assert 'href="quickstart.html#primary-stable-anchor"' in quickstart
-        assert 'href="context-sessions.html#eks-authentication--secret-free-example"' in quickstart
-        assert 'href="context-sessions.html#eks-authentication--secret-free-example"' in contexts
+        assert 'href="context-sessions.html#eks"' in quickstart
         assert 'id="first-installation-and-trial"' in quickstart
-        assert 'id="eks-authentication--secret-free-example"' in contexts
+        assert 'id="eks-authentication--supported-local-contracts"' in contexts
         assert 'id="legacy-eks-authentication"' in contexts
     redirects = (output / "docs/_redirects").read_text()
-    assert (
-        "/eks-authentication.html /context-sessions.html#legacy-eks-authentication 301\n"
-        in redirects
-    )
-    assert "/themes /configuration.html#legacy-themes 301\n" in redirects
-    assert (
-        "/standard-resources /resource-workspace.html#legacy-standard-resources 301\n" in redirects
-    )
+    assert "/eks-authentication.html /context-sessions.html 301\n" in redirects
+    assert "/themes /configuration.html 301\n" in redirects
+    assert "/standard-resources /resource-workspace.html 301\n" in redirects
     verify(output, source)
 
 
@@ -214,11 +206,12 @@ def test_legacy_routes_survive_later_source_consolidation(tmp_path):
         for page in section["pages"]
         if page["source"] == "context-sessions.md"
     )
-    page["sources"].remove("eks-authentication.md")
+    assert "eks-authentication.md" in page["retired_sources"]
     route = next(
         route for route in data["legacy_routes"] if route["source"] == "eks-authentication.md"
     )
     route["heading"] = "retained-aws-help"
+    route["anchor"] = "relocated-aws-help"
     existing = source / "docs/eks-authentication.md"
     body = existing.read_text().split("\n", 1)[1]
     insert_after_title(source / "docs/context-sessions.md", "## Retained AWS help\n" + body)
@@ -227,7 +220,7 @@ def test_legacy_routes_survive_later_source_consolidation(tmp_path):
     output = tmp_path / "output"
     build(output, source)
     html = (output / "docs/context-sessions.html").read_text()
-    assert 'id="legacy-eks-authentication"' in html
+    assert 'id="relocated-aws-help"' in html
     assert 'id="retained-aws-help"' in html
     verify(output, source)
 
@@ -239,7 +232,9 @@ def test_checker_rejects_rehashed_but_invalid_documentation_routes(tmp_path, fau
     build(output, source)
     if fault == "redirect":
         path = output / "docs/_redirects"
-        path.write_text(path.read_text().replace("#legacy-themes", "#wrong-anchor"))
+        path.write_text(
+            path.read_text().replace("/themes /configuration.html", "/themes /wrong.html")
+        )
         refresh(output, path)
     elif fault == "anchor":
         path = output / "docs/context-sessions.html"
@@ -255,11 +250,11 @@ def test_checker_rejects_rehashed_but_invalid_documentation_routes(tmp_path, fau
         verify(output, source)
 
 
-def test_merged_fragments_remain_part_of_the_source_receipt(tmp_path):
+def test_generated_reference_snapshots_remain_part_of_the_source_receipt(tmp_path):
     source = published_source(tmp_path / "source")
     output = tmp_path / "output"
     build(output, source)
-    path = source / "docs/eks-authentication.md"
-    path.write_text(path.read_text() + "\nA changed source fragment.\n")
+    path = source / "docs/generated/config-reference.md"
+    path.write_text(path.read_text() + "\nA changed generated snapshot.\n")
     with pytest.raises(ValueError, match="source drift"):
         verify(output, source)

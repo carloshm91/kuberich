@@ -7,6 +7,12 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Consolidate user documentation into focused task guides and source-generated
+  command, key, resource, and configuration references. Preserve previous guide
+  routes and exact superseded text outside the website
+  ([#224](https://github.com/carloshm91/kuberich/issues/224),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Replace the README with a concise product introduction, published installation,
   a read-only quick start and a plain feature list
   ([#223](https://github.com/carloshm91/kuberich/issues/223),

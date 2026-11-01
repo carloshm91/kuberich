@@ -1,192 +1,29 @@
-# Local preferences and diagnostics
+# Configure your workspace
 
-KubeRich provides `info`, `config init`, `config check`, `config migrate`, and local
-diagnostic logging, alongside the [resource workspace](resource-workspace.md).
-Preference inspection does not connect to Kubernetes. The UI applies built-in themes and displays
-read-only mode in both header/status and shared command decisions. The native shell service applies the shared read-only guard before preparation.
+Change local preferences without changing Kubernetes configuration. Run
+`kuberich info` to find the preference file and diagnostic log used on your machine.
+`--config` selects preferences; `--kubeconfig` selects Kubernetes connections.
 
-The next-release source adds [theme preview and context preferences](themes.md),
-including the explicit local save controls and an opt-in cached version notice.
-The published 0.1.0 package does not include those controls. `config check` in the
-source validates custom palette fields, contrast and registered theme references;
-invalid appearance settings leave files unchanged. It also checks
-[jump definitions](resource-jumps.md).
-
-## Legacy preview compatibility
-
-KubeRich uses `kuberich` for its package, Python imports and canonical command.
-The `kubetrol` console command remains an alias to the same entry point for the
-initial preview. Its help/version identify KubeRich. The old Python module and
-distribution are not duplicate packages; use `python -m kuberich` for module
-launch. Removing the alias requires a later minor release and migration notes.
-
-Default preference selection is CLI `--config`, then `KUBERICH_CONFIG`, then
-`KUBETROL_CONFIG`, then the platform's KubeRich file. If no KubeRich file exists,
-the old platform Kubetrol `config.yaml` is read in place. An existing or broken
-symlink/directory/invalid KubeRich file never silently falls back to old settings.
-Each `KUBERICH_*` preference variable wins over its corresponding `KUBETROL_*`
-alias; CLI overrides still have highest precedence. Explicit files never fall
-back to another location. Environment-provided relative log paths retain the
-launch directory rather than the preference directory.
-
-`info` reports the file actually read, whether migration is pending and the new
-target, without writing either file. `config check` and ordinary loading also
-leave preferences unchanged. `config init` refuses to replace existing legacy
-preferences. Use `config migrate` with default paths and without runtime overrides
-to create a mode-0600 KubeRich file atomically. It retains the original, unknown
-fields, read-only policy and effective settings; relative file-provided log
-destinations are made absolute to preserve their target. Existing legacy log/lock
-headers and archives remain accepted for explicitly configured log destinations.
-Default new logs use KubeRich's new platform directory.
-
-An existing destination is never replaced, including a competing creation during
-the commit. Repeating a completed migration validates the current file and makes
-no change. Explicit `--config` or configuration environment paths cannot be
-relocated implicitly by this command. It does not move kubeconfig, credentials,
-diagnostic logs or tool installations.
-
-## Commands
+## Create and check preferences
 
 ```sh
-uv run kuberich info
-uv run kuberich config check
-uv run kuberich config init
-uv run kuberich config migrate
-uv run kuberich --config /path/to/preferences.yaml config check
-uv run kuberich --log-level DEBUG --log-file /path/to/kuberich.log
+kuberich config init
+kuberich config check
+kuberich info
 ```
 
-Place global flags before a command. `--logLevel`/`-l` and `--logFile` are aliases
-for `--log-level` and `--log-file`. `--config` selects **KubeRich preferences**;
-`--kubeconfig` selects Kubernetes connection configuration for a terminal launch.
+Init creates defaults and refuses an existing file. Check validates without
+writing files, connecting, or running credential helpers. Global flags go before
+a local command: `kuberich --config /absolute/path/preferences.yaml config check`.
 
-`info` prints JSON with installed versions, local config/data/log paths, validated
-effective preferences, unknown-field count and migration status. It never prints
-unknown field names/values, credential environment variables or kubeconfig
-contents. `info` and `config check` create no files. They do not execute cloud
-credential helpers or inspect/connect to a cluster.
-
-`config init` creates schema-v1 defaults at the selected path. It never overwrites
-an existing file, persists environment overrides, or creates diagnostic logs.
-All runtime overrides are rejected for this command. You can edit the YAML with your
-own editor and run `config check` afterward. There is no automatic rewrite on load.
-
-## Paths and precedence
-
-The config path is chosen from `--config`, then `KUBERICH_CONFIG`, then
-`KUBETROL_CONFIG`, then the platform default with the legacy fallback described
-above. Defaults follow [platformdirs](https://platformdirs.readthedocs.io/en/latest/api.html). An absent
-default file uses the defaults below. An explicitly selected missing file fails
-with exit 3; use `config init` to create it. Empty/comment-only files also use
-defaults. Paths expand `~`, support spaces and reject control characters.
-
-| Platform | Default preferences | Default diagnostic log |
-| --- | --- | --- |
-| Linux | `$XDG_CONFIG_HOME/kuberich/config.yaml` or `~/.config/kuberich/config.yaml` | `$XDG_STATE_HOME/kuberich/log/kuberich.log` or `~/.local/state/kuberich/log/kuberich.log` |
-| macOS | `~/Library/Application Support/kuberich/config.yaml` | `~/Library/Logs/kuberich/kuberich.log` |
-
-`info` reports the actual paths on your machine. Preference operations never
-load Kubernetes credentials or change kubeconfig or its `current-context`. Files recognized as
-kubeconfig are rejected as preferences. Startup never writes preference files.
-
-Preference precedence is **explicit runtime CLI override → `KUBERICH_*`
-environment → selected YAML → defaults**. Each layer is validated; a malformed
-file/environment value fails even if a higher layer would override it. This
-prevents an invalid lower layer from silently resurfacing on the next invocation.
-The file is always read; log flags do not bypass a broken config.
-
-| YAML field | Default | Environment | Runtime CLI |
-| --- | --- | --- | --- |
-| `shell` | `["sh"]` | Not available | Not available; configure YAML |
-| `theme` | `k9s` | `KUBERICH_THEME` | Not yet available |
-| `refresh_seconds` | `2.0` | `KUBERICH_REFRESH` | `--refresh`, `-r`; periodic table ages/local repaint, independent of live watches |
-| `read_only` | `false` | `KUBERICH_READONLY` | `--readonly` / `--write` (mutually exclusive) |
-| `log_level` | `WARNING` | `KUBERICH_LOG_LEVEL` | `--log-level`, `--logLevel`, `-l` |
-| `log_file` | `null` (platform path) | `KUBERICH_LOG_FILE` | `--log-file`, `--logFile` |
-
-Environment read-only values are `true`/`false`, case insensitive. Levels accept
-DEBUG, INFO, WARNING, ERROR or CRITICAL, case insensitive, and are normalized to
-uppercase in effective settings. Refresh must be a finite number
-in 0.1–3600 seconds; booleans and numeric strings in YAML are rejected. Theme IDs
-are 1–64 ASCII letters/digits/underscores/hyphens starting with a letter; available
-themes must also be `k9s` or registered built-in Textual themes when opening the UI.
-`config check` validates the schema, while the UI validates availability.
-A null log path selects the platform
-default, while an empty path is an error.
-
-Relative `log_file` values from YAML resolve against that file's directory.
-Relative environment/CLI paths resolve against the invocation's working directory,
-including when their text happens to match the file's value.
-
-Runtime choices never rewrite preferences. `--write` explicitly overrides a valid
-file/environment read-only setting for this invocation. Read-only blocks commands
-through a shared service decision, including the native shell service.
-See the [launch contract](k9s-cli.md) for aliases, availability and command-specific
-option handling. Per-context settings are described below.
-
-## Per-context settings
-
-A `context_settings` section can make one kubeconfig context stricter or change
-how often its tables refresh:
+The preference path comes from `--config`, `KUBERICH_CONFIG`, then the platform
+default. Linux uses `~/.config/kuberich/config.yaml` unless XDG_CONFIG_HOME is set;
+macOS uses `~/Library/Application Support/kuberich/config.yaml`.
+An absent default file uses defaults; an explicitly selected missing file fails.
 
 ```yaml
 schema_version: 1
-context_settings:
-  schema_version: 1
-  contexts:
-    production:
-      read_only: true
-    staging:
-      refresh_seconds: 5
-```
-
-Each context accepts only `read_only` and `refresh_seconds`. A context can turn
-read-only mode on, but it cannot turn it off. `refresh_seconds` uses the same
-0.1–3600 range as the global setting. Names are the kubeconfig context names, up
-to 128 contexts.
-
-The settings apply when you switch to that context and stop when you leave it.
-The order is:
-
-1. Command-line flags and `KUBERICH_*` environment variables.
-2. The settings of the current context.
-3. The global values in the preference file.
-4. The defaults.
-
-`--readonly` or a read-only file keeps every context read-only. `--write` does
-not lift a context's `read_only: true`.
-
-## Changing preferences while KubeRich runs
-
-KubeRich checks the preference file every two seconds. When you save a valid
-change, it applies the new themes, colors, aliases, jumps, context settings,
-plugins, shell and refresh interval, and shows "Preferences reloaded." Your
-current view, filter and selection stay as they are.
-
-- Key binding and mouse changes are read but apply after a restart. The notice
-  says so.
-- Log settings apply after a restart.
-- Turning `read_only` off in the file does not end read-only mode in a running
-  session. Restart to leave it.
-- Plugin files are read again when the preference file changes.
-- If the file is invalid, KubeRich keeps the last valid preferences and shows the
-  error once. Run `kuberich config check` to see it again.
-- If the file is deleted, the current preferences stay active.
-
-Fields that KubeRich does not know are kept in the file and ignored. Startup,
-reload and `kuberich config check` name them, so a typo is easy to spot.
-
-`shell` is a list of 1–32 nonempty strings, with an executable first and
-literal arguments after it. Strings and shell expressions are rejected. For
-example, `shell: ["/bin/bash", "-l"]` selects bash only in images that contain it.
-A saved change applies to the next shell you open. Diagnostics omit this
-argument list. See [native shells](container-shell.md).
-
-## Schema, compatibility and writes
-
-```yaml
-schema_version: 1
-theme: textual-dark
+theme: k9s
 refresh_seconds: 2.0
 read_only: false
 log_level: WARNING
@@ -194,68 +31,142 @@ log_file: null
 shell: ["sh"]
 ```
 
-Unknown fields are retained in memory and preserved by the atomic save API; they
-do not become effective settings or appear in diagnostics. Unknown schema versions
-are rejected so older builds cannot overwrite a newer schema. Versionless/v0
-preferences migrate `refresh` to `refresh_seconds` and `readonly` to `read_only`
-in memory. Supplying both a legacy and current name fails. A later explicit save
-writes version 1 while retaining unknown fields; current CLI commands do not
-perform that migration write automatically.
+The [generated configuration reference](config-reference.md) lists actual fields,
+defaults, and extension declarations. Preference files accept safe YAML up to
+64 KiB. Unknown root fields are preserved and reported; unknown schema versions
+are refused. Loading and checking do not rewrite files.
 
-YAML uses a [safe loader](https://pyyaml.org/wiki/PyYAMLDocumentation), unique string
-keys and a 64 KiB input limit. Aliases, object-construction tags, multiple documents,
-more than 20 nested collections and excessive parser events are rejected. Parser
-errors identify the problem without echoing source values or source excerpts.
+## Understand precedence and reload
 
-Writes use a mode-0600 temporary file in the destination directory, flush/fsync it,
-and commit with an atomic link for creation or replace for an explicit save.
-Creation cannot overwrite a concurrent writer. New application directories are
-mode 0700; existing parent directories keep their permissions. Destination
-symlinks are refused. A failure or interrupt before commit leaves the previous file
-intact and removes the temporary file. A post-commit cleanup/directory-sync failure
-returns exit 3 and explicitly says the preferences were saved but durability or
-cleanup could not be confirmed; reread the file before retrying.
+Runtime CLI overrides win over `KUBERICH_*` environment variables, file settings,
+and defaults. Each layer must be valid even if another overrides it. Relative
+YAML log paths resolve against the preference directory; environment and CLI
+paths resolve against the launch directory.
 
-## Logging and errors
+`context_settings` can add read-only mode or a refresh interval for exact context
+names. CLI/environment refresh overrides win; context values then precede global
+file values. A read-only context cannot be made writable by `--write`.
 
-The ordinary CLI creates its local log and a small persistent `.lock` sibling,
-both mode 0600. A nonblocking process lock permits only one writer per log path;
-concurrent instances must use different `--log-file` values. Logs rotate at
-approximately 1 MiB with three archives. Each formatted record is bounded to
-8 KiB in UTF-8; total log storage is bounded by four times (1 MiB + 8 KiB), plus
-the small lock file. Open files and locks are released on normal exit or failure.
+KubeRich checks the file every two seconds. Valid changes update themes, aliases,
+jumps, context settings, plugins, shell, and refresh without losing your view.
+Keys, mouse mode, and log settings need a restart. Turning read-only off in a file
+does not make the running session writable. Invalid or deleted files leave the
+last valid preferences active and show a message. Use `config check` for details.
 
-Nonempty destinations and existing archives must have KubeRich's diagnostic
-header. Foreign files, symlinks and nonregular files are refused rather than
-modified. This includes a mistakenly selected kubeconfig. An empty regular file
-is accepted. These checks prevent mistaken destinations; they are not a sandbox
-against another program modifying files with the same user's privileges.
+## Choose and save a theme
 
-Logs use an application-owned logger without console handlers or root/SDK
-logging configuration changes. Messages redact common tokens, Bearer/Basic auth,
-JWTs, passwords, secret/access/API keys, private-key blocks, certificate data and
-HTTP URL passwords. Terminal control and directional-control characters are
-escaped. Debug exceptions include type and frame locations, excluding exception
-values, source text, chained exception values and locals. Raw kubeconfig, external
-command output, credential-helper responses and arbitrary API bodies must never
-be logged; pattern matching is defense in depth, not proof that arbitrary text
-contains no secret. Debug output stays in the file.
+Open `:themes` or run `kuberich --command themes`. The standalone picker needs no
+cluster. Moving through themes previews them. **Global** saves the global theme
+and update-check choice; **Context** saves only the named context's theme.
+**Back** or Escape cancels a preview. Preview alone writes nothing.
 
-| Exit | Meaning |
-| --- | --- |
-| `0` | Successful command, help, version or normal UI quit (including Ctrl+C) |
-| `1` | Unexpected internal/local failure; concise message without raw exception |
-| `2` | Invalid arguments, settings, schema, YAML or a noninteractive UI launch |
-| `3` | Missing explicit file, local permissions/I/O, existing init destination or log ownership failure |
-| `4` | Recognized option/command requires behavior not shipped in this version |
-| `130` | Interrupted non-UI operation |
-| `143` | SIGTERM during a native shell, after cleanup and terminal restoration |
+An environment theme wins over a context theme, then global `theme`, then `k9s`.
+The picker reports the effective name when another layer overrides your save.
+`--invert` reverses this session's resolved colors without saving. `kuberich-mono`
+provides black/white colors with visible state words.
 
-Argument parsing does not echo rejected arguments, which might contain tokens.
-Settings errors name the setting without printing its value. Logging failures
-cannot fall back to Python logging's raw-record stderr output.
+```yaml
+schema_version: 1
+appearance:
+  schema_version: 1
+  check_updates: false
+  themes:
+    ocean:
+      primary: '#5fd7ff'
+      foreground: '#ffffff'
+      background: '#000000'
+      dark: true
+  contexts:
+    demo-lab: ocean
+```
 
-The tests exercise temporary files, real wheel entry points, injected permission,
-replace/fsync failures, interrupts, migration round trips, redaction, bounded
-rotation and an actual second process competing for a log. They never use a real
-cluster or the maintainer's kubeconfig.
+Use fictional names here as a template. Custom themes require primary,
+foreground, and background; optional colors and limits appear in the reference.
+Colors are quoted six-digit hex values. Background, surface, and panel also
+accept `'default'` for the terminal's background, whose contrast cannot be checked.
+Other foreground contrast must reach 4.5:1; primary/accent/status colors need 3:1.
+Palettes contain no executable CSS or Python. `appearance.full_gvr_titles: true`
+adds API versions to standard resource titles; custom resources always show them.
+
+Saves preserve unrelated settings and refuse a competing file change. Local
+preference saves work in cluster read-only mode. They never persist runtime
+connection, environment, or read-only overrides.
+
+## Set keys, aliases, and resource layouts
+
+```yaml
+schema_version: 1
+navigation:
+  schema_version: 1
+  mouse: false
+  keys:
+    resources:
+      first: H
+      last: K
+  aliases:
+    work: pods
+    lab: ctx demo-lab
+```
+
+`table` supplies shared table defaults; specific table profiles override them.
+Logs and text use independent profiles. See the generated key reference for
+profiles and actions. Fixed navigation, safety, and per-view action keys cannot
+be replaced. Keys are one ASCII letter/digit or a permitted Ctrl/Alt combination;
+counts and chords are unsupported. Duplicate effective keys are refused.
+
+Aliases expand literal command text, never a shell expression. Up to 64 aliases
+and eight expansion steps are allowed. Built-in names, cycles, ambiguous preset
+arguments, and discovered-resource collisions are refused. Aliases work with
+completion and supported startup views, retaining the target's checks.
+
+`:views` edits columns as `key[:width][:alignment]`, their order, and typed sorting.
+For example, `name:24:left ready:8:center age:8`. Width is auto or 1–256;
+alignment is auto/left/center/right. Name stays visible, as does namespace in an
+all-namespace list. Apply changes the session; Global or Context saves explicitly.
+Context preferences win over global layouts. A changed server-printer schema
+uses working defaults without reinterpreting old positions under new labels.
+Hidden columns can still participate in sorting/filtering.
+
+## Define a resource jump
+
+A jump opens another view with a local filter from the selected row:
+
+```yaml
+schema_version: 1
+jumps:
+  schema_version: 1
+  definitions:
+    node-pods:
+      source: v1/nodes
+      target: v1/pods
+      namespace: "*"
+      fields: "spec.nodeName={{ metadata.name }}"
+```
+
+Use `:jump` or `:jump node-pods`. Templates read fields or a label map, without
+functions, conditions, or executable code. Missing or unsafe selector values
+produce an error. `labels` and `fields` are mutually exclusive. Run `config check`
+to validate definitions offline.
+
+## Optional update notices
+
+Checks are off by default. Enable `appearance.check_updates` or the picker checkbox
+and save Global. KubeRich reads GitHub's public stable-release endpoint, caches
+results for up to 24 hours, and shows a validated newer version in the header.
+`:about` shows installed version, license, and check state. Local info/help/version
+and config check stay offline. Nothing is downloaded or installed automatically.
+
+## Legacy files and diagnostic logs
+
+The `kubetrol` command remains an alias. `KUBETROL_*` preference variables are
+fallbacks after corresponding `KUBERICH_*` variables. If the new default preference
+file is absent, the old Kubetrol file is read without moving it. Run
+`kuberich config migrate` explicitly to create the new private file and keep the
+old one. Explicit preference paths cannot be relocated implicitly.
+
+Normal launches write private, redacted diagnostic logs, about 1 MiB each with
+three archives. One writer can use a log path at a time; give simultaneous
+instances different `--log-file` values. Foreign nonempty files and symlinks are
+refused as log destinations. Diagnostics omit raw kubeconfig, helper output,
+resource bodies, and editor drafts. Redaction cannot recognize every sensitive
+phrase; inspect any report before sharing it.
