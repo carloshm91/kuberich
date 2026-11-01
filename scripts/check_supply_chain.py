@@ -62,8 +62,8 @@ INPUT_FILES = (
     "packaging/standalone/python-runtime.json",
     "packaging/standalone/entry.py",
     "packaging/standalone/hooks/hook-pyte.py",
-    "docs/backlog.json",
-    "docs/github-issues.json",
+    "docs/internal/backlog.json",
+    "docs/internal/github-issues.json",
 )
 
 

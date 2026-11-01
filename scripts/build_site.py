@@ -552,7 +552,7 @@ def build(output: Path, root: Path = ROOT, *, public_launch: bool = False) -> di
         "version": version,
         "private_preparation": not public_launch,
         "indexing": "public" if public_launch else "preview",
-        "application_qualification": "docs/acceptance/workload-checkpoint.md",
+        "application_qualification": "docs/internal/acceptance/workload-checkpoint.md",
         "publication_performed": False,
         "documentation_pages": catalog.user_page_count,
         "sources": {p.relative_to(root).as_posix(): digest(p) for p in inputs},

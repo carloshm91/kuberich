@@ -123,7 +123,7 @@ signal. Local tests also support xdist; use the
 and evidence ownership rules. The complete suite and coverage gates still run
 before merging.
 
-The [observed CI comparison](docs/acceptance/private-ci.md) verifies seven native
+The [observed CI comparison](docs/internal/acceptance/private-ci.md) verifies seven native
 jobs per matching-source PR/main pair plus four planner/aggregate jobs. These
 elapsed-time measurements include actual failures and separate unallocated or
 still-active work; they are not an account invoice. Preserve each failed original

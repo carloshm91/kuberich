@@ -39,7 +39,7 @@ in [website/README](../website/README.md#keep-documentation-current-in-each-prod
 Repository checks rebuild and browser-verify both surfaces on every PR/main push.
 The same generator prepares exact release-candidate documentation under #89.
 
-See [flat-site acceptance](acceptance/flat-website.md) for measured local evidence.
+See [flat-site acceptance](internal/acceptance/flat-website.md) for measured local evidence.
 
 ## Local reviewable result
 
@@ -55,7 +55,7 @@ Open `http://127.0.0.1:8715/` on that machine. Initial docs live under `/docs/`.
 HTML/CSS/JS/SVG; the optional script only copies examples. There is no server-side
 application, Kubernetes access, analytics or external asset dependency.
 Build hashes, actual local browser checks and limits appear in
-[acceptance evidence](acceptance/initial-website.md). Reproduction/tool/media
+[acceptance evidence](internal/acceptance/initial-website.md). Reproduction/tool/media
 instructions are in [website/README](../website/README.md).
 
 ## Development publication: #166
@@ -73,7 +73,7 @@ from source `0cfa7153bd8617c3ece3f5641d5b7e539b497ae4` and manifest SHA-256
 `8661dbe055181e8aa73f18438c6d7724d1f1ed4a79f09d8527835e3d367035d7`.
 Both production and immutable deployment hosts passed every file digest, header
 and custom-404 check. Independent production verification matched the same
-retained manifest. The [acceptance receipt](acceptance/pages-publication.md#actual-provider-acceptance)
+retained manifest. The [acceptance receipt](internal/acceptance/pages-publication.md#actual-provider-acceptance)
 records exact deployment IDs and the preserved first partial/failed attempt.
 The live preview serves those published bytes; a later source merge alone does
 not deploy its regenerated guides.
@@ -140,7 +140,7 @@ Provider-host preview publication and the owner-approved public 0.1.0 deployment
 are delivered. Both custom domains serve the verified release and canonical
 documentation routing. Final custom-domain asset-header cache cleanup and the
 separate `www` redirect remain in
-[first-channel acceptance](acceptance/first-channel-activation.md#owner-approved-public-website-activation-2026-10-13-utc).
+[first-channel acceptance](internal/acceptance/first-channel-activation.md#owner-approved-public-website-activation-2026-10-13-utc).
 Direct Upload supports this CI workflow;
 see [Cloudflare's GitHub Actions procedure](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/).
 No project, deployment, credential or DNS record was created by #154;

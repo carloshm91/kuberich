@@ -134,7 +134,7 @@ without the owner's explicit authorization. The maintainer has purchased
 10. Close #89 only after every promised public channel and site is verified.
     Record real links and start the next Unreleased section by PR.
 
-The [observed development matrix](acceptance/private-ci.md) verifies a complete
+The [observed development matrix](internal/acceptance/private-ci.md) verifies a complete
 matching-source PR/main pair with seven native jobs and four planner/aggregate
 jobs. That reduced development pattern does not qualify a release. Step 4 still
 requires all six supported combinations on the exact main candidate, with true

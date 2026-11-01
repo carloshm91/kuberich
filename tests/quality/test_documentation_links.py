@@ -10,6 +10,7 @@ import yaml
 from scripts.build_site import ROOT
 from scripts.documentation_links import (
     original_contexts,
+    relocated_source,
     repository_path,
     validate_markdown,
     validate_repository_links,
@@ -162,7 +163,7 @@ def test_exact_original_record_resolves_links_in_its_real_original_tree(tmp_path
         "path_escape",
         "non_list",
         "non_object",
-        "non_markdown",
+        "missing_blob",
     ],
 )
 def test_history_context_is_exact_and_cannot_be_a_broad_archive_exemption(tmp_path, fault):
@@ -191,7 +192,7 @@ def test_history_context_is_exact_and_cannot_be_a_broad_archive_exemption(tmp_pa
     elif fault == "non_object":
         records = ["engineering/history"]
     else:
-        record["source"] = "docs/data.json"
+        record["source"] = "docs/missing.md"
     save_records(root, records)
     with pytest.raises(ValueError):
         original_contexts(root)
@@ -227,3 +228,92 @@ def test_unregistered_neighbor_history_has_no_special_link_context(tmp_path):
 def test_registered_paths_are_plain_repository_paths(path):
     with pytest.raises(ValueError):
         repository_path(path)
+
+
+def operational_source(tmp_path):
+    root, archive, history = history_source(tmp_path)
+    original = root / "docs/backlog.json"
+    original.write_text('{"phase": "original"}\n')
+    git(root, "add", ".")
+    git(
+        root,
+        "-c",
+        "user.name=Owned Documentation Fixture",
+        "-c",
+        "user.email=fixture@example.invalid",
+        "-c",
+        "commit.gpgsign=false",
+        "commit",
+        "--quiet",
+        "-m",
+        "Record an operational planning input",
+    )
+    commit = git(root, "rev-parse", "HEAD")
+    current = root / "docs/internal/backlog.json"
+    current.parent.mkdir(parents=True)
+    original.rename(current)
+    record = {
+        "path": "docs/internal/backlog.json",
+        "source": "docs/backlog.json",
+        "commit": commit,
+        "sha256": hashlib.sha256(current.read_bytes()).hexdigest(),
+    }
+    plan = {
+        "preserved_sources": [history],
+        "operational_sources": [record],
+        "relocations": {"docs/backlog.json": "docs/internal/backlog.json"},
+    }
+    return root, archive, current, record, plan
+
+
+def test_operational_json_can_evolve_without_losing_its_original_source_receipt(tmp_path):
+    root, archive, current, _, plan = operational_source(tmp_path)
+    current.write_text('{"phase": "updated"}\n')
+    (root / "docs/documentation-plan.json").write_text(json.dumps(plan))
+    contexts = original_contexts(root)
+    assert archive in contexts and current not in contexts
+    assert relocated_source(root, "docs/backlog.json") == "docs/internal/backlog.json"
+    assert relocated_source(root, "docs/current.md") == "docs/current.md"
+
+
+@pytest.mark.parametrize(
+    "fault",
+    [
+        "duplicate",
+        "markdown",
+        "checksum",
+        "overlap",
+        "unregistered_destination",
+        "duplicate_destination",
+        "unsafe_destination",
+        "non_object",
+        "operational_non_list",
+        "renamed_input",
+    ],
+)
+def test_operational_classification_cannot_exempt_arbitrary_or_unverified_history(tmp_path, fault):
+    root, archive, _, record, plan = operational_source(tmp_path)
+    if fault == "duplicate":
+        plan["operational_sources"].append(dict(record))
+    elif fault == "markdown":
+        record["path"] = archive.relative_to(root).as_posix()
+    elif fault == "checksum":
+        record["sha256"] = "b" * 64
+    elif fault == "overlap":
+        plan["preserved_sources"].append(dict(record))
+    elif fault == "unregistered_destination":
+        plan["relocations"]["docs/backlog.json"] = archive.relative_to(root).as_posix() + ".missing"
+    elif fault == "duplicate_destination":
+        plan["relocations"]["docs/other.json"] = record["path"]
+    elif fault == "unsafe_destination":
+        plan["relocations"]["docs/backlog.json"] = "../outside.json"
+    elif fault == "non_object":
+        plan["relocations"] = []
+    elif fault == "renamed_input":
+        record["path"] = "docs/internal/github-issues.json"
+        (root / record["path"]).write_text('{"phase": "original"}\n')
+    else:
+        plan["operational_sources"] = {}
+    (root / "docs/documentation-plan.json").write_text(json.dumps(plan))
+    with pytest.raises(ValueError):
+        original_contexts(root)

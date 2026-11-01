@@ -234,7 +234,7 @@ architecture links useful.
 
 ## Historical source
 
-The [previous log](../engineering/architecture-history/README.md) is preserved
+The [previous log](internal/architecture-history/README.md) is preserved
 exactly with a source commit, checksum, and per-section destination map. It contains
 superseded planning and measured history, so it is not the current overview.
 Acceptance history has its own pending consolidation; this change does not claim

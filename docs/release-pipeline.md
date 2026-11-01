@@ -51,7 +51,7 @@ Before preparing or publishing, require all of the following:
 The Ubuntu release pin does not freeze hosted image revisions or system package
 versions. Historical `ubuntu-latest` evidence retains its original identity;
 an Ubuntu 26.04 upgrade needs separate future qualification before changing the
-current job/artifact contract. See [runner-pin evidence](acceptance/ubuntu-runner-pin.md).
+current job/artifact contract. See [runner-pin evidence](internal/acceptance/ubuntu-runner-pin.md).
 
 The release workflow consumes the already built/tested quality artifact. Neither
 release job rebuilds it. Preparation verifies archive metadata and produces an

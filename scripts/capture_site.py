@@ -107,7 +107,7 @@ async def capture(output: Path, logs_source: Path) -> None:
                 "sha256": hashlib.sha256((output / "logs.svg").read_bytes()).hexdigest(),
                 "source": "Qualified owned-kind logs screenshot retained in artifacts/ui; cluster deleted",
                 "original_sha256": hashlib.sha256(logs_source.read_bytes()).hexdigest(),
-                "qualification": "docs/acceptance/workload-checkpoint.md",
+                "qualification": "docs/internal/acceptance/workload-checkpoint.md",
                 "terminal_cells": [100, 30],
             },
         },

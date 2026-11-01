@@ -3,7 +3,7 @@
   "baseline_commit": "d990a5e0273465874df24e1e790887520abeacff",
   "canonical_user_pages": 20,
   "reserved_user_pages": 0,
-  "migration_state": "user_guides_consolidated_internal_migrations_pending",
+  "migration_state": "user_guides_architecture_and_internal_history_consolidated",
   "scope": "Task guides, generated references and the architecture overview/ADRs are consolidated. Exact old guide and architecture text is preserved outside the website. Acceptance-history and contribution migrations remain separate incomplete work.",
   "actions": {
     "keep": "Retain the document or canonical URL; later editing may shorten or clarify it.",
@@ -159,7 +159,7 @@
       "destinations": [
         "docs/internal/acceptance/B02.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "71aacb1237ae1dde70ff3baf2d2b8672f86556e9ce7a2a567e43de23f467db38"
     },
     {
@@ -169,7 +169,7 @@
       "destinations": [
         "docs/internal/acceptance/B03.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "4f53347bd28008f487c67bc768f5fb734bf7085e8d4fee34f82b0ef1b964168a"
     },
     {
@@ -179,7 +179,7 @@
       "destinations": [
         "docs/internal/acceptance/B04.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "8a6260cd0cd6fd14ad0e5f7b250ba0a9787107f8bb9529d9af5a2ee01b1747eb"
     },
     {
@@ -189,7 +189,7 @@
       "destinations": [
         "docs/internal/acceptance/S01.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "ac8408d6e19d42b84e80ecd6f7e63c8cb6a03bf4c1fca07f86ab09497e0cc286"
     },
     {
@@ -199,7 +199,7 @@
       "destinations": [
         "docs/internal/acceptance/S02.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "1bc87b2fdfdcf4b5a9be496c8c37247c8564d340e9eba480be31648080ee3949"
     },
     {
@@ -209,7 +209,7 @@
       "destinations": [
         "docs/internal/acceptance/S03.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "5992f437ba0f405de0a8c3da1e6756c6b465061b30346598987e63bab21c5d7b"
     },
     {
@@ -219,7 +219,7 @@
       "destinations": [
         "docs/internal/acceptance/S04.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "dff2e088a967240270ee9c0acad43cbae950f2f9ebfe7acea2cedd6b823c48ca"
     },
     {
@@ -229,7 +229,7 @@
       "destinations": [
         "docs/internal/acceptance/aggregate-input-preparation.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "9f627051c33720c533cf5b95f66f306f0a296106b701b0e45f959545f6a82730"
     },
     {
@@ -239,7 +239,7 @@
       "destinations": [
         "docs/internal/acceptance/aggregated-logs.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "1e8f1b4f57220e2e7c8a7d2c1d735faf3d1541ab4136a7d0c18a55f0eea91d05"
     },
     {
@@ -249,7 +249,7 @@
       "destinations": [
         "docs/internal/acceptance/aks-authentication.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "1092e32dfd382c1780bf3f516b22eb927a46d2823356c2ef7ea4da4fc6a5ff7e"
     },
     {
@@ -259,7 +259,7 @@
       "destinations": [
         "docs/internal/acceptance/apache-public-source.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "2fad62728add0ba572a1b4ecc1cbf4417e6c9c0b2a4b1f81bf8a96a827908c41"
     },
     {
@@ -269,7 +269,7 @@
       "destinations": [
         "docs/internal/acceptance/appearance.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "b1d3753619f7a74704e9d866ea2e0642e7a7151cfff8d8f8492f21ada4499824"
     },
     {
@@ -277,9 +277,9 @@
       "audience": "evidence",
       "action": "move",
       "destinations": [
-        "docs/internal/acceptance/azure-login-recovery.svg"
+        "docs/internal/acceptance/assets/azure-login-recovery.svg"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "26c4745591ff3a9e71032b221e2de5abbc7cb140479347d8fbf758018f331b04"
     },
     {
@@ -287,9 +287,9 @@
       "audience": "evidence",
       "action": "move",
       "destinations": [
-        "docs/internal/acceptance/connection-overrides-refresh.svg"
+        "docs/internal/acceptance/assets/connection-overrides-refresh.svg"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "a0c6e9e8b2dd30e8f851e5ff27b27b7927a37f6d454b1fc8a9e5228c5a127af0"
     },
     {
@@ -297,9 +297,9 @@
       "audience": "evidence",
       "action": "move",
       "destinations": [
-        "docs/internal/acceptance/context-container-command.svg"
+        "docs/internal/acceptance/assets/context-container-command.svg"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "55273b146b6d261871824219cc84a35f7f0c6c7c4941acf5520cbc04aee661e6"
     },
     {
@@ -307,9 +307,9 @@
       "audience": "evidence",
       "action": "move",
       "destinations": [
-        "docs/internal/acceptance/context-container-contexts.svg"
+        "docs/internal/acceptance/assets/context-container-contexts.svg"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "002f1ea856b5a2ab3674a5cd79d8b588b89611d3e80aedefd95b1a4d019ef682"
     },
     {
@@ -317,9 +317,9 @@
       "audience": "evidence",
       "action": "move",
       "destinations": [
-        "docs/internal/acceptance/context-container-details.svg"
+        "docs/internal/acceptance/assets/context-container-details.svg"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "ba18213e10fb3a3e37392c30874b61e7bdb6bd382bd9ed0fbebae9c196fc91e9"
     },
     {
@@ -327,9 +327,9 @@
       "audience": "evidence",
       "action": "move",
       "destinations": [
-        "docs/internal/acceptance/eks-sso-recovery.svg"
+        "docs/internal/acceptance/assets/eks-sso-recovery.svg"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "2ae69c57c693afe01bc36b79ef1a7da7c11bfea582aaab9a033b6a8dbc847ea7"
     },
     {
@@ -337,9 +337,9 @@
       "audience": "evidence",
       "action": "move",
       "destinations": [
-        "docs/internal/acceptance/embedded-shell.svg"
+        "docs/internal/acceptance/assets/embedded-shell.svg"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "4129b1cd76b9874a008c36aa6a34cb6360af47c37df388332912df130bb69551"
     },
     {
@@ -347,9 +347,9 @@
       "audience": "evidence",
       "action": "move",
       "destinations": [
-        "docs/internal/acceptance/header-ktrol.svg"
+        "docs/internal/acceptance/assets/header-ktrol.svg"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "2aa06ab9220e9b8680c9559e7c6bfcb5c51947c78d62472be574e93e97c1d14b"
     },
     {
@@ -357,9 +357,9 @@
       "audience": "evidence",
       "action": "move",
       "destinations": [
-        "docs/internal/acceptance/resource-workspace-logs.svg"
+        "docs/internal/acceptance/assets/resource-workspace-logs.svg"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "9083a188c2cf1bd2680a9cdbb4dde9fa6b52a9534c165c519aaa723c90a3467e"
     },
     {
@@ -367,9 +367,9 @@
       "audience": "evidence",
       "action": "move",
       "destinations": [
-        "docs/internal/acceptance/resource-workspace-namespaces.svg"
+        "docs/internal/acceptance/assets/resource-workspace-namespaces.svg"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "511f31b47219949895ed0d2568e6a38957a438699063292297018cea6af8894c"
     },
     {
@@ -377,9 +377,9 @@
       "audience": "evidence",
       "action": "move",
       "destinations": [
-        "docs/internal/acceptance/stable-workspace-command.svg"
+        "docs/internal/acceptance/assets/stable-workspace-command.svg"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "d1eb89434ed570254834831b5f3fcc034529b64e19c462009918913934f2e9f6"
     },
     {
@@ -387,9 +387,9 @@
       "audience": "evidence",
       "action": "move",
       "destinations": [
-        "docs/internal/acceptance/stable-workspace-containers.svg"
+        "docs/internal/acceptance/assets/stable-workspace-containers.svg"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "f51219ed5d092bb7195a6cb8e45762df16c179c168bc8b6dfd58bd531dc47c08"
     },
     {
@@ -397,9 +397,9 @@
       "audience": "evidence",
       "action": "move",
       "destinations": [
-        "docs/internal/acceptance/stable-workspace-logs.svg"
+        "docs/internal/acceptance/assets/stable-workspace-logs.svg"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "e2a2e74f77950fe9af649e0a111f2b57efc6406ac84822f548a3b51009a46595"
     },
     {
@@ -409,7 +409,7 @@
       "destinations": [
         "docs/internal/acceptance/ci-usage-observation-2026-10-10.json"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "1301671825ec67fd5092b4acf2ae1c2b41c87b1b2bea0b317dfbf88d63bab1f1"
     },
     {
@@ -419,7 +419,7 @@
       "destinations": [
         "docs/internal/acceptance/combined-workload-progress.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "b698b95bea34e4e1c85c9f6f4d927f20c70d45f34bbed17c244b881c763b0a19"
     },
     {
@@ -429,7 +429,7 @@
       "destinations": [
         "docs/internal/acceptance/configuration-data.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "10d9e31ad32526dcaaea55cf8981f7fb01f5b0d6e46d6f76a0449a3205d7d413"
     },
     {
@@ -439,7 +439,7 @@
       "destinations": [
         "docs/internal/acceptance/connection-overrides.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "c7b8eda0e208ae477b410d3e02703e141724bc4f5648d29bfab50b5971b553e0"
     },
     {
@@ -449,7 +449,7 @@
       "destinations": [
         "docs/internal/acceptance/container-transfers.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "2b38fcc631b9ca23089dbb3a4e424416f662f452be6157c04e0187936a228e40"
     },
     {
@@ -459,7 +459,7 @@
       "destinations": [
         "docs/internal/acceptance/context-cleanup.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "4f6a631cf65d6e154b07a05064c8f3c07b9fbcf32130a7db7824ed5b42d14389"
     },
     {
@@ -469,7 +469,7 @@
       "destinations": [
         "docs/internal/acceptance/context-container-workspace.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "ebe78886ba12dedb4340664508281c001788b9516cb8f5a1b1e969fd00483290"
     },
     {
@@ -479,7 +479,7 @@
       "destinations": [
         "docs/internal/acceptance/cooperative-log-delivery.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "c4839f5c5c00bef367be54d39ab0abfc8314446e47bbc65b01b882e3aa7839b4"
     },
     {
@@ -489,7 +489,7 @@
       "destinations": [
         "docs/internal/acceptance/core-checkpoint.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "b3646b5680098625ebbf91a592d4ded76c32df4dbae7fc2284f34d4cb6d14e38"
     },
     {
@@ -499,7 +499,7 @@
       "destinations": [
         "docs/internal/acceptance/credential-interoperability.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "856a961b64365fea8cab3aa55bbff3fe8abe3c5e4c60401d799735dcd01c900d"
     },
     {
@@ -509,7 +509,7 @@
       "destinations": [
         "docs/internal/acceptance/custom-resources.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "88bf43aaeddf90d5621ada47131598ba19c204a0d2e339c8eccfa47d083fe9bd"
     },
     {
@@ -519,7 +519,7 @@
       "destinations": [
         "docs/internal/acceptance/dependency-refresh.md"
       ],
-      "reason": "Preserve dependency installation evidence outside public navigation; relocate it with the separate acceptance-history migration.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": null
     },
     {
@@ -529,7 +529,7 @@
       "destinations": [
         "docs/internal/acceptance/dependency-security.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "7d0bb1d1b6f2c01bb4fc242b888a7fd94f64e36c3c4ab646e1d1872f76e624e0"
     },
     {
@@ -539,7 +539,7 @@
       "destinations": [
         "docs/internal/acceptance/distribution-artifacts.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "e3529eb8a548de3611154171da0028cc06d59d628f06523c561fdfd8dd98646e"
     },
     {
@@ -549,7 +549,7 @@
       "destinations": [
         "docs/internal/acceptance/editing.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "4789662e542ac7a1c20fb38c38ebcdc1b7ab86e46e190d2766b0a09fa712b85e"
     },
     {
@@ -559,7 +559,7 @@
       "destinations": [
         "docs/internal/acceptance/eks-authentication.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "7bc21891d3c656916aa8ccb6137f731efe2f5ed4cd9de10cef52a8fe239155f4"
     },
     {
@@ -569,7 +569,7 @@
       "destinations": [
         "docs/internal/acceptance/embedded-shell.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "99c5bd3ce870dd56f6a03804334ee92433ab8614dae581808504a813b44c128c"
     },
     {
@@ -579,7 +579,7 @@
       "destinations": [
         "docs/internal/acceptance/enter-navigation.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "6dcee68b590f0267a8333d78592ab438e0928d4b085c56655b798f8f81223b05"
     },
     {
@@ -589,7 +589,7 @@
       "destinations": [
         "docs/internal/acceptance/first-channel-activation.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "d4326bcb45bc3d55615aa726fc17f20b6fe92b5a35c4bed60ebe4544a38970ca"
     },
     {
@@ -599,7 +599,7 @@
       "destinations": [
         "docs/internal/acceptance/first-product-release-policy.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "fa491674ae4715e6d3d4e942eac0c08ca7277b2b90492f3edbe4fdce3222ccc3"
     },
     {
@@ -609,7 +609,7 @@
       "destinations": [
         "docs/internal/acceptance/first-release-preparation.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "447de226009ba6604f36ef2f2e5aea1222ca19641938dfc15d9df6d9aded00d5"
     },
     {
@@ -619,7 +619,7 @@
       "destinations": [
         "docs/internal/acceptance/flat-website.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "92ecaaafc9294e5865436579c41a563d0b712b0ca3cd30ffaca4007ffe091000"
     },
     {
@@ -629,7 +629,7 @@
       "destinations": [
         "docs/internal/acceptance/forward-presets.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "49e182f01aae38700ad9f6edce7d3aaa75348fbffd4f23374a14b53b1ee0b138"
     },
     {
@@ -639,7 +639,7 @@
       "destinations": [
         "docs/internal/acceptance/generic-resource-browser.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "006134565dcd38d876cf50ebc04a4549d9214f8ced3ab6353e7539e05ad71a46"
     },
     {
@@ -649,7 +649,7 @@
       "destinations": [
         "docs/internal/acceptance/header-logo.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "a56f9241f60360c22aa6ad3f41196f2c2bb8194f3cb830ebda7686b784ee6f52"
     },
     {
@@ -659,7 +659,7 @@
       "destinations": [
         "docs/internal/acceptance/homebrew.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "e71ed16b3aaa0de6053a2c5b00d4239d67fbef78bf0e6a81ea8e15be37769ae8"
     },
     {
@@ -669,7 +669,7 @@
       "destinations": [
         "docs/internal/acceptance/identity-migration.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "5019979bfe05aa99aafb0ecf93d2a6d6ab8c708b2b0badec17cdb71475f711d7"
     },
     {
@@ -679,7 +679,7 @@
       "destinations": [
         "docs/internal/acceptance/initial-website.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "a66fc1c10957eb5f50ead1e9937c06a7caa95ef81c735e84fc4af9b4d65ddc94"
     },
     {
@@ -689,7 +689,7 @@
       "destinations": [
         "docs/internal/acceptance/integration-suite.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "fecf9da285ca3e8d8c3a30d25313ea6e10ec9e31a84f48c61fbeb0a3846af406"
     },
     {
@@ -699,7 +699,7 @@
       "destinations": [
         "docs/internal/acceptance/live-render-performance.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "207589d39288982932022729b6606e322a54e03663a069535e9bfad25da37867"
     },
     {
@@ -709,7 +709,7 @@
       "destinations": [
         "docs/internal/acceptance/macos-terminal-verification.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "402e43f27a29fdf18446df14bbcdfcf37f8a6ccd0142388b4a31039b0e3e36f3"
     },
     {
@@ -719,7 +719,7 @@
       "destinations": [
         "docs/internal/acceptance/mutations.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "346c0645c8729a870e769a13d9cad682d11a9aa5aa821ddea92291bd2f1f0efb"
     },
     {
@@ -729,7 +729,7 @@
       "destinations": [
         "docs/internal/acceptance/native-verification-prerequisites.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "794f672b5ee4f9d2ec2e6b30700817c7f64b7b4fad6c97aaa1a717f3df0540ce"
     },
     {
@@ -739,7 +739,7 @@
       "destinations": [
         "docs/internal/acceptance/navigation-preferences.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "8dad4a4e5eeb7c3168a2055d224f110254ae7e18177ddf8552a0be444b98897e"
     },
     {
@@ -749,7 +749,7 @@
       "destinations": [
         "docs/internal/acceptance/owned-crashloop-window.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "943f5a69251b90482b13f45d8c138c22c2b131f0d7dcfab741f8e49a5d5867e7"
     },
     {
@@ -759,7 +759,7 @@
       "destinations": [
         "docs/internal/acceptance/owned-log-formatting.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "e0587a447fb3fce17683843b48205bd38f0ea7c49a649a0fc4f4b0d8b2dc8c15"
     },
     {
@@ -769,7 +769,7 @@
       "destinations": [
         "docs/internal/acceptance/pages-publication.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "1fadc15534b64e5fcde40d59980313d2953ad91d90b372cc3787304b134397e5"
     },
     {
@@ -779,7 +779,7 @@
       "destinations": [
         "docs/internal/acceptance/phased-release-preparation.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "a943d459313f5d6cc28788c7bd56d18ff0caf1aeb36d03991341cf8f15ab039f"
     },
     {
@@ -789,7 +789,7 @@
       "destinations": [
         "docs/internal/acceptance/plugin-compatibility.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "a2754ee803c48ac373ce8e2b42f8554bb74272a09a6a97824c500a7bf2e8f609"
     },
     {
@@ -799,7 +799,7 @@
       "destinations": [
         "docs/internal/acceptance/plugin-contract.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "a55e8f7bbc81be573680db2428c0902d366149b24b26e1480d94372b11f37724"
     },
     {
@@ -809,7 +809,7 @@
       "destinations": [
         "docs/internal/acceptance/plugin-execution.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "cbb5abcb65c4ee66b2866847d962212687654fadcb751b78c8499e1c6cc19af7"
     },
     {
@@ -819,7 +819,7 @@
       "destinations": [
         "docs/internal/acceptance/port-forwards.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "375d895c10cac6b8ceb15d0a4f62cd8853066b5a2deb00073149ee499193e90f"
     },
     {
@@ -829,7 +829,7 @@
       "destinations": [
         "docs/internal/acceptance/private-ci.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "05e6ad949e82a999284cfa46c7590c85e1789808dcec0cf8f3af09a824040975"
     },
     {
@@ -839,7 +839,7 @@
       "destinations": [
         "docs/internal/acceptance/quickstart.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "8ffed2f30c8e4db1fbe2b45bd60d2a2c9baf158e2203d0e3deb36e7771d89359"
     },
     {
@@ -849,7 +849,7 @@
       "destinations": [
         "docs/internal/acceptance/reactive-preferences.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "b7af6bb2969c6b0dfa1eb5b364ed6a153288fcc282a6c1736766abd46d5fabac"
     },
     {
@@ -859,7 +859,7 @@
       "destinations": [
         "docs/internal/acceptance/release-pipeline.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "89748aae70e9230b94b1bb388f6512c46430c9b0417f64593680d7017fa7f0ae"
     },
     {
@@ -869,7 +869,7 @@
       "destinations": [
         "docs/internal/acceptance/resource-jumps.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "44ffe01a0d3cd1aa9d54770891e2ef4d059598c50f52783216c17b90ffcf6725"
     },
     {
@@ -879,7 +879,7 @@
       "destinations": [
         "docs/internal/acceptance/resource-operations.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "7ed5ea053fb28f148a837efba0ee65f09633b5e8ee1fe044d229a83db6962a4e"
     },
     {
@@ -889,7 +889,7 @@
       "destinations": [
         "docs/internal/acceptance/resource-workspace.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "5bf96f59a7b5cc3d4da7295ca8edb2614f03a0bc1bdcc02b1b2f5fb3da7f58e4"
     },
     {
@@ -899,7 +899,7 @@
       "destinations": [
         "docs/internal/acceptance/shell-transition.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "a3eb3f4640713234e308965497f81ee7cee4bb584e7e82614465d0a174ead2a5"
     },
     {
@@ -909,7 +909,7 @@
       "destinations": [
         "docs/internal/acceptance/stable-workspace.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "64938d665697113e6c8eb9f4cbe90b43986b3e435ff605dc22cf0bc67e0f8cd7"
     },
     {
@@ -919,7 +919,7 @@
       "destinations": [
         "docs/internal/acceptance/standalone-executables.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "c637d5c1848f680f574e39b789f80b9602fdd69282e824f00a76010d2c65288c"
     },
     {
@@ -929,7 +929,7 @@
       "destinations": [
         "docs/internal/acceptance/standard-resources.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "5878cdfe6b3b2ce140c2305157f065824586e3de747b446be3bed23324cd9638"
     },
     {
@@ -939,7 +939,7 @@
       "destinations": [
         "docs/internal/acceptance/table-order-performance.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "0b1e06122801afa28601aea795a737eaf4375595e1f37344d0196e44b5090ff9"
     },
     {
@@ -949,7 +949,7 @@
       "destinations": [
         "docs/internal/acceptance/table-width-performance.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "6de7204ad2278fbd72d678928c030e4c19783c70c5a0141ec2cf9da991aef130"
     },
     {
@@ -959,7 +959,7 @@
       "destinations": [
         "docs/internal/acceptance/terminal-history.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "23b4b4b47a38ec3baa6fe219cc2362f8baffa7213ba2376c06a31c3b9b448af7"
     },
     {
@@ -969,7 +969,7 @@
       "destinations": [
         "docs/internal/acceptance/terminal-navigation.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "162aeaae5d9413acc01bc8831916cb11ad4ae96e85103376e7e4b8e2dce61b99"
     },
     {
@@ -979,7 +979,7 @@
       "destinations": [
         "docs/internal/acceptance/terminal-qualification.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "da452ba82b3ef9774266c4224f8dda8a4c09e4f5ca7bc1c1e0f904b6e3b7d4b5"
     },
     {
@@ -989,7 +989,7 @@
       "destinations": [
         "docs/internal/acceptance/ubuntu-runner-pin.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "ce12efc86ef374ddb3b832a062620e649ff07d7e0675de191312df4a8351094c"
     },
     {
@@ -999,7 +999,7 @@
       "destinations": [
         "docs/internal/acceptance/watch-pipeline-performance.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "790d519886eb1e44aadecb009ebec3dccf1318690d1813235aa236d21afd213e"
     },
     {
@@ -1009,7 +1009,7 @@
       "destinations": [
         "docs/internal/acceptance/workload-checkpoint.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "1cfbcb82e320382fc0328c946ba4b0e2c87040a8591eb8605fdeaab78949ebee"
     },
     {
@@ -1019,7 +1019,7 @@
       "destinations": [
         "docs/internal/acceptance/workloads.md"
       ],
-      "reason": "Archive acceptance evidence outside the website and user search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "c8abc0fe1af36c46485e5f278b7643d4317b3ed6a5a6bcb86f295f680328f051"
     },
     {
@@ -1368,7 +1368,7 @@
       "action": "merge",
       "destinations": [
         "docs/context-sessions.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "841a277c1fd580ebb73249e79f69bb77262e432f7bdec41b49672f895a74bdd1"
@@ -1380,7 +1380,7 @@
       "destinations": [
         "docs/architecture.md",
         "docs/adr/README.md",
-        "engineering/architecture-history/architecture-before-adrs.md"
+        "docs/internal/architecture-history/architecture-before-adrs.md"
       ],
       "reason": "Maintain the concise current overview and active decisions; preserve the previous decision log exactly outside user navigation.",
       "baseline_sha256": "d5a8b04b2ec5f55cf703d9a9bc322d190425bd27828c69993784ba2c3fefe162"
@@ -1392,7 +1392,7 @@
       "destinations": [
         "docs/internal/backlog.json"
       ],
-      "reason": "Retain implementation, process or historical material outside the user navigation.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "e1941cf19c3e62129d3e973bf8ad285d71609106cbf2568b62ff8b0d0f30a1ba"
     },
     {
@@ -1421,7 +1421,7 @@
       "action": "keep",
       "destinations": [
         "docs/command-navigation.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "d8faf531e8f3e3d64b0107dfd0c5646c0efa9dcee831cab6e33b41c1ac1e1783"
@@ -1432,7 +1432,7 @@
       "action": "merge",
       "destinations": [
         "docs/editing.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "891f8470afd470a9382c4f3a0703961bd71e09f7fa36c5b3a689dd2c44326fbf"
@@ -1443,7 +1443,7 @@
       "action": "keep",
       "destinations": [
         "docs/configuration.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "e8977ad4b432621cdb5bbfccd79197f76e61236c3247c00dbb497c7953d3608c"
@@ -1454,7 +1454,7 @@
       "action": "keep",
       "destinations": [
         "docs/container-attach-copy.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "f2278b9a4949831c0d9f06f2e0ebef7b9b1bc77b9a5f2a9502add6977bfb83d2"
@@ -1475,7 +1475,7 @@
       "action": "merge",
       "destinations": [
         "docs/log-viewer.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "a74ff6e717eba656ff7ca466c9201e9c64ffc5894708c0de9301d6ea23970a8c"
@@ -1486,7 +1486,7 @@
       "action": "keep",
       "destinations": [
         "docs/container-shell.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "904656b07adba547937c9395c417402ea58f1bc44ee53115921d1f88a741c0c3"
@@ -1497,7 +1497,7 @@
       "action": "keep",
       "destinations": [
         "docs/context-sessions.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "afad310cf5f1c291ec414398580efa85d2ee3b374ba1b26e18c97d87845db0b5"
@@ -1539,7 +1539,7 @@
       "action": "keep",
       "destinations": [
         "docs/editing.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "da15de68a20076b95cfd1254edf1ac29df4219b08b4fdad4db25dc69fc0c4732"
@@ -1550,7 +1550,7 @@
       "action": "merge",
       "destinations": [
         "docs/context-sessions.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "87c8fa0b1dfdf08517fa871881c7b22ae5ade7058f99331a03338efcefba68b7"
@@ -1561,7 +1561,7 @@
       "action": "keep",
       "destinations": [
         "docs/everyday-workflow.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "f9b42a5d17798f59c0c17448658955beff7711a3a0bfa148d6560b96ceb87cc2"
@@ -1571,10 +1571,10 @@
       "audience": "development",
       "action": "merge",
       "destinations": [
-        "docs/status.md",
-        "docs/internal/preview-history.md"
+        "docs/first-preview.md",
+        "docs/internal/first-preview-before-status.md"
       ],
-      "reason": "Replace the user-facing status with a short page and preserve preview/evidence history internally.",
+      "reason": "Keep the existing URL as a short Status page and preserve its previous full log in the internal history area.",
       "baseline_sha256": "8c62eba1186380ad032f085c8969739302f7516e9724bdbe9925bb69f2992925"
     },
     {
@@ -1624,7 +1624,7 @@
       "destinations": [
         "docs/internal/github-issues.json"
       ],
-      "reason": "Retain implementation, process or historical material outside the user navigation.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "7daea076ea9b7bf23b5d5d83cc65c81c7d9c1b1ecae29f052a6a7c66788475bd"
     },
     {
@@ -1643,7 +1643,7 @@
       "action": "keep",
       "destinations": [
         "docs/installation.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "2c35b7849376fbd2df96bdc8fd05aa54171e41272250e71429c3e471933ffe5a"
@@ -1685,7 +1685,7 @@
       "destinations": [
         "docs/internal/k9s-source-inventory.json"
       ],
-      "reason": "Retain implementation, process or historical material outside the user navigation.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "2a7f7d79a3cf8a2149f55c5e663c33debb46749a5c243d12022849e4c0665820"
     },
     {
@@ -1694,7 +1694,7 @@
       "action": "merge",
       "destinations": [
         "docs/context-sessions.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "03dd3d805158084d000c564b636f7cd527630d1c4090d83c27a7514b2c780c73"
@@ -1726,7 +1726,7 @@
       "action": "keep",
       "destinations": [
         "docs/log-viewer.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "377294fe0c890f8caaeb3d0f4b3a3d0ea3c11109f90902ca51fa4e32c2e33e16"
@@ -1737,7 +1737,7 @@
       "action": "merge",
       "destinations": [
         "docs/editing.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "877ba0fc26c9779106b98b148b03d46ec8fbc8ad4a2b3b2249b06b2cece8ee4d"
@@ -1748,7 +1748,7 @@
       "action": "merge",
       "destinations": [
         "docs/configuration.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "673dce8087d56aaf54c8626b56f56b4090b4d466f9a72b0d228e0d264a0f759d"
@@ -1779,7 +1779,7 @@
       "action": "merge",
       "destinations": [
         "docs/plugins.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "b317e7369d8404590fbee2df1670aa54722949be3d25f009ee4a0f0929ba88fa"
@@ -1790,7 +1790,7 @@
       "action": "keep",
       "destinations": [
         "docs/plugins.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "9ed948147921716ea927fb57587dab8f942e69232c6e5e9b780ca8589e0c2dd1"
@@ -1811,7 +1811,7 @@
       "action": "keep",
       "destinations": [
         "docs/port-forwards.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "28c338e5821eeb7de0aeee9a3d171d14d5c3670c9ff26b1a08931af4aa3b96be"
@@ -1823,7 +1823,7 @@
       "destinations": [
         "docs/internal/preview-history.md"
       ],
-      "reason": "Preserve the full preview record as internal history.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "315f9fc69d8d67465ab97ab6a5e9beab73eff389cd429dfc195cc06eee6f1ae5"
     },
     {
@@ -1863,7 +1863,7 @@
       "action": "keep",
       "destinations": [
         "docs/quickstart.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "4dc118263a12e0e7f87f2de6b5bdedacf180c9c3a68c0ed2ec281d1c9d771cd8"
@@ -1934,7 +1934,7 @@
       "action": "merge",
       "destinations": [
         "docs/command-navigation.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "7029ad9dc44c2daf4c0b3845224e0525684aafc43b357bb5d37a6c3a8fcd34f6"
@@ -1945,7 +1945,7 @@
       "action": "merge",
       "destinations": [
         "docs/command-navigation.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "4e0ac45e6c6cde526708a956aad5735b25c5d5092d47ef4f1bc146b13b8a3753"
@@ -1956,7 +1956,7 @@
       "action": "merge",
       "destinations": [
         "docs/workloads.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "641a2c646381995b8df5e887d3a1372cb065e2a00829b22357b480bb7c63bedd"
@@ -1987,7 +1987,7 @@
       "action": "keep",
       "destinations": [
         "docs/resource-workspace.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "123c264c12ba6738603966c73c78af197d83ca8ae91beb24fdba672c782071be"
@@ -2018,7 +2018,7 @@
       "action": "merge",
       "destinations": [
         "docs/resource-workspace.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "5773e28d36ff06f92c93543ea8611df5bd5660d36f7a88cfda8411b5ce55e65a"
@@ -2029,7 +2029,7 @@
       "action": "merge",
       "destinations": [
         "docs/troubleshooting.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "dd4fa26fe25fe64f9d8dc078305fbb99de44553875bfbdc9d9dffd8bb0124096"
@@ -2040,7 +2040,7 @@
       "action": "merge",
       "destinations": [
         "docs/command-navigation.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "34537ea6f688b23814985c823b2ed04395835794c6d20ea2257ad7afb6792a11"
@@ -2061,7 +2061,7 @@
       "action": "merge",
       "destinations": [
         "docs/configuration.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "f615a0ee468648956fc9e2bdf9bdb068631e4cbfd04d770e5797e03fba6148a5"
@@ -2072,7 +2072,7 @@
       "action": "keep",
       "destinations": [
         "docs/troubleshooting.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "0e9ab72dc817b0462b91db61fb3e524631641ee08ca247d90820a6164c6dcef4"
@@ -2093,7 +2093,7 @@
       "action": "keep",
       "destinations": [
         "docs/workloads.md",
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
       "reason": "Use the consolidated task guide; preserve the superseded source text and its checksum outside the public website.",
       "baseline_sha256": "7676830b975b845376bc93d99edfba2bdb296856e697611c0e4cd6920a56305e"
@@ -2101,61 +2101,61 @@
     {
       "source": "engineering/architecture-history/README.md",
       "audience": "development architecture",
-      "action": "keep",
+      "action": "move",
       "destinations": [
-        "engineering/architecture-history/README.md"
+        "docs/internal/architecture-history/README.md"
       ],
-      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": null
     },
     {
       "source": "engineering/architecture-history/architecture-before-adrs.md",
       "audience": "development architecture",
-      "action": "keep",
+      "action": "move",
       "destinations": [
-        "engineering/architecture-history/architecture-before-adrs.md"
+        "docs/internal/architecture-history/architecture-before-adrs.md"
       ],
-      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": null
     },
     {
       "source": "engineering/architecture-history/decision-catalog.json",
       "audience": "development architecture",
-      "action": "keep",
+      "action": "move",
       "destinations": [
-        "engineering/architecture-history/decision-catalog.json"
+        "docs/internal/architecture-history/decision-catalog.json"
       ],
-      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": null
     },
     {
       "source": "engineering/architecture-history/source-map.json",
       "audience": "development architecture",
-      "action": "keep",
+      "action": "move",
       "destinations": [
-        "engineering/architecture-history/source-map.json"
+        "docs/internal/architecture-history/source-map.json"
       ],
-      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": null
     },
     {
       "source": "engineering/guide-history/source-map.json",
       "audience": "development history",
-      "action": "keep",
+      "action": "move",
       "destinations": [
-        "engineering/guide-history/source-map.json"
+        "docs/internal/guide-history/source-map.json"
       ],
-      "reason": "Preserve exact superseded guide text and source checksums outside user navigation and website search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": null
     },
     {
       "source": "engineering/guide-history/user-guides-before-consolidation.md",
       "audience": "development history",
-      "action": "keep",
+      "action": "move",
       "destinations": [
-        "engineering/guide-history/user-guides-before-consolidation.md"
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
       ],
-      "reason": "Preserve exact superseded guide text and source checksums outside user navigation and website search.",
+      "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": null
     },
     {
@@ -2187,6 +2187,996 @@
       ],
       "reason": "Retain this contributor or project contract outside the user navigation.",
       "baseline_sha256": "6760ef2d359a6c3e533aaf6edb78cbf8455de879f3acca5e3422c6843545b1ba"
+    },
+    {
+      "source": "docs/internal/acceptance/B02.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/B02.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "71aacb1237ae1dde70ff3baf2d2b8672f86556e9ce7a2a567e43de23f467db38"
+    },
+    {
+      "source": "docs/internal/acceptance/B03.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/B03.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "4f53347bd28008f487c67bc768f5fb734bf7085e8d4fee34f82b0ef1b964168a"
+    },
+    {
+      "source": "docs/internal/acceptance/B04.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/B04.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "8a6260cd0cd6fd14ad0e5f7b250ba0a9787107f8bb9529d9af5a2ee01b1747eb"
+    },
+    {
+      "source": "docs/internal/acceptance/S01.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/S01.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "ac8408d6e19d42b84e80ecd6f7e63c8cb6a03bf4c1fca07f86ab09497e0cc286"
+    },
+    {
+      "source": "docs/internal/acceptance/S02.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/S02.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "1bc87b2fdfdcf4b5a9be496c8c37247c8564d340e9eba480be31648080ee3949"
+    },
+    {
+      "source": "docs/internal/acceptance/S03.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/S03.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "5992f437ba0f405de0a8c3da1e6756c6b465061b30346598987e63bab21c5d7b"
+    },
+    {
+      "source": "docs/internal/acceptance/S04.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/S04.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "dff2e088a967240270ee9c0acad43cbae950f2f9ebfe7acea2cedd6b823c48ca"
+    },
+    {
+      "source": "docs/internal/acceptance/aggregate-input-preparation.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/aggregate-input-preparation.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "9f627051c33720c533cf5b95f66f306f0a296106b701b0e45f959545f6a82730"
+    },
+    {
+      "source": "docs/internal/acceptance/aggregated-logs.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/aggregated-logs.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "1e8f1b4f57220e2e7c8a7d2c1d735faf3d1541ab4136a7d0c18a55f0eea91d05"
+    },
+    {
+      "source": "docs/internal/acceptance/aks-authentication.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/aks-authentication.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "1092e32dfd382c1780bf3f516b22eb927a46d2823356c2ef7ea4da4fc6a5ff7e"
+    },
+    {
+      "source": "docs/internal/acceptance/apache-public-source.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/apache-public-source.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "2fad62728add0ba572a1b4ecc1cbf4417e6c9c0b2a4b1f81bf8a96a827908c41"
+    },
+    {
+      "source": "docs/internal/acceptance/appearance.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/appearance.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "b1d3753619f7a74704e9d866ea2e0642e7a7151cfff8d8f8492f21ada4499824"
+    },
+    {
+      "source": "docs/internal/acceptance/assets/azure-login-recovery.svg",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/assets/azure-login-recovery.svg"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "26c4745591ff3a9e71032b221e2de5abbc7cb140479347d8fbf758018f331b04"
+    },
+    {
+      "source": "docs/internal/acceptance/assets/connection-overrides-refresh.svg",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/assets/connection-overrides-refresh.svg"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "a0c6e9e8b2dd30e8f851e5ff27b27b7927a37f6d454b1fc8a9e5228c5a127af0"
+    },
+    {
+      "source": "docs/internal/acceptance/assets/context-container-command.svg",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/assets/context-container-command.svg"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "55273b146b6d261871824219cc84a35f7f0c6c7c4941acf5520cbc04aee661e6"
+    },
+    {
+      "source": "docs/internal/acceptance/assets/context-container-contexts.svg",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/assets/context-container-contexts.svg"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "002f1ea856b5a2ab3674a5cd79d8b588b89611d3e80aedefd95b1a4d019ef682"
+    },
+    {
+      "source": "docs/internal/acceptance/assets/context-container-details.svg",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/assets/context-container-details.svg"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "ba18213e10fb3a3e37392c30874b61e7bdb6bd382bd9ed0fbebae9c196fc91e9"
+    },
+    {
+      "source": "docs/internal/acceptance/assets/eks-sso-recovery.svg",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/assets/eks-sso-recovery.svg"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "2ae69c57c693afe01bc36b79ef1a7da7c11bfea582aaab9a033b6a8dbc847ea7"
+    },
+    {
+      "source": "docs/internal/acceptance/assets/embedded-shell.svg",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/assets/embedded-shell.svg"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "4129b1cd76b9874a008c36aa6a34cb6360af47c37df388332912df130bb69551"
+    },
+    {
+      "source": "docs/internal/acceptance/assets/header-ktrol.svg",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/assets/header-ktrol.svg"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "2aa06ab9220e9b8680c9559e7c6bfcb5c51947c78d62472be574e93e97c1d14b"
+    },
+    {
+      "source": "docs/internal/acceptance/assets/resource-workspace-logs.svg",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/assets/resource-workspace-logs.svg"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "9083a188c2cf1bd2680a9cdbb4dde9fa6b52a9534c165c519aaa723c90a3467e"
+    },
+    {
+      "source": "docs/internal/acceptance/assets/resource-workspace-namespaces.svg",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/assets/resource-workspace-namespaces.svg"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "511f31b47219949895ed0d2568e6a38957a438699063292297018cea6af8894c"
+    },
+    {
+      "source": "docs/internal/acceptance/assets/stable-workspace-command.svg",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/assets/stable-workspace-command.svg"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "d1eb89434ed570254834831b5f3fcc034529b64e19c462009918913934f2e9f6"
+    },
+    {
+      "source": "docs/internal/acceptance/assets/stable-workspace-containers.svg",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/assets/stable-workspace-containers.svg"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "f51219ed5d092bb7195a6cb8e45762df16c179c168bc8b6dfd58bd531dc47c08"
+    },
+    {
+      "source": "docs/internal/acceptance/assets/stable-workspace-logs.svg",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/assets/stable-workspace-logs.svg"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "e2a2e74f77950fe9af649e0a111f2b57efc6406ac84822f548a3b51009a46595"
+    },
+    {
+      "source": "docs/internal/acceptance/ci-usage-observation-2026-10-10.json",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/ci-usage-observation-2026-10-10.json"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "1301671825ec67fd5092b4acf2ae1c2b41c87b1b2bea0b317dfbf88d63bab1f1"
+    },
+    {
+      "source": "docs/internal/acceptance/combined-workload-progress.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/combined-workload-progress.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "b698b95bea34e4e1c85c9f6f4d927f20c70d45f34bbed17c244b881c763b0a19"
+    },
+    {
+      "source": "docs/internal/acceptance/configuration-data.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/configuration-data.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "10d9e31ad32526dcaaea55cf8981f7fb01f5b0d6e46d6f76a0449a3205d7d413"
+    },
+    {
+      "source": "docs/internal/acceptance/connection-overrides.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/connection-overrides.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "c7b8eda0e208ae477b410d3e02703e141724bc4f5648d29bfab50b5971b553e0"
+    },
+    {
+      "source": "docs/internal/acceptance/container-transfers.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/container-transfers.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "2b38fcc631b9ca23089dbb3a4e424416f662f452be6157c04e0187936a228e40"
+    },
+    {
+      "source": "docs/internal/acceptance/context-cleanup.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/context-cleanup.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "4f6a631cf65d6e154b07a05064c8f3c07b9fbcf32130a7db7824ed5b42d14389"
+    },
+    {
+      "source": "docs/internal/acceptance/context-container-workspace.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/context-container-workspace.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "ebe78886ba12dedb4340664508281c001788b9516cb8f5a1b1e969fd00483290"
+    },
+    {
+      "source": "docs/internal/acceptance/cooperative-log-delivery.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/cooperative-log-delivery.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "c4839f5c5c00bef367be54d39ab0abfc8314446e47bbc65b01b882e3aa7839b4"
+    },
+    {
+      "source": "docs/internal/acceptance/core-checkpoint.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/core-checkpoint.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "b3646b5680098625ebbf91a592d4ded76c32df4dbae7fc2284f34d4cb6d14e38"
+    },
+    {
+      "source": "docs/internal/acceptance/credential-interoperability.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/credential-interoperability.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "856a961b64365fea8cab3aa55bbff3fe8abe3c5e4c60401d799735dcd01c900d"
+    },
+    {
+      "source": "docs/internal/acceptance/custom-resources.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/custom-resources.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "88bf43aaeddf90d5621ada47131598ba19c204a0d2e339c8eccfa47d083fe9bd"
+    },
+    {
+      "source": "docs/internal/acceptance/dependency-refresh.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/dependency-refresh.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "d0bcf3d1eeaa435fc74725dff4b081f93067dbc473ccfe34de9d2a712c174383"
+    },
+    {
+      "source": "docs/internal/acceptance/dependency-security.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/dependency-security.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "7d0bb1d1b6f2c01bb4fc242b888a7fd94f64e36c3c4ab646e1d1872f76e624e0"
+    },
+    {
+      "source": "docs/internal/acceptance/distribution-artifacts.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/distribution-artifacts.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "e3529eb8a548de3611154171da0028cc06d59d628f06523c561fdfd8dd98646e"
+    },
+    {
+      "source": "docs/internal/acceptance/editing.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/editing.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "4789662e542ac7a1c20fb38c38ebcdc1b7ab86e46e190d2766b0a09fa712b85e"
+    },
+    {
+      "source": "docs/internal/acceptance/eks-authentication.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/eks-authentication.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "7bc21891d3c656916aa8ccb6137f731efe2f5ed4cd9de10cef52a8fe239155f4"
+    },
+    {
+      "source": "docs/internal/acceptance/embedded-shell.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/embedded-shell.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "99c5bd3ce870dd56f6a03804334ee92433ab8614dae581808504a813b44c128c"
+    },
+    {
+      "source": "docs/internal/acceptance/enter-navigation.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/enter-navigation.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "6dcee68b590f0267a8333d78592ab438e0928d4b085c56655b798f8f81223b05"
+    },
+    {
+      "source": "docs/internal/acceptance/first-channel-activation.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/first-channel-activation.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "d4326bcb45bc3d55615aa726fc17f20b6fe92b5a35c4bed60ebe4544a38970ca"
+    },
+    {
+      "source": "docs/internal/acceptance/first-product-release-policy.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/first-product-release-policy.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "fa491674ae4715e6d3d4e942eac0c08ca7277b2b90492f3edbe4fdce3222ccc3"
+    },
+    {
+      "source": "docs/internal/acceptance/first-release-preparation.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/first-release-preparation.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "447de226009ba6604f36ef2f2e5aea1222ca19641938dfc15d9df6d9aded00d5"
+    },
+    {
+      "source": "docs/internal/acceptance/flat-website.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/flat-website.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "92ecaaafc9294e5865436579c41a563d0b712b0ca3cd30ffaca4007ffe091000"
+    },
+    {
+      "source": "docs/internal/acceptance/forward-presets.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/forward-presets.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "49e182f01aae38700ad9f6edce7d3aaa75348fbffd4f23374a14b53b1ee0b138"
+    },
+    {
+      "source": "docs/internal/acceptance/generic-resource-browser.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/generic-resource-browser.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "006134565dcd38d876cf50ebc04a4549d9214f8ced3ab6353e7539e05ad71a46"
+    },
+    {
+      "source": "docs/internal/acceptance/header-logo.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/header-logo.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "a56f9241f60360c22aa6ad3f41196f2c2bb8194f3cb830ebda7686b784ee6f52"
+    },
+    {
+      "source": "docs/internal/acceptance/homebrew.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/homebrew.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "e71ed16b3aaa0de6053a2c5b00d4239d67fbef78bf0e6a81ea8e15be37769ae8"
+    },
+    {
+      "source": "docs/internal/acceptance/identity-migration.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/identity-migration.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "5019979bfe05aa99aafb0ecf93d2a6d6ab8c708b2b0badec17cdb71475f711d7"
+    },
+    {
+      "source": "docs/internal/acceptance/initial-website.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/initial-website.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "a66fc1c10957eb5f50ead1e9937c06a7caa95ef81c735e84fc4af9b4d65ddc94"
+    },
+    {
+      "source": "docs/internal/acceptance/integration-suite.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/integration-suite.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "fecf9da285ca3e8d8c3a30d25313ea6e10ec9e31a84f48c61fbeb0a3846af406"
+    },
+    {
+      "source": "docs/internal/acceptance/live-render-performance.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/live-render-performance.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "207589d39288982932022729b6606e322a54e03663a069535e9bfad25da37867"
+    },
+    {
+      "source": "docs/internal/acceptance/macos-terminal-verification.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/macos-terminal-verification.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "402e43f27a29fdf18446df14bbcdfcf37f8a6ccd0142388b4a31039b0e3e36f3"
+    },
+    {
+      "source": "docs/internal/acceptance/mutations.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/mutations.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "346c0645c8729a870e769a13d9cad682d11a9aa5aa821ddea92291bd2f1f0efb"
+    },
+    {
+      "source": "docs/internal/acceptance/native-verification-prerequisites.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/native-verification-prerequisites.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "794f672b5ee4f9d2ec2e6b30700817c7f64b7b4fad6c97aaa1a717f3df0540ce"
+    },
+    {
+      "source": "docs/internal/acceptance/navigation-preferences.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/navigation-preferences.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "8dad4a4e5eeb7c3168a2055d224f110254ae7e18177ddf8552a0be444b98897e"
+    },
+    {
+      "source": "docs/internal/acceptance/owned-crashloop-window.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/owned-crashloop-window.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "943f5a69251b90482b13f45d8c138c22c2b131f0d7dcfab741f8e49a5d5867e7"
+    },
+    {
+      "source": "docs/internal/acceptance/owned-log-formatting.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/owned-log-formatting.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "e0587a447fb3fce17683843b48205bd38f0ea7c49a649a0fc4f4b0d8b2dc8c15"
+    },
+    {
+      "source": "docs/internal/acceptance/pages-publication.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/pages-publication.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "1fadc15534b64e5fcde40d59980313d2953ad91d90b372cc3787304b134397e5"
+    },
+    {
+      "source": "docs/internal/acceptance/phased-release-preparation.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/phased-release-preparation.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "a943d459313f5d6cc28788c7bd56d18ff0caf1aeb36d03991341cf8f15ab039f"
+    },
+    {
+      "source": "docs/internal/acceptance/plugin-compatibility.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/plugin-compatibility.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "a2754ee803c48ac373ce8e2b42f8554bb74272a09a6a97824c500a7bf2e8f609"
+    },
+    {
+      "source": "docs/internal/acceptance/plugin-contract.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/plugin-contract.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "a55e8f7bbc81be573680db2428c0902d366149b24b26e1480d94372b11f37724"
+    },
+    {
+      "source": "docs/internal/acceptance/plugin-execution.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/plugin-execution.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "cbb5abcb65c4ee66b2866847d962212687654fadcb751b78c8499e1c6cc19af7"
+    },
+    {
+      "source": "docs/internal/acceptance/port-forwards.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/port-forwards.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "375d895c10cac6b8ceb15d0a4f62cd8853066b5a2deb00073149ee499193e90f"
+    },
+    {
+      "source": "docs/internal/acceptance/private-ci.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/private-ci.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "05e6ad949e82a999284cfa46c7590c85e1789808dcec0cf8f3af09a824040975"
+    },
+    {
+      "source": "docs/internal/acceptance/quickstart.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/quickstart.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "8ffed2f30c8e4db1fbe2b45bd60d2a2c9baf158e2203d0e3deb36e7771d89359"
+    },
+    {
+      "source": "docs/internal/acceptance/reactive-preferences.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/reactive-preferences.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "b7af6bb2969c6b0dfa1eb5b364ed6a153288fcc282a6c1736766abd46d5fabac"
+    },
+    {
+      "source": "docs/internal/acceptance/release-pipeline.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/release-pipeline.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "89748aae70e9230b94b1bb388f6512c46430c9b0417f64593680d7017fa7f0ae"
+    },
+    {
+      "source": "docs/internal/acceptance/resource-jumps.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/resource-jumps.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "44ffe01a0d3cd1aa9d54770891e2ef4d059598c50f52783216c17b90ffcf6725"
+    },
+    {
+      "source": "docs/internal/acceptance/resource-operations.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/resource-operations.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "7ed5ea053fb28f148a837efba0ee65f09633b5e8ee1fe044d229a83db6962a4e"
+    },
+    {
+      "source": "docs/internal/acceptance/resource-workspace.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/resource-workspace.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "5bf96f59a7b5cc3d4da7295ca8edb2614f03a0bc1bdcc02b1b2f5fb3da7f58e4"
+    },
+    {
+      "source": "docs/internal/acceptance/shell-transition.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/shell-transition.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "a3eb3f4640713234e308965497f81ee7cee4bb584e7e82614465d0a174ead2a5"
+    },
+    {
+      "source": "docs/internal/acceptance/stable-workspace.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/stable-workspace.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "64938d665697113e6c8eb9f4cbe90b43986b3e435ff605dc22cf0bc67e0f8cd7"
+    },
+    {
+      "source": "docs/internal/acceptance/standalone-executables.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/standalone-executables.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "c637d5c1848f680f574e39b789f80b9602fdd69282e824f00a76010d2c65288c"
+    },
+    {
+      "source": "docs/internal/acceptance/standard-resources.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/standard-resources.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "5878cdfe6b3b2ce140c2305157f065824586e3de747b446be3bed23324cd9638"
+    },
+    {
+      "source": "docs/internal/acceptance/table-order-performance.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/table-order-performance.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "0b1e06122801afa28601aea795a737eaf4375595e1f37344d0196e44b5090ff9"
+    },
+    {
+      "source": "docs/internal/acceptance/table-width-performance.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/table-width-performance.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "6de7204ad2278fbd72d678928c030e4c19783c70c5a0141ec2cf9da991aef130"
+    },
+    {
+      "source": "docs/internal/acceptance/terminal-history.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/terminal-history.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "23b4b4b47a38ec3baa6fe219cc2362f8baffa7213ba2376c06a31c3b9b448af7"
+    },
+    {
+      "source": "docs/internal/acceptance/terminal-navigation.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/terminal-navigation.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "0c0d8e5ff061a9f88a881af2154d4aee8320d7eb1b7764e524a4a87cabf41827"
+    },
+    {
+      "source": "docs/internal/acceptance/terminal-qualification.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/terminal-qualification.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "da452ba82b3ef9774266c4224f8dda8a4c09e4f5ca7bc1c1e0f904b6e3b7d4b5"
+    },
+    {
+      "source": "docs/internal/acceptance/ubuntu-runner-pin.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/ubuntu-runner-pin.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "ce12efc86ef374ddb3b832a062620e649ff07d7e0675de191312df4a8351094c"
+    },
+    {
+      "source": "docs/internal/acceptance/watch-pipeline-performance.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/watch-pipeline-performance.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "790d519886eb1e44aadecb009ebec3dccf1318690d1813235aa236d21afd213e"
+    },
+    {
+      "source": "docs/internal/acceptance/workload-checkpoint.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/workload-checkpoint.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "1cfbcb82e320382fc0328c946ba4b0e2c87040a8591eb8605fdeaab78949ebee"
+    },
+    {
+      "source": "docs/internal/acceptance/workloads.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/workloads.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "c8abc0fe1af36c46485e5f278b7643d4317b3ed6a5a6bcb86f295f680328f051"
+    },
+    {
+      "source": "docs/internal/backlog.json",
+      "audience": "internal operational input",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/backlog.json"
+      ],
+      "reason": "Keep the current validated planning or source input editable; retain its pre-migration identity in operational_sources without freezing future updates.",
+      "baseline_sha256": "e14542367092fc037952b0cd4fb73139b2dc8f25ba39fc7ad2f6001d300490b7"
+    },
+    {
+      "source": "docs/internal/first-preview-before-status.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/first-preview-before-status.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "d1e1526e6e9469d4341eb0f98b315539d62bdadf696c2aa8a8036c43e1b577e2"
+    },
+    {
+      "source": "docs/internal/github-issues.json",
+      "audience": "internal operational input",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/github-issues.json"
+      ],
+      "reason": "Keep the current validated planning or source input editable; retain its pre-migration identity in operational_sources without freezing future updates.",
+      "baseline_sha256": "7daea076ea9b7bf23b5d5d83cc65c81c7d9c1b1ecae29f052a6a7c66788475bd"
+    },
+    {
+      "source": "docs/internal/k9s-source-inventory.json",
+      "audience": "internal operational input",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/k9s-source-inventory.json"
+      ],
+      "reason": "Keep the current validated planning or source input editable; retain its pre-migration identity in operational_sources without freezing future updates.",
+      "baseline_sha256": "2a7f7d79a3cf8a2149f55c5e663c33debb46749a5c243d12022849e4c0665820"
+    },
+    {
+      "source": "docs/internal/preview-history.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/preview-history.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "315f9fc69d8d67465ab97ab6a5e9beab73eff389cd429dfc195cc06eee6f1ae5"
+    },
+    {
+      "source": "docs/internal/architecture-history/README.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/architecture-history/README.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "e5547718e938e9c0392bf4fe9bb26fd119626d6f110d9c7bcbb23fc436e0881b"
+    },
+    {
+      "source": "docs/internal/architecture-history/architecture-before-adrs.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/architecture-history/architecture-before-adrs.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "d5a8b04b2ec5f55cf703d9a9bc322d190425bd27828c69993784ba2c3fefe162"
+    },
+    {
+      "source": "docs/internal/architecture-history/decision-catalog.json",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/architecture-history/decision-catalog.json"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "fc390898d35b71fcfe8713004ba61d0e55790c6b58b81274abd1048bf8eaa1c3"
+    },
+    {
+      "source": "docs/internal/architecture-history/source-map.json",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/architecture-history/source-map.json"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "a6a6b713c9ca47517ed8f121156b114a05ce5ad71df897a914349a30921f879d"
+    },
+    {
+      "source": "docs/internal/guide-history/source-map.json",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/guide-history/source-map.json"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "8caa39f23688ee2f61c34eefb7e952ebdc98662c393bffab90dd959ca449a1b4"
+    },
+    {
+      "source": "docs/internal/guide-history/user-guides-before-consolidation.md",
+      "audience": "internal engineering history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/guide-history/user-guides-before-consolidation.md"
+      ],
+      "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
+      "baseline_sha256": "d2bb375ff33cb047e63e1e8becdc9cd99340c937709f9d9d2700fde71c57bc06"
+    },
+    {
+      "source": "docs/internal/README.md",
+      "audience": "internal engineering index",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/README.md"
+      ],
+      "reason": "Explain immutable evidence locations and original-source link contexts outside the public documentation.",
+      "baseline_sha256": null
     }
   ],
   "inventory_rule": "Every tracked Markdown file, every file under docs/, LICENSE, NOTICE, and contribution issue templates at the baseline commit; new structure contracts are mapped too.",
@@ -2194,10 +3184,694 @@
   "architecture_state": "overview_and_numbered_adrs_active",
   "preserved_sources": [
     {
-      "path": "engineering/architecture-history/architecture-before-adrs.md",
+      "path": "docs/internal/acceptance/B02.md",
+      "source": "docs/acceptance/B02.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "71aacb1237ae1dde70ff3baf2d2b8672f86556e9ce7a2a567e43de23f467db38"
+    },
+    {
+      "path": "docs/internal/acceptance/B03.md",
+      "source": "docs/acceptance/B03.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "4f53347bd28008f487c67bc768f5fb734bf7085e8d4fee34f82b0ef1b964168a"
+    },
+    {
+      "path": "docs/internal/acceptance/B04.md",
+      "source": "docs/acceptance/B04.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "8a6260cd0cd6fd14ad0e5f7b250ba0a9787107f8bb9529d9af5a2ee01b1747eb"
+    },
+    {
+      "path": "docs/internal/acceptance/S01.md",
+      "source": "docs/acceptance/S01.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "ac8408d6e19d42b84e80ecd6f7e63c8cb6a03bf4c1fca07f86ab09497e0cc286"
+    },
+    {
+      "path": "docs/internal/acceptance/S02.md",
+      "source": "docs/acceptance/S02.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "1bc87b2fdfdcf4b5a9be496c8c37247c8564d340e9eba480be31648080ee3949"
+    },
+    {
+      "path": "docs/internal/acceptance/S03.md",
+      "source": "docs/acceptance/S03.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "5992f437ba0f405de0a8c3da1e6756c6b465061b30346598987e63bab21c5d7b"
+    },
+    {
+      "path": "docs/internal/acceptance/S04.md",
+      "source": "docs/acceptance/S04.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "dff2e088a967240270ee9c0acad43cbae950f2f9ebfe7acea2cedd6b823c48ca"
+    },
+    {
+      "path": "docs/internal/acceptance/aggregate-input-preparation.md",
+      "source": "docs/acceptance/aggregate-input-preparation.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "9f627051c33720c533cf5b95f66f306f0a296106b701b0e45f959545f6a82730"
+    },
+    {
+      "path": "docs/internal/acceptance/aggregated-logs.md",
+      "source": "docs/acceptance/aggregated-logs.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "1e8f1b4f57220e2e7c8a7d2c1d735faf3d1541ab4136a7d0c18a55f0eea91d05"
+    },
+    {
+      "path": "docs/internal/acceptance/aks-authentication.md",
+      "source": "docs/acceptance/aks-authentication.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "1092e32dfd382c1780bf3f516b22eb927a46d2823356c2ef7ea4da4fc6a5ff7e"
+    },
+    {
+      "path": "docs/internal/acceptance/apache-public-source.md",
+      "source": "docs/acceptance/apache-public-source.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "2fad62728add0ba572a1b4ecc1cbf4417e6c9c0b2a4b1f81bf8a96a827908c41"
+    },
+    {
+      "path": "docs/internal/acceptance/appearance.md",
+      "source": "docs/acceptance/appearance.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "b1d3753619f7a74704e9d866ea2e0642e7a7151cfff8d8f8492f21ada4499824"
+    },
+    {
+      "path": "docs/internal/acceptance/assets/azure-login-recovery.svg",
+      "source": "docs/acceptance/assets/azure-login-recovery.svg",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "26c4745591ff3a9e71032b221e2de5abbc7cb140479347d8fbf758018f331b04"
+    },
+    {
+      "path": "docs/internal/acceptance/assets/connection-overrides-refresh.svg",
+      "source": "docs/acceptance/assets/connection-overrides-refresh.svg",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "a0c6e9e8b2dd30e8f851e5ff27b27b7927a37f6d454b1fc8a9e5228c5a127af0"
+    },
+    {
+      "path": "docs/internal/acceptance/assets/context-container-command.svg",
+      "source": "docs/acceptance/assets/context-container-command.svg",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "55273b146b6d261871824219cc84a35f7f0c6c7c4941acf5520cbc04aee661e6"
+    },
+    {
+      "path": "docs/internal/acceptance/assets/context-container-contexts.svg",
+      "source": "docs/acceptance/assets/context-container-contexts.svg",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "002f1ea856b5a2ab3674a5cd79d8b588b89611d3e80aedefd95b1a4d019ef682"
+    },
+    {
+      "path": "docs/internal/acceptance/assets/context-container-details.svg",
+      "source": "docs/acceptance/assets/context-container-details.svg",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "ba18213e10fb3a3e37392c30874b61e7bdb6bd382bd9ed0fbebae9c196fc91e9"
+    },
+    {
+      "path": "docs/internal/acceptance/assets/eks-sso-recovery.svg",
+      "source": "docs/acceptance/assets/eks-sso-recovery.svg",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "2ae69c57c693afe01bc36b79ef1a7da7c11bfea582aaab9a033b6a8dbc847ea7"
+    },
+    {
+      "path": "docs/internal/acceptance/assets/embedded-shell.svg",
+      "source": "docs/acceptance/assets/embedded-shell.svg",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "4129b1cd76b9874a008c36aa6a34cb6360af47c37df388332912df130bb69551"
+    },
+    {
+      "path": "docs/internal/acceptance/assets/header-ktrol.svg",
+      "source": "docs/acceptance/assets/header-ktrol.svg",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "2aa06ab9220e9b8680c9559e7c6bfcb5c51947c78d62472be574e93e97c1d14b"
+    },
+    {
+      "path": "docs/internal/acceptance/assets/resource-workspace-logs.svg",
+      "source": "docs/acceptance/assets/resource-workspace-logs.svg",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "9083a188c2cf1bd2680a9cdbb4dde9fa6b52a9534c165c519aaa723c90a3467e"
+    },
+    {
+      "path": "docs/internal/acceptance/assets/resource-workspace-namespaces.svg",
+      "source": "docs/acceptance/assets/resource-workspace-namespaces.svg",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "511f31b47219949895ed0d2568e6a38957a438699063292297018cea6af8894c"
+    },
+    {
+      "path": "docs/internal/acceptance/assets/stable-workspace-command.svg",
+      "source": "docs/acceptance/assets/stable-workspace-command.svg",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "d1eb89434ed570254834831b5f3fcc034529b64e19c462009918913934f2e9f6"
+    },
+    {
+      "path": "docs/internal/acceptance/assets/stable-workspace-containers.svg",
+      "source": "docs/acceptance/assets/stable-workspace-containers.svg",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "f51219ed5d092bb7195a6cb8e45762df16c179c168bc8b6dfd58bd531dc47c08"
+    },
+    {
+      "path": "docs/internal/acceptance/assets/stable-workspace-logs.svg",
+      "source": "docs/acceptance/assets/stable-workspace-logs.svg",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "e2a2e74f77950fe9af649e0a111f2b57efc6406ac84822f548a3b51009a46595"
+    },
+    {
+      "path": "docs/internal/acceptance/ci-usage-observation-2026-10-10.json",
+      "source": "docs/acceptance/ci-usage-observation-2026-10-10.json",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "1301671825ec67fd5092b4acf2ae1c2b41c87b1b2bea0b317dfbf88d63bab1f1"
+    },
+    {
+      "path": "docs/internal/acceptance/combined-workload-progress.md",
+      "source": "docs/acceptance/combined-workload-progress.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "b698b95bea34e4e1c85c9f6f4d927f20c70d45f34bbed17c244b881c763b0a19"
+    },
+    {
+      "path": "docs/internal/acceptance/configuration-data.md",
+      "source": "docs/acceptance/configuration-data.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "10d9e31ad32526dcaaea55cf8981f7fb01f5b0d6e46d6f76a0449a3205d7d413"
+    },
+    {
+      "path": "docs/internal/acceptance/connection-overrides.md",
+      "source": "docs/acceptance/connection-overrides.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "c7b8eda0e208ae477b410d3e02703e141724bc4f5648d29bfab50b5971b553e0"
+    },
+    {
+      "path": "docs/internal/acceptance/container-transfers.md",
+      "source": "docs/acceptance/container-transfers.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "2b38fcc631b9ca23089dbb3a4e424416f662f452be6157c04e0187936a228e40"
+    },
+    {
+      "path": "docs/internal/acceptance/context-cleanup.md",
+      "source": "docs/acceptance/context-cleanup.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "4f6a631cf65d6e154b07a05064c8f3c07b9fbcf32130a7db7824ed5b42d14389"
+    },
+    {
+      "path": "docs/internal/acceptance/context-container-workspace.md",
+      "source": "docs/acceptance/context-container-workspace.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "ebe78886ba12dedb4340664508281c001788b9516cb8f5a1b1e969fd00483290"
+    },
+    {
+      "path": "docs/internal/acceptance/cooperative-log-delivery.md",
+      "source": "docs/acceptance/cooperative-log-delivery.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "c4839f5c5c00bef367be54d39ab0abfc8314446e47bbc65b01b882e3aa7839b4"
+    },
+    {
+      "path": "docs/internal/acceptance/core-checkpoint.md",
+      "source": "docs/acceptance/core-checkpoint.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "b3646b5680098625ebbf91a592d4ded76c32df4dbae7fc2284f34d4cb6d14e38"
+    },
+    {
+      "path": "docs/internal/acceptance/credential-interoperability.md",
+      "source": "docs/acceptance/credential-interoperability.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "856a961b64365fea8cab3aa55bbff3fe8abe3c5e4c60401d799735dcd01c900d"
+    },
+    {
+      "path": "docs/internal/acceptance/custom-resources.md",
+      "source": "docs/acceptance/custom-resources.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "88bf43aaeddf90d5621ada47131598ba19c204a0d2e339c8eccfa47d083fe9bd"
+    },
+    {
+      "path": "docs/internal/acceptance/dependency-refresh.md",
+      "source": "docs/acceptance/dependency-refresh.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "d0bcf3d1eeaa435fc74725dff4b081f93067dbc473ccfe34de9d2a712c174383"
+    },
+    {
+      "path": "docs/internal/acceptance/dependency-security.md",
+      "source": "docs/acceptance/dependency-security.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "7d0bb1d1b6f2c01bb4fc242b888a7fd94f64e36c3c4ab646e1d1872f76e624e0"
+    },
+    {
+      "path": "docs/internal/acceptance/distribution-artifacts.md",
+      "source": "docs/acceptance/distribution-artifacts.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "e3529eb8a548de3611154171da0028cc06d59d628f06523c561fdfd8dd98646e"
+    },
+    {
+      "path": "docs/internal/acceptance/editing.md",
+      "source": "docs/acceptance/editing.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "4789662e542ac7a1c20fb38c38ebcdc1b7ab86e46e190d2766b0a09fa712b85e"
+    },
+    {
+      "path": "docs/internal/acceptance/eks-authentication.md",
+      "source": "docs/acceptance/eks-authentication.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "7bc21891d3c656916aa8ccb6137f731efe2f5ed4cd9de10cef52a8fe239155f4"
+    },
+    {
+      "path": "docs/internal/acceptance/embedded-shell.md",
+      "source": "docs/acceptance/embedded-shell.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "99c5bd3ce870dd56f6a03804334ee92433ab8614dae581808504a813b44c128c"
+    },
+    {
+      "path": "docs/internal/acceptance/enter-navigation.md",
+      "source": "docs/acceptance/enter-navigation.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "6dcee68b590f0267a8333d78592ab438e0928d4b085c56655b798f8f81223b05"
+    },
+    {
+      "path": "docs/internal/acceptance/first-channel-activation.md",
+      "source": "docs/acceptance/first-channel-activation.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "d4326bcb45bc3d55615aa726fc17f20b6fe92b5a35c4bed60ebe4544a38970ca"
+    },
+    {
+      "path": "docs/internal/acceptance/first-product-release-policy.md",
+      "source": "docs/acceptance/first-product-release-policy.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "fa491674ae4715e6d3d4e942eac0c08ca7277b2b90492f3edbe4fdce3222ccc3"
+    },
+    {
+      "path": "docs/internal/acceptance/first-release-preparation.md",
+      "source": "docs/acceptance/first-release-preparation.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "447de226009ba6604f36ef2f2e5aea1222ca19641938dfc15d9df6d9aded00d5"
+    },
+    {
+      "path": "docs/internal/acceptance/flat-website.md",
+      "source": "docs/acceptance/flat-website.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "92ecaaafc9294e5865436579c41a563d0b712b0ca3cd30ffaca4007ffe091000"
+    },
+    {
+      "path": "docs/internal/acceptance/forward-presets.md",
+      "source": "docs/acceptance/forward-presets.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "49e182f01aae38700ad9f6edce7d3aaa75348fbffd4f23374a14b53b1ee0b138"
+    },
+    {
+      "path": "docs/internal/acceptance/generic-resource-browser.md",
+      "source": "docs/acceptance/generic-resource-browser.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "006134565dcd38d876cf50ebc04a4549d9214f8ced3ab6353e7539e05ad71a46"
+    },
+    {
+      "path": "docs/internal/acceptance/header-logo.md",
+      "source": "docs/acceptance/header-logo.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "a56f9241f60360c22aa6ad3f41196f2c2bb8194f3cb830ebda7686b784ee6f52"
+    },
+    {
+      "path": "docs/internal/acceptance/homebrew.md",
+      "source": "docs/acceptance/homebrew.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "e71ed16b3aaa0de6053a2c5b00d4239d67fbef78bf0e6a81ea8e15be37769ae8"
+    },
+    {
+      "path": "docs/internal/acceptance/identity-migration.md",
+      "source": "docs/acceptance/identity-migration.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "5019979bfe05aa99aafb0ecf93d2a6d6ab8c708b2b0badec17cdb71475f711d7"
+    },
+    {
+      "path": "docs/internal/acceptance/initial-website.md",
+      "source": "docs/acceptance/initial-website.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "a66fc1c10957eb5f50ead1e9937c06a7caa95ef81c735e84fc4af9b4d65ddc94"
+    },
+    {
+      "path": "docs/internal/acceptance/integration-suite.md",
+      "source": "docs/acceptance/integration-suite.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "fecf9da285ca3e8d8c3a30d25313ea6e10ec9e31a84f48c61fbeb0a3846af406"
+    },
+    {
+      "path": "docs/internal/acceptance/live-render-performance.md",
+      "source": "docs/acceptance/live-render-performance.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "207589d39288982932022729b6606e322a54e03663a069535e9bfad25da37867"
+    },
+    {
+      "path": "docs/internal/acceptance/macos-terminal-verification.md",
+      "source": "docs/acceptance/macos-terminal-verification.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "402e43f27a29fdf18446df14bbcdfcf37f8a6ccd0142388b4a31039b0e3e36f3"
+    },
+    {
+      "path": "docs/internal/acceptance/mutations.md",
+      "source": "docs/acceptance/mutations.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "346c0645c8729a870e769a13d9cad682d11a9aa5aa821ddea92291bd2f1f0efb"
+    },
+    {
+      "path": "docs/internal/acceptance/native-verification-prerequisites.md",
+      "source": "docs/acceptance/native-verification-prerequisites.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "794f672b5ee4f9d2ec2e6b30700817c7f64b7b4fad6c97aaa1a717f3df0540ce"
+    },
+    {
+      "path": "docs/internal/acceptance/navigation-preferences.md",
+      "source": "docs/acceptance/navigation-preferences.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "8dad4a4e5eeb7c3168a2055d224f110254ae7e18177ddf8552a0be444b98897e"
+    },
+    {
+      "path": "docs/internal/acceptance/owned-crashloop-window.md",
+      "source": "docs/acceptance/owned-crashloop-window.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "943f5a69251b90482b13f45d8c138c22c2b131f0d7dcfab741f8e49a5d5867e7"
+    },
+    {
+      "path": "docs/internal/acceptance/owned-log-formatting.md",
+      "source": "docs/acceptance/owned-log-formatting.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "e0587a447fb3fce17683843b48205bd38f0ea7c49a649a0fc4f4b0d8b2dc8c15"
+    },
+    {
+      "path": "docs/internal/acceptance/pages-publication.md",
+      "source": "docs/acceptance/pages-publication.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "1fadc15534b64e5fcde40d59980313d2953ad91d90b372cc3787304b134397e5"
+    },
+    {
+      "path": "docs/internal/acceptance/phased-release-preparation.md",
+      "source": "docs/acceptance/phased-release-preparation.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "a943d459313f5d6cc28788c7bd56d18ff0caf1aeb36d03991341cf8f15ab039f"
+    },
+    {
+      "path": "docs/internal/acceptance/plugin-compatibility.md",
+      "source": "docs/acceptance/plugin-compatibility.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "a2754ee803c48ac373ce8e2b42f8554bb74272a09a6a97824c500a7bf2e8f609"
+    },
+    {
+      "path": "docs/internal/acceptance/plugin-contract.md",
+      "source": "docs/acceptance/plugin-contract.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "a55e8f7bbc81be573680db2428c0902d366149b24b26e1480d94372b11f37724"
+    },
+    {
+      "path": "docs/internal/acceptance/plugin-execution.md",
+      "source": "docs/acceptance/plugin-execution.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "cbb5abcb65c4ee66b2866847d962212687654fadcb751b78c8499e1c6cc19af7"
+    },
+    {
+      "path": "docs/internal/acceptance/port-forwards.md",
+      "source": "docs/acceptance/port-forwards.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "375d895c10cac6b8ceb15d0a4f62cd8853066b5a2deb00073149ee499193e90f"
+    },
+    {
+      "path": "docs/internal/acceptance/private-ci.md",
+      "source": "docs/acceptance/private-ci.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "05e6ad949e82a999284cfa46c7590c85e1789808dcec0cf8f3af09a824040975"
+    },
+    {
+      "path": "docs/internal/acceptance/quickstart.md",
+      "source": "docs/acceptance/quickstart.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "8ffed2f30c8e4db1fbe2b45bd60d2a2c9baf158e2203d0e3deb36e7771d89359"
+    },
+    {
+      "path": "docs/internal/acceptance/reactive-preferences.md",
+      "source": "docs/acceptance/reactive-preferences.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "b7af6bb2969c6b0dfa1eb5b364ed6a153288fcc282a6c1736766abd46d5fabac"
+    },
+    {
+      "path": "docs/internal/acceptance/release-pipeline.md",
+      "source": "docs/acceptance/release-pipeline.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "89748aae70e9230b94b1bb388f6512c46430c9b0417f64593680d7017fa7f0ae"
+    },
+    {
+      "path": "docs/internal/acceptance/resource-jumps.md",
+      "source": "docs/acceptance/resource-jumps.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "44ffe01a0d3cd1aa9d54770891e2ef4d059598c50f52783216c17b90ffcf6725"
+    },
+    {
+      "path": "docs/internal/acceptance/resource-operations.md",
+      "source": "docs/acceptance/resource-operations.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "7ed5ea053fb28f148a837efba0ee65f09633b5e8ee1fe044d229a83db6962a4e"
+    },
+    {
+      "path": "docs/internal/acceptance/resource-workspace.md",
+      "source": "docs/acceptance/resource-workspace.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "5bf96f59a7b5cc3d4da7295ca8edb2614f03a0bc1bdcc02b1b2f5fb3da7f58e4"
+    },
+    {
+      "path": "docs/internal/acceptance/shell-transition.md",
+      "source": "docs/acceptance/shell-transition.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "a3eb3f4640713234e308965497f81ee7cee4bb584e7e82614465d0a174ead2a5"
+    },
+    {
+      "path": "docs/internal/acceptance/stable-workspace.md",
+      "source": "docs/acceptance/stable-workspace.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "64938d665697113e6c8eb9f4cbe90b43986b3e435ff605dc22cf0bc67e0f8cd7"
+    },
+    {
+      "path": "docs/internal/acceptance/standalone-executables.md",
+      "source": "docs/acceptance/standalone-executables.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "c637d5c1848f680f574e39b789f80b9602fdd69282e824f00a76010d2c65288c"
+    },
+    {
+      "path": "docs/internal/acceptance/standard-resources.md",
+      "source": "docs/acceptance/standard-resources.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "5878cdfe6b3b2ce140c2305157f065824586e3de747b446be3bed23324cd9638"
+    },
+    {
+      "path": "docs/internal/acceptance/table-order-performance.md",
+      "source": "docs/acceptance/table-order-performance.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "0b1e06122801afa28601aea795a737eaf4375595e1f37344d0196e44b5090ff9"
+    },
+    {
+      "path": "docs/internal/acceptance/table-width-performance.md",
+      "source": "docs/acceptance/table-width-performance.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "6de7204ad2278fbd72d678928c030e4c19783c70c5a0141ec2cf9da991aef130"
+    },
+    {
+      "path": "docs/internal/acceptance/terminal-history.md",
+      "source": "docs/acceptance/terminal-history.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "23b4b4b47a38ec3baa6fe219cc2362f8baffa7213ba2376c06a31c3b9b448af7"
+    },
+    {
+      "path": "docs/internal/acceptance/terminal-navigation.md",
+      "source": "docs/acceptance/terminal-navigation.md",
+      "commit": "b947a452ed32989f13fc2c6e2c81e3d7319573c7",
+      "sha256": "0c0d8e5ff061a9f88a881af2154d4aee8320d7eb1b7764e524a4a87cabf41827"
+    },
+    {
+      "path": "docs/internal/acceptance/terminal-qualification.md",
+      "source": "docs/acceptance/terminal-qualification.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "da452ba82b3ef9774266c4224f8dda8a4c09e4f5ca7bc1c1e0f904b6e3b7d4b5"
+    },
+    {
+      "path": "docs/internal/acceptance/ubuntu-runner-pin.md",
+      "source": "docs/acceptance/ubuntu-runner-pin.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "ce12efc86ef374ddb3b832a062620e649ff07d7e0675de191312df4a8351094c"
+    },
+    {
+      "path": "docs/internal/acceptance/watch-pipeline-performance.md",
+      "source": "docs/acceptance/watch-pipeline-performance.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "790d519886eb1e44aadecb009ebec3dccf1318690d1813235aa236d21afd213e"
+    },
+    {
+      "path": "docs/internal/acceptance/workload-checkpoint.md",
+      "source": "docs/acceptance/workload-checkpoint.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "1cfbcb82e320382fc0328c946ba4b0e2c87040a8591eb8605fdeaab78949ebee"
+    },
+    {
+      "path": "docs/internal/acceptance/workloads.md",
+      "source": "docs/acceptance/workloads.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "c8abc0fe1af36c46485e5f278b7643d4317b3ed6a5a6bcb86f295f680328f051"
+    },
+    {
+      "path": "docs/internal/first-preview-before-status.md",
+      "source": "docs/first-preview.md",
+      "commit": "b947a452ed32989f13fc2c6e2c81e3d7319573c7",
+      "sha256": "d1e1526e6e9469d4341eb0f98b315539d62bdadf696c2aa8a8036c43e1b577e2"
+    },
+    {
+      "path": "docs/internal/preview-history.md",
+      "source": "docs/preview-history.md",
+      "commit": "b8b7eb24b8c69b1d00e765fc2a77b9ded9487c59",
+      "sha256": "315f9fc69d8d67465ab97ab6a5e9beab73eff389cd429dfc195cc06eee6f1ae5"
+    },
+    {
+      "path": "docs/internal/architecture-history/README.md",
+      "source": "engineering/architecture-history/README.md",
+      "commit": "dd0a67ee7c17e5482c4fc9f2b31cfad223bbca08",
+      "sha256": "e5547718e938e9c0392bf4fe9bb26fd119626d6f110d9c7bcbb23fc436e0881b"
+    },
+    {
+      "path": "docs/internal/architecture-history/architecture-before-adrs.md",
       "source": "docs/architecture.md",
       "commit": "625086db1a75aab10ec28fe4d6440f7fb1d32849",
       "sha256": "d5a8b04b2ec5f55cf703d9a9bc322d190425bd27828c69993784ba2c3fefe162"
+    },
+    {
+      "path": "docs/internal/architecture-history/decision-catalog.json",
+      "source": "engineering/architecture-history/decision-catalog.json",
+      "commit": "dd0a67ee7c17e5482c4fc9f2b31cfad223bbca08",
+      "sha256": "fc390898d35b71fcfe8713004ba61d0e55790c6b58b81274abd1048bf8eaa1c3"
+    },
+    {
+      "path": "docs/internal/architecture-history/source-map.json",
+      "source": "engineering/architecture-history/source-map.json",
+      "commit": "dd0a67ee7c17e5482c4fc9f2b31cfad223bbca08",
+      "sha256": "a6a6b713c9ca47517ed8f121156b114a05ce5ad71df897a914349a30921f879d"
+    },
+    {
+      "path": "docs/internal/guide-history/source-map.json",
+      "source": "engineering/guide-history/source-map.json",
+      "commit": "dd0a67ee7c17e5482c4fc9f2b31cfad223bbca08",
+      "sha256": "8caa39f23688ee2f61c34eefb7e952ebdc98662c393bffab90dd959ca449a1b4"
+    },
+    {
+      "path": "docs/internal/guide-history/user-guides-before-consolidation.md",
+      "source": "engineering/guide-history/user-guides-before-consolidation.md",
+      "commit": "dd0a67ee7c17e5482c4fc9f2b31cfad223bbca08",
+      "sha256": "d2bb375ff33cb047e63e1e8becdc9cd99340c937709f9d9d2700fde71c57bc06"
+    }
+  ],
+  "relocations": {
+    "docs/acceptance/B02.md": "docs/internal/acceptance/B02.md",
+    "docs/acceptance/B03.md": "docs/internal/acceptance/B03.md",
+    "docs/acceptance/B04.md": "docs/internal/acceptance/B04.md",
+    "docs/acceptance/S01.md": "docs/internal/acceptance/S01.md",
+    "docs/acceptance/S02.md": "docs/internal/acceptance/S02.md",
+    "docs/acceptance/S03.md": "docs/internal/acceptance/S03.md",
+    "docs/acceptance/S04.md": "docs/internal/acceptance/S04.md",
+    "docs/acceptance/aggregate-input-preparation.md": "docs/internal/acceptance/aggregate-input-preparation.md",
+    "docs/acceptance/aggregated-logs.md": "docs/internal/acceptance/aggregated-logs.md",
+    "docs/acceptance/aks-authentication.md": "docs/internal/acceptance/aks-authentication.md",
+    "docs/acceptance/apache-public-source.md": "docs/internal/acceptance/apache-public-source.md",
+    "docs/acceptance/appearance.md": "docs/internal/acceptance/appearance.md",
+    "docs/acceptance/assets/azure-login-recovery.svg": "docs/internal/acceptance/assets/azure-login-recovery.svg",
+    "docs/acceptance/assets/connection-overrides-refresh.svg": "docs/internal/acceptance/assets/connection-overrides-refresh.svg",
+    "docs/acceptance/assets/context-container-command.svg": "docs/internal/acceptance/assets/context-container-command.svg",
+    "docs/acceptance/assets/context-container-contexts.svg": "docs/internal/acceptance/assets/context-container-contexts.svg",
+    "docs/acceptance/assets/context-container-details.svg": "docs/internal/acceptance/assets/context-container-details.svg",
+    "docs/acceptance/assets/eks-sso-recovery.svg": "docs/internal/acceptance/assets/eks-sso-recovery.svg",
+    "docs/acceptance/assets/embedded-shell.svg": "docs/internal/acceptance/assets/embedded-shell.svg",
+    "docs/acceptance/assets/header-ktrol.svg": "docs/internal/acceptance/assets/header-ktrol.svg",
+    "docs/acceptance/assets/resource-workspace-logs.svg": "docs/internal/acceptance/assets/resource-workspace-logs.svg",
+    "docs/acceptance/assets/resource-workspace-namespaces.svg": "docs/internal/acceptance/assets/resource-workspace-namespaces.svg",
+    "docs/acceptance/assets/stable-workspace-command.svg": "docs/internal/acceptance/assets/stable-workspace-command.svg",
+    "docs/acceptance/assets/stable-workspace-containers.svg": "docs/internal/acceptance/assets/stable-workspace-containers.svg",
+    "docs/acceptance/assets/stable-workspace-logs.svg": "docs/internal/acceptance/assets/stable-workspace-logs.svg",
+    "docs/acceptance/ci-usage-observation-2026-10-10.json": "docs/internal/acceptance/ci-usage-observation-2026-10-10.json",
+    "docs/acceptance/combined-workload-progress.md": "docs/internal/acceptance/combined-workload-progress.md",
+    "docs/acceptance/configuration-data.md": "docs/internal/acceptance/configuration-data.md",
+    "docs/acceptance/connection-overrides.md": "docs/internal/acceptance/connection-overrides.md",
+    "docs/acceptance/container-transfers.md": "docs/internal/acceptance/container-transfers.md",
+    "docs/acceptance/context-cleanup.md": "docs/internal/acceptance/context-cleanup.md",
+    "docs/acceptance/context-container-workspace.md": "docs/internal/acceptance/context-container-workspace.md",
+    "docs/acceptance/cooperative-log-delivery.md": "docs/internal/acceptance/cooperative-log-delivery.md",
+    "docs/acceptance/core-checkpoint.md": "docs/internal/acceptance/core-checkpoint.md",
+    "docs/acceptance/credential-interoperability.md": "docs/internal/acceptance/credential-interoperability.md",
+    "docs/acceptance/custom-resources.md": "docs/internal/acceptance/custom-resources.md",
+    "docs/acceptance/dependency-refresh.md": "docs/internal/acceptance/dependency-refresh.md",
+    "docs/acceptance/dependency-security.md": "docs/internal/acceptance/dependency-security.md",
+    "docs/acceptance/distribution-artifacts.md": "docs/internal/acceptance/distribution-artifacts.md",
+    "docs/acceptance/editing.md": "docs/internal/acceptance/editing.md",
+    "docs/acceptance/eks-authentication.md": "docs/internal/acceptance/eks-authentication.md",
+    "docs/acceptance/embedded-shell.md": "docs/internal/acceptance/embedded-shell.md",
+    "docs/acceptance/enter-navigation.md": "docs/internal/acceptance/enter-navigation.md",
+    "docs/acceptance/first-channel-activation.md": "docs/internal/acceptance/first-channel-activation.md",
+    "docs/acceptance/first-product-release-policy.md": "docs/internal/acceptance/first-product-release-policy.md",
+    "docs/acceptance/first-release-preparation.md": "docs/internal/acceptance/first-release-preparation.md",
+    "docs/acceptance/flat-website.md": "docs/internal/acceptance/flat-website.md",
+    "docs/acceptance/forward-presets.md": "docs/internal/acceptance/forward-presets.md",
+    "docs/acceptance/generic-resource-browser.md": "docs/internal/acceptance/generic-resource-browser.md",
+    "docs/acceptance/header-logo.md": "docs/internal/acceptance/header-logo.md",
+    "docs/acceptance/homebrew.md": "docs/internal/acceptance/homebrew.md",
+    "docs/acceptance/identity-migration.md": "docs/internal/acceptance/identity-migration.md",
+    "docs/acceptance/initial-website.md": "docs/internal/acceptance/initial-website.md",
+    "docs/acceptance/integration-suite.md": "docs/internal/acceptance/integration-suite.md",
+    "docs/acceptance/live-render-performance.md": "docs/internal/acceptance/live-render-performance.md",
+    "docs/acceptance/macos-terminal-verification.md": "docs/internal/acceptance/macos-terminal-verification.md",
+    "docs/acceptance/mutations.md": "docs/internal/acceptance/mutations.md",
+    "docs/acceptance/native-verification-prerequisites.md": "docs/internal/acceptance/native-verification-prerequisites.md",
+    "docs/acceptance/navigation-preferences.md": "docs/internal/acceptance/navigation-preferences.md",
+    "docs/acceptance/owned-crashloop-window.md": "docs/internal/acceptance/owned-crashloop-window.md",
+    "docs/acceptance/owned-log-formatting.md": "docs/internal/acceptance/owned-log-formatting.md",
+    "docs/acceptance/pages-publication.md": "docs/internal/acceptance/pages-publication.md",
+    "docs/acceptance/phased-release-preparation.md": "docs/internal/acceptance/phased-release-preparation.md",
+    "docs/acceptance/plugin-compatibility.md": "docs/internal/acceptance/plugin-compatibility.md",
+    "docs/acceptance/plugin-contract.md": "docs/internal/acceptance/plugin-contract.md",
+    "docs/acceptance/plugin-execution.md": "docs/internal/acceptance/plugin-execution.md",
+    "docs/acceptance/port-forwards.md": "docs/internal/acceptance/port-forwards.md",
+    "docs/acceptance/private-ci.md": "docs/internal/acceptance/private-ci.md",
+    "docs/acceptance/quickstart.md": "docs/internal/acceptance/quickstart.md",
+    "docs/acceptance/reactive-preferences.md": "docs/internal/acceptance/reactive-preferences.md",
+    "docs/acceptance/release-pipeline.md": "docs/internal/acceptance/release-pipeline.md",
+    "docs/acceptance/resource-jumps.md": "docs/internal/acceptance/resource-jumps.md",
+    "docs/acceptance/resource-operations.md": "docs/internal/acceptance/resource-operations.md",
+    "docs/acceptance/resource-workspace.md": "docs/internal/acceptance/resource-workspace.md",
+    "docs/acceptance/shell-transition.md": "docs/internal/acceptance/shell-transition.md",
+    "docs/acceptance/stable-workspace.md": "docs/internal/acceptance/stable-workspace.md",
+    "docs/acceptance/standalone-executables.md": "docs/internal/acceptance/standalone-executables.md",
+    "docs/acceptance/standard-resources.md": "docs/internal/acceptance/standard-resources.md",
+    "docs/acceptance/table-order-performance.md": "docs/internal/acceptance/table-order-performance.md",
+    "docs/acceptance/table-width-performance.md": "docs/internal/acceptance/table-width-performance.md",
+    "docs/acceptance/terminal-history.md": "docs/internal/acceptance/terminal-history.md",
+    "docs/acceptance/terminal-navigation.md": "docs/internal/acceptance/terminal-navigation.md",
+    "docs/acceptance/terminal-qualification.md": "docs/internal/acceptance/terminal-qualification.md",
+    "docs/acceptance/ubuntu-runner-pin.md": "docs/internal/acceptance/ubuntu-runner-pin.md",
+    "docs/acceptance/watch-pipeline-performance.md": "docs/internal/acceptance/watch-pipeline-performance.md",
+    "docs/acceptance/workload-checkpoint.md": "docs/internal/acceptance/workload-checkpoint.md",
+    "docs/acceptance/workloads.md": "docs/internal/acceptance/workloads.md",
+    "docs/backlog.json": "docs/internal/backlog.json",
+    "docs/first-preview.md": "docs/internal/first-preview-before-status.md",
+    "docs/github-issues.json": "docs/internal/github-issues.json",
+    "docs/k9s-source-inventory.json": "docs/internal/k9s-source-inventory.json",
+    "docs/preview-history.md": "docs/internal/preview-history.md",
+    "engineering/architecture-history/README.md": "docs/internal/architecture-history/README.md",
+    "engineering/architecture-history/architecture-before-adrs.md": "docs/internal/architecture-history/architecture-before-adrs.md",
+    "engineering/architecture-history/decision-catalog.json": "docs/internal/architecture-history/decision-catalog.json",
+    "engineering/architecture-history/source-map.json": "docs/internal/architecture-history/source-map.json",
+    "engineering/guide-history/source-map.json": "docs/internal/guide-history/source-map.json",
+    "engineering/guide-history/user-guides-before-consolidation.md": "docs/internal/guide-history/user-guides-before-consolidation.md"
+  },
+  "operational_sources": [
+    {
+      "path": "docs/internal/backlog.json",
+      "source": "docs/backlog.json",
+      "commit": "b947a452ed32989f13fc2c6e2c81e3d7319573c7",
+      "sha256": "e14542367092fc037952b0cd4fb73139b2dc8f25ba39fc7ad2f6001d300490b7"
+    },
+    {
+      "path": "docs/internal/github-issues.json",
+      "source": "docs/github-issues.json",
+      "commit": "b947a452ed32989f13fc2c6e2c81e3d7319573c7",
+      "sha256": "7daea076ea9b7bf23b5d5d83cc65c81c7d9c1b1ecae29f052a6a7c66788475bd"
+    },
+    {
+      "path": "docs/internal/k9s-source-inventory.json",
+      "source": "docs/k9s-source-inventory.json",
+      "commit": "b947a452ed32989f13fc2c6e2c81e3d7319573c7",
+      "sha256": "2a7f7d79a3cf8a2149f55c5e663c33debb46749a5c243d12022849e4c0665820"
     }
   ]
 }

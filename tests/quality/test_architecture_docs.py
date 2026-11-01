@@ -10,7 +10,11 @@ from markdown_it import MarkdownIt
 
 from scripts.build_site import ROOT, heading_ids
 from scripts.documentation import load_navigation, validate_documentation_plan
-from scripts.documentation_links import original_contexts, validate_repository_links
+from scripts.documentation_links import (
+    original_contexts,
+    relocated_source,
+    validate_repository_links,
+)
 
 
 class Identifiers(HTMLParser):
@@ -35,11 +39,10 @@ def rendered(source):
 
 
 def history():
-    folder = ROOT / "engineering/architecture-history"
-    return (
-        json.loads((folder / "source-map.json").read_text()),
-        json.loads((folder / "decision-catalog.json").read_text()),
-    )
+    folder = ROOT / "docs/internal/architecture-history"
+    record = json.loads((folder / "source-map.json").read_text())
+    record["archive"] = relocated_source(ROOT, record["archive"])
+    return record, json.loads((folder / "decision-catalog.json").read_text())
 
 
 def test_short_overview_explains_the_actual_layers_data_flow_and_boundaries():
@@ -173,7 +176,7 @@ def test_every_new_architecture_document_has_an_explicit_disposition():
     names = [item["source"] for item in catalog["decisions"]]
     names += [
         record["archive"],
-        "engineering/architecture-history/README.md",
+        "docs/internal/architecture-history/README.md",
         "docs/adr/README.md",
         "docs/adr/0000-template.md",
     ]

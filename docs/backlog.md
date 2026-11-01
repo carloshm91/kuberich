@@ -3,7 +3,7 @@
 [Open the GitHub project](https://github.com/users/carloshm91/projects/3).
 
 The plan has **15 epics and 124 tasks**. GitHub issues are the live
-status source; this file is the planning map, built from [backlog.json](backlog.json).
+status source; this file is the planning map, built from [backlog.json](internal/backlog.json).
 
 Work on one implementation task at a time. Pick the first unblocked task in the
 earliest unfinished milestone, following `delivery.execution_order`.
@@ -262,7 +262,7 @@ Stable release: every phase complete, including Windows; stable configuration an
 | [Q06 #88](https://github.com/carloshm91/kuberich/issues/88) | Audit complete feature parity and resolve every remaining gap | [Q05 #87](https://github.com/carloshm91/kuberich/issues/87), [D11 #86](https://github.com/carloshm91/kuberich/issues/86), [Q22 #252](https://github.com/carloshm91/kuberich/issues/252), [D19 #253](https://github.com/carloshm91/kuberich/issues/253) |
 
 Each task has scope, acceptance criteria and verification in its issue and
-[backlog.json](backlog.json). Qualification dependencies remain explicit in that
+[backlog.json](internal/backlog.json). Qualification dependencies remain explicit in that
 graph; phase readiness adds cumulative gates and tracked launch/feedback extras.
 Native parent/dependency links and epic checklists mirror the reviewed scope.
 

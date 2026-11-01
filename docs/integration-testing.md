@@ -106,4 +106,4 @@ Sources: [kind explicit kubeconfig/provider](https://kind.sigs.k8s.io/docs/user/
 [Docker context precedence](https://docs.docker.com/reference/cli/docker/),
 [Python process groups](https://docs.python.org/3.12/library/subprocess.html).
 
-Measured commits, counts and limitations: [Q01 acceptance](acceptance/integration-suite.md).
+Measured commits, counts and limitations: [Q01 acceptance](internal/acceptance/integration-suite.md).

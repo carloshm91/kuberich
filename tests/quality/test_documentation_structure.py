@@ -54,7 +54,7 @@ def test_navigation_is_complete_diataxis_and_maps_the_baseline_documents():
     paths += ["docs/STYLE.md", "docs/navigation.json", "docs/documentation-plan.json"]
     assert validate_documentation_plan(ROOT, paths) == len(plan["documents"])
     assert len((ROOT / "docs/STYLE.md").read_text().splitlines()) <= 250
-    assert plan["migration_state"] == "user_guides_consolidated_internal_migrations_pending"
+    assert plan["migration_state"] == "user_guides_architecture_and_internal_history_consolidated"
 
 
 @pytest.mark.parametrize(

@@ -26,7 +26,7 @@ screen remote programs receive real terminal input and resize events.
 ## Source and related decisions
 
 This record extracts an implemented decision from the [previous architecture
-log](../../engineering/architecture-history/README.md). It does not requalify its historical
+log](../internal/architecture-history/README.md). It does not requalify its historical
 measurements.
 
 - [src/kuberich/adapters/pty.py](../../src/kuberich/adapters/pty.py)

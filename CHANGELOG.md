@@ -7,6 +7,12 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Keep historical engineering evidence in one internal area and replace the
+  development log with a short status page. Planning inputs stay editable and
+  retain the same release checks
+  ([#226](https://github.com/carloshm91/kuberich/issues/226),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Replace the architecture decision log with a concise overview, focused ADRs,
   and an exact historical archive
   ([#225](https://github.com/carloshm91/kuberich/issues/225),
@@ -166,7 +172,7 @@ retain development history.
 [Authored release notes](docs/release-notes/0.1.0.md)
 describe this phase, installation, upgrades and known limits. The entries below
 retain development history; dated qualification statements are superseded by
-the [completed workload checkpoint](docs/acceptance/workload-checkpoint.md).
+the [completed workload checkpoint](docs/internal/acceptance/workload-checkpoint.md).
 
 ### Added
 

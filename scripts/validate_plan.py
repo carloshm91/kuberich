@@ -23,9 +23,9 @@ policy = {
         "PHASE_EXTRAS",
     }
 }
-plan = json.loads((ROOT / "docs/backlog.json").read_text())
+plan = json.loads((ROOT / "docs/internal/backlog.json").read_text())
 capabilities = json.loads((ROOT / "docs/capabilities.json").read_text())
-inventory = json.loads((ROOT / "docs/k9s-source-inventory.json").read_text())
+inventory = json.loads((ROOT / "docs/internal/k9s-source-inventory.json").read_text())
 tasks = {task["id"]: task for task in plan["tasks"]}
 epics = {epic["id"]: epic for epic in plan["epics"]}
 milestones = {item["title"]: index for index, item in enumerate(plan["milestones"])}
@@ -116,7 +116,7 @@ cli_doc = (ROOT / "docs/k9s-cli.md").read_text()
 assert len(flags) == 26 and len(set(flags)) == len(flags)
 assert all(f"`--{flag}`" in cli_doc for flag in flags)
 link_count = validate_repository_links(ROOT)
-index = ROOT / "docs/github-issues.json"
+index = ROOT / "docs/internal/github-issues.json"
 if index.exists():
     issues = json.loads(index.read_text())
     assert plan["repository"] == issues["repository"] == "carloshm91/kuberich"

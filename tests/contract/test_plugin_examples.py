@@ -20,6 +20,7 @@ from kuberich.domain.targets import ResourceTarget, SessionIdentity
 from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
 from kuberich.services.plugins import PluginManager, PluginSource
+from scripts.documentation_links import relocated_source
 from tests.support.plugin_examples import EXAMPLES, ROOT, executable
 from tests.support.pods import pod
 from tests.support.resources import pod_resource, reader_fixture
@@ -75,7 +76,7 @@ def test_original_examples_validate_with_the_real_offline_cli_without_running_to
 
 
 def test_census_covers_every_pinned_source_and_all_workflows_without_bundling_scripts():
-    inventory = json.loads((ROOT / "docs/k9s-source-inventory.json").read_text())
+    inventory = json.loads((ROOT / "docs/internal/k9s-source-inventory.json").read_text())
     expected = {r["source"]: r for r in inventory["records"] if r["source"].startswith("plugins/")}
     records = CENSUS["records"]
     assert CENSUS["baseline"] == {k: inventory["baseline"][k] for k in ("tag", "commit")}
@@ -86,11 +87,12 @@ def test_census_covers_every_pinned_source_and_all_workflows_without_bundling_sc
     assert TRANSLATIONS["baseline"] == CENSUS["baseline"]["commit"]
     cases = {(c["source"], c["upstream_command"]): c["id"] for c in TRANSLATIONS["cases"]}
     classified = {}
-    history = json.loads((ROOT / "engineering/guide-history/source-map.json").read_text())
+    history = json.loads((ROOT / "docs/internal/guide-history/source-map.json").read_text())
     source = next(
         item for item in history["documents"] if item["source"] == "docs/plugin-compatibility.md"
     )
-    archive = (ROOT / history["archive"]).read_bytes()
+    archive_name = relocated_source(ROOT, history["archive"])
+    archive = (ROOT / archive_name).read_bytes()
     content = archive[source["byte_start"] : source["byte_end"]]
     assert hashlib.sha256(content).hexdigest() == source["sha256"]
     assert history["source_commit"] == "a14d1ab65201a214fe178c0f01d1d4e9bcc59a1d"
