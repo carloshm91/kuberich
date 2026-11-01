@@ -638,7 +638,7 @@ def test_engineering_versions_refuse_preflight_before_any_external_request(versi
 
 
 @pytest.mark.parametrize(
-    "incomplete", [None, 123, 124, 193, 47, 40, 154, 88, 89, 189, 211, 230, 272, 243, 253]
+    "incomplete", [None, 123, 124, 193, 47, 40, 154, 88, 89, 189, 211, 230, 272, 274, 243, 253]
 )
 def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomplete):
     plan = json.loads((ROOT / "docs/backlog.json").read_text())
@@ -671,6 +671,7 @@ def test_actual_plan_requires_transitive_features_and_extra_launch_issues(incomp
             189,
             208,
             272,
+            274,
             230,
             242,
             248,
@@ -749,6 +750,7 @@ def test_actual_phase_includes_selected_and_prior_qualifiers(version, phase_gate
         ("0.3.0", 189),
         ("0.3.0", 211),
         ("0.3.0", 272),
+        ("0.3.0", 274),
         ("0.5.0", 82),
         ("0.6.0", 235),
         ("0.8.0", 124),

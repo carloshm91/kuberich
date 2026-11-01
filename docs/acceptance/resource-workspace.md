@@ -113,3 +113,38 @@ passes. Their failure status is preserved. Linux local
 qualification follows the maintainer-authorized [temporary quality workflow](../quality.md#temporary-private-development-workflow-when-actions-is-unavailable).
 macOS and full platform CI remain required before a public release.
 Visibility, package publication, version `0.0.1.dev0` and tags are unchanged.
+
+## Observable log startup qualification
+
+Required run `41282379945`, job `124780105815`, failed its CoreDNS startup
+banner assertion after reporting Running and Ready. Original artifact
+`13074153360` was downloaded and its SHA-256 verified as
+`416ea07c26d117d78e8be122da30442592911ad55e8666fa22a8cb6d52e1656d`.
+That failure did not retain actual log counts/content, so its precise ordering
+or content cause remains unverified. A later successful run is not its diagnosis.
+
+Correction #274 requires both the existing pod readiness condition and the
+observable timestamped recent logs/startup banner, under the same maximum
+90-second readiness budget. Each observation replaces its limited buffer; it
+does not accumulate repeated snapshots. All-lines, since, follow cancellation
+and previous-instance assertions remain. A missing banner still fails.
+
+Failure records contain booleans, counts, the error class and verifier checksum;
+log text and exception messages are omitted. Workflow event SHA is labelled as
+such, rather than presented as the checked-out source commit. Evidence-write
+errors add a note without replacing the first exception.
+
+The real-HTTP Ready-before-startup case fails on unchanged main at the original
+assertion and passes with the correction. The controlled cohort passed 58 log
+and cluster-ownership cases in 44.24 seconds; the final eight log cases passed
+in 1.41 seconds after finalizing metadata labels. The absent-banner, blocked
+evidence, original-error and unchanged maximum-budget controls remain active.
+
+The complete verifier also passed on an explicitly created local kind 0.33.0
+cluster with its pinned Kubernetes 1.36.4 node digest. It checked TLS, discovery,
+list/watch, actual logs, namespace/context generation, Pilot resource and log
+views, and client cleanup; startup was observable on its first attempt. The
+cluster was deleted and its absence verified. Its final receipt is
+`artifacts/log274/owned/context-sessions.json`, with the original transcript
+in `artifacts/log274/owned-original.log`. This local success does not prove
+the earlier incident's exact cause or certify provider/native release behavior.
