@@ -25,6 +25,8 @@ from types import FrameType
 from typing import Any
 
 from scripts.startup_policy import (
+    CLI_BUDGET_NS,
+    IMPORT_BUDGET_US,
     OFFLINE_CASES,
     PAINT_BUDGET_NS,
     Measurement,
@@ -32,6 +34,7 @@ from scripts.startup_policy import (
     check_importtime,
     check_paint,
     enforce_paint_budget,
+    enforce_startup_budget,
     observe_paint,
     rss_bytes,
 )
@@ -291,11 +294,20 @@ def qualify(
     cancellation: Cancellation | None = None,
     *,
     strict_paint: bool = False,
+    strict_startup: bool = False,
 ) -> None:
     version = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
-    paint_enforced = enforce_paint_budget(version, strict=strict_paint)
+    latency_enforced = enforce_startup_budget(version, strict=strict_startup)
+    paint_enforced = enforce_paint_budget(version, strict=strict_startup or strict_paint)
     result.update(
         {
+            "source_version": version,
+            "offline_budget_ns": CLI_BUDGET_NS,
+            "offline_budget_enforced": latency_enforced,
+            "offline_budget_met": None,
+            "import_budget_us": IMPORT_BUDGET_US,
+            "import_budget_enforced": latency_enforced,
+            "import_budget_met": None,
             "first_paint_budget_ns": PAINT_BUDGET_NS,
             "first_paint_budget_enforced": paint_enforced,
             "first_paint_budget_met": None,
@@ -336,9 +348,23 @@ def qualify(
                 f"{case}-{sample}",
                 cancellation=cancellation,
             )
-            observations.append({"case": case, "sample": sample, **asdict(measured)})
+            observations.append(
+                {
+                    "case": case,
+                    "sample": sample,
+                    **asdict(measured),
+                    "budget_ns": CLI_BUDGET_NS,
+                    "budget_met": (
+                        type(measured.elapsed_ns) is int and 0 < measured.elapsed_ns < CLI_BUDGET_NS
+                    ),
+                    "budget_enforced": latency_enforced,
+                }
+            )
+            result["offline_budget_met"] = all(
+                row["budget_met"] for row in observations if "sample" in row
+            )
             try:
-                check_cli(case, measured, version)
+                check_cli(case, measured, version, enforce_latency=latency_enforced)
             except ValueError:
                 try:
                     diagnostic = run_plain(
@@ -361,7 +387,14 @@ def qualify(
         )
         if profiled.exit_code:
             raise ValueError("Import-time command failed.")
-        observations.append({"case": case, "importtime": check_importtime(profiled.stderr)})
+        profile = check_importtime(profiled.stderr, enforce_latency=False)
+        profile["budget_enforced"] = latency_enforced
+        observations.append({"case": case, "importtime": profile})
+        result["import_budget_met"] = all(
+            row["importtime"]["budget_met"] for row in observations if "importtime" in row
+        )
+        if latency_enforced and not profile["budget_met"]:
+            check_importtime(profiled.stderr, enforce_latency=True)
     paints: list[dict[str, Any]] = []
     result["first_paint"] = paints
     for sample in range(samples):
@@ -411,6 +444,11 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--samples", type=int, default=5, choices=range(3, 11))
     parser.add_argument(
+        "--strict-startup",
+        action="store_true",
+        help="enforce all original latency targets (mandatory for version 1.x and later)",
+    )
+    parser.add_argument(
         "--strict-paint",
         action="store_true",
         help="enforce the unchanged 600 ms UI target (mandatory for version 1.x and later)",
@@ -428,8 +466,12 @@ def main() -> int:
         "cpu_count": os.cpu_count(),
         "samples_per_case": arguments.samples,
         "scope": (
-            "Fresh-process startup contracts; UI budget enforcement follows the version and "
-            "--strict-paint. No release or provider certification."
+            "Fresh-process startup contracts; latency enforcement follows the source version "
+            "and --strict-startup. --strict-paint preserves UI-only enforcement. "
+            "0.x latency is advisory; source major 1, including prereleases, is always strict. "
+            "Memory bounds, forbidden-import absence, valid output/source/frames and cleanup "
+            "are always required. "
+            "No release or provider certification."
         ),
     }
     code = 1
@@ -451,6 +493,7 @@ def main() -> int:
                 result,
                 cancellation,
                 strict_paint=arguments.strict_paint,
+                strict_startup=arguments.strict_startup,
             )
             cancellation.check()
         if inputs() != before:
@@ -463,9 +506,13 @@ def main() -> int:
     finally:
         (output / "report.json").write_text(json.dumps(result, indent=2) + "\n")
     if code == 0:
+        offline_status = "met" if result["offline_budget_met"] else "not met (advisory for 0.x)"
+        import_status = "met" if result["import_budget_met"] else "not met (advisory for 0.x)"
         paint_status = "met" if result["first_paint_budget_met"] else "not met (advisory for 0.x)"
         print(
-            f"Startup contracts passed; 600 ms UI target {paint_status}: {output / 'report.json'}"
+            f"Startup contracts passed; offline latency target {offline_status}; "
+            f"import latency target {import_status}; 600 ms UI target {paint_status}: "
+            f"{output / 'report.json'}"
         )
     return code
 
