@@ -1,0 +1,917 @@
+{
+  "schema_version": 1,
+  "source_commit": "625086db1a75aab10ec28fe4d6440f7fb1d32849",
+  "source": "docs/architecture.md",
+  "archive": "engineering/architecture-history/architecture-before-adrs.md",
+  "sha256": "d5a8b04b2ec5f55cf703d9a9bc322d190425bd27828c69993784ba2c3fefe162",
+  "sections": [
+    {
+      "heading": "Native table-cache retirement and metadata geometry: prerequisite for S08 #62",
+      "identifier": "native-table-cache-retirement-and-metadata-geometry-prerequisite-for-s08-62",
+      "byte_start": 26,
+      "byte_end": 928,
+      "destinations": [
+        "docs/adr/0025-native-table-cache-retirement.md"
+      ],
+      "sha256": "f0ad57b49933ce5113c78483abe481b0da7471fdd1b6042a3432e471132c5f9e"
+    },
+    {
+      "heading": "Captured forwarding presets and bounded reconnects: S08 #62",
+      "identifier": "captured-forwarding-presets-and-bounded-reconnects-s08-62",
+      "byte_start": 928,
+      "byte_end": 2131,
+      "destinations": [
+        "docs/adr/0015-managed-tcp-forwards.md"
+      ],
+      "sha256": "617eec71d24563d9280fc141c5626772fd10dfb80b3616e3040924a7cbeb2bfd"
+    },
+    {
+      "heading": "Audited plugin adaptations: U05 #60",
+      "identifier": "audited-plugin-adaptations-u05-60",
+      "byte_start": 2131,
+      "byte_end": 3234,
+      "destinations": [
+        "docs/adr/0016-explicit-local-plugins.md"
+      ],
+      "sha256": "192802805a9296506093debf86e17fea0fcc78bae1090737fe129f2a7c5772e6"
+    },
+    {
+      "heading": "Owned plugin execution: U04 #59",
+      "identifier": "owned-plugin-execution-u04-59",
+      "byte_start": 3234,
+      "byte_end": 4765,
+      "destinations": [
+        "docs/adr/0016-explicit-local-plugins.md",
+        "docs/adr/0008-external-process-ownership.md"
+      ],
+      "sha256": "e54e0280bc2303f50a7ab8668f4359f9d7d4b6ab2625779cfd1906cca3f9a638"
+    },
+    {
+      "heading": "Bounded native CSS parse reuse: prerequisite for U03 #58",
+      "identifier": "bounded-native-css-parse-reuse-prerequisite-for-u03-58",
+      "byte_start": 4765,
+      "byte_end": 6069,
+      "destinations": [
+        "docs/adr/0024-transactional-css-parse-reuse.md"
+      ],
+      "sha256": "7345b63a5fbdcb78152c87955868e3c870df1a1a00c5c5fb1f5074a982cb00f5"
+    },
+    {
+      "heading": "Explicit plugin definitions and capture: U03 #58",
+      "identifier": "explicit-plugin-definitions-and-capture-u03-58",
+      "byte_start": 6069,
+      "byte_end": 7286,
+      "destinations": [
+        "docs/adr/0016-explicit-local-plugins.md"
+      ],
+      "sha256": "09a3fabdfa7e888f674a715d17671ffc66fd54805a464416b6aa13f1d1280b56"
+    },
+    {
+      "heading": "Per-owner navigation and captured views: U02 #57",
+      "identifier": "per-owner-navigation-and-captured-views-u02-57",
+      "byte_start": 7286,
+      "byte_end": 8492,
+      "destinations": [
+        "docs/adr/0019-saved-resource-view-contracts.md"
+      ],
+      "sha256": "2ab9475f30b72fcb5310578b3d40dcced3977aa2956ede5d1e8f46a91c8a1750"
+    },
+    {
+      "heading": "Appearance and optional release reads: U01 #56",
+      "identifier": "appearance-and-optional-release-reads-u01-56",
+      "byte_start": 8492,
+      "byte_end": 9628,
+      "destinations": [
+        "docs/adr/0020-data-only-theme-palettes.md",
+        "docs/adr/0021-opt-in-release-notices.md"
+      ],
+      "sha256": "64b4413545c1f8422d6c179dac7f8e2d1145c236faabac2b75db5e3dbfeb0817"
+    },
+    {
+      "heading": "Deliberate configuration disclosure: M05 #55",
+      "identifier": "deliberate-configuration-disclosure-m05-55",
+      "byte_start": 9628,
+      "byte_end": 10468,
+      "destinations": [
+        "docs/adr/0022-default-redaction-and-explicit-disclosure.md"
+      ],
+      "sha256": "5345a64c3d6df820a8393f5f306d979cc9019333146cff8b8e728190bd7a8717"
+    },
+    {
+      "heading": "Owned CrashLoop status synchronization: Refs #89",
+      "identifier": "owned-crashloop-status-synchronization-refs-89",
+      "byte_start": 10468,
+      "byte_end": 11648,
+      "destinations": [
+        "docs/adr/0030-owned-verification-fixtures.md"
+      ],
+      "sha256": "b98a1a58fb739ed5e64ef0532428be1a8124154490594cc2df841c9bb492b733"
+    },
+    {
+      "heading": "Shell controls during teardown: D06 #51",
+      "identifier": "shell-controls-during-teardown-d06-51",
+      "byte_start": 11648,
+      "byte_end": 12324,
+      "destinations": [
+        "docs/adr/0010-embedded-container-terminal.md"
+      ],
+      "sha256": "7011050372ce6fcbac748258a1ad6cfcff41e5f53bb00539ac2f916b12b8cb0c"
+    },
+    {
+      "heading": "Widget rendering-cache ownership: Refs D05 #49 / D04 #40",
+      "identifier": "widget-rendering-cache-ownership-refs-d05-49-d04-40",
+      "byte_start": 12324,
+      "byte_end": 14017,
+      "destinations": [
+        "docs/adr/0023-widget-style-cache-ownership.md"
+      ],
+      "sha256": "779454277ceb4144a7e1d158121d10b90a449de9590e597eeb8e289965f364bb"
+    },
+    {
+      "heading": "Frozen runtime and external processes: Refs D05 #49",
+      "identifier": "frozen-runtime-and-external-processes-refs-d05-49",
+      "byte_start": 14017,
+      "byte_end": 15171,
+      "destinations": [
+        "docs/adr/0027-frozen-runtime-delegation.md"
+      ],
+      "sha256": "7d57414c3c94125bbcc3d03cfbcd5d80af0e31c99dade8ab3b0b31afe03a4ec3"
+    },
+    {
+      "heading": "Incremental log geometry and fixed-height status: Refs Q03 #50",
+      "identifier": "incremental-log-geometry-and-fixed-height-status-refs-q03-50",
+      "byte_start": 15171,
+      "byte_end": 17253,
+      "destinations": [
+        "docs/adr/0026-incremental-rendering-and-cooperative-work.md",
+        "docs/adr/0011-single-container-log-streams.md"
+      ],
+      "sha256": "31567138ebb0f3de29b88f2fc89731cc4d4b1ae8217d57f1c2c8eeef199ad4df"
+    },
+    {
+      "heading": "Owned CrashLoop qualification observation: Refs Q03 #50",
+      "identifier": "owned-crashloop-qualification-observation-refs-q03-50",
+      "byte_start": 17253,
+      "byte_end": 19172,
+      "destinations": [
+        "docs/adr/0030-owned-verification-fixtures.md"
+      ],
+      "sha256": "710fed15e42df2438bd2047247080620a1dc2317d24e0159957d93013623625a"
+    },
+    {
+      "heading": "Bounded formatting and collected parser outcomes: Refs Q03 #50",
+      "identifier": "bounded-formatting-and-collected-parser-outcomes-refs-q03-50",
+      "byte_start": 19172,
+      "byte_end": 20152,
+      "destinations": [
+        "docs/adr/0026-incremental-rendering-and-cooperative-work.md"
+      ],
+      "sha256": "2d8211dfaffd4f64029bcd4e236c03861e6a1337548835317569992431e06e59"
+    },
+    {
+      "heading": "Single owned watch parser: Refs Q03 #50",
+      "identifier": "single-owned-watch-parser-refs-q03-50",
+      "byte_start": 20152,
+      "byte_end": 21021,
+      "destinations": [
+        "docs/adr/0006-list-watch-continuity.md"
+      ],
+      "sha256": "3beff724835dd4b8b688f1cb74a71d0c6c8ce383a3f45c490efab49801fc45ed"
+    },
+    {
+      "heading": "Owned workspace repaint: Refs Q03 #50",
+      "identifier": "owned-workspace-repaint-refs-q03-50",
+      "byte_start": 21021,
+      "byte_end": 21769,
+      "destinations": [
+        "docs/adr/0026-incremental-rendering-and-cooperative-work.md"
+      ],
+      "sha256": "d901ef1c5b922ce35799025f9fd8cbc9683514e339b7e36a90138113abf95ea0"
+    },
+    {
+      "heading": "Phased immutable release decisions: Refs #89",
+      "identifier": "phased-immutable-release-decisions-refs-89",
+      "byte_start": 21769,
+      "byte_end": 22676,
+      "destinations": [
+        "docs/adr/0029-immutable-release-activation.md"
+      ],
+      "sha256": "37a777a8fe422891a221d7fba14ee8dfb2e5d0085e19d642d93b2f2ea7654d7a"
+    },
+    {
+      "heading": "KubeRich identity migration: #149",
+      "identifier": "kuberich-identity-migration-149",
+      "byte_start": 22676,
+      "byte_end": 23580,
+      "destinations": [
+        "docs/adr/0028-identity-and-preference-migration.md"
+      ],
+      "sha256": "dbaa176b243a856e5c0440612c3e89bda4b5608ac0559b1c4e5f630ccd343f47"
+    },
+    {
+      "heading": "Preview refinement #129",
+      "identifier": "preview-refinement-129",
+      "byte_start": 23580,
+      "byte_end": 25022,
+      "destinations": [
+        "docs/adr/0018-focused-input-and-workspace-geometry.md"
+      ],
+      "sha256": "a68934c0e63af7cbf4095d4c7abb89941b391c3080b6a719af64cf774b45203f"
+    },
+    {
+      "heading": "Product boundary",
+      "identifier": "product-boundary",
+      "byte_start": 25022,
+      "byte_end": 34452,
+      "destinations": [
+        "docs/adr/0004-credential-helpers-and-delegation.md",
+        "docs/adr/0005-discovery-and-printer-schemas.md",
+        "docs/adr/0008-external-process-ownership.md",
+        "docs/adr/0013-reviewed-conditional-writes.md",
+        "docs/adr/0014-reviewed-file-transfers.md",
+        "docs/adr/0015-managed-tcp-forwards.md",
+        "docs/adr/0026-incremental-rendering-and-cooperative-work.md",
+        "docs/adr/0030-owned-verification-fixtures.md"
+      ],
+      "sha256": "a088cdbbcba2221ad1aaf9c5f020129640afffcc6e1b84e0ec6b925fc383bb4f"
+    },
+    {
+      "heading": "Chosen stack",
+      "identifier": "chosen-stack",
+      "byte_start": 34452,
+      "byte_end": 39496,
+      "destinations": [
+        "docs/adr/0001-python-terminal-stack.md",
+        "docs/adr/0031-standard-python-packaging.md"
+      ],
+      "sha256": "d16bb4753ed7f0fe86f68cdbc81b8ab8d2db4d2a9d40e913b85c1854345d06fa"
+    },
+    {
+      "heading": "Why Python and Textual",
+      "identifier": "why-python-and-textual",
+      "byte_start": 39496,
+      "byte_end": 41047,
+      "destinations": [
+        "docs/adr/0001-python-terminal-stack.md"
+      ],
+      "sha256": "08eb91b38c43fd7b4eeb8810c6361a7d636e412dc5dcdd23dc7d127f0e39dac8"
+    },
+    {
+      "heading": "Authentication and delegated tools",
+      "identifier": "authentication-and-delegated-tools",
+      "byte_start": 41047,
+      "byte_end": 43107,
+      "destinations": [
+        "docs/adr/0004-credential-helpers-and-delegation.md"
+      ],
+      "sha256": "b8d9fa515e737e1f85b13e14071ada72da8ddc43dc0d5776b30ec33c05b450c4"
+    },
+    {
+      "heading": "Dependency direction",
+      "identifier": "dependency-direction",
+      "byte_start": 43107,
+      "byte_end": 43953,
+      "destinations": [
+        "docs/adr/0002-dependency-direction.md"
+      ],
+      "sha256": "e95482c86194d9a4900959b7ef026e70c851862ec2008faf79e5a60a68f02a34"
+    },
+    {
+      "heading": "Cluster sessions and watches",
+      "identifier": "cluster-sessions-and-watches",
+      "byte_start": 43953,
+      "byte_end": 44920,
+      "destinations": [
+        "docs/adr/0003-explicit-context-sessions.md",
+        "docs/adr/0006-list-watch-continuity.md"
+      ],
+      "sha256": "52a83c4044405af8b9eafb2e3e8df0e99f8e55e684a57f808f9169995c6805cf"
+    },
+    {
+      "heading": "Terminal behavior",
+      "identifier": "terminal-behavior",
+      "byte_start": 44920,
+      "byte_end": 47251,
+      "destinations": [
+        "docs/adr/0009-native-terminal-handoff.md",
+        "docs/adr/0010-embedded-container-terminal.md"
+      ],
+      "sha256": "cb9ff034f9e89fd69481aa5698d1f71eb0775d2ed30673f7a3b08eb18f65ed9e"
+    },
+    {
+      "heading": "Actions, configuration, and trust",
+      "identifier": "actions-configuration-and-trust",
+      "byte_start": 47251,
+      "byte_end": 53578,
+      "destinations": [
+        "docs/adr/0013-reviewed-conditional-writes.md",
+        "docs/adr/0017-versioned-local-preferences.md",
+        "docs/adr/0022-default-redaction-and-explicit-disclosure.md"
+      ],
+      "sha256": "ab5ab542b62628413d31769960364f759f3eafbcec0602b9ff8e4b53d790e36d"
+    },
+    {
+      "heading": "C01 session adapter decision",
+      "identifier": "c01-session-adapter-decision",
+      "byte_start": 53578,
+      "byte_end": 56508,
+      "destinations": [
+        "docs/adr/0003-explicit-context-sessions.md",
+        "docs/adr/0004-credential-helpers-and-delegation.md"
+      ],
+      "sha256": "c3f190ff67d8c07a1a2fc26bad0ea3f9c20f56762bb782b71de1c674a1589f91"
+    },
+    {
+      "heading": "C02 discovery and snapshot decision",
+      "identifier": "c02-discovery-and-snapshot-decision",
+      "byte_start": 56508,
+      "byte_end": 57516,
+      "destinations": [
+        "docs/adr/0005-discovery-and-printer-schemas.md"
+      ],
+      "sha256": "e8e87c3a792f1e878030450249eee034b772184c77acd2288a0a789b10f5e1f6"
+    },
+    {
+      "heading": "C03 synchronization decision",
+      "identifier": "c03-synchronization-decision",
+      "byte_start": 57516,
+      "byte_end": 58864,
+      "destinations": [
+        "docs/adr/0006-list-watch-continuity.md"
+      ],
+      "sha256": "94f8e06976f064239f04f83a613f65af397e84e9d6c01d27716cda2f8511ac22"
+    },
+    {
+      "heading": "C04 active-view ownership decision",
+      "identifier": "c04-active-view-ownership-decision",
+      "byte_start": 58864,
+      "byte_end": 59711,
+      "destinations": [
+        "docs/adr/0007-active-view-generations.md"
+      ],
+      "sha256": "a2edcb8af363e3f1cd6d943ce7a0785203c268b67d8320940c66301c61a5e688"
+    },
+    {
+      "heading": "Sources",
+      "identifier": "sources",
+      "byte_start": 59711,
+      "byte_end": 60604,
+      "destinations": [
+        "docs/adr/0001-python-terminal-stack.md",
+        "docs/adr/0002-dependency-direction.md"
+      ],
+      "sha256": "c4533e298284d1195b08723188b1d47c40bc2b8a052eadefaa1e5ad434133489"
+    },
+    {
+      "heading": "B04 resource inspection",
+      "identifier": "b04-resource-inspection",
+      "byte_start": 60604,
+      "byte_end": 61184,
+      "destinations": [
+        "docs/adr/0022-default-redaction-and-explicit-disclosure.md"
+      ],
+      "sha256": "6bfb77f7ed35df507389ad7034f381507f122bbfc6f0f162e209d642a325166e"
+    },
+    {
+      "heading": "S01 log transport",
+      "identifier": "s01-log-transport",
+      "byte_start": 61184,
+      "byte_end": 62079,
+      "destinations": [
+        "docs/adr/0011-single-container-log-streams.md"
+      ],
+      "sha256": "3a1d84a050da139a2517dc8b2633590f4c2af33b69a40a3444335e6468c8f940"
+    },
+    {
+      "heading": "S02 log viewer",
+      "identifier": "s02-log-viewer",
+      "byte_start": 62079,
+      "byte_end": 63918,
+      "destinations": [
+        "docs/adr/0011-single-container-log-streams.md",
+        "docs/adr/0026-incremental-rendering-and-cooperative-work.md"
+      ],
+      "sha256": "36f6d69132827d0a1a0ed9d2d51c9361a34b15efcd957bbdcab9ca486595c775"
+    },
+    {
+      "heading": "S06 aggregate log ownership",
+      "identifier": "s06-aggregate-log-ownership",
+      "byte_start": 63918,
+      "byte_end": 66043,
+      "destinations": [
+        "docs/adr/0012-controller-owned-aggregate-logs.md"
+      ],
+      "sha256": "4b40c0bd5a2effd5597db745cf085ce20df2d9edbd926063477cc6eef1a14261"
+    },
+    {
+      "heading": "Enter navigation feedback: #115",
+      "identifier": "enter-navigation-feedback-115",
+      "byte_start": 66043,
+      "byte_end": 68599,
+      "destinations": [
+        "docs/adr/0018-focused-input-and-workspace-geometry.md",
+        "docs/adr/0026-incremental-rendering-and-cooperative-work.md"
+      ],
+      "sha256": "2ad499f960f4ddeeb0a9c946aea3353e59e9f5d40a9708ee5943be6152089f57"
+    },
+    {
+      "heading": "S03 process and terminal ownership",
+      "identifier": "s03-process-and-terminal-ownership",
+      "byte_start": 68599,
+      "byte_end": 70003,
+      "destinations": [
+        "docs/adr/0008-external-process-ownership.md",
+        "docs/adr/0009-native-terminal-handoff.md"
+      ],
+      "sha256": "bd8043c2d18f5657bce3d03061f0750a37944fa68965467046ffb809b63cc6eb"
+    },
+    {
+      "heading": "S04 captured shell and prepared connection",
+      "identifier": "s04-captured-shell-and-prepared-connection",
+      "byte_start": 70003,
+      "byte_end": 73971,
+      "destinations": [
+        "docs/adr/0010-embedded-container-terminal.md",
+        "docs/adr/0004-credential-helpers-and-delegation.md"
+      ],
+      "sha256": "20227b57f61713f5d4808c22e2a2c15637e07096ad8b63a723d36d14aff9ed6a"
+    },
+    {
+      "heading": "Shared resource workspace: #125",
+      "identifier": "shared-resource-workspace-125",
+      "byte_start": 73971,
+      "byte_end": 75799,
+      "destinations": [
+        "docs/adr/0018-focused-input-and-workspace-geometry.md"
+      ],
+      "sha256": "4558b72e9ad796fe3c2d84fac0a68fa63902b0b55c2f0b3ed79c535f05a5434b"
+    },
+    {
+      "heading": "Stable workspace and inline input: #127",
+      "identifier": "stable-workspace-and-inline-input-127",
+      "byte_start": 75799,
+      "byte_end": 77574,
+      "destinations": [
+        "docs/adr/0018-focused-input-and-workspace-geometry.md",
+        "docs/adr/0026-incremental-rendering-and-cooperative-work.md"
+      ],
+      "sha256": "2a041147977c01ba3aca44f27bc8ecc7fd6fd1fc5732d2429a4268d3aa8d52aa"
+    },
+    {
+      "heading": "Terminal interactions and captured read workspaces",
+      "identifier": "terminal-interactions-and-captured-read-workspaces",
+      "byte_start": 77574,
+      "byte_end": 79512,
+      "destinations": [
+        "docs/adr/0018-focused-input-and-workspace-geometry.md",
+        "docs/adr/0019-saved-resource-view-contracts.md",
+        "docs/adr/0022-default-redaction-and-explicit-disclosure.md"
+      ],
+      "sha256": "62c9b3789e6b3305b96db45e4025ca693f11b88cdd3e197a6306476e930c99d8"
+    }
+  ],
+  "preamble": {
+    "byte_start": 0,
+    "byte_end": 26,
+    "destination": "docs/architecture.md"
+  },
+  "headings": [
+    {
+      "level": 1,
+      "title": "Architecture decisions",
+      "identifier": "architecture-decisions",
+      "decisions": [
+        "0002"
+      ],
+      "anchor_location": "docs/architecture.md#architecture-decisions"
+    },
+    {
+      "level": 2,
+      "title": "Native table-cache retirement and metadata geometry: prerequisite for S08 #62",
+      "identifier": "native-table-cache-retirement-and-metadata-geometry-prerequisite-for-s08-62",
+      "decisions": [
+        "0025"
+      ],
+      "anchor_location": "docs/architecture.md#native-table-cache-retirement-and-metadata-geometry-prerequisite-for-s08-62"
+    },
+    {
+      "level": 2,
+      "title": "Captured forwarding presets and bounded reconnects: S08 #62",
+      "identifier": "captured-forwarding-presets-and-bounded-reconnects-s08-62",
+      "decisions": [
+        "0015"
+      ],
+      "anchor_location": "docs/architecture.md#captured-forwarding-presets-and-bounded-reconnects-s08-62"
+    },
+    {
+      "level": 2,
+      "title": "Audited plugin adaptations: U05 #60",
+      "identifier": "audited-plugin-adaptations-u05-60",
+      "decisions": [
+        "0016"
+      ],
+      "anchor_location": "docs/architecture.md#audited-plugin-adaptations-u05-60"
+    },
+    {
+      "level": 2,
+      "title": "Owned plugin execution: U04 #59",
+      "identifier": "owned-plugin-execution-u04-59",
+      "decisions": [
+        "0016",
+        "0008"
+      ],
+      "anchor_location": "docs/architecture.md#owned-plugin-execution-u04-59"
+    },
+    {
+      "level": 2,
+      "title": "Bounded native CSS parse reuse: prerequisite for U03 #58",
+      "identifier": "bounded-native-css-parse-reuse-prerequisite-for-u03-58",
+      "decisions": [
+        "0024"
+      ],
+      "anchor_location": "docs/architecture.md#bounded-native-css-parse-reuse-prerequisite-for-u03-58"
+    },
+    {
+      "level": 2,
+      "title": "Explicit plugin definitions and capture: U03 #58",
+      "identifier": "explicit-plugin-definitions-and-capture-u03-58",
+      "decisions": [
+        "0016"
+      ],
+      "anchor_location": "docs/architecture.md#explicit-plugin-definitions-and-capture-u03-58"
+    },
+    {
+      "level": 2,
+      "title": "Per-owner navigation and captured views: U02 #57",
+      "identifier": "per-owner-navigation-and-captured-views-u02-57",
+      "decisions": [
+        "0019"
+      ],
+      "anchor_location": "docs/architecture.md#per-owner-navigation-and-captured-views-u02-57"
+    },
+    {
+      "level": 2,
+      "title": "Appearance and optional release reads: U01 #56",
+      "identifier": "appearance-and-optional-release-reads-u01-56",
+      "decisions": [
+        "0020",
+        "0021"
+      ],
+      "anchor_location": "docs/architecture.md#appearance-and-optional-release-reads-u01-56"
+    },
+    {
+      "level": 2,
+      "title": "Deliberate configuration disclosure: M05 #55",
+      "identifier": "deliberate-configuration-disclosure-m05-55",
+      "decisions": [
+        "0022"
+      ],
+      "anchor_location": "docs/architecture.md#deliberate-configuration-disclosure-m05-55"
+    },
+    {
+      "level": 2,
+      "title": "Owned CrashLoop status synchronization: Refs #89",
+      "identifier": "owned-crashloop-status-synchronization-refs-89",
+      "decisions": [
+        "0030"
+      ],
+      "anchor_location": "docs/architecture.md#owned-crashloop-status-synchronization-refs-89"
+    },
+    {
+      "level": 2,
+      "title": "Shell controls during teardown: D06 #51",
+      "identifier": "shell-controls-during-teardown-d06-51",
+      "decisions": [
+        "0010"
+      ],
+      "anchor_location": "docs/architecture.md#shell-controls-during-teardown-d06-51"
+    },
+    {
+      "level": 2,
+      "title": "Widget rendering-cache ownership: Refs D05 #49 / D04 #40",
+      "identifier": "widget-rendering-cache-ownership-refs-d05-49-d04-40",
+      "decisions": [
+        "0023"
+      ],
+      "anchor_location": "docs/architecture.md#widget-rendering-cache-ownership-refs-d05-49-d04-40"
+    },
+    {
+      "level": 2,
+      "title": "Frozen runtime and external processes: Refs D05 #49",
+      "identifier": "frozen-runtime-and-external-processes-refs-d05-49",
+      "decisions": [
+        "0027"
+      ],
+      "anchor_location": "docs/architecture.md#frozen-runtime-and-external-processes-refs-d05-49"
+    },
+    {
+      "level": 2,
+      "title": "Incremental log geometry and fixed-height status: Refs Q03 #50",
+      "identifier": "incremental-log-geometry-and-fixed-height-status-refs-q03-50",
+      "decisions": [
+        "0026",
+        "0011"
+      ],
+      "anchor_location": "docs/architecture.md#incremental-log-geometry-and-fixed-height-status-refs-q03-50"
+    },
+    {
+      "level": 2,
+      "title": "Owned CrashLoop qualification observation: Refs Q03 #50",
+      "identifier": "owned-crashloop-qualification-observation-refs-q03-50",
+      "decisions": [
+        "0030"
+      ],
+      "anchor_location": "docs/architecture.md#owned-crashloop-qualification-observation-refs-q03-50"
+    },
+    {
+      "level": 2,
+      "title": "Bounded formatting and collected parser outcomes: Refs Q03 #50",
+      "identifier": "bounded-formatting-and-collected-parser-outcomes-refs-q03-50",
+      "decisions": [
+        "0026"
+      ],
+      "anchor_location": "docs/architecture.md#bounded-formatting-and-collected-parser-outcomes-refs-q03-50"
+    },
+    {
+      "level": 2,
+      "title": "Single owned watch parser: Refs Q03 #50",
+      "identifier": "single-owned-watch-parser-refs-q03-50",
+      "decisions": [
+        "0006"
+      ],
+      "anchor_location": "docs/architecture.md#single-owned-watch-parser-refs-q03-50"
+    },
+    {
+      "level": 2,
+      "title": "Owned workspace repaint: Refs Q03 #50",
+      "identifier": "owned-workspace-repaint-refs-q03-50",
+      "decisions": [
+        "0026"
+      ],
+      "anchor_location": "docs/architecture.md#owned-workspace-repaint-refs-q03-50"
+    },
+    {
+      "level": 2,
+      "title": "Phased immutable release decisions: Refs #89",
+      "identifier": "phased-immutable-release-decisions-refs-89",
+      "decisions": [
+        "0029"
+      ],
+      "anchor_location": "docs/architecture.md#phased-immutable-release-decisions-refs-89"
+    },
+    {
+      "level": 2,
+      "title": "KubeRich identity migration: #149",
+      "identifier": "kuberich-identity-migration-149",
+      "decisions": [
+        "0028"
+      ],
+      "anchor_location": "docs/architecture.md#kuberich-identity-migration-149"
+    },
+    {
+      "level": 2,
+      "title": "Preview refinement #129",
+      "identifier": "preview-refinement-129",
+      "decisions": [
+        "0018"
+      ],
+      "anchor_location": "docs/architecture.md#preview-refinement-129"
+    },
+    {
+      "level": 2,
+      "title": "Product boundary",
+      "identifier": "product-boundary",
+      "decisions": [
+        "0004",
+        "0005",
+        "0013",
+        "0014",
+        "0015",
+        "0030"
+      ],
+      "anchor_location": "docs/architecture.md#product-boundary"
+    },
+    {
+      "level": 3,
+      "title": "Terminal qualification and shutdown: Q02 #33",
+      "identifier": "terminal-qualification-and-shutdown-q02-33",
+      "decisions": [
+        "0009",
+        "0010"
+      ],
+      "anchor_location": "docs/architecture.md#terminal-qualification-and-shutdown-q02-33"
+    },
+    {
+      "level": 2,
+      "title": "Chosen stack",
+      "identifier": "chosen-stack",
+      "decisions": [
+        "0001",
+        "0031"
+      ],
+      "anchor_location": "docs/architecture.md#chosen-stack"
+    },
+    {
+      "level": 2,
+      "title": "Why Python and Textual",
+      "identifier": "why-python-and-textual",
+      "decisions": [
+        "0001"
+      ],
+      "anchor_location": "docs/architecture.md#why-python-and-textual"
+    },
+    {
+      "level": 2,
+      "title": "Authentication and delegated tools",
+      "identifier": "authentication-and-delegated-tools",
+      "decisions": [
+        "0004"
+      ],
+      "anchor_location": "docs/architecture.md#authentication-and-delegated-tools"
+    },
+    {
+      "level": 2,
+      "title": "Dependency direction",
+      "identifier": "dependency-direction",
+      "decisions": [
+        "0002"
+      ],
+      "anchor_location": "docs/architecture.md#dependency-direction"
+    },
+    {
+      "level": 2,
+      "title": "Cluster sessions and watches",
+      "identifier": "cluster-sessions-and-watches",
+      "decisions": [
+        "0003",
+        "0006"
+      ],
+      "anchor_location": "docs/architecture.md#cluster-sessions-and-watches"
+    },
+    {
+      "level": 2,
+      "title": "Terminal behavior",
+      "identifier": "terminal-behavior",
+      "decisions": [
+        "0009",
+        "0010"
+      ],
+      "anchor_location": "docs/architecture.md#terminal-behavior"
+    },
+    {
+      "level": 2,
+      "title": "Actions, configuration, and trust",
+      "identifier": "actions-configuration-and-trust",
+      "decisions": [
+        "0013",
+        "0017",
+        "0022"
+      ],
+      "anchor_location": "docs/architecture.md#actions-configuration-and-trust"
+    },
+    {
+      "level": 2,
+      "title": "C01 session adapter decision",
+      "identifier": "c01-session-adapter-decision",
+      "decisions": [
+        "0003",
+        "0004"
+      ],
+      "anchor_location": "docs/architecture.md#c01-session-adapter-decision"
+    },
+    {
+      "level": 2,
+      "title": "C02 discovery and snapshot decision",
+      "identifier": "c02-discovery-and-snapshot-decision",
+      "decisions": [
+        "0005"
+      ],
+      "anchor_location": "docs/architecture.md#c02-discovery-and-snapshot-decision"
+    },
+    {
+      "level": 2,
+      "title": "C03 synchronization decision",
+      "identifier": "c03-synchronization-decision",
+      "decisions": [
+        "0006"
+      ],
+      "anchor_location": "docs/architecture.md#c03-synchronization-decision"
+    },
+    {
+      "level": 2,
+      "title": "C04 active-view ownership decision",
+      "identifier": "c04-active-view-ownership-decision",
+      "decisions": [
+        "0007"
+      ],
+      "anchor_location": "docs/architecture.md#c04-active-view-ownership-decision"
+    },
+    {
+      "level": 2,
+      "title": "Sources",
+      "identifier": "sources",
+      "decisions": [
+        "0001",
+        "0002"
+      ],
+      "anchor_location": "docs/architecture.md#sources"
+    },
+    {
+      "level": 2,
+      "title": "B04 resource inspection",
+      "identifier": "b04-resource-inspection",
+      "decisions": [
+        "0022"
+      ],
+      "anchor_location": "docs/architecture.md#b04-resource-inspection"
+    },
+    {
+      "level": 2,
+      "title": "S01 log transport",
+      "identifier": "s01-log-transport",
+      "decisions": [
+        "0011"
+      ],
+      "anchor_location": "docs/architecture.md#s01-log-transport"
+    },
+    {
+      "level": 2,
+      "title": "S02 log viewer",
+      "identifier": "s02-log-viewer",
+      "decisions": [
+        "0011",
+        "0026"
+      ],
+      "anchor_location": "docs/architecture.md#s02-log-viewer"
+    },
+    {
+      "level": 2,
+      "title": "S06 aggregate log ownership",
+      "identifier": "s06-aggregate-log-ownership",
+      "decisions": [
+        "0012"
+      ],
+      "anchor_location": "docs/architecture.md#s06-aggregate-log-ownership"
+    },
+    {
+      "level": 2,
+      "title": "Enter navigation feedback: #115",
+      "identifier": "enter-navigation-feedback-115",
+      "decisions": [
+        "0018",
+        "0026"
+      ],
+      "anchor_location": "docs/architecture.md#enter-navigation-feedback-115"
+    },
+    {
+      "level": 2,
+      "title": "S03 process and terminal ownership",
+      "identifier": "s03-process-and-terminal-ownership",
+      "decisions": [
+        "0008",
+        "0009"
+      ],
+      "anchor_location": "docs/architecture.md#s03-process-and-terminal-ownership"
+    },
+    {
+      "level": 2,
+      "title": "S04 captured shell and prepared connection",
+      "identifier": "s04-captured-shell-and-prepared-connection",
+      "decisions": [
+        "0010",
+        "0004"
+      ],
+      "anchor_location": "docs/architecture.md#s04-captured-shell-and-prepared-connection"
+    },
+    {
+      "level": 2,
+      "title": "Shared resource workspace: #125",
+      "identifier": "shared-resource-workspace-125",
+      "decisions": [
+        "0018"
+      ],
+      "anchor_location": "docs/architecture.md#shared-resource-workspace-125"
+    },
+    {
+      "level": 2,
+      "title": "Stable workspace and inline input: #127",
+      "identifier": "stable-workspace-and-inline-input-127",
+      "decisions": [
+        "0018",
+        "0026"
+      ],
+      "anchor_location": "docs/architecture.md#stable-workspace-and-inline-input-127"
+    },
+    {
+      "level": 2,
+      "title": "Terminal interactions and captured read workspaces",
+      "identifier": "terminal-interactions-and-captured-read-workspaces",
+      "decisions": [
+        "0018",
+        "0019",
+        "0022"
+      ],
+      "anchor_location": "docs/architecture.md#terminal-interactions-and-captured-read-workspaces"
+    }
+  ]
+}

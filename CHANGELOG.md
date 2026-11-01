@@ -7,6 +7,11 @@ Release entries are written in release PRs and linked to their Git tags.
 
 ### Changed
 
+- Replace the architecture decision log with a concise overview, focused ADRs,
+  and an exact historical archive
+  ([#225](https://github.com/carloshm91/kuberich/issues/225),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
+
 - Consolidate user documentation into focused task guides and source-generated
   command, key, resource, and configuration references. Preserve previous guide
   routes and exact superseded text outside the website

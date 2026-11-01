@@ -4,7 +4,7 @@
   "canonical_user_pages": 20,
   "reserved_user_pages": 0,
   "migration_state": "user_guides_consolidated_internal_migrations_pending",
-  "scope": "Task guides and generated reference use canonical navigation. Original guide text is preserved outside the website. Architecture, acceptance-history and contribution migrations remain separate incomplete work.",
+  "scope": "Task guides, generated references and the architecture overview/ADRs are consolidated. Exact old guide and architecture text is preserved outside the website. Acceptance-history and contribution migrations remain separate incomplete work.",
   "actions": {
     "keep": "Retain the document or canonical URL; later editing may shorten or clarify it.",
     "merge": "Move useful content into the listed destinations before retiring the source.",
@@ -1023,6 +1023,336 @@
       "baseline_sha256": "c8abc0fe1af36c46485e5f278b7643d4317b3ed6a5a6bcb86f295f680328f051"
     },
     {
+      "source": "docs/adr/0000-template.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0000-template.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0001-python-terminal-stack.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0001-python-terminal-stack.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0002-dependency-direction.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0002-dependency-direction.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0003-explicit-context-sessions.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0003-explicit-context-sessions.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0004-credential-helpers-and-delegation.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0004-credential-helpers-and-delegation.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0005-discovery-and-printer-schemas.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0005-discovery-and-printer-schemas.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0006-list-watch-continuity.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0006-list-watch-continuity.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0007-active-view-generations.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0007-active-view-generations.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0008-external-process-ownership.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0008-external-process-ownership.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0009-native-terminal-handoff.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0009-native-terminal-handoff.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0010-embedded-container-terminal.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0010-embedded-container-terminal.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0011-single-container-log-streams.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0011-single-container-log-streams.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0012-controller-owned-aggregate-logs.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0012-controller-owned-aggregate-logs.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0013-reviewed-conditional-writes.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0013-reviewed-conditional-writes.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0014-reviewed-file-transfers.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0014-reviewed-file-transfers.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0015-managed-tcp-forwards.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0015-managed-tcp-forwards.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0016-explicit-local-plugins.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0016-explicit-local-plugins.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0017-versioned-local-preferences.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0017-versioned-local-preferences.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0018-focused-input-and-workspace-geometry.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0018-focused-input-and-workspace-geometry.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0019-saved-resource-view-contracts.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0019-saved-resource-view-contracts.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0020-data-only-theme-palettes.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0020-data-only-theme-palettes.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0021-opt-in-release-notices.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0021-opt-in-release-notices.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0022-default-redaction-and-explicit-disclosure.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0022-default-redaction-and-explicit-disclosure.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0023-widget-style-cache-ownership.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0023-widget-style-cache-ownership.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0024-transactional-css-parse-reuse.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0024-transactional-css-parse-reuse.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0025-native-table-cache-retirement.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0025-native-table-cache-retirement.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0026-incremental-rendering-and-cooperative-work.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0026-incremental-rendering-and-cooperative-work.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0027-frozen-runtime-delegation.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0027-frozen-runtime-delegation.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0028-identity-and-preference-migration.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0028-identity-and-preference-migration.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0029-immutable-release-activation.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0029-immutable-release-activation.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0030-owned-verification-fixtures.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0030-owned-verification-fixtures.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0031-standard-python-packaging.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0031-standard-python-packaging.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/README.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/README.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
       "source": "docs/agent-setup.md",
       "audience": "development",
       "action": "move",
@@ -1046,12 +1376,13 @@
     {
       "source": "docs/architecture.md",
       "audience": "development",
-      "action": "move",
+      "action": "keep",
       "destinations": [
         "docs/architecture.md",
-        "docs/internal/architecture-history.md"
+        "docs/adr/README.md",
+        "engineering/architecture-history/architecture-before-adrs.md"
       ],
-      "reason": "Keep a short contributor overview at the existing path and archive the historical decisions or evidence separately.",
+      "reason": "Maintain the concise current overview and active decisions; preserve the previous decision log exactly outside user navigation.",
       "baseline_sha256": "d5a8b04b2ec5f55cf703d9a9bc322d190425bd27828c69993784ba2c3fefe162"
     },
     {
@@ -1245,6 +1576,46 @@
       ],
       "reason": "Replace the user-facing status with a short page and preserve preview/evidence history internally.",
       "baseline_sha256": "8c62eba1186380ad032f085c8969739302f7516e9724bdbe9925bb69f2992925"
+    },
+    {
+      "source": "docs/capability-reference.md",
+      "audience": "generated reference",
+      "action": "keep",
+      "destinations": [
+        "docs/capability-reference.md"
+      ],
+      "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/cli-reference.md",
+      "audience": "generated reference",
+      "action": "keep",
+      "destinations": [
+        "docs/cli-reference.md"
+      ],
+      "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/config-reference.md",
+      "audience": "generated reference",
+      "action": "keep",
+      "destinations": [
+        "docs/config-reference.md"
+      ],
+      "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/resource-reference.md",
+      "audience": "generated reference",
+      "action": "keep",
+      "destinations": [
+        "docs/resource-reference.md"
+      ],
+      "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
+      "baseline_sha256": null
     },
     {
       "source": "docs/github-issues.json",
@@ -1728,6 +2099,66 @@
       "baseline_sha256": "7676830b975b845376bc93d99edfba2bdb296856e697611c0e4cd6920a56305e"
     },
     {
+      "source": "engineering/architecture-history/README.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "engineering/architecture-history/README.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "engineering/architecture-history/architecture-before-adrs.md",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "engineering/architecture-history/architecture-before-adrs.md"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "engineering/architecture-history/decision-catalog.json",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "engineering/architecture-history/decision-catalog.json"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "engineering/architecture-history/source-map.json",
+      "audience": "development architecture",
+      "action": "keep",
+      "destinations": [
+        "engineering/architecture-history/source-map.json"
+      ],
+      "reason": "Maintain a focused architecture decision or exact historical source outside public user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "engineering/guide-history/source-map.json",
+      "audience": "development history",
+      "action": "keep",
+      "destinations": [
+        "engineering/guide-history/source-map.json"
+      ],
+      "reason": "Preserve exact superseded guide text and source checksums outside user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "engineering/guide-history/user-guides-before-consolidation.md",
+      "audience": "development history",
+      "action": "keep",
+      "destinations": [
+        "engineering/guide-history/user-guides-before-consolidation.md"
+      ],
+      "reason": "Preserve exact superseded guide text and source checksums outside user navigation and website search.",
+      "baseline_sha256": null
+    },
+    {
       "source": "packaging/homebrew/README.md",
       "audience": "development",
       "action": "keep",
@@ -1756,68 +2187,17 @@
       ],
       "reason": "Retain this contributor or project contract outside the user navigation.",
       "baseline_sha256": "6760ef2d359a6c3e533aaf6edb78cbf8455de879f3acca5e3422c6843545b1ba"
-    },
-    {
-      "source": "engineering/guide-history/user-guides-before-consolidation.md",
-      "audience": "development history",
-      "action": "keep",
-      "destinations": [
-        "engineering/guide-history/user-guides-before-consolidation.md"
-      ],
-      "reason": "Preserve exact superseded guide text and source checksums outside user navigation and website search.",
-      "baseline_sha256": null
-    },
-    {
-      "source": "engineering/guide-history/source-map.json",
-      "audience": "development history",
-      "action": "keep",
-      "destinations": [
-        "engineering/guide-history/source-map.json"
-      ],
-      "reason": "Preserve exact superseded guide text and source checksums outside user navigation and website search.",
-      "baseline_sha256": null
-    },
-    {
-      "source": "docs/capability-reference.md",
-      "audience": "generated reference",
-      "action": "keep",
-      "destinations": [
-        "docs/capability-reference.md"
-      ],
-      "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
-      "baseline_sha256": null
-    },
-    {
-      "source": "docs/cli-reference.md",
-      "audience": "generated reference",
-      "action": "keep",
-      "destinations": [
-        "docs/cli-reference.md"
-      ],
-      "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
-      "baseline_sha256": null
-    },
-    {
-      "source": "docs/config-reference.md",
-      "audience": "generated reference",
-      "action": "keep",
-      "destinations": [
-        "docs/config-reference.md"
-      ],
-      "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
-      "baseline_sha256": null
-    },
-    {
-      "source": "docs/resource-reference.md",
-      "audience": "generated reference",
-      "action": "keep",
-      "destinations": [
-        "docs/resource-reference.md"
-      ],
-      "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
-      "baseline_sha256": null
     }
   ],
   "inventory_rule": "Every tracked Markdown file, every file under docs/, LICENSE, NOTICE, and contribution issue templates at the baseline commit; new structure contracts are mapped too.",
-  "routing": "Each retired guide path redirects to its preserved source section. Internal links to active source fragments keep exact heading targets. Cloudflare cannot inspect an incoming URL fragment, so an external deep link on a retired path lands at the source section. Legacy route anchors stay explicit when later prose is consolidated."
+  "routing": "Each retired guide path redirects to its preserved source section. Internal links to active source fragments keep exact heading targets. Cloudflare cannot inspect an incoming URL fragment, so an external deep link on a retired path lands at the source section. Legacy route anchors stay explicit when later prose is consolidated.",
+  "architecture_state": "overview_and_numbered_adrs_active",
+  "preserved_sources": [
+    {
+      "path": "engineering/architecture-history/architecture-before-adrs.md",
+      "source": "docs/architecture.md",
+      "commit": "625086db1a75aab10ec28fe4d6440f7fb1d32849",
+      "sha256": "d5a8b04b2ec5f55cf703d9a9bc322d190425bd27828c69993784ba2c3fefe162"
+    }
+  ]
 }
