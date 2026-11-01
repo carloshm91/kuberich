@@ -57,9 +57,9 @@ def application(directory, url, forwarding):
         catalog=catalog_fixture(directory, url),
         preferences=PreferenceSource(ConfigLocation(path, True), document),
         initial_command=ResourceCommand(RESOURCE_ALIASES["svc"], "team"),
+        environment=executable(directory),
+        directory=directory,
     )
-    app._process_environment = executable(directory)
-    app._process_directory = directory
     return app, path
 
 

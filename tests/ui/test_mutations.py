@@ -186,7 +186,7 @@ async def test_review_enter_cancel_confirm_and_public_history(tmp_path, size, mo
             assert "private-edit-value" not in content and "private-existing" not in content
             app.screen.back()
             await pilot.pause()
-        assert app.sessions.client is None and not app.mutations._live
+        assert app.sessions.client is None and app.mutations.active_count == 0
 
 
 @pytest.mark.asyncio
@@ -240,7 +240,7 @@ async def test_escaping_pending_write_retains_outcome_and_exit_drains_uncertain_
             await api.entered.wait()
             await pilot.press("escape")
             await wait_for(lambda: len(app.screen_stack) == 1)
-            assert len(app.mutations._live) == 1
+            assert app.mutations.active_count == 1
             app.action_writes()
             await wait_for(lambda: isinstance(app.screen, MutationHistoryScreen))
             await pilot.pause()
@@ -248,4 +248,8 @@ async def test_escaping_pending_write_retains_outcome_and_exit_drains_uncertain_
                 app.screen.query_one("#write-history-content", Static).content
             )
         assert app.mutations.records[-1].result.state is MutationState.UNCERTAIN
-        assert not app.mutations._live and app.sessions.client is None and len(api.requests) == 1
+        assert (
+            app.mutations.active_count == 0
+            and app.sessions.client is None
+            and len(api.requests) == 1
+        )
