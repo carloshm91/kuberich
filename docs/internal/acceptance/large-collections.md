@@ -95,7 +95,9 @@ resourceVersion; the three-page final snapshots must report complete membership.
 
 A role-label query excludes a deliberately nonmatching fixture. Adding a name
 field selector further excludes the other matching fixture. A fresh GET through
-the same Table reader must recover the original full data and UID. Namespace
+the same Table reader must recover the original full data and UID. One actual
+MODIFIED event must retain the UID and changed annotation while omitting data;
+the compact watch is then cancelled and awaited. Namespace
 deletion is requested in `finally`; the existing owned-cluster boundary verifies
 node deletion and absence. The context receipt records the observed full and
 compact retained bytes alongside each assertion's result.

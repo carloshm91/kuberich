@@ -268,7 +268,8 @@ async def test_compact_table_negotiation_is_opt_in_and_plain_json_fallback_remai
 @pytest.mark.asyncio
 async def test_compact_table_watch_preserves_metadata_negotiation_query_and_real_uid(tmp_path):
     requests, updates = [], []
-    query = ResourceQuery("app=api", compact=True)
+    stopped = asyncio.Event()
+    query = ResourceQuery("app=api", "metadata.name=one", compact=True)
 
     async def handler(request):
         requests.append(dict(request.query))
@@ -279,7 +280,12 @@ async def test_compact_table_watch_preserves_metadata_negotiation_query_and_real
             "metadata": obj["metadata"],
         }
         if "watch" in request.query:
-            return await stable_watch(request, {"type": "MODIFIED", "object": server_table(obj)})
+            try:
+                return await stable_watch(
+                    request, {"type": "MODIFIED", "object": server_table(obj)}
+                )
+            finally:
+                stopped.set()
         return web.json_response(server_table(obj, rv="original-rv"))
 
     async def observe(update):
@@ -291,9 +297,12 @@ async def test_compact_table_watch_preserves_metadata_negotiation_query_and_real
         reader = ResourceReader(owner.session, tables=True)
         with pytest.raises(ObservationComplete):
             await ListWatch(reader, query=query).run(custom_resource(), "team", observe)
+        await wait_for(stopped.is_set)
     assert len(requests) == 2
     assert all(
-        value["includeObject"] == "Metadata" and value["labelSelector"] == "app=api"
+        value["includeObject"] == "Metadata"
+        and value["labelSelector"] == "app=api"
+        and value["fieldSelector"] == "metadata.name=one"
         for value in requests
     )
     assert requests[1]["resourceVersion"] == "original-rv"

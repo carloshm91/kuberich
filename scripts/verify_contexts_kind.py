@@ -416,6 +416,56 @@ async def verify_collection_queries(
         fresh = await tables.get(resource, "wire-0", namespace)
         assert (fresh.uid, fresh.namespace) == (expected["wire-0"], namespace)
         assert not fresh.metadata_only and fresh.manifest["data"] == payload
+        modified = asyncio.Event()
+        patched = False
+
+        async def observe_modified(update: SyncUpdate) -> None:
+            nonlocal patched
+            if update.status is SyncStatus.LIVE and update.event is None and not patched:
+                assert update.snapshot is not None and update.snapshot.collection.complete
+                assert [row.uid for row in update.snapshot.items] == [expected["wire-0"]]
+                assert update.snapshot.items[0].metadata_only
+                patched = True
+                await api.patch_namespaced_config_map(
+                    "wire-0",
+                    namespace,
+                    {
+                        "metadata": {"annotations": {"kuberich-wire-event": "modified"}},
+                        "data": {"payload": "owned-modified-data"},
+                    },
+                )
+            if update.event is not None:
+                assert update.event.type is EventType.MODIFIED
+                record = update.event.record
+                assert record is not None and record.uid == expected["wire-0"]
+                assert record.namespace == namespace and record.metadata_only
+                assert record.server is not None and "data" not in record.manifest
+                assert record.manifest["kind"] == "PartialObjectMetadata"
+                assert (
+                    record.manifest["metadata"]["annotations"]["kuberich-wire-event"] == "modified"
+                )
+                assert update.snapshot is not None and update.snapshot.items == (record,)
+                modified.set()
+
+        task = asyncio.create_task(
+            ListWatch(
+                tables,
+                query=ResourceQuery(owner_label + ",role=selected", "metadata.name=wire-0", True),
+            ).run(resource, namespace, observe_modified)
+        )
+        completion = asyncio.create_task(modified.wait())
+        try:
+            done, _ = await asyncio.wait(
+                {task, completion}, timeout=30, return_when=asyncio.FIRST_COMPLETED
+            )
+            if task in done:
+                await task
+            assert patched and modified.is_set()
+        finally:
+            completion.cancel()
+            task.cancel()
+            results = await asyncio.gather(task, completion, return_exceptions=True)
+        assert isinstance(results[0], asyncio.CancelledError) and task.done()
     finally:
         await api.delete_namespace(namespace)
     return {
@@ -424,6 +474,8 @@ async def verify_collection_queries(
         "real_compact_table_partial_metadata_identity": True,
         "real_compact_payload_reduction": True,
         "real_compact_fresh_get_full_data": True,
+        "real_compact_watch_modified_metadata": True,
+        "real_compact_watch_cancellation_awaited": True,
         "real_paginated_collection_progress": True,
         "real_query_namespace_delete_requested": True,
         "query_fixture_count": len(expected),
