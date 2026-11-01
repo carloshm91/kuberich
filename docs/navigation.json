@@ -1,0 +1,276 @@
+{
+  "schema_version": 1,
+  "page_budget": 20,
+  "index_title": "Start here",
+  "sections": [
+    {
+      "kind": "tutorial",
+      "title": "Tutorials",
+      "pages": [
+        {
+          "source": "quickstart.md",
+          "title": "Quick start",
+          "sources": [
+            "quickstart.md"
+          ],
+          "generated": false
+        },
+        {
+          "source": "everyday-workflow.md",
+          "title": "Everyday workflow",
+          "sources": [
+            "everyday-workflow.md"
+          ],
+          "generated": false
+        }
+      ]
+    },
+    {
+      "kind": "how-to",
+      "title": "How-to guides",
+      "pages": [
+        {
+          "source": "installation.md",
+          "title": "Install and upgrade",
+          "sources": [
+            "installation.md"
+          ],
+          "generated": false
+        },
+        {
+          "source": "context-sessions.md",
+          "title": "Contexts and authentication",
+          "sources": [
+            "context-sessions.md",
+            "eks-authentication.md",
+            "aks-authentication.md",
+            "kubeconfig-interoperability.md"
+          ],
+          "generated": false
+        },
+        {
+          "source": "command-navigation.md",
+          "title": "Navigate and search",
+          "sources": [
+            "command-navigation.md",
+            "terminal-navigation.md",
+            "resource-inspection.md",
+            "resource-jumps.md"
+          ],
+          "generated": false
+        },
+        {
+          "source": "log-viewer.md",
+          "title": "Read logs",
+          "sources": [
+            "log-viewer.md",
+            "container-navigation.md"
+          ],
+          "generated": false
+        },
+        {
+          "source": "container-shell.md",
+          "title": "Shells and attach",
+          "sources": [
+            "container-shell.md"
+          ],
+          "generated": false
+        },
+        {
+          "source": "container-attach-copy.md",
+          "title": "Transfer files",
+          "sources": [
+            "container-attach-copy.md"
+          ],
+          "generated": false
+        },
+        {
+          "source": "port-forwards.md",
+          "title": "Forward ports",
+          "sources": [
+            "port-forwards.md"
+          ],
+          "generated": false
+        },
+        {
+          "source": "editing.md",
+          "title": "Edit and change resources",
+          "sources": [
+            "editing.md",
+            "mutations.md",
+            "configuration-data.md"
+          ],
+          "generated": false
+        },
+        {
+          "source": "workloads.md",
+          "title": "Operate workloads",
+          "sources": [
+            "workloads.md",
+            "resource-operations.md"
+          ],
+          "generated": false
+        },
+        {
+          "source": "configuration.md",
+          "title": "Configuration and themes",
+          "sources": [
+            "configuration.md",
+            "themes.md",
+            "navigation-preferences.md"
+          ],
+          "generated": false
+        },
+        {
+          "source": "plugins.md",
+          "title": "Run local plugins",
+          "sources": [
+            "plugins.md",
+            "plugin-compatibility.md"
+          ],
+          "generated": false
+        },
+        {
+          "source": "troubleshooting.md",
+          "title": "Troubleshooting and FAQ",
+          "sources": [
+            "troubleshooting.md",
+            "terminal-compatibility.md"
+          ],
+          "generated": false
+        }
+      ]
+    },
+    {
+      "kind": "explanation",
+      "title": "Explanation",
+      "pages": [
+        {
+          "source": "resource-workspace.md",
+          "title": "Understand the workspace",
+          "sources": [
+            "resource-workspace.md",
+            "standard-resources.md"
+          ],
+          "generated": false
+        }
+      ]
+    },
+    {
+      "kind": "reference",
+      "title": "Reference",
+      "pages": [
+        {
+          "source": "cli-reference.md",
+          "title": "Command-line options",
+          "sources": [],
+          "generated": true
+        },
+        {
+          "source": "resource-reference.md",
+          "title": "Resource registry",
+          "sources": [],
+          "generated": true
+        },
+        {
+          "source": "capability-reference.md",
+          "title": "Feature availability",
+          "sources": [],
+          "generated": true
+        }
+      ]
+    }
+  ],
+  "legacy_routes": [
+    {
+      "source": "eks-authentication.md",
+      "target": "context-sessions.md",
+      "anchor": "legacy-eks-authentication",
+      "heading": "eks-authentication--eks-authentication"
+    },
+    {
+      "source": "aks-authentication.md",
+      "target": "context-sessions.md",
+      "anchor": "legacy-aks-authentication",
+      "heading": "aks-authentication--aks-authentication"
+    },
+    {
+      "source": "kubeconfig-interoperability.md",
+      "target": "context-sessions.md",
+      "anchor": "legacy-kubeconfig-interoperability",
+      "heading": "kubeconfig-interoperability--kubeconfig-and-credential-interoperability"
+    },
+    {
+      "source": "terminal-navigation.md",
+      "target": "command-navigation.md",
+      "anchor": "legacy-terminal-navigation",
+      "heading": "terminal-navigation--terminal-navigation-and-remote-clipboard"
+    },
+    {
+      "source": "resource-inspection.md",
+      "target": "command-navigation.md",
+      "anchor": "legacy-resource-inspection",
+      "heading": "resource-inspection--inspecting-a-pod"
+    },
+    {
+      "source": "resource-jumps.md",
+      "target": "command-navigation.md",
+      "anchor": "legacy-resource-jumps",
+      "heading": "resource-jumps--jump-to-related-resources"
+    },
+    {
+      "source": "container-navigation.md",
+      "target": "log-viewer.md",
+      "anchor": "legacy-container-navigation",
+      "heading": "container-navigation--pod-and-container-navigation"
+    },
+    {
+      "source": "mutations.md",
+      "target": "editing.md",
+      "anchor": "legacy-mutations",
+      "heading": "mutations--guarded-resource-changes"
+    },
+    {
+      "source": "configuration-data.md",
+      "target": "editing.md",
+      "anchor": "legacy-configuration-data",
+      "heading": "configuration-data--inspect-configuration-data-deliberately"
+    },
+    {
+      "source": "resource-operations.md",
+      "target": "workloads.md",
+      "anchor": "legacy-resource-operations",
+      "heading": "resource-operations--delete-resources-and-operate-jobs"
+    },
+    {
+      "source": "themes.md",
+      "target": "configuration.md",
+      "anchor": "legacy-themes",
+      "heading": "themes--themes-and-local-appearance"
+    },
+    {
+      "source": "navigation-preferences.md",
+      "target": "configuration.md",
+      "anchor": "legacy-navigation-preferences",
+      "heading": "navigation-preferences--navigation-aliases-and-saved-resource-views"
+    },
+    {
+      "source": "plugin-compatibility.md",
+      "target": "plugins.md",
+      "anchor": "legacy-plugin-compatibility",
+      "heading": "plugin-compatibility--plugin-compatibility-and-original-examples"
+    },
+    {
+      "source": "terminal-compatibility.md",
+      "target": "troubleshooting.md",
+      "anchor": "legacy-terminal-compatibility",
+      "heading": "terminal-compatibility--terminal-compatibility"
+    },
+    {
+      "source": "standard-resources.md",
+      "target": "resource-workspace.md",
+      "anchor": "legacy-standard-resources",
+      "heading": "standard-resources--standard-resource-views"
+    }
+  ]
+}
