@@ -64,6 +64,23 @@ every transitive dependency receive their own notices. The wheel/sdist do not
 vendor these separately installed libraries; release sidecars record their actual
 composition. A future bundler must qualify its concrete redistribution method.
 
+## Development, build and deployment tools
+
+The runtime inventory does not audit the development or standalone-build tool
+groups. Audit their exact locked requirements separately, and test the affected
+installer or build workflow after an update. A tool dependency does not become
+an installed application dependency merely because it shares `uv.lock`.
+
+The deployment CLI has its own exact parent pin and npm lock under
+`website/deploy`. Install it with `npm ci --ignore-scripts` in an owned directory,
+run `npm audit --audit-level=low`, and check its version and Pages command help
+without credentials. Update a parent when it pins a vulnerable child exactly;
+do not conceal that dependency with an override or an advisory dismissal.
+
+The [tooling refresh evidence](acceptance/dependency-refresh.md) records the
+patched resolutions, advisory scope, measured checks and remaining platform
+qualification. Tooling checks authorize no publication or deployment.
+
 ## Runtime security boundaries
 
 The full deterministic inventory is listed under
