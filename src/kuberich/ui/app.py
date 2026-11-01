@@ -1,5 +1,7 @@
 """A responsive workspace subscribed to its owned Kubernetes resource view."""
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import os
@@ -10,10 +12,11 @@ from dataclasses import replace
 from functools import partial
 from importlib.metadata import version
 from pathlib import Path
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 from uuid import UUID
 
 from platformdirs import user_cache_path
+from rich.console import RenderableType
 from textual import on
 from textual.app import App, ComposeResult
 from textual.binding import Binding, BindingType
@@ -32,7 +35,6 @@ from kuberich.config.catalog import KubeCatalog, kubeconfig_paths, load_catalog
 from kuberich.config.forwarding import ForwardPreferences, forwarding_from
 from kuberich.config.navigation import NavigationPreferences, navigation_from
 from kuberich.config.schema import Settings
-from kuberich.domain.aggregate_logs import workload_kind
 from kuberich.domain.appearance import Appearance, effective_theme
 from kuberich.domain.cleanup import finished_pods
 from kuberich.domain.clipboard import ClipboardBackend, clipboard_backend, clipboard_bytes, osc52
@@ -46,7 +48,6 @@ from kuberich.domain.forward_presets import annotation_preset, resolve_mappings
 from kuberich.domain.interactions import InteractionCommand
 from kuberich.domain.keyboard import effective_keymap
 from kuberich.domain.kubeconfig_edit import ContextChange
-from kuberich.domain.logs import log_containers
 from kuberich.domain.namespaces import NamespaceRow
 from kuberich.domain.navigation import (
     MAX_HISTORY,
@@ -69,9 +70,7 @@ from kuberich.errors import AppError, ExecutableUnavailable
 from kuberich.security.arguments import validate_argument
 from kuberich.security.presentation import safe_text
 from kuberich.services.access import AccessPolicy, Action
-from kuberich.services.aggregate_logs import AggregateLogs
 from kuberich.services.appearance import PreferenceSource
-from kuberich.services.attach import AttachService
 from kuberich.services.clipboard import NativeClipboard
 from kuberich.services.commands import (
     Command,
@@ -83,13 +82,8 @@ from kuberich.services.commands import (
     ScopedCommand,
     suggestions,
 )
-from kuberich.services.configuration_data import ConfigurationService
-from kuberich.services.editing import EditingService
 from kuberich.services.filtering import FilterResult, apply_filter
-from kuberich.services.inspection import InspectionService
-from kuberich.services.logs import LogStream
 from kuberich.services.mutations import MutationManager, MutationService
-from kuberich.services.operations import ResourceOperationService
 from kuberich.services.pods import (
     CustomProjection,
     NamespaceProjection,
@@ -99,13 +93,8 @@ from kuberich.services.pods import (
 from kuberich.services.port_forwards import ForwardManager, ForwardService
 from kuberich.services.processes import ProcessRunner, _finish_owned
 from kuberich.services.sessions import SessionService
-from kuberich.services.shell import ShellService
-from kuberich.services.transfers import TransferService
 from kuberich.services.updates import UpdateResult, UpdateService
-from kuberich.services.workloads import WorkloadService
 from kuberich.services.workspace import ViewSubscription, WorkspaceService
-from kuberich.ui.aggregate_logs import AggregateLogScreen
-from kuberich.ui.appearance import AboutScreen, ThemeScreen
 from kuberich.ui.chrome import (
     CTX_SHORTCUTS,
     NS_SHORTCUTS,
@@ -122,37 +111,40 @@ from kuberich.ui.chrome import (
     workload_shortcuts,
 )
 from kuberich.ui.commands import CommandInput, NavigationInput
-from kuberich.ui.configuration_data import ConfigurationScreen
-from kuberich.ui.containers import ContainerScreen
-from kuberich.ui.context_admin import ContextEditResult, ContextEditScreen
 from kuberich.ui.contexts import ContextTable, context_rows
 from kuberich.ui.custom import CustomTable
-from kuberich.ui.editing import EditingScreen
 from kuberich.ui.handoff import terminal_handoff
-from kuberich.ui.help import HelpScreen
-from kuberich.ui.inspection import InspectionScreen, Page
 from kuberich.ui.interactions import Interactions
 from kuberich.ui.jumps import JumpController
 from kuberich.ui.keybindings import NavigationHelpScreen, navigation_help
 from kuberich.ui.live_preferences import LivePreferences
-from kuberich.ui.logs import LogScreen
-from kuberich.ui.mutations import AnnotationScreen, MutationHistoryScreen
 from kuberich.ui.namespaces import NamespaceTable
 from kuberich.ui.nested import CommandWorkspace
-from kuberich.ui.operations import ResourceOperationScreen
 from kuberich.ui.plugins import PluginController, PluginJobs, PluginScreen
 from kuberich.ui.pods import PodTable, Viewport
 from kuberich.ui.port_forwards import ForwardPrompt, ForwardScreen
 from kuberich.ui.presentation import DEFAULT_PRESENTATION, Presentation
-from kuberich.ui.scopes import ConnectionScreen
 from kuberich.ui.shutdown import TerminalSignals
 from kuberich.ui.standard import StandardTable
 from kuberich.ui.style_cache import ColorStylesCache, ComponentStylesheet
-from kuberich.ui.terminal import ShellScreen
 from kuberich.ui.theme_catalog import appearance_from, invert_theme, themes_for
-from kuberich.ui.transfers import TransferScreen
+from kuberich.ui.view_mounts import ViewMounts
 from kuberich.ui.views import ViewPreferences, ViewScreen
-from kuberich.ui.workloads import WorkloadScreen
+
+if TYPE_CHECKING:
+    from kuberich.ui.aggregate_logs import AggregateLogScreen
+    from kuberich.ui.context_admin import ContextEditResult
+    from kuberich.ui.inspection import Page
+
+
+def __getattr__(name: str) -> object:
+    # Retain the existing public import used by embedded workspace consumers.
+    if name == "HelpScreen":
+        from kuberich.ui.help import HelpScreen
+
+        return HelpScreen
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 DISCONNECTED_STATUS = "Disconnected · No resource data"
 
@@ -163,6 +155,7 @@ class KubeRichApp(App[None]):
     CSS_PATH = Path(__file__).with_name("kuberich.tcss")
     ENABLE_COMMAND_PALETTE = False
     AUTO_FOCUS = "#resources"
+    _view_mounts: ViewMounts | None = None
     BINDINGS: ClassVar[list[BindingType]] = [
         Binding("slash", "focus_filter", "Filter", key_display="/", priority=True),
         Binding("colon", "focus_command", "Cmd", key_display=":", priority=True),
@@ -363,6 +356,8 @@ class KubeRichApp(App[None]):
             self._appearance_warning = "Selected theme is unavailable; using k9s."
 
     def action_change_theme(self) -> None:
+        from kuberich.ui.appearance import ThemeScreen
+
         if not isinstance(self.screen, ModalScreen):
             context = self._theme_context()
             self.push_screen(
@@ -404,6 +399,8 @@ class KubeRichApp(App[None]):
         return f"Saved {'globally' if context is None else 'for this context'} · effective theme: {self.theme} · environment > context > global"
 
     def action_about(self) -> None:
+        from kuberich.ui.appearance import AboutScreen
+
         if not isinstance(self.screen, ModalScreen):
             message = self._notice_text()
             self.push_screen(
@@ -437,6 +434,8 @@ class KubeRichApp(App[None]):
             self._update_task.add_done_callback(self._update_finished)
 
     async def _check_update(self) -> None:
+        from kuberich.ui.appearance import AboutScreen
+
         result = await self._updates.check()
         if self._updates_stopped or not self.appearance.check_updates:
             return
@@ -522,22 +521,25 @@ class KubeRichApp(App[None]):
     async def on_event(self, event: Event) -> None:
         if (
             self.screen_stack
-            and isinstance(self.screen, ShellScreen)
+            and isinstance(self.screen, ModalScreen)
             and isinstance(event, (Key, Paste))
             and not event.is_forwarded
         ):
-            if isinstance(event, Key):
-                if event.key == "ctrl+q" and not (
-                    self.screen.attach_mode and self.screen.detach_pending
-                ):
-                    self.exit()
+            from kuberich.ui.terminal import ShellScreen
+
+            if isinstance(self.screen, ShellScreen):
+                if isinstance(event, Key):
+                    if event.key == "ctrl+q" and not (
+                        self.screen.attach_mode and self.screen.detach_pending
+                    ):
+                        self.exit()
+                    else:
+                        self.screen.key(event)
                 else:
-                    self.screen.key(event)
-            else:
-                self.screen.paste(event)
-            event.stop()
-            event.prevent_default()
-            return
+                    self.screen.paste(event)
+                event.stop()
+                event.prevent_default()
+                return
         if (
             isinstance(event, Key)
             and not event.is_forwarded
@@ -594,6 +596,16 @@ class KubeRichApp(App[None]):
     def _workspace_status(self) -> str:
         return self.workspace.store.observation.message
 
+    def _initial_table(self) -> Widget:
+        initial = self._initial_command
+        if initial is Command.CONTEXTS and self.sessions.catalog.names:
+            return self.context_table
+        if initial is Command.NAMESPACES:
+            return self.namespace_table
+        if isinstance(initial, ResourceCommand):
+            return self.standard_table
+        return self.resources
+
     def compose(self) -> ComposeResult:
         yield self.header
         with WorkspaceBars():
@@ -605,11 +617,9 @@ class KubeRichApp(App[None]):
                 yield self.command_input
         with WorkspaceFrame(id="resource-view"):
             yield Button("0  All namespaces", id="all-namespaces", compact=True)
-            yield self.resources
-            yield self.namespace_table
-            yield self.context_table
-            yield self.standard_table
-            yield self.custom_table
+            initial_table = self._initial_table()
+            initial_table.display = True
+            yield initial_table
             with Vertical(id="empty-state"):
                 yield WorkspaceLabel("No cluster connection", id="empty-title", markup=False)
                 yield WorkspaceLabel(
@@ -634,6 +644,27 @@ class KubeRichApp(App[None]):
         child._styles_cache = ColorStylesCache()
 
     def on_mount(self) -> None:
+        first_paint = asyncio.Event()
+        mounts = self._view_mounts = ViewMounts(
+            self,
+            self.query_one("#resource-view", Vertical),
+            (
+                self.resources,
+                self.namespace_table,
+                self.context_table,
+                self.standard_table,
+                self.custom_table,
+            ),
+            self.query_one("#empty-state"),
+            self._handle_exception,
+        )
+
+        async def before_connect() -> None:
+            await first_paint.wait()
+            await mounts.wait_ready()
+
+        self.sessions.before_connect = before_connect
+        self.call_after_refresh(first_paint.set)
         self.set_keymap(dict(self.navigation_keymap))
         self.plugins.refresh()
         for table in (
@@ -659,12 +690,13 @@ class KubeRichApp(App[None]):
         self.query_one("#resource-view", Vertical).border_title = "Resources · no connection"
         self.screen.set_class(self.size.width < 70, "compact")
         self.screen.set_class(self.size.height < 16, "short")
-        self.set_focus(self.resources)
+        self.set_focus(self._initial_table())
         self._set_status(DISCONNECTED_STATUS)
         self._build_info = self.header.query_one("#build-info", Static)
         self.live_preferences.start((self._appearance_warning, self._navigation_warning))
-        self._start_update_check()
         if self._initial_command is not Command.QUIT:
+            self.call_after_refresh(mounts.start)
+            self.call_after_refresh(self._start_update_check)
             subscription = self.workspace.subscribe()
             self._view_task = asyncio.create_task(self._observe_view(subscription))
             self._render_task = asyncio.create_task(self._render_views())
@@ -781,6 +813,14 @@ class KubeRichApp(App[None]):
                             header.update_identity()
                         header_identity = identity
                     for screen in tuple(self.screen_stack):
+                        if not isinstance(screen, ModalScreen):
+                            continue
+                        from kuberich.ui.configuration_data import ConfigurationScreen
+                        from kuberich.ui.containers import ContainerScreen
+                        from kuberich.ui.inspection import InspectionScreen
+                        from kuberich.ui.logs import LogScreen
+                        from kuberich.ui.terminal import ShellScreen
+
                         if isinstance(
                             screen,
                             (
@@ -1111,6 +1151,17 @@ class KubeRichApp(App[None]):
         self._show_sort()
 
     async def _close_client_operations(self, client: KubernetesSession) -> None:
+        from kuberich.ui.configuration_data import ConfigurationScreen
+        from kuberich.ui.containers import ContainerScreen
+        from kuberich.ui.editing import EditingScreen
+        from kuberich.ui.inspection import InspectionScreen
+        from kuberich.ui.logs import LogScreen
+        from kuberich.ui.mutations import AnnotationScreen
+        from kuberich.ui.operations import ResourceOperationScreen
+        from kuberich.ui.terminal import ShellScreen
+        from kuberich.ui.transfers import TransferScreen
+        from kuberich.ui.workloads import WorkloadScreen
+
         closing = asyncio.gather(
             *(
                 screen.stop_owned()
@@ -1200,6 +1251,17 @@ class KubeRichApp(App[None]):
         else:
             self.notify(str(error), severity="error")
 
+    def exit(
+        self,
+        result: None = None,
+        return_code: int = 0,
+        message: RenderableType | None = None,
+    ) -> None:
+        self._updates_stopped = True
+        if self._view_mounts is not None:
+            self._view_mounts.stop()
+        super().exit(result=result, return_code=return_code, message=message)
+
     async def on_unmount(self) -> None:
         self._clipboard_closing = True
         self._updates_stopped = True
@@ -1207,6 +1269,8 @@ class KubeRichApp(App[None]):
             self._update_task.cancel()
             await _finish_owned(asyncio.gather(self._update_task, return_exceptions=True))
         try:
+            if self._view_mounts is not None:
+                await self._view_mounts.close()
             if self._nested_route_task is not None:
                 if not self._nested_route_task.done() and not self._nested_route_task.cancelling():
                     self._nested_route_task.cancel()
@@ -1272,6 +1336,9 @@ class KubeRichApp(App[None]):
             self._inspect("details")
 
     def action_configuration_data(self) -> None:
+        from kuberich.services.configuration_data import ConfigurationService
+        from kuberich.ui.configuration_data import ConfigurationScreen
+
         selection = self._capture_target()
         if selection is not None:
             client, resource, _, target, current = selection
@@ -1287,6 +1354,8 @@ class KubeRichApp(App[None]):
         path: str | None = None,
         time_format: str | None = None,
     ) -> str | None:
+        from kuberich.ui.configuration_data import ConfigurationScreen
+
         if any(
             isinstance(screen, (ConfigurationScreen, PluginScreen)) for screen in self.screen_stack
         ):
@@ -1298,6 +1367,8 @@ class KubeRichApp(App[None]):
         return super().deliver_screenshot(filename, path, time_format)
 
     def export_screenshot(self, *, title: str | None = None, simplify: bool = False) -> str:
+        from kuberich.ui.configuration_data import ConfigurationScreen
+
         if any(
             isinstance(screen, (ConfigurationScreen, PluginScreen)) for screen in self.screen_stack
         ):
@@ -1316,6 +1387,9 @@ class KubeRichApp(App[None]):
         self._inspect("events")
 
     def _inspect(self, page: Page) -> None:
+        from kuberich.services.inspection import InspectionService
+        from kuberich.ui.inspection import InspectionScreen
+
         selection = self._capture_target()
         if selection is not None:
             client, resource, _, target, current = selection
@@ -1363,6 +1437,8 @@ class KubeRichApp(App[None]):
             )
 
     def action_annotate(self) -> None:
+        from kuberich.ui.mutations import AnnotationScreen
+
         try:
             self.commands.policy.require(Action.MUTATE)
         except AppError as error:
@@ -1382,6 +1458,8 @@ class KubeRichApp(App[None]):
             self.push_screen(AnnotationScreen(source, self.mutations))
 
     def action_writes(self) -> None:
+        from kuberich.ui.mutations import MutationHistoryScreen
+
         if not isinstance(self.screen, ModalScreen):
             self.push_screen(MutationHistoryScreen(self.mutations))
 
@@ -1393,6 +1471,9 @@ class KubeRichApp(App[None]):
         uids: tuple[str, ...] | None = None,
         labels: tuple[str, ...] | None = None,
     ) -> None:
+        from kuberich.services.operations import ResourceOperationService
+        from kuberich.ui.operations import ResourceOperationScreen
+
         if self._resource_name == "contexts" and action is ResourceAction.DELETE:
             self._edit_context(ContextChange.DELETE)
             return
@@ -1466,6 +1547,8 @@ class KubeRichApp(App[None]):
         )
 
     def _edit_context(self, change: ContextChange, new_name: str = "") -> None:
+        from kuberich.ui.context_admin import ContextEditScreen
+
         name = self.context_table.capture_viewport().selected
         if self._resource_name != "contexts" or name is None:
             self._set_status("Open :ctx and select a context first.")
@@ -1501,6 +1584,9 @@ class KubeRichApp(App[None]):
         self._render_ready.set()
 
     def action_workload(self, operation: WorkloadAction, argument: str = "") -> None:
+        from kuberich.services.workloads import WorkloadService
+        from kuberich.ui.workloads import WorkloadScreen
+
         try:
             self.commands.policy.require(
                 Action.READ if operation is WorkloadAction.STATUS else Action.MUTATE
@@ -1526,6 +1612,9 @@ class KubeRichApp(App[None]):
             )
 
     def action_edit(self) -> None:
+        from kuberich.services.editing import EditingService
+        from kuberich.ui.editing import EditingScreen
+
         try:
             self.commands.policy.require(Action.MUTATE)
         except AppError as error:
@@ -1629,6 +1718,14 @@ class KubeRichApp(App[None]):
         )
 
     def _open_logs(self, *, containers_first: bool = False, uid: str | None = None) -> None:
+        from kuberich.domain.logs import log_containers
+        from kuberich.services.attach import AttachService
+        from kuberich.services.logs import LogStream
+        from kuberich.services.shell import ShellService
+        from kuberich.services.transfers import TransferService
+        from kuberich.ui.containers import ContainerScreen
+        from kuberich.ui.logs import LogScreen
+
         selection = self._capture_target(uid)
         if selection is None:
             return
@@ -1681,6 +1778,10 @@ class KubeRichApp(App[None]):
         )
 
     def action_logs_all(self) -> None:
+        from kuberich.domain.aggregate_logs import workload_kind
+        from kuberich.services.aggregate_logs import AggregateLogs
+        from kuberich.ui.aggregate_logs import AggregateLogScreen
+
         if self._aggregate_screens:
             self._set_status(
                 "Previous aggregate logs are closing; wait for owned cleanup to finish."
@@ -1792,6 +1893,8 @@ class KubeRichApp(App[None]):
             self._context_selected(event.row_key.value)
 
     def action_connection_details(self) -> None:
+        from kuberich.ui.scopes import ConnectionScreen
+
         if not isinstance(self.screen, ModalScreen):
             self.push_screen(ConnectionScreen(self._workspace_status()))
 
@@ -1832,6 +1935,19 @@ class KubeRichApp(App[None]):
     def _display_resource(
         self, resource: str, *, focus: bool = True, generic: ResourceSelection | None = None
     ) -> None:
+        table = (
+            self.context_table
+            if resource == "contexts"
+            else self.namespace_table
+            if resource == "namespaces"
+            else self.custom_table
+            if generic is not None
+            else self.resources
+            if resource == "pods"
+            else self.standard_table
+        )
+        if self._view_mounts is not None:
+            self._view_mounts.ensure(table)
         self._resource_name = resource
         self._generic_selection = generic
         self._column_notice = None
@@ -2126,6 +2242,8 @@ class KubeRichApp(App[None]):
         self.set_focus(self.command_input)
 
     def action_show_help(self) -> None:
+        from kuberich.ui.help import HelpScreen
+
         if not isinstance(self.screen, ModalScreen):
             aliases = "Aliases: " + ", ".join(
                 f":{name} → {target}" for name, target in self.navigation.aliases
@@ -2155,6 +2273,15 @@ class KubeRichApp(App[None]):
             self.view_preferences.open()
 
     async def action_back(self) -> None:
+        from kuberich.ui.appearance import ThemeScreen
+        from kuberich.ui.editing import EditingScreen
+        from kuberich.ui.inspection import InspectionScreen
+        from kuberich.ui.logs import LogScreen
+        from kuberich.ui.mutations import AnnotationScreen
+        from kuberich.ui.operations import ResourceOperationScreen
+        from kuberich.ui.transfers import TransferScreen
+        from kuberich.ui.workloads import WorkloadScreen
+
         if isinstance(self.screen, CommandWorkspace) and self.screen.leave_command():
             return
         if isinstance(self.screen, (InspectionScreen, LogScreen, ThemeScreen, ViewScreen)):
@@ -2212,6 +2339,10 @@ class KubeRichApp(App[None]):
         self._submit_command(event.value)
 
     def route_nested(self, origin: CommandWorkspace, value: str) -> None:
+        from kuberich.ui.containers import ContainerScreen
+        from kuberich.ui.inspection import InspectionScreen
+        from kuberich.ui.logs import LogScreen
+
         if self._nested_route_task is not None and not self._nested_route_task.done():
             self.notify("A workspace transition is already in progress.")
             return
@@ -2269,6 +2400,10 @@ class KubeRichApp(App[None]):
     async def _route_nested(
         self, origin: CommandWorkspace, command: ResolvedCommand, value: str
     ) -> None:
+        from kuberich.ui.containers import ContainerScreen
+        from kuberich.ui.inspection import InspectionScreen
+        from kuberich.ui.logs import LogScreen
+
         source = (
             origin.service
             if isinstance(origin, InspectionScreen)

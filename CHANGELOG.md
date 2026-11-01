@@ -12,6 +12,11 @@ Release entries are written in release PRs and linked to their Git tags.
   introducing a plain-language style and a complete document migration map
   ([#222](https://github.com/carloshm91/kuberich/issues/222),
   [Carlos J. Herrera](https://github.com/carloshm91)).
+- Keep offline diagnostics independent of terminal/SDK imports and defer cluster
+  preparation until the first terminal refresh; enforce fresh-process startup
+  and real-terminal first-frame budgets in CI
+  ([#214](https://github.com/carloshm91/kuberich/issues/214),
+  [Carlos J. Herrera](https://github.com/carloshm91)).
 - Add parallel development test layers and an early full unit/contract/UI signal
   before the complete platform and coverage checks
   ([#209](https://github.com/carloshm91/kuberich/issues/209),

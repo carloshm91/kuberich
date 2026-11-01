@@ -1,11 +1,14 @@
 """One non-replayed conditional PATCH through an explicitly owned SDK connection."""
 
+from __future__ import annotations
+
 import asyncio
 import ssl
 from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING
 
-import aiohttp
-from aiohttp_socks import ProxyConnectionError, ProxyError, ProxyTimeoutError
+if TYPE_CHECKING:
+    import aiohttp
 
 from kuberich.adapters.kubernetes import KubernetesSession, decode_json
 from kuberich.domain.mutations import MutationIntent, MutationResult, MutationState, status_result
@@ -23,6 +26,8 @@ async def _single_attempt(
     applied it. Translate only retryable disconnects to a non-replayed public
     client error; connector failures retain their before-send classification.
     """
+    import aiohttp
+
     try:
         return await handler(request)
     except aiohttp.ClientConnectorError:
@@ -71,6 +76,9 @@ async def guarded_request(
     may have changed even if the response never arrives. A fresh confirmation
     must follow inspection; this function never retries the write.
     """
+    import aiohttp
+    from aiohttp_socks import ProxyConnectionError, ProxyError, ProxyTimeoutError
+
     started = False
     try:
         async with asyncio.timeout(client.timeout):

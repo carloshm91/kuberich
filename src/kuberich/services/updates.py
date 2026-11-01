@@ -8,9 +8,8 @@ import tempfile
 import time
 from contextlib import suppress
 from dataclasses import dataclass
+from importlib import import_module
 from pathlib import Path
-
-import aiohttp
 
 from kuberich.adapters.editing import file_worker
 from kuberich.domain.releases import (
@@ -83,6 +82,11 @@ class UpdateService:
         )
 
     async def check(self) -> UpdateResult:
+        # The first opt-in read must not synchronously load the HTTP graph on
+        # Textual's event loop or wait on a concurrent SDK import there.
+        await file_worker(lambda: import_module("aiohttp"))
+        import aiohttp
+
         try:
             current = str(installed_version(self.current))
             now = time.time()

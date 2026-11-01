@@ -1,5 +1,59 @@
 # Architecture decisions
 
+## Offline startup and first-frame readiness
+
+The CLI parses help/version without importing the terminal application. A small
+bootstrap seam keeps the existing installed-metadata, configuration, logging and
+launch ports while importing their implementations only when used. Offline
+configuration validation shares a pure catalog of the pinned framework's theme
+names; a parity test checks that catalog against Textual's public definitions.
+Every configured navigation, appearance, forwarding, jump, context and plugin
+validation remains in its original order. An absent extension can avoid its
+unused parser imports; explicit empty or invalid values still validate normally.
+The selected theme is always checked. An entirely empty set of resource views
+can additionally avoid unused command/registry imports.
+
+The Kubernetes adapter imports the actual SDK inside its owned preparation
+worker, after the session is allowed to connect. Constructing a client or importing
+an adapter does not import SDK models. Once a connection is prepared, the normal
+SDK initializes its model catalog; this does not introduce an upstream model
+loader or change Kubernetes serialization.
+
+HTTP/proxy libraries are likewise deferred to actual transport calls. Optional
+release checks load their HTTP module through the existing owned file worker,
+so cancellation drains preparation before the owner exits. Unused modal screen
+families load in their requesting actions, while root events and root-only view
+observations do not import terminal/log/editor screens. The existing public
+`HelpScreen` import remains a literal lazy compatibility export; constructor
+injection ports such as `PodProjection` and `CustomProjection` remain eager.
+No generic facade, screen proxy or upstream loader is introduced.
+
+`SessionService.before_connect` is an optional asynchronous readiness port,
+independent of Textual. Its wait is inside the existing connection ownership and
+cancellation boundary, before client construction, credential helpers or network
+work. The terminal's public `call_after_refresh` callback starts an owned
+registration task, yielding before registering inactive DOM nodes even with
+Python's eager task factory. The actual selected initial table is eagerly
+composed, while the original eager column-model setup remains unchanged for all
+tables. On-demand routes register their real target synchronously before
+configure/focus; background registration yields between the remaining tables.
+Readiness requires the actual first refresh and complete registration. A public
+`App.exit` override stops new registrations immediately and preserves the
+framework's result, message and return code. Shutdown drains every native
+completion. This adapter covers the existing nonblocking resource tables, not
+arbitrary third-party handlers that can block Textual's queued teardown.
+Initial command/history ordering remains synchronous, while quit and context
+replacement drain or supersede the pending connection normally. Optional release
+checks are also queued after refresh and remain disabled by default.
+
+The startup qualifier observes the actual CLI in fresh interpreters and the real
+application on an owned 120×36 PTY. It retains both the public refresh callback and
+visible PTY delivery times, rejects SDK/helper/network work before that refresh,
+and verifies the mounted selected table's columns and bounded geometry. It
+requires normal client cleanup and alternate-screen restoration. It never
+loads a maintainer kubeconfig or connects to a real provider. See the
+[startup acceptance record](acceptance/startup-budget.md).
+
 ## Native table-cache retirement and metadata geometry: prerequisite for S08 #62
 
 `FrameTable` uses a small native LRU subclass for its six rendering/ordering

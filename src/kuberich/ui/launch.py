@@ -10,7 +10,7 @@ from kuberich.domain.connections import DEFAULT_CONNECTION, ConnectionRequest
 from kuberich.errors import AppError, ExitCode
 from kuberich.services.appearance import PreferenceSource
 from kuberich.services.commands import Command, ResolvedCommand
-from kuberich.ui.app import KubeRichApp
+from kuberich.ui.app import KubeRichApp as KubeRichApp
 from kuberich.ui.presentation import DEFAULT_PRESENTATION, Presentation
 
 

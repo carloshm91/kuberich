@@ -1,30 +1,43 @@
 """One validation path for `kuberich config check` and for reloading preferences."""
 
-from kuberich.adapters.plugin_files import load_plugins
-from kuberich.config.context_settings import context_settings_from
-from kuberich.config.forwarding import forwarding_from
-from kuberich.config.jumps import jumps_from
-from kuberich.config.navigation import navigation_from, validate_resource_views
 from kuberich.config.paths import ConfigLocation
-from kuberich.config.plugins import plugins_from
 from kuberich.config.schema import ConfigDocument, Settings
+from kuberich.config.themes import BUILTINS, appearance_from
 from kuberich.diagnostics.redaction import sanitize_text
 from kuberich.errors import AppError
-from kuberich.ui.theme_catalog import BUILTINS, appearance_from
 
 
 def validate_preferences(
     document: ConfigDocument, location: ConfigLocation, settings: Settings
 ) -> None:
     """Check every section; plugin files are read, so call this off the event loop."""
-    navigation = navigation_from(document)
-    validate_resource_views(navigation)
-    forwarding_from(document)
-    jumps_from(document)
-    context_settings_from(document)
-    plugin_preferences = plugins_from(document, location.path.parent)
-    for context in (None, *(name for name, _ in plugin_preferences.contexts)):
-        load_plugins(plugin_preferences, context, navigation.keys)
+    navigation = None
+    if "navigation" in document.extensions:
+        from kuberich.config.navigation import navigation_from, validate_resource_views
+
+        navigation = navigation_from(document)
+        validate_resource_views(navigation)
+    if "forwarding" in document.extensions:
+        from kuberich.config.forwarding import forwarding_from
+
+        forwarding_from(document)
+    if "jumps" in document.extensions:
+        from kuberich.config.jumps import jumps_from
+
+        jumps_from(document)
+    if "context_settings" in document.extensions:
+        from kuberich.config.context_settings import context_settings_from
+
+        context_settings_from(document)
+    if "plugins" in document.extensions:
+        from kuberich.adapters.plugin_files import load_plugins
+        from kuberich.config.plugins import plugins_from
+
+        plugin_preferences = plugins_from(document, location.path.parent)
+        for context in (None, *(name for name, _ in plugin_preferences.contexts)):
+            load_plugins(
+                plugin_preferences, context, navigation.keys if navigation is not None else ()
+            )
     appearance = appearance_from(document)
     if settings.theme not in BUILTINS | {theme.name for theme in appearance.themes}:
         raise AppError("Selected theme is unavailable; choose k9s or a registered theme.")

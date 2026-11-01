@@ -1,5 +1,31 @@
 # Quality and coverage
 
+## Startup and import boundaries
+
+The Application matrix runs `python -m scripts.check_startup` serially against the
+exact source checkout, with five fresh observations of each offline command and
+five actual first frames on an owned 120×36 PTY. Every observation must satisfy
+the unchanged 150 ms / 40,000,000-byte CLI and 600 ms first-frame budgets.
+`-X importtime` additionally rejects terminal/SDK imports and 150,000 µs aggregate
+self or maximum cumulative import time. A deliberately late mount and explicit
+Textual import must fail their controls. Inputs remain frozen during a run; raw
+output, profiles, ANSI transcripts and failure reports are uploaded even on failure.
+
+The SDK prepares only after the public refresh readiness port. Functional tests
+cover owned credential/network/update reads, initial views, context replacement,
+quit and cancellation before readiness.
+
+Every accepted first frame includes a mounted real selected resource table with
+columns and geometry inside the original viewport; header delivery alone cannot
+satisfy it. Public lifecycle controls cover on-demand registration before input,
+stable selection/geometry, duplicate owners and cancellation of owned completion
+waits. A blocked third-party Mount handler is a separate documented framework
+limit, not claimed as cancellable by this adapter. The critical CLI/navigation
+coverage and
+whole-package/changed-line floors remain unchanged; type-only imports stay in the
+denominator. Local source startup evidence does not qualify native artifacts or
+other platforms. See [the startup acceptance record](acceptance/startup-budget.md).
+
 ## Reactive preferences: U06 #64
 
 `config/context_settings.py` joins the 100% line/branch inventory, with the

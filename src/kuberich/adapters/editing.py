@@ -7,7 +7,6 @@ import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
-from kuberich.domain.editing import MAX_EDIT_BYTES
 from kuberich.errors import AppError, ExitCode
 
 
@@ -52,6 +51,8 @@ class ManifestFile:
             raise
 
     def read(self) -> bytes:
+        from kuberich.domain.editing import MAX_EDIT_BYTES
+
         descriptor = os.open(self.path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
         try:
             info = os.fstat(descriptor)
