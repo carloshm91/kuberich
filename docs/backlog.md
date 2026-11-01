@@ -22,7 +22,7 @@ foundations and documentation work starts before any new feature family.
 | --- | --- | --- |
 | 0.1.x | D06 #51 | Core workspace; also #53, #54 and #123 |
 | 0.2.x | D07 #65 | Extensibility; also Homebrew bottles #193 |
-| 0.3.x | D16 #230 | Foundations and documentation; also #189, #208 and dependency refresh #270 |
+| 0.3.x | D16 #230 | Foundations and documentation; also #189, #208, dependency refresh #270 and X11 selection readiness #281 |
 | 0.4.x | D08 #75 | Observability and metrics |
 | 0.5.x | D09 #82 | Operations, Helm and manifests |
 | 0.6.x | D17 #242 | Multi-cluster workspace |

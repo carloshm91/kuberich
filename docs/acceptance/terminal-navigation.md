@@ -141,3 +141,42 @@ all view/focus assertions. An owned real-PTY Unicode/ANSI burst verifies bounded
 inspection, actual tiny reads, exact retained bytes and original restoration.
 The original local failure/coverage/transcript/digest remain unqualified evidence;
 fresh complete protected qualification remains required after this test-only fix.
+
+## Owned X11 selection readiness: #281
+
+Required PR #279 Fast tests run `41291048960`, job `124802232149`, source
+`922fdcd0168c587e099510963166caaaf7ec7823`, rejected a real isolated clipboard read
+with `target STRING not available`. The original log is retained under
+`artifacts/issue281/ci-fast-original.log`; it does not establish the original
+payload phase or scheduling cause.
+
+A controlled wrapper delays each actual X11 selection writer by 300 ms before
+executing the real xclip binary on a fresh Xvfb display. Calling the original
+qualifier under that condition fails with the same unavailable-target assertion
+in 0.50 seconds. This reproduces the readiness assumption, rather than claiming
+to diagnose the original runner.
+
+The qualifier now observes the actual exact bytes through owned reader processes
+within one five-second readiness deadline. It neither resubmits writes nor treats
+a process launch as selection receipt. Empty bytes, Unicode/control sequences,
+RTF/PostScript-looking plaintext and replacement remain byte-for-byte checks.
+The reader uses the existing process runner's cancellation/reaping ownership.
+The display uses a bounded nonblocking readiness pipe and an owned, drained
+server shutdown. No host display or clipboard is used. Bounded receipts contain
+only attempt counts, status, exit code, byte counts and match booleans.
+
+The original native, delayed-writer, absent/wrong-selection and cancelled-reader cohort
+passed **32 cases with one explicit macOS-only skip in 6.18 seconds**. The absent
+selection must time out; the cancelled reader must be reaped before return. An
+initial new-helper run retained 27 passes, four setup failures and the explicit
+skip; the missing capture mode and descriptor type were corrected, without
+relaxing a deadline or expected payload. The separate release-policy cohort
+passed **283 cases in 0.97 seconds**, including refusal of an unfinished or
+omitted readiness follow-up in this phase and later cumulative phases. Ruff,
+formatting, strict helper/policy types and plan validation passed. Raw XML,
+readiness receipts and source identity remain under `artifacts/issue281`.
+
+This changes test infrastructure and release prerequisites, with no production
+application changes. Changed production coverage is not applicable; these
+results do not replace complete coverage, native macOS or protected required CI.
+No original failure is erased, and no package, website or release is published.
