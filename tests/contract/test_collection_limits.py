@@ -10,7 +10,7 @@ from kuberich.domain.connections import ConnectionRequest
 from kuberich.domain.logs import LogOptions
 from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.resources import api_resource
-from kuberich.domain.watches import SyncStatus, WatchState, watch_event
+from kuberich.domain.watches import EventType, SyncStatus, WatchState, watch_event
 from kuberich.errors import AppError
 from kuberich.services import resources
 from kuberich.services.resources import ResourceReader
@@ -334,9 +334,13 @@ async def test_compact_table_watch_preserves_metadata_negotiation_query_and_real
             "metadata": obj["metadata"],
         }
         if "watch" in request.query:
+            bookmark = server_table(obj)
+            bookmark["rows"][0]["object"] = {"metadata": {"resourceVersion": "checkpoint"}}
             try:
                 return await stable_watch(
-                    request, {"type": "MODIFIED", "object": server_table(obj)}
+                    request,
+                    {"type": "BOOKMARK", "object": bookmark},
+                    {"type": "MODIFIED", "object": server_table(obj)},
                 )
             finally:
                 stopped.set()
@@ -344,7 +348,7 @@ async def test_compact_table_watch_preserves_metadata_negotiation_query_and_real
 
     async def observe(update):
         updates.append(update)
-        if update.event is not None:
+        if update.event is not None and update.event.type is EventType.MODIFIED:
             raise ObservationComplete
 
     async with reader_fixture(tmp_path, handler) as owner:
@@ -352,6 +356,7 @@ async def test_compact_table_watch_preserves_metadata_negotiation_query_and_real
         with pytest.raises(ObservationComplete):
             await ListWatch(reader, query=query).run(custom_resource(), "team", observe)
         await wait_for(stopped.is_set)
+        assert not owner.session.api.rest_client.pool_manager.closed
     assert len(requests) == 2
     assert all(
         value["includeObject"] == "Metadata"
@@ -360,6 +365,10 @@ async def test_compact_table_watch_preserves_metadata_negotiation_query_and_real
         for value in requests
     )
     assert requests[1]["resourceVersion"] == "original-rv"
+    assert [update.event.type for update in updates if update.event is not None] == [
+        EventType.BOOKMARK,
+        EventType.MODIFIED,
+    ]
     assert updates[-1].snapshot.items[0].uid == "owned-one"
     assert updates[-1].snapshot.items[0].metadata_only
     assert updates[-1].snapshot.items[0].resource_version == "watched"

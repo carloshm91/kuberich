@@ -480,7 +480,8 @@ async def verify_collection_queries(
                         "data": {"payload": "owned-modified-data"},
                     },
                 )
-            if update.event is not None:
+            # Bookmarks advance the checkpoint while the fixture modification is pending.
+            if update.event is not None and update.event.type is not EventType.BOOKMARK:
                 assert update.event.type is EventType.MODIFIED
                 record = update.event.record
                 assert record is not None and record.uid == expected["wire-0"]
