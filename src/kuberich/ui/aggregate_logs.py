@@ -27,7 +27,7 @@ from kuberich.security.presentation import safe_text
 from kuberich.services.aggregate_logs import AggregateLogs, format_records
 from kuberich.services.log_export import save_logs
 from kuberich.services.logs import LogStream
-from kuberich.services.processes import _finish_owned
+from kuberich.services.ownership import finish_owned
 from kuberich.services.resources import parse_owned
 from kuberich.ui.chrome import WorkspaceChrome
 from kuberich.ui.keybindings import table_bindings
@@ -469,7 +469,7 @@ class AggregateLogScreen(LogScreen):
     async def stop_owned(self) -> None:
         self._cancel_tasks()
         await self.owner.close()
-        await _finish_owned(
+        await finish_owned(
             asyncio.gather(
                 *(
                     task

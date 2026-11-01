@@ -11,8 +11,8 @@ from kuberich.adapters.plugin_files import load_plugins
 from kuberich.config.plugins import plugins_from
 from kuberich.domain.plugins import Plugin, PluginSelection, plugin_bindings
 from kuberich.errors import AppError
+from kuberich.services.ownership import finish_owned
 from kuberich.services.plugins import PluginManager, PluginSource
-from kuberich.services.processes import _finish_owned
 
 if TYPE_CHECKING:
     from kuberich.ui.app import KubeRichApp
@@ -48,7 +48,7 @@ class PluginController:
 
     def refresh(self) -> None:
         app = self.app
-        context = app._theme_context()
+        context = app.appearance_controller.context()
         if self._closed or (self._loaded and context == self._context) or app.preferences is None:
             return
         self._context = context
@@ -218,5 +218,5 @@ class PluginController:
             if task is not None:
                 if not task.done():
                     task.cancel()
-                await _finish_owned(asyncio.gather(task, return_exceptions=True))
+                await finish_owned(asyncio.gather(task, return_exceptions=True))
         await self.manager.close()

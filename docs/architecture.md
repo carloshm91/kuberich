@@ -1,5 +1,10 @@
 # Architecture decisions
 
+The [application composition proposal](adr/app-composition.md) records the typed
+view/controller boundaries, shared command metadata and root-screen lifecycle
+contract being introduced in the foundations phase. Its integration and behavioral
+qualification are still in progress.
+
 ## Offline startup and first-frame readiness
 
 The CLI parses help/version without importing the terminal application. A small

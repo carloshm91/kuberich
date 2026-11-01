@@ -15,7 +15,7 @@ from kuberich.domain.connections import ConnectionProblem
 from kuberich.domain.transfers import TransferDirection
 from kuberich.errors import AppError
 from kuberich.security.presentation import safe_text
-from kuberich.services.processes import _finish_owned
+from kuberich.services.ownership import finish_owned
 from kuberich.services.transfers import TransferReview, TransferService
 from kuberich.ui.port_forwards import ForwardInput
 
@@ -185,7 +185,7 @@ class TransferScreen(ModalScreen[str]):
         if self._operation_task is not None:
             if not self._operation_task.done() and not self._operation_task.cancelling():
                 self._operation_task.cancel()
-            await _finish_owned(asyncio.gather(self._operation_task, return_exceptions=True))
+            await finish_owned(asyncio.gather(self._operation_task, return_exceptions=True))
         await self.source.close()
 
     async def on_unmount(self) -> None:

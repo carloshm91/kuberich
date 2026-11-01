@@ -2,136 +2,23 @@
 
 import re
 from dataclasses import dataclass
-from enum import Enum, auto
 
 from kuberich.domain.aliases import Aliases, expand_alias
+from kuberich.domain.commands import Command as Command
 from kuberich.domain.connections import namespace_name
 from kuberich.domain.interactions import INTERACTION_VERBS, InteractionCommand, interaction_command
 from kuberich.domain.registry import RESOURCE_ALIASES, ResourceDefinition
 from kuberich.domain.resources import Discovery, api_segment
 from kuberich.errors import AppError
 from kuberich.security.arguments import validate_argument
-from kuberich.services.access import AccessPolicy, Action
+from kuberich.services.access import AccessPolicy
+from kuberich.services.command_catalog import COMMAND_CATALOG, RESERVED_ACTIONS
 
+ALIASES = dict(COMMAND_CATALOG.aliases)
 
-class Command(Enum):
-    EMPTY = auto()
-    HELP = auto()
-    THEMES = auto()
-    ABOUT = auto()
-    VIEWS = auto()
-    PLUGINS = auto()
-    PLUGIN_JOBS = auto()
-    QUIT = auto()
-    PODS = auto()
-    CONTEXTS = auto()
-    NAMESPACES = auto()
-    STATUS = auto()
-    RETRY = auto()
-    LOGIN = auto()
-    BACK = auto()
-    FORWARD = auto()
-    SHELL = auto()
-    ATTACH = auto()
-    UPLOAD = auto()
-    DOWNLOAD = auto()
-    PORT_FORWARD = auto()
-    PORT_FORWARDS = auto()
-    ANNOTATE = auto()
-    EDIT = auto()
-    WRITES = auto()
-    SCALE = auto()
-    RESTART = auto()
-    ROLLBACK = auto()
-    ROLLOUT = auto()
-    DELETE = auto()
-    DELETE_BATCH = auto()
-    TRIGGER = auto()
-    SUSPEND = auto()
-    RESUME = auto()
-    REFRESH = auto()
-    COLUMNS = auto()
-    LOGS_ALL = auto()
-    RENAME = auto()
-    CLEANUP = auto()
-    JUMP = auto()
-    UNAVAILABLE = auto()
-
-
-_ACTIONS = {
-    **dict.fromkeys(("exec", "shell", "ssh"), Action.EXEC),
-    "attach": Action.ATTACH,
-    "upload": Action.MUTATE,
-    "plugin": Action.PLUGIN,
-    "portforward": Action.PORT_FORWARD,
-    "annotate": Action.MUTATE,
-    **dict.fromkeys(
-        (
-            "delete",
-            "deletebatch",
-            "trigger",
-            "suspend",
-            "resume",
-            "edit",
-            "scale",
-            "restart",
-            "rollback",
-            "apply",
-            "patch",
-            "rename",
-            "cleanup",
-        ),
-        Action.MUTATE,
-    ),
-}
-
-ALIASES = {
-    "plugins": Command.PLUGINS,
-    "pluginjobs": Command.PLUGIN_JOBS,
-    "views": Command.VIEWS,
-    "themes": Command.THEMES,
-    "theme": Command.THEMES,
-    "about": Command.ABOUT,
-    **dict.fromkeys(("help", "?"), Command.HELP),
-    **dict.fromkeys(("quit", "q", "exit"), Command.QUIT),
-    **dict.fromkeys(("po", "pod", "pods"), Command.PODS),
-    **dict.fromkeys(("ctx", "context", "contexts"), Command.CONTEXTS),
-    **dict.fromkeys(("ns", "namespace", "namespaces"), Command.NAMESPACES),
-    "status": Command.STATUS,
-    "retry": Command.RETRY,
-    "login": Command.LOGIN,
-    "back": Command.BACK,
-    "forward": Command.FORWARD,
-    "shell": Command.SHELL,
-    "exec": Command.SHELL,
-    "attach": Command.ATTACH,
-    "upload": Command.UPLOAD,
-    "download": Command.DOWNLOAD,
-    "pf": Command.PORT_FORWARDS,
-    "portforwards": Command.PORT_FORWARDS,
-    "portforward": Command.PORT_FORWARD,
-    "annotate": Command.ANNOTATE,
-    "edit": Command.EDIT,
-    "writes": Command.WRITES,
-    "scale": Command.SCALE,
-    "restart": Command.RESTART,
-    "rollback": Command.ROLLBACK,
-    "rollout": Command.ROLLOUT,
-    "delete": Command.DELETE,
-    "deletebatch": Command.DELETE_BATCH,
-    "trigger": Command.TRIGGER,
-    "suspend": Command.SUSPEND,
-    "resume": Command.RESUME,
-    "refresh": Command.REFRESH,
-    "columns": Command.COLUMNS,
-    "logsall": Command.LOGS_ALL,
-    "rename": Command.RENAME,
-    "cleanup": Command.CLEANUP,
-    "jump": Command.JUMP,
-}
 
 RESERVED_COMMANDS = frozenset(
-    {*ALIASES, *RESOURCE_ALIASES, *_ACTIONS, *INTERACTION_VERBS, "resource"}
+    {*ALIASES, *RESOURCE_ALIASES, *RESERVED_ACTIONS, *INTERACTION_VERBS, "resource"}
 )
 
 
@@ -336,7 +223,7 @@ class CommandService:
             # The manifest's explicit classification is checked before any
             # input, credential/helper lookup or process preparation.
             return PluginCommand(parts[1])
-        self.policy.require(_ACTIONS.get(verb, Action.READ))
+        self.policy.require(COMMAND_CATALOG.policy_for(verb))
         if verb == "resource":
             return generic_command(parts[1] if len(parts) == 2 else "", discovery)
         if verb == "columns" and len(parts) == 2:

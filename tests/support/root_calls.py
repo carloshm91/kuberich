@@ -23,7 +23,7 @@ class RootCalls:
             for owner, interval, callback in self.timers
             if owner is app
             and interval == app.live_preferences.refresh_seconds
-            and getattr(callback, "__self__", None) is app
+            and getattr(callback, "__self__", None) is app.presenter
         ]
         assert len(callbacks) == 1
         callbacks[0]()

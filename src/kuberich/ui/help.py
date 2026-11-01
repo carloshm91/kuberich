@@ -20,9 +20,17 @@ class HelpScreen(CommandWorkspace):
 
     AUTO_FOCUS = "#help-scroll"
 
-    def __init__(self, navigation: str = "", aliases: str = "") -> None:
+    def __init__(
+        self,
+        navigation: str = "",
+        aliases: str = "",
+        commands: tuple[tuple[str, str], ...] = (),
+    ) -> None:
         super().__init__()
         self.navigation, self.aliases = navigation, aliases
+        self.command_help = "\n".join(
+            f":{aliases.replace(' / ', '/')}  {help}" for aliases, help in commands
+        )
 
     def compose(self) -> ComposeResult:
         yield WorkspaceHeader(
@@ -64,11 +72,10 @@ class HelpScreen(CommandWorkspace):
                         "Escape in table   Clear active filter\n"
                         "q / Ctrl+Q        Quit (q outside inputs)\n"
                         "Ctrl+C            Quit\n\n"
-                        "Commands: po/pod/pods [NS or *], ctx [NAME], ns [NAME or *], "
-                        "status, retry, login, back, forward, shell/exec, pf/portforwards, "
-                        "portforward, annotate, edit (Shift+E), scale, restart, rollback, rollout, "
-                        "delete, deletebatch, cleanup, jump [NAME], trigger, suspend, resume, writes, help, quit.\n"
-                        "In :ctx, :rename NEW renames and Ctrl+D deletes the selected context.\n"
+                        "Commands:\n"
+                        + self.command_help
+                        + "\n"
+                        + "In :ctx, :rename NEW renames and Ctrl+D deletes the selected context.\n"
                         "Resources: deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, "
                         "no, pvc, pv, sc. Namespaced resources accept [NS or *].\n"
                         "Discovered: :resource NAME[.GROUP][/VERSION] [NS or *]. "

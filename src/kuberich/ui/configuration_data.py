@@ -19,7 +19,7 @@ from kuberich.security.controls import escape_controls
 from kuberich.security.presentation import safe_text
 from kuberich.services.configuration_data import ConfigurationService
 from kuberich.services.inspection import read_error
-from kuberich.services.processes import _finish_owned
+from kuberich.services.ownership import finish_owned
 from kuberich.ui.keybindings import table_bindings
 from kuberich.ui.presentation import FrameTable
 
@@ -271,7 +271,7 @@ class ConfigurationScreen(ModalScreen[None]):
         tasks = tuple(self._tasks)
         for task in tasks:
             task.cancel()
-        await _finish_owned(asyncio.gather(*tasks, return_exceptions=True))
+        await finish_owned(asyncio.gather(*tasks, return_exceptions=True))
         self._tasks.clear()
 
     async def on_unmount(self) -> None:

@@ -2,11 +2,13 @@
 
 import asyncio
 from collections.abc import Callable, Mapping
+from functools import partial
 from pathlib import Path
 
 from kuberich.domain.clipboard import ClipboardBackend
 from kuberich.domain.processes import ProcessMode, ProcessPurpose, ProcessStatus, capture_command
 from kuberich.errors import AppError
+from kuberich.services.ownership import finish_owned
 from kuberich.services.processes import ProcessRunner, ProcessSession, _finish_owned
 
 # Constant program: payload travels on stdin, never as code or command arguments.
@@ -84,3 +86,63 @@ class NativeClipboard:
             ProcessStatus.CANCELLED,
         }:
             failed(AppError("Native clipboard writer stopped; check the X11 display."))
+
+
+class ClipboardQueue:
+    """Serialize native writes, retaining only the latest queued selection."""
+
+    def __init__(
+        self,
+        native: NativeClipboard,
+        failed: Callable[[bytes, AppError], None],
+    ) -> None:
+        self.native, self.failed = native, failed
+        self._pending: tuple[bytes, ClipboardBackend] | None = None
+        self._task: asyncio.Task[None] | None = None
+        self._closing: asyncio.Task[None] | None = None
+        self._stopped = False
+
+    @property
+    def active_count(self) -> int:
+        """Unfinished writer and cleanup ownership, without exposing task handles."""
+        return int(self._task is not None and not self._task.done()) + int(
+            self._closing is not None and not self._closing.done()
+        )
+
+    def submit(self, data: bytes, backend: ClipboardBackend) -> None:
+        if not self._stopped:
+            self._pending = data, backend
+            if self._task is None or self._task.done():
+                self._task = asyncio.create_task(self._write())
+
+    def stop(self) -> None:
+        """Refuse new writes and stale failure callbacks before async teardown."""
+        self._stopped = True
+        self._pending = None
+
+    def _failed(self, data: bytes, error: AppError) -> None:
+        if self._pending is None and not self._stopped:
+            self.failed(data, error)
+
+    async def _write(self) -> None:
+        while self._pending is not None:
+            data, backend = self._pending
+            self._pending = None
+            try:
+                await self.native.write(data, backend, failed=partial(self._failed, data))
+            except AppError as error:
+                self._failed(data, error)
+
+    async def _close(self) -> None:
+        if self._task is not None:
+            if not self._task.done() and not self._task.cancelling():
+                self._task.cancel()
+            await finish_owned(asyncio.gather(self._task, return_exceptions=True))
+            self._task = None
+        await self.native.close()
+
+    async def close(self) -> None:
+        self.stop()
+        if self._closing is None:
+            self._closing = asyncio.create_task(self._close())
+        await finish_owned(self._closing)
