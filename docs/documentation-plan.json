@@ -1325,6 +1325,26 @@
       "baseline_sha256": null
     },
     {
+      "source": "docs/internal/acceptance/property-mutation-survivors.json",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/property-mutation-survivors.json"
+      ],
+      "reason": "Retain the complete initial campaign survivor inventory without discounting results or claiming it qualifies later source changes.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/acceptance/property-mutation-tests.md",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/property-mutation-tests.md"
+      ],
+      "reason": "Retain the exact initial property and mutation campaign scope, original outcomes and unmet advisory target as development evidence.",
+      "baseline_sha256": null
+    },
+    {
       "source": "docs/k9s-cli.md",
       "audience": "development",
       "action": "move",
