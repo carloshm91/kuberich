@@ -238,7 +238,10 @@ Both GUI entry routes still use Review and Run. At the service boundary,
 requires interactive review.
 
 Captured output uses credential-pattern redaction, known captured token/input
-value masking and terminal-control escaping. Display is bounded to 16,384
+value masking and terminal-control escaping. Prepared Basic passwords, decoded
+`username:password` pairs, Basic headers and their base64 values are also masked
+in captured stdout and stderr. An ordinary username remains visible when used
+without its credential pair. Display is bounded to 16,384
 characters with an explicit truncation marker; retained sanitized text is at most
 65,536 characters. Raw output is never logged or included in job representations.
 No remote OSC sequence can become a clipboard operation. Arbitrary plugin output

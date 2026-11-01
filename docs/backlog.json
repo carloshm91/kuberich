@@ -1341,7 +1341,7 @@
         "Every inventory row and every flag/action/schema/plugin entry has a delivered test or a clearly stated compatibility difference; planned rows are never counted as implemented.",
         "Refresh the latest stable upstream comparison and create tickets for new features before freezing the stable parity claim.",
         "Maintain the Alpha evidence gap until authoritative material is available; do not claim 100% paid-feature parity without a verifiable catalog and tests.",
-        "Per the 2026-11-01 maintainer decision, complete the deferred unchanged under-600-ms real UI first-paint qualification. Version major 1 and later automatically enforce the original strict startup mode; retain all five observations, both strict negative controls and original failures without a higher substitute threshold.",
+        "Complete the deferred unchanged strict startup latency qualification: offline wall time below 150 ms, aggregate self/maximum cumulative imports below 150,000 us, and real UI paint below 600 ms. Actual source major 1 (including prereleases) enforces all original limits; retain every observation, strict negative control and original failure without a higher substitute threshold. Memory, forbidden imports and functional/cleanup checks remain mandatory in all versions.",
         "For major-version 1 qualification, enforce the unchanged runtime heartbeat/input-latency limits and original blocking negative controls; neither environment nor receipt metadata may downgrade them. Earlier advisory 0.x measurements are not a strict pass.",
         "Complete deferred Q11 #212 framework compatibility/private-API work before stable publication. Review Q08 #211 size/ownership goals and its recorded remaining boundaries; do not mistake the pragmatic 0.3.0 delivery for completion of deferred cleanup.",
         "Complete the deferred CI-reuse optimization #189 and fine macOS runtime diagnosis #275 before stable publication. They remain open follow-up work; the existing 0.x full qualification pipeline and thresholds are unchanged."
@@ -1729,7 +1729,8 @@
       "epic": "E13",
       "milestone": "v0.3.0",
       "requires": [
-        "Q09"
+        "Q09",
+        "Q13"
       ],
       "scope": "`src/kuberich/ui/app.py` has 2,726 lines. `KubeRichApp` has about 110 methods and more than 60 state fields:",
       "acceptance": [
@@ -1786,9 +1787,9 @@
       "requires": [],
       "scope": "`kuberich --version` takes 1.10 s and 94 MB RSS on the development machine. The CLI imports the whole UI and `kubernetes_asyncio`; `import kuberich.ui.app` alone takes about 0.93 s. Terminal users expect instant startup.",
       "acceptance": [
-        "`--version`, `--help`, `info` and `config check` finish in under 150 ms and under 40 MB on the reference machine. Those paths never import Textual or `kubernetes_asyncio`.",
-        "Record all five actual TUI first-paint observations before SDK/helper/network work, with explicit budget-met/enforced flags. On 2026-11-01 the maintainer accepted approximately 685 ms for 0.3: the unchanged under-600-ms target is advisory for 0.x, enforced by --strict-paint and mandatory from version major 1 under Q06 #88.",
-        "`kubernetes_asyncio` models load lazily. A CI regression check uses `-X importtime` thresholds."
+        "Record all five actual --version/--help/info/config-check samples against the original 150 ms wall-time target. Startup latency is advisory for 0.x; --strict-startup and actual source major 1 (including prereleases) enforce original limits. RSS below 40,000,000 bytes, valid output/source and absence of Textual/kubernetes_asyncio imports remain mandatory.",
+        "Record all five actual UI first-paint observations before SDK/helper/network work against the original 600 ms target, with explicit budget-met/enforced flags. The target is advisory for 0.x; --strict-startup, compatible --strict-paint and actual source major 1 enforce it. Frame geometry, deadlines and owned cleanup remain hard requirements.",
+        "Kubernetes SDK models load lazily. CI retains every complete import profile and actual aggregate self/maximum cumulative values against 150,000 us; timing is advisory for 0.x and strict under --strict-startup or actual source major 1. Forbidden imports and malformed profiles always fail."
       ],
       "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
       "priority": "P1"
@@ -2067,7 +2068,7 @@
       "scope": "Every v0.3.0 task: Q08 #211, Q09 #210, Q10 #209, Q12 #213, Q13 #214, Q14 #215, Q15 #216, Q16 #217, Q17 #218, Q18 #219, Q19 #220, D15 #221, W04 #222–W11 #229, #208, dependency refresh #270 and opened plugin output correction #272, observable log startup #274. Also requires the 0.2.0 gate #65. Required verification follow-ups also include generic resource plugin capture #278, owned X11 selection readiness #281 and migration from retired macOS 14 runners #291.",
       "acceptance": [
         "The qualification command from Q17 #218 passes on the complete Linux/macOS matrix.",
-        "Delivered ownership/controller changes pass their functional, cancellation and platform checks. Numeric App/module size and complete private-framework removal are tracked improvement goals for stable #88/#212, not 0.3.0 blockers. Offline startup budgets remain enforced; UI first-paint measurements remain explicit and advisory for 0.x. Keep relevant large-collection safeguards and honest measured limits.",
+        "Delivered ownership/controller changes pass their functional, cancellation and platform checks. Numeric App/module size and complete private-framework removal are tracked improvement goals for stable #88/#212, not 0.3.0 blockers. All startup latency objectives remain explicit and advisory for 0.x, with original strict-startup/stable limits retained. Offline RSS limits and absence of forbidden imports remain mandatory, along with valid output/source/frame/cleanup contracts. Keep relevant large-collection safeguards and honest measured limits.",
         "Documentation checks pass and the README stays within its budget.",
         "No publication happens here. Publication needs separate maintainer approval.",
         "For 0.x, runtime heartbeat/input-latency observations are advisory with explicit unmet results; preserve unchanged strict opt-in limits, always-strict blocking negative controls and all functional, resource, cleanup, coverage and platform requirements."
@@ -2535,9 +2536,9 @@
     "D07",
     "Q10",
     "Q09",
+    "Q13",
     "Q08",
     "Q12",
-    "Q13",
     "Q14",
     "Q15",
     "Q16",
@@ -2765,9 +2766,9 @@
       "D07",
       "Q10",
       "Q09",
+      "Q13",
       "Q08",
       "Q12",
-      "Q13",
       "Q14",
       "Q15",
       "Q16",
