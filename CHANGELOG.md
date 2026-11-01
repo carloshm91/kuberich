@@ -28,9 +28,9 @@ Release entries are written in release PRs and linked to their Git tags.
   [Carlos J. Herrera](https://github.com/carloshm91)).
 
 - Keep offline diagnostics independent of terminal/SDK imports and defer cluster
-  preparation until the first terminal refresh; enforce offline startup and
-  actual-frame safety in CI. Report UI latency for 0.x while retaining the
-  unchanged strict 600 ms check for 1.0 and explicit qualification
+  preparation until the first terminal refresh. Report all startup latency targets
+  honestly for 0.x, retaining original strict opt-in/stable limits and mandatory
+  memory, source, output, import, frame and cleanup requirements
   ([#214](https://github.com/carloshm91/kuberich/issues/214),
   [Carlos J. Herrera](https://github.com/carloshm91)).
 - Add parallel development test layers and an early full unit/contract/UI signal

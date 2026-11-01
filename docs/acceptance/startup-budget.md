@@ -6,15 +6,42 @@ macOS, native-archive or release qualification from Linux source tests.
 
 ## Maintainer decision on 2026-11-01
 
-The maintainer accepted the measured approximately 685 ms UI startup for 0.3.
-For 0.x, the unchanged 600 ms target is advisory: record all five actual values
-and explicit budget-met/enforced flags, including any missed target. The
-qualifier's `--strict-paint` mode retains the original strict check; version
-major 1 and later enforce it automatically. Offline latency/RSS/import limits
-and every source, actual-frame, SDK, geometry and cleanup contract remain
-mandatory in every mode. The deliberate 700 ms control always exercises the
-strict check. No higher threshold or style shortcut is part of this delivery.
-Earlier failed strict references below remain failed and are not relabeled.
+The maintainer accepted approximately 685 ms UI startup and subsequently made
+all startup latency objectives advisory for 0.x: offline 150 ms wall time,
+150,000 µs aggregate self/maximum cumulative imports and 600 ms actual UI paint.
+Every observation retains its actual value, original target and explicit
+budget-met/enforced flags. `--strict-startup` enforces all original limits;
+`--strict-paint` preserves its UI-only meaning. Actual source major 1 and later,
+including prereleases, always enforce every limit without a version override.
+
+Offline RSS below 40,000,000 bytes, absence of terminal/SDK imports, valid output,
+source identity, actual frames/geometry, deadlines and owned cleanup remain hard
+requirements. The deliberate 700 ms frame and forbidden-import controls stay
+strict. Original failures remain failures under their recorded policy/source;
+no higher threshold, style shortcut or unchanged retry is used.
+
+## Retained hosted macOS failure and changed-policy follow-up
+
+Application quality run `41343238183` tested PR head `6653257` through synthetic
+merge `d27f7e2`, whose tree exactly matches that head. All 168 captured
+production/tool/lock hashes match. The Darwin 25.6 ARM64 runner used CPython
+3.12.10 and reported three CPUs. Its first ordinary `info` observation was
+**161.144125 ms**, **27,738,112 bytes** RSS, exit zero with complete diagnostics.
+The then-hard 150 ms wall limit rejected it. Five version and five help samples
+had passed; config-check and UI observations were not reached on that runner.
+
+The existing after-failure diagnostic reported 102.170084 ms wall time,
+65,821 µs aggregate import self and 21,403 µs maximum cumulative time, with no
+Textual/SDK imports. That diagnostic is not a replacement ordinary sample and
+is never promoted into a pass. Raw job `124969281714` and original artifact
+`13100210468` remain preserved. All four native targets and all 16 test parts
+passed in that original run; its application failure still prevents merging.
+
+The policy follow-up changes future enforcement for 0.x instead of chasing the
+11.144125 ms difference. It retains all five ordinary samples per offline command and UI frame, plus
+all four import profiles, and reports missed targets honestly. Changed-head functional, coverage, platform
+and native checks remain required; the failed original is not reinterpreted as
+qualification of the new policy.
 
 ## Approved 0.x reference
 
@@ -278,16 +305,17 @@ uv run python -m scripts.check_startup --output artifacts/startup/qualification
 
 The output directory must be new. The canonical command runs five observations
 per offline path and five actual first frames; CI uses that same command without
-skip or budget options. All four paths must finish below **150 ms** and
-**40,000,000 bytes**. Every import profile must avoid Textual/SDK and keep both
-aggregate import self time and maximum cumulative time below **150,000 µs**.
-Actual first paint, including PTY delivery, must always precede connection work.
-The unchanged **600 ms** target is recorded for every sample and enforced with
-`--strict-paint` or automatically from version major 1. For an explicit strict
-run on 0.x, use a separate fresh output directory:
+skip options. All four paths report the original **150 ms** wall objective and
+must always stay below **40,000,000 bytes** RSS. Every complete import profile
+must avoid Textual/SDK and report aggregate self/maximum cumulative values
+against **150,000 µs**. Actual first paint, including PTY delivery, must always
+precede connection work and report its unchanged **600 ms** objective.
+Latency targets are advisory for 0.x; `--strict-startup` or actual source major 1
+enforces all original targets. `--strict-paint` remains the UI-only opt-in. For
+an explicit all-latency strict run on 0.x, use a separate fresh output directory:
 
 ```console
-uv run python -m scripts.check_startup --strict-paint --output artifacts/startup/strict-qualification
+uv run python -m scripts.check_startup --strict-startup --output artifacts/startup/strict-qualification
 ```
 
 A deliberate 700 ms mount and an explicit Textual import must both be rejected

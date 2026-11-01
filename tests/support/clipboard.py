@@ -21,8 +21,10 @@ async def owned_x11_display() -> AsyncIterator[dict[str, str]]:
     server = None
     first: BaseException | None = None
     try:
+        # A replacement can leave no X11 clients while the next writer starts.
+        # Keep this fixture's server generation until its explicit shutdown.
         server = subprocess.Popen(
-            ["Xvfb", "-displayfd", str(initial_write_fd), "-nolisten", "tcp"],
+            ["Xvfb", "-noreset", "-displayfd", str(initial_write_fd), "-nolisten", "tcp"],
             pass_fds=(initial_write_fd,),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
