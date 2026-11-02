@@ -240,6 +240,7 @@ async def test_source_picker_uid_recreation_expired_selection_and_manual_space(t
             before = api.requests.copy()
             await pilot.press("enter")
             assert screen.owner.selected == frozenset() and api.requests == before
+            await wait_for(lambda: len(screen.owner.retired) == 64 and picker.table.row_count == 67)
             assert len(screen.owner.retired) == 64 and picker.table.row_count == 67
             selected = screen.owner.states["same-name-new-uid", "app"]
             picker.table.move_cursor(row=picker.table.get_row_index(str(selected.number)))
