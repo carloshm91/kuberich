@@ -592,6 +592,13 @@ exact distribution bytes. Every finding requires a reviewed, exact, expiring
 exception; missing/skipped evidence and scanner errors fail. See
 [dependency security](dependency-security.md) for commands, scope and limits.
 
+If a canonical release-candidate audit fails, the packaging fixture preserves
+its available regular output files in a separate private directory under
+`artifacts/security/canonical-release-failures/`. Each attempt has a unique
+directory; successful ordinary audit reports are never substituted. These partial
+files are diagnostic evidence, not a passing audit. The original error remains
+the test failure even if retaining the files also fails.
+
 D02 retains local candidate identity under `artifacts/releases`. Release decision
 and owned HTTP/Git transport tests run in every application job; actual canonical
 RC builds/audits/installations exercise preparation without publication. The

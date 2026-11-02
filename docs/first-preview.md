@@ -148,6 +148,9 @@ checks once and records their source, original logs, cleanup and remaining
 native/repetition requirements. Read the [phase verification guide](releases.md#reproduce-phase-verification)
 before running the full command. The installed application remains 0.2.0.
 
+Failed canonical release-candidate audits now retain their own partial output
+separately for diagnosis. The original failure still fails verification.
+
 ## Development: runtime latency observations
 
 For 0.x development, runtime latency observations retain their original targets
