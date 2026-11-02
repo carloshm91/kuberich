@@ -1,7 +1,7 @@
 # Development checkpoint
 
 This maintained internal checkpoint carries the inspected protected source
-`857f9ad0216688853142d9b463d5d41cc955114f`. Historical preview snapshots remain
+`5fa8641153ed77895490d8d0b1f682eae4cee8f5`. Historical preview snapshots remain
 unchanged and do not establish current qualification. The brief user
 [Status](../first-preview.md) describes the installed and development versions.
 
@@ -200,8 +200,7 @@ uv run kuberich --version
 uv run kubetrol --version
 ```
 
-These commands were checked against the development source; its version remains
-0.2.0 until the release version changes. The published 0.2.0 package does not
+These commands report 0.3.0 in the prepared development source. The published 0.2.0 package does not
 include the new warning. Existing preference/environment/log compatibility stays
 supported. Explicit preference migration keeps previous files and reports
 creation only once; see [configuration](../configuration.md#legacy-preview-compatibility).
