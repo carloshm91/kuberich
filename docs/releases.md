@@ -104,8 +104,9 @@ existing checks and never publishes packages, tags, sites or releases:
 uv run python scripts/qualify.py 0.3.0 --output artifacts/qualification/candidate
 ```
 
-The default runs lint, formatting and every strict type target in the workflow, then
-one complete test run with branch coverage. That run includes the actual terminal,
+The default runs lint, formatting, the private-access audit, every strict type
+target in the workflow and startup checks in fresh processes and a real terminal,
+then one complete test run with branch coverage. That run includes the actual terminal,
 packaging and installation cases. The existing runtime, production/critical and
 changed-line coverage validators, build, metadata and supply-chain checks follow.
 The changed-coverage base is the branch merge base, or `HEAD^` on main; use

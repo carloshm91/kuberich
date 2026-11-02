@@ -94,7 +94,20 @@ def local_stages(root: Path, output: Path, temporary: Path, workers: int, base: 
         ),
         Stage("lint", ("uv", "run", "ruff", "check", ".")),
         Stage("format", ("uv", "run", "ruff", "format", "--check", ".")),
+        Stage("private-access", ("uv", "run", "python", "scripts/check_private_access.py")),
         Stage("types", type_command(root)),
+        Stage(
+            "startup",
+            (
+                "uv",
+                "run",
+                "python",
+                "-m",
+                "scripts.check_startup",
+                "--output",
+                str(output / "startup"),
+            ),
+        ),
         Stage(
             "tests",
             (
