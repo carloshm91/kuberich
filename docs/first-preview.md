@@ -43,6 +43,26 @@ Real EKS, AKS and GKE clusters are not certified yet; those trials stay opt-in.
 
 ## Next development phase: 0.3.0
 
+Contributors can start with the short [architecture overview](architecture.md)
+and [decision index](adr/README.md). The overview describes the implemented layers,
+resource data flow, ownership and security boundaries; migrated decisions and their
+unchanged historical source remain separate from current implementation notes.
+The [architecture acceptance record](acceptance/architecture-overview.md) lists
+the source boundary, focused checks and qualification limits. Its source-scoped
+local verification passed 74 existing controls plus applicable static checks;
+the exact historical archive remains unchanged. A later required-check correction
+waits for a plugin job's final visible status together with its output, after a
+real-child/Pilot cleanup-boundary control. Product lifecycle and the original
+result/cleanup assertions remain intact. Final PR qualification is separate.
+
+```sh
+uv run python -m pytest tests/quality/test_architecture_docs.py
+uv run python -m scripts.validate_plan
+```
+
+These are local documentation checks. They do not launch the application,
+connect to a cluster or publish the website. The installed release remains 0.2.0.
+
 The development checkout now has focused task guides and four generated
 references, with 19 content pages plus the index. Start with the
 [quick start](quickstart.md), then use the [everyday workflow](everyday-workflow.md)

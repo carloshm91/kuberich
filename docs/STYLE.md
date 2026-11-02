@@ -42,8 +42,9 @@ oversized page in imports or very long lines. Wrap ordinary prose at about
 80–100 characters; commands and reference tables may need longer lines.
 
 The task guides and generated references follow these budgets. Superseded source
-text is preserved outside public navigation in the engineering history. Separate
-architecture, acceptance-history, and contribution migrations remain incomplete;
+text is preserved outside public navigation in the engineering history. The
+architecture overview and ADRs are maintained separately.
+Acceptance-history and contribution migrations remain incomplete;
 `docs/documentation-plan.json` records their individual dispositions.
 
 Keep development policies, ADRs, acceptance records, delivery logs, and source
