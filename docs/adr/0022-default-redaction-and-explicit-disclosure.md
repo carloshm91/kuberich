@@ -29,6 +29,19 @@ needed, while OSC52 sends size-limited base64 frames through the trusted termina
 Headless copies stay in application memory. Sensitive bytes do not become argv,
 executable code, diagnostics, or unsolicited remote clipboard requests.
 
+## Current implementation notes
+
+The current [plugin service](../../src/kuberich/services/plugins.py) captures
+Basic credential hints as well as bearer hints before executing a plugin. Password,
+decoded pair, full Basic header and bare Base64 representations are redacted in
+ordinary output; an ordinary username remains displayable. Empty-password pairs
+and their encoded headers still require masking. This is bounded credential
+redaction, not a guarantee about arbitrary confidential prose.
+
+The in-memory-only copy path refers to Textual's true test/headless driver. CLI
+`--headless` hides the header and leaves the native clipboard/terminal policy in
+place. Production never reads the host clipboard to prove a write succeeded.
+
 ## Source and related decisions
 
 This record extracts an implemented decision from the [previous architecture

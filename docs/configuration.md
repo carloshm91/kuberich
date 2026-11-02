@@ -21,6 +21,8 @@ then the platform default with the legacy fallback described below. Linux uses
 `~/.config/kuberich/config.yaml` unless XDG_CONFIG_HOME is set;
 macOS uses `~/Library/Application Support/kuberich/config.yaml`.
 An absent default file uses defaults; an explicitly selected missing file fails.
+An empty or comment-only YAML file also uses defaults. An empty `--config` path
+or a path containing control characters is invalid.
 
 ```yaml
 schema_version: 1
@@ -43,6 +45,10 @@ Runtime CLI overrides win over `KUBERICH_*` environment variables, file settings
 and defaults. Each layer must be valid even if another overrides it. Relative
 YAML log paths resolve against the preference directory; environment and CLI
 paths resolve against the launch directory.
+
+Use [a diagnostic report](troubleshooting.md#create-a-diagnostic-report) when
+invalid preferences or environment values prevent a normal launch. Reporting
+records the failed check without printing those values or reading kubeconfig.
 
 `context_settings` can add read-only mode or a refresh interval for exact context
 names. CLI/environment refresh overrides win; context values then precede global

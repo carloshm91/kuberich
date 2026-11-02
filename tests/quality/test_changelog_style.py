@@ -238,7 +238,17 @@ def test_unreleased_core_changes_keep_exact_published_history_and_complete_dispo
             targets.update(block["targets"])
     assert starts == expected and len(starts) == 24
     assert targets | set(snapshot["additional_user_entries"]) == entries.keys()
-    assert set(snapshot["additional_user_entries"]) == {"notes"}
+    assert set(snapshot["additional_user_entries"]) == {"notes", "deleted-resource-memory"}
+    assert {"fatal-report", "basic-output-masking", "deleted-resource-memory"} <= entries.keys()
+    assert "policy_parent_pending" not in snapshot
+    assert (
+        subprocess.run(
+            ["git", "merge-base", "--is-ancestor", source["commit"], "refs/remotes/origin/main"],
+            cwd=ROOT,
+            check=False,
+        ).returncode
+        == 0
+    )
     text = (ROOT / "CHANGELOG.md").read_text().split("## [0.2.0]", 1)[0]
     assert "not yet published" in text and "0.4.0" in text
     assert "--strict-startup" not in text and "600 ms" not in text

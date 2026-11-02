@@ -1,6 +1,8 @@
 """Actual HTTP watch framing, continuity, recovery, backpressure and cancellation."""
 
 import asyncio
+import concurrent.futures
+import contextvars
 import json
 import sys
 import threading
@@ -642,33 +644,46 @@ async def test_established_idle_client_timeout_resets_previous_failure_backoff(t
 @pytest.mark.asyncio
 @pytest.mark.parametrize("result", ["slow_headers", "slow_error"])
 async def test_failed_watch_establishment_does_not_reset_failure_backoff(tmp_path: Path, result):
-    clock, calls, updates = Clock(), 0, []
+    clock, calls, lists, updates = Clock(), 0, 0, []
 
     async def handler(request):
-        nonlocal calls
+        nonlocal calls, lists
         if "watch" not in request.query:
+            lists += 1
             return web.json_response(collection())
         calls += 1
-        if calls == 3:
-            return web.Response(status=403)
         if result == "slow_headers":
             await asyncio.sleep(0.2)
         else:
             clock.now += 2
         return web.Response(status=503)
 
-    async with reader_fixture(tmp_path, handler, timeout=0.1) as reader:
-        with pytest.raises(HttpProblem):
-            await follower(reader, clock).run(
-                pod_resource(), None, lambda update: collect(updates, update)
+    async def pause(delay):
+        await clock.sleep(delay)
+        if len(clock.delays) == 2:
+            raise Finished
+
+    async with reader_fixture(tmp_path, handler) as reader:
+
+        async def consume(update):
+            if update.status is SyncStatus.SNAPSHOT:
+                assert clock.delays == []
+                if result == "slow_headers":
+                    reader.session.timeout = 0.1
+            await collect(updates, update)
+
+        with pytest.raises(Finished):
+            await ListWatch(reader, sleep=pause, monotonic=clock.monotonic, jitter=lambda: 0.5).run(
+                pod_resource(), None, consume
             )
+    assert lists == 1 and calls == 2
+    assert sum(update.status is SyncStatus.SNAPSHOT for update in updates) == 1
     assert clock.delays == [0.25, 0.5]
     assert not any(update.status is SyncStatus.LIVE for update in updates)
-    assert next(
-        update for update in updates if update.status is SyncStatus.RETRYING
-    ).problem.state is (
-        ConnectionState.TIMEOUT if result == "slow_headers" else ConnectionState.API_ERROR
-    )
+    retries = [update for update in updates if update.status is SyncStatus.RETRYING]
+    assert len(retries) == 2
+    expected = ConnectionState.TIMEOUT if result == "slow_headers" else ConnectionState.API_ERROR
+    assert all(update.problem.state is expected for update in retries)
 
 
 @pytest.mark.asyncio
@@ -871,3 +886,92 @@ async def test_deleted_initial_records_are_released_when_consumer_keeps_no_histo
     async with reader_fixture(tmp_path, handler) as reader:
         with pytest.raises(Finished):
             await ListWatch(reader).run(pod_resource(), None, sink)
+
+
+@pytest.mark.asyncio
+async def test_initial_parser_completion_retains_no_deleted_record_while_worker_unwinds(
+    tmp_path: Path, monkeypatch
+) -> None:
+    from kuberich.services import resources
+
+    loop = asyncio.get_running_loop()
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+    phase = contextvars.ContextVar("initial_resource_parse", default=False)
+    worker = threading.local()
+    published, release = asyncio.Event(), threading.Event()
+    original_to_thread = asyncio.to_thread
+    original_parse = resources.parse_owned
+    original_publish = concurrent.futures.Future.set_result
+    parse_calls, publications = 0, []
+    initial, uid = None, None
+
+    async def owned_to_thread(operation, /, *args, **kwargs):
+        selected = phase.get()
+        context = contextvars.copy_context()
+
+        def run():
+            try:
+                return context.run(operation, *args, **kwargs)
+            finally:
+                worker.selected = selected
+
+        return await loop.run_in_executor(executor, run)
+
+    async def initial_parse(operation):
+        nonlocal parse_calls
+        parse_calls += 1
+        if parse_calls != 1:
+            return await original_parse(operation)
+        token = phase.set(True)
+        try:
+            return await original_parse(operation)
+        finally:
+            phase.reset(token)
+
+    def publish(future, result):
+        selected = getattr(worker, "selected", False)
+        original_publish(future, result)
+        if selected:
+            publications.append((id(future), result is None))
+            loop.call_soon_threadsafe(published.set)
+            try:
+                release.wait()
+            finally:
+                worker.selected = False
+
+    monkeypatch.setattr(asyncio, "to_thread", owned_to_thread)
+    monkeypatch.setattr(resources, "parse_owned", initial_parse)
+    monkeypatch.setattr(concurrent.futures.Future, "set_result", publish)
+
+    async def handler(request):
+        return (
+            web.Response(body=frame(event("DELETED", version="deletion")))
+            if "watch" in request.query
+            else web.json_response(collection(item()))
+        )
+
+    async def sink(update):
+        nonlocal initial, uid
+        if update.status is SyncStatus.SNAPSHOT:
+            initial = weakref.ref(update.snapshot.items[0])
+            uid = update.snapshot.items[0].uid
+        if update.event is not None:
+            async with asyncio.timeout(5):
+                await published.wait()
+            assert update.event.type is EventType.DELETED
+            assert update.event.record.uid == uid
+            assert not update.snapshot.items
+            assert initial is not None and initial() is None
+            assert len(publications) == 1 and publications[0][1] is True
+            assert not release.is_set()
+            raise Finished
+
+    try:
+        async with reader_fixture(tmp_path, handler) as reader:
+            with pytest.raises(Finished):
+                await ListWatch(reader).run(pod_resource(), None, sink)
+    finally:
+        release.set()
+        monkeypatch.setattr(asyncio, "to_thread", original_to_thread)
+        await original_to_thread(executor.shutdown, wait=True)
+    assert parse_calls == 1

@@ -2,40 +2,40 @@
 
 ## Startup and import boundaries
 
-The Application matrix runs `python -m scripts.check_startup` serially against the
-exact source checkout, with five fresh observations of each offline command and
-five actual first frames on an owned 120×36 PTY. Every offline observation must
-satisfy the unchanged 150 ms / 40,000,000-byte CLI budgets.
-`-X importtime` additionally rejects terminal/SDK imports and 150,000 µs aggregate
-self or maximum cumulative import time. A deliberately late mount and explicit
-Textual import must fail their controls. Inputs remain frozen during a run; raw
-output, profiles, ANSI transcripts and failure reports are uploaded even on failure.
+The Application matrix runs `python -m scripts.check_startup` serially against
+exact source, retaining five fresh observations of every offline command,
+four import profiles and five actual frames on an owned 120×36 PTY. No case is
+omitted when a latency target is missed in advisory mode.
 
-On 2026-11-01 the maintainer accepted the measured approximately 685 ms first
-paint for 0.3 and deferred strict optimization to the stable audit. For 0.x,
-every actual UI sample records elapsed time and explicit `budget_met` /
-`budget_enforced` flags against the unchanged 600 ms target. The qualifier's
-`--strict-paint` mode enforces that target on demand; version major 1 and later
-enforce it automatically. Its deliberate 700 ms negative control always uses
-the original strict check, including in advisory mode. A missed target remains
-reported as missed. Only latency is advisory: every source, actual-frame,
-SDK/import, geometry, ownership and cleanup failure still blocks every mode.
+On 2026-11-01 the maintainer made every startup latency objective advisory for
+0.x: **150 ms** offline wall time, **150,000 µs** aggregate self and maximum
+cumulative import time, and **600 ms** actual UI first paint. Each sample/profile
+and aggregate reports its actual values, original target, `budget_met` and
+`budget_enforced`. An unmet objective is never called a strict pass.
+`--strict-startup` enforces all original limits; `--strict-paint` preserves the
+existing UI-only opt-in. Actual source major 1 and later, including prereleases,
+always enforce every limit. No version override or higher threshold is used.
 
-The SDK prepares only after the public refresh readiness port. Functional tests
-cover owned credential/network/update reads, initial views, context replacement,
-quit and cancellation before readiness.
+Offline RSS must remain below **40,000,000 bytes**. Valid elapsed observations,
+clean output, installed/source identity, complete import profiles and absence
+of Textual/the Kubernetes SDK remain hard requirements in every mode. The real
+selected table must be mounted with columns and geometry inside the original
+viewport before any SDK/helper/network work. Deadline, terminal restoration,
+client ownership and cleanup failures always block. Configured validation and
+all production/critical/changed-line coverage gates remain unchanged.
 
-Every accepted first frame includes a mounted real selected resource table with
-columns and geometry inside the original viewport; header delivery alone cannot
-satisfy it. All original tables retain eager composition. A deferred-DOM
-prototype showed no startup improvement and was removed rather than retaining
-extra ownership machinery. Fresh children also reject unused editor imports
-while preserving the canonical read-only text class and inspection behavior.
-The critical CLI/navigation coverage and
-whole-package/changed-line floors remain unchanged; type-only imports stay in the
-denominator. Local source startup evidence does not qualify native artifacts or
-other platforms. See [the startup acceptance record](internal/acceptance/startup-budget.md).
+Both original negative controls remain required: the deliberate 700 ms frame
+uses the unchanged strict check, and an explicit Textual import must fail even
+in advisory mode. Synthetic controls also verify strict offline/import timing,
+stable prerelease enforcement, RSS and functional failures. The original macOS
+`info` observation of 161.144125 ms remains a failed old-policy result; its later
+102.170084 ms diagnostic is not promoted into a pass. See the
+[startup acceptance record](internal/acceptance/startup-budget-0.3.md).
 
+Inputs stay frozen during qualification. Raw stdout/stderr, import profiles,
+ANSI transcripts and original failures are retained. All tables keep eager
+composition; the ineffective inactive-DOM prototype remains removed. Historical
+source evidence does not qualify a changed head, native artifact or platform.
 
 ## Public test boundaries
 
@@ -218,7 +218,7 @@ the existing context qualification cluster for status patches, captured UID
 recreation and nested namespace/context/Escape cleanup; its fixture is deliberately
 unscheduled and makes no running-container/restart/exec claim. Existing separate
 shell, RBAC, runtime/performance and full platform checks remain required.
-See [acceptance](internal/acceptance/terminal-navigation.md).
+See [acceptance](internal/acceptance/terminal-navigation-0.3.md).
 
 ## Navigation preferences: U02 #57
 
@@ -592,6 +592,13 @@ exact distribution bytes. Every finding requires a reviewed, exact, expiring
 exception; missing/skipped evidence and scanner errors fail. See
 [dependency security](dependency-security.md) for commands, scope and limits.
 
+If a canonical release-candidate audit fails, the packaging fixture preserves
+its available regular output files in a separate private directory under
+`artifacts/security/canonical-release-failures/`. Each attempt has a unique
+directory; successful ordinary audit reports are never substituted. These partial
+files are diagnostic evidence, not a passing audit. The original error remains
+the test failure even if retaining the files also fails.
+
 D02 retains local candidate identity under `artifacts/releases`. Release decision
 and owned HTTP/Git transport tests run in every application job; actual canonical
 RC builds/audits/installations exercise preparation without publication. The
@@ -667,6 +674,9 @@ by the existing runtime, production/critical and changed-line gates. It keeps
 original logs, skipped-case details and canonical evidence before and after the
 run. A unique external mode-0700 parent owns a new basetemp child for every pytest
 stage. Do not edit candidate inputs or start competing timing checks during it.
+The private-access audit and actual startup checks run before the suite, using
+the existing validators and unchanged hard limits; startup reports stay under
+the selected output directory.
 
 Use `--collect-only --quality-run ID --repository-run ID` to collect the actual
 full exact-source hosted results through the existing release validators. This

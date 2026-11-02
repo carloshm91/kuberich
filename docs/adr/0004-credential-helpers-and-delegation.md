@@ -28,6 +28,16 @@ boundary; automatic netrc identity stays disabled. The pinned SOCKS connector
 needs an SSLContext hostname adaptation because it drops request-level overrides.
 That local compatibility mechanism is separate from real-provider certification.
 
+## Current implementation notes
+
+The current [kubeconfig contract](0032-kubeconfig-loader-contract.md) also supports
+per-session Basic authentication and explicit OIDC exec migration. Delegated tools
+use the same prepared credential identity. Captured secret hints include the
+password, decoded `user:password` pair, full Basic header, and bare Base64 value;
+a username alone is not classified as secret merely because the password is empty.
+These bounded hints complement pattern redaction rather than recognizing arbitrary
+confidential text. Local contract fixtures do not certify an actual cloud provider.
+
 ## Source and related decisions
 
 This record extracts an implemented decision from the [previous architecture

@@ -25,6 +25,8 @@ class OfflineImports(importlib.abc.MetaPathFinder):
 sys.meta_path.insert(0, OfflineImports())
 forbidden = os.path.abspath(os.environ["KUBECONFIG"])
 def no_kubeconfig_reads(event, arguments):
+    if event in {"subprocess.Popen", "os.system", "os.exec"}:
+        raise AssertionError("Offline bug-report executed a helper")
     if event == "open" and isinstance(arguments[0], (str, bytes, os.PathLike)):
         if os.path.abspath(os.fsdecode(arguments[0])) == forbidden:
             raise AssertionError("Offline bug-report read kubeconfig")
@@ -193,3 +195,28 @@ def test_default_report_uses_its_own_state_directory_and_a_new_private_name(tmp_
     assert destination.name.startswith("kuberich-report-") and destination.suffix == ".json"
     assert stat.S_IMODE(destination.stat().st_mode) == 0o600
     assert json.loads(destination.read_text())["config_check"] == "missing"
+
+
+@pytest.mark.parametrize("selection", ["explicit", "current-env", "legacy-env"])
+def test_invalid_preference_selection_still_reports_without_credentials_helpers_or_sdk(
+    tmp_path, selection
+):
+    private = tmp_path / "private-kubeconfig"
+    private.write_text("private-auth-marker-must-never-be-read")
+    output = tmp_path / "report.json"
+    arguments = ["--config", ""] if selection == "explicit" else []
+    environment = (
+        {}
+        if selection == "explicit"
+        else {"KUBERICH_CONFIG" if selection == "current-env" else "KUBETROL_CONFIG": ""}
+    )
+    result = invoke(
+        tmp_path, [*arguments, "bug-report", "--output", str(output)], environment=environment
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stderr == "" and str(output) in result.stdout
+    value = json.loads(output.read_text())
+    assert value["config_check"] == "invalid" and value["recent_log"] == {"status": "unavailable"}
+    assert stat.S_IMODE(output.stat().st_mode) == 0o600
+    assert "private-auth-marker" not in output.read_text() + result.stdout + result.stderr
+    assert private.read_text() == "private-auth-marker-must-never-be-read"

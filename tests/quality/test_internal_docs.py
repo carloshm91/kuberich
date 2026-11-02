@@ -16,9 +16,9 @@ from scripts.site_reference import reference_files
 def test_history_moves_to_one_internal_area_with_exact_original_git_evidence():
     plan = json.loads((ROOT / "docs/documentation-plan.json").read_text())
     assert len(plan["relocations"]) == 100
-    assert len(plan["preserved_sources"]) == 102
+    assert len(plan["preserved_sources"]) == 105
     assert len(plan["operational_sources"]) == 3
-    assert len(original_contexts(ROOT)) == 102
+    assert len(original_contexts(ROOT)) == 105
     mapped = {item["source"]: item for item in plan["documents"]}
     for old, new in plan["relocations"].items():
         assert new.startswith("docs/internal/") and (ROOT / new).is_file()
@@ -28,8 +28,8 @@ def test_history_moves_to_one_internal_area_with_exact_original_git_evidence():
             assert not (ROOT / old).is_file()
     for record in plan["preserved_sources"] + plan["operational_sources"]:
         assert mapped[record["path"]]["baseline_sha256"] == record["sha256"]
-    assert len(mapped) == 331
-    assert validate_documentation_plan(ROOT, list(mapped)) == 331
+    assert len(mapped) == 339
+    assert validate_documentation_plan(ROOT, list(mapped)) == 339
     assert not (ROOT / "docs/status.md").exists()
 
 
@@ -91,6 +91,9 @@ def test_source_guard_keeps_current_operational_inputs_in_exact_release_inventor
 def test_current_engineering_phase_snapshots_do_not_overwrite_earlier_history():
     plan = json.loads((ROOT / "docs/documentation-plan.json").read_text())
     versions = {
+        "docs/acceptance/editing.md": "docs/internal/acceptance/editing.md",
+        "docs/acceptance/startup-budget.md": "docs/internal/acceptance/startup-budget.md",
+        "docs/acceptance/terminal-navigation.md": "docs/internal/acceptance/terminal-navigation.md",
         "docs/acceptance/forward-presets.md": "docs/internal/acceptance/forward-presets.md",
         "docs/acceptance/plugin-execution.md": "docs/internal/acceptance/plugin-execution.md",
         "docs/acceptance/resource-workspace.md": "docs/internal/acceptance/resource-workspace.md",
@@ -115,3 +118,20 @@ def test_current_engineering_phase_snapshots_do_not_overwrite_earlier_history():
     ):
         path = "docs/internal/acceptance/" + name
         assert (ROOT / path).is_file() and mapped[path]["action"] == "keep"
+
+
+def test_current_checkpoint_and_acceptance_use_normal_links_without_history_exemptions():
+    contexts = original_contexts(ROOT)
+    current = (
+        "docs/internal/first-preview-current.md",
+        "docs/internal/acceptance/task-guides.md",
+        "docs/internal/acceptance/architecture-overview.md",
+    )
+    for name in current:
+        assert (ROOT / name).is_file() and ROOT / name not in contexts
+    checkpoint = (ROOT / current[0]).read_text()
+    assert "857f9ad0216688853142d9b463d5d41cc955114f" in checkpoint
+    assert "41444530467" in checkpoint and "125274306280" in checkpoint
+    assert "Commands and keys" in checkpoint
+    acceptance = (ROOT / current[1]).read_text()
+    assert "41425930497" in acceptance and "79.77" in acceptance

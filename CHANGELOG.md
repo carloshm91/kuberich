@@ -22,9 +22,9 @@ These source changes are not yet published. Changes by [Carlos J. Herrera](https
 - Find the published version and installation links on a short status page ([#226](https://github.com/carloshm91/kuberich/issues/226)).
 - Follow focused task guides with references generated from commands, keys and configuration ([#222](https://github.com/carloshm91/kuberich/issues/222), [#224](https://github.com/carloshm91/kuberich/issues/224)).
 - Find installation steps and product features in a shorter README ([#223](https://github.com/carloshm91/kuberich/issues/223)).
-- Install with the supported Kubernetes SDK date-parser version.
+- Install without incompatible Kubernetes date-parser dependencies.
 - Read shorter release notes focused on changes you can use ([#227](https://github.com/carloshm91/kuberich/issues/227)).
-- Run offline inspection commands without importing the terminal UI or Kubernetes SDK ([#214](https://github.com/carloshm91/kuberich/issues/214)).
+- Run offline inspection commands without starting the terminal UI or connecting to a cluster ([#214](https://github.com/carloshm91/kuberich/issues/214)).
 
 ### Deprecated
 
@@ -32,6 +32,9 @@ These source changes are not yet published. Changes by [Carlos J. Herrera](https
 
 ### Fixed
 
+- Release memory for deleted resources during live updates ([#226](https://github.com/carloshm91/kuberich/issues/226)).
+- Hide prepared Basic credentials in captured plugin output ([#215](https://github.com/carloshm91/kuberich/issues/215)).
+- Restore your terminal after fatal UI errors and show a private crash-report path ([#216](https://github.com/carloshm91/kuberich/issues/216)).
 - Navigate, resize and change themes without repeatedly updating unchanged headers ([#209](https://github.com/carloshm91/kuberich/issues/209)).
 - Review plugins in custom-resource views using the selected API group, version and resource identity ([#278](https://github.com/carloshm91/kuberich/issues/278)).
 - Read completed plugin-job output and exit status without pressing Enter again or changing the opened result ([#272](https://github.com/carloshm91/kuberich/issues/272)).

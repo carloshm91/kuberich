@@ -45,6 +45,33 @@ and guide-source readers. This does not turn a source checkpoint into release
 qualification or claim that a feature-branch blob is protected-main evidence.
 The suffix identifies an engineering phase, not a published or qualified release.
 
+## Source-history setup
+
+Use a full-history clone. Before documentation link/history validation or the
+local qualifier, fetch these existing PR histories once:
+
+```sh
+git fetch --no-tags origin refs/pull/277/head refs/pull/290/head
+```
+
+PR 277 retains the reviewed prerequisite ancestry for the three `1875994d5c`
+records. PR 290 retains the internal-evidence source ancestry, including the
+`aad1a0b2` and `dd0a67ee` origins. Their exact receipt identities remain unchanged;
+fetching a source does not turn a feature-branch origin into protected-main proof.
+CI performs this bounded setup before Repository plan validation and Quality
+test shards. Current-only site builds, release-byte checks and installers do not
+need these historical blobs. Ordinary Markdown validation never fetches from the
+network: unavailable or different original objects still fail validation.
+
+## Current maintained records
+
+[Development checkpoint](first-preview-current.md),
+[task-guide acceptance](acceptance/task-guides.md) and
+[architecture acceptance](acceptance/architecture-overview.md) carry current
+protected-parent facts and later verification. They receive ordinary current-source
+Markdown link checks. The frozen `first-preview-0.3.md` remains its original
+unprotected prepared snapshot; it is not the maintained checkpoint.
+
 ## Updating evidence
 
 Keep new verification evidence in its pull request or release assets when

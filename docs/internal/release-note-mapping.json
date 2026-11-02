@@ -3310,11 +3310,11 @@
     }
   ],
   "unreleased": {
-    "status": "Engineering-phase source snapshot; not a published or qualified 0.3 release. Its prepared-parent anchor still awaits matching protected main.",
+    "status": "Unreleased changes inspected against the actual protected parent; not a published or qualified 0.3 release. Published source blobs and their original mapping remain unchanged.",
     "source": {
       "path": "CHANGELOG.md",
-      "commit": "3c8745caff1da62f1884f1e130c9affbc7bb3a65",
-      "sha256": "ff385a15b758f0e7854b311638349a97d0ecc39b5a202509de8453170b01dc75"
+      "commit": "13a6c5cc8da72c36a360d2a68f07553c2959889a",
+      "sha256": "29e107a520979d0ccfa7ee1126607bf52dc58c7715a6e0cb20a5e73a7c4132da"
     },
     "entries": [
       {
@@ -3370,7 +3370,7 @@
       {
         "id": "date-parser",
         "category": "Changed",
-        "markdown_sha256": "7652fd374c803d2e761be38353794c81ff011d65c77bd677c1a97b98787f8e5d"
+        "markdown_sha256": "e5358ef4f97945675b0f668e37483546b9e818afb73a83ae14300beb1ce51541"
       },
       {
         "id": "notes",
@@ -3380,12 +3380,27 @@
       {
         "id": "offline-imports",
         "category": "Changed",
-        "markdown_sha256": "4d65346bf8f1217e697da1f4c1ebd67384c90f93d1e6653a927c5be650d1663b"
+        "markdown_sha256": "82b1afac22d9c25547abb9be50024185cffaed969ee77cc4066fa4896d248c0f"
       },
       {
         "id": "alias",
         "category": "Deprecated",
         "markdown_sha256": "ae06bf090d84254585b190d42d2c1bc217132d98c063bad195db996c5e12b684"
+      },
+      {
+        "id": "deleted-resource-memory",
+        "category": "Fixed",
+        "markdown_sha256": "9ca48db602170edfa38650bbbf9749e9292bc446012786cd9f70ea60760b2c1e"
+      },
+      {
+        "id": "basic-output-masking",
+        "category": "Fixed",
+        "markdown_sha256": "1c2dd7ca671e4b88c0de56769b151ee70942c2d5993136791b0d12e951535e53"
+      },
+      {
+        "id": "fatal-report",
+        "category": "Fixed",
+        "markdown_sha256": "4aac39c5b84f7b1a3897e4da505f98d04f27b046c20c99d68fa71c536b4121ee"
       },
       {
         "id": "headers",
@@ -3425,7 +3440,8 @@
         "disposition": "user_change",
         "targets": [
           "view-retry",
-          "bug-report"
+          "bug-report",
+          "fatal-report"
         ],
         "reason": "Keep the actual user behavior; engineering policy and qualification details stay internal."
       },
@@ -3584,7 +3600,7 @@
         "category": "Changed",
         "line_start": 71,
         "line_end": 77,
-        "sha256": "03a0521068b0e96f04d965aa09efa1ba742fbc87cf247601a8092125b5898132",
+        "sha256": "8e474ecea653b604ce672968f88cd59255bda056f07c5f27d8ff59af6a07c6d2",
         "disposition": "user_change",
         "targets": [
           "offline-imports"
@@ -3649,13 +3665,14 @@
         "version": "Unreleased",
         "category": "Fixed",
         "line_start": 95,
-        "line_end": 101,
-        "sha256": "7f3d84a5da6795ef6c3858ad1b2e752f1ce059ba4c22a6ff5d6b85e5f798f41c",
+        "line_end": 102,
+        "sha256": "266139964c40c35d23ea8a7b34518bb93eb0bfe8c2cd7b65b46e5ba581c1bf01",
         "disposition": "user_change",
         "targets": [
           "basic-auth",
           "oidc-migration",
-          "optional-credentials"
+          "optional-credentials",
+          "basic-output-masking"
         ],
         "reason": "Keep the actual user behavior; engineering policy and qualification details stay internal."
       },
@@ -3664,8 +3681,8 @@
         "source": "CHANGELOG.md",
         "version": "Unreleased",
         "category": "Fixed",
-        "line_start": 102,
-        "line_end": 105,
+        "line_start": 103,
+        "line_end": 106,
         "sha256": "9efe6d1813b125e987db787b91f71a50280027c8e5db536e64e5ac06dbc7f481",
         "disposition": "user_change",
         "targets": [
@@ -3678,8 +3695,8 @@
         "source": "CHANGELOG.md",
         "version": "Unreleased",
         "category": "Fixed",
-        "line_start": 106,
-        "line_end": 108,
+        "line_start": 107,
+        "line_end": 109,
         "sha256": "852b6a488cb8d6e35845d364fcdaae7b5e704d375312a88de3c4eb04996c35bf",
         "disposition": "internal_process",
         "targets": [],
@@ -3690,8 +3707,8 @@
         "source": "CHANGELOG.md",
         "version": "Unreleased",
         "category": "Fixed",
-        "line_start": 109,
-        "line_end": 113,
+        "line_start": 110,
+        "line_end": 114,
         "sha256": "a463dc61e7110491f633959ccc3c7b286b9a1118cce7f35a316f057074b68359",
         "disposition": "internal_process",
         "targets": [],
@@ -3702,8 +3719,8 @@
         "source": "CHANGELOG.md",
         "version": "Unreleased",
         "category": "Fixed",
-        "line_start": 114,
-        "line_end": 117,
+        "line_start": 115,
+        "line_end": 118,
         "sha256": "7f2182d745d97ab4059c896009499d72ca99964751af6a739aefe9cf23f689b3",
         "disposition": "internal_process",
         "targets": [],
@@ -3714,8 +3731,8 @@
         "source": "CHANGELOG.md",
         "version": "Unreleased",
         "category": "Fixed",
-        "line_start": 118,
-        "line_end": 122,
+        "line_start": 119,
+        "line_end": 123,
         "sha256": "849ce12a0c34b2bf6f91bf624e89a5d477b6bd35e09dda6db35c58423304b8fb",
         "disposition": "user_change",
         "targets": [
@@ -3728,8 +3745,8 @@
         "source": "CHANGELOG.md",
         "version": "Unreleased",
         "category": "Security",
-        "line_start": 125,
-        "line_end": 130,
+        "line_start": 126,
+        "line_end": 131,
         "sha256": "02deedef20f8845163a4abb36bdeae96acde788f4f417494f8fe4db85ae5ce5d",
         "disposition": "internal_process",
         "targets": [],
@@ -3737,8 +3754,8 @@
       }
     ],
     "additional_user_entries": [
-      "notes"
-    ],
-    "policy_parent_pending": "33491efd8305c33db2b26b2fed024d23237c197b changes startup-latency qualification policy; it is not integrated in this snapshot and creates no installed-version or latency-guarantee claim."
+      "notes",
+      "deleted-resource-memory"
+    ]
   }
 }

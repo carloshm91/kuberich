@@ -1,6 +1,8 @@
 """Delayed real selection ownership must keep the exact native contract intact."""
 
 import asyncio
+import ctypes
+import ctypes.util
 import json
 import os
 import shutil
@@ -107,3 +109,106 @@ async def test_cancelled_selection_reader_is_reaped_before_return(tmp_path):
         with pytest.raises(ProcessLookupError):
             os.kill(int(pid.read_text()), 0)
     assert not json.loads(receipt.read_text())["ready"]
+
+
+def generation_marker(environment, *, create=False):
+    # libX11 is the existing xclip runtime dependency; no new executable is
+    # required. A root property belongs to this disposable server generation.
+    library = ctypes.util.find_library("X11")
+    assert library is not None, "The required Linux xclip lane needs its libX11 runtime."
+    x11 = ctypes.CDLL(library)
+    x11.XOpenDisplay.argtypes = [ctypes.c_char_p]
+    x11.XOpenDisplay.restype = ctypes.c_void_p
+    x11.XDefaultRootWindow.argtypes = [ctypes.c_void_p]
+    x11.XDefaultRootWindow.restype = ctypes.c_ulong
+    x11.XInternAtom.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int]
+    x11.XInternAtom.restype = ctypes.c_ulong
+    x11.XChangeProperty.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_ulong,
+        ctypes.c_ulong,
+        ctypes.c_ulong,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_char_p,
+        ctypes.c_int,
+    ]
+    x11.XGetWindowProperty.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_ulong,
+        ctypes.c_ulong,
+        ctypes.c_long,
+        ctypes.c_long,
+        ctypes.c_int,
+        ctypes.c_ulong,
+        ctypes.POINTER(ctypes.c_ulong),
+        ctypes.POINTER(ctypes.c_int),
+        ctypes.POINTER(ctypes.c_ulong),
+        ctypes.POINTER(ctypes.c_ulong),
+        ctypes.POINTER(ctypes.c_void_p),
+    ]
+    x11.XSync.argtypes = [ctypes.c_void_p, ctypes.c_int]
+    x11.XCloseDisplay.argtypes = [ctypes.c_void_p]
+    x11.XFree.argtypes = [ctypes.c_void_p]
+    display = x11.XOpenDisplay(environment["DISPLAY"].encode("ascii"))
+    assert display, "The owned Xvfb display must accept its generation probe."
+    try:
+        root = x11.XDefaultRootWindow(display)
+        atom = x11.XInternAtom(display, b"KUBERICH_OWNED_GENERATION", False)
+        marker = b"owned-generation"
+        if create:
+            x11.XChangeProperty(display, root, atom, 31, 8, 0, marker, len(marker))
+            x11.XSync(display, False)
+        kind, width = ctypes.c_ulong(), ctypes.c_int()
+        count, remaining, data = ctypes.c_ulong(), ctypes.c_ulong(), ctypes.c_void_p()
+        result = x11.XGetWindowProperty(
+            display,
+            root,
+            atom,
+            0,
+            32,
+            False,
+            0,
+            ctypes.byref(kind),
+            ctypes.byref(width),
+            ctypes.byref(count),
+            ctypes.byref(remaining),
+            ctypes.byref(data),
+        )
+        try:
+            assert result == 0 and remaining.value == 0 and count.value <= len(marker)
+            assert kind.value == 0 or (kind.value == 31 and width.value == 8)
+            return ctypes.string_at(data, count.value) if data.value else b""
+        finally:
+            if data.value:
+                x11.XFree(data)
+    finally:
+        x11.XCloseDisplay(display)
+
+
+@pytest.mark.asyncio
+async def test_owned_display_generation_survives_the_gap_between_selection_owners(tmp_path):
+    if sys.platform != "linux":
+        pytest.skip("The owned Xvfb generation contract is required on the Linux lane.")
+    assert shutil.which("Xvfb") and shutil.which("xclip"), "Install the required Xvfb/xclip tools."
+    async with owned_x11_display() as environment, ProcessRunner(AccessPolicy(True)) as runner:
+        clipboard = NativeClipboard(runner, environment, tmp_path)
+        try:
+            data = b"synthetic-owned-generation"
+            await clipboard.write(data, ClipboardBackend.X11)
+            assert (
+                await read_x11_selection(
+                    runner, environment, tmp_path, data, receipt=tmp_path / "before-gap.json"
+                )
+                == data
+            )
+            owner = clipboard.owner
+            assert owner is not None and owner.running
+            assert generation_marker(environment, create=True) == b"owned-generation"
+            await clipboard.close()
+            assert owner.task.done() and runner.active_count == 0
+            with pytest.raises(ProcessLookupError):
+                os.kill(owner.pid, 0)
+            assert generation_marker(environment) == b"owned-generation"
+        finally:
+            await clipboard.close()
