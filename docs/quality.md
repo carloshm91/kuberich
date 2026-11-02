@@ -674,6 +674,9 @@ by the existing runtime, production/critical and changed-line gates. It keeps
 original logs, skipped-case details and canonical evidence before and after the
 run. A unique external mode-0700 parent owns a new basetemp child for every pytest
 stage. Do not edit candidate inputs or start competing timing checks during it.
+The private-access audit and actual startup checks run before the suite, using
+the existing validators and unchanged hard limits; startup reports stay under
+the selected output directory.
 
 Use `--collect-only --quality-run ID --repository-run ID` to collect the actual
 full exact-source hosted results through the existing release validators. This
