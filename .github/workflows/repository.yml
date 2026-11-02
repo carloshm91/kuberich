@@ -39,9 +39,12 @@ jobs:
           else
             git diff-tree --root --check HEAD
           fi
+      - name: Check required documentation sources and advisory observations
+        timeout-minutes: 2
+        run: uv run python -m scripts.check_documentation --external
       - name: Build and validate both static-site surfaces
         run: |
-          uv run mypy --strict scripts/build_site.py scripts/check_site.py scripts/site_reference.py scripts/documentation.py scripts/pages.py scripts/documentation_links.py
+          uv run mypy --strict scripts/build_site.py scripts/check_site.py scripts/site_reference.py scripts/documentation.py scripts/pages.py scripts/documentation_links.py scripts/site_schema.py scripts/check_documentation.py scripts/documentation_external.py
           uv run python -m scripts.build_site
           uv run python -m scripts.check_site
       - name: Verify website keyboard, accessibility and browser behavior
@@ -61,5 +64,6 @@ jobs:
             artifacts/site-qa/*.png
             artifacts/site-qa/browser-report.json
             artifacts/site-qa/npm-audit.json
+            artifacts/site-qa/documentation-report.json
           if-no-files-found: error
           retention-days: 7

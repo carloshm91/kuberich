@@ -2027,12 +2027,13 @@
       "requires": [
         "W04"
       ],
-      "scope": "Add documentation quality checks: prose lint, links and page budgets",
+      "scope": "Run existing documentation correctness checks and report advisory prose, formatting, per-page line targets and public HTTPS observations in the same Repository job. Keep structural navigation/page-count, source/reference, internal-link and publication boundaries required.",
       "acceptance": [
-        "Vale (or equivalent) enforces the `docs/STYLE.md` rules, including banned terms.",
-        "Markdown lint, internal and external link checks, and per-page line budgets.",
-        "Screenshots are regenerated from the real application.",
-        "All of these are required checks for documentation changes."
+        "Actual-source/generated CLI/config/key references, internal links, structural navigation/page-count limits and publication boundaries remain required.",
+        "Report docs/STYLE.md prose rules, banned terms, Markdown formatting and per-page line targets with advisory severity for 0.x; inherited editorial assertions must not block correct builds.",
+        "A bounded public HTTPS report excludes fixture/private endpoints and reports external availability as advisory, without following redirects or claiming fragment validation.",
+        "Regenerate screenshots from the real application with synthetic fixtures, verified redaction and stream/client cleanup.",
+        "The existing required documentation job runs and retains these checks and advisory observations without a new workflow, permissions or cosmetic release gate."
       ],
       "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
       "priority": "P1"

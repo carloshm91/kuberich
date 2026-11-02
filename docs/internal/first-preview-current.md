@@ -961,3 +961,26 @@ helper's strict/static input files are byte-identical after this checkpoint-only
 integration. The earlier 84-case cohort and original failed control remain
 separate source-scoped records. Fresh complete current-head hosted/native CI
 is still required before protected delivery; no unchanged CI attempt was retried.
+
+## Documentation quality and current media checkpoint
+
+Protected source `af6beb02318a31ed196e4bd880e563f23659baf9` delivered the
+contributor-policy changes and scoped watch/picker test corrections with all 27
+pull-request jobs, four native runners and matching Repository/DCO checks. Its
+automatic-main Fast job later reached the unchanged 15-minute job deadline at
+99% without identifying the remaining node. Retained runtime owners had completed
+and drained; the available output does not establish a product defect or a unique
+cause. The next required run retains the same selection, workers, controls and
+deadline, adding public verbose node logging and a nonfatal 60-second Python
+stack dump for diagnosis. No unchanged CI run is retried.
+
+The current documentation work keeps generated references, internal links,
+publication checks and the 20-page navigation structure mandatory. STYLE prose,
+Markdown formatting, per-page length targets and bounded public HTTPS
+availability observations are advisory during 0.x development. Existing source
+receipts and their historical payloads remain unchanged. A real synthetic
+loopback capture now checks clean committed application identity, redaction and
+client/stream/handler cleanup before writing its source-bound images. Local
+verification and fresh media results are pending at this source checkpoint; the
+previous recorded media is historical. Version remains 0.2.0, and no publication
+or production coverage percentage is claimed.

@@ -326,13 +326,6 @@ def guide_html(
     catalog = catalog or load_navigation(root)
     source = root / "docs" / guide.source
     md = MarkdownIt("commonmark", {"html": False}).enable("table")
-    lines = (
-        len(generated.splitlines())
-        if generated is not None
-        else sum(len((root / "docs" / name).read_text().splitlines()) for name in guide.sources)
-    )
-    if lines > 250:
-        raise ValueError(f"User documentation exceeds the 250-line budget: {guide.source}")
     tokens = (
         md.parse(generated) if generated is not None else composed_guide(root, guide, md, catalog)
     )

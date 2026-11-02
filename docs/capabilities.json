@@ -35,7 +35,7 @@
         "tests/ui/test_view_errors.py",
         "tests/unit/test_diagnostic_reports.py"
       ],
-      "public_summary": "Launch flags provide help, version, local diagnostics, read-only policy, presentation controls, session color inversion, startup views, and connection overrides. Splash, general resource export, and shell completion are unavailable. Development source also provides local redacted diagnostic bundles and recoverable view errors.",
+      "public_summary": "Launch flags provide help, version, local diagnostics, read-only policy, presentation controls, session color inversion, startup views, and connection overrides. Splash, general resource export, and shell completion are unavailable. Create redacted local diagnostic bundles and retry recoverable resource-view errors.",
       "public_status": "partial"
     },
     {

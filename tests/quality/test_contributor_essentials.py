@@ -18,7 +18,6 @@ CONTRACT = "https://github.com/carloshm91/kuberich/blob/main/CONTRIBUTING.md#del
 
 def test_contribution_guide_keeps_delivery_architecture_identity_and_real_commands():
     guide = (ROOT / "CONTRIBUTING.md").read_text()
-    assert len(guide.splitlines()) <= 150
     assert "## Delivery contract\n" in guide
     assert "### Definition of ready\n" in guide and "### Definition of done\n" in guide
     assert "](docs/architecture.md)" in guide and "](docs/adr/README.md)" in guide
@@ -60,17 +59,13 @@ def test_bug_feature_and_task_forms_link_instead_of_copying_delivery_contract():
         assert len(instructions) == 1 and instructions[0].count(CONTRACT) == 1
         assert "https://github.com/carloshm91/kuberich/blob/main/docs/quality.md" in instructions[0]
         assert "Definition of done" not in instructions[0] and "coverage" not in instructions[0]
-        assert len(instructions[0].split()) <= 15
     bug = (ROOT / ".github/ISSUE_TEMPLATE/bug.yml").read_text()
     assert "Do not include credentials or kubeconfig contents" in bug
     assert "Report vulnerabilities privately" in bug
 
 
-def test_current_agent_and_quality_instructions_fit_their_budgets():
+def test_current_agent_instructions_keep_identity_and_verification_policy():
     agent = (ROOT / "AGENTS.md").read_text()
-    quality = (ROOT / "docs/quality.md").read_text()
-    assert len(agent.splitlines()) <= 60
-    assert len(quality.splitlines()) <= 250
     assert not re.search(r"\b20\d\d-\d\d-\d\d\b|\b(?:Astra|GPT|Argon|Sol)\b", agent, re.I)
     assert "carloshm91@gmail.com" in agent
     assert "90%" in agent and "100%" in agent

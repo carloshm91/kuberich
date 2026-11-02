@@ -1,4 +1,4 @@
-"""Task-guide budgets, active redirects, exact history and source-generated lookup."""
+"""Task-guide navigation, active redirects, exact history and generated lookup."""
 
 import hashlib
 import json
@@ -16,7 +16,7 @@ from scripts.site_schema import fields
 from tests.support.site_source import copy_source, refresh
 
 
-def test_every_user_page_fits_budget_and_checked_reference_is_current():
+def test_every_user_page_keeps_tracking_boundaries_and_current_source_reference():
     catalog = load_navigation(ROOT)
     generated = reference_files(ROOT)
     assert catalog.user_page_count == 20
@@ -27,12 +27,6 @@ def test_every_user_page_fits_budget_and_checked_reference_is_current():
             if guide.generated
             else "\n".join((ROOT / "docs" / source).read_text() for source in guide.sources)
         )
-        assert len(text.splitlines()) <= 250, guide.source
-        assert not re.search(
-            r"\b(?:owned|bounded|captured|qualified|lifecycle|projection|provenance|preflight|orchestration|invariant)\b",
-            text,
-            re.I,
-        ), guide.source
         assert not re.search(r"/(?:issues|pull)/|actions/runs/|\b[A-Z][0-9]{2}\b", text), (
             guide.source
         )
@@ -96,10 +90,8 @@ def test_all_retired_routes_and_deep_links_reach_active_guidance(tmp_path):
         assert f"/{route.source[:-3]}.html /{route.target[:-3]}.html 301\n" in redirects
 
 
-@pytest.mark.parametrize(
-    "fault", ["missing_target", "unsafe_alias", "line_budget", "checked_snapshot"]
-)
-def test_docs_reject_invalid_aliases_oversize_pages_and_stale_reference(tmp_path, fault):
+@pytest.mark.parametrize("fault", ["missing_target", "unsafe_alias", "checked_snapshot"])
+def test_docs_reject_invalid_aliases_and_stale_reference(tmp_path, fault):
     source = copy_source(tmp_path / "source")
     navigation = source / "docs/navigation.json"
     data = json.loads(navigation.read_text())
@@ -107,8 +99,6 @@ def test_docs_reject_invalid_aliases_oversize_pages_and_stale_reference(tmp_path
         page = data["sections"][0]["pages"][0]
         page["anchors"]["probe" if fault == "missing_target" else "../outside"] = "missing-target"
         navigation.write_text(json.dumps(data))
-    elif fault == "line_budget":
-        (source / "docs/quickstart.md").write_text("# Oversized\n" + "Text\n" * 250)
     else:
         path = source / "docs/config-reference.md"
         path.write_text(path.read_text() + "stale\n")

@@ -11,8 +11,8 @@ Real cloud accounts, terminals, and provider policies can need additional setup.
 ### All 26 explicitly registered launch flags; help/version/info and completion
 **partial** — Launch flags provide help, version, local diagnostics, read-only policy, presentation
 controls, session color inversion, startup views, and connection overrides. Splash, general resource
-export, and shell completion are unavailable. Development source also provides local redacted
-diagnostic bundles and recoverable view errors.
+export, and shell completion are unavailable. Create redacted local diagnostic bundles and retry
+recoverable resource-view errors.
 ### Context/kubeconfig/cluster/user/namespace selection and connection overrides
 **partial** — Select kubeconfig files, context, namespace, connection overrides, and user settings
 explicitly. Each context uses its own connection and passes that identity to delegated tools.
