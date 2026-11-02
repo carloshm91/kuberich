@@ -120,6 +120,8 @@ class Runner:
             # explain XNU's exiting-group EPERM; a live/denied group is failure.
             for _ in range(5):
                 time.sleep(0.01)
+                # Reap this owned leader; only the group probe establishes absence.
+                process.poll()
                 try:
                     os.killpg(process.pid, 0)
                 except ProcessLookupError:
@@ -297,7 +299,9 @@ def collect(report: dict[str, Any], quality_run: int | None, repository_run: int
         "source-import",
         "lint",
         "format",
+        "private-access",
         "types",
+        "startup",
         "tests",
         "runtime-controls",
         "coverage",
