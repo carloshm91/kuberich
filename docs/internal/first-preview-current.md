@@ -1020,3 +1020,26 @@ The retained advisory/browser reports are under `artifacts/site-qa/`; actual
 capture inputs/results are under `artifacts/issue229/capture-fba017c/` and the
 tracked media inventory. Fresh complete current-head hosted/platform CI remains
 pending. Source version stays 0.2.0; no publication or release is performed.
+
+## Prepared 0.3.0 source checkpoint
+
+Protected `6384fb1a25ac19b8c494cc6fb1b87e6d28bfaac4` delivered documentation
+quality and current synthetic media through PR #304 with all 27 required PR jobs,
+four native runners and matching Repository/DCO checks. Issue #230 now prepares
+the source version and authored notes before freezing the final qualification
+candidate. This preparation does not complete the foundations gate.
+
+The source/own lock version is 0.3.0 without dependency upgrades. Published
+0.1.0/0.2.0 records and notes remain unchanged. The new authored note has one
+baseline-null disposition; all 340 earlier rows, 105 immutable origins/payloads,
+three operational source receipts and 100 aliases remain unchanged. Exactly two
+existing census expectations change from 340 to 341 for that new document.
+Runtime, Q17, architecture, workflow policy and all other tests remain unchanged.
+
+The existing media remains a recorded clean 0.2.0 render from source `fba017c`,
+not newly captured 0.3.0 evidence. The real 0.3.0 preview must rebuild both site
+surfaces. Public indexing must reject unpublished 0.3.0 against the unchanged
+publication inventory; existing published fixtures cover that separate mode.
+Local preparation checks and committed-note freezing are pending. Full exact-main
+qualification, owned-cluster repetitions, installations and the six-environment
+release matrix remain pending; no manual CI, tag, package or site is published.
