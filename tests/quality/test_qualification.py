@@ -40,6 +40,24 @@ def test_default_command_runs_all_layers_once_with_existing_independent_coverage
     assert not any(item in command for item in ("-m", "-k", "fast", "tests/unit"))
     assert f"--basetemp={tmp_path / 'external/tests-pytest'}" in command
     by_name = {stage.name: stage.command for stage in stages}
+    assert by_name["private-access"] == (
+        "uv",
+        "run",
+        "python",
+        "scripts/check_private_access.py",
+    )
+    assert by_name["startup"] == (
+        "uv",
+        "run",
+        "python",
+        "-m",
+        "scripts.check_startup",
+        "--output",
+        str(tmp_path / "out/startup"),
+    )
+    names = [stage.name for stage in stages]
+    assert names.index("private-access") < names.index("tests")
+    assert names.index("startup") < names.index("tests")
     assert by_name["types"] == catalog.type_command(ROOT)
     assert by_name["runtime-controls"][-1] == "scripts.merge_runtime_coverage"
     assert by_name["coverage"][-2:] == ("scripts/check_coverage.py", "coverage.json")
@@ -365,7 +383,15 @@ def test_queued_quality_collection_does_not_prevent_independent_repository_colle
         "source": {"commit": "a" * 40},
         "gates": [
             driver.pending(name)
-            for name in ("tests", "native-platforms", "plan", "repository", "repetitions")
+            for name in (
+                "private-access",
+                "startup",
+                "tests",
+                "native-platforms",
+                "plan",
+                "repository",
+                "repetitions",
+            )
         ],
     }
 
@@ -399,6 +425,8 @@ def test_queued_quality_collection_does_not_prevent_independent_repository_colle
     assert report["hosted"]["quality"]["status"] == "queued"
     statuses = {gate["name"]: gate["status"] for gate in report["gates"]}
     assert statuses == {
+        "private-access": "pending",
+        "startup": "pending",
         "tests": "pending",
         "native-platforms": "pending",
         "plan": "passed",
@@ -414,6 +442,8 @@ def test_collector_uses_full_matrix_without_inventing_publication_repetitions(mo
         "gates": [
             driver.pending(name)
             for name in (
+                "private-access",
+                "startup",
                 "tests",
                 "native-platforms",
                 "owned-kind",
@@ -437,6 +467,8 @@ def test_collector_uses_full_matrix_without_inventing_publication_repetitions(mo
     driver.collect(report, 42, None)
     statuses = {gate["name"]: gate["status"] for gate in report["gates"]}
     assert statuses == {
+        "private-access": "passed",
+        "startup": "passed",
         "tests": "passed",
         "native-platforms": "passed",
         "owned-kind": "passed",

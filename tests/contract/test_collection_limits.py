@@ -10,7 +10,7 @@ from kuberich.domain.connections import ConnectionRequest
 from kuberich.domain.logs import LogOptions
 from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.resources import api_resource
-from kuberich.domain.watches import SyncStatus, WatchState, watch_event
+from kuberich.domain.watches import EventType, SyncStatus, WatchState, watch_event
 from kuberich.errors import AppError
 from kuberich.services import resources
 from kuberich.services.resources import ResourceReader
@@ -266,9 +266,64 @@ async def test_compact_table_negotiation_is_opt_in_and_plain_json_fallback_remai
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("compact", [False, True])
+async def test_filtered_table_collection_exhausts_an_empty_terminal_page(tmp_path, compact):
+    calls, progress = [], []
+    query = ResourceQuery("role=selected", "metadata.name!=omitted", compact)
+
+    async def handler(request):
+        calls.append(dict(request.query))
+        page = len(calls)
+        values = []
+        if page < 3:
+            value = custom_item(str(page), uid=f"uid-{page}")
+            if compact:
+                value = {
+                    "apiVersion": "meta.k8s.io/v1",
+                    "kind": "PartialObjectMetadata",
+                    "metadata": value["metadata"],
+                }
+            values.append(value)
+        return web.json_response(
+            server_table(*values, rv="filtered/first", token=f"next-{page}" if page < 3 else "")
+        )
+
+    async def observe(snapshot):
+        progress.append(snapshot)
+
+    async with reader_fixture(tmp_path, handler) as owner:
+        reader = ResourceReader(owner.session, tables=True)
+        snapshot = await reader.list(
+            custom_resource(), "team", page_size=1, query=query, progress=observe
+        )
+    assert [call["continue"] for call in calls] == ["", "next-1", "next-2"]
+    assert all(
+        call["labelSelector"] == "role=selected"
+        and call["fieldSelector"] == "metadata.name!=omitted"
+        and call["includeObject"] == ("Metadata" if compact else "Object")
+        for call in calls
+    )
+    assert [row.uid for row in snapshot.items] == ["uid-1", "uid-2"]
+    assert all(row.namespace == "team" and row.metadata_only == compact for row in snapshot.items)
+    assert snapshot.collection.complete and not snapshot.collection.limited
+    assert snapshot.collection.pages == 3 and snapshot.resource_version == "filtered/first"
+    assert [len(update.items) for update in progress] == [1, 2]
+    assert [update.collection.pages for update in progress] == [1, 2]
+    assert all(
+        not update.collection.complete
+        and not update.collection.limited
+        and update.resource_version == snapshot.resource_version
+        and update.collection.retained_bytes == sum(row.size_bytes for row in update.items)
+        for update in progress
+    )
+    assert snapshot.collection.retained_bytes == sum(row.size_bytes for row in snapshot.items)
+
+
+@pytest.mark.asyncio
 async def test_compact_table_watch_preserves_metadata_negotiation_query_and_real_uid(tmp_path):
     requests, updates = [], []
-    query = ResourceQuery("app=api", compact=True)
+    stopped = asyncio.Event()
+    query = ResourceQuery("app=api", "metadata.name=one", compact=True)
 
     async def handler(request):
         requests.append(dict(request.query))
@@ -279,24 +334,41 @@ async def test_compact_table_watch_preserves_metadata_negotiation_query_and_real
             "metadata": obj["metadata"],
         }
         if "watch" in request.query:
-            return await stable_watch(request, {"type": "MODIFIED", "object": server_table(obj)})
+            bookmark = server_table(obj)
+            bookmark["rows"][0]["object"] = {"metadata": {"resourceVersion": "checkpoint"}}
+            try:
+                return await stable_watch(
+                    request,
+                    {"type": "BOOKMARK", "object": bookmark},
+                    {"type": "MODIFIED", "object": server_table(obj)},
+                )
+            finally:
+                stopped.set()
         return web.json_response(server_table(obj, rv="original-rv"))
 
     async def observe(update):
         updates.append(update)
-        if update.event is not None:
+        if update.event is not None and update.event.type is EventType.MODIFIED:
             raise ObservationComplete
 
     async with reader_fixture(tmp_path, handler) as owner:
         reader = ResourceReader(owner.session, tables=True)
         with pytest.raises(ObservationComplete):
             await ListWatch(reader, query=query).run(custom_resource(), "team", observe)
+        await wait_for(stopped.is_set)
+        assert not owner.session.api.rest_client.pool_manager.closed
     assert len(requests) == 2
     assert all(
-        value["includeObject"] == "Metadata" and value["labelSelector"] == "app=api"
+        value["includeObject"] == "Metadata"
+        and value["labelSelector"] == "app=api"
+        and value["fieldSelector"] == "metadata.name=one"
         for value in requests
     )
     assert requests[1]["resourceVersion"] == "original-rv"
+    assert [update.event.type for update in updates if update.event is not None] == [
+        EventType.BOOKMARK,
+        EventType.MODIFIED,
+    ]
     assert updates[-1].snapshot.items[0].uid == "owned-one"
     assert updates[-1].snapshot.items[0].metadata_only
     assert updates[-1].snapshot.items[0].resource_version == "watched"
