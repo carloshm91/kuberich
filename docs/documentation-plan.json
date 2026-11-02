@@ -43,6 +43,16 @@
       "baseline_sha256": "655d3d5f26f1d47a041c39a27117317a0dbabfa6cd97f91f8792b5953c0b0f0d"
     },
     {
+      "source": ".github/ISSUE_TEMPLATE/task.yml",
+      "audience": "contributor task form",
+      "action": "keep",
+      "destinations": [
+        ".github/ISSUE_TEMPLATE/task.yml"
+      ],
+      "reason": "Define scoped tasks while linking the single delivery contract and quality policy instead of repeating their rules.",
+      "baseline_sha256": null
+    },
+    {
       "source": ".github/PULL_REQUEST_TEMPLATE.md",
       "audience": "development",
       "action": "keep",

@@ -236,7 +236,7 @@ Focused policy, receipt and release controls passed 423 cases. Three actual
 aggregate-UI, HTTP-backend and mounted-terminal cases also passed, retaining both
 always-strict blocking controls and full positive workload/cleanup checks. These
 are local prerequisite checks, not full platform or coverage qualification.
-The [quality policy](../quality.md#runtime-latency-policy-for-0x-and-stable-qualification)
+The [quality policy](../quality.md#performance-evidence)
 explains the exact observation and validation contract.
 
 ```sh
@@ -794,3 +794,48 @@ Production executable code is unchanged, so changed-production coverage is N/A,
 not a new 100% result. Complete current-head hosted/native CI remains pending.
 Receipts are under `artifacts/issue227/protected-13a6/`. These source-scoped results
 make no new release, installation, provider, performance or publication claim.
+
+## Release-history delivery
+
+PR 292 delivered the user-focused release history at protected squash
+`614f3f89f314cfc1a98dc0e2ac753506ce257ce5`, tree
+`5d97314de68af2fdf9ec0023e2e79bf99d2fb929`, with sole parent `13a6c5c`.
+The exact `11aff35` head passed all 27 selected Quality jobs, including four
+native targets, plus matching Repository checks and DCO. The 149 local controls
+remain source-scoped evidence. No remote release body or publication changed.
+
+## Current contributor essentials
+
+Active agent, contributor and quality instructions now keep the current delivery
+contract, boundaries and verification policy within 60, 150 and 250 lines.
+Bug, feature and task forms link the shared contract instead of copying it.
+The global limit remains ONE implementation issue, with agent ownership inside
+that issue. Continuous authorized source delivery, existing approvals, local
+maintainer identity/sign-off, explicit domain-purchase/publication approval and
+owned disposable-cluster rules remain intact.
+
+Three exact pre-condensation instruction snapshots and their source/hash receipts
+are kept maintainer-local from actual protected `614f3f8`, outside tracked source
+and public CI. Existing public Git history and all 105 historical payloads/origins
+remain unchanged; internal records in a public repository are not confidential.
+The public inventory adds only the new task form, for 340 documents, with the
+same three operational JSON inputs and 100 historical aliases.
+
+Fork contributors now fetch the existing PR 277/290 histories explicitly from
+the canonical HTTPS URL without changing remotes. Validators remain offline and
+fail closed. The current checkpoint and acceptance links remain accessible;
+qualifier guidance names the full current strict/private/startup stage sequence.
+The quality policy states both startup and runtime/collection latency as advisory
+for 0.x, preserving every original budget, actual miss, strict opt-in, major-1+
+enforcement, strict negative control and hard resource/functional/ownership gate.
+Actual-parent architecture, release instructions, runtime, qualification stages,
+CI setup and unrelated tests are unchanged. Source version remains 0.2.0;
+production changed-code coverage is N/A, not a new 100% result.
+
+A later automatic-main Python 3.14 shard failed job `125357973367` while opening
+the HTTP watch in the independent bounded server-interval case `[0.1-1]`, with
+`ConnectionProblem TIMEOUT`. The original artifact `13154722289` is retained by
+its owner. Cause is under diagnosis; this documentation work changes no watch
+assertion or budget and does not resolve that result. Delivery remains held for
+the reviewed prerequisite and fresh candidate qualification. Local verification
+and complete current-head hosted/native results are still pending here.
