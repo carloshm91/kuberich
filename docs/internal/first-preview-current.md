@@ -736,3 +736,61 @@ Receipts remain separate under `artifacts/issue226/parser-integration/`. These
 and the prerequisite's 303 cases overlap and must not be added together. They
 do not substitute for fresh complete current-head hosted/native CI, which is
 still pending, or for release/provider/performance qualification.
+
+## Internal evidence delivery
+
+The internal-evidence candidate was delivered through PR 290 at protected squash
+`13a6c5cc8da72c36a360d2a68f07553c2959889a`, tree
+`f75eed2feffeddbe161d49581f9ead786654829b`, with sole parent `857f9ad`.
+Its exact `e67183c` source passed all 27 selected Quality jobs, including four
+native targets, with matching Repository checks and DCO. The original failed
+main run and the earlier local cohorts remain retained and source-scoped.
+No release or website publication was part of that source delivery.
+
+## User-focused release history
+
+The release-history migration preserves the reviewed published 0.1.0 and 0.2.0
+user changes, both authored notes, and the existing frozen-note contract. The
+published mapping keeps all 168 original blocks: 148 user-change blocks map to
+134 concise changelog entries or note sections, and 20 maintainer-only blocks
+have explicit removal reasons. All three original source blobs retain their
+protected `919f617` identities. Existing measured preparation receipts remain
+historical; they do not qualify this integration.
+
+Unreleased now records the actually inspected protected `13a6c5c` changelog,
+not the older prepared `3c8745c` parent. Its 24 source blocks map to concise
+current benefits, including captured Basic masking and fatal UI terminal/crash
+report recovery. A further entry describes releasing deleted-resource memory
+during live updates, from the delivered parser prerequisite. The stale pending
+startup-policy binding is removed without inventing a replacement source.
+The published tail and its mapping are unchanged. Every change remains one
+plain-language line with at most 25 visible words; internal process stays out of
+the user release copy.
+
+The current 105 immutable records, three operational inputs, maintained
+checkpoint/acceptance pages, corrected browser evidence, parser retention fix,
+qualification gates and two explicit history-fetch setup steps are preserved.
+The document inventory adds only the map and author template, for 339 entries.
+Fork-clone instructions remain with the separate contributor-guidance task.
+Source version remains 0.2.0. No production code changes, package/tag/release,
+remote release-body edit, website/DNS change or other publication is included.
+Fresh local checks and complete current-head hosted qualification are pending.
+
+The frozen integration `e2394e4e02788fba780e4bd49cd4f7eae6dc4f47`
+passed 149 existing release-history, frozen-note, owned-HTTP transport, internal
+record, link and document-disposition controls in 39.20 seconds (40.43 seconds
+including the runner), with no failures, errors or skips. The exact command was:
+
+```sh
+uv run python -m pytest -q tests/quality/test_changelog_style.py tests/quality/test_release_notes.py tests/quality/test_release_transport.py tests/quality/test_internal_docs.py tests/quality/test_documentation_links.py tests/quality/test_documentation_structure.py --basetemp=/tmp/kuberich-227-docs-pg1otc8k/pytest --junitxml=artifacts/issue227/protected-13a6/tests.xml
+```
+
+The actual workflow strict union (234 files), seven documentation modules, Ruff,
+formatting, private-access audit, checked references and the 899-link module-plan
+check also passed. Both previously qualified offline site manifests still match
+every enrolled input; no redundant standalone rebuild was run. The focused
+controls include current navigation/site exclusion and document dispositions.
+Production executable code is unchanged, so changed-production coverage is N/A,
+not a new 100% result. Complete current-head hosted/native CI remains pending.
+Receipts are under `artifacts/issue227/protected-13a6/`. These source-scoped results
+make no new release, installation, provider, performance or publication claim.

@@ -15,6 +15,10 @@ proof that an unpublished candidate passed release qualification.
 - `backlog.json`, `github-issues.json` and `k9s-source-inventory.json` remain
   machine-readable planning and source inputs. GitHub is the live task status.
 
+`release-note-mapping.json` maps previous release changes to concise user entries
+and records which maintainer-only process details were removed. Original sources
+are identified by exact Git commits, paths and hashes.
+
 ## Reading an original record
 
 Historical files are listed in `preserved_sources` in

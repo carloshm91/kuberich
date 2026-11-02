@@ -2876,6 +2876,16 @@
       "baseline_sha256": "315f9fc69d8d67465ab97ab6a5e9beab73eff389cd429dfc195cc06eee6f1ae5"
     },
     {
+      "source": "docs/internal/release-note-mapping.json",
+      "audience": "internal migration mapping",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/release-note-mapping.json"
+      ],
+      "reason": "Keep the user-note migration trace or author template outside user navigation; do not publish internal process evidence as user prose.",
+      "baseline_sha256": null
+    },
+    {
       "source": "docs/k9s-cli.md",
       "audience": "development",
       "action": "move",
@@ -3114,6 +3124,16 @@
       ],
       "reason": "Retain authored release inputs and release history outside user-guide navigation.",
       "baseline_sha256": "5e2a508a8ac19e278c230424b287a0f81400d7b8ad159ddd70e10644d67ce4d2"
+    },
+    {
+      "source": "docs/release-notes/TEMPLATE.md",
+      "audience": "contributor release template",
+      "action": "keep",
+      "destinations": [
+        "docs/release-notes/TEMPLATE.md"
+      ],
+      "reason": "Keep the user-note migration trace or author template outside user navigation; do not publish internal process evidence as user prose.",
+      "baseline_sha256": null
     },
     {
       "source": "docs/release-pipeline.md",
