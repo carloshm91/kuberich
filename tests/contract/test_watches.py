@@ -642,33 +642,46 @@ async def test_established_idle_client_timeout_resets_previous_failure_backoff(t
 @pytest.mark.asyncio
 @pytest.mark.parametrize("result", ["slow_headers", "slow_error"])
 async def test_failed_watch_establishment_does_not_reset_failure_backoff(tmp_path: Path, result):
-    clock, calls, updates = Clock(), 0, []
+    clock, calls, lists, updates = Clock(), 0, 0, []
 
     async def handler(request):
-        nonlocal calls
+        nonlocal calls, lists
         if "watch" not in request.query:
+            lists += 1
             return web.json_response(collection())
         calls += 1
-        if calls == 3:
-            return web.Response(status=403)
         if result == "slow_headers":
             await asyncio.sleep(0.2)
         else:
             clock.now += 2
         return web.Response(status=503)
 
-    async with reader_fixture(tmp_path, handler, timeout=0.1) as reader:
-        with pytest.raises(HttpProblem):
-            await follower(reader, clock).run(
-                pod_resource(), None, lambda update: collect(updates, update)
+    async def pause(delay):
+        await clock.sleep(delay)
+        if len(clock.delays) == 2:
+            raise Finished
+
+    async with reader_fixture(tmp_path, handler) as reader:
+
+        async def consume(update):
+            if update.status is SyncStatus.SNAPSHOT:
+                assert clock.delays == []
+                if result == "slow_headers":
+                    reader.session.timeout = 0.1
+            await collect(updates, update)
+
+        with pytest.raises(Finished):
+            await ListWatch(reader, sleep=pause, monotonic=clock.monotonic, jitter=lambda: 0.5).run(
+                pod_resource(), None, consume
             )
+    assert lists == 1 and calls == 2
+    assert sum(update.status is SyncStatus.SNAPSHOT for update in updates) == 1
     assert clock.delays == [0.25, 0.5]
     assert not any(update.status is SyncStatus.LIVE for update in updates)
-    assert next(
-        update for update in updates if update.status is SyncStatus.RETRYING
-    ).problem.state is (
-        ConnectionState.TIMEOUT if result == "slow_headers" else ConnectionState.API_ERROR
-    )
+    retries = [update for update in updates if update.status is SyncStatus.RETRYING]
+    assert len(retries) == 2
+    expected = ConnectionState.TIMEOUT if result == "slow_headers" else ConnectionState.API_ERROR
+    assert all(update.problem.state is expected for update in retries)
 
 
 @pytest.mark.asyncio

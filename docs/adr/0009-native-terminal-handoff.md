@@ -27,6 +27,15 @@ termination signal chooses the exit status; native handoff defers application
 exit until suspension resumes. A revoked output stream is discarded at hangup
 without hiding restoration failures on a still-live terminal.
 
+## Current implementation notes
+
+Here, headless means Textual's actual test/headless driver (`app.is_headless`),
+which the [handoff port](../../src/kuberich/ui/handoff.py) refuses. The CLI
+`--headless` flag only hides the workspace header through presentation settings;
+it does not select that driver or disable native terminal handoff. Pilot behavior
+checks do not establish real-terminal restoration; the separate PTY controls do.
+Embedded pod shells retain their separate PTY/emulator owner and keep Textual active.
+
 ## Source and related decisions
 
 This record extracts an implemented decision from the [previous architecture

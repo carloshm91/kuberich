@@ -107,3 +107,57 @@ measured scope. See [editor behavior](../editing.md). No tag, public repository,
 release or package is published.
 
 Raw evidence: `/tmp/kubetrol-44-evidence` (local, rather than durable hosted artifacts).
+
+## Foundations follow-up: native editor Ctrl+C
+
+The fourth full local attempt on source
+`ada689fb9e11274a2848c45f4b230090531fc837` retained 7,006 passes, one failure and
+four explicit skips in 1,047.82 seconds. The existing editor Ctrl+C case still
+failed to return to its cancellation message. Its readiness receipt recorded
+that SIGINT was not inherited as ignored, Python's default interrupt handler
+was installed, and the editor owned the foreground with canonical ISIG input.
+The earlier ignored-parent fixture correction remains independently valid;
+these observations establish a separate failure path.
+
+A controlled owned editor holds the prompt-to-read window using the documented
+[PyOS_InputHook](https://docs.python.org/3.12/c-api/veryhigh.html#c.PyOS_InputHook)
+and `libc.pause`. The original helper then reproduced the same visible failure.
+Before the real Ctrl+C byte, the main thread was paused. After the byte, it was
+blocked in a read of descriptor 0. Both observations retained the same actual
+foreground group, VINTR `03`, canonical ISIG modes, an unblocked SIGINT mask and
+Python's default handler; no kernel-pending SIGINT remained. The
+[CPython 3.12.12 input implementation](https://github.com/python/cpython/blob/v3.12.12/Parser/myreadline.c#L283-L308)
+prints the prompt before entering its blocking read, and checks an interrupted
+read afterward. This controlled window reproduces the observed symptoms;
+the original fourth attempt has no instruction-pointer trace that would prove
+it uniquely encountered that exact window.
+
+The cooperative native-editor fixture now explicitly declares kernel-default
+SIGINT handling, matching the existing generic native-handoff fixture. Ctrl+C
+terminates that owned child independently of Python's pending-handler delivery.
+The inherited-ignored regression still checks the inherited state and the actual
+declared policy, with VINTR recorded explicitly. No production process runner,
+user editor policy or signal mask is normalized.
+
+The new Linux regression waits for the owned editor's actual pre-read pause
+through `/proc`, then sends the unchanged Ctrl+C byte. It failed on the original
+helper in 17.93 seconds and passes with the declared kernel policy. Its first
+observer attempt queried foreground ownership on the slave from outside the
+controlling session and failed with ENOTTY; that setup failure is retained and
+is not counted as a signal reproduction. The corrected parent observes the
+PTY master. No application deadline is raised and no timing sleep substitutes
+for the read-state gate.
+
+The bounded corrected cohort passed **83 tests in 32.08 seconds** on Linux with
+CPython 3.12.12. It retains all five original editor outcomes, ignored-parent and
+held-window controls, actual generic handoffs, foreground-process and terminal-
+lease behavior, and owned HTTP/Pilot editing checks. All 877 tracked input hashes
+and the checkout commit stayed unchanged until the test child was reaped.
+The existing literal Ctrl+C, cancellation UI, no-PATCH, private-draft deletion,
+terminal restoration and deadline assertions remain unchanged.
+
+Raw original receipts, controlled pre/post-key states, failed witnesses and
+corrected logs remain under `artifacts/issue211-signal-window`. The new read-state
+gate is Linux-specific; it does not qualify the Darwin kernel. Full and native
+platform checks remain pending. No provider, real cluster, host clipboard,
+publication, full-suite retry or profiling is involved.

@@ -101,8 +101,10 @@ limited redacted application-log tail, without kubeconfig or preference bodies.
 Build, test, release, and site tools live under `scripts/`, outside installed
 runtime behavior. Help/version/info/config-check and bug-report stay offline,
 without importing Textual or the SDK. Actual client preparation loads the SDK
-inside its worker. UI first-paint timing is advisory for 0.x; offline budgets and
-functional/ownership gates remain required.
+inside its worker. Startup and runtime/collection latency targets are advisory
+for 0.x; strict opt-ins and actual source major 1 enforce the unchanged limits.
+RSS/import boundaries, valid output and frames, deadlines, functionality, and
+ownership/cleanup remain mandatory. See the current [quality policy](quality.md).
 
 ## Dependency direction
 

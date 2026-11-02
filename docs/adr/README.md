@@ -5,6 +5,10 @@ explains one implemented decision, its consequences, and the main source modules
 The migration records describe source snapshot
 `625086db1a75aab10ec28fe4d6440f7fb1d32849`; they do not certify new measurements.
 
+Sections labeled **Current implementation notes** describe later source behavior.
+They do not change the archived rationale, its source identity, or historical
+qualification. The separate foundations decisions below keep their own status.
+
 | Number | Decision |
 | --- | --- |
 | 0001 | [Build the terminal application with Python and Textual](0001-python-terminal-stack.md) |

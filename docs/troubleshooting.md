@@ -45,6 +45,16 @@ size-limited redacted tail of the application's own diagnostic log. It also work
 when preferences are invalid; the report records that result. Existing files,
 symbolic links and special-file destinations are refused.
 
+Global flags go before the command, for example
+`kuberich --config /absolute/path/preferences.yaml bug-report`. An invalid or
+empty `--config` path still produces a report with `config_check: invalid`.
+Invalid preference or environment values also record that status; the log tail
+is unavailable when its settings cannot be validated.
+
+The log tail follows normal precedence: `--log-file`, `KUBERICH_LOG_FILE`, the
+legacy `KUBETROL_LOG_FILE`, then the YAML setting or default. Relative environment
+and CLI paths use the launch directory; YAML paths use the preference directory.
+
 Reports do not load kubeconfig, contact a cluster, run credential helpers or
 include preference contents. Crash reports omit exception values, local
 variables, source lines and full traceback paths. Review the file before sharing
@@ -150,7 +160,8 @@ within its byte limit. Forced-native failures ask you to check the helper or use
 `KUBERICH_CLIPBOARD=osc52`. Compositor acceptance still depends on your session.
 
 Native text accepts up to 1 MiB; OSC52 accepts 64 KiB. Invalid or oversized text
-is refused rather than truncated. Headless copies stay in application memory.
+is refused rather than truncated. `--headless` and `:headless` only hide the
+workspace header; they keep the same clipboard route.
 Wayland and X Window System selection persistence after exit depends on a
 clipboard manager. Native helper text travels on stdin, with no MIME guessing
 or newline trimming.
