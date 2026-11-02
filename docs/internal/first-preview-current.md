@@ -5,6 +5,10 @@ This maintained internal checkpoint carries the inspected protected source
 unchanged and do not establish current qualification. The brief user
 [Status](../first-preview.md) describes the installed and development versions.
 
+The previous maintained checkpoint was inspected at
+`857f9ad0216688853142d9b463d5d41cc955114f`; its source-scoped results and
+failures below remain historical. Later sections identify subsequent checkpoints.
+
 **KubeRich 0.2.0 is published** on [PyPI](https://pypi.org/project/kuberich/0.2.0/),
 [GitHub Releases](https://github.com/carloshm91/kuberich/releases/tag/v0.2.0) and
 [Homebrew](https://github.com/kuberich/homebrew-tap).
