@@ -54,6 +54,12 @@ Cancellation and retention assertions observe actual coroutine callers at public
 service, renderer and I/O ports. Read-only numeric diagnostics distinguish active
 operations from registered owners where necessary. They expose no tasks, mutable
 caches or resource payloads, and do not replace real cleanup, UID or scope checks.
+## Property and mutation testing
+
+Property tests run with `uv run pytest tests/unit/property`. The weekly/manual mutation job targets 85% actual kills.
+[Property/mutation evidence](internal/acceptance/property-mutation-tests.md) retains survivors, incomplete runs and tool errors.
+Coverage gates stay unchanged; reconsider the critical-line mandate only after stable mutation evidence.
+
 ## Supported native runner images
 
 Native Apple Silicon builds and Homebrew installation checks select `macos-15`;
