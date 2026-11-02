@@ -1,5 +1,7 @@
 """Start the actual CLI in a real PTY, then verify exit, resize and error restoration."""
 
+import json
+import stat
 import sys
 from pathlib import Path
 
@@ -53,7 +55,10 @@ def test_real_terminal_unicode_filter_paste_and_return(tmp_path: Path) -> None:
 def test_real_terminal_error_restores_tty_and_does_not_expose_values(tmp_path: Path) -> None:
     code = (
         "import sys\n"
+        "from pathlib import Path\n"
         "from kuberich import cli\n"
+        "from kuberich.diagnostics import reports\n"
+        "reports.user_state_path = lambda *args, **kwargs: Path(sys.argv[1])\n"
         "from kuberich.ui import launch\n"
         "from kuberich.ui.app import KubeRichApp\n"
         "class BrokenApp(KubeRichApp):\n"
@@ -61,15 +66,23 @@ def test_real_terminal_error_restores_tty_and_does_not_expose_values(tmp_path: P
         "        super().on_mount()\n"
         "        raise RuntimeError('opaque-sensitive-pty-value')\n"
         "launch.KubeRichApp = BrokenApp\n"
-        "sys.exit(cli.main())\n"
+        "sys.exit(cli.main([]))\n"
     )
-    with TerminalSession([sys.executable, "-c", code], tmp_path) as terminal:
+    with TerminalSession([sys.executable, "-c", code, str(tmp_path)], tmp_path) as terminal:
         terminal.finish(expected=1)
         assert b"Terminal interface failed" in terminal.transcript
         assert b"opaque-sensitive-pty-value" not in terminal.transcript
+        assert b"Redacted crash report:" in terminal.transcript
         terminal.save_evidence("failure")
     contents = (tmp_path / "kuberich.log").read_text()
     assert "exception=RuntimeError" in contents and "opaque-sensitive-pty-value" not in contents
+    bundles = list((tmp_path / "reports").glob("*.json"))
+    assert len(bundles) == 1 and stat.S_IMODE(bundles[0].stat().st_mode) == 0o600
+    payload = bundles[0].read_text()
+    assert "opaque-sensitive-pty-value" not in payload
+    report = json.loads(payload)
+    assert report["recent_log"]["status"] == "included"
+    assert "exception=RuntimeError" in report["recent_log"]["text"]
 
 
 def test_real_terminal_initial_help_and_readonly_with_hidden_header(tmp_path: Path) -> None:

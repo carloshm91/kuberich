@@ -7,15 +7,16 @@ usage: kuberich [-h] [--version] [--config CONFIG] [--kubeconfig KUBECONFIG] [--
                 [--insecure-skip-tls-verify [INSECURE]]
                 [--certificate-authority CERTIFICATE_AUTHORITY] [--client-key CLIENT_KEY]
                 [--client-certificate CLIENT_CERTIFICATE] [--token TOKEN]
-                {help,version,info,config,kubeconfig} ...
+                {help,version,info,bug-report,config,kubeconfig} ...
 
 A Kubernetes terminal UI built with Python and Textual.
 
 positional arguments:
-  {help,version,info,config,kubeconfig}
+  {help,version,info,bug-report,config,kubeconfig}
     help                show launch help without loading configuration
     version             show installed version without loading configuration
     info                show safe local paths, preferences and installed versions
+    bug-report          write a private redacted diagnostic bundle
     config              initialize, validate or migrate local preferences
     kubeconfig          inspect an explicitly selected kubeconfig locally
 

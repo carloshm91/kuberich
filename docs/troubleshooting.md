@@ -28,6 +28,38 @@ If `--version` reports an unexpected build, identify which executable your shell
 resolves and which channel installed it. Upgrade through that same channel;
 installing another copy does not upgrade the original one.
 
+## A resource view cannot be rendered
+
+An inline error panel means that this view's presentation failed. Use **Retry**
+in that panel to try again, or choose another resource. Watch updates do not
+repeatedly retry the failed view. Displayed rows may be incomplete; the original
+selection and identity checks still apply to operations. Other views and active
+port forwards keep running. A new context or resource scope clears the old fault.
+
+If the whole application exits unexpectedly, it restores the terminal and prints
+the location of a private crash report. If the report cannot be written, the
+message says so. A normal quit, interrupt or disconnected terminal does not
+create a crash report.
+
+## Create a diagnostic report
+
+```sh
+kuberich bug-report
+# Choose a new destination explicitly:
+kuberich bug-report --output ./kuberich-report.json
+```
+
+The command writes a mode-0600 JSON file with the installed version, Python and
+platform, terminal dimensions when available, preference-check status and a
+bounded redacted tail of the application's own diagnostic log. It also works
+when preferences are invalid; the report records that result. Existing files,
+symbolic links and special-file destinations are refused.
+
+Reports do not load kubeconfig, contact a cluster, run credential helpers or
+include preference contents. Crash reports omit exception values, local
+variables, source lines and full traceback paths. Review the file before sharing
+it; it stays local until you choose to attach it to a bug report.
+
 ## A context is missing or different
 
 KubeRich loads `--kubeconfig` when supplied. Otherwise it reads the configured

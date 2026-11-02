@@ -40,6 +40,8 @@ class WorkspacePresenter:
         full_gvr_titles: Callable[[], bool],
         observation_changed: Callable[[], None],
         failed: Callable[[Exception], None],
+        *,
+        recover: Callable[[RenderRequest, Exception], None] | None = None,
     ) -> None:
         self.host, self.workspace, self.views = host, workspace, views
         self.interactions, self.navigator = interactions, navigator
@@ -48,6 +50,7 @@ class WorkspacePresenter:
         self.policy, self.forwards = policy, forwards
         self.full_gvr_titles, self.observation_changed = full_gvr_titles, observation_changed
         self.failed = failed
+        self.recover = recover
         self._selection_notice: tuple[ViewObservation, str] | None = None
         self._observation_task: asyncio.Task[None] | None = None
 
@@ -74,7 +77,12 @@ class WorkspacePresenter:
         forwards = (
             f" · Forwards: {self.forwards.active_count}" if self.forwards.active_count else ""
         )
-        self.status_label.update_text(safe_text(prefix + insecure + message + forwards))
+        try:
+            self.status_label.update_text(safe_text(prefix + insecure + message + forwards))
+        except Exception as error:
+            if self.recover is None:
+                raise
+            self.recover(self.capture(), error)
 
     def available_actions(self, request: RenderRequest) -> frozenset[str]:
         view = ViewState(
@@ -124,12 +132,18 @@ class WorkspacePresenter:
                     and observation.revision == self.workspace.store.observation.revision
                 ):
                     self.views.request()
+                    # Target/process invalidation remains outside the UI boundary.
                     self.observation_changed()
-                    identity = self.header.chrome.identity()
-                    if identity != header_identity:
-                        for header in self.host.query(WorkspaceHeader):
-                            header.update_identity()
-                        header_identity = identity
+                    try:
+                        identity = self.header.chrome.identity()
+                        if identity != header_identity:
+                            for header in self.host.query(WorkspaceHeader):
+                                header.update_identity()
+                            header_identity = identity
+                    except Exception as error:
+                        if self.recover is None:
+                            raise
+                        self.recover(self.capture(), error)
                     for screen in tuple(self.host.screen_stack):
                         if not isinstance(screen, ModalScreen):
                             continue

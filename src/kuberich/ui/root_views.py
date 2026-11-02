@@ -56,6 +56,7 @@ class RootViews:
         namespace_projection: Callable[[], ResourceProjection[NamespaceRow]],
         standard_projection: Callable[[ResourceDefinition], ResourceProjection[ResourceRow]],
         custom_projection: Callable[[CustomLayout], ResourceProjection[ResourceRow]],
+        recover: Callable[[RenderRequest, Exception | None], None] | None = None,
     ) -> None:
         self.tables, self.foreground = tables, foreground
         self._by_kind: dict[ViewKind, PodTable | NamespaceTable | ContextTable | StandardTable] = {
@@ -80,7 +81,9 @@ class RootViews:
                 ViewKind.CUSTOM: self._custom_entry,
             }
         )
-        self.renderer = RenderCoordinator(foreground, self.registry, capture, publish, failed)
+        self.renderer = RenderCoordinator(
+            foreground, self.registry, capture, publish, failed, recover=recover
+        )
 
     @property
     def table(self) -> PodTable | NamespaceTable | ContextTable | StandardTable:
