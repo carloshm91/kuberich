@@ -456,7 +456,7 @@ def preflight(api: GitHub, sha: str, version: str, index: str) -> dict[str, Any]
         raise ValueError("Requested source metadata version differs")
     values = {}
     for filename in ("backlog.json", "github-issues.json"):
-        contents = api(f"repos/{REPOSITORY}/contents/docs/{filename}?ref={sha}")
+        contents = api(f"repos/{REPOSITORY}/contents/docs/internal/{filename}?ref={sha}")
         values[filename] = json.loads(base64.b64decode(contents["content"]))
     result["release_gate"] = milestone_readiness(
         api, version, values["backlog.json"], values["github-issues.json"]

@@ -33,7 +33,7 @@ implementation; do not claim to switch models without actual environment support
 - The maintainer authorized continuous implementation, local verification
   and autonomous squash merges: finish each issue/PR and proceed to the next
   unblocked task without waiting for intermediate manual trials or feedback.
-  Keep progress updates and docs/first-preview.md current, but do not ask the
+  Keep progress updates and docs/internal/first-preview-current.md current, but do not ask the
   maintainer to test between tasks. They will test and provide feedback later.
 - Real cloud/provider trials are deferred to the maintainer's later installed
   preview tests. Implement and verify local contracts and owned disposable-cluster
@@ -62,7 +62,7 @@ implementation; do not claim to switch models without actual environment support
   Prepare and verify the concrete result first, then request approval for the
   publication step. Domain names are proposals until the maintainer chooses one;
   do not purchase domains or change DNS without explicit authorization.
-- Notify the maintainer at each usable checkpoint in docs/first-preview.md, with
+- Notify the maintainer at each usable checkpoint in docs/internal/first-preview-current.md, with
   the exact tested command and honest feature status. B01 is prioritized early.
 - Keep docs/capabilities.json and the pinned source inventory traceable to issues;
   do not claim parity from planned work or an unverifiable paid feature catalog.

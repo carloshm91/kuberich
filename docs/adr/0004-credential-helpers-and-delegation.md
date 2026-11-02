@@ -41,7 +41,7 @@ confidential text. Local contract fixtures do not certify an actual cloud provid
 ## Source and related decisions
 
 This record extracts an implemented decision from the [previous architecture
-log](../../engineering/architecture-history/README.md). It does not requalify its historical
+log](../internal/architecture-history/README.md). It does not requalify its historical
 measurements.
 
 - [src/kuberich/adapters/credentials.py](../../src/kuberich/adapters/credentials.py)

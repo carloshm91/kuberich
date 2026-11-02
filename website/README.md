@@ -129,7 +129,7 @@ kubeconfig. The historical source screenshot must be available to reproduce it;
 its committed digest alone does not reconstruct missing original evidence.
 
 See [hosting and release gates](../docs/website.md) and
-[measured acceptance](../docs/acceptance/initial-website.md).
+[measured acceptance](../docs/internal/acceptance/initial-website.md).
 
 ## Publication ownership
 

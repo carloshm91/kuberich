@@ -25,7 +25,7 @@ change while old objects remain visible.
 ## Source and related decisions
 
 This record extracts an implemented decision from the [previous architecture
-log](../../engineering/architecture-history/README.md). It does not requalify its historical
+log](../internal/architecture-history/README.md). It does not requalify its historical
 measurements.
 
 - [src/kuberich/domain/resources.py](../../src/kuberich/domain/resources.py)

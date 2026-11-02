@@ -77,7 +77,7 @@ run `npm audit --audit-level=low`, and check its version and Pages command help
 without credentials. Update a parent when it pins a vulnerable child exactly;
 do not conceal that dependency with an override or an advisory dismissal.
 
-The [tooling refresh evidence](acceptance/dependency-refresh.md) records the
+The [tooling refresh evidence](internal/acceptance/dependency-refresh.md) records the
 patched resolutions, advisory scope, measured checks and remaining platform
 qualification. Tooling checks authorize no publication or deployment.
 
@@ -105,4 +105,4 @@ the implemented log viewer remain O06 #73.
 - [CycloneDX 1.6 schema](https://github.com/CycloneDX/specification/blob/master/schema/bom-1.6.schema.json)
 - [Requests negative-control advisory](https://github.com/advisories/GHSA-x84v-xcm2-53pg)
 
-Measured candidate results: [Q04 acceptance](acceptance/dependency-security.md).
+Measured candidate results: [Q04 acceptance](internal/acceptance/dependency-security.md).

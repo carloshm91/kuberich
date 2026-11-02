@@ -26,7 +26,7 @@ editor, or a credential helper can load incompatible libraries.
 ## Source and related decisions
 
 This record extracts an implemented decision from the [previous architecture
-log](../../engineering/architecture-history/README.md). It does not requalify its historical
+log](../internal/architecture-history/README.md). It does not requalify its historical
 measurements.
 
 - [scripts/build_standalone.py](../../scripts/build_standalone.py)

@@ -266,8 +266,9 @@ architecture links useful.
 
 ## Historical source
 
-The [previous log](../engineering/architecture-history/README.md) is preserved
+The [previous log](internal/architecture-history/README.md) is preserved
 exactly with a source commit, checksum, and per-section destination map. It contains
 superseded planning and measured history, so it is not the current overview.
-Acceptance history has its own pending consolidation; this change does not claim
-that migration or a new platform/performance qualification is complete.
+[Internal records](internal/README.md) keep engineering acceptance history separate
+from current instructions. Historical results do not qualify a new candidate,
+platform, or performance result.

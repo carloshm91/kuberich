@@ -106,6 +106,6 @@ as an implemented capability.
 
 ## Execution order
 
-Follow the phased topological execution order in [backlog.json](backlog.json), including tracked
+Follow the phased topological execution order in [backlog.json](internal/backlog.json), including tracked
 preview refinements. The product implementation is already in progress; select
 the next unblocked issue rather than restarting completed bootstrap work.

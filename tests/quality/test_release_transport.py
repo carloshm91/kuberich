@@ -40,8 +40,8 @@ def test_native_download_checksums_use_actual_flat_attachment_names():
 @pytest.mark.parametrize(
     "name",
     [
-        "docs/backlog.json",
-        "docs/github-issues.json",
+        "docs/internal/backlog.json",
+        "docs/internal/github-issues.json",
         "packaging/homebrew/README.md",
         "NOTICE",
         "docs/release-notes/0.1.0.md",
@@ -87,11 +87,11 @@ def test_actual_http_main_qualification_is_readonly_and_source_version_matches(t
             ).decode()
         }
         files = {
-            name: json.loads((ROOT / "docs" / name).read_text())
+            name: json.loads((ROOT / "docs/internal" / name).read_text())
             for name in ("backlog.json", "github-issues.json")
         }
         for name, content in files.items():
-            server.reads[f"/repos/{REPOSITORY}/contents/docs/{name}?ref={SHA}"] = {
+            server.reads[f"/repos/{REPOSITORY}/contents/docs/internal/{name}?ref={SHA}"] = {
                 "content": base64.b64encode(json.dumps(content).encode()).decode()
             }
         _, numbers = phase_requirements(
@@ -118,6 +118,10 @@ def test_actual_http_main_qualification_is_readonly_and_source_version_matches(t
             for method, path, auth in server.requests
         )
         assert server.posts == []
+        read_paths = {path for method, path, _ in server.requests if method == "GET"}
+        for name in ("backlog.json", "github-issues.json"):
+            assert f"/repos/{REPOSITORY}/contents/docs/internal/{name}?ref={SHA}" in read_paths
+            assert f"/repos/{REPOSITORY}/contents/docs/{name}?ref={SHA}" not in read_paths
         with pytest.raises(ValueError, match="metadata version"):
             preflight(api, SHA, "1.0.0", "pypi")
         server.reads[f"/repos/{REPOSITORY}"]["private"] = True

@@ -135,7 +135,7 @@ Domain tests qualify endpoint/alias/scope decisions and immutable manifests.
 Real loopback HTTP contract tests cover both discovery protocols, partial groups,
 pagination, 410, permissions, limits, invalid responses, deadlines and cancellation.
 The domain resource and Table modules are in the critical 100% line/branch
-coverage inventory. See [C05 acceptance evidence](acceptance/custom-resources.md).
+coverage inventory. See [C05 acceptance evidence](internal/acceptance/custom-resources.md).
 
 With Docker running and the workflow's verified kind v0.33.0 binary:
 

@@ -89,7 +89,7 @@ uv run pytest tests/unit/test_logs.py tests/contract/test_logs.py
 
 The integration script also exercises snapshots, timestamp/tail/all/since options,
 cancellable follow and unavailable previous logs on an owned disposable kind
-cluster. See [S01 acceptance evidence](acceptance/S01.md).
+cluster. See [S01 acceptance evidence](internal/acceptance/S01.md).
 
 API semantics follow the [Kubernetes logs reference](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_logs/)
 and [server log-option validation](https://github.com/kubernetes/kubernetes/blob/v1.36.4/pkg/apis/core/validation/validation.go),

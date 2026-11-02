@@ -50,7 +50,7 @@ These current notes do not attribute later gates to the archived source snapshot
 ## Source and related decisions
 
 This record extracts an implemented decision from the [previous architecture
-log](../../engineering/architecture-history/README.md). It does not requalify its historical
+log](../internal/architecture-history/README.md). It does not requalify its historical
 measurements.
 
 - [tests/conftest.py](../../tests/conftest.py)

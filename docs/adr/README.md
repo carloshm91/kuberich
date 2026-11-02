@@ -68,6 +68,5 @@ Link relevant modules, limits, and verification policy. Keep run logs, test coun
 and release history in their engineering records. Update the document disposition
 map and this index in the same change.
 
-The [previous log](../../engineering/architecture-history/README.md) is preserved
-exactly with per-section hashes and active destinations. Acceptance-history
-relocation remains separate from this architecture migration.
+The [previous log](../internal/architecture-history/README.md) is preserved
+exactly with per-section hashes and active destinations. Acceptance history is kept in the same internal area, outside public navigation.

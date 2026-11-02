@@ -25,7 +25,7 @@ making ordinary repeated navigation accumulate unreachable work.
 ## Source and related decisions
 
 This record extracts an implemented decision from the [previous architecture
-log](../../engineering/architecture-history/README.md). It does not requalify its historical
+log](../internal/architecture-history/README.md). It does not requalify its historical
 measurements.
 
 - [src/kuberich/ui/style_cache.py](../../src/kuberich/ui/style_cache.py)

@@ -10,6 +10,7 @@ import pytest
 from scripts.build_site import ROOT, build
 from scripts.check_site import verify
 from scripts.documentation import load_navigation
+from scripts.documentation_links import relocated_source
 from scripts.site_reference import check_reference_files, reference_files
 from scripts.site_schema import fields
 from tests.support.site_source import copy_source, refresh
@@ -39,7 +40,10 @@ def test_every_user_page_fits_budget_and_checked_reference_is_current():
 
 
 def test_superseded_guides_preserve_exact_source_bytes_outside_website():
-    record = json.loads((ROOT / "engineering/guide-history/source-map.json").read_text())
+    record = json.loads(
+        (ROOT / relocated_source(ROOT, "engineering/guide-history/source-map.json")).read_text()
+    )
+    record["archive"] = relocated_source(ROOT, record["archive"])
     archive = (ROOT / record["archive"]).read_bytes()
     assert record["source_commit"] == "919f617eacd6882370964c0400ae56a0128ff77e"
     assert len(record["documents"]) == 30

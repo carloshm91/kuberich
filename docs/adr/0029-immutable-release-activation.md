@@ -25,7 +25,7 @@ a version outside the reviewed phase map.
 ## Source and related decisions
 
 This record extracts an implemented decision from the [previous architecture
-log](../../engineering/architecture-history/README.md). It does not requalify its historical
+log](../internal/architecture-history/README.md). It does not requalify its historical
 measurements.
 
 - [scripts/release_policy.py](../../scripts/release_policy.py)

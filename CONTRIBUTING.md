@@ -98,6 +98,18 @@ group. They require uv on PATH and package-index access for dependencies; tool
 state/configuration is confined to owned temporary directories. Installed CLI
 help/version require no cluster. Real UI checks use owned APIs and PTYs.
 
+Before running source-history documentation checks or local qualification from a
+full-history clone, fetch the existing pull-request source histories once:
+
+```sh
+git fetch --no-tags origin refs/pull/277/head refs/pull/290/head
+```
+
+The exact historical records include original feature-branch commits that squash
+merges do not put in main's ancestry. These existing PR refs supply their objects;
+the validators remain offline and still check the recorded commit, blob and hash.
+See [internal source records](docs/internal/README.md#source-history-setup).
+
 The coverage script independently checks lines and branches, the complete
 production inventory, and the maintained critical-module list. diff-cover checks
 changed executable lines against the merge base; fetch the current base branch
@@ -124,7 +136,7 @@ signal. Local tests also support xdist; use the
 and evidence ownership rules. The complete suite and coverage gates still run
 before merging.
 
-The [observed CI comparison](docs/acceptance/private-ci.md) verifies seven native
+The [observed CI comparison](docs/internal/acceptance/private-ci.md) verifies seven native
 jobs per matching-source PR/main pair plus four planner/aggregate jobs. These
 elapsed-time measurements include actual failures and separate unallocated or
 still-active work; they are not an account invoice. Preserve each failed original
@@ -161,3 +173,9 @@ cluster-specific private data. Report vulnerabilities via [SECURITY.md](SECURITY
 
 Prefer original implementation and documented public APIs. Any copied third-party
 code requires compatible licensing, attribution, and a recorded source.
+
+Current verification and feature limits are recorded in the
+[development checkpoint](docs/internal/first-preview-current.md),
+[task-guide acceptance](docs/internal/acceptance/task-guides.md) and
+[architecture acceptance](docs/internal/acceptance/architecture-overview.md).
+These records remain outside user navigation and website search.
