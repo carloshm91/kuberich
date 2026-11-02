@@ -948,3 +948,16 @@ under the helper's `artifacts/issue228/idle-backoff-contract/` and the delivery'
 `artifacts/issue228/root-tracking/`. Combined integration checks and fresh complete
 current-head hosted/native qualification remain pending. Source version is 0.2.0;
 no application coverage percentage or release/publication follows from this fix.
+
+The corrected combined frozen source `922e2340d8ef754d3fac9e39ef092cf19b8e55ae`
+passed 101 cases in 25.68 seconds (26.88 with the runner), with no failures,
+errors or skips. This is the earlier 100-case documentation/interval/picker
+selection plus the corrected established-idle-timeout case. The exact invocation,
+source and owned-process receipts are in
+`artifacts/issue228/idle-integration/tests-command.json`; canonical output is
+`tests.xml` and `tests.log` in that directory. The source stayed unchanged through
+the run; the child/process group and private test directory are gone. The
+helper's strict/static input files are byte-identical after this checkpoint-only
+integration. The earlier 84-case cohort and original failed control remain
+separate source-scoped records. Fresh complete current-head hosted/native CI
+is still required before protected delivery; no unchanged CI attempt was retried.
