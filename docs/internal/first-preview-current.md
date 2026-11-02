@@ -839,3 +839,22 @@ its owner. Cause is under diagnosis; this documentation work changes no watch
 assertion or budget and does not resolve that result. Delivery remains held for
 the reviewed prerequisite and fresh candidate qualification. Local verification
 and complete current-head hosted/native results are still pending here.
+
+The frozen documentation source `226703d9b00ec8f9ade9a318520c7902ae71afe8`
+passed 95 focused contributor-policy/form, link, internal-record, disposition and
+architecture controls in 21.16 seconds (24.80 seconds including the runner), with
+no failures, errors or skips. The exact command was:
+
+```sh
+uv run python -m pytest -q tests/quality/test_contributor_essentials.py tests/quality/test_documentation_links.py tests/quality/test_internal_docs.py tests/quality/test_documentation_structure.py tests/quality/test_architecture_docs.py --basetemp=/tmp/kuberich-228-docs-7u06ojn6/pytest --junitxml=artifacts/issue228/protected-614f/tests.xml
+```
+
+The current strict workflow union (234 files), seven documentation modules,
+Ruff/format/private-access, checked references and the 885-link module-plan gate
+also passed. Both qualified parent site manifests match every enrolled input;
+no redundant standalone rebuild was run. Existing navigation/site-exclusion
+controls passed. These are documentation-only results: production coverage is
+N/A and no provider, performance, installation or native qualification is inferred.
+Receipts are under `artifacts/issue228/protected-614f/`. The parent watch-open
+failure remains under diagnosis, and fresh complete current-head hosted/native
+CI and public delivery remain pending.
