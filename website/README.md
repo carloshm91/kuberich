@@ -1,7 +1,7 @@
 # Initial KubeRich website
 
 This is the development launch material from #150, refined in #162.
-It is a static landing page, authored user guides and three generated references, without a backend, account system, analytics,
+It is a static landing page, authored user guides and four generated references, without a backend, account system, analytics,
 external fonts or cluster connectivity. Expanded/versioned MkDocs stays #90/#91.
 
 The HTML guides are built from the maintained files in `docs/`; edit those
@@ -71,15 +71,13 @@ Automated accessibility does not establish screen-reader certification.
    (available, partial, planned or unverified). Keep internal task IDs and historic
    acceptance records out of public guide prose and generated reference text.
 2. Edit `docs/navigation.json` to change user navigation on both surfaces. It
-   lists the four Diátaxis types and 19 canonical user pages, including the index
-   and three generated references. The maximum is 20 pages. Keep acceptance
+   lists the four Diátaxis types and 19 canonical content pages plus the index:
+   20 pages total, including four generated references. Keep acceptance
    reports, architecture and maintainer-only procedures outside user navigation.
    Follow [the documentation style](../docs/STYLE.md) and update every document's
    disposition in `docs/documentation-plan.json` when a source changes purpose.
-   During the structure transition, a canonical page can combine its listed
-   source fragments; they are rendered once and included in the source receipt.
-   Consolidating the remaining long prose and meeting the 250-line limit are
-   separate guide/reference rewrites, not completed by this navigation change.
+   The task guides and generated references meet the 250-line page budget.
+   Their sources are rendered once and included in the source receipt.
 3. CLI and standard-resource declaration changes appear automatically in the
    reference on the next build. `scripts/site_reference.py` constructs the parser
    and reads the registry in an isolated subprocess against the selected checkout;
@@ -95,17 +93,19 @@ Automated accessibility does not establish screen-reader certification.
    Build automation is already active; deployment/DNS automation is a separate gate.
 
 The references display the source version, retain unavailable options and planned
-capability differences, and link to maintained sources. Generated Markdown exists
-only in memory during the build. No generated HTML/reference file is hand edited.
+capability differences, and link to maintained sources. Generated Markdown is
+checked in at its canonical `docs/*.md` paths so links also work in GitHub.
+Run `uv run python -m scripts.site_reference --write` to regenerate it and
+`uv run python -m scripts.site_reference` to check declaration drift. Do not edit
+generated Markdown or HTML by hand.
 
 Retired guide paths have explicit `legacy_routes` in `docs/navigation.json`.
 The builder rewrites internal links to real canonical headings and emits local
-301 rules for both extensionless and `.html` paths. A retired path redirects to
-its stable section anchor. URL fragments are not sent to the server, so an old
-external link's fragment cannot select a deeper heading after that redirect.
-Primary-page anchors and rewritten internal deep links keep their exact targets.
-When a later rewrite removes a source fragment, preserve the route and update
-its `heading` to the corresponding canonical heading. The checker rejects
+301 rules for both extensionless and `.html` paths. Redirect destinations omit
+fragments so browsers can preserve an incoming fragment. Canonical pages publish
+aliases for retired headings, while internal links map directly to active headings.
+When a later rewrite removes a source fragment, preserve its route and aliases
+and update its `heading` to the corresponding canonical heading. The checker rejects
 missing target anchors, unexpected pages, changed routes and source drift.
 
 ## Media

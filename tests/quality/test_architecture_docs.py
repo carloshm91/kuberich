@@ -216,4 +216,6 @@ def test_current_composition_and_kubeconfig_decisions_remain_in_the_active_index
     assert "current view and scope" in overview and "inline Retry" in overview
     assert "**INCOMPLETE**" in overview and "PartialObjectMetadata" in overview
     assert "Basic authentication" in overview and "OIDC migration" in overview
-    assert "first-paint timing is advisory for 0.x" in overview
+    assert "latency targets are advisory" in overview and "for 0.x" in overview
+    assert "strict opt-ins and actual source major 1" in overview
+    assert "RSS/import boundaries" in overview and "ownership/cleanup remain mandatory" in overview

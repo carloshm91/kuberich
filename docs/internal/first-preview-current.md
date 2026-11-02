@@ -1,0 +1,655 @@
+# Development checkpoint
+
+This maintained internal checkpoint carries the inspected protected source
+`857f9ad0216688853142d9b463d5d41cc955114f`. Historical preview snapshots remain
+unchanged and do not establish current qualification. The brief user
+[Status](../first-preview.md) describes the installed and development versions.
+
+**KubeRich 0.2.0 is published** on [PyPI](https://pypi.org/project/kuberich/0.2.0/),
+[GitHub Releases](https://github.com/carloshm91/kuberich/releases/tag/v0.2.0) and
+[Homebrew](https://github.com/kuberich/homebrew-tap).
+
+```sh
+brew install kuberich/tap/kuberich
+# Alternative with Python 3.12–3.14:
+uv tool install --python 3.12 kuberich
+kuberich --version
+kuberich config check
+```
+
+Choose one installation method. Start with
+`kuberich --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly`, using
+your intended context and namespace. The [installation guide](../installation.md)
+covers pipx, standalone archives, updates and removal. To move from 0.1.0, run
+`uv tool upgrade kuberich`, `pipx upgrade kuberich` or
+`brew upgrade kuberich/tap/kuberich`. Your preferences and kubeconfig stay as
+they are.
+
+The [release notes](../release-notes/0.2.0.md) list what is new: themes,
+navigation and column preferences, local plugins, ConfigMap and Secret data,
+resource jumps, live preference reload, context edits, pod cleanup and
+forwarding presets. Homebrew installs a prebuilt bottle on macOS Apple Silicon,
+macOS Intel and Linux x86_64.
+
+The [website](https://kuberich.com/) and [documentation](https://docs.kuberich.com/)
+still show the 0.1.0 content. Their 0.2.0 update needs separate approval.
+
+## 0.2.0 validation
+
+The exact release commit passed all six Python combinations on Linux and macOS,
+the four standalone archive builds and the Homebrew source and bottle installs.
+Coverage was 98.78% of lines and 95.93% of branches, with 100% for the critical
+modules. Three consecutive rounds passed the contract tests and every local
+test-cluster scenario, including cleanup. The published wheel has the same
+SHA-256 as the locally built one. Installs from PyPI with uv and pipx, and
+upgrades from the published 0.1.0 packages, passed in clean environments.
+
+Real EKS, AKS and GKE clusters are not certified yet; those trials stay opt-in.
+
+## Next development phase: 0.3.0
+
+Contributors can start with the short [architecture overview](../architecture.md)
+and [decision index](../adr/README.md). The overview describes the implemented layers,
+resource data flow, ownership and security boundaries; migrated decisions and their
+unchanged historical source remain separate from current implementation notes.
+The [architecture acceptance record](acceptance/architecture-overview.md) lists
+the source boundary, focused checks and qualification limits. Its source-scoped
+local verification passed 74 existing controls plus applicable static checks;
+the exact historical archive remains unchanged. A later required-check correction
+waits for a plugin job's final visible status together with its output, after a
+real-child/Pilot cleanup-boundary control. Product lifecycle and the original
+result/cleanup assertions remain intact. Final PR qualification is separate.
+
+```sh
+uv run python -m pytest tests/quality/test_architecture_docs.py
+uv run python -m scripts.validate_plan
+```
+
+These are local documentation checks. They do not launch the application,
+connect to a cluster or publish the website. The installed release remains 0.2.0.
+
+The development checkout now has focused task guides and four generated
+references, with 19 content pages plus the index. Start with the
+[quick start](../quickstart.md), then use the [everyday workflow](../everyday-workflow.md)
+or the guide for your task. Previous guide URLs and heading fragments remain
+supported. Generated Markdown also resolves at its canonical paths in GitHub.
+The guides cover development-source limits; the installed release remains 0.2.0.
+The hosted website still needs its separately approved update.
+
+```sh
+uv run python -m scripts.site_reference
+uv run python -m scripts.validate_plan
+uv run python -m scripts.build_site --output artifacts/issue224/c2-delivery/site
+uv run python -m scripts.check_site --output artifacts/issue224/c2-delivery/site
+```
+
+The [guide acceptance record](acceptance/task-guides.md) records the tested source,
+focused checks and remaining qualification. These commands check documentation
+locally; they do not start the application or connect to a cluster.
+
+The local browser check also passed all 43 pages at desktop and mobile widths,
+including navigation with JavaScript disabled, with zero accessibility findings.
+It follows **Commands and keys** and the **Commands, keys, and launch options**
+heading. The [acceptance record](acceptance/task-guides.md#browser-correction)
+preserves the original stale-label CI failure and the corrected 79.77-second
+Linux/Chrome result, source and cleanup limits. The exact checked command was:
+
+```sh
+node scripts/verify_site_browser.mjs artifacts/issue224/c2-delivery/browser-fix/site artifacts/issue224/c2-delivery/browser-fix/qa
+```
+
+Development source adds an inline Retry panel for resource-view presentation
+failures and a local `kuberich bug-report` command. Report files are private and
+redacted; the diagnostic command does not read kubeconfig or connect to a
+cluster. Fatal UI errors restore the terminal before printing a crash-report
+path. These changes
+are not part of the installed 0.2.0 release. Integrated platform, package and
+whole-application qualification remain pending.
+
+```sh
+uv run kuberich bug-report --output ./kuberich-report.json
+uv run pytest tests/ui/test_view_errors.py tests/contract/test_bug_report_cli.py tests/unit/test_diagnostic_reports.py
+```
+
+The foundations phase is in progress. Its first task adds full unit/contract/UI
+test selection, local xdist workers and a fast CI signal before full qualification.
+Worker ownership, failure propagation, coverage combination and timing isolation
+have dedicated regressions. The complete fast selection passed locally with
+4,588 tests and one expected macOS-only clipboard skip in 158.00 seconds.
+The [quality guide](../quality.md#test-layers-and-local-parallel-runs) records the
+same-candidate serial comparison, full-run measurements and verification policy.
+Complete platform, artifact and coverage checks remain required for the phase.
+The installed release is 0.2.0.
+
+```sh
+uv sync --locked --group dev
+uv run pytest tests/unit tests/contract tests/ui -m fast -n 12
+```
+
+Use fewer workers on smaller machines. These are developer checks on owned
+fixtures, and do not require access to your Kubernetes contexts.
+
+The development source also corrects plugin review from qualified custom-resource
+views. Matching commands can review the selected UID after the view is live;
+previous resource names and API versions remain refused while a new view loads.
+This correction is not included in the installed 0.2.0 release.
+
+The integrated development source also passes the full-package check against
+private test dependencies. Workspace tests now use public command/state boundaries
+while retaining captured-target, cancellation and bounded-cache behavior. Full
+platform, runtime and coverage qualification remains pending for this foundation
+work; the installed release remains 0.2.0.
+
+```sh
+uv run python scripts/check_private_access.py
+```
+
+## Development: bounded live collections
+
+Development source keeps a resource view live when it reaches 10,000 retained
+rows or 64 MiB of retained payload. The view labels incomplete membership;
+updates remain tied to resource UIDs. Server queries narrow the Kubernetes
+request separately from the local `/` filter:
+
+```text
+:server label app=api
+:server field metadata.name=api-one
+:server clear
+```
+
+Generic views also offer `:server compact` for metadata-only Table rows and
+`:server full` to restore full objects. Inspection fetches the full object when
+needed. These modes preserve existing scope and identity checks. The
+[workspace guide](../resource-workspace.md) explains the limits and recovery.
+
+Owned Kubernetes fixtures verified pagination, filtering, compact rows, fresh
+full-object reads, watch updates and cleanup. Large-fixture contracts check
+retention bounds; they do not certify sustained throughput, process RSS or a
+long-running soak. This behavior is not in the installed 0.2.0 release.
+
+## Development: kubeconfig compatibility
+
+Development source supports explicit Basic credentials and empty optional
+kubeconfig connection fields. Reads, guarded writes and delegated tools keep
+the same captured identity. Known unsupported fields receive an actionable
+message. For legacy OIDC, an explicit offline command generates a reviewable
+exec-plugin migration fragment without copying tokens or changing kubeconfig:
+
+```sh
+uv run kuberich kubeconfig oidc-migration --help
+```
+
+The command above was checked without connecting to a cluster. The
+[context guide](../context-sessions.md) documents migration, supported fields and
+remaining limits. Captured/background plugin output masks known prepared Basic
+credentials; foreground output goes directly to the terminal.
+
+Local TLS/API, helper and synthetic provider-shaped contracts have been checked.
+Actual EKS, AKS, GKE, Teleport and tailnet accounts are not certified. Full native
+and phase qualification remains required. The installed release is still 0.2.0.
+
+## Development: previous command name
+
+The 0.3 development source keeps `kubetrol` as a deprecated command. It prints
+one fixed notice to stderr naming `kuberich` and the planned 0.4.0 removal;
+stdout and exit codes keep the canonical CLI behavior. The package, imports
+and new default paths use KubeRich.
+
+```sh
+uv run kuberich --version
+uv run kubetrol --version
+```
+
+These commands were checked against the development source; its version remains
+0.2.0 until the release version changes. The published 0.2.0 package does not
+include the new warning. Existing preference/environment/log compatibility stays
+supported. Explicit preference migration keeps previous files and reports
+creation only once; see [configuration](../configuration.md#legacy-preview-compatibility).
+
+## Development: one phase verification command
+
+The development checkout now provides a coordinator for the existing checks:
+
+```sh
+uv run python scripts/qualify.py --help
+uv run python scripts/qualify.py 0.3.0 --collect-only
+```
+
+The first command explains the options. The second writes an honest pending
+report without starting tests or clusters. A local run executes the existing
+checks once and records their source, original logs, cleanup and remaining
+native/repetition requirements. Read the [phase verification guide](../releases.md#reproduce-phase-verification)
+before running the full command. The installed application remains 0.2.0.
+
+Failed canonical release-candidate audits now retain their own partial output
+separately for diagnosis. The original failure still fails verification.
+
+## Development: runtime latency observations
+
+For 0.x development, runtime latency observations retain their original targets
+and report whether they met them. Small overshoots do not replace functional
+correctness as a release blocker. All workload, resource, memory, cleanup and
+coverage checks remain required. Strict runtime limits remain available with
+`KUBERICH_STRICT_RUNTIME_BUDGETS=1` and become mandatory for major-version 1
+candidates; the deliberate blocking negative controls always remain strict.
+Focused policy, receipt and release controls passed 423 cases. Three actual
+aggregate-UI, HTTP-backend and mounted-terminal cases also passed, retaining both
+always-strict blocking controls and full positive workload/cleanup checks. These
+are local prerequisite checks, not full platform or coverage qualification.
+The [quality policy](../quality.md#runtime-latency-policy-for-0x-and-stable-qualification)
+explains the exact observation and validation contract.
+
+```sh
+uv run pytest tests/quality/test_runtime_budget.py tests/quality/test_runtime_coverage.py tests/quality/test_backend_runtime.py
+```
+
+## Development: owned X11 clipboard qualification
+
+The native clipboard trial now observes exact selection receipt on a disposable
+Xvfb display. A controlled delayed real writer reproduces the earlier immediate
+read failure; missing/wrong-selection and cancelled-reader controls keep their deadlines
+and require owned process cleanup. The clipboard cohort passed 32 cases with one
+explicit macOS-only skip on Linux. This changes developer qualification; the
+published application remains 0.2.0. Native/full required checks remain pending.
+
+```sh
+uv run pytest tests/contract/test_clipboard.py tests/contract/test_x11_readiness.py tests/unit/test_clipboard.py
+```
+
+### Development checkpoint: Wayland clipboard
+
+The unreleased checkout can copy through `wl-copy` in local Wayland sessions.
+Automatic detection prefers Wayland over XWayland and keeps OSC52 over SSH.
+The helper receives plaintext on stdin and closes on replacement or application
+exit. The native 1 MiB limit and terminal 64 KiB limit still apply.
+
+```sh
+uv run pytest tests/unit/test_clipboard.py tests/contract/test_clipboard.py \
+  tests/contract/test_wayland_clipboard.py tests/ui/test_clipboard.py -n 2 \
+  --cov=kuberich --cov-branch --cov-report=json --cov-report=xml
+```
+
+The original source checkpoint passed 56 tests with one explicit hosted-macOS skip and
+100% line/branch coverage in both clipboard modules. Its helpers simulate
+`wl-copy`; no real compositor or developer clipboard was used. See
+[Wayland verification](acceptance/wayland-clipboard.md) for the measured scope.
+Full-package and supported-platform checks remain required before delivery.
+
+## Included in 0.2.0: live preferences
+
+Edit and save the preference file while KubeRich runs. Themes, aliases, column
+views, jumps and plugins update within two seconds, and the current view stays.
+An invalid file keeps the last valid preferences. A `context_settings` section
+can make one context read-only or change its refresh interval. Palettes can use
+`'default'` to show the terminal's own background, and
+`appearance.full_gvr_titles` shows the API version in titles.
+
+```sh
+uv run pytest tests/ui/test_live_preferences.py tests/unit/test_context_settings.py
+```
+
+See [configuration](../configuration.md#changing-preferences-while-kuberich-runs)
+and [acceptance evidence](acceptance/reactive-preferences.md).
+
+## Included in 0.2.0: resource jumps
+
+Define jumps in the preference file, select a row and type `:jump` or
+`:jump NAME`. The related view opens with a label or field filter already set,
+for example from a Deployment to its pods or from a node to its pods.
+`kuberich config check` validates the definitions.
+
+```sh
+uv run pytest tests/unit/test_jumps.py tests/ui/test_jumps.py tests/unit/test_cli_config.py
+```
+
+See [resource jumps](../resource-jumps.md) and
+[acceptance evidence](acceptance/resource-jumps.md).
+
+## Included in 0.2.0: context edits and pod cleanup
+
+In `:ctx`, `:rename NEW` renames the selected context and Ctrl+D or `:delete`
+deletes it. Review shows the file and the change first; a backup is written
+before the file is replaced. In a pods view, `:cleanup` reviews deleting the
+completed and failed pods shown.
+
+```sh
+uv run pytest tests/unit/test_kubeconfig_edit.py tests/unit/test_cleanup.py tests/contract/test_kubeconfig_files.py tests/ui/test_context_cleanup.py
+uv run python -m scripts.verify_cleanup_kind --kind /absolute/path/to/kind
+```
+
+See [context edits](../context-sessions.md#rename-or-delete-a-context),
+[finished-pod cleanup](../resource-operations.md#clean-up-finished-pods) and
+[acceptance evidence](acceptance/context-cleanup.md).
+
+## Included in 0.2.0: forwarding presets
+
+The next-release source adds named/container-qualified TCP mappings, local and
+exact-context presets, explicit local permission for annotation shortcuts,
+kubectl child transport selection and optional bounded reconnects. Non-loopback
+binds still need separate confirmation; resource listing never starts a listener.
+
+```sh
+uv run pytest tests/unit/test_forward_presets.py tests/contract/test_forward_reconnect.py tests/ui/test_forward_presets.py
+uv run pytest tests/terminal/test_port_forwards.py tests/packaging/test_forward_presets.py
+```
+
+The final focused command passed 220 cases in 79.79 seconds, including real
+source/installed terminals and initial/replacement startup failure regressions. Both new deterministic modules measured 100%
+line/branch coverage. Fresh owned-kind trials verified HTTP, named annotations,
+both transport modes, listener collisions, deliberate remote bind, Service backend
+replacement/reconnect and full cleanup. Required platform/native PR checks and
+the cumulative phase qualifier remain independent gates.
+See [forwarding behavior](../port-forwards.md) and
+[acceptance evidence](acceptance/forward-presets-0.3.md).
+
+Required checks also exposed a table-cache collection pause and a configuration
+key-name clipping race. The source now releases retired native cache entries
+promptly and sizes key columns from captured metadata before painting. Both have
+owned negative controls. The local Python 3.13 runtime trial retained an 89-ms
+maximum gap with the original 150-ms limit and active GC; fresh full platform/native
+qualification remains required. The maintainer requested stopping after this
+ticket's verified delivery, before starting the next implementation issue.
+
+## Included in 0.2.0: terminal navigation
+
+The next source checkpoint adds command/filter recall, inverse/fuzzy/metadata
+filters, wide/errors controls, bounded UID ranges and explicit namespace
+favorites. Read-only workspaces share chrome and nested command routing;
+container status refreshes from the owned Pod watch. Native macOS/X Window System writers and
+OSC52/tmux clipboard requests have explicit UTF-8 bounds.
+
+```sh
+uv run pytest tests/unit/test_interactions.py tests/unit/test_selectors.py tests/unit/test_metadata_filtering.py
+uv run pytest tests/ui/test_interactions.py tests/terminal/test_interactions.py
+```
+
+Focused deterministic clipboard/history/range/selector modules passed 100% line
+and branch coverage. Pilot verified controls at 40 and 120 columns, live
+container status and fatal permission invalidation. Owned kind verified status
+patches, same-name UID replacement, nested namespace/context drain and Escape;
+that Pod was deliberately unscheduled and is not a real exec/restart trial.
+Owned Xvfb and ephemeral hosted macOS verified synthetic plaintext clipboard
+roundtrips. Source and installed console/module PTYs verify navigation and exact
+OSC52 receipts. The [implementation PR](https://github.com/carloshm91/kuberich/pull/206)
+retains the successful protected platform/native and coverage qualification.
+See [behavior and limits](../terminal-navigation.md).
+
+## Included in 0.2.0: plugin compatibility and examples
+
+The source classifies all 50 pinned community plugin files and 108 commands,
+including two executable helpers. It adds three original reviewed definitions
+for Pod inspection, an interactive local kubectl exec and finite background
+event collection; 18 synthetic argv adaptations record their changed semantics.
+Upstream scripts/virtual views/legacy tools are not automatically imported,
+installed or claimed as native features.
+
+```sh
+uv run pytest tests/contract/test_plugin_examples.py tests/unit/test_plugins.py
+uv run pytest tests/terminal/test_plugin_examples.py
+```
+
+See [compatibility and examples](../plugin-compatibility.md) and
+[acceptance evidence](acceptance/plugin-compatibility.md). Runtime prerequisites,
+read-only trust, output/Stop behavior and separate service identities are explicit.
+
+## Included in 0.2.0: plugin execution
+
+The next-release source adds `:plugins`, `:plugin NAME`, typed Review/Run forms,
+resource-scoped shortcuts and `:pluginjobs`. Capture, background and native
+foreground commands use owned processes, explicit read-only trust, bounded
+captured output and private single-context credentials. Context/UID invalidation
+and exit drain processes before removing connection files.
+
+```sh
+uv run pytest tests/contract/test_plugins.py tests/ui/test_plugins.py
+uv run pytest tests/unit/test_credential_child.py tests/unit/test_plugin_commands.py
+uv run pytest tests/terminal/test_handoff.py
+```
+
+See [the invocation guide](../plugins.md) and [acceptance evidence](acceptance/plugin-execution-0.3.md).
+Foreground local plugins deliberately use native terminal handoff; pod/container
+shells remain embedded. Arbitrary local programs are not sandboxed, and direct
+foreground output cannot be redacted by KubeRich.
+
+## Included in 0.2.0: plugin configuration
+
+The source validates explicitly configured global/context plugin files, exact
+resource scopes, shortcut overrides, typed inputs and captured literal variables.
+This configuration checkpoint executes no command; interactive invocation and
+owned process execution follow in the next task.
+
+```sh
+uv run pytest tests/unit/test_plugins.py tests/contract/test_plugin_files.py
+```
+
+The offline CLI test also runs `kuberich --config <owned-fixture> config check`,
+verifies no sentinel command was executed and confirms the file is unchanged.
+See [configuration and trust](../plugins.md) and [evidence](acceptance/plugin-contract.md).
+
+## Included in 0.2.0: navigation preferences
+
+The next-release source supports per-view navigation keys, literal command aliases
+and resource-specific column order, visibility, width, alignment and typed sort.
+`:views` applies a session choice or explicitly saves globally/per context.
+Help/completion reflect effective settings; invalid overrides retain working
+navigation and the original file. Server-column signatures prevent stale saved
+positions from being interpreted under a changed schema.
+
+```sh
+uv run pytest tests/unit/test_navigation_preferences.py tests/contract/test_navigation_preferences.py
+uv run pytest tests/ui/test_navigation_preferences.py tests/terminal/test_preferences.py
+```
+
+The source PTY verifies actual remapped keys, alias completion, private saves,
+reopening and terminal restoration against an owned local API. Expanded filters, resource jumps, reactive reload and
+plugins remain later work. See [the guide](../navigation-preferences.md) and
+[measured acceptance](acceptance/navigation-preferences.md).
+
+## Included in 0.2.0: appearance
+
+The next-release source provides `:themes`, `:theme` and `:about`, custom opaque
+palettes, environment/context/global precedence, explicit preference saves and
+runtime `--invert`. Version notices are disabled by default; opt-in checks are
+asynchronous, bounded, cached and offline-safe. See [the guide](../themes.md).
+
+```sh
+uv sync --locked --group dev
+uv run kuberich --command themes
+uv run kuberich --invert --command about
+```
+
+The commands were exercised through actual source/installed-console/module PTYs,
+including NO_COLOR, preview/cancel, a real save, 40-column About and terminal
+restoration. Owned HTTP/cache and Pilot cases cover errors, cancellation,
+precedence and private persistence. [Appearance acceptance](acceptance/appearance.md)
+records measured scope; the issue-linked PR retains exact-head platform gates.
+No real cloud was used.
+
+## Included in 0.2.0: configuration data
+
+The next-release source adds Enter / `v` on ConfigMaps and Secrets: a key/size
+index with values hidden by default, explicit per-key reveal/copy, UTF-8/Base64
+selection, bounded output and fresh UID/version-bound reads. Secret manifests
+use the existing deliberate editor disclosure, redacted review, strict dry-run
+and separate conditional Apply. Ordinary inspection stays redacted.
+
+```sh
+uv sync --locked --group dev
+uv run kuberich --context YOUR_CONTEXT --namespace YOUR_NAMESPACE --readonly
+```
+
+These commands run the checkout.
+Owned-loopback Pilot and real PTY verification cover the controls; disposable-kind
+verification covers actual Secret/ConfigMap reads and guarded edits. Measured
+final acceptance is retained in [configuration-data evidence](acceptance/configuration-data.md).
+No maintainer cluster was used; real-cloud certification remains deferred.
+
+## Available workflows
+
+The current implementation supports live pods, context and namespace tables,
+standard resource views and discovered custom resources. Commands complete
+inline, filtering uses `/`, and Vim-style navigation retains the selected
+resource as the table refreshes.
+
+Enter on a pod opens its containers; Enter on a container opens its logs.
+Current, previous and aggregate logs, embedded shells, pod/Service forwarding,
+captured attach and guarded file transfers are implemented. Reviewed changes
+include annotation updates, manifest dry-run/Apply, scale/restart/rollback,
+deletion and Job/CronJob operations.
+
+Version 0.2.0 adds themes, configurable navigation and views, local plugins,
+deliberate Secret editing, terminal refinements and Homebrew bottles. Metrics and
+advanced node/debug operations remain planned. Complete K9s parity and stable 1.0
+compatibility are later milestones.
+The [guided workflow](../everyday-workflow.md) describes the current controls,
+and the [release phases](../releases.md) explain what belongs to each version.
+
+## 0.1.0 validation
+
+The website and documentation contain fictional examples and actual application
+renders from owned fixtures. Both generated surfaces passed checks across
+57 offline-preview pages, including desktop/mobile navigation, accessibility
+and local links. The public build has 30 pages without duplicate guides. Its
+exact deployed artifact passed all 30 desktop and 30 mobile browser cases,
+keyboard/copy/no-JavaScript navigation and zero automated accessibility
+violations. Live custom-domain checks independently matched the served content;
+the remaining asset-header cache finding above is retained without a waiver.
+Exact main `3dbf9c0118193aa11635baea6ae2a0b36bee4c6e` passed all six source
+Python combinations and all four native executables. Original audits and native
+provenance passed independent review. Measured coverage was 99.0987–99.1296%
+lines and 96.8382–96.9721% branches, with 100% for designated critical modules.
+Three fresh consecutive rounds passed all thirteen owned-cluster scenario
+families with caller configuration preservation and cleanup.
+
+Actual TestPyPI/PyPI uploads, SBOM/build attestations, immutable annotated tag and
+all 24 public GitHub attachment digests passed verification. Public PyPI-by-name
+uv and pipx installs passed version/help/default-preference checks, no-op upgrade
+and uninstall in owned environments. The public Linux x86_64 archive also passed
+CLI checks outside the checkout. The other archive bytes match their native
+hosted qualification. The published Homebrew formula passed Linux/macOS style,
+online audit, source install, CLI tests and uninstall before protected merge.
+There is no prior public release to claim as a version-upgrade baseline.
+
+These safe local commands have been verified against the candidate:
+
+```sh
+uv sync --locked --group dev
+uv run kuberich --version
+uv run kuberich --help
+uv run kuberich config check
+```
+
+They do not contact Kubernetes or execute authentication helpers. Connecting
+requires an explicitly intended kubeconfig/context; see [first launch](../quickstart.md).
+The default preference permits writes. Use `--readonly` for a first connection;
+write actions require the corresponding Kubernetes permissions and their
+operation-specific target/review controls.
+
+The [candidate evidence](acceptance/first-release-preparation.md) retains measured
+results and limits. [Historical engineering checkpoints](preview-history.md)
+remain available separately. Real cloud-provider and physical-terminal
+certification still require their later opt-in trials.
+
+### Wayland platform fixture correction
+
+The focused clipboard command above now passes 59 cases with one explicit
+macOS-only skip on Linux (17.32 seconds). It covers native failure/fallback
+behavior for X11, Wayland and macOS through an inert driver on every host.
+The first hosted macOS failure was a missing platform boundary in synthetic
+Linux fixtures; it is retained in run `41280079738`. No native host or compositor
+qualification is inferred from the synthetic cases.
+
+### Wayland parent integration
+
+The local parent integration preserves the application clipboard queue and the
+owned X11 receipt checks. Its 225 focused helper/process/queue/public-UI and
+documentation cases passed in 51.54 seconds. The critical clipboard domain
+retains 100% line and branch coverage; the native service including its queue
+measured 96.77% of lines and 91.18% of branches, with 94.74% changed-line coverage.
+The [acceptance record](acceptance/wayland-clipboard.md#parent-integration-verification)
+separates these results from the earlier source checkpoints. No real Wayland
+compositor, host clipboard or cluster was used. The installed version remains
+0.2.0; full supported-platform and package qualification remain pending.
+### Opened plugin job results
+
+After opening a running job in `:pluginjobs`, its status, exit code and completed
+output now update without pressing Enter again. Cursor movement keeps the opened
+job until another Enter; retired history releases its displayed result.
+
+The tested local regression command was:
+
+```sh
+uv run pytest tests/ui/test_plugin_jobs.py tests/ui/test_plugins.py \
+  tests/contract/test_plugins.py tests/terminal/test_plugins.py \
+  tests/quality/test_release_policy.py \
+  --basetemp artifacts/plugin272/tmp/regression-01 \
+  --cov=kuberich --cov-branch \
+  --cov-report=json:artifacts/plugin272/regression-coverage.json \
+  --cov-report=xml:artifacts/plugin272/regression-coverage.xml \
+  --junitxml=artifacts/plugin272/regression-tests.xml
+```
+
+The selection passed 326 cases on Linux/Python 3.12, including source CLI
+terminal restoration. The final two UI cases also passed after strengthening
+the output-only check. Changed application lines measured 100%; complete
+platform, package and coverage gates remain required. The original macOS
+failure and the unchanged-main negative controls are retained in
+[plugin execution evidence](acceptance/plugin-execution-0.3.md).
+
+The 326-case result and changed-line measurement above are retained historical
+evidence from the original correction. They do not qualify the refreshed
+delivery head or its newer prerequisite tree; current-parent validation is
+recorded separately before delivery.
+
+## Parent verification follow-up
+
+The protected parent's automatic-main Quality run `41444530467` failed its Fast
+job `125274306280` in the deleted-initial-record retention contract. The original
+failure is retained and prerequisite diagnosis is pending. The earlier complete
+PR qualification remains source-scoped; this relocation does not change watch
+behavior or turn that later failure into a pass.
+
+## Internal documentation relocation
+
+The internal-evidence migration retains all 102 pre-existing immutable payloads
+and their original source records. Three already-recorded editing, startup-budget
+and terminal-navigation snapshots retain their `1875994d5c4bd7946b0196aa4fe9e4679a6810d6`
+source identities, for 105 immutable payloads total. The original
+`first-preview-0.3.md` remains the unprotected prepared `aad1a0b2` source; it has
+not been relabeled as protected or substituted for this maintained checkpoint.
+
+Current planning data moves into the three existing operational JSON locations.
+The actual protected task-guide and architecture acceptance records move into
+maintained internal Markdown, with ordinary current-source link checks. All
+runtime code, qualification stages and unrelated behavioral tests remain the
+actual protected parent. This includes the plugin-job completed-result wait,
+strict private/startup gates and the two corrected browser labels.
+
+The first integrated tree `6566f1a52cc9703fd5107f8d49c84c01068dc66d`
+passed 480 existing focused controls in 50.22 seconds (51.44 seconds including the
+runner). They cover internal/history identity and exclusion, links and document
+dispositions, architecture, guide redirects, the plugin census, release policy,
+and owned-loopback HTTP transport. There were no failures, errors or skips.
+Ruff, formatting, the private-access audit, the current workflow's full strict
+type target union and seven documentation modules also passed. These are source-
+scoped local results; the earlier 458-case preparation receipt remains historical.
+
+The exact focused command was:
+
+```sh
+uv run python -m pytest -q tests/quality/test_internal_docs.py tests/quality/test_documentation_links.py tests/quality/test_documentation_structure.py tests/quality/test_architecture_docs.py tests/quality/test_user_guides.py tests/contract/test_plugin_examples.py tests/quality/test_release_policy.py tests/quality/test_release_transport.py --basetemp=/tmp/kuberich-226-docs-v170ybg9/pytest --junitxml=artifacts/issue226/protected-857f/tests.xml
+```
+
+After that cohort, capability evidence paths were reconciled directly from the
+actual parent's data to the selected relocation aliases, preserving all other
+capability values. The checkpoint received this measured note. Final reference,
+plan and both site-mode build checks apply to the resulting candidate separately.
+These checks do not certify a new native artifact, provider, performance result
+or hosted deployment. They do not resolve the parent Fast-retention failure.
+
+Final reference validation and module-plan validation passed, including 895 local
+Markdown links. Both offline site modes passed: preview output had 43 pages and
+1,508 local links/assets; public-mode output had 23 pages and 799 links/assets.
+The strict workflow union covered 234 source files, and the supplemental docs
+check covered seven files. Both builds still report source version 0.2.0 and
+perform no publication.

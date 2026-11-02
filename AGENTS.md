@@ -33,7 +33,7 @@ implementation; do not claim to switch models without actual environment support
 - The maintainer authorized continuous implementation, local verification
   and autonomous squash merges: finish each issue/PR and proceed to the next
   unblocked task without waiting for intermediate manual trials or feedback.
-  Keep progress updates and docs/first-preview.md current, but do not ask the
+  Keep progress updates and docs/internal/first-preview-current.md current, but do not ask the
   maintainer to test between tasks. They will test and provide feedback later.
 - Real cloud/provider trials are deferred to the maintainer's later installed
   preview tests. Implement and verify local contracts and owned disposable-cluster
@@ -62,7 +62,7 @@ implementation; do not claim to switch models without actual environment support
   Prepare and verify the concrete result first, then request approval for the
   publication step. Domain names are proposals until the maintainer chooses one;
   do not purchase domains or change DNS without explicit authorization.
-- Notify the maintainer at each usable checkpoint in docs/first-preview.md, with
+- Notify the maintainer at each usable checkpoint in docs/internal/first-preview-current.md, with
   the exact tested command and honest feature status. B01 is prioritized early.
 - Keep docs/capabilities.json and the pinned source inventory traceable to issues;
   do not claim parity from planned work or an unverifiable paid feature catalog.
@@ -72,14 +72,16 @@ implementation; do not claim to switch models without actual environment support
   authorized finishing v0.2.0 in order: #221, #63, #64, #193, #65 (#124 moved
   to v0.8.0). Finish and verify each issue before advancing; publication of any
   artifact still needs explicit approval. Final hosting work stays in #89.
-- On 2026-11-01 the maintainer accepted the measured approximately 685 ms UI
-  startup for 0.3 and deferred strict 600 ms optimization to the stable 1.0 audit
-  (Q06 #88). For 0.x, report all five actual UI observations and explicit
-  budget-met/enforced flags; do not call the missed target passed. Keep the
-  unchanged `--strict-paint` qualifier mode, mandatory from version major 1.
-  Offline 150 ms/40 MB/import gates and actual-frame, SDK, geometry, ownership
-  and cleanup checks remain mandatory. Do not resume speculative style or
-  first-paint optimization for 0.3; prioritize the remaining product work.
+- On 2026-11-01 the maintainer made all startup latency objectives advisory
+  for 0.x: offline 150 ms wall time, 150,000 us aggregate/cumulative imports,
+  and 600 ms actual UI paint. Report every measured value and unmet target;
+  do not increase limits or relabel original failures. `--strict-startup`
+  enforces every original latency limit; `--strict-paint` retains UI-only
+  compatibility. Actual source major 1 and later, including prereleases,
+  always enforce all limits. Offline RSS below 40,000,000 bytes, absence of
+  forbidden Textual/SDK imports, valid output/source/frames, geometry, deadlines and
+  owned cleanup remain mandatory. Negative latency controls stay strict.
+  Prioritize useful product work rather than more 0.3 latency optimization.
 - Use a short-lived issue branch, an issue-linked pull request, required checks,
   and squash merging. Keep main releasable.
 - While hosted Actions cannot start because of the account quota/billing block,

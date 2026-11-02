@@ -41,6 +41,15 @@ and guide-source readers. This does not turn a source checkpoint into release
 qualification or claim that a feature-branch blob is protected-main evidence.
 The suffix identifies an engineering phase, not a published or qualified release.
 
+## Current maintained records
+
+[Development checkpoint](first-preview-current.md),
+[task-guide acceptance](acceptance/task-guides.md) and
+[architecture acceptance](acceptance/architecture-overview.md) carry current
+protected-parent facts and later verification. They receive ordinary current-source
+Markdown link checks. The frozen `first-preview-0.3.md` remains its original
+unprotected prepared snapshot; it is not the maintained checkpoint.
+
 ## Updating evidence
 
 Keep new verification evidence in its pull request or release assets when

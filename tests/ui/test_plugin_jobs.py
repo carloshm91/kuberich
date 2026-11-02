@@ -53,7 +53,14 @@ async def test_opened_background_output_updates_after_a_real_child_finishes(tmp_
             release.write_text("finish")
             await job.wait()
             assert job.status == "Succeeded" and job.returncode == 0
-            await wait_for(lambda: "PLUGIN_BACKGROUND" in str(text.content))
+            # Output may appear during cleanup, before the final status is repainted.
+            await wait_for(
+                lambda: (
+                    "PLUGIN_BACKGROUND" in str(text.content)
+                    and "Succeeded" in str(text.content)
+                    and "exit 0" in str(text.content)
+                )
+            )
             assert "Succeeded" in str(text.content) and "exit 0" in str(text.content)
         assert job.runner.active_count == 0
 

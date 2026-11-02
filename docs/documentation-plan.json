@@ -273,6 +273,16 @@
       "baseline_sha256": "b1d3753619f7a74704e9d866ea2e0642e7a7151cfff8d8f8492f21ada4499824"
     },
     {
+      "source": "docs/acceptance/architecture-overview.md",
+      "audience": "development acceptance",
+      "action": "move",
+      "destinations": [
+        "docs/internal/acceptance/architecture-overview.md"
+      ],
+      "reason": "Maintain the actual protected-parent acceptance and later verification as current internal Markdown, with ordinary current-source link validation.",
+      "baseline_sha256": null
+    },
+    {
       "source": "docs/acceptance/assets/azure-login-recovery.svg",
       "audience": "evidence",
       "action": "move",
@@ -547,7 +557,8 @@
       "audience": "evidence",
       "action": "move",
       "destinations": [
-        "docs/internal/acceptance/editing.md"
+        "docs/internal/acceptance/editing.md",
+        "docs/internal/acceptance/editing-0.3.md"
       ],
       "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "4789662e542ac7a1c20fb38c38ebcdc1b7ab86e46e190d2766b0a09fa712b85e"
@@ -940,7 +951,8 @@
       "audience": "evidence",
       "action": "move",
       "destinations": [
-        "docs/internal/acceptance/startup-budget.md"
+        "docs/internal/acceptance/startup-budget.md",
+        "docs/internal/acceptance/startup-budget-0.3.md"
       ],
       "reason": "Keep active instructions separate; preserve both the earlier history and the current 0.3 engineering-phase snapshot without rewriting either payload.",
       "baseline_sha256": null
@@ -966,6 +978,16 @@
       "baseline_sha256": "6de7204ad2278fbd72d678928c030e4c19783c70c5a0141ec2cf9da991aef130"
     },
     {
+      "source": "docs/acceptance/task-guides.md",
+      "audience": "development acceptance",
+      "action": "move",
+      "destinations": [
+        "docs/internal/acceptance/task-guides.md"
+      ],
+      "reason": "Maintain the actual protected-parent acceptance and later verification as current internal Markdown, with ordinary current-source link validation.",
+      "baseline_sha256": null
+    },
+    {
       "source": "docs/acceptance/terminal-history.md",
       "audience": "evidence",
       "action": "move",
@@ -980,7 +1002,8 @@
       "audience": "evidence",
       "action": "move",
       "destinations": [
-        "docs/internal/acceptance/terminal-navigation.md"
+        "docs/internal/acceptance/terminal-navigation.md",
+        "docs/internal/acceptance/terminal-navigation-0.3.md"
       ],
       "reason": "Preserve the exact source and its source-commit links in the internal history area; exclude it from user navigation, the website and search.",
       "baseline_sha256": "162aeaae5d9413acc01bc8831916cb11ad4ae96e85103376e7e4b8e2dce61b99"
@@ -1645,9 +1668,10 @@
       "destinations": [
         "docs/first-preview.md",
         "docs/internal/first-preview-before-status.md",
-        "docs/internal/first-preview-0.3.md"
+        "docs/internal/first-preview-0.3.md",
+        "docs/internal/first-preview-current.md"
       ],
-      "reason": "Keep active instructions separate; preserve both the earlier history and the current 0.3 engineering-phase snapshot without rewriting either payload.",
+      "reason": "Keep a brief user Status and maintain current contributor checkpoints separately from both unchanged historical preview snapshots.",
       "baseline_sha256": "8c62eba1186380ad032f085c8969739302f7516e9724bdbe9925bb69f2992925"
     },
     {
@@ -1820,6 +1844,16 @@
       ],
       "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
       "baseline_sha256": "b1d3753619f7a74704e9d866ea2e0642e7a7151cfff8d8f8492f21ada4499824"
+    },
+    {
+      "source": "docs/internal/acceptance/architecture-overview.md",
+      "audience": "development acceptance",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/architecture-overview.md"
+      ],
+      "reason": "Maintain current acceptance facts separately from unchanged historical payloads.",
+      "baseline_sha256": null
     },
     {
       "source": "docs/internal/acceptance/assets/azure-login-recovery.svg",
@@ -2090,6 +2124,16 @@
       ],
       "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
       "baseline_sha256": "e3529eb8a548de3611154171da0028cc06d59d628f06523c561fdfd8dd98646e"
+    },
+    {
+      "source": "docs/internal/acceptance/editing-0.3.md",
+      "audience": "development history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/editing-0.3.md"
+      ],
+      "reason": "Preserve exact pre-condensation wording or the current engineering-phase report outside public navigation; it does not qualify a release.",
+      "baseline_sha256": "3873b1c4a6ae431aac0c58b8cc723aa8e7a8ab471aba36d59d8185d3a5ab2f7a"
     },
     {
       "source": "docs/internal/acceptance/editing.md",
@@ -2552,6 +2596,16 @@
       "baseline_sha256": "5878cdfe6b3b2ce140c2305157f065824586e3de747b446be3bed23324cd9638"
     },
     {
+      "source": "docs/internal/acceptance/startup-budget-0.3.md",
+      "audience": "development history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/startup-budget-0.3.md"
+      ],
+      "reason": "Preserve exact pre-condensation wording or the current engineering-phase report outside public navigation; it does not qualify a release.",
+      "baseline_sha256": "e8af738f60baf693c41c32b521fe1f1984b485f49b8cdcd62d657514a8f24a0b"
+    },
+    {
       "source": "docs/internal/acceptance/startup-budget.md",
       "audience": "evidence",
       "action": "keep",
@@ -2582,6 +2636,16 @@
       "baseline_sha256": "6de7204ad2278fbd72d678928c030e4c19783c70c5a0141ec2cf9da991aef130"
     },
     {
+      "source": "docs/internal/acceptance/task-guides.md",
+      "audience": "development acceptance",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/task-guides.md"
+      ],
+      "reason": "Maintain current acceptance facts separately from unchanged historical payloads.",
+      "baseline_sha256": null
+    },
+    {
       "source": "docs/internal/acceptance/terminal-history.md",
       "audience": "internal engineering history",
       "action": "keep",
@@ -2590,6 +2654,16 @@
       ],
       "reason": "Retain the exact recorded source bytes and source identity outside user navigation, website output and search.",
       "baseline_sha256": "23b4b4b47a38ec3baa6fe219cc2362f8baffa7213ba2376c06a31c3b9b448af7"
+    },
+    {
+      "source": "docs/internal/acceptance/terminal-navigation-0.3.md",
+      "audience": "development history",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/terminal-navigation-0.3.md"
+      ],
+      "reason": "Preserve exact pre-condensation wording or the current engineering-phase report outside public navigation; it does not qualify a release.",
+      "baseline_sha256": "c9faa03029dd9d85f0b5d24f216270ae7a831f026ae718dfaaaf3e193e644e15"
     },
     {
       "source": "docs/internal/acceptance/terminal-navigation.md",
@@ -2712,6 +2786,16 @@
       "baseline_sha256": "e14542367092fc037952b0cd4fb73139b2dc8f25ba39fc7ad2f6001d300490b7"
     },
     {
+      "source": "docs/internal/first-preview-0.3.md",
+      "audience": "evidence",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/first-preview-0.3.md"
+      ],
+      "reason": "Preserve this exact 0.3 engineering-phase source snapshot outside public navigation; protected-parent anchoring remains pending.",
+      "baseline_sha256": "c763c73b8d37d5c16d41e2b6652a86159635f142c891d707bf4f8157aee35be9"
+    },
+    {
       "source": "docs/internal/first-preview-before-status.md",
       "audience": "internal engineering history",
       "action": "keep",
@@ -2722,14 +2806,14 @@
       "baseline_sha256": "d1e1526e6e9469d4341eb0f98b315539d62bdadf696c2aa8a8036c43e1b577e2"
     },
     {
-      "source": "docs/internal/first-preview-0.3.md",
-      "audience": "evidence",
+      "source": "docs/internal/first-preview-current.md",
+      "audience": "development checkpoint",
       "action": "keep",
       "destinations": [
-        "docs/internal/first-preview-0.3.md"
+        "docs/internal/first-preview-current.md"
       ],
-      "reason": "Preserve this exact 0.3 engineering-phase source snapshot outside public navigation; protected-parent anchoring remains pending.",
-      "baseline_sha256": "c763c73b8d37d5c16d41e2b6652a86159635f142c891d707bf4f8157aee35be9"
+      "reason": "Maintain the inspected protected-parent checkpoint and later development facts with normal current-source link checks.",
+      "baseline_sha256": null
     },
     {
       "source": "docs/internal/github-issues.json",
@@ -3344,7 +3428,7 @@
     }
   ],
   "inventory_rule": "Every tracked Markdown file, every file under docs/, LICENSE, NOTICE, and contribution issue templates at the baseline commit; new structure contracts are mapped too.",
-  "routing": "Each retired guide path redirects to its preserved source section. Internal links to active source fragments keep exact heading targets. Cloudflare cannot inspect an incoming URL fragment, so an external deep link on a retired path lands at the source section. Legacy route anchors stay explicit when later prose is consolidated.",
+  "routing": "Retired guide paths redirect without replacing incoming URL fragments. Canonical pages preserve aliases for old headings; internal links resolve directly to active headings. Legacy routes and heading mappings remain explicit when later prose is consolidated.",
   "architecture_state": "overview_and_numbered_adrs_active",
   "preserved_sources": [
     {
@@ -3958,6 +4042,24 @@
       "source": "docs/preview-history.md",
       "commit": "c183d8457309c7fb0aea900a1d53fce47c511e1b",
       "sha256": "315f9fc69d8d67465ab97ab6a5e9beab73eff389cd429dfc195cc06eee6f1ae5"
+    },
+    {
+      "path": "docs/internal/acceptance/editing-0.3.md",
+      "source": "docs/acceptance/editing.md",
+      "commit": "1875994d5c4bd7946b0196aa4fe9e4679a6810d6",
+      "sha256": "3873b1c4a6ae431aac0c58b8cc723aa8e7a8ab471aba36d59d8185d3a5ab2f7a"
+    },
+    {
+      "path": "docs/internal/acceptance/startup-budget-0.3.md",
+      "source": "docs/acceptance/startup-budget.md",
+      "commit": "1875994d5c4bd7946b0196aa4fe9e4679a6810d6",
+      "sha256": "e8af738f60baf693c41c32b521fe1f1984b485f49b8cdcd62d657514a8f24a0b"
+    },
+    {
+      "path": "docs/internal/acceptance/terminal-navigation-0.3.md",
+      "source": "docs/acceptance/terminal-navigation.md",
+      "commit": "1875994d5c4bd7946b0196aa4fe9e4679a6810d6",
+      "sha256": "c9faa03029dd9d85f0b5d24f216270ae7a831f026ae718dfaaaf3e193e644e15"
     }
   ],
   "relocations": {
@@ -4000,7 +4102,7 @@
     "docs/acceptance/dependency-refresh.md": "docs/internal/acceptance/dependency-refresh.md",
     "docs/acceptance/dependency-security.md": "docs/internal/acceptance/dependency-security.md",
     "docs/acceptance/distribution-artifacts.md": "docs/internal/acceptance/distribution-artifacts.md",
-    "docs/acceptance/editing.md": "docs/internal/acceptance/editing.md",
+    "docs/acceptance/editing.md": "docs/internal/acceptance/editing-0.3.md",
     "docs/acceptance/eks-authentication.md": "docs/internal/acceptance/eks-authentication.md",
     "docs/acceptance/embedded-shell.md": "docs/internal/acceptance/embedded-shell.md",
     "docs/acceptance/enter-navigation.md": "docs/internal/acceptance/enter-navigation.md",
@@ -4039,11 +4141,11 @@
     "docs/acceptance/stable-workspace.md": "docs/internal/acceptance/stable-workspace.md",
     "docs/acceptance/standalone-executables.md": "docs/internal/acceptance/standalone-executables.md",
     "docs/acceptance/standard-resources.md": "docs/internal/acceptance/standard-resources.md",
-    "docs/acceptance/startup-budget.md": "docs/internal/acceptance/startup-budget.md",
+    "docs/acceptance/startup-budget.md": "docs/internal/acceptance/startup-budget-0.3.md",
     "docs/acceptance/table-order-performance.md": "docs/internal/acceptance/table-order-performance.md",
     "docs/acceptance/table-width-performance.md": "docs/internal/acceptance/table-width-performance.md",
     "docs/acceptance/terminal-history.md": "docs/internal/acceptance/terminal-history.md",
-    "docs/acceptance/terminal-navigation.md": "docs/internal/acceptance/terminal-navigation.md",
+    "docs/acceptance/terminal-navigation.md": "docs/internal/acceptance/terminal-navigation-0.3.md",
     "docs/acceptance/terminal-qualification.md": "docs/internal/acceptance/terminal-qualification.md",
     "docs/acceptance/ubuntu-runner-pin.md": "docs/internal/acceptance/ubuntu-runner-pin.md",
     "docs/acceptance/watch-pipeline-performance.md": "docs/internal/acceptance/watch-pipeline-performance.md",

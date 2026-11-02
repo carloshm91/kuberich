@@ -151,8 +151,8 @@ try {
   await staticPage.goto(`${origin}/www/`);
   await staticPage.getByRole("link", { name: "Get started" }).click();
   assert.match(await staticPage.getByRole("heading", { level: 1 }).textContent(), /install and upgrade/i);
-  await staticPage.getByRole("navigation", { name: "Documentation", exact: true }).getByRole("link", { name: "Command-line options", exact: true }).click();
-  assert.match(await staticPage.getByRole("heading", { level: 1 }).textContent(), /Command-line reference/);
+  await staticPage.getByRole("navigation", { name: "Documentation", exact: true }).getByRole("link", { name: "Commands and keys", exact: true }).click();
+  assert.match(await staticPage.getByRole("heading", { level: 1 }).textContent(), /Commands, keys, and launch options/);
   await noJs.close();
   assert.deepEqual(external, [], "External runtime requests");
   assert.deepEqual(failures, [], "Browser failures");

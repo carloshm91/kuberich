@@ -161,3 +161,9 @@ cluster-specific private data. Report vulnerabilities via [SECURITY.md](SECURITY
 
 Prefer original implementation and documented public APIs. Any copied third-party
 code requires compatible licensing, attribution, and a recorded source.
+
+Current verification and feature limits are recorded in the
+[development checkpoint](docs/internal/first-preview-current.md),
+[task-guide acceptance](docs/internal/acceptance/task-guides.md) and
+[architecture acceptance](docs/internal/acceptance/architecture-overview.md).
+These records remain outside user navigation and website search.
