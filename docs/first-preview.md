@@ -540,3 +540,8 @@ the output-only check. Changed application lines measured 100%; complete
 platform, package and coverage gates remain required. The original macOS
 failure and the unchanged-main negative controls are retained in
 [plugin execution evidence](acceptance/plugin-execution.md).
+
+The 326-case result and changed-line measurement above are retained historical
+evidence from the original correction. They do not qualify the refreshed
+delivery head or its newer prerequisite tree; current-parent validation is
+recorded separately before delivery.
