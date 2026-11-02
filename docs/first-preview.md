@@ -43,6 +43,25 @@ Real EKS, AKS and GKE clusters are not certified yet; those trials stay opt-in.
 
 ## Next development phase: 0.3.0
 
+The development checkout now has focused task guides and four generated
+references, with 19 content pages plus the index. Start with the
+[quick start](quickstart.md), then use the [everyday workflow](everyday-workflow.md)
+or the guide for your task. Previous guide URLs and heading fragments remain
+supported. Generated Markdown also resolves at its canonical paths in GitHub.
+The guides cover development-source limits; the installed release remains 0.2.0.
+The hosted website still needs its separately approved update.
+
+```sh
+uv run python -m scripts.site_reference
+uv run python -m scripts.validate_plan
+uv run python -m scripts.build_site --output artifacts/issue224/c2-delivery/site
+uv run python -m scripts.check_site --output artifacts/issue224/c2-delivery/site
+```
+
+The [guide acceptance record](acceptance/task-guides.md) records the tested source,
+focused checks and remaining qualification. These commands check documentation
+locally; they do not start the application or connect to a cluster.
+
 Development source adds an inline Retry panel for resource-view presentation
 failures and a local `kuberich bug-report` command. Report files are private and
 redacted; the diagnostic command does not read kubeconfig or connect to a
@@ -63,8 +82,8 @@ have dedicated regressions. The complete fast selection passed locally with
 4,588 tests and one expected macOS-only clipboard skip in 158.00 seconds.
 The [quality guide](quality.md#test-layers-and-local-parallel-runs) records the
 same-candidate serial comparison, full-run measurements and verification policy.
-Three complete parallel runs, collection equivalence and the required hosted
-checks are required before this rollout merges. The installed release is 0.2.0.
+Complete platform, artifact and coverage checks remain required for the phase.
+The installed release is 0.2.0.
 
 ```sh
 uv sync --locked --group dev
@@ -89,6 +108,68 @@ work; the installed release remains 0.2.0.
 uv run python scripts/check_private_access.py
 ```
 
+## Development: bounded live collections
+
+Development source keeps a resource view live when it reaches 10,000 retained
+rows or 64 MiB of retained payload. The view labels incomplete membership;
+updates remain tied to resource UIDs. Server queries narrow the Kubernetes
+request separately from the local `/` filter:
+
+```text
+:server label app=api
+:server field metadata.name=api-one
+:server clear
+```
+
+Generic views also offer `:server compact` for metadata-only Table rows and
+`:server full` to restore full objects. Inspection fetches the full object when
+needed. These modes preserve existing scope and identity checks. The
+[workspace guide](resource-workspace.md) explains the limits and recovery.
+
+Owned Kubernetes fixtures verified pagination, filtering, compact rows, fresh
+full-object reads, watch updates and cleanup. Large-fixture contracts check
+retention bounds; they do not certify sustained throughput, process RSS or a
+long-running soak. This behavior is not in the installed 0.2.0 release.
+
+## Development: kubeconfig compatibility
+
+Development source supports explicit Basic credentials and empty optional
+kubeconfig connection fields. Reads, guarded writes and delegated tools keep
+the same captured identity. Known unsupported fields receive an actionable
+message. For legacy OIDC, an explicit offline command generates a reviewable
+exec-plugin migration fragment without copying tokens or changing kubeconfig:
+
+```sh
+uv run kuberich kubeconfig oidc-migration --help
+```
+
+The command above was checked without connecting to a cluster. The
+[context guide](context-sessions.md) documents migration, supported fields and
+remaining limits. Captured/background plugin output masks known prepared Basic
+credentials; foreground output goes directly to the terminal.
+
+Local TLS/API, helper and synthetic provider-shaped contracts have been checked.
+Actual EKS, AKS, GKE, Teleport and tailnet accounts are not certified. Full native
+and phase qualification remains required. The installed release is still 0.2.0.
+
+## Development: previous command name
+
+The 0.3 development source keeps `kubetrol` as a deprecated command. It prints
+one fixed notice to stderr naming `kuberich` and the planned 0.4.0 removal;
+stdout and exit codes keep the canonical CLI behavior. The package, imports
+and new default paths use KubeRich.
+
+```sh
+uv run kuberich --version
+uv run kubetrol --version
+```
+
+These commands were checked against the development source; its version remains
+0.2.0 until the release version changes. The published 0.2.0 package does not
+include the new warning. Existing preference/environment/log compatibility stays
+supported. Explicit preference migration keeps previous files and reports
+creation only once; see [configuration](configuration.md#legacy-preview-compatibility).
+
 ## Development: one phase verification command
 
 The development checkout now provides a coordinator for the existing checks:
@@ -103,6 +184,9 @@ report without starting tests or clusters. A local run executes the existing
 checks once and records their source, original logs, cleanup and remaining
 native/repetition requirements. Read the [phase verification guide](releases.md#reproduce-phase-verification)
 before running the full command. The installed application remains 0.2.0.
+
+Failed canonical release-candidate audits now retain their own partial output
+separately for diagnosis. The original failure still fails verification.
 
 ## Development: runtime latency observations
 
@@ -475,3 +559,8 @@ the output-only check. Changed application lines measured 100%; complete
 platform, package and coverage gates remain required. The original macOS
 failure and the unchanged-main negative controls are retained in
 [plugin execution evidence](acceptance/plugin-execution.md).
+
+The 326-case result and changed-line measurement above are retained historical
+evidence from the original correction. They do not qualify the refreshed
+delivery head or its newer prerequisite tree; current-parent validation is
+recorded separately before delivery.

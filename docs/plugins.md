@@ -103,8 +103,8 @@ external tool's later server requests atomic.
 
 ## Select a resource
 
-The development source fixes plugin review in custom-resource views opened with
-an explicit group/version. `:widgets.example.test/v1` matches the exact plugin
+In custom-resource views, plugins match the selected API group and version.
+`:widgets.example.test/v1` matches the exact plugin
 scope `example.test/v1/widgets`; navigation syntax does not change the canonical
 API resource name. Wait for the current resource and version to load before
 Review. The selected UID and group/version remain part of the review guards.
@@ -146,10 +146,13 @@ not a sandbox or proof of a tool's behavior. Interactive Review and Run remain
 separate even for a trusted read-only definition.
 
 Collected output escapes terminal controls and masks recognized credentials and
-known private input/token values. Display stops at 16,384 characters with a
-notice; kept sanitized output is limited to 65,536 characters. Arbitrary program
-output can contain secrets the application cannot recognize. Do not ask plugins
-to print credentials.
+known private input/token values. Prepared Basic passwords, `username:password`
+pairs, Basic headers, and their base64 values are masked in stdout and stderr.
+An ordinary username stays visible outside its credential pair. Display stops at
+16,384 characters with a notice; kept sanitized output is limited to 65,536
+characters. Foreground output goes directly to your terminal without these
+redaction or byte limits. Arbitrary program output can contain secrets the
+application cannot recognize. Do not ask plugins to print credentials.
 
 K9s plugin YAML is not a drop-in format. Translate fields and variables explicitly
 and check the resulting definition; unsupported fields fail validation rather

@@ -1905,8 +1905,18 @@
       ],
       "reason": "Check the generated lookup against current declarations in CI; render its canonical reference route.",
       "baseline_sha256": null
+    },
+    {
+      "source": "docs/acceptance/task-guides.md",
+      "audience": "development acceptance",
+      "action": "keep",
+      "destinations": [
+        "docs/acceptance/task-guides.md"
+      ],
+      "reason": "Retain measured task-guide, generated-reference and redirect acceptance outside user navigation.",
+      "baseline_sha256": null
     }
   ],
   "inventory_rule": "Every tracked Markdown file, every file under docs/, LICENSE, NOTICE, and contribution issue templates at the baseline commit; new structure contracts are mapped too.",
-  "routing": "Each retired guide path redirects to its preserved source section. Internal links to active source fragments keep exact heading targets. Cloudflare cannot inspect an incoming URL fragment, so an external deep link on a retired path lands at the source section. Legacy route anchors stay explicit when later prose is consolidated."
+  "routing": "Retired guide paths redirect without replacing incoming URL fragments. Canonical pages preserve aliases for old headings; internal links resolve directly to active headings. Legacy routes and heading mappings remain explicit when later prose is consolidated."
 }

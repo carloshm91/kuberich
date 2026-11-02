@@ -3,6 +3,7 @@
 import json
 import shutil
 import sys
+from uuid import uuid4
 
 import pytest
 
@@ -108,7 +109,20 @@ def canonical_release(tmp_path_factory):
     )
     sha = run(["git", "rev-parse", "HEAD"], source).stdout.strip()
     run(["uv", "build", "--python", sys.executable], source, 120)
-    generate(source / "artifacts/security", source / "dist", root=source)
+    output = source / "artifacts/security"
+    try:
+        generate(output, source / "dist", root=source)
+    except BaseException as failure:
+        try:
+            retained = ROOT / "artifacts/security/canonical-release-failures" / uuid4().hex
+            retained.mkdir(mode=0o700, parents=True)
+            if output.is_dir():
+                for path in output.iterdir():
+                    if path.is_file() and not path.is_symlink():
+                        shutil.copy2(path, retained / path.name)
+        except BaseException:
+            raise failure from None
+        raise
     candidates(source, sha, "1.0.0rc1", source)
     bundle = tmp_path / "release-candidate"
     prepared = prepare(source, bundle, sha, "1.0.0rc1", root=source)
