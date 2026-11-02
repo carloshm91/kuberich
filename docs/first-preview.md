@@ -48,7 +48,9 @@ and [decision index](adr/README.md). The overview describes the implemented laye
 resource data flow, ownership and security boundaries; migrated decisions and their
 unchanged historical source remain separate from current implementation notes.
 The [architecture acceptance record](acceptance/architecture-overview.md) lists
-the source boundary, focused checks and qualification limits.
+the source boundary, focused checks and qualification limits. Its source-scoped
+local verification passed 74 existing controls plus applicable static checks;
+the exact historical archive remains unchanged. Final PR qualification is separate.
 
 ```sh
 uv run python -m pytest tests/quality/test_architecture_docs.py

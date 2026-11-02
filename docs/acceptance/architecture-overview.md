@@ -42,6 +42,21 @@ uv run python -m scripts.build_site --output artifacts/issue225/site
 uv run python -m scripts.check_site --output artifacts/issue225/site
 ```
 
+## Measured local checks
+
+On signed integration `f285c3248897e5df8e6473e554791e226f861265`, the 74 existing
+architecture/disposition/link/plugin-census checks above passed in 14.074 seconds,
+with no failures, errors or skips. All 927 tracked inputs stayed unchanged during
+the ten recorded local commands, and every owned group was drained and reaped.
+The current workflow's strict union passed over 234 source files; the seven
+site/documentation scripts also passed strict typing. Ruff, formatting over 843
+files, the public-boundary audit, generated-reference comparison, module planning
+validator and whitespace checks passed. The planning validator checked 808 local
+Markdown links.
+
+This result belongs to that integration source. The following evidence-only
+update adds these observations; it does not change its test/tool or application
+bytes. Final local site generation and link/source checks use the final checkout.
 Local command logs, XML, actual source comparisons and build/check receipts are
 retained under the issue's ignored artifact directory. Required PR checks still
 qualify the eventual delivered head; local documentation checks establish no new
