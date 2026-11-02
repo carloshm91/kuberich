@@ -858,3 +858,37 @@ N/A and no provider, performance, installation or native qualification is inferr
 Receipts are under `artifacts/issue228/protected-614f/`. The parent watch-open
 failure remains under diagnosis, and fresh complete current-head hosted/native
 CI and public delivery remain pending.
+
+## Reviewed test-contract prerequisites
+
+The automatic-main run for protected `614f3f8` terminated as FAILURE: 20 jobs,
+16 success, three failure and one skip. Two original source shards failed, and
+the aggregate gate failed. The originals retain the watch server-interval
+`[0.1-1]` HTTP-open timeout and the aggregate source-picker retired/table-count
+assertion. The original controller comparison was false and close metadata was
+missing; later controls do not establish a unique historical cause or a product
+fix. Canonical failures and those diagnostic limits remain retained.
+
+Reviewed child `36e01250d1242f230038872acc8ed9279ac92b0e` changes only the watch
+interval test and its public aiohttp imports. It checks all four actual production
+interval/request/ClientTimeout values at the public HTTP-call boundary, including
+None establishment, EOF and cleanup. Existing real-HTTP deadline, renewal and
+cancellation controls remain byte-exact; no product API, budget or runtime code
+changes. Its source-scoped watch/pipeline cohort passed 84 cases in 13.56 seconds
+with static checks; those helper results are not a repeated campaign here.
+
+Reviewed child `f0a25faf28abdc89a486ce1c7cdaaca3c13903be` adds exactly one wait
+for retired ownership 64 AND the mounted picker table's 67 rows, immediately
+before the original assertion. Every assertion, 34-cycle loop, 0.3-second pause,
+helper budget, UID/Space/Escape check and production byte stays unchanged. The
+same-public-gate fixed comparison passed one case in 5.54 seconds; the four-file
+aggregate cohort passed 138 cases with Ruff/format/private and 195-file helper
+strict checks. The controller/metadata limits above remain part of that evidence.
+
+Both reviewed children are merged normally into the fresh delivery branch.
+They are explicit necessary TEST-ONLY exceptions to otherwise exact protected-
+parent preservation. Original 95-case documentation, 84-case watch/pipeline and
+138-case aggregate receipts remain separate, source-scoped and unsummed. No new
+application coverage, runtime qualification or unique-cause claim follows from
+these controls. The final combined selection, actual workflow strict union and
+fresh complete current-head hosted/native qualification remain pending.
