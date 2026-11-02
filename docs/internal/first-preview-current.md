@@ -961,3 +961,62 @@ helper's strict/static input files are byte-identical after this checkpoint-only
 integration. The earlier 84-case cohort and original failed control remain
 separate source-scoped records. Fresh complete current-head hosted/native CI
 is still required before protected delivery; no unchanged CI attempt was retried.
+
+## Documentation quality and current media checkpoint
+
+Protected source `af6beb02318a31ed196e4bd880e563f23659baf9` delivered the
+contributor-policy changes and scoped watch/picker test corrections with all 27
+pull-request jobs, four native runners and matching Repository/DCO checks.
+Its automatic-main [Quality run 41494869111](https://github.com/carloshm91/kuberich/actions/runs/41494869111)
+was cancelled on attempt one: Fast job `125447165896` reached the unchanged
+15-minute deadline at 99% without naming the remaining node. Of six instantiated
+jobs, one passed, one was cancelled, the gate failed and three were skipped;
+no native qualification ran. Repository run `41494869103` passed. Original
+artifact `13167985028` remains intact (SHA-256
+`b742493b5010341b678191266d4156abe0b60983f636dd43015548693ee756e8`).
+The retained four controlled children completed and drained, but this does not
+identify every unfinished test or establish a unique cause. The next required
+run keeps the selection, workers, controls and deadline, adding public verbose
+node logging and a nonfatal 60-second Python stack dump for diagnosis. No
+unchanged CI attempt is retried, and no product hang fix is claimed.
+
+Frozen documentation source `35c280aa131ddabcd9313159902e9754920afe61` passed
+246 focused documentation, capture, site, link/history, contributor, architecture
+and CI-policy cases in 95.11 seconds, with zero failures, errors or skips. Ruff,
+formatting (861 files), the actual workflow strict union (234 files plus nine
+documentation modules), private-access checks, generated references and the
+module plan passed. The 340 disposition rows, 105 immutable payloads/origins,
+three operational source receipts and 100 relocation aliases remain unchanged.
+Production code and its coverage inventory are unchanged; changed production
+coverage is not applicable.
+
+Required source/link/navigation/publication checks passed for 20 user pages and
+885 local Markdown links. The retained report contains four prose advisories and
+15 bounded public HTTPS observations: 14 reachable URLs and one 301 marked for
+review. Redirects and external fragments were not followed or certified.
+Per-page length, STYLE and Markdown observations remain advisory for 0.x.
+
+Both images were freshly rendered from clean committed source
+`fba017cb540efc3b7ae940c5272081c7aa61411b`, application tree
+`cbc45d9f9cf427c99674dc7c612eddd4f90ecec6`, version 0.2.0. The command used
+no historical image import and no ambient kubeconfig. Synthetic loopback data
+produced five resource requests and one log request; redaction, released client
+and API, closed pool/stream, zero active handlers and removed temporary directory
+were checked before writing the images. Both vectors and the landing rendering
+were visually reviewed. Earlier recorded media remains historical in Git.
+
+Fresh preview/public builds and checks passed with 43/23 HTML pages and
+1,508/799 checked links/assets. The unchanged browser verifier passed 43 desktop
+and 43 mobile pages in 80.135 seconds: no accessibility violations, browser
+failures or external requests, with keyboard, no-JavaScript navigation, clipboard
+success/denial and overflow controls intact. The preview browser run does not
+claim public-host navigation or screen-reader certification. Its process was
+reaped and process group absent; owned browser/server cleanup completed. Locked
+browser-tool audit reported zero vulnerabilities.
+
+Canonical local receipts are in `artifacts/issue229/local/`: `tests.xml`,
+`static.json`, `site-commands.json`, `browser-command.json` and `verification.json`.
+The retained advisory/browser reports are under `artifacts/site-qa/`; actual
+capture inputs/results are under `artifacts/issue229/capture-fba017c/` and the
+tracked media inventory. Fresh complete current-head hosted/platform CI remains
+pending. Source version stays 0.2.0; no publication or release is performed.

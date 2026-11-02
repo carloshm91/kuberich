@@ -111,22 +111,26 @@ missing target anchors, unexpected pages, changed routes and source drift.
 ## Media
 
 `assets/media.json` identifies and hashes the actual rendered SVGs. The main
-workspace uses original synthetic resources through the actual local HTTP client
-and Textual UI. The logs screenshot comes from the qualified owned kind rehearsal;
-its cluster was deleted. Both are labeled honestly in the page. Rich's external
-font declarations are removed; vectors use local monospace fallbacks. These are
-actual captures, not reconstructed product mockups.
+workspace and logs use synthetic resources through the actual local HTTP client
+and Textual UI. Both screenshots come from the same disposable loopback API;
+neither needs a cluster or customer data. Rich's external font declarations are
+removed; vectors use local monospace fallbacks. These are actual application
+renders, not reconstructed product mockups.
 
-To capture new media, use a new directory and an available owned-kind screenshot:
+To capture both images, use a new directory:
 
 ```sh
-env -u NO_COLOR uv run python -m scripts.capture_site --output /absolute/path/to/new-media --logs-source /absolute/path/to/owned-kind-logs.svg
+env -u NO_COLOR uv run python -m scripts.capture_site --output /absolute/path/to/new-media
 ```
 
 Review the rendered data and inventory before replacing the three corresponding
-tracked assets. The producer uses only owned loopback fixtures, never ambient
-kubeconfig. The historical source screenshot must be available to reproduce it;
-its committed digest alone does not reconstruct missing original evidence.
+tracked assets. The producer refuses dirty or foreign application sources and records
+the exact commit/runtime tree/version, redaction and stream/client/handler cleanup. The producer uses only its loopback fixture, never ambient
+kubeconfig, and checks log redaction and stream/client shutdown. The optional
+`--logs-source /absolute/path/to/previous.svg` imports an existing offline SVG;
+its inventory explicitly records that it was not regenerated and that the
+producer cannot establish its source or privacy status. Review such an image
+separately before tracking it; a digest does not reconstruct missing evidence.
 
 See [hosting and release gates](../docs/website.md) and
 [measured acceptance](../docs/internal/acceptance/initial-website.md).

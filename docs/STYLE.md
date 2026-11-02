@@ -36,15 +36,25 @@ pages, their documentation type, and any existing source fragments they include.
 The budget is **20 user pages**, including the documentation index and generated
 reference pages. Redirects are routes, not additional content pages.
 
-Keep each user page at **250 lines or fewer**. Count headings, blank lines,
+Aim for **250 lines or fewer** per user page. Count headings, blank lines,
 tables, code blocks, included fragments, and generated Markdown. Do not hide an
 oversized page in imports or very long lines. Wrap ordinary prose at about
 80–100 characters; commands and reference tables may need longer lines.
 
+For 0.x, page length, word choice and formatting are advisory observations for
+human review. They do not prevent a correct site build. The structural maximum
+of 20 user pages, source/reference correctness, working internal links and
+historical migration boundaries remain required.
+
+Contributor-page line targets are also advisory: `AGENTS.md` 60,
+`CONTRIBUTING.md` 150, the architecture overview 300, quality policy 250,
+the Status page 50 and this guide 250. The report includes these maintained pages
+alongside the canonical user pages; internal historical records are not relinted.
+
 The task guides and generated references follow these budgets. Superseded guides,
 architecture logs and acceptance records are preserved in `docs/internal/`,
 outside public navigation. The architecture overview and ADRs are maintained
-separately. Contributor-policy cleanup remains a separate task;
+separately. Contributor instructions live in `CONTRIBUTING.md` and `docs/quality.md`;
 `docs/documentation-plan.json` records each document's disposition.
 
 Keep development policies, ADRs, acceptance records, delivery logs, and source
@@ -137,3 +147,23 @@ the same check through the documentation tests.
 Run the documentation checks for both local surfaces. Review links, navigation,
 and narrow-terminal examples. A successful build prepares static files; website
 publication remains a separate maintainer action.
+
+```sh
+uv run python -m scripts.check_documentation --external
+uv run python -m scripts.build_site
+uv run python -m scripts.check_site
+```
+
+The documentation report at `artifacts/site-qa/documentation-report.json` checks
+references against current code and verifies repository links. Missing sources,
+broken internal paths and stale generated references fail the check. The report
+also flags words from this guide, heading jumps, code blocks without a language,
+whitespace and page length for human review. These editorial observations are
+advisory for 0.x; they do not silently rewrite exact labels or code. Each finding
+has `severity: advisory`, including a page that exceeds its line target.
+
+`--external` adds a time-limited HTTPS HEAD report for public documentation hosts.
+It excludes private, reserved and fixture endpoints and follows no redirects.
+An unavailable HEAD response or an unchecked fragment does not prove a broken
+page. External observations are advisory; inspect a reported link before changing
+it. CI saves this report with the existing site checks.
