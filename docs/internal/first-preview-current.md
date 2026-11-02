@@ -1118,8 +1118,9 @@ configuration, installed navigation/shell and uninstall assertions remain.
 The partial 5fa sustained workload was explicitly cancelled after 470 seconds
 for this further source correction. Its source stayed unchanged and owned CLI,
 API and process groups drained. It is a cancelled diagnostic, not a completed
-30-minute observation. The fixture correction must publish the complete owned
-PID atomically while preserving its real descendant, unrelated-process,
-cancellation, forced-termination and cleanup controls. Combined checks and
+30-minute observation. The fixture correction now publishes the complete owned
+PID atomically. Both existing control variants passed on CPython 3.13.12 with
+their real descendant, unrelated-process, cancellation, forced-termination and
+cleanup assertions unchanged; command owners drained. Combined checks and
 fresh final-source qualification remain pending. No product, workflow, deadline,
 coverage or publication policy is relaxed.
