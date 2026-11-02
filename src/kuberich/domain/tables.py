@@ -78,6 +78,8 @@ def _columns(value: Any) -> tuple[ServerColumn, ...]:
 def _cell(value: Any, kind: str) -> ServerCell:
     if value is None:
         return None
+    if kind == "string" and type(value) is int and -(2**63) <= value < 2**63:
+        return str(value)
     valid = (
         kind in {"string", "date"} and isinstance(value, str) and len(value) <= MAX_CELL_CHARACTERS
     ) or (kind == "boolean" and type(value) is bool)
