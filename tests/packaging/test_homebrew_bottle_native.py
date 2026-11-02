@@ -16,12 +16,12 @@ from scripts.homebrew import BOTTLE_BLOCK, FORMULA, bottle_records, prepare, wit
 from tests.support.distribution import PROJECT, ROOT, clean_environment, run
 from tests.support.navigation import terminal_navigation
 from tests.support.shell import terminal_shell
-from tests.support.source_candidate import source_candidate
-
-# The reviewed public tap commit that published the source-only 0.1.0 formula.
-PUBLISHED = "ec62f339cdb71bf379724fcb2753326dd26ad570"
-PUBLISHED_VERSION = "0.1.0"
-TAP_URL = "https://github.com/kuberich/homebrew-tap"
+from tests.support.source_candidate import (
+    published_baseline,
+    published_bottle_pour,
+    published_tap,
+    source_candidate,
+)
 
 
 @pytest.mark.skipif(
@@ -61,7 +61,8 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
     bottles.mkdir()
     records, timings = [], {}
     current = Version(PROJECT["version"])
-    version = str(current) if current > Version(PUBLISHED_VERSION) else "0.2.0rc1"
+    baseline = published_baseline(str(current))
+    version = str(current)
 
     def execute(arguments, timeout=180, phase=None, cwd=outside):
         command = [brew, *arguments]
@@ -116,10 +117,8 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
         prepared = tmp_path / "prepared"
         prepare(bundle, source, prepared)
         candidate = (prepared / FORMULA).read_text()
-        tap.parent.mkdir(parents=True, exist_ok=True)
-        run(["git", "clone", "--quiet", TAP_URL, str(tap)], outside)
-        run(["git", "checkout", "--quiet", "-B", "main", PUBLISHED], tap)
-        assert f"# Source version: {PUBLISHED_VERSION}\n" in (tap / FORMULA).read_text()
+        baseline = published_tap(tap, baseline, bottled=True)
+        (output / f"bottle-{target}-published-formula.rb").write_text((tap / FORMULA).read_text())
         if trusts:
             # Trust only this owned formula for commands that load third-party definitions.
             execute(["trust", "--formula", "kuberich/tap/kuberich"])
@@ -148,9 +147,14 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
         execute(["uninstall", "--force", "kuberich/tap/kuberich"])
 
         # Install the published release exactly as a user did, then upgrade to the bottle.
-        run(["git", "reset", "--quiet", "--hard", PUBLISHED], tap)
-        execute(["install", "kuberich/tap/kuberich"], 1800, "published_source_install")
-        assert installed() == f"kuberich {PUBLISHED_VERSION}\n"
+        run(["git", "reset", "--quiet", "--hard", baseline["tap_commit"]], tap)
+        installed_baseline = execute(
+            ["install", "kuberich/tap/kuberich"], 1800, "published_bottle_install"
+        )
+        baseline_pour = published_bottle_pour(
+            baseline, installed_baseline.stdout + installed_baseline.stderr
+        )
+        assert installed() == f"kuberich {baseline['version']}\n"
         (tap / FORMULA).write_text(with_bottles(candidate, bottle, root_url))
         commit("test: owned unpublished bottle formula")
         execute(["style", "kuberich/tap/kuberich"])
@@ -160,7 +164,7 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
         assert re.search(rf"Pouring kuberich--?{re.escape(version)}\.{tag}\.bottle\.tar\.gz", log)
         # A poured bottle downloads no Python resources and compiles nothing.
         assert "Resource kuberich--" not in log and "files.pythonhosted.org" not in log
-        assert (prefix / "Cellar/kuberich" / PUBLISHED_VERSION).is_dir()
+        assert (prefix / "Cellar/kuberich" / baseline["version"]).is_dir()
         assert installed() == f"kuberich {version}\n"
         execute(["test", "kuberich/tap/kuberich"])
         binary = str(prefix / "bin/kuberich")
@@ -207,7 +211,9 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
                 "source_commit": run(["git", "rev-parse", "HEAD"], ROOT).stdout.strip(),
                 "candidate_commit": sha,
                 "candidate_version": version,
-                "published_tap_commit": PUBLISHED,
+                "published_tap_commit": baseline["tap_commit"],
+                "published_baseline": baseline,
+                "published_baseline_pour": baseline_pour,
                 "target": target,
                 "os": platform.platform(),
                 "python": sys.version,
