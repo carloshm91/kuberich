@@ -45,7 +45,14 @@ async def test_incomplete_marker_survives_local_filter_empty_state_and_selection
             assert "2 retained pods" in str(app.status.content)
             app.presenter.notice("Selection reviewed")
             app.filter_input.value = "no-such-retained-pod"
-            await wait_for(lambda: app.resources.row_count == 0)
+            # Row removal can yield before the completed render publishes its labels.
+            await wait_for(
+                lambda: (
+                    app.resources.row_count == 0
+                    and "No retained pods match this filter"
+                    in str(app.query_one("#empty-title").content)
+                )
+            )
             assert "INCOMPLETE" in str(app.query_one("#resource-view").border_title)
             assert "No retained pods match this filter" in str(
                 app.query_one("#empty-title").content

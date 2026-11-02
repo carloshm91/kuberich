@@ -1,6 +1,7 @@
 """A report cannot turn incomplete work or a failed owned process into qualification."""
 
 import copy
+import errno
 import json
 import os
 import signal
@@ -9,6 +10,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 import yaml
@@ -40,6 +42,24 @@ def test_default_command_runs_all_layers_once_with_existing_independent_coverage
     assert not any(item in command for item in ("-m", "-k", "fast", "tests/unit"))
     assert f"--basetemp={tmp_path / 'external/tests-pytest'}" in command
     by_name = {stage.name: stage.command for stage in stages}
+    assert by_name["private-access"] == (
+        "uv",
+        "run",
+        "python",
+        "scripts/check_private_access.py",
+    )
+    assert by_name["startup"] == (
+        "uv",
+        "run",
+        "python",
+        "-m",
+        "scripts.check_startup",
+        "--output",
+        str(tmp_path / "out/startup"),
+    )
+    names = [stage.name for stage in stages]
+    assert names.index("private-access") < names.index("tests")
+    assert names.index("startup") < names.index("tests")
     assert by_name["types"] == catalog.type_command(ROOT)
     assert by_name["runtime-controls"][-1] == "scripts.merge_runtime_coverage"
     assert by_name["coverage"][-2:] == ("scripts/check_coverage.py", "coverage.json")
@@ -365,7 +385,15 @@ def test_queued_quality_collection_does_not_prevent_independent_repository_colle
         "source": {"commit": "a" * 40},
         "gates": [
             driver.pending(name)
-            for name in ("tests", "native-platforms", "plan", "repository", "repetitions")
+            for name in (
+                "private-access",
+                "startup",
+                "tests",
+                "native-platforms",
+                "plan",
+                "repository",
+                "repetitions",
+            )
         ],
     }
 
@@ -399,6 +427,8 @@ def test_queued_quality_collection_does_not_prevent_independent_repository_colle
     assert report["hosted"]["quality"]["status"] == "queued"
     statuses = {gate["name"]: gate["status"] for gate in report["gates"]}
     assert statuses == {
+        "private-access": "pending",
+        "startup": "pending",
         "tests": "pending",
         "native-platforms": "pending",
         "plan": "passed",
@@ -414,6 +444,8 @@ def test_collector_uses_full_matrix_without_inventing_publication_repetitions(mo
         "gates": [
             driver.pending(name)
             for name in (
+                "private-access",
+                "startup",
                 "tests",
                 "native-platforms",
                 "owned-kind",
@@ -437,6 +469,8 @@ def test_collector_uses_full_matrix_without_inventing_publication_repetitions(mo
     driver.collect(report, 42, None)
     statuses = {gate["name"]: gate["status"] for gate in report["gates"]}
     assert statuses == {
+        "private-access": "passed",
+        "startup": "passed",
         "tests": "passed",
         "native-platforms": "passed",
         "owned-kind": "passed",
@@ -914,3 +948,35 @@ finally:
     observation = json.loads((tmp_path / "result.json").read_text())
     assert observation["unrelated_alive"] and observation["descendant_reaped"]
     assert observation["gate"]["returncode"] == 0 and observation["gate"]["group_drained"]
+
+
+@pytest.mark.parametrize("group_state", ["absent-after-poll", "live", "denied"])
+def test_darwin_group_absence_requires_owned_poll_and_confirmed_esrch(
+    checkout, tmp_path, monkeypatch, group_state
+):
+    runner = owned_runner(checkout, tmp_path, [catalog.Stage("darwin", ())])
+    polls, probes = [], []
+    owned_pid = os.getpid() + 100000
+
+    def poll_owned():
+        polls.append(owned_pid)
+        return 0
+
+    def probe(group, value):
+        probes.append((group, value))
+        assert group == owned_pid
+        if not polls or group_state == "denied":
+            raise PermissionError(errno.EPERM, "Controlled XNU group denial")
+        if group_state == "absent-after-poll":
+            raise ProcessLookupError(errno.ESRCH, "Controlled reaped group absence")
+
+    runner.current = SimpleNamespace(pid=owned_pid, poll=poll_owned)
+    monkeypatch.setattr(driver, "sys", SimpleNamespace(platform="darwin"))
+    monkeypatch.setattr(driver, "os", SimpleNamespace(killpg=probe, getpgrp=os.getpgrp))
+    if group_state == "absent-after-poll":
+        assert runner.signal_group(0) is False
+        assert polls
+    else:
+        with pytest.raises(PermissionError, match="Controlled XNU group denial"):
+            runner.signal_group(0)
+    assert probes and all(group == owned_pid and value == 0 for group, value in probes)
