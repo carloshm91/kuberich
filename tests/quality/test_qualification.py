@@ -1,6 +1,7 @@
 """A report cannot turn incomplete work or a failed owned process into qualification."""
 
 import copy
+import errno
 import json
 import os
 import signal
@@ -9,6 +10,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 import yaml
@@ -946,3 +948,35 @@ finally:
     observation = json.loads((tmp_path / "result.json").read_text())
     assert observation["unrelated_alive"] and observation["descendant_reaped"]
     assert observation["gate"]["returncode"] == 0 and observation["gate"]["group_drained"]
+
+
+@pytest.mark.parametrize("group_state", ["absent-after-poll", "live", "denied"])
+def test_darwin_group_absence_requires_owned_poll_and_confirmed_esrch(
+    checkout, tmp_path, monkeypatch, group_state
+):
+    runner = owned_runner(checkout, tmp_path, [catalog.Stage("darwin", ())])
+    polls, probes = [], []
+    owned_pid = os.getpid() + 100000
+
+    def poll_owned():
+        polls.append(owned_pid)
+        return 0
+
+    def probe(group, value):
+        probes.append((group, value))
+        assert group == owned_pid
+        if not polls or group_state == "denied":
+            raise PermissionError(errno.EPERM, "Controlled XNU group denial")
+        if group_state == "absent-after-poll":
+            raise ProcessLookupError(errno.ESRCH, "Controlled reaped group absence")
+
+    runner.current = SimpleNamespace(pid=owned_pid, poll=poll_owned)
+    monkeypatch.setattr(driver, "sys", SimpleNamespace(platform="darwin"))
+    monkeypatch.setattr(driver, "os", SimpleNamespace(killpg=probe, getpgrp=os.getpgrp))
+    if group_state == "absent-after-poll":
+        assert runner.signal_group(0) is False
+        assert polls
+    else:
+        with pytest.raises(PermissionError, match="Controlled XNU group denial"):
+            runner.signal_group(0)
+    assert probes and all(group == owned_pid and value == 0 for group, value in probes)
