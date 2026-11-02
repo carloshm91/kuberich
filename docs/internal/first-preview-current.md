@@ -1094,3 +1094,32 @@ correction. Final combined preparation checks follow on the integrated candidate
 full exact-main qualification, three contract/owned-cluster rounds and a fresh
 30-minute sustained workload remain pending. No runtime, dependency, workflow,
 runner, permission, numeric budget or publication policy changed.
+
+## 0.3.0 qualification: Python upgrades and fixture publication
+
+Protected `5fa8641153ed77895490d8d0b1f682eae4cee8f5` merged preparation
+through PR #305 after all 27 PR quality jobs, Repository/DCO and six native
+Homebrew jobs passed. Its automatic main run passed all 22 jobs, but the
+[manual full-matrix run](https://github.com/carloshm91/kuberich/actions/runs/41535651646)
+failed. A descendant-control collector read a created-but-empty PID file;
+its later reaping assertion failed. The aggregate failed and the application
+matrix did not run. All four native builds passed, but neither they nor the
+automatic run qualify the failed manual matrix. The original failure is retained.
+
+The installation review also found that Python-manager upgrades covered only a
+private RC with identical application payload. Source
+`29ae374a9c54320f4ba2dfde9e5adce2696467e3` adds the actual published 0.2.0
+wheel while retaining both RC cases. All four real uv/pipx upgrades and 11 offline
+pin, metadata and dependency controls passed locally on Linux CPython 3.12.12.
+The old wheel's SHA-256 matches official PyPI and GitHub records; its actual
+payload differs from the current 0.3.0 wheel. Existing normal no-op/upgrade,
+configuration, installed navigation/shell and uninstall assertions remain.
+
+The partial 5fa sustained workload was explicitly cancelled after 470 seconds
+for this further source correction. Its source stayed unchanged and owned CLI,
+API and process groups drained. It is a cancelled diagnostic, not a completed
+30-minute observation. The fixture correction must publish the complete owned
+PID atomically while preserving its real descendant, unrelated-process,
+cancellation, forced-termination and cleanup controls. Combined checks and
+fresh final-source qualification remain pending. No product, workflow, deadline,
+coverage or publication policy is relaxed.
