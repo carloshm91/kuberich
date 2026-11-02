@@ -7,7 +7,9 @@ import pytest
 from aiohttp import web
 
 from kuberich.domain.views import ViewStatus
+from kuberich.services.pods import PodProjection
 from kuberich.services.resources import ResourceReader
+from kuberich.ui import app as app_module
 from scripts.standard_kind import presentation_owners
 from scripts.verify_custom_resources_kind import refresh_browser
 from tests.support.connections import catalog_fixture, namespaces
@@ -19,8 +21,11 @@ from tests.ui.test_navigation import make_app
 
 @pytest.mark.asyncio
 async def test_public_refresh_waits_real_operation_and_observes_finished_render_subscription_owners(
-    tmp_path,
+    tmp_path, monkeypatch
 ):
+    projection = PodProjection()
+    monkeypatch.setattr(app_module, "PodProjection", lambda: projection)
+
     async def ns(request):
         return namespaces("team")
 
@@ -39,6 +44,7 @@ async def test_public_refresh_waits_real_operation_and_observes_finished_render_
                 assert observations.tasks and renders.tasks
                 assert all(not task.done() for task in (*observations.tasks, *renders.tasks))
                 assert app.views.renderer.active_count == 1
+                assert projection.cached_count == 1
                 assert app.workspace.ownership.subscription_count == 1
                 entered, release = asyncio.Event(), asyncio.Event()
                 original = ResourceReader.discover
@@ -64,5 +70,6 @@ async def test_public_refresh_waits_real_operation_and_observes_finished_render_
         assert observations.tasks and all(task.done() for task in observations.tasks)
         assert renders.tasks and all(task.done() for task in renders.tasks)
         assert app.views.renderer.active_count == 0
+        assert projection.cached_count == 0
         assert app.workspace.ownership.subscription_count == 0
         assert app.workspace.ownership.close_complete and app.sessions.client is None
