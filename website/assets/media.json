@@ -1,21 +1,28 @@
 {
-  "application_tree": "2946d2f627df18f456c81149188545cdb66a786f",
-  "application_version": "0.1.0",
-  "capture_command": "env -u NO_COLOR uv run python -m scripts.capture_site --output NEW_MEDIA_DIRECTORY --logs-source artifacts/ui/logs-owned-kind.svg",
+  "application_tree": "cbc45d9f9cf427c99674dc7c612eddd4f90ecec6",
+  "application_version": "0.2.0",
+  "capture_command": "env -u NO_COLOR uv run python -m scripts.capture_site --output NEW_MEDIA_DIRECTORY",
+  "cleanup": {
+    "application_client_released": true,
+    "client_api_released": true,
+    "client_pool_closed": true,
+    "log_stream_handler_closed": true,
+    "loopback_api_context_closed": true,
+    "resource_handlers_active": 0,
+    "temporary_directory_removed": true
+  },
   "external_fonts_removed": true,
   "images": {
     "logs.svg": {
-      "original_sha256": "94bbc14e30925212a0bda864b10db2707b8790016ba6707130579d8a9e8132eb",
-      "qualification": "docs/internal/acceptance/workload-checkpoint.md",
-      "sha256": "ac1ef6ff3b42fc248e2fb5df3cbf1e22630bc92bfbbeaa84de9b67d85f455ad9",
-      "source": "Qualified owned-kind logs screenshot retained in artifacts/ui; cluster deleted",
+      "sha256": "d5e018ea81f8180b8284ac6eace88b3a6648f438f5fa12a41891f397de46a8b6",
+      "source": "Actual Textual log viewer against owned loopback API with synthetic logs",
       "terminal_cells": [
         100,
         30
       ]
     },
     "workspace.svg": {
-      "sha256": "93bbf0d70e475d8b735736ae8f571aad090bc3003710b6b9dc1bc3e45ba9f23a",
+      "sha256": "d586f7c0049762029d711798a256da36d314085226720417537d7dbf7dcd1267",
       "source": "Actual Textual render against owned loopback API with synthetic pods",
       "terminal_cells": [
         120,
@@ -23,5 +30,11 @@
       ]
     }
   },
-  "private_data_used": false
+  "imported_application_matches_source": true,
+  "owned_log_requests": 1,
+  "owned_requests": 5,
+  "private_data_used": false,
+  "redaction_verified": true,
+  "source_clean": true,
+  "source_commit": "fba017cb540efc3b7ae940c5272081c7aa61411b"
 }
