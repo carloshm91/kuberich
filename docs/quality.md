@@ -592,6 +592,13 @@ exact distribution bytes. Every finding requires a reviewed, exact, expiring
 exception; missing/skipped evidence and scanner errors fail. See
 [dependency security](dependency-security.md) for commands, scope and limits.
 
+If a canonical release-candidate audit fails, the packaging fixture preserves
+its available regular output files in a separate private directory under
+`artifacts/security/canonical-release-failures/`. Each attempt has a unique
+directory; successful ordinary audit reports are never substituted. These partial
+files are diagnostic evidence, not a passing audit. The original error remains
+the test failure even if retaining the files also fails.
+
 D02 retains local candidate identity under `artifacts/releases`. Release decision
 and owned HTTP/Git transport tests run in every application job; actual canonical
 RC builds/audits/installations exercise preparation without publication. The
@@ -657,6 +664,27 @@ comparison. Only executable lines represented by coverage are counted; comments,
 assets, and edits to non-executable continuations do not establish new coverage.
 No changed executable lines means N/A. The negative-control tests verify 0%,
 80%, the exact 90% boundary, a docs-only diff, and an unavailable base.
+
+### One phase verification report
+
+`uv run python scripts/qualify.py 0.3.0` coordinates the existing local commands
+and records their actual results in one JSON report and a short Markdown summary.
+It runs the complete suite once, with all layers and branch coverage, followed
+by the existing runtime, production/critical and changed-line gates. It keeps
+original logs, skipped-case details and canonical evidence before and after the
+run. A unique external mode-0700 parent owns a new basetemp child for every pytest
+stage. Do not edit candidate inputs or start competing timing checks during it.
+The private-access audit and actual startup checks run before the suite, using
+the existing validators and unchanged hard limits; startup reports stay under
+the selected output directory.
+
+Use `--collect-only --quality-run ID --repository-run ID` to collect the actual
+full exact-source hosted results through the existing release validators. This
+never converts development-only, queued, failed or missing jobs into success.
+Native facilities and contract/owned-cluster repetitions remain pending until
+satisfied; the coordinator cannot authorize publication. See
+[phase verification](releases.md#reproduce-phase-verification) for tools, reports,
+exit statuses and the separate sustained-performance/provider requirements.
 
 ### Test layers and local parallel runs
 

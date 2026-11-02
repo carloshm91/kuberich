@@ -133,6 +133,24 @@ Local TLS/API, helper and synthetic provider-shaped contracts have been checked.
 Actual EKS, AKS, GKE, Teleport and tailnet accounts are not certified. Full native
 and phase qualification remains required. The installed release is still 0.2.0.
 
+## Development: one phase verification command
+
+The development checkout now provides a coordinator for the existing checks:
+
+```sh
+uv run python scripts/qualify.py --help
+uv run python scripts/qualify.py 0.3.0 --collect-only
+```
+
+The first command explains the options. The second writes an honest pending
+report without starting tests or clusters. A local run executes the existing
+checks once and records their source, original logs, cleanup and remaining
+native/repetition requirements. Read the [phase verification guide](releases.md#reproduce-phase-verification)
+before running the full command. The installed application remains 0.2.0.
+
+Failed canonical release-candidate audits now retain their own partial output
+separately for diagnosis. The original failure still fails verification.
+
 ## Development: runtime latency observations
 
 For 0.x development, runtime latency observations retain their original targets
