@@ -133,6 +133,24 @@ Local TLS/API, helper and synthetic provider-shaped contracts have been checked.
 Actual EKS, AKS, GKE, Teleport and tailnet accounts are not certified. Full native
 and phase qualification remains required. The installed release is still 0.2.0.
 
+## Development: previous command name
+
+The 0.3 development source keeps `kubetrol` as a deprecated command. It prints
+one fixed notice to stderr naming `kuberich` and the planned 0.4.0 removal;
+stdout and exit codes keep the canonical CLI behavior. The package, imports
+and new default paths use KubeRich.
+
+```sh
+uv run kuberich --version
+uv run kubetrol --version
+```
+
+These commands were checked against the development source; its version remains
+0.2.0 until the release version changes. The published 0.2.0 package does not
+include the new warning. Existing preference/environment/log compatibility stays
+supported. Explicit preference migration keeps previous files and reports
+creation only once; see [configuration](configuration.md#legacy-preview-compatibility).
+
 ## Development: one phase verification command
 
 The development checkout now provides a coordinator for the existing checks:
