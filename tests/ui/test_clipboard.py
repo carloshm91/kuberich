@@ -5,11 +5,13 @@ import base64
 import logging
 import os
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from textual.drivers.headless_driver import HeadlessDriver
 
 from kuberich.config.schema import Settings
+from kuberich.domain.clipboard import ClipboardBackend
 from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
 from kuberich.services.clipboard import NativeClipboard
@@ -53,18 +55,35 @@ class ClipboardApp(KubeRichApp):
 @pytest.mark.parametrize(
     "preference,oversize", [("auto", False), ("auto", True), ("native", False)]
 )
+@pytest.mark.parametrize("session", ["x11", "wayland", "macos"])
 async def test_native_failure_falls_back_only_when_allowed_and_bounded(
-    monkeypatch, preference, oversize
+    monkeypatch, preference, oversize, session
 ):
     monkeypatch.setenv("KUBERICH_CLIPBOARD", preference)
     monkeypatch.setenv("DISPLAY", ":owned-adapter-boundary")
     for variable in ("WAYLAND_DISPLAY", "SSH_TTY", "SSH_CONNECTION", "TMUX"):
         monkeypatch.delenv(variable, raising=False)
+    if session == "wayland":
+        monkeypatch.setenv("WAYLAND_DISPLAY", "owned-wayland-test")
+    # Scope the platform to this adapter fixture, without changing Python's
+    # platform for Textual, asyncio or the other host-native controls.
+    monkeypatch.setattr(
+        "kuberich.ui.app.sys",
+        SimpleNamespace(platform="darwin" if session == "macos" else "linux"),
+    )
     app = ClipboardApp()
     notices = []
     monkeypatch.setattr(app, "notify", lambda message, **kwargs: notices.append(str(message)))
 
     async def failed(data, backend, **kwargs):
+        assert (
+            backend
+            is {
+                "x11": ClipboardBackend.X11,
+                "wayland": ClipboardBackend.WAYLAND,
+                "macos": ClipboardBackend.MACOS,
+            }[session]
+        )
         raise AppError("Native clipboard is unavailable in this owned fixture.")
 
     monkeypatch.setattr(app.native_clipboard, "write", failed)

@@ -1013,6 +1013,16 @@
       "baseline_sha256": "790d519886eb1e44aadecb009ebec3dccf1318690d1813235aa236d21afd213e"
     },
     {
+      "source": "docs/acceptance/wayland-clipboard.md",
+      "audience": "evidence",
+      "action": "move",
+      "destinations": [
+        "docs/internal/acceptance/wayland-clipboard.md"
+      ],
+      "reason": "Retain native Wayland helper invocation, ownership and explicit compositor qualification limits outside user navigation.",
+      "baseline_sha256": null
+    },
+    {
       "source": "docs/acceptance/workload-checkpoint.md",
       "audience": "evidence",
       "action": "move",

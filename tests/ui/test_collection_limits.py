@@ -40,7 +40,14 @@ async def test_incomplete_marker_survives_local_filter_empty_state_and_selection
         app = make_app(catalog_fixture(tmp_path, url))
         async with app.run_test(size=(100, 30)) as pilot:
             await wait_for(lambda: app.state.status.name == "LIVE")
-            await wait_for(lambda: app.resources.row_count == 2)
+            # Row patches can yield before the completed render publishes header/status.
+            await wait_for(
+                lambda: (
+                    app.resources.row_count == 2
+                    and "INCOMPLETE" in str(app.query_one("#resource-view").border_title)
+                    and "2 retained pods" in str(app.status.content)
+                )
+            )
             assert "INCOMPLETE" in str(app.query_one("#resource-view").border_title)
             assert "2 retained pods" in str(app.status.content)
             app.presenter.notice("Selection reviewed")
