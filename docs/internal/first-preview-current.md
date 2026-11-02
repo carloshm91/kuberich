@@ -775,3 +775,22 @@ Fork-clone instructions remain with the separate contributor-guidance task.
 Source version remains 0.2.0. No production code changes, package/tag/release,
 remote release-body edit, website/DNS change or other publication is included.
 Fresh local checks and complete current-head hosted qualification are pending.
+
+The frozen integration `e2394e4e02788fba780e4bd49cd4f7eae6dc4f47`
+passed 149 existing release-history, frozen-note, owned-HTTP transport, internal
+record, link and document-disposition controls in 39.20 seconds (40.43 seconds
+including the runner), with no failures, errors or skips. The exact command was:
+
+```sh
+uv run python -m pytest -q tests/quality/test_changelog_style.py tests/quality/test_release_notes.py tests/quality/test_release_transport.py tests/quality/test_internal_docs.py tests/quality/test_documentation_links.py tests/quality/test_documentation_structure.py --basetemp=/tmp/kuberich-227-docs-pg1otc8k/pytest --junitxml=artifacts/issue227/protected-13a6/tests.xml
+```
+
+The actual workflow strict union (234 files), seven documentation modules, Ruff,
+formatting, private-access audit, checked references and the 899-link module-plan
+check also passed. Both previously qualified offline site manifests still match
+every enrolled input; no redundant standalone rebuild was run. The focused
+controls include current navigation/site exclusion and document dispositions.
+Production executable code is unchanged, so changed-production coverage is N/A,
+not a new 100% result. Complete current-head hosted/native CI remains pending.
+Receipts are under `artifacts/issue227/protected-13a6/`. These source-scoped results
+make no new release, installation, provider, performance or publication claim.
