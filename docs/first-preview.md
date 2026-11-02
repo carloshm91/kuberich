@@ -62,6 +62,17 @@ The [guide acceptance record](acceptance/task-guides.md) records the tested sour
 focused checks and remaining qualification. These commands check documentation
 locally; they do not start the application or connect to a cluster.
 
+The local browser check also passed all 43 pages at desktop and mobile widths,
+including navigation with JavaScript disabled, with zero accessibility findings.
+It follows **Commands and keys** and the **Commands, keys, and launch options**
+heading. The [acceptance record](acceptance/task-guides.md#browser-correction)
+preserves the original stale-label CI failure and the corrected 79.77-second
+Linux/Chrome result, source and cleanup limits. The exact checked command was:
+
+```sh
+node scripts/verify_site_browser.mjs artifacts/issue224/c2-delivery/browser-fix/site artifacts/issue224/c2-delivery/browser-fix/qa
+```
+
 Development source adds an inline Retry panel for resource-view presentation
 failures and a local `kuberich bug-report` command. Report files are private and
 redacted; the diagnostic command does not read kubeconfig or connect to a

@@ -36,7 +36,8 @@ coverage gates, deadlines, failure retention and process ownership remain intact
 
 ## Current local verification
 
-The integrated candidate passed **174 checks in 75.47 seconds**: all guide,
+The original integrated candidate `d9f0c4db08e44ac385657be7dca87f5dfc2f1b7a`
+passed **174 checks in 75.47 seconds**: all guide,
 Markdown-link, navigation, site and plugin-example cases, plus the existing
 qualification stage-catalog contract. They cover declaration/schema drift,
 250-line budgets, old routes/fragments, broken/unsafe links, exact archived bytes,
@@ -65,6 +66,37 @@ and current runtime/qualification behavior are compared directly with the
 protected parent; the qualification command and its assertion are the only
 intentional exceptions outside the documentation implementation.
 
+## Browser correction
+
+Original Repository run `41425930497`, job `125212405508`, failed in the
+no-JavaScript navigation check after its plan, types, build and static checks
+passed. The verifier still expected **Command-line options** and **Command-line
+reference**. The actual navigation and generated heading were already **Commands
+and keys** and **Commands, keys, and launch options**.
+
+The correction changes only those two JavaScript expectations. Exact roles,
+names, heading checks, no-JavaScript navigation, the 30-second assertion timeout
+and every accessibility, keyboard, clipboard, overflow and external-request
+control remain. Original failure logs and artifact `13131288839` are preserved;
+the artifact is 1,894,821 bytes with SHA-256
+`668f9aa06d0b8826df1d558fbb606a844f89697479a204c90cdcb6f77100f961`.
+
+One full local browser verification passed in **79.77 seconds** against a fresh
+checked build: 43 desktop and 43 mobile pages, zero accessibility violations,
+working no-JavaScript navigation and no external requests or browser errors.
+Chrome was 143.0.7499.169, Playwright 1.64.0 and axe 4.14.0 on Linux. The process
+exited 0, was reaped, and its process group was absent; the browser/server cleanup
+path completed and the verifier source stayed unchanged during the run.
+
+```sh
+node scripts/verify_site_browser.mjs artifacts/issue224/c2-delivery/browser-fix/site artifacts/issue224/c2-delivery/browser-fix/qa
+```
+
+The browser report, source checksum and cleanup receipt remain under
+`artifacts/issue224/c2-delivery/browser-fix/`. The original 174-check/Python-type
+receipts retain their original source scope. This correction changes no Python,
+application or package bytes; fresh complete PR checks still qualify its head.
+
 ## Limits
 
 Earlier documentation receipts are historical evidence, including the prepared
@@ -72,8 +104,9 @@ Earlier documentation receipts are historical evidence, including the prepared
 integration. Current application coverage is not newly measured by these
 documentation checks; no executable application lines change.
 
-Fresh required PR checks still qualify the delivered head. This local pass does
-not claim browser, native/platform, provider, performance or release qualification.
+Fresh required PR checks still qualify the delivered head. The local browser
+result covers the stated Linux/Chrome environment; it does not establish native
+application/platform, provider, performance or release qualification.
 Recorded media keeps its previous source identity; no new media was captured.
 Architecture, acceptance-history and contribution migrations remain separate work.
 No website, package, tag, release, DNS or visibility publication is included.
