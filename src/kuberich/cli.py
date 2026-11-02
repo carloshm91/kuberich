@@ -204,6 +204,15 @@ def _parser() -> argparse.ArgumentParser:
         help="copy legacy defaults without deleting or overwriting files",
         allow_abbrev=False,
     )
+    kubeconfig = commands.add_parser(
+        "kubeconfig", help="inspect an explicitly selected kubeconfig locally", allow_abbrev=False
+    )
+    kube_operations = kubeconfig.add_subparsers(dest="operation", required=True)
+    kube_operations.add_parser(
+        "oidc-migration",
+        help="print a secret-free OIDC exec migration fragment without writing files",
+        allow_abbrev=False,
+    )
     return parser
 
 
@@ -253,6 +262,20 @@ def main(argv: Sequence[str] | None = None) -> int:
                 parser.print_help()
             else:
                 print(version("kuberich") if arguments.short else f"kuberich {version('kuberich')}")
+            return 0
+        if arguments.subcommand == "kubeconfig":
+            if arguments.config is not None or set(runtime) - {"kubeconfig", "context"}:
+                raise AppError("kubeconfig oidc-migration accepts only --kubeconfig and --context.")
+            from kuberich.config.oidc_migration import render_oidc_migration
+            from kuberich.domain.connections import ConnectionRequest
+
+            print(
+                render_oidc_migration(
+                    ConnectionRequest(kubeconfig=arguments.kubeconfig, context=arguments.context),
+                    os.environ,
+                ),
+                end="",
+            )
             return 0
         if arguments.subcommand is not None and any(
             key in runtime

@@ -266,7 +266,11 @@ async def test_invalid_or_excessive_response_is_not_an_empty_cluster(
         ({"insecure-skip-tls-verify": 1}, {}, ConnectionState.CONFIG_ERROR),
         ({}, {"client-certificate-data": "eA=="}, ConnectionState.AUTH_ERROR),
         ({}, {"auth-provider": {"name": "oidc"}}, ConnectionState.AUTH_ERROR),
-        ({}, {"username": "synthetic", "password": "synthetic"}, ConnectionState.AUTH_ERROR),
+        (
+            {},
+            {"username": "synthetic:invalid", "password": "synthetic"},
+            ConnectionState.AUTH_ERROR,
+        ),
         ({}, {"exec": {}, "token": "synthetic"}, ConnectionState.AUTH_ERROR),
         ({}, {"exec": {}}, ConnectionState.AUTH_ERROR),
     ],

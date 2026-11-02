@@ -66,10 +66,10 @@ class SessionService:
                     self.client.insecure,
                 )
                 self.scopes[context] = namespace
-            except AppError:
+            except AppError as error:
                 self.observation = SessionObservation(
                     ConnectionState.CONFIG_ERROR,
-                    "Selected context has missing or invalid cluster/credential references. Choose a context with F2.",
+                    str(error),
                     identity,
                     namespace,
                 )

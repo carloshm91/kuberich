@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Config
+current-context: demo-kind
+clusters:
+- name: demo-kind
+  cluster:
+    server: https://api.example.invalid
+    certificate-authority-data: <owned-certificate-authority-data>
+users:
+- name: demo-kind
+  user:
+    client-certificate-data: <owned-client-certificate-data>
+    client-key-data: <owned-client-key-data>
+contexts:
+- name: demo-kind
+  context:
+    cluster: demo-kind
+    user: demo-kind
+    namespace: ''

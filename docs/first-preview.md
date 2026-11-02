@@ -50,8 +50,8 @@ have dedicated regressions. The complete fast selection passed locally with
 4,588 tests and one expected macOS-only clipboard skip in 158.00 seconds.
 The [quality guide](quality.md#test-layers-and-local-parallel-runs) records the
 same-candidate serial comparison, full-run measurements and verification policy.
-Three complete parallel runs, collection equivalence and the required hosted
-checks are required before this rollout merges. The installed release is 0.2.0.
+Complete platform, artifact and coverage checks remain required for the phase.
+The installed release is 0.2.0.
 
 ```sh
 uv sync --locked --group dev
@@ -75,6 +75,50 @@ work; the installed release remains 0.2.0.
 ```sh
 uv run python scripts/check_private_access.py
 ```
+
+## Development: bounded live collections
+
+Development source keeps a resource view live when it reaches 10,000 retained
+rows or 64 MiB of retained payload. The view labels incomplete membership;
+updates remain tied to resource UIDs. Server queries narrow the Kubernetes
+request separately from the local `/` filter:
+
+```text
+:server label app=api
+:server field metadata.name=api-one
+:server clear
+```
+
+Generic views also offer `:server compact` for metadata-only Table rows and
+`:server full` to restore full objects. Inspection fetches the full object when
+needed. These modes preserve existing scope and identity checks. The
+[workspace guide](resource-workspace.md) explains the limits and recovery.
+
+Owned Kubernetes fixtures verified pagination, filtering, compact rows, fresh
+full-object reads, watch updates and cleanup. Large-fixture contracts check
+retention bounds; they do not certify sustained throughput, process RSS or a
+long-running soak. This behavior is not in the installed 0.2.0 release.
+
+## Development: kubeconfig compatibility
+
+Development source supports explicit Basic credentials and empty optional
+kubeconfig connection fields. Reads, guarded writes and delegated tools keep
+the same captured identity. Known unsupported fields receive an actionable
+message. For legacy OIDC, an explicit offline command generates a reviewable
+exec-plugin migration fragment without copying tokens or changing kubeconfig:
+
+```sh
+uv run kuberich kubeconfig oidc-migration --help
+```
+
+The command above was checked without connecting to a cluster. The
+[context guide](context-sessions.md) documents migration, supported fields and
+remaining limits. Captured/background plugin output masks known prepared Basic
+credentials; foreground output goes directly to the terminal.
+
+Local TLS/API, helper and synthetic provider-shaped contracts have been checked.
+Actual EKS, AKS, GKE, Teleport and tailnet accounts are not certified. Full native
+and phase qualification remains required. The installed release is still 0.2.0.
 
 ## Development: runtime latency observations
 

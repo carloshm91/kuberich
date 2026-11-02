@@ -95,6 +95,8 @@ different file sets it as `current-context`. Edit those files yourself.
 
 Supported now:
 
+- Explicit `username`/`password` Basic authentication without a password prompt.
+  Empty halves are retained; Basic credentials stay separate from bearer tokens.
 - Static bearer `token` or periodically refreshed `tokenFile`; the last successfully
   read file value takes precedence over an explicit configured token.
 - Embedded or file-backed CA and client certificate/key pairs. Inline TLS data
@@ -134,8 +136,14 @@ records precedence, cleanup and SOCKS5 streaming limits.
 
 KubeRich supports exec certificate renewal and native helper `:login`, including
 the exact declared stdin behavior, private stdout and restored terminal.
-Legacy `auth-provider` and basic credentials remain explicitly unsupported;
-the same guide describes migration to exec/token/certificate entries.
+Legacy `auth-provider` requires migration to a provider's exec helper. For OIDC,
+print a reviewed fragment with `kuberich --kubeconfig /path/to/config --context
+my-context kubeconfig oidc-migration`. This local command contacts no issuer,
+runs no helper and changes no file. Install int128/kubelogin separately, replace
+any fixed client-secret placeholder in a private configuration, review provider
+scopes and apply the fragment yourself. Existing ID/refresh/client-secret tokens
+are omitted; the helper owns future sign-in and refresh. Relative issuer CA
+files resolve against the kubeconfig that supplied the user entry.
 Credential behavior is verified locally. Real EKS/AKS/GKE compatibility requires
 separate provider trials; synthetic tests do not certify cloud tenants.
 See [EKS](eks-authentication.md) and [AKS](aks-authentication.md) limits.
@@ -144,6 +152,43 @@ see the [effective launch connection](k9s-cli.md#effective-invocation-connection
 They apply to this invocation, including context changes, reads, watches, logs
 and the private captured kubectl shell connection. Real provider qualification
 requires separate authorized trials.
+
+## Kubeconfig compatibility
+
+The v1 field inventory is identical in upstream kubectl/client-go 1.35, 1.36 and
+1.37. The table applies to all three schemas; local contracts and the separately
+pinned integration client establish only the behavior actually tested. Cluster
+version skew and real provider sign-in still need their own qualification.
+
+| Fields | Behavior |
+| --- | --- |
+| `apiVersion`, `kind` | Accept omitted/empty values or `v1`/`Config`; other values name the invalid field |
+| `clusters`, `users`, `contexts`, named `name` and payload | First whole named entry wins across merged files; each entry keeps its original directory |
+| `current-context`, `KUBECONFIG` list | First nonempty current context wins; explicit file overrides the list; no source write |
+| `preferences.colors`, `preferences.extensions` | Accepted deprecated metadata; does not change terminal preferences |
+| Top-level, cluster, user and context `extensions`; `name`, `extension` | Named opaque metadata, including scalar payloads; reserved cluster exec extension is passed only when requested |
+| Context `cluster`, `user`, `namespace` | Explicit aliases; empty user is anonymous, empty namespace means `default` |
+| Cluster `server` | HTTP(S), including URL path prefixes; embedded credentials/query/fragment refused by field |
+| `tls-server-name`, `insecure-skip-tls-verify` | Explicit verification name/policy; insecure transport remains visible |
+| `certificate-authority`, `certificate-authority-data` | Original relative paths; nonempty inline data wins, empty data falls back to file |
+| `proxy-url` | HTTP(S)/SOCKS5; captured proxy environment when omitted/empty; no silent proxy bypass |
+| `disable-compression` | Boolean accepted and retained for delegation; owned HTTP already requests identity encoding |
+| User `client-certificate`, `client-key`, `client-certificate-data`, `client-key-data` | Paired private session copies; encrypted keys refused before a passphrase prompt |
+| `token`, `tokenFile` | Bounded bearer values; last successful file value wins, refresh and one read-only 401 retry |
+| `username`, `password` | Explicit Basic identity, including empty half; no implicit prompt or netrc fallback |
+| `as`, `as-uid`, `as-groups`, `as-user-extra` | Validated repeated impersonation attributes; subject required |
+| `exec.command`, `exec.args`, `exec.env.name/value` | Literal captured argv/environment and original directory; bounded owned helper |
+| `exec.apiVersion`, `exec.interactiveMode` | v1/v1beta1 and explicit native login policy; unsupported versions name the field |
+| `exec.installHint` | Metadata accepted; KubeRich displays fixed safe installation guidance |
+| `exec.provideClusterInfo` | Boolean; only true supplies effective cluster metadata and reserved extension |
+| `auth-provider.name`, `.config` | Field-specific migration hint; OIDC fragment generation preserves reviewed metadata only |
+| OIDC `idp-issuer-url`, `client-id`, `idp-certificate-authority`, `idp-certificate-authority-data` | Validated issuer/client metadata and source-relative CA become literal helper options |
+| OIDC `client-secret`, `id-token`, `refresh-token`, `extra-scopes` | Secret placeholder and manual scope review; existing credential values never copied |
+
+Mixed credential mechanisms are refused with their field names; choose the
+intended identity or use an explicit invocation override. File/argument/YAML
+bounds remain application limits. Unsupported fields never trigger another user,
+context, helper or ambient credential fallback.
 
 ## Connection states and bounds
 
