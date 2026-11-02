@@ -891,7 +891,7 @@ if sys.platform.startswith('linux'):
 out=root/'artifacts/descendants'; out.mkdir(parents=True)
 external=work/'external'; external.mkdir(mode=0o700)
 pidfile,ready=work/'descendant.pid',work/'leader-ready'
-program="import os,signal,time; from pathlib import Path\\nchild=os.fork()\\nif child==0:\\n signal.signal(signal.SIGINT,signal.SIG_IGN); signal.signal(signal.SIGTERM,signal.SIG_IGN)\\n Path("+repr(str(pidfile))+").write_text(str(os.getpid()))\\n time.sleep(60); os._exit(0)\\nwhile not Path("+repr(str(pidfile))+").exists(): time.sleep(.01)\\n"
+program="import os,signal,time; from pathlib import Path\\nchild=os.fork()\\nif child==0:\\n signal.signal(signal.SIGINT,signal.SIG_IGN); signal.signal(signal.SIGTERM,signal.SIG_IGN)\\n staged=Path("+repr(str(pidfile.with_suffix('.pending')))+")\\n staged.write_text(str(os.getpid()))\\n staged.replace("+repr(str(pidfile))+")\\n time.sleep(60); os._exit(0)\\nwhile not Path("+repr(str(pidfile))+").exists(): time.sleep(.01)\\n"
 if cancel:
     program+="signal.signal(signal.SIGINT,lambda *args: exit(0))\\nPath("+repr(str(ready))+").write_text('ready')\\ntime.sleep(60)\\n"
 else:
