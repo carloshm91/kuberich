@@ -1609,12 +1609,13 @@
         "D07",
         "D16"
       ],
-      "scope": "Qualify the exact phase candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Qualification does not publish; approved phased publication remains D10 #89.",
+      "scope": "Qualify the exact phase candidate and all scoped platform, installation, terminal, security and Kubernetes behavior. Retain every original prerequisite. Qualification does not publish; approved phased publication remains D10 #89. Remove the deprecated kubetrol console alias for 0.4.0 and verify installed upgrades preserve user files.",
       "acceptance": [
         "Every scoped acceptance criterion has actual evidence; independent line/branch and changed-line coverage meet 90%, and designated deterministic critical modules meet 100%.",
         "Run the complete supported Linux/macOS Python matrix, owned API/terminal/cluster behavior and audited exact wheel/sdist; D05 standalone and extended-platform outputs are qualified where required by this checkpoint.",
         "Verify clean local installs, upgrade/uninstall, caller configuration invariance, hashes and provenance using the tested bytes. Retain unavailable platform/provider evidence as incomplete; deferring publication does not complete qualification.",
-        "Record measured results and capability status. Public PyPI/TestPyPI ownership/OIDC, main/environment protection, tap/registry activation, immutable public tags/artifacts, website/DNS and public-channel trials remain D10 #89."
+        "Record measured results and capability status. Public PyPI/TestPyPI ownership/OIDC, main/environment protection, tap/registry activation, immutable public tags/artifacts, website/DNS and public-channel trials remain D10 #89.",
+        "For 0.4.0 remove the deprecated kubetrol console-script declaration and shim introduced in Q18 #219. Verify fresh and upgraded installed artifacts expose only the canonical kuberich command, retain its stdout/exit behavior and preserve previous preference/log bytes. Do not claim this removal completed in 0.3."
       ],
       "verification": "Attach exact source/artifact pins, all supported platform results, independent coverage, owned-cluster/PTY/install/audit evidence. Close only after scoped engineering qualification; no public publication occurs here.",
       "priority": "P0"
@@ -1861,11 +1862,11 @@
       "epic": "E13",
       "milestone": "v0.3.0",
       "requires": [],
-      "scope": "`pyproject.toml` publishes a second console script, `kubetrol`. Configuration paths still fall back to `kubetrol`, and old coverage artifacts refer to `src/kubetrol`. (Links in open issues were fixed during the 2026-10-19 backlog review.)",
+      "scope": "Deprecate the previous console name during 0.3 while preserving explicit, non-overwriting configuration migration and existing compatibility contracts. Actual console-alias removal belongs to the 0.4 qualification D08 #75; historical release/source evidence keeps its exact identity and paths.",
       "acceptance": [
-        "In 0.3.0 the `kubetrol` entry point prints a deprecation warning; 0.4.0 removes it.",
-        "Legacy configuration migrates with a one-time notice.",
-        "No remaining references in source, docs or packaging."
+        "In 0.3 the kubetrol console entry prints a fixed stderr deprecation notice naming kuberich and the planned 0.4.0 removal. Canonical stdout and exit behavior are unchanged.",
+        "Explicit config migrate atomically creates the new preferences without changing previous files; its success notice appears once on creation, while repeated migration and normal loading do not rewrite settings.",
+        "Current package, imports, new default paths and product branding use KubeRich. Only the intentional 0.3 compatibility shim, supported legacy environment/configuration/log contracts, their migration instructions/tests and immutable historical evidence retain the previous identity. No src/kubetrol package is shipped."
       ],
       "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
       "priority": "P2"
