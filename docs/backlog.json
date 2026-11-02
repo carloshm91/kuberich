@@ -1768,11 +1768,11 @@
       "epic": "E13",
       "milestone": "v0.3.0",
       "requires": [],
-      "scope": "With `MAX_RESOURCE_ITEMS = 10000`, the view fails with \"Live collection exceeds its item/memory limit.\" Q03 #50 measured exactly 10,000 resources, with a p95 margin of 0.92 ms. All-namespace views on production clusters routinely exceed this, and that is exactly where a cluster tool matters most.",
+      "scope": "Keep large collections usable with bounded retained ownership, explicit incomplete membership and server-side narrowing. On 2026-11-01 the maintainer prioritized practical 0.3.0 behavior; numeric large-workload latency/margin goals remain advisory observations until stable certification.",
       "acceptance": [
         "Above the memory budget, the view stays live in an explicit degraded mode: a visible banner, server-side narrowing (label/field selectors, namespace) and a deterministic cap on retained rows. Never a hard error.",
         "Use the Table API or PartialObjectMetadata to cut bytes per object. Paginate initial lists (`limit`/`continue`) with progress.",
-        "Measure 50,000 pods at 100 events/s: p95 input latency under 100 ms with at least 20% margin, and a bounded memory plateau.",
+        "Retain bounded rows/payloads and watch ownership for a 50,000-object source. Report any 100-events/s, p95-under-100-ms, 20%-margin and memory-plateau measurements honestly as advisory 0.x goals; preserve stable certification in Q06 #88 without inventing a replacement threshold.",
         "Tests cover crossing the threshold in both directions."
       ],
       "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",

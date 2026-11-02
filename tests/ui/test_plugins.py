@@ -92,7 +92,9 @@ async def test_colon_catalogue_review_run_status_keys_and_input_ownership(tmp_pa
             await wait_for(lambda: app.resources.row_count == 1 and bool(app.plugins.plugins))
             before = app.resources.capture_viewport()
             await pilot.press("colon", *"plugins", "enter")
-            await wait_for(lambda: isinstance(app.screen, PluginCatalogue))
+            await wait_for(
+                lambda: isinstance(app.screen, PluginCatalogue) and app.screen.is_mounted
+            )
             assert app.screen.query_one("#plugin-catalogue").row_count == 1
             output = Path("artifacts/ui").resolve()
             output.mkdir(parents=True, exist_ok=True)
@@ -257,7 +259,7 @@ async def test_readonly_unknown_missing_scope_and_offline_catalogue_are_actionab
     app = KubeRichApp(Settings(), logging.Logger("offline", level=100))
     async with app.run_test() as pilot:
         await app.run_command("plugins")
-        await wait_for(lambda: isinstance(app.screen, PluginCatalogue))
+        await wait_for(lambda: isinstance(app.screen, PluginCatalogue) and app.screen.is_mounted)
         assert app.screen.query_one("#plugin-catalogue").row_count == 0
         await pilot.click("#plugin-back")
 

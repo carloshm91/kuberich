@@ -8,6 +8,7 @@ from kuberich.adapters.credentials import CredentialLogin
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, namespace_name
 from kuberich.domain.navigation import NamespaceChoice
+from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.resources import Discovery
 from kuberich.domain.views import (
     USABLE_CONNECTIONS,
@@ -235,6 +236,10 @@ class WorkspaceService:
             return self._discovery[1]
         return None
 
+    def set_query(self, query: ResourceQuery) -> asyncio.Task[None]:
+        """Changing API selectors invalidates the old scope before cleanup awaits."""
+        return self.select_resource(replace(self.selection, query=query))
+
     def refresh_discovery(self) -> asyncio.Task[None]:
         context = self._current_context()
         self._discovery = None
@@ -349,6 +354,7 @@ class WorkspaceService:
                 observation.identity,
                 resource,
                 observation.namespace if resource.namespaced else None,
+                selection.resource.query,
             )
             self.store.bind(selection.revision, scope)
             self._publish()
@@ -387,7 +393,9 @@ class WorkspaceService:
                 self._publish()
 
         try:
-            await ListWatch(reader).run(scope.resource, scope.namespace, receive)
+            await ListWatch(reader, query=scope.query, progress=True).run(
+                scope.resource, scope.namespace, receive
+            )
         except ConnectionProblem as problem:
             self._fail(revision, problem)
         except AppError:

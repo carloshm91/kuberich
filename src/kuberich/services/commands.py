@@ -8,6 +8,7 @@ from kuberich.domain.commands import Command as Command
 from kuberich.domain.connections import namespace_name
 from kuberich.domain.interactions import INTERACTION_VERBS, InteractionCommand, interaction_command
 from kuberich.domain.registry import RESOURCE_ALIASES, ResourceDefinition
+from kuberich.domain.resource_queries import ResourceQuery, query_command
 from kuberich.domain.resources import Discovery, api_segment
 from kuberich.errors import AppError
 from kuberich.security.arguments import validate_argument
@@ -154,6 +155,8 @@ def suggestions(
             values = plugins
         elif command is Command.JUMP:
             values = jumps
+        elif command is Command.SERVER:
+            values = ("label ", "field ", "clear", "compact", "full")
         elif command in {Command.NAMESPACES, Command.PODS} or (
             effective in RESOURCE_ALIASES and RESOURCE_ALIASES[effective].namespaced
         ):
@@ -228,6 +231,9 @@ class CommandService:
             return generic_command(parts[1] if len(parts) == 2 else "", discovery)
         if verb == "columns" and len(parts) == 2:
             return ScopedCommand(Command.COLUMNS, parts[1])
+        if ALIASES.get(verb) is Command.SERVER and len(parts) == 2:
+            query_command(ResourceQuery(), parts[1])
+            return ScopedCommand(Command.SERVER, parts[1])
         if (
             verb not in ALIASES
             and verb not in RESOURCE_ALIASES

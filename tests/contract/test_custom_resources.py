@@ -8,6 +8,7 @@ import pytest
 from aiohttp import web
 
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, HttpProblem
+from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.tables import TableDecoder
 from kuberich.domain.watches import SyncStatus
 from kuberich.errors import AppError
@@ -21,33 +22,64 @@ from tests.support.watches import Clock, error_event, frame
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("namespaced", [True, False])
+@pytest.mark.parametrize("compact", [False, True])
 async def test_real_paged_table_and_selected_get_keep_full_gvr_scope_and_objects(
-    tmp_path, namespaced
+    tmp_path, namespaced, compact
 ):
     resource = custom_resource(namespaced=namespaced)
     scope = "team" if namespaced else None
-    requests = []
+    requests, progress = [], []
+
+    async def observe(snapshot):
+        progress.append(snapshot)
 
     async def handler(request):
         requests.append((request.path, dict(request.query)))
         assert "as=Table" in request.headers["Accept"]
-        assert request.query["includeObject"] == "Object"
         if request.path.endswith("/one"):
-            return web.json_response(server_table(custom_item(namespace=scope)))
+            assert request.query["includeObject"] == "Object"
+            assert "labelSelector" not in request.query and "fieldSelector" not in request.query
+            return web.json_response(server_table(custom_item(namespace=scope, uid="one")))
+        assert request.query["includeObject"] == ("Metadata" if compact else "Object")
+        assert request.query["labelSelector"] == "app=api"
+        assert request.query["fieldSelector"] == "metadata.name!=omitted"
         second = request.query.get("continue") == "next"
         obj = custom_item(
             "two" if second else "one", namespace=scope, uid="two" if second else "one"
         )
+        if compact:
+            obj = {
+                "apiVersion": "meta.k8s.io/v1",
+                "kind": "PartialObjectMetadata",
+                "metadata": obj["metadata"],
+            }
         return web.json_response(server_table(obj, token="" if second else "next"))
 
     async with reader_fixture(tmp_path, handler) as base:
         reader = ResourceReader(base.session, tables=True)
-        snapshot = await reader.list(resource, scope, page_size=1)
+        snapshot = await reader.list(
+            resource,
+            scope,
+            page_size=1,
+            query=ResourceQuery("app=api", "metadata.name!=omitted", compact),
+            progress=observe,
+        )
         assert [r.name for r in snapshot.items] == ["one", "two"]
+        assert [r.uid for r in snapshot.items] == ["one", "two"]
+        assert all(r.namespace == scope and r.metadata_only == compact for r in snapshot.items)
+        if compact:
+            assert all("spec" not in r.manifest for r in snapshot.items)
+        else:
+            assert all(r.manifest["spec"] == {"level": 3, "enabled": True} for r in snapshot.items)
         assert snapshot.resource_version == "collection-version"
+        assert snapshot.collection.complete and snapshot.collection.pages == 2
+        assert len(progress) == 1 and not progress[0].collection.complete
+        assert progress[0].collection.pages == 1
+        assert progress[0].resource_version == snapshot.resource_version
         assert [c.name for c in snapshot.columns] == ["Name", "Level", "Enabled"]
         assert snapshot.items[0].server.cells == ("one", 3, True)
         record = await reader.get(resource, "one", scope)
+        assert not record.metadata_only and record.uid == "one"
         assert record.manifest["spec"] == {"level": 3, "enabled": True}
         assert record.namespace == scope and record.server.columns == snapshot.columns
     assert [path for path, _ in requests] == [resource.path(scope)] * 2 + [
@@ -416,11 +448,31 @@ async def test_table_pagination_retains_atomicity_identity_and_metadata_bounds(
             assert requests == ["", "next", ""]
             assert result.resource_version == "new"
             assert [record.name for record in result.items] == ["replacement"]
+        elif fault == "memory":
+            resource = custom_resource()
+            attempted = TableDecoder(resource, "team").records(
+                server_table(custom_item("one", uid="one"), rv="original", token="next")
+            )[0]
+            assert attempted.uid == "one" and attempted.namespace == "team"
+            assert attempted.size_bytes > module.MAX_SNAPSHOT_BYTES
+            result = await reader.list(resource, "team")
+            assert requests == [""]  # Do not read the unretained continuation.
+            assert result.resource == resource and result.namespace == "team"
+            assert result.resource_version == "original"
+            assert [column.name for column in result.columns] == ["Name", "Level", "Enabled"]
+            assert result.items == ()  # No partial object or phantom selected UID.
+            assert not result.collection.complete and result.collection.limited
+            assert result.collection.pages == 1
+            assert result.collection.retained_bytes == sum(
+                record.size_bytes for record in result.items
+            )
+            assert result.collection.retained_bytes <= module.MAX_SNAPSHOT_BYTES
+            assert len(result.items) <= module.MAX_ITEMS
         else:
             with pytest.raises(ConnectionProblem) as error:
                 await reader.list(custom_resource(), "team")
             assert error.value.state is ConnectionState.API_ERROR
-        # Invalid full-object identity and memory are API errors, never fallback.
+        # Identity/schema errors never fall back; retention caps report limited membership.
         assert reader.uses_tables(custom_resource())
 
 

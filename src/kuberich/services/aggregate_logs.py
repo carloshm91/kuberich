@@ -118,9 +118,19 @@ class AggregateLogs:
         self._pods: tuple[ResourceRecord, ...] = ()
         self._intermediates: tuple[ResourceRecord, ...] = ()
         self._ready: set[str] = set()
+        self._incomplete: set[str] = set()
         self._owned: list[asyncio.Task[None]] = []
         self._notice: Callable[[str], None] = lambda message: None
         self._fault: Exception | None = None
+
+    def _notify(self, message: str) -> None:
+        if self._incomplete:
+            message += (
+                " · INCOMPLETE "
+                + ", ".join(sorted(self._incomplete))
+                + " membership; aggregate logs cover only retained sources"
+            )
+        self._notice(message)
 
     @property
     def controller_count(self) -> int:
@@ -175,8 +185,13 @@ class AggregateLogs:
                     self._intermediates = update.snapshot.items
                 self._ready.add(resource.name)
                 self._changed.set()
+                if not update.snapshot.collection.complete:
+                    self._incomplete.add(resource.name)
+                    self._notify(f"Membership {resource.name} updated")
+                else:
+                    self._incomplete.discard(resource.name)
             if update.problem is not None:
-                self._notice(f"Membership {resource.name}: {update.problem}")
+                self._notify(f"Membership {resource.name}: {update.problem}")
 
         await ListWatch(self.reader).run(resource, self.target.namespace, observe)
 
@@ -267,7 +282,7 @@ class AggregateLogs:
                         self._read(state, self._generation, options, sink, head_lines)
                     )
                     active += 1
-            self._notice("Sources updated")
+            self._notify("Sources updated")
 
     async def _read(
         self,
@@ -316,7 +331,7 @@ class AggregateLogs:
             nonlocal was_opened
             was_opened = True
             state.message = "Waiting for output"
-            self._notice("Reader opened")
+            self._notify("Reader opened")
 
         try:
             await stream.run(options, retain, opened=opened)
@@ -355,6 +370,7 @@ class AggregateLogs:
         self._notice = notice
         self._generation += 1
         self._ready.clear()
+        self._incomplete.clear()
         self._fault = None
         self._pods, self._intermediates = (), ()
         record = await self.reader.get(self.resource, self.target.name, self.target.namespace)

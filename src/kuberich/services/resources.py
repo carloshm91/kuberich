@@ -1,7 +1,7 @@
 """Bounded API discovery and atomic, version-consistent collection reads."""
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from functools import partial
 from typing import Any
@@ -9,10 +9,12 @@ from urllib.parse import quote
 
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, HttpProblem
+from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.resources import (
     MAX_RESOURCE_BYTES,
     MAX_RESOURCE_ITEMS,
     ApiResource,
+    CollectionState,
     Discovery,
     DiscoveryIssue,
     ResourceRecord,
@@ -62,6 +64,12 @@ def _entries(value: Any, limit: int) -> list[Any]:
     if not isinstance(value, list) or len(value) > limit:
         raise AppError("Invalid or excessive API discovery entries.")
     return value
+
+
+def _collection_records(
+    resource: ApiResource, namespace: str | None, values: list[Any]
+) -> tuple[ResourceRecord, ...]:
+    return tuple(resource_record(resource, value, namespace) for value in values)
 
 
 def _descriptors(version: str, values: Any, *, aggregated: bool = False) -> tuple[ApiResource, ...]:
@@ -314,34 +322,65 @@ class ResourceReader:
             ) from None
 
     async def list(
-        self, resource: ApiResource, namespace: str | None = None, *, page_size: int = 100
+        self,
+        resource: ApiResource,
+        namespace: str | None = None,
+        *,
+        page_size: int = 100,
+        query: ResourceQuery | None = None,
+        progress: Callable[[ResourceSnapshot], Awaitable[None]] | None = None,
     ) -> ResourceSnapshot:
         if "list" not in resource.verbs:
             raise AppError("This discovered resource does not advertise list support.")
         if type(page_size) is not int or not 1 <= page_size <= 500:
             raise AppError("Resource page size must be an integer from 1 through 500.")
         path = resource.path(namespace)
+        if query is None:
+            query = ResourceQuery()
+        elif not isinstance(query, ResourceQuery):
+            raise AppError("Resource listing requires a validated server query.")
+        if query.compact and not resource.group and resource.name in {"pods", "services"}:
+            raise AppError("Pod/Service resources retain full objects; use :server full.")
         try:
             async with asyncio.timeout(self.session.timeout):
+
+                def snapshot(complete: bool, limited: bool, pages: int) -> ResourceSnapshot:
+                    return ResourceSnapshot(
+                        resource,
+                        namespace,
+                        snapshot_version,
+                        tuple(records),
+                        decoder.columns or () if self.uses_tables(resource) else (),
+                        CollectionState(complete, limited, pages, total_bytes),
+                    )
+
                 # An expired continuation restarts the whole collection once;
                 # never mix old pages with the server's replacement token.
                 restarted = False
                 while True:
-                    decoder = TableDecoder(resource, namespace)
-                    records = []
+                    decoder = TableDecoder(resource, namespace, metadata_only=query.compact)
+                    records: list[ResourceRecord] = []
                     identities: set[tuple[str | None, str]] = set()
                     uids: set[str] = set()
                     tokens: set[str] = set()
                     token = ""
                     snapshot_version = None
                     total_bytes = 0
+
                     for page in range(MAX_PAGES):
                         try:
-                            params = {"limit": str(page_size), "continue": token}
+                            params = {
+                                "limit": str(page_size),
+                                "continue": token,
+                                **query.parameters,
+                            }
                             if self.uses_tables(resource):
                                 payload = await self.session.get_json(
                                     path,
-                                    params={**params, "includeObject": "Object"},
+                                    params={
+                                        **params,
+                                        "includeObject": "Metadata" if query.compact else "Object",
+                                    },
                                     accept=TABLE_ACCEPT,
                                 )
                             else:
@@ -377,49 +416,60 @@ class ResourceReader:
                             snapshot_version = rv
                         elif rv != snapshot_version:
                             raise AppError("Collection resourceVersion changed between pages.")
+                        token = metadata.get("continue", "")
+                        if not isinstance(token, str):
+                            raise AppError("Invalid continuation token.")
+                        if token:
+                            resource_text(token)
+                            if token in tokens:
+                                raise AppError("Repeated continuation token.")
+                        values = payload.get("rows" if table else "items")
+                        if not isinstance(values, list):
+                            raise AppError("Invalid resource collection.")
+                        # Even an API that ignores limit cannot make us materialize
+                        # a second unbounded collection of ResourceRecord objects.
+                        capacity = min(MAX_ITEMS, max(1, MAX_ITEMS - len(records) + 1))
+                        bounded = values[:capacity]
+                        unread_rows = len(values) > len(bounded)
                         if table:
                             try:
-                                incoming = await parse_owned(partial(decoder.records, payload))
+                                incoming = await parse_owned(
+                                    partial(decoder.records, {**payload, "rows": bounded})
+                                )
                             except TableUnavailable:
                                 self.disable_tables(resource)
                                 break
                         else:
-                            values = payload.get("items")
-                            if not isinstance(values, list) or len(values) > MAX_ITEMS:
-                                raise AppError("Invalid or excessive resource collection.")
-                            incoming = tuple(
-                                resource_record(resource, value, namespace) for value in values
+                            incoming = await parse_owned(
+                                partial(_collection_records, resource, namespace, bounded)
                             )
+                        limited = unread_rows
                         for record in incoming:
                             identity = record.namespace, record.name
                             if (
                                 record.uid is not None and record.uid in uids
                             ) or identity in identities:
                                 raise AppError("Duplicate item in collection snapshot.")
+                            if (
+                                len(records) >= MAX_ITEMS
+                                or total_bytes + record.size_bytes > MAX_SNAPSHOT_BYTES
+                            ):
+                                limited = True
+                                break
                             if record.uid is not None:
                                 uids.add(record.uid)
                             identities.add(identity)
                             total_bytes += record.size_bytes
                             records.append(record)
-                        if len(records) > MAX_ITEMS or total_bytes > MAX_SNAPSHOT_BYTES:
-                            raise AppError("Resource snapshot exceeds its item/memory limit.")
-                        token = metadata.get("continue", "")
-                        if not isinstance(token, str):
-                            raise AppError("Invalid continuation token.")
+                        if limited or (token and len(records) == MAX_ITEMS):
+                            return snapshot(False, True, page + 1)
                         if not token:
-                            return ResourceSnapshot(
-                                resource,
-                                namespace,
-                                snapshot_version,
-                                tuple(records),
-                                decoder.columns or () if self.uses_tables(resource) else (),
-                            )
-                        resource_text(token)
-                        if token in tokens:
-                            raise AppError("Repeated continuation token.")
+                            return snapshot(True, False, page + 1)
                         tokens.add(token)
+                        if progress is not None:
+                            await progress(snapshot(False, False, page + 1))
                     else:
-                        raise AppError("Resource snapshot exceeds its page limit.")
+                        return snapshot(False, True, MAX_PAGES)
         except TimeoutError:
             raise ConnectionProblem(
                 ConnectionState.TIMEOUT, "Resource listing timed out; check --request-timeout."

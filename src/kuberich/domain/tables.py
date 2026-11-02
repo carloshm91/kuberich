@@ -12,6 +12,7 @@ from kuberich.domain.resources import (
     ServerCell,
     ServerColumn,
     ServerRow,
+    metadata_record,
     resource_object,
     resource_record,
     resource_text,
@@ -77,6 +78,8 @@ def _columns(value: Any) -> tuple[ServerColumn, ...]:
 def _cell(value: Any, kind: str) -> ServerCell:
     if value is None:
         return None
+    if kind == "string" and type(value) is int and -(2**63) <= value < 2**63:
+        return str(value)
     valid = (
         kind in {"string", "date"} and isinstance(value, str) and len(value) <= MAX_CELL_CHARACTERS
     ) or (kind == "boolean" and type(value) is bool)
@@ -99,8 +102,11 @@ def _size(value: object) -> int:
 class TableDecoder:
     """Own headers within one paged LIST or opened watch, never across streams."""
 
-    def __init__(self, resource: ApiResource, namespace: str | None) -> None:
+    def __init__(
+        self, resource: ApiResource, namespace: str | None, *, metadata_only: bool = False
+    ) -> None:
         self.resource, self.namespace = resource, namespace
+        self.metadata_only = metadata_only
         self.columns: tuple[ServerColumn, ...] | None = None
         self._column_bytes = 0
 
@@ -134,7 +140,12 @@ class TableDecoder:
 
     def _record(self, row: Any) -> ResourceRecord:
         obj = self._object(row)
-        if obj.get("apiVersion") is None or obj.get("kind") in (None, "PartialObjectMetadata"):
+        partial = obj.get("kind") == "PartialObjectMetadata"
+        if (
+            obj.get("apiVersion") is None
+            or obj.get("kind") is None
+            or (partial and not self.metadata_only)
+        ):
             raise TableUnavailable()
         assert self.columns is not None
         raw_cells = row.get("cells")
@@ -144,7 +155,11 @@ class TableDecoder:
             _cell(value, column.type) for value, column in zip(raw_cells, self.columns, strict=True)
         )
         size = self._column_bytes + _size(cells)
-        record = resource_record(self.resource, obj, self.namespace)
+        record = (
+            metadata_record(self.resource, obj, self.namespace)
+            if partial
+            else resource_record(self.resource, obj, self.namespace)
+        )
         return replace(record, server=ServerRow(self.columns, cells, size))
 
     def records(self, value: dict[str, Any], *, single: bool = False) -> tuple[ResourceRecord, ...]:
@@ -161,7 +176,8 @@ class TableDecoder:
             metadata = resource_object(self._object(rows[0]).get("metadata"))
             return WatchEvent(EventType.BOOKMARK, resource_text(metadata.get("resourceVersion")))
         record = self._record(rows[0])
+        obj = {"metadata": record.manifest["metadata"]} if record.metadata_only else record.manifest
         event = watch_event(
-            self.resource, {"type": payload.get("type"), "object": record.manifest}, self.namespace
+            self.resource, {"type": payload.get("type"), "object": obj}, self.namespace
         )
         return replace(event, record=record)

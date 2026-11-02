@@ -18,7 +18,13 @@ from kuberich.config.schema import Settings
 from kuberich.domain.connections import ConnectionProblem, ConnectionRequest, ConnectionState
 from kuberich.domain.logs import LogBuffer, LogOptions
 from kuberich.domain.pods import pod_row, utc_now
-from kuberich.domain.resources import resource_record
+from kuberich.domain.resource_queries import ResourceQuery
+from kuberich.domain.resources import (
+    MAX_RESOURCE_BYTES,
+    ApiResource,
+    ResourceSnapshot,
+    resource_record,
+)
 from kuberich.domain.targets import ResourceTarget
 from kuberich.domain.views import ResourceSelection, ViewStatus
 from kuberich.domain.watches import EventType, SyncStatus, SyncUpdate
@@ -312,6 +318,224 @@ async def verify_pod_table(reader, resource, catalog, path, context):
         "real_namespace_table_uid_status_and_watch_create_delete": True,
         "real_namespace_enter_pods_escape_and_all_scope": True,
         "server_table_pod_count": len(table["rows"]),
+    }
+
+
+async def verify_collection_queries(
+    reader: ResourceReader, resource: ApiResource
+) -> dict[str, object]:
+    """Verify selectors and compact pagination against this owned API server."""
+    api = CoreV1Api(reader.session.api)
+    identity = uuid4().hex[:12]
+    namespace = "kuberich-query-" + identity
+    owner_label = "kuberich-wire-owner=" + identity
+    payload = {"payload": "owned-query-data:" + "x" * 8192}
+    expected: dict[str, str] = {}
+    await api.create_namespace(V1Namespace(metadata=V1ObjectMeta(name=namespace)))
+    try:
+        for index in range(3):
+            created = await api.create_namespaced_config_map(
+                namespace,
+                {
+                    "metadata": {
+                        "name": f"wire-{index}",
+                        "labels": {
+                            "kuberich-wire-owner": identity,
+                            "role": "selected" if index < 2 else "excluded",
+                        },
+                    },
+                    "data": payload,
+                },
+            )
+            assert created.metadata.uid
+            expected[created.metadata.name] = created.metadata.uid
+        full_progress: list[ResourceSnapshot] = []
+        compact_progress: list[ResourceSnapshot] = []
+
+        async def observe_full(snapshot: ResourceSnapshot) -> None:
+            full_progress.append(snapshot)
+
+        async def observe_compact(snapshot: ResourceSnapshot) -> None:
+            compact_progress.append(snapshot)
+
+        full = await reader.list(
+            resource,
+            namespace,
+            page_size=1,
+            query=ResourceQuery(owner_label),
+            progress=observe_full,
+        )
+        tables = ResourceReader(reader.session, tables=True)
+        compact = await tables.list(
+            resource,
+            namespace,
+            page_size=1,
+            query=ResourceQuery(owner_label, compact=True),
+            progress=observe_compact,
+        )
+        identities = {(uid, name, namespace) for name, uid in expected.items()}
+        assert {(row.uid, row.name, row.namespace) for row in full.items} == identities
+        assert {(row.uid, row.name, row.namespace) for row in compact.items} == identities
+        assert all(not row.metadata_only and row.manifest["data"] == payload for row in full.items)
+        assert tables.uses_tables(resource) and compact.columns
+        assert all(
+            row.metadata_only
+            and row.server is not None
+            and row.manifest["kind"] == "PartialObjectMetadata"
+            and row.manifest["apiVersion"] == "meta.k8s.io/v1"
+            and "data" not in row.manifest
+            for row in compact.items
+        )
+        assert compact.collection.retained_bytes < full.collection.retained_bytes
+        for result, progress in ((full, full_progress), (compact, compact_progress)):
+            assert result.collection.complete and not result.collection.limited
+            assert progress and result.collection.pages == len(progress) + 1
+            assert result.namespace == namespace
+            assert result.resource_version
+            assert 0 < result.collection.retained_bytes <= MAX_RESOURCE_BYTES
+            assert [len(update.items) for update in progress] == sorted(
+                len(update.items) for update in progress
+            )
+            assert [update.collection.pages for update in progress] == list(
+                range(1, result.collection.pages)
+            )
+            assert all(
+                not update.collection.complete
+                and not update.collection.limited
+                and update.namespace == namespace
+                and update.resource_version == result.resource_version
+                and {(row.uid, row.name, row.namespace) for row in update.items} <= identities
+                and update.collection.retained_bytes == sum(row.size_bytes for row in update.items)
+                for update in progress
+            )
+            assert result.collection.retained_bytes == sum(row.size_bytes for row in result.items)
+        selected_progress: list[ResourceSnapshot] = []
+        narrowed_progress: list[ResourceSnapshot] = []
+
+        async def observe_selected(snapshot: ResourceSnapshot) -> None:
+            selected_progress.append(snapshot)
+
+        async def observe_narrowed(snapshot: ResourceSnapshot) -> None:
+            narrowed_progress.append(snapshot)
+
+        selected = await tables.list(
+            resource,
+            namespace,
+            page_size=1,
+            query=ResourceQuery(owner_label + ",role=selected", compact=True),
+            progress=observe_selected,
+        )
+        assert {row.name for row in selected.items} == {"wire-0", "wire-1"}
+        narrowed = await tables.list(
+            resource,
+            namespace,
+            page_size=1,
+            query=ResourceQuery(owner_label + ",role=selected", "metadata.name=wire-0", True),
+            progress=observe_narrowed,
+        )
+        assert [row.uid for row in narrowed.items] == [expected["wire-0"]]
+        for result, progress in ((selected, selected_progress), (narrowed, narrowed_progress)):
+            assert result.collection.complete and not result.collection.limited
+            assert result.collection.pages == len(progress) + 1
+            assert result.namespace == namespace and result.resource_version
+            assert 0 < result.collection.retained_bytes <= MAX_RESOURCE_BYTES
+            assert all(
+                row.uid == expected[row.name] and row.namespace == namespace and row.metadata_only
+                for row in result.items
+            )
+            assert result.collection.retained_bytes == sum(row.size_bytes for row in result.items)
+            assert [update.collection.pages for update in progress] == list(
+                range(1, result.collection.pages)
+            )
+            assert [len(update.items) for update in progress] == sorted(
+                len(update.items) for update in progress
+            )
+            assert all(
+                not update.collection.complete
+                and not update.collection.limited
+                and update.namespace == namespace
+                and update.resource_version == result.resource_version
+                and set(row.uid for row in update.items) <= set(row.uid for row in result.items)
+                and update.collection.retained_bytes == sum(row.size_bytes for row in update.items)
+                for update in progress
+            )
+        fresh = await tables.get(resource, "wire-0", namespace)
+        assert (fresh.uid, fresh.namespace) == (expected["wire-0"], namespace)
+        assert not fresh.metadata_only and fresh.manifest["data"] == payload
+        modified = asyncio.Event()
+        patched = False
+
+        async def observe_modified(update: SyncUpdate) -> None:
+            nonlocal patched
+            if update.status is SyncStatus.LIVE and update.event is None and not patched:
+                assert update.snapshot is not None and update.snapshot.collection.complete
+                assert [row.uid for row in update.snapshot.items] == [expected["wire-0"]]
+                assert update.snapshot.items[0].metadata_only
+                patched = True
+                await api.patch_namespaced_config_map(
+                    "wire-0",
+                    namespace,
+                    {
+                        "metadata": {"annotations": {"kuberich-wire-event": "modified"}},
+                        "data": {"payload": "owned-modified-data"},
+                    },
+                )
+            # Bookmarks advance the checkpoint while the fixture modification is pending.
+            if update.event is not None and update.event.type is not EventType.BOOKMARK:
+                assert update.event.type is EventType.MODIFIED
+                record = update.event.record
+                assert record is not None and record.uid == expected["wire-0"]
+                assert record.namespace == namespace and record.metadata_only
+                assert record.server is not None and "data" not in record.manifest
+                assert record.manifest["kind"] == "PartialObjectMetadata"
+                assert (
+                    record.manifest["metadata"]["annotations"]["kuberich-wire-event"] == "modified"
+                )
+                assert update.snapshot is not None and update.snapshot.items == (record,)
+                modified.set()
+
+        task = asyncio.create_task(
+            ListWatch(
+                tables,
+                query=ResourceQuery(owner_label + ",role=selected", "metadata.name=wire-0", True),
+            ).run(resource, namespace, observe_modified)
+        )
+        completion = asyncio.create_task(modified.wait())
+        try:
+            done, _ = await asyncio.wait(
+                {task, completion}, timeout=30, return_when=asyncio.FIRST_COMPLETED
+            )
+            if task in done:
+                await task
+            assert patched and modified.is_set()
+        finally:
+            completion.cancel()
+            task.cancel()
+            results = await asyncio.gather(task, completion, return_exceptions=True)
+        assert isinstance(results[0], asyncio.CancelledError) and task.done()
+    finally:
+        await api.delete_namespace(namespace)
+    return {
+        "real_configmap_query_pagination": True,
+        "real_label_and_field_selector_narrowing": True,
+        "real_compact_table_partial_metadata_identity": True,
+        "real_compact_payload_reduction": True,
+        "real_compact_fresh_get_full_data": True,
+        "real_compact_watch_modified_metadata": True,
+        "real_compact_watch_cancellation_awaited": True,
+        "real_paginated_collection_progress": True,
+        "real_query_namespace_delete_requested": True,
+        "query_fixture_count": len(expected),
+        "query_full_retained_bytes": full.collection.retained_bytes,
+        "query_compact_retained_bytes": compact.collection.retained_bytes,
+        "query_full_pages": full.collection.pages,
+        "query_full_progress_pages": len(full_progress),
+        "query_compact_pages": compact.collection.pages,
+        "query_compact_progress_pages": len(compact_progress),
+        "query_label_pages": selected.collection.pages,
+        "query_label_progress_pages": len(selected_progress),
+        "query_field_pages": narrowed.collection.pages,
+        "query_field_progress_pages": len(narrowed_progress),
     }
 
 
@@ -649,6 +873,7 @@ async def verify(path: Path, context: str) -> dict[str, object]:
         assert deployments.api_version == "apps/v1"
         deployment_snapshot = await reader.list(deployments, "kube-system", page_size=1)
         assert deployment_snapshot.resource_version and deployment_snapshot.items
+        query_evidence = await verify_collection_queries(reader, discovery.find("configmaps"))
         log_evidence = await verify_logs(reader, scoped_pods, sessions)
         watch_evidence = await verify_watch(reader, discovery.find("configmaps"))
         quiet_evidence = await verify_quiet_renewal(
@@ -684,6 +909,7 @@ async def verify(path: Path, context: str) -> dict[str, object]:
         "collection_versions_and_item_uids": True,
         "discovered_resource_count": len(discovery.resources),
         "scoped_pod_count": len(scoped_pods.items),
+        **query_evidence,
         **log_evidence,
         **watch_evidence,
         **quiet_evidence,

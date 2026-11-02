@@ -379,6 +379,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 Command.ROLLBACK,
                 Command.ROLLOUT,
                 Command.COLUMNS,
+                Command.SERVER,
                 Command.LOGS_ALL,
                 Command.PORT_FORWARD,
                 Command.DELETE,

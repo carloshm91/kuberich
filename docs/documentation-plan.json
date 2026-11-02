@@ -1295,6 +1295,16 @@
       "baseline_sha256": "9cb914357c2b78bfc646c457157620942e9bcd04e6ad8408900bf8df49e97748"
     },
     {
+      "source": "docs/internal/acceptance/large-collections.md",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/large-collections.md"
+      ],
+      "reason": "Retain measured bounded-collection behavior and explicit incomplete-state limits outside user navigation.",
+      "baseline_sha256": null
+    },
+    {
       "source": "docs/k9s-cli.md",
       "audience": "development",
       "action": "move",

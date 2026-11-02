@@ -290,7 +290,9 @@ async def test_context_switch_cancels_reconnect_backoff_and_clears_old_stale_sna
         finally:
             cancelled.set()
 
-    monkeypatch.setattr(module, "ListWatch", lambda reader: ListWatch(reader, sleep=retry_sleep))
+    monkeypatch.setattr(
+        module, "ListWatch", lambda reader, **kwargs: ListWatch(reader, sleep=retry_sleep, **kwargs)
+    )
 
     async def handler(request):
         return namespaces("team", "default")
@@ -334,7 +336,9 @@ async def test_real_410_discards_current_snapshot_and_recovery_replaces_it(tmp_p
         relisting.set()
         await release.wait()
 
-    monkeypatch.setattr(module, "ListWatch", lambda reader: ListWatch(reader, sleep=sleep))
+    monkeypatch.setattr(
+        module, "ListWatch", lambda reader, **kwargs: ListWatch(reader, sleep=sleep, **kwargs)
+    )
 
     async def handler(request):
         return namespaces("team")
@@ -358,7 +362,8 @@ async def test_real_410_discards_current_snapshot_and_recovery_replaces_it(tmp_p
         )
         try:
             await owner.connect("kuberich-test-one")
-            await relisting.wait()
+            async with asyncio.timeout(3):
+                await relisting.wait()
             assert owner.store.observation.status is ViewStatus.RELISTING
             assert owner.store.observation.snapshot is None
             release.set()

@@ -30,6 +30,7 @@ from kuberich.domain.connections import (
 from kuberich.domain.credential_helpers import bearer_token
 from kuberich.domain.exec_credentials import encrypted_key
 from kuberich.domain.proxies import effective_proxy, tls_failure
+from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.errors import AppError
 
 if TYPE_CHECKING:
@@ -666,6 +667,7 @@ class KubernetesSession:
         max_bytes: int = 8 * 1024 * 1024,
         accept: str = "application/json",
         include_object: bool = False,
+        query: ResourceQuery | None = None,
     ) -> AsyncGenerator[bytes | None, None]:
         """Pull one bounded complete frame; its consumer owns parsing and validation."""
         import aiohttp
@@ -681,8 +683,14 @@ class KubernetesSession:
             "allowWatchBookmarks": "true",
             "timeoutSeconds": str(duration),
         }
+        if query is not None:
+            if not isinstance(query, ResourceQuery):
+                raise AppError("Kubernetes watch requires a validated server query.")
+            params.update(query.parameters)
         if include_object:
-            params["includeObject"] = "Object"
+            params["includeObject"] = (
+                "Metadata" if query is not None and query.compact else "Object"
+            )
         try:
             async with self._response(path, params, accept, lifetime) as response:
                 yield None

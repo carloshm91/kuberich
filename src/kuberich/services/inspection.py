@@ -73,6 +73,8 @@ class InspectionService:
         try:
             snapshot = await ResourceReader(self.client).list(EVENTS, self.target.namespace)
             events = snapshot.items
+            if not snapshot.collection.complete:
+                events_error = "Events are INCOMPLETE; only retained events are shown."
         except (AppError, ConnectionProblem) as error:
             events_error = read_error(error)
         self.require_current()

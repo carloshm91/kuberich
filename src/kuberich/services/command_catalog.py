@@ -262,6 +262,11 @@ COMMAND_SPECS = (
         capability=Capability.SERVER_COLUMNS,
     ),
     _spec(
+        Command.SERVER,
+        ("server",),
+        "Narrow the server collection with label/field selectors; compact/full controls generic payloads.",
+    ),
+    _spec(
         Command.LOGS_ALL,
         ("logsall",),
         "Open bounded aggregate pod or workload logs.",
