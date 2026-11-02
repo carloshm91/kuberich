@@ -1020,3 +1020,78 @@ The retained advisory/browser reports are under `artifacts/site-qa/`; actual
 capture inputs/results are under `artifacts/issue229/capture-fba017c/` and the
 tracked media inventory. Fresh complete current-head hosted/platform CI remains
 pending. Source version stays 0.2.0; no publication or release is performed.
+
+## Prepared 0.3.0 source checkpoint
+
+Protected `6384fb1a25ac19b8c494cc6fb1b87e6d28bfaac4` delivered documentation
+quality and current synthetic media through PR #304 with all 27 required PR jobs,
+four native runners and matching Repository/DCO checks. Issue #230 now prepares
+the source version and authored notes before freezing the final qualification
+candidate. This preparation does not complete the foundations gate.
+
+The source/own lock version is 0.3.0 without dependency upgrades. Published
+0.1.0/0.2.0 records and notes remain unchanged. The new authored note has one
+baseline-null disposition; all 340 earlier rows, 105 immutable origins/payloads,
+three operational source receipts and 100 aliases remain unchanged. Exactly two
+existing census expectations change from 340 to 341 for that new document.
+Runtime, Q17, architecture, workflow policy and all other tests remain unchanged.
+
+The existing media remains a recorded clean 0.2.0 render from source `fba017c`,
+not newly captured 0.3.0 evidence. The real 0.3.0 preview must rebuild both site
+surfaces. Public indexing must reject unpublished 0.3.0 against the unchanged
+publication inventory; existing published fixtures cover that separate mode.
+Local preparation results follow below. Full exact-main qualification, owned-cluster
+repetitions, installations and the six-environment release matrix remain pending;
+no manual CI, tag, package or site is published.
+
+Source `2eabe106a687efb25325caa49af051cb7b2780ac` passed 508 focused
+release-note/policy, document-history/link/structure/schema/site and CLI cases in
+98.34 seconds, with zero failures, errors or skips. Its strict workflow union
+(234 files plus nine documentation modules), Ruff/formatting (862 files),
+private-access audit, neutral reference check and 890 local Markdown links passed.
+The new source imports from this checkout and both CLI version forms report 0.3.0.
+
+The 0.3.0 preview rebuilt both surfaces and passed 43 HTML pages and 1,508
+links/assets. Public indexing correctly rejected unpublished 0.3.0 before creating
+output; existing published 0.2.0 fixtures passed their public-mode regressions.
+The existing browser verifier passed 43 desktop and 43 mobile pages in 80.393
+seconds, with zero accessibility violations, browser failures or external requests;
+keyboard, no-JavaScript, clipboard and overflow controls passed. The browser/server
+closed, its process was reaped and process group absent. This checks preview bytes
+and does not qualify or deploy a public 0.3.0 site.
+
+The authored note now uses durable user-facing installation, upgrade and removal
+commands for the existing channels, with 0.2.0 as the actual upgrade baseline.
+Those commands are qualification targets, not claims of current 0.3.0 availability.
+Preparation status stays here and in Unreleased instead of becoming permanently
+pending prose in an immutable public release body. The original source-scoped
+508-case, static, browser and note-freeze receipts remain under
+`artifacts/issue230/preparation/`; focused revised-note checks remain separate.
+The coordinator is still reviewing the installation-upgrade baseline before any
+final source freeze. This preparation does not complete #230 or authorize publication.
+
+## 0.3.0 preparation: published upgrade coverage
+
+The reviewed installation correction is integrated after the durable-note change.
+It preserves the existing private RC-to-stable source rehearsal and adds the real
+published predecessor, selected strictly below the candidate version. Source
+upgrades use the recorded 0.2.0 formula at
+`cbe421cac5331407771b7b82279d69b533665cd2`; bottle upgrades use its reviewed
+bottle-only update at `a878dbd38d7ae0ac81fd9fcba37b4b104bad641d` and require an
+actual baseline pour. Both bind the published source
+`344222174a85868bb7836ecd1fcc91e15f65d269`. Existing version, old-keg,
+configuration, PTY, cold/warm install and removal assertions remain enforced.
+
+Independent review checked the four test/support changes and retained public
+formula, distribution and bottle metadata. The isolated source passed 55 offline
+cases in 12.93 seconds, Ruff/formatting (863 files), the private-access audit and
+the actual strict workflow union (234 files). These results establish neither
+native installation nor an actual pour. The corrected six native installation
+jobs remain required on the final protected 0.3.0 source.
+
+The revised public note separately passed 34 cases; those are not added to the
+earlier 508-case cohort. Its frozen body is unchanged by the installation
+correction. Final combined preparation checks follow on the integrated candidate;
+full exact-main qualification, three contract/owned-cluster rounds and a fresh
+30-minute sustained workload remain pending. No runtime, dependency, workflow,
+runner, permission, numeric budget or publication policy changed.

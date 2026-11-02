@@ -3455,6 +3455,16 @@
       ],
       "reason": "Retain this contributor or project contract outside the user navigation.",
       "baseline_sha256": "6760ef2d359a6c3e533aaf6edb78cbf8455de879f3acca5e3422c6843545b1ba"
+    },
+    {
+      "source": "docs/release-notes/0.3.0.md",
+      "action": "keep",
+      "destinations": [
+        "docs/release-notes/0.3.0.md"
+      ],
+      "reason": "Authored notes for the prepared 0.3.0 source version; availability and qualification remain separate.",
+      "audience": "users and release maintainers",
+      "baseline_sha256": null
     }
   ],
   "inventory_rule": "Every tracked Markdown file, every file under docs/, LICENSE, NOTICE, and contribution issue templates at the baseline commit; new structure contracts are mapped too.",

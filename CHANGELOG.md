@@ -7,6 +7,9 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 These source changes are not yet published. Changes by [Carlos J. Herrera](https://github.com/carloshm91).
 
+The [prepared 0.3.0 notes](docs/release-notes/0.3.0.md) describe these changes;
+release qualification and public availability remain separate.
+
 ### Added
 
 - Browse oversized collections with visible INCOMPLETE counts and pagination progress ([#213](https://github.com/carloshm91/kuberich/issues/213)).
