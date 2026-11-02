@@ -1040,6 +1040,32 @@ The existing media remains a recorded clean 0.2.0 render from source `fba017c`,
 not newly captured 0.3.0 evidence. The real 0.3.0 preview must rebuild both site
 surfaces. Public indexing must reject unpublished 0.3.0 against the unchanged
 publication inventory; existing published fixtures cover that separate mode.
-Local preparation checks and committed-note freezing are pending. Full exact-main
-qualification, owned-cluster repetitions, installations and the six-environment
-release matrix remain pending; no manual CI, tag, package or site is published.
+Local preparation results follow below. Full exact-main qualification, owned-cluster
+repetitions, installations and the six-environment release matrix remain pending;
+no manual CI, tag, package or site is published.
+
+Source `2eabe106a687efb25325caa49af051cb7b2780ac` passed 508 focused
+release-note/policy, document-history/link/structure/schema/site and CLI cases in
+98.34 seconds, with zero failures, errors or skips. Its strict workflow union
+(234 files plus nine documentation modules), Ruff/formatting (862 files),
+private-access audit, neutral reference check and 890 local Markdown links passed.
+The new source imports from this checkout and both CLI version forms report 0.3.0.
+
+The 0.3.0 preview rebuilt both surfaces and passed 43 HTML pages and 1,508
+links/assets. Public indexing correctly rejected unpublished 0.3.0 before creating
+output; existing published 0.2.0 fixtures passed their public-mode regressions.
+The existing browser verifier passed 43 desktop and 43 mobile pages in 80.393
+seconds, with zero accessibility violations, browser failures or external requests;
+keyboard, no-JavaScript, clipboard and overflow controls passed. The browser/server
+closed, its process was reaped and process group absent. This checks preview bytes
+and does not qualify or deploy a public 0.3.0 site.
+
+The authored note now uses durable user-facing installation, upgrade and removal
+commands for the existing channels, with 0.2.0 as the actual upgrade baseline.
+Those commands are qualification targets, not claims of current 0.3.0 availability.
+Preparation status stays here and in Unreleased instead of becoming permanently
+pending prose in an immutable public release body. The original source-scoped
+508-case, static, browser and note-freeze receipts remain under
+`artifacts/issue230/preparation/`; focused revised-note checks remain separate.
+The coordinator is still reviewing the installation-upgrade baseline before any
+final source freeze. This preparation does not complete #230 or authorize publication.
