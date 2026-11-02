@@ -605,9 +605,10 @@ recorded separately before delivery.
 
 The protected parent's automatic-main Quality run `41444530467` failed its Fast
 job `125274306280` in the deleted-initial-record retention contract. The original
-failure is retained and prerequisite diagnosis is pending. The earlier complete
-PR qualification remains source-scoped; this relocation does not change watch
-behavior or turn that later failure into a pass.
+failure is retained. The reviewed result-ownership correction below addresses
+the diagnosed lifetime; final PR qualification remains pending. The earlier
+complete PR qualification remains source-scoped and does not turn that later
+failure into a pass.
 
 ## Internal documentation relocation
 
@@ -621,8 +622,8 @@ not been relabeled as protected or substituted for this maintained checkpoint.
 Current planning data moves into the three existing operational JSON locations.
 The actual protected task-guide and architecture acceptance records move into
 maintained internal Markdown, with ordinary current-source link checks. All
-runtime code, qualification stages and unrelated behavioral tests remain the
-actual protected parent. This includes the plugin-job completed-result wait,
+runtime code, qualification stages and unrelated behavioral tests at that first
+integrated tree remained the actual protected parent. This included the plugin-job completed-result wait,
 strict private/startup gates and the two corrected browser labels.
 
 The first integrated tree `6566f1a52cc9703fd5107f8d49c84c01068dc66d`
@@ -678,5 +679,36 @@ covered the existing link, internal-record, disposition and CI-policy controls,
 including both bounded setup/order assertions. Ruff, formatting and whitespace
 checks also passed. Receipts are retained separately under
 `artifacts/issue226/source-history-setup/`; the earlier 480-case evidence remains
-unchanged and source-scoped. Public delivery still awaits review and the separate
-parent Fast-retention prerequisite.
+unchanged and source-scoped. At that setup checkpoint, public delivery still awaited review and the separate
+parent Fast-retention prerequisite; the reviewed integration follows below.
+
+## Parser result-ownership prerequisite
+
+The separately reviewed prerequisite
+`3feefd3bcdc846e5a83bed31846b2deee9d13f61` is merged normally into this candidate.
+The original automatic-main failure `41444530467` / `125274306280` remains
+retained. Its weak-reference assertion exposed a real executor/Future lifetime:
+a completed parser could retain the initial resource payload during a live
+DELETE even though the consumer kept no history.
+
+`parse_owned` now transfers the parsed value through an owned cell, leaving the
+executor completion result as `None`, and clears the cell after handoff or
+cancellation. Cancellation/error draining is preserved. The original watch
+oracle and watch-function ASTs remain unchanged. The new regression holds the
+initial worker at the same publication barrier and checks the weak reference at
+the live DELETE, before allowing worker drain; it does not add a wait or GC call
+to the original oracle.
+
+The prerequisite's independent verification passed 303 controls and strict/static
+checks. Its exact `parse_owned` coverage was 18/18 executable lines and 2/2
+branches; changed executable-line coverage was 17/17. These measurements belong
+to that reviewed prerequisite source, not a repeated local campaign here.
+Final integration checks and complete current-head CI remain separate.
+
+The necessary exceptions to protected-parent byte preservation are explicit:
+`src/kuberich/services/resources.py` and the added retention regression in
+`tests/contract/test_watches.py` carry this reviewed fix; two CI setup steps fetch
+existing PR histories before offline source validation. Other runtime behavior,
+packaging, qualification gates and unrelated tests retain the protected parent.
+All 105 historical payloads and source receipts remain exact. The source version
+stays 0.2.0; no artifact, website or hosting publication is performed.

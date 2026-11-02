@@ -42,20 +42,30 @@ MAX_SNAPSHOT_BYTES = MAX_RESOURCE_BYTES
 
 async def parse_owned[T](operation: Callable[[], T]) -> T:
     """Finish an owned CPU parser even under repeated caller cancellation."""
-    task = asyncio.create_task(asyncio.to_thread(operation))
+    result: list[T] = []
+
+    def parse() -> None:
+        # Executor completion may outlive publication; keep its result payload empty.
+        result.append(operation())
+
+    task = asyncio.create_task(asyncio.to_thread(parse))
     # The collector consumes late failures even if its shield is cancelled.
     completion = asyncio.gather(task, return_exceptions=True)
     try:
-        await asyncio.shield(completion)
-    except asyncio.CancelledError:
-        while not completion.done():
-            try:
-                await asyncio.shield(completion)
-            except asyncio.CancelledError:
-                continue
-        await completion
-        raise
-    return task.result()
+        try:
+            await asyncio.shield(completion)
+        except asyncio.CancelledError:
+            while not completion.done():
+                try:
+                    await asyncio.shield(completion)
+                except asyncio.CancelledError:
+                    continue
+            await completion
+            raise
+        task.result()
+        return result.pop()
+    finally:
+        result.clear()
 
 
 def _entries(value: Any, limit: int) -> list[Any]:
