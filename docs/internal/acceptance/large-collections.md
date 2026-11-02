@@ -83,6 +83,54 @@ of the 82,811-byte source/diff packet was verified by a unique nonce and an exac
 source quote. The review is supporting evidence, not a replacement for the
 owned HTTP, cancellation, memory-retention or Pilot tests.
 
+## Owned Kubernetes wire checks
+
+The owned context verifier creates three ConfigMaps with controlled payloads in
+a generated namespace. A unique owner-label selector isolates these fixtures
+from controller-created objects. Full JSON and compact Table lists use one-item
+pages and must preserve the same UIDs and namespace. Compact rows must contain
+actual PartialObjectMetadata, omit ConfigMap data and retain fewer payload bytes.
+Intermediate snapshots must report incomplete progress with a consistent
+resourceVersion; final snapshots must report complete membership and progress
+must demonstrate actual pagination.
+
+A role-label query excludes a deliberately nonmatching fixture. Adding a name
+field selector further excludes the other matching fixture. A fresh GET through
+the same Table reader must recover the original full data and UID. One actual
+MODIFIED event must retain the UID and changed annotation while omitting data;
+the compact watch is then cancelled and awaited. Namespace
+deletion is requested in `finally`; the existing owned-cluster boundary verifies
+node deletion and absence. The context receipt records the observed full and
+compact retained bytes alongside each assertion's result.
+Filtered pages may be empty while continuation is still present; completeness
+therefore follows server exhaustion rather than matched-row count. The verifier
+checks actual progress/page accounting and records narrowed-query page counts.
+An owned HTTP regression retains an empty terminal Table page in both full and
+compact mode, as allowed by the
+[Kubernetes ListOptions contract](https://github.com/kubernetes/apimachinery/blob/v0.36.4/pkg/apis/meta/v1/types.go#L358-L365).
+
+These checks exercise real Kubernetes negotiation and pagination with small
+fixtures. They do not measure oversized-cluster throughput or replace the
+existing deterministic cap, watch, cancellation or full-platform qualification.
+
+The initial real probe failed before the compact watch: Kubernetes 1.36.4's
+ConfigMap printer declares Data as string but sends its count as an integer.
+A separate shape-only observation confirmed a valid Table and
+PartialObjectMetadata followed by ordinary JSON fallback. Both failed originals
+and the diagnostic source/hash remain retained; no payload values were printed.
+The [upstream column definition](https://github.com/kubernetes/kubernetes/blob/v1.36.4/pkg/printers/internalversion/printers.go#L338)
+and [printer](https://github.com/kubernetes/kubernetes/blob/v1.36.4/pkg/printers/internalversion/printers.go#L2420)
+show that mismatch explicitly.
+
+The decoder normalizes only exact signed-64-bit integers advertised as strings
+to decimal text. This preserves visible generic values and homogeneous declared
+string sort keys. Booleans, floats, date mismatches, nested values and out-of-range
+integers retain their refusal behavior, as do all metadata/scope/payload bounds.
+ConfigMap and Secret server-cell redaction remains unchanged. A regression with
+the observed printer shape failed before this correction; range, projection and
+stable sorting controls accompany it. Raw evidence is retained under
+`artifacts/issue213-wire-kind/`.
+
 ## Limits and stable certification
 
 The retained 64 MiB bound accounts for resource payloads and printer cells, not
