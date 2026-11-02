@@ -1069,3 +1069,29 @@ pending prose in an immutable public release body. The original source-scoped
 `artifacts/issue230/preparation/`; focused revised-note checks remain separate.
 The coordinator is still reviewing the installation-upgrade baseline before any
 final source freeze. This preparation does not complete #230 or authorize publication.
+
+## 0.3.0 preparation: published upgrade coverage
+
+The reviewed installation correction is integrated after the durable-note change.
+It preserves the existing private RC-to-stable source rehearsal and adds the real
+published predecessor, selected strictly below the candidate version. Source
+upgrades use the recorded 0.2.0 formula at
+`cbe421cac5331407771b7b82279d69b533665cd2`; bottle upgrades use its reviewed
+bottle-only update at `a878dbd38d7ae0ac81fd9fcba37b4b104bad641d` and require an
+actual baseline pour. Both bind the published source
+`344222174a85868bb7836ecd1fcc91e15f65d269`. Existing version, old-keg,
+configuration, PTY, cold/warm install and removal assertions remain enforced.
+
+Independent review checked the four test/support changes and retained public
+formula, distribution and bottle metadata. The isolated source passed 55 offline
+cases in 12.93 seconds, Ruff/formatting (863 files), the private-access audit and
+the actual strict workflow union (234 files). These results establish neither
+native installation nor an actual pour. The corrected six native installation
+jobs remain required on the final protected 0.3.0 source.
+
+The revised public note separately passed 34 cases; those are not added to the
+earlier 508-case cohort. Its frozen body is unchanged by the installation
+correction. Final combined preparation checks follow on the integrated candidate;
+full exact-main qualification, three contract/owned-cluster rounds and a fresh
+30-minute sustained workload remain pending. No runtime, dependency, workflow,
+runner, permission, numeric budget or publication policy changed.
