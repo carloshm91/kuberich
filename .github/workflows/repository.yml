@@ -17,6 +17,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+      - name: Fetch recorded documentation source histories
+        timeout-minutes: 2
+        run: git fetch --no-tags origin refs/pull/277/head refs/pull/290/head
       - name: Install locked static-site tools
         uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
         with:

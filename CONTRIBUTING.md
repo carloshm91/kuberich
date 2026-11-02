@@ -98,6 +98,18 @@ group. They require uv on PATH and package-index access for dependencies; tool
 state/configuration is confined to owned temporary directories. Installed CLI
 help/version require no cluster. Real UI checks use owned APIs and PTYs.
 
+Before running source-history documentation checks or local qualification from a
+full-history clone, fetch the existing pull-request source histories once:
+
+```sh
+git fetch --no-tags origin refs/pull/277/head refs/pull/290/head
+```
+
+The exact historical records include original feature-branch commits that squash
+merges do not put in main's ancestry. These existing PR refs supply their objects;
+the validators remain offline and still check the recorded commit, blob and hash.
+See [internal source records](docs/internal/README.md#source-history-setup).
+
 The coverage script independently checks lines and branches, the complete
 production inventory, and the maintained critical-module list. diff-cover checks
 changed executable lines against the merge base; fetch the current base branch

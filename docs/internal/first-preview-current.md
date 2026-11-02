@@ -653,3 +653,30 @@ Markdown links. Both offline site modes passed: preview output had 43 pages and
 The strict workflow union covered 234 source files, and the supplemental docs
 check covered seven files. Both builds still report source version 0.2.0 and
 perform no publication.
+
+## Reproducible historical-source setup
+
+Repository checks and Quality test shards now fetch the existing PR 277 and
+PR 290 head refs once, in explicit setup steps bounded to two minutes. The same
+command is documented for contributors. Normal Markdown validation remains
+offline and fail-closed, with all 105 receipt identities and payloads unchanged.
+Current-only site builds, release-byte verification and installers do not need
+these original historical Git objects.
+
+A clean isolated reachable-only checkout of the local `9ea3523` candidate lacked
+the `1875994` source commit before setup. An actual bounded fetch from the two
+existing GitHub PR refs supplied it; all 105 original contexts and the offline
+plan check then passed. There were no alternates or copies of the shared object
+store. This proof uses explicitly local candidate ancestry for `aad1a0b2`: the
+descendant is not public yet. Remote PR 290 already contains `dd0a67ee`; its normal
+descendant push will also retain the candidate's `aad1a0b2` ancestry. No synthetic
+ref, tag, source binding or protected-main claim was created.
+
+The focused documentation/workflow follow-up passed 106 controls in 17.13 seconds
+(18.16 seconds including the runner), with no failures, errors or skips. It
+covered the existing link, internal-record, disposition and CI-policy controls,
+including both bounded setup/order assertions. Ruff, formatting and whitespace
+checks also passed. Receipts are retained separately under
+`artifacts/issue226/source-history-setup/`; the earlier 480-case evidence remains
+unchanged and source-scoped. Public delivery still awaits review and the separate
+parent Fast-retention prerequisite.

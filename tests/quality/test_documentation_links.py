@@ -95,6 +95,31 @@ def test_repository_workflow_installs_locked_parser_before_validation():
     assert all("continue-on-error" not in step for step in steps)
 
 
+@pytest.mark.parametrize(
+    "filename,job,consumer",
+    [
+        ("repository.yml", "repository", "uv run python -m scripts.validate_plan"),
+        ("quality.yml", "tests", "uv run pytest --cov=kuberich"),
+    ],
+)
+def test_source_history_setup_precedes_offline_documentation_validation(filename, job, consumer):
+    workflow = yaml.safe_load((ROOT / ".github/workflows" / filename).read_text())
+    steps = workflow["jobs"][job]["steps"]
+    checkout = next(
+        i for i, step in enumerate(steps) if "actions/checkout@" in step.get("uses", "")
+    )
+    setup = next(
+        i
+        for i, step in enumerate(steps)
+        if step.get("run") == "git fetch --no-tags origin refs/pull/277/head refs/pull/290/head"
+    )
+    validate = next(i for i, step in enumerate(steps) if consumer in step.get("run", ""))
+    assert checkout < setup < validate
+    assert steps[checkout]["with"]["fetch-depth"] == 0
+    assert 0 < steps[setup]["timeout-minutes"] <= 2
+    assert "continue-on-error" not in steps[setup]
+
+
 def test_actual_markdown_ignores_fenced_inline_and_indented_code(tmp_path):
     page = tmp_path / "example.md"
     (tmp_path / "real.md").write_text("# Target\n")
