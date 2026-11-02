@@ -32,7 +32,7 @@ measurements are advisory for 0.x and strict for 1.0.
 | 0.1.x | D06 #51 | Core workspace; also #53, #54 and #123 |
 | 0.2.x | D07 #65 | Extensibility; also Homebrew bottles #193 |
 | 0.3.x | D16 #230 | Foundations and documentation; also #208, dependency refresh #270, plugin output #272, log readiness #274, generic plugin capture #278, X11 selection readiness #281 and native macOS runners #291 |
-| 0.4.x | D08 #75 | Observability and metrics |
+| 0.4.x | D08 #75 | Observability, metrics and deprecated console-alias removal |
 | 0.5.x | D09 #82 | Operations, Helm and manifests |
 | 0.6.x | D17 #242 | Multi-cluster workspace |
 | 0.7.x | D18 #248 | Extensions, security center and AI |
@@ -299,6 +299,10 @@ landing page and documentation before public launch. Both provide local launch
 preparation evidence; final public-launch requirements belong to #89, and expanded versioned documentation remains #90/#91. GitHub tracks
 their acceptance criteria and current status. Neither ticket authorizes visibility,
 domain/DNS, hosting publication, ownership transfer or public distribution changes.
+
+The 0.3 identity transition warns when the previous console command is used.
+D08 #75 owns its actual removal in 0.4.0, including fresh-install/upgrade checks;
+explicit configuration migration retains previous files and confirms creation once.
 
 ## History
 

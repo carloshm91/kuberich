@@ -46,6 +46,16 @@ def _boolean(value: str) -> bool:
     return value.casefold() == "true"
 
 
+def legacy_main(argv: Sequence[str] | None = None) -> int:
+    """Retain the previous console name with a fixed 0.3 transition notice."""
+    print(
+        "Warning: kubetrol is deprecated; use kuberich instead. "
+        "This command will be removed in 0.4.0.",
+        file=sys.stderr,
+    )
+    return main(argv)
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = _Parser(
         prog="kuberich",
