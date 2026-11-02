@@ -11,7 +11,7 @@ from contextlib import aclosing
 from pathlib import Path
 
 import pytest
-from aiohttp import web
+from aiohttp import ClientSession, ClientTimeout, web
 
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, HttpProblem
@@ -688,17 +688,70 @@ async def test_failed_watch_establishment_does_not_reset_failure_backoff(tmp_pat
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("timeout,seconds", [(0.1, "1"), (1.25, "2"), (5, "5"), (3600, "60")])
-async def test_watch_server_interval_is_an_independent_bounded_integer(tmp_path, timeout, seconds):
-    async def handler(request):
-        assert request.query["timeoutSeconds"] == seconds
-        return web.Response(body=b"")
+async def test_watch_server_interval_is_an_independent_bounded_integer(
+    tmp_path, monkeypatch, timeout, seconds
+):
+    class EmptyResponse:
+        status = 200
 
+        def __init__(self):
+            self.content = self
+            self.chunk_sizes = []
+            self.entered = self.exited = self.exhausted = False
+
+        async def __aenter__(self):
+            self.entered = True
+            return self
+
+        async def __aexit__(self, *args):
+            self.exited = True
+
+        def iter_chunked(self, size):
+            self.chunk_sizes.append(size)
+            return self
+
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            self.exhausted = True
+            raise StopAsyncIteration
+
+    response, requests = EmptyResponse(), []
+
+    async def request(pool, url, **kwargs):
+        requests.append((pool, url, kwargs))
+        assert kwargs["params"]["timeoutSeconds"] == seconds
+        assert kwargs["params"]["resourceVersion"] == "opaque"
+        assert kwargs["params"]["watch"] == "true"
+        assert kwargs["params"]["allowWatchBookmarks"] == "true"
+        budget = kwargs["timeout"]
+        assert isinstance(budget, ClientTimeout)
+        lifetime = int(seconds) + min(timeout, 60.0) + 1.0
+        assert budget.total == budget.sock_read == lifetime
+        assert budget.connect == min(timeout, lifetime)
+        return response
+
+    async def handler(request):
+        pytest.fail("Protocol generation uses the public HTTP-call boundary, not a cold connection")
+
+    # Real-HTTP header/body deadline and quiet-renewal cases remain separate.
+    monkeypatch.setattr(ClientSession, "get", request)
     async with (
         reader_fixture(tmp_path, handler, timeout=timeout) as reader,
         aclosing(reader.session.watch_json("/api/v1/pods", "opaque")) as stream,
     ):
+        pool = reader.session.api.rest_client.pool_manager
+        assert reader.session.timeout == timeout
+        assert type(reader.session.watch_seconds) is int
+        assert reader.session.watch_seconds == int(seconds)
         assert await anext(stream) is None
         assert [value async for value in stream] == []
+        assert len(requests) == 1 and requests[0][0] is pool
+        assert requests[0][1].endswith("/api/v1/pods")
+        assert response.entered and response.exited and response.exhausted
+        assert response.chunk_sizes == [16384]
+    assert reader.session.api is None and pool.closed
 
 
 @pytest.mark.asyncio
