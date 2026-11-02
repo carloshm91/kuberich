@@ -892,3 +892,22 @@ parent preservation. Original 95-case documentation, 84-case watch/pipeline and
 application coverage, runtime qualification or unique-cause claim follows from
 these controls. The final combined selection, actual workflow strict union and
 fresh complete current-head hosted/native qualification remain pending.
+
+The combined frozen source `999408a907ba4737723d155ca90e3fb67aed766e`
+passed exactly 100 selected cases in 23.05 seconds (24.22 seconds including the
+runner), with no failures, errors or skips: the five documentation/policy files,
+all four watch interval values and the target source-picker UI case. The command was:
+
+```sh
+uv run python -m pytest -q tests/quality/test_contributor_essentials.py tests/quality/test_documentation_links.py tests/quality/test_internal_docs.py tests/quality/test_documentation_structure.py tests/quality/test_architecture_docs.py tests/contract/test_watches.py::test_watch_server_interval_is_an_independent_bounded_integer tests/ui/test_aggregate_logs.py::test_source_picker_uid_recreation_expired_selection_and_manual_space --basetemp=/tmp/kuberich-228-integration-k4l0_811/pytest --junitxml=artifacts/issue228/final-integration/tests.xml
+```
+
+The actual workflow strict union (234 files), seven documentation modules,
+Ruff/format/private-access, checked references and module-plan validation passed.
+Both previously qualified site manifests still match every enrolled input; no
+standalone rebuild was needed. All five forbidden ancestry guards, private-copy
+permissions, 105 historical identities, three operational inputs, 100 aliases and
+340-document inventory remain intact. Original and helper cohorts stay separate;
+no broad 84/138/full/native campaign was repeated. Production coverage remains N/A.
+Receipts are under `artifacts/issue228/final-integration/`. Fresh complete current-
+head hosted/native qualification and root-reviewed public delivery remain pending.
