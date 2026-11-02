@@ -911,3 +911,40 @@ permissions, 105 historical identities, three operational inputs, 100 aliases an
 no broad 84/138/full/native campaign was repeated. Production coverage remains N/A.
 Receipts are under `artifacts/issue228/final-integration/`. Fresh complete current-
 head hosted/native qualification and root-reviewed public delivery remain pending.
+
+### Contributor-guidance CI correction
+
+The first PR #303 source `869cccf462d6c2f02acc1a1195d12c169898cf3e`
+did not qualify. Application quality run `41481687428` ended with 24 jobs:
+20 successful, two failed, one cancelled and one skipped. The idle-timeout
+backoff test recorded `[0.25, 0.5, 0.25, 0.5]` instead of the expected three
+delays; the aggregate gate failed and the Application matrix stayed skipped.
+The cancelled macOS part had no acquired runner or test steps; its original
+annotation identifies hosted-runner acquisition capacity. All four native jobs,
+Repository checks and DCO passed, which does not replace the failed qualification.
+
+One controlled execution of the unchanged original test retained its failed
+assertion. Actual HTTP 503/503 responses, one LIVE observation and the 2.1-second
+idle-body timeout correctly produced the expected reset to 0.25 seconds. Only
+then, a controlled delay before the incidental final request was cancelled by
+the unchanged 0.1-second handshake deadline, adding the extra 0.5-second backoff.
+This proves a sufficient route, not the unique historical hosted cause. The
+original failure, raw control failure and cleanup/source receipts remain intact.
+
+Reviewed child `1026e18b23d914f2cb6083cb7e0e8cd1ee32d13a` changes only
+that test. LIST setup uses its ordinary deadline; the intended watch phase keeps
+0.1 seconds and the enclosing run keeps five seconds. The test stops through
+the existing `Finished` control after recording the third sleep. It still
+requires real HTTP 503/503, one LIVE state, the actual idle TIMEOUT, exact delays,
+checkpoint and request counts, plus drained handlers and a closed client pool.
+All other functions, shared fixtures, production code and hard controls are exact.
+
+The child passed 84 watch/pipeline cases in 14.52 seconds (18.09 with the runner),
+with no failures, errors or skips. Ruff, formatting, private-access checks and
+the actual workflow strict union of 234 files passed. All owned local commands and
+the original CI observer are reaped. Root and independent review approved the
+change; it is integrated without rewriting the published parent. Receipts are
+under the helper's `artifacts/issue228/idle-backoff-contract/` and the delivery's
+`artifacts/issue228/root-tracking/`. Combined integration checks and fresh complete
+current-head hosted/native qualification remain pending. Source version is 0.2.0;
+no application coverage percentage or release/publication follows from this fix.
