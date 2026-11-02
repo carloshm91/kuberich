@@ -712,3 +712,27 @@ existing PR histories before offline source validation. Other runtime behavior,
 packaging, qualification gates and unrelated tests retain the protected parent.
 All 105 historical payloads and source receipts remain exact. The source version
 stays 0.2.0; no artifact, website or hosting publication is performed.
+
+The frozen integration `59c572eb1136d10005df5f4d92d85993387ef042`
+passed the original and new retention cases together with the existing internal
+history, link, disposition and workflow controls: 108 cases in 17.08 seconds
+(18.12 seconds including the runner), with no failures, errors or skips. The
+exact command was:
+
+```sh
+uv run python -m pytest -q tests/contract/test_watches.py::test_deleted_initial_records_are_released_when_consumer_keeps_no_history tests/contract/test_watches.py::test_initial_parser_completion_retains_no_deleted_record_while_worker_unwinds tests/quality/test_documentation_links.py tests/quality/test_internal_docs.py tests/quality/test_documentation_structure.py tests/quality/test_ci_policy.py --basetemp=/tmp/kuberich-226-integration-_vqnp4d4/pytest --junitxml=artifacts/issue226/parser-integration/tests.xml
+```
+
+The current 234-file strict workflow union, seven documentation modules, Ruff,
+formatting, private-access audit, checked references and plan validation all
+passed. The plan validates 896 local Markdown links. Because `resources.py` is
+an enrolled site input, both offline outputs were rebuilt and checked: preview
+43 pages / 1,508 links and assets, public mode 23 / 799, with 20 canonical
+documentation pages and version 0.2.0 in both. Their manifests perform no
+publication. The final evidence-only checkpoint note changes no enrolled input.
+
+Receipts remain separate under `artifacts/issue226/parser-integration/`. These
+108 integration cases, the earlier 480 documentation cases, the 106 setup cases
+and the prerequisite's 303 cases overlap and must not be added together. They
+do not substitute for fresh complete current-head hosted/native CI, which is
+still pending, or for release/provider/performance qualification.
