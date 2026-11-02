@@ -1,145 +1,93 @@
-# Selected-container embedded shell
+# Open a shell or attach
 
-On pods, `x`, `:shell` or `:exec` opens the container table. Enter on a pod also
-opens that table, including single-container pods. Choose a regular/init container
-with arrows or `j/k`, then press `s` or `x` to launch its configured shell.
-Enter/`l` still opens logs. Pod `s` continues to change the sort column.
+Open an embedded terminal for a selected container. You need kubectl on PATH,
+a trusted connection, pod read access, and `pods/exec` for a shell or `pods/attach`
+for attachment. Read-only mode blocks both actions.
 
-KubeRich opens a full-screen **embedded terminal inside Textual**. Its frame keeps
-context, namespace/pod and container visible while an owned PTY runs
-[kubectl exec](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_exec/).
-The actual shell prompt, ANSI colors, cursor movement and alternate-screen
-programs are rendered by an emulator. Textual stays active throughout the session.
+## Start a shell
 
-- `exit` or Ctrl+D returns to the retained container selection.
-- Ctrl+] closes the owned exec session and returns to containers.
-- Ctrl+C reaches the shell/program; it does not quit KubeRich here.
-- Ctrl+Q quits KubeRich and cleans up the exec process.
-- Escape, Tab, arrows, `q`, `:` and `/` reach the remote program while the terminal is live.
-- After returning, Escape goes from containers to the retained pod table.
+1. Start with an explicit context and namespace in write mode:
 
-The frame consumes two columns and six rows; resizing a 80×25 terminal gives the
-remote PTY 78×19 cells. Target lines are literal, redacted and clipped in compact
-windows. A failed exec returns to safe, scrollable feedback. SIGTERM cleans up
-and exits the CLI with 143 after terminal restoration.
+   ```sh
+   kuberich --context demo-lab --namespace demo-apps --write
+   ```
 
-## Review output without sending shell commands
+2. Replace those fictional names with your intended scope. Select a pod and press
+   Enter, or use `x`, `:shell`, or `:exec` to open its container table.
+3. Check the container name and state. Press `s` or `x` on the intended container.
 
-Click **History**, or press Alt+PageUp / Shift+PageUp, to review a frozen copy of
-normal-screen output. The remote program keeps running and receiving its actual
-PTY size; its latest output and cursor stay in the live emulator. Full-screen
-alternate buffers, such as an editor, do not enter normal-screen history.
-
-- Up/Down or `j/k`, PageUp/PageDown and Home/End or `g/G` move through the capture.
-  The mouse wheel scrolls only during review; clicking selects a row.
-- `/` or Ctrl+F starts literal, case-insensitive Unicode search. Enter finds a
-  match; `n/N` finds the next/previous match with wraparound. Escape cancels search.
-- `v` or Space starts/ends a range; move to its other end. Shift-click also
-  selects a range. `y` or Ctrl+Y explicitly copies the selected whole rows.
-- Enter, Escape or `q`, or clicking **Live**, returns to the current remote
-  screen. Search, selection, navigation and paste stay local during review.
-  Ctrl+] still closes the session and Ctrl+Q still quits KubeRich.
-
-At most **1,000 scrolled rows** are retained. The footer reports discarded live
-history; a frozen capture retains its own rows while the live ring advances.
-Resizing crops the capture to the new viewport without reflowing or modifying its
-captured rows. Search accepts 256 characters and copy accepts at most 64 KiB after
-control escaping. Copy redacts the recognized credential patterns used elsewhere
-in KubeRich; it cannot identify arbitrary secrets printed by a program. Copy uses
-the host clipboard mechanism, whose availability depends on the outer terminal.
-Remote OSC52 clipboard requests remain inert. Nothing copies automatically.
-Closing, stale-target cancellation and repeated sessions release the capture,
-history and session-owned cell cache. See [history evidence](acceptance/terminal-history.md).
-
-## Requirements and preferences
-
-Install kubectl on PATH, using a [client version supported by your cluster](https://kubernetes.io/releases/version-skew-policy/#kubectl).
-Use trusted Kubernetes configuration and credentials; configured exec-auth
-helpers remain trusted local programs. The selected account needs pod reads
-and pods/exec permission; the Kubernetes server makes the authorization decision.
-Read-only mode blocks shells before file preparation or executable lookup.
-
-The default image command is `sh`. To choose another shell, edit KubeRich
-preferences and restart:
+The shell opens full screen inside the Textual workspace. Its frame identifies
+the context, namespace, pod, and container. The default command is `sh`; the image
+must contain it. Configure another argument list in preferences if needed:
 
 ```yaml
 schema_version: 1
 shell: ["/bin/bash", "-l"]
 ```
 
-This is an argument list, with 1–32 nonempty strings. It is passed literally after
-kubectl's `--`, without shell interpolation. The image must contain that program.
-`config check` validates the preference; it does not connect or execute anything.
-Initial `--command shell` is unavailable because launching a shell requires a
-selected pod and container. The interactive aliases take no command arguments.
+Run `kuberich config check` after editing. Arguments are passed literally; shell
+expressions are not interpreted by KubeRich. The setting applies to the next shell.
+A startup `--command shell` is unavailable because a selected pod is required.
 
-## Captured scope and return
+## Return without leaving the workspace
 
-The action captures the owned client/session, context, namespace, pod name/UID,
-container, shell argv, environment and working directory before awaiting work.
-A GET verifies that the pod still has the captured UID and container, and that
-it is not deleting or completed. Scope invalidation blocks launch. A replacement
-between that check and kubectl's server request remains a Kubernetes race:
-exec-by-name has no atomic pod-UID precondition. KubeRich does not claim otherwise.
+| Control | Result |
+| --- | --- |
+| `exit` or Ctrl+D | Exit the shell and return to containers |
+| Ctrl+] | Close this local exec session and return |
+| Ctrl+C | Interrupt the remote program |
+| Ctrl+Q | Quit KubeRich and stop its local processes |
 
-Kubectl uses a private snapshot of the prepared session's endpoint, TLS material
-and credential mechanism, with explicit context/namespace/pod/container flags.
-Changing the original kubeconfig after connection cannot redirect this action.
-The snapshot is mode 0600 inside the owned mode-0700 SDK directory and is deleted
-after return or cancellation. Certificate files live until their client closes.
-The original kubeconfig and current-context are never rewritten.
+While the terminal is live, Escape, arrows, Tab, `q`, `:`, and `/` reach the remote
+program. Full-screen editors and ANSI colors use the embedded emulator. Resizing
+changes the remote terminal size. Escape after returning to containers restores
+the preceding pod table and its selection.
 
-Missing local kubectl, denied pod reads, deleted/replaced pods, unavailable
-containers and nonzero exec exits produce safe feedback. Exit 126/127 suggests
-an unavailable image shell. Other kubectl failures name the exit code and
-permission/state/shell checks; raw stderr appears only in the deliberately
-opened embedded terminal and is not retained in UI diagnostics. Exec is never retried
-automatically. An image without a shell requires a suitable image or the later
-ephemeral-debug workflow, not an invented SSH connection.
+## Review terminal history
 
-## Verification and remaining scope
+Click **History**, or press Alt+PageUp/Shift+PageUp, to review a frozen copy of
+normal-screen output. The remote program keeps running. Full-screen alternate
+buffers do not enter normal-screen history.
 
-See [shell verification evidence](acceptance/S04.md) and the
-[embedded-terminal acceptance](acceptance/embedded-shell.md) for qualified
-commits, coverage, actual terminal/cluster trials and unavailable platform checks.
+- Arrows or `j`/`k`, page keys, and `g`/Shift+G move locally.
+- `/` or Ctrl+F starts literal, case-insensitive search. Enter finds a match;
+  `n`/Shift+N move through matches.
+- `v` or Space starts/ends a row range. Shift-click can select a range when mouse
+  reporting is enabled. `y` or Ctrl+Y copies selected whole rows explicitly.
+- Enter, Escape, `q`, or **Live** returns to the running screen.
 
-Behavioral checks cover immutable capture, exact arguments, private file modes,
-UID replacement, stale views, read-only policy and repeated cancellation/cleanup.
-Pilot trials cover selected-container launch, compact feedback and retained
-cursor/viewport. Source and freshly installed CLI PTYs cover actual child controlling-terminal
-ownership, input, resize, Ctrl+C, fullscreen use, failures and terminal restoration.
+History keeps up to 1,000 scrolled rows; a frozen copy keeps its own rows while
+live history advances. Search accepts 256 characters; copy accepts 64 KiB after
+control escaping and recognized-credential redaction. Output can still contain
+secrets the application cannot identify. Remote clipboard escape requests are
+inert; no output copies automatically.
 
-The isolated Kubernetes trial creates and deletes its own cluster and fixtures:
+## Attach to an existing process
 
-```sh
-uv run python -m scripts.verify_shell_kind --kind /path/to/kind --kubectl /path/to/kubectl
-```
+Use `:attach` on a pod, then `a` on a running container. Attach connects to its
+existing main process. That process's stdin and TTY settings decide whether
+interaction is possible; this action does not create a new shell.
 
-It requires kind 0.33.0 and kubectl 1.36.4, pins the Kubernetes 1.36.4 node and
-Alpine images by digest, and exercises the actual CLI with two containers,
-configured/default/missing shells, full-screen vi, resize, interruption, repeated
-return and denied pods/exec. It also edits only its owned source kubeconfig after
-connection to verify the prepared session remains pinned. Evidence is written to
-`artifacts/cluster/shell.json` and `artifacts/terminal/kind-shell-*`.
+Press Ctrl+P then Ctrl+Q to send kubectl's detach sequence. Ctrl+] closes the local
+session. Ctrl+C reaches the existing process and can affect the workload.
+Ctrl+Q alone quits KubeRich. Closing or detaching does not request pod deletion.
 
-Native POSIX terminal, SSH and tmux behavior is tested separately from
-real-provider authentication. [Attach and file transfer](container-attach-copy.md)
-have separate workflows; node shells and new ephemeral debug containers are planned. This checkpoint supports shell keys, bounded Unicode paste,
-ANSI/256/true colors, cursor reports and alternate screens. It does not implement
-mouse reporting, terminal graphics or advanced keyboard protocols. There is no
-promise that every terminal program is compatible or that K9s parity is complete.
+## Handle a failed or stale session
 
-Output storage is limited to two 400×150 cell screens, 32 code points per cell,
-1,000 history rows, one frozen capture of at most 1,150 rows, a session-owned
-1,024-entry immutable cell cache, a single saved cursor and 128-byte control
-sequences. PTY reads backpressure at
-8×16 KiB and pending input at 64 KiB; paste accepts at most 16,384 characters.
-Remote OSC/DCS/APC/PM/SOS strings, including clipboard/title/link/image commands,
-are consumed without being relayed to the host. Terminal output is deliberately
-visible to its operator and is not stored in application diagnostic logs.
+A deleted, replaced, completed, or deleting pod cannot start an old selection's
+session. Select the pod again after a context or UID change. KubeRich checks the
+pod before launch, but Kubernetes exec/attach targets names and has no atomic UID
+precondition; replacement between the check and server request remains possible.
 
-[Pyte 0.8.2](https://github.com/selectel/pyte/tree/0.8.2) is an unmodified,
-dynamically imported LGPLv3 dependency, pinned in pyproject.toml and
-uv.lock. KubeRich's own adapter/widget code is original Apache-2.0 code; no upstream
-widget source is copied. Pyte's license and replacement/source availability must
-be preserved in standalone distributions, together with license and SBOM checks.
+Exit 126/127 often means the configured image shell is missing. Check kubectl,
+permissions, the selected container, and its state before trying again. An image
+without a shell needs a suitable image; SSH is not required for pod exec.
+
+The private kubectl connection file is deleted after return. The source kubeconfig
+and current-context are unchanged. Local cleanup cannot promise termination of a
+remote exec process after a lost connection. Raw interactive output is visible
+in the terminal and is not copied into application diagnostic logs.
+
+Mouse reporting, terminal graphics, and advanced keyboard protocols are not
+implemented inside the remote emulator. For file movement, use
+[file transfers](container-attach-copy.md).

@@ -13,7 +13,6 @@ from scripts.build_site import GUIDES, MARKER, REFERENCES, ROOT, build, heading_
 from scripts.check_site import verify
 from tests.support.site_source import (
     copy_source,
-    latest_published,
     published_source,
     refresh,
     set_version,
@@ -31,10 +30,10 @@ def test_builds_both_surfaces_deterministically_and_rebuilds_owned_output(tmp_pa
     assert evidence["local_links_and_assets"] > 500
     for name in ("www/docs/quickstart.html", "docs/quickstart.html"):
         html = (first / name).read_text()
-        assert "uv tool install --python 3.12" in html
-        assert "kuberich --kubeconfig" in html
-        assert "--readonly" in html and "--write" in html
-        assert "uninstall" in html and "Public release" in html
+        assert 'href="installation.html"' in html
+        assert "kuberich --context demo-lab" in html
+        assert "--readonly" in html and "shell" in html
+        assert "Public release" in html
         assert "Install from PyPI, the project Homebrew tap or GitHub Release archives" in html
         assert "PyPI/Homebrew packages are not available" not in html
         assert "Maintainer rehearsal" not in html
@@ -42,9 +41,9 @@ def test_builds_both_surfaces_deterministically_and_rebuilds_owned_output(tmp_pa
         installation = (first / surface / "installation.html").read_text()
         assert "brew install kuberich/tap/kuberich" in installation
         assert "pipx upgrade kuberich" in installation
-        assert f"kuberich-{latest_published()}-linux-arm64.tar.gz" in installation
-        assert "macOS 26" in installation and "glibc 2.35" in installation
-        assert "troubleshooting.html#legacy-terminal-compatibility" in installation
+        assert "linux-arm64.tar.gz" in installation
+        assert "macOS 14" in installation and "glibc 2.35" in installation
+        assert 'href="troubleshooting.html"' in installation
         assert "Public release" in installation
         assert "PyPI/Homebrew packages are not available" not in installation
 
@@ -232,8 +231,8 @@ def test_source_document_changes_flow_into_the_built_guide(tmp_path):
     source = copy_source(tmp_path / "source")
     quickstart = source / "docs/quickstart.md"
     text = quickstart.read_text().replace(
-        "## If something fails",
-        "## Owned guide change\n\nFresh maintained text.\n\n## If something fails",
+        "## Leave the workspace",
+        "## Owned guide change\n\nFresh maintained text.\n\n## Leave the workspace",
     )
     quickstart.write_text(text)
     output = tmp_path / "output"
@@ -256,8 +255,8 @@ def test_untrusted_markdown_html_is_text_and_unsafe_urls_do_not_become_links(tmp
     guide = source / "docs/quickstart.md"
     guide.write_text(
         guide.read_text().replace(
-            "## If something fails",
-            '<script>alert("owned")</script>\n\n[bad](javascript:alert(1))\n\n## If something fails',
+            "## Leave the workspace",
+            '<script>alert("owned")</script>\n\n[bad](javascript:alert(1))\n\n## Leave the workspace',
         )
     )
     output = tmp_path / "output"
@@ -365,9 +364,9 @@ def test_reference_uses_selected_checkout_contracts_and_preserves_planned_status
         assert "--owned-reference-probe" in (output / surface / "cli-reference.html").read_text()
         assert "owned-probe" in (output / surface / "resource-reference.html").read_text()
         progress = (output / surface / "capability-reference.html").read_text()
-        assert "Status: planned" in progress and "CLI01" not in progress
+        assert "<strong>planned</strong>" in progress and "CLI01" not in progress
         assert "Tasks:" not in progress and "#87" not in progress
-        assert "not a promise of complete parity" in progress
+        assert "Planned features are unavailable" in progress
     verify(output, source)
 
 
@@ -416,10 +415,10 @@ def test_public_guides_use_product_language_and_fictional_tutorials(tmp_path):
             assert row["id"] not in progress
             assert row["public_summary"]
         workflow = (output / surface / "everyday-workflow.html").read_text()
-        assert "Every name here is fictional" in workflow and "demo-lab" in workflow
-        assert "Ctrl+]" in workflow and "scale 3" in workflow
+        assert "fictional names" in workflow and "demo-lab" in workflow
+        assert "Ctrl+]" in workflow and "workload operations" in workflow
         troubleshooting = (output / surface / "troubleshooting.html").read_text()
-        assert "Authentication fails while kubectl works" in troubleshooting
+        assert "If kubectl works" in troubleshooting
         assert "Report a problem" in troubleshooting
     verify(output)
 

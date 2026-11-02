@@ -116,7 +116,13 @@ def rewrite_links(
                     name.removesuffix(".md") + "--" + fragment if fragment else legacy[name].anchor
                 )
             elif name in legacy:
-                fragment = legacy[name].anchor
+                fragment = (
+                    dict(legacy[name].fragments).get(fragment, fragment)
+                    if fragment
+                    else legacy[name].anchor
+                )
+            else:
+                fragment = dict(guide.aliases).get(fragment, fragment)
         else:
             # Non-launch developer evidence remains in the source repository.
             result = f"{REPOSITORY}/blob/main/{relative}"
@@ -217,6 +223,35 @@ def page_frame(
     return Template((root / "website/frame.html").read_text()).substitute(values)
 
 
+def resolved_aliases(
+    tokens: list[Token], declared: tuple[tuple[str, str], ...]
+) -> dict[str, list[str]]:
+    identifiers = {str(token.attrGet("id")) for token in tokens if token.type == "heading_open"}
+    aliases: dict[str, list[str]] = {}
+    for identifier, target in declared:
+        if target not in identifiers:
+            raise ValueError(f"Documentation alias target is missing: {identifier} -> {target}")
+        if identifier in identifiers:
+            if identifier != target:
+                raise ValueError("Documentation alias conflicts with an active heading")
+            continue
+        aliases.setdefault(target, []).append(identifier)
+    return aliases
+
+
+def with_heading_aliases(tokens: list[Token], aliases: dict[str, list[str]]) -> list[Token]:
+    result: list[Token] = []
+    for token in tokens:
+        if token.type == "heading_open":
+            for identifier in aliases.get(str(token.attrGet("id")), []):
+                anchor = Token("link_open", "a", 1)
+                anchor.attrSet("id", identifier)
+                anchor.attrSet("aria-hidden", "true")
+                result.extend((anchor, Token("link_close", "a", -1)))
+        result.append(token)
+    return result
+
+
 def composed_guide(root: Path, guide: Guide, md: MarkdownIt, catalog: Navigation) -> list[Token]:
     tokens: list[Token] = []
     for index, name in enumerate(guide.sources):
@@ -245,7 +280,7 @@ def composed_guide(root: Path, guide: Guide, md: MarkdownIt, catalog: Navigation
         rewrite_links(fragment, source, root, catalog)
         tokens.extend(fragment)
     identifiers = {str(token.attrGet("id")) for token in tokens if token.type == "heading_open"}
-    aliases: dict[str, list[str]] = {}
+    aliases = resolved_aliases(tokens, guide.aliases)
     for route in catalog.legacy_routes:
         if route.target != guide.source:
             continue
@@ -260,16 +295,7 @@ def composed_guide(root: Path, guide: Guide, md: MarkdownIt, catalog: Navigation
                 raise ValueError("Legacy documentation anchor has conflicting targets")
             continue
         aliases.setdefault(route.heading, []).append(route.anchor)
-    result: list[Token] = []
-    for token in tokens:
-        if token.type == "heading_open":
-            for identifier in aliases.get(str(token.attrGet("id")), []):
-                anchor = Token("link_open", "a", 1)
-                anchor.attrSet("id", identifier)
-                anchor.attrSet("aria-hidden", "true")
-                result.extend((anchor, Token("link_close", "a", -1)))
-        result.append(token)
-    return result
+    return with_heading_aliases(tokens, aliases)
 
 
 def legacy_redirects(catalog: Navigation, *, prefix: str = "/") -> str:
@@ -277,7 +303,12 @@ def legacy_redirects(catalog: Navigation, *, prefix: str = "/") -> str:
     lines: list[str] = []
     for route in catalog.legacy_routes:
         source = route.source.removesuffix(".md")
-        target = prefix + pages[route.target].filename + "#" + route.anchor
+        target = prefix + pages[route.target].filename
+        # RFC 9110 section 10.2.2: no Location fragment preserves the request hash.
+        # https://www.rfc-editor.org/rfc/rfc9110.html#section-10.2.2
+        # New consolidated pages retain old unprefixed and composed identifiers.
+        if not route.fragments:
+            target += "#" + route.anchor
         lines.extend(f"{prefix}{name} {target} 301" for name in (source, source + ".html"))
     return "\n".join(lines) + ("\n" if lines else "")
 
@@ -295,10 +326,19 @@ def guide_html(
     catalog = catalog or load_navigation(root)
     source = root / "docs" / guide.source
     md = MarkdownIt("commonmark", {"html": False}).enable("table")
+    lines = (
+        len(generated.splitlines())
+        if generated is not None
+        else sum(len((root / "docs" / name).read_text().splitlines()) for name in guide.sources)
+    )
+    if lines > 250:
+        raise ValueError(f"User documentation exceeds the 250-line budget: {guide.source}")
     tokens = (
         md.parse(generated) if generated is not None else composed_guide(root, guide, md, catalog)
     )
     sections = heading_ids(tokens)
+    if generated is not None:
+        tokens = with_heading_aliases(tokens, resolved_aliases(tokens, guide.aliases))
     for token in tokens:
         if token.type == "table_open":
             # Wide references scroll locally on mobile and must accept keyboard focus.
@@ -366,8 +406,8 @@ def docs_index(root: Path, version: str, *, standalone: bool, public_launch: boo
         '<a href="troubleshooting.html">troubleshooting</a> or check '
         '<a href="troubleshooting.html#legacy-terminal-compatibility">terminal compatibility</a>.</li></ol>'
         "<p>Use a trusted kubeconfig and the intended provider helper session. "
-        "KubeRich preserves kubeconfig and owns each connection separately. "
-        "All tutorial names are fictional; captures use owned local test resources.</p>"
+        "Selecting scope leaves kubeconfig unchanged and uses a separate connection. "
+        "All tutorial names and screenshots use fictional resources.</p>"
         "<h2>All guides and references</h2>"
         f'<ul class="doc-index-links">{links}</ul></article></main>'
     )
@@ -411,6 +451,7 @@ def source_inputs(root: Path) -> list[Path]:
         root / "pyproject.toml",
         root / "scripts/build_site.py",
         root / "scripts/site_reference.py",
+        root / "scripts/site_schema.py",
         root / "scripts/documentation.py",
         root / "docs/navigation.json",
         root / "docs/capabilities.json",
@@ -421,6 +462,7 @@ def source_inputs(root: Path) -> list[Path]:
     inputs += sorted((root / "website").glob("*.html"))
     inputs += sorted((root / "website/assets").glob("*"))
     inputs += [root / "docs" / name for guide in catalog.guides for name in guide.sources]
+    inputs += [root / "docs" / guide.source for guide in catalog.references]
     return inputs
 
 

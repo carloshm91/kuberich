@@ -17,8 +17,16 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+      - name: Install locked static-site tools
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          version: '0.10.4'
+          python-version: '3.12'
+          enable-cache: true
+      - name: Install locked development dependencies
+        run: uv sync --locked --group dev
       - name: Validate plan, dependency graph, audit mappings and documentation links
-        run: python3 scripts/validate_plan.py
+        run: uv run python -m scripts.validate_plan
       - name: Check whitespace
         env:
           KUBERICH_DIFF_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
@@ -28,16 +36,9 @@ jobs:
           else
             git diff-tree --root --check HEAD
           fi
-      - name: Install locked static-site tools
-        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
-        with:
-          version: '0.10.4'
-          python-version: '3.12'
-          enable-cache: true
       - name: Build and validate both static-site surfaces
         run: |
-          uv sync --locked --group dev
-          uv run mypy --strict scripts/build_site.py scripts/check_site.py scripts/site_reference.py scripts/documentation.py scripts/pages.py
+          uv run mypy --strict scripts/build_site.py scripts/check_site.py scripts/site_reference.py scripts/documentation.py scripts/pages.py scripts/documentation_links.py
           uv run python -m scripts.build_site
           uv run python -m scripts.check_site
       - name: Verify website keyboard, accessibility and browser behavior

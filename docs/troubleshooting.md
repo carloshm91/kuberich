@@ -1,11 +1,9 @@
-# Troubleshooting
+# Troubleshoot a session
 
-Start with the visible state and the operation that failed. Authentication,
-permission, resource synchronization and local terminal errors have different
-causes. The examples below use fictional `demo-lab` and `demo-apps` names; replace
-them with an explicitly intended scope when running a command locally.
+Start with the visible state and the operation that failed. The examples use
+fictional context and namespace names; replace them with your intended scope.
 
-## Check the local installation
+## Check the installation
 
 ```sh
 kuberich --version
@@ -14,26 +12,18 @@ kuberich info
 kuberich config check
 ```
 
-These commands do not connect to Kubernetes or execute authentication helpers.
-`info` describes the local application, dependency versions, preference paths and
-resolved preferences. It does not prove that a cluster connection is healthy.
-`config check` validates preferences without changing files.
-
-If the command is missing, inspect the executable location reported by your
-installer. uv and pipx tool executables must be on your shell's PATH. A locally
-extracted standalone archive uses its own `./kuberich` entry point; retain the
-complete extracted directory. See [installation](installation.md).
-
-If `--version` reports an unexpected build, identify which executable your shell
-resolves and which channel installed it. Upgrade through that same channel;
-installing another copy does not upgrade the original one.
+These commands stay offline and execute no authentication helpers. Info reports
+local versions, preferences, and paths; it does not test a cluster connection.
+If the command is missing, check your install manager's executable directory and
+PATH. If its version is unexpected, identify the executable your shell resolves
+and upgrade through that installation method. Keep an archive's complete directory.
 
 ## A resource view cannot be rendered
 
 An inline error panel means that this view's presentation failed. Use **Retry**
 in that panel to try again, or choose another resource. Watch updates do not
-repeatedly retry the failed view. Displayed rows may be incomplete; the original
-selection and identity checks still apply to operations. Other views and active
+repeatedly retry the failed view. Displayed rows may be incomplete; the selected
+resource and identity checks still apply to operations. Other views and active
 port forwards keep running. A new context or resource scope clears the old fault.
 
 If the whole application exits unexpectedly, it restores the terminal and prints
@@ -51,151 +41,142 @@ kuberich bug-report --output ./kuberich-report.json
 
 The command writes a mode-0600 JSON file with the installed version, Python and
 platform, terminal dimensions when available, preference-check status and a
-bounded redacted tail of the application's own diagnostic log. It also works
+size-limited redacted tail of the application's own diagnostic log. It also works
 when preferences are invalid; the report records that result. Existing files,
 symbolic links and special-file destinations are refused.
+
+Global flags go before the command, for example
+`kuberich --config /absolute/path/preferences.yaml bug-report`. An invalid or
+empty `--config` path still produces a report with `config_check: invalid`.
+Invalid preference or environment values also record that status; the log tail
+is unavailable when its settings cannot be validated.
+
+The log tail follows normal precedence: `--log-file`, `KUBERICH_LOG_FILE`, the
+legacy `KUBETROL_LOG_FILE`, then the YAML setting or default. Relative environment
+and CLI paths use the launch directory; YAML paths use the preference directory.
 
 Reports do not load kubeconfig, contact a cluster, run credential helpers or
 include preference contents. Crash reports omit exception values, local
 variables, source lines and full traceback paths. Review the file before sharing
 it; it stays local until you choose to attach it to a bug report.
 
-## A context is missing or different
+## Find the intended context
 
-KubeRich loads `--kubeconfig` when supplied. Otherwise it reads the configured
-`KUBECONFIG` file list or the ordinary default. `--config` is an application
-preferences file, not a kubeconfig.
-
-Use an explicit path and context to make the intended selection unambiguous:
+`--config` selects application preferences. `--kubeconfig` selects Kubernetes
+configuration. Otherwise KubeRich merges KUBECONFIG or reads the default file.
+Use an explicit path when comparing tools:
 
 ```sh
-kuberich --kubeconfig /absolute/path/to/kubeconfig \
-  --context demo-lab --namespace demo-apps --readonly
+kuberich --kubeconfig /absolute/path/to/kubeconfig --context demo-lab --namespace demo-apps --readonly
 ```
 
-`:ctx` lists the loaded local catalogue; Enter selects a context. Browsing the
-catalogue does not rewrite kubeconfig or authenticate. Names preserve case and
-can include spaces. For merged files, relative certificate/helper paths resolve
-against the file that supplied their entry.
+`:ctx` shows the loaded list; Enter connects. Selecting a context does not change
+kubectl's saved current-context. Restart after changing kubeconfig elsewhere.
 
-A context switch cancels the previous connection and rejects its late results.
-It does not change kubectl's persisted current context. Invocation overrides
-continue to apply during that KubeRich invocation. See [context sessions](context-sessions.md).
+## Fix authentication
 
-## Authentication fails while kubectl works
+If kubectl works, compare its exact kubeconfig, context, namespace, PATH, provider
+profile, cache directory, and environment with the KubeRich launch. Another
+terminal can have a different provider session. Start a fresh invocation after
+changing helper environment or kubeconfig.
 
-Compare the explicit kubeconfig, context, namespace and inherited environment in
-both commands. A kubectl invocation from another terminal can have a different
-PATH, provider profile, cache directory or login session.
-
-KubeRich captures helper identity and environment for a context session. If you
-changed a profile, environment variable or kubeconfig after launching, start a
-fresh invocation to deliberately use the new settings.
-
-| Visible condition | Next step |
+| Message or state | Action |
 | --- | --- |
-| Missing helper | Install the executable declared by the selected kubeconfig and make it available on the effective PATH. |
-| Expired EKS credentials or SSO | Complete the intended AWS CLI profile login externally, then `:retry`. |
-| Azure CLI login required | Establish the intended `az login` session for a configured `azurecli` entry, then retry. |
-| Interactive exec helper required | Use explicit `:login` in a native terminal. It runs the declared helper, without inferring another provider mode. |
-| Unsupported legacy credentials | Migrate the intended entry to supported exec/token/certificate configuration following the provider's instructions. |
-| Helper timeout | Check provider login/connectivity. Background helpers have closed stdin and bounded execution; they cannot wait indefinitely for a prompt. |
+| Auth error or missing helper | Install the declared helper; check login, PATH, and its configured mode |
+| Expired EKS/SSO credentials | Complete the intended AWS profile login externally, then `:retry` |
+| Azure CLI login required | Establish the intended `az login` session for azurecli mode |
+| Interactive helper required | Use `:login` in a native terminal; it runs the declared entry |
+| Legacy auth-provider unsupported | Use a current provider helper or the explicit OIDC migration command |
+| TLS error | Check CA, server hostname, and client certificates; do not disable verification |
+| Timeout or Unreachable | Check VPN, server/proxy reachability, and request deadline |
+| Config error | Correct the named configuration problem or choose another context |
+| API error | Check endpoint/API availability, then retry deliberately |
 
-`:login` restores the workspace after completion or cancellation. Authentication
-is allowed in read-only mode because it enables reads. Provider tools own their
-login caches; KubeRich does not store a second cloud identity database.
+Background helpers have closed stdin and a deadline. `:login` permits the declared
+interactive behavior and restores the workspace afterward; Ctrl+C cancels it.
+Authentication remains available in read-only mode. See
+[contexts and authentication](context-sessions.md) for EKS, AKS, GKE, and TLS details.
 
-[EKS](eks-authentication.md), [AKS](aks-authentication.md) and
-[credential interoperability](kubeconfig-interoperability.md) explain supported
-contracts and the limits of real-provider certification.
+## Diagnose an empty or stale table
 
-## The session is connected but the table is empty
+Connection status and resource status are separate. Successful namespace discovery
+does not prove permission to list a resource family.
 
-Connection status and resource status are separate. A successful namespace
-discovery does not establish permission to list every resource family.
+1. Escape leaves an input, then clears the table filter. Check matching/total rows.
+2. Check context and namespace. `:ns demo-apps` chooses a known namespace;
+   `:ns *` needs all-namespace permission.
+3. Distinguish a successful empty list from Permission denied or Stale.
+4. `:refresh` renews API discovery and the current resource watch on the same
+   client. `:retry` replaces the connection and stops its session work.
 
-1. Clear the local filter: Escape leaves its input first, then clears the filter
-   from the table. Confirm whether the visible count changes.
-2. Check the context and namespace in the header. `:ns demo-apps` selects an exact
-   namespace; `:ns *` requests an all-namespace scope that needs broader permission.
-3. Distinguish **No resources** from **Permission denied**, **Stale** or a removed API.
-   A successful empty list is valid; a denied list is not presented as empty data.
-4. For a failed discovered API, return to `:pods` or another available resource.
-   `:refresh` renews discovery and the selected watch; `:retry` reconnects the session.
+A denied namespace list can still permit direct entry of an allowed namespace.
+All namespaces does not bypass RBAC. A stale view keeps its last successful rows
+while reconnecting; those rows are not proof of current server state.
+An absent discovered API remains a visible error. Use `:pods` or another available
+view to recover rather than expecting a guessed endpoint.
 
-When namespace listing is denied, direct selection of a permitted namespace can
-still work. Changing to all namespaces does not bypass Kubernetes RBAC.
+## Recover logs, shells, and writes
 
-## A live view says stale or reconnecting
+Logs need pods/log permission and a current pod/container. Previous logs may not
+exist. Select the pod again after deletion/recreation or a context change.
 
-The view retains its last successful snapshot during a temporary watch/network
-failure and marks it stale. Bounded reconnect/relist work runs in the background;
-it does not establish that retained rows describe the current server state.
+Shells also need write mode, kubectl, pods/exec permission, and an image containing
+the configured shell. `exit`/Ctrl+D returns normally; Ctrl+] closes the local
+session. During history review, Escape returns to the live remote screen.
+Graphics, mouse reporting, and advanced remote keyboard protocols are outside
+the embedded emulator's current support.
 
-Check VPN/network reachability and the selected API endpoint locally. `:status`
-opens connection details. `:retry` creates a new owned session; changing context
-also replaces it. A quiet stream can renew normally, so absence of new rows alone
-does not mean resources disappeared.
+A blocked write can mean read-only mode, a stale target, an autoscaler, or missing
+permissions. A conflict requires current state and a new review. An uncertain
+write may already have applied: inspect the object and `:writes` before retrying.
+Leaving a confirmed form does not undo it. See [resource changes](editing.md).
 
-TLS errors require checking CA, hostname and client certificate configuration.
-Timeout/unreachable states concern connectivity or request deadlines. Resolve
-the stated cause before retrying rather than weakening TLS verification.
+## Keys and terminal compatibility
 
-## Logs or a shell fail
+Use an interactive UTF-8 terminal. If function keys or Alt combinations are
+intercepted by a terminal or tmux, use `:ctx`, `:ns`, `:back`, and `:forward`.
+KubeRich cannot receive keys consumed by an outer program. `?` shows current
+controls. Mouse reporting is off by default; enable `navigation.mouse` and restart
+only if wanted. Every operation has a keyboard route.
 
-Logs require a valid captured pod/container and permission for `pods/log`. Previous
-logs may be absent even when current logs work. A replaced/deleted pod invalidates
-the captured selection; return to the table and select the current object.
+The interface adapts down to compact terminals; help exposes clipped secondary
+information. A font, terminal palette, or emulator can still render glyphs and
+colors differently. NO_COLOR and the monochrome theme keep textual state cues.
+SSH and tmux need working PTY and resize forwarding. See the
+[command/key reference](cli-reference.md) for default navigation.
 
-Shells additionally require write mode, local `kubectl`, permission for `pods/exec`
-and an available configured shell in a running container. Read-only mode deliberately
-blocks launch. The embedded terminal does not implement every graphics, mouse or
-advanced keyboard protocol; a program using those features can exceed its scope.
+## Clipboard
 
-`exit`/Ctrl+D returns normally; Ctrl+] closes the owned shell. During local history
-review, Escape returns to remote-key routing. See [shell controls](container-shell.md).
+Copy is explicit; the application never reads your clipboard to acknowledge it.
+`KUBERICH_CLIPBOARD=auto` selects OSC52 over SSH, then local macOS native text,
+Wayland `wl-copy` when WAYLAND_DISPLAY is set, X Window System `xclip` when DISPLAY
+is set, and otherwise OSC52. Wayland takes precedence when both display variables
+are present. `native` requires a native session and skips the automatic SSH
+preference; `osc52` explicitly selects your terminal.
 
-## A key or clipboard action does not work
+Local Wayland needs `wl-copy` on PATH and a working compositor; X Window System
+needs `xclip`. Missing or failed helpers can fall back to OSC52 in automatic mode
+within its byte limit. Forced-native failures ask you to check the helper or use
+`KUBERICH_CLIPBOARD=osc52`. Compositor acceptance still depends on your session.
 
-Terminal emulators and tmux can consume function keys or Alt combinations. Use
-`:ctx` and `:ns` when F2/F3 are intercepted, and `:back`/`:forward` when Alt navigation
-is unavailable. Consult the current view's `?` help.
+Native text accepts up to 1 MiB; OSC52 accepts 64 KiB. Invalid or oversized text
+is refused rather than truncated. `--headless` and `:headless` only hide the
+workspace header; they keep the same clipboard route.
+Wayland and X Window System selection persistence after exit depends on a
+clipboard manager. Native helper text travels on stdin, with no MIME guessing
+or newline trimming.
 
-Local Wayland copying requires `wl-copy` on PATH and a working `WAYLAND_DISPLAY`.
-If the helper is missing or the compositor refuses it, install/check `wl-copy` or
-set `KUBERICH_CLIPBOARD=osc52` before starting KubeRich. When both Wayland and
-X Window System variables are set, Wayland takes precedence. Automatic mode
-can send a terminal fallback for text within the 64 KiB OSC52 limit; forced-native
-mode reports the failure.
-
-Over SSH, automatic mode sends redacted text through terminal OSC52 support.
-SSH/tmux forwarding and your terminal's clipboard permission determine receipt.
-The application showing a copy result does not certify the host clipboard.
-Use a reviewed explicit file export where supported if clipboard integration is
-unavailable. [Terminal compatibility](terminal-compatibility.md) describes the scope.
-
-## A change is blocked, conflicted or uncertain
-
-Review and Confirm are separate. Missing write mode, a stale captured UID/version,
-an autoscaler or insufficient permission can block a change before writing.
-A conflict requires reading the current object and preparing a new review.
-
-An uncertain outcome means a sent request may have applied even if its response
-was lost. Inspect the object and `:writes` before another attempt. KubeRich does
-not automatically replay writes. Leaving a review does not undo a confirmed action.
-
-See [guarded changes](mutations.md), [editing](editing.md) and [workloads](workloads.md)
-for operation-specific restrictions.
+The outer terminal must allow clipboard writes. In tmux, allow passthrough for
+the intended pane using your own server configuration; KubeRich does not change
+it. A sent OSC52 request does not prove the outer clipboard accepted it.
+Where supported, save an explicit reviewed file if clipboard integration is absent.
+Secret-value copy has separate deliberate-disclosure rules.
 
 ## Report a problem
 
-Include the KubeRich version and installation channel, OS/architecture, Python
-version for source installs, terminal/tmux/SSH arrangement, the visible state and
-the smallest sequence that reproduces the problem. Describe expected and actual
-behavior. State whether it also reproduces with an owned disposable cluster.
-
-Use fictional context, namespace, resource and account names in a public report.
-Do not attach kubeconfig, token/helper output, private certificates, credentials
-or customer logs. Inspect screenshots and copied diagnostics before sharing:
-application redaction cannot recognize every private business name or log message.
-For vulnerabilities, follow [the security reporting policy](../SECURITY.md).
+Include application version, installation method, OS/architecture, terminal and
+SSH/tmux arrangement, the visible state, and the smallest reproducing steps.
+Use fictional names. Do not attach kubeconfig, helper output, tokens, certificates,
+credentials, or customer logs. Check screenshots and copied output before sharing;
+redaction cannot recognize every private name or message. Report vulnerabilities
+through [the security policy](../SECURITY.md).

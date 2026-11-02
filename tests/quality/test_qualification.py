@@ -42,6 +42,7 @@ def test_default_command_runs_all_layers_once_with_existing_independent_coverage
     assert not any(item in command for item in ("-m", "-k", "fast", "tests/unit"))
     assert f"--basetemp={tmp_path / 'external/tests-pytest'}" in command
     by_name = {stage.name: stage.command for stage in stages}
+    assert by_name["plan"] == ("uv", "run", "python", "-m", "scripts.validate_plan")
     assert by_name["private-access"] == (
         "uv",
         "run",

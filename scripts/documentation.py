@@ -9,7 +9,9 @@ from typing import cast
 
 MAX_USER_PAGES = 20
 KINDS = frozenset({"tutorial", "how-to", "reference", "explanation"})
-GENERATED = frozenset({"cli-reference.md", "resource-reference.md", "capability-reference.md"})
+GENERATED = frozenset(
+    {"cli-reference.md", "resource-reference.md", "capability-reference.md", "config-reference.md"}
+)
 ACTIONS = frozenset({"keep", "merge", "move", "delete"})
 
 
@@ -21,6 +23,8 @@ class Guide:
     kind: str = "how-to"
     fragments: tuple[str, ...] = ()
     generated: bool = False
+    aliases: tuple[tuple[str, str], ...] = ()
+    retired: tuple[str, ...] = ()
 
     @property
     def filename(self) -> str:
@@ -37,6 +41,7 @@ class LegacyRoute:
     target: str
     anchor: str
     heading: str
+    fragments: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -100,6 +105,18 @@ def document_name(value: object) -> str:
     return name
 
 
+def anchor_mapping(value: object) -> tuple[tuple[str, str], ...]:
+    result = mapping(value, "Documentation heading aliases")
+    if any(
+        re.fullmatch(r"[a-z0-9][a-z0-9-]*", key) is None
+        or not isinstance(target, str)
+        or re.fullmatch(r"[a-z0-9][a-z0-9-]*", target) is None
+        for key, target in result.items()
+    ):
+        raise ValueError("Documentation heading aliases must use plain identifiers")
+    return tuple(sorted((key, str(target)) for key, target in result.items()))
+
+
 def read_document(path: Path) -> dict[str, object]:
     if path.is_symlink() or not path.is_file() or path.stat().st_size > 512 * 1024:
         raise ValueError(f"Missing or unsafe documentation input: {path.name}")
@@ -160,7 +177,14 @@ def load_navigation(root: Path) -> Navigation:
                     if fragment in sources:
                         raise ValueError("A documentation fragment may belong to only one page")
                     sources.add(fragment)
-            pages.append(Guide(source, title, group, kind, fragments, generated))
+            aliases = anchor_mapping(entry.get("anchors", {}))
+            retired = tuple(
+                document_name(item)
+                for item in sequence(entry.get("retired_sources", []), "Retired sources")
+            )
+            if generated and retired:
+                raise ValueError("Generated pages cannot retire authored sources")
+            pages.append(Guide(source, title, group, kind, fragments, generated, aliases, retired))
     if kinds != KINDS or references != GENERATED:
         raise ValueError("Navigation must include all documentation types and generated references")
     routes = []
@@ -178,10 +202,12 @@ def load_navigation(root: Path) -> Navigation:
         heading = text(route.get("heading"), "Legacy documentation heading")
         if any(re.fullmatch(r"[a-z0-9][a-z0-9-]*", value) is None for value in (anchor, heading)):
             raise ValueError("Legacy documentation anchors must use plain heading identifiers")
-        routes.append(LegacyRoute(source, target, anchor, heading))
+        routes.append(
+            LegacyRoute(source, target, anchor, heading, anchor_mapping(route.get("fragments", {})))
+        )
     route_targets = {route.source: route.target for route in routes}
     for page in pages:
-        for source in page.sources[1:]:
+        for source in (*page.sources[1:], *page.retired):
             if route_targets.get(source) != page.source:
                 raise ValueError(
                     "Every merged source needs its explicit legacy documentation route"

@@ -81,7 +81,7 @@ def local_stages(root: Path, output: Path, temporary: Path, workers: int, base: 
     if workers < 0 or workers > 64:
         raise ValueError("Workers must be between 0 and 64.")
     return [
-        Stage("plan", ("uv", "run", "python", "scripts/validate_plan.py")),
+        Stage("plan", ("uv", "run", "python", "-m", "scripts.validate_plan")),
         Stage(
             "source-import",
             (

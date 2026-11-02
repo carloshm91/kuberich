@@ -1,46 +1,46 @@
-# Resource workspace
+# Understand the workspace
 
-KubeRich uses a keyboard-driven resource workspace built with original
-Python/Textual code. The shared header, input area and navigation trail keep
-resource views in a consistent frame.
+The workspace keeps the selected context, resource scope, and available actions
+visible while you move between tables, inspection, logs, and terminals. Different
+views share a frame, but their rows and keys have different meanings.
 
-The default `k9s` theme has a black background, cyan tables/frames/selection,
-yellow metadata labels/navigation, blue shortcut keys and white headings.
-Explicit Textual themes remain supported. Select it for one invocation:
+## Identity and focus
 
-```sh
-KUBERICH_THEME=k9s uv run kuberich
-```
+The header shows context, cluster/user aliases, namespace, connection state, and
+installed version. Credentials stay hidden. Shortcuts change with the focused
+view. The command and filter bars sit above resources; inline completion never
+covers the table. The bottom trail identifies the parent view and Escape action.
 
-The top header shows context, cluster/user **aliases**, namespace, connection
-state and installed application version, without credentials. View-specific
-shortcuts show implemented pod, namespace, container and log actions. Inputs sit
-above resources. The dedicated `:` bar shows the selected completion suffix next
-to typed text, in muted italic styling; it never opens a dropdown over resources.
-Tab accepts it and Up/Down cycles the bounded local candidates. Plain Enter
-submits literal input; Enter after deliberate cycling accepts that candidate.
-Typing makes no API requests; suggestions still use the session name catalogue.
-The command row sits inside its own rectangular border. Below 16 terminal rows,
-it keeps side borders so the table retains usable height; all views reserve the
-same four ordinary/two compact interaction rows.
+Escape first leaves an input, then clears an active filter, then returns to the
+parent view. Letters in an input remain text. In a live embedded terminal, keys
+belong to the remote program except the documented local return/quit controls.
+The [navigation guide](command-navigation.md) explains concrete keys.
 
-The bottom trail identifies the current view and Escape action. Escape first
-leaves an input, then clears an active filter, then returns to the parent view.
-Pods, contexts, namespaces, containers and logs share the same frame margins, header
-columns and reserved interaction/footer rows at a fixed terminal size. Clicking
-controls or changing focus does not move that frame. View actions change while
-their header columns retain a fixed row count. Container/log views retain captured
-pod identity and parent viewport. Embedded
-shells retain their existing target frame, remote-key routing and cleanup.
+## Local contexts and live resources
+
+Context rows are local kubeconfig entries. Browsing and filtering them makes no
+API request; Enter deliberately connects. Resource rows come from the selected
+API and scope. Namespaces are a live table too; Enter opens that namespace's pods,
+while `0` chooses all namespaces.
+
+Only the active resource view is watched. Its first successful list establishes
+the rows, and watch updates change them afterward. Temporary failures keep the
+last snapshot with a stale state. A denied list remains an error, not an empty
+successful table. Context changes replace the client and reject old results.
+
+Selection follows UID rather than row position or name. Sorting, filtering, and
+updates preserve the selected object and viewport where possible. A replacement
+with the same name has a different UID and does not inherit an old operation.
+Read permissions and cluster capabilities still decide which views are available.
 
 ## Large collections and server selectors
 
-Large collections remain live with a deterministic retained prefix of at most
-10,000 resources and 64 MiB of retained resource payloads, including server cells.
+Large collections remain live with a deterministic kept subset of at most
+10,000 resources and 64 MiB of resource payloads, including server cells.
 These are payload limits, not a total-process memory guarantee. Pagination reports
-retained rows and progress. An **INCOMPLETE** title identifies a limited or still
+available rows and progress. An **INCOMPLETE** title identifies a limited or still
 loading collection, even when a selection notice replaces the status text.
-Counts and local filter results describe only those retained rows.
+Counts and local filter results describe only those available rows.
 
 Use an explicit command to narrow the API collection:
 
@@ -55,14 +55,14 @@ Use an explicit command to narrow the API collection:
 
 `:server` shows the active query. Label and field selectors combine; `clear`
 removes both selectors and preserves the payload mode. Selector changes restart
-the owned LIST/WATCH scope. Back/forward retains the server query separately from
+the current LIST/WATCH scope. Back/forward retains the server query separately from
 the local `/` filter. Typing in `/`, including local `label:` and `field:` filters,
 never changes server selectors or sends a request for each keystroke.
 
-Selectors are bounded to 256 characters and eight AND terms. Server field
+Selectors accept up to 256 characters and eight AND terms. Server field
 selectors use the existing field allowlist; Kubernetes may reject a field that
 the selected resource does not support. Namespace selection is another way to
-narrow results. A deletion below the retained limit does not prove the missing
+narrow results. A deletion below the row limit does not prove the missing
 rows disappeared: only a fresh complete list clears the incomplete state.
 
 In a generic resource view, `:server compact` requests Table rows with genuine
@@ -72,92 +72,71 @@ raw payloads. A server without that representation falls back to full JSON.
 core Pod/Service views retain full objects for their existing actions. Inspection
 always reads a fresh full object; a configured jump needing absent fields asks
 for `:server full`. Incomplete event lists and aggregate-log membership also
-identify their retained subset explicitly.
+identify their available subset explicitly.
 
-## Live namespaces
+## Standard and discovered views
 
-Bare `:ns`, `:namespace`, `:namespaces`, `n` or F3 open a normal workspace table.
-It reads real Namespace objects through the owned per-session LIST/WATCH service.
-NAME/STATUS/AGE columns use UID selection and ascending name order; unknown
-status/time appears as `Unknown` / `—`.
+Standard views provide resource-specific summaries for workloads, networking,
+configuration, nodes, and storage. The generated [resource reference](resource-reference.md)
+lists actual aliases and columns. Counts, dates, and quantities sort by their
+types; unknown values stay last. Cluster-scoped resources reject a namespace
+argument while preserving your namespace choice for later views.
 
-- `/` filters name/status using the same literal and bounded `re:` syntax as pods.
-  Enter returns to the table; Escape there clears the filter.
-- Enter opens pods in the selected namespace. The namespace filter does not
-  filter pods. Escape from the unfiltered pod table restores the namespace
-  filter, UID selection and viewport.
-- `0` or **All namespaces** opens all pods. It is a scope action, not a fabricated
-  resource row with a fake UID.
-- `j/k`, arrows, PageUp/PageDown and `g/G` navigate namespace rows.
-- `:ns NAME`, `:ns *`, `:po NAME`, `:po *` still select pods directly. A pod filter
-  stays active when changing scope from the pod view.
-- `:po` opens pods in the current scope. `:back` / `:forward` retain resource kind,
-  context, namespace, filter and viewport.
+Other APIs, including custom resources, use discovery and server Table columns.
+`:resource widgets.example.test/v1` selects a specific family/version; the example
+is fictional. An omitted version follows discovery's preferred version.
+Ambiguous aliases require qualification. No endpoint or API group is guessed.
+`:refresh` renews discovery and the current watch without replacing credentials.
 
-Only the active resource is watched. Switches invalidate old results, await old
-watches/projection/filter workers and clear obsolete navigation targets. Denied
-listing is an error rather than an empty table; directly entering an allowed
-namespace still works. Temporary failures retain the last snapshot with stale
-status. Recreated namespaces have distinct UID selection.
+If server Table columns are absent or malformed, metadata columns stay usable.
+Changed printer schemas do not reinterpret old cell values as new fields.
+`:columns` selects transient server fields; `:views` supports explicit saved
+layouts. Layouts affect display rather than confidentiality.
 
-Inspection uses existing captured-UID details/YAML/events services. Logs and
-shells require a pod; namespace mutations remain planned.
+Generic discovered views are read-only inspection views. Ordinary built-in routes
+provide their applicable mutation, log, shell, transfer, or forwarding actions.
+`:resource pods` deliberately uses generic inspection; `:pods` returns to the pod
+workspace. Arbitrary custom fields can contain sensitive information that
+redaction does not recognize; inspect resources appropriate to your access.
 
-## Local contexts
+## Snapshot inspection and live containers
 
-Bare `:ctx`, `:context`, `:contexts`, `c` or F2 shows a workspace table with
-NAME/CLUSTER/AUTHINFO/NAMESPACE and `*` for the selected session. These entries
-come from the loaded kubeconfig catalogue, not a Kubernetes resource endpoint.
-Aliases are rendered as redacted literal text; no credential bodies or API URLs
-are displayed. `/` filters these columns with the existing bounded literal/
-regex semantics. Browsing makes no authentication request and rewrites no file.
+Details, YAML, and events show a selected resource read snapshot. They do not
+silently become a different resource when the parent cursor changes. Ordinary
+inspection redacts sensitive values. ConfigMap/Secret reveal is a separate
+[deliberate data view](editing.md#inspect-configuration-data).
 
-Enter connects to the exact selected name, including case/spaces, and opens pods.
-Switching keeps the existing owned cancellation and generation checks.
-Escape first clears the filter, then restores the preceding pod/namespace view
-and its filter/viewport. Back/forward also retains the context table state.
-Direct `:ctx NAME` still connects immediately; context tables have no resource
-YAML/details/events because their rows are local configuration.
-Scoped `:ns NAME`, `:ns *` and `:po NAME` from contexts open pods with their own
-filter; they preserve the context query/cursor for returning to the catalogue.
+Enter on a pod opens regular, init, and existing ephemeral containers. Container
+state, readiness, restarts, image, probes, declared ports, and requests/limits
+come from that pod. The table refreshes from the existing pod watch without a
+separate watch per container. Selection follows container name. CPU/memory show
+requested/limited quantities rather than measured usage.
 
-## Container details
+Enter on a container opens its logs. Shell and attach open an embedded terminal
+with the selected target displayed. Returning restores the parent selection.
+Deletion, replacement, or scope changes invalidate the old target.
 
-Enter on a pod shows NAME, TYPE (App/Init/Sidecar), READY, STATE, RESTARTS, IMAGE,
-PROBES(R:L:S), CPU REQ/LIM, MEM REQ/LIM and PORTS. Status is joined by container
-name, not list position. Missing readiness/restart data is `—`, absent state is
-Unknown, and waiting/termination reasons such as CrashLoopBackOff/OOMKilled remain
-visible. Configured probes use readiness:liveness:startup order and on/off labels.
-Ports include declared name/number/protocol, with a bounded list and `…` when longer.
+## Connection state and action results
 
-CPU/MEM are specification requests/limits in Kubernetes quantity notation, with
-`—` for undeclared quantities. They are not live usage. Values come from the
-captured pod snapshot; reopen to refresh. Horizontal arrows/Home/End reveal wide
-columns. Enter/l logs and s/x shell retain the captured UID/container and parent
-cursor/scroll state. Live container refresh, ephemeral debug containers and usage
-metrics are planned.
+A connected session means connection setup succeeded; each resource request can
+still fail independently. Read-only is an application policy, not extra Kubernetes
+RBAC. It blocks effectful actions while allowing reads and local preference
+changes. Server authorization remains authoritative.
 
-## Sizes and remaining work
+Changes use Review and separate Confirm. A successful API request does not prove
+a controller finished reconciling or that dependents finished deleting. A lost
+response can leave an uncertain outcome. [Workload operations](workloads.md) and
+[resource changes](editing.md) describe those distinctions.
 
-At 70+ columns the header uses six rows. Narrow terminals use four rows, omitting
-cluster/user aliases and the logo. Below 16 rows the three-row context/namespace/
-state header preserves room for resources/inputs. Container hints and log controls
-remain available; help contains secondary shortcuts. NO_COLOR retains textual cues.
+## Compact layouts and themes
 
-The upper-right brand is an original five-row KubeRich ASCII logo from 120 columns,
-or a compact wordmark at 70–119 columns. Resizing changes only the mark's reserved
-width, keeping the shared view geometry consistent at each terminal size.
-The project, installed version label and CLI remain KubeRich/`kuberich`.
+The default `k9s` theme uses a dark palette and readable state words. Other
+built-in/custom themes, a monochrome theme, and session inversion are available.
+The installed version appears in the header; optional update notices require
+local opt-in. See [configuration and themes](configuration.md).
 
-`--headless` hides the shortcut/logo header, `--logoless` hides its brand and
-`--crumbsless` hides identity/navigation bars. Log `z` hides the header/route and
-frame, preserving search, controls and stream ownership.
-
-The header shows the actual installed version. Optional real release
-notices, custom/live/context themes and Kubernetes-version/CPU/memory
-presentation are planned. Clipboard receipt depends on the host terminal.
-This release does not establish full K9s parity.
-
-Behavior references: [K9s commands](https://k9scli.io/topics/commands/),
-[K9s skins](https://k9scli.io/topics/skins/),
-[Textual themes](https://textual.textualize.io/guide/design/).
+Narrow layouts omit secondary aliases and branding while keeping commands,
+status, and resources available. Short layouts reduce header rows. Help exposes
+secondary controls. Fullscreen/headless controls adjust this session's frame
+without changing saved preferences. Font, color, clipboard, and key forwarding
+still depend on the terminal and any SSH/tmux layers.

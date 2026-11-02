@@ -43,6 +43,36 @@ Real EKS, AKS and GKE clusters are not certified yet; those trials stay opt-in.
 
 ## Next development phase: 0.3.0
 
+The development checkout now has focused task guides and four generated
+references, with 19 content pages plus the index. Start with the
+[quick start](quickstart.md), then use the [everyday workflow](everyday-workflow.md)
+or the guide for your task. Previous guide URLs and heading fragments remain
+supported. Generated Markdown also resolves at its canonical paths in GitHub.
+The guides cover development-source limits; the installed release remains 0.2.0.
+The hosted website still needs its separately approved update.
+
+```sh
+uv run python -m scripts.site_reference
+uv run python -m scripts.validate_plan
+uv run python -m scripts.build_site --output artifacts/issue224/c2-delivery/site
+uv run python -m scripts.check_site --output artifacts/issue224/c2-delivery/site
+```
+
+The [guide acceptance record](acceptance/task-guides.md) records the tested source,
+focused checks and remaining qualification. These commands check documentation
+locally; they do not start the application or connect to a cluster.
+
+The local browser check also passed all 43 pages at desktop and mobile widths,
+including navigation with JavaScript disabled, with zero accessibility findings.
+It follows **Commands and keys** and the **Commands, keys, and launch options**
+heading. The [acceptance record](acceptance/task-guides.md#browser-correction)
+preserves the original stale-label CI failure and the corrected 79.77-second
+Linux/Chrome result, source and cleanup limits. The exact checked command was:
+
+```sh
+node scripts/verify_site_browser.mjs artifacts/issue224/c2-delivery/browser-fix/site artifacts/issue224/c2-delivery/browser-fix/qa
+```
+
 Development source adds an inline Retry panel for resource-view presentation
 failures and a local `kuberich bug-report` command. Report files are private and
 redacted; the diagnostic command does not read kubeconfig or connect to a

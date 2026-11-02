@@ -134,7 +134,12 @@ def verify(output: Path, source: Path = ROOT) -> dict[str, int]:
             route_target = (folder / targets[route.target]).resolve()
             if route_target not in pages or any(
                 identifier not in pages[route_target].ids
-                for identifier in (route.anchor, route.heading)
+                for identifier in (
+                    route.anchor,
+                    route.heading,
+                    *(identifier for identifier, _ in route.fragments),
+                    *(target for _, target in route.fragments),
+                )
             ):
                 raise ValueError("Legacy documentation redirect has a missing target or anchor")
     for surface in ("docs", "www"):
