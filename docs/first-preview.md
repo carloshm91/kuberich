@@ -50,7 +50,10 @@ unchanged historical source remain separate from current implementation notes.
 The [architecture acceptance record](acceptance/architecture-overview.md) lists
 the source boundary, focused checks and qualification limits. Its source-scoped
 local verification passed 74 existing controls plus applicable static checks;
-the exact historical archive remains unchanged. Final PR qualification is separate.
+the exact historical archive remains unchanged. A later required-check correction
+waits for a plugin job's final visible status together with its output, after a
+real-child/Pilot cleanup-boundary control. Product lifecycle and the original
+result/cleanup assertions remain intact. Final PR qualification is separate.
 
 ```sh
 uv run python -m pytest tests/quality/test_architecture_docs.py

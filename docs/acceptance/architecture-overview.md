@@ -63,3 +63,26 @@ qualify the eventual delivered head; local documentation checks establish no new
 application coverage, cloud-provider, native or performance qualification.
 No cluster, installed application, browser/media campaign, website, package,
 release, tag, DNS or visibility publication is part of this migration.
+
+## Required-check synchronization correction
+
+The original [Python 3.14 part failure](https://github.com/carloshm91/kuberich/actions/runs/41435801610/job/125247007601)
+on source `17196855` retained 2,039 passing cases, one failure and one explicit
+skip. The plugin-job test saw `Running · exit 0` with the expected literal output,
+then checked the final visible status before its scheduled repaint.
+
+A single controlled real-child/Pilot observation on unchanged `17196855` held only
+the public process-cleanup boundary. The existing output predicate became true
+while the model and rendered result were still Running. After cleanup was released,
+the existing timer published Succeeded for the same opened job/widget without
+another Enter or forced final refresh. Literal markup stayed literal; process,
+client and renderer cleanup completed. This demonstrates a sufficient ordering,
+not unique retrospective proof of the hosted scheduler's sequence.
+
+Only that existing test's wait predicate now requires the final rendered status,
+exit code and output marker together. The original job wait, model/result checks,
+visible-result assertion, literal child output and cleanup assertion remain, as
+does the five-second helper. Production status still becomes final after cleanup.
+The original failed run and artifact 13135944907 are retained; no unchanged retry,
+product lifecycle change, deadline increase or assertion removal is involved.
+The earlier 74 documentation checks remain tied to their recorded source.
