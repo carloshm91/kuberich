@@ -3,6 +3,11 @@ description: Propose a concrete terminal or Kubernetes workflow improvement.
 title: "[Feature] "
 labels: [enhancement]
 body:
+  - type: markdown
+    attributes:
+      value: >-
+        Follow the [delivery contract](https://github.com/carloshm91/kuberich/blob/main/CONTRIBUTING.md#delivery-contract)
+        and [quality policy](https://github.com/carloshm91/kuberich/blob/main/docs/quality.md).
   - type: textarea
     id: problem
     attributes:

@@ -236,7 +236,7 @@ Focused policy, receipt and release controls passed 423 cases. Three actual
 aggregate-UI, HTTP-backend and mounted-terminal cases also passed, retaining both
 always-strict blocking controls and full positive workload/cleanup checks. These
 are local prerequisite checks, not full platform or coverage qualification.
-The [quality policy](../quality.md#runtime-latency-policy-for-0x-and-stable-qualification)
+The [quality policy](../quality.md#performance-evidence)
 explains the exact observation and validation contract.
 
 ```sh
@@ -794,3 +794,170 @@ Production executable code is unchanged, so changed-production coverage is N/A,
 not a new 100% result. Complete current-head hosted/native CI remains pending.
 Receipts are under `artifacts/issue227/protected-13a6/`. These source-scoped results
 make no new release, installation, provider, performance or publication claim.
+
+## Release-history delivery
+
+PR 292 delivered the user-focused release history at protected squash
+`614f3f89f314cfc1a98dc0e2ac753506ce257ce5`, tree
+`5d97314de68af2fdf9ec0023e2e79bf99d2fb929`, with sole parent `13a6c5c`.
+The exact `11aff35` head passed all 27 selected Quality jobs, including four
+native targets, plus matching Repository checks and DCO. The 149 local controls
+remain source-scoped evidence. No remote release body or publication changed.
+
+## Current contributor essentials
+
+Active agent, contributor and quality instructions now keep the current delivery
+contract, boundaries and verification policy within 60, 150 and 250 lines.
+Bug, feature and task forms link the shared contract instead of copying it.
+The global limit remains ONE implementation issue, with agent ownership inside
+that issue. Continuous authorized source delivery, existing approvals, local
+maintainer identity/sign-off, explicit domain-purchase/publication approval and
+owned disposable-cluster rules remain intact.
+
+Three exact pre-condensation instruction snapshots and their source/hash receipts
+are kept maintainer-local from actual protected `614f3f8`, outside tracked source
+and public CI. Existing public Git history and all 105 historical payloads/origins
+remain unchanged; internal records in a public repository are not confidential.
+The public inventory adds only the new task form, for 340 documents, with the
+same three operational JSON inputs and 100 historical aliases.
+
+Fork contributors now fetch the existing PR 277/290 histories explicitly from
+the canonical HTTPS URL without changing remotes. Validators remain offline and
+fail closed. The current checkpoint and acceptance links remain accessible;
+qualifier guidance names the full current strict/private/startup stage sequence.
+The quality policy states both startup and runtime/collection latency as advisory
+for 0.x, preserving every original budget, actual miss, strict opt-in, major-1+
+enforcement, strict negative control and hard resource/functional/ownership gate.
+Actual-parent architecture, release instructions, runtime, qualification stages,
+CI setup and unrelated tests are unchanged. Source version remains 0.2.0;
+production changed-code coverage is N/A, not a new 100% result.
+
+A later automatic-main Python 3.14 shard failed job `125357973367` while opening
+the HTTP watch in the independent bounded server-interval case `[0.1-1]`, with
+`ConnectionProblem TIMEOUT`. The original artifact `13154722289` is retained by
+its owner. Cause is under diagnosis; this documentation work changes no watch
+assertion or budget and does not resolve that result. Delivery remains held for
+the reviewed prerequisite and fresh candidate qualification. Local verification
+and complete current-head hosted/native results are still pending here.
+
+The frozen documentation source `226703d9b00ec8f9ade9a318520c7902ae71afe8`
+passed 95 focused contributor-policy/form, link, internal-record, disposition and
+architecture controls in 21.16 seconds (24.80 seconds including the runner), with
+no failures, errors or skips. The exact command was:
+
+```sh
+uv run python -m pytest -q tests/quality/test_contributor_essentials.py tests/quality/test_documentation_links.py tests/quality/test_internal_docs.py tests/quality/test_documentation_structure.py tests/quality/test_architecture_docs.py --basetemp=/tmp/kuberich-228-docs-7u06ojn6/pytest --junitxml=artifacts/issue228/protected-614f/tests.xml
+```
+
+The current strict workflow union (234 files), seven documentation modules,
+Ruff/format/private-access, checked references and the 885-link module-plan gate
+also passed. Both qualified parent site manifests match every enrolled input;
+no redundant standalone rebuild was run. Existing navigation/site-exclusion
+controls passed. These are documentation-only results: production coverage is
+N/A and no provider, performance, installation or native qualification is inferred.
+Receipts are under `artifacts/issue228/protected-614f/`. The parent watch-open
+failure remains under diagnosis, and fresh complete current-head hosted/native
+CI and public delivery remain pending.
+
+## Reviewed test-contract prerequisites
+
+The automatic-main run for protected `614f3f8` terminated as FAILURE: 20 jobs,
+16 success, three failure and one skip. Two original source shards failed, and
+the aggregate gate failed. The originals retain the watch server-interval
+`[0.1-1]` HTTP-open timeout and the aggregate source-picker retired/table-count
+assertion. The original controller comparison was false and close metadata was
+missing; later controls do not establish a unique historical cause or a product
+fix. Canonical failures and those diagnostic limits remain retained.
+
+Reviewed child `36e01250d1242f230038872acc8ed9279ac92b0e` changes only the watch
+interval test and its public aiohttp imports. It checks all four actual production
+interval/request/ClientTimeout values at the public HTTP-call boundary, including
+None establishment, EOF and cleanup. Existing real-HTTP deadline, renewal and
+cancellation controls remain byte-exact; no product API, budget or runtime code
+changes. Its source-scoped watch/pipeline cohort passed 84 cases in 13.56 seconds
+with static checks; those helper results are not a repeated campaign here.
+
+Reviewed child `f0a25faf28abdc89a486ce1c7cdaaca3c13903be` adds exactly one wait
+for retired ownership 64 AND the mounted picker table's 67 rows, immediately
+before the original assertion. Every assertion, 34-cycle loop, 0.3-second pause,
+helper budget, UID/Space/Escape check and production byte stays unchanged. The
+same-public-gate fixed comparison passed one case in 5.54 seconds; the four-file
+aggregate cohort passed 138 cases with Ruff/format/private and 195-file helper
+strict checks. The controller/metadata limits above remain part of that evidence.
+
+Both reviewed children are merged normally into the fresh delivery branch.
+They are explicit necessary TEST-ONLY exceptions to otherwise exact protected-
+parent preservation. Original 95-case documentation, 84-case watch/pipeline and
+138-case aggregate receipts remain separate, source-scoped and unsummed. No new
+application coverage, runtime qualification or unique-cause claim follows from
+these controls. The final combined selection, actual workflow strict union and
+fresh complete current-head hosted/native qualification remain pending.
+
+The combined frozen source `999408a907ba4737723d155ca90e3fb67aed766e`
+passed exactly 100 selected cases in 23.05 seconds (24.22 seconds including the
+runner), with no failures, errors or skips: the five documentation/policy files,
+all four watch interval values and the target source-picker UI case. The command was:
+
+```sh
+uv run python -m pytest -q tests/quality/test_contributor_essentials.py tests/quality/test_documentation_links.py tests/quality/test_internal_docs.py tests/quality/test_documentation_structure.py tests/quality/test_architecture_docs.py tests/contract/test_watches.py::test_watch_server_interval_is_an_independent_bounded_integer tests/ui/test_aggregate_logs.py::test_source_picker_uid_recreation_expired_selection_and_manual_space --basetemp=/tmp/kuberich-228-integration-k4l0_811/pytest --junitxml=artifacts/issue228/final-integration/tests.xml
+```
+
+The actual workflow strict union (234 files), seven documentation modules,
+Ruff/format/private-access, checked references and module-plan validation passed.
+Both previously qualified site manifests still match every enrolled input; no
+standalone rebuild was needed. All five forbidden ancestry guards, private-copy
+permissions, 105 historical identities, three operational inputs, 100 aliases and
+340-document inventory remain intact. Original and helper cohorts stay separate;
+no broad 84/138/full/native campaign was repeated. Production coverage remains N/A.
+Receipts are under `artifacts/issue228/final-integration/`. Fresh complete current-
+head hosted/native qualification and root-reviewed public delivery remain pending.
+
+### Contributor-guidance CI correction
+
+The first PR #303 source `869cccf462d6c2f02acc1a1195d12c169898cf3e`
+did not qualify. Application quality run `41481687428` ended with 24 jobs:
+20 successful, two failed, one cancelled and one skipped. The idle-timeout
+backoff test recorded `[0.25, 0.5, 0.25, 0.5]` instead of the expected three
+delays; the aggregate gate failed and the Application matrix stayed skipped.
+The cancelled macOS part had no acquired runner or test steps; its original
+annotation identifies hosted-runner acquisition capacity. All four native jobs,
+Repository checks and DCO passed, which does not replace the failed qualification.
+
+One controlled execution of the unchanged original test retained its failed
+assertion. Actual HTTP 503/503 responses, one LIVE observation and the 2.1-second
+idle-body timeout correctly produced the expected reset to 0.25 seconds. Only
+then, a controlled delay before the incidental final request was cancelled by
+the unchanged 0.1-second handshake deadline, adding the extra 0.5-second backoff.
+This proves a sufficient route, not the unique historical hosted cause. The
+original failure, raw control failure and cleanup/source receipts remain intact.
+
+Reviewed child `1026e18b23d914f2cb6083cb7e0e8cd1ee32d13a` changes only
+that test. LIST setup uses its ordinary deadline; the intended watch phase keeps
+0.1 seconds and the enclosing run keeps five seconds. The test stops through
+the existing `Finished` control after recording the third sleep. It still
+requires real HTTP 503/503, one LIVE state, the actual idle TIMEOUT, exact delays,
+checkpoint and request counts, plus drained handlers and a closed client pool.
+All other functions, shared fixtures, production code and hard controls are exact.
+
+The child passed 84 watch/pipeline cases in 14.52 seconds (18.09 with the runner),
+with no failures, errors or skips. Ruff, formatting, private-access checks and
+the actual workflow strict union of 234 files passed. All owned local commands and
+the original CI observer are reaped. Root and independent review approved the
+change; it is integrated without rewriting the published parent. Receipts are
+under the helper's `artifacts/issue228/idle-backoff-contract/` and the delivery's
+`artifacts/issue228/root-tracking/`. Combined integration checks and fresh complete
+current-head hosted/native qualification remain pending. Source version is 0.2.0;
+no application coverage percentage or release/publication follows from this fix.
+
+The corrected combined frozen source `922e2340d8ef754d3fac9e39ef092cf19b8e55ae`
+passed 101 cases in 25.68 seconds (26.88 with the runner), with no failures,
+errors or skips. This is the earlier 100-case documentation/interval/picker
+selection plus the corrected established-idle-timeout case. The exact invocation,
+source and owned-process receipts are in
+`artifacts/issue228/idle-integration/tests-command.json`; canonical output is
+`tests.xml` and `tests.log` in that directory. The source stayed unchanged through
+the run; the child/process group and private test directory are gone. The
+helper's strict/static input files are byte-identical after this checkpoint-only
+integration. The earlier 84-case cohort and original failed control remain
+separate source-scoped records. Fresh complete current-head hosted/native CI
+is still required before protected delivery; no unchanged CI attempt was retried.

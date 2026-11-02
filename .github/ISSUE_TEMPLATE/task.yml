@@ -1,0 +1,42 @@
+name: Implementation task
+description: Define a scoped change with an observable result.
+title: "[Task] "
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Follow the [delivery contract](https://github.com/carloshm91/kuberich/blob/main/CONTRIBUTING.md#delivery-contract)
+        and [quality policy](https://github.com/carloshm91/kuberich/blob/main/docs/quality.md).
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: Explain what a user or contributor can do when this task is complete.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: Identify the affected behavior and its limits.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List observable results that demonstrate completion.
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification
+      description: Describe relevant behavior, failure and cleanup checks using synthetic data.
+    validations:
+      required: true
+  - type: input
+    id: dependencies
+    attributes:
+      label: Dependencies and milestone
+      description: Link any blocking issues and the intended release milestone.

@@ -3,6 +3,11 @@ description: Report a reproducible problem in a released or development version.
 title: "[Bug] "
 labels: [bug]
 body:
+  - type: markdown
+    attributes:
+      value: >-
+        Follow the [delivery contract](https://github.com/carloshm91/kuberich/blob/main/CONTRIBUTING.md#delivery-contract)
+        and [quality policy](https://github.com/carloshm91/kuberich/blob/main/docs/quality.md).
   - type: input
     id: version
     attributes:

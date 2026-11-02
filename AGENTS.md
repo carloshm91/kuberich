@@ -1,132 +1,59 @@
 # Working on KubeRich
 
-Read the selected GitHub issue, CONTRIBUTING.md, docs/architecture.md,
-docs/quality.md, and the relevant release milestone before implementation.
+Read the live issue, its milestone, CONTRIBUTING.md, docs/architecture.md and
+docs/quality.md before implementation. GitHub is the live status source;
+docs/internal/backlog.json records the reviewed plan and release phases.
 
-## Current stage
+## Scope and delivery
 
-This repository starts with a reviewed plan and a GitHub backlog. Product
-implementation begins only after the maintainer starts the first implementation
-issue. The requested model workflow is Astra for planning and GPT-6.1 Sol for
-implementation; do not claim to switch models without actual environment support.
+- Write repository content, issues, PRs and commits in English.
+- Build an independent Python terminal client; K9s is inspiration, not copied source.
+- Keep unrelated experiments out of public code, documentation and history.
+- Python 3.12+; use the supported Python/platform matrix in docs/quality.md.
+- Textual Web and a hosted backend remain outside the current product scope.
+- Repository: carloshm91/kuberich; SSH: git@github.com:carloshm91/kuberich.git.
+- Use repo-local carloshm91@gmail.com for maintainer commits; never change global or other contributor identity.
+- Work on ONE implementation issue globally; coordinate agent ownership within that issue.
+- Select the earliest unblocked milestone task; implement behavior, not a stub or plan.
+- Continue authorized implementation and verified squash merges without manual-trial pauses.
+- Use an issue-linked PR, required checks, resolved review and a signed-off squash commit.
+- Keep main releasable; do not bypass protection, force-push or delete protected branches.
+- Respect existing authorization; do not ask again for an already authorized action.
+- Repository/project visibility, tags, packages, distribution repositories, hosting, domain purchases and DNS need explicit approval.
+- Prepare and verify concrete artifacts before a publication approval; phase readiness is not approval.
+- Follow docs/releases.md; do not bump a version for every PR or infer publication from metadata.
+- Update user guidance, capability limits, relevant evidence and docs/internal/first-preview-current.md.
+- Keep capability/source inventories traceable; planned work does not establish parity.
+- Use synthetic examples/screenshots; never expose customer identities, real credentials or kubeconfig contents.
 
-## Scope and ownership
+## Engineering
 
-- Write repository content, documentation, issues, pull requests, comments and
-  commit messages in English.
-- Build a new Python terminal application. K9s is a design inspiration, not a
-  source tree to copy. Keep the README attribution short.
-- Keep unrelated experiments and their history out of public documentation,
-  tickets, source, and commit messages.
-- Python 3.12+; initially test CPython 3.12, 3.13, and 3.14. Linux and macOS first.
-- Textual Web and a hosted backend are out of scope. Prepare a simple landing
-  page and initial documentation before the public launch; the expanded,
-  versioned documentation website remains a separate later milestone.
-- Repository: carloshm91/kuberich. SSH remote:
-  git@github.com:carloshm91/kuberich.git.
-- Use repository-local author email carloshm91@gmail.com for the maintainer's
-  commits. Do not change global Git identity or overwrite another contributor's
-  identity. Never include credentials or kubeconfig contents in commits.
-
-## Delivery workflow
-
-- The maintainer authorized continuous implementation, local verification
-  and autonomous squash merges: finish each issue/PR and proceed to the next
-  unblocked task without waiting for intermediate manual trials or feedback.
-  Keep progress updates and docs/internal/first-preview-current.md current, but do not ask the
-  maintainer to test between tasks. They will test and provide feedback later.
-- Real cloud/provider trials are deferred to the maintainer's later installed
-  preview tests. Implement and verify local contracts and owned disposable-cluster
-  behavior now, record limits honestly, and retain opt-in certification in Q05 #87.
-  This does not authorize using the maintainer's active context for automated tests.
-- On 2026-10-08 the maintainer explicitly authorized opening carloshm91/kuberich
-  with Apache-2.0 in #155. This authorization covers the source repository and
-  its repository issues/history, not the separate GitHub project, hosting or
-  distribution channels. Do not request the same visibility permission again.
-- On 2026-10-09 the maintainer requested usable, qualified 0.x releases,
-  starting with 0.1.0. This supersedes the earlier first-public-1.0-only policy.
-  Follow the explicit cumulative phase mapping in docs/releases.md/backlog.json;
-  phase preparation does not authorize tags, packages, taps or website publication.
-- Main has enforced strict app-bound Quality gate/Repository checks/DCO, admin,
-  PR/linear/conversation controls and no force pushes/deletions. Both release
-  environments require owner review, protected branches and no admin bypass;
-  solo self-review remains allowed. Revalidate actual live rules before release.
-- On 2026-10-09 the maintainer explicitly authorized #166 to publish the current
-  development landing and initial docs to two Cloudflare Pages provider hosts,
-  using the protected `release` secrets. Custom domains/DNS, `www`, packages and
-  application tags remain outside this authorization. #166 is delivered; #53
-  and #54 are delivered. Use the current issue/backlog rather than this historical
-  deployment sequence to choose the next task.
-- Ask before changing repository/project visibility, publishing a website,
-  creating a public distribution repository, or publishing package artifacts.
-  Prepare and verify the concrete result first, then request approval for the
-  publication step. Domain names are proposals until the maintainer chooses one;
-  do not purchase domains or change DNS without explicit authorization.
-- Notify the maintainer at each usable checkpoint in docs/internal/first-preview-current.md, with
-  the exact tested command and honest feature status. B01 is prioritized early.
-- Keep docs/capabilities.json and the pinned source inventory traceable to issues;
-  do not claim parity from planned work or an unverifiable paid feature catalog.
-- Work on one implementation issue at a time. Select the first unblocked issue
-  in the earliest unfinished product milestone; see docs/backlog.md.
-- On 2026-10-19 the maintainer approved the revised phase plan (#221) and
-  authorized finishing v0.2.0 in order: #221, #63, #64, #193, #65 (#124 moved
-  to v0.8.0). Finish and verify each issue before advancing; publication of any
-  artifact still needs explicit approval. Final hosting work stays in #89.
-- On 2026-11-01 the maintainer made all startup latency objectives advisory
-  for 0.x: offline 150 ms wall time, 150,000 us aggregate/cumulative imports,
-  and 600 ms actual UI paint. Report every measured value and unmet target;
-  do not increase limits or relabel original failures. `--strict-startup`
-  enforces every original latency limit; `--strict-paint` retains UI-only
-  compatibility. Actual source major 1 and later, including prereleases,
-  always enforce all limits. Offline RSS below 40,000,000 bytes, absence of
-  forbidden Textual/SDK imports, valid output/source/frames, geometry, deadlines and
-  owned cleanup remain mandatory. Negative latency controls stay strict.
-  Prioritize useful product work rather than more 0.3 latency optimization.
-- Use a short-lived issue branch, an issue-linked pull request, required checks,
-  and squash merging. Keep main releasable.
-- While hosted Actions cannot start because of the account quota/billing block,
-  follow the maintainer-authorized temporary local verification workflow in
-  docs/quality.md. Record real local evidence and unavailable platform checks;
-  preserve coverage gates and qualify full platform CI before a public release.
-- Sign off authored commits with the repository identity (`git commit -s`) and
-  preserve the sign-off in squash commits; satisfy the DCO check.
-- A plan, stub, or mocked demonstration does not complete a behavior issue.
-- Update documentation and acceptance evidence with the implementation. Treat
-  GitHub as the live status source; the checked-in backlog is the planning map.
-- Create tags and publish releases only as part of an explicitly requested
-  release task, following docs/releases.md. Do not bump a version for every PR.
-
-## Engineering invariants
-
-- Follow the architecture in docs/architecture.md. Inject a per-context client;
-  avoid process-global Kubernetes configuration and singletons.
-- Keep domain operations independent of Textual. Own and cancel every watch,
-  log stream, subprocess, and port-forward session.
-- Never block the Textual event loop with synchronous network or process waits
-  during normal UI operation. Terminal handoff is an explicit exception.
-- Use stable resource identity, preserve cursor/scroll state, bound log memory,
-  and reject results from previous context generations.
-- Pass subprocess argument vectors and explicit kubeconfig/context/namespace;
-  do not interpolate resource names into shell command strings.
-- Escape untrusted markup and control sequences before display. Redact secrets
-  and credentials in logs, diagnostics, exports, and default views.
-- Use disposable local test clusters. Do not use the user's active Kubernetes
-  context for tests or mutate a real cluster without task-specific authorization.
+- Follow the architecture; keep domain operations independent of Textual.
+- Inject clients per context; avoid global Kubernetes configuration and singletons.
+- Own and cancel every watch, log stream, worker, subprocess and forwarding session.
+- Never block the active UI loop with synchronous network/process waits; follow the terminal lease.
+- Use stable resource identity, preserve cursor/scroll, limit memory and reject stale generations.
+- Pass explicit argv/kubeconfig/context/namespace; never interpolate resource names into shell strings.
+- Enforce read-only, target identity and confirmation policy at effectful service boundaries.
+- Escape remote markup/control sequences and redact credentials in display, logs and exports.
+- Keep temporary credential material private and clean it up through failure and cancellation.
+- Use disposable owned clusters and fixtures; never automate tests against the user's active context.
+- Real provider trials and real-cluster changes require explicit task authorization.
+- Prefer documented ports and public APIs; keep compatibility adaptations isolated and tested.
 
 ## Verification
 
-- Enforce at least 90% line coverage AND 90% branch coverage over all production
-  code, plus 90% changed-line coverage. Target and enforce 100% for the critical
-  deterministic modules described in docs/quality.md.
-- Run Ruff, formatting, strict type checking, behavioral tests, and applicable
-  integration/terminal/package checks. Required checks must not ignore failures.
-- Coverage excludes tests, but includes unimported production modules. Do not
-  add broad exclusions or meaningless tests to increase a percentage.
-- Publish measured results honestly. Coverage is not a substitute for testing
-  reconnects, cancellation, terminal restoration, permissions, or installations.
-
-## Skills
-
-Relevant optional Codex skills and reproducible installation instructions are
-documented in docs/agent-setup.md. They support this workflow and do not grant
-permission for unrelated publication, cluster operations, or configuration changes.
+- Enforce at least 90% production line, 90% branch and 90% changed-line coverage.
+- Enforce 100% lines/branches for the reviewed critical modules in pyproject.toml.
+- Include unimported production modules; exclude tests, never hide code with blanket exclusions.
+- Run Ruff, formatting, strict types, behavior and applicable terminal/package/cluster checks.
+- Required failures remain failures; retain originals and report unavailable platform evidence.
+- Coordinate timing windows, freeze measured inputs and use independent temporary/artifact directories.
+- For 0.x, startup and runtime/collection latency is advisory; retain unmet results and original limits.
+- Actual major 1+ (including prereleases) or --strict-startup enforce all startup timing limits.
+- --strict-paint remains UI-only; RSS/import absence, frames, deadlines, cleanup and coverage stay hard.
+- KUBERICH_STRICT_RUNTIME_BUDGETS=1 enforces runtime/collection timing; major 1+ cannot opt out.
+- Keep negative latency controls strict; policy changes never relabel an original failure.
+- Coverage and test counts do not guarantee correct behavior, cleanup or installation.
+- Sign off authored commits with git commit -s; never sign for another contributor.
+- Optional skills in docs/agent-setup.md do not grant unrelated execution or publication authority.

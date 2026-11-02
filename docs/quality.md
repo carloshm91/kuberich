@@ -1,1181 +1,250 @@
 # Quality and coverage
 
-## Startup and import boundaries
-
-The Application matrix runs `python -m scripts.check_startup` serially against
-exact source, retaining five fresh observations of every offline command,
-four import profiles and five actual frames on an owned 120×36 PTY. No case is
-omitted when a latency target is missed in advisory mode.
-
-On 2026-11-01 the maintainer made every startup latency objective advisory for
-0.x: **150 ms** offline wall time, **150,000 µs** aggregate self and maximum
-cumulative import time, and **600 ms** actual UI first paint. Each sample/profile
-and aggregate reports its actual values, original target, `budget_met` and
-`budget_enforced`. An unmet objective is never called a strict pass.
-`--strict-startup` enforces all original limits; `--strict-paint` preserves the
-existing UI-only opt-in. Actual source major 1 and later, including prereleases,
-always enforce every limit. No version override or higher threshold is used.
-
-Offline RSS must remain below **40,000,000 bytes**. Valid elapsed observations,
-clean output, installed/source identity, complete import profiles and absence
-of Textual/the Kubernetes SDK remain hard requirements in every mode. The real
-selected table must be mounted with columns and geometry inside the original
-viewport before any SDK/helper/network work. Deadline, terminal restoration,
-client ownership and cleanup failures always block. Configured validation and
-all production/critical/changed-line coverage gates remain unchanged.
-
-Both original negative controls remain required: the deliberate 700 ms frame
-uses the unchanged strict check, and an explicit Textual import must fail even
-in advisory mode. Synthetic controls also verify strict offline/import timing,
-stable prerelease enforcement, RSS and functional failures. The original macOS
-`info` observation of 161.144125 ms remains a failed old-policy result; its later
-102.170084 ms diagnostic is not promoted into a pass. See the
-[startup acceptance record](internal/acceptance/startup-budget-0.3.md).
-
-Inputs stay frozen during qualification. Raw stdout/stderr, import profiles,
-ANSI transcripts and original failures are retained. All tables keep eager
-composition; the ineffective inactive-DOM prototype remains removed. Historical
-source evidence does not qualify a changed head, native artifact or platform.
-
-## Public test boundaries
-
-Tests use real Pilot input or `app.run_command(text)` and read the frozen
-`app.state` snapshot for workspace selection and connection status. The command
-API uses the same root and captured-workspace routing as the command bar; it
-returns after dispatch, so tests still await the relevant public result.
-
-Run the static check `uv run python scripts/check_private_access.py` to reject private imports,
-attributes, aliases and reflection into any production KubeRich namespace from
-tests, including embedded terminal fixture programs. The required CI step uses
-the same checker. Test-owned doubles and standard/framework namespaces retain
-their separate ownership; this does not waive the pinned framework boundary tests.
-
-Cancellation and retention assertions observe actual coroutine callers at public
-service, renderer and I/O ports. Read-only numeric diagnostics distinguish active
-operations from registered owners where necessary. They expose no tasks, mutable
-caches or resource payloads, and do not replace real cleanup, UID or scope checks.
-## Property and mutation testing
-
-Property tests run with `uv run pytest tests/unit/property`. The weekly/manual mutation job targets 85% actual kills.
-[Property/mutation evidence](internal/acceptance/property-mutation-tests.md) retains survivors, incomplete runs and tool errors.
-Coverage gates stay unchanged; reconsider the critical-line mandate only after stable mutation evidence.
-
-## Supported native runner images
-
-Native Apple Silicon builds and Homebrew installation checks select `macos-15`;
-Intel keeps `macos-15-intel`. GitHub retires its macOS 14 images on 2026-11-02.
-New Apple Silicon bottles use their actual `arm64_sequoia` tag; published Sonoma
-metadata remains readable. New-image build and installation results must pass
-before claiming qualification or publishing artifacts.
-
-## Reactive preferences: U06 #64
-
-`config/context_settings.py` joins the 100% line/branch inventory, with the
-already critical `domain/appearance.py` and `services/access.py`. Unit tests
-cover strict context settings, precedence, transparent surfaces and a policy
-that can only become stricter. Headless UI tests reload through the real poll,
-keep the last valid file, apply a column view to a live table and keep flags,
-environment and theme overrides ahead of the file. See
-[acceptance evidence](internal/acceptance/reactive-preferences.md).
-
-## Resource jumps: U06 #64
-
-`domain/jumps.py` and `config/jumps.py` join the 100% line/branch inventory.
-Unit tests cover strict definitions, field-path-only templates, missing and
-unsafe values, label-map expansion, namespace scope and cluster-scoped targets.
-Headless UI tests open a non-preferred discovered version and a built-in pod
-view, restore the previous filter with `:back` and report missing or invalid
-jumps without changing the view. See
-[acceptance evidence](internal/acceptance/resource-jumps.md).
-
-## Context edits and pod cleanup: M08 #63
-
-`domain/kubeconfig_edit.py`, `domain/cleanup.py` and `domain/view_actions.py`
-join the 100% line/branch inventory. Fixture tests cover merged files, ambiguous
-ownership, a file changed after review, backup removal on failure, symbolic
-links and file modes. Headless UI tests drive rename, delete, the current-context
-confirmation, Escape/Cancel, read-only refusal and a lost cleanup race. An owned
-kind trial drives `:cleanup` through the real UI: running pods are never listed,
-a replaced pod refuses the whole batch, a changed pod returns a conflict while
-the other pod is deleted. See [acceptance evidence](internal/acceptance/context-cleanup.md).
-
-## Forwarding presets: S08 #62
-
-The required Python 3.13 runtime child retained a 152.761-ms pause, including
-a 119.516-ms generation-two collection of 22,139 objects during a view transition.
-The pinned table-cache correction unlinks retired native LRU rings, rather than
-changing GC or the 150-ms control. `ui/table_cache.py` joins the 100% deterministic
-line/branch inventory. An owned weak-reference negative control reproduces
-retention before the fix; native comparisons retain capacity, lookup, eviction,
-key order and counters. A second required macOS check exposed clipped key names
-on the first metadata paint. A held idle-width-scan control reproduces that
-clipping; explicit metadata widths preserve complete names and hidden values.
-Original failed logs/artifacts and fresh complete platform/native checks remain
-required. See [forwarding acceptance](internal/acceptance/forward-presets-0.3.md).
-
-Named/container-qualified port resolution, annotation precedence and local
-opt-in/transport/retry preferences join the critical deterministic inventory.
-Owned HTTP/process contracts exercise both child flags, reconnect budgets,
-permission/UID/context invalidation, cancellation and listener/file cleanup.
-Startup errors cannot enter reconnect: only a previously READY child may retry,
-and a failed replacement terminates the controller.
-Pilot checks default review, explicit exact-context opt-in, presets and remote
-bind refusal at 40×12 and 100×30. Source and installed-console/module PTYs retain
-strict terminal restoration while using named annotation defaults.
-The existing owned-kind forward verifier additionally resolves declared names,
-selects both kubectl transport modes and replaces a Service backend before a
-real process disconnect/reconnect and distinct HTTP response. Local/hosted
-results are recorded separately; these fixtures do not certify real providers.
-
-Normal Python manager version upgrades are behavioral packaging checks in the
-full suite. A separate `Native installation qualification` workflow requires real
-Homebrew source installation, version upgrade, formula checks, upgraded PTY
-behavior and removal on Ubuntu 24.04, ARM macOS 14 and Intel macOS 15. Its opt-in
-test is skipped outside an owned ephemeral Actions host; that skip is not native
-installation evidence. All three hosted results must pass before D04 qualification.
-Existing coverage and protected quality checks remain required.
-
-Coverage is a release requirement and one part of correctness. A high percentage
-does not establish correct Kubernetes semantics, responsive terminal behavior,
-or reliable installation.
-
-## Plugin compatibility: U05 #60
-
-The complete pinned workflow census is checked against the source inventory,
-including both extensionless executable helpers. Eighteen original adaptation
-fixtures assert exact expanded argv, scope, typed values and conservative trust;
-unsupported upstream fields/variables fail closed. Three original manifest files
-load through the real adapter. Harmless real children exercise capture, completed
-background output, Stop, read-only refusal, missing executables and private-file
-cleanup. A real CLI PTY repeats the interactive example with hostile literal
-container input and checks native terminal restoration. No upstream program or
-maintainer cluster is executed. Existing critical/full-package/changed-line and
-complete platform/native gates remain unchanged. See
-[acceptance evidence](internal/acceptance/plugin-compatibility.md).
-
-## Plugin execution: U04 #59
-
-`adapters/credential_child.py` joins the critical 100% line/branch inventory.
-Existing critical process/plugin/runtime/command/CLI decisions retain their
-unchanged floors. Actual children exercise literal argv/cwd/environment, private
-single-context files, independently captured helper cwd/profile, exit/signal/
-timeout/overflow, background waiter ownership, descendants and repeated cleanup.
-Pilot exercises typed forms, Review/Run, scope/key/input ownership, read-only,
-job output/Stop and screenshot concealment. Existing real handoff PTYs verify
-plugin-purpose terminal restoration; a fresh installed-wheel child and all four
-native archive verifiers execute the packaged private credential launcher.
-The full real CLI plugin-mode trial additionally repeats reviewed foreground
-handoff, verifies private-path cleanup with a capture command and inspects
-background output from source, an installed wheel and each exact native archive.
-Owned kind verifies real client-go plugin authentication with four credential
-mechanisms, distinct cwd, TLS/CONNECT proxy and private-file/session cleanup.
-No provider/current-context trial or publication is inferred from these checks.
-See [execution evidence](internal/acceptance/plugin-execution-0.3.md).
-
-Qualified generic plugin regressions use the real startup and command-bar routes
-against an owned loopback API. They prepare a review for the selected custom UID
-without executing a plugin, and retain explicit refusals for a previous resource
-name or API version. The pending-selection fixture holds only the public workspace
-port; it does not assign private App fields. Run them with
-`uv run pytest tests/ui/test_generic_plugins.py`.
-
-## Plugin configuration: U03 #58
-
-The required 3.13 failure retained a 152.010-ms genuine runtime pause, including
-97.881 ms of GC during CSS reparse. The production correction bounds exact
-variable/source parse reuse within each app and retains transactional errors.
-`ui/style_cache.py` joins the critical 100% line/branch inventory, with native
-control, source/variable/error/copy/bounds and existing component/color tests.
-All original 150-ms controls, 200-ms deliberate negative callback, full dataset,
-two rounds, GC policy and complete platform/native gates remain required.
-
-`config/plugins.py` and `domain/plugins.py` join the 100% line/branch critical
-inventory. Pure tests cover type/size/schema/scope/shortcut conflicts, context
-identity, hostile literal substitutions, typed defaults and deliberate input
-cancellation. Actual files and offline CLI tests cover explicit-only discovery,
-per-context precedence, invalid/duplicate/oversize YAML, symlinks/special files,
-permission failures and retained preference bytes. No plugin is executed by a
-configuration check. Interactive/process behavior remains U04; see
-[contract acceptance](internal/acceptance/plugin-contract.md).
-
-## Terminal interactions: B07 #61
-
-`domain/clipboard.py`, `domain/interactions.py` and `domain/selectors.py` join
-critical 100% line/branch policy. Pure tests cover bounds, malformed selectors,
-missing label/health data, drafts/recall, UID ranges and exact terminal framing.
-Pilot covers per-view ownership, captured-action review, stale guards, wide
-projection changes, local preference conflicts and owned stream/worker cleanup.
-An inert recording driver exercises clipboard wiring/coalescing/error/exit paths
-without accessing a developer clipboard; real owned Xvfb and explicitly ephemeral
-hosted macOS perform synthetic native roundtrips. Ordinary terminal tests force
-OSC52; production never reads a clipboard for acknowledgement.
-
-Source, installed and native PTYs retain original restoration controls. Actual
-capital-G and unpaced navigation-to-command input, resize, Unicode and exact
-outer OSC52 receipts run through owned SSH/tmux/private passthrough servers.
-Mouse tests separately prove default-off and explicit opt-in. Owned kind reuses
-the existing context qualification cluster for status patches, captured UID
-recreation and nested namespace/context/Escape cleanup; its fixture is deliberately
-unscheduled and makes no running-container/restart/exec claim. Existing separate
-shell, RBAC, runtime/performance and full platform checks remain required.
-See [acceptance](internal/acceptance/terminal-navigation-0.3.md).
-
-## Navigation preferences: U02 #57
-
-Focused new-model coverage does not qualify modified existing critical modules.
-The CLI's invalid-navigation offline-diagnostics fallback is also an explicit
-behavioral contract; the unchanged 100% critical CLI gate remains required.
-
-`config/navigation.py`, `domain/keyboard.py`, `domain/aliases.py` and
-`domain/resource_preferences.py` join the 100% line/branch critical inventory.
-Behavioral verification covers per-owner conflicts and literal input, alias
-recursion/collisions, migration and exact-version applicability, typed hidden
-sorting, explicit private saves and schema/context invalidation. Pilot, owned
-HTTP and source/installed console/module PTYs exercise actual controls and
-restart persistence; the four-target native verifier exercises configured
-first/last, a literal alias and the view editor with native terminal restoration.
-Whole-package, changed-line, native and owned-kind checks remain mandatory.
-See [acceptance evidence](internal/acceptance/navigation-preferences.md).
-
-## Appearance and release notices: U01 #56
-
-`domain/appearance.py` and `domain/releases.py` join the 100% line/branch critical
-inventory. Pure tests cover limits, contrast, inversion, precedence, PEP 440 and
-hostile cache/release values. Actual private files and owned HTTP cover optimistic
-save conflicts, symlinks/FIFOs, binary/oversize/error/rate-limit responses,
-credential absence, deadlines and repeated cancellation. Pilot covers working
-fallbacks, preview/cancel, scope, saves and child-before-parent teardown. Source,
-installed console/module and actual native PTYs exercise presentation/About;
-all existing whole-package/platform/owned-kind gates remain required.
-See [measured acceptance](internal/acceptance/appearance.md).
-
-## Configuration data: M05 #55
-
-`domain/configuration_data.py` joins the 100% line/branch critical inventory.
-Synthetic parser cases cover binary/text/Base64 errors and content-free bounds;
-owned HTTP tests cover fresh reads, UID/version/scope changes, cancellation and
-Secret editor disclosure. Pilot and real source/installed PTYs verify deliberate
-reveal/hide, encoding, small-window return and terminal restoration. The existing
-mandatory editing-kind verifier also checks real Secret reads, dry-run/Apply,
-read-only, conflicts, RBAC and immutable-field rejection. Measurements and honest
-limits belong in [acceptance](internal/acceptance/configuration-data.md).
+Coverage cannot guarantee behavior, cleanup or installation; report measured results and gaps.
+The 0.3 gate follows functional readiness; deferred architecture/performance goals
+stay visible for stable work. Coverage, security, ownership and cleanup stay mandatory.
 
 ## Required gates
 
-D05 #49 adds a separate four-target native matrix on every Application quality
-event. It builds the pinned full interpreter, checks complete original provenance
-and native ABI/deployment floors, then runs the extracted archive's owned auth/UI/
-shell controls. Linux x86_64/ARM64 use Python-free Ubuntu 22.04 runtime containers
-and actual owned-kind exec/TLS/RBAC trials. macOS ARM64/Intel use native signing
-inspection and explicit process isolation from outside Python/source files;
-physical runner Python absence and macOS 14 Intel trials are not claimed.
-The existing source Python matrix, coverage and owned-cluster checks remain
-required. Quality gate now depends on both complete matrices and refuses missing,
-failed, cancelled or skipped native results. The corrected four-target hosted
-qualification closed #49; the complete six-source/four-native main run retained
-under #40 also passed. Later runtime changes need fresh checks on their own source.
-
-The release preflight also requires all four native jobs and their original retained
-artifacts from the exact manual qualification run. Public candidate preparation
-and verification reject missing native archives or mismatched source/runtime
-records; source-only bundles remain explicitly local development candidates.
-Parser fixtures exercise fail-closed decisions, not real native execution. See
-[core qualification](internal/acceptance/core-checkpoint.md) for original retained matrix,
-audit and installer results. First-phase and public-release qualification remain
-separate gates.
-
 | Gate | Requirement |
 | --- | --- |
-| Production line coverage | At least 90%, measured independently |
-| Production branch coverage | At least 90%, measured independently |
-| Changed-line coverage | At least 90% against the PR merge base |
-| Critical deterministic modules | 100% line and branch coverage |
-| Lint and formatting | Ruff check and format check pass |
-| Types | Strict mypy over application source passes |
-| Behavioral tests | Applicable unit, UI, contract, and integration tests pass |
-| Artifacts | Build, metadata validation, and clean-environment installation pass |
-| Dependencies | No unresolved actionable high/critical vulnerability without a documented, time-bounded mitigation reviewed in the PR |
+| Production lines | At least 90%, independently measured |
+| Production branches | At least 90%, independently measured |
+| Changed executable lines | At least 90% against the event merge base |
+| Critical deterministic modules | 100% lines and applicable branches per module |
+| Static checks | Ruff check, format check and strict mypy |
+| Behavior | Applicable unit, contract, UI, terminal, integration and quality tests |
+| Artifacts | Build, metadata, payload, rebuild and clean-install checks |
+| Dependencies | Audits, SBOMs, licenses and exact artifact/source bindings |
 
-The initial launch site in #150 also runs build/link/digest checks, strict builder
-types and real Chrome keyboard/accessibility/copy/no-JavaScript checks under
-Repository checks. Its Node 20+/Chrome and locked Playwright/axe tools are developer
-verification prerequisites, outside the application/runtime dependency contract.
-Generated local evidence and node_modules are not repository planning sources.
-Site-only delivery reports changed executable application coverage as N/A;
-it preserves every application coverage gate and the latest qualified source tree.
+[pyproject.toml](../pyproject.toml) lists `tool.kuberich.coverage.critical_modules`.
+Gates cover every `src/kuberich` Python file, including unimported modules; tests
+and development scripts are excluded. Missing/extra files, inconsistent totals or
+missing branch evidence fail. Counts are integers, not rounded; zero branches mean N/A.
 
-#166 adds owned API/HTTP and actual Node subprocess regression cases for the
-Pages publication boundary, conflicting projects, credential isolation, stale
-public bytes, response policies, 404s and partial failures. Its manual main-only
-workflow builds/browser-verifies without secrets, passes the immutable checked
-artifact to the protected `release` job, and installs/audits pinned Wrangler before
-the credential-bearing upload step. Publication requires actual HTTPS file/header/
-404 verification and retains complete or partial receipts. This development-site
-exception does not waive application gates or qualify the final product release.
-
-Its first macOS run exposed a subprocess group exit race, addressed as a narrow
-publication prerequisite. That application correction requires measured changed
-line coverage and full native checks; #166 is consequently not a site-only diff.
-Process regressions retain real-child reaping and descendant cancellation, and
-negative controls reject live or persistently denied Darwin groups.
-
-The later #89 documentation PR's actual Linux/Python 3.12 aggregate-kind check
-timed out on previous CrashLoop logs. Its original ended one-line result lacked
-the expected synthetic output; failure did not waive the gate. The aggregate
-fixture now explicitly sets and verifies a one-second owned kubelet sync period
-alongside its existing twenty-second restart cap. Other owned-cluster callers
-keep their defaults. Original deadlines, genuine membership responses, first
-current/previous output, no-replay and cleanup checks remain required. Retain the
-failed originals, independent owned-node controls and new hosted verification;
-a subsequent unchanged passing rerun is not a correction.
-
-The current critical modules are the CLI/module entry points, preference schema
-validation/precedence, diagnostic redaction, control escaping, literal text
-presentation, argument validation/capture, client/UID target identity checks,
-launch availability/exclusivity, shared access/command decisions, context catalogue
-and session identity, resource endpoint/scope/alias/manifest normalization, and
-watch events, UID state/replays and recovery decisions, plus active-view identity,
-snapshot invalidation and freshness decisions, plus pod health, typed ordering,
-inspection redaction/search, log query/framing/retention, and retained log identities,
-window selection, start-time validation and clipboard bounds, plus immutable
-process/environment capture, scoped kubectl/editor builders and exit decisions,
-plus shell target validation and sanitized return decisions, plus bounded terminal
-geometry and keyboard/paste encoding. Namespace UID/lifecycle values in
-`domain/namespaces.py` join the critical inventory in #125; shared workspace
-layout receives Pilot and real-terminal checks.
-#123 adds `domain/terminal_history.py` to the 100% line/branch inventory for
-retention, literal search, selection and redacted bounded copy. Actual child,
-source/installed PTY and owned-kind trials exercise local review while output
-continues, alternate-screen isolation, resize, stale scope and session cleanup.
-Separate fresh-process allocation and uninstrumented mounted-widget stress
-checks retain receipts under `artifacts/terminal/history-*.json`; traced Python
-allocation is not RSS or a latency result. See [history acceptance](internal/acceptance/terminal-history.md).
-Captured container specification/status decisions in `domain/containers.py`
-join the critical 100% line/branch inventory in #129.
-Standard resource summary, quantity and ordering decisions in
-`domain/registry.py` join that inventory in B05 #41. Every advertised family
-receives parameterized column contracts, actual HTTP/Pilot LIST/WATCH/GET tests
-and owned-kind watch updates/individual reads through `scripts.standard_kind`.
-S05 #42 adds bounded numeric TCP intent, bind validation, scoped argv, target
-UID/phase and observed readiness decisions in `domain/port_forwards.py` to the
-critical inventory. Real child/socket, Pilot, source/fresh-install PTYs and
-`scripts.verify_port_forwards_kind` qualify forwarding, cancellation and cleanup.
-The Linux/Python 3.12 job requires real owned Pod/Service HTTP transport; pinned
-images/binaries and the shared kind owner protect caller configuration.
-M01 #43 adds immutable mutation intent, patch/precondition, annotation and outcome
-decisions in `domain/mutations.py` to the 100% critical inventory. Actual HTTP/TLS
-faults, repeated cancellation, Pilot and source/fresh-install PTYs qualify guards
-and confirmation; `scripts.verify_mutations_kind` is required on Linux/Python 3.12
-for actual writes, stale UID/version refusal and server RBAC on an owned cluster.
-M02 #44 adds editor argv, bounded JSON-compatible YAML, immutable identity and
-structural diff decisions in `domain/editing.py` to the critical 100% inventory.
-Actual private files, held workers/reads, loopback HTTP/TLS, Pilot and source/fresh
-wheel PTYs qualify editor failure/cancellation, default Cancel and distinct
-dry-run/Apply. `scripts.verify_editing_kind` is required on Linux/Python 3.12 for
-actual strict dry-run, guarded edits, conflict/replacement refusal and patch RBAC.
-M03 #45 adds workload applicability, counts, restart/history and observed rollout
-decisions in `domain/workloads.py` to the critical 100% inventory. HTTP/TLS,
-Pilot and source/fresh-wheel terminal contracts complement required Linux/Python
-3.12 `scripts.verify_workloads_kind` Deployment and ControllerRevision operations,
-HPA, scale-only RBAC, failed progress and monitoring cancellation.
-M04 #46 adds deletion options, immutable create/delete requests and Job suspension
-decisions in `domain/operations.py` to the critical 100% inventory. Required
-Linux/Python 3.12 `scripts.verify_operations_kind` checks real deletion policies,
-finalizers, mixed RBAC batches, replacement/version refusal, Job/CronJob
-suspension, manual execution and duplicate prevention. HTTP/TLS disconnects
-must prove a single DELETE attempt; Pilot/source/fresh-wheel PTYs cover exact
-selection/count, default Cancel, partial results and lifecycle ownership.
-S07 #48 adds running-process attach and literal transfer/path/probe decisions in
-`domain/attach.py` and `domain/transfers.py` to the critical 100% inventory.
-Actual files, controlled HTTP/executables, held-worker and repeated-cancellation
-contracts, Pilot and source/fresh-wheel PTYs qualify private staging, default
-Cancel, overwrite, tar/archive limits and cancellation-before/after-publication.
-Required Linux/Python 3.12 `scripts.verify_transfers_kind` checks actual regular,
-init and ephemeral round trips, 8 MiB streams, directories, missing tar,
-interrupted uploads/downloads and native attach/restore on an owned cluster.
-The source kubeconfig and caller context remain unchanged.
-
-F05 invocation overrides and bounded impersonation decisions in
-`domain/connection_overrides.py` join the critical inventory in #19.
-Fixed provider diagnostic decisions in `domain/credential_helpers.py` join the
-critical 100% line/branch inventory in C06 #21. Synthetic provider contracts,
-responsive Pilot navigation and the owned-kind AWS-shaped helper qualify local
-behavior; real EKS evidence remains a separate explicit test-context requirement.
-C07 extends that same critical module with Azure mode/prompt/error and bounded
-bearer decisions. Native provider handoff also receives actual PTY and fresh-wheel
-checks for private stdout, declared stdin, Ctrl+C/cancel/SIGTERM and restoration.
-C05 #52 adds immutable bounded Table decoding in `domain/tables.py` to the
-critical 100% line/branch inventory. Real HTTP contracts cover generic GET,
-paged Table/JSON fallback, per-GVR negotiation, permission/error identity,
-renewed watches and repeatedly cancelled parser workers. The required Linux
-3.12 `scripts.verify_custom_resources_kind` checks real CRDs of both scopes,
-server columns/full objects, versions, alias collisions, install/remove refresh
-and actual restricted RBAC. Its receipt labels forced legacy/plain-JSON
-representations supplied by an owned loopback gateway; status denials are actual
-cluster responses. Visible generic custom-resource UI remains B06 #53.
-B06 #53 adds typed generic row/column decisions in `domain/custom.py` to the
-critical inventory. Pure/HTTP/Pilot cases cover header/schema replacement,
-literal labels, unknown values, redaction, alias/version/scope/history routing,
-retained UID selection and rejected old context/GVR projections. Source and
-fresh-wheel native terminals cover initial discovery, columns, inspection,
-scope/refresh and restoration. The existing required Linux 3.12
-`scripts.verify_custom_resources_kind` now also exercises the actual generic
-browser against both CRD scopes, live changes and removal/core recovery.
-S06 adds `domain/aggregate_logs.py` and `domain/log_json.py` to the 100% critical
-inventory. Pure decisions cover exact controller-chain ownership, container-start
-evidence, independently bounded retention and post-parse JSON redaction.
-Owned HTTP/Pilot cases cover interleaving, Pending/init/ephemeral startup,
-pre-open 400 evidence changes, manual admission, same-name UID churn, expired
-selection, source/status bounds, noise/slow-source heartbeat and detached-export
-cleanup before context-client close. Source and fresh-installed console/module
-PTYs exercise actual controls, resize, exit and terminal restoration.
-### Runtime latency policy for 0.x and stable qualification
-
-For 0.x, runtime heartbeat and input-latency targets are advisory observations,
-not release blockers. The original 150 ms heartbeat limit remains unchanged.
-Receipts report the actual gap and `runtime_budget.version`, `enforced` and
-`met`; an overshoot records `met: false` rather than a strict pass. Set
-`KUBERICH_STRICT_RUNTIME_BUDGETS=1` to enforce the original limit explicitly.
-Major-version 1 and later, including prerelease candidates, always enforce it;
-setting the variable to `0` cannot downgrade stable qualification. Values other
-than `0` and `1` are errors. The version comes from the tested source metadata.
-
-The ordinary UI/backend aggregate and terminal-render workloads still execute.
-Every functional assertion, complete round, retention/memory bound, source
-identity, process deadline, output bound and ownership/cleanup check remains
-mandatory, as do production line/branch/changed-line and critical coverage gates.
-The deliberate 200 ms blocking callbacks always run in strict mode and must fail
-the original 150 ms assertion. The branch-covered replay remains explicitly
-nonqualifying for timing; it cannot replace ordinary uninstrumented observations.
-The existing receipt validators reject missing/falsely met observations and
-attempts to disable required enforcement. No test or platform lane is skipped.
-
-The original documentation-only run `41325919244` measured 162.447845 ms against
-the 150 ms target. That failed original remains retained. This policy is the
-maintainer-approved distinction between 0.x latency observations and functional
-correctness, not a claim that the old result met its target. Strict runtime
-latency and the separate strict UI first-paint target remain stable 1.0 goals.
-
-The separate actual-HTTP tiny-line backend case retains 32,770 received lines,
-a responsive slow source, 600 aggregate/300 per-source retained lines, byte limits,
-the 30-second receive deadline and drained ownership under the full parent branch
-coverage run. Two mandatory owned fresh children run that exact same workload
-without coverage/trace/profile instrumentation or development-only IRI imports.
-The positive child reports the unchanged 150-ms maximum heartbeat target and
-enforces it in strict/stable mode. The negative
-child must fail specifically that assertion after a deliberate 200-ms callback;
-it must still deliver the complete bounded workload and drain all owners.
-Normal GC stays enabled at its original thresholds. Each child owns its process
-group, 60-second deadline and 256-KiB output bound. Unique nonces, complete artifact
-hashes, actual instrumentation/import facts, source identity and final cleanup
-are independently required before the coverage merge. Neither child contributes
-coverage; the original parent workload remains branch-covered. A parent timing
-gap is diagnostic rather than evidence of ordinary runtime latency.
-The retained original macOS run `38043506336` measured 561.710 ms under CTracer
-with the development IRI grammar loaded; a 534.620-ms generation-two collection
-overlapped that gap. These observations do not establish the entire cause or
-qualify the failed source. The originals stay retained without a retry.
-The backend retains bounded read-only failure attribution at
-`artifacts/backend/aggregate-tiny-lines-heartbeat.json`: source hashes, actual
-interpreter/tracer/import facts, normal GC policy, generation-two overlap and
-post-cleanup counts. These diagnostics do not collect garbage, alter thresholds,
-relax functional assertions or qualify timing. Child originals stay in
-`artifacts/backend/runtime/`, with the control receipt at
-`artifacts/backend/runtime-receipt.json`. A passing new candidate does not explain an
-earlier failed measurement; Q03 retains the unresolved performance investigation.
-The required 5,000-row UI benchmark runs from its full-suite test node in an owned
-fresh pytest process. The full development catalogue imports a development-only
-IRI grammar through the SBOM validator: diagnosis found roughly 327,000 retained
-roots versus 93,500 from production UI imports. After prior suite apps, fixture
-preparation reached 489,434 roots and 168–211-ms collections before the benchmark
-app existed. The development grammar is absent from installed runtimes.
-The fresh process keeps normal GC and its default thresholds. It warms genuine
-runtime caches through four same-app Pod/ReplicaSet viewer reopens, source-picker
-admission cycles, theme changes and 40/100-column geometries under the heartbeat;
-it never clears library caches. It then measures two full 5,000-record layout/
-format/timestamp/copy/save and Current/Previous cycles, with the unchanged 150-ms
-strict/stable target, at most 5,000 prepared records and 5,001 retained-plus-prepared records.
-Public Escape and final application/API cleanup must drain all owned work.
-The first 0.1.0 candidate's Ubuntu/Python 3.13 normal-runtime child measured
-183.688 ms while opening a source picker; a generation-two collection occupied
-174.698 ms and reclaimed 46,159 objects. The original failed run is retained.
-A scoped component stylesheet now avoids repeatedly allocating virtual DOM
-graphs during focus/theme changes. Native CSS comparisons and the existing
-positive/negative runtime observer verify the changed behavior. This is a source
-correction, not a raised limit, disabled GC or unchanged retry. Exact candidate
-platform qualification must pass before those local results qualify a release.
-Production aggregate view/export formatting now uses sequential owned turns of
-at most 32 records and 8 KiB of reserved output, with a larger single retained
-record isolated in its own turn. Captured identity/filter/order and repeated
-cancellation contracts apply between turns. This does not change the retained
-dataset, two full rounds, GC policy, runtime deadline or heartbeat budget.
-An independent child runs that same node with a deliberate 200-ms UI callback and
-must fail specifically the heartbeat assertion, then drain. Both runtime children
-require inactive coverage and no tracing/profile callback. A third mandatory
-child repeats the entire warmed two-round functional scenario under branch
-coverage, retaining every non-time behavior assertion. Its timing is explicitly
-nonqualifying: ordinary paired Python 3.12 evidence measured 177.48 ms with the
-pinned coverage 7.16.2 CTracer versus 112.49 ms without instrumentation; CSS
-reparse/update cost nearly doubled. Installed runtimes have no coverage tracer.
-The runtime children keep the original strict-mode 150-ms assertions and the
-always-strict deliberate 200-ms negative control. The parent requires all three results, actual coverage
-version/core and trace/profile type facts, exact source/input hashes, unique
-nonces, XML and import inventories;
-timeouts, missing/stale evidence and other failures fail closed. Each child owns
-its process group, 120-second deadline and bounded output; only the functional
-replay owns separate coverage files.
-Phase/CPU/GC diagnostics remain under `artifacts/ui/aggregate-heartbeat.json`;
-original positive, negative and instrumented replay artifacts are retained under
-`artifacts/ui/aggregate-runtime/`.
-A separate 15,000-line
-case retains 10,000 lightweight layouts, saturates the 128-entry visible Strip
-cache through public paging, preserves its resize anchor, and checks current
-identity and actual rendered text after a fresh Head 1000 window. Its receipt is
-`artifacts/ui/log-layout-cache.json`. These additional caches are separate from
-the text-retention byte bound; sustained-load/RSS qualification remains Q03.
-Pod, standard/custom and aggregate source-picker tables resolve their inherited
-Rich style once per synchronous visual frame. Pilot checks exact reference
-segments/cell widths, selected/scrolling rows, theme/hidden changes, nested renders
-and recovery after a render exception; no style persists into a later frame.
-Required Linux 3.12 `scripts.verify_aggregate_logs_kind` verifies actual
-Deployment→ReplicaSet→Pod and CronJob→Job→Pod membership, matching-label rejection,
-regular/init/ephemeral sources, starting→logs without replay, Pod replacement and
-drained UI/backend ownership. Its receipt is `artifacts/cluster/aggregate-logs-kind.json`.
-CrashLoop Current/Previous trials each require an observed waiting Pod and an
-available owned log instance before enrollment. Failure receipts retain bounded
-mode, source/task status and Pod container state without log payloads; the
-120-second enrollment limit and no-replay behavior remain unchanged.
-C08 adds bounded credential-response validation and captured proxy/TLS decisions
-in `domain/exec_credentials.py` and `domain/proxies.py` to the 100% critical
-inventory. Real token-file/certificate renewal, HTTP CONNECT and SOCKS5 contracts
-complement generic source/fresh-wheel native login. The required Linux/Python
-3.12 `scripts.verify_credential_interop_kind` checks merged configs, relative TLS,
-exec certificate/token helpers, logs, real kubectl exec/forwards and private-file
-cleanup through an owned HTTP proxy. Real GKE/OIDC/provider certification remains
-opt-in Q05 #87; future Helm operations remain #66.
-Q02 adds mandatory owned loopback SSH, isolated tmux and SSH-to-tmux trials for
-workspace/log navigation, native handoff and embedded shells. The suite requires
-OpenSSH client/keygen/server and tmux; missing prerequisites fail explicitly.
-Linux runners install openssh-server/tmux and prepare `/run/sshd`; macOS runners
-install tmux and require their existing `/usr/sbin/sshd`. No developer system
-daemon or user configuration is changed. See
-[terminal compatibility](terminal-compatibility.md) for commands, ownership,
-lost-connection evidence and outstanding macOS/manual qualification.
-
-D01 requires complete wheel/sdist payload and metadata checks, private-file traps,
-sdist-to-wheel equivalence and actual isolated uv tool/pip-backed pipx installs.
-Each interpreter runs installed CLI/navigation/shell trials outside the checkout.
-Installer evidence is retained under `artifacts/packaging`; installed dependencies
-are measured independently of the development lock. Tool subprocesses own their
-process group and reap children on timeout. Application jobs allow 75 minutes
-for the measured full suite, cold pip-backed installs and owned cluster checks,
-including the setup/body cancellation qualification added in Q01 #38. Main
-run 37964239155's Linux 3.12 job took 39 minutes 11 seconds before S06's extra
-rehearsal, native installs and churn/lifecycle cases; the former 45-minute budget
-left 5 minutes 49 seconds for that work and host/setup variation. S06 raises
-only the job deadline; every check remains required. PR #258's Linux 3.12 job reached
-the 60-minute limit after the finished-pod cleanup cluster check was added
-(47 minutes for the suite alone), so the deadline is now 75 minutes.
-
-Future critical modules include mutation guards, tool-specific command builders,
-and resource-state transition/reconnect decisions. Keep those decisions separate
-from transport and widget glue so exhaustive tests are practical. The critical
-module list is maintained in `tool.kuberich.coverage.critical_modules` in
-pyproject.toml and changes with code review. Each listed file must exist, contain
-executable code, and independently meet 100% lines and applicable branches.
-
-Q04 #35 audits isolated locked/fresh installed runtimes, validates CycloneDX 1.6
-SBOMs, retains original license notices and verifies artifact/lock/policy digests.
-The packaging suite retains actual reports under `artifacts/security`; after the
-final build, CI runs `python -m scripts.check_supply_chain --verify` against those
-exact distribution bytes. Every finding requires a reviewed, exact, expiring
-exception; missing/skipped evidence and scanner errors fail. See
-[dependency security](dependency-security.md) for commands, scope and limits.
-
-If a canonical release-candidate audit fails, the packaging fixture preserves
-its available regular output files in a separate private directory under
-`artifacts/security/canonical-release-failures/`. Each attempt has a unique
-directory; successful ordinary audit reports are never substituted. These partial
-files are diagnostic evidence, not a passing audit. The original error remains
-the test failure even if retaining the files also fails.
-
-D02 retains local candidate identity under `artifacts/releases`. Release decision
-and owned HTTP/Git transport tests run in every application job; actual canonical
-RC builds/audits/installations exercise preparation without publication. The
-dispatch pipeline still requires real green hosted Linux/macOS qualification,
-protected main and approved environments; private local checks never bypass it.
-See [release pipeline](release-pipeline.md) for the owner setup and retry contract.
-
-D03 adds strict types for `scripts/homebrew.py`, owned HTTP/Git update transactions
-and canonical-RC formula tests sharing the actual audited RC build. Its local tap
-qualification uses real brew style/audit/install/test/upgrade/uninstall; the prepared
-tap CI requires Linux/macOS online checks. See [Homebrew delivery](homebrew.md).
-
-Configure coverage over the entire src/kuberich package, including modules not
-imported by tests. Do not include tests in the denominator. Do not omit entire
-UI, client, or subprocess modules. A combined coverage.py percentage is not the
-independent line/branch gate: parse coverage JSON totals for each metric. Zero
-branches are not a fabricated 100%; report them as not applicable. Empty
-production source does not establish product coverage.
-
-Use a 90% minimum changed-line gate with diff-cover. Exceptions for
-unreachable or platform-specific lines require an explicit narrow justification;
-the global line and branch floors remain unchanged. Do not add assertions that
-merely mirror implementation details or blanket no-cover directives. No coverage
-exclusions are currently approved: automatic line/partial-branch exclusions are
-disabled, include/omit filters are rejected, and excluded lines fail the gate.
-Introducing a narrowly justified exception requires a reviewed policy and gate
-change; do not bypass the current checks with a pragma or command-line filter.
+No exclusions are approved: automatic line/partial-branch exclusions, include/omit
+filters and excluded lines fail. A narrow exception needs reviewed policy/gate
+changes, not a pragma or CLI filter. No changed production executable lines means
+N/A, not a new 100% result.
 
 ## Running the gates
 
+Use [explicit source-history setup](../CONTRIBUTING.md#toolchain) first.
+`uv run python scripts/qualify.py 0.3.0` runs the actual strict target union,
+private-access/startup stages, full suite and existing gates; see
+[phase verification](releases.md#reproduce-phase-verification). Individual tools:
+
 ```sh
+uv sync --locked --group dev
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy --strict src/kuberich scripts/check_coverage.py scripts/check_quality_gate.py
 uv run pytest --cov=kuberich --cov-branch --cov-report=xml --cov-report=json
 uv run python -m scripts.merge_runtime_coverage
 uv run python scripts/check_coverage.py coverage.json
 uv run diff-cover coverage.xml --compare-branch origin/main --fail-under 90 --total-percent-float
+uv build
+uv run twine check dist/*
 ```
 
-The runtime coverage helper first verifies both backend timing controls and the
-original branch-covered backend workload, then both UI runtime controls and the
-successful instrumented replay against the current source, then merges only that
-replay's branch data into the full
-parent measurement. It preserves the original parent database/reports in an
-exclusive nonce-bound directory, verifies the exact per-file arc union over the
-whole production inventory and regenerates JSON/XML before the unchanged gates.
-The runtime children generate no coverage database. Hashes and provenance
-are retained in `artifacts/ui/coverage-merge-receipt.json`; missing, stale, tampered
-or missing-replay evidence rejects the merge. The full functional/audit suite and
-every production, critical-module and changed-line floor remain mandatory.
-
-`scripts/check_coverage.py` compares coverage.json's file inventory to every
-Python file under src/kuberich, including unimported namespace-package modules.
-It rejects missing/extra files, inconsistent totals, missing branch evidence,
-empty production source, and configuration that hides code. Floors use integer
-counts rather than rounded display percentages. Tests and development scripts
-are outside the application denominator; their regression tests still run in CI.
-
-The application matrix runs Ruff, formatting, strict mypy for the application
-and gate scripts, all behavioral/gate/artifact tests, coverage gates, builds, and
-metadata validation on Linux/macOS and Python 3.12-3.14. Each matrix job applies
-the same coverage requirements. CI fetches full Git history and uses the PR's
-base commit, or the push event's previous commit, with diff-cover's merge-base
-comparison. Only executable lines represented by coverage are counted; comments,
-assets, and edits to non-executable continuations do not establish new coverage.
-No changed executable lines means N/A. The negative-control tests verify 0%,
-80%, the exact 90% boundary, a docs-only diff, and an unavailable base.
-
-### One phase verification report
-
-`uv run python scripts/qualify.py 0.3.0` coordinates the existing local commands
-and records their actual results in one JSON report and a short Markdown summary.
-It runs the complete suite once, with all layers and branch coverage, followed
-by the existing runtime, production/critical and changed-line gates. It keeps
-original logs, skipped-case details and canonical evidence before and after the
-run. A unique external mode-0700 parent owns a new basetemp child for every pytest
-stage. Do not edit candidate inputs or start competing timing checks during it.
-The private-access audit and actual startup checks run before the suite, using
-the existing validators and unchanged hard limits; startup reports stay under
-the selected output directory.
-
-Use `--collect-only --quality-run ID --repository-run ID` to collect the actual
-full exact-source hosted results through the existing release validators. This
-never converts development-only, queued, failed or missing jobs into success.
-Native facilities and contract/owned-cluster repetitions remain pending until
-satisfied; the coordinator cannot authorize publication. See
-[phase verification](releases.md#reproduce-phase-verification) for tools, reports,
-exit statuses and the separate sustained-performance/provider requirements.
+Fetch the base first: CI uses the exact event base with diff-cover's merge-base comparison.
+Local staged/unstaged executable changes count. The [gate](../scripts/check_coverage.py)
+independently verifies the full inventory and line/branch floors; combined percentages are insufficient.
 
 ### Test layers and local parallel runs
 
-Tests receive a layer marker from their directory: `unit`, `contract`, `ui`,
-`terminal`, `packaging` or `quality`. The `fast` marker selects **every** unit,
-contract and UI test. It does not select a smaller sample or omit slow cases.
-`kind` is registered for explicit disposable-cluster tests; the current real
-cluster scenarios still run through `scripts.verify_*_kind` in CI, not through
-a pretend pytest layer. No command may fall back to an ambient cluster.
+Directory markers are `unit`, `contract`, `ui`, `terminal`, `packaging` and
+`quality`. `fast` selects every unit/contract/UI case, including slow cases.
+The registered `kind` marker is not a substitute for real cluster verifiers.
 
 ```sh
-# Quick development feedback; 12 workers on the six-core, 30 GiB reference host.
 uv run pytest tests/unit tests/contract tests/ui -m fast -n 12
-# One layer, or all layers with combined branch coverage.
 uv run pytest -m terminal -n 4
 uv run pytest -n 6 --cov=kuberich --cov-branch --cov-report=xml --cov-report=json
-uv run python -m scripts.merge_runtime_coverage
-uv run python scripts/check_coverage.py coverage.json
 ```
 
-Individual layers have the following commands:
+Use fewer workers on smaller hosts or `-n 0` for serial execution. Default
+loadgroup scheduling keeps shared evidence fixtures together; worker restarts
+are disabled. Crashes and failed tests fail the run. Workers get separate pytest
+temporary directories and ephemeral API ports; coordinate separate commands so
+one run cannot delete another's retained temporary files or artifacts.
 
-| Layer | Command |
-| --- | --- |
-| Unit | `uv run pytest tests/unit -m unit -n 6` |
-| Contract | `uv run pytest tests/contract -m contract -n 6` |
-| UI | `uv run pytest tests/ui -m ui -n 6` |
-| Terminal | `uv run pytest tests/terminal -m terminal -n 4` |
-| Packaging | `uv run pytest tests/packaging -m packaging -n 2` |
-| Quality | `uv run pytest tests/quality -m quality -n 4` |
-
-The registered `kind` marker has no pytest cases yet. Run the real cluster
-verifiers from [disposable-cluster qualification](integration-testing.md), for
-example:
-
-```sh
-uv run python -m scripts.verify_kind_lifecycle --kind /absolute/path/to/kind
-```
-
-Those verifiers require the documented local Docker and pinned tool prerequisites.
-They create and verify their own cluster ownership and preserve the caller's
-default kubeconfig. Run the cluster trials sequentially.
-
-Use fewer workers on smaller machines. Serial execution remains available with
-`-n 0`. `loadgroup` scheduling and disabled worker restarts are defaults: tests
-within a file stay in one worker, and files sharing release-evidence fixtures
-stay together across files. Every worker gets its own pytest temporary directory;
-owned API listeners use ephemeral ports. Failed tests and crashed workers fail
-the run rather than being retried or skipped. Production coverage is combined
-by pytest-cov across workers before the same independent gates run.
-
-The two runtime heartbeat controls have a `performance` marker. Their subprocess
-orchestrators share the first group, with the backend controls before the UI
-coverage replay. A controller-owned reader/writer lock drains other tests while
-each uninstrumented timing child runs, including
-its setup and cleanup, then resumes parallel work. Coverage replays share the
-ordinary parallel work window. Runtime children explicitly load the asyncio and
-coverage plugins they need, keeping unrelated auto-discovered development plugins
-out of their timing observations. Every fast run executes both the full positive
-scenario and its deliberately failing negative control. A run requesting coverage
-also performs the instrumented replay; its branch data is mandatory for the full
-coverage gate. A fast-only receipt cannot pass that gate. This keeps coverage
-measurement in the full tier and retains the same 150 ms strict/stable target.
-Run timing comparisons
-without a second test command competing on the same host; separate pytest commands
-own separate locks and cannot reserve CPU from each other.
-
-The fast-tier rollout found fixture ownership races: manually supplied widget
-rows competed with the full workspace's initial observation, and plugin receipts
-could be read after creation but before writing finished. Widget tests now mount
-the real tables in a dedicated Textual host, while API/workspace cases retain the
-full application. Plugin and credential stand-ins publish complete receipts
-atomically before cancellation tests can observe them. This prevents cancellation
-between file creation and writing the PID, while retaining the real child-reaping
-and retry assertions. The same readiness contract applies to the source CLI PTY.
-Directory rollback controls explicitly cover both source entry orders.
-
-Supply-chain policy consumers load the full CycloneDX JSON validator only when
-they actually validate an SBOM. Collecting a digest or audit decision test must
-not load the IRI parser into every UI worker. A fresh-process regression enforces
-that import boundary; existing schema rejection tests still run the real strict
-validator. This reduces unrelated garbage-collector roots without changing
-validation, GC settings, workload sizes or coverage requirements.
-
-Profiling also identified repeated palette generation and redundant shortcut
-updates on the real header. Shortcut panels use one current palette snapshot per
-render and the existing owned-text projection guard; theme, content, external
-mutation and layout behavior retain native rendering. The normal positive timing
-control passed three consecutive trials at 136.55, 138.29 and 131.48 ms; injected
-negative controls exceeded 200 ms and failed as required. These targeted trials
-are separate from the required three complete parallel suite runs.
-
-Application quality first runs the complete fast tier on Linux/Python 3.12.
-Failure prevents the expensive full test/native matrices from starting and
-fails the protected aggregate. Success then runs every existing source/native
-environment, all test layers, runtime controls and coverage gates. This fast
-signal never substitutes for full qualification. Failed fast runs and test parts
-retain their available evidence too.
-
-### Measured parallel rollout
-
-The same-candidate fast-tier comparison on `3f31d1f` ran the same 4,589 case
-identities, including one explicit macOS-only skip, on Linux/Python 3.12.12 with
-six logical CPUs and 30 GiB RAM. Serial execution took 1,026.56 seconds; twelve
-workers took 156.22 seconds, a 6.57-fold improvement for this selection.
-No competing local test, build or browser command ran during that comparison.
-The later implementation candidate `79dbec4` passed the same fast selection in
-158.00 seconds.
-
-Its first retained complete parallel run passed 6,062 tests with four explicit
-platform/native-workflow skips in 1,039.01 seconds. Independent gates passed:
-98.7712% line coverage, 95.8896% branch coverage, 100% in all 68 critical modules
-and 100% changed-line coverage. Local skips require actual macOS sandbox/clipboard
-facilities or the owned native Homebrew workflows; these results do not establish
-their native installation qualification.
-
-This rollout requires three consecutive complete parallel runs, matching case
-selection and the protected hosted checks before merge. The
-[implementation verification record](https://github.com/carloshm91/kuberich/pull/269)
-retains the final repeat results, exact candidate identities, original failures
-and hosted artifact links. Interrupted or failed originals do not count as passes.
-The normal runtime heartbeat observations retain their 150 ms target, mandatory
-strict/stable enforcement and always-strict deliberate blocking negative controls. Real provider certification remains opt-in.
+Uninstrumented backend/UI runtime children take an exclusive controller lock,
+including setup and cleanup; other tests drain and resume afterward. Separate
+pytest commands have separate locks, so coordinate host-wide timing windows.
+Every fast run keeps the full positive and deliberate negative runtime controls.
+Coverage runs additionally require the instrumented replay; fast-only receipts
+cannot satisfy the full coverage gate.
 
 ### Parallel test parts
 
-CI splits the pytest run into four parts per operating system and Python
-version. Each part runs on its own runner with two xdist workers and keeps whole
-test files together.
-`tests/support/part_timings.json` lists how long each file took, so the parts
-take about the same time. A file that is not in the list counts as ten seconds.
-Test files that share fixtures which write evidence, such as the release
-candidate and supply-chain files, always run in the same part. `GROUPS` in
-`tests/support/parts.py` lists them.
-To run one part locally:
+Each source environment has four CI parts, each with two xdist workers. Whole
+files and shared-evidence groups remain together. Timing data lives in
+[part_timings.json](../tests/support/part_timings.json); unknown files use ten seconds.
 
 ```sh
 KUBERICH_TEST_PART=2/4 uv run pytest --cov=kuberich --cov-branch --cov-report=
 ```
 
-The matching Application job then downloads all four parts and runs
-`scripts/combine_test_parts.py`. It fails when a part is missing, a part has no
-coverage data, evidence contains a symbolic link, or two parts wrote different
-bytes to the same evidence file. It writes `.coverage`, `coverage.json` and
-`coverage.xml`, and the runtime coverage merge and every coverage gate run on
-the combined result exactly as above. The Quality gate also checks that the
-planner listed every part for every Application job.
-
-When test files change a lot, refresh the timing list from a full JUnit report:
-
-```sh
-uv run pytest --junitxml=junit.xml
-uv run python -m scripts.part_timings junit.xml
-```
-
-Coverage JSON/XML, changed-line JSON, actual UI SVGs, PTY transcripts/restoration
-summaries and candidate distributions are retained
-for seven days, including available evidence after failures. They are test
-artifacts, not published release packages.
+The Application job combines all four parts with `scripts/combine_test_parts.py`.
+Missing parts/coverage, symbolic links or conflicting evidence bytes fail.
+The runtime merge then verifies exact source/nonce receipts, both timing controls,
+the successful branch-covered replay and the exact per-file arc union before
+regenerating coverage JSON/XML. It preserves the parent reports and merge receipt;
+missing, stale or tampered evidence cannot satisfy any floor.
+Refresh timing data from a complete JUnit run with `uv run python -m scripts.part_timings junit.xml`.
 
 ## GitHub merge checks
 
-The stable required check names are **Quality gate**, **Repository checks**, and
-**DCO**. Quality gate uses `always()` and requires both the verification planner
-and the complete event-specific application matrix to succeed. It independently
-validates the planner's output for the actual event/ref; failure, cancellation,
-skip, missing dependencies, invalid results and incomplete plans cannot pass.
-There are no path filters or allowed matrix failures.
+Required names are **Quality gate**, **Repository checks** and **DCO**. The
+aggregate runs with `always()` and requires the actual event/ref planner, every
+part and every selected source/native job. Missing, failed, cancelled, skipped
+or malformed dependencies cannot pass. No path filters or allowed failures apply.
 
-### Private development matrix: #109
-
-| Event | Required application jobs |
+| Event | Source environments |
 | --- | --- |
-| Every pull request, including documentation | Linux: Python 3.12/3.13/3.14; macOS baseline: Python 3.12 |
-| Every main push | Linux: Python 3.12/3.13/3.14 |
-| Manual Application quality dispatch on main | Linux and macOS: Python 3.12/3.13/3.14 |
+| Pull request, including docs | Linux Python 3.12/3.13/3.14; macOS Python 3.12 |
+| Main push | Linux Python 3.12/3.13/3.14 |
+| Manual Application quality on main | Linux and macOS Python 3.12/3.13/3.14 |
 
-Each selected job still runs the complete behavioral/terminal/packaging suite,
-independent coverage gates, build and supply-chain verification. Linux 3.12 keeps
-all twelve actual disposable-cluster rehearsals. The macOS baseline is a development
-check, not qualification of macOS 3.13/3.14. The planner refuses unknown events
-and non-main push/dispatch refs. PR checks stay on `pull_request`; a manual
-dispatch never substitutes for the required PR checks. Concurrency groups include
-the event so a main push cannot cancel a manual release qualification.
+The complete fast selection runs first on Linux 3.12; failure blocks matrices and
+fails the aggregate. Success replaces no complete suite, coverage, build or audit.
+Linux source jobs use `ubuntu-24.04`; the source macOS matrix uses `macos-latest`.
+Native Apple Silicon build/install lanes use `macos-15`; Intel uses `macos-15-intel`.
+New Apple Silicon bottles use `arm64_sequoia`; published Sonoma metadata stays
+readable. Require actual new-image results before claiming native qualification.
 
-Before a release, dispatch Application quality on the intended main commit and
-require all six successful jobs and its retained artifacts. Publication preflight
-requires the latest completed successful **manual** quality run for the exact
-commit and its main-push Repository checks; a routine three/four-job run cannot
-qualify publication. A later failed qualification attempt blocks an older success.
-No automatic schedule, extra paid runner, billing change or publication is added.
+Repository checks validate planning, links, generated references, both site surfaces
+and digests, strict builder types, browser keyboard/accessibility/copy and no-JavaScript.
+Locked Node/browser tools are development-only. Retain coverage, changed-line, UI,
+PTY/restoration and package artifacts, including failures, for seven days; they are not releases.
 
-### Linux host selection: #168
+Main requires PRs, resolved conversations, admin enforcement and linear history;
+force pushes/deletions stay disabled and checks stay bound to their expected apps.
+Solo delivery needs no second reviewer when protection permits. Both release
+environments still require owner review, protected branches and no admin bypass.
+Revalidate live rules before publication through the [release procedure](releases.md).
 
-Every Linux job in the repository, application, release and website workflows
-selects `ubuntu-24.04`, including the planner, aggregate gate, terminal-tool
-setup and all Linux/Python 3.12 owned-cluster rehearsals. Python 3.12/3.13/3.14,
-the macOS baseline and the six-environment release matrix are unchanged.
-The retained artifact is `quality-ubuntu-24.04-python-3.12` for release input.
-Preflight requires completed successful jobs whose requested runner labels match
-their expected host, including the planner, aggregate and Repository checks;
-candidate retry validation also requires the pinned Linux host.
+### Temporary private-development workflow when Actions is unavailable
 
-GitHub's [announced latest-label migration](https://github.com/actions/runner-images/issues/14748)
-begins on 2026-10-19. Selecting Ubuntu 24.04 makes an OS upgrade deliberate; it
-does not freeze the hosted image revision, kernel or apt packages. Record actual
-image/tool versions with each hosted qualification. Preserve original
-`ubuntu-latest` receipts and require separate future Ubuntu 26.04 qualification
-before changing this contract. Local policy/site checks do not establish a new
-hosted/native result; [acceptance evidence](internal/acceptance/ubuntu-runner-pin.md)
-records the pinned candidate's measured status.
-
-The [CI usage audit](internal/acceptance/private-ci.md) retains 227 original run/job
-observations, reproduces the historical private totals and measures the resumed
-development matrix. Its matching-source PR/main pair executed seven native jobs
-and four short planner/aggregate jobs. Completed elapsed time, active/unallocated
-nodes, failed runs and current storage are separate from inaccessible account
-billing. Current merges require the configured hosted checks. The older failed
-warm-route heartbeat remains a [D04 qualification finding](https://github.com/carloshm91/kuberich/issues/40#issuecomment-6101596974);
-a later pass does not establish its correction. Full supported-platform
-qualification remains mandatory in #40 and before publication under #89.
-
-Current enforced configuration was independently re-read on 2026-10-10 at
-02:09:56 UTC under #89. Main requires strict/up-to-date Quality gate and
-Repository checks bound to GitHub Actions app 15368, and DCO bound to app 1861.
-Admin enforcement, PRs, resolved conversations and linear history are enabled;
-force pushes and deletion are disabled. Zero required human PR approvals
-preserves the authorized solo workflow. Both `release` and `release-test` require
-the maintainer, protected branches and `can_admins_bypass=false`;
-`prevent_self_review=false` permits the authorized solo reviewer. The actual
-release-policy protection validator passed against both API records. No release
-was dispatched, and index ownership/OIDC, six-native release qualification,
-upgrades, public channels and approved final site remain incomplete under #89.
-
-Historical private-repository condition: GitHub rejected branch-protection
-access with HTTP 403 on the previous account plan. The maintainer authorized
-manual inspection of all current checks before squash merges, recorded in PR #96
-on 2026-10-04. F02 completed under that scope adjustment; this dated exception is
-superseded by the actual enforced configuration above, without rewriting those
-historical measurements. Visibility changes still need explicit approval.
-See [GitHub's protected-branch availability](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches).
-
-## Temporary private-development workflow when Actions is unavailable
-
-Historical condition: the source repository opened under #155 on 2026-10-08.
-Hosted development checks resumed, including native macOS qualification in #157
-and the #46 candidate. Use actual required hosted results for current merges;
-the temporary exception below applies only while its stated blocker exists.
-Full release qualification remains #89; current protection is configured as above.
-
-
-On 2026-10-04, during PR #108, GitHub refused to start hosted jobs after the
-maintainer exhausted the account's 2,000 included Actions minutes. The maintainer
-explicitly authorized continuing private development and merging with measured
-local checks while this quota/billing restriction remains. This authorization
-takes precedence over the usual requirement for green hosted checks during this
-temporary condition.
-
-Before a merge, run the applicable full suite, independent line/branch/changed-line
-and critical-module gates, lint/formatting, strict typing, build/metadata checks,
-and relevant owned-cluster/PTY/install verification locally. Record the tested
-commit/application tree, interpreter/platform, commands, counts and results in
-the PR/issue. Record which hosted jobs did not run; Linux evidence does not
-establish a new macOS result. Failed local checks still block delivery.
-
-Keep the hosted workflows and their true failure status; never manufacture a
-passing check or report blocked jobs as passed. Resume the configured event-specific
-CI when the restriction is resolved, and qualify the full supported matrix before the
-first public release. [Follow-up #109](https://github.com/carloshm91/kuberich/issues/109)
-tracks a less costly development matrix and trigger policy. Account budgets,
-paid/persistent runners, repository visibility and publication remain separate
-maintainer decisions.
+Hosted checks remain required; historical quota exceptions grant no current waiver.
+An explicit local-only exception records its blocker, source, commands/results and
+unavailable platforms, preserving failures; local evidence never becomes hosted,
+native, provider or public-release qualification.
 
 ## Test layers
 
-The maintainer approved opening the source repository in #155 on 2026-10-08.
-Its measured licensing/package checks do not qualify a public product release.
-Actual standard-runner development workflows resumed after source opening.
-Require their configured matrix for current PRs; preserve honest platform counts. Keep the real
-hosted status and the full platform/public-release requirements above.
+Test observable behavior and controlled faults, disclose platform/provider gaps,
+and avoid implementation mirrors or empty repetition.
 
-Q01 #38 consolidates the [owned Kubernetes/fault suite](integration-testing.md).
-Required Linux/Python 3.12 CI verifies disposable endpoint/node identity before
-writes and real SIGTERM cleanup during setup and after readiness. Release-time
-qualification repeats contracts and actual-kind trials three times with separate
-artifacts. These repetitions do not replace Q03 performance benchmarks.
+- Unit: pure validation, sorting, redaction, literal arguments and transitions.
+- Contract: real local HTTP/WebSocket responses, pagination, 403/410, reconnect,
+  malformed frames, credential refresh, cancellation and slow consumers.
+- UI: Pilot navigation, focus, scope, stable selection, errors, resize and geometry;
+  screenshots never replace behavioral assertions.
+- Terminal: source and installed PTYs, Unicode, resize, Ctrl-C, handoff, SSH/tmux,
+  connection loss, exact terminal attributes, child reaping and descendant cleanup.
+- Packaging: complete wheel/sdist payload, private-file traps, rebuild equivalence,
+  isolated uv/pipx installs, installed CLI/UI/shell behavior and real upgrades.
+- Integration: owned disposable kind clusters, actual effects, permissions, logs,
+  exec, forwarding and custom resources. Preserve and never fall back to an ambient context.
 
-### Behavior coverage for every feature
+Writes require captured UID/version/scope, read-only checks and confirmation.
+Test conflicts, denied access, stale identities, cancellation and ambiguous outcomes
+without blind retries. Streams/processes need startup/EOF/error, repeated-stop,
+listener/private-file cleanup and actual terminal restoration scenarios.
+Keep authentication/helper contracts distinct from opt-in real-cloud trials.
+The [integration guide](integration-testing.md) lists pinned prerequisites,
+ownership verification, sequential cluster commands and signal-cleanup controls.
 
-The maintainer requested deeper scenario coverage while continuing incremental
-delivery. Each feature PR must map its acceptance criteria to applicable tests
-and identify any remaining manual/platform/provider qualification. Test quantity
-and code coverage alone do not establish completeness. Use the following scenario
-families where they apply, and link unresolved gaps to the implementing issue:
+Tests use Pilot or public `app.run_command(text)` and frozen `app.state` observations.
+Run `uv run python scripts/check_private_access.py`: private access into any KubeRich
+namespace from tests or embedded programs fails. Test fakes/framework objects keep
+their own boundaries. Numeric diagnostics never replace actual cleanup/UID/scope checks.
 
-- Resource views: discovered/supported endpoints, typed columns, empty collections,
-  denied/absent APIs, pagination, watch renewal/410/reconnect, context generations,
-  UID replacement, retained selection/filter/scroll, untrusted text and navigation.
-- Mutations including scale: read-only guards, exact captured target and confirmation,
-  input/limits, denied access, conflicts and validation failures, cancellation,
-  ambiguous transport outcomes and no blind retries. Exercise actual effects only
-  on owned disposable fixtures, then verify resulting API state.
-- Logs/processes/port-forward: bounded streams, startup/EOF/failure, concurrent
-  ownership, repeated start/stop, interruption, resize, exit and process/listener
-  cleanup. Demonstrate terminal restoration and real forwarding where applicable.
-- Credentials: declared args/env/profiles/roles, expiration and concurrent refresh,
-  malformed/private output, authorization versus login failure, context replacement
-  and cancellation. Keep local contracts distinct from opt-in real-cloud trials.
-- Installation/release: clean built artifacts, supported Python/OS combinations,
-  installed CLI behavior, upgrade/rollback and the actual promised install channels.
+## Startup and import boundaries
 
-Use controlled failure injection and negative controls for important regressions
-so a test demonstrates the incorrect behavior would fail. Add release-time soak
-scenarios under Q01 #38; do not replace behavioral assertions with implementation
-mirrors or arbitrary repetitions. The existing independent 90% floors and 100%
-critical-module gates remain mandatory, and maximum practical coverage is the target.
+Run `uv run python -m scripts.check_startup --output NEW_PATH` serially on frozen
+source. Keep five fresh samples per offline command, four import profiles and
+five actual frames on an owned 120×36 PTY; never omit an advisory miss.
 
-- Unit: domain rules, typed sorting, quantities, validation, redaction, command
-  arguments, transition logic, and retries with a controllable clock.
-- Contract: a local fake Kubernetes HTTP/WebSocket server for pagination,
-  list/watch continuity, 410, 403, disconnects, malformed payloads, and cancellation.
-- UI: Textual Pilot tests for navigation, focus, keybindings, selection stability,
-  details, modal dismissal, resizing, and error states. Add selected snapshots
-  for meaningful layouts; do not replace behavior assertions with screenshots.
-- Integration: isolated kind fixtures for real API behavior, container logs,
-  exec, RBAC denial, and subsequently mutations/port-forward/CRDs. Every test
-  owns its context and cleanup; never fall back to the user's active context.
-- Terminal: real PTY/subprocess tests for handoff, Ctrl-C, window resizing,
-  terminal restoration, process exit, SSH, and tmux. Headless tests cannot prove
-  terminal restoration.
-- Packaging: test the built wheel, source distribution, Homebrew formula, and
-  later standalone artifacts in clean environments. Check help, version, missing
-  kubeconfig, bundled assets, and a disposable-cluster smoke workflow.
+All startup latency is advisory for 0.x: offline wall time 150 ms, aggregate self
+and maximum cumulative import time 150,000 µs, and actual UI first paint 600 ms.
+Keep actual values, original targets, `budget_met` and `budget_enforced`.
+`--strict-startup` enforces every original limit; `--strict-paint` stays UI-only.
+Actual source major 1+, including prereleases, always enforces all timing limits;
+no version override or higher substitute threshold can downgrade them.
 
-The fast required PR suite covers every supported Python minor on Linux and
-the declared macOS baseline. Cluster, PTY, and install checks are required for
-changes affecting those paths; the release gate runs the complete matrix.
-Use stable check names and a required aggregate quality-gate job that cannot
-pass when a required dependency fails, is cancelled, or is incorrectly skipped.
+RSS below 40,000,000 bytes, valid observations/output/source identity, complete
+profiles and absence of terminal/SDK imports stay hard. Require a real mounted
+selected table, columns and geometry inside the original viewport before
+SDK/helper/network work. Deadlines, ownership, cleanup and restoration stay hard.
+Keep the original strict 700 ms late-frame and forbidden-import negative controls,
+plus strict offline/import, stable-prerelease, RSS and functional controls.
+Old-policy failures remain failed; supplemental diagnostics do not replace them.
+
+Prepare the SDK only after the public refresh-readiness port; retain eager tables,
+pre-readiness quit/cancellation and read-only navigation. Preserve stdout/stderr,
+import profiles, ANSI and failures. Source evidence does not qualify another
+platform or native artifact. See [startup history](internal/acceptance/startup-budget-0.3.md).
+
+## Property and mutation testing
+
+Run `uv run pytest tests/unit/property`; the weekly/manual mutation campaign targets
+85% actual kills. Its initial 84.971693% misses that advisory target; survivors,
+incomplete/tool failures and raw counts stay in [the record](internal/acceptance/property-mutation-tests.md).
+Coverage gates and failure reporting remain unchanged.
 
 ## Performance evidence
 
-Record the runner, terminal size, Python/dependency versions, dataset, and
-measurement method. The initial qualification workload is 10,000 synthetic
-resource rows, 100 resource events/second, and 2,000 log lines/second with a
-10,000-line retained buffer. Target p95 input response below 100 ms on the
-documented reference machine and a memory plateau during a 30-minute soak.
-These are acceptance targets, not claims about current performance. Investigate
-failures before changing the budget; preserve comparable benchmark results.
+Time the original workload without coverage, tracing, profiling, GC tuning or competing
+checks. Freeze inputs; retain machine/interpreter/dependency, viewport/dataset/observer
+identities and raw samples. Select alternate interpreters explicitly.
+For 0.x, runtime/collection heartbeat and input latency is advisory against the
+original 150 ms limit. `KUBERICH_STRICT_RUNTIME_BUDGETS=1` enforces it; actual
+major 1+, including prereleases, always enforces it and cannot opt out with `0`.
+Retain every measured miss; the deliberate 200 ms controls stay strict. Every
+functional assertion, memory/retention/source/output bound, deadline, ownership,
+cleanup and coverage gate stays hard. Diagnostics never replace original failures.
 
-Q03's repository-owned measurement command is
-`uv run python -m tests.support.performance_terminal --seconds 30 --output
-artifacts/workload50/fresh-short-run`. Use `--seconds 1800` and a different,
-fresh output directory for the sustained observation. Its Linux `/proc` observer
-records the actual CLI child and separate source/observer RSS, peak RSS, thread
-and descriptor counts every five seconds. It runs the normal CLI against a
-separate independently paced loopback source, never a maintainer context.
-The output includes source hashes, reference-machine/dependency metadata,
-raw public-key-to-painted-tail samples, ordered ANSI and cleanup/error receipts.
-An existing output directory is rejected. Run without coverage, tracing,
-profiling or competing local verification, and do not edit measured inputs.
-The GC guard compares the current interpreter with an isolated invocation of
-that same executable's untuned defaults; it never sets thresholds or disables
-GC. Record the actual policy because ordinary defaults differ across Python
-versions. A local alternate-Python environment must also record its actual
-executable/version: `uv run` can follow the project's pinned Python unless the
-alternate interpreter is explicitly selected.
+The real-CLI workload uses 10,000 resource rows, 100 resource events/second and
+2,000 log lines/second with 10,000 retained lines. Its reference p95 input target
+is below 100 ms; evaluate memory over a 30-minute soak, not a short demonstration.
+Use `uv run python -m tests.support.performance_terminal --seconds 1800 --output NEW_PATH`.
+After ten warmup minutes, review four five-minute windows with at least 54 samples.
+For app/source/observer RSS, ranges of window medians and p95s stay within the
+larger of 8 MiB or 5% of the minimum median; descriptor range is at most two and
+thread count stays constant. Preserve failures and investigate before changing limits.
 
-Before the first sustained invocation, declare ten minutes of warmup followed
-by four five-minute windows, each with at least 54 process samples. For each of
-the application, source and observer, the range of window RSS medians **and**
-p95s must stay within the larger of 8 MiB and 5% of the minimum median. Across
-those late samples, descriptor range is at most two (socket renewal allowance)
-and thread count stays constant. The RSS allowance accommodates allocator/page
-noise; it does not authorize raising the input-response target. Preserve every
-distribution and investigate failures. Short runs cannot pass the plateau rule.
-The observer never declares Q03 or a release qualified: the frozen-source
-latency/plateau review and separate context/forward/task lifecycle evidence
-are still required. macOS process-memory qualification remains separate.
+The complementary `tests/contract/test_performance_lifecycle.py` keeps three warmup
+and 36 measured cycles with constant drained descriptor/thread/task counts.
+Held-resource controls must detect added resources. It measures cleanup, not
+latency or RSS, and does not replace actual-kind or sustained-CLI observations.
 
-The complementary owned lifecycle cohort is
-`uv run pytest tests/contract/test_performance_lifecycle.py`. Each scenario has
-three warmup cycles followed by 36 measured cycles. Before the baseline it
-populates the interpreter's ordinary lazy asyncio executor to its existing
-capacity; it does not set a worker limit or replace the executor. Then descriptor,
-thread and pending-task counts must remain exactly constant between drained
-cycles. Receipts record the actual capacity, source hashes and every sample.
-An actual held descriptor, thread and task verify that these observations detect
-added resources. This measures cleanup and bounded ownership rather than latency
-or RSS; it does not replace the sustained real-CLI observation.
+## Artifacts and release qualification
 
-Actual HTTP context transitions stop real forwarding children through the same
-SessionService close hook used by the application, close old API pools/private
-directories and leave only one pending observation for a slow subscriber.
-Large watch frames held at a slow sink must not create a background parser queue;
-repeated cancellation drains their transport. Forward startup cancellation must
-reap its real child and staged configuration. Retained forward history saturates
-at its existing 32 records. A held initial snapshot also expires the paced
-source's explicitly reduced three-event protocol ring; actual ListWatch must
-publish the 410 relisting state, drop its old snapshot and recover all current
-rows without leaked transport or source work. This protocol fixture keeps the
-qualification workload's ordinary replay and performance limits unchanged.
-Each required native environment runs the cohort;
-the existing real-kind forward and context trials remain required separately.
-Unique original receipts live under `artifacts/backend/performance-lifecycle-*`.
+Use fresh outside-checkout environments/tool state, explicit no-cluster configuration
+and actual index/dependency prerequisites. Verify complete bundles, ABI/deployment floors,
+licenses, certificates, interpreter isolation and source/installed/native terminal behavior.
+Audits and strict CycloneDX bind exact artifacts/locks. Scanner errors, missing evidence
+or unreviewed/expired exceptions fail. High/critical findings need exact reviewed expiring
+mitigations; never omit findings. See [dependency security](dependency-security.md) and [Homebrew](homebrew.md).
 
-## Current repository stage
+A release needs the exact main source's latest successful manual six-environment
+Application run, all four native targets and their original retained artifacts.
+A later failed attempt blocks an older success. Development PR/main matrices do
+not substitute for release qualification. Promised native Homebrew install/upgrade/
+removal and bottle lanes require their own real supported-host results.
+Repeat release contracts and owned-kind trials three times with separate artifacts;
+these do not replace performance, provider or installation qualification.
+Follow cumulative phase readiness, exact authored notes, source/artifact digests,
+protected owner review and approved channels in [releases.md](releases.md).
+Evidence preparation does not publish tags, packages, websites or DNS changes.
 
-F01 provides the installable development CLI and behavioral/artifact tests.
-F02 implements independent coverage, changed-line and critical-module gates,
-negative controls, and the aggregate application matrix. Automatic protected-
-branch enforcement remains unavailable under the current private-repository
-plan, as recorded above. F03 adds local configuration, sanitized diagnostics and
-temporary-file/process/artifact checks. B01 adds the real disconnected terminal
-workspace, Pilot behavior tests, normal/compact geometry snapshots and real PTY
-checks for resize, rapid command input, Unicode paste, quit and failure. Installed
-wheel console/module launches also run in PTYs outside the checkout. Each matrix
-job retains actual SVGs and terminal restoration evidence; SSH/tmux and cluster
-qualification remain future work. F04 adds hostile text/argument and immutable
-target tests, ambient credential traps for all test families, unsafe fixture
-negative controls and a real isolated SDK configuration load without an API
-connection. F05 stage 1 adds audited option/alias tests, a reviewed help snapshot,
-service-level policy negative controls, visibility/initial-command Pilot evidence,
-real PTY restoration and clean-installed launch contract checks. Reviewed help
-snapshots preserve argparse's native alias formatting on Python 3.12 and 3.13/3.14.
-C01 adds real loopback HTTP/TLS and synthetic exec-helper contract tests,
-responsive context/namespace Pilot selectors and owned client/process cleanup.
-Linux/Python 3.12 additionally requires disposable-kind namespace/TLS/client-auth
-verification and retains sanitized cluster evidence. The deterministic catalogue,
-connection-request and session-state modules join the critical 100% inventory.
-C02 adds real HTTP discovery negotiation, consistent/expired pagination,
-partial/forbidden groups, bounded snapshots and cancellation tests. The resource
-domain joins the critical inventory. Disposable-kind verification additionally
-requires core/named-group discovery and real paginated namespace/pod/deployment
-snapshots with collection versions and item UIDs. The UI still has no resource
-rows; live updates remain C03/C04/B02.
-C03 adds pure critical watch-state/retry decisions and actual HTTP framing,
-list/watch continuity, replay/recreation, retry/backoff, permission, token refresh,
-bounded slow-consumer and cancellation tests. The required kind check exercises
-a real write between LIST and WATCH plus create/update/delete/recreation and owned
-watch/fixture cleanup. UI resource subscriptions remain C04/B02; C03 does not
-establish a visible live pod table or maximum-workload performance.
-Provider qualification and later effectful integrations remain pending; a parsed flag is not
-compatibility evidence. [Test isolation](security-primitives.md) describes the qualified
-fixture path and limitations. The README must
-never show an unmeasured coverage badge or imply that planned checks already run.
+## Failure records and historical evidence
 
-C04 adds bounded latest-state subscriptions, generation/client/scope rejection,
-rapid switches, cancelled preparation/reconnect, late pages/callbacks and leak tests.
-Its view domain joins the critical inventory. Pilot and PTYs verify stale/live/error
-status and terminal restoration. The kind check adds actual namespace/resource
-switches, client reopening and workspace exit cleanup. UI counts are available;
-B02 still owns table rows and Q01 owns performance qualification.
-
-Preview correction #107 adds no-bookmark idle streams, normal renewal/checkpoint
-continuity and failed-establishment/timeout backoff regression tests. Pilot and
-source/installed CLI PTYs verify the clearer live/count state and terminal cleanup;
-the kind check requires two real quiet-watch renewals without stale status or relisting.
-
-The PTY harness retains a shell-like session owner while the actual CLI process
-runs. It records all terminal attributes immediately before/after that process,
-using a separate completion pipe, before the session owner exits and macOS
-[revokes access to the terminal](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/kern/kern_exit.c#L2093).
-The parent verifies both against the original PTY
-mode and checks terminal control restoration in the actual output. Timeouts
-terminate/kill the owned process group and close every descriptor.
-
-## Sources
-
-- [Coverage configuration](https://coverage.readthedocs.io/en/latest/config.html)
-- [Textual testing](https://textual.textualize.io/guide/testing/)
-
-
-S04 adds selected-container shell identity/return decisions to the critical
-inventory. API/Pilot/native-PTY/fresh-install cases cover configured/default
-shells, read-only policy, scoped arguments, private connection preparation, stale
-UIDs, failures and cleanup. The Linux/Python 3.12 job additionally requires
-`scripts.verify_shell_kind`: actual kubectl exec, two containers, fullscreen vi,
-resize, interruption, repeated return, source-kubeconfig pinning and RBAC denial.
-Its matching kubectl 1.36.4 is downloaded into the runner's temporary directory
-and verified against a pinned SHA-256; no global kubectl is replaced. The owned
-cluster is deleted on success/failure and sanitized terminal/cluster evidence is
-retained. Hosted/macOS results remain unavailable under the billing restriction.
-
-F05 #19 adds actual HTTP/TLS tests for alias selection, credential replacement,
-repeated impersonation headers, loaded UID/extras, stream consistency, server
-denial and private shell snapshots. Pilot checks effective identity and timed age
-updates while filtering, with unchanged request count/session generation. Source
-and freshly installed CLI PTYs exercise overrides across context/namespace
-navigation and terminal restoration. The owned kind shell check also requires
-explicit CA/client certificate files, forced TLS verification, alternate aliases,
-successful impersonated exec, impersonated exec denial, and token replacement of
-the original client certificate identity. These checks establish the initial
-launch contract, not cloud provider or later mutation/plugin qualification.
+Keep original failures, logs, source identity and cleanup outcomes. Never hide cleanup
+failure with longer deadlines, skipped assertions or success receipts. Supplemental
+controls are not exact qualification; an unchanged retry is not a correction.
+Historical reports stay in `docs/internal/`, apart from user guides; local fakes
+cannot establish cloud compatibility.
