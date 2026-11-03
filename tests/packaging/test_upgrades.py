@@ -1,4 +1,4 @@
-"""Real manager upgrades between immutable local wheels, without public publication."""
+"""Real private-RC and published-predecessor manager upgrades without publication."""
 
 import hashlib
 import json
@@ -11,13 +11,15 @@ from pathlib import Path
 import pytest
 from packaging.version import Version
 
+from scripts.build_standalone import source_inputs
 from tests.support.distribution import PROJECT, ROOT, clean_environment, run
 from tests.support.navigation import terminal_navigation
+from tests.support.published_wheel import published_upgrade_wheel, require_wheelhouse
 from tests.support.shell import terminal_shell
 
 
 @pytest.fixture(scope="session")
-def upgrade_artifacts(artifacts, tmp_path_factory):
+def private_upgrade_artifacts(artifacts, tmp_path_factory):
     directory = tmp_path_factory.mktemp("upgrade-artifacts")
     source = directory / "source"
     source.mkdir()
@@ -61,6 +63,12 @@ def upgrade_artifacts(artifacts, tmp_path_factory):
             name: after.read(name) for name in after.namelist() if name.startswith("kuberich/")
         }
         assert old_payload and old_payload == new_payload
+    return old, newer, old_version, version
+
+
+@pytest.fixture(scope="session")
+def upgrade_dependencies(tmp_path_factory):
+    directory = tmp_path_factory.mktemp("upgrade-dependencies")
     requirements = directory / "runtime.txt"
     run(
         [
@@ -93,14 +101,55 @@ def upgrade_artifacts(artifacts, tmp_path_factory):
         180,
     )
     assert list(dependencies.glob("*.whl"))
-    return old, newer, old_version, version, dependencies
+    return dependencies
+
+
+@pytest.fixture(scope="session", params=["private-rc", "published"])
+def upgrade_artifacts(request, artifacts, upgrade_dependencies, tmp_path_factory):
+    kind = request.param
+    if kind == "private-rc":
+        old, newer, old_version, version = request.getfixturevalue("private_upgrade_artifacts")
+        provenance = {"baseline_kind": kind, "published_predecessor": False}
+    else:
+        old, published = published_upgrade_wheel(
+            tmp_path_factory.mktemp("published-upgrade") / "original", PROJECT["version"]
+        )
+        newer, old_version, version = artifacts[0], published["version"], PROJECT["version"]
+        assert Version(version) > Version(old_version)
+        provenance = {"baseline_kind": kind, "published_predecessor": published}
+    for wheel in (old, newer):
+        require_wheelhouse(wheel, upgrade_dependencies)
+    provenance["old_artifact"] = {
+        "filename": old.name,
+        "sha256": hashlib.sha256(old.read_bytes()).hexdigest(),
+    }
+    provenance["new_artifact"] = {
+        "filename": newer.name,
+        "sha256": hashlib.sha256(newer.read_bytes()).hexdigest(),
+    }
+    provenance["candidate_source"] = {
+        "commit": run(["git", "rev-parse", "HEAD"], ROOT).stdout.strip(),
+        "tracked_status": run(
+            ["git", "status", "--porcelain", "--untracked-files=no"], ROOT
+        ).stdout,
+        "inputs": {
+            name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
+            for name in {*source_inputs(ROOT), "uv.lock"}
+        },
+    }
+    provenance["locked_dependency_wheels"] = {
+        path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in upgrade_dependencies.glob("*.whl")
+    }
+    return old, newer, old_version, version, upgrade_dependencies, provenance
 
 
 @pytest.mark.parametrize("installer", ["uv", "pipx"])
 def test_real_version_upgrade_retains_preferences_and_runs_installed_ui(
     upgrade_artifacts, tmp_path, installer
 ):
-    old, newer, old_version, version, dependencies = upgrade_artifacts
+    old, newer, old_version, version, dependencies, provenance = upgrade_artifacts
+    baseline_kind = provenance["baseline_kind"]
     outside = tmp_path / "outside"
     outside.mkdir()
     wheelhouse = tmp_path / "owned wheelhouse"
@@ -167,9 +216,18 @@ def test_real_version_upgrade_retains_preferences_and_runs_installed_ui(
             directory = outside / name
             directory.mkdir()
             if name == "navigation":
-                trial([str(binary)], directory, evidence=f"upgraded-{installer}-navigation")
+                trial(
+                    [str(binary)],
+                    directory,
+                    evidence=f"upgraded-{installer}-{baseline_kind}-navigation",
+                )
             else:
-                trial([str(binary)], directory, "success", evidence=f"upgraded-{installer}-shell")
+                trial(
+                    [str(binary)],
+                    directory,
+                    "success",
+                    evidence=f"upgraded-{installer}-{baseline_kind}-shell",
+                )
     finally:
         result = run(
             [*manager, "uninstall", "kuberich"], outside, 60, check=False, environment=environment
@@ -184,11 +242,12 @@ def test_real_version_upgrade_retains_preferences_and_runs_installed_ui(
     }
     output = ROOT / "artifacts/packaging"
     output.mkdir(parents=True, exist_ok=True)
-    (output / f"{installer}-version-upgrade.json").write_text(
+    (output / f"{installer}-{baseline_kind}-version-upgrade.json").write_text(
         json.dumps(
             {
                 "result": "passed",
                 "installer": installer,
+                "artifact_provenance": provenance,
                 "old_version": old_version,
                 "new_version": version,
                 "original_artifacts": originals,
