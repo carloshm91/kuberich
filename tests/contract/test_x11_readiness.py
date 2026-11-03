@@ -79,7 +79,9 @@ async def test_cancelled_selection_reader_is_reaped_before_return(tmp_path):
     wrapper.write_text(
         f"#!{sys.executable}\n"
         "import os,time\nfrom pathlib import Path\n"
-        f"Path({str(pid)!r}).write_text(str(os.getpid()))\n"
+        f"pending=Path({str(pid.with_suffix('.pending'))!r})\n"
+        "pending.write_text(str(os.getpid()))\n"
+        f"pending.replace({str(pid)!r})\n"
         "time.sleep(30)\n"
     )
     wrapper.chmod(0o700)
