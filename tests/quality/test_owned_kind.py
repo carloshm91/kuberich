@@ -340,7 +340,7 @@ def test_actual_process_group_timeout_terminates_resistant_descendant(tmp_path):
     pid = tmp_path / "child.pid"
     program = tmp_path / "resistant.py"
     program.write_text(
-        "import os,signal,time,sys\nfrom pathlib import Path\nsignal.signal(signal.SIGTERM,signal.SIG_IGN)\nchild=os.fork()\nif child==0:\n Path(sys.argv[1]).write_text(str(os.getpid()))\nwhile True: time.sleep(.05)\n"
+        "import os,signal,time,sys\nfrom pathlib import Path\nsignal.signal(signal.SIGTERM,signal.SIG_IGN)\nchild=os.fork()\nif child==0:\n pending=Path(sys.argv[1]+'.pending')\n pending.write_text(str(os.getpid()))\n pending.replace(sys.argv[1])\nwhile True: time.sleep(.05)\n"
     )
     with pytest.raises(subprocess.TimeoutExpired):
         run_owned([sys.executable, str(program), str(pid)], dict(os.environ), timeout=1)

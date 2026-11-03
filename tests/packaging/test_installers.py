@@ -152,7 +152,9 @@ def stop(signum,frame):
     child.wait()
     raise SystemExit(143)
 signal.signal(signal.SIGTERM,stop)
-Path('child.pid').write_text(str(child.pid))
+pending=Path('child.pid.pending')
+pending.write_text(str(child.pid))
+pending.replace('child.pid')
 time.sleep(60)
 """
     with pytest.raises(subprocess.TimeoutExpired):
