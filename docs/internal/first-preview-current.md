@@ -1,7 +1,7 @@
 # Development checkpoint
 
 This maintained internal checkpoint carries the inspected protected source
-`5fa8641153ed77895490d8d0b1f682eae4cee8f5`. Historical preview snapshots remain
+`1075d6833d9c4e42808bae103978b6bd569cfae9`. Historical preview snapshots remain
 unchanged and do not establish current qualification. The brief user
 [Status](../first-preview.md) describes the installed and development versions.
 
@@ -1128,3 +1128,28 @@ their real descendant, unrelated-process, cancellation, forced-termination and
 cleanup assertions unchanged; command owners drained. Combined checks and
 fresh final-source qualification remain pending. No product, workflow, deadline,
 coverage or publication policy is relaxed.
+
+## Interrupted PID publication in verification helpers
+
+PR #306 delivered the Python-upgrade and descendant-fixture corrections at
+protected `1075d6833d9c4e42808bae103978b6bd569cfae9` after all 27 PR
+quality jobs and Repository/DCO checks passed. Its automatic-main Fast run
+`41654279758` failed a different fixture: the cancelled X11 reader created its
+PID file before completing its contents. Cancellation could interrupt that write;
+the later integer read failed even though the runner's zero-active-process check
+passed. The original log and failed result remain retained. An unchanged passing
+manual Fast occurrence does not correct that race.
+
+The correction publishes complete owned PID files atomically in the X11 reader
+and two equivalent forced-timeout fixtures for installer and cluster-process
+cleanup. These two preventive paths were identified by source inspection; no
+historical failure is claimed for them. Original cancellation, process/group
+checks and deadlines remain unchanged. A source-scoped audit found the other
+terminal/UI/support publishers already atomic or synchronized through completed
+output or readiness markers.
+
+The partial 1075 workload was cancelled after 271.43 seconds for this tracked
+correction. Its source stayed clean and all five owned processes and three
+groups drained. It does not establish normal-finish terminal restoration or a
+complete memory plateau. Final corrected-main qualification remains required;
+no production, workflow, coverage, budget or publication policy is relaxed.
