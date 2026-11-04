@@ -8,8 +8,11 @@ project remains private. Source opening did not publish packages, a tap, a
 website, tags or GitHub Releases. The first release-preparation PR sets metadata
 to `0.1.0`; its TestPyPI/PyPI uploads, immutable tag/GitHub Release and checked
 Homebrew activation completed on 2026-10-12. Version 0.2.0, with Homebrew
-bottles, was published on 2026-10-21. Site updates for each release need
-separate approval.
+bottles, was published on 2026-10-21. Version 0.3.0 was published to PyPI and
+GitHub Releases on 2026-11-04 from protected source
+`b1f00706ff3448cded7818633c84ed77e3ca83af`; its Homebrew source formula and
+three bottle targets are active. Site updates for each release need separate
+approval.
 
 The maintainer changed the release policy on 2026-10-09 to usable, qualified
 **0.x phases**, beginning with **0.1.0**. This supersedes #154's earlier

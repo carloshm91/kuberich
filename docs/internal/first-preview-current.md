@@ -1,5 +1,73 @@
 # Development checkpoint
 
+## Qualified 0.3.0 source
+
+The current qualified release source is protected commit
+`b1f00706ff3448cded7818633c84ed77e3ca83af`, tree
+`efa050ba125172145cb157efbe24ec857c5d9df3`. [#230](https://github.com/carloshm91/kuberich/issues/230)
+is closed with its scoped acceptance complete. Version 0.3.0 was published to
+PyPI and GitHub Releases on 2026-11-04 by
+[release run 41872341380](https://github.com/carloshm91/kuberich/actions/runs/41872341380).
+The annotated tag points to the same qualified source, the 24 GitHub asset
+digests match, and both actual PyPI distribution downloads match their tested
+bytes. The actual Homebrew source formula is active at tap commit
+`670925d22df047bb3aae352c54a42e28d453f456`, with its generated formula SHA-256
+`a96cd455ca66af8943a310ed04fe421e2d84764d94322007dd665aac0b54d9af`. Source
+CI passed both platforms and DCO; a macOS retry addressed an unassigned runner,
+without an executed test failure. Bottle publication completed in
+[run 41882852493](https://github.com/carloshm91/kuberich/actions/runs/41882852493).
+The three public archive digests match their reviewed inputs, and the bottle-only
+tap update merged at `3018e8c8f27c7ce060391095a27501a1fe2ae9de`, retaining
+the source formula above. Public-pour verification is recorded in
+[run 41903084439](https://github.com/carloshm91/kuberich/actions/runs/41903084439),
+whose actual results are the authoritative consumer verdict. It was dispatched
+from `fix/230-bottle-verification` at
+`8fd1e92dffaf98fa307123bec6c6f1a95c2a1149`, not protected main; its consumer
+results remain separate from the release-source qualification above. Activation
+merge and website deployment require all three public-consumer checks to pass.
+Pre-deployment HTTPS checks recorded on 2026-11-04 at 17:01 UTC found both
+production website hosts serving 0.1.0. Source changes do not deploy them.
+
+Exact-source [manual quality](https://github.com/carloshm91/kuberich/actions/runs/41708242403)
+passed all 37 jobs, including the six Linux/macOS Python environments and four
+standalone targets. [Repository validation](https://github.com/carloshm91/kuberich/actions/runs/41708121466)
+and the [six native Homebrew lanes](https://github.com/carloshm91/kuberich/actions/runs/41716910423)
+also passed. Native Homebrew evidence contains nine actual source/bottle upgrade
+cases and remains separate from the coordinator native-platform gate.
+
+The single local coordinator passed all 63 gates: 7,262 full-suite cases with
+five platform/workflow skips, two further contract rounds of 1,279 passed plus
+one macOS clipboard skip each, and all 13 owned-kind verifiers plus installed
+quickstart in each of three rounds. Production coverage was 18,836/19,078 lines
+(98.73%) and 5,388/5,626 branches (95.77%); changed coverage against the published
+0.2.0 source was 3,245/3,351 (96.84%), with designated critical lines and
+applicable branches at 100% and no excluded lines.
+
+The real CLI sustained workload measured 1,800.063 seconds and passed all hard
+memory, descriptor, thread, restoration and cleanup checks. Numeric 0.x latency
+remains advisory. All 211 independently observed process/start-time identities,
+176 process groups and created test containers were absent after cleanup; all
+58 original command drains passed. The private wrapper used incomplete
+leader-thread tracking and deferred adopted-helper orphan reaping until exit;
+the final independent all-thread/start-time/group audit supplies the cleanup
+proof. The same original command continued by explicit root decision, with no
+second campaign or injected runtime reaping.
+
+Canonical local evidence remains under the final-pr307 worktree at
+`artifacts/issue230/final-main-b1f/qualification-0.3.0/`. The original
+`report.json` SHA-256 is
+`6acc558c9728653c2e4257f5aa4091ae11af6c7399bb4e75d87ba27e4913c2d7`;
+`summary.md` is
+`7f07a49355d661b2e0d7a6c103deb064155f63d3278492788316d1f3bf13970c`.
+These reports do not authorize publication. Real-provider certification stays
+opt-in under #87; stable architecture/performance goals remain under #88/#212.
+Historical failed and cancelled source-specific evidence is preserved.
+
+## Earlier engineering checkpoints
+
+The following sections describe their recorded historical source and policy;
+they do not qualify another candidate or describe current package availability.
+
 This maintained internal checkpoint carries the inspected protected source
 `1075d6833d9c4e42808bae103978b6bd569cfae9`. Historical preview snapshots remain
 unchanged and do not establish current qualification. The brief user

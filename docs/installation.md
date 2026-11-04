@@ -1,5 +1,8 @@
 # Install and upgrade
 
+Version 0.3.0 is available from PyPI, GitHub Releases and the project Homebrew
+tap, with prebuilt Homebrew bottles for the targets below.
+
 Install the `kuberich` command on Linux or macOS. Choose one method so that
 upgrades and removal use the same package manager. Preferences and kubeconfig
 stay separate from the application.
@@ -12,14 +15,22 @@ kuberich --version
 ```
 
 The project tap is `kuberich/homebrew-tap`. Homebrew installs Python, kubectl, and
-libyaml as dependencies. Prebuilt bottles are available for macOS Apple Silicon
-(`arm64_sonoma`), macOS Intel (`sequoia`), and Linux x86_64 (`x86_64_linux`).
-Other supported Homebrew systems build from source. Dependencies may also need a
-source build on an older operating system; that can take several minutes.
+libyaml as dependencies. It pours a compatible prebuilt KubeRich bottle when
+one is available; otherwise it builds KubeRich from source.
 
-Development builds for the next release use macOS 15 Apple Silicon runners and
-`arm64_sequoia` bottles. Published 0.2.0 Sonoma bottles keep their existing files;
-when no compatible bottle exists, Homebrew builds from source.
+The 0.3.0 bottle targets are macOS 15 Apple Silicon (`arm64_sequoia`), macOS
+Intel (`sequoia`) and Linux x86_64 (`x86_64_linux`). Published 0.2.0 Sonoma
+bottles keep their existing files. When no compatible bottle exists, Homebrew
+builds from source; dependencies may also need source builds on older systems.
+
+A KubeRich bottle still needs its Homebrew runtime dependencies. Homebrew's
+[support policy](https://docs.brew.sh/Support-Tiers#tier-3) lists Intel macOS as
+Tier 3. On affected configurations, missing core bottles can make Python,
+kubectl or libyaml build from source and take substantial time. For an alternative,
+use the [Python tools](#python-tools) method below with a
+[uv-managed Python](https://docs.astral.sh/uv/guides/install-python/), or choose a
+[standalone archive](#standalone-archives), which includes its Python runtime.
+Delegated operations still need kubectl as documented below.
 
 ## Python tools
 
@@ -61,12 +72,12 @@ Developer ID notarized.
 2. Extract into a new directory. Keep the complete `kuberich/` tree.
 3. Run the launcher from that directory and check its version.
 
-For example, with the published 0.2.0 Linux x86_64 archive:
+For example, with the published 0.3.0 Linux x86_64 archive:
 
 ```sh
-mkdir kuberich-0.2.0
-tar -xzf kuberich-0.2.0-linux-x86_64.tar.gz -C kuberich-0.2.0
-./kuberich-0.2.0/kuberich/kuberich --version
+mkdir kuberich-0.3.0
+tar -xzf kuberich-0.3.0-linux-x86_64.tar.gz -C kuberich-0.3.0
+./kuberich-0.3.0/kuberich/kuberich --version
 ```
 
 The `_internal` directory and notices must stay beside the launcher. Move the

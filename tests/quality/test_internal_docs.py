@@ -11,6 +11,7 @@ from scripts.check_supply_chain import INPUT_FILES
 from scripts.documentation import load_navigation, validate_documentation_plan
 from scripts.documentation_links import links, original_contexts, relocated_source
 from scripts.site_reference import reference_files
+from tests.support.site_source import latest_published
 
 
 def test_history_moves_to_one_internal_area_with_exact_original_git_evidence():
@@ -36,7 +37,7 @@ def test_history_moves_to_one_internal_area_with_exact_original_git_evidence():
 def test_status_is_short_and_every_user_page_avoids_evidence_links():
     status = (ROOT / "docs/first-preview.md").read_text()
     assert status.startswith("# Status\n")
-    assert "0.2.0" in status and "It is not a published release" in status
+    assert f"KubeRich {latest_published()} is published" in status
     assert "coverage" not in status.lower() and "actions/runs" not in status
     assert "kuberich --version" in status
     navigation = load_navigation(ROOT)

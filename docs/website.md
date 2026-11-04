@@ -1,4 +1,15 @@
-# Initial landing page and launch documentation
+# Website delivery
+
+The existing production hosts are [kuberich.com](https://kuberich.com/) and
+[docs.kuberich.com](https://docs.kuberich.com/). Pre-deployment HTTPS checks
+recorded on 2026-11-04 at 17:01 UTC found both serving the published 0.1.0 site.
+The maintained sources and repository checks do not update those hosts. A new
+release needs its verified publication record, checked current installation
+notices and separate approval for the concrete website update.
+Use the existing projects and protected workflow; a content update needs no DNS
+change.
+
+## Initial preparation and publication history
 
 #150 delivered the initial local preparation and now binds launch material to
 the prepared `0.1.0` candidate. The proposed custom
