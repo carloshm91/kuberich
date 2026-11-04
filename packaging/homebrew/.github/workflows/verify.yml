@@ -37,8 +37,6 @@ jobs:
           tap="$(brew --repository)/Library/Taps/kuberich/homebrew-tap"
           mkdir -p "$(dirname "$tap")"
           ln -s "$GITHUB_WORKSPACE" "$tap"
-          # Trust only this linked formula before Homebrew's online audit.
-          brew trust --formula kuberich/tap/kuberich
           brew style kuberich/tap/kuberich
           brew audit --strict --online kuberich/tap/kuberich
           brew install --build-from-source kuberich/tap/kuberich
