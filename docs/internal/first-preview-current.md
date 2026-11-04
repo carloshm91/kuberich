@@ -23,8 +23,22 @@ the source formula above. Public-pour verification is recorded in
 whose actual results are the authoritative consumer verdict. It was dispatched
 from `fix/230-bottle-verification` at
 `8fd1e92dffaf98fa307123bec6c6f1a95c2a1149`, not protected main; its consumer
-results remain separate from the release-source qualification above. Activation
-merge and website deployment require all three public-consumer checks to pass.
+results remain separate from the release-source qualification above. Linux and
+Apple Silicon passed. The Intel dependency step reached its 75-minute limit
+while Homebrew was compiling Python; the application-install step was skipped.
+The retained Intel log SHA-256 is
+`af34ec0dca22396b0df5e31f8bf5b1c3fcc3bdb4ac1970b4be324e0fb5c96a65`.
+This failed attempt does not establish an Intel application-pour result.
+
+The follow-up verification bounds only Intel dependency setup at 120 minutes
+within a 150-minute job; other hosts retain their 75-minute setup and 90-minute
+job limits. The application install, pour, version, test and uninstall step
+retains its separate 30-minute limit on every host. The changed procedure needs
+a fresh exact-workflow public-consumer run; the original failure stays retained.
+Source guidance can merge after its required Quality gate, Repository checks
+and DCO succeed because the publication facts above are already verified. Website publication still requires
+three actual public-consumer successes and concrete owner approval of the exact
+checked site bytes.
 Pre-deployment HTTPS checks recorded on 2026-11-04 at 17:01 UTC found both
 production website hosts serving 0.1.0. Source changes do not deploy them.
 
