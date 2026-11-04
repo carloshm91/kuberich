@@ -1,7 +1,7 @@
 """One scope-owned serialized metrics poller using the existing per-context reader."""
 
 import asyncio
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import replace
 from datetime import UTC, datetime
 from functools import partial
@@ -177,11 +177,13 @@ class MetricsPoller:
         *,
         interval: float = POLL_INTERVAL,
         now: Callable[[], datetime] = lambda: datetime.now(UTC),
+        expiry_sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
     ) -> None:
         if not 0.01 <= interval <= 60:
             raise AppError("Metrics poll interval is outside its bounds.")
         self.reader, self.discovery, self.scope = reader, discovery, scope
         self.snapshot, self.current, self.interval, self.now = snapshot, current, interval, now
+        self.expiry_sleep = expiry_sleep
         self.ready = asyncio.Event()
 
     def wake(self) -> None:
@@ -321,13 +323,52 @@ class MetricsPoller:
         )
 
     async def run(self, publish: Callable[[MetricsSnapshot], None]) -> None:
-        while self.current():
-            selected = self.snapshot()
-            if selected is None:
-                self.ready.clear()
-                await self.ready.wait()
-                continue
-            result = await self.poll(selected)
-            if self.current():
-                publish(result)
-            await asyncio.sleep(self.interval)
+        expiry: asyncio.Task[None] | None = None
+        batch: MetricsSnapshot | None = None
+
+        async def expire(captured: MetricsSnapshot, delay: float) -> None:
+            await self.expiry_sleep(delay)
+            if self.current() and captured is batch:
+                # The cache flag is O(1). The existing bounded render worker
+                # clears usage once; no per-row timer, HTTP or 1Hz table scan.
+                publish(replace(captured, cache_expired=True))
+
+        async def retire_expiry() -> None:
+            nonlocal expiry
+            owned, expiry = expiry, None
+            if owned is not None:
+                owned.cancel()
+                completion = asyncio.gather(owned, return_exceptions=True)
+                cancelled = False
+                while not completion.done():
+                    try:
+                        await asyncio.shield(completion)
+                    except asyncio.CancelledError:
+                        # Preserve caller cancellation while the already-cancelled
+                        # child finishes its own asynchronous cleanup.
+                        cancelled = True
+                if cancelled:
+                    raise asyncio.CancelledError
+                if not owned.cancelled():
+                    owned.result()
+
+        try:
+            while self.current():
+                selected = self.snapshot()
+                if selected is None:
+                    self.ready.clear()
+                    await self.ready.wait()
+                    continue
+                result = await self.poll(selected)
+                batch = result
+                await retire_expiry()
+                if self.current():
+                    publish(result)
+                    delay = result.expiry_delay(self.now())
+                    if delay is not None:
+                        expiry = asyncio.create_task(
+                            expire(result, delay), name="kuberich-metrics-expiry"
+                        )
+                await asyncio.sleep(self.interval)
+        finally:
+            await retire_expiry()

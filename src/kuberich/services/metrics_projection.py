@@ -31,7 +31,9 @@ def with_metrics[T: PodRow | NamespaceRow | ResourceRow](
         )
     result: list[PodRow | NamespaceRow | ResourceRow] = []
     for row in rows:
-        report = index.get(row.uid, MetricReport(metrics.status, detail=metrics.detail)).fresh(now)
+        report = metrics.current(
+            index.get(row.uid, MetricReport(metrics.status, detail=metrics.detail)), now
+        )
         if isinstance(row, PodRow):
             result.append(replace(row, metrics=report))
         elif isinstance(row, ResourceRow) and len(columns) == len(row.values):

@@ -259,10 +259,62 @@ state. Ownership cleanup found no remaining process. Evidence is in
 Ruff, formatting, the strict workflow type target union (238 source files),
 private-access checks, plan/generated-reference checks and six documentation
 contract cases passed after the fixture correction.
-Production runtime remains the tested `a553ab6` source; the correction changes
-only the owned fixture and acceptance/preview records. No production cap,
+At that checkpoint production runtime remained the tested `a553ab6` source;
+the clipboard correction changed only the owned fixture and acceptance/preview
+records. No production cap,
 deadline or refusal control was weakened, and no full local coordinator or kind
 repetition was run solely for this fixture correction. Current-head required
 hosted full-suite/runtime/coverage/build gates remain pending integration of the
 incoming release-activation base and the next PR push. Real provider and native
 platform qualification are not claimed by these Linux results.
+
+## Main-table expiry independent of AGE and pending reads
+
+Independent review found a real gap after that checkpoint: main-table freshness
+was only applied during a render. With AGE refresh set to 3,600 seconds, a quiet
+resource watch and a pending 300-second metrics read, old numeric usage could
+remain displayed beyond its cache lifetime. The container screen's independent
+expiry already worked; that did not establish autonomous expiry of the main
+Pod, Node or workload tables.
+
+The poller now owns one one-shot expiry task for each usable completed batch.
+It computes the earliest still-live sample deadline once, ignoring expired or
+no-usage reports, and publishes an O(1) `metrics cache expired` cache flag. The
+existing bounded projection/render worker clears usage and percentages once.
+It performs no per-row HTTP request, overlapping poll, repeated per-second
+table scan or AGE preference change. The cache contract is conservative: newer
+members can expire with the batch while their original sample timestamps and
+windows remain unchanged. Configured budgets and resource UID/viewport survive.
+
+Batch replacement cancels and awaits the old expiry before publishing fresh
+data. Scope/context changes and exit drain it alongside the existing metrics
+owner. A batch-identity/current-generation guard rejects late callbacks. The
+owned drain shields asynchronous child cleanup and re-raises caller cancellation
+after that cleanup, including a repeated cancellation while normal fresh-batch
+retirement is held.
+
+The final focused command passed **186 cases in 23.82 seconds**:
+
+```sh
+uv run pytest tests/unit/test_metrics.py tests/unit/test_metrics_projection.py tests/contract/test_metrics.py tests/ui/test_metrics.py -q -n 4 --tb=short --cov=kuberich.domain.metrics --cov=kuberich.services.metrics --cov=kuberich.services.metrics_projection --cov-branch --cov-report=json:artifacts/issue68/main-expiry-final-coverage.json --junitxml=artifacts/issue68/main-expiry-final.xml
+```
+
+The real HTTP/Pilot witnesses set AGE refresh to 3,600 seconds and request
+timeout to 300 seconds. They hold the next API read, advance a controlled clock
+and release the owned expiry boundary without input or watch events. Actual
+Pod, Node and StatefulSet cells change CPU/memory usage to N/A/stale while exact
+configured CPU/memory requests and limits remain numeric. Selection and horizontal
+scroll survive; a newer member's original timestamp is retained rather than
+being falsely aged. A fresh completed batch restores values, and exit cancels
+the next held read and its new expiry. Separate contracts verify namespace/context
+changes, obsolete generations, delayed old-timer completion, repeated parent
+cancellation and absence of a timer for empty/stale/forbidden batches.
+
+Focused line/branch coverage is **100%/100%** for the deterministic metrics and
+projection modules, and **98.204%/92.188%** for the I/O poller. All newly added
+expiry/drain lines and branches were exercised. The original full-source
+campaigns and their nonces/source receipts remain unchanged; their historical
+measurements do not qualify this later production correction. Exact-head hosted
+full-suite/runtime/source/changed/critical coverage and build gates remain
+pending the incoming activation base and next branch push. No additional full
+local phase or kind campaign was run for this correction.

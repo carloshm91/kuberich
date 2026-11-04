@@ -29,6 +29,7 @@ from kuberich.services.workspace import WorkspaceService
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.metrics import (
     NOW,
+    ExpiryGate,
     budgeted,
     metric_resource,
     metric_roots,
@@ -621,3 +622,203 @@ async def test_real_http_admitted_status_preserves_configured_percentages(
         assert report.memory.request == 32 * 2**20 and report.memory.limit == 128 * 2**20
         assert report.cpu.percent("request") == 250 and report.cpu.percent("limit") == 25
         assert report.memory.percent("request") == 200 and report.memory.percent("limit") == 50
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("retirement", ["replace", "cancel", "obsolete"])
+async def test_fresh_batch_drains_old_expiry_before_publication_and_preserves_parent_cancellation(
+    tmp_path,
+    retirement,
+):
+    expiry_started, cancelling, finish_retire = asyncio.Event(), asyncio.Event(), asyncio.Event()
+    reads, current = 0, True
+    release_read = asyncio.Event()
+    expiry_waits = []
+    observed = []
+
+    async def expiry_sleep(delay):
+        index = len(expiry_waits)
+        expiry_waits.append(delay)
+        if index == 0:
+            expiry_started.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                cancelling.set()
+                await finish_retire.wait()  # A late timer completion must not clear the new batch.
+        else:
+            await asyncio.Event().wait()
+
+    async def handler(request):
+        nonlocal reads
+        reads += 1
+        if reads > 1:
+            await release_read.wait()
+        return web.json_response(sample_list(sample(cpu=f"{reads}m")))
+
+    async with reader_fixture(tmp_path, handler) as reader:
+        poller = MetricsPoller(
+            reader,
+            Discovery((pod_resource(), metric_resource())),
+            scope_for(),
+            lambda: snapshot(budgeted()),
+            lambda: current,
+            interval=0.01,
+            now=lambda: NOW,
+            expiry_sleep=expiry_sleep,
+        )
+        task = asyncio.create_task(poller.run(observed.append))
+        try:
+            await asyncio.wait_for(expiry_started.wait(), 5)
+            await wait_for(lambda: reads == 2)
+            release_read.set()
+            await asyncio.wait_for(cancelling.wait(), 5)
+            assert len(observed) == 1
+            if retirement == "cancel":
+                task.cancel()
+                await asyncio.sleep(0)
+                task.cancel()
+                await asyncio.sleep(0)
+                assert not task.done() and len(expiry_waits) == 1
+            elif retirement == "obsolete":
+                current = False
+            finish_retire.set()
+            if retirement == "cancel":
+                with pytest.raises(asyncio.CancelledError):
+                    await asyncio.wait_for(task, 5)
+                assert len(observed) == 1 and reads == 2 and len(expiry_waits) == 1
+            elif retirement == "obsolete":
+                await asyncio.wait_for(task, 5)
+                assert len(observed) == 1 and reads == 2 and len(expiry_waits) == 1
+            else:
+                await wait_for(lambda: len(observed) >= 2 and len(expiry_waits) >= 2)
+                assert not any(batch.cache_expired for batch in observed)
+                assert observed[1].report("owned-api", NOW).cpu.usage == Decimal(".002")
+        finally:
+            finish_retire.set()
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+        assert not [
+            task for task in asyncio.all_tasks() if task.get_name() == "kuberich-metrics-expiry"
+        ]
+
+
+@pytest.mark.asyncio
+async def test_workspace_cancels_and_awaits_expiry_with_pending_reads_on_scope_context_and_exit(
+    tmp_path, monkeypatch
+):
+    expiry = ExpiryGate()
+    held, releases = [], asyncio.Event()
+    counts = {}
+
+    class ControlledPoller(MetricsPoller):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs, interval=0.01, now=lambda: NOW, expiry_sleep=expiry)
+
+    monkeypatch.setattr("kuberich.services.workspace.MetricsPoller", ControlledPoller)
+
+    async def ns(request):
+        return namespaces("team", "default")
+
+    async def handler(request):
+        namespace = (
+            request.path.split("/namespaces/")[1].split("/")[0]
+            if "/namespaces/" in request.path
+            else "team"
+        )
+        if request.path.startswith("/apis/metrics.k8s.io/"):
+            counts[request.path] = counts.get(request.path, 0) + 1
+            if counts[request.path] % 2 == 0:
+                held.append(request.transport)
+                await releases.wait()
+            return web.json_response(sample_list(sample(namespace=namespace)))
+        if "watch" in request.query:
+            return await stable_watch(request)
+        return web.json_response(collection(budgeted(namespace=namespace)))
+
+    async with workspace_api(ns, handler, discovery_roots=metric_roots) as url:
+        config = catalog_fixture(tmp_path, url)
+        before = (tmp_path / "fixture-config").read_bytes()
+        workspace = WorkspaceService(SessionService(config, ConnectionRequest(timeout=300)))
+        try:
+            await workspace.connect("kuberich-test-one")
+            await wait_for(lambda: len(held) == 1 and len(expiry.waits) == 1)
+            await workspace.select_namespace("default")
+            await wait_for(lambda: len(held) == 2 and len(expiry.waits) == 2)
+            assert 0 in expiry.finished and held[0].is_closing()
+            await workspace.connect("kuberich-test-Two")
+            await wait_for(lambda: len(held) == 3 and len(expiry.waits) == 3)
+            assert 1 in expiry.finished and held[1].is_closing()
+            await workspace.close()
+            assert expiry.finished == {0, 1, 2}
+            assert held[2].is_closing() and workspace.ownership.metrics_count == 0
+            assert workspace.sessions.client is None
+            assert (tmp_path / "fixture-config").read_bytes() == before
+            assert not [
+                task for task in asyncio.all_tasks() if task.get_name() == "kuberich-metrics-expiry"
+            ]
+        finally:
+            await workspace.close()
+            releases.set()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("state", ["empty", "stale", "forbidden", "obsolete"])
+async def test_unusable_batches_have_no_expiry_loop_and_obsolete_expiry_cannot_publish(
+    tmp_path, state
+):
+    expiry, release = ExpiryGate(), asyncio.Event()
+    current, reads = True, 0
+    observed = []
+
+    async def handler(request):
+        nonlocal reads
+        reads += 1
+        if reads > 1:
+            await release.wait()
+        if state == "forbidden":
+            return web.Response(status=403)
+        return web.json_response(
+            sample_list(
+                *(
+                    []
+                    if state == "empty"
+                    else [sample(now=NOW - timedelta(seconds=61) if state == "stale" else NOW)]
+                )
+            )
+        )
+
+    async with reader_fixture(tmp_path, handler) as reader:
+        selected = snapshot(budgeted())
+        poller = MetricsPoller(
+            reader,
+            Discovery((pod_resource(), metric_resource())),
+            scope_for(),
+            lambda: selected,
+            lambda: current,
+            interval=0.01,
+            now=lambda: NOW,
+            expiry_sleep=expiry,
+        )
+        task = asyncio.create_task(poller.run(observed.append))
+        try:
+            await wait_for(lambda: reads == 2 and len(observed) == 1)
+            if state == "obsolete":
+                await wait_for(lambda: len(expiry.waits) == 1)
+                current = False
+                expiry.waits[0][1].set()
+                await wait_for(lambda: expiry.finished == {0})
+                assert not observed[0].cache_expired
+                release.set()
+                with pytest.raises(asyncio.CancelledError):
+                    await task
+            else:
+                assert not expiry.waits and observed[0].report("owned-api", NOW).cpu.usage is None
+            assert len(observed) == 1 and reads == 2
+        finally:
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+            release.set()
+        assert not [
+            task for task in asyncio.all_tasks() if task.get_name() == "kuberich-metrics-expiry"
+        ]

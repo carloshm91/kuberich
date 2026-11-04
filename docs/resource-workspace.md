@@ -141,6 +141,14 @@ in an open container screen. Polls run every 15 seconds after the previous batch
 finishes, using the selected client and namespace. Scope changes and exit stop
 and drain the old poll. Use `:refresh` after changing API installation/discovery.
 
+The main table also expires its cached batch while a subsequent API read is
+pending, independently of the AGE refresh preference. The earliest still-usable
+sample deadline expires that batch and labels it `metrics cache expired`.
+Newer samples in the same batch may therefore lose displayed usage before their
+own 60-second age; original sample timestamps/windows and configured budgets
+remain intact. This is a maximum cache lifetime, not a promise to retain every
+newer sample for 60 seconds. A completed fresh read replaces the expired cache.
+
 CPU/memory quantities, percentages and sampling windows sort by numeric values. `:wide` exposes sample time in UTC,
 window in seconds and generic extended resource names; `:views` can hide or
 reorder metric fields. Existing saved column layouts keep their chosen fields. Workload sample time is the oldest member timestamp and

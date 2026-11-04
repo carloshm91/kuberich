@@ -42,3 +42,8 @@ def test_projection_enriches_pod_and_standard_numeric_values_and_leaves_other_vi
     assert with_metrics((ns_row,), view) == (ns_row,)
     missing = with_metrics((replace(pod_value, uid="replacement"),), view)[0]
     assert missing.metrics.status is MetricStatus.NO_SAMPLE and missing.metrics.cpu.usage is None
+    expired_view = replace(view, metrics=replace(view.metrics, cache_expired=True))
+    assert with_metrics((pod_value,), expired_view)[0].metrics.status is MetricStatus.STALE
+    stale_node = with_metrics((node_value,), expired_view)[0]
+    assert stale_node.values[index].text == "N/A" and stale_node.values[index].sort is None
+    assert report.cpu.usage == Decimal(".25")

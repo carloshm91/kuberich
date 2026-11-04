@@ -1188,3 +1188,14 @@ and terminal cleanup. The [acceptance record](acceptance/resource-metrics.md#own
 has the exact commands, failed-suite coverage measurements and original failure
 receipts. Current-head hosted qualification remains pending; these focused
 corrections do not convert the original failed campaign into a pass.
+
+Independent review then found and corrected main-table cache expiry when AGE
+refresh is long and a subsequent metrics request remains pending. One owned
+batch deadline now publishes `metrics cache expired` independently of AGE/read
+completion, retaining budgets, original timestamps and selection. A conservative
+batch can expire a newer member early; it does not invent an older sample time.
+The focused metrics family passed **186 cases**, including actual Pod/Node/workload
+cells, fresh replacement, scope/context/exit cleanup and repeated cancellation
+during timer retirement. The [expiry acceptance](acceptance/resource-metrics.md#main-table-expiry-independent-of-age-and-pending-reads)
+records the command and measured module coverage. Current-head hosted full
+qualification remains pending the activation base; original reports are retained.

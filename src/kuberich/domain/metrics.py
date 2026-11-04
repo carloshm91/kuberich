@@ -146,6 +146,18 @@ class MetricReport:
     containers: tuple[tuple[str, "MetricReport"], ...] = ()
     allocation_uncertain: bool = False
 
+    def expire_cache(self) -> "MetricReport":
+        if self.cpu.usage is None and self.memory.usage is None:
+            return self
+        return replace(
+            self,
+            status=MetricStatus.STALE,
+            cpu=replace(self.cpu, usage=None),
+            memory=replace(self.memory, usage=None),
+            detail="metrics cache expired" + (" · " + self.detail if self.detail else ""),
+            containers=tuple((name, report.expire_cache()) for name, report in self.containers),
+        )
+
     def fresh(self, now: datetime) -> "MetricReport":
         if self.timestamp is not None and (now - self.timestamp).total_seconds() > MAX_SAMPLE_AGE:
             return replace(
@@ -202,13 +214,28 @@ class MetricsSnapshot:
     reports: tuple[tuple[str, MetricReport], ...] = ()
     status: MetricStatus = MetricStatus.NO_SAMPLE
     detail: str = "Waiting for metrics"
+    cache_expired: bool = False
+
+    def expiry_delay(self, now: datetime) -> float | None:
+        """One conservative batch deadline, computed once after a completed read."""
+        remaining = tuple(
+            MAX_SAMPLE_AGE - (now - report.timestamp).total_seconds()
+            for _, report in self.reports
+            if report.timestamp is not None
+            and report.status in {MetricStatus.VALID, MetricStatus.PARTIAL}
+            and (report.cpu.usage is not None or report.memory.usage is not None)
+        )
+        live = tuple(delay for delay in remaining if delay > 0)
+        return min(MAX_SAMPLE_AGE, min(live)) if live and not self.cache_expired else None
+
+    def current(self, report: MetricReport, now: datetime) -> MetricReport:
+        return (report.expire_cache() if self.cache_expired else report).fresh(now)
 
     def report(self, uid: str, now: datetime | None = None) -> MetricReport:
         # Projection indexes once per batch; this convenience port is for captured containers.
-        return (
-            dict(self.reports)
-            .get(uid, MetricReport(self.status, detail=self.detail))
-            .fresh(now or datetime.now(UTC))
+        return self.current(
+            dict(self.reports).get(uid, MetricReport(self.status, detail=self.detail)),
+            now or datetime.now(UTC),
         )
 
 

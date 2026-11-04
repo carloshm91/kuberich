@@ -1,5 +1,6 @@
 """Synthetic current samples; metrics objects deliberately omit UID/resourceVersion."""
 
+import asyncio
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 
@@ -8,6 +9,23 @@ from tests.support.pods import pod, record
 from tests.support.resources import descriptor, legacy_roots
 
 NOW = datetime(2026, 11, 4, 12, tzinfo=UTC)
+
+
+class ExpiryGate:
+    """Deterministic one-shot clock boundary; every owned wait exposes its drain."""
+
+    def __init__(self):
+        self.waits = []
+        self.finished = set()
+
+    async def __call__(self, delay):
+        released = asyncio.Event()
+        index = len(self.waits)
+        self.waits.append((delay, released))
+        try:
+            await released.wait()
+        finally:
+            self.finished.add(index)
 
 
 def metric_resource(name="pods", version="v1"):

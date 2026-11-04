@@ -714,3 +714,49 @@ def test_running_init_and_debug_members_without_samples_are_partial(field):
     assert result.cpu.usage == D(".25") and result.cpu.percent("request") is None
     value["status"][field][0]["state"] = {"terminated": {"exitCode": 0}}
     assert pod_sample(record(value), sampled(), NOW).status is MetricStatus.VALID
+
+
+def test_cache_deadline_uses_earliest_usable_sample_and_excludes_expired_or_absent_usage():
+    original = pod_sample(budget_record(), sampled(), NOW)
+    older = replace(original, timestamp=NOW - timedelta(seconds=45), detail="older sample")
+    newer = replace(original, timestamp=NOW - timedelta(seconds=10))
+    zero = replace(older, cpu=replace(older.cpu, usage=D(0)))
+    memory_only = replace(newer, cpu=replace(newer.cpu, usage=None))
+    expired = replace(original, timestamp=NOW - timedelta(seconds=61))
+    absent = replace(older, cpu=ResourceAmount(), memory=ResourceAmount())
+    forbidden = replace(older, status=MetricStatus.FORBIDDEN)
+    batch = MetricsSnapshot(
+        (
+            ("old", zero),
+            ("new", memory_only),
+            ("expired", expired),
+            ("absent", absent),
+            ("denied", forbidden),
+        )
+    )
+    assert batch.expiry_delay(NOW) == 15
+    assert replace(batch, cache_expired=True).expiry_delay(NOW) is None
+    assert MetricsSnapshot().expiry_delay(NOW) is None
+    assert MetricsSnapshot((("expired", expired), ("absent", absent))).expiry_delay(NOW) is None
+    assert (
+        MetricsSnapshot(
+            (("future", replace(newer, timestamp=NOW + timedelta(seconds=5))),)
+        ).expiry_delay(NOW)
+        == 60
+    )
+    cached = replace(batch, cache_expired=True)
+    result = cached.report("old", NOW + timedelta(seconds=16))
+    assert result.status is MetricStatus.STALE and result.cpu.usage is result.memory.usage is None
+    assert result.cpu.request == older.cpu.request and result.cpu.limit == older.cpu.limit
+    assert result.timestamp == older.timestamp and result.window == older.window
+    assert result.detail == "metrics cache expired · older sample"
+    assert dict(result.containers)["app"].cpu.usage is None
+    fresh_member = cached.report("new", NOW + timedelta(seconds=16))
+    assert (
+        fresh_member.status is MetricStatus.STALE and fresh_member.detail == "metrics cache expired"
+    )
+    assert fresh_member.timestamp == newer.timestamp  # Still only 26 seconds old; cache expired.
+    assert fresh_member.cpu.percent("request") is None
+    assert cached.report("absent", NOW).cpu.usage is None
+    assert cached.report("replacement", NOW).status is MetricStatus.NO_SAMPLE
+    assert batch.report("old", NOW).cpu.usage == 0
