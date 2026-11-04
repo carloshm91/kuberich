@@ -82,8 +82,9 @@ applicable controllers after review. Automatic controller-to-pod drill-down is u
 **partial** — Service, EndpointSlice, Ingress and NetworkPolicy views are available. Service numeric
 TCP forwarding has its own prerequisites. Discovery refuses APIs removed from the selected server.
 ### Nodes, PV/PVC, StorageClasses, priority/scheduling, HPA/PDB/quota/limits
-**partial** — Node, PV, PVC, StorageClass and HPA tables are available. Live usage, scheduling
-overviews and broader quota/disruption diagnostics are planned.
+**partial** — Node, PV, PVC, StorageClass and HPA tables are available. Development source adds Node
+CPU/memory usage, allocatable percentages and vendor-neutral extended-resource capacity; scheduling
+and broader quota/disruption diagnostics remain planned.
 ### ConfigMaps, Secrets, service accounts and RBAC resource families
 **partial** — ConfigMap and Secret values stay hidden until a deliberate reveal or copy. Manifest
 editing requires local disclosure, validation, and Apply. An interactive permission browser is
@@ -174,8 +175,10 @@ terminal.
 **partial** — Translate plugin fields and variables explicitly and install required external tools
 separately. External services and tool features do not become native application capabilities.
 ### CPU/memory usage, requests/limits/percentages, extended/GPU resources
-**partial** — Container rows show declared CPU/memory requests and limits. Live usage, percentages,
-GPU/extended resources and metrics views are planned.
+**partial** — Development source adds current CPU/memory usage, declared requests/limits, labelled
+percentages and Node/extended-resource capacity. Missing, forbidden, stale, partial and measured-
+zero values remain distinct. Complex Pod allocations are explicitly uncertain; GPU utilization and
+history are unavailable. Installed 0.3.0 predates these metrics columns.
 ### Pulse cluster overview and CPU/memory drill-downs
 **planned** — A cluster metrics overview with CPU/memory drill-down is planned.
 ### XRay relationships, jump-to-owner/node, service endpoints and UsedBy

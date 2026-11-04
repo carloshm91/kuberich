@@ -38,7 +38,10 @@ See [read logs](log-viewer.md) for export limits and current/previous instances.
 Type `:pods`, filter to the pod you want, and press Enter. The container table
 shows regular, init, and existing ephemeral containers. State, readiness, restart
 counts, and other displayed fields update while the same pod remains selected.
-CPU and memory columns show requests and limits, not measured usage.
+The declared CPU/memory requests and limits stay visible. Development source
+also shows live CPU(m), memory(MiB), explicitly labelled usage percentages and
+sample availability. See [current metrics](resource-workspace.md#current-cpu-and-memory-metrics)
+for read permissions, units, partial totals and uncertain allocation limits.
 
 Select a container and press Enter for its logs. Escape returns through
 logs → containers → pods. Selection and scroll position survive ordinary updates;

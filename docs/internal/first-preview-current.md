@@ -1153,3 +1153,25 @@ correction. Its source stayed clean and all five owned processes and three
 groups drained. It does not establish normal-finish terminal restoration or a
 complete memory plateau. Final corrected-main qualification remains required;
 no production, workflow, coverage, budget or publication policy is relaxed.
+
+## O01 #68: resource metrics implementation checkpoint
+
+The source now reads current metrics through the selected per-context client,
+with discovered API versions, serialized 15-second batches and 60-second sample
+expiry. Pod/workload/Node/container rows keep numeric sorting and UID selection.
+Availability states, missing/zero denominators, uncertain complex Pod budgets and
+vendor-neutral extended-resource capacity/requests remain explicit. No Metrics API
+installation, Prometheus, historical chart, package or website publication occurs.
+
+The focused command passed **135 tests** on Linux CPython 3.12.12:
+
+```sh
+uv run pytest tests/unit/test_metrics.py tests/unit/test_metrics_projection.py tests/contract/test_metrics.py tests/ui/test_metrics.py tests/ui/test_pods.py tests/ui/test_interactions.py -q -n 4 --tb=short
+```
+
+The open-container Pilot trial refreshes values through measured zero, 403, 404
+and valid data, then expires the last good sample while a subsequent HTTP read
+is held. Scope/context/exit contracts close actual local HTTP reads and preserve
+the synthetic kubeconfig. Full source verification is recorded separately in
+[resource metrics acceptance](acceptance/resource-metrics.md); this focused
+checkpoint does not claim hosted/native/provider or release qualification.

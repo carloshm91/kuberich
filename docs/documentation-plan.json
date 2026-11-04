@@ -2536,6 +2536,16 @@
       "baseline_sha256": "44ffe01a0d3cd1aa9d54770891e2ef4d059598c50f52783216c17b90ffcf6725"
     },
     {
+      "source": "docs/internal/acceptance/resource-metrics.md",
+      "audience": "contributor acceptance evidence",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/resource-metrics.md"
+      ],
+      "reason": "Keep O01 #68 measured metrics, identity, availability, cleanup and allocation limits outside user navigation.",
+      "baseline_sha256": null
+    },
+    {
       "source": "docs/internal/acceptance/resource-operations.md",
       "audience": "internal engineering history",
       "action": "keep",

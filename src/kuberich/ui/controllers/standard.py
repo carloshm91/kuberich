@@ -26,7 +26,9 @@ class StandardController(ResourceController[ResourceRow]):
         self.definition = definition
         self.selected = definition()
         self.factory = projection
-        super().__init__(table, self.factory(self.selected), filtering, prepare, actions)
+        super().__init__(
+            table, self.factory(self.selected), filtering, prepare, actions, metrics=True
+        )
 
     async def project(self, request: RenderRequest) -> ProjectedRows[ResourceRow]:
         definition = self.definition()

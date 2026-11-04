@@ -7,6 +7,7 @@ from dataclasses import dataclass, replace
 from kuberich.adapters.credentials import CredentialLogin
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, namespace_name
+from kuberich.domain.metrics import MetricsSnapshot
 from kuberich.domain.navigation import NamespaceChoice
 from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.resources import Discovery
@@ -20,6 +21,7 @@ from kuberich.domain.views import (
 from kuberich.domain.watches import SyncUpdate
 from kuberich.errors import AppError
 from kuberich.security.arguments import validate_argument
+from kuberich.services.metrics import MetricsPoller, supports_metrics
 from kuberich.services.resources import ResourceReader
 from kuberich.services.sessions import SessionService
 from kuberich.services.watches import ListWatch
@@ -36,6 +38,7 @@ class WorkspaceOwnership:
     subscription_count: int
     discovery_count: int
     close_complete: bool
+    metrics_count: int = 0
 
 
 class ViewSubscription(AsyncIterator[ViewObservation]):
@@ -118,6 +121,8 @@ class WorkspaceService:
         self.task: asyncio.Task[None] | None = None
         self._operation: asyncio.Task[None] | None = None
         self._watch: asyncio.Task[None] | None = None
+        self._metrics: asyncio.Task[None] | None = None
+        self._metrics_poller: MetricsPoller | None = None
         self._discovery: tuple[KubernetesSession, Discovery] | None = None
         self._closed = False
         self._closing: asyncio.Task[None] | None = None
@@ -131,6 +136,7 @@ class WorkspaceService:
             subscription_count=len(self._subscriptions),
             discovery_count=int(self._discovery is not None),
             close_complete=self._closing is not None and self._closing.done(),
+            metrics_count=int(self._metrics is not None),
         )
 
     def _require_open(self) -> None:
@@ -154,6 +160,7 @@ class WorkspaceService:
     def _schedule(self, selection: _Selection) -> asyncio.Task[None]:
         self._desired = selection
         _cancel_once(self._watch)
+        _cancel_once(self._metrics)
         _cancel_once(self._operation)
         self._publish()
         if self.task is None or self.task.done():
@@ -268,6 +275,14 @@ class WorkspaceService:
         )
 
     async def _stop_watch(self) -> None:
+        metrics = self._metrics
+        if metrics is not None:
+            _cancel_once(metrics)
+            try:
+                await _join(metrics)
+            finally:
+                self._metrics = None
+                self._metrics_poller = None
         task = self._watch
         if task is not None:
             _cancel_once(task)
@@ -358,6 +373,28 @@ class WorkspaceService:
             )
             self.store.bind(selection.revision, scope)
             self._publish()
+            if supports_metrics(scope):
+
+                def current() -> bool:
+                    return (
+                        not self._closed
+                        and self.sessions.client is client
+                        and self.sessions.observation.identity == scope.session
+                        and self.store.observation.revision == selection.revision
+                        and self.store.observation.scope == scope
+                    )
+
+                self._metrics_poller = MetricsPoller(
+                    ResourceReader(client),
+                    discovery,
+                    scope,
+                    lambda: self.store.observation.snapshot,
+                    current,
+                )
+                self._metrics = asyncio.create_task(
+                    self._run_metrics(selection.revision, self._metrics_poller),
+                    name="kuberich-resource-metrics",
+                )
             self._watch = asyncio.create_task(
                 self._run_watch(selection.revision, client, scope, reader),
                 name="kuberich-resource-watch",
@@ -390,6 +427,8 @@ class WorkspaceService:
                 and self.sessions.observation.identity == scope.session
                 and self.store.apply(revision, scope, update)
             ):
+                if self._metrics_poller is not None:
+                    self._metrics_poller.wake()
                 self._publish()
 
         try:
@@ -408,6 +447,17 @@ class WorkspaceService:
         except Exception as error:
             self._unexpected(revision, error)
 
+    async def _run_metrics(self, revision: int, poller: MetricsPoller) -> None:
+        def publish(metrics: MetricsSnapshot) -> None:
+            if poller.current():
+                self.store.observation = replace(self.store.observation, metrics=metrics)
+                self._publish()
+
+        try:
+            await poller.run(publish)
+        except Exception as error:
+            self._unexpected(revision, error)
+
     async def close(self) -> None:
         if self._closing is None:
             self._closed = True
@@ -415,6 +465,7 @@ class WorkspaceService:
             self._desired = None
             _cancel_once(self._operation)
             _cancel_once(self._watch)
+            _cancel_once(self._metrics)
             self._closing = asyncio.create_task(self._close())
         await _join(self._closing)
         # Retrieve any unexpected close failure rather than silently suppress it.

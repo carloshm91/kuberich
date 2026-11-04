@@ -6,6 +6,7 @@ from decimal import Decimal
 
 import pytest
 
+from kuberich.domain.metrics import METRIC_KEYS, MetricReport
 from kuberich.domain.registry import (
     RESOURCE_ALIASES,
     STANDARD_RESOURCES,
@@ -53,7 +54,21 @@ def test_an_edited_manifest_never_changes_the_next_one():
 def test_all_resource_columns_are_meaningful_and_endpoint_scope_is_explicit(definition, expected):
     row = resource_row(row_record(definition), definition)
     values = row.cells(datetime(2026, 10, 8, tzinfo=UTC))
-    assert values == (*(("team",) if definition.namespaced else ()), "owned-one", *expected, "7d")
+    metric_values = (
+        tuple(
+            MetricReport().value(key)[0]
+            for key in (METRIC_KEYS if definition.name == "nodes" else METRIC_KEYS[:14])
+        )
+        if any(column.key == "cpu" for column in definition.columns)
+        else ()
+    )
+    assert values == (
+        *(("team",) if definition.namespaced else ()),
+        "owned-one",
+        *expected,
+        *metric_values,
+        "7d",
+    )
     assert len(values) == len(definition.columns)
     assert api(definition).group == definition.selection.group
     for alias in (definition.name, *definition.aliases):

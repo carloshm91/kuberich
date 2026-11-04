@@ -1,6 +1,7 @@
 """Typed resource table ports share one projection/filter/application adapter."""
 
 from collections.abc import Callable
+from functools import partial
 from typing import Protocol
 
 from kuberich.domain.namespaces import NamespaceRow
@@ -9,7 +10,9 @@ from kuberich.domain.pods import PodRow
 from kuberich.domain.registry import ResourceRow
 from kuberich.domain.views import ViewObservation
 from kuberich.services.filtering import FilterResult
+from kuberich.services.metrics_projection import with_metrics
 from kuberich.services.pods import ResourceProjection
+from kuberich.services.resources import parse_owned
 from kuberich.ui.controllers.base import ProjectedRows, RenderRequest
 from kuberich.ui.controllers.filtering import ResourceFilter
 
@@ -32,14 +35,21 @@ class ResourceController[T: PodRow | NamespaceRow | ResourceRow]:
         filtering: ResourceFilter,
         prepare: Callable[[ViewObservation], object],
         actions: Callable[[RenderRequest], frozenset[str]],
+        *,
+        metrics: bool = False,
     ) -> None:
         self.table, self.projection, self.filtering = table, projection, filtering
         self.prepare, self.actions = prepare, actions
+        self.metrics = metrics
 
     async def project(self, request: RenderRequest) -> ProjectedRows[T]:
         self.prepare(request.observation)
+        rows = await self.projection.project(request.observation.snapshot)
         return ProjectedRows(
-            await self.projection.project(request.observation.snapshot), lambda: True
+            await parse_owned(partial(with_metrics, rows, request.observation))
+            if self.metrics
+            else rows,
+            lambda: True,
         )
 
     async def retire_projection(self) -> None:

@@ -1,10 +1,23 @@
 """Read-only container details from a captured pod, without invented metrics."""
 
 from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from typing import Any
 
 from kuberich.domain.logs import log_containers
+from kuberich.domain.metrics import METRIC_LABELS, MetricReport, MetricStatus
 
+CONTAINER_METRIC_KEYS = (
+    "cpu",
+    "memory",
+    "cpu-percent-request",
+    "cpu-percent-limit",
+    "memory-percent-request",
+    "memory-percent-limit",
+    "metrics",
+    "sample",
+    "window",
+)
 CONTAINER_COLUMNS = (
     "NAME",
     "TYPE",
@@ -16,6 +29,7 @@ CONTAINER_COLUMNS = (
     "CPU REQ/LIM",
     "MEM REQ/LIM",
     "PORTS",
+    *(METRIC_LABELS.get(key, key.upper()) for key in CONTAINER_METRIC_KEYS),
 )
 
 
@@ -47,7 +61,8 @@ def _state(status: dict[str, Any]) -> str:
 def _limits(spec: dict[str, Any], resource: str) -> str:
     values = _object(spec.get("resources"))
     return "/".join(
-        _text(_object(values.get(kind)).get(resource)) for kind in ("requests", "limits")
+        _text(_object(values.get(kind)).get(resource), "unlimited" if kind == "limits" else "N/A")
+        for kind in ("requests", "limits")
     )
 
 
@@ -81,6 +96,7 @@ class ContainerRow:
     cpu: str
     memory: str
     ports: str
+    metrics: MetricReport = dataclass_field(default_factory=MetricReport)
 
     def cells(self) -> tuple[str, ...]:
         return (
@@ -94,11 +110,16 @@ class ContainerRow:
             self.cpu,
             self.memory,
             self.ports,
+            *(self.metrics.value(key)[0] for key in CONTAINER_METRIC_KEYS),
         )
 
 
-def container_rows(manifest: dict[str, Any]) -> tuple[ContainerRow, ...]:
+def container_rows(
+    manifest: dict[str, Any], metrics: MetricReport | None = None
+) -> tuple[ContainerRow, ...]:
     names = log_containers(manifest)
+    metrics = metrics or MetricReport()
+    observed_metrics = dict(metrics.containers)
     spec, status = _object(manifest.get("spec")), _object(manifest.get("status"))
     declarations: dict[str, tuple[str, dict[str, Any], dict[str, Any]]] = {}
     for field, status_field in (
@@ -140,6 +161,15 @@ def container_rows(manifest: dict[str, Any]) -> tuple[ContainerRow, ...]:
                 _limits(declaration, "cpu"),
                 _limits(declaration, "memory"),
                 _ports(declaration),
+                observed_metrics.get(
+                    name,
+                    MetricReport(
+                        metrics.status
+                        if metrics.status is not MetricStatus.VALID
+                        else MetricStatus.NO_SAMPLE,
+                        detail=metrics.detail,
+                    ),
+                ),
             )
         )
     return tuple(rows)

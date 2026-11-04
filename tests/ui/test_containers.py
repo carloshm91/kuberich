@@ -7,6 +7,7 @@ import pytest
 from aiohttp import web
 from textual.widgets import DataTable, Static
 
+from kuberich.domain.containers import CONTAINER_COLUMNS
 from kuberich.errors import AppError
 from kuberich.ui.containers import ContainerScreen
 from kuberich.ui.logs import LogScreen
@@ -60,19 +61,10 @@ async def test_container_columns_render_matched_status_and_literal_redacted_spec
             await pilot.press("enter")
             containers = app.screen
             assert isinstance(containers, ContainerScreen)
-            assert [column.label.plain for column in containers.table.columns.values()] == [
-                "NAME",
-                "TYPE",
-                "READY",
-                "STATE",
-                "RESTARTS",
-                "IMAGE",
-                "PROBES(R:L:S)",
-                "CPU REQ/LIM",
-                "MEM REQ/LIM",
-                "PORTS",
-            ]
-            assert [cell.plain for cell in containers.table.get_row("app")] == [
+            assert [column.label.plain for column in containers.table.columns.values()] == list(
+                CONTAINER_COLUMNS
+            )
+            assert [cell.plain for cell in containers.table.get_row("app")[:10]] == [
                 "app",
                 "App",
                 "true",

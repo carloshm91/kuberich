@@ -154,7 +154,8 @@ async def test_header_click_sort_cycle_and_live_age_updates(monkeypatch):
         clock[0] += timedelta(seconds=60)
         table.refresh_ages()
         assert [str(table.get_cell(row.uid, "age")) for row in baseline] == ["1m", "1m", "1m"]
-        await pilot.press("s")
+        for _ in range(len(table.visible_columns) - 5):
+            await pilot.press("s")
         assert table.sort_column is PodColumn.NAMESPACE
         assert PodCell("owned", "x" * 1000).__rich__().cell_len == 256
 

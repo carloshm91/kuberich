@@ -12,6 +12,7 @@ from uuid import uuid4
 from kuberich.config.catalog import KubeCatalog
 from kuberich.config.schema import Settings
 from kuberich.domain.connections import ConnectionRequest
+from kuberich.domain.metrics import MetricStatus
 from kuberich.domain.registry import STANDARD_RESOURCES
 from kuberich.domain.views import ViewStatus
 from kuberich.services.commands import ResourceCommand
@@ -206,6 +207,18 @@ async def verify_standard_resources(
                 await pilot.pause()
                 assert app.standard_table.selected_uid == uid
                 resource = resources[definition.name]
+                if definition.name == "nodes":
+                    async with asyncio.timeout(30):
+                        while app.workspace.store.observation.metrics is None:
+                            await asyncio.sleep(0.01)
+                    metric_report = app.workspace.store.observation.metrics.report(uid)
+                    assert metric_report.status is MetricStatus.UNAVAILABLE
+                    assert (
+                        metric_report.cpu.usage is None and metric_report.cpu.capacity is not None
+                    )
+                    assert metric_report.cpu.allocatable is not None
+                    assert metric_report.cpu.request is not None
+                    assert str(app.standard_table.get_cell(uid, "cpu")) == "N/A"
                 endpoint = resource.path(namespace if resource.namespaced else None) + "/" + name
                 # A real metadata change must arrive over the active WATCH for every family.
                 await write(

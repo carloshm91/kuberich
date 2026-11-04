@@ -6,6 +6,8 @@ from types import SimpleNamespace
 import pytest
 from aiohttp import web
 
+from kuberich.domain.metrics import METRIC_KEYS
+from kuberich.domain.pods import PodColumn
 from kuberich.domain.views import ViewStatus
 from kuberich.ui.containers import ContainerScreen
 from kuberich.ui.logs import LogScreen
@@ -75,10 +77,10 @@ async def test_filters_wide_uid_ranges_copy_history_favorites_and_runtime_chrome
             await command(app, pilot, "errors")
             await wait_for(lambda: app.resources.row_count == 3)
             await command(app, pilot, "wide")
-            await wait_for(lambda: len(app.resources.columns) == 9)
+            await wait_for(lambda: len(app.resources.columns) == len(PodColumn))
             assert app.resources.get_row("owned-api")[6].plain == "node-a"
             await command(app, pilot, "wide")
-            await wait_for(lambda: len(app.resources.columns) == 6)
+            await wait_for(lambda: len(app.resources.columns) == 6 + len(METRIC_KEYS[:11]))
             await pilot.press("g", "space", "shift+down")
             assert app.interactions.selection.marked == {"owned-api", "owned-unknown"}
             assert app.resources.rows["owned-api"].label.plain == "●"
@@ -376,13 +378,13 @@ async def test_container_projection_coalesces_and_client_close_drains_the_owned_
                 decodes.capture()
                 return await native_to_thread(function, *args, **kwargs)
 
-            def controlled(manifest):
+            def controlled(manifest, metrics=None):
                 version = manifest["metadata"]["resourceVersion"]
                 calls.append(version)
                 if version == "blocked":
                     entered.set()
                     assert release.wait(10)
-                return original(manifest)
+                return original(manifest, metrics)
 
             monkeypatch.setattr(module, "container_rows", controlled)
             monkeypatch.setattr(

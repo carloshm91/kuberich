@@ -8,6 +8,7 @@ from textual.containers import Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Input
 
+from kuberich.domain.metrics import MetricsSnapshot
 from kuberich.domain.view_actions import TABLE_ACTIONS, ViewState
 from kuberich.domain.view_routes import ViewKind
 from kuberich.domain.views import USABLE_CONNECTIONS, ViewObservation, ViewStatus
@@ -177,7 +178,12 @@ class WorkspacePresenter:
                                     None,
                                 )
                                 if record is not None:
-                                    screen.observe_record(record)
+                                    screen.observe_record(
+                                        record,
+                                        (observation.metrics or MetricsSnapshot()).report(
+                                            record.uid or ""
+                                        ),
+                                    )
                             if (
                                 (
                                     isinstance(screen, (ContainerScreen, InspectionScreen))
