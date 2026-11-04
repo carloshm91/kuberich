@@ -56,6 +56,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write(body)
                 self.wfile.flush()
                 while query.get("follow") == ["true"] and not self.server.stopping.wait(0.1):
+                    if not self.server.log_follow_gate.is_set():
+                        continue
                     self.wfile.write(b"2026-10-05T12:00:01Z owned quiet follow\n")
                     self.wfile.flush()
             except OSError:
@@ -202,6 +204,8 @@ class Server(ThreadingHTTPServer):
         super().__init__(("127.0.0.1", 0), Handler)
         self.fail_watches = threading.Event()
         self.stopping = threading.Event()
+        self.log_follow_gate = threading.Event()
+        self.log_follow_gate.set()
         self.quiet_watches = threading.Event()
         self.renewed = threading.Event()
         self.watch_versions = []

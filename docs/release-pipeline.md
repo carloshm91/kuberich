@@ -1,10 +1,14 @@
 # Approved immutable release pipeline
 
-D02 #36 implements `.github/workflows/release.yml` and
-`python -m scripts.release`. This is distribution automation, not a published
-version. Development still reports `0.0.1.dev0`. The source repository is public under #155. TestPyPI enrollment, public channel
-activation and first qualified 0.1.0 publication remain D10 #89. Main and both
-publication environments are now enforced; full release qualification remains pending.
+The protected `.github/workflows/release.yml` and `python -m scripts.release`
+deliver already qualified immutable bytes. The first public 0.1.0 activation is
+complete; the current 0.3.0 source is qualified and published on PyPI, GitHub
+Releases and the Homebrew tap, including its three bottle targets. The source
+repository is public, and main/publication-environment controls remain mandatory
+for every release.
+See [release status and sequence](releases.md) and the
+[publication inventory](published-releases.json) for completed channel activation.
+The automation alone does not establish qualification or authorize a new release.
 
 ## Qualification and approval
 
@@ -113,21 +117,23 @@ against both environment records: required maintainer, protected branches,
 `can_admins_bypass=false`, `prevent_self_review=false`. Main has strict
 Quality gate/Repository checks bound to GitHub Actions and DCO bound to its app,
 admin enforcement, required PRs, linear history and resolved conversations, with
-force pushes/deletions disabled. First-publication readiness still requires index
-ownership, OIDC/attestation, the full release matrix and public installation/upgrade
-evidence under #89. This scoped configuration is not a release qualification. Neither source opening nor the old
-temporary local-merge exception bypasses those checks. The workflow must refuse
+force pushes/deletions disabled. Every publication still requires index ownership,
+OIDC/attestation, the full release matrix and public installation/upgrade evidence
+under the #89 process. This scoped configuration is not a release qualification.
+Neither source opening nor the old temporary local-merge exception bypasses
+those checks. The workflow must refuse
 when any live condition is missing; development CI is not release qualification.
 
 ## Local candidate without publication
 
-After building and generating security evidence on a committed development tree:
+After building and generating security evidence on a committed source tree, use
+its exact metadata version (`0.3.0` in this example):
 
 ```sh
 uv build
 uv run python -m scripts.check_supply_chain
-uv run python -m scripts.release prepare --candidate --source . --bundle artifacts/local-release --commit "$(git rev-parse HEAD)" --version 0.0.1.dev0
-uv run python -m scripts.release verify --candidate --bundle artifacts/local-release --commit "$(git rev-parse HEAD)" --version 0.0.1.dev0
+uv run python -m scripts.release prepare --candidate --source . --bundle artifacts/local-release --commit "$(git rev-parse HEAD)" --version 0.3.0
+uv run python -m scripts.release verify --candidate --bundle artifacts/local-release --commit "$(git rev-parse HEAD)" --version 0.3.0
 ```
 
 Choose a new output directory for each trial. Preparation refuses an existing

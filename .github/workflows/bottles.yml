@@ -134,14 +134,14 @@ jobs:
     name: Verify the merged tap pours (${{ matrix.os }})
     if: ${{ inputs.operation == 'verify' }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 90
+    timeout-minutes: ${{ matrix.os == 'macos-15-intel' && 150 || 90 }}
     strategy:
       fail-fast: false
       matrix:
         os: [macos-15, macos-15-intel, ubuntu-24.04]
     steps:
       - name: Prepare runtime dependencies with separate setup timing
-        timeout-minutes: 75
+        timeout-minutes: ${{ matrix.os == 'macos-15-intel' && 120 || 75 }}
         run: |
           if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
             echo /home/linuxbrew/.linuxbrew/bin >> "$GITHUB_PATH"

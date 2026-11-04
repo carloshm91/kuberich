@@ -11,6 +11,7 @@ def config(path: Path, server: str, user: dict[str, Any]) -> Path: ...
 class Server(ThreadingHTTPServer):
     fail_watches: threading.Event
     stopping: threading.Event
+    log_follow_gate: threading.Event
     quiet_watches: threading.Event
     renewed: threading.Event
     watch_versions: list[str]

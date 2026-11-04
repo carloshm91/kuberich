@@ -33,11 +33,12 @@ uv tool install kuberich
 pipx install kuberich
 ```
 
-Version 0.2.0 is the latest published and verified release. See
+Version 0.3.0 is published on PyPI, GitHub Releases and the Homebrew tap,
+including its three prebuilt Homebrew bottle targets. See
 [installation](installation.md) for platform scope and the
-[release](https://github.com/carloshm91/kuberich/releases/tag/v0.2.0) for four
-native archives, checksums and provenance. From 0.2.0, the Homebrew tap also
-provides bottles for macOS Apple Silicon, macOS Intel and Linux x86_64.
+[release](https://github.com/carloshm91/kuberich/releases/tag/v0.3.0) for four
+native archives, checksums and provenance. Published 0.2.0 Homebrew bottles
+retain their immutable platform files.
 
 ## Development artifacts: D01 #34
 
@@ -127,7 +128,8 @@ Pyte's original LGPL source stays outside the embedded Python archive and ships
 with its license and replacement instructions. A local diagnostic trial exercised
 an actual compatible source replacement in a copied bundle. The entire directory,
 including `_internal` and notices, must be retained; the launcher alone is not a
-portable installation. No standalone artifact has been published.
+portable installation. Public standalone archives are available from the
+[release](https://github.com/carloshm91/kuberich/releases/tag/v0.3.0).
 
 The freezing interpreter now comes from the full Python Build Standalone archive,
 not the developer's interpreter or an install-only download. The reviewed
@@ -199,7 +201,7 @@ release is published; do not publish a formula pointing at unreleased main.
 Fresh wheel/sdist uv-tool/pipx installs above do not prove upgrades. D04 #40 and
 D06 #51 must retain actual local baseline-to-candidate update evidence for every
 promised manager, including an explicitly identified immutable local baseline
-for first 0.1.0. There is no previous public KubeRich release to claim. Later
+for first 0.1.0, which had no previous public KubeRich release. Later
 releases must exercise the actual previous supported published artifact, with
 public channel checks under #89. The 0.2.0 upgrade trials started from the
 published 0.1.0 packages.
@@ -218,8 +220,8 @@ brew upgrade kuberich/tap/kuberich
 brew uninstall kuberich/tap/kuberich
 ```
 
-Public uv/pipx installation and no-op upgrade checks passed for the first release; distinct
-version upgrades use the owned baseline trials until a public predecessor exists. Preserve
+Public uv/pipx installation and no-op upgrade checks passed for the first release.
+Later version upgrades use the actual published predecessor in owned trials. Preserve
 the original source/version constraints: `uv tool upgrade` respects install-time
 constraints, so an exact version or file-path install cannot be assumed to select
 a new release. D04/D06 must use a real supported channel, such as an owned
