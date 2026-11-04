@@ -295,7 +295,10 @@ def test_unknown_and_naive_schedule_time_never_sort_as_known(timestamp):
     row = resource_row(
         row_record(definition, overrides={"status": {"lastScheduleTime": timestamp}}), definition
     )
-    assert row.values[-2].sort is None
+    assert (
+        row.values[[column.key for column in definition.columns].index("last-schedule")].sort
+        is None
+    )
 
 
 def test_timestamp_sort_uses_instant_not_timezone_spelling():
