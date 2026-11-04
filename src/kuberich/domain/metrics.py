@@ -243,6 +243,78 @@ def _sum(values: tuple[ResourceAmount, ...]) -> ResourceAmount:
     )
 
 
+def _contradicts(
+    observed: Any, declared: dict[str, Decimal | None], *, compute_only: bool = False
+) -> bool:
+    if not isinstance(observed, dict):
+        return True
+    # Missing optional telemetry is not a contradiction. Only compare fields
+    # actually reported by kubelet; preserve admitted extended-resource requests.
+    return any(
+        value is None or declared.get(key) is None or value != declared[key]
+        for key, value in _resources(observed).items()
+        if not compute_only or key in {"cpu", "memory"}
+    )
+
+
+def _allocation_problem(
+    declarations: list[dict[str, Any]], statuses: list[Any], status: dict[str, Any]
+) -> str | None:
+    if status.get("resize"):
+        return "reported Pod resize"
+    conditions = status.get("conditions") or []
+    if not isinstance(conditions, list) or len(conditions) > MAX_CONTAINERS:
+        raise AppError("Invalid or excessive Pod conditions.")
+    for condition in conditions:
+        condition = _object(condition)
+        if (
+            condition.get("type") in {"PodResizePending", "PodResizeInProgress"}
+            and condition.get("status") != "False"
+        ):
+            return "Pod resize active or unconfirmed"
+    declared = {entry["name"]: _object(entry.get("resources")) for entry in declarations}
+    if len(declared) != len(declarations):
+        return "ambiguous declared container identity"
+    seen: set[str] = set()
+    for entry in statuses:
+        entry = _object(entry)
+        name = entry.get("name")
+        if not isinstance(name, str) or name not in declared or name in seen:
+            return "unconfirmed container allocation identity"
+        seen.add(name)
+        requested = _resources(declared[name].get("requests"))
+        allocated = entry.get("allocatedResources")
+        if allocated is not None and _contradicts(allocated, requested, compute_only=True):
+            return "declared/allocated container requests differ"
+        enacted = entry.get("resources")
+        if enacted is not None:
+            if not isinstance(enacted, dict):
+                return "invalid enacted container resources"
+            for field in ("requests", "limits"):
+                actual = enacted.get(field)
+                if actual is not None and _contradicts(
+                    actual, _resources(declared[name].get(field))
+                ):
+                    return "declared/enacted container resources differ"
+    pod_allocated = status.get("allocatedResources")
+    if pod_allocated is not None:
+        requests: dict[str, Decimal | None] = {}
+        for resources in declared.values():
+            for key, value in _resources(resources.get("requests")).items():
+                previous = requests.get(key, ZERO)
+                requests[key] = (
+                    previous + value if previous is not None and value is not None else None
+                )
+        if _contradicts(pod_allocated, requests, compute_only=True):
+            return "declared/allocated Pod requests differ"
+    pod_resources = status.get("resources")
+    if pod_resources is not None and not isinstance(pod_resources, dict):
+        return "invalid Pod-level allocation resources"
+    if pod_resources:
+        return "unconfirmed Pod-level allocation"
+    return None
+
+
 def pod_budget(record: ResourceRecord) -> MetricReport:
     manifest = record.manifest
     spec, status = _object(manifest.get("spec")), _object(manifest.get("status"))
@@ -250,19 +322,6 @@ def pod_budget(record: ResourceRecord) -> MetricReport:
     statuses = status.get("containerStatuses") or []
     if not isinstance(statuses, list) or len(statuses) > MAX_CONTAINERS:
         raise AppError("Invalid or excessive observed container statuses.")
-    # These budgets require scheduler/resize-aware allocation semantics. Do not
-    # present the naive app-container sum as the effective Pod reservation.
-    uncertain = bool(
-        spec.get("initContainers")
-        or spec.get("overhead")
-        or spec.get("resources")
-        or status.get("resize")
-        or status.get("allocatedResources")
-        or any(
-            _object(entry).get("allocatedResources") or _object(entry).get("resources")
-            for entry in statuses
-        )
-    )
     keys = {"cpu", "memory"}
     for declaration in (*declarations, *_entries(spec.get("initContainers") or [])):
         for field in ("requests", "limits"):
@@ -272,6 +331,18 @@ def pod_budget(record: ResourceRecord) -> MetricReport:
     keys.update(_resources(spec.get("overhead")))
     if len(keys) > MAX_RESOURCES:
         raise AppError("Excessive Pod resource keys.")
+    # Complex Pod allocation remains deliberately uncertain. Ordinary status
+    # fields describe normal admission too; their mere presence is not resize.
+    problem = (
+        "init/sidecar Pod budget"
+        if spec.get("initContainers")
+        else "Pod overhead"
+        if spec.get("overhead")
+        else "Pod-level budget"
+        if spec.get("resources")
+        else _allocation_problem(declarations, statuses, status)
+    )
+    uncertain = problem is not None
     values = {
         key: _sum(
             tuple(_budget(item.get("resources"), key, uncertain=uncertain) for item in declarations)
@@ -281,9 +352,7 @@ def pod_budget(record: ResourceRecord) -> MetricReport:
     return MetricReport(
         cpu=values["cpu"],
         memory=values["memory"],
-        detail="uncertain Pod allocation (init/sidecar/overhead/Pod budget/resize)"
-        if uncertain
-        else "",
+        detail="uncertain Pod allocation · " + problem if problem is not None else "",
         extended=tuple((key, values[key]) for key in sorted(keys - {"cpu", "memory"})),
     )
 
@@ -350,6 +419,11 @@ def pod_sample(pod: ResourceRecord, sample: ResourceRecord | None, now: datetime
         for entry in _entries(spec.get("initContainers") or [])
         if entry.get("restartPolicy") == "Always"
     )
+    status = _object(pod.manifest.get("status"))
+    for field in ("initContainerStatuses", "ephemeralContainerStatuses"):
+        for entry in _entries(status.get(field) or []):
+            if isinstance(_object(entry.get("state")).get("running"), dict):
+                expected.add(entry["name"])
     seen: set[str] = set()
     containers = []
     for entry in _entries(data.get("containers")):
@@ -375,6 +449,7 @@ def pod_sample(pod: ResourceRecord, sample: ResourceRecord | None, now: datetime
                     replace(memory, usage=usage.get("memory") if valid else None),
                     timestamp,
                     window,
+                    detail=budget.detail,
                 ),
             )
         )

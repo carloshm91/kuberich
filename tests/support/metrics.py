@@ -1,6 +1,7 @@
 """Synthetic current samples; metrics objects deliberately omit UID/resourceVersion."""
 
-from datetime import UTC, datetime
+from copy import deepcopy
+from datetime import UTC, datetime, timedelta
 
 from kuberich.domain.resources import ApiResource, ResourceSnapshot, resource_record
 from tests.support.pods import pod, record
@@ -132,3 +133,14 @@ def sample_list(*values, version="v1", name="pods"):
         "metadata": {},
         "items": list(values),
     }
+
+
+def admitted(name="api", **kwargs):
+    """Ordinary admitted Pod with both normal kubelet allocation status fields."""
+    kwargs.setdefault("created", NOW - timedelta(minutes=1))
+    value = budgeted(name, **kwargs)
+    declared = value["spec"]["containers"][0]["resources"]
+    observed = value["status"]["containerStatuses"][0]
+    observed["allocatedResources"] = deepcopy(declared["requests"])
+    observed["resources"] = deepcopy(declared)
+    return value

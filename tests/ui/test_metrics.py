@@ -12,7 +12,7 @@ from kuberich.domain.containers import CONTAINER_COLUMNS
 from kuberich.domain.pods import PodColumn
 from kuberich.services.metrics import MetricsPoller
 from kuberich.ui.containers import ContainerScreen
-from tests.support.metrics import budgeted, metric_roots, sample, sample_list
+from tests.support.metrics import admitted, budgeted, metric_roots, sample, sample_list
 from tests.support.resources import collection
 from tests.support.workspace import stable_watch, wait_for, workspace_api
 from tests.ui.test_logs import app_for, ns
@@ -36,7 +36,9 @@ async def test_live_metrics_refresh_numeric_sort_keep_uid_and_container_status_a
     monkeypatch.setattr(
         "kuberich.ui.containers.datetime", SimpleNamespace(now=lambda timezone: clock[0])
     )
-    values = (budgeted("api"), budgeted("worker"))
+    values = tuple(
+        admitted(name, created=clock[0] - timedelta(minutes=1)) for name in ("api", "worker")
+    )
 
     async def handler(request):
         if request.path.startswith("/apis/metrics.k8s.io/"):
@@ -69,6 +71,9 @@ async def test_live_metrics_refresh_numeric_sort_keep_uid_and_container_status_a
                         and str(app.resources.get_cell("owned-api", "cpu")) == "9"
                     )
                 )
+                assert str(app.resources.get_cell("owned-api", "cpu-req")) == "100"
+                assert str(app.resources.get_cell("owned-api", "cpu-percent-request")) == "9"
+                assert str(app.resources.get_cell("owned-api", "cpu-percent-limit")) == "0.9"
                 app.resources.set_sort(PodColumn.CPU)
                 await pilot.pause()
                 assert [row.key.value for row in app.resources.ordered_rows] == [
@@ -85,6 +90,8 @@ async def test_live_metrics_refresh_numeric_sort_keep_uid_and_container_status_a
                     "owned-api",
                 ]
                 assert app.resources.selected_uid == selected == "owned-api"
+                assert str(app.resources.get_cell("owned-api", "cpu-percent-request")) == "200"
+                assert str(app.resources.get_cell("owned-api", "cpu-percent-limit")) == "20"
                 await pilot.press("enter")
                 screen = app.screen
                 assert isinstance(screen, ContainerScreen)

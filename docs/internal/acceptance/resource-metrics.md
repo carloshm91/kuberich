@@ -111,3 +111,46 @@ exercise actual horizontal overflow before the unchanged `l`, `x` and `s`
 shortcuts, preserving selected UID and both viewports. The initial-sample modal
 also expires without any subsequent observation. Complete corrected source and
 owned-kind results remain pending until their recorded commands finish.
+
+## Ordinary admitted allocation status
+
+The second frozen campaign at `c39ac6d9ff1689a5a77e4ad51ae45f3cd841e3c0`
+was interrupted before editing after version-specific source review identified
+that ordinary admission/enactment status had been mistaken for resize evidence.
+Its separate report/after archive and cancellation receipt record exit 130,
+reaping, a drained group without forced kill, and no remaining process under its
+owned source/fixture directories. No result from that interrupted campaign is a
+passing qualification claim.
+
+The corrected decision matches unique declared container names, then compares
+only explicitly reported bounded quantities numerically. `allocatedResources`
+is compute-request telemetry; `resources` provides enacted requests/limits.
+Equivalent units match. Missing optional fields, subsets and omitted extended
+telemetry do not create false resize flags or replace admitted GPU requests.
+Genuine contradictions, malformed/ambiguous identities, invalid values, explicit
+resize, and True/Unknown PodResizePending/PodResizeInProgress remain uncertain;
+False resize conditions do not trigger uncertainty. Zero, absence and unlimited
+limits retain their distinct declaration/display semantics.
+
+Primary references: [Kubernetes v1.36.4 API types](https://github.com/kubernetes/kubernetes/blob/v1.36.4/staging/src/k8s.io/api/core/v1/types.go)
+and [the kubelet status producer](https://github.com/kubernetes/kubernetes/blob/v1.36.4/pkg/kubelet/kubelet_pods.go).
+These were consulted to separate ordinary admitted/enacted state from resize
+evidence and to avoid whole-map equality against optional telemetry.
+
+The real-shaped HTTP positive asserts known numeric budgets and 250%/25% CPU
+and 200%/50% memory request/limit percentages with equivalent-unit status fields.
+The live Pilot uses ordinary admitted status while refreshing numeric percentages.
+A subset/omitted-GPU/unlimited-limit witness preserves declaration values.
+Active init/debug containers missing a sample remain partial rather than a full
+usage percentage. All new deterministic modules retain 100% focused line and
+branch coverage after **165** cases; the expanded container/shell family then
+passed **211** cases with the changed container module also at 100% lines/branches.
+
+The owned standard-resource trial now creates two controlled Pods in its own
+namespace: an ordinary Pod with explicit 100m/1 CPU and 32Mi/128Mi memory budgets,
+and a separate init Pod with an independently established uncertain allocation.
+It inspects actual kubelet admission/enactment fields, requires exact known report
+and rendered declarations without a Metrics API, and checks actual uncertain
+Pod/Node N/A cells. Filtered status/report observations are retained before those
+assertions so a real-shape failure cannot disappear during cluster cleanup.
+The owned trial and final full source qualification are pending their actual runs.

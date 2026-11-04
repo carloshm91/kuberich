@@ -953,7 +953,9 @@ async def verify(
         )
         workspace_evidence = await verify_workspace(catalog, path, context)
         pod_evidence = await verify_pod_table(reader, pods, catalog, path, context)
-        standard_evidence = await verify_standard_resources(reader, catalog, path, context)
+        standard_evidence = await verify_standard_resources(
+            reader, catalog, path, context, evidence_dir=evidence_dir
+        )
         navigation_evidence = await verify_container_navigation(
             CoreV1Api(sessions.client.api), catalog, path, context
         )

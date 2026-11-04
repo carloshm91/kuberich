@@ -190,7 +190,7 @@ class MetricsPoller:
     def _missing(self, name: str) -> MetricsSnapshot:
         forbidden = any(
             issue.reason == "forbidden"
-            and (issue.source == "/apis" or issue.source.startswith("metrics.k8s.io"))
+            and (issue.source == "/apis" or issue.source.partition("/")[0] == "metrics.k8s.io")
             for issue in self.discovery.issues
         )
         return MetricsSnapshot(

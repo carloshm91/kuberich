@@ -158,7 +158,10 @@ Pod allocation with init containers, sidecars, overhead, a Pod-level resource
 budget or an observed resize is explicitly uncertain: usage stays available,
 but effective Pod request/limit totals and their percentages show `N/A (budget)`
 or `N/A`. Container percentages still use that container's declared budget.
-These values do not claim scheduler reservations. Extended resource fields show
+Known requests/limits describe admitted declarations, rather than proof that a
+resize has finished. Matching ordinary status fields and omitted optional
+telemetry preserve those declarations; a reported contradiction or active or
+unconfirmed resize marks allocation uncertain. These values do not claim scheduler reservations. Extended resource fields show
 vendor-neutral declared requests/limits and Node capacity/allocatable values;
 the CPU/memory Metrics API provides no GPU utilization. Collection payload/row
 limits still apply. Historical charts and Prometheus metrics are unavailable.

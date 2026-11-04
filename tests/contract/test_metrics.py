@@ -112,6 +112,10 @@ async def test_http_availability_retains_requests_and_never_becomes_zero(tmp_pat
         ((DiscoveryIssue("/apis", "forbidden", 403),), MetricStatus.FORBIDDEN),
         ((DiscoveryIssue("metrics.k8s.io/v1", "forbidden", 403),), MetricStatus.FORBIDDEN),
         ((DiscoveryIssue("other.test/v1", "forbidden", 403),), MetricStatus.UNAVAILABLE),
+        (
+            (DiscoveryIssue("metrics.k8s.io.example/v1", "forbidden", 403),),
+            MetricStatus.UNAVAILABLE,
+        ),
     ],
 )
 async def test_missing_discovered_api_differs_from_forbidden_discovery_and_no_sample(
@@ -584,3 +588,31 @@ async def test_node_poller_includes_only_scheduled_nonterminal_pod_requests(tmp_
         assert report.cpu.usage == Decimal("1.5") and report.cpu.request == Decimal(".1")
         assert report.cpu.percent("allocatable") == 50
         assert report.cpu.percent("request") == 1500
+
+
+@pytest.mark.asyncio
+async def test_real_http_admitted_status_with_equivalent_units_keeps_ordinary_percentages(tmp_path):
+    from tests.support.metrics import admitted
+
+    value = admitted()
+    observed = value["status"]["containerStatuses"][0]
+    observed["allocatedResources"] = {"cpu": "0.1", "memory": "33554432"}
+    observed["resources"] = {
+        "requests": {"cpu": "100000000n", "memory": "32768Ki"},
+        "limits": {"cpu": "1000m", "memory": "134217728"},
+    }
+    selected = snapshot(value)
+
+    async def handler(request):
+        return web.json_response(sample_list(sample()))
+
+    async with reader_fixture(tmp_path, handler) as reader:
+        result = await poller_for(
+            reader, Discovery((pod_resource(), metric_resource())), selected
+        ).poll(selected)
+        report = result.report("owned-api", NOW)
+        assert report.status is MetricStatus.VALID and not report.cpu.uncertain
+        assert report.cpu.request == Decimal(".1") and report.cpu.limit == 1
+        assert report.memory.request == 32 * 2**20 and report.memory.limit == 128 * 2**20
+        assert report.cpu.percent("request") == 250 and report.cpu.percent("limit") == 25
+        assert report.memory.percent("request") == 200 and report.memory.percent("limit") == 50

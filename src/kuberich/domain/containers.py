@@ -165,7 +165,7 @@ def container_rows(
                     name,
                     MetricReport(
                         metrics.status
-                        if metrics.status is not MetricStatus.VALID
+                        if metrics.status not in {MetricStatus.VALID, MetricStatus.PARTIAL}
                         else MetricStatus.NO_SAMPLE,
                         detail=metrics.detail,
                     ),

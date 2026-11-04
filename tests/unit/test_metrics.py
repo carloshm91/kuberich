@@ -450,3 +450,209 @@ def test_observed_container_status_payloads_are_bounded(statuses):
     value["status"]["containerStatuses"] = statuses
     with pytest.raises(AppError, match="observed container statuses"):
         pod_budget(record(value))
+
+
+def test_ordinary_admitted_status_fields_preserve_known_budgets_and_percentages_with_equivalent_units():
+    from tests.support.metrics import admitted
+
+    value = admitted()
+    observed = value["status"]["containerStatuses"][0]
+    observed["allocatedResources"] = {"cpu": ".1", "memory": "33554432"}
+    observed["resources"] = {
+        "requests": {"cpu": "100000000n", "memory": "32768Ki"},
+        "limits": {"cpu": "1000m", "memory": "134217728"},
+    }
+    value["status"]["allocatedResources"] = {"cpu": "1e-1", "memory": "32Mi"}
+    result = pod_sample(record(value), sampled(), NOW)
+    assert not result.cpu.uncertain and not result.memory.uncertain and not result.detail
+    assert result.cpu.request == D(".1") and result.cpu.limit == 1
+    assert result.memory.request == 32 * 2**20 and result.memory.limit == 128 * 2**20
+    assert result.value("cpu-percent-request") == ("250", D(250))
+    assert result.value("cpu-percent-limit") == ("25", D(25))
+    assert result.value("memory-percent-request") == ("200", D(200))
+    assert result.value("memory-percent-limit") == ("50", D(50))
+
+
+def test_optional_subset_status_and_omitted_extended_telemetry_do_not_remove_declared_percentages_or_unlimited_limits():
+    value = budgeted(limit=None)
+    declaration = value["spec"]["containers"][0]["resources"]
+    declaration["requests"]["vendor.example/device"] = "2"
+    declaration["limits"]["vendor.example/device"] = "2"
+    observed = value["status"]["containerStatuses"][0]
+    observed["allocatedResources"] = {"cpu": ".1"}
+    observed["resources"] = {"requests": {"cpu": "1e-1"}}
+    result = pod_sample(record(value), sampled(), NOW)
+    assert not result.cpu.uncertain and result.cpu.request == D(".1")
+    assert result.value("cpu-percent-request")[1] == 250
+    assert result.value("cpu-lim") == ("unlimited", None)
+    assert result.value("cpu-percent-limit") == ("N/A", None)
+    assert dict(result.extended)["vendor.example/device"].request == 2
+    assert "vendor.example/device req=2 lim=2" in result.value("extended")[0]
+    # allocatedResources is request telemetry, not an enacted limit map or a
+    # replacement for the admitted non-resizable GPU declaration.
+    observed["allocatedResources"]["vendor.example/device"] = "3"
+    assert not pod_budget(record(value)).cpu.uncertain
+
+
+@pytest.mark.parametrize(
+    "observed",
+    [
+        {},
+        {"allocatedResources": None, "resources": None},
+        {"allocatedResources": {}, "resources": {}},
+        {"resources": {"requests": None, "limits": {}}},
+    ],
+)
+def test_absent_optional_status_is_not_resize_evidence(observed):
+    value = budgeted()
+    value["status"]["containerStatuses"][0].update(observed)
+    assert not pod_budget(record(value)).cpu.uncertain
+
+
+def test_container_statuses_match_names_not_positions_and_pod_allocated_requests_compare_numerically():
+    value = budgeted()
+    value["spec"]["containers"].append(
+        {
+            "name": "worker",
+            "resources": {
+                "requests": {"cpu": "200m", "memory": "16Mi"},
+                "limits": {"cpu": "2", "memory": "64Mi"},
+            },
+        }
+    )
+    value["status"]["containerStatuses"] = [
+        {"name": "worker", "allocatedResources": {"cpu": ".2"}},
+        {"name": "app", "resources": {"requests": {"cpu": ".1"}}},
+    ]
+    value["status"]["allocatedResources"] = {"cpu": "300m", "memory": "49152Ki"}
+    result = pod_sample(
+        record(value),
+        sampled(
+            sample(
+                containers=[
+                    {"name": "app", "usage": {"cpu": "250m", "memory": "64Mi"}},
+                    {"name": "worker", "usage": {"cpu": "500m", "memory": "32Mi"}},
+                ]
+            )
+        ),
+        NOW,
+    )
+    assert not result.cpu.uncertain and result.cpu.request == D(".3")
+    assert result.cpu.percent("request") == 250 and result.memory.percent("request") == 200
+
+
+@pytest.mark.parametrize(
+    "observed",
+    [
+        {"allocatedResources": {"cpu": "200m"}},
+        {"allocatedResources": {"memory": "32M"}},
+        {"allocatedResources": {"cpu": "NaN"}},
+        {"allocatedResources": []},
+        {"resources": []},
+        {"resources": {"requests": {"cpu": "200m"}}},
+        {"resources": {"limits": {"cpu": "0"}}},
+        {"resources": {"limits": {"memory": "64Mi"}}},
+        {"resources": {"limits": {"cpu": "Infinity"}}},
+        {"resources": {"requests": []}},
+        {"name": "unknown"},
+        {"name": None},
+    ],
+)
+def test_genuine_allocation_contradictions_and_invalid_identities_stay_uncertain(observed):
+    value = budgeted()
+    value["status"]["containerStatuses"][0].update(observed)
+    result = pod_sample(record(value), sampled(), NOW)
+    assert result.cpu.usage == D(".25") and result.cpu.request == D(".1")
+    assert result.cpu.uncertain and result.value("cpu-req") == ("N/A (budget)", None)
+    assert result.value("cpu-percent-request") == ("N/A", None)
+    assert "uncertain Pod allocation" in result.detail
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "duplicate_status",
+        "invalid_status",
+        "duplicate_declaration",
+        "pod_mismatch",
+        "pod_invalid",
+        "pod_resource_invalid",
+        "pod_resources",
+        "invalid_declared",
+        "invalid_previous_sum",
+    ],
+)
+def test_ambiguous_or_invalid_allocation_status_never_confirms_a_budget(mutation):
+    value = budgeted()
+    if mutation == "duplicate_status":
+        value["status"]["containerStatuses"] *= 2
+    elif mutation == "invalid_status":
+        value["status"]["containerStatuses"] = [False]
+    elif mutation == "duplicate_declaration":
+        value["spec"]["containers"] *= 2
+    elif mutation == "pod_mismatch":
+        value["status"]["allocatedResources"] = {"cpu": "200m"}
+    elif mutation == "pod_invalid":
+        value["status"]["allocatedResources"] = []
+    elif mutation == "pod_resource_invalid":
+        value["status"]["resources"] = 0
+    elif mutation == "pod_resources":
+        value["status"]["resources"] = {"requests": {"cpu": "1"}}
+    else:
+        value["spec"]["containers"][0]["resources"]["requests"]["cpu"] = "invalid"
+        if mutation == "invalid_previous_sum":
+            value["spec"]["containers"].append(
+                {"name": "worker", "resources": {"requests": {"cpu": "100m"}}}
+            )
+        value["status"]["allocatedResources"] = {"cpu": "100m"}
+    assert pod_budget(record(value)).cpu.uncertain
+
+
+@pytest.mark.parametrize("kind", ["PodResizePending", "PodResizeInProgress"])
+@pytest.mark.parametrize(
+    "condition,uncertain", [("True", True), ("False", False), ("Unknown", True)]
+)
+def test_resize_conditions_distinguish_active_false_and_unknown(kind, condition, uncertain):
+    value = budgeted()
+    value["status"]["conditions"] = [{"type": kind, "status": condition}]
+    result = pod_sample(record(value), sampled(), NOW)
+    assert result.cpu.uncertain is uncertain
+    assert (result.cpu.percent("request") is None) is uncertain
+    if uncertain:
+        assert "resize" in result.detail
+
+
+@pytest.mark.parametrize("conditions", [True, [{}] * (MAX_CONTAINERS + 1)])
+def test_resize_condition_payloads_are_bounded(conditions):
+    value = budgeted()
+    value["status"]["conditions"] = conditions
+    with pytest.raises(AppError, match="Pod conditions"):
+        pod_budget(record(value))
+
+
+def test_zero_and_unlimited_enacted_limits_remain_distinct():
+    value = budgeted(request="0", limit="0")
+    value["status"]["containerStatuses"][0]["resources"] = {
+        "requests": {"cpu": "0m"},
+        "limits": {"cpu": "0"},
+    }
+    result = pod_sample(record(value), sampled(), NOW)
+    assert not result.cpu.uncertain and result.cpu.request == result.cpu.limit == 0
+    assert result.value("cpu-lim") == ("0", D(0)) and result.cpu.percent("limit") is None
+    value = budgeted(limit=None)
+    value["status"]["containerStatuses"][0]["resources"] = {"limits": {"cpu": "0"}}
+    result = pod_sample(record(value), sampled(), NOW)
+    assert result.cpu.unlimited and result.cpu.limit is None and result.cpu.uncertain
+
+
+@pytest.mark.parametrize("field", ["initContainerStatuses", "ephemeralContainerStatuses"])
+def test_running_init_and_debug_members_without_samples_are_partial(field):
+    value = budgeted()
+    declaration = "initContainers" if field == "initContainerStatuses" else "ephemeralContainers"
+    value["spec"][declaration] = [{"name": "debug"}]
+    value["status"][field] = [{"name": "debug", "state": {"running": {}}}]
+    result = pod_sample(record(value), sampled(), NOW)
+    assert result.status is MetricStatus.PARTIAL and "1/2 containers" in result.detail
+    assert result.cpu.usage == D(".25") and result.cpu.percent("request") is None
+    value["status"][field][0]["state"] = {"terminated": {"exitCode": 0}}
+    assert pod_sample(record(value), sampled(), NOW).status is MetricStatus.VALID

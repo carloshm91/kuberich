@@ -179,3 +179,18 @@ def test_ports_are_bounded_and_bad_entries_are_not_interpreted_as_declarations()
 def test_invalid_or_duplicate_declarations_preserve_existing_validation():
     with pytest.raises(AppError, match="Duplicate"):
         container_rows({"spec": {"containers": [{"name": "app"}, {"name": "app"}]}})
+
+
+def test_missing_active_debug_sample_is_no_sample_in_container_rows():
+    from kuberich.domain.metrics import MetricStatus, pod_sample
+    from tests.support.metrics import NOW, budgeted, sampled
+    from tests.support.pods import record
+
+    value = budgeted()
+    value["spec"]["ephemeralContainers"] = [{"name": "debug"}]
+    value["status"]["ephemeralContainerStatuses"] = [{"name": "debug", "state": {"running": {}}}]
+    parent = pod_sample(record(value), sampled(), NOW)
+    assert parent.status is MetricStatus.PARTIAL
+    app, debug = container_rows(value, parent)
+    assert app.metrics.status is MetricStatus.VALID and app.metrics.cpu.usage is not None
+    assert debug.metrics.status is MetricStatus.NO_SAMPLE and debug.metrics.cpu.usage is None
