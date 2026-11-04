@@ -1,13 +1,21 @@
 """Public aggregate viewer keys in actual source and fresh-installed terminal sessions."""
 
+import base64
+import json
+import re
 import threading
 
+from kuberich.domain.clipboard import MAX_OSC52_BYTES
 from tests.support.terminal_api import Server, config
 from tests.terminal.pty_support import TerminalSession
 
 
 def terminal_aggregate_logs(command, directory, evidence):
     server = Server()
+    # Three live readers retain exactly 80 initial records each. Hold further
+    # owned follow output so copy success never races the OSC52 backend bound.
+    # Existing server.stopping still interrupts every handler's wait on exit.
+    server.log_follow_gate.clear()
     server.pod_table.set()
     server.quiet_watches.set()
     server.shell_containers = ("sidecar", "debug")
@@ -28,7 +36,8 @@ def terminal_aggregate_logs(command, directory, evidence):
             terminal.wait_for(b"Aggregated logs", since=marker)
             terminal.wait_for(b"3/8 readers", since=marker)
             terminal.wait_for(b"uid=owned-default-000", since=marker)
-            terminal.resize(220, 30)
+            marker = terminal.resize(220, 30)
+            terminal.wait_for_screen("240 retained", since=marker)
             marker = terminal.send(b"J")
             terminal.wait_for(b'"source":', since=marker)
             marker = terminal.send(b"t")
@@ -39,6 +48,24 @@ def terminal_aggregate_logs(command, directory, evidence):
             terminal.wait_for(b"Matching line", since=marker)
             marker = terminal.send(b"\x19")
             terminal.wait_for(b"Retained redacted logs copied", since=marker)
+            copied = re.search(rb"\x1b\]52;c;([^\x07]+)\x07", terminal.transcript[marker:])
+            assert copied is not None, "Copy notice requires an actual OSC52 clipboard frame"
+            payload = base64.b64decode(copied[1], validate=True)
+            assert len(payload) <= MAX_OSC52_BYTES
+            records = [json.loads(line) for line in payload.splitlines()]
+            assert len(records) == 240
+            assert {record["source"]["container"] for record in records} == {
+                "app",
+                "sidecar",
+                "debug",
+            }
+            assert all(
+                record["source"]["uid"] == "owned-default-000"
+                and record["source"]["namespace"] == "default"
+                and "[REDACTED]" in record["payload"]
+                for record in records
+            )
+            assert b"log-line-000" in payload and b"hidden-log-token" not in payload
             marker = terminal.send(b"c")
             terminal.wait_for(b"Log sources", since=marker)
             marker = terminal.send(b"\r")
