@@ -1176,3 +1176,15 @@ is held. Scope/context/exit contracts close actual local HTTP reads and preserve
 the synthetic kubeconfig. Full source verification is recorded separately in
 [resource metrics acceptance](acceptance/resource-metrics.md); this focused
 checkpoint does not claim hosted/native/provider or release qualification.
+
+The later owned context/native-resource trial passed in **83.7 seconds** on
+frozen `a553ab6`, including exact real ordinary-Pod budget cells and independently
+uncertain init/Node allocation cells. The complete local suite retained
+**7,450 passed / 1 fixture-size failure / 5 native-only skips**; its valid OSC52
+oversize refusal exposed an unbounded success-copy fixture. The corrected
+source/installed-console/installed-module and refusal family passed **54 cases
+with 1 macOS-only skip**, requiring actual decoded 54,611-byte clipboard frames
+and terminal cleanup. The [acceptance record](acceptance/resource-metrics.md#owned-trial-and-retained-full-source-results)
+has the exact commands, failed-suite coverage measurements and original failure
+receipts. Current-head hosted qualification remains pending; these focused
+corrections do not convert the original failed campaign into a pass.

@@ -184,4 +184,85 @@ metrics projection and container rows:
 uv run pytest tests/unit/test_metrics.py tests/unit/test_container_rows.py tests/contract/test_metrics.py tests/ui/test_metrics.py tests/ui/test_shell.py tests/unit/test_metrics_projection.py -q -n 4 --tb=short --cov=kuberich.domain.metrics --cov=kuberich.domain.quantities --cov=kuberich.services.metrics_projection --cov=kuberich.domain.containers --cov-branch --cov-report=json:artifacts/issue68/pod-status-complete-focused-coverage.json
 ```
 
-The corrected owned trial and final full source qualification remain pending.
+## Owned trial and retained full-source results
+
+The corrected owned context/native-resource trial passed in **83.7 seconds** on
+clean frozen `a553ab63bb354c76fc3b36a7b280bf1453375f77`:
+
+```sh
+uv run python -m scripts.verify_contexts_kind --kind /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kind --evidence artifacts/issue68/kind-qualification-2/evidence.json
+```
+
+The ordinary Pod's real Pod/container allocation fields matched its admitted
+100m/1 CPU and 32Mi/128Mi memory budgets. Both report and rendered cells were
+numeric with allocation uncertainty false, even without a Metrics API. The
+independent init Pod and Node allocation cells were explicitly uncertain.
+The same trial exercised all 15 native resource families, UID/watch/inspection
+round trips, context changes, container navigation, TLS and log cleanup.
+The unique owned cluster was deleted with absence verified; its dedicated
+kubeconfig directory and owner/child processes were gone. Docker inventory was
+unchanged. Filtered real status, rendered/report assertions and cleanup receipts
+are retained under `artifacts/issue68/kind-qualification-2/`.
+
+One complete source campaign then ran against the same clean frozen source:
+
+```sh
+uv run python scripts/qualify.py 0.3.0 --output artifacts/issue68/source-qualification-3 --base b1f00706ff3448cded7818633c84ed77e3ca83af --workers 6 --repetitions 1
+```
+
+Ruff, formatting, private-access checks, the strict workflow type target union
+and startup contracts passed. Offline/UI startup latency targets were missed
+and retained as advisory 0.x observations. Full pytest finished with
+**7,450 passed, 1 failed and 5 explicit native-only skips** in 1,360.08 seconds.
+The failed command is retained as failed; the coordinator stopped before its
+remaining gates. Its source was unchanged and every owned process group was
+drained/reaped without forced kill. Independent cleanup found no remaining
+owned process or live retained PID witness.
+
+The sole failure was the installed-console aggregate-log success-copy fixture.
+Its continuously growing three-source JSON payload reached 302 retained records.
+The actual ANSI contains the correct **64 KiB OSC52 backend refusal**, followed
+by a normal source update, and no clipboard frame. This establishes a fixture
+size race rather than a missed copy dispatch. The original failure ANSI/JSON,
+terminal restoration and cleanup witnesses remain under
+`artifacts/terminal/failure-1793823150790247167.*` and the campaign's after archive.
+
+Numerical checks over that **retained failed-suite measurement**, while its
+source was still clean, found **98.709% source lines, 95.733% source branches,
+100% of every configured critical module, and 99.29% changed lines** against
+`b1f00706ff3448cded7818633c84ed77e3ca83af`, with no exclusions. These are not
+current-head qualification or a passing full campaign. The original coordinator,
+nonce and source receipts were not rewritten or rebound.
+
+## Deterministic clipboard fixture correction
+
+A fixture-only follow-output gate now holds the three real HTTP readers open
+after exactly 80 initial records each. Waiting for the observed 240-record
+state establishes a known safely bounded success-copy payload. The gate defaults
+open for other fixtures, and the existing stop event still interrupts every
+handler. The test requires the actual decoded OSC52 payload, all 240 records,
+three container identities, the captured Pod UID, redaction, the unchanged
+65,536-byte backend bound, a rendered copy notice, and terminal restoration.
+
+The affected source, freshly installed console/module and clipboard refusal
+family passed **54 cases with 1 explicit macOS-only skip** in 26.74 seconds:
+
+```sh
+uv run pytest tests/terminal/test_aggregate_logs.py tests/packaging/test_distribution.py::test_installed_aggregate_logs_and_terminal_restore tests/unit/test_clipboard.py tests/ui/test_clipboard.py tests/contract/test_clipboard.py -q -n 4 --no-cov --tb=short --basetemp=/tmp/kuberich68-bounded-aggregate-pytest --junitxml=artifacts/issue68/bounded-aggregate-family.xml
+```
+
+All three PTY variants emitted exactly **54,611 bytes / 240 JSON records**,
+with three expected container identities, the correct Pod UID, no hidden token,
+a rendered success notice, exit 0 and restored terminal/cursor/alternate-screen
+state. Ownership cleanup found no remaining process. Evidence is in
+`artifacts/issue68/bounded-aggregate-family-evidence.json` and its log/XML.
+Ruff, formatting, the strict workflow type target union (238 source files),
+private-access checks, plan/generated-reference checks and six documentation
+contract cases passed after the fixture correction.
+Production runtime remains the tested `a553ab6` source; the correction changes
+only the owned fixture and acceptance/preview records. No production cap,
+deadline or refusal control was weakened, and no full local coordinator or kind
+repetition was run solely for this fixture correction. Current-head required
+hosted full-suite/runtime/coverage/build gates remain pending integration of the
+incoming release-activation base and the next PR push. Real provider and native
+platform qualification are not claimed by these Linux results.
