@@ -34,6 +34,15 @@ def terminal_navigation(command, directory, *, evidence, initial_scope=False):
             marker = terminal.send(b":ctx\r")
             terminal.wait_for_screen("contexts[1]", since=marker)
             terminal.wait_for_screen("AUTHINFO", since=marker)
+            # A PTY read can stop during a context-header repaint, after an
+            # earlier AUTHINFO cell is visible but before CLUSTER is complete.
+            deadline = time.monotonic() + 10
+            while not any(
+                "NAME" in line and "CLUSTER" in line and "AUTHINFO" in line
+                for line in terminal.screen.display
+            ):
+                terminal.read()
+                assert time.monotonic() < deadline, "Context header did not finish rendering"
             assert any("NAME" in line and "CLUSTER" in line for line in terminal.screen.display)
             marker = terminal.send(b"\r")
             terminal.wait_for_screen("pods(", since=marker, absent=("contexts[",))
