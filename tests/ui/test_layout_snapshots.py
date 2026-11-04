@@ -59,7 +59,9 @@ async def test_layout_and_rendered_evidence(
             assert app.resources.max_scroll_x > 0
             await pilot.press("right", "end")
             assert app.resources.scroll_x > 0
-            assert "AGE" in app.export_screenshot()
+            # End exposes the new rightmost status column; AGE remains in the schema.
+            assert "age" in app.resources.columns
+            assert "METRICS" in app.export_screenshot()
         await pilot.press("question_mark")
         help_svg = app.export_screenshot(title=f"KubeRich {name} help")
         (output / f"help-{name}.svg").write_text(help_svg)

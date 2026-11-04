@@ -1163,7 +1163,8 @@ Availability states, missing/zero denominators, uncertain complex Pod budgets an
 vendor-neutral extended-resource capacity/requests remain explicit. No Metrics API
 installation, Prometheus, historical chart, package or website publication occurs.
 
-The focused command passed **135 tests** on Linux CPython 3.12.12:
+The initial focused command passed **135 tests** on Linux CPython 3.12.12; later
+source corrections and qualification results are in the acceptance record:
 
 ```sh
 uv run pytest tests/unit/test_metrics.py tests/unit/test_metrics_projection.py tests/contract/test_metrics.py tests/ui/test_metrics.py tests/ui/test_pods.py tests/ui/test_interactions.py -q -n 4 --tb=short

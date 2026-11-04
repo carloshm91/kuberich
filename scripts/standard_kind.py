@@ -217,7 +217,8 @@ async def verify_standard_resources(
                         metric_report.cpu.usage is None and metric_report.cpu.capacity is not None
                     )
                     assert metric_report.cpu.allocatable is not None
-                    assert metric_report.cpu.request is not None
+                    if metric_report.cpu.request is None:
+                        assert metric_report.value("cpu-req")[0] in {"N/A", "N/A (budget)"}
                     assert str(app.standard_table.get_cell(uid, "cpu")) == "N/A"
                 endpoint = resource.path(namespace if resource.namespaced else None) + "/" + name
                 # A real metadata change must arrive over the active WATCH for every family.

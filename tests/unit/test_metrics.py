@@ -376,3 +376,77 @@ def test_resource_key_length_is_bounded():
 )
 def test_subsecond_sampling_windows(window, seconds):
     assert sample_time({"timestamp": NOW.isoformat(), "window": window}, NOW)[1] == D(seconds)
+
+
+@pytest.mark.parametrize(
+    "placement,key",
+    [
+        ("init", "vendor.example/slice"),
+        ("sidecar", "other.test/device"),
+        ("pod", "hugepages-2Mi"),
+        ("overhead", "vendor.example/overhead"),
+    ],
+)
+def test_extended_totals_propagate_complex_allocations_even_when_key_is_absent_from_app_containers(
+    placement, key
+):
+    ordinary = budgeted("ordinary")
+    ordinary["spec"]["containers"][0]["resources"].update(
+        {"requests": {"cpu": "100m", key: "2"}, "limits": {"cpu": "1", key: "2"}}
+    )
+    complex_pod = budgeted("complex")
+    extra = {"requests": {key: "1"}, "limits": {key: "1"}}
+    if placement in {"init", "sidecar"}:
+        complex_pod["spec"]["initContainers"] = [
+            {
+                "name": "initializer",
+                "resources": extra,
+                **({"restartPolicy": "Always"} if placement == "sidecar" else {}),
+            }
+        ]
+    elif placement == "pod":
+        complex_pod["spec"]["resources"] = extra
+    else:
+        complex_pod["spec"]["overhead"] = {key: "1"}
+    normal_report, complex_report = pod_budget(record(ordinary)), pod_budget(record(complex_pod))
+    assert key in dict(complex_report.extended)
+    assert dict(complex_report.extended)[key].uncertain
+    assert f"{key} req=N/A lim=N/A" in complex_report.value("extended")[0]
+    total = aggregate((normal_report, complex_report))
+    assert dict(total.extended)[key].uncertain
+    assert f"{key} req=N/A lim=N/A" in total.value("extended")[0]
+    assert "uncertain budget" in total.value("extended")[0]
+    # An uncertain member with no declaration of this key must not be treated
+    # as a proven zero reservation when another member declares it.
+    unknown = budgeted("unknown")
+    unknown["spec"]["initContainers"] = [{"name": "init"}]
+    missing_key = aggregate((normal_report, pod_budget(record(unknown))))
+    assert dict(missing_key.extended)[key].uncertain
+    assert "req=N/A" in missing_key.value("extended")[0]
+    node = node_record()
+    node_report = node_sample(
+        node, sampled(name="node", namespace=None), (normal_report, complex_report), NOW
+    )
+    assert dict(node_report.extended)[key].uncertain
+    assert "req=N/A" in node_report.value("extended")[0]
+    assert "allocation uncertain" in node_report.detail
+    partial = node_sample(
+        node, sampled(name="node", namespace=None), (normal_report,), NOW, complete=False
+    )
+    assert dict(partial.extended)[key].uncertain and "req=N/A" in partial.value("extended")[0]
+
+
+def test_nullable_optional_container_lists_do_not_crash_metrics_projection():
+    value = budgeted()
+    value["spec"].update(initContainers=None, ephemeralContainers=None)
+    value["status"]["containerStatuses"] = None
+    result = pod_sample(record(value), sampled(), NOW)
+    assert result.status is MetricStatus.VALID and result.cpu.usage == D(".25")
+
+
+@pytest.mark.parametrize("statuses", [True, "malformed", [{}] * (MAX_CONTAINERS + 1)])
+def test_observed_container_status_payloads_are_bounded(statuses):
+    value = budgeted()
+    value["status"]["containerStatuses"] = statuses
+    with pytest.raises(AppError, match="observed container statuses"):
+        pod_budget(record(value))

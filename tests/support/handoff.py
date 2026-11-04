@@ -55,7 +55,7 @@ from kuberich.ui.handoff import terminal_handoff
 scenario = sys.argv[1]
 directory = Path.cwd()
 class HandoffApp(KubeRichApp):
-    BINDINGS = [Binding('h', 'handoff', 'Handoff'), Binding('f12', 'probe', 'Probe', priority=True)]
+    BINDINGS = [Binding('h', 'handoff', 'Handoff', priority=True), Binding('f12', 'probe', 'Probe', priority=True)]
     def __init__(self):
         super().__init__(Settings(read_only=scenario == 'read_only'), logging.getLogger('owned-handoff'))
         self.attempt = 0

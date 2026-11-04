@@ -50,6 +50,10 @@ METRIC_LABELS = {
     "cpu-percent-limit": "CPU%LIM",
     "memory-percent-request": "MEM%REQ",
     "memory-percent-limit": "MEM%LIM",
+    "cpu-capacity": "CPU CAP(m)",
+    "cpu-allocatable": "CPU ALLOC(m)",
+    "memory-capacity": "MEM CAP(MiB)",
+    "memory-allocatable": "MEM ALLOC(MiB)",
     "cpu-percent-allocatable": "CPU%ALLOC",
     "memory-percent-allocatable": "MEM%ALLOC",
 }
@@ -166,7 +170,7 @@ class MetricReport:
         if key == "extended":
             text = (
                 "; ".join(
-                    f"{key} req={number(value.request)} lim={'unlimited' if value.unlimited else number(value.limit)}"
+                    f"{key} req={'N/A' if value.uncertain else number(value.request)} lim={'N/A' if value.uncertain else 'unlimited' if value.unlimited else number(value.limit)}"
                     + (
                         f" cap={number(value.capacity)} alloc={number(value.allocatable)}"
                         if value.capacity is not None or value.allocatable is not None
@@ -212,7 +216,9 @@ def _budget(resources: Any, key: str, *, uncertain: bool = False) -> ResourceAmo
     requests, limits = _object(resources.get("requests")), _object(resources.get("limits"))
     return ResourceAmount(
         request=amount(requests.get(key)) if key in {"cpu", "memory"} or key in requests else ZERO,
-        limit=amount(limits.get(key)) if key in {"cpu", "memory"} or key in limits else ZERO,
+        limit=amount(limits.get(key))
+        if key in {"cpu", "memory"} or key in limits or key in requests
+        else ZERO,
         unlimited=key in {"cpu", "memory"} and key not in limits,
         uncertain=uncertain,
     )
@@ -240,7 +246,10 @@ def _sum(values: tuple[ResourceAmount, ...]) -> ResourceAmount:
 def pod_budget(record: ResourceRecord) -> MetricReport:
     manifest = record.manifest
     spec, status = _object(manifest.get("spec")), _object(manifest.get("status"))
-    declarations = _entries(spec.get("containers", []))
+    declarations = _entries(spec.get("containers") or [])
+    statuses = status.get("containerStatuses") or []
+    if not isinstance(statuses, list) or len(statuses) > MAX_CONTAINERS:
+        raise AppError("Invalid or excessive observed container statuses.")
     # These budgets require scheduler/resize-aware allocation semantics. Do not
     # present the naive app-container sum as the effective Pod reservation.
     uncertain = bool(
@@ -251,13 +260,16 @@ def pod_budget(record: ResourceRecord) -> MetricReport:
         or status.get("allocatedResources")
         or any(
             _object(entry).get("allocatedResources") or _object(entry).get("resources")
-            for entry in status.get("containerStatuses", [])
+            for entry in statuses
         )
     )
     keys = {"cpu", "memory"}
-    for declaration in declarations:
+    for declaration in (*declarations, *_entries(spec.get("initContainers") or [])):
         for field in ("requests", "limits"):
             keys.update(_resources(_object(declaration.get("resources")).get(field)))
+    for field in ("requests", "limits"):
+        keys.update(_resources(_object(spec.get("resources")).get(field)))
+    keys.update(_resources(spec.get("overhead")))
     if len(keys) > MAX_RESOURCES:
         raise AppError("Excessive Pod resource keys.")
     values = {
@@ -330,12 +342,12 @@ def pod_sample(pod: ResourceRecord, sample: ResourceRecord | None, now: datetime
     declared = {
         entry.get("name"): entry
         for field in ("containers", "initContainers", "ephemeralContainers")
-        for entry in _entries(spec.get(field, []))
+        for entry in _entries(spec.get(field) or [])
     }
-    expected = {entry.get("name") for entry in _entries(spec.get("containers", []))}
+    expected = {entry.get("name") for entry in _entries(spec.get("containers") or [])}
     expected.update(
         entry.get("name")
-        for entry in _entries(spec.get("initContainers", []))
+        for entry in _entries(spec.get("initContainers") or [])
         if entry.get("restartPolicy") == "Always"
     )
     seen: set[str] = set()
@@ -423,7 +435,15 @@ def aggregate(reports: tuple[MetricReport, ...], *, complete: bool = True) -> Me
                 key,
                 _sum(
                     tuple(
-                        dict(report.extended).get(key, ResourceAmount(request=ZERO, limit=ZERO))
+                        replace(
+                            dict(report.extended).get(
+                                key, ResourceAmount(request=ZERO, limit=ZERO)
+                            ),
+                            uncertain=report.cpu.uncertain
+                            or report.memory.uncertain
+                            or dict(report.extended).get(key, ResourceAmount()).uncertain
+                            or not complete,
+                        )
                         for report in reports
                     )
                 ),
@@ -488,7 +508,11 @@ def node_sample(
         value("memory"),
         timestamp,
         window,
-        "Pod requests incomplete" if not complete else "",
+        "Pod requests incomplete"
+        if not complete
+        else "Pod allocation uncertain"
+        if requests.cpu.uncertain or requests.memory.uncertain
+        else "",
         tuple(
             (
                 key,
@@ -496,6 +520,10 @@ def node_sample(
                     dict(requests.extended).get(key, ResourceAmount()),
                     capacity=capacity.get(key),
                     allocatable=allocatable.get(key),
+                    uncertain=not complete
+                    or requests.cpu.uncertain
+                    or requests.memory.uncertain
+                    or dict(requests.extended).get(key, ResourceAmount()).uncertain,
                 ),
             )
             for key in sorted(keys)

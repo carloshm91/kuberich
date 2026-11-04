@@ -47,7 +47,7 @@ class ResourceController[T: PodRow | NamespaceRow | ResourceRow]:
         rows = await self.projection.project(request.observation.snapshot)
         return ProjectedRows(
             await parse_owned(partial(with_metrics, rows, request.observation))
-            if self.metrics
+            if self.metrics and rows
             else rows,
             lambda: True,
         )

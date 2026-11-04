@@ -117,3 +117,60 @@ async def test_live_metrics_refresh_numeric_sort_keep_uid_and_container_status_a
             finally:
                 release.set()
         assert app.workspace.ownership.metrics_count == 0 and app.sessions.client is None
+
+
+@pytest.mark.asyncio
+async def test_initial_container_sample_expires_without_any_later_observation(
+    tmp_path, monkeypatch
+):
+    clock = [datetime.now(UTC)]
+    blocked, release = asyncio.Event(), asyncio.Event()
+    reads = 0
+
+    class FastPoller(MetricsPoller):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs, interval=0.03, now=lambda: clock[0])
+
+    monkeypatch.setattr("kuberich.services.workspace.MetricsPoller", FastPoller)
+    monkeypatch.setattr(
+        "kuberich.ui.containers.datetime", SimpleNamespace(now=lambda timezone: clock[0])
+    )
+
+    async def handler(request):
+        nonlocal reads
+        if request.path.startswith("/apis/metrics.k8s.io/"):
+            reads += 1
+            if reads > 1:
+                blocked.set()
+                await release.wait()
+            return web.json_response(sample_list(sample(now=clock[0])))
+        if "watch" in request.query:
+            return await stable_watch(request)
+        return web.json_response(collection(budgeted()))
+
+    async with workspace_api(ns, handler, discovery_roots=metric_roots) as url:
+        app = app_for(tmp_path, url)
+        async with app.run_test(size=(100, 30)) as pilot:
+            try:
+                await wait_for(
+                    lambda: (
+                        app.resources.row_count == 1
+                        and str(app.resources.get_cell("owned-api", "cpu")) == "250"
+                    )
+                )
+                await asyncio.wait_for(blocked.wait(), 5)
+                await pilot.press("enter")
+                screen = app.screen
+                assert isinstance(screen, ContainerScreen)
+                usage = str(CONTAINER_COLUMNS.index("CPU(m)"))
+                status = str(CONTAINER_COLUMNS.index("METRICS"))
+                assert screen.table.get_cell("app", usage).plain == "250"
+                clock[0] += timedelta(seconds=61)
+                await wait_for(
+                    lambda: screen.table.get_cell("app", status).plain.startswith("stale")
+                )
+                assert screen.table.get_cell("app", usage).plain == "N/A"
+                assert reads == 2 and app.screen is screen
+            finally:
+                release.set()
+        assert app.workspace.ownership.metrics_count == 0 and app.sessions.client is None

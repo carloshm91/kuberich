@@ -59,3 +59,55 @@ Full source/static/type/private-access, complete production coverage, changed-li
 coverage and applicable owned-cluster results will be appended after the frozen
 local campaign. This record currently makes no hosted, macOS, native artifact,
 real cloud-provider or public-release qualification claim.
+
+## First frozen source campaign and corrections
+
+The initial frozen source was `1b2af31e5fa52c3786425e87727724bcea07508e`.
+The local phase runner passed plan/source import, Ruff/format, private-access,
+the actual workflow strict-type target union and startup's hard controls.
+Startup retained advisory offline and first-paint timing misses; the import
+budget was met. Original limits and 0.x advisory/enforcement flags are unchanged.
+
+The suite printed **28 failed, 7,358 passed, 5 skipped** before the qualification
+owner was interrupted to correct the already diagnosed source/fixture faults.
+The owner exited 130; `source-qualification-1/report.json` records cancellation,
+a failed test stage, reaping and a drained owned process group, without a forced
+kill. All recorded owner/worker PIDs and 117 retained `*.pid` witnesses were absent
+before editing. These are failed/interrupted results, not qualification. The
+five skips are existing actual-macOS/native-Homebrew-only lanes.
+
+The retained 28 failures are classified in `failure-classification.json`:
+
+- 23 native/source/installed/SSH/tmux handoff cases used an injected non-priority
+  `h` binding. Wider metrics columns enabled the real table's existing horizontal
+  `h` navigation. The fixture binding now explicitly owns priority; production
+  navigation, handoff/TTY checks and all deadlines stay intact.
+- A genuine feedback race let an empty render overwrite `No contexts`. The
+  navigation action now uses the existing persistent notice owner. Empty rows
+  also avoid an unnecessary metrics projection worker. A forced later repaint
+  verifies that the action feedback persists.
+- Unknown-context DOM observation now waits for the exact expected label, rather
+  than assuming service state and painting finish simultaneously. The mouse case
+  now uses four actual owned-HTTP Pod UIDs; incomplete anonymous rows inserted
+  behind the live renderer no longer race its authoritative snapshot. Exact
+  labels, click success, focus and up/down selected UIDs remain asserted.
+- Compact geometry and horizontal scrolling already passed; its End-key witness
+  now asserts the actual final `METRICS` header, while retaining AGE in the schema.
+  The disposition-map count includes the new acceptance document.
+
+Separate read-only review found that an uncertain Pod with an extended-resource
+key outside application containers could lose that uncertainty during aggregate
+zero-defaulting. All init/sidecar/Pod-level/overhead declaration keys now remain
+visible, with `N/A` and an uncertain-budget label instead of an invented complete
+request total. Mixed normal/complex members and denied/incomplete Node membership
+have deterministic regression controls; Node capacity/allocatable remain visible.
+Nullable optional container lists and malformed/oversized status lists are also
+bounded without an unexpected UI fault.
+
+The corrected focused UI/domain checks passed **164 tests**, followed by
+**136 domain/HTTP/Pilot tests** with all three new critical modules at **100%
+lines and branches**. The resource/container logs and shell cases additionally
+exercise actual horizontal overflow before the unchanged `l`, `x` and `s`
+shortcuts, preserving selected UID and both viewports. The initial-sample modal
+also expires without any subsequent observation. Complete corrected source and
+owned-kind results remain pending until their recorded commands finish.

@@ -127,7 +127,7 @@ availability and permissions.
 
 `CPU(m)` uses millicores: 1000 m equals one core. `MEM(MiB)` uses mebibytes:
 1 MiB equals 1,048,576 bytes. CPU is the average over the reported sampling
-window; memory is the sampled working set. Requests and limits use the same
+window; memory is the sampled working set. Requests, limits, capacity and allocatable use the same
 display units. Header percentages name their denominator: `%REQ` means usage /
 request, `%LIM` means usage / limit, and Node `%ALLOC` means usage / allocatable.
 Values can exceed 100%. Zero usage stays `0`; absent or zero denominators show
@@ -140,9 +140,9 @@ in an open container screen. Polls run every 15 seconds after the previous batch
 finishes, using the selected client and namespace. Scope changes and exit stop
 and drain the old poll. Use `:refresh` after changing API installation/discovery.
 
-Sorting uses normalized numeric values. `:wide` exposes sample time in UTC,
+CPU/memory quantities, percentages and sampling windows sort by numeric values. `:wide` exposes sample time in UTC,
 window in seconds and generic extended resource names; `:views` can hide or
-reorder metric fields. Workload sample time is the oldest member timestamp and
+reorder metric fields. Existing saved column layouts keep their chosen fields. Workload sample time is the oldest member timestamp and
 window is the largest member window, rather than one shared sampling interval.
 
 Workload totals include actual Pods identified by UID and controller ownership,

@@ -191,6 +191,11 @@ async def verify_pod_table(reader, resource, catalog, path, context):
         report = app.workspace.store.observation.metrics.report(log_uid)
         assert report.status is MetricStatus.UNAVAILABLE and report.cpu.usage is None
         assert str(app.resources.get_cell(log_uid, "cpu")) == "N/A"
+        async with asyncio.timeout(30):
+            while not all(
+                row.metrics.status is MetricStatus.UNAVAILABLE for row in containers.rows
+            ):
+                await asyncio.sleep(0.01)
         assert all(row.metrics.status is MetricStatus.UNAVAILABLE for row in containers.rows)
         assert any(
             "coredns" in row.image.lower() and row.state == "Running" for row in containers.rows

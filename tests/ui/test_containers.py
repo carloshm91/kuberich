@@ -120,6 +120,9 @@ async def test_enter_pod_containers_selected_logs_and_back_preserves_both_viewpo
         app = app_for(tmp_path, url)
         async with app.run_test(size=size) as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
+            await pilot.press("end")
+            await pilot.pause()
+            assert app.resources.scroll_x > 0
             before = app.resources.capture_viewport()
             await pilot.press("enter")
             assert isinstance(app.screen, ContainerScreen) and not requests
@@ -136,6 +139,10 @@ async def test_enter_pod_containers_selected_logs_and_back_preserves_both_viewpo
                 assert containers.table.cursor_row == 25
                 assert containers.table.scroll_y > 0
             selected = "init" if multiple else "app"
+            await pilot.press("end")
+            await pilot.pause()
+            assert containers.table.scroll_x > 0
+            horizontal = containers.table.scroll_x
             evidence = Path("artifacts/ui").resolve()
             evidence.mkdir(parents=True, exist_ok=True)
             app.save_screenshot(filename=f"containers-{size[0]}-{multiple}.svg", path=str(evidence))
@@ -168,6 +175,7 @@ async def test_enter_pod_containers_selected_logs_and_back_preserves_both_viewpo
             )
             assert app.screen is containers
             assert containers.table.cursor_row == row and containers.table.scroll_y == scroll
+            assert containers.table.scroll_x == horizontal
             await pilot.press("l")
             await wait_for(lambda: isinstance(app.screen, LogScreen) and app.screen.body.rows)
             assert app.screen.container == selected
