@@ -128,7 +128,7 @@ is compute-request telemetry; `resources` provides enacted requests/limits.
 Equivalent units match. Missing optional fields, subsets and omitted extended
 telemetry do not create false resize flags or replace admitted GPU requests.
 Genuine contradictions, malformed/ambiguous identities, invalid values, explicit
-resize, and True/Unknown PodResizePending/PodResizeInProgress remain uncertain;
+resize, and True/Unknown PodResizePending/PodResizeInProgress leave active allocation unconfirmed;
 False resize conditions do not trigger uncertainty. Zero, absence and unlimited
 limits retain their distinct declaration/display semantics.
 
@@ -153,4 +153,35 @@ It inspects actual kubelet admission/enactment fields, requires exact known repo
 and rendered declarations without a Metrics API, and checks actual uncertain
 Pod/Node N/A cells. Filtered status/report observations are retained before those
 assertions so a real-shape failure cannot disappear during cluster cleanup.
-The owned trial and final full source qualification are pending their actual runs.
+The first owned trial on `c6608c01c5f0275989f5de055709c61ee4a3b980` failed
+the exact ordinary-budget uncertainty assertion. The retained ordinary Pod had
+matching Pod-level `status.allocatedResources` and `status.resources` even though
+`spec.resources` was absent. A separate minimal owned diagnostic captured those
+exact resource fields: 100m/1 CPU and 32Mi/128Mi memory at both Pod and container
+status. Both disposable clusters were deleted with absence verified; the first
+trial's Docker inventory remained unchanged. Evidence is retained in
+`artifacts/issue68/kind-qualification-1/`, including the failed terminal receipt,
+filtered admitted/report values and the separate Pod-status diagnostic.
+
+The correction reconciles ordinary Pod aggregate telemetry numerically too.
+Configured requests/limits and their percentages stay available when only
+status telemetry differs; the `METRICS` label says configured budgets and active
+allocation unconfirmed. This distinction covers kernel-rounded Pod cgroup
+observations without guessing that a resize is active or inventing an epsilon.
+Init/sidecar/overhead/Pod-level spec budgets still suppress an unproven effective
+Pod total. Node Pod-allocation sums are uncertain when any member's active
+allocation is unconfirmed; independent Node usage/allocatable remains useful.
+The kubelet's `convertToAPIPodLevelResourcesStatus` and
+[CPU cgroup conversion helpers](https://github.com/kubernetes/kubernetes/blob/v1.36.4/pkg/kubelet/cm/helpers_linux.go)
+explain why those status fields must remain distinct from configured budgets.
+Unit, real HTTP and live-container Pilot witnesses require known configured
+numbers for both matching ordinary status and a differing cgroup CPU value.
+The expanded corrected focus passed **209 cases** in 34.89 seconds on Linux
+CPython 3.12.12, with 100% lines and branches for metrics, quantities,
+metrics projection and container rows:
+
+```sh
+uv run pytest tests/unit/test_metrics.py tests/unit/test_container_rows.py tests/contract/test_metrics.py tests/ui/test_metrics.py tests/ui/test_shell.py tests/unit/test_metrics_projection.py -q -n 4 --tb=short --cov=kuberich.domain.metrics --cov=kuberich.domain.quantities --cov=kuberich.services.metrics_projection --cov=kuberich.domain.containers --cov-branch --cov-report=json:artifacts/issue68/pod-status-complete-focused-coverage.json
+```
+
+The corrected owned trial and final full source qualification remain pending.

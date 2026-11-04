@@ -158,7 +158,10 @@ def test_complex_pod_allocation_preserves_usage_and_labels_uncertain_denominator
 def test_resize_allocation_is_not_claimed_as_a_scheduler_total(status):
     value = budgeted()
     value["status"].update(status)
-    assert pod_budget(record(value)).cpu.uncertain
+    report = pod_budget(record(value))
+    assert report.allocation_uncertain and not report.cpu.uncertain
+    assert report.value("cpu-req") == ("100", D(".1"))
+    assert "active allocation unconfirmed" in report.detail
 
 
 def test_extended_resources_are_vendor_neutral_and_never_claim_gpu_utilization():
@@ -463,8 +466,13 @@ def test_ordinary_admitted_status_fields_preserve_known_budgets_and_percentages_
         "limits": {"cpu": "1000m", "memory": "134217728"},
     }
     value["status"]["allocatedResources"] = {"cpu": "1e-1", "memory": "32Mi"}
+    value["status"]["resources"] = {
+        "requests": {"cpu": "100000000n", "memory": "32768Ki"},
+        "limits": {"cpu": "1000m", "memory": "134217728"},
+    }
     result = pod_sample(record(value), sampled(), NOW)
     assert not result.cpu.uncertain and not result.memory.uncertain and not result.detail
+    assert not result.allocation_uncertain
     assert result.cpu.request == D(".1") and result.cpu.limit == 1
     assert result.memory.request == 32 * 2**20 and result.memory.limit == 128 * 2**20
     assert result.value("cpu-percent-request") == ("250", D(250))
@@ -481,6 +489,7 @@ def test_optional_subset_status_and_omitted_extended_telemetry_do_not_remove_dec
     observed = value["status"]["containerStatuses"][0]
     observed["allocatedResources"] = {"cpu": ".1"}
     observed["resources"] = {"requests": {"cpu": "1e-1"}}
+    value["status"]["resources"] = {"requests": {"cpu": "100m"}}
     result = pod_sample(record(value), sampled(), NOW)
     assert not result.cpu.uncertain and result.cpu.request == D(".1")
     assert result.value("cpu-percent-request")[1] == 250
@@ -563,9 +572,10 @@ def test_genuine_allocation_contradictions_and_invalid_identities_stay_uncertain
     value["status"]["containerStatuses"][0].update(observed)
     result = pod_sample(record(value), sampled(), NOW)
     assert result.cpu.usage == D(".25") and result.cpu.request == D(".1")
-    assert result.cpu.uncertain and result.value("cpu-req") == ("N/A (budget)", None)
-    assert result.value("cpu-percent-request") == ("N/A", None)
-    assert "uncertain Pod allocation" in result.detail
+    assert result.allocation_uncertain and not result.cpu.uncertain
+    assert result.value("cpu-req") == ("100", D(".1"))
+    assert result.value("cpu-percent-request") == ("250", D(250))
+    assert "configured budgets; active allocation unconfirmed" in result.detail
 
 
 @pytest.mark.parametrize(
@@ -578,11 +588,13 @@ def test_genuine_allocation_contradictions_and_invalid_identities_stay_uncertain
         "pod_invalid",
         "pod_resource_invalid",
         "pod_resources",
+        "pod_limits",
+        "pod_requests_invalid",
         "invalid_declared",
         "invalid_previous_sum",
     ],
 )
-def test_ambiguous_or_invalid_allocation_status_never_confirms_a_budget(mutation):
+def test_ambiguous_or_invalid_status_never_confirms_active_allocation(mutation):
     value = budgeted()
     if mutation == "duplicate_status":
         value["status"]["containerStatuses"] *= 2
@@ -598,6 +610,10 @@ def test_ambiguous_or_invalid_allocation_status_never_confirms_a_budget(mutation
         value["status"]["resources"] = 0
     elif mutation == "pod_resources":
         value["status"]["resources"] = {"requests": {"cpu": "1"}}
+    elif mutation == "pod_limits":
+        value["status"]["resources"] = {"limits": {"memory": "32M"}}
+    elif mutation == "pod_requests_invalid":
+        value["status"]["resources"] = {"requests": []}
     else:
         value["spec"]["containers"][0]["resources"]["requests"]["cpu"] = "invalid"
         if mutation == "invalid_previous_sum":
@@ -605,7 +621,9 @@ def test_ambiguous_or_invalid_allocation_status_never_confirms_a_budget(mutation
                 {"name": "worker", "resources": {"requests": {"cpu": "100m"}}}
             )
         value["status"]["allocatedResources"] = {"cpu": "100m"}
-    assert pod_budget(record(value)).cpu.uncertain
+    assert pod_budget(record(value)).allocation_uncertain
+    if mutation == "duplicate_declaration":
+        assert pod_budget(record(value)).value("cpu-req") == ("N/A (budget)", None)
 
 
 @pytest.mark.parametrize("kind", ["PodResizePending", "PodResizeInProgress"])
@@ -616,8 +634,8 @@ def test_resize_conditions_distinguish_active_false_and_unknown(kind, condition,
     value = budgeted()
     value["status"]["conditions"] = [{"type": kind, "status": condition}]
     result = pod_sample(record(value), sampled(), NOW)
-    assert result.cpu.uncertain is uncertain
-    assert (result.cpu.percent("request") is None) is uncertain
+    assert result.allocation_uncertain is uncertain
+    assert not result.cpu.uncertain and result.cpu.percent("request") == 250
     if uncertain:
         assert "resize" in result.detail
 
@@ -642,7 +660,47 @@ def test_zero_and_unlimited_enacted_limits_remain_distinct():
     value = budgeted(limit=None)
     value["status"]["containerStatuses"][0]["resources"] = {"limits": {"cpu": "0"}}
     result = pod_sample(record(value), sampled(), NOW)
-    assert result.cpu.unlimited and result.cpu.limit is None and result.cpu.uncertain
+    assert result.cpu.unlimited and result.cpu.limit is None and result.allocation_uncertain
+    assert result.value("cpu-lim") == ("unlimited", None)
+
+
+@pytest.mark.parametrize("resources", [None, {}, {"requests": None, "limits": {}}])
+def test_absent_optional_pod_status_fields_preserve_configured_budgets(resources):
+    value = budgeted()
+    value["status"]["resources"] = resources
+    assert not pod_budget(record(value)).allocation_uncertain
+
+
+def test_pod_cgroup_difference_keeps_configured_percentages_and_marks_node_allocation_unknown():
+    from tests.support.metrics import admitted
+
+    value = admitted()
+    value["status"]["resources"]["requests"]["cpu"] = "99m"
+    report = pod_sample(record(value), sampled(), NOW)
+    assert report.allocation_uncertain and "active allocation unconfirmed" in report.detail
+    assert report.value("cpu-req") == ("100", D(".1"))
+    assert report.value("cpu-percent-request") == ("250", D(250))
+    assert dict(report.containers)["app"].allocation_uncertain
+    total = aggregate((report,))
+    assert total.allocation_uncertain and "configured budgets" in total.detail
+    assert total.cpu.percent("request") == 250
+    node = resource_record(
+        ApiResource("", "v1", "nodes", "Node", False, ()),
+        {
+            "apiVersion": "v1",
+            "kind": "Node",
+            "metadata": {"name": "node", "uid": "node", "resourceVersion": "1"},
+            "status": {
+                "capacity": {"cpu": "4", "memory": "1Gi", "vendor/device": "2"},
+                "allocatable": {"cpu": "3", "memory": "1Gi", "vendor/device": "2"},
+            },
+        },
+    )
+    observed = node_sample(node, sampled(name="node", namespace=None), (report,), NOW)
+    assert observed.allocation_uncertain and observed.value("cpu-req") == ("N/A (budget)", None)
+    assert observed.cpu.percent("allocatable") is not None
+    assert "Pod allocation uncertain" in observed.detail
+    assert dict(observed.extended)["vendor/device"].uncertain
 
 
 @pytest.mark.parametrize("field", ["initContainerStatuses", "ephemeralContainerStatuses"])

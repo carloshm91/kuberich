@@ -237,6 +237,8 @@ async def verify_standard_resources(
                 "namespace": fixture.namespace,
                 "node": manifest["spec"].get("nodeName"),
                 "phase": manifest.get("status", {}).get("phase"),
+                "pod_allocated_resources": manifest.get("status", {}).get("allocatedResources"),
+                "pod_enacted_resources": manifest.get("status", {}).get("resources"),
                 "declared_resources": [
                     entry.get("resources") for entry in manifest["spec"]["containers"]
                 ],
@@ -327,6 +329,7 @@ async def verify_standard_resources(
                                 "memory_limit": str(known_report.memory.limit),
                                 "cpu_uncertain": known_report.cpu.uncertain,
                                 "memory_uncertain": known_report.memory.uncertain,
+                                "allocation_uncertain": known_report.allocation_uncertain,
                                 "detail": known_report.detail,
                             },
                             "init": {
@@ -342,6 +345,7 @@ async def verify_standard_resources(
                 known_report.status is MetricStatus.UNAVAILABLE and known_report.cpu.usage is None
             )
             assert not known_report.cpu.uncertain and not known_report.memory.uncertain
+            assert not known_report.allocation_uncertain
             assert known_report.cpu.request == Decimal(".1") and known_report.cpu.limit == 1
             assert (
                 known_report.memory.request == 32 * 2**20

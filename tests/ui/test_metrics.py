@@ -19,8 +19,9 @@ from tests.ui.test_logs import app_for, ns
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("pod_cpu,unconfirmed", [("100m", False), ("99m", True)])
 async def test_live_metrics_refresh_numeric_sort_keep_uid_and_container_status_across_polls_and_expiry(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, pod_cpu, unconfirmed
 ):
     clock = [datetime.now(UTC)]
     state = {"cpu": "9m", "code": 200, "hold": False}
@@ -38,6 +39,12 @@ async def test_live_metrics_refresh_numeric_sort_keep_uid_and_container_status_a
     )
     values = tuple(
         admitted(name, created=clock[0] - timedelta(minutes=1)) for name in ("api", "worker")
+    )
+    values[0]["status"]["resources"]["requests"]["cpu"] = pod_cpu
+    valid_label = "valid" + (
+        " · configured budgets; active allocation unconfirmed · declared/enacted Pod resources differ"
+        if unconfirmed
+        else ""
     )
 
     async def handler(request):
@@ -74,6 +81,7 @@ async def test_live_metrics_refresh_numeric_sort_keep_uid_and_container_status_a
                 assert str(app.resources.get_cell("owned-api", "cpu-req")) == "100"
                 assert str(app.resources.get_cell("owned-api", "cpu-percent-request")) == "9"
                 assert str(app.resources.get_cell("owned-api", "cpu-percent-limit")) == "0.9"
+                assert str(app.resources.get_cell("owned-api", "metrics")) == valid_label
                 app.resources.set_sort(PodColumn.CPU)
                 await pilot.pause()
                 assert [row.key.value for row in app.resources.ordered_rows] == [
@@ -95,10 +103,11 @@ async def test_live_metrics_refresh_numeric_sort_keep_uid_and_container_status_a
                 await pilot.press("enter")
                 screen = app.screen
                 assert isinstance(screen, ContainerScreen)
-                assert cell(screen, "CPU(m)") == "200" and cell(screen, "METRICS") == "valid"
+                assert cell(screen, "CPU(m)") == "200" and cell(screen, "METRICS") == valid_label
+                assert cell(screen, "CPU%REQ") == "200" and cell(screen, "CPU%LIM") == "20"
                 state["cpu"] = "0"
                 await wait_for(lambda: cell(screen, "CPU(m)") == "0")
-                assert cell(screen, "METRICS") == "valid"
+                assert cell(screen, "METRICS") == valid_label
                 state["code"] = 403
                 await wait_for(lambda: cell(screen, "METRICS").startswith("forbidden"))
                 assert cell(screen, "CPU(m)") == "N/A"
@@ -118,7 +127,12 @@ async def test_live_metrics_refresh_numeric_sort_keep_uid_and_container_status_a
                 assert len(requests) == count and app.screen is screen
                 evidence = Path("artifacts/ui").resolve()
                 evidence.mkdir(parents=True, exist_ok=True)
-                app.save_screenshot(filename="resource-metrics-live-expiry.svg", path=str(evidence))
+                app.save_screenshot(
+                    filename="resource-metrics-live-expiry-unconfirmed.svg"
+                    if unconfirmed
+                    else "resource-metrics-live-expiry.svg",
+                    path=str(evidence),
+                )
                 await pilot.press("escape")
                 assert app.resources.selected_uid == selected
             finally:

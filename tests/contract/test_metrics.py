@@ -591,7 +591,10 @@ async def test_node_poller_includes_only_scheduled_nonterminal_pod_requests(tmp_
 
 
 @pytest.mark.asyncio
-async def test_real_http_admitted_status_with_equivalent_units_keeps_ordinary_percentages(tmp_path):
+@pytest.mark.parametrize("pod_cpu,unconfirmed", [("100000000n", False), ("99m", True)])
+async def test_real_http_admitted_status_preserves_configured_percentages(
+    tmp_path, pod_cpu, unconfirmed
+):
     from tests.support.metrics import admitted
 
     value = admitted()
@@ -601,6 +604,7 @@ async def test_real_http_admitted_status_with_equivalent_units_keeps_ordinary_pe
         "requests": {"cpu": "100000000n", "memory": "32768Ki"},
         "limits": {"cpu": "1000m", "memory": "134217728"},
     }
+    value["status"]["resources"]["requests"]["cpu"] = pod_cpu
     selected = snapshot(value)
 
     async def handler(request):
@@ -612,6 +616,7 @@ async def test_real_http_admitted_status_with_equivalent_units_keeps_ordinary_pe
         ).poll(selected)
         report = result.report("owned-api", NOW)
         assert report.status is MetricStatus.VALID and not report.cpu.uncertain
+        assert report.allocation_uncertain is unconfirmed
         assert report.cpu.request == Decimal(".1") and report.cpu.limit == 1
         assert report.memory.request == 32 * 2**20 and report.memory.limit == 128 * 2**20
         assert report.cpu.percent("request") == 250 and report.cpu.percent("limit") == 25

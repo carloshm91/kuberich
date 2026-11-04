@@ -143,4 +143,6 @@ def admitted(name="api", **kwargs):
     observed = value["status"]["containerStatuses"][0]
     observed["allocatedResources"] = deepcopy(declared["requests"])
     observed["resources"] = deepcopy(declared)
+    value["status"]["allocatedResources"] = deepcopy(declared["requests"])
+    value["status"]["resources"] = deepcopy(declared)
     return value

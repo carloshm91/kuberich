@@ -129,7 +129,8 @@ availability and permissions.
 1 MiB equals 1,048,576 bytes. CPU is the average over the reported sampling
 window; memory is the sampled working set. Requests, limits, capacity and allocatable use the same
 display units. Header percentages name their denominator: `%REQ` means usage /
-request, `%LIM` means usage / limit, and Node `%ALLOC` means usage / allocatable.
+configured request, `%LIM` means usage / configured limit, and Node `%ALLOC`
+means usage / allocatable.
 Values can exceed 100%. Zero usage stays `0`; absent or zero denominators show
 `N/A`, and an absent container limit shows `unlimited`.
 
@@ -154,14 +155,18 @@ Node usage comes from Node metrics and includes node processes; its Pod request
 sum needs a complete cluster-wide Pod list. Namespace-only RBAC can leave Node
 usage/allocatable percentages available while Pod allocations say incomplete.
 
-Pod allocation with init containers, sidecars, overhead, a Pod-level resource
-budget or an observed resize is explicitly uncertain: usage stays available,
+Pod allocation with init containers, sidecars, overhead or a Pod-level resource
+budget is explicitly uncertain: usage stays available,
 but effective Pod request/limit totals and their percentages show `N/A (budget)`
 or `N/A`. Container percentages still use that container's declared budget.
 Known requests/limits describe admitted declarations, rather than proof that a
-resize has finished. Matching ordinary status fields and omitted optional
-telemetry preserve those declarations; a reported contradiction or active or
-unconfirmed resize marks allocation uncertain. These values do not claim scheduler reservations. Extended resource fields show
+resize has finished. Matching ordinary Pod/container status fields and omitted
+optional telemetry preserve those declarations. Status differences, including
+kernel-rounded Pod cgroup values, do not erase configured budgets or their
+percentages. They label active allocation unconfirmed; an explicit active or
+unconfirmed resize also receives that label. Node Pod-allocation totals become
+uncertain when a member's active allocation is unconfirmed, while Node usage /
+allocatable stays available. These values do not claim scheduler reservations. Extended resource fields show
 vendor-neutral declared requests/limits and Node capacity/allocatable values;
 the CPU/memory Metrics API provides no GPU utilization. Collection payload/row
 limits still apply. Historical charts and Prometheus metrics are unavailable.

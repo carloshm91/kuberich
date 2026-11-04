@@ -144,6 +144,7 @@ class MetricReport:
     detail: str = ""
     extended: tuple[tuple[str, ResourceAmount], ...] = ()
     containers: tuple[tuple[str, "MetricReport"], ...] = ()
+    allocation_uncertain: bool = False
 
     def fresh(self, now: datetime) -> "MetricReport":
         if self.timestamp is not None and (now - self.timestamp).total_seconds() > MAX_SAMPLE_AGE:
@@ -296,22 +297,29 @@ def _allocation_problem(
                     actual, _resources(declared[name].get(field))
                 ):
                     return "declared/enacted container resources differ"
-    pod_allocated = status.get("allocatedResources")
-    if pod_allocated is not None:
-        requests: dict[str, Decimal | None] = {}
+    totals: dict[str, dict[str, Decimal | None]] = {}
+    for field in ("requests", "limits"):
+        total: dict[str, Decimal | None] = {}
         for resources in declared.values():
-            for key, value in _resources(resources.get("requests")).items():
-                previous = requests.get(key, ZERO)
-                requests[key] = (
+            for key, value in _resources(resources.get(field)).items():
+                previous = total.get(key, ZERO)
+                total[key] = (
                     previous + value if previous is not None and value is not None else None
                 )
-        if _contradicts(pod_allocated, requests, compute_only=True):
-            return "declared/allocated Pod requests differ"
+        totals[field] = total
+    pod_allocated = status.get("allocatedResources")
+    if pod_allocated is not None and _contradicts(
+        pod_allocated, totals["requests"], compute_only=True
+    ):
+        return "declared/allocated Pod requests differ"
     pod_resources = status.get("resources")
-    if pod_resources is not None and not isinstance(pod_resources, dict):
-        return "invalid Pod-level allocation resources"
-    if pod_resources:
-        return "unconfirmed Pod-level allocation"
+    if pod_resources is not None:
+        if not isinstance(pod_resources, dict):
+            return "invalid enacted Pod resources"
+        for field in ("requests", "limits"):
+            actual = pod_resources.get(field)
+            if actual is not None and _contradicts(actual, totals[field], compute_only=True):
+                return "declared/enacted Pod resources differ"
     return None
 
 
@@ -340,9 +348,16 @@ def pod_budget(record: ResourceRecord) -> MetricReport:
         if spec.get("overhead")
         else "Pod-level budget"
         if spec.get("resources")
-        else _allocation_problem(declarations, statuses, status)
+        else None
     )
     uncertain = problem is not None
+    allocation_problem = (
+        _allocation_problem(declarations, statuses, status) if not uncertain else None
+    )
+    # Configured denominators remain known across status-only differences,
+    # including kubelet's Pod-cgroup quantization. Ambiguous declarations cannot
+    # establish even a configured sum; complex spec budgets need scheduling math.
+    uncertain = uncertain or allocation_problem == "ambiguous declared container identity"
     values = {
         key: _sum(
             tuple(_budget(item.get("resources"), key, uncertain=uncertain) for item in declarations)
@@ -352,8 +367,13 @@ def pod_budget(record: ResourceRecord) -> MetricReport:
     return MetricReport(
         cpu=values["cpu"],
         memory=values["memory"],
-        detail="uncertain Pod allocation · " + problem if problem is not None else "",
+        detail="uncertain Pod allocation · " + problem
+        if problem is not None
+        else "configured budgets; active allocation unconfirmed · " + allocation_problem
+        if allocation_problem is not None
+        else "",
         extended=tuple((key, values[key]) for key in sorted(keys - {"cpu", "memory"})),
+        allocation_uncertain=uncertain or allocation_problem is not None,
     )
 
 
@@ -450,6 +470,7 @@ def pod_sample(pod: ResourceRecord, sample: ResourceRecord | None, now: datetime
                     timestamp,
                     window,
                     detail=budget.detail,
+                    allocation_uncertain=budget.allocation_uncertain,
                 ),
             )
         )
@@ -504,7 +525,12 @@ def aggregate(reports: tuple[MetricReport, ...], *, complete: bool = True) -> Me
         max((report.window for report in reports if report.window is not None), default=None),
         f"{sampled}/{len(reports)} Pods"
         + (" · membership incomplete" if not complete else "")
-        + (" · uncertain Pod allocation" if cpu.uncertain or memory.uncertain else ""),
+        + (" · uncertain Pod allocation" if cpu.uncertain or memory.uncertain else "")
+        + (
+            " · configured budgets; active allocation unconfirmed"
+            if any(report.allocation_uncertain for report in reports)
+            else ""
+        ),
         tuple(
             (
                 key,
@@ -525,6 +551,7 @@ def aggregate(reports: tuple[MetricReport, ...], *, complete: bool = True) -> Me
             )
             for key in keys
         ),
+        allocation_uncertain=not complete or any(report.allocation_uncertain for report in reports),
     )
 
 
@@ -570,7 +597,9 @@ def node_sample(
             capacity=capacity.get(key),
             allocatable=allocatable.get(key),
             uncertain=not complete
-            or any(report.cpu.uncertain or report.memory.uncertain for report in pods),
+            or requests.allocation_uncertain
+            or requests.cpu.uncertain
+            or requests.memory.uncertain,
             partial=state is not MetricStatus.VALID,
         )
 
@@ -586,7 +615,7 @@ def node_sample(
         "Pod requests incomplete"
         if not complete
         else "Pod allocation uncertain"
-        if requests.cpu.uncertain or requests.memory.uncertain
+        if requests.cpu.uncertain or requests.memory.uncertain or requests.allocation_uncertain
         else "",
         tuple(
             (
@@ -596,6 +625,7 @@ def node_sample(
                     capacity=capacity.get(key),
                     allocatable=allocatable.get(key),
                     uncertain=not complete
+                    or requests.allocation_uncertain
                     or requests.cpu.uncertain
                     or requests.memory.uncertain
                     or dict(requests.extended).get(key, ResourceAmount()).uncertain,
@@ -603,4 +633,5 @@ def node_sample(
             )
             for key in sorted(keys)
         ),
+        allocation_uncertain=not complete or requests.allocation_uncertain,
     )
