@@ -362,7 +362,7 @@ def authorization_rows(snapshot: AuthorizationSnapshot | None) -> tuple[Authoriz
                             ),
                             None,
                         )
-                        for subject in binding.subjects
+                        for subject in dict.fromkeys(binding.subjects)
                     )
         elif intent.mode in {AuthorizationMode.ROLES, AuthorizationMode.ROLE}:
             for role in rbac.roles:

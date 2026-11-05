@@ -97,7 +97,16 @@ def fixture_manifests() -> tuple[dict[str, Any], ...]:
         )
 
     def subject(namespace: str) -> list[dict[str, str]]:
-        return [{"kind": "ServiceAccount", "name": SERVICEACCOUNT, "namespace": namespace}]
+        account = {"kind": "ServiceAccount", "name": SERVICEACCOUNT, "namespace": namespace}
+        return [
+            account,
+            dict(account),
+            {
+                "kind": "User",
+                "apiGroup": RBAC_GROUP,
+                "name": f"system:serviceaccount:{namespace}:{SERVICEACCOUNT}",
+            },
+        ]
 
     for namespace in (NAMESPACE, OTHER_NAMESPACE):
         add("Namespace", namespace)
@@ -518,6 +527,33 @@ async def native_checks(
         )
         await pilot.press("enter")
         await until(lambda: ready(AuthorizationMode.BINDING))
+        binding_snapshot = app.workspace.store.observation.authorization
+        assert binding_snapshot is not None and binding_snapshot.rbac is not None
+        binding = next(
+            value
+            for value in binding_snapshot.rbac.bindings
+            if value.ref.name == ROLE and value.ref.namespace == NAMESPACE
+        )
+        account = RbacSubject(RbacSubjectKind.SERVICE_ACCOUNT, SERVICEACCOUNT, NAMESPACE)
+        canonical_user = RbacSubject(
+            RbacSubjectKind.USER, f"system:serviceaccount:{NAMESPACE}:{SERVICEACCOUNT}", None
+        )
+        displayed_subjects: list[RbacSubject] = []
+        for key in app.authorization_table.rows:
+            binding_row = app.authorization_table.row_at(key.value)
+            if binding_row is not None and binding_row.destination is not None:
+                selected_subject = binding_row.destination.subject
+                if selected_subject is not None:
+                    displayed_subjects.append(selected_subject)
+        checkpoint(
+            directory,
+            "native-repeated-binding-subjects-preserve-distinct-identities",
+            declared_subjects=len(binding.subjects),
+            repeated_account_declarations=binding.subjects.count(account),
+            displayed_subjects=[asdict(value) for value in displayed_subjects],
+        )
+        assert len(binding.subjects) == 3 and binding.subjects.count(account) == 2
+        assert displayed_subjects == [account, canonical_user]
         select_row(
             app,
             lambda row: (

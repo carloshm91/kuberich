@@ -6,22 +6,30 @@ Issue #71 is the single active implementation task. Native `:rbac`, `:can-i`,
 `:rules` and `:who-can` behavior is implemented. The corrected-source actual
 owned-cluster trial passed seven scenario checks, 167 observed API calls, unchanged
 kubeconfig/environment and complete cluster/private-directory/worker cleanup in
-38.290 seconds. All 226 runtime/configuration/verifier inputs stayed unchanged.
+38.274 seconds. All 226 runtime/configuration/verifier inputs stayed unchanged.
 The exact child invocation and source hashes are retained in
-`artifacts/issue71/kind-trial-2/invocation.json`; the wrapper used this checkout's
+`artifacts/issue71/kind-trial-3/invocation.json`; the wrapper used this checkout's
 Python 3.12.12 and the verified pinned kind executable. Local behavior and
 coverage checks are recorded below; exact-head hosted qualification and protected
 delivery remain pending. The
 [authorization acceptance record](acceptance/authorization.md) tracks actual
 source-bound measurements as they become available.
 
-The local complete run recorded 8,624 passes, five explicit platform skips and
+The preceding `26d0b81` source's local complete run recorded 8,624 passes, five explicit platform skips and
 seven development-tool prerequisite failures. After clean source was committed
 and the locked environment activated, all 21 cases in both affected files
 passed unchanged. Original failures remain retained, not relabelled. The verified
 runtime coverage merge measured 98.7848% lines, 96.0444% branches and 99.23%
 changed lines; all 93 critical modules were independently at 100%. See the
 acceptance record for exact source, commands and remaining hosted checks.
+
+The final independent review additionally found repeated binding-subject detail
+rows could collide. The minimal exact-identity dedup preserves declarations and
+rule indices. All 31 row cases (100% lines/branches) and 225 affected App/command/
+navigation cases passed. The fresh strengthened kind trial verifies three actual
+server declarations produce two distinct visible subject identities. Earlier
+whole-source coverage remains scoped to `26d0b81`; fresh hosted checks must
+qualify the corrected source before delivery.
 
 The preceding relationship task is delivered through protected squash
 `64817677c20aad876489f81427a7636f0c56cc6c`, tree

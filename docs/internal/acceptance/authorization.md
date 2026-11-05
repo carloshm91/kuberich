@@ -253,3 +253,42 @@ The measured production/configuration bytes still match the frozen complete
 run, corrected owned-kind trial and startup reports. Subsequent acceptance-note
 edits change documentation only. Required exact-head hosted source/native
 checks, resolved review and protected squash still precede issue completion.
+
+## Repeated binding-subject detail correction
+
+The final independent UI integration review of PR #313 at `26d0b81` found
+one additional legal-input collision: selected RoleBinding/ClusterRoleBinding
+details emitted one identity-keyed row per repeated subject declaration. Both
+actual App/Pilot regressions retained Textual `DuplicateKey` traces before the
+fix. No other legal repeated emitter or scope/session/history blocker was found.
+
+Binding detail now iterates exact frozen subject identities once in declaration
+order. The original DTO keeps every declared subject, distinct User/Group/
+ServiceAccount identities and namespaces remain separate, and indexed rule
+provenance is unchanged. Five new regressions passed; the independent rows run
+passed 31 cases with 133/133 lines and 64/64 branches. The overlapping affected
+App/table/commands/routing/navigation cohort passed 225 cases in 22.08 seconds.
+Scoped lint/format/types and the private-access check passed. Original failures
+and the final source manifest are in
+`artifacts/issue71/ui/duplicate-binding-subjects/`.
+
+The real-cluster fixture now sends a repeated ServiceAccount declaration plus
+its equivalent canonical User to both binding kinds. The strengthened fresh
+owned-kind trial passed all seven scenarios and 167 real API calls in 38.274
+seconds (37.476 seconds inside the verifier), with all 226 captured runtime/
+configuration/verifier inputs unchanged. Its native detail checkpoint confirms
+three server-accepted declarations, two repeated-account declarations and two
+distinct displayed subject identities. Earlier SUBJECT navigation also exercises
+semantic grant deduplication. The original environment/kubeconfig, UID/effect
+guards, scopes, cancellation and owned cluster/private-file/process cleanup
+checks remain intact. Exact records are in `artifacts/issue71/kind-trial-3/`.
+All 27 verifier controls passed; scoped Ruff/format/strict typing passed.
+
+The preceding whole-source coverage numbers and 21 recovered tool cases qualify
+the earlier `26d0b81` production bytes. They are not reused as current full-head
+coverage for this row change. Repository/DCO and fast checks passed on that
+source; Root intentionally cancelled its expanding Application run 42030536516
+after finding this defect. The stopped read-only observer reaped all 54 reader
+leaders, verified every reader group absent and released its lock. Corrected
+source requires fresh exact-head hosted source/native checks before protected
+squash; no unchanged source rerun is used.

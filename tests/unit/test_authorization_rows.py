@@ -143,6 +143,57 @@ def test_binding_drilldowns_follow_observed_subjects_and_resolved_role(mode):
         }
 
 
+@pytest.mark.parametrize("kind", ["RoleBinding", "ClusterRoleBinding"])
+def test_binding_repeated_subjects_keep_one_row_per_full_identity_in_declaration_order(kind):
+    binding_ref = replace(BINDING, kind=kind, namespace="team" if kind == "RoleBinding" else None)
+    snapshot = observed(a.AuthorizationMode.BINDING, selected=("binding", binding_ref))
+    distinct = (
+        USER,
+        GROUP,
+        ACCOUNT,
+        replace(USER, kind=a.RbacSubjectKind.GROUP),
+        replace(ACCOUNT, namespace="other"),
+    )
+    declarations = (
+        USER,
+        replace(USER),
+        GROUP,
+        ACCOUNT,
+        replace(GROUP),
+        distinct[3],
+        replace(ACCOUNT),
+        distinct[4],
+    )
+    binding = replace(
+        snapshot.rbac.bindings[0],
+        ref=binding_ref,
+        subjects=declarations,
+        role_kind="Role" if kind == "RoleBinding" else "ClusterRole",
+        role_name=ROLE.name if kind == "RoleBinding" else CLUSTER_ROLE.name,
+    )
+    snapshot = replace(snapshot, rbac=replace(snapshot.rbac, bindings=(binding,)))
+
+    rows = authorization_rows(snapshot)
+    subjects = tuple(row for row in rows if row.key.startswith("subject:"))
+    assert tuple(row.destination.subject for row in subjects) == distinct
+    assert len({row.key for row in rows}) == len(rows)
+    assert all(row.object_ref is None and row.destination.scope == SCOPE for row in subjects)
+    assert subjects[0].label == "User Alice" and subjects[3].label == "Group Alice"
+    assert subjects[2].label == "ServiceAccount identity/runner"
+    assert subjects[4].label == "ServiceAccount other/runner"
+    assert snapshot.rbac.bindings[0].subjects == declarations
+
+
+def test_repeated_role_rule_declarations_keep_distinct_rule_indices():
+    snapshot = observed(a.AuthorizationMode.ROLE, selected=("role", ROLE))
+    role = replace(snapshot.rbac.roles[0], rules=(RULE, RULE))
+    snapshot = replace(snapshot, rbac=replace(snapshot.rbac, roles=(role,)))
+    rules = tuple(row for row in authorization_rows(snapshot) if row.key.startswith("rule:"))
+    assert len(rules) == 2 and rules[0].key != rules[1].key
+    assert rules[0].details == rules[1].details
+    assert rules[0].label.startswith("Rule 1") and rules[1].label.startswith("Rule 2")
+
+
 @pytest.mark.parametrize("kind", ["Role", "ClusterRole"])
 def test_binding_missing_role_stays_navigable_evidence_without_an_object_target(kind):
     snapshot = observed(a.AuthorizationMode.BINDING, selected=("binding", BINDING))

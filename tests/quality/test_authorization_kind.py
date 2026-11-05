@@ -119,6 +119,31 @@ def test_restricted_fixture_grants_named_reads_and_subresources_without_unfilter
     assert not any(rule_matches(rule, replace(question, name="owned-other")) for rule in role.rules)
 
 
+@pytest.mark.parametrize(
+    "kind,name",
+    [("RoleBinding", verification.ROLE), ("ClusterRoleBinding", "owned-public-path")],
+)
+def test_real_binding_fixtures_keep_repeated_and_equivalent_subject_declarations(kind, name):
+    manifest = next(
+        value
+        for value in verification.fixture_manifests()
+        if value["kind"] == kind
+        and value["metadata"]["name"] == name
+        and value["metadata"].get("namespace") in {None, verification.NAMESPACE}
+    )
+    resource, record = parsed_fixture(manifest)
+    binding = parse_rbac_binding(resource, record)
+    assert len(binding.subjects) == 3
+    account, repeated_account, canonical_user = binding.subjects
+    assert account == repeated_account and account.kind == "ServiceAccount"
+    assert account.namespace == verification.NAMESPACE
+    assert canonical_user.kind == "User" and canonical_user.namespace is None
+    assert canonical_user.name == (
+        f"system:serviceaccount:{verification.NAMESPACE}:{verification.SERVICEACCOUNT}"
+    )
+    assert len(dict.fromkeys(binding.subjects)) == 2
+
+
 def test_scoped_clusterrole_binding_cannot_grant_cluster_or_nonresource_questions():
     declarations = verification.fixture_manifests()
     manifest = next(

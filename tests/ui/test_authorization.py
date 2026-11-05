@@ -1,9 +1,19 @@
 """Actual native authorization commands and HTTP evidence in the shared App frame."""
 
+import logging
+
 import pytest
 
-from kuberich.domain.authorization import AuthorizationMode, AuthorizationScopeKind, ReviewDecision
+from kuberich.config.schema import Settings
+from kuberich.domain.authorization import (
+    AuthorizationMode,
+    AuthorizationScopeKind,
+    RbacSubject,
+    RbacSubjectKind,
+    ReviewDecision,
+)
 from kuberich.services.authorization_commands import authorization_command
+from kuberich.ui.app import KubeRichApp
 from tests.support.authorization_ui import GROUP, AuthorizationAPI, authorization_api
 from tests.support.connections import catalog_fixture
 from tests.support.workspace import wait_for
@@ -49,6 +59,98 @@ def select(app, predicate):
     app.authorization_table.move_cursor(row=app.authorization_table.get_row_index(row.key))
     app.authorization_table.focus()
     return row
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "kind,plural,name,namespace",
+    [
+        ("RoleBinding", "rolebindings", "readers", "team"),
+        ("ClusterRoleBinding", "clusterrolebindings", "cluster-readers", None),
+    ],
+)
+async def test_repeated_binding_subjects_render_unique_native_rows_and_remain_navigable(
+    tmp_path, kind, plural, name, namespace
+):
+    api = AuthorizationAPI()
+    user = {"kind": "User", "apiGroup": GROUP, "name": "Alice"}
+    group = {"kind": "Group", "apiGroup": GROUP, "name": "Operators"}
+    account = {"kind": "ServiceAccount", "name": "runner", "namespace": "identity"}
+    api.objects[(GROUP, plural, namespace, name)]["subjects"] = [
+        user,
+        dict(user),
+        group,
+        account,
+        dict(group),
+        {**user, "kind": "Group"},
+        dict(account),
+        {**account, "namespace": "other"},
+    ]
+    expected = (
+        RbacSubject(RbacSubjectKind.USER, "Alice", None),
+        RbacSubject(RbacSubjectKind.GROUP, "Operators", None),
+        RbacSubject(RbacSubjectKind.SERVICE_ACCOUNT, "runner", "identity"),
+        RbacSubject(RbacSubjectKind.GROUP, "Alice", None),
+        RbacSubject(RbacSubjectKind.SERVICE_ACCOUNT, "runner", "other"),
+    )
+    async with authorization_api(api) as url:
+        app = KubeRichApp(
+            Settings(read_only=True),
+            logging.getLogger("binding-subjects"),
+            catalog=catalog_fixture(tmp_path, url),
+        )
+        async with app.run_test(size=(80, 20)) as pilot:
+            await pods_ready(app)
+            await app.run_command("rbac bindings")
+            await ready(app, AuthorizationMode.BINDINGS)
+            selected = select(
+                app,
+                lambda row: (
+                    row.object_ref is not None
+                    and row.object_ref.kind == kind
+                    and row.object_ref.name == name
+                ),
+            )
+            await pilot.press("enter")
+            panel = app.query_one("#view-error")
+            await wait_for(
+                lambda: (
+                    panel.has_class("failed")
+                    or (
+                        app.authorization_table.request == app.workspace.authorization_request
+                        and any(row.status == "declared subject" for row in rows(app))
+                    )
+                )
+            )
+            assert not panel.has_class("failed"), (
+                "Binding detail must render legal repeated subjects"
+            )
+            await ready(app, AuthorizationMode.BINDING)
+            subjects = tuple(row for row in rows(app) if row.status == "declared subject")
+            assert tuple(row.destination.subject for row in subjects) == expected
+            assert len({row.key for row in rows(app)}) == app.authorization_table.row_count
+            assert all(row.object_ref is None for row in subjects)
+            assert {row.label for row in subjects} == {
+                "User Alice",
+                "Group Operators",
+                "Group Alice",
+                "ServiceAccount identity/runner",
+                "ServiceAccount other/runner",
+            }
+            assert app.workspace.authorization_request.intent.binding == selected.object_ref
+            select(app, lambda row: row.label == "Group Operators")
+            await pilot.press("enter")
+            await ready(app, AuthorizationMode.SUBJECT)
+            grants = tuple(row for row in rows(app) if row.key.startswith("grant:"))
+            matching = tuple(row for row in grants if row.object_ref == selected.object_ref)
+            assert len(matching) == 1
+            assert matching[0].destination.binding == selected.object_ref
+            assert "via group: direct declaration" in matching[0].details
+            assert f"{kind}/{name}" in matching[0].label
+            assert (f"namespace {namespace}" if namespace is not None else "cluster") in matching[
+                0
+            ].label
+            assert not panel.has_class("failed")
 
 
 @pytest.mark.asyncio
