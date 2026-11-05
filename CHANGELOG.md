@@ -7,7 +7,8 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Added
 
-- Save reviewed resource YAML, retained logs, diagnostics, literal screen text and inspectable support JSON with default redaction and private files; browse, filter, view, copy and explicitly delete local artifacts with `:exports` ([#73](https://github.com/carloshm91/kuberich/issues/73)).
+- Save reviewed resource YAML, logs, diagnostics, screen text and inspectable support JSON with default redaction and private files ([#73](https://github.com/carloshm91/kuberich/issues/73)).
+- Browse, filter, view, copy and explicitly delete saved local artifacts with `:exports` ([#73](https://github.com/carloshm91/kuberich/issues/73)).
 - Choose the initial export directory with `--screen-dump-dir` and open the local browser with `--command exports` without automatically connecting or authenticating ([#73](https://github.com/carloshm91/kuberich/issues/73)).
 - Inspect image-pull, scheduling, crash-loop, readiness and volume evidence in native `:diagnostics` and captured-workload `:diagnose` views, with explicit source gaps and guarded resource/log navigation ([#72](https://github.com/carloshm91/kuberich/issues/72)).
 - Run a configured optional Popeye executable explicitly with `:popeye`; keep report severity, provenance, namespace scope and name-only identity limits visible ([#72](https://github.com/carloshm91/kuberich/issues/72)).

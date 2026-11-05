@@ -362,3 +362,53 @@ cases passed with branch tracing in 70.70 seconds. Ruff and formatting passed.
 `ui/navigation-preferences-evidence.json` binds the test, original/controlled
 failures, phase JSON and qualified cohort. Product/helper files did not change;
 the byte-matching post-CI runtime, terminal and wheel receipts remain applicable.
+
+## Third hosted candidate: changelog and stable log-source selection
+
+Source `0221e2050b6ee3ecaa7e689df6853866ac59439e` passed Repository run
+42129836343 and the complete fast selection in Application run 42129836362:
+7,358 passed, one owned-macOS clipboard skip, in 341.846 seconds. All four native
+build/install targets passed. This candidate nevertheless fails qualification:
+Linux part 4 found a 32-word Unreleased changelog entry, and Python 3.13/3.14
+also exposed an aggregate-log source-selection assumption. Original job logs,
+annotations, fast artifacts and test-part evidence remain in
+`hosted-pr315-0221e20/`; successful lanes do not override these failures.
+
+The changelog entry is split into separate save and browser changes without
+changing the 25-word policy. All five existing changelog checks passed locally.
+
+An untouched aggregate case passed when the app stream retained its first chunk
+before init. A controlled real-HTTP interleaving delays that app chunk until init
+is retained and reproduces the same five-second timeout. Picker index 1 then
+selects init; all three readers remain active with one request each. The new app
+line reaches retained aggregate records but is correctly absent from the
+init-filtered export. Both hosted Python 3.13 sizes fail at this same phase.
+This establishes a test selection defect, rather than evidence of a stopped log
+reader. The corrected test deliberately retains the other streams first, selects
+the advertised app identity and verifies its exact filter. The live append,
+frozen saved records, redaction, scope and viewport assertions remain, with an
+additional nonempty all-app saved-record assertion. Both sizes passed with branch
+tracing in 32.83 seconds. All 26 non-runtime aggregate/log UI cases passed under
+isolated locked CPython 3.14.3 in 66.00 seconds; the separately owned runtime case
+was deselected for this cohort. Ruff, formatting and whitespace checks passed.
+`ui/aggregate-filter-investigation/evidence.json` retains the original and
+controlled failures, actual reader/filter observations and final test-only hashes.
+
+Changing this test also changes the aggregate runtime's explicit source inventory.
+The older 337-input runtime receipts remain historical. Fresh positive,
+strict-negative and covered replay evidence passed in 110.82 seconds: the actual
+uninstrumented gap was 134.003 ms, the deliberate strict negative correctly
+rejected 263.586 ms, and the CTracer replay's 243.635-ms miss remains advisory and
+is not timing qualification. Both successful children completed their two full
+history rounds. All original workload, byte, deadline and cleanup limits remain;
+all 337 input hashes match and all child PIDs are absent. The archived receipt
+and binding are in `ui/aggregate-runtime-source-filter-receipts/`, with binding
+SHA-256 `96137a3054f4fe78f032ade03582d040758c777e087c58d12bbaeb623dcc052e`.
+
+Production and installed-wheel terminal-input hashes remain independently
+verifiable; those runtime bytes did not change. Ruff, all 1,014 formatting checks,
+the required complete test-private audit and documentation-source validation
+passed. The third hosted observer finished and reaped all 185 readers, with
+groups absent and its lock released. Its Application jobs were correctly skipped
+after the part failures; the resulting Quality gate is failed. The test-only
+correction and local replay do not replace the final exact-head hosted matrix.

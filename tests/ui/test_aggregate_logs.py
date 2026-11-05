@@ -26,6 +26,7 @@ from kuberich.ui.aggregate_logs import AggregateLogScreen, LogSourcesScreen
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.containers import ContainerScreen
 from kuberich.ui.logs import LogScreen
+from kuberich.ui.scopes import ScopeScreen
 from tests.support.aggregate_logs import AggregateApi
 from tests.support.aggregate_runtime import (
     MODE,
@@ -82,9 +83,8 @@ async def test_public_aggregate_controls_reuse_history_with_json_filter_export_a
     api.pods["pod-00"]["spec"].update(
         initContainers=[{"name": "init"}], ephemeralContainers=[{"name": "debug"}]
     )
-    api.initial["pod-00", "app"] = (
-        b'2026-10-09T12:00:03Z {"pass\\u0077ord":"hidden-json-value","message":"owned-json","control":"\\u001b[red]"}\n'
-    )
+    app_initial = b'2026-10-09T12:00:03Z {"pass\\u0077ord":"hidden-json-value","message":"owned-json","control":"\\u001b[red]"}\n'
+    api.initial["pod-00", "app"] = b""
     api.initial["pod-00", "init"] = b'2026-10-09T11:00:00-02:00 init earlier-clock\n{"bad-json":\n'
     async with workspace_api(ns, api.handler) as url:
         app = app_for(tmp_path, url)
@@ -94,6 +94,13 @@ async def test_public_aggregate_controls_reuse_history_with_json_filter_export_a
             await pilot.press("L")
             await wait_for(lambda: isinstance(app.screen, AggregateLogScreen))
             screen = app.screen
+            # Readers arrive independently; exercise a source picker whose first
+            # retained source is not the app stream used by the later append.
+            await wait_for(lambda: len(screen.body.rows) == 3 and api.active == 3)
+            assert all(
+                record.source.container != "app" for record in screen.aggregate.records.values()
+            )
+            await api.emit("pod-00", "app", app_initial)
             await wait_for(lambda: len(screen.body.rows) == 4)
             assert api.active == 3 and not api.requests["pod-01", "app"]
             assert "hidden-json-value" not in rendered(screen) and "owned-pod-00" in rendered(
@@ -124,9 +131,13 @@ async def test_public_aggregate_controls_reuse_history_with_json_filter_export_a
             await pilot.pause()
             assert len(screen.body.matches) == 1 and screen.aggregate.marks
             await pilot.press("s")
-            app.screen.query_one(OptionList).highlighted = 1
+            picker = app.screen
+            assert isinstance(picker, ScopeScreen)
+            app_source = screen.owner.states["owned-pod-00", "app"]
+            app_label = app_source.source.label(app_source.number)
+            picker.query_one(OptionList).highlighted = picker.values.index(app_label)
             await pilot.press("enter")
-            await wait_for(lambda: screen.aggregate.filter is not None)
+            await wait_for(lambda: screen.aggregate.filter == app_source.source.key)
             await pilot.press("ctrl+y")
             await wait_for(lambda: app.clipboard == screen.aggregate.export())
             assert app.clipboard == screen.aggregate.export()
@@ -142,6 +153,7 @@ async def test_public_aggregate_controls_reuse_history_with_json_filter_export_a
             metadata, provenance, retained = read_logs(destination)
             records = tuple(json.loads(line) for line in retained.splitlines())
             assert records == frozen and "arrived-after-review" not in retained
+            assert records and all(record["source"]["container"] == "app" for record in records)
             assert (
                 metadata.scope.context == "kuberich-test-one"
                 and metadata.scope.collection_namespace == "team"
