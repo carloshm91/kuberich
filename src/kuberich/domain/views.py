@@ -10,6 +10,7 @@ from kuberich.domain.connections import (
     SessionObservation,
 )
 from kuberich.domain.metrics import MetricsSnapshot
+from kuberich.domain.pulse import PulseScope, PulseSnapshot, PulseStatus
 from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.resources import ApiResource, ResourceSnapshot, api_segment
 from kuberich.domain.targets import SessionIdentity
@@ -78,6 +79,7 @@ class ViewObservation:
     snapshot: ResourceSnapshot | None = None
     problem: ConnectionProblem | None = None
     metrics: MetricsSnapshot | None = None
+    pulse: PulseSnapshot | None = None
 
     @property
     def message(self) -> str:
@@ -95,6 +97,14 @@ class ViewObservation:
             return f"{prefix}{action} · {self.problem}"
         if self.status is ViewStatus.FAILED:
             return self.connection.message
+        if self.pulse is not None:
+            loading = sum(source.status is PulseStatus.LOADING for source in self.pulse.sources)
+            partial = any(source.status is not PulseStatus.VALID for source in self.pulse.sources)
+            return (
+                "Cluster pulse · "
+                + (f"Loading {loading} sources" if loading else "Observed sources")
+                + (" · partial/unavailable data" if partial else "")
+            )
         if self.scope is None:
             return "Loading resource discovery."
         if self.snapshot is None:
@@ -188,6 +198,35 @@ class ViewStore:
             status=_SYNC_STATUSES[update.status],
             snapshot=snapshot,
             problem=_owned_problem(update.problem),
+        )
+        return True
+
+    def bind_pulse(self, revision: int, scope: PulseScope) -> bool:
+        if revision != self.observation.revision:
+            return False
+        connection = self.observation.connection
+        if (
+            connection.state not in USABLE_CONNECTIONS
+            or connection.identity != scope.session
+            or connection.namespace != scope.namespace
+        ):
+            raise AppError("Pulse scope does not belong to the active connection.")
+        self.observation = replace(self.observation, pulse=PulseSnapshot(scope))
+        return True
+
+    def apply_pulse(self, revision: int, snapshot: PulseSnapshot) -> bool:
+        if (
+            revision != self.observation.revision
+            or self.observation.pulse is None
+            or self.observation.pulse.scope != snapshot.scope
+        ):
+            return False
+        self.observation = replace(
+            self.observation,
+            pulse=snapshot,
+            status=ViewStatus.LOADING
+            if any(source.status is PulseStatus.LOADING for source in snapshot.sources)
+            else ViewStatus.LIVE,
         )
         return True
 

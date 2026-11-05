@@ -47,6 +47,11 @@ PARSERS = (
         },
     ),
     ("domain/jumps.py", "parse_jumps", {"value": "jumps", "fields": "jumps.definitions.NAME"}),
+    (
+        "config/observability.py",
+        "parse_observability",
+        {"value": "observability", "raw": "observability.history"},
+    ),
 )
 
 
@@ -128,9 +133,14 @@ def fields(root: Path) -> list[Field]:
     parsers = (
         *PARSERS,
         ("config/forwarding.py", "parse_forwarding", {"value": "forwarding.contexts.NAME"}),
+        (
+            "config/observability.py",
+            "parse_observability",
+            {"value": "observability.contexts.NAME", "raw": "observability.contexts.NAME.history"},
+        ),
     )
     for index, (filename, function_name, paths) in enumerate(parsers):
-        nested_context = index == len(PARSERS)
+        nested_context = index >= len(PARSERS)
         tree = ast.parse((root / "src/kuberich" / filename).read_text())
         names: dict[str, set[str]] = {}
         node: ast.AST

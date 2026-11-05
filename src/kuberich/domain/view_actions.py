@@ -51,6 +51,15 @@ class ViewState:
 
 
 def action_available(action: str, view: ViewState) -> bool:
+    if view.resource == "pulse" and action in TABLE_ACTIONS - {
+        "focus_filter",
+        "focus_command",
+        "history_back",
+        "history_forward",
+    }:
+        return False
+    if view.resource == "pulse" and action == "views":
+        return False
     if action == "review_delete" and (view.generic or view.resource == "namespaces"):
         return False
     if action == "configuration_data" and (

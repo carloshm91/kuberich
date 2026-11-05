@@ -9,12 +9,13 @@ from typing import Protocol
 from kuberich.domain.namespaces import NamespaceRow
 from kuberich.domain.navigation import ContextRow, Viewport
 from kuberich.domain.pods import PodRow
+from kuberich.domain.pulse import PulseDrilldown, PulseRow
 from kuberich.domain.registry import ResourceRow
 from kuberich.domain.view_routes import ViewRoute
 from kuberich.domain.views import ViewObservation
 from kuberich.services.filtering import FilterResult
 
-type ViewRow = PodRow | NamespaceRow | ContextRow | ResourceRow
+type ViewRow = PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow
 
 
 @dataclass(frozen=True)
@@ -23,6 +24,7 @@ class RenderRequest:
     query: str
     current: Callable[[], bool]
     route: ViewRoute
+    drilldown: PulseDrilldown | None = None
 
 
 @dataclass(frozen=True)

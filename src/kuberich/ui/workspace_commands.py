@@ -230,6 +230,7 @@ class WorkspaceCommands:
             Command.CONTEXTS,
             Command.NAMESPACES,
             Command.PODS,
+            Command.PULSE,
             Command.BACK,
             Command.FORWARD,
             Command.QUIT,

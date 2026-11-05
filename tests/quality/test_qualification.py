@@ -84,7 +84,14 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     second = catalog.cluster_stages(
         tmp_path, Path("/owned/kind"), Path("/owned/kubectl"), Path("/owned/app.whl"), 2
     )
-    assert len(first) == len(second) == 14
+    assert len(first) == len(second) == 15
+    pulse = next(stage for stage in first if stage.name == "kind-1-pulse")
+    repeated_pulse = next(stage for stage in second if stage.name == "kind-2-pulse")
+    pulse_evidence = Path(pulse.command[pulse.command.index("--evidence") + 1])
+    repeated_evidence = Path(repeated_pulse.command[repeated_pulse.command.index("--evidence") + 1])
+    assert pulse_evidence == tmp_path / "kind-1-pulse" / "evidence.json"
+    assert repeated_evidence == tmp_path / "kind-2-pulse" / "evidence.json"
+    assert pulse_evidence.parent != repeated_evidence.parent
     for stage in first:
         module = stage.command[4]
         assert module in body

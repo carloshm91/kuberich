@@ -965,7 +965,8 @@
       "acceptance": [
         "Summaries carry timestamp and scope and distinguish unavailable data from healthy state.",
         "Keyboard actions jump to the exact underlying resource/filter while preserving context and navigation history.",
-        "Large-cluster summaries use incremental bounded work and responsive loading states."
+        "Large-cluster summaries use incremental bounded work and responsive loading states.",
+        "Match the Lens cluster overview (workload status summary, node and pod health, capacity and requests/limits) using terminal charts from O08 #231 when Prometheus is available."
       ],
       "verification": "Scenario fixtures and Pilot tests cover healthy/degraded/partial-RBAC clusters, metrics loss and scope changes; include performance measurements.",
       "priority": "P1"

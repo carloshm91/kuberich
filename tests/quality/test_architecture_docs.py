@@ -153,6 +153,7 @@ def test_architecture_and_decision_links_resolve_without_publishing_history():
     paths += [
         ROOT / "docs/adr/app-composition.md",
         ROOT / "docs/adr/0032-kubeconfig-loader-contract.md",
+        ROOT / "docs/adr/0033-cluster-overview-and-history.md",
     ]
     for path in paths:
         tokens, _ = rendered(path.read_text())
@@ -171,7 +172,7 @@ def test_architecture_and_decision_links_resolve_without_publishing_history():
                     _, identifiers = rendered(target.read_text())
                     assert unquote(parsed.fragment) in identifiers, href
     navigation = load_navigation(ROOT)
-    assert navigation.user_page_count == 20
+    assert navigation.user_page_count == 21
     assert not any(
         "architecture" in page.source or "adr/" in page.source for page in navigation.pages
     )
@@ -185,6 +186,7 @@ def test_every_new_architecture_document_has_an_explicit_disposition():
         "docs/internal/architecture-history/README.md",
         "docs/adr/README.md",
         "docs/adr/0000-template.md",
+        "docs/adr/0033-cluster-overview-and-history.md",
     ]
     validate_documentation_plan(ROOT, names)
 
@@ -209,7 +211,11 @@ def test_archived_architecture_links_use_the_byte_verified_original_source_conte
 def test_current_composition_and_kubeconfig_decisions_remain_in_the_active_index():
     index = (ROOT / "docs/adr/README.md").read_text()
     overview = (ROOT / "docs/architecture.md").read_text()
-    for name in ("app-composition.md", "0032-kubeconfig-loader-contract.md"):
+    for name in (
+        "app-composition.md",
+        "0032-kubeconfig-loader-contract.md",
+        "0033-cluster-overview-and-history.md",
+    ):
         assert f"]({name})" in index
         assert f"](adr/{name})" in overview
     assert "current view and scope" in overview and "inline Retry" in overview

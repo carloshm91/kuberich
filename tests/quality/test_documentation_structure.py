@@ -33,7 +33,7 @@ def insert_after_title(path, text):
 
 def test_navigation_is_complete_diataxis_and_maps_the_baseline_documents():
     catalog = load_navigation(ROOT)
-    assert catalog.user_page_count == 20
+    assert catalog.user_page_count == 21
     assert {page.kind for page in catalog.pages} == {
         "tutorial",
         "how-to",
@@ -48,8 +48,8 @@ def test_navigation_is_complete_diataxis_and_maps_the_baseline_documents():
         if item["audience"] == "user"
     }
     retired = {name for page in catalog.guides for name in page.retired}
-    assert fragments | retired == baseline_guides and len(fragments | retired) == 30
-    assert len(fragments) == 15
+    assert fragments | retired == baseline_guides and len(fragments | retired) == 31
+    assert len(fragments) == 16
     paths = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT, text=True).split("\0")
     paths += ["docs/STYLE.md", "docs/navigation.json", "docs/documentation-plan.json"]
     assert validate_documentation_plan(ROOT, paths) == len(plan["documents"])
@@ -171,12 +171,12 @@ def test_canonical_pages_preserve_every_fragment_and_real_deep_links(tmp_path, p
     )
     output = tmp_path / "output"
     manifest = build(output, source, public_launch=public)
-    assert manifest["documentation_pages"] == 20 and manifest["publication_performed"] is False
+    assert manifest["documentation_pages"] == 21 and manifest["publication_performed"] is False
     assert "docs/navigation.json" in manifest["sources"]
     assert "scripts/documentation.py" in manifest["sources"]
     surfaces = [output / "docs"] + ([] if public else [output / "www/docs"])
     for surface in surfaces:
-        assert len(list(surface.glob("*.html"))) - int((surface / "404.html").exists()) == 20
+        assert len(list(surface.glob("*.html"))) - int((surface / "404.html").exists()) == 21
         for guide in catalog.guides:
             html = (surface / guide.filename).read_text()
             for fragment in guide.sources:

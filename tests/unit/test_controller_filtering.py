@@ -6,6 +6,7 @@ import pytest
 
 from kuberich.domain.namespaces import namespace_row
 from kuberich.domain.pods import pod_row
+from kuberich.domain.pulse import PulseDrilldown, PulsePredicate
 from kuberich.domain.view_routes import ViewRoute
 from kuberich.domain.views import ViewObservation
 from kuberich.services.metadata_filtering import MetadataFilter
@@ -67,3 +68,22 @@ async def test_controller_filter_observes_changed_options_after_the_public_filte
         rows, RenderRequest(ViewObservation(snapshot=data), "", lambda: True, route)
     )
     assert [row.name for row in result.rows] == ["alpha"]
+
+
+@pytest.mark.asyncio
+async def test_captured_pulse_predicate_and_uid_filter_before_local_search():
+    data = snapshot(pod("ready"), pod("unready", ready=False), pod("other", ready=False))
+    rows = tuple(pod_row(record) for record in data.items)
+    drilldown = PulseDrilldown(data.resource, "team", PulsePredicate.POD_NOT_READY)
+    service = ResourceFilter(MetadataFilter(), lambda _: FilterOptions())
+    request = RenderRequest(
+        ViewObservation(snapshot=data), "", lambda: True, ViewRoute.pods(), drilldown
+    )
+    assert [row.name for row in (await service.apply(rows, request)).rows] == ["unready", "other"]
+    selected = replace(request, drilldown=replace(drilldown, uid="owned-unready"))
+    assert [row.name for row in (await service.apply(rows, selected)).rows] == ["unready"]
+    assert not (await service.apply(rows, replace(selected, query="ready-but-missing"))).rows
+    # An absent captured UID never silently expands to all matching resources.
+    assert not (
+        await service.apply(rows, replace(request, drilldown=replace(drilldown, uid="gone")))
+    ).rows

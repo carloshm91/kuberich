@@ -19,8 +19,8 @@ from tests.support.site_source import copy_source, refresh
 def test_every_user_page_keeps_tracking_boundaries_and_current_source_reference():
     catalog = load_navigation(ROOT)
     generated = reference_files(ROOT)
-    assert catalog.user_page_count == 20
-    assert len(catalog.guides) == 15 and len(catalog.references) == 4
+    assert catalog.user_page_count == 21
+    assert len(catalog.guides) == 16 and len(catalog.references) == 4
     for guide in catalog.pages:
         text = (
             generated[guide.source]
@@ -83,7 +83,7 @@ def test_all_retired_routes_and_deep_links_reach_active_guidance(tmp_path):
                     if f"[Old guide]({route.source}#{old})" in chunk:
                         assert f'href="{target}#{active}"' in rendered
             assert "guide-history" not in rendered
-        assert manifest["documentation_pages"] == 20
+        assert manifest["documentation_pages"] == 21
     redirects = (output / "docs/_redirects").read_text()
     for route in catalog.legacy_routes:
         # No Location fragment discards the old hash; the active page keeps its ID.
@@ -109,7 +109,9 @@ def test_docs_reject_invalid_aliases_and_stale_reference(tmp_path, fault):
         build(tmp_path / "output", source)
 
 
-@pytest.mark.parametrize("declaration", ["alias", "key", "flag", "subcommand", "schema"])
+@pytest.mark.parametrize(
+    "declaration", ["alias", "key", "flag", "subcommand", "schema", "observability"]
+)
 def test_reference_drift_follows_actual_selected_checkout_declarations(tmp_path, declaration):
     source = copy_source(tmp_path / "source")
     changes = {
@@ -134,6 +136,11 @@ def test_reference_drift_follows_actual_selected_checkout_declarations(tmp_path,
             '        "full_gvr_titles",',
             '        "full_gvr_titles",\n        "probe_schema",',
         ),
+        "observability": (
+            "config/observability.py",
+            '            "cluster_value",',
+            '            "cluster_value",\n            "probe_history",',
+        ),
     }
     filename, old, replacement = changes[declaration]
     path = source / "src/kuberich" / filename
@@ -143,6 +150,10 @@ def test_reference_drift_follows_actual_selected_checkout_declarations(tmp_path,
         check_reference_files(source)
     if declaration == "schema":
         assert "appearance.probe_schema" in {item["path"] for item in fields(source)}
+    if declaration == "observability":
+        declared = {item["path"] for item in fields(source)}
+        assert "observability.history.probe_history" in declared
+        assert "observability.contexts.NAME.history.probe_history" in declared
 
 
 def test_schema_includes_optional_fields_and_real_defaults_without_loading_user_files():
@@ -156,6 +167,17 @@ def test_schema_includes_optional_fields_and_real_defaults_without_loading_user_
     assert schema["forwarding.presets.NAME.retries"] == "0"
     assert "jumps.definitions.NAME.source" in schema
     assert "navigation.views.RESOURCE.columns[].alignment" in schema
+    assert schema["observability.contexts"] == "{}"
+    assert schema["observability.schema_version"] == "1"
+    for prefix in ("observability.history", "observability.contexts.NAME.history"):
+        assert schema[prefix] == "null (before validation)"
+        assert schema[prefix + ".port"] == "9090"
+        assert schema[prefix + ".scheme"] == '"http"'
+        assert schema[prefix + ".matchers"] == "{}"
+        for required_or_optional in ("namespace", "service", "cluster_label", "cluster_value"):
+            assert schema[prefix + "." + required_or_optional] == "null (before validation)"
+    assert "observability.contexts.NAME.schema_version" not in schema
+    assert "observability.contexts.NAME.contexts" not in schema
 
 
 def test_rehashed_missing_external_legacy_fragment_is_rejected(tmp_path):

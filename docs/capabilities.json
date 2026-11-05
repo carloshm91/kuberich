@@ -710,7 +710,7 @@
         "tests/contract/test_metrics.py",
         "tests/ui/test_metrics.py"
       ],
-      "public_summary": "Node, PV, PVC, StorageClass and HPA tables are available. Development source adds Node CPU/memory usage, allocatable percentages and vendor-neutral extended-resource capacity; scheduling and broader quota/disruption diagnostics remain planned.",
+      "public_summary": "Node, PV, PVC, StorageClass and HPA tables are available. Development source adds Node CPU/memory usage, allocatable percentages and vendor-neutral extended-resource capacity; the development cluster overview adds known pressure/unscheduled states, while broader quota/disruption diagnostics remain planned.",
       "public_status": "partial"
     },
     {
@@ -1374,8 +1374,8 @@
       ],
       "source": "internal/client/metrics.go",
       "status": "planned",
-      "difference": "O01 #68 implements discovered current CPU/memory metrics in native Pod/workload/Node/container views, UID/controller-chain totals, typed sorting, explicit API/RBAC/no-sample/stale/partial/zero states, declared budgets and vendor-neutral extended-resource requests/capacity. Effective allocation with init/sidecar/overhead/Pod-level budgets/observed resize is labelled uncertain; CPU/memory Metrics API supplies no GPU utilization. Historical charts and Prometheus remain separate O08 work.",
-      "public_summary": "Development source adds current CPU/memory usage, declared requests/limits, labelled percentages and Node/extended-resource capacity. Missing, forbidden, stale, partial and measured-zero values remain distinct. Complex Pod allocations are explicitly uncertain; GPU utilization and history are unavailable. Installed 0.3.0 predates these metrics columns.",
+      "difference": "O01 #68 implements discovered current CPU/memory metrics in native Pod/workload/Node/container views, UID/controller-chain totals, typed sorting, explicit API/RBAC/no-sample/stale/partial/zero states, declared budgets and vendor-neutral extended-resource requests/capacity. Effective allocation with init/sidecar/overhead/Pod-level budgets/observed resize is labelled uncertain; CPU/memory Metrics API supplies no GPU utilization. O02 #69 adds configured overview CPU/memory history; broader historical charts and Prometheus entities remain O08 work.",
+      "public_summary": "Development source adds current CPU/memory usage, declared requests/limits, labelled percentages and Node/extended-resource capacity. Missing, forbidden, stale, partial and measured-zero values remain distinct. Complex Pod allocations are explicitly uncertain; GPU utilization and broader per-resource history are unavailable; development overview history is separately configured. Installed 0.3.0 predates these metrics columns.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/resource-workspace.md",
@@ -1393,9 +1393,19 @@
       ],
       "source": "internal/view/pulse.go",
       "status": "planned",
-      "difference": "",
-      "public_summary": "A cluster metrics overview with CPU/memory drill-down is planned.",
-      "public_status": "planned"
+      "difference": "O02 #69 adds a native Pulse route with independent timestamp/scope/availability per source, incremental Node/Pod/workload summaries, capacity and configured budgets, exact typed health/CPU/memory drill-downs, and session-owned current metrics/history expiry. Configured per-context Service-proxy Prometheus overview CPU/memory queries provide numeric sparklines and explicit gaps/backend binding. Broader entities, network/filesystem history, ranges and remaining providers remain O08 #231; owned kind verifies actual scraped values, native charts, drill-downs and cleanup; final current-head qualification remains pending.",
+      "public_summary": "Development source adds a native cluster overview with Node/Pod/workload health, capacity, current usage and exact resource drill-downs. Configured Prometheus Service-proxy CPU/memory history shows numeric values, gaps and explicit backend scope. Broader per-resource/network/filesystem history remains unavailable; installed 0.3.0 predates the overview.",
+      "public_status": "partial",
+      "partial_evidence": [
+        "docs/cluster-overview.md",
+        "docs/internal/acceptance/cluster-overview.md",
+        "tests/unit/test_pulse.py",
+        "tests/contract/test_pulse.py",
+        "tests/ui/test_pulse.py",
+        "tests/unit/test_history.py",
+        "tests/contract/test_history.py",
+        "tests/ui/test_observability_live.py"
+      ]
     },
     {
       "id": "OBS03",

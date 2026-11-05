@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "page_budget": 20,
+  "page_budget": 21,
   "index_title": "Start here",
   "sections": [
     {
@@ -122,6 +122,16 @@
             "start-and-select": "select-configuration-and-scope",
             "supported-local-contracts": "eks"
           }
+        },
+        {
+          "source": "cluster-overview.md",
+          "title": "Inspect cluster health",
+          "sources": [
+            "cluster-overview.md"
+          ],
+          "generated": false,
+          "retired_sources": [],
+          "anchors": {}
         },
         {
           "source": "command-navigation.md",

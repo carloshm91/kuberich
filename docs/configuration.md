@@ -60,6 +60,48 @@ Keys, mouse mode, and log settings need a restart. Turning read-only off in a fi
 does not make the running session writable. Invalid or deleted files leave the
 last valid preferences active and show a message. Use `config check` for details.
 
+## Configure overview history
+
+Development source can read CPU/memory history for the
+[cluster overview](cluster-overview.md) through a Prometheus Service proxy.
+The installed 0.3.0 release predates this connection. Configure it only for the
+exact context that should use the backend:
+
+```yaml
+schema_version: 1
+observability:
+  schema_version: 1
+  contexts:
+    demo-lab:
+      history:
+        namespace: observability
+        service: prometheus
+        port: 9090
+        scheme: http
+        cluster_label: cluster
+        cluster_value: demo
+        matchers:
+          job: cadvisor
+```
+
+Replace the fictional Service fields and label values with your backend's
+declarations. Requests use your selected Kubernetes connection and need
+`services/proxy` read access in the backend namespace. The overview adds the
+active namespace to its query; a conflicting configured namespace is refused.
+
+`cluster_label` and `cluster_value` declare a cluster selector together. Omit
+both when that binding is unknown; the chart then labels its backend scope as
+unverified. A context name is not automatically a Prometheus label value.
+Literal `matchers` narrow the backend series without accepting arbitrary PromQL.
+
+A root `observability.history` supplies a fallback for contexts without an
+override. An explicit context `history: null` disables that fallback. Valid
+backend changes cancel the previous query and restart Pulse. Theme-only changes
+keep its collection running, and an invalid reload keeps the last valid settings.
+Checking preferences performs no connection, backend installation or file rewrite.
+See the [generated fields](config-reference.md) and
+[history interpretation](cluster-overview.md#connect-overview-history).
+
 ## Choose and save a theme
 
 Open `:themes` or run `kuberich --command themes`. The standalone picker needs no

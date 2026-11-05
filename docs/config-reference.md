@@ -80,6 +80,24 @@ nullable; the parser still validates it. A null fallback is not permission to su
 | `navigation.views.RESOURCE.sort` | {} |
 | `navigation.views.RESOURCE.sort.descending` | false |
 | `navigation.views.RESOURCE.sort.key` | "name" |
+| `observability.contexts` | {} |
+| `observability.contexts.NAME.history` | null (before validation) |
+| `observability.contexts.NAME.history.cluster_label` | null (before validation) |
+| `observability.contexts.NAME.history.cluster_value` | null (before validation) |
+| `observability.contexts.NAME.history.matchers` | {} |
+| `observability.contexts.NAME.history.namespace` | null (before validation) |
+| `observability.contexts.NAME.history.port` | 9090 |
+| `observability.contexts.NAME.history.scheme` | "http" |
+| `observability.contexts.NAME.history.service` | null (before validation) |
+| `observability.history` | null (before validation) |
+| `observability.history.cluster_label` | null (before validation) |
+| `observability.history.cluster_value` | null (before validation) |
+| `observability.history.matchers` | {} |
+| `observability.history.namespace` | null (before validation) |
+| `observability.history.port` | 9090 |
+| `observability.history.scheme` | "http" |
+| `observability.history.service` | null (before validation) |
+| `observability.schema_version` | 1 |
 | `plugins.commands` | No explicit fallback; see task guide |
 | `plugins.commands.NAME.args` | [] |
 | `plugins.commands.NAME.command` | null (before validation) |
@@ -108,6 +126,6 @@ nullable; the parser still validates it. A null fallback is not permission to su
 | `plugins.locations` | No explicit fallback; see task guide |
 | `plugins.schema_version` | null (before validation) |
 
-The root accepts these versioned extensions: `appearance`, `context_settings`, `forwarding`, `jumps`, `navigation`, `plugins`.
+The root accepts these versioned extensions: `appearance`, `context_settings`, `forwarding`, `jumps`, `navigation`, `observability`, `plugins`.
 Key profiles/actions come from the [key reference](cli-reference.md#additional-navigation-defaults).
 Theme colors and plugin definitions are validated as described in their task guides.

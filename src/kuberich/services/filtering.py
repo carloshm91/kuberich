@@ -7,19 +7,22 @@ from dataclasses import dataclass
 from kuberich.domain.namespaces import NamespaceRow
 from kuberich.domain.navigation import ContextRow
 from kuberich.domain.pods import PodRow
+from kuberich.domain.pulse import PulseRow
 from kuberich.domain.registry import ResourceRow
 
 REGEX_SECONDS = 0.05
 
 
 @dataclass(frozen=True)
-class FilterResult[T: PodRow | NamespaceRow | ContextRow | ResourceRow]:
+class FilterResult[T: PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow]:
     rows: tuple[T, ...]
     problem: str | None = None
     unknown: int = 0
 
 
-def search_text(row: PodRow | NamespaceRow | ContextRow | ResourceRow) -> str:
+def search_text(row: PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow) -> str:
+    if isinstance(row, PulseRow):
+        return f"{row.label} {row.detail} {row.source}"
     if isinstance(row, ResourceRow):
         return " ".join(value.text for value in row.values[:-1])
     if isinstance(row, ContextRow):
@@ -29,7 +32,7 @@ def search_text(row: PodRow | NamespaceRow | ContextRow | ResourceRow) -> str:
     return f"{row.namespace} {row.name} {row.ready}/{row.containers} {row.status} {row.restarts}"
 
 
-def filter_rows[T: PodRow | NamespaceRow | ContextRow | ResourceRow](
+def filter_rows[T: PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow](
     rows: tuple[T, ...], query: str, kind: str = "pods"
 ) -> FilterResult[T]:
     if not query:
@@ -85,7 +88,7 @@ def filter_rows[T: PodRow | NamespaceRow | ContextRow | ResourceRow](
     return FilterResult(tuple(matches))
 
 
-async def apply_filter[T: PodRow | NamespaceRow | ContextRow | ResourceRow](
+async def apply_filter[T: PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow](
     rows: tuple[T, ...], query: str, kind: str = "pods"
 ) -> FilterResult[T]:
     if not query:

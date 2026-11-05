@@ -4,6 +4,7 @@ import asyncio
 from collections.abc import Callable
 from contextlib import suppress
 
+from kuberich.domain.pulse import PulseScope
 from kuberich.domain.view_routes import ViewRoute
 from kuberich.domain.views import ResourceScope
 from kuberich.ui.controllers.base import RenderOutcome, RenderRequest
@@ -25,7 +26,7 @@ class RenderCoordinator:
         self.foreground, self.views = foreground, views
         self.capture, self.publish, self.failed = capture, publish, failed
         self.recover = recover
-        self._blocked: dict[ViewRoute, tuple[str | None, ResourceScope | None]] = {}
+        self._blocked: dict[ViewRoute, tuple[str | None, ResourceScope | PulseScope | None]] = {}
         self._ready = asyncio.Event()
         self._task: asyncio.Task[None] | None = None
         self._closed = False
@@ -46,9 +47,17 @@ class RenderCoordinator:
             self.request()
 
     def is_failed(self, request: RenderRequest) -> bool:
-        return request.route in self._blocked and self._blocked[request.route] == (
+        return request.route in self._blocked and self._blocked[request.route] == self._scope(
+            request
+        )
+
+    @staticmethod
+    def _scope(request: RenderRequest) -> tuple[str | None, ResourceScope | PulseScope | None]:
+        return (
             request.observation.context,
-            request.observation.scope,
+            request.observation.pulse.scope
+            if request.observation.pulse is not None
+            else request.observation.scope,
         )
 
     def fail(self, request: RenderRequest, error: Exception) -> None:
@@ -58,7 +67,7 @@ class RenderCoordinator:
         if self.recover is None:
             self.failed(error)
             return
-        self._blocked[request.route] = (request.observation.context, request.observation.scope)
+        self._blocked[request.route] = self._scope(request)
         self.recover(request, error)
 
     def start(self) -> None:

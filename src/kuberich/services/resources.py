@@ -339,16 +339,30 @@ class ResourceReader:
         page_size: int = 100,
         query: ResourceQuery | None = None,
         progress: Callable[[ResourceSnapshot], Awaitable[None]] | None = None,
+        max_items: int | None = None,
+        max_retained_bytes: int | None = None,
     ) -> ResourceSnapshot:
         if "list" not in resource.verbs:
             raise AppError("This discovered resource does not advertise list support.")
         if type(page_size) is not int or not 1 <= page_size <= 500:
             raise AppError("Resource page size must be an integer from 1 through 500.")
+        if max_items is None:
+            max_items = MAX_ITEMS
+        if max_retained_bytes is None:
+            max_retained_bytes = MAX_SNAPSHOT_BYTES
+        if type(max_items) is not int or not 0 <= max_items <= MAX_ITEMS:
+            raise AppError("Resource retention count must stay within the collection ceiling.")
+        if type(max_retained_bytes) is not int or not 0 <= max_retained_bytes <= MAX_SNAPSHOT_BYTES:
+            raise AppError("Resource retention bytes must stay within the collection ceiling.")
         path = resource.path(namespace)
         if query is None:
             query = ResourceQuery()
         elif not isinstance(query, ResourceQuery):
             raise AppError("Resource listing requires a validated server query.")
+        if max_items == 0 or max_retained_bytes == 0:
+            return ResourceSnapshot(
+                resource, namespace, None, (), collection=CollectionState(False, True)
+            )
         if query.compact and not resource.group and resource.name in {"pods", "services"}:
             raise AppError("Pod/Service resources retain full objects; use :server full.")
         try:
@@ -438,7 +452,7 @@ class ResourceReader:
                             raise AppError("Invalid resource collection.")
                         # Even an API that ignores limit cannot make us materialize
                         # a second unbounded collection of ResourceRecord objects.
-                        capacity = min(MAX_ITEMS, max(1, MAX_ITEMS - len(records) + 1))
+                        capacity = min(max_items, max(1, max_items - len(records) + 1))
                         bounded = values[:capacity]
                         unread_rows = len(values) > len(bounded)
                         if table:
@@ -461,8 +475,8 @@ class ResourceReader:
                             ) or identity in identities:
                                 raise AppError("Duplicate item in collection snapshot.")
                             if (
-                                len(records) >= MAX_ITEMS
-                                or total_bytes + record.size_bytes > MAX_SNAPSHOT_BYTES
+                                len(records) >= max_items
+                                or total_bytes + record.size_bytes > max_retained_bytes
                             ):
                                 limited = True
                                 break
@@ -471,7 +485,7 @@ class ResourceReader:
                             identities.add(identity)
                             total_bytes += record.size_bytes
                             records.append(record)
-                        if limited or (token and len(records) == MAX_ITEMS):
+                        if limited or (token and len(records) == max_items):
                             return snapshot(False, True, page + 1)
                         if not token:
                             return snapshot(True, False, page + 1)
