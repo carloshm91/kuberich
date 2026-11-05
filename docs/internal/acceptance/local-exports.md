@@ -333,3 +333,32 @@ production inventory digest is
 bind the post-CI-prefixed ANSI/kernel/offline receipts. The prior
 `qualified-7fe-terminal/` archive remains unchanged. Full-package/platform
 coverage and required exact-head hosted checks still determine protected delivery.
+
+## Second hosted candidate: preference-test phase control
+
+Source `e7c088124b11421892179bc81dbf8e550adbdd55` passed Repository validation
+42127664609. Application run 42127664582 failed the older competing-preferences
+test, with 143 cases passed before the fast-stop policy. The full matrix again
+correctly did not expand. Original artifacts and annotations remain in
+`hosted-pr315-e7c0881/`. Its observer and all 28 readers were reaped, with process
+groups absent and its lock released.
+
+The untouched case passed once locally; that unchanged pass was not called a
+correction. A controlled run forces the actual public `LivePreferences.check`
+before global apply and reproduces the timeout. Phase evidence shows the real
+checker adopting `opaque: competing`, an inactive/enabled Global button, then a
+successful Save and editor dismissal. The test's assumed stale-save conflict no
+longer exists after that legitimate reload. Native button suppression was not
+involved in this controlled reproduction; hosted ordering remains unrecorded.
+
+Only the test now holds that check through the deliberately stale Save and
+Cancel. It observes the real validation, visible/inactive Pilot button and one
+actual failed apply; competing bytes remain unchanged and focus returns. It
+then releases and drains the same real checker, verifies the competing document
+is adopted normally and compares its complete mapping with disk. Timer intervals,
+deadlines, production behavior and required gates are unchanged. The corrected
+target passed in 3.86 seconds; all 37 navigation/appearance/live-preferences UI
+cases passed with branch tracing in 70.70 seconds. Ruff and formatting passed.
+`ui/navigation-preferences-evidence.json` binds the test, original/controlled
+failures, phase JSON and qualified cohort. Product/helper files did not change;
+the byte-matching post-CI runtime, terminal and wheel receipts remain applicable.

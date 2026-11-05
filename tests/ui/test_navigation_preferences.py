@@ -426,29 +426,83 @@ async def test_custom_persistence_hidden_typed_sort_and_schema_change_reject_sta
 
 
 @pytest.mark.asyncio
-async def test_cancel_validation_and_competing_file_failures_do_not_save_or_trap_focus(tmp_path):
+async def test_cancel_validation_and_competing_file_failures_do_not_save_or_trap_focus(
+    tmp_path, monkeypatch
+):
     app, path = app_for(tmp_path)
     original = path.read_bytes()
+    document = app.preferences.document
+    reload_requested, allow_reload = asyncio.Event(), asyncio.Event()
+    active_checks = set()
+    real_check = app.live_preferences.check
+
+    async def held_check():
+        owner = asyncio.current_task()
+        assert owner is not None
+        active_checks.add(owner)
+        reload_requested.set()
+        try:
+            await allow_reload.wait()
+            await real_check()
+        finally:
+            active_checks.discard(owner)
+
+    # Keep the original document active for the deliberate stale-save phase;
+    # afterward the same real checker must adopt the external file normally.
+    monkeypatch.setattr(app.live_preferences, "check", held_check)
     async with app.run_test(size=(40, 12)) as pilot:
-        screen = await editor(app, pilot)
-        await pilot.press("ctrl+a", "ctrl+k", *"name:24:center age:8")
-        assert (
-            screen.columns_input.value == "name:24:center age:8"
-            and app.focused is screen.columns_input
-        )
-        await apply_view(screen, pilot, "age", "name")
-        assert "name column" in str(screen.feedback.content)
-        screen.columns_input.value = "name:24"
-        screen.sort_input.value = "name"
-        write_config(
-            path, parse_document({"schema_version": 1, "opaque": "competing"}), overwrite=True
-        )
-        await apply_view(screen, pilot, "name:24", mode="global")
-        await wait_for(lambda: "changed on disk" in str(screen.feedback.content))
-        assert "changed on disk" in str(screen.feedback.content)
-        await pilot.press("escape")
-        assert len(app.screen_stack) == 1 and app.focused is app.resources
-    assert path.read_bytes() != original
+        reload_owner = None
+        try:
+            screen = await editor(app, pilot)
+            applies = CoroutineCalls()
+            screen.apply = applies.observe(screen.apply)
+            await pilot.press("ctrl+a", "ctrl+k", *"name:24:center age:8")
+            assert (
+                screen.columns_input.value == "name:24:center age:8"
+                and app.focused is screen.columns_input
+            )
+            await apply_view(screen, pilot, "age", "name")
+            assert "name column" in str(screen.feedback.content) and not applies.tasks
+            screen.columns_input.value = "name:24"
+            screen.sort_input.value = "name"
+            write_config(
+                path, parse_document({"schema_version": 1, "opaque": "competing"}), overwrite=True
+            )
+            competing = path.read_bytes()
+            reload_owner = asyncio.create_task(app.live_preferences.check())
+            await wait_for(lambda: reload_requested.is_set() and reload_owner in active_checks)
+            assert not reload_owner.done() and app.preferences.document is document
+            button = screen.query_one("#view-global", Button)
+            await wait_for(
+                lambda: (
+                    button.region.width > 0
+                    and button.region.height > 0
+                    and app.get_widget_at(button.region.x, button.region.y)[0] is button
+                )
+            )
+            assert not button.disabled and not button.has_class("-active")
+            await apply_view(screen, pilot, "name:24", mode="global")
+            await wait_for(lambda: "changed on disk" in str(screen.feedback.content))
+            assert len(applies.tasks) == 1 and applies.latest.done()
+            assert app.screen is screen and app.preferences.document is document
+            assert path.read_bytes() == competing
+            await pilot.press("escape")
+            assert len(app.screen_stack) == 1 and app.focused is app.resources
+            assert path.read_bytes() == competing
+            allow_reload.set()
+            await asyncio.wait_for(reload_owner, 5)
+            await wait_for(lambda: not active_checks)
+            assert app.preferences.document.unknown == {"opaque": "competing"}
+            assert app.preferences.document.to_mapping() == read_config(path).to_mapping()
+            assert path.read_bytes() == competing and path.read_bytes() != original
+        finally:
+            allow_reload.set()
+            if reload_owner is not None:
+                if not reload_owner.done():
+                    reload_owner.cancel()
+                await asyncio.gather(reload_owner, return_exceptions=True)
+            await wait_for(lambda: not active_checks)
+    assert not active_checks
 
 
 @pytest.mark.asyncio
