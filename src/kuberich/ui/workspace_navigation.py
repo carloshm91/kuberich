@@ -12,7 +12,17 @@ from kuberich.domain.custom import CustomLayout
 from kuberich.domain.navigation import NamespaceChoice, NavigationHistory, NavigationState, Viewport
 from kuberich.domain.pods import PodColumn
 from kuberich.domain.registry import RESOURCE_ALIASES, resource_selection
+from kuberich.domain.relationships import (
+    RelationshipBookmark,
+    RelationshipMode,
+    RelationshipPath,
+    RelationshipRef,
+    relationship_actionable,
+    resolve_reference,
+)
 from kuberich.domain.resource_queries import ResourceQuery, query_command
+from kuberich.domain.resources import ApiResource
+from kuberich.domain.targets import ResourceTarget
 from kuberich.domain.view_routes import ViewKind, ViewRoute
 from kuberich.domain.views import USABLE_CONNECTIONS, ResourceSelection, ViewObservation
 from kuberich.errors import AppError
@@ -95,6 +105,7 @@ class WorkspaceNavigation:
         self._namespace_route = False
         self._column_notice: str | None = None
         self._pending_generic: GenericResourceCommand | None = None
+        self._pending_relationships: NavigationState | None = None
 
     @property
     def resource_name(self) -> str:
@@ -117,6 +128,9 @@ class WorkspaceNavigation:
         self.status(message)
 
     def resolve_pending(self) -> None:
+        if self._pending_relationships is not None and self.workspace.discovery is not None:
+            state, self._pending_relationships = self._pending_relationships, None
+            self.restore(state)
         if self._pending_generic is not None and self.workspace.discovery is not None:
             command, self._pending_generic = self._pending_generic, None
             self.generic(command)
@@ -168,11 +182,15 @@ class WorkspaceNavigation:
             self.status(str(error))
             return
         if remember:
+            self._pending_relationships = None
             self.remember()
         if context != self.workspace.store.observation.context:
             self._namespace_parent = self._namespace_state = None
             self._namespace_route = False
             self.views.reset_context()
+            if self.resource_name == "relationships":
+                self.workspace.prepare_resource(ResourceSelection("pods"))
+                self.display("pods")
         self.apply_theme(context)
         self.workspace.connect(context, scope=scope, authenticate=authenticate)
         self.clear_rows()
@@ -181,6 +199,7 @@ class WorkspaceNavigation:
         self.status("Connecting · F2 contexts · F4 retry · Ctrl+Q quit")
 
     def contexts(self) -> None:
+        self._pending_relationships = None
         if not self.sessions.catalog.names:
             self.notice("No contexts found. Configure KUBECONFIG or use --kubeconfig.")
         elif not isinstance(self.host.screen, ModalScreen):
@@ -200,6 +219,7 @@ class WorkspaceNavigation:
 
     def context_selected(self, value: str | None) -> None:
         if value is not None:
+            self._pending_relationships = None
             self._context_state = (
                 self.capture() if self.resource_name == "contexts" else self._context_state
             )
@@ -224,6 +244,7 @@ class WorkspaceNavigation:
         self.command_input.reset_choice()
 
     def pulse(self, *, restore: NavigationState | None = None, remember: bool = True) -> None:
+        self._pending_relationships = None
         if isinstance(self.host.screen, ModalScreen):
             return
         if self.resource_name == "pulse" and restore is None:
@@ -283,6 +304,136 @@ class WorkspaceNavigation:
             generic=generic,
         )
 
+    def relationships(
+        self,
+        target: ResourceTarget,
+        resource: ApiResource,
+        mode: RelationshipMode,
+        *,
+        restore: NavigationState | None = None,
+        remember: bool = True,
+    ) -> None:
+        self._pending_relationships = None
+        if mode is RelationshipMode.USED_BY and (resource.group, resource.name) not in {
+            ("", "configmaps"),
+            ("", "secrets"),
+            ("", "serviceaccounts"),
+            ("", "persistentvolumeclaims"),
+            ("scheduling.k8s.io", "priorityclasses"),
+        }:
+            self.notice(
+                "UsedBy supports ConfigMaps, Secrets, ServiceAccounts, PVCs and PriorityClasses."
+            )
+            return
+        previous = self.capture()
+        try:
+            self.workspace.select_relationships(
+                target,
+                resource,
+                mode,
+                expanded=restore.relationships.expanded
+                if restore is not None and restore.relationships is not None
+                else frozenset({()}),
+            )
+        except AppError as error:
+            self.notice(str(error))
+            return
+        if remember and previous is not None:
+            self.history.visit(previous)
+        self.display("relationships")
+        self.clear_rows()
+        self.filter_input.value = restore.query if restore is not None else ""
+        self.set_errors(False)
+        if restore is not None:
+            self._restore_state = self.workspace.store.observation.revision, restore
+        self.views.request()
+
+    def expand_relationship(self, path: RelationshipPath, expanded: bool) -> None:
+        table = self.views.tables.relationships
+        if (
+            self.views.route.kind is not ViewKind.RELATIONSHIPS
+            or table.request is None
+            or table.request != self.workspace.relationship_request
+            or table.request.scope.root.session != self.sessions.observation.identity
+        ):
+            self.notice("Relationship scope changed; select a current row.")
+            return
+        row = table.row_at(path)
+        if row is None or not row.expandable:
+            self.notice("This relationship cannot expand. Use o to open an available resource.")
+            return
+        state = self.capture()
+        self.workspace.set_relationship_expanded(path, expanded=expanded)
+        if state is not None:
+            self._restore_state = self.workspace.store.observation.revision, state
+        self.views.request()
+
+    def relationship_selected(self, path: RelationshipPath | None) -> None:
+        if path is not None:
+            request = self.views.tables.relationships.request
+            if request is not None:
+                self.expand_relationship(path, path not in request.expanded)
+
+    def open_resource(
+        self,
+        resource: ApiResource,
+        namespace: str | None,
+        *,
+        uid: str | None = None,
+        query: str = "",
+    ) -> None:
+        """Open a discovered descriptor through the normal navigation/history path."""
+        discovery = self.workspace.discovery
+        known = RESOURCE_ALIASES.get(resource.name)
+        preferred = discovery is not None and resource == discovery.resolve(
+            resource.name, group=resource.group
+        )
+        builtin = (
+            (not resource.group and resource.name in {"pods", "namespaces"})
+            or (known is not None and known.group == resource.group)
+        ) and preferred
+        generic = (
+            None
+            if builtin
+            else ResourceSelection(resource.name, resource.group, resource.version, True)
+        )
+        context = self.workspace.store.observation.context
+        if context is None:
+            return
+        state = NavigationState(
+            context,
+            namespace
+            if resource.namespaced
+            else self.workspace.store.observation.connection.namespace,
+            query=query,
+            selected=uid,
+            resource=resource.name if builtin else resource.name + "." + (resource.group or "core"),
+            generic=generic,
+            expected_uid=uid,
+        )
+        self.select_resource(
+            state.resource, restore=state, scope=NamespaceChoice(state.namespace), generic=generic
+        )
+
+    def open_relationship(self, path: RelationshipPath | None) -> None:
+        table = self.views.tables.relationships
+        if (
+            path is None
+            or self.views.route.kind is not ViewKind.RELATIONSHIPS
+            or table.request is None
+            or table.request != self.workspace.relationship_request
+            or table.request.scope.root.session != self.sessions.observation.identity
+        ):
+            self.notice("Select a current resource relationship before opening it.")
+            return
+        row = table.row_at(path)
+        if row is None or not relationship_actionable(row) or row.ref.resource is None:
+            self.notice(
+                "This relationship is unavailable or its identity changed; refresh the graph."
+            )
+            return
+        self.open_resource(row.ref.resource, row.ref.namespace, uid=row.observed_uid)
+
     def namespaces(self) -> None:
         self.disable_favorites()
         observation = self.workspace.store.observation.connection
@@ -302,6 +453,8 @@ class WorkspaceNavigation:
             if resource == "contexts"
             else ViewRoute.pulse()
             if resource == "pulse"
+            else ViewRoute.relationships()
+            if resource == "relationships"
             else ViewRoute.namespaces()
             if resource == "namespaces"
             else ViewRoute.pods()
@@ -310,12 +463,15 @@ class WorkspaceNavigation:
         )
         self.views.select(route)
         self.views.drilldown = None
+        self.views.expected_uid = None
         self._column_notice = None
         namespaces = route.kind is ViewKind.NAMESPACES
         self.host.query_one("#all-namespaces").display = namespaces
         self.header.shortcuts = (
-            (("Enter", "Drill down"), (":", "Command"), ("/", "Filter"), ("Esc", "Previous"))
-            if resource == "pulse"
+            (("Enter", "Expand"), ("o", "Open"), ("/", "Filter"), ("Esc", "Previous"))
+            if resource == "relationships"
+            else (("Enter", "Drill down"), (":", "Command"), ("/", "Filter"), ("Esc", "Previous"))
+            if resource in {"pulse", "relationships"}
             else CTX_SHORTCUTS
             if resource == "contexts"
             else NS_SHORTCUTS
@@ -330,7 +486,7 @@ class WorkspaceNavigation:
         )
         self.header.binding_profile = (
             "table"
-            if resource == "pulse"
+            if resource in {"pulse", "relationships"}
             else "contexts"
             if resource == "contexts"
             else "namespaces"
@@ -350,6 +506,7 @@ class WorkspaceNavigation:
         scope: NamespaceChoice | None = None,
         generic: ResourceSelection | None = None,
     ) -> None:
+        self._pending_relationships = None
         current = self.capture()
         if self.resource_name == "contexts":
             self._context_state = current
@@ -358,6 +515,7 @@ class WorkspaceNavigation:
             and generic == self.generic_selection
             and scope is None
             and self.views.drilldown is None
+            and self.views.expected_uid is None
             and restore is None
         ):
             self.host.set_focus(self.views.table)
@@ -391,6 +549,7 @@ class WorkspaceNavigation:
                 self._namespace_parent = current
         self.display(resource, generic=generic)
         self.views.drilldown = restore.drilldown if restore is not None else None
+        self.views.expected_uid = restore.expected_uid if restore is not None else None
         self.clear_rows()
         self.filter_input.value = restore.query if restore is not None else ""
         if restore is not None:
@@ -415,6 +574,23 @@ class WorkspaceNavigation:
                     else None
                 )
                 parent = self._namespace_parent if was_namespace_view else current
+                if parent is not None and parent.relationships is not None:
+                    bookmark = parent.relationships
+                    descriptor = bookmark.root.resource
+                    if current is not None:
+                        self.history.visit(current)
+                    if was_namespace_view:
+                        self._namespace_state = current
+                    if (
+                        descriptor is not None
+                        and descriptor.namespaced
+                        and choice.namespace is not None
+                        and choice.namespace != bookmark.root.namespace
+                    ):
+                        self.open_resource(descriptor, choice.namespace)
+                    else:
+                        self.restore(replace(parent, namespace=choice.namespace))
+                    return
                 if parent is not None and parent.resource == "pulse":
                     self.workspace.select_pulse()
                     self.workspace.select_namespace(choice.namespace)
@@ -557,7 +733,7 @@ class WorkspaceNavigation:
 
     def server(self, text: str) -> None:
         """Replace the owned server query only on an explicit command."""
-        if self.resource_name in {"contexts", "pulse"}:
+        if self.resource_name in {"contexts", "pulse", "relationships"}:
             self.notice(
                 "Server selectors apply to Kubernetes resources; open a resource view first."
             )
@@ -623,6 +799,22 @@ class WorkspaceNavigation:
             self.views.drilldown,
             viewport.top_offset,
             self.errors(),
+            RelationshipBookmark(
+                RelationshipRef(
+                    request.scope.resource.api_version,
+                    request.scope.resource.kind,
+                    request.scope.root.namespace,
+                    request.scope.root.name,
+                    request.scope.root.uid,
+                    request.scope.resource,
+                ),
+                request.scope.mode,
+                request.expanded,
+            )
+            if self.resource_name == "relationships"
+            and (request := self.workspace.relationship_request) is not None
+            else None,
+            self.views.expected_uid,
         )
 
     def remember(self) -> None:
@@ -642,6 +834,43 @@ class WorkspaceNavigation:
         self.restore(state)
 
     def restore(self, state: NavigationState) -> None:
+        if state.resource == "relationships" and state.relationships is not None:
+            current = self.workspace.store.observation
+            identity, discovery = current.connection.identity, self.workspace.discovery
+            if (
+                state.context != current.context
+                or current.connection.state not in USABLE_CONNECTIONS
+                or identity is None
+                or discovery is None
+            ):
+                self._pending_relationships = state
+                self.workspace.prepare_resource(ResourceSelection("pods"))
+                self.display("pods")
+                self.connect(state.context, scope=NamespaceChoice(state.namespace), remember=False)
+                return
+            root = resolve_reference(discovery, state.relationships.root)
+            if root.resource is None or root.uid is None:
+                self.notice(
+                    "The relationship root API is unavailable in the current discovery catalogue."
+                )
+                return
+            if current.connection.namespace != state.namespace:
+                self.workspace.select_namespace(state.namespace)
+            self.relationships(
+                ResourceTarget(
+                    identity,
+                    root.resource.group,
+                    root.resource.name,
+                    root.namespace,
+                    root.name,
+                    root.uid,
+                ),
+                root.resource,
+                state.relationships.mode,
+                restore=state,
+                remember=False,
+            )
+            return
         if state.resource == "contexts":
             if self.resource_name != "contexts":
                 self._context_parent = self.capture()
@@ -693,6 +922,7 @@ class WorkspaceNavigation:
         self.filter_input.value = state.query
         self.set_errors(state.errors)
         self.views.drilldown = state.drilldown
+        self.views.expected_uid = state.expected_uid
         self._restore_state = self.workspace.store.observation.revision, state
 
     def history_back(self) -> None:
@@ -700,6 +930,14 @@ class WorkspaceNavigation:
 
     def history_forward(self) -> None:
         self.move(forward=True)
+
+    def _relationship_restore_ready(self, view: ViewObservation) -> bool:
+        snapshot, table = view.relationships, self.views.tables.relationships
+        if snapshot is None or not snapshot.rows or table.request != snapshot.request:
+            return False
+        # Progressive publications can replace rows before a scheduled scroll restore.
+        # Wait for the settled collection; missing/replaced/filtered keys then fall back.
+        return not self.workspace.relationship_collecting
 
     def after_render(self, view: ViewObservation) -> None:
         if (
@@ -709,6 +947,10 @@ class WorkspaceNavigation:
                 view.snapshot is not None
                 or self.views.route.kind is ViewKind.CONTEXTS
                 or (self.views.route.kind is ViewKind.PULSE and view.pulse is not None)
+                or (
+                    self.views.route.kind is ViewKind.RELATIONSHIPS
+                    and self._relationship_restore_ready(view)
+                )
             )
         ):
             state = self._restore_state[1]
@@ -764,13 +1006,18 @@ class WorkspaceNavigation:
             else "Pulse"
             if self.views.drilldown is not None
             else "Previous view"
-            if self.resource_name == "pulse"
+            if self.resource_name in {"pulse", "relationships"}
+            or self.views.expected_uid is not None
             else f"Stay in {self.resource_name}"
         )
         return NavigationTrail(trail, destination)
 
     def back(self) -> None:
-        if self.resource_name == "pulse" or self.views.drilldown is not None:
+        if (
+            self.resource_name in {"pulse", "relationships"}
+            or self.views.drilldown is not None
+            or self.views.expected_uid is not None
+        ):
             self.history_back()
         elif self.resource_name == "contexts":
             self._context_state = self.capture()

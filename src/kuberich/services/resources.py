@@ -9,6 +9,7 @@ from urllib.parse import quote
 
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, HttpProblem
+from kuberich.domain.read_budget import ReadBudget, ReadBudgetExceeded
 from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.resources import (
     MAX_RESOURCE_BYTES,
@@ -199,11 +200,14 @@ def _issue(source: str, problem: ConnectionProblem) -> DiscoveryIssue:
 class ResourceReader:
     """Uses one existing session; never loads credentials or selects a fallback."""
 
-    def __init__(self, session: KubernetesSession, *, tables: bool = False) -> None:
+    def __init__(
+        self, session: KubernetesSession, *, tables: bool = False, budget: ReadBudget | None = None
+    ) -> None:
         if type(tables) is not bool:
             raise AppError("Server-column negotiation must be boolean.")
         self.session = session
         self.tables = tables
+        self.budget = budget
         self._table_failed: set[tuple[str, str, str]] = set()
 
     def uses_tables(self, resource: ApiResource) -> bool:
@@ -226,6 +230,8 @@ class ResourceReader:
             async with asyncio.timeout(self.session.timeout):
                 while True:
                     try:
+                        if self.budget is not None:
+                            self.budget.charge()
                         payload = await self.session.get_json(
                             path,
                             accept=TABLE_ACCEPT
@@ -268,6 +274,8 @@ class ResourceReader:
         self, path: str, *, aggregate: bool = False
     ) -> dict[str, Any] | ConnectionProblem:
         try:
+            if self.budget is not None:
+                self.budget.charge()
             return await self.session.get_json(
                 path,
                 max_bytes=2 * 1024 * 1024,
@@ -381,6 +389,7 @@ class ResourceReader:
                 # An expired continuation restarts the whole collection once;
                 # never mix old pages with the server's replacement token.
                 restarted = False
+                previous: ResourceSnapshot | None = None
                 while True:
                     decoder = TableDecoder(resource, namespace, metadata_only=query.compact)
                     records: list[ResourceRecord] = []
@@ -398,6 +407,8 @@ class ResourceReader:
                                 "continue": token,
                                 **query.parameters,
                             }
+                            if self.budget is not None:
+                                self.budget.charge()
                             if self.uses_tables(resource):
                                 payload = await self.session.get_json(
                                     path,
@@ -409,6 +420,22 @@ class ResourceReader:
                                 )
                             else:
                                 payload = await self.session.get_json(path, params=params)
+                        except ReadBudgetExceeded:
+                            if records or previous is None:
+                                return snapshot(False, True, page)
+                            return ResourceSnapshot(
+                                previous.resource,
+                                previous.namespace,
+                                previous.resource_version,
+                                previous.items,
+                                previous.columns,
+                                CollectionState(
+                                    False,
+                                    True,
+                                    previous.collection.pages,
+                                    previous.collection.retained_bytes,
+                                ),
+                            )
                         except HttpProblem as problem:
                             if self.uses_tables(resource) and problem.status in {406, 415}:
                                 self.disable_tables(resource)
@@ -490,8 +517,9 @@ class ResourceReader:
                         if not token:
                             return snapshot(True, False, page + 1)
                         tokens.add(token)
+                        previous = snapshot(False, False, page + 1)
                         if progress is not None:
-                            await progress(snapshot(False, False, page + 1))
+                            await progress(previous)
                     else:
                         return snapshot(False, True, MAX_PAGES)
         except TimeoutError:

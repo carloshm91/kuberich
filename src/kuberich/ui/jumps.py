@@ -4,17 +4,12 @@ from typing import TYPE_CHECKING
 
 from kuberich.config.jumps import jumps_from
 from kuberich.domain.jumps import JumpDefinition, Jumps, resolve_jump
-from kuberich.domain.navigation import NamespaceChoice
-from kuberich.domain.registry import STANDARD_RESOURCES
 from kuberich.errors import AppError
-from kuberich.services.commands import GenericResourceCommand
 
 if TYPE_CHECKING:
     from kuberich.config.schema import ConfigDocument
     from kuberich.domain.resources import ResourceRecord
     from kuberich.ui.app import KubeRichApp
-
-_BUILT_IN = frozenset({("", "pods"), *((item.group, item.name) for item in STANDARD_RESOURCES)})
 
 
 class JumpController:
@@ -78,21 +73,12 @@ class JumpController:
                     "This jump needs fields absent from compact metadata; use :server full and select the row again."
                 ) from None
             raise
-        if (target.group, target.name) in _BUILT_IN and target == discovery.resolve(
-            target.name, group=target.group
-        ):
-            # Built-in views follow the served preferred version.
-            view = target.name
-            app._select_resource(
-                view,
-                scope=None
-                if result.namespace is None
-                else NamespaceChoice(None if result.namespace == "*" else result.namespace),
-            )
-        else:
-            view = f"{target.name}.{target.group or 'core'}"
-            app._apply_generic(
-                GenericResourceCommand(target.name, target.group, target.version, result.namespace)
-            )
-        if app._resource_name == view:
-            app.filter_input.value = result.query
+        app.navigator.open_resource(
+            target,
+            app.workspace.store.observation.connection.namespace
+            if result.namespace is None
+            else None
+            if result.namespace == "*"
+            else result.namespace,
+            query=result.query,
+        )

@@ -6,6 +6,7 @@ import pytest
 from textual.app import App, ComposeResult
 
 from kuberich.domain.registry import RESOURCE_ALIASES
+from kuberich.domain.resources import resource_record
 from kuberich.domain.views import ViewObservation
 from kuberich.services.metadata_filtering import MetadataFilter
 from kuberich.ui.controllers.base import RenderPort, RenderRequest, ViewDriver
@@ -113,3 +114,51 @@ async def test_standard_controller_replaces_the_projection_for_the_actual_select
         assert controller.projection is not first
         assert "succeeded" in app.table.columns
         assert app.table.get_row_at(0)[2].text == "Complete"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("kind", ["pods", "namespaces", "services"])
+async def test_driver_pins_opened_uid_before_local_filter_and_rejects_a_list_replacement(kind):
+    data, route = observed(kind)
+    app = ResourceHost(kind)
+    filtering = ResourceFilter(MetadataFilter(), lambda _: FilterOptions())
+    arguments = (app.table, filtering, lambda _: None, lambda _: frozenset())
+    controller = (
+        PodController(*arguments)
+        if kind == "pods"
+        else NamespaceController(*arguments)
+        if kind == "namespaces"
+        else StandardController(app.table, lambda: app.table.definition, *arguments[1:])
+    )
+    driver = ViewDriver(controller)
+    captured_uid = data.items[0].uid
+    request = RenderRequest(
+        ViewObservation(revision=1, context="owned", snapshot=data),
+        "",
+        lambda: True,
+        route,
+        expected_uid=captured_uid,
+    )
+    async with app.run_test() as pilot:
+        outcome = await driver.render(request)
+        assert outcome.applied and outcome.count == outcome.filtered == app.table.row_count == 1
+        await pilot.pause()
+        assert driver.capture_viewport().selected == captured_uid
+        invalid_filter = await driver.render(replace(request, query="re:["))
+        assert invalid_filter.applied and invalid_filter.filtered == 1
+        assert "Invalid regex" in invalid_filter.problem
+        assert driver.capture_viewport().selected == captured_uid
+        # Local search cannot introduce an unrelated UID into the opened scope.
+        result = await driver.render(replace(request, query=data.items[1].name))
+        assert result.applied and result.count == 1 and result.filtered == 0
+        manifest = data.items[0].manifest
+        manifest["metadata"]["uid"] = "same-name-replacement"
+        replacement = resource_record(data.resource, manifest, data.namespace)
+        raced = replace(data, items=(replacement, data.items[1]))
+        result = await driver.render(
+            replace(request, observation=replace(request.observation, revision=2, snapshot=raced))
+        )
+        assert result.applied and result.count == result.filtered == app.table.row_count == 0
+        assert driver.capture_viewport().selected is None
+        assert (await driver.render(replace(request, expected_uid=None))).filtered == 2
+        await controller.retire_projection()

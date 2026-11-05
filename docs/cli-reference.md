@@ -94,6 +94,7 @@ Resource aliases are in the [resource reference](resource-reference.md).
 | `login` | login |
 | `logsall` | logs all |
 | `namespace`, `namespaces`, `ns` | namespaces |
+| `open` | open relationship |
 | `pluginjobs` | plugin jobs |
 | `plugins` | plugins |
 | `po`, `pod`, `pods` | pods |
@@ -116,8 +117,10 @@ Resource aliases are in the [resource reference](resource-reference.md).
 | `theme`, `themes` | themes |
 | `trigger` | trigger |
 | `upload` | upload |
+| `usedby` | used by |
 | `views` | views |
 | `writes` | writes |
+| `xray` | xray |
 | `resource NAME[.GROUP][/VERSION] [NAMESPACE or *]` | Browse a discovered resource |
 | `plugin NAME` | Review a configured local plugin |
 
@@ -190,6 +193,19 @@ Profile 3: `logs`, `text`.
 | Logs | `question_mark` | Help |
 | Logs | `ctrl+y` | Copy |
 | Logs | `ctrl+s` | Save |
+| Relationships | `right` | Expand relationship |
+| Relationships | `left` | Collapse relationship |
+| Relationships | `shift+right, alt+l` | Scroll right |
+| Relationships | `shift+left, h` | Scroll left |
+| Relationships | `j` | Down |
+| Relationships | `k` | Up |
+| Relationships | `g` | First row |
+| Relationships | `G` | Last row |
+| Relationships | `ctrl+b` | Page up |
+| Relationships | `ctrl+f` | Page down |
+| Relationships | `ctrl+u` | Half page up |
+| Relationships | `J` | Half page down |
+| Relationships | `question_mark` | Keys |
 | Workspace | `slash` | Filter |
 | Workspace | `colon` | Cmd |
 | Workspace | `question_mark, f1` | Help |
@@ -207,6 +223,7 @@ Profile 3: `logs`, `text`.
 | Workspace | `n, f3` | Namespaces |
 | Workspace | `r, f4` | Retry |
 | Workspace | `i, f5` | Status |
+| Workspace | `o` | Open resource |
 | Workspace | `alt+left` | Previous view |
 | Workspace | `alt+right` | Next view |
 | Workspace | `space` | Mark |

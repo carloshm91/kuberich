@@ -82,6 +82,8 @@ async def test_completion_commands_multiple_choices_tab_focus_and_literal_small_
         assert app.command_input.value == "" and app.focused is app.resources
         assert not app.command_input.inline_completion
         await pilot.press("colon", "x", "tab")
+        assert app.command_input.value == "xray" and app.focused is app.command_input
+        await pilot.press("escape", "colon", "z", "z", "tab")
         assert app.focused is app.resources  # no candidate: ordinary focus traversal
         await pilot.press("slash", "c", "n", "r", "q", "s", "colon", "slash")
         assert app.filter_input.value == "cnrqs:/" and app.is_running

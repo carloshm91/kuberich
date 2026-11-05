@@ -1,5 +1,7 @@
 """Actual command grammar, local completions and bounded reversible history."""
 
+from dataclasses import replace
+
 import pytest
 
 from kuberich.domain.navigation import (
@@ -9,6 +11,7 @@ from kuberich.domain.navigation import (
     NavigationHistory,
     NavigationState,
 )
+from kuberich.domain.relationships import RelationshipBookmark, RelationshipMode, RelationshipRef
 from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
 from kuberich.services.commands import ALIASES, Command, CommandService, ScopedCommand, suggestions
@@ -128,3 +131,21 @@ def test_history_memory_is_bounded_in_both_directions_and_scope_validates():
     assert NamespaceChoice("team").namespace == "team"
     with pytest.raises(AppError):
         NamespaceChoice("Uppercase")
+
+
+def test_history_preserves_the_opened_uid_and_relationship_bookmark_independently():
+    bookmark = RelationshipBookmark(
+        RelationshipRef("v1", "Pod", "team", "root", "root-uid", None),
+        RelationshipMode.XRAY,
+        frozenset({(), ("owner",)}),
+    )
+    graph = NavigationState("owned", "team", resource="relationships", relationships=bookmark)
+    assert graph.expected_uid is None
+    opened = replace(graph, resource="pods", relationships=None, expected_uid="observed-uid")
+    history = NavigationHistory()
+    history.visit(graph)
+    restored_graph = history.move(opened)
+    assert restored_graph == graph and restored_graph.relationships == bookmark
+    restored_open = history.move(graph, forward=True)
+    assert restored_open == opened and restored_open.expected_uid == "observed-uid"
+    assert restored_open.relationships is None

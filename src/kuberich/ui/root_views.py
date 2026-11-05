@@ -25,6 +25,7 @@ from kuberich.ui.foreground import ForegroundGate
 from kuberich.ui.namespaces import NamespaceTable
 from kuberich.ui.pods import PodTable
 from kuberich.ui.pulse import PulseTable
+from kuberich.ui.relationships import RelationshipTable
 from kuberich.ui.standard import StandardTable
 
 if TYPE_CHECKING:
@@ -39,6 +40,7 @@ class RootTables:
     standard: StandardTable
     custom: CustomTable
     pulse: PulseTable
+    relationships: RelationshipTable
 
 
 class RootViews:
@@ -63,8 +65,15 @@ class RootViews:
     ) -> None:
         self.tables, self.foreground = tables, foreground
         self._by_kind: dict[
-            ViewKind, PodTable | NamespaceTable | ContextTable | StandardTable | PulseTable
+            ViewKind,
+            PodTable
+            | NamespaceTable
+            | ContextTable
+            | StandardTable
+            | PulseTable
+            | RelationshipTable,
         ] = {
+            ViewKind.RELATIONSHIPS: tables.relationships,
             ViewKind.PULSE: tables.pulse,
             ViewKind.PODS: tables.pods,
             ViewKind.NAMESPACES: tables.namespaces,
@@ -76,11 +85,13 @@ class RootViews:
         self.filtering = ResourceFilter(metadata, options)
         self.route = ViewRoute.pods()
         self.drilldown: PulseDrilldown | None = None
+        self.expected_uid: str | None = None
         self._pod_factory, self._namespace_factory = pod_projection, namespace_projection
         self._standard_factory, self._custom_factory = standard_projection, custom_projection
         self._custom: CustomController | None = None
         self.registry = ViewRegistry(
             {
+                ViewKind.RELATIONSHIPS: self._relationships,
                 ViewKind.PULSE: self._pulse,
                 ViewKind.PODS: self._pods,
                 ViewKind.NAMESPACES: self._namespaces,
@@ -94,7 +105,9 @@ class RootViews:
         )
 
     @property
-    def table(self) -> PodTable | NamespaceTable | ContextTable | StandardTable | PulseTable:
+    def table(
+        self,
+    ) -> PodTable | NamespaceTable | ContextTable | StandardTable | PulseTable | RelationshipTable:
         return self._by_kind[self.route.kind]
 
     def select(self, route: ViewRoute) -> None:
@@ -142,6 +155,13 @@ class RootViews:
 
         return ViewEntry(ViewDriver(PulseController(self.tables.pulse, self.actions)))
 
+    def _relationships(self) -> ViewEntry:
+        from kuberich.ui.controllers.relationships import RelationshipController
+
+        return ViewEntry(
+            ViewDriver(RelationshipController(self.tables.relationships, self.actions))
+        )
+
     def _standard(self) -> ViewEntry:
         from kuberich.ui.controllers.standard import StandardController
 
@@ -173,6 +193,7 @@ class RootViews:
         return ViewEntry(ViewDriver(self.custom), close=self.custom.retire_projection)
 
     def reset_context(self) -> None:
+        self.expected_uid = None
         if self._custom is not None:
             self._custom.reset_context()
 

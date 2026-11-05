@@ -11,8 +11,16 @@ from kuberich.domain.history import HistorySnapshot
 from kuberich.domain.metrics import MetricsSnapshot
 from kuberich.domain.navigation import NamespaceChoice
 from kuberich.domain.pulse import PulseScope, PulseSnapshot
+from kuberich.domain.relationships import (
+    RelationshipMode,
+    RelationshipPath,
+    RelationshipRequest,
+    RelationshipScope,
+    RelationshipSnapshot,
+)
 from kuberich.domain.resource_queries import ResourceQuery
-from kuberich.domain.resources import Discovery
+from kuberich.domain.resources import ApiResource, Discovery
+from kuberich.domain.targets import ResourceTarget
 from kuberich.domain.views import (
     USABLE_CONNECTIONS,
     ResourceScope,
@@ -25,6 +33,7 @@ from kuberich.errors import AppError
 from kuberich.security.arguments import validate_argument
 from kuberich.services.metrics import MetricsPoller, supports_metrics
 from kuberich.services.pulse import PulseService
+from kuberich.services.relationships import RelationshipService
 from kuberich.services.resources import ResourceReader
 from kuberich.services.sessions import SessionService
 from kuberich.services.watches import ListWatch
@@ -43,6 +52,7 @@ class WorkspaceOwnership:
     close_complete: bool
     metrics_count: int = 0
     pulse_count: int = 0
+    relationships_count: int = 0
 
 
 class ViewSubscription(AsyncIterator[ViewObservation]):
@@ -89,6 +99,7 @@ class _Selection:
     namespace: str | None = None
     authenticate: CredentialLogin | None = None
     pulse: bool = False
+    relationships: RelationshipRequest | None = None
 
 
 def _cancel_once(task: asyncio.Task[None] | None) -> None:
@@ -133,6 +144,10 @@ class WorkspaceService:
         self._metrics: asyncio.Task[None] | None = None
         self._metrics_poller: MetricsPoller | None = None
         self._pulse: asyncio.Task[None] | None = None
+        self._relationships: asyncio.Task[None] | None = None
+        self._relationship_request: RelationshipRequest | None = None
+        self._relationship_revision = 0
+        self._relationship_service: tuple[KubernetesSession, RelationshipService] | None = None
         self._discovery: tuple[KubernetesSession, Discovery] | None = None
         self._closed = False
         self._closing: asyncio.Task[None] | None = None
@@ -148,6 +163,7 @@ class WorkspaceService:
             close_complete=self._closing is not None and self._closing.done(),
             metrics_count=int(self._metrics is not None),
             pulse_count=int(self._pulse is not None),
+            relationships_count=int(self._relationships is not None),
         )
 
     def _require_open(self) -> None:
@@ -173,6 +189,7 @@ class WorkspaceService:
         _cancel_once(self._watch)
         _cancel_once(self._metrics)
         _cancel_once(self._pulse)
+        _cancel_once(self._relationships)
         _cancel_once(self._operation)
         self._publish()
         if self.task is None or self.task.done():
@@ -188,6 +205,10 @@ class WorkspaceService:
     ) -> asyncio.Task[None]:
         self._require_open()
         validate_argument(context)
+        request = self._relationship_request
+        if request is not None and request.scope.root.session.context != context:
+            self._relationship_request = None
+            self._relationship_service = None
         revision = self.store.begin(context)
         return self._schedule(
             _Selection(
@@ -199,6 +220,7 @@ class WorkspaceService:
                 namespace=scope.namespace if scope is not None else None,
                 authenticate=authenticate,
                 pulse=self.pulse_selected,
+                relationships=self._relationship_request,
             )
         )
 
@@ -220,6 +242,16 @@ class WorkspaceService:
             namespace_name(namespace)
         connection = replace(self.store.observation.connection, namespace=namespace)
         revision = self.store.begin(context, connection)
+        request = self._relationship_request
+        if request is not None:
+            self._relationship_revision += 1
+            request = replace(
+                request,
+                revision=self._relationship_revision,
+                scope=replace(request.scope, namespace=namespace),
+            )
+            self._relationship_request = request
+            self.store.bind_relationships(revision, request)
         return self._schedule(
             _Selection(
                 revision,
@@ -228,6 +260,7 @@ class WorkspaceService:
                 change_namespace=True,
                 namespace=namespace,
                 pulse=self.pulse_selected,
+                relationships=request,
             )
         )
 
@@ -251,11 +284,15 @@ class WorkspaceService:
         self._require_open()
         self.selection = resource
         self.pulse_selected = False
+        self._relationship_request = None
+        self._relationship_service = None
 
     def select_pulse(self) -> asyncio.Task[None]:
         """Select a native overview, including before the first connection is ready."""
         self._require_open()
         self.pulse_selected = True
+        self._relationship_request = None
+        self._relationship_service = None
         context = self.store.observation.context
         if context is None:
             return asyncio.create_task(asyncio.sleep(0), name="kuberich-pulse-selection")
@@ -274,6 +311,75 @@ class WorkspaceService:
                 namespace=connection.namespace,
                 pulse=True,
             )
+        )
+
+    @property
+    def relationship_request(self) -> RelationshipRequest | None:
+        return self._relationship_request
+
+    @property
+    def relationship_collecting(self) -> bool:
+        """Distinguish in-flight collection from a retained, owned task receipt."""
+        return self._relationships is not None and not self._relationships.done()
+
+    def select_relationships(
+        self,
+        root: ResourceTarget,
+        resource: ApiResource,
+        mode: RelationshipMode,
+        *,
+        expanded: frozenset[RelationshipPath] = frozenset(),
+    ) -> asyncio.Task[None]:
+        context = self._current_context()
+        connection = self.store.observation.connection
+        if root.session != connection.identity:
+            raise AppError("The relationship root belongs to an obsolete connection.")
+        self._relationship_revision += 1
+        scope = RelationshipScope(root, resource, connection.namespace, mode)
+        request = RelationshipRequest(scope, self._relationship_revision, expanded)
+        self._relationship_request = request
+        self.pulse_selected = False
+        revision = self.store.begin(context, connection)
+        self.store.bind_relationships(revision, request)
+        return self._schedule(
+            _Selection(
+                revision,
+                context,
+                self.selection,
+                change_namespace=connection.namespace != self.sessions.observation.namespace,
+                namespace=connection.namespace,
+                relationships=request,
+            )
+        )
+
+    def set_relationship_expanded(
+        self, path: RelationshipPath, expanded: bool
+    ) -> asyncio.Task[None]:
+        request = self._relationship_request
+        if request is None:
+            raise AppError("Open a relationship view before expanding a reference.")
+        paths = set(request.expanded)
+        if expanded:
+            paths.add(path)
+        else:
+            paths = {item for item in paths if item[: len(path)] != path}
+        return self.select_relationships(
+            request.scope.root,
+            request.scope.resource,
+            request.scope.mode,
+            expanded=frozenset(paths),
+        )
+
+    def refresh_relationships(self) -> asyncio.Task[None]:
+        request = self._relationship_request
+        if request is None:
+            raise AppError("Open a relationship view before refreshing its evidence.")
+        self._relationship_service = None
+        return self.select_relationships(
+            request.scope.root,
+            request.scope.resource,
+            request.scope.mode,
+            expanded=request.expanded,
         )
 
     @property
@@ -298,6 +404,7 @@ class WorkspaceService:
     def refresh_discovery(self) -> asyncio.Task[None]:
         context = self._current_context()
         self._discovery = None
+        self._relationship_service = None
         connection = self.store.observation.connection
         revision = self.store.begin(context, connection)
         return self._schedule(
@@ -308,6 +415,7 @@ class WorkspaceService:
                 change_namespace=connection.namespace != self.sessions.observation.namespace,
                 namespace=connection.namespace,
                 pulse=self.pulse_selected,
+                relationships=self._relationship_request,
             )
         )
 
@@ -324,6 +432,13 @@ class WorkspaceService:
         )
 
     async def _stop_watch(self) -> None:
+        relationships = self._relationships
+        if relationships is not None:
+            _cancel_once(relationships)
+            try:
+                await _join(relationships)
+            finally:
+                self._relationships = None
         pulse = self._pulse
         if pulse is not None:
             _cancel_once(pulse)
@@ -416,6 +531,49 @@ class WorkspaceService:
                 self._discovery = client, discovery
             else:
                 discovery = self._discovery[1]
+            if selection.relationships is not None:
+                request = selection.relationships
+                if request.scope.root.session != observation.identity:
+                    request = replace(
+                        request,
+                        scope=replace(
+                            request.scope,
+                            root=replace(request.scope.root, session=observation.identity),
+                            namespace=observation.namespace,
+                        ),
+                    )
+                self._relationship_request = request
+                self.store.bind_relationships(selection.revision, request)
+
+                def relationship_current(candidate: RelationshipRequest) -> bool:
+                    current_view = self.store.observation
+                    return (
+                        not self._closed
+                        and self.sessions.client is client
+                        and self.sessions.observation.identity == candidate.scope.root.session
+                        and current_view.revision == selection.revision
+                        and self._relationship_request == candidate
+                        and current_view.relationships is not None
+                        and current_view.relationships.request == candidate
+                    )
+
+                cached = self._relationship_service
+                if cached is None or cached[0] is not client or cached[1].scope != request.scope:
+                    service = RelationshipService(
+                        ResourceReader(client), discovery, request.scope, relationship_current
+                    )
+                    self._relationship_service = client, service
+                else:
+                    service = cached[1]
+                    # The graph cache/budget survives expansion, but its outer
+                    # workspace revision belongs to this newly owned invocation.
+                    service.current = relationship_current
+                self._relationships = asyncio.create_task(
+                    self._run_relationships(selection.revision, service, request),
+                    name="kuberich-relationship-collection",
+                )
+                self._publish()
+                return
             if selection.pulse:
                 pulse_scope = PulseScope(observation.identity, observation.namespace)
                 self.store.bind_pulse(selection.revision, pulse_scope)
@@ -552,6 +710,18 @@ class WorkspaceService:
         except Exception as error:
             self._unexpected(revision, error)
 
+    async def _run_relationships(
+        self, revision: int, service: RelationshipService, request: RelationshipRequest
+    ) -> None:
+        def publish(snapshot: RelationshipSnapshot) -> None:
+            if service.current(request) and self.store.apply_relationships(revision, snapshot):
+                self._publish()
+
+        try:
+            await service.collect(request, publish)
+        except Exception as error:
+            self._unexpected(revision, error)
+
     async def close(self) -> None:
         if self._closing is None:
             self._closed = True
@@ -561,6 +731,7 @@ class WorkspaceService:
             _cancel_once(self._watch)
             _cancel_once(self._metrics)
             _cancel_once(self._pulse)
+            _cancel_once(self._relationships)
             self._closing = asyncio.create_task(self._close())
         await _join(self._closing)
         # Retrieve any unexpected close failure rather than silently suppress it.
@@ -574,5 +745,7 @@ class WorkspaceService:
             await self.sessions.close()
         finally:
             self._discovery = None
+            self._relationship_service = None
+            self._relationship_request = None
             for subscription in tuple(self._subscriptions):
                 subscription.close()

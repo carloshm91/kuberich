@@ -11,11 +11,12 @@ from kuberich.domain.navigation import ContextRow, Viewport
 from kuberich.domain.pods import PodRow
 from kuberich.domain.pulse import PulseDrilldown, PulseRow
 from kuberich.domain.registry import ResourceRow
+from kuberich.domain.relationships import RelationshipRow
 from kuberich.domain.view_routes import ViewRoute
 from kuberich.domain.views import ViewObservation
 from kuberich.services.filtering import FilterResult
 
-type ViewRow = PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow
+type ViewRow = PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow | RelationshipRow
 
 
 @dataclass(frozen=True)
@@ -25,6 +26,7 @@ class RenderRequest:
     current: Callable[[], bool]
     route: ViewRoute
     drilldown: PulseDrilldown | None = None
+    expected_uid: str | None = None
 
 
 @dataclass(frozen=True)
@@ -77,11 +79,17 @@ class ViewDriver[T: ViewRow]:
     async def render(self, request: RenderRequest) -> RenderOutcome:
         projected = await self.controller.project(request)
         guarded = replace(request, current=lambda: request.current() and projected.current())
-        result = await self.controller.filter(projected.rows, guarded)
+        rows = projected.rows
+        if request.expected_uid is not None:
+            rows = tuple(
+                row
+                for row in rows
+                if not isinstance(row, PodRow | NamespaceRow | ResourceRow)
+                or row.uid == request.expected_uid
+            )
+        result = await self.controller.filter(rows, guarded)
         applied = await self.controller.apply(result.rows, guarded)
-        return RenderOutcome(
-            len(projected.rows), len(result.rows), result.problem, result.unknown, applied
-        )
+        return RenderOutcome(len(rows), len(result.rows), result.problem, result.unknown, applied)
 
     def capture_viewport(self) -> Viewport:
         return self.controller.capture_viewport()

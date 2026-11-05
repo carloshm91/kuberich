@@ -153,6 +153,7 @@ jobs:
           uv run mypy --strict src/kuberich scripts/check_coverage.py scripts/qualify.py scripts/qualification.py scripts/qualification_runner.py scripts/check_quality_gate.py scripts/ci_policy.py scripts/combine_test_parts.py scripts/check_supply_chain.py scripts/supply_chain.py scripts/dependency_inventory.py scripts/release.py scripts/release_policy.py scripts/release_notes.py scripts/homebrew.py scripts/owned_kind.py scripts/verify_kind_lifecycle.py scripts/verify_quickstart.py scripts/standard_kind.py scripts/verify_port_forwards_kind.py scripts/verify_mutations_kind.py scripts/verify_editing_kind.py scripts/verify_workloads_kind.py scripts/verify_operations_kind.py scripts/verify_cleanup_kind.py scripts/verify_credential_interop_kind.py scripts/verify_transfers_kind.py scripts/verify_custom_resources_kind.py scripts/verify_aggregate_logs_kind.py scripts/merge_runtime_coverage.py scripts/build_standalone.py scripts/standalone.py scripts/standalone_python.py scripts/check_standalone.py scripts/verify_standalone.py scripts/verify_shell_kind.py scripts/navigation_kind.py
           uv run mypy --strict scripts/check_startup.py scripts/startup_policy.py scripts/startup_probe.py
           uv run mypy --strict scripts/verify_pulse_kind.py
+          uv run mypy --strict scripts/verify_relationships_kind.py
       - name: Verify fresh-process CLI and real-terminal startup budgets
         run: uv run python -m scripts.check_startup --output artifacts/startup/qualification
       - name: Verify plaintext clipboard on the owned ephemeral macOS runner
@@ -220,6 +221,9 @@ jobs:
       - name: Verify cluster Pulse and actually scraped Prometheus history
         if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_pulse_kind --kind "$RUNNER_TEMP/kuberich-kind" --evidence artifacts/pulse/evidence.json
+      - name: Verify native resource relationships identity references and navigation
+        if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
+        run: uv run python -m scripts.verify_relationships_kind --kind "$RUNNER_TEMP/kuberich-kind" --evidence artifacts/relationships/evidence.json
       - name: Enforce independent production and critical-module coverage
         run: uv run python scripts/check_coverage.py coverage.json
       - name: Enforce changed executable-line coverage against the merge base
@@ -259,6 +263,7 @@ jobs:
             artifacts/releases/*
             artifacts/cluster/*
             artifacts/pulse/**
+            artifacts/relationships/**
             artifacts/quickstart/*
             artifacts/startup/**
           if-no-files-found: error

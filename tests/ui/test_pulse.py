@@ -107,6 +107,28 @@ def test_sparks_keep_missing_zero_and_numeric_units_separate():
 
 
 @pytest.mark.asyncio
+async def test_resource_uid_pin_does_not_hide_pulse_aggregates_or_change_local_filtering():
+    app = TableApp()
+    rows = (
+        PulseRow("health", "Pod health", 2, "pods", None),
+        PulseRow("nodes", "Nodes", 3, "nodes", None),
+    )
+    data = PulseSnapshot(PulseScope(SessionIdentity("owned", 0), "team"), rows=rows)
+    request = RenderRequest(
+        ViewObservation(pulse=data),
+        "health",
+        lambda: True,
+        ViewRoute.pulse(),
+        expected_uid="captured-resource-uid",
+    )
+    async with app.run_test():
+        driver = ViewDriver(PulseController(app.table, lambda _: frozenset()))
+        outcome = await driver.render(request)
+        assert outcome.applied and outcome.count == 2 and outcome.filtered == 1
+        assert app.table.row_count == 1 and app.table.get_row_at(0)[0].plain == "Pod health"
+
+
+@pytest.mark.asyncio
 async def test_pulse_rows_distinguish_sources_budgets_and_stale_charts_escape_markup():
     app = TableApp()
     now = datetime.now(UTC)

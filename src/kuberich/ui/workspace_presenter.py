@@ -102,6 +102,7 @@ class WorkspacePresenter:
     def capture(self) -> RenderRequest:
         view, query = self.workspace.store.observation, self.filter_input.value
         route, interaction_revision = self.views.route, self.interactions.revision
+        expected_uid = self.views.expected_uid
 
         def current() -> bool:
             return (
@@ -111,9 +112,10 @@ class WorkspacePresenter:
                 and query == self.filter_input.value
                 and route == self.views.route
                 and interaction_revision == self.interactions.revision
+                and expected_uid == self.views.expected_uid
             )
 
-        return RenderRequest(view, query, current, route, self.views.drilldown)
+        return RenderRequest(view, query, current, route, self.views.drilldown, expected_uid)
 
     def refresh_ages(self) -> None:
         if not self.host.is_running or isinstance(self.host.screen, ModalScreen):
@@ -249,6 +251,22 @@ class WorkspacePresenter:
     def show(self, view: ViewObservation) -> None:
         observation = view.connection
         self.header.update_identity()
+        if self.views.route.kind is ViewKind.RELATIONSHIPS:
+            snapshot = view.relationships
+            graph_scope = snapshot.request.scope if snapshot is not None else None
+            self.host.query_one("#resource-view", Vertical).border_title = safe_text(
+                f"{graph_scope.mode.value} · {graph_scope.resource.kind}/{graph_scope.root.name}"
+                if graph_scope is not None
+                else "Relationships · loading"
+            )
+            self.host.query_one("#empty-state").set_class(True, "populated")
+            self.views.tables.relationships.set_class(True, "populated")
+            self.show_sort()
+            self.view_status(
+                view,
+                view.message + " · Enter expand/collapse · o open resource · Esc previous view",
+            )
+            return
         if self.views.route.kind is ViewKind.PULSE:
             self.host.query_one("#resource-view", Vertical).border_title = safe_text(
                 f"pulse({view.connection.namespace or 'all'}) · {view.status.name.lower()}"
@@ -301,7 +319,11 @@ class WorkspacePresenter:
         usable = observation.state in USABLE_CONNECTIONS
         incomplete = view.snapshot is not None and not view.snapshot.collection.complete
         self.host.query_one("#empty-title", WorkspaceLabel).update_text(
-            "Stale resource data"
+            "Captured resource is not in the retained results"
+            if self.views.expected_uid is not None
+            and view.snapshot is not None
+            and not self.views.table.row_count
+            else "Stale resource data"
             if view.snapshot is not None and view.problem is not None
             else "Resource data unavailable"
             if usable and view.status is ViewStatus.FAILED
@@ -316,7 +338,16 @@ class WorkspacePresenter:
             else "Connection unavailable"
         )
         self.host.query_one("#empty-description", WorkspaceLabel).update_text(
-            "Collection incomplete; retained rows are only a subset. :server label/field or :ns to narrow."
+            "The object may have been removed or recreated. Return to the graph and refresh its identity."
+            + (
+                " This collection is incomplete; the captured object may also be outside retained rows."
+                if incomplete
+                else ""
+            )
+            if self.views.expected_uid is not None
+            and view.snapshot is not None
+            and not self.views.table.row_count
+            else "Collection incomplete; retained rows are only a subset. :server label/field or :ns to narrow."
             if incomplete
             else f"No {self.views.route.display_key} were returned. :ns namespaces · :ctx contexts."
             if view.status is ViewStatus.LIVE
@@ -363,8 +394,16 @@ class WorkspacePresenter:
 
     def show_sort(self) -> None:
         frame = self.host.query_one("#resource-view", Vertical)
+        if self.views.route.kind is ViewKind.RELATIONSHIPS:
+            frame.border_subtitle = "Enter expand · o open · Left/Right tree · Shift+arrows scroll"
+            return
         if self.views.route.kind is ViewKind.PULSE:
             frame.border_subtitle = "Enter drill down · :back / :forward · arrows scroll"
+            return
+        if self.views.expected_uid is not None and isinstance(
+            self.views.table, (PodTable, StandardTable)
+        ):
+            frame.border_subtitle = "Captured resource · " + self.views.table.sort_summary
             return
         if self.views.drilldown is not None and isinstance(
             self.views.table, (PodTable, StandardTable)

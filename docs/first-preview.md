@@ -41,3 +41,8 @@ with health/capacity summaries, exact resource drill-downs and optional configur
 Prometheus CPU/memory history. Its source states distinguish missing, denied,
 partial and stale data; it does not install a metrics backend. These capabilities
 remain unreleased work for 0.4.0.
+
+Development source adds [resource relationships](resource-relationships.md):
+`:xray` follows owners, selectors, endpoints and placement; `:usedby` finds
+supported configuration, storage and identity declarations. UID replacement and
+incomplete source scans remain explicit. These views are not in installed 0.3.0.

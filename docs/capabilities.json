@@ -188,11 +188,12 @@
         "C02",
         "C05",
         "B05",
-        "B06"
+        "B06",
+        "O03"
       ],
       "source": "internal/dao/registry.go",
       "status": "planned",
-      "difference": "C05/B06 provide discovery-qualified aliases and explicit versions, live generic tables with typed server columns or metadata fallback, bounded session-local column selection, captured YAML/details, scope/history routing and owned discovery/removal refresh. Generic mutations, persistent custom preferences/hotkeys and reactive jump chains retain M05/U02/U06; full parity is not claimed.",
+      "difference": "C05/B06 provide discovery-qualified aliases and explicit versions, live generic tables with typed server columns or metadata fallback, bounded session-local column selection, captured YAML/details, scope/history routing and owned discovery/removal refresh. Generic mutations, persistent custom preferences/hotkeys and reactive jump chains retain M05/U02/U06; full parity is not claimed. O03 #70 follows actual discovered owner GVKs in native development-source graphs; it does not infer arbitrary custom-resource reference fields. Complete issue/current-head qualification remains pending.",
       "partial_evidence": [
         "docs/resource-discovery.md",
         "tests/unit/test_resources.py",
@@ -216,9 +217,13 @@
         "tests/contract/test_custom_projection.py",
         "tests/ui/test_custom_resources.py",
         "tests/ui/test_custom_table.py",
-        "tests/terminal/test_custom_resources.py"
+        "tests/terminal/test_custom_resources.py",
+        "docs/resource-relationships.md",
+        "docs/internal/acceptance/resource-relationships.md",
+        "tests/unit/test_relationships.py",
+        "tests/contract/test_relationships.py"
       ],
-      "public_summary": "Discovery chooses served API versions and unambiguous aliases. Generic tables provide server columns, metadata fallback, and configurable layouts. Generic mutations and automatic relationship discovery are unavailable.",
+      "public_summary": "Discovery chooses served API versions and unambiguous aliases. Generic tables provide server columns, metadata fallback and saved layouts. Development source follows discovered owners; generic mutations and arbitrary custom-resource reference scanning remain unavailable.",
       "public_status": "partial"
     },
     {
@@ -645,11 +650,12 @@
       "capability": "Deployments, StatefulSets, DaemonSets, ReplicaSets, replication controllers, workloads",
       "tasks": [
         "B05",
-        "M03"
+        "M03",
+        "O03"
       ],
       "source": "internal/client/gvrs.go",
       "status": "planned",
-      "difference": "B05 provides typed workload tables and inspection; M03 adds documented apps workload operations. ReplicationController/generic browsing and owner drill-down remain B06 #53/O03 #70.",
+      "difference": "B05 provides typed workload tables and M03 apps workload operations; generic ReplicationController browsing is delivered. O03 #70 adds UID-checked owner chains, separate inferred selector matches and zero-replica template declarations in development source. Complete issue/current-head qualification remains pending.",
       "partial_evidence": [
         "docs/standard-resources.md",
         "docs/internal/acceptance/standard-resources.md",
@@ -657,9 +663,15 @@
         "tests/ui/test_standard_resources.py",
         "tests/ui/test_standard_table.py",
         "tests/terminal/test_standard_resources.py",
-        "scripts/standard_kind.py"
+        "scripts/standard_kind.py",
+        "docs/resource-relationships.md",
+        "docs/internal/acceptance/resource-relationships.md",
+        "tests/unit/test_relationships.py",
+        "tests/unit/test_reference_fields.py",
+        "tests/contract/test_relationships.py",
+        "tests/ui/test_relationship_table.py"
       ],
-      "public_summary": "Standard workload tables support scaling, restart, and explicit revision rollback for applicable controllers after review. Automatic controller-to-pod drill-down is unavailable.",
+      "public_summary": "Standard workload tables support reviewed scaling, restart and explicit revision rollback. Development source adds native controller and Pod relationships; selector matches remain separate from ownership.",
       "public_status": "partial"
     },
     {
@@ -672,7 +684,7 @@
       ],
       "source": "internal/client/gvrs.go",
       "status": "planned",
-      "difference": "B05 implements Services, Endpoints and Ingress tables and inspection. EndpointSlices and NetworkPolicies remain the networking/generic-resource backlog.",
+      "difference": "B05/B06 provide networking resource browsing. O03 #70 adds separately labelled Service selector membership, discovered EndpointSlice associations, available legacy Endpoints fallback and backend targetRef identity/readiness/ports in development source. Denied and incomplete endpoint sources remain explicit; broader networking diagnostics remain separate.",
       "partial_evidence": [
         "docs/standard-resources.md",
         "docs/internal/acceptance/standard-resources.md",
@@ -680,9 +692,15 @@
         "tests/ui/test_standard_resources.py",
         "tests/ui/test_standard_table.py",
         "tests/terminal/test_standard_resources.py",
-        "scripts/standard_kind.py"
+        "scripts/standard_kind.py",
+        "docs/resource-relationships.md",
+        "docs/internal/acceptance/resource-relationships.md",
+        "tests/unit/test_relationships.py",
+        "tests/unit/test_reference_fields.py",
+        "tests/contract/test_relationships.py",
+        "tests/ui/test_relationship_table.py"
       ],
-      "public_summary": "Service, EndpointSlice, Ingress and NetworkPolicy views are available. Service numeric TCP forwarding has its own prerequisites. Discovery refuses APIs removed from the selected server.",
+      "public_summary": "Service, EndpointSlice, Ingress and NetworkPolicy views are available. Development source adds reported service backends and separate selector matches, preserving unknown endpoint identity and incomplete reads.",
       "public_status": "partial"
     },
     {
@@ -691,11 +709,12 @@
       "tasks": [
         "B05",
         "O01",
-        "A05"
+        "A05",
+        "O03"
       ],
       "source": "internal/client/gvrs.go",
       "status": "planned",
-      "difference": "B05 implements Nodes, PVs, PVCs and StorageClasses with typed capacities, scope and inspection. Scheduling, HPA/PDB/quota/limits remain later tasks. O01 #68 adds current Node usage/allocatable percentages and generic extended-resource capacity with incomplete Pod-allocation status when cluster-wide Pod reads are unavailable.",
+      "difference": "B05 implements Nodes, PVs, PVCs and StorageClasses with typed capacities, scope and inspection. Scheduling, HPA/PDB/quota/limits remain later tasks. O01 #68 adds current Node usage/allocatable percentages and generic extended-resource capacity with incomplete Pod-allocation status when cluster-wide Pod reads are unavailable. O03 #70 adds declared Pod/node placement and explicit PV/PVC/PriorityClass reference relationships in development source; scheduling constraints are not placement and unknown implicit PV Secret namespaces stay incomplete.",
       "partial_evidence": [
         "docs/standard-resources.md",
         "docs/internal/acceptance/standard-resources.md",
@@ -708,9 +727,15 @@
         "docs/internal/acceptance/resource-metrics.md",
         "tests/unit/test_metrics.py",
         "tests/contract/test_metrics.py",
-        "tests/ui/test_metrics.py"
+        "tests/ui/test_metrics.py",
+        "docs/resource-relationships.md",
+        "docs/internal/acceptance/resource-relationships.md",
+        "tests/unit/test_relationships.py",
+        "tests/unit/test_reference_fields.py",
+        "tests/contract/test_relationships.py",
+        "tests/ui/test_relationship_table.py"
       ],
-      "public_summary": "Node, PV, PVC, StorageClass and HPA tables are available. Development source adds Node CPU/memory usage, allocatable percentages and vendor-neutral extended-resource capacity; the development cluster overview adds known pressure/unscheduled states, while broader quota/disruption diagnostics remain planned.",
+      "public_summary": "Node, PV, PVC, StorageClass and HPA tables are available. Development source adds Node CPU/memory usage, allocatable percentages and vendor-neutral extended-resource capacity; the development cluster overview adds known pressure/unscheduled states, while broader quota/disruption diagnostics remain planned. Development relationships distinguish declared placement, PV/PVC bindings and static PriorityClass references.",
       "public_status": "partial"
     },
     {
@@ -719,11 +744,12 @@
       "tasks": [
         "B05",
         "M05",
-        "O04"
+        "O04",
+        "O03"
       ],
       "source": "internal/view/registrar.go",
       "status": "planned",
-      "difference": "M05 adds explicit ConfigMap/Secret key metadata, reveal/copy and UTF-8/Base64 controls with fresh UID/version-bound reads, plus common guarded Secret editing. Permission browsing and environment provenance remain later work; full family parity is not claimed.",
+      "difference": "M05 adds explicit ConfigMap/Secret key metadata, reveal/copy and UTF-8/Base64 controls with fresh UID/version-bound reads, plus common guarded Secret editing. Permission browsing and environment provenance remain later work; full family parity is not claimed. O03 #70 adds supported static ConfigMap/Secret/ServiceAccount UsedBy declarations without values or proof of process consumption; current-head acceptance remains pending.",
       "partial_evidence": [
         "docs/standard-resources.md",
         "docs/internal/acceptance/standard-resources.md",
@@ -737,9 +763,15 @@
         "tests/unit/test_configuration_data.py",
         "tests/contract/test_configuration_data.py",
         "tests/ui/test_configuration_data.py",
-        "scripts/verify_editing_kind.py"
+        "scripts/verify_editing_kind.py",
+        "docs/resource-relationships.md",
+        "docs/internal/acceptance/resource-relationships.md",
+        "tests/unit/test_relationships.py",
+        "tests/unit/test_reference_fields.py",
+        "tests/contract/test_relationships.py",
+        "tests/ui/test_relationship_table.py"
       ],
-      "public_summary": "ConfigMap and Secret values stay hidden until a deliberate reveal or copy. Manifest editing requires local disclosure, validation, and Apply. An interactive permission browser is unavailable.",
+      "public_summary": "ConfigMap and Secret values stay hidden until deliberate reveal or copy. Development source adds supported static configuration and ServiceAccount relationships with explicit scan scope; interactive permission browsing remains unavailable.",
       "public_status": "partial"
     },
     {
@@ -749,11 +781,12 @@
         "C05",
         "B06",
         "U02",
-        "U06"
+        "U06",
+        "O03"
       ],
       "source": "internal/view/custom_jump.go",
       "status": "planned",
-      "difference": "C05/B06 provide discovery-qualified aliases and explicit versions, live generic tables with typed server columns or metadata fallback, bounded session-local column selection, captured YAML/details, scope/history routing and owned discovery/removal refresh. Generic mutations, persistent custom preferences/hotkeys and reactive jump chains retain M05/U02/U06; full parity is not claimed. U02 #57 implements bounded per-owner navigation keys, literal aliases and explicit version-pinned column width/alignment/order/visibility and typed-sort saves. Server schemas invalidate stale layouts. This source checkpoint does not claim broader navigation/filter/jump/plugin parity. U06 #64 adds configured jumps between discovered resources, including explicit non-preferred versions.",
+      "difference": "C05/B06 provide discovery-qualified aliases and explicit versions, live generic tables with typed server columns or metadata fallback, bounded session-local column selection, captured YAML/details, scope/history routing and owned discovery/removal refresh. Generic mutations, persistent custom preferences/hotkeys and reactive jump chains retain M05/U02/U06; full parity is not claimed. U02 #57 implements bounded per-owner navigation keys, literal aliases and explicit version-pinned column width/alignment/order/visibility and typed-sort saves. Server schemas invalidate stale layouts. This source checkpoint does not claim broader navigation/filter/jump/plugin parity. U06 #64 adds configured jumps between discovered resources, including explicit non-preferred versions. O03 #70 follows actual discovered owner GVKs in native development-source graphs; it does not infer arbitrary custom-resource reference fields. Complete issue/current-head qualification remains pending.",
       "partial_evidence": [
         "docs/resource-discovery.md",
         "docs/internal/acceptance/custom-resources.md",
@@ -778,9 +811,13 @@
         "tests/packaging/test_distribution.py",
         "scripts/verify_standalone.py",
         "docs/resource-jumps.md",
-        "tests/ui/test_jumps.py"
+        "tests/ui/test_jumps.py",
+        "docs/resource-relationships.md",
+        "docs/internal/acceptance/resource-relationships.md",
+        "tests/unit/test_relationships.py",
+        "tests/contract/test_relationships.py"
       ],
-      "public_summary": "Discovered APIs provide served-version selection, typed printer columns, inspection, and saved schema-pinned layouts. Generic resource mutation is unavailable; configured jumps can open related views.",
+      "public_summary": "Discovered APIs provide served-version selection, typed printer columns, inspection and saved schema-pinned layouts. Development source follows discovered owners in native graphs; configured jumps share navigation history. Generic mutation and arbitrary custom-resource reference scanning remain unavailable.",
       "public_status": "partial"
     },
     {
@@ -1030,11 +1067,12 @@
       "capability": "Scale, restart and rollback workloads; deployment ReplicaSet drill-down",
       "tasks": [
         "M03",
-        "B05"
+        "B05",
+        "O03"
       ],
       "source": "internal/view/restart_extender.go",
       "status": "planned",
-      "difference": "M03 implements reviewed scale/restart/explicit revision rollback and actual rollout monitoring for documented apps workloads. Owner/ReplicaSet drill-down remains O03 #70; full hosted/macOS qualification remains outstanding.",
+      "difference": "M03 implements reviewed scale/restart/explicit revision rollback and rollout monitoring for documented apps workloads. O03 #70 adds UID-checked owner/ReplicaSet graph navigation in development source. Graph rows are not mutation targets; complete current-head/platform qualification remains separate.",
       "partial_evidence": [
         "docs/standard-resources.md",
         "docs/internal/acceptance/standard-resources.md",
@@ -1049,9 +1087,15 @@
         "tests/contract/test_workloads.py",
         "tests/ui/test_workloads.py",
         "tests/terminal/test_workloads.py",
-        "scripts/verify_workloads_kind.py"
+        "scripts/verify_workloads_kind.py",
+        "docs/resource-relationships.md",
+        "docs/internal/acceptance/resource-relationships.md",
+        "tests/unit/test_relationships.py",
+        "tests/unit/test_reference_fields.py",
+        "tests/contract/test_relationships.py",
+        "tests/ui/test_relationship_table.py"
       ],
-      "public_summary": "Review scale, restart, or one explicit available revision rollback for supported controllers. Rollout progress is independent of API write confirmation. Automatic owner drill-down is unavailable.",
+      "public_summary": "Review scale, restart or one explicit available revision rollback for supported controllers. Development source adds owner/ReplicaSet navigation; open an ordinary resource view before changing a resource.",
       "public_status": "partial"
     },
     {
@@ -1223,15 +1267,21 @@
       ],
       "source": "internal/config/json/schemas/jumps.json",
       "status": "planned",
-      "difference": "U06 #64 implements named jumps from a source GVR to a target GVR with namespace, label and field templates. Templates only read literal field paths; values are restricted to selector-safe characters and validated as local label/field filters. The target view opens with the filter in the filter box rather than a server-side selector. Reactive reload and per-context jump overrides remain planned.",
-      "public_summary": "Define jumps in the preference file and use :jump to open a related view, such as a Deployment's pods, with a filter already set. Templates only read fields from the row.",
+      "difference": "U06 #64 implements named jumps from a source GVR to a target GVR with namespace, label and field templates. Templates only read literal field paths; values are restricted to selector-safe characters and validated as local label/field filters. The target view opens with the filter in the filter box rather than a server-side selector. Reactive reload and per-context jump overrides remain planned. O03 #70 adds native discovered custom-owner navigation within the same history model. It does not recursively infer arbitrary CR reference fields; full current-head acceptance remains pending.",
+      "public_summary": "Define preference-file jumps and use :jump to open related views with a local filter. Development source adds native discovered-owner graphs using the same history; arbitrary custom-resource reference discovery is unavailable.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/resource-jumps.md",
         "docs/internal/acceptance/resource-jumps.md",
         "tests/unit/test_jumps.py",
         "tests/ui/test_jumps.py",
-        "tests/unit/test_cli_config.py"
+        "tests/unit/test_cli_config.py",
+        "docs/resource-relationships.md",
+        "docs/internal/acceptance/resource-relationships.md",
+        "tests/unit/test_relationships.py",
+        "tests/unit/test_reference_fields.py",
+        "tests/contract/test_relationships.py",
+        "tests/ui/test_relationship_table.py"
       ]
     },
     {
@@ -1415,9 +1465,17 @@
       ],
       "source": "internal/view/xray.go",
       "status": "planned",
-      "difference": "",
-      "public_summary": "Automatic relationship graphs, controller/node drill-down, service endpoint drill-down, and UsedBy views are unavailable. Explicit configured jumps are described separately.",
-      "public_status": "planned"
+      "difference": "O03 #70 implements development-source native XRay/UsedBy records, collectors, visible expansion rows and source coverage. Discovery/expected UID and Kubernetes owner scope remain authoritative; path-local cycles differ from shared descendants. Supported Pod/seven-template, ServiceAccount and PV/PVC declarations retain field paths, optional/defaulted evidence and explicit namespace scope without claiming process consumption or arbitrary CR reference discovery. Focused domain/HTTP/widget evidence exists; actual App, owned-kind and complete current-head qualification remain pending.",
+      "public_summary": "Development source provides native :xray and :usedby views for owners, selector matches, reported endpoints, placement and supported static configuration/storage/identity declarations. Replacement UIDs and incomplete scans remain explicit; installed 0.3.0 predates these views.",
+      "public_status": "partial",
+      "partial_evidence": [
+        "docs/resource-relationships.md",
+        "docs/internal/acceptance/resource-relationships.md",
+        "tests/unit/test_relationships.py",
+        "tests/unit/test_reference_fields.py",
+        "tests/contract/test_relationships.py",
+        "tests/ui/test_relationship_table.py"
+      ]
     },
     {
       "id": "OBS04",

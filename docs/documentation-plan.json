@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "baseline_commit": "d990a5e0273465874df24e1e790887520abeacff",
-  "canonical_user_pages": 21,
+  "canonical_user_pages": 22,
   "reserved_user_pages": 0,
   "migration_state": "user_guides_architecture_and_internal_history_consolidated",
   "scope": "Task guides, generated references, the architecture overview/ADRs and internal engineering-record relocation are implemented. Exact historical payloads remain outside the website; source Git/hash validation does not claim that every pending feature snapshot already has a protected-main anchor. Contribution guidance remains a separate migration.",
@@ -3504,6 +3504,36 @@
         "docs/internal/acceptance/cluster-overview.md"
       ],
       "reason": "Keep O02 #69 actual overview/history verification and remaining evidence outside user navigation.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/resource-relationships.md",
+      "audience": "user",
+      "action": "keep",
+      "destinations": [
+        "docs/resource-relationships.md"
+      ],
+      "reason": "Guide native XRay/UsedBy navigation, evidence, source scope and explicit incomplete results without claiming universal dependency discovery.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0034-native-resource-relationships.md",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0034-native-resource-relationships.md"
+      ],
+      "reason": "Record graph identity, provenance, bounded collection and navigation ownership without rewriting earlier architecture history.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/acceptance/resource-relationships.md",
+      "audience": "contributor acceptance evidence",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/resource-relationships.md"
+      ],
+      "reason": "Keep O03 #70 scoped measurements and pending App/cluster/current-head qualification outside user navigation.",
       "baseline_sha256": null
     }
   ],

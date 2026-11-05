@@ -9,7 +9,7 @@ from scripts.build_site import ROOT, build
 from scripts.check_site import verify
 from scripts.check_supply_chain import INPUT_FILES
 from scripts.documentation import load_navigation, validate_documentation_plan
-from scripts.documentation_links import links, original_contexts, relocated_source
+from scripts.documentation_links import git_bytes, links, original_contexts, relocated_source
 from scripts.site_reference import reference_files
 from tests.support.site_source import latest_published
 
@@ -29,8 +29,8 @@ def test_history_moves_to_one_internal_area_with_exact_original_git_evidence():
             assert not (ROOT / old).is_file()
     for record in plan["preserved_sources"] + plan["operational_sources"]:
         assert mapped[record["path"]]["baseline_sha256"] == record["sha256"]
-    assert len(mapped) == 345
-    assert validate_documentation_plan(ROOT, list(mapped)) == 345
+    assert len(mapped) == 348
+    assert validate_documentation_plan(ROOT, list(mapped)) == 348
     assert not (ROOT / "docs/status.md").exists()
 
 
@@ -62,14 +62,14 @@ def test_status_is_short_and_every_user_page_avoids_evidence_links():
                     "architecture-history",
                 )
             ), (name, target)
-    assert navigation.user_page_count == 21
+    assert navigation.user_page_count == 22
 
 
 def test_public_surfaces_and_search_never_include_internal_records(tmp_path):
     output = tmp_path / "site"
     manifest = build(output, ROOT)
     verify(output, ROOT)
-    assert manifest["documentation_pages"] == 21
+    assert manifest["documentation_pages"] == 22
     for path in output.rglob("*"):
         assert "internal" not in path.relative_to(output).parts
         if path.is_file() and (path.suffix == ".html" or path.name.startswith("search")):
@@ -136,3 +136,30 @@ def test_current_checkpoint_and_acceptance_use_normal_links_without_history_exem
     assert "Commands and keys" in checkpoint
     acceptance = (ROOT / current[1]).read_text()
     assert "41425930497" in acceptance and "79.77" in acceptance
+
+
+def test_relationship_docs_append_only_exact_enrollment_without_rewriting_history():
+    baseline = json.loads(
+        git_bytes(
+            ROOT, "show", "55e5937d955b91a283924650432b54ff2a0a5fc1:docs/documentation-plan.json"
+        )
+    )
+    current = json.loads((ROOT / "docs/documentation-plan.json").read_text())
+    assert len(baseline["documents"]) == 345
+    assert current["documents"][:345] == baseline["documents"]
+    assert [item["source"] for item in current["documents"][345:]] == [
+        "docs/resource-relationships.md",
+        "docs/adr/0034-native-resource-relationships.md",
+        "docs/internal/acceptance/resource-relationships.md",
+    ]
+    assert all(item["baseline_sha256"] is None for item in current["documents"][345:])
+    assert current["canonical_user_pages"] == 22
+    assert {
+        key: value
+        for key, value in current.items()
+        if key not in {"documents", "canonical_user_pages"}
+    } == {
+        key: value
+        for key, value in baseline.items()
+        if key not in {"documents", "canonical_user_pages"}
+    }

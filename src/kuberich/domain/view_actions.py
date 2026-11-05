@@ -38,6 +38,9 @@ TABLE_ACTIONS = frozenset(
         "download",
         "port_forward",
         "review_delete",
+        "xray",
+        "usedby",
+        "open_relationship",
     }
 )
 
@@ -51,6 +54,22 @@ class ViewState:
 
 
 def action_available(action: str, view: ViewState) -> bool:
+    if action == "open_relationship" and view.resource != "relationships":
+        return False
+    if action in {"xray", "usedby"} and view.resource in {"contexts", "pulse"}:
+        return False
+    if view.resource in {"pulse", "relationships"} and action in {"annotate", "cleanup_pods"}:
+        return False
+    if view.resource == "relationships" and action in TABLE_ACTIONS - {
+        "focus_filter",
+        "focus_command",
+        "history_back",
+        "history_forward",
+        "xray",
+        "usedby",
+        "open_relationship",
+    }:
+        return False
     if view.resource == "pulse" and action in TABLE_ACTIONS - {
         "focus_filter",
         "focus_command",
@@ -58,7 +77,7 @@ def action_available(action: str, view: ViewState) -> bool:
         "history_forward",
     }:
         return False
-    if view.resource == "pulse" and action == "views":
+    if view.resource in {"pulse", "relationships"} and action == "views":
         return False
     if action == "review_delete" and (view.generic or view.resource == "namespaces"):
         return False

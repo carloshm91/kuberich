@@ -39,6 +39,7 @@ KIND_SCENARIOS = (
     ("custom-resources", "verify_custom_resources_kind", False),
     ("aggregate-logs", "verify_aggregate_logs_kind", False),
     ("pulse", "verify_pulse_kind", False),
+    ("relationships", "verify_relationships_kind", False),
 )
 
 
@@ -173,7 +174,7 @@ def cluster_stages(
                 "--evidence",
                 str(
                     output / f"kind-{repetition}-{name}" / "evidence.json"
-                    if name == "pulse"
+                    if name in {"pulse", "relationships"}
                     else output / f"kind-{repetition}-{name}.json"
                 ),
             ),
