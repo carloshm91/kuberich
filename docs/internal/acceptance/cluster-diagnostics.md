@@ -212,6 +212,29 @@ Its current-source receipt is
 golden remain byte-for-byte; failed trial two is not counted as qualified.
 Required hosted whole-source/platform checks qualify the final formatted tree.
 
+## Hosted-check corrections
+
+Initial PR #314 source `aef8e86` received two CodeQL annotations for substring
+matching of Event API paths in HTTP test fixtures. The fixtures now compare the
+exact served API paths; all 27 native service contracts passed. No analysis rule
+or required check was disabled. CodeQL passed on follow-up source `3ce31f7`.
+
+The complete Fast job for that follow-up then found a fresh-process import
+regression: importing the root App eagerly loaded the evidence text viewer and
+Textual's document/editor modules. The matching local regression failed before
+the fix. Diagnostic navigation now imports the evidence screen only after a
+real selected finding, and log-mode helpers load only for explicit log actions.
+Annotations use TYPE_CHECKING imports. Public interfaces and policies are
+unchanged. All 124 related import/App/navigation/action/evidence/cleanup cases
+passed in 70.04 seconds, with strict types, lint, format and private-access checks.
+The receipt is `artifacts/issue72/ui/lazy-import-ci-fix/source-manifest.json`,
+SHA-256 `846176c827041da96c75cc665ef5c6b3d7794206770430596637509cd17e1bba`.
+
+Earlier local trial/UI receipts retain their exact source hashes and are not
+relabelled after these import changes. The fresh required hosted run must
+qualify the current whole source, packaging/platforms and actual owned-cluster
+verifier. No unchanged failed-head retry is used.
+
 Whole-source coverage, packaging and exact-head hosted platform checks are
 still required before protected delivery. Focused and owned-cluster evidence
 above does not replace them. Only synthetic

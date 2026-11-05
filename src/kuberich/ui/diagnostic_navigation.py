@@ -22,10 +22,10 @@ from kuberich.domain.targets import SessionIdentity
 from kuberich.domain.view_routes import ViewKind
 from kuberich.domain.views import USABLE_CONNECTIONS, ViewObservation
 from kuberich.errors import AppError
-from kuberich.ui.diagnostic_evidence import DiagnosticEvidenceScreen, available_log_modes
 
 if TYPE_CHECKING:
     from kuberich.services.workspace import WorkspaceService
+    from kuberich.ui.diagnostic_evidence import DiagnosticEvidenceScreen
     from kuberich.ui.root_views import RootViews
     from kuberich.ui.workspace_navigation import WorkspaceNavigation
 
@@ -275,6 +275,8 @@ class DiagnosticNavigation:
         selected = self._finding(key)
         if selected is None:
             return
+        from kuberich.ui.diagnostic_evidence import DiagnosticEvidenceScreen
+
         request, finding = selected
 
         def current() -> bool:
@@ -352,6 +354,8 @@ class DiagnosticNavigation:
         self, request: DiagnosticRequest, finding: DiagnosticFinding, mode: DiagnosticLogMode
     ) -> None:
         self._require_current(request, finding)
+        from kuberich.ui.diagnostic_evidence import available_log_modes
+
         if mode not in available_log_modes(finding):
             raise AppError("This finding has no evidence for the requested container log mode.")
         await self.show_logs(request, finding, mode)

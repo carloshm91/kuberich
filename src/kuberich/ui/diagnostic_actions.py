@@ -17,7 +17,6 @@ from kuberich.domain.targets import ResourceTarget
 from kuberich.domain.views import USABLE_CONNECTIONS
 from kuberich.errors import AppError
 from kuberich.services.access import Action
-from kuberich.ui.diagnostic_evidence import available_log_modes
 
 if TYPE_CHECKING:
     from kuberich.ui.app import KubeRichApp
@@ -74,6 +73,7 @@ class DiagnosticActions:
     ) -> None:
         from kuberich.domain.logs import log_containers
         from kuberich.services.logs import LogStream
+        from kuberich.ui.diagnostic_evidence import available_log_modes
         from kuberich.ui.logs import LogScreen
 
         app = self.app
