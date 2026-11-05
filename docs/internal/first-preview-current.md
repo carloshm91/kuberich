@@ -9,10 +9,19 @@ kubeconfig/environment and complete cluster/private-directory/worker cleanup in
 38.290 seconds. All 226 runtime/configuration/verifier inputs stayed unchanged.
 The exact child invocation and source hashes are retained in
 `artifacts/issue71/kind-trial-2/invocation.json`; the wrapper used this checkout's
-Python 3.12.12 and the verified pinned kind executable. Complete whole-source
-and platform qualification remain pending. The
+Python 3.12.12 and the verified pinned kind executable. Local behavior and
+coverage checks are recorded below; exact-head hosted qualification and protected
+delivery remain pending. The
 [authorization acceptance record](acceptance/authorization.md) tracks actual
 source-bound measurements as they become available.
+
+The local complete run recorded 8,624 passes, five explicit platform skips and
+seven development-tool prerequisite failures. After clean source was committed
+and the locked environment activated, all 21 cases in both affected files
+passed unchanged. Original failures remain retained, not relabelled. The verified
+runtime coverage merge measured 98.7848% lines, 96.0444% branches and 99.23%
+changed lines; all 93 critical modules were independently at 100%. See the
+acceptance record for exact source, commands and remaining hosted checks.
 
 The preceding relationship task is delivered through protected squash
 `64817677c20aad876489f81427a7636f0c56cc6c`, tree

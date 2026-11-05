@@ -27,7 +27,7 @@ Parallel ownership within this one active issue separates pure domain behavior,
 service/HTTP/workspace, UI/commands/history, and root integration/documentation/
 owned-cluster verification. No separate product issue is implemented concurrently.
 
-## Behavior under implementation
+## Implemented behavior
 
 The selected scope covers observed subjects, Roles/ClusterRoles and bindings,
 current-identity review, individual SelfSubjectAccessReview, namespace
@@ -235,3 +235,21 @@ displayed). Coverage does not relabel the seven failures as a passing suite.
 The five skips require actual native Homebrew source/bottle workflows, owned
 macOS clipboard access or macOS sandbox-exec. They are not local platform
 certification. Exact-head hosted checks and protected delivery remain required.
+
+## Recovered local tool prerequisites
+
+After the completed feature was signed off and committed as
+`743e126f9500579ca844c454ccb369976549f388`, the two original affected files
+passed all 21 cases in 4.69 seconds through `uv run pytest`. This includes all
+seven previously failing cases and their existing negative/success controls.
+The actual source-capture clean-tree checks and 90% changed-line acceptance/
+rejection assertions remain unchanged. No production or test edit recovered
+these cases: the corrections were committing clean source and activating its
+locked development-tool PATH. The original full run remains a retained failure;
+these overlapping test counts are not summed. Exact command, source, JUnit and
+summary are in `artifacts/issue71/full-corrected-1/qualified-tooling-*`.
+
+The measured production/configuration bytes still match the frozen complete
+run, corrected owned-kind trial and startup reports. Subsequent acceptance-note
+edits change documentation only. Required exact-head hosted source/native
+checks, resolved review and protected squash still precede issue completion.
