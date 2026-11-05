@@ -325,9 +325,9 @@ def test_each_native_artifact_must_be_retained_and_unambiguous(target, mutation)
         (12, "Application (ubuntu-24.04, Python 3.12)"),
         (12, "Application (ubuntu-24.04, Python 3.13)"),
         (12, "Application (ubuntu-24.04, Python 3.14)"),
-        (12, "Application (macos-latest, Python 3.12)"),
-        (12, "Application (macos-latest, Python 3.13)"),
-        (12, "Application (macos-latest, Python 3.14)"),
+        (12, "Application (macos-15, Python 3.12)"),
+        (12, "Application (macos-15, Python 3.13)"),
+        (12, "Application (macos-15, Python 3.14)"),
         (13, "Repository checks"),
     ],
 )
@@ -613,7 +613,7 @@ def test_missing_or_ambiguous_release_readiness_cannot_pass(mutation):
         milestone_readiness(lambda _: issue, "1.0.0", plan, index)
 
 
-@pytest.mark.parametrize("missing", ["macos-latest", "Python 3.13", "Python 3.14"])
+@pytest.mark.parametrize("missing", ["macos-15", "Python 3.13", "Python 3.14"])
 def test_routine_development_matrix_does_not_qualify_publication(missing):
     data = trusted_api()
     path = f"repos/{REPOSITORY}/actions/runs/12/jobs?filter=latest&per_page=100"

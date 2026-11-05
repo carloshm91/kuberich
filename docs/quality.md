@@ -109,7 +109,9 @@ or malformed dependencies cannot pass. No path filters or allowed failures apply
 
 The complete fast selection runs first on Linux 3.12; failure blocks matrices and
 fails the aggregate. Success replaces no complete suite, coverage, build or audit.
-Linux source jobs use `ubuntu-24.04`; the source macOS matrix uses `macos-latest`.
+Linux source jobs use `ubuntu-24.04`; the source macOS matrix uses the explicit
+`macos-15` Apple Silicon image. Source Python versions and all four test parts
+remain unchanged.
 Native Apple Silicon build/install lanes use `macos-15`; Intel uses `macos-15-intel`.
 New Apple Silicon bottles use `arm64_sequoia`; published Sonoma metadata stays
 readable. Require actual new-image results before claiming native qualification.

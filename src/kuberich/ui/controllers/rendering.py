@@ -5,6 +5,7 @@ from collections.abc import Callable
 from contextlib import suppress
 
 from kuberich.domain.authorization import AuthorizationRequest
+from kuberich.domain.cluster_diagnostics import DiagnosticRequest
 from kuberich.domain.pulse import PulseScope
 from kuberich.domain.relationships import RelationshipScope
 from kuberich.domain.view_routes import ViewRoute
@@ -32,7 +33,12 @@ class RenderCoordinator:
             ViewRoute,
             tuple[
                 str | None,
-                ResourceScope | PulseScope | RelationshipScope | AuthorizationRequest | None,
+                ResourceScope
+                | PulseScope
+                | RelationshipScope
+                | AuthorizationRequest
+                | DiagnosticRequest
+                | None,
             ],
         ] = {}
         self._ready = asyncio.Event()
@@ -63,11 +69,19 @@ class RenderCoordinator:
     def _scope(
         request: RenderRequest,
     ) -> tuple[
-        str | None, ResourceScope | PulseScope | RelationshipScope | AuthorizationRequest | None
+        str | None,
+        ResourceScope
+        | PulseScope
+        | RelationshipScope
+        | AuthorizationRequest
+        | DiagnosticRequest
+        | None,
     ]:
         return (
             request.observation.context,
-            request.observation.authorization.request
+            request.observation.diagnostics.request
+            if request.observation.diagnostics is not None
+            else request.observation.authorization.request
             if request.observation.authorization is not None
             else request.observation.relationships.request.scope
             if request.observation.relationships is not None

@@ -1488,11 +1488,11 @@
         "O03"
       ],
       "source": "internal/view/xray.go",
-      "status": "planned",
-      "difference": "O03 #70 implements development-source native XRay/UsedBy records, collectors, visible expansion rows and source coverage. Discovery/expected UID and Kubernetes owner scope remain authoritative; path-local cycles differ from shared descendants. Supported Pod/seven-template, ServiceAccount and PV/PVC declarations retain field paths, optional/defaulted evidence and explicit namespace scope without claiming process consumption or arbitrary CR reference discovery. Focused domain/HTTP/widget evidence exists; actual App, owned-kind and complete current-head qualification remain pending.",
+      "status": "implemented",
+      "difference": "O03 #70 provides native XRay/UsedBy collectors, UID-guarded opening, path-local cycle handling, source coverage and history restoration. Protected PR #312 passed all selected source/native jobs; actual owned-cluster evidence is retained in the relationship acceptance record. Supported static Pod/workload, ServiceAccount and storage declarations preserve field paths and namespace scope; arbitrary CR references and proof of process consumption remain outside this implementation.",
       "public_summary": "Development source provides native :xray and :usedby views for owners, selector matches, reported endpoints, placement and supported static configuration/storage/identity declarations. Replacement UIDs and incomplete scans remain explicit; installed 0.3.0 predates these views.",
       "public_status": "partial",
-      "partial_evidence": [
+      "evidence": [
         "docs/resource-relationships.md",
         "docs/internal/acceptance/resource-relationships.md",
         "tests/unit/test_relationships.py",
@@ -1534,10 +1534,26 @@
         "O05"
       ],
       "source": "README.md",
-      "status": "planned",
-      "difference": "README advertises Popeye; treat this as documented surface, not proof of a working builtin in the pinned binary.",
-      "public_summary": "Cluster diagnostic reports and actionable health-check views are planned.",
-      "public_status": "planned"
+      "status": "implemented",
+      "difference": "O05 #72 provides bounded native diagnostics for five Pod/workload failure categories, UID-linked resource/Event/log actions and explicit per-context Popeye 0.22.1 ingestion. Actual owned-kind/native/official-binary trials passed eight runtime scenarios with all 239 bound source inputs unchanged and complete container/cluster/private-file cleanup; external API read count and name-only historical identity remain explicit limits. The 198-case native/Workspace and 162-case UI/regression cohorts passed. Exact-head whole-source/platform checks and protected delivery remain required.",
+      "public_summary": "Development source adds native :diagnostics and captured-workload :diagnose evidence, plus explicit optional :popeye report ingestion. Source gaps, stale evidence and name-only report identity remain visible; installed 0.3.0 predates these views.",
+      "public_status": "partial",
+      "evidence": [
+        "docs/cluster-diagnostics.md",
+        "docs/internal/acceptance/cluster-diagnostics.md",
+        "src/kuberich/domain/cluster_diagnostics.py",
+        "src/kuberich/domain/popeye.py",
+        "tests/contract/test_diagnostic_native_service.py",
+        "tests/contract/test_diagnostic_workspace_integration72.py",
+        "tests/contract/test_popeye_process72.py",
+        "tests/ui/test_cluster_diagnostics_app.py",
+        "tests/ui/test_diagnostic_tool_integration72.py",
+        "scripts/verify_diagnostics_kind.py",
+        "scripts/diagnostics_kind_runtime.py",
+        "scripts/diagnostics_tools.py",
+        "tests/ui/test_diagnostic_client_cleanup.py",
+        "tests/fixtures/popeye/0.22.1/official-provenance.json"
+      ]
     },
     {
       "id": "OBS06",

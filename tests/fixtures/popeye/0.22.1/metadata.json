@@ -1,0 +1,18 @@
+{
+  "parser_id": "popeye-json/0.22.1",
+  "producer_version": "0.22.1",
+  "producer_commit": "35b554961dcdabfa7aba6bd070673c6c24c70884",
+  "format_version": 1,
+  "fixtures": {
+    "synthetic-current.json": "Authored synthetic edge-case report; not actual upstream command output."
+  },
+  "shape_sources": [
+    "https://github.com/derailed/popeye/blob/35b554961dcdabfa7aba6bd070673c6c24c70884/internal/report/builder.go",
+    "https://github.com/derailed/popeye/blob/35b554961dcdabfa7aba6bd070673c6c24c70884/internal/report/report.go",
+    "https://github.com/derailed/popeye/blob/35b554961dcdabfa7aba6bd070673c6c24c70884/internal/report/tally.go",
+    "https://github.com/derailed/popeye/blob/35b554961dcdabfa7aba6bd070673c6c24c70884/internal/issues/issue.go"
+  ],
+  "fixture_sha256": {
+    "synthetic-current.json": "e7c2ed21422bbc289d676dbf7e743202bbe00d962c180fcddf3e04b516872ad6"
+  }
+}

@@ -8,6 +8,7 @@ import os
 import pty
 import select
 import signal
+import stat
 import struct
 import subprocess
 import sys
@@ -19,12 +20,15 @@ from typing import TYPE_CHECKING
 
 import pyte
 
+from kuberich.diagnostics.logging import LOG_HEADER
+from kuberich.diagnostics.redaction import sanitize_text
 from tests.support.terminal_modes import restored_modes
 
 if TYPE_CHECKING:
     from tests.support.transports import TerminalTransport
 
 ROOT = Path(__file__).resolve().parents[2]
+LOG_TAIL_BYTES = 16384
 
 # Keep a shell-like session owner alive while the actual CLI exits. Darwin revokes
 # slave descriptors when that owner exits, so record both modes before then.
@@ -93,6 +97,7 @@ class TerminalSession:
     ) -> None:
         assert type(read_size) is int and 1 <= read_size <= 65536
         self.read_size = read_size
+        self._application_log_path = directory / "kuberich.log"
         self._closed_descriptors: set[int] = set()
         self._attempted_descriptors: set[int] = set()
         self._acknowledged = False
@@ -538,6 +543,43 @@ class TerminalSession:
             + "\n"
         )
 
+    def _application_log_tail(self) -> dict[str, object]:
+        """Read only this session's regular owned log, after process cleanup."""
+        try:
+            descriptor = os.open(
+                self._application_log_path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK
+            )
+            try:
+                details = os.fstat(descriptor)
+                if not stat.S_ISREG(details.st_mode) or details.st_uid != os.geteuid():
+                    return {"status": "unavailable", "reason": "not-owned-regular-log"}
+                header = os.read(descriptor, len(LOG_HEADER))
+                if header != LOG_HEADER:
+                    return {"status": "unavailable", "reason": "unrecognized-log-header"}
+                start = max(len(header), details.st_size - LOG_TAIL_BYTES)
+                tail = os.pread(descriptor, LOG_TAIL_BYTES, start)
+            finally:
+                os.close(descriptor)
+        except OSError as error:
+            return {
+                "status": "unavailable",
+                "error_type": type(error).__name__,
+                "errno": error.errno,
+            }
+        # Application log records are sanitized and physically single-line.
+        # Drop a partial first record before reapplying credential/control rules.
+        truncated = start > len(header)
+        if truncated:
+            tail = tail.partition(b"\n")[2]
+        text = sanitize_text(tail.decode("utf-8", errors="replace"), allow_newlines=True).encode(
+            "utf-8"
+        )
+        return {
+            "status": "included",
+            "truncated": truncated or len(text) > LOG_TAIL_BYTES,
+            "text": text[-LOG_TAIL_BYTES:].decode("utf-8", errors="ignore"),
+        }
+
     def __exit__(
         self,
         kind: type[BaseException] | None,
@@ -672,6 +714,7 @@ class TerminalSession:
                             "terminal_completion_before_cleanup": before,
                             "terminal_completion": self.completion,
                             "cleanup": self.cleanup,
+                            "application_log": self._application_log_tail(),
                         },
                         indent=2,
                     )

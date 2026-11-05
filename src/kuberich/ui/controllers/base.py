@@ -7,6 +7,7 @@ from dataclasses import dataclass, replace
 from typing import Protocol
 
 from kuberich.domain.authorization_rows import AuthorizationRow
+from kuberich.domain.diagnostic_rows import DiagnosticRow
 from kuberich.domain.namespaces import NamespaceRow
 from kuberich.domain.navigation import ContextRow, Viewport
 from kuberich.domain.pods import PodRow
@@ -18,7 +19,14 @@ from kuberich.domain.views import ViewObservation
 from kuberich.services.filtering import FilterResult
 
 type ViewRow = (
-    PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow | RelationshipRow | AuthorizationRow
+    PodRow
+    | NamespaceRow
+    | ContextRow
+    | ResourceRow
+    | PulseRow
+    | RelationshipRow
+    | AuthorizationRow
+    | DiagnosticRow
 )
 
 

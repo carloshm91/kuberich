@@ -87,6 +87,8 @@ Resource aliases are in the [resource reference](resource-reference.md).
 | `context`, `contexts`, `ctx` | contexts |
 | `delete` | delete |
 | `deletebatch` | delete batch |
+| `diagnose` | diagnose |
+| `diagnostics` | diagnostics |
 | `download` | download |
 | `edit` | edit |
 | `forward` | forward |
@@ -99,6 +101,7 @@ Resource aliases are in the [resource reference](resource-reference.md).
 | `pluginjobs` | plugin jobs |
 | `plugins` | plugins |
 | `po`, `pod`, `pods` | pods |
+| `popeye` | popeye |
 | `portforward` | port forward |
 | `pf`, `portforwards` | port forwards |
 | `overview`, `pulse` | pulse |
@@ -169,6 +172,13 @@ Profile 3: `logs`, `text`.
 | Containers | `a` | Attach |
 | Containers | `u` | Upload |
 | Containers | `d` | Download |
+| Diagnostic evidence | `o` | Open resource |
+| Diagnostic evidence | `e` | Open Event |
+| Diagnostic evidence | `n` | Next Event |
+| Diagnostic evidence | `l` | Current logs |
+| Diagnostic evidence | `p` | Previous logs |
+| Diagnostic evidence | `r` | Refresh evidence |
+| Diagnostic evidence | `escape` | Back |
 | Embedded terminal | `tab` | Focus Next |
 | Embedded terminal | `shift+tab` | Focus Previous |
 | Embedded terminal | `ctrl+c,super+c` | Copy selected text |

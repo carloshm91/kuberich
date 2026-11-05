@@ -174,7 +174,7 @@ def test_architecture_and_decision_links_resolve_without_publishing_history():
                     _, identifiers = rendered(target.read_text())
                     assert unquote(parsed.fragment) in identifiers, href
     navigation = load_navigation(ROOT)
-    assert navigation.user_page_count == 23
+    assert navigation.user_page_count == 24
     assert not any(
         "architecture" in page.source or "adr/" in page.source for page in navigation.pages
     )

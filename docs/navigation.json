@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "page_budget": 23,
+  "page_budget": 24,
   "index_title": "Start here",
   "sections": [
     {
@@ -148,6 +148,16 @@
           "title": "Inspect permissions",
           "sources": [
             "authorization.md"
+          ],
+          "generated": false,
+          "retired_sources": [],
+          "anchors": {}
+        },
+        {
+          "source": "cluster-diagnostics.md",
+          "title": "Investigate workload failures",
+          "sources": [
+            "cluster-diagnostics.md"
           ],
           "generated": false,
           "retired_sources": [],

@@ -1,49 +1,62 @@
 # Development checkpoint
 
-## Unreleased 0.4.0 authorization work
+## Unreleased 0.4.0 diagnostic work
 
-Issue #71 is the single active implementation task. Native `:rbac`, `:can-i`,
-`:rules` and `:who-can` behavior is implemented. The corrected-source actual
-owned-cluster trial passed seven scenario checks, 167 observed API calls, unchanged
-kubeconfig/environment and complete cluster/private-directory/worker cleanup in
-38.274 seconds. All 226 runtime/configuration/verifier inputs stayed unchanged.
-The exact child invocation and source hashes are retained in
-`artifacts/issue71/kind-trial-3/invocation.json`; the wrapper used this checkout's
-Python 3.12.12 and the verified pinned kind executable. Local behavior and
-coverage checks are recorded below; exact-head hosted qualification and protected
-delivery remain pending. The
-[authorization acceptance record](acceptance/authorization.md) tracks actual
-source-bound measurements as they become available.
+Issue #72 is the single active implementation task. Native `:diagnostics` and
+captured Pod/workload `:diagnose` collection are integrated with the normal root
+workspace. Optional `:popeye` is explicit and configured per context; it never
+installs a tool or reruns during native refresh/history navigation. Five failure
+categories retain source evidence, times, partial/forbidden states and guarded
+resource/container-log actions. See the
+[diagnostic acceptance record](acceptance/cluster-diagnostics.md).
 
-The preceding `26d0b81` source's local complete run recorded 8,624 passes, five explicit platform skips and
-seven development-tool prerequisite failures. After clean source was committed
-and the locked environment activated, all 21 cases in both affected files
-passed unchanged. Original failures remain retained, not relabelled. The verified
-runtime coverage merge measured 98.7848% lines, 96.0444% branches and 99.23%
-changed lines; all 93 critical modules were independently at 100%. See the
-acceptance record for exact source, commands and remaining hosted checks.
+The focused native/Workspace cohort passed 198 cases, including fresh session
+generation after an explicit same-namespace selection. Native domain, row and
+producer-owner modules measured 100% independent lines and branches. Workspace
+service measured 98.23% lines and 91.38% branches; native collector measured
+99.69% and 96.88%. The latest Root App/config/process/cleanup cohort passed ten cases, including
+faithful exit-one reports, per-context tool selection, missing dependencies,
+no automatic rerun, read-only refusal before a probe, expected HTTP failures and
+client-close ordering. The strengthened UI/navigation/log cohort passed 162
+cases with all captured production inputs unchanged. Independent UI coverage
+measured 622/626 lines and 175/180 branches, with table/controller at 100%.
 
-The final independent review additionally found repeated binding-subject detail
-rows could collide. The minimal exact-identity dedup preserves declarations and
-rule indices. All 31 row cases (100% lines/branches) and 225 affected App/command/
-navigation cases passed. The fresh strengthened kind trial verifies three actual
-server declarations produce two distinct visible subject identities. Earlier
-whole-source coverage remains scoped to `26d0b81`; fresh hosted checks must
-qualify the corrected source before delivery.
+The actual owned-kind trial passed eight runtime scenarios in 87.139 seconds:
+five native failure categories, UID-linked Events, previous/current logs,
+workload controller chains, denied sources, UID replacement and explicit official
+Popeye scans. All 239 source/runtime/configuration bindings stayed unchanged;
+the owned container, cluster and private files were removed, and caller
+configuration/environment plus unrelated container inventory remained unchanged.
+Exact commands and hashes are retained in
+`artifacts/issue72/popeye-actual/trial3/evidence.json` and the diagnostic
+acceptance record. Full exact-head hosted/platform checks and protected delivery
+remain pending.
 
-The preceding relationship task is delivered through protected squash
-`64817677c20aad876489f81427a7636f0c56cc6c`, tree
-`e5867f0a4692dd6029e2d41504ec4c710e4604e3`. PR #312 passed all 27 selected
-jobs, Repository checks and DCO at head `5742647`. Actual Ubuntu Python 3.13
-coverage was 21,862/22,143 lines (98.7310%), 6,424/6,700 branches (95.8806%)
-and 1,384/1,411 changed lines (98.09% displayed), with all 89 critical modules
-at 100%. The live merge protection, exact tested tree, author email and sign-off
-were verified; issue acceptance, Epic child and roadmap status are complete.
+The prerequisite authorization work is delivered in PR #313 at protected squash
+`a3f8118e6b7bf8a55948564c80e8bdeec405c1ff`, tree
+`dda33fb550b95592cb3ffbc031a79a85106a49a4`. All 27 selected PR jobs,
+Repository checks and DCO passed at exact head `3087ee8`. Actual Ubuntu Python
+3.13 coverage measured 23,656/23,946 lines (98.7889%), 7,089/7,382 branches
+(96.0309%), 99.23% changed lines and all 93 critical modules at 100%.
+Its source-bound kind trial passed seven checks and 167 observed API calls with
+unchanged caller configuration and complete owned cleanup. Original development
+failures remain in the [authorization acceptance record](acceptance/authorization.md).
 
-The new maintained checkpoint covers the subsequent authorization changes.
-Earlier relationship, Pulse and release evidence below keeps its recorded source
-boundaries. Source metadata remains 0.3.0 during unreleased 0.4.0 implementation;
-no package, tag, website or DNS publication is part of this work.
+The automatic main run after that merge exposed a relationship viewport defect
+on Python 3.14. The failure remains unqualified and retained. The current
+correction prevents native horizontal geometry updates from counting as user
+scroll; a new horizontal-offset-nine regression failed before the fix. All 18
+widget cases now pass with 100% module lines and branches. Exact original CI
+callback ordering is not claimed reproduced; fresh App and required hosted
+checks must qualify this corrected source.
+
+Four of ten technical v0.4.0 tasks are delivered: metrics, Pulse, relationships
+and authorization. Diagnostics is active; sanitized exports, image/environment
+inspection, remaining curated resource families and final phase qualification
+follow. Source metadata remains 0.3.0 during this work. No package, tag, website
+or DNS publication is authorized by implementation progress.
+
+The source snapshots below preserve earlier measured boundaries and limitations.
 
 ## Unreleased 0.4.0 relationship source
 

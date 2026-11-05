@@ -21,6 +21,8 @@ from scripts.release_policy import (
 # owned_kind finally: two inspections (ps + inspect, 30 s each), deletion
 # (90 s), and one command's existing two 2 s signal waits plus 5 s reap.
 OWNED_KIND_CLEANUP_SECONDS = 2 * 2 * 30 + 90 + 2 * 2 + 5
+# The contained diagnostic tool drains/removes its exact container before kind cleanup.
+DIAGNOSTIC_CONTAINER_CLEANUP_SECONDS = 45
 SIGNAL_GRACE_SECONDS = 2
 REAP_GRACE_SECONDS = 5
 
@@ -41,6 +43,7 @@ KIND_SCENARIOS = (
     ("pulse", "verify_pulse_kind", False),
     ("relationships", "verify_relationships_kind", False),
     ("authorization", "verify_authorization_kind", False),
+    ("diagnostics", "verify_diagnostics_kind", False),
 )
 
 
@@ -160,28 +163,54 @@ def local_stages(root: Path, output: Path, temporary: Path, workers: int, base: 
 def cluster_stages(
     output: Path, kind: Path, kubectl: Path, wheel: Path, repetition: int
 ) -> list[Stage]:
+    diagnostic_tools = output / "diagnostic-tools"
     stages = [
         Stage(
-            f"kind-{repetition}-{name}",
+            f"kind-{repetition}-diagnostic-tools",
             (
                 "uv",
                 "run",
                 "python",
                 "-m",
-                f"scripts.{module}",
-                "--kind",
-                str(kind),
-                *(("--kubectl", str(kubectl)) if needs_kubectl else ()),
-                "--evidence",
-                str(
-                    output / f"kind-{repetition}-{name}" / "evidence.json"
-                    if name in {"pulse", "relationships", "authorization"}
-                    else output / f"kind-{repetition}-{name}.json"
-                ),
+                "scripts.diagnostics_tools",
+                "--directory",
+                str(diagnostic_tools),
             ),
-            cleanup_timeout=OWNED_KIND_CLEANUP_SECONDS,
-        )
-        for name, module, needs_kubectl in KIND_SCENARIOS
+        ),
+        *[
+            Stage(
+                f"kind-{repetition}-{name}",
+                (
+                    "uv",
+                    "run",
+                    "python",
+                    "-m",
+                    f"scripts.{module}",
+                    "--kind",
+                    str(kind),
+                    *(("--kubectl", str(kubectl)) if needs_kubectl else ()),
+                    *(
+                        (
+                            "--docker",
+                            "/usr/bin/docker",
+                            "--popeye",
+                            str(diagnostic_tools / "popeye"),
+                        )
+                        if name == "diagnostics"
+                        else ()
+                    ),
+                    "--evidence",
+                    str(
+                        output / f"kind-{repetition}-{name}" / "evidence.json"
+                        if name in {"pulse", "relationships", "authorization", "diagnostics"}
+                        else output / f"kind-{repetition}-{name}.json"
+                    ),
+                ),
+                cleanup_timeout=OWNED_KIND_CLEANUP_SECONDS
+                + (DIAGNOSTIC_CONTAINER_CLEANUP_SECONDS if name == "diagnostics" else 0),
+            )
+            for name, module, needs_kubectl in KIND_SCENARIOS
+        ],
     ]
     # Quickstart is the installed-wheel rehearsal in addition to the API trials.
     stages.append(

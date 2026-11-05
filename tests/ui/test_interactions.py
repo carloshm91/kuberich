@@ -368,7 +368,8 @@ async def test_container_projection_coalesces_and_client_close_drains_the_owned_
             screen = app.screen
             assert isinstance(screen, ContainerScreen)
             assert screen.active_count == 0
-            entered, release = threading.Event(), threading.Event()
+            entered, release = asyncio.Event(), threading.Event()
+            loop = asyncio.get_running_loop()
             original = module.container_rows
             calls = []
             decodes = CoroutineCalls()
@@ -382,8 +383,10 @@ async def test_container_projection_coalesces_and_client_close_drains_the_owned_
                 version = manifest["metadata"]["resourceVersion"]
                 calls.append(version)
                 if version == "blocked":
-                    entered.set()
-                    assert release.wait(10)
+                    loop.call_soon_threadsafe(entered.set)
+                    # Only the test releases this worker. UI event processing
+                    # must not consume an independent fixture expiry deadline.
+                    release.wait()
                 return original(manifest, metrics)
 
             monkeypatch.setattr(module, "container_rows", controlled)
@@ -398,20 +401,26 @@ async def test_container_projection_coalesces_and_client_close_drains_the_owned_
                     gather=asyncio.gather,
                 ),
             )
-            value["metadata"]["resourceVersion"] = "blocked"
-            screen.observe_record(record(value))
-            assert await asyncio.to_thread(entered.wait, 5)
-            assert screen.active_count == 1 and not decodes.latest.done()
-            for version in ("intermediate", "latest"):
-                value["metadata"]["resourceVersion"] = version
+            closing = None
+            try:
+                value["metadata"]["resourceVersion"] = "blocked"
                 screen.observe_record(record(value))
-            await pilot.press("colon", *"still-responsive")
-            assert screen.command_input.value == "still-responsive"
-            closing = asyncio.create_task(app.sessions.close())
-            await wait_for(lambda: screen.invalidated)
-            assert not closing.done() and screen.active_count == 1 and not decodes.latest.done()
-            release.set()
-            await closing
+                await asyncio.wait_for(entered.wait(), 5)
+                assert screen.active_count == 1 and not decodes.latest.done()
+                for version in ("intermediate", "latest"):
+                    value["metadata"]["resourceVersion"] = version
+                    screen.observe_record(record(value))
+                await pilot.press("colon", *"still-responsive")
+                assert screen.command_input.value == "still-responsive"
+                closing = asyncio.create_task(app.sessions.close())
+                await wait_for(lambda: screen.invalidated)
+                assert not closing.done() and screen.active_count == 1 and not decodes.latest.done()
+            finally:
+                release.set()
+                # Drain even when a responsiveness/ownership assertion fails.
+                if closing is None:
+                    closing = asyncio.create_task(app.sessions.close())
+                await closing
             assert screen.active_count == 0 and decodes.latest.done() and not screen.table.row_count
             assert calls == ["blocked"]  # Closing rejects every late/pending result.
             assert app.sessions.client is None

@@ -91,7 +91,7 @@ jobs:
           sudo apt-get install --yes openssh-server tmux xclip xvfb
           sudo install -d -m 0755 /run/sshd
       - name: Install real terminal transport test tools on macOS
-        if: ${{ matrix.os == 'macos-latest' }}
+        if: ${{ matrix.os == 'macos-15' }}
         run: |
           brew install tmux
           test -x /usr/sbin/sshd
@@ -141,7 +141,7 @@ jobs:
           sudo apt-get install --yes openssh-server tmux xclip xvfb
           sudo install -d -m 0755 /run/sshd
       - name: Install real terminal transport test tools on macOS
-        if: ${{ matrix.os == 'macos-latest' }}
+        if: ${{ matrix.os == 'macos-15' }}
         run: |
           brew install tmux
           test -x /usr/sbin/sshd
@@ -155,10 +155,11 @@ jobs:
           uv run mypy --strict scripts/verify_pulse_kind.py
           uv run mypy --strict scripts/verify_relationships_kind.py
           uv run mypy --strict scripts/verify_authorization_kind.py
+          uv run mypy --strict scripts/diagnostics_tools.py scripts/verify_diagnostics_kind.py scripts/diagnostics_kind_runtime.py
       - name: Verify fresh-process CLI and real-terminal startup budgets
         run: uv run python -m scripts.check_startup --output artifacts/startup/qualification
       - name: Verify plaintext clipboard on the owned ephemeral macOS runner
-        if: ${{ matrix.os == 'macos-latest' }}
+        if: ${{ matrix.os == 'macos-15' }}
         env:
           KUBERICH_NATIVE_CLIPBOARD_TEST: '1'
         run: uv run pytest -q tests/contract/test_clipboard.py::test_owned_hosted_macos_plaintext_roundtrip
@@ -228,6 +229,11 @@ jobs:
       - name: Verify actual authorization reviews RBAC scope and native navigation
         if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_authorization_kind --kind "$RUNNER_TEMP/kuberich-kind" --evidence artifacts/authorization/evidence.json
+      - name: Verify native diagnostic evidence and the pinned optional Popeye tool
+        if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
+        run: |
+          uv run python -m scripts.diagnostics_tools --directory "$RUNNER_TEMP/kuberich-diagnostic-tools"
+          uv run python -m scripts.verify_diagnostics_kind --kind "$RUNNER_TEMP/kuberich-kind" --docker /usr/bin/docker --popeye "$RUNNER_TEMP/kuberich-diagnostic-tools/popeye" --evidence artifacts/diagnostics/evidence.json
       - name: Enforce independent production and critical-module coverage
         run: uv run python scripts/check_coverage.py coverage.json
       - name: Enforce changed executable-line coverage against the merge base
@@ -269,6 +275,7 @@ jobs:
             artifacts/pulse/**
             artifacts/relationships/**
             artifacts/authorization/**
+            artifacts/diagnostics/**
             artifacts/quickstart/*
             artifacts/startup/**
           if-no-files-found: error

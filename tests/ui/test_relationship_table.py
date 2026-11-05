@@ -439,14 +439,15 @@ async def test_pending_viewport_yields_to_user_interaction_before_a_coalesced_re
 
 
 @pytest.mark.asyncio
-async def test_native_cursor_reveal_does_not_cancel_exact_viewport_restoration():
+@pytest.mark.parametrize("initial_x", [0, 9])
+async def test_native_cursor_reveal_does_not_cancel_exact_viewport_restoration(initial_x):
     app = TableApp()
     rows = tuple(row((str(index),), name=f"pod-{index}") for index in range(20))
     data = snapshot(*rows)
     async with app.run_test(size=(60, 12)) as pilot:
         await app.table.apply_rows(rows, data, lambda: True)
         await pilot.pause()
-        app.table.scroll_to(y=4, animate=False, immediate=True, force=True)
+        app.table.scroll_to(x=initial_x, y=4, animate=False, immediate=True, force=True)
         expected = replace(
             app.table.capture_viewport(),
             selected=relationship_path_key(rows[15].path),

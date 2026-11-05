@@ -6,8 +6,9 @@ import asyncio
 import logging
 import os
 import sys
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from contextlib import suppress
+from datetime import UTC, datetime
 from functools import partial
 from importlib.metadata import version
 from pathlib import Path
@@ -26,6 +27,7 @@ from textual.geometry import Size
 from textual.screen import ModalScreen
 from textual.widget import Widget
 from textual.widgets import Button, DataTable, Input, Static
+from textual.worker import Worker, WorkerCancelled
 
 from kuberich.adapters.credentials import CredentialLogin, ExecToken, auth_problem
 from kuberich.adapters.kubernetes import KubernetesSession
@@ -37,8 +39,16 @@ from kuberich.config.schema import Settings
 from kuberich.domain.appearance import Appearance
 from kuberich.domain.cleanup import finished_pods
 from kuberich.domain.clipboard import ClipboardBackend, clipboard_backend, clipboard_bytes, osc52
+from kuberich.domain.cluster_diagnostics import (
+    DiagnosticRequest,
+    DiagnosticSnapshot,
+    DiagnosticSource,
+    DiagnosticSourceKind,
+    DiagnosticStatus,
+)
 from kuberich.domain.connections import (
     DEFAULT_CONNECTION,
+    ConnectionProblem,
     ConnectionRequest,
 )
 from kuberich.domain.credential_helpers import helper_start_failure
@@ -55,6 +65,7 @@ from kuberich.domain.operations import MAX_BATCH, ResourceAction
 from kuberich.domain.processes import ProcessStatus
 from kuberich.domain.pulse import PulseScope
 from kuberich.domain.relationships import RelationshipMode
+from kuberich.domain.resources import Discovery
 from kuberich.domain.targets import SessionIdentity
 from kuberich.domain.view_actions import ViewState
 from kuberich.domain.view_routes import ViewKind
@@ -98,11 +109,14 @@ from kuberich.ui.chrome import (
     WorkspaceLabel,
     header_identity,
 )
+from kuberich.ui.cluster_diagnostics import ClusterDiagnosticsTable
 from kuberich.ui.commands import CommandInput, NavigationInput
 from kuberich.ui.contexts import ContextTable
 from kuberich.ui.controllers.base import RenderRequest
 from kuberich.ui.controllers.filtering import FilterOptions
 from kuberich.ui.custom import CustomTable
+from kuberich.ui.diagnostic_actions import DiagnosticActions
+from kuberich.ui.diagnostic_navigation import DiagnosticNavigation
 from kuberich.ui.foreground import ForegroundGate
 from kuberich.ui.handoff import terminal_handoff
 from kuberich.ui.input_dispatch import InputDispatcher
@@ -133,6 +147,7 @@ from kuberich.ui.workspace_screen import WorkspaceScreen
 
 if TYPE_CHECKING:
     from kuberich.ui.context_admin import ContextEditResult
+    from kuberich.ui.diagnostic_evidence import DiagnosticEvidenceScreen
     from kuberich.ui.inspection import Page
 
 
@@ -213,11 +228,16 @@ class KubeRichApp(App[None]):
         self.sub_title = "Local preview"
         self._diagnostic_logger = logger
         self._initial_command = initial_command
+        policy = AccessPolicy(settings.read_only)
         self.sessions = SessionService(
             catalog if catalog is not None else KubeCatalog(), connection
         )
         self.workspace = WorkspaceService(
-            self.sessions, on_error=self._handle_exception, pulse_history=self._read_pulse_history
+            self.sessions,
+            on_error=self._handle_exception,
+            pulse_history=self._read_pulse_history,
+            diagnostic_policy=policy,
+            diagnostic_popeye=self._read_popeye,
         )
         self.history = NavigationHistory()
         self.interactions = Interactions(self)
@@ -231,7 +251,7 @@ class KubeRichApp(App[None]):
                 self._navigation_warning = str(error)
                 self._navigation_invalid = True
         self.navigation_keymap = effective_keymap(self.navigation.keys)
-        self.commands = CommandService(AccessPolicy(settings.read_only), self.navigation.aliases)
+        self.commands = CommandService(policy, self.navigation.aliases)
         self.processes = ProcessRunner(self.commands.policy)
         self.forwards = ForwardManager(self.processes, changed=self._forward_changed)
         self.mutations = MutationManager()
@@ -279,6 +299,8 @@ class KubeRichApp(App[None]):
         self.relationships_table.display = False
         self.authorization_table = AuthorizationTable()
         self.authorization_table.display = False
+        self.diagnostics_table = ClusterDiagnosticsTable()
+        self.diagnostics_table.display = False
         self.chrome = WorkspaceChrome(
             partial(header_identity, self.workspace.store, self.sessions),
             f"KubeRich: {version('kuberich')} · {self._mode}",
@@ -318,6 +340,7 @@ class KubeRichApp(App[None]):
                 self.pulse_table,
                 self.relationships_table,
                 self.authorization_table,
+                self.diagnostics_table,
             ),
             self._foreground,
             lambda: self.sessions.catalog,
@@ -358,6 +381,17 @@ class KubeRichApp(App[None]):
             self.workspace, self.views, self.navigator, self.workspace.select_authorization
         )
         self.navigator.authorization = self.authorization
+        self.diagnostics = DiagnosticActions(self)
+        self.diagnostic_navigation = DiagnosticNavigation(
+            self.workspace,
+            self.views,
+            self.navigator,
+            self.workspace.select_diagnostics,
+            resolve=self.workspace.resolve_diagnostic,
+            open_logs=self.diagnostics.open_logs,
+            show_evidence=self._show_diagnostic_evidence,
+        )
+        self.navigator.diagnostics = self.diagnostic_navigation
         self.presenter = WorkspacePresenter(
             self,
             self.workspace,
@@ -432,6 +466,8 @@ class KubeRichApp(App[None]):
                 Command.PLUGIN_JOBS: self.action_plugin_jobs,
                 Command.QUIT: self.exit,
                 Command.PULSE: self.navigator.pulse,
+                Command.DIAGNOSE: self.diagnostics.diagnose,
+                Command.POPEYE: self.diagnostics.popeye,
                 Command.RBAC: lambda: self.authorization.command(authorization_command("rbac")),
                 Command.CAN_I: lambda: self.authorization.command(authorization_command("can-i")),
                 Command.WHO_CAN: lambda: self.authorization.command(
@@ -472,6 +508,9 @@ class KubeRichApp(App[None]):
                 ),
             },
             {
+                Command.DIAGNOSTICS: lambda value: (
+                    self.diagnostics.cancel() if value == "cancel" else self.diagnostics.overview()
+                ),
                 Command.PODS: self._command_pods,
                 Command.NAMESPACES: lambda value: (
                     self.navigator.namespaces()
@@ -594,6 +633,7 @@ class KubeRichApp(App[None]):
         | PulseTable
         | RelationshipTable
         | AuthorizationTable
+        | ClusterDiagnosticsTable
     ):
         return self.views.table
 
@@ -652,6 +692,7 @@ class KubeRichApp(App[None]):
             yield self.pulse_table
             yield self.relationships_table
             yield self.authorization_table
+            yield self.diagnostics_table
             with Vertical(id="empty-state"):
                 yield WorkspaceLabel("No cluster connection", id="empty-title", markup=False)
                 yield WorkspaceLabel(
@@ -696,6 +737,7 @@ class KubeRichApp(App[None]):
             self.pulse_table,
             self.relationships_table,
             self.authorization_table,
+            self.diagnostics_table,
         ):
             table.effective_keys = self.navigation_keymap
         if not self.is_headless and not self.is_web:
@@ -712,6 +754,7 @@ class KubeRichApp(App[None]):
         self.pulse_table.setup()
         self.relationships_table.setup()
         self.authorization_table.setup()
+        self.diagnostics_table.setup()
         self.standard_table.setup()
         self.query_one("#resource-view", Vertical).border_title = "Resources · no connection"
         self.screen.set_class(self.size.width < 70, "compact")
@@ -764,7 +807,35 @@ class KubeRichApp(App[None]):
         self.presenter.show_sort()
 
     async def _close_client_operations(self, client: KubernetesSession) -> None:
-        await self.operations.close_for_client(client)
+        from kuberich.ui.diagnostic_evidence import DiagnosticEvidenceScreen
+
+        async def drain(worker: Worker[object]) -> None:
+            with suppress(WorkerCancelled):
+                await worker.wait()
+
+        closing = asyncio.gather(
+            *(drain(worker) for worker in self.workers.cancel_group(self, "diagnostic-object")),
+            *(
+                screen.stop_owned()
+                for screen in tuple(self.screen_stack)
+                if isinstance(screen, DiagnosticEvidenceScreen)
+                and screen.request.scope.session.context == client.context.name
+            ),
+            self.operations.close_for_client(client),
+            return_exceptions=True,
+        )
+        cancelled: asyncio.CancelledError | None = None
+        try:
+            outcomes = await asyncio.shield(closing)
+        except asyncio.CancelledError as error:
+            cancelled = error
+            await finish_owned(closing)
+            outcomes = closing.result()
+        for outcome in outcomes:
+            if isinstance(outcome, BaseException):
+                raise outcome
+        if cancelled is not None:
+            raise cancelled
 
     def copy_to_clipboard(self, text: str) -> None:
         backend = clipboard_backend(
@@ -1088,6 +1159,71 @@ class KubeRichApp(App[None]):
         backend = self.live_preferences.observability.for_context(scope.session.context).history
         return await HistoryReader().read(client, backend, scope.namespace)
 
+    async def _read_popeye(
+        self,
+        client: KubernetesSession,
+        discovery: Discovery,
+        request: DiagnosticRequest,
+        current: Callable[[DiagnosticRequest], bool],
+        *,
+        max_findings: int,
+        max_text_bytes: int,
+        max_source_text_bytes: int,
+    ) -> DiagnosticSnapshot:
+        from kuberich.services.popeye import PopeyeService
+
+        settings = self.live_preferences.observability.for_context(
+            request.scope.session.context
+        ).popeye
+        if settings is None:
+            observed = datetime.now(UTC)
+            return DiagnosticSnapshot(
+                request,
+                (),
+                (
+                    DiagnosticSource(
+                        "popeye:configuration",
+                        DiagnosticSourceKind.POPEYE,
+                        None,
+                        request.scope.namespace,
+                        DiagnosticStatus.UNAVAILABLE,
+                        collection=None,
+                        resource_version=None,
+                        detail="Popeye is optional. Configure observability.popeye.executable before running :popeye.",
+                        observed_at=observed,
+                    ),
+                ),
+                collecting=False,
+                native_requests_used=0,
+                observed_at=observed,
+            )
+        service = PopeyeService(
+            client,
+            self.commands.policy,
+            settings,
+            self._process_environment,
+            self._process_directory,
+            current,
+            discovery=discovery,
+        )
+        try:
+            result = await service.run(
+                request,
+                max_findings=max_findings,
+                max_text_bytes=max_text_bytes,
+                max_source_text_bytes=max_source_text_bytes,
+            )
+            return DiagnosticSnapshot(
+                request,
+                result.findings,
+                result.sources,
+                collecting=False,
+                native_requests_used=0,
+                observed_at=datetime.now(UTC),
+            )
+        finally:
+            await service.close()
+
     def action_contexts(self) -> None:
         self.navigator.contexts()
 
@@ -1118,10 +1254,30 @@ class KubeRichApp(App[None]):
         self._open_relationship_view(RelationshipMode.USED_BY)
 
     def action_open_relationship(self) -> None:
-        if self.authorization.active:
+        if self.diagnostic_navigation.active:
+            _worker: Worker[None] = self.run_worker(
+                self._open_diagnostic_object, group="diagnostic-object", exclusive=True
+            )
+        elif self.authorization.active:
             self.authorization.open_object()
         else:
             self.navigator.open_relationship(self.relationships_table.selected_path())
+
+    async def _open_diagnostic_object(self) -> None:
+        request = self.workspace.diagnostic_request
+        try:
+            await self.diagnostic_navigation.open_object()
+        except (AppError, ConnectionProblem) as error:
+            if self.diagnostic_navigation.active and self.workspace.diagnostic_request == request:
+                self._set_notice(str(error))
+
+    def _show_diagnostic_evidence(self, screen: DiagnosticEvidenceScreen) -> None:
+        self.push_screen(screen)
+
+    @on(DataTable.RowSelected, "#cluster-diagnostics")
+    def diagnostic_selected(self, event: DataTable.RowSelected) -> None:
+        event.stop()
+        self.diagnostic_navigation.selected(event.row_key.value)
 
     @on(DataTable.RowSelected, "#authorization")
     def authorization_selected(self, event: DataTable.RowSelected) -> None:

@@ -5,6 +5,7 @@ import time
 from dataclasses import dataclass
 
 from kuberich.domain.authorization_rows import AuthorizationRow
+from kuberich.domain.diagnostic_rows import DiagnosticRow
 from kuberich.domain.namespaces import NamespaceRow
 from kuberich.domain.navigation import ContextRow
 from kuberich.domain.pods import PodRow
@@ -24,6 +25,7 @@ class FilterResult[
     | PulseRow
     | RelationshipRow
     | AuthorizationRow
+    | DiagnosticRow
 ]:
     rows: tuple[T, ...]
     problem: str | None = None
@@ -37,8 +39,22 @@ def search_text(
     | ResourceRow
     | PulseRow
     | RelationshipRow
-    | AuthorizationRow,
+    | AuthorizationRow
+    | DiagnosticRow,
 ) -> str:
+    if isinstance(row, DiagnosticRow):
+        return " ".join(
+            (
+                row.severity,
+                row.category,
+                row.resource,
+                row.container,
+                row.summary,
+                row.source,
+                row.age,
+                *row.details,
+            )
+        )
     if isinstance(row, AuthorizationRow):
         return " ".join((row.label, row.scope, row.status, *row.details))
     if isinstance(row, RelationshipRow):
@@ -78,6 +94,7 @@ def filter_rows[
     | PulseRow
     | RelationshipRow
     | AuthorizationRow
+    | DiagnosticRow
 ](rows: tuple[T, ...], query: str, kind: str = "pods") -> FilterResult[T]:
     if not query:
         return FilterResult(rows)
@@ -140,6 +157,7 @@ async def apply_filter[
     | PulseRow
     | RelationshipRow
     | AuthorizationRow
+    | DiagnosticRow
 ](rows: tuple[T, ...], query: str, kind: str = "pods") -> FilterResult[T]:
     if not query:
         return FilterResult(rows)

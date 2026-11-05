@@ -223,23 +223,68 @@ async def test_invalid_override_recovers_and_cannot_overwrite_the_broken_file(
 
 
 @pytest.mark.asyncio
-async def test_competing_file_save_error_keeps_preview_usable_and_cancel_restores(tmp_path):
+async def test_competing_file_save_error_keeps_preview_usable_and_cancel_restores(
+    tmp_path, monkeypatch, save_calls
+):
     app, path = owned_app(tmp_path)
+    reload_requested, allow_reload = asyncio.Event(), asyncio.Event()
+    real_check = app.live_preferences.check
+
+    async def held_check():
+        reload_requested.set()
+        await allow_reload.wait()
+        await real_check()
+
+    # A competing save and a live reload are independent owners. Keep the
+    # original document active through the save-error/preview assertions, then
+    # prove the real reload adopts the external preference after release.
+    monkeypatch.setattr(app.live_preferences, "check", held_check)
     async with app.run_test() as pilot:
-        screen = await open_themes(app, pilot)
-        choose(screen, "textual-light")
-        await pilot.pause()
-        write_config(
-            path,
-            replace(read_config(path), settings=Settings(theme="textual-dark")),
-            overwrite=True,
-        )
-        before = path.read_bytes()
-        await pilot.click("#theme-global")
-        await wait_for(lambda: "changed on disk" in str(screen.status.content))
-        assert app.theme == "textual-light" and path.read_bytes() == before
-        await pilot.press("escape")
-        assert app.theme == "k9s"
+        reload_owner = None
+        try:
+            screen = await open_themes(app, pilot)
+            choose(screen, "textual-light")
+            await wait_for(
+                lambda: app.theme == "textual-light" and screen.selected == "textual-light"
+            )
+            write_config(
+                path,
+                replace(read_config(path), settings=Settings(theme="textual-dark")),
+                overwrite=True,
+            )
+            before = path.read_bytes()
+            reload_owner = asyncio.create_task(app.live_preferences.check())
+            await wait_for(reload_requested.is_set)
+            assert not reload_owner.done() and app.preferences.document.settings.theme == "k9s"
+            button = screen.query_one("#theme-global", Button)
+            await wait_for(
+                lambda: (
+                    button.region.width > 0
+                    and button.region.height > 0
+                    and app.get_widget_at(button.region.x, button.region.y)[0] is button
+                )
+            )
+            assert await pilot.click("#theme-global")
+            await wait_for(lambda: save_calls.latest is not None and save_calls.latest.done())
+            assert "changed on disk" in str(screen.status.content)
+            assert app.theme == "textual-light" and path.read_bytes() == before
+            choose(screen, "kuberich-mono")
+            await wait_for(lambda: app.theme == "kuberich-mono")
+            choose(screen, "textual-light")
+            await wait_for(lambda: app.theme == "textual-light")
+            await pilot.press("escape")
+            assert app.theme == "k9s" and app.screen is not screen
+            assert path.read_bytes() == before
+            allow_reload.set()
+            await asyncio.wait_for(reload_owner, 5)
+            assert app.preferences.document.settings.theme == app.theme == "textual-dark"
+            assert path.read_bytes() == before
+        finally:
+            if reload_owner is not None:
+                if not reload_owner.done():
+                    reload_owner.cancel()
+                await asyncio.gather(reload_owner, return_exceptions=True)
+            allow_reload.set()
 
 
 @pytest.mark.asyncio

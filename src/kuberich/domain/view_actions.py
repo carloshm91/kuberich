@@ -41,6 +41,7 @@ TABLE_ACTIONS = frozenset(
         "xray",
         "usedby",
         "open_relationship",
+        "diagnose",
     }
 )
 
@@ -54,11 +55,22 @@ class ViewState:
 
 
 def action_available(action: str, view: ViewState) -> bool:
-    if action == "open_relationship" and view.resource not in {"relationships", "authorization"}:
+    if action == "diagnose" and (view.generic or view.resource not in WORKLOAD_LOG_VIEWS):
         return False
-    if action in {"xray", "usedby"} and view.resource in {"contexts", "pulse", "authorization"}:
+    if action == "open_relationship" and view.resource not in {
+        "relationships",
+        "authorization",
+        "diagnostics",
+    }:
         return False
-    if view.resource in {"pulse", "relationships", "authorization"} and action in {
+    if action in {"xray", "usedby"} and view.resource in {
+        "contexts",
+        "pulse",
+        "authorization",
+        "diagnostics",
+    }:
+        return False
+    if view.resource in {"pulse", "relationships", "authorization", "diagnostics"} and action in {
         "annotate",
         "cleanup_pods",
     }:
@@ -73,7 +85,7 @@ def action_available(action: str, view: ViewState) -> bool:
         "open_relationship",
     }:
         return False
-    if view.resource == "authorization" and action in TABLE_ACTIONS - {
+    if view.resource in {"authorization", "diagnostics"} and action in TABLE_ACTIONS - {
         "focus_filter",
         "focus_command",
         "history_back",
@@ -88,7 +100,10 @@ def action_available(action: str, view: ViewState) -> bool:
         "history_forward",
     }:
         return False
-    if view.resource in {"pulse", "relationships", "authorization"} and action == "views":
+    if (
+        view.resource in {"pulse", "relationships", "authorization", "diagnostics"}
+        and action == "views"
+    ):
         return False
     if action == "review_delete" and (view.generic or view.resource == "namespaces"):
         return False

@@ -201,7 +201,9 @@ views.
 identity access reviews and RBAC who-can evidence. Partial reads, unknown group membership and
 external-authorizer limits remain visible.
 ### Popeye/cluster diagnostic reports and actionable failure evidence
-**planned** — Cluster diagnostic reports and actionable health-check views are planned.
+**partial** — Development source adds native :diagnostics and captured-workload :diagnose evidence,
+plus explicit optional :popeye report ingestion. Source gaps, stale evidence and name-only report
+identity remain visible; installed 0.3.0 predates these views.
 ### Opt-in image vulnerability scans, severity/package/fix views and advisory links
 **planned** — Opt-in image vulnerability scanning and advisory/package/fix views are planned.
 ### Node shell helper pods, configurable image/namespace/limits/host mounts
