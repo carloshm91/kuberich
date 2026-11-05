@@ -180,7 +180,7 @@ async def test_core_event_failure_never_falls_back_to_hide_denial(tmp_path, deni
     req = request()
     async with reader_fixture(tmp_path, handler) as reader:
         result = await service(reader, req, (PODS, EVENTS, NEW_EVENTS)).collect(req, lambda _: None)
-    assert len(paths) == 2 and not any("events.k8s.io" in path for path in paths)
+    assert paths == ["/api/v1/namespaces/team/pods", "/api/v1/namespaces/team/events"]
     assert result.findings and "PRIVATE" not in repr(result)
     assert result.sources[-1].status is (
         Status.FORBIDDEN
@@ -198,7 +198,9 @@ async def test_fallback_only_when_core_not_discovered_and_unknown_sources(tmp_pa
     async def handler(req):
         paths.append(req.path)
         return web.json_response(
-            list_body(NEW_EVENTS) if "events.k8s.io" in req.path else list_body(PODS)
+            list_body(NEW_EVENTS)
+            if req.path == "/apis/events.k8s.io/v1/events"
+            else list_body(PODS)
         )
 
     req = request(namespace=None)
