@@ -688,16 +688,15 @@ class RelationshipService:
             child_path = (*path, f"{digest}:{ordinal}")
             status, details, observed = edge.status, edge.details, None
             child = edge.fact
-            if status is RelationshipStatus.READY:
-                if relationship_cycle(ref, ancestors):
-                    status = RelationshipStatus.CYCLE
-                    details += ("Cycle on this ancestor path; shared branches remain independent.",)
-                elif child is None:
-                    child, status, extra = await self._get(request, ref)
-                    details += extra
+            if status is RelationshipStatus.READY and child is None:
+                child, status, extra = await self._get(request, ref)
+                details += extra
             if child is not None:
                 observed = child.ref.uid
                 ref = replace(ref, resource=child.ref.resource)
+                if status is RelationshipStatus.READY and relationship_cycle(child.ref, ancestors):
+                    status = RelationshipStatus.CYCLE
+                    details += ("Cycle on this ancestor path; shared branches remain independent.",)
             self._rows.append(
                 RelationshipRow(
                     child_path,
@@ -717,7 +716,7 @@ class RelationshipService:
                 and status is RelationshipStatus.READY
                 and child_path in request.expanded
             ):
-                await self._walk(request, child, child_path, (*ancestors, ref))
+                await self._walk(request, child, child_path, (*ancestors, child.ref))
 
     def _truncate(self, path: RelationshipPath, detail: str) -> None:
         for index, row in enumerate(self._rows):

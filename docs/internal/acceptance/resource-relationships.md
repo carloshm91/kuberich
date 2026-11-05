@@ -205,6 +205,18 @@ Earlier `cd4f026`/`bd98e00` measurements below do not qualify this later product
 correction. A fresh owned-kind trial and complete final-head hosted checks remain
 required; no cross-source coverage reports are combined.
 
+The related cycle review reproduced two identity defects before correction:
+Node→Pod→a name-only Node reference stayed READY on the first repeat, and an
+inner name-only PVC→PV→PVC cycle lost its observed UID. Cycle classification now
+uses the resolved child identity, and recursion carries observed ancestors.
+Published name-only declarations keep their unspecified expected UID; a
+REPLACED/error result takes precedence and sibling branches remain independent.
+The original two failures and passing REPLACED control are retained alongside
+the corrected 180-case cohort in `artifacts/issue70/observed-cycles/`.
+The collector independently measured 326/337 lines (96.7359%) and 118/128 branches
+(92.1875%); the three pure modules remain at 100%. Ruff, formatting and strict
+collector typing passed. This focused measurement is not a full-source pass.
+
 - Actual App/controlled-HTTP and disposable-kind behavior are recorded above.
   The corrected App cohort adds successful cross-context Back and passes 17 cases
   both normally and with coverage. The original UsedBy failure happened before

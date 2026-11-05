@@ -1006,3 +1006,100 @@ async def test_node_placement_selector_boundary_and_maximum_dns_name_keep_exact_
     source = next(source for source in result.sources if source.family == "/pods")
     assert source.status is RelationshipStatus.READY
     assert source.collection.complete and not source.collection.limited
+
+
+@pytest.mark.asyncio
+async def test_node_to_pod_name_only_placement_detects_first_observed_node_repeat(tmp_path):
+    nodes, pods = resource("nodes"), resource()
+    placed = workload(pods, "placed", nodeName="one")
+    calls = []
+
+    async def handler(request):
+        calls.append(request.path)
+        if request.path == nodes.path() + "/one":
+            return web.json_response(manifest(nodes, spec={}))
+        assert request.path == pods.path("team")
+        return web.json_response(list_body(pods, placed))
+
+    req = request_for(nodes)
+    async with reader_fixture(tmp_path, handler) as reader:
+        service = RelationshipService(reader, Discovery((nodes, pods)), req.scope, lambda _: True)
+        first = await service.collect(req, lambda _: None)
+        pod_row = next(row for row in first.rows if row.ref.kind == "Pod")
+        result = await service.collect(
+            replace(req, revision=2, expanded=frozenset({(), pod_row.path})), lambda _: None
+        )
+    repeated = next(row for row in result.rows if row.path and row.ref.kind == "Node")
+    assert repeated.path[:-1] == pod_row.path and len(repeated.path) == 2
+    assert repeated.status is RelationshipStatus.CYCLE
+    assert repeated.ref.uid is None  # spec.nodeName declares a name, not a Node UID.
+    assert repeated.observed_uid == req.scope.root.uid
+    assert not repeated.expandable
+    assert not any(row.status is RelationshipStatus.TRUNCATED for row in result.rows)
+    assert calls == [nodes.path() + "/one", pods.path("team"), nodes.path() + "/one"]
+    assert result.requests_used == len(calls) == 3
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "claim_uid", [None, "earlier-claim-uid"], ids=["name-only-cycle", "replaced-before-cycle"]
+)
+async def test_name_only_pvc_pv_descendants_use_observed_ancestor_uid_and_keep_status_precedence(
+    tmp_path, claim_uid
+):
+    pods, claims, volumes = (
+        resource(),
+        resource("persistentvolumeclaims"),
+        resource("persistentvolumes"),
+    )
+    pod = workload(pods, volumes=[{"persistentVolumeClaim": {"claimName": "claim"}}])
+    claim = manifest(claims, "claim", uid="current-claim-uid", spec={"volumeName": "volume"})
+    claim_reference = {"name": "claim", "namespace": "team"}
+    if claim_uid is not None:
+        claim_reference["uid"] = claim_uid
+    volume = manifest(
+        volumes, "volume", uid="current-volume-uid", spec={"claimRef": claim_reference}
+    )
+    objects = {
+        pods.path("team") + "/one": pod,
+        claims.path("team") + "/claim": claim,
+        volumes.path() + "/volume": volume,
+    }
+    calls = []
+
+    async def handler(request):
+        calls.append(request.path)
+        assert request.path in objects
+        return web.json_response(objects[request.path])
+
+    req = request_for(pods)
+    async with reader_fixture(tmp_path, handler) as reader:
+        service = RelationshipService(
+            reader, Discovery((pods, claims, volumes)), req.scope, lambda _: True
+        )
+        first = await service.collect(req, lambda _: None)
+        claim_row = next(row for row in first.rows if row.ref.kind == "PersistentVolumeClaim")
+        assert claim_row.ref.uid is None and claim_row.observed_uid == "current-claim-uid"
+        second = await service.collect(
+            replace(req, revision=2, expanded=frozenset({(), claim_row.path})), lambda _: None
+        )
+        volume_row = next(row for row in second.rows if row.ref.kind == "PersistentVolume")
+        assert volume_row.ref.uid is None and volume_row.observed_uid == "current-volume-uid"
+        result = await service.collect(
+            replace(req, revision=3, expanded=frozenset({(), claim_row.path, volume_row.path})),
+            lambda _: None,
+        )
+    repeated = next(
+        row for row in result.rows if len(row.path) == 3 and row.ref.kind == "PersistentVolumeClaim"
+    )
+    assert repeated.path[:-1] == volume_row.path
+    assert repeated.status is (
+        RelationshipStatus.CYCLE if claim_uid is None else RelationshipStatus.REPLACED
+    )
+    assert repeated.ref.uid == claim_uid
+    assert repeated.observed_uid == "current-claim-uid"
+    assert not repeated.expandable
+    assert not any(row.status is RelationshipStatus.TRUNCATED for row in result.rows)
+    assert calls.count(claims.path("team") + "/claim") == 1
+    assert calls.count(volumes.path() + "/volume") == 1
+    assert result.requests_used == len(calls) == 5
