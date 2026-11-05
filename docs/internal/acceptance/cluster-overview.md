@@ -137,6 +137,32 @@ The real App screenshot is `pulse-real-prometheus.svg`, SHA-256
 `3cc87c50577bdefb78dca241325e3d1f3d653779d5ffa932c67e5901180ad7fb`.
 Earlier failures and their cleanup evidence remain separate.
 
+## Initial hosted attempt and fixture correction
+
+PR #311 head `9a94478a7172346054d77e6639369bce0287db2b` ran
+[Application quality 41965229953](https://github.com/carloshm91/kuberich/actions/runs/41965229953).
+Fifteen source test parts, all four standalone targets, Fast tests and planning
+passed. macOS Python 3.12 part 1 failed one existing ambiguous-Job-receipt case
+(2,308 passed, six platform skips). The subsequent Application aggregation was
+skipped and Quality gate correctly failed. This attempt supplies no complete
+application coverage result. Repository validation and DCO passed separately.
+
+The failing case retained its deliberately injected 100-ms timeout for a later
+normal `prepare()` GET. The fixture now restores its original read timeout after
+the ambiguous write and deliberately delays the follow-up response by 200 ms.
+The retained original fixture reproduces the same timeout in 1.37 seconds;
+all 52 corrected operation contracts pass in 5.45 seconds. The forced ambiguous
+write timeout, unchanged Job name, conflict result and no-duplicate assertions
+remain in force. No application deadline or production file changed.
+
+Failed hosted logs and reader cleanup are retained under
+`artifacts/issue69/hosted-pr311/`; the macOS job log SHA-256 is
+`1758936ba33dede3e4440ffe1855448c8eada4b127b30a4ca5e4bf7462a6d352`.
+The controlled reproduction and corrected cohort are under
+`artifacts/issue69/ci-timeout-repro/` and `artifacts/issue69/final/`.
+All 211 product/verifier inputs from the successful owned trial remain identical.
+A new exact-head hosted run must pass; the original attempt remains failed.
+
 ## Acceptance still requiring final evidence
 
 - The current source's complete required CI, independent global 90% line,
