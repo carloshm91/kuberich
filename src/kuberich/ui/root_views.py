@@ -10,6 +10,7 @@ from kuberich.config.catalog import KubeCatalog
 from kuberich.domain.custom import CustomLayout
 from kuberich.domain.namespaces import NamespaceRow
 from kuberich.domain.pods import PodRow
+from kuberich.domain.pulse import PulseDrilldown
 from kuberich.domain.registry import RESOURCE_ALIASES, ResourceDefinition, ResourceRow
 from kuberich.domain.view_routes import ViewKind, ViewRoute
 from kuberich.services.metadata_filtering import MetadataFilter
@@ -23,6 +24,7 @@ from kuberich.ui.custom import CustomTable
 from kuberich.ui.foreground import ForegroundGate
 from kuberich.ui.namespaces import NamespaceTable
 from kuberich.ui.pods import PodTable
+from kuberich.ui.pulse import PulseTable
 from kuberich.ui.standard import StandardTable
 
 if TYPE_CHECKING:
@@ -36,6 +38,7 @@ class RootTables:
     contexts: ContextTable
     standard: StandardTable
     custom: CustomTable
+    pulse: PulseTable
 
 
 class RootViews:
@@ -59,7 +62,10 @@ class RootViews:
         recover: Callable[[RenderRequest, Exception | None], None] | None = None,
     ) -> None:
         self.tables, self.foreground = tables, foreground
-        self._by_kind: dict[ViewKind, PodTable | NamespaceTable | ContextTable | StandardTable] = {
+        self._by_kind: dict[
+            ViewKind, PodTable | NamespaceTable | ContextTable | StandardTable | PulseTable
+        ] = {
+            ViewKind.PULSE: tables.pulse,
             ViewKind.PODS: tables.pods,
             ViewKind.NAMESPACES: tables.namespaces,
             ViewKind.CONTEXTS: tables.contexts,
@@ -69,11 +75,13 @@ class RootViews:
         self.catalog, self.preferences, self.actions = catalog, preferences, actions
         self.filtering = ResourceFilter(metadata, options)
         self.route = ViewRoute.pods()
+        self.drilldown: PulseDrilldown | None = None
         self._pod_factory, self._namespace_factory = pod_projection, namespace_projection
         self._standard_factory, self._custom_factory = standard_projection, custom_projection
         self._custom: CustomController | None = None
         self.registry = ViewRegistry(
             {
+                ViewKind.PULSE: self._pulse,
                 ViewKind.PODS: self._pods,
                 ViewKind.NAMESPACES: self._namespaces,
                 ViewKind.CONTEXTS: self._contexts,
@@ -86,7 +94,7 @@ class RootViews:
         )
 
     @property
-    def table(self) -> PodTable | NamespaceTable | ContextTable | StandardTable:
+    def table(self) -> PodTable | NamespaceTable | ContextTable | StandardTable | PulseTable:
         return self._by_kind[self.route.kind]
 
     def select(self, route: ViewRoute) -> None:
@@ -128,6 +136,11 @@ class RootViews:
 
         controller = ContextController(self.tables.contexts, self.catalog, self.actions)
         return ViewEntry(ViewDriver(controller))
+
+    def _pulse(self) -> ViewEntry:
+        from kuberich.ui.controllers.pulse import PulseController
+
+        return ViewEntry(ViewDriver(PulseController(self.tables.pulse, self.actions)))
 
     def _standard(self) -> ViewEntry:
         from kuberich.ui.controllers.standard import StandardController

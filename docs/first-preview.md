@@ -35,3 +35,9 @@ metrics to Pod, workload, Node and container views. It distinguishes missing API
 denial, no sample, stale samples and measured zero. See
 [current metrics](resource-workspace.md#current-cpu-and-memory-metrics) for units,
 percentages and allocation limits. This work is not part of installed 0.3.0.
+
+Development source also adds the native [cluster overview](cluster-overview.md)
+with health/capacity summaries, exact resource drill-downs and optional configured
+Prometheus CPU/memory history. Its source states distinguish missing, denied,
+partial and stale data; it does not install a metrics backend. These capabilities
+remain unreleased work for 0.4.0.

@@ -60,6 +60,20 @@ class Interactions:
             if verb in {"headless", "crumbsless", "fullscreen"}:
                 self._presentation(verb)
                 return
+            if app._resource_name == "pulse" and verb in {
+                "mark",
+                "range",
+                "selectall",
+                "selectnone",
+                "copy",
+                "copyns",
+                "copytext",
+                "errors",
+                "wide",
+            }:
+                raise AppError(
+                    "Pulse aggregates have no resource selection. Enter a health summary first."
+                )
             if verb in {"copy", "copyns", "copytext"}:
                 self._copy(verb)
                 return
@@ -114,6 +128,12 @@ class Interactions:
     def changed(self) -> None:
         self.revision += 1
         self.app.request_render()
+
+    def set_errors(self, enabled: bool) -> None:
+        """Restore the visible filter state without turning later toggles into overrides."""
+        if enabled != self.errors:
+            self.errors = enabled
+            self.changed()
 
     async def _save_favorite(self, updated: NavigationPreferences) -> None:
         app = self.app

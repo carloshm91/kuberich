@@ -1,14 +1,16 @@
 """Own the active session/view, coalesce switches and bound UI subscriptions."""
 
 import asyncio
-from collections.abc import AsyncIterator, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass, replace
 
 from kuberich.adapters.credentials import CredentialLogin
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, namespace_name
+from kuberich.domain.history import HistorySnapshot
 from kuberich.domain.metrics import MetricsSnapshot
 from kuberich.domain.navigation import NamespaceChoice
+from kuberich.domain.pulse import PulseScope, PulseSnapshot
 from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.resources import Discovery
 from kuberich.domain.views import (
@@ -22,6 +24,7 @@ from kuberich.domain.watches import SyncUpdate
 from kuberich.errors import AppError
 from kuberich.security.arguments import validate_argument
 from kuberich.services.metrics import MetricsPoller, supports_metrics
+from kuberich.services.pulse import PulseService
 from kuberich.services.resources import ResourceReader
 from kuberich.services.sessions import SessionService
 from kuberich.services.watches import ListWatch
@@ -39,6 +42,7 @@ class WorkspaceOwnership:
     discovery_count: int
     close_complete: bool
     metrics_count: int = 0
+    pulse_count: int = 0
 
 
 class ViewSubscription(AsyncIterator[ViewObservation]):
@@ -84,6 +88,7 @@ class _Selection:
     change_namespace: bool = False
     namespace: str | None = None
     authenticate: CredentialLogin | None = None
+    pulse: bool = False
 
 
 def _cancel_once(task: asyncio.Task[None] | None) -> None:
@@ -111,10 +116,14 @@ class WorkspaceService:
         sessions: SessionService,
         *,
         on_error: Callable[[Exception], None] | None = None,
+        pulse_history: Callable[[KubernetesSession, PulseScope], Awaitable[HistorySnapshot]]
+        | None = None,
     ) -> None:
         self.sessions = sessions
         self.store = ViewStore()
         self.selection = ResourceSelection()
+        self.pulse_selected = False
+        self._pulse_history = pulse_history
         self._on_error = on_error
         self._subscriptions: set[ViewSubscription] = set()
         self._desired: _Selection | None = None
@@ -123,6 +132,7 @@ class WorkspaceService:
         self._watch: asyncio.Task[None] | None = None
         self._metrics: asyncio.Task[None] | None = None
         self._metrics_poller: MetricsPoller | None = None
+        self._pulse: asyncio.Task[None] | None = None
         self._discovery: tuple[KubernetesSession, Discovery] | None = None
         self._closed = False
         self._closing: asyncio.Task[None] | None = None
@@ -137,6 +147,7 @@ class WorkspaceService:
             discovery_count=int(self._discovery is not None),
             close_complete=self._closing is not None and self._closing.done(),
             metrics_count=int(self._metrics is not None),
+            pulse_count=int(self._pulse is not None),
         )
 
     def _require_open(self) -> None:
@@ -161,6 +172,7 @@ class WorkspaceService:
         self._desired = selection
         _cancel_once(self._watch)
         _cancel_once(self._metrics)
+        _cancel_once(self._pulse)
         _cancel_once(self._operation)
         self._publish()
         if self.task is None or self.task.done():
@@ -186,6 +198,7 @@ class WorkspaceService:
                 change_namespace=scope is not None,
                 namespace=scope.namespace if scope is not None else None,
                 authenticate=authenticate,
+                pulse=self.pulse_selected,
             )
         )
 
@@ -209,13 +222,18 @@ class WorkspaceService:
         revision = self.store.begin(context, connection)
         return self._schedule(
             _Selection(
-                revision, context, self.selection, change_namespace=True, namespace=namespace
+                revision,
+                context,
+                self.selection,
+                change_namespace=True,
+                namespace=namespace,
+                pulse=self.pulse_selected,
             )
         )
 
     def select_resource(self, resource: ResourceSelection) -> asyncio.Task[None]:
         context = self._current_context()
-        self.selection = resource
+        self.prepare_resource(resource)
         connection = self.store.observation.connection
         revision = self.store.begin(context, connection)
         return self._schedule(
@@ -225,6 +243,36 @@ class WorkspaceService:
                 resource,
                 change_namespace=connection.namespace != self.sessions.observation.namespace,
                 namespace=connection.namespace,
+            )
+        )
+
+    def prepare_resource(self, resource: ResourceSelection) -> None:
+        """Prepare an ordinary view before connecting, with no transport effects."""
+        self._require_open()
+        self.selection = resource
+        self.pulse_selected = False
+
+    def select_pulse(self) -> asyncio.Task[None]:
+        """Select a native overview, including before the first connection is ready."""
+        self._require_open()
+        self.pulse_selected = True
+        context = self.store.observation.context
+        if context is None:
+            return asyncio.create_task(asyncio.sleep(0), name="kuberich-pulse-selection")
+        try:
+            self._current_context()
+        except AppError:
+            return self.connect(context)
+        connection = self.store.observation.connection
+        revision = self.store.begin(context, connection)
+        return self._schedule(
+            _Selection(
+                revision,
+                context,
+                self.selection,
+                change_namespace=connection.namespace != self.sessions.observation.namespace,
+                namespace=connection.namespace,
+                pulse=True,
             )
         )
 
@@ -259,6 +307,7 @@ class WorkspaceService:
                 self.selection,
                 change_namespace=connection.namespace != self.sessions.observation.namespace,
                 namespace=connection.namespace,
+                pulse=self.pulse_selected,
             )
         )
 
@@ -275,6 +324,13 @@ class WorkspaceService:
         )
 
     async def _stop_watch(self) -> None:
+        pulse = self._pulse
+        if pulse is not None:
+            _cancel_once(pulse)
+            try:
+                await _join(pulse)
+            finally:
+                self._pulse = None
         metrics = self._metrics
         if metrics is not None:
             _cancel_once(metrics)
@@ -360,6 +416,34 @@ class WorkspaceService:
                 self._discovery = client, discovery
             else:
                 discovery = self._discovery[1]
+            if selection.pulse:
+                pulse_scope = PulseScope(observation.identity, observation.namespace)
+                self.store.bind_pulse(selection.revision, pulse_scope)
+
+                def pulse_current() -> bool:
+                    return (
+                        not self._closed
+                        and self.sessions.client is client
+                        and self.sessions.observation.identity == pulse_scope.session
+                        and self.store.observation.revision == selection.revision
+                        and self.store.observation.pulse is not None
+                        and self.store.observation.pulse.scope == pulse_scope
+                    )
+
+                history = self._pulse_history
+                pulse_service = PulseService(
+                    ResourceReader(client),
+                    discovery,
+                    pulse_scope,
+                    pulse_current,
+                    history=(lambda: history(client, pulse_scope)) if history is not None else None,
+                )
+                self._pulse = asyncio.create_task(
+                    self._run_pulse(selection.revision, pulse_service),
+                    name="kuberich-cluster-pulse",
+                )
+                self._publish()
+                return
             resource = discovery.find(
                 selection.resource.name,
                 group=selection.resource.group,
@@ -458,6 +542,16 @@ class WorkspaceService:
         except Exception as error:
             self._unexpected(revision, error)
 
+    async def _run_pulse(self, revision: int, service: PulseService) -> None:
+        def publish(snapshot: PulseSnapshot) -> None:
+            if service.current() and self.store.apply_pulse(revision, snapshot):
+                self._publish()
+
+        try:
+            await service.run(publish)
+        except Exception as error:
+            self._unexpected(revision, error)
+
     async def close(self) -> None:
         if self._closing is None:
             self._closed = True
@@ -466,6 +560,7 @@ class WorkspaceService:
             _cancel_once(self._operation)
             _cancel_once(self._watch)
             _cancel_once(self._metrics)
+            _cancel_once(self._pulse)
             self._closing = asyncio.create_task(self._close())
         await _join(self._closing)
         # Retrieve any unexpected close failure rather than silently suppress it.

@@ -83,8 +83,9 @@ applicable controllers after review. Automatic controller-to-pod drill-down is u
 TCP forwarding has its own prerequisites. Discovery refuses APIs removed from the selected server.
 ### Nodes, PV/PVC, StorageClasses, priority/scheduling, HPA/PDB/quota/limits
 **partial** — Node, PV, PVC, StorageClass and HPA tables are available. Development source adds Node
-CPU/memory usage, allocatable percentages and vendor-neutral extended-resource capacity; scheduling
-and broader quota/disruption diagnostics remain planned.
+CPU/memory usage, allocatable percentages and vendor-neutral extended-resource capacity; the
+development cluster overview adds known pressure/unscheduled states, while broader quota/disruption
+diagnostics remain planned.
 ### ConfigMaps, Secrets, service accounts and RBAC resource families
 **partial** — ConfigMap and Secret values stay hidden until a deliberate reveal or copy. Manifest
 editing requires local disclosure, validation, and Apply. An interactive permission browser is
@@ -178,9 +179,13 @@ separately. External services and tool features do not become native application
 **partial** — Development source adds current CPU/memory usage, declared requests/limits, labelled
 percentages and Node/extended-resource capacity. Missing, forbidden, stale, partial and measured-
 zero values remain distinct. Complex Pod allocations are explicitly uncertain; GPU utilization and
-history are unavailable. Installed 0.3.0 predates these metrics columns.
+broader per-resource history are unavailable; development overview history is separately configured.
+Installed 0.3.0 predates these metrics columns.
 ### Pulse cluster overview and CPU/memory drill-downs
-**planned** — A cluster metrics overview with CPU/memory drill-down is planned.
+**partial** — Development source adds a native cluster overview with Node/Pod/workload health,
+capacity, current usage and exact resource drill-downs. Configured Prometheus Service-proxy
+CPU/memory history shows numeric values, gaps and explicit backend scope. Broader per-
+resource/network/filesystem history remains unavailable; installed 0.3.0 predates the overview.
 ### XRay relationships, jump-to-owner/node, service endpoints and UsedBy
 **planned** — Automatic relationship graphs, controller/node drill-down, service endpoint drill-
 down, and UsedBy views are unavailable. Explicit configured jumps are described separately.

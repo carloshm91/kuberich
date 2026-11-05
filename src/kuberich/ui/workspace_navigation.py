@@ -72,6 +72,9 @@ class WorkspaceNavigation:
         changed: Callable[[], None],
         disable_favorites: Callable[[], None],
         favorites: Callable[[str], tuple[str, ...]],
+        *,
+        errors: Callable[[], bool] = lambda: False,
+        set_errors: Callable[[bool], None] = lambda _: None,
     ) -> None:
         self.host, self.sessions, self.workspace, self.views = host, sessions, workspace, views
         self.history, self.filter_input, self.command_input = history, filter_input, command_input
@@ -83,6 +86,7 @@ class WorkspaceNavigation:
             changed,
         )
         self.disable_favorites, self.favorites = disable_favorites, favorites
+        self.errors, self.set_errors = errors, set_errors
         self._restore_state: tuple[int, NavigationState] | None = None
         self._context_parent: NavigationState | None = None
         self._context_state: NavigationState | None = None
@@ -122,7 +126,7 @@ class WorkspaceNavigation:
     ) -> None:
         context = self.sessions.request.context or self.sessions.catalog.current
         if initial is Command.NAMESPACES:
-            self.workspace.selection = ResourceSelection("namespaces")
+            self.workspace.prepare_resource(ResourceSelection("namespaces"))
             self.display("namespaces")
         scope = None
         if isinstance(initial, ScopedCommand):
@@ -131,7 +135,7 @@ class WorkspaceNavigation:
             else:
                 scope = NamespaceChoice(None if initial.argument == "*" else initial.argument)
         if isinstance(initial, ResourceCommand):
-            self.workspace.selection = initial.definition.selection
+            self.workspace.prepare_resource(initial.definition.selection)
             self.display(initial.definition.name)
             if initial.scope is not None:
                 scope = NamespaceChoice(None if initial.scope == "*" else initial.scope)
@@ -200,7 +204,7 @@ class WorkspaceNavigation:
                 self.capture() if self.resource_name == "contexts" else self._context_state
             )
             self.remember()
-            self.workspace.selection = ResourceSelection("pods")
+            self.workspace.prepare_resource(ResourceSelection("pods"))
             self.display("pods")
             self.filter_input.value = ""
             self.connect(value, remember=False)
@@ -219,6 +223,66 @@ class WorkspaceNavigation:
         self.host.query_one("#empty-title", WorkspaceLabel).update_text("Loading resources")
         self.command_input.reset_choice()
 
+    def pulse(self, *, restore: NavigationState | None = None, remember: bool = True) -> None:
+        if isinstance(self.host.screen, ModalScreen):
+            return
+        if self.resource_name == "pulse" and restore is None:
+            self.host.set_focus(self.views.tables.pulse)
+            return
+        if remember:
+            self.remember()
+        self.workspace.select_pulse()
+        self.display("pulse")
+        self.clear_rows()
+        self.filter_input.value = restore.query if restore is not None else ""
+        if restore is not None:
+            self.set_errors(restore.errors)
+            self._restore_state = self.workspace.store.observation.revision, restore
+        self.views.request()
+
+    def pulse_selected(self, key: str | None) -> None:
+        snapshot = self.workspace.store.observation.pulse
+        if (
+            self.views.route.kind is not ViewKind.PULSE
+            or snapshot is None
+            or snapshot.scope.session != self.sessions.observation.identity
+            or snapshot.scope != self.views.tables.pulse.scope
+        ):
+            self.notice("Pulse scope changed; select a current summary before drilling down.")
+            return
+        drilldown = self.views.tables.pulse.drilldown(key)
+        if drilldown is None:
+            self.notice("This aggregate has no resource drill-down. Select a health summary.")
+            return
+        # Capture the served API, namespace, predicate, sort and optional UID before selection.
+        resource = drilldown.resource
+        known = RESOURCE_ALIASES.get(resource.name)
+        generic = (
+            ResourceSelection(
+                resource.name, resource.group, resource.version, True, drilldown.query
+            )
+            if not (resource.name == "pods" and not resource.group)
+            and (known is None or known.group != resource.group)
+            else None
+        )
+        state = NavigationState(
+            snapshot.scope.session.context,
+            drilldown.namespace if resource.namespaced else snapshot.scope.namespace,
+            column=drilldown.sort,
+            descending=drilldown.descending,
+            selected=drilldown.uid,
+            resource=resource.name,
+            generic=generic,
+            server_query=drilldown.query,
+            drilldown=drilldown,
+        )
+        self.select_resource(
+            resource.name,
+            restore=state,
+            scope=NamespaceChoice(state.namespace),
+            generic=generic,
+        )
+
     def namespaces(self) -> None:
         self.disable_favorites()
         observation = self.workspace.store.observation.connection
@@ -236,6 +300,8 @@ class WorkspaceNavigation:
             if generic is not None
             else ViewRoute.contexts()
             if resource == "contexts"
+            else ViewRoute.pulse()
+            if resource == "pulse"
             else ViewRoute.namespaces()
             if resource == "namespaces"
             else ViewRoute.pods()
@@ -243,11 +309,14 @@ class WorkspaceNavigation:
             else ViewRoute.standard(RESOURCE_ALIASES[resource])
         )
         self.views.select(route)
+        self.views.drilldown = None
         self._column_notice = None
         namespaces = route.kind is ViewKind.NAMESPACES
         self.host.query_one("#all-namespaces").display = namespaces
         self.header.shortcuts = (
-            CTX_SHORTCUTS
+            (("Enter", "Drill down"), (":", "Command"), ("/", "Filter"), ("Esc", "Previous"))
+            if resource == "pulse"
+            else CTX_SHORTCUTS
             if resource == "contexts"
             else NS_SHORTCUTS
             if namespaces
@@ -260,7 +329,13 @@ class WorkspaceNavigation:
             else workload_shortcuts(resource, self.policy.read_only)
         )
         self.header.binding_profile = (
-            "contexts" if resource == "contexts" else "namespaces" if namespaces else "resources"
+            "table"
+            if resource == "pulse"
+            else "contexts"
+            if resource == "contexts"
+            else "namespaces"
+            if namespaces
+            else "resources"
         )
         self.header.render_shortcuts()
         if focus and len(self.host.screen_stack) == 1:
@@ -278,11 +353,25 @@ class WorkspaceNavigation:
         current = self.capture()
         if self.resource_name == "contexts":
             self._context_state = current
-        if resource == self.resource_name and generic == self.generic_selection and scope is None:
+        if (
+            resource == self.resource_name
+            and generic == self.generic_selection
+            and scope is None
+            and self.views.drilldown is None
+            and restore is None
+        ):
             self.host.set_focus(self.views.table)
             return
         try:
-            selection = generic or resource_selection(resource)
+            selection = (
+                ResourceSelection(
+                    restore.drilldown.resource.name,
+                    restore.drilldown.resource.group,
+                    restore.drilldown.resource.version,
+                )
+                if restore is not None and restore.drilldown is not None and generic is None
+                else generic or resource_selection(resource)
+            )
             if restore is not None:
                 selection = replace(selection, query=restore.server_query)
                 if generic is not None:
@@ -301,9 +390,11 @@ class WorkspaceNavigation:
             elif resource == "namespaces":
                 self._namespace_parent = current
         self.display(resource, generic=generic)
+        self.views.drilldown = restore.drilldown if restore is not None else None
         self.clear_rows()
         self.filter_input.value = restore.query if restore is not None else ""
         if restore is not None:
+            self.set_errors(restore.errors)
             self._restore_state = self.workspace.store.observation.revision, restore
         self.views.request()
 
@@ -324,6 +415,20 @@ class WorkspaceNavigation:
                     else None
                 )
                 parent = self._namespace_parent if was_namespace_view else current
+                if parent is not None and parent.resource == "pulse":
+                    self.workspace.select_pulse()
+                    self.workspace.select_namespace(choice.namespace)
+                    if current is not None:
+                        self.history.visit(current)
+                    if was_namespace_view:
+                        self._namespace_state = current
+                    self.display("pulse", focus=not isinstance(self.host.focused, Input))
+                    self.clear_rows()
+                    self.filter_input.value = ""
+                    self.views.drilldown = None
+                    self.views.request()
+                    self.header.update_identity()
+                    return
                 pod_query = (
                     parent.server_query
                     if parent is not None and parent.resource == "pods"
@@ -452,7 +557,7 @@ class WorkspaceNavigation:
 
     def server(self, text: str) -> None:
         """Replace the owned server query only on an explicit command."""
-        if self.resource_name == "contexts":
+        if self.resource_name in {"contexts", "pulse"}:
             self.notice(
                 "Server selectors apply to Kubernetes resources; open a resource view first."
             )
@@ -515,6 +620,9 @@ class WorkspaceNavigation:
             and self.views.tables.custom.resource_layout is not None
             else (),
             self.workspace.selection.query,
+            self.views.drilldown,
+            viewport.top_offset,
+            self.errors(),
         )
 
     def remember(self) -> None:
@@ -539,12 +647,36 @@ class WorkspaceNavigation:
                 self._context_parent = self.capture()
             self.display("contexts")
             self.filter_input.value = state.query
+            self.set_errors(state.errors)
             self._restore_state = self.workspace.store.observation.revision, state
             self.views.request()
             return
+        if state.resource == "pulse":
+            current = self.workspace.store.observation
+            self.pulse(restore=state, remember=False)
+            if (
+                state.context != current.context
+                or current.connection.state not in USABLE_CONNECTIONS
+            ):
+                self.connect(state.context, scope=NamespaceChoice(state.namespace), remember=False)
+                self._restore_state = self.workspace.store.observation.revision, state
+            else:
+                self.workspace.select_namespace(state.namespace)
+                self._restore_state = self.workspace.store.observation.revision, state
+            return
         scope = NamespaceChoice(state.namespace)
         selection = replace(
-            state.generic or resource_selection(state.resource), query=state.server_query
+            state.generic
+            or (
+                ResourceSelection(
+                    state.drilldown.resource.name,
+                    state.drilldown.resource.group,
+                    state.drilldown.resource.version,
+                )
+                if state.drilldown is not None
+                else resource_selection(state.resource)
+            ),
+            query=state.server_query,
         )
         generic = selection if state.generic is not None else None
         current = self.workspace.store.observation
@@ -555,10 +687,12 @@ class WorkspaceNavigation:
             self.clear_rows()
             self.header.update_identity()
         else:
-            self.workspace.selection = selection
+            self.workspace.prepare_resource(selection)
             self.display(state.resource, generic=generic)
             self.connect(state.context, scope=scope, remember=False)
         self.filter_input.value = state.query
+        self.set_errors(state.errors)
+        self.views.drilldown = state.drilldown
         self._restore_state = self.workspace.store.observation.revision, state
 
     def history_back(self) -> None:
@@ -571,7 +705,11 @@ class WorkspaceNavigation:
         if (
             self._restore_state is not None
             and self._restore_state[0] == view.revision
-            and (view.snapshot is not None or self.views.route.kind is ViewKind.CONTEXTS)
+            and (
+                view.snapshot is not None
+                or self.views.route.kind is ViewKind.CONTEXTS
+                or (self.views.route.kind is ViewKind.PULSE and view.pulse is not None)
+            )
         ):
             state = self._restore_state[1]
             if isinstance(self.views.table, (PodTable, StandardTable, NamespaceTable)):
@@ -592,7 +730,7 @@ class WorkspaceNavigation:
                     state.descending if compatible else False,
                 )
             self.views.table.restore_viewport(
-                Viewport(state.selected, state.index, state.x, state.y, state.top)
+                Viewport(state.selected, state.index, state.x, state.y, state.top, state.top_offset)
             )
             self._restore_state = None
         if self._column_notice is not None:
@@ -600,7 +738,9 @@ class WorkspaceNavigation:
 
     def trail(self) -> NavigationTrail:
         trail = (
-            ("namespaces", "pods")
+            ("pulse", self.resource_name)
+            if self.views.drilldown is not None
+            else ("namespaces", "pods")
             if self._namespace_route and self.resource_name == "pods"
             else (self.resource_name,)
         )
@@ -621,12 +761,18 @@ class WorkspaceNavigation:
             if self.resource_name == "contexts" and self._context_parent is not None
             else "Pods"
             if self.resource_name == "contexts"
+            else "Pulse"
+            if self.views.drilldown is not None
+            else "Previous view"
+            if self.resource_name == "pulse"
             else f"Stay in {self.resource_name}"
         )
         return NavigationTrail(trail, destination)
 
     def back(self) -> None:
-        if self.resource_name == "contexts":
+        if self.resource_name == "pulse" or self.views.drilldown is not None:
+            self.history_back()
+        elif self.resource_name == "contexts":
             self._context_state = self.capture()
             if self._context_parent is not None:
                 self.restore(self._context_parent)

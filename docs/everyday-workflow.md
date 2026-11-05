@@ -6,6 +6,11 @@ logs. Start in read-only mode; this walkthrough changes no resources.
 
 ## Start with the workload
 
+When you need a wider starting point, development source provides a
+[cluster overview](cluster-overview.md). Open `:pulse` to inspect health, capacity
+and usage, then press Enter on a summary to open its matching resource list.
+The installed 0.3.0 release predates this overview.
+
 ```sh
 kuberich --context demo-lab --namespace demo-apps --readonly
 ```

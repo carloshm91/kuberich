@@ -7,6 +7,8 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Added
 
+- Inspect node, pod and workload health in the native `:pulse` overview, with source times, explicit unavailable/partial states and exact resource drill-downs ([#69](https://github.com/carloshm91/kuberich/issues/69)).
+- Read optional overview CPU/memory history through a configured Prometheus Service proxy, with numeric units, visible gaps and explicit backend scope ([#69](https://github.com/carloshm91/kuberich/issues/69)).
 - View current CPU/memory usage, configured requests/limits and labelled percentages in Pod, workload, Node and container tables ([#68](https://github.com/carloshm91/kuberich/issues/68)).
 - Distinguish missing, forbidden, stale, partial and measured-zero metrics; retain numeric sorting and selected resource identity during refresh ([#68](https://github.com/carloshm91/kuberich/issues/68)).
 - Inspect vendor-neutral extended-resource requests/limits and Node capacity without implying GPU utilization or confirmed complex Pod allocation ([#68](https://github.com/carloshm91/kuberich/issues/68)).

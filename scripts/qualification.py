@@ -38,6 +38,7 @@ KIND_SCENARIOS = (
     ("transfers", "verify_transfers_kind", True),
     ("custom-resources", "verify_custom_resources_kind", False),
     ("aggregate-logs", "verify_aggregate_logs_kind", False),
+    ("pulse", "verify_pulse_kind", False),
 )
 
 
@@ -170,7 +171,11 @@ def cluster_stages(
                 str(kind),
                 *(("--kubectl", str(kubectl)) if needs_kubectl else ()),
                 "--evidence",
-                str(output / f"kind-{repetition}-{name}.json"),
+                str(
+                    output / f"kind-{repetition}-{name}" / "evidence.json"
+                    if name == "pulse"
+                    else output / f"kind-{repetition}-{name}.json"
+                ),
             ),
             cleanup_timeout=OWNED_KIND_CLEANUP_SECONDS,
         )

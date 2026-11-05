@@ -6,6 +6,8 @@ from dataclasses import replace
 import pytest
 
 from kuberich.domain.navigation import Viewport
+from kuberich.domain.pulse import PulseScope, PulseSnapshot
+from kuberich.domain.targets import SessionIdentity
 from kuberich.domain.view_routes import ViewKind, ViewRoute
 from kuberich.domain.views import ViewObservation
 from kuberich.ui.controllers.base import RenderOutcome, RenderRequest
@@ -34,6 +36,25 @@ class Driver:
 
     def available_actions(self, request):
         return frozenset()
+
+
+def test_pulse_failure_is_bound_to_actual_namespace_and_client_generation():
+    session = SessionIdentity("owned", 1)
+    observation = ViewObservation(context="owned", pulse=PulseSnapshot(PulseScope(session, "team")))
+    request = RenderRequest(observation, "", lambda: True, ViewRoute.pulse())
+    owner = RenderCoordinator(
+        ForegroundGate(lambda: None),
+        ViewRegistry({}),
+        lambda: request,
+        lambda *_: None,
+        lambda _: None,
+        recover=lambda *_: None,
+    )
+    owner.fail(request, ValueError("owned"))
+    assert owner.is_failed(request)
+    for scope in (PulseScope(session, "other"), PulseScope(SessionIdentity("owned", 2), "team")):
+        changed = replace(request, observation=replace(observation, pulse=PulseSnapshot(scope)))
+        assert not owner.is_failed(changed)
 
 
 @pytest.mark.asyncio

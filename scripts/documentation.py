@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import cast
 
-MAX_USER_PAGES = 20
+MAX_USER_PAGES = 21
 KINDS = frozenset({"tutorial", "how-to", "reference", "explanation"})
 GENERATED = frozenset(
     {"cli-reference.md", "resource-reference.md", "capability-reference.md", "config-reference.md"}
@@ -216,7 +216,7 @@ def load_navigation(root: Path) -> Navigation:
         tuple(pages), text(data.get("index_title"), "Documentation index title"), tuple(routes)
     )
     if navigation.user_page_count > MAX_USER_PAGES:
-        raise ValueError("User documentation exceeds the 20-page budget")
+        raise ValueError(f"User documentation exceeds the {MAX_USER_PAGES}-page budget")
     if sources & references:
         raise ValueError("Generated references cannot also be authored fragments")
     return navigation

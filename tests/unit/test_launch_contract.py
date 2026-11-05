@@ -13,6 +13,20 @@ from kuberich.services.commands import Command
 from kuberich.ui.presentation import Presentation
 
 
+@pytest.mark.parametrize("command", ["pulse", "overview", ":pulse"])
+def test_native_pulse_can_be_selected_at_startup_without_loading_a_context(
+    command, monkeypatch, capsys
+):
+    captured = []
+    monkeypatch.setattr(
+        cli, "run_terminal", lambda *args, **kwargs: captured.append(kwargs["initial_command"])
+    )
+    assert cli.main(["--context", "owned-not-loaded", "--command", command]) == 0
+    assert captured == [Command.PULSE]
+    output = capsys.readouterr()
+    assert output.out == output.err == ""
+
+
 @pytest.mark.parametrize(
     "action",
     [

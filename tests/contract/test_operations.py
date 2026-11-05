@@ -384,12 +384,14 @@ async def test_created_job_ambiguous_receipt_preserves_exact_name_and_no_duplica
     async with source_fixture(tmp_path, "cj", ResourceAction.TRIGGER) as (sources, api, _):
         source = sources[0]
         intent = await source.prepare()
+        ordinary_timeout = source.client.timeout
         api.mode, source.client.timeout = mode, 0.1
         result = await source.execute(source.confirm(intent))
         assert result.state is MutationState.UNCERTAIN and len(api.jobs) == 1
         assert len(api.requests) == 1
         # A deliberate repeat in the same captured service uses the same name.
-        api.mode = "normal"
+        api.mode, source.client.timeout = "normal", ordinary_timeout
+        api.read_delay = 0.2
         next_intent = await source.prepare()
         assert next_intent.created_name == intent.created_name
         assert (await source.execute(source.confirm(next_intent))).state is MutationState.CONFLICT

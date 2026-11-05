@@ -45,6 +45,11 @@ changes, logging, navigation, and validation. Domain code imports neither Textua
 nor generated SDK models. Raw Kubernetes field names remain intact in records;
 display and sorting use separate derived values.
 
+[Pulse](../src/kuberich/domain/pulse.py) defines scoped overview sources,
+health summaries and exact resource predicates. [History](../src/kuberich/domain/history.py)
+defines bounded aggregate series, backend-scope declarations and explicit gaps.
+Neither model presents an aggregate row as a Kubernetes object.
+
 ### Services
 
 [Sessions](../src/kuberich/services/sessions.py),
@@ -55,6 +60,13 @@ display and sorting use separate derived values.
 loop. Commands, access policy, logs, resource changes, transfers, plugins, and
 forwards use their own service owners. Services return observations/results,
 not widgets, and enforce policy independently of a button or shortcut.
+
+[PulseService](../src/kuberich/services/pulse.py) owns serial overview collection
+within the selected workspace session. It publishes per-source progress and
+shares a combined retained-payload budget across resource families and samples.
+[HistoryReader](../src/kuberich/services/history.py) uses that session's relative
+Service-proxy transport for optional Prometheus CPU/memory history. Its fixed
+queries, literal selectors and matrix bounds remain separate from UI rendering.
 
 ### Adapters
 
@@ -83,6 +95,12 @@ parsing/policy and the [canonical command catalog](../src/kuberich/services/comm
 The App still contains substantial composition and coordination; complete
 private-boundary removal and the smaller-App target remain stable-release goals.
 See the implemented [application composition record](adr/app-composition.md).
+
+The typed Pulse route uses a dedicated native controller in the same frame.
+Navigation preserves its aggregate selection and variable-height viewport;
+drill-downs carry the actual API/version, namespace, predicate, sort and UID.
+The [overview decision](adr/0033-cluster-overview-and-history.md) records ownership,
+expiry, configured backend scope and the separately planned broader history.
 
 Presentation/rendering faults are isolated to their current view and scope.
 An inline Retry explicitly restarts that view; watches and unrelated forwards

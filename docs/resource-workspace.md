@@ -76,6 +76,12 @@ identify their available subset explicitly.
 
 ## Standard and discovered views
 
+Development source also provides a native [cluster overview](cluster-overview.md)
+through `:pulse` or `:overview`. Its summaries carry their own scope, observation
+time and availability. Enter opens the underlying resource list with the same
+health/phase predicate; current CPU/memory rows open the corresponding list sorted
+by usage. Aggregate rows are navigation entries rather than Kubernetes objects.
+
 Standard views provide resource-specific summaries for workloads, networking,
 configuration, nodes, and storage. The generated [resource reference](resource-reference.md)
 lists actual aliases and columns. Counts, dates, and quantities sort by their

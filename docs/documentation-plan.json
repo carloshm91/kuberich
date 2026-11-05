@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "baseline_commit": "d990a5e0273465874df24e1e790887520abeacff",
-  "canonical_user_pages": 20,
+  "canonical_user_pages": 21,
   "reserved_user_pages": 0,
   "migration_state": "user_guides_architecture_and_internal_history_consolidated",
   "scope": "Task guides, generated references, the architecture overview/ADRs and internal engineering-record relocation are implemented. Exact historical payloads remain outside the website; source Git/hash validation does not claim that every pending feature snapshot already has a protected-main anchor. Contribution guidance remains a separate migration.",
@@ -3474,6 +3474,36 @@
       ],
       "reason": "Authored notes for the prepared 0.3.0 source version; availability and qualification remain separate.",
       "audience": "users and release maintainers",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0033-cluster-overview-and-history.md",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0033-cluster-overview-and-history.md"
+      ],
+      "reason": "Record implemented native overview ownership, exact navigation predicates and optional backend scope.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/cluster-overview.md",
+      "audience": "user",
+      "action": "keep",
+      "destinations": [
+        "docs/cluster-overview.md"
+      ],
+      "reason": "Guide current overview navigation, independent source states and explicitly scoped Service-proxy history.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/acceptance/cluster-overview.md",
+      "audience": "contributor acceptance evidence",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/cluster-overview.md"
+      ],
+      "reason": "Keep O02 #69 actual overview/history verification and remaining evidence outside user navigation.",
       "baseline_sha256": null
     }
   ],

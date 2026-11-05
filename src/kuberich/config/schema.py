@@ -9,7 +9,15 @@ from kuberich.security.arguments import freeze_arguments
 
 SCHEMA_VERSION = 1
 EXTENSIONS = frozenset(
-    {"appearance", "navigation", "plugins", "forwarding", "jumps", "context_settings"}
+    {
+        "appearance",
+        "navigation",
+        "plugins",
+        "forwarding",
+        "jumps",
+        "context_settings",
+        "observability",
+    }
 )
 LOG_LEVELS = frozenset({"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"})
 FIELDS = frozenset({"theme", "refresh_seconds", "read_only", "log_level", "log_file", "shell"})

@@ -10,6 +10,7 @@ from textual.timer import Timer
 from kuberich.adapters.editing import file_worker
 from kuberich.config.context_settings import ContextSettings, context_settings_from
 from kuberich.config.navigation import navigation_from
+from kuberich.config.observability import ObservabilityPreferences, observability_from
 from kuberich.config.schema import ConfigDocument, Settings
 from kuberich.config.store import read_config
 from kuberich.errors import AppError
@@ -36,6 +37,7 @@ class LivePreferences:
         self.app = app
         self.settings = settings
         self.context_settings = ContextSettings()
+        self.observability = ObservabilityPreferences()
         self.error: str | None = None
         self.refresh_seconds = settings.refresh_seconds
         self._refresh_timer: Timer | None = None
@@ -45,6 +47,10 @@ class LivePreferences:
         if app.preferences is not None:
             try:
                 self.context_settings = context_settings_from(app.preferences.document)
+            except AppError as error:
+                self.error = str(error)
+            try:
+                self.observability = observability_from(app.preferences.document)
             except AppError as error:
                 self.error = str(error)
 
@@ -120,6 +126,9 @@ class LivePreferences:
         app = self.app
         assert app.preferences is not None
         settings = app.preferences.settings(document)
+        context = app.workspace.store.observation.context
+        previous_history = self.observability.for_context(context or "").history
+        self.observability = observability_from(document)
         navigation = navigation_from(document)
         restart = (navigation.keys, navigation.mouse) != (app.navigation.keys, app.navigation.mouse)
         app.navigation, app._navigation_invalid = navigation, False
@@ -136,6 +145,12 @@ class LivePreferences:
         app.jumps.configure(document)
         app.plugins.reload()
         app.appearance_controller.apply()
+        if (
+            app.workspace.pulse_selected
+            and app.workspace.store.observation.connection.identity is not None
+            and previous_history != self.observability.for_context(context or "").history
+        ):
+            app.workspace.select_pulse()
         app.request_render()  # Saved column views apply to the current table.
         return restart
 

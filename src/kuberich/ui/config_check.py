@@ -29,6 +29,10 @@ def validate_preferences(
         from kuberich.config.context_settings import context_settings_from
 
         context_settings_from(document)
+    if "observability" in document.extensions:
+        from kuberich.config.observability import observability_from
+
+        observability_from(document)
     if "plugins" in document.extensions:
         from kuberich.adapters.plugin_files import load_plugins
         from kuberich.config.plugins import plugins_from

@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 
 from kuberich.domain.connections import namespace_name
 from kuberich.domain.pods import PodColumn
+from kuberich.domain.pulse import PulseDrilldown
 from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.resources import ServerColumn
 from kuberich.domain.views import ResourceSelection
@@ -18,6 +19,7 @@ class Viewport:
     x: float
     y: float
     top: str | None
+    top_offset: float = 0
 
 
 @dataclass(frozen=True)
@@ -57,6 +59,9 @@ class NavigationState:
     generic: ResourceSelection | None = None
     headers: tuple[ServerColumn, ...] = ()
     server_query: ResourceQuery = field(default_factory=ResourceQuery)
+    drilldown: PulseDrilldown | None = None
+    top_offset: float = 0
+    errors: bool = False
 
 
 class NavigationHistory:

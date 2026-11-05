@@ -35,3 +35,15 @@ def test_table_actions_pause_while_a_modal_or_input_has_focus(action):
     assert action_available(action, ViewState("pods"))
     assert not action_available(action, ViewState("pods", modal=True))
     assert not action_available(action, ViewState("pods", typing=True))
+
+
+@pytest.mark.parametrize("action", sorted(TABLE_ACTIONS | {"views", "retry"}))
+def test_pulse_exposes_navigation_without_resource_operations(action):
+    allowed = action in {
+        "focus_filter",
+        "focus_command",
+        "history_back",
+        "history_forward",
+        "retry",
+    }
+    assert action_available(action, ViewState("pulse")) is allowed

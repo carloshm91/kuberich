@@ -1,5 +1,26 @@
 # Development checkpoint
 
+## Unreleased 0.4.0 overview source
+
+Development work for #69 adds native `:pulse`/`:overview`, scoped health/capacity
+summaries and typed drill-downs. Its configured Prometheus Service-proxy reader
+supplies real CPU/memory `query_range` history with literal selectors, visible
+backend binding, missing-sample gaps and independent expiry. It does not install
+a backend or infer a cluster label from a context name. See the maintained
+[overview acceptance record](acceptance/cluster-overview.md) for exact scoped
+measurements and remaining evidence.
+
+This work starts from protected main
+`ced365fd224d1f6c872fda638f5d7c6d8a1d75c8`, which delivered #68. That baseline
+passed 27/27 PR jobs and 22/22 automatic main jobs; these results do not qualify
+the later overview source. The implementation's focused history, collector,
+reload and UI cases passed as recorded in the acceptance note. The real owned Prometheus trial passed in 100.88 seconds, including actual
+chart values, independent raw-backend comparison, keyboard drill-downs, partial
+RBAC and verified cleanup. The controlled large-collection observation served
+35,000 records within the shared 10,000-item retention bound. Complete
+current-source/global/hosted qualification remains pending. Source metadata stays 0.3.0; installed public 0.3.0 does not include
+this work. Published release records below remain unchanged.
+
 ## Qualified 0.3.0 source
 
 The current qualified release source is protected commit

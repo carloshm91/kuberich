@@ -20,7 +20,9 @@ from kuberich.services.workspace import ViewSubscription, WorkspaceService
 from kuberich.ui.chrome import Breadcrumbs, WorkspaceHeader, WorkspaceLabel
 from kuberich.ui.controllers.base import RenderOutcome, RenderRequest
 from kuberich.ui.interactions import Interactions
+from kuberich.ui.pods import PodTable
 from kuberich.ui.root_views import RootViews
+from kuberich.ui.standard import StandardTable
 from kuberich.ui.workspace_navigation import WorkspaceNavigation
 
 
@@ -111,7 +113,7 @@ class WorkspacePresenter:
                 and interaction_revision == self.interactions.revision
             )
 
-        return RenderRequest(view, query, current, route)
+        return RenderRequest(view, query, current, route, self.views.drilldown)
 
     def refresh_ages(self) -> None:
         if not self.host.is_running or isinstance(self.host.screen, ModalScreen):
@@ -247,6 +249,18 @@ class WorkspacePresenter:
     def show(self, view: ViewObservation) -> None:
         observation = view.connection
         self.header.update_identity()
+        if self.views.route.kind is ViewKind.PULSE:
+            self.host.query_one("#resource-view", Vertical).border_title = safe_text(
+                f"pulse({view.connection.namespace or 'all'}) · {view.status.name.lower()}"
+            )
+            self.host.query_one("#empty-state").set_class(True, "populated")
+            self.views.tables.pulse.set_class(True, "populated")
+            self.show_sort()
+            self.view_status(
+                view,
+                "Pulse · sources load independently · Enter exact drill-down · :back previous view",
+            )
+            return
         if self.views.route.display_key == "contexts":
             self.host.query_one("#resource-view", Vertical).border_title = safe_text(
                 f"contexts[{self.views.tables.contexts.row_count}]"
@@ -348,6 +362,17 @@ class WorkspacePresenter:
         self.status(message)
 
     def show_sort(self) -> None:
+        frame = self.host.query_one("#resource-view", Vertical)
+        if self.views.route.kind is ViewKind.PULSE:
+            frame.border_subtitle = "Enter drill down · :back / :forward · arrows scroll"
+            return
+        if self.views.drilldown is not None and isinstance(
+            self.views.table, (PodTable, StandardTable)
+        ):
+            frame.border_subtitle = (
+                f"Pulse: {self.views.drilldown.predicate.value} · {self.views.table.sort_summary}"
+            )
+            return
         self.host.query_one("#resource-view", Vertical).border_subtitle = (
             self.views.tables.pods.sort_summary
             if self.views.route.display_key == "pods"

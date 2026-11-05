@@ -98,6 +98,8 @@ class CrashWaitingReader(ResourceReader):
         page_size: int = 100,
         query: ResourceQuery | None = None,
         progress: Callable[[ResourceSnapshot], Awaitable[None]] | None = None,
+        max_items: int | None = None,
+        max_retained_bytes: int | None = None,
     ) -> ResourceSnapshot:
         if (
             not self.pending
@@ -106,7 +108,13 @@ class CrashWaitingReader(ResourceReader):
             or namespace != self.namespace
         ):
             return await super().list(
-                resource, namespace, page_size=page_size, query=query, progress=progress
+                resource,
+                namespace,
+                page_size=page_size,
+                query=query,
+                progress=progress,
+                max_items=max_items,
+                max_retained_bytes=max_retained_bytes,
             )
 
         snapshot: ResourceSnapshot | None = None
@@ -114,7 +122,13 @@ class CrashWaitingReader(ResourceReader):
         async def waiting() -> bool:
             nonlocal snapshot
             snapshot = await super(CrashWaitingReader, self).list(
-                resource, namespace, page_size=page_size, query=query, progress=progress
+                resource,
+                namespace,
+                page_size=page_size,
+                query=query,
+                progress=progress,
+                max_items=max_items,
+                max_retained_bytes=max_retained_bytes,
             )
             self.evidence["list_attempts"] = self.evidence.get("list_attempts", 0) + 1
             return waiting_crash_record(snapshot, self.namespace, self.uid) is not None

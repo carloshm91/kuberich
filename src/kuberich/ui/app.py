@@ -42,6 +42,7 @@ from kuberich.domain.connections import (
     ConnectionRequest,
 )
 from kuberich.domain.credential_helpers import helper_start_failure
+from kuberich.domain.history import HistorySnapshot
 from kuberich.domain.interactions import InteractionCommand
 from kuberich.domain.keyboard import effective_keymap
 from kuberich.domain.kubeconfig_edit import ContextChange
@@ -52,6 +53,7 @@ from kuberich.domain.navigation import (
 )
 from kuberich.domain.operations import MAX_BATCH, ResourceAction
 from kuberich.domain.processes import ProcessStatus
+from kuberich.domain.pulse import PulseScope
 from kuberich.domain.targets import SessionIdentity
 from kuberich.domain.view_actions import ViewState
 from kuberich.domain.view_routes import ViewKind
@@ -109,6 +111,7 @@ from kuberich.ui.nested import CommandWorkspace, NestedCommands
 from kuberich.ui.plugins import PluginController
 from kuberich.ui.pods import PodTable
 from kuberich.ui.presentation import DEFAULT_PRESENTATION, Presentation
+from kuberich.ui.pulse import PulseTable
 from kuberich.ui.resource_operations import OperationContext, ResourceOperations
 from kuberich.ui.root_views import RootTables, RootViews
 from kuberich.ui.shutdown import TerminalSignals
@@ -207,7 +210,9 @@ class KubeRichApp(App[None]):
         self.sessions = SessionService(
             catalog if catalog is not None else KubeCatalog(), connection
         )
-        self.workspace = WorkspaceService(self.sessions, on_error=self._handle_exception)
+        self.workspace = WorkspaceService(
+            self.sessions, on_error=self._handle_exception, pulse_history=self._read_pulse_history
+        )
         self.history = NavigationHistory()
         self.interactions = Interactions(self)
         self.navigation = NavigationPreferences()
@@ -262,6 +267,8 @@ class KubeRichApp(App[None]):
         self.standard_table.display = False
         self.custom_table = CustomTable()
         self.custom_table.display = False
+        self.pulse_table = PulseTable()
+        self.pulse_table.display = False
         self.chrome = WorkspaceChrome(
             partial(header_identity, self.workspace.store, self.sessions),
             f"KubeRich: {version('kuberich')} · {self._mode}",
@@ -298,6 +305,7 @@ class KubeRichApp(App[None]):
                 self.context_table,
                 self.standard_table,
                 self.custom_table,
+                self.pulse_table,
             ),
             self._foreground,
             lambda: self.sessions.catalog,
@@ -331,6 +339,8 @@ class KubeRichApp(App[None]):
             self._update_trail,
             self._disable_namespace_favorites,
             lambda context: dict(self.navigation.favorites).get(context, ()),
+            errors=lambda: self.interactions.errors,
+            set_errors=self.interactions.set_errors,
         )
         self.presenter = WorkspacePresenter(
             self,
@@ -405,6 +415,7 @@ class KubeRichApp(App[None]):
                 Command.PLUGINS: self.plugins.open,
                 Command.PLUGIN_JOBS: self.action_plugin_jobs,
                 Command.QUIT: self.exit,
+                Command.PULSE: self.navigator.pulse,
                 Command.STATUS: self.action_connection_details,
                 Command.RETRY: self.navigator.retry,
                 Command.LOGIN: self.action_login,
@@ -548,7 +559,9 @@ class KubeRichApp(App[None]):
         return route.selection if route.kind is ViewKind.CUSTOM else None
 
     @property
-    def _active_table(self) -> PodTable | NamespaceTable | ContextTable | StandardTable:
+    def _active_table(
+        self,
+    ) -> PodTable | NamespaceTable | ContextTable | StandardTable | PulseTable:
         return self.views.table
 
     def request_render(self) -> None:
@@ -603,6 +616,7 @@ class KubeRichApp(App[None]):
             yield self.context_table
             yield self.standard_table
             yield self.custom_table
+            yield self.pulse_table
             with Vertical(id="empty-state"):
                 yield WorkspaceLabel("No cluster connection", id="empty-title", markup=False)
                 yield WorkspaceLabel(
@@ -644,6 +658,7 @@ class KubeRichApp(App[None]):
             self.custom_table,
             self.namespace_table,
             self.context_table,
+            self.pulse_table,
         ):
             table.effective_keys = self.navigation_keymap
         if not self.is_headless and not self.is_web:
@@ -657,6 +672,7 @@ class KubeRichApp(App[None]):
         self.resources.setup()
         self.namespace_table.setup()
         self.context_table.setup()
+        self.pulse_table.setup()
         self.standard_table.setup()
         self.query_one("#resource-view", Vertical).border_title = "Resources · no connection"
         self.screen.set_class(self.size.width < 70, "compact")
@@ -993,7 +1009,7 @@ class KubeRichApp(App[None]):
         return TargetSelection(
             self.views.route,
             None
-            if modal or self.views.route.kind is ViewKind.CONTEXTS
+            if modal or self.views.route.kind in {ViewKind.CONTEXTS, ViewKind.PULSE}
             else self.views.table.capture_viewport().selected,
             modal,
         )
@@ -1023,6 +1039,14 @@ class KubeRichApp(App[None]):
             forwarding_from(self.preferences.document) if self.preferences else ForwardPreferences()
         )
 
+    async def _read_pulse_history(
+        self, client: KubernetesSession, scope: PulseScope
+    ) -> HistorySnapshot:
+        from kuberich.services.history import HistoryReader
+
+        backend = self.live_preferences.observability.for_context(scope.session.context).history
+        return await HistoryReader().read(client, backend, scope.namespace)
+
     def action_contexts(self) -> None:
         self.navigator.contexts()
 
@@ -1031,6 +1055,11 @@ class KubeRichApp(App[None]):
         event.stop()
         if self._resource_name == "contexts":
             self._context_selected(event.row_key.value)
+
+    @on(DataTable.RowSelected, "#pulse")
+    def pulse_selected(self, event: DataTable.RowSelected) -> None:
+        event.stop()
+        self.navigator.pulse_selected(event.row_key.value)
 
     def action_connection_details(self) -> None:
         from kuberich.ui.scopes import ConnectionScreen

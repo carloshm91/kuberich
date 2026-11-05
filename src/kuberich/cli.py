@@ -134,7 +134,7 @@ def _parser() -> argparse.ArgumentParser:
         "-c",
         dest="initial_command",
         type=_argument,
-        help="initial terminal command: po, ctx, ns, themes, views, about, status, retry, back, forward, help or quit",
+        help="initial terminal command: po, ctx, ns, pulse, overview, themes, views, about, status, retry, back, forward, help or quit",
     )
     for flag in ("headless", "logoless", "crumbsless", "invert"):
         parser.add_argument(
