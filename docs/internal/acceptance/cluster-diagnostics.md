@@ -235,6 +235,16 @@ relabelled after these import changes. The fresh required hosted run must
 qualify the current whole source, packaging/platforms and actual owned-cluster
 verifier. No unchanged failed-head retry is used.
 
+The next complete matrices found seven outdated quality-test expectations in
+three files: 23 versus 24 public pages, 351 versus 354 inventory records,
+authorization-only versus the exact three appended diagnostic records, and
+17 versus 18 cluster rehearsals. The corrections preserve the historical
+348-record baseline, the delivered 351-record authorization prefix and the
+explicit diagnostic additions; source checks still fail on unexpected entries.
+All 193 related documentation, CI-policy and qualification cases passed in
+55.53 seconds. Product code and earlier scoped runtime evidence are unchanged;
+fresh required hosted checks remain necessary.
+
 Whole-source coverage, packaging and exact-head hosted platform checks are
 still required before protected delivery. Focused and owned-cluster evidence
 above does not replace them. Only synthetic
