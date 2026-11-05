@@ -81,6 +81,7 @@ from kuberich.ui.logs import LogScreen
 from kuberich.ui.containers import ContainerScreen
 from kuberich.ui.inspection import InspectionScreen
 from kuberich.ui.terminal import ShellScreen
+from kuberich.ui.relationships import RelationshipTable
 parser = _parser()
 options = []
 local_commands = []
@@ -108,7 +109,8 @@ for profile in PROFILES:
     keymaps.setdefault(tuple(keys.items()), []).append(profile)
 bindings = {}
 for label, owner in (("Workspace", KubeRichApp), ("Logs", LogScreen), ("Containers", ContainerScreen),
-                     ("Inspection", InspectionScreen), ("Embedded terminal", ShellScreen)):
+                     ("Inspection", InspectionScreen), ("Embedded terminal", ShellScreen),
+                     ("Relationships", RelationshipTable)):
     grouped = {}
     for item in owner.BINDINGS:
         if isinstance(item, tuple):

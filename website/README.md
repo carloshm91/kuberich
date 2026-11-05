@@ -71,8 +71,8 @@ Automated accessibility does not establish screen-reader certification.
    (available, partial, planned or unverified). Keep internal task IDs and historic
    acceptance records out of public guide prose and generated reference text.
 2. Edit `docs/navigation.json` to change user navigation on both surfaces. It
-   lists the four Diátaxis types and 19 canonical content pages plus the index:
-   20 pages total, including four generated references. Keep acceptance
+   lists the four Diátaxis types and 21 canonical content pages plus the index:
+   22 pages total, including four generated references. Keep acceptance
    reports, architecture and maintainer-only procedures outside user navigation.
    Follow [the documentation style](../docs/STYLE.md) and update every document's
    disposition in `docs/documentation-plan.json` when a source changes purpose.

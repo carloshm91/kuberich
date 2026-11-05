@@ -50,6 +50,12 @@ health summaries and exact resource predicates. [History](../src/kuberich/domain
 defines bounded aggregate series, backend-scope declarations and explicit gaps.
 Neither model presents an aggregate row as a Kubernetes object.
 
+[Relationships](../src/kuberich/domain/relationships.py) publish immutable graph
+identity, provenance and source completeness. [Reference fields](../src/kuberich/domain/reference_fields.py)
+extract explicit Pod/template, ServiceAccount and storage declarations without
+configuration values. Discovery resolves owner kinds; UID and owner-scope checks
+keep replacements separate from valid controller chains.
+
 ### Services
 
 [Sessions](../src/kuberich/services/sessions.py),
@@ -67,6 +73,12 @@ shares a combined retained-payload budget across resource families and samples.
 [HistoryReader](../src/kuberich/services/history.py) uses that session's relative
 Service-proxy transport for optional Prometheus CPU/memory history. Its fixed
 queries, literal selectors and matrix bounds remain separate from UI rendering.
+
+[RelationshipService](../src/kuberich/services/relationships.py) owns one graph's
+compact facts, expansion and cumulative [read budget](../src/kuberich/domain/read_budget.py).
+It preserves denied/partial sources, uses worker-side extraction and matching,
+and rejects obsolete client/root/request generations. Refresh starts a new
+collection; collapse and expansion reuse the graph's remaining shared budget.
 
 ### Adapters
 
@@ -101,6 +113,13 @@ Navigation preserves its aggregate selection and variable-height viewport;
 drill-downs carry the actual API/version, namespace, predicate, sort and UID.
 The [overview decision](adr/0033-cluster-overview-and-history.md) records ownership,
 expiry, configured backend scope and the separately planned broader history.
+
+The [relationship table](../src/kuberich/ui/relationships.py) and
+[controller](../src/kuberich/ui/controllers/relationships.py) show visible graph
+paths, provenance and source states. Navigation restores expansion and viewport
+from minimal bookmarks; opening an object revalidates its identity. Graph/source
+rows are not mutation targets. The [relationship decision](adr/0034-native-resource-relationships.md)
+keeps root namespace separate from the selected search namespace for cluster roots.
 
 Presentation/rendering faults are isolated to their current view and scope.
 An inline Retry explicitly restarts that view; watches and unrelated forwards
@@ -280,6 +299,7 @@ architecture links useful.
 | <a id="owned-crashloop-status-synchronization-refs-89"></a><a id="owned-crashloop-qualification-observation-refs-q03-50"></a>Use explicit disposable fixtures and preserve original failures | [0030](adr/0030-owned-verification-fixtures.md) |
 | Build standard Python artifacts with one explicit backend | [0031](adr/0031-standard-python-packaging.md) |
 | Own kubeconfig preparation and make migration explicit | [0032](adr/0032-kubeconfig-loader-contract.md) |
+| Preserve graph identity, evidence and per-root collection ownership | [0034](adr/0034-native-resource-relationships.md) |
 | Compose typed views, commands, navigation, and operation owners | [Application composition](adr/app-composition.md) |
 
 ## Historical source

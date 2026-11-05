@@ -331,7 +331,9 @@ def test_readonly_initial_commands_use_the_service_policy_before_launch(
     assert not (tmp_path / "logs").exists()
 
 
-@pytest.mark.parametrize("command", ["networkpolicies", "shell", "help extra"])
+@pytest.mark.parametrize(
+    "command", ["networkpolicies", "shell", "help extra", "xray", "usedby", "open"]
+)
 def test_initial_commands_require_real_behavior(
     command: str, capsys: pytest.CaptureFixture[str]
 ) -> None:

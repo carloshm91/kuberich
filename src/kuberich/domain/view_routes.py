@@ -12,6 +12,7 @@ from kuberich.errors import AppError
 
 class ViewKind(Enum):
     PULSE = "pulse"
+    RELATIONSHIPS = "relationships"
     PODS = "pods"
     NAMESPACES = "namespaces"
     CONTEXTS = "contexts"
@@ -31,7 +32,7 @@ class ViewRoute:
             raise AppError("A view route requires a known view kind.")
         if self.selection is not None and not isinstance(self.selection, ResourceSelection):
             raise AppError("A view route requires a canonical resource selection value.")
-        if self.kind in {ViewKind.CONTEXTS, ViewKind.PULSE}:
+        if self.kind in {ViewKind.CONTEXTS, ViewKind.PULSE, ViewKind.RELATIONSHIPS}:
             if self.selection is not None:
                 raise AppError("This workspace view has no API resource selection.")
             return
@@ -79,6 +80,10 @@ class ViewRoute:
     @classmethod
     def pulse(cls) -> ViewRoute:
         return cls(ViewKind.PULSE)
+
+    @classmethod
+    def relationships(cls) -> ViewRoute:
+        return cls(ViewKind.RELATIONSHIPS)
 
     @classmethod
     def standard(cls, definition: ResourceDefinition) -> ViewRoute:

@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from kuberich.domain.connections import namespace_name
 from kuberich.domain.pods import PodColumn
 from kuberich.domain.pulse import PulseDrilldown
+from kuberich.domain.relationships import RelationshipBookmark
 from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.resources import ServerColumn
 from kuberich.domain.views import ResourceSelection
@@ -62,6 +63,8 @@ class NavigationState:
     drilldown: PulseDrilldown | None = None
     top_offset: float = 0
     errors: bool = False
+    relationships: RelationshipBookmark | None = None
+    expected_uid: str | None = None
 
 
 class NavigationHistory:

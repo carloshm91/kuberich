@@ -3,6 +3,8 @@
 import pytest
 
 from kuberich.domain.view_actions import TABLE_ACTIONS, ViewState, action_available
+from kuberich.services.access import Action
+from kuberich.services.command_catalog import COMMAND_SPECS
 
 
 @pytest.mark.parametrize(
@@ -30,7 +32,9 @@ def test_actions_follow_the_current_view(action, view, expected):
     assert action_available(action, view) is expected
 
 
-@pytest.mark.parametrize("action", sorted(TABLE_ACTIONS - {"configuration_data", "port_forward"}))
+@pytest.mark.parametrize(
+    "action", sorted(TABLE_ACTIONS - {"configuration_data", "port_forward", "open_relationship"})
+)
 def test_table_actions_pause_while_a_modal_or_input_has_focus(action):
     assert action_available(action, ViewState("pods"))
     assert not action_available(action, ViewState("pods", modal=True))
@@ -47,3 +51,45 @@ def test_pulse_exposes_navigation_without_resource_operations(action):
         "retry",
     }
     assert action_available(action, ViewState("pulse")) is allowed
+
+
+@pytest.mark.parametrize("action", sorted(TABLE_ACTIONS | {"views", "retry"}))
+def test_relationships_expose_explicit_open_and_graph_navigation_without_resource_operations(
+    action,
+):
+    allowed = action in {
+        "focus_filter",
+        "focus_command",
+        "history_back",
+        "history_forward",
+        "xray",
+        "usedby",
+        "open_relationship",
+        "retry",
+    }
+    assert action_available(action, ViewState("relationships")) is allowed
+
+
+@pytest.mark.parametrize("resource", ["relationships", "pulse"])
+def test_every_declared_mutation_ui_action_is_unavailable_for_aggregate_rows(resource):
+    actions = {
+        spec.ui_action
+        for spec in COMMAND_SPECS
+        if spec.policy is Action.MUTATE and spec.ui_action is not None
+    }
+    assert {"annotate", "edit", "review_delete", "cleanup_pods"} <= actions
+    for action in actions:
+        assert not action_available(action, ViewState(resource))
+
+
+@pytest.mark.parametrize("action", ["xray", "usedby", "open_relationship"])
+def test_graph_actions_respect_modal_and_input_focus(action):
+    assert action_available(action, ViewState("relationships"))
+    assert not action_available(action, ViewState("relationships", modal=True))
+    assert not action_available(action, ViewState("relationships", typing=True))
+
+
+@pytest.mark.parametrize("resource", ["contexts", "pulse"])
+@pytest.mark.parametrize("action", ["xray", "usedby", "open_relationship"])
+def test_graph_commands_do_not_capture_non_resource_source_views(resource, action):
+    assert not action_available(action, ViewState(resource))

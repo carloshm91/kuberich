@@ -52,6 +52,7 @@ implemented decisions are kept separately without rewriting that history:
 | --- | --- |
 | [0032: Kubeconfig preparation](0032-kubeconfig-loader-contract.md) | Per-session credentials, Basic authentication, and explicit OIDC exec migration |
 | [0033: Cluster overview and history](0033-cluster-overview-and-history.md) | Native summary routing, session-owned collection, exact predicates and explicit Prometheus backend scope |
+| [0034: Resource relationships](0034-native-resource-relationships.md) | UID-based native graphs, explicit declaration evidence and per-root collection budgets |
 | [Application composition](app-composition.md) | Integrated typed views, command metadata, navigation and operation owners; remaining stable-release work stays explicit |
 
 The composition record retains its existing filename; it is not renumbered into

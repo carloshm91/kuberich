@@ -4,6 +4,19 @@ Select a workload in its ordinary resource table, check the context and namespac
 and use a command for the intended action. Changes require write mode and the
 corresponding Kubernetes permissions. Progress viewing also works read-only.
 
+## Follow the controller chain
+
+In development source, select a workload and use `:xray` to inspect its owners,
+children, selector matches and declared configuration/storage references.
+Template declarations remain visible at zero replicas. Enter/arrows expand or
+collapse; `o` or `:open` opens a current readable object in its resource view.
+Graph rows are not targets for workload changes.
+
+`:usedby` on a supported configuration, identity or storage target includes
+Pod/template declarations without claiming that a process consumed a value.
+Read [relationship evidence and incomplete scans](resource-relationships.md)
+before treating an empty result as absence. Installed 0.3.0 predates these views.
+
 ## Scale replicas
 
 Use `:scale` or `:scale 3` on a Deployment, ReplicaSet, or StatefulSet. Review the

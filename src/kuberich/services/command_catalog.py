@@ -85,6 +85,27 @@ COMMAND_SPECS = (
     _spec(Command.PODS, ("po", "pod", "pods"), "List pods; optionally choose NAMESPACE or *."),
     _spec(Command.PULSE, ("pulse", "overview"), "Open cluster health, budgets and metric history."),
     _spec(
+        Command.XRAY,
+        ("xray",),
+        "Explore the selected resource's ownership, references and placement.",
+        capability=Capability.RESOURCE,
+        action="xray",
+    ),
+    _spec(
+        Command.USED_BY,
+        ("usedby",),
+        "Inspect supported declarations that reference the selected resource.",
+        capability=Capability.RESOURCE,
+        action="usedby",
+    ),
+    _spec(
+        Command.OPEN_RELATIONSHIP,
+        ("open",),
+        "Open the selected current relationship resource in its normal table.",
+        capability=Capability.RESOURCE,
+        action="open_relationship",
+    ),
+    _spec(
         Command.CONTEXTS,
         ("ctx", "context", "contexts"),
         "List local contexts; optionally select NAME.",

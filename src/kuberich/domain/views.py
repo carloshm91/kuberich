@@ -11,6 +11,11 @@ from kuberich.domain.connections import (
 )
 from kuberich.domain.metrics import MetricsSnapshot
 from kuberich.domain.pulse import PulseScope, PulseSnapshot, PulseStatus
+from kuberich.domain.relationships import (
+    RelationshipRequest,
+    RelationshipSnapshot,
+    RelationshipStatus,
+)
 from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.resources import ApiResource, ResourceSnapshot, api_segment
 from kuberich.domain.targets import SessionIdentity
@@ -80,6 +85,7 @@ class ViewObservation:
     problem: ConnectionProblem | None = None
     metrics: MetricsSnapshot | None = None
     pulse: PulseSnapshot | None = None
+    relationships: RelationshipSnapshot | None = None
 
     @property
     def message(self) -> str:
@@ -97,6 +103,24 @@ class ViewObservation:
             return f"{prefix}{action} · {self.problem}"
         if self.status is ViewStatus.FAILED:
             return self.connection.message
+        if self.relationships is not None:
+            snapshot = self.relationships
+            pending = any(row.status is RelationshipStatus.LOADING for row in snapshot.rows) or any(
+                source.status is RelationshipStatus.LOADING for source in snapshot.sources
+            )
+            incomplete = any(
+                source.status is not RelationshipStatus.READY
+                or (source.collection is not None and not source.collection.complete)
+                for source in snapshot.sources
+            ) or any(
+                row.status not in {RelationshipStatus.READY, RelationshipStatus.CYCLE}
+                for row in snapshot.rows
+            )
+            return (
+                f"{snapshot.request.scope.mode.value} relationships · "
+                + ("Loading references" if pending or not snapshot.rows else "Observed references")
+                + (" · incomplete/unavailable evidence" if incomplete else "")
+            )
         if self.pulse is not None:
             loading = sum(source.status is PulseStatus.LOADING for source in self.pulse.sources)
             partial = any(source.status is not PulseStatus.VALID for source in self.pulse.sources)
@@ -182,7 +206,7 @@ class ViewStore:
             or namespace != scope.namespace
         ):
             raise AppError("Resource scope does not belong to the active connection.")
-        self.observation = replace(self.observation, scope=scope)
+        self.observation = replace(self.observation, scope=scope, pulse=None, relationships=None)
         return True
 
     def apply(self, revision: int, scope: ResourceScope, update: SyncUpdate) -> bool:
@@ -211,7 +235,7 @@ class ViewStore:
             or connection.namespace != scope.namespace
         ):
             raise AppError("Pulse scope does not belong to the active connection.")
-        self.observation = replace(self.observation, pulse=PulseSnapshot(scope))
+        self.observation = replace(self.observation, pulse=PulseSnapshot(scope), relationships=None)
         return True
 
     def apply_pulse(self, revision: int, snapshot: PulseSnapshot) -> bool:
@@ -226,6 +250,49 @@ class ViewStore:
             pulse=snapshot,
             status=ViewStatus.LOADING
             if any(source.status is PulseStatus.LOADING for source in snapshot.sources)
+            else ViewStatus.LIVE,
+        )
+        return True
+
+    def bind_relationships(self, revision: int, request: RelationshipRequest) -> bool:
+        if revision != self.observation.revision:
+            return False
+        connection, scope = self.observation.connection, request.scope
+        root = scope.root
+        if (
+            connection.state not in USABLE_CONNECTIONS
+            or connection.identity != root.session
+            or connection.namespace != scope.namespace
+            or (root.group, root.resource) != (scope.resource.group, scope.resource.name)
+            or (scope.resource.namespaced and root.namespace is None)
+        ):
+            raise AppError("Relationship root does not belong to the active connection.")
+        scope.resource.path(root.namespace)
+        self.observation = replace(
+            self.observation,
+            scope=None,
+            snapshot=None,
+            metrics=None,
+            pulse=None,
+            relationships=RelationshipSnapshot(request, (), (), 0, None),
+            status=ViewStatus.LOADING,
+            problem=None,
+        )
+        return True
+
+    def apply_relationships(self, revision: int, snapshot: RelationshipSnapshot) -> bool:
+        if (
+            revision != self.observation.revision
+            or self.observation.relationships is None
+            or self.observation.relationships.request != snapshot.request
+        ):
+            return False
+        self.observation = replace(
+            self.observation,
+            relationships=snapshot,
+            status=ViewStatus.LOADING
+            if any(row.status is RelationshipStatus.LOADING for row in snapshot.rows)
+            or any(source.status is RelationshipStatus.LOADING for source in snapshot.sources)
             else ViewStatus.LIVE,
         )
         return True

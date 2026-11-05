@@ -7,6 +7,8 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Added
 
+- Follow owners, workload pods, service endpoints and node placement in native `:xray` graphs, with UID replacements, cycles and incomplete source states kept explicit ([#70](https://github.com/carloshm91/kuberich/issues/70)).
+- Inspect supported configuration, storage and identity declarations with `:usedby`, including zero-replica templates, optional/defaulted fields and the scanned namespace scope ([#70](https://github.com/carloshm91/kuberich/issues/70)).
 - Inspect node, pod and workload health in the native `:pulse` overview, with source times, explicit unavailable/partial states and exact resource drill-downs ([#69](https://github.com/carloshm91/kuberich/issues/69)).
 - Read optional overview CPU/memory history through a configured Prometheus Service proxy, with numeric units, visible gaps and explicit backend scope ([#69](https://github.com/carloshm91/kuberich/issues/69)).
 - View current CPU/memory usage, configured requests/limits and labelled percentages in Pod, workload, Node and container tables ([#68](https://github.com/carloshm91/kuberich/issues/68)).

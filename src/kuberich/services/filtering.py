@@ -9,18 +9,41 @@ from kuberich.domain.navigation import ContextRow
 from kuberich.domain.pods import PodRow
 from kuberich.domain.pulse import PulseRow
 from kuberich.domain.registry import ResourceRow
+from kuberich.domain.relationships import RelationshipRow
 
 REGEX_SECONDS = 0.05
 
 
 @dataclass(frozen=True)
-class FilterResult[T: PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow]:
+class FilterResult[
+    T: PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow | RelationshipRow
+]:
     rows: tuple[T, ...]
     problem: str | None = None
     unknown: int = 0
 
 
-def search_text(row: PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow) -> str:
+def search_text(
+    row: PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow | RelationshipRow,
+) -> str:
+    if isinstance(row, RelationshipRow):
+        ref = row.ref
+        return " ".join(
+            (
+                ref.api_version,
+                ref.kind,
+                ref.resource.name if ref.resource is not None else "",
+                ref.namespace or "",
+                ref.name,
+                ref.uid or "",
+                row.observed_uid or "",
+                str(row.relation or ""),
+                str(row.direction or ""),
+                str(row.evidence or ""),
+                row.status.value,
+                *row.details,
+            )
+        )
     if isinstance(row, PulseRow):
         return f"{row.label} {row.detail} {row.source}"
     if isinstance(row, ResourceRow):
@@ -32,7 +55,7 @@ def search_text(row: PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow
     return f"{row.namespace} {row.name} {row.ready}/{row.containers} {row.status} {row.restarts}"
 
 
-def filter_rows[T: PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow](
+def filter_rows[T: PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow | RelationshipRow](
     rows: tuple[T, ...], query: str, kind: str = "pods"
 ) -> FilterResult[T]:
     if not query:
@@ -88,9 +111,9 @@ def filter_rows[T: PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow](
     return FilterResult(tuple(matches))
 
 
-async def apply_filter[T: PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow](
-    rows: tuple[T, ...], query: str, kind: str = "pods"
-) -> FilterResult[T]:
+async def apply_filter[
+    T: PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow | RelationshipRow
+](rows: tuple[T, ...], query: str, kind: str = "pods") -> FilterResult[T]:
     if not query:
         return FilterResult(rows)
     worker = asyncio.create_task(

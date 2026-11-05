@@ -1,5 +1,57 @@
 # Development checkpoint
 
+## Unreleased 0.4.0 relationship source
+
+Development work for #70 adds native `:xray` and `:usedby` with separate owner,
+selector, endpoint, placement and declaration evidence. Graph opening retains
+expected UID checks, path-local cycles, explicit source completeness and minimal
+navigation history. Pod and seven workload templates, including zero replicas,
+plus ServiceAccounts and PV/PVC declarations are supported. Arbitrary CR reference
+search and proof of process consumption remain unsupported. See the
+[relationship acceptance record](acceptance/resource-relationships.md).
+
+The source starts from #69's protected squash
+`55e5937d955b91a283924650432b54ff2a0a5fc1` after PR #311 passed all 27 selected
+jobs, Repository checks and DCO. Its independent 98.7960% line, 95.9154% branch,
+99.57% changed-line and 86-critical-module results qualify that baseline only.
+Retry 2 recovered GitHub artifact DNS `ENOTFOUND` after a separate supported
+test-timeout correction. The automatic-main application run 41973484821 passed
+all 22 jobs, and Repository run 41973485184 passed. These baseline results do
+not qualify the later #70 source.
+
+The pure focused command passed 133 cases with both modules at 100% lines and
+branches. The corrected UI cohort passed 11 cases; collector cohorts and their
+independent coverage limits are recorded separately. These overlapping results
+are not one combined suite. Actual App/owned-HTTP integration now passes 17
+cases, including delayed/filter-render readiness and cross-context Back. The
+first disposable-kind trial passed in 38.026 seconds with all 217 source inputs
+unchanged and complete owned cleanup. The initial whole local campaign retained
+four failures; exact guide census and asynchronous test-readiness corrections
+passed their focused cohorts without production changes. Subsequent production
+corrections cover valid long Node names and observed-UID cycle classification;
+their affected 180-case cohort passed, followed by a fresh 38.326-second owned
+trial with all 217 inputs unchanged and complete cleanup. Current hosted/platform
+qualification is recorded in [PR #312's required checks](https://github.com/carloshm91/kuberich/pull/312/checks).
+See the acceptance record for source boundaries, original failures and measured
+coverage; earlier-source measurements are not final-source certification.
+
+The final-source macOS check also found a deferred horizontal restore being
+superseded by another render. Its controlled reproduction and fix preserve exact
+viewport assertions and subsequent user movement on both axes; 34 affected
+widget/App cases pass with the widget at 100% lines/branches. The failed run is
+retained. The corrected source also passed all nine owned-cluster checks in
+36.821 seconds with unchanged inputs and complete cleanup. Final hosted
+qualification is tracked in the linked PR checks.
+
+```sh
+COVERAGE_FILE=artifacts/issue70/domain/.coverage uv run pytest tests/unit/test_relationships.py tests/unit/test_reference_fields.py -n 0 --cov=kuberich --cov-branch --cov-report=json:artifacts/issue70/domain/coverage-final-qualified.json --cov-report= -q
+```
+
+This tested command uses synthetic fixtures, not an ambient cluster. Source
+metadata remains 0.3.0; this work is unreleased for 0.4.0 and does not publish
+artifacts or update the installed release. Earlier sections below keep their
+recorded source boundaries and historical qualification limits.
+
 ## Unreleased 0.4.0 overview source
 
 Development work for #69 adds native `:pulse`/`:overview`, scoped health/capacity
@@ -18,7 +70,13 @@ reload and UI cases passed as recorded in the acceptance note. The real owned Pr
 chart values, independent raw-backend comparison, keyboard drill-downs, partial
 RBAC and verified cleanup. The controlled large-collection observation served
 35,000 records within the shared 10,000-item retention bound. Complete
-current-source/global/hosted qualification remains pending. Source metadata stays 0.3.0; installed public 0.3.0 does not include
+PR #311 subsequently passed 27/27 jobs at
+`20e82dbac29c2a47dca3be2510a32f1b7a75fd42`; the protected squash
+`55e5937d955b91a283924650432b54ff2a0a5fc1` passed 22/22 automatic-main jobs.
+The measured global result was 20,514/20,764 production lines and 5,941/6,194
+branches, with 99.57% changed-line coverage and 86 critical modules at 100%.
+Those results qualify the overview source, not later relationship changes.
+Source metadata stays 0.3.0; installed public 0.3.0 does not include
 this work. Published release records below remain unchanged.
 
 ## Qualified 0.3.0 source

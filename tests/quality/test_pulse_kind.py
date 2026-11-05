@@ -3,15 +3,28 @@
 import json
 import sys
 from contextlib import contextmanager
+from dataclasses import replace
+from datetime import UTC, datetime
 
 import pytest
 import yaml
 from aiohttp import web
 
 from kuberich.domain.history import HistoryBackend, HistorySnapshot
+from kuberich.domain.pulse import (
+    FAMILIES,
+    PulseScope,
+    PulseSnapshot,
+    PulseSource,
+    PulseStatus,
+    predicates,
+    rows,
+)
+from kuberich.domain.resources import CollectionState, ResourceSnapshot, resource_record
+from kuberich.domain.targets import SessionIdentity
 from scripts import verify_pulse_kind as verification
 from scripts.owned_kind import SHELL_IMAGE, OwnedCluster
-from tests.support.pulse import pulse_object, pulse_record, pulse_roots
+from tests.support.pulse import pulse_object, pulse_record, pulse_resource, pulse_roots
 from tests.support.resources import collection, reader_fixture
 
 
@@ -220,3 +233,268 @@ async def test_failure_diagnostics_read_only_owned_namespace_pods_and_preserve_d
             json.loads((directory / "pulse-failure-pods.json").read_text())["status"]
             == "unavailable"
         )
+
+
+def fixture_overview(*, changing=None):
+    """Independent observed fixture states projected through the real predicates."""
+
+    def record(family, name, **options):
+        return pulse_record(family, name, namespace=verification.NAMESPACE, **options)
+
+    running = {"phase": "Running", "conditions": [{"type": "Ready", "status": "True"}]}
+    data = {
+        "nodes": [record("nodes", "owned-node")],
+        "pods": [
+            record("pods", "owned-healthy", status=running),
+            record("pods", "owned-prometheus", status=running),
+            record(
+                "pods",
+                "owned-degraded",
+                spec={"containers": [{"name": "app"}]},
+                status={"phase": "Pending"},
+            ),
+            record(
+                "pods",
+                "owned-pending",
+                spec={"containers": [{"name": "app"}]},
+                status={"phase": "Pending"},
+            ),
+            record("pods", "owned-completed", status={"phase": "Succeeded"}),
+        ],
+        "deployments": [
+            record("deployments", "owned-healthy"),
+            record(
+                "deployments",
+                "owned-degraded",
+                status={
+                    "observedGeneration": 1,
+                    "readyReplicas": 0,
+                    "availableReplicas": 0,
+                    "updatedReplicas": 1,
+                },
+            ),
+        ],
+        "replicasets": [
+            record("replicasets", "owned-healthy"),
+            record(
+                "replicasets",
+                "owned-degraded",
+                status={"observedGeneration": 1, "readyReplicas": 0, "availableReplicas": 0},
+            ),
+        ],
+        "statefulsets": [
+            record(
+                "statefulsets",
+                "owned-stateful",
+                spec={"replicas": 0},
+                status={
+                    "observedGeneration": 1,
+                    "readyReplicas": 0,
+                    "updatedReplicas": 0,
+                    "currentRevision": "owned",
+                    "updateRevision": "owned",
+                },
+            )
+        ],
+        "daemonsets": [
+            record(
+                "daemonsets",
+                "owned-daemon",
+                status={
+                    "observedGeneration": 1,
+                    "desiredNumberScheduled": 0,
+                    "numberReady": 0,
+                },
+            )
+        ],
+        "jobs": [
+            record(
+                "jobs",
+                "owned-completed",
+                status={"conditions": [{"type": "Complete", "status": "True"}]},
+            )
+        ],
+        "cronjobs": [
+            record("cronjobs", "owned-suspended", spec={"schedule": "0 * * * *", "suspend": True})
+        ],
+    }
+    if changing is not None:
+        family = "pods" if changing.startswith("pod-") else changing
+        index = 1 if family == "pods" else 0
+        value = data[family][index].manifest
+        if changing == "pod-readiness":
+            value["status"]["conditions"] = [{"type": "Ready", "status": "False"}]
+        elif changing == "pod-unknown":
+            value["status"]["conditions"] = []
+        else:
+            value["status"] = {}
+        data[family][index] = resource_record(pulse_resource(family), value)
+    observed = datetime(2026, 11, 5, tzinfo=UTC)
+    sources = tuple(
+        PulseSource(
+            name,
+            pulse_resource(name),
+            None if name == "nodes" else verification.NAMESPACE,
+            PulseStatus.VALID,
+            observed,
+            complete=True,
+        )
+        for _, name in FAMILIES
+    )
+    return PulseSnapshot(
+        PulseScope(SessionIdentity("owned-pulse", 1), verification.NAMESPACE),
+        sources=sources,
+        rows=tuple(
+            row
+            for source in sources
+            for row in rows(
+                source,
+                {
+                    predicate: sum(predicate.matches(record) for record in data[source.key])
+                    for predicate in predicates(source.key)
+                },
+            )
+        ),
+        observed_at=observed,
+    )
+
+
+@pytest.mark.parametrize(
+    "changing", ["statefulsets", "replicasets", "pod-readiness", "pod-unknown"]
+)
+def test_fixture_readiness_rejects_bootstrap_transitions_accepted_by_old_five_counts(changing):
+    observed = fixture_overview(changing=changing)
+    counts = {row.key: row.count for row in observed.rows}
+    # The actual retained run did not preserve its row key. These controlled
+    # alternatives prove the old fence admits multiple still-changing sources.
+    assert counts["deployments:healthy"] == counts["deployments:degraded"] == 1
+    assert counts["pods:pod-unscheduled"] == counts["pods:pod-running"] == 2
+    assert counts["jobs:completed"] == 1
+    assert not verification.fixture_counts_settled(observed)
+
+
+def test_fixture_readiness_accepts_all_forty_four_observed_counts():
+    overview = fixture_overview()
+    assert len(overview.rows) == 44 and len(overview.sources) == 8
+    assert verification.fixture_counts_settled(overview)
+    assert verification.overview_evidence(overview)["settled"] is True
+
+
+@pytest.mark.parametrize(
+    "status",
+    [
+        PulseStatus.LOADING,
+        PulseStatus.PARTIAL,
+        PulseStatus.FORBIDDEN,
+        PulseStatus.FAILED,
+        PulseStatus.UNAVAILABLE,
+    ],
+)
+def test_fixture_readiness_rejects_incomplete_source_even_when_all_counts_match(status):
+    overview = fixture_overview()
+    changed = replace(overview.sources[0], status=status)
+    assert not verification.fixture_counts_settled(
+        replace(overview, sources=(changed, *overview.sources[1:]))
+    )
+
+
+@pytest.mark.parametrize("changes", [{"complete": False}, {"limited": True}])
+def test_fixture_readiness_requires_complete_unlimited_sources(changes):
+    overview = fixture_overview()
+    changed = replace(overview.sources[0], **changes)
+    assert not verification.fixture_counts_settled(
+        replace(overview, sources=(changed, *overview.sources[1:]))
+    )
+
+
+def test_fixture_readiness_rejects_missing_sources_rows_and_duplicate_rows():
+    overview = fixture_overview()
+    assert not verification.fixture_counts_settled(replace(overview, sources=overview.sources[1:]))
+    assert not verification.fixture_counts_settled(replace(overview, rows=overview.rows[1:]))
+    assert not verification.fixture_counts_settled(
+        replace(overview, rows=(*overview.rows, overview.rows[0]))
+    )
+
+
+def test_drilldown_mismatch_preserves_exact_membership_before_original_assertion(tmp_path):
+    overview = fixture_overview()
+    row = next(row for row in overview.rows if row.key == "pods:pod-running")
+    record = pulse_record(
+        "pods",
+        "owned-only-running",
+        status={"phase": "Running", "message": "PRIVATE-fixture-message"},
+    )
+    snapshot = ResourceSnapshot(
+        row.drilldown.resource,
+        verification.NAMESPACE,
+        "observed-list-rv",
+        (record,),
+        collection=CollectionState(pages=1, retained_bytes=record.size_bytes),
+    )
+    with pytest.raises(AssertionError, match="pods:pod-running"):
+        verification.checked_drilldown(row, snapshot, tmp_path)
+    receipt = json.loads((tmp_path / "pulse-drilldown-observations.jsonl").read_text())
+    assert receipt["expected_count"] == 2 and receipt["actual_count"] == 1
+    assert receipt["query"] == {"fieldSelector": "status.phase=Running"}
+    assert receipt["predicate"] == "pod-running"
+    assert receipt["resource_version"] == "observed-list-rv"
+    assert receipt["collection"]["complete"] and receipt["collection"]["pages"] == 1
+    assert receipt["matched"][0]["uid"] == record.uid
+    assert receipt["api_path"] == "/api/v1/namespaces/kuberich-owned-pulse/pods"
+    assert "PRIVATE-fixture-message" not in json.dumps(receipt)
+    # A later genuinely matching observation appends its own receipt; it cannot
+    # overwrite or reinterpret the preserved failed assertion.
+    matched = verification.checked_drilldown(replace(row, count=1), snapshot, tmp_path)
+    assert matched == (record,)
+    assert len((tmp_path / "pulse-drilldown-observations.jsonl").read_text().splitlines()) == 2
+
+
+def test_overview_receipt_omits_untrusted_source_details_and_preserves_unknown_counts():
+    overview = fixture_overview()
+    source = replace(overview.sources[0], detail="PRIVATE-server-message")
+    row = replace(overview.rows[0], count=None)
+    receipt = verification.overview_evidence(
+        replace(overview, sources=(source, *overview.sources[1:]), rows=(row, *overview.rows[1:]))
+    )
+    assert receipt["counts"][row.key] is None
+    assert receipt["sources"][0]["observed_at"] is not None
+    assert receipt["settled"] is False
+    assert "PRIVATE-server-message" not in json.dumps(receipt)
+
+
+@pytest.mark.parametrize("limited", [False, True])
+def test_partial_drilldown_cannot_qualify_even_when_observed_count_matches(tmp_path, limited):
+    overview = fixture_overview()
+    row = next(row for row in overview.rows if row.key == "nodes:all")
+    record = pulse_record("nodes", "owned-node")
+    snapshot = ResourceSnapshot(
+        row.drilldown.resource,
+        None,
+        "partial-list-rv",
+        (record,),
+        collection=CollectionState(
+            complete=False, limited=limited, pages=1, retained_bytes=record.size_bytes
+        ),
+    )
+    with pytest.raises(AssertionError, match="nodes:all"):
+        verification.checked_drilldown(row, snapshot, tmp_path)
+    receipt = json.loads((tmp_path / "pulse-drilldown-observations.jsonl").read_text())
+    assert receipt["expected_count"] == receipt["actual_count"] == 1
+    assert receipt["collection"]["complete"] is False
+    assert receipt["collection"]["limited"] is limited
+    assert receipt["resource_version"] == "partial-list-rv"
+
+
+def test_zero_desired_daemonset_remains_unknown_when_optional_counters_are_omitted():
+    # The pinned actual API omits zero available/updated counters. Preserve the
+    # production classifier's honest unknown instead of inventing healthy data.
+    overview = fixture_overview()
+    counts = {row.key: row.count for row in overview.rows if row.source == "daemonsets"}
+    assert counts == {
+        "daemonsets:all": 1,
+        "daemonsets:healthy": 0,
+        "daemonsets:degraded": 0,
+        "daemonsets:unknown": 1,
+        "daemonsets:completed": 0,
+    }
+    assert verification.fixture_counts_settled(overview)

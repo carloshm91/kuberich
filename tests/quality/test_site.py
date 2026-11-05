@@ -11,6 +11,7 @@ from markdown_it import MarkdownIt
 
 from scripts.build_site import GUIDES, MARKER, REFERENCES, ROOT, build, heading_ids, user_content
 from scripts.check_site import verify
+from scripts.site_reference import contracts
 from tests.support.site_source import (
     copy_source,
     published_source,
@@ -472,3 +473,32 @@ def test_public_tracking_scan_retains_issue_and_internal_references(text):
 def test_public_tracking_scan_accepts_quoted_color_values_without_ignoring_other_lines():
     text = "primary: '#5fd7ff'\nbackground: '#000000'\nforeground: '#123456'\n"
     assert not re.search(r"#[0-9]+", public_tracking_text(text))
+
+
+def test_relationship_binding_reference_reads_actual_selected_checkout_declarations(tmp_path):
+    source = copy_source(tmp_path / "source")
+    before = contracts(source)["bindings"]["Relationships"]
+    assert {"keys": "right", "action": "expand", "description": "Expand relationship"} in before
+    widget = source / "src/kuberich/ui/relationships.py"
+    original = widget.read_text()
+    changed = original.replace(
+        'Binding("right", "expand", "Expand relationship"',
+        'Binding("ctrl+right", "expand", "Expand selected relationship probe"',
+    )
+    assert changed != original
+    widget.write_text(changed)
+    after = contracts(source)["bindings"]["Relationships"]
+    assert {
+        "keys": "ctrl+right",
+        "action": "expand",
+        "description": "Expand selected relationship probe",
+    } in after
+    assert {"keys": "right", "action": "expand", "description": "Expand relationship"} not in after
+    output = tmp_path / "site"
+    build(output, source)
+    verify(output, source)
+    for surface in ("docs", "www/docs"):
+        reference = (output / surface / "cli-reference.html").read_text()
+        assert "Relationships" in reference
+        assert "ctrl+right" in reference
+        assert "Expand selected relationship probe" in reference

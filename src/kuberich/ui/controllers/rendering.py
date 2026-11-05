@@ -5,6 +5,7 @@ from collections.abc import Callable
 from contextlib import suppress
 
 from kuberich.domain.pulse import PulseScope
+from kuberich.domain.relationships import RelationshipScope
 from kuberich.domain.view_routes import ViewRoute
 from kuberich.domain.views import ResourceScope
 from kuberich.ui.controllers.base import RenderOutcome, RenderRequest
@@ -26,7 +27,9 @@ class RenderCoordinator:
         self.foreground, self.views = foreground, views
         self.capture, self.publish, self.failed = capture, publish, failed
         self.recover = recover
-        self._blocked: dict[ViewRoute, tuple[str | None, ResourceScope | PulseScope | None]] = {}
+        self._blocked: dict[
+            ViewRoute, tuple[str | None, ResourceScope | PulseScope | RelationshipScope | None]
+        ] = {}
         self._ready = asyncio.Event()
         self._task: asyncio.Task[None] | None = None
         self._closed = False
@@ -52,10 +55,14 @@ class RenderCoordinator:
         )
 
     @staticmethod
-    def _scope(request: RenderRequest) -> tuple[str | None, ResourceScope | PulseScope | None]:
+    def _scope(
+        request: RenderRequest,
+    ) -> tuple[str | None, ResourceScope | PulseScope | RelationshipScope | None]:
         return (
             request.observation.context,
-            request.observation.pulse.scope
+            request.observation.relationships.request.scope
+            if request.observation.relationships is not None
+            else request.observation.pulse.scope
             if request.observation.pulse is not None
             else request.observation.scope,
         )

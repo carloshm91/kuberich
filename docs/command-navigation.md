@@ -88,6 +88,20 @@ alignment, and sort; Apply affects this session, while Global or Context saves
 preferences explicitly. A hidden field may still be used in sorting or filtering.
 Hiding a column is not a confidentiality control.
 
+## Follow a related object
+
+Development source provides `:xray` from a selected resource and `:usedby` for
+supported configuration, storage and identity targets. Enter or Right expands
+a graph branch; Left collapses it. Shift+Left/Right scroll horizontally. Press
+`o` or use `:open` to open a readable object after its identity is checked.
+
+The graph uses the same filter bar and Back/Forward history. Visible matches
+keep their ancestors; filtering does not scan unopened branches. Graph rows
+explain relationships and are not mutation targets. See
+[resource relationships](resource-relationships.md) for evidence, namespace
+scope, UID replacements and incomplete source states. Installed 0.3.0 predates
+these views.
+
 ## Mark rows and copy
 
 Space marks a resource; Shift+Up/Shift+Down extend a range. `:mark`, `:range`,

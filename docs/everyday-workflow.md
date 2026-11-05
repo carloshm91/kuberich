@@ -24,6 +24,18 @@ These pages show a read snapshot. `/` searches the document, `n` and Shift+N mov
 between matches, and Escape returns to the resource table. Values in ordinary
 inspection pages are redacted.
 
+## Follow owners and dependencies
+
+Development source adds `:xray` on the selected Deployment. Expand its controller
+and Pod relationships with Enter/Right; selector matches remain separate from
+UID-checked ownership. Select a current object and use `o` or `:open` to open its
+resource view. Use `:back` to return to the graph and its expansion state.
+
+For a ConfigMap, Secret, ServiceAccount, PVC or PriorityClass, `:usedby` lists
+supported static declarations. An empty incomplete scan does not prove unused.
+See [resource relationships](resource-relationships.md) for supported fields,
+source scope and permission limits. Installed 0.3.0 predates these views.
+
 ## Read logs across the workload
 
 On the Deployment row, press Shift+L or type `:logsall`. The viewer reads logs from

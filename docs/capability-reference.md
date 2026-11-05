@@ -29,8 +29,8 @@ unavailable.
 explicit review and a backup. Local per-context display preferences can be saved.
 ### API discovery, resource aliases and dynamic/CRD server columns
 **partial** — Discovery chooses served API versions and unambiguous aliases. Generic tables provide
-server columns, metadata fallback, and configurable layouts. Generic mutations and automatic
-relationship discovery are unavailable.
+server columns, metadata fallback and saved layouts. Development source follows discovered owners;
+generic mutations and arbitrary custom-resource reference scanning remain unavailable.
 ### Live resource updates, manual refresh, retry/reconnect and errors
 **partial** — Live lists and watches keep a last snapshot during temporary failures and reconnect or
 relist as needed. Refresh renews discovery and the selected resource stream. A stale snapshot does
@@ -76,24 +76,28 @@ can use a cached result; they never install an update.
 existing ephemeral container rows. State updates from the pod watch; Enter on a container opens its
 logs.
 ### Deployments, StatefulSets, DaemonSets, ReplicaSets, replication controllers, workloads
-**partial** — Standard workload tables support scaling, restart, and explicit revision rollback for
-applicable controllers after review. Automatic controller-to-pod drill-down is unavailable.
+**partial** — Standard workload tables support reviewed scaling, restart and explicit revision
+rollback. Development source adds native controller and Pod relationships; selector matches remain
+separate from ownership.
 ### Services, Endpoints, EndpointSlices, Ingresses and NetworkPolicies
-**partial** — Service, EndpointSlice, Ingress and NetworkPolicy views are available. Service numeric
-TCP forwarding has its own prerequisites. Discovery refuses APIs removed from the selected server.
+**partial** — Service, EndpointSlice, Ingress and NetworkPolicy views are available. Development
+source adds reported service backends and separate selector matches, preserving unknown endpoint
+identity and incomplete reads.
 ### Nodes, PV/PVC, StorageClasses, priority/scheduling, HPA/PDB/quota/limits
 **partial** — Node, PV, PVC, StorageClass and HPA tables are available. Development source adds Node
 CPU/memory usage, allocatable percentages and vendor-neutral extended-resource capacity; the
 development cluster overview adds known pressure/unscheduled states, while broader quota/disruption
-diagnostics remain planned.
+diagnostics remain planned. Development relationships distinguish declared placement, PV/PVC
+bindings and static PriorityClass references.
 ### ConfigMaps, Secrets, service accounts and RBAC resource families
-**partial** — ConfigMap and Secret values stay hidden until a deliberate reveal or copy. Manifest
-editing requires local disclosure, validation, and Apply. An interactive permission browser is
-unavailable.
+**partial** — ConfigMap and Secret values stay hidden until deliberate reveal or copy. Development
+source adds supported static configuration and ServiceAccount relationships with explicit scan
+scope; interactive permission browsing remains unavailable.
 ### Custom resources, unknown APIs and custom columns/jump chains
-**partial** — Discovered APIs provide served-version selection, typed printer columns, inspection,
-and saved schema-pinned layouts. Generic resource mutation is unavailable; configured jumps can open
-related views.
+**partial** — Discovered APIs provide served-version selection, typed printer columns, inspection
+and saved schema-pinned layouts. Development source follows discovered owners in native graphs;
+configured jumps share navigation history. Generic mutation and arbitrary custom-resource reference
+scanning remain unavailable.
 ### Current/previous logs, container selection and all-container/workload logs
 **available** — Read current or previous container output and aggregate supported workload logs.
 Readers follow controller membership and identify each source independently.
@@ -128,9 +132,9 @@ only mode is not a sandbox.
 inspect a redacted diff, validate with a strict server dry-run, and choose Apply separately. This
 includes deliberate Secret editing.
 ### Scale, restart and rollback workloads; deployment ReplicaSet drill-down
-**partial** — Review scale, restart, or one explicit available revision rollback for supported
-controllers. Rollout progress is independent of API write confirmation. Automatic owner drill-down
-is unavailable.
+**partial** — Review scale, restart or one explicit available revision rollback for supported
+controllers. Development source adds owner/ReplicaSet navigation; open an ordinary resource view
+before changing a resource.
 ### Delete/force-delete/bulk actions and pod completed/error cleanup
 **available** — Single/batch deletion reviews identity, grace and propagation, then reports each
 result separately. It never silently removes finalizers. :cleanup reviews deleting the completed and
@@ -155,8 +159,9 @@ save, live reload, and session inversion. Icon preferences are unavailable.
 **partial** — Configure additional navigation keys, literal aliases, and global/context resource
 columns and sort. Inputs keep normal text editing; invalid overrides leave working defaults.
 ### Custom GVR relationship jumps with selectors/templates/namespace
-**partial** — Define jumps in the preference file and use :jump to open a related view, such as a
-Deployment's pods, with a filter already set. Templates only read fields from the row.
+**partial** — Define preference-file jumps and use :jump to open related views with a local filter.
+Development source adds native discovered-owner graphs using the same history; arbitrary custom-
+resource reference discovery is unavailable.
 ### Reactive settings reload, paths, feature gates, connection/log/metric thresholds
 **partial** — Valid saved preferences reload while the application runs; an invalid file leaves the
 last working settings active. Contexts can add read-only mode or a refresh interval.
@@ -187,8 +192,10 @@ capacity, current usage and exact resource drill-downs. Configured Prometheus Se
 CPU/memory history shows numeric values, gaps and explicit backend scope. Broader per-
 resource/network/filesystem history remains unavailable; installed 0.3.0 predates the overview.
 ### XRay relationships, jump-to-owner/node, service endpoints and UsedBy
-**planned** — Automatic relationship graphs, controller/node drill-down, service endpoint drill-
-down, and UsedBy views are unavailable. Explicit configured jumps are described separately.
+**partial** — Development source provides native :xray and :usedby views for owners, selector
+matches, reported endpoints, placement and supported static configuration/storage/identity
+declarations. Replacement UIDs and incomplete scans remain explicit; installed 0.3.0 predates these
+views.
 ### RBAC can/user/group/service-account policies and rule inspection
 **planned** — An interactive RBAC permission/rule browser is planned.
 ### Popeye/cluster diagnostic reports and actionable failure evidence
