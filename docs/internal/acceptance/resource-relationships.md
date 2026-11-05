@@ -202,8 +202,8 @@ The collector/read-budget cohort passed 44 cases in 2.32 seconds. Original and
 corrected evidence is in `artifacts/issue70/node-name-boundary/`.
 
 Earlier `cd4f026`/`bd98e00` measurements below do not qualify this later production
-correction. A fresh owned-kind trial and complete final-head hosted checks remain
-required; no cross-source coverage reports are combined.
+correction. The fresh owned trials are recorded below; complete final-head hosted
+checks remain required. No cross-source coverage reports are combined.
 
 The related cycle review reproduced two identity defects before correction:
 Node→Pod→a name-only Node reference stayed READY on the first repeat, and an
@@ -216,6 +216,24 @@ the corrected 180-case cohort in `artifacts/issue70/observed-cycles/`.
 The collector independently measured 326/337 lines (96.7359%) and 118/128 branches
 (92.1875%); the three pure modules remain at 100%. Ruff, formatting and strict
 collector typing passed. This focused measurement is not a full-source pass.
+
+The second owned trial qualified the long-Node correction at `aaf7210` in 37.466
+seconds; the final trial qualified both collector corrections at `a851a81` in
+38.326 seconds (37.566 seconds inside the verifier). All nine actual checks
+passed again, including native App history/viewport and restricted RBAC. The 217
+captured production/configuration/verifier inputs stayed unchanged; the owned
+cluster/private directory were deleted, the wrapper reaped its worker and the
+process group was absent. Receipts, stages, API traces and native SVGs are in
+`artifacts/issue70/kind-final-2/` and `kind-final-3/`. These are intentional trials
+after production changes; earlier successful and failed outcomes are retained.
+
+The preceding test-only head `bd98e00` passed all 27 jobs in run 41983206631,
+Repository run 41983206655 and app-bound DCO. Its observer reaped 266 readers;
+two transient metadata HTTP 503 results were preserved and recovered on the next
+scheduled read. This establishes that earlier baseline, not the collector fixes.
+Final required-check status and source binding are authoritative in
+[PR #312](https://github.com/carloshm91/kuberich/pull/312/checks) and its linked
+delivery closeout; a queued, cancelled or preceding-head run is not qualification.
 
 - Actual App/controlled-HTTP and disposable-kind behavior are recorded above.
   The corrected App cohort adds successful cross-context Back and passes 17 cases
@@ -245,7 +263,7 @@ collector typing passed. This focused measurement is not a full-source pass.
   both strict negative controls rejected their deliberate violations, and no
   latency policy was changed. Exact receipts are in
   `artifacts/issue70/startup-final-cd4/`.
-- Complete current-head hosted checks remain required. Earlier run 41980688756
+- Complete current-head hosted checks are required. Earlier run 41980688756
   failed Fast on the premature lifecycle assertion; its downstream gate failed.
   Repository and DCO passed. All failed logs/inventories and 22 reaped reader
   receipts remain in `artifacts/issue70/hosted-pr312-cd4f026/`. Current-head

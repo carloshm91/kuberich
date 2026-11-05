@@ -27,9 +27,13 @@ cases, including delayed/filter-render readiness and cross-context Back. The
 first disposable-kind trial passed in 38.026 seconds with all 217 source inputs
 unchanged and complete owned cleanup. The initial whole local campaign retained
 four failures; exact guide census and asynchronous test-readiness corrections
-passed their focused cohorts without production changes. Complete current-head
-hosted/platform/package evidence remains pending. See the acceptance record for
-the original failure lineage, measured coverage and scoped corrections.
+passed their focused cohorts without production changes. Subsequent production
+corrections cover valid long Node names and observed-UID cycle classification;
+their affected 180-case cohort passed, followed by a fresh 38.326-second owned
+trial with all 217 inputs unchanged and complete cleanup. Current hosted/platform
+qualification is recorded in [PR #312's required checks](https://github.com/carloshm91/kuberich/pull/312/checks).
+See the acceptance record for source boundaries, original failures and measured
+coverage; earlier-source measurements are not final-source certification.
 
 ```sh
 COVERAGE_FILE=artifacts/issue70/domain/.coverage uv run pytest tests/unit/test_relationships.py tests/unit/test_reference_fields.py -n 0 --cov=kuberich --cov-branch --cov-report=json:artifacts/issue70/domain/coverage-final-qualified.json --cov-report= -q
