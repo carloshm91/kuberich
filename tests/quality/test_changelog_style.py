@@ -192,7 +192,7 @@ def test_rewritten_actual_notes_still_freeze_exactly_under_the_existing_contract
     assert all(f"\n## {section}\n" in template for section in SECTIONS)
 
 
-def test_unreleased_core_changes_keep_exact_published_history_and_complete_dispositions():
+def test_historical_unreleased_snapshot_keeps_exact_history_and_complete_dispositions():
     mapping = json.loads((ROOT / "docs/internal/release-note-mapping.json").read_text())
     published = {key: value for key, value in mapping.items() if key != "unreleased"}
     assert (
@@ -250,5 +250,12 @@ def test_unreleased_core_changes_keep_exact_published_history_and_complete_dispo
         == 0
     )
     text = (ROOT / "CHANGELOG.md").read_text().split("## [0.2.0]", 1)[0]
-    assert "not yet published" in text and "0.4.0" in text
+    release = json.loads((ROOT / "docs/published-releases.json").read_text())["releases"]["0.3.0"]
+    published_date = date.fromisoformat(release["published_at"][:10])
+    heading = f"## [0.3.0] - {published_date.isoformat()}\n"
+    assert heading in text
+    published_section = text.split(heading, 1)[1].split("\n## [", 1)[0]
+    assert "[Release notes](docs/release-notes/0.3.0.md)" in published_section
+    assert (ROOT / "docs/release-notes/0.3.0.md").is_file()
+    assert "not yet published" not in published_section and "0.4.0" in published_section
     assert "--strict-startup" not in text and "600 ms" not in text

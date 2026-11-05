@@ -137,11 +137,13 @@ See [hosting and release gates](../docs/website.md) and
 
 ## Publication ownership
 
-Initial local preparation is delivered; #150 now qualifies the exact `0.1.0`
-candidate's guides and static bytes. Actual public quickstart and protected
-GitHub Actions → Cloudflare Pages deployment are #89,
-after product features and dedicated qualification. Package/site/DNS publication
-needs approval of the concrete result. See [the deployment procedure](../docs/website.md).
+Initial local preparation and the first public deployment are delivered. Each
+release updates its verified publication record and guides, then checks both
+static surfaces from that exact documentation source. The protected GitHub
+Actions → Cloudflare Pages workflow deploys the checked bytes after concrete
+website approval; a source merge alone does not update hosting. Package/site/DNS
+publication needs its applicable authorization. Existing production hosts need
+no DNS change for a content update. See [the deployment procedure](../docs/website.md).
 
 ## Published installation status
 

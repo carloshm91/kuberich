@@ -134,21 +134,33 @@ jobs:
     name: Verify the merged tap pours (${{ matrix.os }})
     if: ${{ inputs.operation == 'verify' }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: ${{ matrix.os == 'macos-15-intel' && 150 || 90 }}
     strategy:
       fail-fast: false
       matrix:
         os: [macos-15, macos-15-intel, ubuntu-24.04]
     steps:
+      - name: Prepare runtime dependencies with separate setup timing
+        timeout-minutes: ${{ matrix.os == 'macos-15-intel' && 120 || 75 }}
+        run: |
+          if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+            echo /home/linuxbrew/.linuxbrew/bin >> "$GITHUB_PATH"
+            export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+          fi
+          start=$SECONDS
+          brew update --quiet
+          brew tap kuberich/tap
+          brew install --only-dependencies kuberich/tap/kuberich
+          echo "- \`${{ matrix.os }}\` dependency setup (update, tap and runtime dependencies): $((SECONDS - start)) s" >> "$GITHUB_STEP_SUMMARY"
       - name: Install like a user and confirm the bottle is poured
+        timeout-minutes: 30
         run: |
           if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
             export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
           fi
-          brew update --quiet
           start=$SECONDS
           brew install kuberich/tap/kuberich 2>&1 | tee install.log
-          echo "- \`${{ matrix.os }}\` install with dependencies: $((SECONDS - start)) s" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`${{ matrix.os }}\` application install (dependencies prepared): $((SECONDS - start)) s" >> "$GITHUB_STEP_SUMMARY"
           grep -Eq "Pouring kuberich--?$BOTTLE_VERSION\\." install.log
           test "$(kuberich --version)" = "kuberich $BOTTLE_VERSION"
           # Users install without trust; `brew test` loads the formula only once trusted.

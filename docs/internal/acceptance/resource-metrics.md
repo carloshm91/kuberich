@@ -318,3 +318,39 @@ measurements do not qualify this later production correction. Exact-head hosted
 full-suite/runtime/source/changed/critical coverage and build gates remain
 pending the incoming activation base and next branch push. No additional full
 local phase or kind campaign was run for this correction.
+
+## Integration after completed 0.3.0 delivery
+
+The metrics branch incorporates protected main
+`25265acfa2424a89bec275bf016b255db3b3448a` through a normal merge. The
+published-release registry, frozen 0.3.0 notes, complete published changelog
+history, dependency lock and shared clipboard/navigation fixture corrections
+match that base exactly. Source metadata remains 0.3.0; these metrics are
+unreleased work for the next 0.4.0 phase. The actual 0.3.0 website/channel
+closeout remains separate from metrics implementation and qualification.
+
+The integrated focused metrics command passed **186 cases in 18.19 seconds**
+on Linux CPython 3.12.12:
+
+```sh
+COVERAGE_FILE=artifacts/issue68/activation-20261105/.coverage uv run pytest tests/unit/test_metrics.py tests/unit/test_metrics_projection.py tests/contract/test_metrics.py tests/ui/test_metrics.py -q -n 4 --tb=short --basetemp=/tmp/kuberich68-activation-20261105-pytest --cov=kuberich.domain.metrics --cov=kuberich.domain.quantities --cov=kuberich.services.metrics --cov=kuberich.services.metrics_projection --cov-branch --cov-report=json:artifacts/issue68/activation-20261105/metrics-coverage.json --junitxml=artifacts/issue68/activation-20261105/metrics.xml
+```
+
+Metrics, quantities and metrics projection each measured **100% lines and
+branches**. The I/O poller measured **98.204% lines and 92.188% branches**, with
+no exclusions. These are focused module measurements, not complete production
+coverage or exact-head hosted qualification. All 198 production-file hashes
+remained unchanged during the checks, preserving the reviewed `3cc9967` runtime.
+
+Ruff, formatting, the actual workflow strict-type union (238 files),
+private-access, plan/generated-reference and whitespace checks passed. The
+integrated internal-documentation, changelog, navigation structure, static-site
+and Pages contracts passed **140 cases in 59.76 seconds**. Exact commands,
+logs/XML, coverage and preserved-input checks are under
+`artifacts/issue68/activation-20261105/`.
+
+No full local suite, additional owned-cluster repetition, real-provider trial
+or publication was performed for this base integration. The original failed
+campaigns remain unchanged. Current integrated-head required hosted full-suite,
+source/branch/changed/critical coverage, runtime, package and native-platform
+checks remain required before delivery.

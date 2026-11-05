@@ -5,10 +5,15 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ## [Unreleased]
 
-These source changes are not yet published. Changes by [Carlos J. Herrera](https://github.com/carloshm91).
+### Added
 
-The [prepared 0.3.0 notes](docs/release-notes/0.3.0.md) describe these changes;
-release qualification and public availability remain separate.
+- View current CPU/memory usage, configured requests/limits and labelled percentages in Pod, workload, Node and container tables ([#68](https://github.com/carloshm91/kuberich/issues/68)).
+- Distinguish missing, forbidden, stale, partial and measured-zero metrics; retain numeric sorting and selected resource identity during refresh ([#68](https://github.com/carloshm91/kuberich/issues/68)).
+- Inspect vendor-neutral extended-resource requests/limits and Node capacity without implying GPU utilization or confirmed complex Pod allocation ([#68](https://github.com/carloshm91/kuberich/issues/68)).
+
+## [0.3.0] - 2026-11-04
+
+[Release notes](docs/release-notes/0.3.0.md). Changes by [Carlos J. Herrera](https://github.com/carloshm91).
 
 ### Added
 
@@ -207,6 +212,7 @@ release qualification and public availability remain separate.
 - Keep rotating diagnostic logs private and redact credentials without echoing rejected arguments or exception values.
 - Verify downloads with checksums, dependency reports, license notices and stable SBOM identifiers ([#89](https://github.com/carloshm91/kuberich/issues/89)).
 
-[Unreleased]: https://github.com/carloshm91/kuberich/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/carloshm91/kuberich/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/carloshm91/kuberich/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/carloshm91/kuberich/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/carloshm91/kuberich/releases/tag/v0.1.0

@@ -1374,7 +1374,7 @@
       ],
       "source": "internal/client/metrics.go",
       "status": "planned",
-      "difference": "O01 #68 implements discovered current CPU/memory metrics in native Pod/workload/Node/container views, UID/controller-chain totals, typed sorting, explicit API/RBAC/no-sample/stale/partial/zero states, declared budgets and vendor-neutral extended-resource requests/capacity. Effective allocation with init/sidecar/overhead/Pod-level budgets/observed resize is labelled uncertain; CPU/memory Metrics API supplies no GPU utilization. Historical charts and Prometheus remain separate O08/O09 work.",
+      "difference": "O01 #68 implements discovered current CPU/memory metrics in native Pod/workload/Node/container views, UID/controller-chain totals, typed sorting, explicit API/RBAC/no-sample/stale/partial/zero states, declared budgets and vendor-neutral extended-resource requests/capacity. Effective allocation with init/sidecar/overhead/Pod-level budgets/observed resize is labelled uncertain; CPU/memory Metrics API supplies no GPU utilization. Historical charts and Prometheus remain separate O08 work.",
       "public_summary": "Development source adds current CPU/memory usage, declared requests/limits, labelled percentages and Node/extended-resource capacity. Missing, forbidden, stale, partial and measured-zero values remain distinct. Complex Pod allocations are explicitly uncertain; GPU utilization and history are unavailable. Installed 0.3.0 predates these metrics columns.",
       "public_status": "partial",
       "partial_evidence": [

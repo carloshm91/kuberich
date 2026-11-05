@@ -2,10 +2,12 @@
 
 Browse Kubernetes resources, read logs and manage workloads from your terminal.
 
+Current release: [0.3.0](https://github.com/carloshm91/kuberich/releases/tag/v0.3.0).
+
 [Website](https://kuberich.com/) · [Documentation](https://docs.kuberich.com/) ·
 [Releases](https://github.com/carloshm91/kuberich/releases)
 
-![KubeRich showing a pods table and inline command completion with fictional demo resources](https://raw.githubusercontent.com/carloshm91/kuberich/v0.2.0/website/assets/workspace.svg)
+![KubeRich showing a pods table and inline command completion with fictional demo resources](https://raw.githubusercontent.com/carloshm91/kuberich/v0.3.0/website/assets/workspace.svg)
 
 *A real KubeRich session with fictional demo resources.*
 

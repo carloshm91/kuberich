@@ -1,9 +1,15 @@
 # Homebrew source delivery
 
-D03 #37 prepares a source tap, verified formula generator and immutable update-PR
-automation. Native source checks and owned upgrades passed on Linux, macOS ARM
-and macOS Intel under #40/#51. No public tap/package exists yet. D10 #89 must approve
-public tap creation, publish the immutable artifacts and verify public installation.
+The public [project tap](https://github.com/kuberich/homebrew-tap) delivers
+KubeRich on Linux and macOS. Install with `brew install kuberich/tap/kuberich`;
+use `brew upgrade kuberich/tap/kuberich` for an existing installation. See
+[installation](installation.md) for prerequisites, upgrades and removal.
+
+Release tooling generates a source formula from the immutable published sdist
+and audited dependency hashes, then proposes a tap pull request. Native checks
+and maintainer review are required before merging. Source qualification, public
+formula activation and bottle activation are separate steps. Version 0.3.0
+is available from the source formula and the three bottle targets below.
 
 ## Local candidate
 
@@ -36,7 +42,8 @@ brew test kuberich/tap/kuberich
 brew uninstall kuberich/tap/kuberich
 ```
 
-These are candidate checks, not currently available public installation commands.
+Run these candidate checks against the generated local tap, not an unrelated
+installed public version.
 Tap CI additionally requires online audit on Linux and macOS. The formula declares
 Python 3.14, kubectl and libyaml. Its private environment disables system site
 packages; functional tests check CLI/config/info, typing/TCSS assets and dependency
@@ -48,9 +55,12 @@ own, including Pyte's LGPL source and replacement rights.
 
 ## Bottles
 
-Bottles are prebuilt archives for `arm64_sonoma`, `sequoia` and `x86_64_linux`.
-They are added to a version after its source formula is merged in the tap. The
-formula keeps its source URL and resources, so other systems build from source.
+New bottles target macOS 15 Apple Silicon (`arm64_sequoia`), macOS Intel
+(`sequoia`) and Linux x86_64 (`x86_64_linux`). Published 0.2.0 Apple Silicon
+bottles retain their original `arm64_sonoma` tag and immutable files. Bottles
+are added to a version after its source formula is merged in the tap. The formula
+keeps its source URL and resources, so systems without a compatible bottle build
+from source.
 
 Before a release, the native installation workflow builds a bottle from the local
 candidate on each of the three hosts. On each host it installs the published
@@ -73,9 +83,11 @@ After the source formula for a release is merged, the maintainer runs the
 3. After that pull request is merged, `operation: verify` installs from the tap
    on each host and requires Homebrew to pour the bottle.
 
-Users install from the tap without extra steps. Newer Homebrew versions run
-`brew test` and `brew bottle --merge` on a third-party formula only after
-`brew trust`, so the workflows trust the formula on their temporary hosts.
+Users install from the tap without extra steps. The tap and native workflows
+trust only `kuberich/tap/kuberich` on their temporary hosts before Homebrew
+online audit, tests and bottle operations. Scoped formula trust is a prerequisite;
+style, strict online audit, source install, test and uninstall checks all remain
+required.
 
 Bottle archives are never replaced. A retry reuses uploaded archives with the same
 checksum and refuses different ones. A published bottle release cannot get new
@@ -93,7 +105,7 @@ actual repository identity and Organization owner `kuberich`; a same-named
 personal repository is refused. Owner control and namespace availability must
 be established before activation; a 404 lookup is not a reservation.
 
-Before the approved D10 publication, initialize the tap from `packaging/homebrew` and configure
+The existing public tap was initialized from `packaging/homebrew`. Keep
 `HOMEBREW_TAP_TOKEN` in the protected release environment. Prefer a short-lived
 GitHub App installation token. A fine-grained credential must be limited to that
 tap's contents/pull requests. The updater only changes `Formula/kuberich.rb`; it
@@ -104,11 +116,12 @@ The updater creates Git objects, an immutable version/source branch and a PR.
 It never merges, force-pushes or deletes refs. Existing published versions cannot
 be downgraded or replaced. Retries verify existing branch bytes and reuse the PR;
 a partial failure does not rebuild or replace the branch. A mismatched branch
-requires investigation. First live cross-repository PR, online audit and public installation/upgrades
-remain D10 #89. Actual owned local baseline-to-candidate upgrades remain D04/D06
-requirements, separate from fresh installs. Later public upgrades use the real
-previous published artifact; first 0.1.0 has no previous public KubeRich version. Owned HTTP/Git fixtures and a
-local RC do not establish public channel ownership.
+requires investigation. Each release retains its actual update PR, online audit
+and public installation/upgrade verification. Owned local baseline-to-candidate
+upgrades remain required separately from fresh installs; later public upgrades
+use the real previous published artifact. The first 0.1.0 had no previous public
+KubeRich version. Owned HTTP/Git fixtures and a local RC do not establish public
+channel ownership or qualify an activated package.
 
 Sources: [Homebrew Python formulae](https://docs.brew.sh/Language-Specific-Formulae),
 [installation](https://docs.brew.sh/Installation),

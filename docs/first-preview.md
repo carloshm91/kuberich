@@ -1,8 +1,9 @@
 # Status
 
-KubeRich 0.2.0 is published on [PyPI](https://pypi.org/project/kuberich/0.2.0/),
-[GitHub Releases](https://github.com/carloshm91/kuberich/releases/tag/v0.2.0) and
-[Homebrew](https://github.com/kuberich/homebrew-tap).
+KubeRich 0.3.0 is published on [PyPI](https://pypi.org/project/kuberich/0.3.0/),
+[GitHub Releases](https://github.com/carloshm91/kuberich/releases/tag/v0.3.0) and
+[Homebrew](https://github.com/kuberich/homebrew-tap), including prebuilt
+Homebrew bottles on the supported targets.
 
 Choose one installation method:
 
@@ -13,26 +14,24 @@ uv tool install --python 3.12 kuberich
 kuberich --version
 ```
 
-Read [Install](installation.md) for standalone downloads, upgrades and removal.
-The [quick start](quickstart.md) explains choosing your context and namespace
-and starting in read-only mode.
+Read [Install](installation.md) for Homebrew, pipx, standalone downloads,
+upgrades and removal. The [quick start](quickstart.md) explains choosing your
+context and namespace and starting in read-only mode.
 
 The published release includes resource browsing, logs, shells, file transfers,
 port forwarding, workload changes, themes, navigation preferences and local
-plugins. See the [0.2.0 release notes](release-notes/0.2.0.md) for the changes
-and the [quick-start guide](quickstart.md) for tasks and configuration.
-
-The 0.3.0 development phase focuses on reliability, startup, maintainability and
-documentation. It is not a published release. A source checkout can contain
-changes that are absent from the installed 0.2.0 package.
+plugins. Version 0.3.0 adds reliability fixes, collection limits and clearer task
+guides. See the [0.3.0 release notes](release-notes/0.3.0.md) for the changes.
+Existing 0.2.0 preferences load unchanged; use `kuberich` instead of the
+warning-producing `kubetrol` alias.
 
 Real EKS, AKS and GKE cluster trials remain separate from local testing. Follow
 [contexts and authentication](context-sessions.md) for provider prerequisites.
 
 ## Resource metrics in development source
 
-The current development checkout adds read-only current CPU/memory metrics to
-Pod, workload, Node and container views. It distinguishes missing APIs, permission
+Development source for the next 0.4.0 phase adds read-only current CPU/memory
+metrics to Pod, workload, Node and container views. It distinguishes missing APIs, permission
 denial, no sample, stale samples and measured zero. See
 [current metrics](resource-workspace.md#current-cpu-and-memory-metrics) for units,
 percentages and allocation limits. This work is not part of installed 0.3.0.
