@@ -307,3 +307,73 @@ in the linked PR checks; previous-head successes are not substituted for it.
 No cloud/provider trial or ambient Kubernetes context is used by the focused
 checks above. Pending work is not delivered acceptance, and baseline #69 results
 are not relabelled as #70 qualification.
+
+## Later hosted provisioning and Pulse fixture failure
+
+The final production source at `b5eb1d0` passed every macOS behavior part,
+including the original exact horizontal/vertical viewport assertions. Its first
+attempt of run 41998508032 stopped two Linux parts before tests because the
+pinned Python asset downloads returned HTTP 504. The retained failed jobs and
+subsequent successful HTTP HEAD checks justified one targeted failed-job and
+dependent-job retry without changing source; the original attempt remains failed.
+
+Attempt two then passed all 16 behavior parts, all four standalone targets and
+three Application environments. Ubuntu Python 3.13 measured 21,863/22,143
+production lines (98.7355%), 6,425/6,700 branches (95.8955%) and 1,384/1,411
+changed executable lines (98.09% displayed); every one of the 89 critical modules
+passed its independent 100% line/applicable-branch gate. These measurements bind
+to that exact production source and do not make the complete run pass.
+
+The remaining Ubuntu Python 3.12 Application job failed the existing Pulse
+owned-cluster verifier with an assertion at
+`checking-all-exact-resource-drilldowns`. The artifact retained five expected
+Pods and successful owned-cluster/private-directory cleanup. It did not retain
+the exact failing row, so no particular controller transition is claimed as
+proven. The verifier waited only five counters before checking all 44 rows
+against later independent API reads; other controller and Pod classifications
+could still change. The original run, safe Pulse JSON and artifact ZIP are
+preserved in `artifacts/issue70/hosted-pr312-b5eb1d0-attempt2/`.
+
+Five controlled regressions reproduced that readiness weakness: the original
+five counters were satisfied while ReplicaSet, StatefulSet, DaemonSet or Pod
+counters differed from the proposed complete fixture state. Their original failures
+are preserved in `artifacts/issue70/pulse-readiness-red/`. No unchanged retry
+is used to establish a correction.
+
+The complete oracle was independently compared with the retained successful #69
+owned-cluster result. That comparison corrected an overbroad proposed
+DaemonSet expectation: the API omits optional zero counters, and the current
+classifier honestly reports unknown. The oracle preserves that observation;
+production classification was not changed. Four meaningful bootstrap transition
+controls remain, and a separate positive test preserves the zero-desired
+DaemonSet's unknown state. The final focused file passed 26 cases in 0.98 seconds;
+Ruff, formatting and strict verifier typing also passed. Receipts and frozen-file
+hashes are in `artifacts/issue70/pulse-readiness-green-corrected/`.
+
+The corrected verifier requires every one of the 44 expected counts and all
+eight complete, available, non-limited family sources. It records overview
+observations and each actual drilldown's count, identity, selector, resource
+version and collection state before enforcing completeness and the unchanged
+exact equality. A partial LIST with a coincidentally matching count fails.
+The original 180-second convergence deadline remains; mismatched drilldown counts
+are never retried or rebased.
+
+An initial local trial was started prematurely with the overbroad DaemonSet
+oracle, then explicitly interrupted before the correction. Its source stayed
+unchanged, its owned cluster/private directory were deleted, and its worker and
+process group were reaped/absent after 61.472 seconds. This remains an
+interrupted result in `artifacts/issue70/pulse-readiness-kind/`, not a pass.
+The corrected source uses a separate fresh evidence directory.
+
+The fresh corrected-source Pulse trial passed all 10 actual checks and
+all 44 exact complete-list drilldowns in 104.959 seconds
+(104.160 seconds inside the verifier). The genuinely scraped
+Prometheus history, native navigation and restricted-permission checks also
+passed. All 217 captured inputs stayed unchanged, the owned cluster and
+private directory were deleted, and the worker/process group were reaped/absent.
+The 25 readiness observations, safe pre-assertion drilldown receipts and
+final process/source evidence are retained in
+`artifacts/issue70/pulse-readiness-kind-corrected/`. No production file changed;
+all 217 inputs of the successful final relationship trial still match. Final
+complete hosted qualification on the resulting head remains authoritative in
+the linked PR checks; this local correction does not relabel previous failures.

@@ -9,6 +9,7 @@ import re
 import sys
 import time
 from collections.abc import Awaitable, Callable
+from dataclasses import asdict
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
@@ -23,8 +24,8 @@ from kuberich.config.schema import parse_document
 from kuberich.domain.connection_overrides import ConnectionOverrides
 from kuberich.domain.connections import ConnectionRequest, HttpProblem
 from kuberich.domain.history import HistoryBackend, HistorySnapshot, HistoryStatus, history_queries
-from kuberich.domain.pulse import PulsePredicate, PulseScope, PulseSnapshot, PulseStatus
-from kuberich.domain.resources import ResourceRecord
+from kuberich.domain.pulse import PulsePredicate, PulseRow, PulseScope, PulseSnapshot, PulseStatus
+from kuberich.domain.resources import ResourceRecord, ResourceSnapshot
 from kuberich.domain.targets import SessionIdentity
 from kuberich.services.appearance import PreferenceSource
 from kuberich.services.commands import Command
@@ -263,6 +264,135 @@ def prometheus_manifests() -> tuple[dict[str, Any], ...]:
     )
 
 
+# Independent oracle for these fixed manifests, including zero-replica controllers.
+FIXTURE_COUNTS = {
+    "nodes:all": 1,
+    "nodes:node-ready": 1,
+    "nodes:node-not-ready": 0,
+    "nodes:unknown": 0,
+    "nodes:node-cordoned": 0,
+    "nodes:node-pressure": 0,
+    "pods:all": 5,
+    "pods:pod-running": 2,
+    "pods:pod-pending": 2,
+    "pods:pod-succeeded": 1,
+    "pods:pod-failed": 0,
+    "pods:pod-unscheduled": 2,
+    "pods:pod-not-ready": 0,
+    "pods:unknown": 0,
+    "deployments:all": 2,
+    "deployments:healthy": 1,
+    "deployments:degraded": 1,
+    "deployments:unknown": 0,
+    "deployments:completed": 0,
+    "replicasets:all": 2,
+    "replicasets:healthy": 1,
+    "replicasets:degraded": 1,
+    "replicasets:unknown": 0,
+    "replicasets:completed": 0,
+    "statefulsets:all": 1,
+    "statefulsets:healthy": 1,
+    "statefulsets:degraded": 0,
+    "statefulsets:unknown": 0,
+    "statefulsets:completed": 0,
+    "daemonsets:all": 1,
+    "daemonsets:healthy": 0,
+    "daemonsets:degraded": 0,
+    "daemonsets:unknown": 1,
+    "daemonsets:completed": 0,
+    "jobs:all": 1,
+    "jobs:healthy": 0,
+    "jobs:degraded": 0,
+    "jobs:unknown": 0,
+    "jobs:completed": 1,
+    "cronjobs:all": 1,
+    "cronjobs:healthy": 0,
+    "cronjobs:degraded": 0,
+    "cronjobs:unknown": 1,
+    "cronjobs:completed": 0,
+}
+
+
+def fixture_counts_settled(overview: PulseSnapshot) -> bool:
+    """Fence every static fixture predicate, not just Pod phases and Deployments."""
+    counts = {row.key: row.count for row in overview.rows}
+    sources = {source.key: source for source in overview.sources}
+    families = {key.partition(":")[0] for key in FIXTURE_COUNTS}
+    return (
+        len(overview.rows) == len(FIXTURE_COUNTS)
+        and counts == FIXTURE_COUNTS
+        and all(
+            name in sources
+            and sources[name].status is PulseStatus.VALID
+            and sources[name].complete
+            and not sources[name].limited
+            for name in families
+        )
+    )
+
+
+def overview_evidence(overview: PulseSnapshot) -> dict[str, Any]:
+    """Only bounded fixture counts and source metadata; no resource bodies/messages."""
+    return {
+        "observed_at": overview.observed_at.isoformat() if overview.observed_at else None,
+        "settled": fixture_counts_settled(overview),
+        "counts": {row.key: row.count for row in overview.rows},
+        "expected_counts": dict(FIXTURE_COUNTS),
+        "sources": [
+            {
+                "key": source.key,
+                "api_version": source.resource.api_version if source.resource else None,
+                "resource": source.resource.name if source.resource else None,
+                "namespace": source.namespace,
+                "status": str(source.status),
+                "complete": source.complete,
+                "limited": source.limited,
+                "count": source.count,
+                "observed_at": source.observed_at.isoformat() if source.observed_at else None,
+                "attempted_at": source.attempted_at.isoformat() if source.attempted_at else None,
+            }
+            for source in overview.sources
+        ],
+    }
+
+
+def checked_drilldown(
+    row: PulseRow, underlying: ResourceSnapshot, evidence_dir: Path
+) -> tuple[ResourceRecord, ...]:
+    """Preserve exact observed membership before enforcing the original equality."""
+    target = row.drilldown
+    assert target is not None, row.key
+    matched = tuple(record for record in underlying.items if target.predicate.matches(record))
+    receipt = {
+        "observed_at": datetime.now(UTC).isoformat(),
+        "key": row.key,
+        "resource": target.resource.api_version + "/" + target.resource.name,
+        "namespace": target.namespace,
+        "api_path": target.resource.path(target.namespace),
+        "predicate": str(target.predicate),
+        "query": target.query.parameters,
+        "expected_count": row.count,
+        "actual_count": len(matched),
+        "resource_version": underlying.resource_version,
+        "collection": asdict(underlying.collection),
+        "matched": [
+            {
+                "name": record.name,
+                "namespace": record.namespace,
+                "uid": record.uid,
+                "resource_version": record.resource_version,
+            }
+            for record in matched
+        ],
+    }
+    evidence_dir.mkdir(parents=True, exist_ok=True)
+    with (evidence_dir / "pulse-drilldown-observations.jsonl").open("a") as stream:
+        stream.write(json.dumps(receipt) + "\n")
+    assert underlying.collection.complete and not underlying.collection.limited, row.key
+    assert len(matched) == row.count, row.key
+    return matched
+
+
 async def until(predicate: Callable[[], Awaitable[bool]], *, timeout: float = 180) -> None:
     async with asyncio.timeout(timeout):
         while not await predicate():
@@ -423,14 +553,14 @@ async def verify(cluster: OwnedCluster, evidence_dir: Path) -> dict[str, Any]:
         async def settled() -> bool:
             nonlocal overview
             overview = await service.collect(lambda _: None)
-            counts = {row.key: row.count for row in overview.rows}
-            return (
-                counts.get("deployments:healthy") == 1
-                and counts.get("deployments:degraded") == 1
-                and counts.get("pods:pod-unscheduled") == 2
-                and counts.get("jobs:completed") == 1
-                and counts.get("pods:pod-running") == 2
+            observation = overview_evidence(overview)
+            evidence_dir.mkdir(parents=True, exist_ok=True)
+            (evidence_dir / "pulse-overview-observed.json").write_text(
+                json.dumps(observation, indent=2) + "\n"
             )
+            with (evidence_dir / "pulse-readiness-observations.jsonl").open("a") as stream:
+                stream.write(json.dumps(observation) + "\n")
+            return fixture_counts_settled(overview)
 
         checkpoint(evidence_dir, "waiting-for-controller-pod-health-and-budget-state")
         await until(settled)
@@ -474,10 +604,7 @@ async def verify(cluster: OwnedCluster, evidence_dir: Path) -> dict[str, Any]:
             target = row.drilldown
             assert target is not None and sources[row.source].complete
             underlying = await reader.list(target.resource, target.namespace, query=target.query)
-            matched = tuple(
-                record for record in underlying.items if target.predicate.matches(record)
-            )
-            assert len(matched) == row.count, row.key
+            matched = checked_drilldown(row, underlying, evidence_dir)
             drilldowns.append(
                 {
                     "key": row.key,
