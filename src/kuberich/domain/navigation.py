@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, field
 
+from kuberich.domain.authorization import AuthorizationIntent
 from kuberich.domain.connections import namespace_name
 from kuberich.domain.pods import PodColumn
 from kuberich.domain.pulse import PulseDrilldown
@@ -65,6 +66,7 @@ class NavigationState:
     errors: bool = False
     relationships: RelationshipBookmark | None = None
     expected_uid: str | None = None
+    authorization: AuthorizationIntent | None = None
 
 
 class NavigationHistory:

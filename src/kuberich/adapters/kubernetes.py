@@ -33,10 +33,100 @@ from kuberich.domain.kubeconfig_auth import basic_credentials, basic_header
 from kuberich.domain.proxies import effective_proxy, tls_failure
 from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.errors import AppError
+from kuberich.security.arguments import validate_argument
 
 if TYPE_CHECKING:
     import aiohttp
     from kubernetes_asyncio import client
+
+
+REVIEW_ENDPOINTS = {
+    "/apis/authorization.k8s.io/v1/selfsubjectaccessreviews": (
+        "authorization.k8s.io/v1",
+        "SelfSubjectAccessReview",
+    ),
+    "/apis/authorization.k8s.io/v1/selfsubjectrulesreviews": (
+        "authorization.k8s.io/v1",
+        "SelfSubjectRulesReview",
+    ),
+    "/apis/authentication.k8s.io/v1/selfsubjectreviews": (
+        "authentication.k8s.io/v1",
+        "SelfSubjectReview",
+    ),
+}
+MAX_REVIEW_BYTES = 1024 * 1024
+
+
+def _review_payload(path: str, body: dict[str, Any], maximum: int) -> bytes:
+    """Permit self-review envelopes only; this is never a generic mutation port."""
+    route = REVIEW_ENDPOINTS.get(path)
+    if (
+        route is None
+        or type(maximum) is not int
+        or not 1 <= maximum <= MAX_REVIEW_BYTES
+        or not isinstance(body, dict)
+        or set(body) != {"apiVersion", "kind", "spec"}
+        or (body["apiVersion"], body["kind"]) != route
+        or not isinstance(body["spec"], dict)
+    ):
+        raise AppError("Invalid or unsupported Kubernetes self-review request.")
+    spec = body["spec"]
+    if route[1] == "SelfSubjectReview":
+        if spec:
+            raise AppError("Identity self-review requires an empty spec.")
+    elif route[1] == "SelfSubjectRulesReview":
+        if set(spec) != {"namespace"}:
+            raise AppError("Rules self-review requires one namespace.")
+        namespace_name(spec["namespace"])
+    else:
+        if set(spec) not in ({"resourceAttributes"}, {"nonResourceAttributes"}):
+            raise AppError("Access self-review requires exactly one access variant.")
+        if "nonResourceAttributes" in spec:
+            attributes = spec["nonResourceAttributes"]
+            if not isinstance(attributes, dict) or set(attributes) != {"verb", "path"}:
+                raise AppError("Invalid non-resource self-review attributes.")
+            validate_argument(attributes["verb"])
+            value = validate_argument(attributes["path"])
+            if not value.startswith("/") or "?" in value or "#" in value:
+                raise AppError("Invalid non-resource self-review path.")
+        else:
+            attributes = spec["resourceAttributes"]
+            required = {"namespace", "verb", "group", "version", "resource"}
+            if (
+                not isinstance(attributes, dict)
+                or not required <= set(attributes)
+                or not set(attributes)
+                <= required | {"subresource", "name", "fieldSelector", "labelSelector"}
+            ):
+                raise AppError("Invalid resource self-review attributes.")
+            for name in required | {"subresource", "name"}:
+                if name in attributes and attributes[name] != "":
+                    validate_argument(attributes[name])
+                elif (
+                    name in {"verb", "version", "resource", "subresource", "name"}
+                    and name in attributes
+                ):
+                    raise AppError(
+                        "Resource self-review attributes cannot contain empty identifiers."
+                    )
+            if attributes["namespace"]:
+                namespace_name(attributes["namespace"])
+            for field in ("fieldSelector", "labelSelector"):
+                if field in attributes:
+                    selector = attributes[field]
+                    if not isinstance(selector, dict) or set(selector) != {"rawSelector"}:
+                        raise AppError("Self-review selectors require their literal rawSelector.")
+                    if field == "fieldSelector":
+                        ResourceQuery(field_selector=selector["rawSelector"])
+                    else:
+                        ResourceQuery(label_selector=selector["rawSelector"])
+    try:
+        encoded = json.dumps(body, ensure_ascii=True, allow_nan=False).encode()
+    except (ValueError, TypeError, RecursionError):
+        raise AppError("Invalid Kubernetes self-review JSON request.") from None
+    if len(encoded) > MAX_REVIEW_BYTES:
+        raise AppError("Kubernetes self-review request exceeds its bound.")
+    return encoded
 
 
 def decode_json(data: bytes) -> dict[str, Any]:
@@ -575,7 +665,13 @@ class KubernetesSession:
 
     @asynccontextmanager
     async def _response(
-        self, path: str, params: dict[str, str] | None, accept: str, timeout: float | None
+        self,
+        path: str,
+        params: dict[str, str] | None,
+        accept: str,
+        timeout: float | None,
+        *,
+        review: bytes | None = None,
     ) -> AsyncIterator[aiohttp.ClientResponse]:
         import aiohttp
 
@@ -590,21 +686,30 @@ class KubernetesSession:
             token = self.authorization_header()
             if token:
                 headers.append(("Authorization", token))
+            if review is not None:
+                headers.append(("Content-Type", "application/json"))
             # Bound connection/header establishment separately from a watch's
             # longer body lifetime. An idle watch need not send bookmarks.
             handshake = self.timeout if timeout is None else min(self.timeout, timeout)
             async with asyncio.timeout(handshake):
-                response = await api.rest_client.pool_manager.get(
-                    str(configuration.host) + path,
-                    headers=headers,
-                    params=params,
-                    proxy=self.request_proxy,
-                    server_hostname=configuration.tls_server_name,
-                    allow_redirects=False,
-                    timeout=aiohttp.ClientTimeout(
+                options: dict[str, Any] = {
+                    "headers": headers,
+                    "params": params,
+                    "proxy": self.request_proxy,
+                    "server_hostname": configuration.tls_server_name,
+                    "allow_redirects": False,
+                    "timeout": aiohttp.ClientTimeout(
                         total=timeout, connect=handshake, sock_read=timeout
                     ),
-                )
+                }
+                if review is None:
+                    response = await api.rest_client.pool_manager.get(
+                        str(configuration.host) + path, **options
+                    )
+                else:
+                    response = await api.rest_client.pool_manager.post(
+                        str(configuration.host) + path, data=review, **options
+                    )
             async with response:
                 if (
                     response.status == 401
@@ -616,7 +721,7 @@ class KubernetesSession:
                     self.token_read_after = 0.0
                     refreshed = True
                     continue
-                if response.status != 200:
+                if response.status not in ({200} if review is None else {200, 201, 202}):
                     raise HttpProblem(
                         response.status,
                         retry_after=_retry_after(response.headers.get("Retry-After")),
@@ -671,6 +776,50 @@ class KubernetesSession:
         except (AppError, ValueError, UnicodeError, RecursionError, TypeError):
             raise ConnectionProblem(
                 ConnectionState.API_ERROR, "Invalid or oversized Kubernetes JSON response."
+            ) from None
+
+    async def review_json(
+        self, path: str, body: dict[str, Any], *, max_bytes: int = MAX_REVIEW_BYTES
+    ) -> dict[str, Any]:
+        """Bounded fixed self-review POSTs using this session's actual identity."""
+        import aiohttp
+        from aiohttp_socks import ProxyConnectionError, ProxyError, ProxyTimeoutError
+
+        encoded = _review_payload(path, body, max_bytes)
+        try:
+            async with asyncio.timeout(self.timeout):
+                async with self._response(
+                    path, None, "application/json", self.timeout, review=encoded
+                ) as response:
+                    data = bytearray()
+                    async for chunk in response.content.iter_chunked(16384):
+                        data.extend(chunk)
+                        if len(data) > max_bytes:
+                            raise ValueError
+                return await _decode_owned(bytes(data))
+        except (TimeoutError, ProxyTimeoutError):
+            raise ConnectionProblem(
+                ConnectionState.TIMEOUT, "Authorization review timed out."
+            ) from None
+        except (aiohttp.ClientSSLError, ssl.SSLError):
+            raise ConnectionProblem(
+                ConnectionState.TLS_ERROR, "Authorization review TLS verification failed."
+            ) from None
+        except (
+            aiohttp.ClientError,
+            ProxyError,
+            ProxyConnectionError,
+            OSError,
+            asyncio.IncompleteReadError,
+        ) as error:
+            raise ConnectionProblem(
+                ConnectionState.TLS_ERROR if tls_failure(error) else ConnectionState.UNREACHABLE,
+                "Authorization review transport failed.",
+            ) from None
+        except (AppError, ValueError, UnicodeError, RecursionError, TypeError):
+            raise ConnectionProblem(
+                ConnectionState.API_ERROR,
+                "Invalid or oversized authorization review JSON response.",
             ) from None
 
     async def log_bytes(

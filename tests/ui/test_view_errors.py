@@ -6,6 +6,7 @@ from dataclasses import replace
 
 import pytest
 from aiohttp import web
+from textual.app import App, ComposeResult
 from textual.widgets import Input, Static
 
 from kuberich.config.catalog import Entry, KubeCatalog
@@ -19,6 +20,7 @@ from kuberich.ui.app import KubeRichApp
 from kuberich.ui.controllers.pods import PodController
 from kuberich.ui.controllers.standard import StandardController
 from kuberich.ui.port_forwards import ForwardPrompt, ForwardScreen
+from kuberich.ui.view_errors import ViewErrorPanel
 from tests.support.connections import catalog_fixture, namespaces
 from tests.support.pods import pod
 from tests.support.port_forwards import executable
@@ -27,6 +29,31 @@ from tests.support.standard import standard_api
 from tests.support.watches import frame
 from tests.support.workers import CoroutineCalls
 from tests.support.workspace import wait_for, workspace_api
+
+
+@pytest.mark.asyncio
+async def test_retry_failure_class_precedes_committed_mouse_hit_test_geometry():
+    retried = []
+
+    class Host(App):
+        def compose(self) -> ComposeResult:
+            yield ViewErrorPanel(lambda: retried.append(True))
+
+    app = Host()
+    async with app.run_test() as pilot:
+        panel = app.query_one(ViewErrorPanel)
+        button = app.query_one("#view-error-retry")
+        panel.show_failure(True)
+        assert panel.has_class("failed") and button.region.width == 0
+        await wait_for(
+            lambda: (
+                button.region.width > 0
+                and button.region.height > 0
+                and app.get_widget_at(button.region.x, button.region.y)[0] is button
+            )
+        )
+        assert await pilot.click("#view-error-retry")
+        assert retried == [True]
 
 
 @pytest.mark.asyncio

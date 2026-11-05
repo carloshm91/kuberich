@@ -1,5 +1,33 @@
 # Development checkpoint
 
+## Unreleased 0.4.0 authorization work
+
+Issue #71 is the single active implementation task. Native `:rbac`, `:can-i`,
+`:rules` and `:who-can` behavior is implemented. The corrected-source actual
+owned-cluster trial passed seven scenario checks, 167 observed API calls, unchanged
+kubeconfig/environment and complete cluster/private-directory/worker cleanup in
+38.290 seconds. All 226 runtime/configuration/verifier inputs stayed unchanged.
+The exact child invocation and source hashes are retained in
+`artifacts/issue71/kind-trial-2/invocation.json`; the wrapper used this checkout's
+Python 3.12.12 and the verified pinned kind executable. Complete whole-source
+and platform qualification remain pending. The
+[authorization acceptance record](acceptance/authorization.md) tracks actual
+source-bound measurements as they become available.
+
+The preceding relationship task is delivered through protected squash
+`64817677c20aad876489f81427a7636f0c56cc6c`, tree
+`e5867f0a4692dd6029e2d41504ec4c710e4604e3`. PR #312 passed all 27 selected
+jobs, Repository checks and DCO at head `5742647`. Actual Ubuntu Python 3.13
+coverage was 21,862/22,143 lines (98.7310%), 6,424/6,700 branches (95.8806%)
+and 1,384/1,411 changed lines (98.09% displayed), with all 89 critical modules
+at 100%. The live merge protection, exact tested tree, author email and sign-off
+were verified; issue acceptance, Epic child and roadmap status are complete.
+
+The new maintained checkpoint covers the subsequent authorization changes.
+Earlier relationship, Pulse and release evidence below keeps its recorded source
+boundaries. Source metadata remains 0.3.0 during unreleased 0.4.0 implementation;
+no package, tag, website or DNS publication is part of this work.
+
 ## Unreleased 0.4.0 relationship source
 
 Development work for #70 adds native `:xray` and `:usedby` with separate owner,

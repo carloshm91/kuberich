@@ -4,6 +4,7 @@ import asyncio
 import time
 from dataclasses import dataclass
 
+from kuberich.domain.authorization_rows import AuthorizationRow
 from kuberich.domain.namespaces import NamespaceRow
 from kuberich.domain.navigation import ContextRow
 from kuberich.domain.pods import PodRow
@@ -16,7 +17,13 @@ REGEX_SECONDS = 0.05
 
 @dataclass(frozen=True)
 class FilterResult[
-    T: PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow | RelationshipRow
+    T: PodRow
+    | NamespaceRow
+    | ContextRow
+    | ResourceRow
+    | PulseRow
+    | RelationshipRow
+    | AuthorizationRow
 ]:
     rows: tuple[T, ...]
     problem: str | None = None
@@ -24,8 +31,16 @@ class FilterResult[
 
 
 def search_text(
-    row: PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow | RelationshipRow,
+    row: PodRow
+    | NamespaceRow
+    | ContextRow
+    | ResourceRow
+    | PulseRow
+    | RelationshipRow
+    | AuthorizationRow,
 ) -> str:
+    if isinstance(row, AuthorizationRow):
+        return " ".join((row.label, row.scope, row.status, *row.details))
     if isinstance(row, RelationshipRow):
         ref = row.ref
         return " ".join(
@@ -55,9 +70,15 @@ def search_text(
     return f"{row.namespace} {row.name} {row.ready}/{row.containers} {row.status} {row.restarts}"
 
 
-def filter_rows[T: PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow | RelationshipRow](
-    rows: tuple[T, ...], query: str, kind: str = "pods"
-) -> FilterResult[T]:
+def filter_rows[
+    T: PodRow
+    | NamespaceRow
+    | ContextRow
+    | ResourceRow
+    | PulseRow
+    | RelationshipRow
+    | AuthorizationRow
+](rows: tuple[T, ...], query: str, kind: str = "pods") -> FilterResult[T]:
     if not query:
         return FilterResult(rows)
     if len(query) > 256:
@@ -112,7 +133,13 @@ def filter_rows[T: PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow |
 
 
 async def apply_filter[
-    T: PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow | RelationshipRow
+    T: PodRow
+    | NamespaceRow
+    | ContextRow
+    | ResourceRow
+    | PulseRow
+    | RelationshipRow
+    | AuthorizationRow
 ](rows: tuple[T, ...], query: str, kind: str = "pods") -> FilterResult[T]:
     if not query:
         return FilterResult(rows)

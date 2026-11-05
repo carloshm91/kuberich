@@ -154,6 +154,7 @@ jobs:
           uv run mypy --strict scripts/check_startup.py scripts/startup_policy.py scripts/startup_probe.py
           uv run mypy --strict scripts/verify_pulse_kind.py
           uv run mypy --strict scripts/verify_relationships_kind.py
+          uv run mypy --strict scripts/verify_authorization_kind.py
       - name: Verify fresh-process CLI and real-terminal startup budgets
         run: uv run python -m scripts.check_startup --output artifacts/startup/qualification
       - name: Verify plaintext clipboard on the owned ephemeral macOS runner
@@ -224,6 +225,9 @@ jobs:
       - name: Verify native resource relationships identity references and navigation
         if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_relationships_kind --kind "$RUNNER_TEMP/kuberich-kind" --evidence artifacts/relationships/evidence.json
+      - name: Verify actual authorization reviews RBAC scope and native navigation
+        if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
+        run: uv run python -m scripts.verify_authorization_kind --kind "$RUNNER_TEMP/kuberich-kind" --evidence artifacts/authorization/evidence.json
       - name: Enforce independent production and critical-module coverage
         run: uv run python scripts/check_coverage.py coverage.json
       - name: Enforce changed executable-line coverage against the merge base
@@ -264,6 +268,7 @@ jobs:
             artifacts/cluster/*
             artifacts/pulse/**
             artifacts/relationships/**
+            artifacts/authorization/**
             artifacts/quickstart/*
             artifacts/startup/**
           if-no-files-found: error

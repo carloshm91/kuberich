@@ -8,6 +8,7 @@ from textual.containers import Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Input
 
+from kuberich.domain.authorization_rows import scope_label
 from kuberich.domain.metrics import MetricsSnapshot
 from kuberich.domain.view_actions import TABLE_ACTIONS, ViewState
 from kuberich.domain.view_routes import ViewKind
@@ -221,7 +222,13 @@ class WorkspacePresenter:
             or self.interactions.errors
             or (kind == "namespaces" and self.interactions.favorites)
         ):
-            detail = "Local kubeconfig catalogue" if kind == "contexts" else view.message
+            detail = (
+                "Local kubeconfig catalogue"
+                if kind == "contexts"
+                else self.navigator.authorization.message(view)
+                if kind == "authorization" and self.navigator.authorization is not None
+                else view.message
+            )
             self.view_status(
                 view, outcome.problem or f"Filter active · {filtered}/{count} {kind} · {detail}"
             )
@@ -251,6 +258,23 @@ class WorkspacePresenter:
     def show(self, view: ViewObservation) -> None:
         observation = view.connection
         self.header.update_identity()
+        if self.views.route.kind is ViewKind.AUTHORIZATION:
+            authorization = view.authorization
+            self.host.query_one("#resource-view", Vertical).border_title = safe_text(
+                f"{authorization.request.intent.mode.value} · {scope_label(authorization.request.intent.scope)}"
+                if authorization is not None
+                else "Authorization · waiting for discovery"
+            )
+            self.host.query_one("#empty-state").set_class(True, "populated")
+            self.views.tables.authorization.set_class(True, "populated")
+            self.show_sort()
+            self.view_status(
+                view,
+                self.navigator.authorization.message(view)
+                if self.navigator.authorization is not None
+                else view.message,
+            )
+            return
         if self.views.route.kind is ViewKind.RELATIONSHIPS:
             snapshot = view.relationships
             graph_scope = snapshot.request.scope if snapshot is not None else None
@@ -394,6 +418,9 @@ class WorkspacePresenter:
 
     def show_sort(self) -> None:
         frame = self.host.query_one("#resource-view", Vertical)
+        if self.views.route.kind is ViewKind.AUTHORIZATION:
+            frame.border_subtitle = "Informational evidence · Enter follow · o open observed object"
+            return
         if self.views.route.kind is ViewKind.RELATIONSHIPS:
             frame.border_subtitle = "Enter expand · o open · Left/Right tree · Shift+arrows scroll"
             return

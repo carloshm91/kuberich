@@ -81,6 +81,7 @@ Resource aliases are in the [resource reference](resource-reference.md).
 | `annotate` | annotate |
 | `attach` | attach |
 | `back` | back |
+| `can-i` | can i |
 | `cleanup` | cleanup |
 | `columns` | columns |
 | `context`, `contexts`, `ctx` | contexts |
@@ -102,6 +103,7 @@ Resource aliases are in the [resource reference](resource-reference.md).
 | `pf`, `portforwards` | port forwards |
 | `overview`, `pulse` | pulse |
 | `exit`, `q`, `quit` | quit |
+| `rbac` | rbac |
 | `refresh` | refresh |
 | `rename` | rename |
 | `restart` | restart |
@@ -109,6 +111,7 @@ Resource aliases are in the [resource reference](resource-reference.md).
 | `retry` | retry |
 | `rollback` | rollback |
 | `rollout` | rollout |
+| `rules` | rules |
 | `scale` | scale |
 | `server` | server |
 | `exec`, `shell` | shell |
@@ -119,6 +122,7 @@ Resource aliases are in the [resource reference](resource-reference.md).
 | `upload` | upload |
 | `usedby` | used by |
 | `views` | views |
+| `who-can` | who can |
 | `writes` | writes |
 | `xray` | xray |
 | `resource NAME[.GROUP][/VERSION] [NAMESPACE or *]` | Browse a discovered resource |

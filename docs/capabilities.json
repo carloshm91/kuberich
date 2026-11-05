@@ -130,7 +130,7 @@
       ],
       "source": "cmd/root.go",
       "status": "planned",
-      "difference": "C01/F05/C08 qualify CA/client certificates, TLS names, request bounds, token-file/exec renewal, captured HTTP(S)/SOCKS5 proxies and repeated impersonation. Actual HTTP CONNECT kind logs/exec/forwards retain connection identity. SOCKS5/SPDY limits are documented; the permission browser remains O04.",
+      "difference": "C01/F05/C08 qualify CA/client certificates, TLS names, request bounds, token-file/exec renewal, captured HTTP(S)/SOCKS5 proxies and repeated impersonation. Actual HTTP CONNECT kind logs/exec/forwards retain connection identity. SOCKS5/SPDY limits are documented; O04 #71 adds current-identity reviews and native RBAC evidence with explicit partial/unknown status.",
       "partial_evidence": [
         "docs/context-sessions.md",
         "tests/contract/test_sessions.py",
@@ -151,9 +151,21 @@
         "tests/contract/test_proxy_transport.py",
         "tests/terminal/test_credential_login.py",
         "tests/packaging/test_distribution.py",
-        "scripts/verify_credential_interop_kind.py"
+        "scripts/verify_credential_interop_kind.py",
+        "docs/authorization.md",
+        "docs/internal/acceptance/authorization.md",
+        "src/kuberich/domain/authorization.py",
+        "src/kuberich/domain/rbac.py",
+        "tests/unit/test_authorization.py",
+        "tests/unit/test_authorization_literal_selectors.py",
+        "tests/unit/test_rbac.py",
+        "tests/contract/test_authorization_reviews.py",
+        "tests/contract/test_authorization_service.py",
+        "tests/contract/test_authorization_workspace.py",
+        "tests/ui/test_authorization.py",
+        "scripts/verify_authorization_kind.py"
       ],
-      "public_summary": "CA and client certificates, TLS names, timeouts, proxy settings, and repeated impersonation are supported. SOCKS5 streaming has limitations; an interactive permission browser is unavailable.",
+      "public_summary": "CA and client certificates, TLS names, timeouts, proxy settings and repeated impersonation are supported. Development source adds current-identity permission reviews and observed RBAC browsing; SOCKS5 streaming limits remain explicit.",
       "public_status": "partial"
     },
     {
@@ -749,7 +761,7 @@
       ],
       "source": "internal/view/registrar.go",
       "status": "planned",
-      "difference": "M05 adds explicit ConfigMap/Secret key metadata, reveal/copy and UTF-8/Base64 controls with fresh UID/version-bound reads, plus common guarded Secret editing. Permission browsing and environment provenance remain later work; full family parity is not claimed. O03 #70 adds supported static ConfigMap/Secret/ServiceAccount UsedBy declarations without values or proof of process consumption; current-head acceptance remains pending.",
+      "difference": "M05 adds explicit ConfigMap/Secret key metadata, reveal/copy and UTF-8/Base64 controls with fresh UID/version-bound reads, plus common guarded Secret editing. Environment provenance remains O07; full family parity is not claimed. O04 #71 adds native role/binding/subject evidence and current-identity permission reviews. O03 #70 adds supported static ConfigMap/Secret/ServiceAccount UsedBy declarations without values or proof of process consumption; scoped acceptance is recorded in the relationship delivery.",
       "partial_evidence": [
         "docs/standard-resources.md",
         "docs/internal/acceptance/standard-resources.md",
@@ -769,9 +781,21 @@
         "tests/unit/test_relationships.py",
         "tests/unit/test_reference_fields.py",
         "tests/contract/test_relationships.py",
-        "tests/ui/test_relationship_table.py"
+        "tests/ui/test_relationship_table.py",
+        "docs/authorization.md",
+        "docs/internal/acceptance/authorization.md",
+        "src/kuberich/domain/authorization.py",
+        "src/kuberich/domain/rbac.py",
+        "tests/unit/test_authorization.py",
+        "tests/unit/test_authorization_literal_selectors.py",
+        "tests/unit/test_rbac.py",
+        "tests/contract/test_authorization_reviews.py",
+        "tests/contract/test_authorization_service.py",
+        "tests/contract/test_authorization_workspace.py",
+        "tests/ui/test_authorization.py",
+        "scripts/verify_authorization_kind.py"
       ],
-      "public_summary": "ConfigMap and Secret values stay hidden until deliberate reveal or copy. Development source adds supported static configuration and ServiceAccount relationships with explicit scan scope; interactive permission browsing remains unavailable.",
+      "public_summary": "ConfigMap and Secret values stay hidden until deliberate reveal or copy. Development source includes static configuration/ServiceAccount relationships, observed RBAC browsing and current-identity permission reviews with explicit scope and uncertainty.",
       "public_status": "partial"
     },
     {
@@ -1484,10 +1508,24 @@
         "O04"
       ],
       "source": "internal/view/rbac.go",
-      "status": "planned",
-      "difference": "",
-      "public_summary": "An interactive RBAC permission/rule browser is planned.",
-      "public_status": "planned"
+      "status": "implemented",
+      "difference": "O04 #71 adds native observed subjects/bindings/roles, individual current-identity SSAR, namespace SSRR and bounded local who-can. Actual owned-kind behavior covers name/subresource/non-resource scopes, aggregation, current-group evidence, partial/forbidden sources and unchanged effect guards. External authorizers and unknown membership remain explicit limits; final whole-source/platform checks remain required.",
+      "public_summary": "Development source includes role and subject browsing, namespace rules, current-identity access reviews and RBAC who-can evidence. Partial reads, unknown group membership and external-authorizer limits remain visible.",
+      "public_status": "partial",
+      "evidence": [
+        "docs/authorization.md",
+        "docs/internal/acceptance/authorization.md",
+        "src/kuberich/domain/authorization.py",
+        "src/kuberich/domain/rbac.py",
+        "tests/unit/test_authorization.py",
+        "tests/unit/test_authorization_literal_selectors.py",
+        "tests/unit/test_rbac.py",
+        "tests/contract/test_authorization_reviews.py",
+        "tests/contract/test_authorization_service.py",
+        "tests/contract/test_authorization_workspace.py",
+        "tests/ui/test_authorization.py",
+        "scripts/verify_authorization_kind.py"
+      ]
     },
     {
       "id": "OBS05",

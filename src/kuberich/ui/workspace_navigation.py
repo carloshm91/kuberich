@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass, replace
+from typing import TYPE_CHECKING
 
 from textual.app import App
 from textual.screen import ModalScreen
@@ -56,6 +57,9 @@ from kuberich.ui.root_views import RootViews
 from kuberich.ui.standard import StandardTable
 from kuberich.ui.views import ViewPreferences
 
+if TYPE_CHECKING:
+    from kuberich.ui.authorization_navigation import AuthorizationNavigation
+
 
 @dataclass(frozen=True)
 class NavigationTrail:
@@ -106,6 +110,7 @@ class WorkspaceNavigation:
         self._column_notice: str | None = None
         self._pending_generic: GenericResourceCommand | None = None
         self._pending_relationships: NavigationState | None = None
+        self.authorization: AuthorizationNavigation | None = None
 
     @property
     def resource_name(self) -> str:
@@ -122,12 +127,19 @@ class WorkspaceNavigation:
     def set_column_notice(self, message: str) -> None:
         self._column_notice = message
 
+    def cancel_pending_resource_restore(self) -> None:
+        """A newer native intent replaces deferred graph/generic destinations."""
+        self._pending_relationships = None
+        self._pending_generic = None
+
     def command_error(self, message: str) -> None:
         if self.views.route.kind is ViewKind.CUSTOM:
             self._column_notice = message
         self.status(message)
 
     def resolve_pending(self) -> None:
+        if self.authorization is not None:
+            self.authorization.resolve_pending()
         if self._pending_relationships is not None and self.workspace.discovery is not None:
             state, self._pending_relationships = self._pending_relationships, None
             self.restore(state)
@@ -184,6 +196,8 @@ class WorkspaceNavigation:
         if remember:
             self._pending_relationships = None
             self.remember()
+        if self.authorization is not None:
+            self.authorization.context_changing(context, explicit=remember)
         if context != self.workspace.store.observation.context:
             self._namespace_parent = self._namespace_state = None
             self._namespace_route = False
@@ -441,6 +455,8 @@ class WorkspaceNavigation:
             message = "Connect to a context before selecting a namespace."
             self.notice(message)
         elif not isinstance(self.host.screen, ModalScreen):
+            if self.authorization is not None:
+                self.authorization.begin_namespace_picker()
             self.select_resource("namespaces", restore=self._namespace_state)
 
     def display(
@@ -455,6 +471,8 @@ class WorkspaceNavigation:
             if resource == "pulse"
             else ViewRoute.relationships()
             if resource == "relationships"
+            else ViewRoute.authorization()
+            if resource == "authorization"
             else ViewRoute.namespaces()
             if resource == "namespaces"
             else ViewRoute.pods()
@@ -462,16 +480,25 @@ class WorkspaceNavigation:
             else ViewRoute.standard(RESOURCE_ALIASES[resource])
         )
         self.views.select(route)
+        if self.authorization is not None:
+            self.authorization.departing(route.kind)
         self.views.drilldown = None
         self.views.expected_uid = None
         self._column_notice = None
         namespaces = route.kind is ViewKind.NAMESPACES
         self.host.query_one("#all-namespaces").display = namespaces
         self.header.shortcuts = (
-            (("Enter", "Expand"), ("o", "Open"), ("/", "Filter"), ("Esc", "Previous"))
+            (
+                ("Enter", "Follow evidence"),
+                ("o", "Open object"),
+                ("/", "Filter"),
+                ("Esc", "Previous"),
+            )
+            if resource == "authorization"
+            else (("Enter", "Expand"), ("o", "Open"), ("/", "Filter"), ("Esc", "Previous"))
             if resource == "relationships"
             else (("Enter", "Drill down"), (":", "Command"), ("/", "Filter"), ("Esc", "Previous"))
-            if resource in {"pulse", "relationships"}
+            if resource in {"pulse", "relationships", "authorization"}
             else CTX_SHORTCUTS
             if resource == "contexts"
             else NS_SHORTCUTS
@@ -486,7 +513,7 @@ class WorkspaceNavigation:
         )
         self.header.binding_profile = (
             "table"
-            if resource in {"pulse", "relationships"}
+            if resource in {"pulse", "relationships", "authorization"}
             else "contexts"
             if resource == "contexts"
             else "namespaces"
@@ -562,6 +589,10 @@ class WorkspaceNavigation:
             try:
                 choice = NamespaceChoice(None if value == "*" else value)
                 current = self.capture()
+                if self.authorization is not None and self.authorization.namespace_selected(
+                    choice, current
+                ):
+                    return
                 was_namespace_view = self.resource_name == "namespaces"
                 was_context_view = self.resource_name == "contexts"
                 if was_context_view:
@@ -675,6 +706,9 @@ class WorkspaceNavigation:
             self.status(self._column_notice)
 
     def refresh_discovery(self) -> None:
+        if self.authorization is not None and self.authorization.active:
+            self.authorization.refresh()
+            return
         state = self.capture()
         try:
             self.workspace.refresh_discovery()
@@ -733,7 +767,7 @@ class WorkspaceNavigation:
 
     def server(self, text: str) -> None:
         """Replace the owned server query only on an explicit command."""
-        if self.resource_name in {"contexts", "pulse", "relationships"}:
+        if self.resource_name in {"contexts", "pulse", "relationships", "authorization"}:
             self.notice(
                 "Server selectors apply to Kubernetes resources; open a resource view first."
             )
@@ -815,6 +849,10 @@ class WorkspaceNavigation:
             and (request := self.workspace.relationship_request) is not None
             else None,
             self.views.expected_uid,
+            self.workspace.authorization_request.intent
+            if self.resource_name == "authorization"
+            and self.workspace.authorization_request is not None
+            else None,
         )
 
     def remember(self) -> None:
@@ -834,6 +872,9 @@ class WorkspaceNavigation:
         self.restore(state)
 
     def restore(self, state: NavigationState) -> None:
+        if state.authorization is not None and self.authorization is not None:
+            self.authorization.restore(state)
+            return
         if state.resource == "relationships" and state.relationships is not None:
             current = self.workspace.store.observation
             identity, discovery = current.connection.identity, self.workspace.discovery
@@ -931,6 +972,10 @@ class WorkspaceNavigation:
     def history_forward(self) -> None:
         self.move(forward=True)
 
+    def restore_pending(self, state: NavigationState) -> None:
+        """Restore common history geometry after the matching native data applies."""
+        self._restore_state = self.workspace.store.observation.revision, state
+
     def _relationship_restore_ready(self, view: ViewObservation) -> bool:
         snapshot, table = view.relationships, self.views.tables.relationships
         if snapshot is None or not snapshot.rows or table.request != snapshot.request:
@@ -947,6 +992,11 @@ class WorkspaceNavigation:
                 view.snapshot is not None
                 or self.views.route.kind is ViewKind.CONTEXTS
                 or (self.views.route.kind is ViewKind.PULSE and view.pulse is not None)
+                or (
+                    self.views.route.kind is ViewKind.AUTHORIZATION
+                    and self.authorization is not None
+                    and self.authorization.restore_ready(view)
+                )
                 or (
                     self.views.route.kind is ViewKind.RELATIONSHIPS
                     and self._relationship_restore_ready(view)
@@ -1006,7 +1056,7 @@ class WorkspaceNavigation:
             else "Pulse"
             if self.views.drilldown is not None
             else "Previous view"
-            if self.resource_name in {"pulse", "relationships"}
+            if self.resource_name in {"pulse", "relationships", "authorization"}
             or self.views.expected_uid is not None
             else f"Stay in {self.resource_name}"
         )
@@ -1014,7 +1064,7 @@ class WorkspaceNavigation:
 
     def back(self) -> None:
         if (
-            self.resource_name in {"pulse", "relationships"}
+            self.resource_name in {"pulse", "relationships", "authorization"}
             or self.views.drilldown is not None
             or self.views.expected_uid is not None
         ):

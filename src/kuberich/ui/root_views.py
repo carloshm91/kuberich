@@ -15,6 +15,7 @@ from kuberich.domain.registry import RESOURCE_ALIASES, ResourceDefinition, Resou
 from kuberich.domain.view_routes import ViewKind, ViewRoute
 from kuberich.services.metadata_filtering import MetadataFilter
 from kuberich.services.pods import ResourceProjection
+from kuberich.ui.authorization import AuthorizationTable
 from kuberich.ui.contexts import ContextTable
 from kuberich.ui.controllers.base import RenderOutcome, RenderRequest, ViewDriver
 from kuberich.ui.controllers.filtering import FilterOptions, ResourceFilter
@@ -41,6 +42,7 @@ class RootTables:
     custom: CustomTable
     pulse: PulseTable
     relationships: RelationshipTable
+    authorization: AuthorizationTable
 
 
 class RootViews:
@@ -71,8 +73,10 @@ class RootViews:
             | ContextTable
             | StandardTable
             | PulseTable
-            | RelationshipTable,
+            | RelationshipTable
+            | AuthorizationTable,
         ] = {
+            ViewKind.AUTHORIZATION: tables.authorization,
             ViewKind.RELATIONSHIPS: tables.relationships,
             ViewKind.PULSE: tables.pulse,
             ViewKind.PODS: tables.pods,
@@ -91,6 +95,7 @@ class RootViews:
         self._custom: CustomController | None = None
         self.registry = ViewRegistry(
             {
+                ViewKind.AUTHORIZATION: self._authorization,
                 ViewKind.RELATIONSHIPS: self._relationships,
                 ViewKind.PULSE: self._pulse,
                 ViewKind.PODS: self._pods,
@@ -107,7 +112,15 @@ class RootViews:
     @property
     def table(
         self,
-    ) -> PodTable | NamespaceTable | ContextTable | StandardTable | PulseTable | RelationshipTable:
+    ) -> (
+        PodTable
+        | NamespaceTable
+        | ContextTable
+        | StandardTable
+        | PulseTable
+        | RelationshipTable
+        | AuthorizationTable
+    ):
         return self._by_kind[self.route.kind]
 
     def select(self, route: ViewRoute) -> None:
@@ -160,6 +173,13 @@ class RootViews:
 
         return ViewEntry(
             ViewDriver(RelationshipController(self.tables.relationships, self.actions))
+        )
+
+    def _authorization(self) -> ViewEntry:
+        from kuberich.ui.controllers.authorization import AuthorizationController
+
+        return ViewEntry(
+            ViewDriver(AuthorizationController(self.tables.authorization, self.actions))
         )
 
     def _standard(self) -> ViewEntry:

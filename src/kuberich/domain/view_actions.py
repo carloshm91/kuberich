@@ -54,11 +54,14 @@ class ViewState:
 
 
 def action_available(action: str, view: ViewState) -> bool:
-    if action == "open_relationship" and view.resource != "relationships":
+    if action == "open_relationship" and view.resource not in {"relationships", "authorization"}:
         return False
-    if action in {"xray", "usedby"} and view.resource in {"contexts", "pulse"}:
+    if action in {"xray", "usedby"} and view.resource in {"contexts", "pulse", "authorization"}:
         return False
-    if view.resource in {"pulse", "relationships"} and action in {"annotate", "cleanup_pods"}:
+    if view.resource in {"pulse", "relationships", "authorization"} and action in {
+        "annotate",
+        "cleanup_pods",
+    }:
         return False
     if view.resource == "relationships" and action in TABLE_ACTIONS - {
         "focus_filter",
@@ -70,6 +73,14 @@ def action_available(action: str, view: ViewState) -> bool:
         "open_relationship",
     }:
         return False
+    if view.resource == "authorization" and action in TABLE_ACTIONS - {
+        "focus_filter",
+        "focus_command",
+        "history_back",
+        "history_forward",
+        "open_relationship",
+    }:
+        return False
     if view.resource == "pulse" and action in TABLE_ACTIONS - {
         "focus_filter",
         "focus_command",
@@ -77,7 +88,7 @@ def action_available(action: str, view: ViewState) -> bool:
         "history_forward",
     }:
         return False
-    if view.resource in {"pulse", "relationships"} and action == "views":
+    if view.resource in {"pulse", "relationships", "authorization"} and action == "views":
         return False
     if action == "review_delete" and (view.generic or view.resource == "namespaces"):
         return False

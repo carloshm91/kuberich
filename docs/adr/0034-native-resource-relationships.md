@@ -1,6 +1,6 @@
 # 0034: Keep relationship evidence and identity within the selected graph
 
-Status: implemented in development source; complete issue acceptance remains pending
+Status: implemented in development source; scoped acceptance is recorded separately
 
 ## Context
 
@@ -69,7 +69,7 @@ Snapshots and bookmarks contain no `ResourceRecord`, mutable object dictionary,
 Secret/ConfigMap values, clients or transport exceptions. Cached facts remain
 private to the collector and keep their actual source observation times.
 Sources are observed separately, not atomically. Scoped test evidence and
-pending App, owned-cluster and complete-current-head qualification are tracked
+App, owned-cluster and complete-current-head qualification are tracked
 in the [acceptance record](../internal/acceptance/resource-relationships.md).
 
 ## Source and related decisions

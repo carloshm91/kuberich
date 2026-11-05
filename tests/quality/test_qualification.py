@@ -84,7 +84,7 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     second = catalog.cluster_stages(
         tmp_path, Path("/owned/kind"), Path("/owned/kubectl"), Path("/owned/app.whl"), 2
     )
-    assert len(first) == len(second) == 16
+    assert len(first) == len(second) == 17
     pulse = next(stage for stage in first if stage.name == "kind-1-pulse")
     repeated_pulse = next(stage for stage in second if stage.name == "kind-2-pulse")
     pulse_evidence = Path(pulse.command[pulse.command.index("--evidence") + 1])
@@ -101,6 +101,17 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     assert graph_evidence == tmp_path / "kind-1-relationships" / "evidence.json"
     assert repeated_graph_evidence == tmp_path / "kind-2-relationships" / "evidence.json"
     assert graph_evidence.parent != repeated_graph_evidence.parent
+    authorization = next(stage for stage in first if stage.name == "kind-1-authorization")
+    repeated_authorization = next(stage for stage in second if stage.name == "kind-2-authorization")
+    authorization_evidence = Path(
+        authorization.command[authorization.command.index("--evidence") + 1]
+    )
+    repeated_authorization_evidence = Path(
+        repeated_authorization.command[repeated_authorization.command.index("--evidence") + 1]
+    )
+    assert authorization_evidence == tmp_path / "kind-1-authorization" / "evidence.json"
+    assert repeated_authorization_evidence == tmp_path / "kind-2-authorization" / "evidence.json"
+    assert authorization_evidence.parent != repeated_authorization_evidence.parent
     for stage in first:
         module = stage.command[4]
         assert module in body

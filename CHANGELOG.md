@@ -7,6 +7,9 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Added
 
+- Browse observed subjects, bindings, role rules and aggregation in a native `:rbac` workspace with UID-safe object opening and normal namespace/history navigation ([#71](https://github.com/carloshm91/kuberich/issues/71)).
+- Ask current-identity `:can-i` questions, read namespace `:rules` and inspect scoped `:who-can` evidence with forbidden, incomplete and unknown results kept explicit ([#71](https://github.com/carloshm91/kuberich/issues/71)).
+
 - Follow owners, workload pods, service endpoints and node placement in native `:xray` graphs, with UID replacements, cycles and incomplete source states kept explicit ([#70](https://github.com/carloshm91/kuberich/issues/70)).
 - Inspect supported configuration, storage and identity declarations with `:usedby`, including zero-replica templates, optional/defaulted fields and the scanned namespace scope ([#70](https://github.com/carloshm91/kuberich/issues/70)).
 - Inspect node, pod and workload health in the native `:pulse` overview, with source times, explicit unavailable/partial states and exact resource drill-downs ([#69](https://github.com/carloshm91/kuberich/issues/69)).

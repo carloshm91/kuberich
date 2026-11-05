@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "page_budget": 22,
+  "page_budget": 23,
   "index_title": "Start here",
   "sections": [
     {
@@ -138,6 +138,16 @@
           "title": "Follow resource relationships",
           "sources": [
             "resource-relationships.md"
+          ],
+          "generated": false,
+          "retired_sources": [],
+          "anchors": {}
+        },
+        {
+          "source": "authorization.md",
+          "title": "Inspect permissions",
+          "sources": [
+            "authorization.md"
           ],
           "generated": false,
           "retired_sources": [],

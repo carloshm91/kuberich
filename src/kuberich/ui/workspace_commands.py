@@ -12,6 +12,7 @@ from kuberich.domain.navigation import NamespaceChoice
 from kuberich.domain.view_routes import ViewKind
 from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
+from kuberich.services.authorization_commands import AuthorizationCommand
 from kuberich.services.command_catalog import COMMAND_CATALOG, BoundCommands
 from kuberich.services.commands import (
     Command,
@@ -92,6 +93,9 @@ class WorkspaceCommands:
             navigator.generic,
             lambda: views.route.kind is ViewKind.CUSTOM,
             navigator.command_error,
+            authorization=navigator.authorization.command
+            if navigator.authorization is not None
+            else None,
         )
         self._transition: asyncio.Task[None] | None = None
 
@@ -240,7 +244,10 @@ class WorkspaceCommands:
         }
         action = command.command if isinstance(command, ScopedCommand) else command
         requires_target = (
-            not isinstance(command, (ResourceCommand, GenericResourceCommand, InteractionCommand))
+            not isinstance(
+                command,
+                (ResourceCommand, GenericResourceCommand, InteractionCommand, AuthorizationCommand),
+            )
             and action not in local | navigation
         )
         try:
