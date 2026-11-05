@@ -39,7 +39,9 @@ The final-source macOS check also found a deferred horizontal restore being
 superseded by another render. Its controlled reproduction and fix preserve exact
 viewport assertions and subsequent user movement on both axes; 34 affected
 widget/App cases pass with the widget at 100% lines/branches. The failed run is
-retained, and the next source requires fresh hosted qualification.
+retained. The corrected source also passed all nine owned-cluster checks in
+36.821 seconds with unchanged inputs and complete cleanup. Final hosted
+qualification is tracked in the linked PR checks.
 
 ```sh
 COVERAGE_FILE=artifacts/issue70/domain/.coverage uv run pytest tests/unit/test_relationships.py tests/unit/test_reference_fields.py -n 0 --cov=kuberich --cov-branch --cov-report=json:artifacts/issue70/domain/coverage-final-qualified.json --cov-report= -q

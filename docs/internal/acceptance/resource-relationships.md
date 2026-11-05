@@ -261,6 +261,14 @@ checks passed. Evidence is in `artifacts/issue70/viewport-pending-*` and
 `viewport-vertical-*`. Fresh final-source owned and hosted qualification is
 required; earlier successful runs do not qualify this later widget correction.
 
+The fresh owned trial at `95668bd` passed all nine checks in 36.821 seconds
+(36.003 seconds inside the verifier), including actual native expansion,
+resource opening and exact history viewport restoration. All 217 inputs stayed
+unchanged, the owned cluster/private directory were deleted, and the worker and
+process group were absent after cleanup. Evidence is retained in
+`artifacts/issue70/kind-final-4/`. Final-head hosted status remains authoritative
+in the linked PR checks; previous-head successes are not substituted for it.
+
 - Actual App/controlled-HTTP and disposable-kind behavior are recorded above.
   The corrected App cohort adds successful cross-context Back and passes 17 cases
   both normally and with coverage. The original UsedBy failure happened before
