@@ -33,7 +33,7 @@ turning into a catalogue of every option.
 
 `docs/navigation.json` is the only user-navigation source. It lists the canonical
 pages, their documentation type, and any existing source fragments they include.
-The budget is **22 user pages**, including the documentation index and generated
+The budget is **23 user pages**, including the documentation index and generated
 reference pages. Redirects are routes, not additional content pages.
 
 Aim for **250 lines or fewer** per user page. Count headings, blank lines,
@@ -43,7 +43,7 @@ oversized page in imports or very long lines. Wrap ordinary prose at about
 
 For 0.x, page length, word choice and formatting are advisory observations for
 human review. They do not prevent a correct site build. The structural maximum
-of 22 user pages, source/reference correctness, working internal links and
+of 23 user pages, source/reference correctness, working internal links and
 historical migration boundaries remain required.
 
 Contributor-page line targets are also advisory: `AGENTS.md` 60,

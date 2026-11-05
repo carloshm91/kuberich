@@ -194,6 +194,18 @@ async def test_unexpected_subscription_render_error_reaches_sanitized_hook_and_c
             )
             assert owner is observers.latest and not owner.done()
             assert app.sessions.client is client and len(streams) == 1
+            button = app.query_one("#view-error-retry")
+            # The failed state is published before the next layout commits the
+            # retry button to the compositor's mouse hit-test map.
+            await wait_for(
+                lambda: (
+                    button.region.width > 0
+                    and button.region.height > 0
+                    and button.region.right <= app.size.width
+                    and button.region.bottom <= app.size.height
+                    and app.get_widget_at(button.region.x, button.region.y)[0] is button
+                )
+            )
             assert await pilot.click("#view-error-retry")
             await wait_for(lambda: not panel.has_class("failed") and app.resources.row_count == 2)
             assert "2 pods" in str(app.status.content)

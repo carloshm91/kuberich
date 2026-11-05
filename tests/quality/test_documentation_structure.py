@@ -33,7 +33,7 @@ def insert_after_title(path, text):
 
 def test_navigation_is_complete_diataxis_and_maps_the_baseline_documents():
     catalog = load_navigation(ROOT)
-    assert catalog.user_page_count == 22
+    assert catalog.user_page_count == 23
     assert {page.kind for page in catalog.pages} == {
         "tutorial",
         "how-to",
@@ -48,8 +48,8 @@ def test_navigation_is_complete_diataxis_and_maps_the_baseline_documents():
         if item["audience"] == "user"
     }
     retired = {name for page in catalog.guides for name in page.retired}
-    assert fragments | retired == baseline_guides and len(fragments | retired) == 32
-    assert len(fragments) == 17
+    assert fragments | retired == baseline_guides and len(fragments | retired) == 33
+    assert len(fragments) == 18
     paths = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT, text=True).split("\0")
     paths += ["docs/STYLE.md", "docs/navigation.json", "docs/documentation-plan.json"]
     assert validate_documentation_plan(ROOT, paths) == len(plan["documents"])
@@ -171,12 +171,12 @@ def test_canonical_pages_preserve_every_fragment_and_real_deep_links(tmp_path, p
     )
     output = tmp_path / "output"
     manifest = build(output, source, public_launch=public)
-    assert manifest["documentation_pages"] == 22 and manifest["publication_performed"] is False
+    assert manifest["documentation_pages"] == 23 and manifest["publication_performed"] is False
     assert "docs/navigation.json" in manifest["sources"]
     assert "scripts/documentation.py" in manifest["sources"]
     surfaces = [output / "docs"] + ([] if public else [output / "www/docs"])
     for surface in surfaces:
-        assert len(list(surface.glob("*.html"))) - int((surface / "404.html").exists()) == 22
+        assert len(list(surface.glob("*.html"))) - int((surface / "404.html").exists()) == 23
         for guide in catalog.guides:
             html = (surface / guide.filename).read_text()
             for fragment in guide.sources:
@@ -259,13 +259,14 @@ def test_generated_reference_snapshots_remain_part_of_the_source_receipt(tmp_pat
         verify(output, source)
 
 
-def test_one_new_relationship_guide_exactly_accounts_for_the_expanded_page_census():
+def test_observability_guides_match_the_current_page_census():
     catalog = load_navigation(ROOT)
-    relationships = [page for page in catalog.pages if page.source == "resource-relationships.md"]
-    assert MAX_USER_PAGES == catalog.user_page_count == 22
-    assert len(relationships) == 1
-    guide = relationships[0]
-    assert guide.kind == "how-to" and not guide.generated
-    assert guide.sources == ("resource-relationships.md",)
-    assert guide.retired == () and guide.aliases == ()
-    assert len(catalog.guides) == 17
+    assert MAX_USER_PAGES == catalog.user_page_count == 23
+    for source in ("resource-relationships.md", "authorization.md"):
+        matching = [page for page in catalog.pages if page.source == source]
+        assert len(matching) == 1
+        guide = matching[0]
+        assert guide.kind == "how-to" and not guide.generated
+        assert guide.sources == (source,)
+        assert guide.retired == () and guide.aliases == ()
+    assert len(catalog.guides) == 18

@@ -6,6 +6,7 @@ from kuberich.domain.interactions import InteractionCommand
 from kuberich.domain.registry import RESOURCE_ALIASES
 from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
+from kuberich.services.authorization_commands import authorization_command
 from kuberich.services.command_catalog import BoundCommands
 from kuberich.services.commands import CommandService, GenericResourceCommand, ResourceCommand
 from kuberich.ui.command_routing import CommandRouter
@@ -92,3 +93,14 @@ def test_parser_and_dispatch_keep_read_only_refusal_before_a_handler_and_plugin_
     assert routes.calls == [("download", None), ("classify-plugin", "trusted-review")]
     # Classification is the only callback. This router never grants trust,
     # launches a process, or substitutes an argv value into shell syntax.
+
+
+def test_authorization_variant_requires_its_declared_navigation_port_and_remains_informational():
+    routes = Routes(readonly=True)
+    with pytest.raises(AppError, match="Authorization navigation"):
+        routes.run("rbac")
+    routes.router.authorization = lambda command: routes.calls.append(("authorization", command))
+    routes.generic_mode = True
+    routes.run("can-i get pods example")
+    assert routes.calls == [("authorization", authorization_command("can-i get pods example"))]
+    assert not routes.refused

@@ -6,6 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, replace
 from typing import Protocol
 
+from kuberich.domain.authorization_rows import AuthorizationRow
 from kuberich.domain.namespaces import NamespaceRow
 from kuberich.domain.navigation import ContextRow, Viewport
 from kuberich.domain.pods import PodRow
@@ -16,7 +17,9 @@ from kuberich.domain.view_routes import ViewRoute
 from kuberich.domain.views import ViewObservation
 from kuberich.services.filtering import FilterResult
 
-type ViewRow = PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow | RelationshipRow
+type ViewRow = (
+    PodRow | NamespaceRow | ContextRow | ResourceRow | PulseRow | RelationshipRow | AuthorizationRow
+)
 
 
 @dataclass(frozen=True)

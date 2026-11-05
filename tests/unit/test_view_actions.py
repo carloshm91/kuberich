@@ -70,7 +70,7 @@ def test_relationships_expose_explicit_open_and_graph_navigation_without_resourc
     assert action_available(action, ViewState("relationships")) is allowed
 
 
-@pytest.mark.parametrize("resource", ["relationships", "pulse"])
+@pytest.mark.parametrize("resource", ["relationships", "pulse", "authorization"])
 def test_every_declared_mutation_ui_action_is_unavailable_for_aggregate_rows(resource):
     actions = {
         spec.ui_action
@@ -89,7 +89,25 @@ def test_graph_actions_respect_modal_and_input_focus(action):
     assert not action_available(action, ViewState("relationships", typing=True))
 
 
-@pytest.mark.parametrize("resource", ["contexts", "pulse"])
+@pytest.mark.parametrize("resource", ["contexts", "pulse", "authorization"])
 @pytest.mark.parametrize("action", ["xray", "usedby", "open_relationship"])
 def test_graph_commands_do_not_capture_non_resource_source_views(resource, action):
-    assert not action_available(action, ViewState(resource))
+    assert action_available(action, ViewState(resource)) is (
+        resource == "authorization" and action == "open_relationship"
+    )
+
+
+@pytest.mark.parametrize("action", sorted(TABLE_ACTIONS | {"views", "retry"}))
+def test_authorization_keeps_navigation_and_explicit_object_open_without_resource_effects(action):
+    allowed = action in {
+        "focus_filter",
+        "focus_command",
+        "history_back",
+        "history_forward",
+        "open_relationship",
+        "retry",
+    }
+    assert action_available(action, ViewState("authorization")) is allowed
+    if action in TABLE_ACTIONS:
+        assert not action_available(action, ViewState("authorization", modal=True))
+        assert not action_available(action, ViewState("authorization", typing=True))

@@ -46,3 +46,11 @@ Development source adds [resource relationships](resource-relationships.md):
 `:xray` follows owners, selectors, endpoints and placement; `:usedby` finds
 supported configuration, storage and identity declarations. UID replacement and
 incomplete source scans remain explicit. These views are not in installed 0.3.0.
+
+Development source also adds [permission inspection](authorization.md). Use
+`:rbac` to browse observed subjects, bindings and roles, or
+`:can-i list pods --all-namespaces` to ask the API server about your current
+identity. Both commands were exercised in an owned local-cluster trial. Missing
+review/list privileges and incomplete who-can evidence remain explicit; these
+informational views do not enable guarded operations. They are unreleased work
+for 0.4.0 and are not part of installed 0.3.0.

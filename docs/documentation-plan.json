@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "baseline_commit": "d990a5e0273465874df24e1e790887520abeacff",
-  "canonical_user_pages": 22,
+  "canonical_user_pages": 23,
   "reserved_user_pages": 0,
   "migration_state": "user_guides_architecture_and_internal_history_consolidated",
   "scope": "Task guides, generated references, the architecture overview/ADRs and internal engineering-record relocation are implemented. Exact historical payloads remain outside the website; source Git/hash validation does not claim that every pending feature snapshot already has a protected-main anchor. Contribution guidance remains a separate migration.",
@@ -3534,6 +3534,36 @@
         "docs/internal/acceptance/resource-relationships.md"
       ],
       "reason": "Keep O03 #70 scoped measurements and pending App/cluster/current-head qualification outside user navigation.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/authorization.md",
+      "audience": "user",
+      "action": "keep",
+      "destinations": [
+        "docs/authorization.md"
+      ],
+      "reason": "Guide observed RBAC, current-identity reviews, explicit question scope and honest partial/unknown permission evidence.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0035-authorization-evidence-and-reviews.md",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0035-authorization-evidence-and-reviews.md"
+      ],
+      "reason": "Record immutable authorization questions, fixed review transport, bounded evidence and atomic independent scope/navigation ownership.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/acceptance/authorization.md",
+      "audience": "contributor acceptance evidence",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/authorization.md"
+      ],
+      "reason": "Keep O04 #71 source bindings, measured behavior/coverage and owned-cluster/current-head qualification outside user navigation.",
       "baseline_sha256": null
     }
   ],

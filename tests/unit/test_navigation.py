@@ -14,6 +14,7 @@ from kuberich.domain.navigation import (
 from kuberich.domain.relationships import RelationshipBookmark, RelationshipMode, RelationshipRef
 from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
+from kuberich.services.authorization_commands import AUTHORIZATION_COMMANDS
 from kuberich.services.commands import ALIASES, Command, CommandService, ScopedCommand, suggestions
 
 
@@ -23,7 +24,10 @@ def test_local_context_row_is_exact_case_preserving_configuration(current, marke
     assert row.cells() == (marker, "Team Production", "Cluster", "auth", "team")
 
 
-@pytest.mark.parametrize("alias,command", ALIASES.items())
+@pytest.mark.parametrize(
+    "alias,command",
+    [(alias, command) for alias, command in ALIASES.items() if alias not in AUTHORIZATION_COMMANDS],
+)
 def test_aliases_share_one_readonly_initial_and_interactive_parser(alias, command):
     text = " :" + alias.upper() + " "
     assert CommandService(AccessPolicy(False)).resolve(text) is command

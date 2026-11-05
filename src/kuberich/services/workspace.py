@@ -6,6 +6,7 @@ from dataclasses import dataclass, replace
 
 from kuberich.adapters.credentials import CredentialLogin
 from kuberich.adapters.kubernetes import KubernetesSession
+from kuberich.domain.authorization import AuthorizationIntent, AuthorizationRequest, rescope_intent
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, namespace_name
 from kuberich.domain.history import HistorySnapshot
 from kuberich.domain.metrics import MetricsSnapshot
@@ -31,6 +32,7 @@ from kuberich.domain.views import (
 from kuberich.domain.watches import SyncUpdate
 from kuberich.errors import AppError
 from kuberich.security.arguments import validate_argument
+from kuberich.services.authorization_workspace import AuthorizationWorkspace
 from kuberich.services.metrics import MetricsPoller, supports_metrics
 from kuberich.services.pulse import PulseService
 from kuberich.services.relationships import RelationshipService
@@ -53,6 +55,7 @@ class WorkspaceOwnership:
     metrics_count: int = 0
     pulse_count: int = 0
     relationships_count: int = 0
+    authorization_count: int = 0
 
 
 class ViewSubscription(AsyncIterator[ViewObservation]):
@@ -100,6 +103,7 @@ class _Selection:
     authenticate: CredentialLogin | None = None
     pulse: bool = False
     relationships: RelationshipRequest | None = None
+    authorization: AuthorizationRequest | None = None
 
 
 def _cancel_once(task: asyncio.Task[None] | None) -> None:
@@ -145,6 +149,7 @@ class WorkspaceService:
         self._metrics_poller: MetricsPoller | None = None
         self._pulse: asyncio.Task[None] | None = None
         self._relationships: asyncio.Task[None] | None = None
+        self._authorization = AuthorizationWorkspace()
         self._relationship_request: RelationshipRequest | None = None
         self._relationship_revision = 0
         self._relationship_service: tuple[KubernetesSession, RelationshipService] | None = None
@@ -164,6 +169,7 @@ class WorkspaceService:
             metrics_count=int(self._metrics is not None),
             pulse_count=int(self._pulse is not None),
             relationships_count=int(self._relationships is not None),
+            authorization_count=int(self._authorization.task is not None),
         )
 
     def _require_open(self) -> None:
@@ -191,6 +197,7 @@ class WorkspaceService:
         _cancel_once(self._pulse)
         _cancel_once(self._relationships)
         _cancel_once(self._operation)
+        self._authorization.cancel()
         self._publish()
         if self.task is None or self.task.done():
             self.task = asyncio.create_task(self._drive(), name="kuberich-workspace")
@@ -205,6 +212,17 @@ class WorkspaceService:
     ) -> asyncio.Task[None]:
         self._require_open()
         validate_argument(context)
+        authorization = self.authorization_request
+        if authorization is not None:
+            if authorization.session.context != context:
+                self._authorization.invalidate()
+            else:
+                intent = (
+                    rescope_intent(authorization.intent, scope.namespace)
+                    if scope is not None
+                    else authorization.intent
+                )
+                self._authorization.prepare(authorization.session, intent)
         request = self._relationship_request
         if request is not None and request.scope.root.session.context != context:
             self._relationship_request = None
@@ -221,6 +239,7 @@ class WorkspaceService:
                 authenticate=authenticate,
                 pulse=self.pulse_selected,
                 relationships=self._relationship_request,
+                authorization=self.authorization_request,
             )
         )
 
@@ -238,6 +257,10 @@ class WorkspaceService:
 
     def select_namespace(self, namespace: str | None) -> asyncio.Task[None]:
         context = self._current_context()
+        if self.authorization_request is not None:
+            return self.select_authorization(
+                self.authorization_request.intent, scope=NamespaceChoice(namespace)
+            )
         if namespace is not None:
             namespace_name(namespace)
         connection = replace(self.store.observation.connection, namespace=namespace)
@@ -283,6 +306,7 @@ class WorkspaceService:
         """Prepare an ordinary view before connecting, with no transport effects."""
         self._require_open()
         self.selection = resource
+        self._authorization.invalidate()
         self.pulse_selected = False
         self._relationship_request = None
         self._relationship_service = None
@@ -291,6 +315,7 @@ class WorkspaceService:
         """Select a native overview, including before the first connection is ready."""
         self._require_open()
         self.pulse_selected = True
+        self._authorization.invalidate()
         self._relationship_request = None
         self._relationship_service = None
         context = self.store.observation.context
@@ -314,6 +339,62 @@ class WorkspaceService:
         )
 
     @property
+    def authorization_request(self) -> AuthorizationRequest | None:
+        return self._authorization.request
+
+    @property
+    def authorization_collecting(self) -> bool:
+        return self._authorization.collecting
+
+    def select_authorization(
+        self,
+        intent: AuthorizationIntent,
+        *,
+        scope: NamespaceChoice | None = None,
+        preserve_intent: bool = False,
+    ) -> asyncio.Task[None]:
+        context = self._current_context()
+        if preserve_intent and scope is None:
+            raise AppError("History restoration requires its captured header scope.")
+        if scope is not None and not preserve_intent:
+            intent = rescope_intent(intent, scope.namespace)
+        connection = self.store.observation.connection
+        if scope is not None:
+            connection = replace(connection, namespace=scope.namespace)
+        assert connection.identity is not None
+        request = self._authorization.prepare(connection.identity, intent)
+        self.pulse_selected = False
+        self._relationship_request = None
+        self._relationship_service = None
+        revision = self.store.begin(context, connection)
+        self.store.bind_authorization(revision, request)
+        return self._schedule(
+            _Selection(
+                revision,
+                context,
+                self.selection,
+                change_namespace=connection.namespace != self.sessions.observation.namespace,
+                namespace=connection.namespace,
+                authorization=request,
+            )
+        )
+
+    def refresh_authorization(self) -> asyncio.Task[None]:
+        request = self.authorization_request
+        if request is None:
+            raise AppError("Open authorization before refreshing evidence.")
+        return self.select_authorization(request.intent)
+
+    async def stop_authorization(self) -> None:
+        self._authorization.invalidate()
+        if self.store.observation.authorization is not None:
+            observation = self.store.observation
+            assert observation.context is not None
+            self.store.begin(observation.context, observation.connection)
+            self._publish()
+        await self._authorization.stop()
+
+    @property
     def relationship_request(self) -> RelationshipRequest | None:
         return self._relationship_request
 
@@ -334,6 +415,7 @@ class WorkspaceService:
         connection = self.store.observation.connection
         if root.session != connection.identity:
             raise AppError("The relationship root belongs to an obsolete connection.")
+        self._authorization.invalidate()
         self._relationship_revision += 1
         scope = RelationshipScope(root, resource, connection.namespace, mode)
         request = RelationshipRequest(scope, self._relationship_revision, expanded)
@@ -405,6 +487,8 @@ class WorkspaceService:
         context = self._current_context()
         self._discovery = None
         self._relationship_service = None
+        if self.authorization_request is not None:
+            return self.refresh_authorization()
         connection = self.store.observation.connection
         revision = self.store.begin(context, connection)
         return self._schedule(
@@ -432,6 +516,7 @@ class WorkspaceService:
         )
 
     async def _stop_watch(self) -> None:
+        await self._authorization.stop()
         relationships = self._relationships
         if relationships is not None:
             _cancel_once(relationships)
@@ -531,6 +616,32 @@ class WorkspaceService:
                 self._discovery = client, discovery
             else:
                 discovery = self._discovery[1]
+            if selection.authorization is not None:
+
+                def authorization_current(candidate: AuthorizationRequest) -> bool:
+                    view = self.store.observation
+                    return (
+                        not self._closed
+                        and self.sessions.client is client
+                        and self.sessions.observation.identity == candidate.session
+                        and view.revision == selection.revision
+                        and self.authorization_request == candidate
+                        and view.authorization is not None
+                        and view.authorization.request == candidate
+                    )
+
+                self._authorization.start(
+                    selection.authorization,
+                    ResourceReader(client),
+                    discovery,
+                    selection.revision,
+                    self.store,
+                    authorization_current,
+                    self._publish,
+                    self._unexpected,
+                )
+                self._publish()
+                return
             if selection.relationships is not None:
                 request = selection.relationships
                 if request.scope.root.session != observation.identity:
@@ -725,6 +836,7 @@ class WorkspaceService:
     async def close(self) -> None:
         if self._closing is None:
             self._closed = True
+            self._authorization.invalidate()
             self.store.disconnect()
             self._desired = None
             _cancel_once(self._operation)

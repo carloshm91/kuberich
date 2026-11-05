@@ -21,9 +21,9 @@ explicitly. Each context uses its own connection and passes that identity to del
 available. Local provider-shaped tests do not certify real cloud accounts or identity providers.
 Legacy auth-provider/basic entries require migration.
 ### TLS/CA/client certificates, proxy, request timeout and impersonation
-**partial** — CA and client certificates, TLS names, timeouts, proxy settings, and repeated
-impersonation are supported. SOCKS5 streaming has limitations; an interactive permission browser is
-unavailable.
+**partial** — CA and client certificates, TLS names, timeouts, proxy settings and repeated
+impersonation are supported. Development source adds current-identity permission reviews and
+observed RBAC browsing; SOCKS5 streaming limits remain explicit.
 ### Context rename/delete and persisted per-context view/namespace preferences
 **partial** — Selecting a context leaves kubeconfig unchanged. Renaming or deleting a context uses
 explicit review and a backup. Local per-context display preferences can be saved.
@@ -91,8 +91,8 @@ diagnostics remain planned. Development relationships distinguish declared place
 bindings and static PriorityClass references.
 ### ConfigMaps, Secrets, service accounts and RBAC resource families
 **partial** — ConfigMap and Secret values stay hidden until deliberate reveal or copy. Development
-source adds supported static configuration and ServiceAccount relationships with explicit scan
-scope; interactive permission browsing remains unavailable.
+source includes static configuration/ServiceAccount relationships, observed RBAC browsing and
+current-identity permission reviews with explicit scope and uncertainty.
 ### Custom resources, unknown APIs and custom columns/jump chains
 **partial** — Discovered APIs provide served-version selection, typed printer columns, inspection
 and saved schema-pinned layouts. Development source follows discovered owners in native graphs;
@@ -197,7 +197,9 @@ matches, reported endpoints, placement and supported static configuration/storag
 declarations. Replacement UIDs and incomplete scans remain explicit; installed 0.3.0 predates these
 views.
 ### RBAC can/user/group/service-account policies and rule inspection
-**planned** — An interactive RBAC permission/rule browser is planned.
+**partial** — Development source includes role and subject browsing, namespace rules, current-
+identity access reviews and RBAC who-can evidence. Partial reads, unknown group membership and
+external-authorizer limits remain visible.
 ### Popeye/cluster diagnostic reports and actionable failure evidence
 **planned** — Cluster diagnostic reports and actionable health-check views are planned.
 ### Opt-in image vulnerability scans, severity/package/fix views and advisory links

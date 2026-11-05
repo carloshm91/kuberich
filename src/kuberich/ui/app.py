@@ -63,6 +63,7 @@ from kuberich.domain.workloads import WorkloadAction
 from kuberich.errors import AppError, ExecutableUnavailable
 from kuberich.services.access import AccessPolicy, Action
 from kuberich.services.appearance import PreferenceSource
+from kuberich.services.authorization_commands import authorization_command
 from kuberich.services.clipboard import ClipboardQueue, NativeClipboard
 from kuberich.services.command_catalog import COMMAND_CATALOG, BoundCommands
 from kuberich.services.commands import (
@@ -85,6 +86,8 @@ from kuberich.services.sessions import SessionService
 from kuberich.services.updates import UpdateResult, UpdateService
 from kuberich.services.workspace import WorkspaceService
 from kuberich.ui.appearance_controller import AppearanceController
+from kuberich.ui.authorization import AuthorizationTable
+from kuberich.ui.authorization_navigation import AuthorizationNavigation
 from kuberich.ui.chrome import (
     POD_SHORTCUTS,
     Breadcrumbs,
@@ -274,6 +277,8 @@ class KubeRichApp(App[None]):
         self.pulse_table.display = False
         self.relationships_table = RelationshipTable()
         self.relationships_table.display = False
+        self.authorization_table = AuthorizationTable()
+        self.authorization_table.display = False
         self.chrome = WorkspaceChrome(
             partial(header_identity, self.workspace.store, self.sessions),
             f"KubeRich: {version('kuberich')} · {self._mode}",
@@ -312,6 +317,7 @@ class KubeRichApp(App[None]):
                 self.custom_table,
                 self.pulse_table,
                 self.relationships_table,
+                self.authorization_table,
             ),
             self._foreground,
             lambda: self.sessions.catalog,
@@ -348,6 +354,10 @@ class KubeRichApp(App[None]):
             errors=lambda: self.interactions.errors,
             set_errors=self.interactions.set_errors,
         )
+        self.authorization = AuthorizationNavigation(
+            self.workspace, self.views, self.navigator, self.workspace.select_authorization
+        )
+        self.navigator.authorization = self.authorization
         self.presenter = WorkspacePresenter(
             self,
             self.workspace,
@@ -422,6 +432,12 @@ class KubeRichApp(App[None]):
                 Command.PLUGIN_JOBS: self.action_plugin_jobs,
                 Command.QUIT: self.exit,
                 Command.PULSE: self.navigator.pulse,
+                Command.RBAC: lambda: self.authorization.command(authorization_command("rbac")),
+                Command.CAN_I: lambda: self.authorization.command(authorization_command("can-i")),
+                Command.WHO_CAN: lambda: self.authorization.command(
+                    authorization_command("who-can")
+                ),
+                Command.RULES: lambda: self.authorization.command(authorization_command("rules")),
                 Command.XRAY: self.action_xray,
                 Command.USED_BY: self.action_usedby,
                 Command.OPEN_RELATIONSHIP: self.action_open_relationship,
@@ -570,7 +586,15 @@ class KubeRichApp(App[None]):
     @property
     def _active_table(
         self,
-    ) -> PodTable | NamespaceTable | ContextTable | StandardTable | PulseTable | RelationshipTable:
+    ) -> (
+        PodTable
+        | NamespaceTable
+        | ContextTable
+        | StandardTable
+        | PulseTable
+        | RelationshipTable
+        | AuthorizationTable
+    ):
         return self.views.table
 
     def request_render(self) -> None:
@@ -627,6 +651,7 @@ class KubeRichApp(App[None]):
             yield self.custom_table
             yield self.pulse_table
             yield self.relationships_table
+            yield self.authorization_table
             with Vertical(id="empty-state"):
                 yield WorkspaceLabel("No cluster connection", id="empty-title", markup=False)
                 yield WorkspaceLabel(
@@ -670,6 +695,7 @@ class KubeRichApp(App[None]):
             self.context_table,
             self.pulse_table,
             self.relationships_table,
+            self.authorization_table,
         ):
             table.effective_keys = self.navigation_keymap
         if not self.is_headless and not self.is_web:
@@ -685,6 +711,7 @@ class KubeRichApp(App[None]):
         self.context_table.setup()
         self.pulse_table.setup()
         self.relationships_table.setup()
+        self.authorization_table.setup()
         self.standard_table.setup()
         self.query_one("#resource-view", Vertical).border_title = "Resources · no connection"
         self.screen.set_class(self.size.width < 70, "compact")
@@ -1022,7 +1049,8 @@ class KubeRichApp(App[None]):
             self.views.route,
             None
             if modal
-            or self.views.route.kind in {ViewKind.CONTEXTS, ViewKind.PULSE, ViewKind.RELATIONSHIPS}
+            or self.views.route.kind
+            in {ViewKind.CONTEXTS, ViewKind.PULSE, ViewKind.RELATIONSHIPS, ViewKind.AUTHORIZATION}
             else self.views.table.capture_viewport().selected,
             modal,
         )
@@ -1090,7 +1118,15 @@ class KubeRichApp(App[None]):
         self._open_relationship_view(RelationshipMode.USED_BY)
 
     def action_open_relationship(self) -> None:
-        self.navigator.open_relationship(self.relationships_table.selected_path())
+        if self.authorization.active:
+            self.authorization.open_object()
+        else:
+            self.navigator.open_relationship(self.relationships_table.selected_path())
+
+    @on(DataTable.RowSelected, "#authorization")
+    def authorization_selected(self, event: DataTable.RowSelected) -> None:
+        event.stop()
+        self.authorization.selected(event.row_key.value)
 
     @on(DataTable.RowSelected, "#relationships")
     def relationship_selected(self, event: DataTable.RowSelected) -> None:

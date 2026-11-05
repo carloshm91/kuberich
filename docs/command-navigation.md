@@ -19,6 +19,10 @@ resource does not accept a namespace argument.
 At launch, `--command 'pods demo-apps'` selects a starting view. Commands that need
 a selected row or confirmation are unavailable at launch.
 
+Use `:rbac` for observed subjects, bindings and roles. `:can-i` asks the server
+about your current identity; `:who-can` explains the RBAC evidence you can read.
+See [inspect permissions](authorization.md) for exact questions, scope and limits.
+
 ## Accept a suggestion
 
 The command bar shows one suggested suffix on the same line. Tab accepts it for

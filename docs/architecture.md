@@ -121,6 +121,17 @@ from minimal bookmarks; opening an object revalidates its identity. Graph/source
 rows are not mutation targets. The [relationship decision](adr/0034-native-resource-relationships.md)
 keeps root namespace separate from the selected search namespace for cluster roots.
 
+[Authorization records](../src/kuberich/domain/authorization.py) and
+[RBAC matching](../src/kuberich/domain/rbac.py) keep current-identity API reviews
+separate from observed declaration analysis. The
+[authorization service](../src/kuberich/services/authorization.py) uses fixed
+self-review transport and owned collection/matching work; its scoped
+[workspace collaborator](../src/kuberich/services/authorization_workspace.py)
+invalidates and drains previous requests. Informational results never enable
+an operation guard. The [authorization decision](adr/0035-authorization-evidence-and-reviews.md)
+defines independent header/question scope, atomic history restoration and the
+native table/navigation boundary.
+
 Presentation/rendering faults are isolated to their current view and scope.
 An inline Retry explicitly restarts that view; watches and unrelated forwards
 continue. Target invalidation, capture, retirement, and cleanup failures remain

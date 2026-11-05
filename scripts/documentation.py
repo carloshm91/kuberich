@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import cast
 
-MAX_USER_PAGES = 22
+MAX_USER_PAGES = 23
 KINDS = frozenset({"tutorial", "how-to", "reference", "explanation"})
 GENERATED = frozenset(
     {"cli-reference.md", "resource-reference.md", "capability-reference.md", "config-reference.md"}

@@ -60,7 +60,7 @@ class Interactions:
             if verb in {"headless", "crumbsless", "fullscreen"}:
                 self._presentation(verb)
                 return
-            if app._resource_name in {"pulse", "relationships"} and verb in {
+            if app._resource_name in {"pulse", "relationships", "authorization"} and verb in {
                 "mark",
                 "range",
                 "selectall",
@@ -74,6 +74,8 @@ class Interactions:
                 raise AppError(
                     "Pulse aggregates have no resource selection. Enter a health summary first."
                     if app._resource_name == "pulse"
+                    else "Authorization evidence is not a resource selection. Open an observed object first."
+                    if app._resource_name == "authorization"
                     else "Relationship rows are not a resource selection. Open a resource table first."
                 )
             if verb in {"copy", "copyns", "copytext"}:

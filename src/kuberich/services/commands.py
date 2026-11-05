@@ -13,6 +13,11 @@ from kuberich.domain.resources import Discovery, api_segment
 from kuberich.errors import AppError
 from kuberich.security.arguments import validate_argument
 from kuberich.services.access import AccessPolicy
+from kuberich.services.authorization_commands import (
+    AUTHORIZATION_COMMANDS,
+    AuthorizationCommand,
+    authorization_command,
+)
 from kuberich.services.command_catalog import COMMAND_CATALOG, RESERVED_ACTIONS
 
 ALIASES = dict(COMMAND_CATALOG.aliases)
@@ -81,6 +86,7 @@ ResolvedCommand = (
     | GenericResourceCommand
     | PluginCommand
     | InteractionCommand
+    | AuthorizationCommand
 )
 
 
@@ -157,6 +163,19 @@ def suggestions(
             values = jumps
         elif command is Command.SERVER:
             values = ("label ", "field ", "clear", "compact", "full")
+        elif effective == "rbac":
+            values = (
+                "subjects",
+                "bindings",
+                "roles",
+                "subject user ",
+                "subject group ",
+                "subject serviceaccount ",
+            )
+        elif effective == "rules":
+            values = tuple(value for value in namespaces if value != "*")
+        elif effective in {"can-i", "who-can"}:
+            values = ("get ", "list ", "watch ", "create ", "update ", "patch ", "delete ")
         elif command in {Command.NAMESPACES, Command.PODS} or (
             effective in RESOURCE_ALIASES and RESOURCE_ALIASES[effective].namespaced
         ):
@@ -183,6 +202,7 @@ def suggestions(
         # newer view-specific commands come last and appear once typed further.
         key=lambda value: (
             not separator and ALIASES.get(value) in {Command.RENAME, Command.CLEANUP, Command.JUMP},
+            not separator and value in AUTHORIZATION_COMMANDS,
             not separator and (value not in ALIASES or value == "columns"),
             not separator
             and ALIASES.get(value)
@@ -227,6 +247,8 @@ class CommandService:
             # input, credential/helper lookup or process preparation.
             return PluginCommand(parts[1])
         self.policy.require(COMMAND_CATALOG.policy_for(verb))
+        if verb in AUTHORIZATION_COMMANDS:
+            return authorization_command(text)
         if verb == "resource":
             return generic_command(parts[1] if len(parts) == 2 else "", discovery)
         if verb == "columns" and len(parts) == 2:

@@ -3,6 +3,7 @@
 from dataclasses import dataclass, field, replace
 from enum import Enum, auto
 
+from kuberich.domain.authorization import AuthorizationRequest, AuthorizationSnapshot
 from kuberich.domain.connections import (
     ConnectionProblem,
     ConnectionState,
@@ -86,6 +87,7 @@ class ViewObservation:
     metrics: MetricsSnapshot | None = None
     pulse: PulseSnapshot | None = None
     relationships: RelationshipSnapshot | None = None
+    authorization: AuthorizationSnapshot | None = None
 
     @property
     def message(self) -> str:
@@ -103,6 +105,13 @@ class ViewObservation:
             return f"{prefix}{action} · {self.problem}"
         if self.status is ViewStatus.FAILED:
             return self.connection.message
+        if self.authorization is not None:
+            evidence = self.authorization
+            if evidence.collecting:
+                return "Authorization · Collecting current evidence"
+            if evidence.review is not None:
+                return f"Authorization review · {evidence.review.decision.value} · {evidence.review.status.value}"
+            return "Authorization · Observed evidence"
         if self.relationships is not None:
             snapshot = self.relationships
             pending = any(row.status is RelationshipStatus.LOADING for row in snapshot.rows) or any(
@@ -206,7 +215,9 @@ class ViewStore:
             or namespace != scope.namespace
         ):
             raise AppError("Resource scope does not belong to the active connection.")
-        self.observation = replace(self.observation, scope=scope, pulse=None, relationships=None)
+        self.observation = replace(
+            self.observation, scope=scope, pulse=None, relationships=None, authorization=None
+        )
         return True
 
     def apply(self, revision: int, scope: ResourceScope, update: SyncUpdate) -> bool:
@@ -235,7 +246,9 @@ class ViewStore:
             or connection.namespace != scope.namespace
         ):
             raise AppError("Pulse scope does not belong to the active connection.")
-        self.observation = replace(self.observation, pulse=PulseSnapshot(scope), relationships=None)
+        self.observation = replace(
+            self.observation, pulse=PulseSnapshot(scope), relationships=None, authorization=None
+        )
         return True
 
     def apply_pulse(self, revision: int, snapshot: PulseSnapshot) -> bool:
@@ -275,6 +288,7 @@ class ViewStore:
             metrics=None,
             pulse=None,
             relationships=RelationshipSnapshot(request, (), (), 0, None),
+            authorization=None,
             status=ViewStatus.LOADING,
             problem=None,
         )
@@ -294,6 +308,42 @@ class ViewStore:
             if any(row.status is RelationshipStatus.LOADING for row in snapshot.rows)
             or any(source.status is RelationshipStatus.LOADING for source in snapshot.sources)
             else ViewStatus.LIVE,
+        )
+        return True
+
+    def bind_authorization(self, revision: int, request: AuthorizationRequest) -> bool:
+        if revision != self.observation.revision:
+            return False
+        connection = self.observation.connection
+        if connection.state not in USABLE_CONNECTIONS or connection.identity != request.session:
+            raise AppError("Authorization request does not belong to the active connection.")
+        self.observation = replace(
+            self.observation,
+            scope=None,
+            snapshot=None,
+            metrics=None,
+            pulse=None,
+            relationships=None,
+            authorization=AuthorizationSnapshot(request, None, None, None, None, None, True),
+            status=ViewStatus.LOADING,
+            problem=None,
+        )
+        return True
+
+    def apply_authorization(self, revision: int, snapshot: AuthorizationSnapshot) -> bool:
+        if (
+            revision != self.observation.revision
+            or self.observation.authorization is None
+            or self.observation.authorization.request != snapshot.request
+        ):
+            return False
+        for evidence in (snapshot.rbac, snapshot.identity, snapshot.review, snapshot.rules):
+            if evidence is not None and evidence.request != snapshot.request:
+                raise AppError("Authorization evidence does not belong to its captured request.")
+        self.observation = replace(
+            self.observation,
+            authorization=snapshot,
+            status=ViewStatus.LOADING if snapshot.collecting else ViewStatus.LIVE,
         )
         return True
 

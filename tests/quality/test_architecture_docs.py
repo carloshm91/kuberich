@@ -155,6 +155,7 @@ def test_architecture_and_decision_links_resolve_without_publishing_history():
         ROOT / "docs/adr/0032-kubeconfig-loader-contract.md",
         ROOT / "docs/adr/0033-cluster-overview-and-history.md",
         ROOT / "docs/adr/0034-native-resource-relationships.md",
+        ROOT / "docs/adr/0035-authorization-evidence-and-reviews.md",
     ]
     for path in paths:
         tokens, _ = rendered(path.read_text())
@@ -173,7 +174,7 @@ def test_architecture_and_decision_links_resolve_without_publishing_history():
                     _, identifiers = rendered(target.read_text())
                     assert unquote(parsed.fragment) in identifiers, href
     navigation = load_navigation(ROOT)
-    assert navigation.user_page_count == 22
+    assert navigation.user_page_count == 23
     assert not any(
         "architecture" in page.source or "adr/" in page.source for page in navigation.pages
     )
@@ -189,6 +190,7 @@ def test_every_new_architecture_document_has_an_explicit_disposition():
         "docs/adr/0000-template.md",
         "docs/adr/0033-cluster-overview-and-history.md",
         "docs/adr/0034-native-resource-relationships.md",
+        "docs/adr/0035-authorization-evidence-and-reviews.md",
     ]
     validate_documentation_plan(ROOT, names)
 

@@ -3,6 +3,8 @@
 from collections.abc import Callable
 
 from kuberich.domain.interactions import InteractionCommand
+from kuberich.errors import AppError
+from kuberich.services.authorization_commands import AuthorizationCommand
 from kuberich.services.command_catalog import BoundCommands
 from kuberich.services.commands import (
     GenericResourceCommand,
@@ -23,16 +25,23 @@ class CommandRouter:
         generic: Callable[[GenericResourceCommand], None],
         generic_mode: Callable[[], bool],
         refused: Callable[[str], None],
+        *,
+        authorization: Callable[[AuthorizationCommand], None] | None = None,
     ) -> None:
         self.bound, self.interaction, self.plugin = bound, interaction, plugin
         self.resource, self.generic = resource, generic
         self.generic_mode, self.refused = generic_mode, refused
+        self.authorization = authorization
 
     def apply(self, command: ResolvedCommand) -> None:
         # These variants retain their own canonical parsing and capture owners.
         # In particular, a named plugin is classified from its manifest before
         # any preparation; it is not reduced to the unsafe bare plugin verb.
-        if isinstance(command, InteractionCommand):
+        if isinstance(command, AuthorizationCommand):
+            if self.authorization is None:
+                raise AppError("Authorization navigation is unavailable.")
+            self.authorization(command)
+        elif isinstance(command, InteractionCommand):
             self.interaction(command)
         elif isinstance(command, PluginCommand):
             self.plugin(command.name)

@@ -85,6 +85,26 @@ COMMAND_SPECS = (
     _spec(Command.PODS, ("po", "pod", "pods"), "List pods; optionally choose NAMESPACE or *."),
     _spec(Command.PULSE, ("pulse", "overview"), "Open cluster health, budgets and metric history."),
     _spec(
+        Command.RBAC,
+        ("rbac",),
+        "Browse declared subjects, bindings and roles; accepts an explicit scope.",
+    ),
+    _spec(
+        Command.CAN_I,
+        ("can-i",),
+        "Review the current identity's exact resource or non-resource access question.",
+    ),
+    _spec(
+        Command.WHO_CAN,
+        ("who-can",),
+        "Explain bounded RBAC candidates for an exact request; external authorizers remain uncertain.",
+    ),
+    _spec(
+        Command.RULES,
+        ("rules",),
+        "Inspect current-identity rule evidence for one explicit namespace.",
+    ),
+    _spec(
         Command.XRAY,
         ("xray",),
         "Explore the selected resource's ownership, references and placement.",
