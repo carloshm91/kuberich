@@ -939,3 +939,70 @@ async def test_budget_limited_page_keeps_actual_observation_time_without_a_new_r
             and "logical read budget exhausted" in final.detail
         )
         assert len(calls) == 2 and result.requests_used == 64
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "last_label_length", [50, 61], ids=["selector-256-boundary", "dns-name-253-maximum"]
+)
+async def test_node_placement_selector_boundary_and_maximum_dns_name_keep_exact_membership(
+    tmp_path, last_label_length
+):
+    nodes, pods = resource("nodes"), resource()
+    node_name = ".".join(("a" * 63, "b" * 63, "c" * 63, "d" * last_label_length))
+    other_node = node_name[:-1] + "e"
+    assert len(node_name) == (242 if last_label_length == 50 else 253)
+    placed = workload(pods, "placed", nodeName=node_name)
+    neighbor = workload(pods, "neighbor", nodeName=other_node)
+    constrained = workload(
+        pods, "constrained", nodeSelector={"relationships.example.test/pool": "workers"}
+    )
+    for value in (placed, neighbor, constrained):
+        value["metadata"]["namespace"] = "search"
+    calls = []
+
+    async def handler(request):
+        calls.append((request.path, dict(request.query)))
+        if request.path == nodes.path() + "/" + node_name:
+            return web.json_response(
+                manifest(
+                    nodes,
+                    node_name,
+                    uid="node-uid",
+                    spec={},
+                    metadata={
+                        "name": node_name,
+                        "uid": "node-uid",
+                        "resourceVersion": "1",
+                        "labels": {"relationships.example.test/pool": "workers"},
+                    },
+                )
+            )
+        assert request.path == pods.path("search")
+        # Return both assignments even for a narrowed request: the exact local
+        # placement check must remain authoritative in both collection paths.
+        return web.json_response(list_body(pods, placed, neighbor, constrained))
+
+    req = request_for(nodes, name=node_name, namespace="search")
+    req = replace(req, scope=replace(req.scope, root=replace(req.scope.root, uid="node-uid")))
+    async with reader_fixture(tmp_path, handler) as reader:
+        result = await RelationshipService(
+            reader, Discovery((nodes, pods)), req.scope, lambda _: True
+        ).collect(req, lambda _: None)
+    assert result.rows[0].status is RelationshipStatus.READY
+    assert [(row.ref.name, row.relation) for row in result.rows] == [
+        (node_name, None),
+        ("placed", RelationKind.NODE),
+    ]
+    assert result.rows[1].observed_uid == "owned-placed"
+    assert result.requests_used == len(calls) == 2
+    path, query = calls[1]
+    assert path == "/api/v1/namespaces/search/pods"
+    if last_label_length == 50:
+        assert query["fieldSelector"] == "spec.nodeName=" + node_name
+        assert len(query["fieldSelector"]) == 256
+    else:
+        assert "fieldSelector" not in query
+    source = next(source for source in result.sources if source.family == "/pods")
+    assert source.status is RelationshipStatus.READY
+    assert source.collection.complete and not source.collection.limited

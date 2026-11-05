@@ -554,12 +554,18 @@ class RelationshipService:
                         )
                     )
         if family == ("", "nodes"):
+            try:
+                placement_query = ResourceQuery(field_selector=f"spec.nodeName={fact.ref.name}")
+            except AppError:
+                # Valid DNS Node names can exceed KubeRich's selector text cap.
+                # The shared scan bounds and exact placement check still apply.
+                placement_query = ResourceQuery()
             for pod in await self._list(
                 request,
                 "",
                 "pods",
                 self.scope.namespace,
-                ResourceQuery(field_selector=f"spec.nodeName={fact.ref.name}"),
+                placement_query,
             ):
                 if pod.node is not None and pod.node.target.name == fact.ref.name:
                     edges.append(

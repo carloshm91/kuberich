@@ -187,6 +187,24 @@ covers only the supported declarations and selected search scope.
 
 ## Final qualification checkpoint
 
+A later review found one production boundary defect: a valid long Node name
+could exceed KubeRich's 256-character selector grammar after adding
+`spec.nodeName=`. Kubernetes requires [DNS subdomain Node names](https://kubernetes.io/docs/concepts/architecture/nodes/),
+whose [limit is 253 characters](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names).
+The original regression retained one boundary pass and one maximum-name failure.
+The correction falls back to the same namespace-scoped, budgeted collection and
+keeps exact `spec.nodeName` matching; it does not raise selector or retention
+limits. The 242-character name still uses its representable 256-character server
+selector; the 253-character dotted name uses the bounded fallback. A nearly
+identical Node assignment and an unassigned selector-matching Pod are excluded.
+Both cases retain complete source state and exactly two logical Reader calls.
+The collector/read-budget cohort passed 44 cases in 2.32 seconds. Original and
+corrected evidence is in `artifacts/issue70/node-name-boundary/`.
+
+Earlier `cd4f026`/`bd98e00` measurements below do not qualify this later production
+correction. A fresh owned-kind trial and complete final-head hosted checks remain
+required; no cross-source coverage reports are combined.
+
 - Actual App/controlled-HTTP and disposable-kind behavior are recorded above.
   The corrected App cohort adds successful cross-context Back and passes 17 cases
   both normally and with coverage. The original UsedBy failure happened before
