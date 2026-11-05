@@ -204,7 +204,7 @@ class RelationshipTable(FrameTable[Text]):
         super().watch_cursor_coordinate(old_coordinate, new_coordinate)
 
     def watch_scroll_x(self, old_value: float, new_value: float) -> None:
-        self._interaction_revision += old_value != new_value
+        self._interaction_revision += old_value != new_value and not self._geometry_scroll
         super().watch_scroll_x(old_value, new_value)
 
     def watch_scroll_y(self, old_value: float, new_value: float) -> None:

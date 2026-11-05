@@ -174,6 +174,8 @@ def suggestions(
             )
         elif effective == "rules":
             values = tuple(value for value in namespaces if value != "*")
+        elif command is Command.DIAGNOSTICS:
+            values = ("cancel",)
         elif effective in {"can-i", "who-can"}:
             values = ("get ", "list ", "watch ", "create ", "update ", "patch ", "delete ")
         elif command in {Command.NAMESPACES, Command.PODS} or (
@@ -279,6 +281,12 @@ class CommandService:
                 namespace_name(parts[1])
             return ResourceCommand(definition, parts[1])
         command = ALIASES.get(verb, Command.UNAVAILABLE)
+        if command is Command.DIAGNOSTICS and len(parts) == 2:
+            if parts[1] != "cancel":
+                raise AppError("Use :diagnostics or :diagnostics cancel.")
+            return ScopedCommand(command, "cancel")
+        if command in {Command.DIAGNOSE, Command.POPEYE} and len(parts) != 1:
+            raise AppError(f"Use :{verb} without arguments.")
         if len(parts) == 1:
             return command
         if command not in {

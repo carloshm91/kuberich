@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "baseline_commit": "d990a5e0273465874df24e1e790887520abeacff",
-  "canonical_user_pages": 23,
+  "canonical_user_pages": 24,
   "reserved_user_pages": 0,
   "migration_state": "user_guides_architecture_and_internal_history_consolidated",
   "scope": "Task guides, generated references, the architecture overview/ADRs and internal engineering-record relocation are implemented. Exact historical payloads remain outside the website; source Git/hash validation does not claim that every pending feature snapshot already has a protected-main anchor. Contribution guidance remains a separate migration.",
@@ -3564,6 +3564,36 @@
         "docs/internal/acceptance/authorization.md"
       ],
       "reason": "Keep O04 #71 source bindings, measured behavior/coverage and owned-cluster/current-head qualification outside user navigation.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/cluster-diagnostics.md",
+      "audience": "user",
+      "action": "keep",
+      "destinations": [
+        "docs/cluster-diagnostics.md"
+      ],
+      "reason": "Explain native failure evidence, optional explicit Popeye scans, scope, cancellation, navigation and honest source limits.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0036-native-and-external-diagnostics.md",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0036-native-and-external-diagnostics.md"
+      ],
+      "reason": "Record immutable diagnostics, exact identity/scope, serialized native/external producers and combined retained-text budgets.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/acceptance/cluster-diagnostics.md",
+      "audience": "contributor acceptance evidence",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/cluster-diagnostics.md"
+      ],
+      "reason": "Keep diagnostic source bindings, measured behavior, platform limits and disposable-cluster qualification outside user navigation.",
       "baseline_sha256": null
     }
   ],

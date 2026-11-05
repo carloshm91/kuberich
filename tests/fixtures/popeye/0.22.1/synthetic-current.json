@@ -1,0 +1,26 @@
+{
+  "popeye": {
+    "report_time": "2026-11-05T10:00:00Z",
+    "score": 75,
+    "grade": "B",
+    "sections": [
+      {
+        "linter": "pods", "gvr": "v1/pods",
+        "tally": {"ok": 1, "info": 1, "warning": 1, "error": 1, "score": 50},
+        "issues": {
+          "team/worker": [
+            {"group": "__root__", "gvr": "v1/pods", "level": 0, "message": "[POP-1] Synthetic OK observation"},
+            {"group": "__root__", "gvr": "v1/pods", "level": 1, "message": "[POP-2] Synthetic information"},
+            {"group": "main", "gvr": "containers", "level": 2, "message": "[POP-3] Synthetic container warning"},
+            {"group": "main", "gvr": "containers", "level": 3, "message": "[POP-4] Synthetic container error"},
+            {"group": "main", "gvr": "containers", "level": 3, "message": "[POP-4] Synthetic container error"}
+          ]
+        }
+      },
+      {"linter": "deployments", "gvr": "apps/v1/deployments", "tally": {"ok": 1, "info": 0, "warning": 0, "error": 0, "score": 100}}
+    ],
+    "errors": {"error": "Synthetic first source unavailable", "error": "Synthetic second source forbidden (403)"}
+  },
+  "ClusterName": "kuberich-session",
+  "ContextName": "owned-preview"
+}

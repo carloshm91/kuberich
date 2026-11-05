@@ -4,6 +4,11 @@ from dataclasses import dataclass, field, replace
 from enum import Enum, auto
 
 from kuberich.domain.authorization import AuthorizationRequest, AuthorizationSnapshot
+from kuberich.domain.cluster_diagnostics import (
+    DiagnosticRequest,
+    DiagnosticSnapshot,
+    DiagnosticStatus,
+)
 from kuberich.domain.connections import (
     ConnectionProblem,
     ConnectionState,
@@ -88,6 +93,7 @@ class ViewObservation:
     pulse: PulseSnapshot | None = None
     relationships: RelationshipSnapshot | None = None
     authorization: AuthorizationSnapshot | None = None
+    diagnostics: DiagnosticSnapshot | None = None
 
     @property
     def message(self) -> str:
@@ -105,6 +111,25 @@ class ViewObservation:
             return f"{prefix}{action} · {self.problem}"
         if self.status is ViewStatus.FAILED:
             return self.connection.message
+        if self.diagnostics is not None:
+            diagnostic = self.diagnostics
+            if diagnostic.collecting:
+                return "Diagnostics · Collecting evidence"
+            if not diagnostic.sources:
+                return "Diagnostics · No source evidence available"
+            partial = any(
+                source.status is not DiagnosticStatus.READY
+                or (source.collection is not None and not source.collection.complete)
+                for source in diagnostic.sources
+            )
+            detail = (
+                f"Findings: {len(diagnostic.findings)}"
+                if diagnostic.findings
+                else "No failure evidence found in the collected sources"
+            )
+            return (
+                "Diagnostics · " + detail + (" · partial/unavailable evidence" if partial else "")
+            )
         if self.authorization is not None:
             evidence = self.authorization
             if evidence.collecting:
@@ -216,7 +241,12 @@ class ViewStore:
         ):
             raise AppError("Resource scope does not belong to the active connection.")
         self.observation = replace(
-            self.observation, scope=scope, pulse=None, relationships=None, authorization=None
+            self.observation,
+            scope=scope,
+            pulse=None,
+            relationships=None,
+            authorization=None,
+            diagnostics=None,
         )
         return True
 
@@ -247,7 +277,11 @@ class ViewStore:
         ):
             raise AppError("Pulse scope does not belong to the active connection.")
         self.observation = replace(
-            self.observation, pulse=PulseSnapshot(scope), relationships=None, authorization=None
+            self.observation,
+            pulse=PulseSnapshot(scope),
+            relationships=None,
+            authorization=None,
+            diagnostics=None,
         )
         return True
 
@@ -289,6 +323,7 @@ class ViewStore:
             pulse=None,
             relationships=RelationshipSnapshot(request, (), (), 0, None),
             authorization=None,
+            diagnostics=None,
             status=ViewStatus.LOADING,
             problem=None,
         )
@@ -325,6 +360,7 @@ class ViewStore:
             pulse=None,
             relationships=None,
             authorization=AuthorizationSnapshot(request, None, None, None, None, None, True),
+            diagnostics=None,
             status=ViewStatus.LOADING,
             problem=None,
         )
@@ -343,6 +379,47 @@ class ViewStore:
         self.observation = replace(
             self.observation,
             authorization=snapshot,
+            status=ViewStatus.LOADING if snapshot.collecting else ViewStatus.LIVE,
+        )
+        return True
+
+    def bind_diagnostics(self, revision: int, request: DiagnosticRequest) -> bool:
+        if revision != self.observation.revision:
+            return False
+        connection, scope = self.observation.connection, request.scope
+        if (
+            connection.state not in USABLE_CONNECTIONS
+            or connection.identity != scope.session
+            or (scope.root is None and connection.namespace != scope.namespace)
+        ):
+            raise AppError("Diagnostic scope does not belong to the active connection.")
+        self.observation = replace(
+            self.observation,
+            scope=None,
+            snapshot=None,
+            metrics=None,
+            pulse=None,
+            relationships=None,
+            authorization=None,
+            diagnostics=DiagnosticSnapshot(request, (), (), True, 0, None),
+            status=ViewStatus.LOADING,
+            problem=None,
+        )
+        return True
+
+    def apply_diagnostics(self, revision: int, snapshot: DiagnosticSnapshot) -> bool:
+        connection = self.observation.connection
+        if (
+            revision != self.observation.revision
+            or self.observation.diagnostics is None
+            or self.observation.diagnostics.request != snapshot.request
+            or connection.state not in USABLE_CONNECTIONS
+            or connection.identity != snapshot.request.scope.session
+        ):
+            return False
+        self.observation = replace(
+            self.observation,
+            diagnostics=snapshot,
             status=ViewStatus.LOADING if snapshot.collecting else ViewStatus.LIVE,
         )
         return True

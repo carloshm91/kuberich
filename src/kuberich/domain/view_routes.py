@@ -11,6 +11,7 @@ from kuberich.errors import AppError
 
 
 class ViewKind(Enum):
+    DIAGNOSTICS = "diagnostics"
     AUTHORIZATION = "authorization"
     PULSE = "pulse"
     RELATIONSHIPS = "relationships"
@@ -38,6 +39,7 @@ class ViewRoute:
             ViewKind.PULSE,
             ViewKind.RELATIONSHIPS,
             ViewKind.AUTHORIZATION,
+            ViewKind.DIAGNOSTICS,
         }:
             if self.selection is not None:
                 raise AppError("This workspace view has no API resource selection.")
@@ -94,6 +96,10 @@ class ViewRoute:
     @classmethod
     def authorization(cls) -> ViewRoute:
         return cls(ViewKind.AUTHORIZATION)
+
+    @classmethod
+    def diagnostics(cls) -> ViewRoute:
+        return cls(ViewKind.DIAGNOSTICS)
 
     @classmethod
     def standard(cls, definition: ResourceDefinition) -> ViewRoute:

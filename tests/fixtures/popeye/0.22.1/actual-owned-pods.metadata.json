@@ -1,0 +1,28 @@
+{
+  "provenance": {
+    "producer_version": "0.22.1",
+    "parser_id": "popeye-json/0.22.1",
+    "source_commit": "35b554961dcdabfa7aba6bd070673c6c24c70884",
+    "annotated_tag_object": "eedda1e7b6014ff773678c6c83421220a9aead1d",
+    "tag_signature": "unsigned; no artifact signature attestation is claimed",
+    "release_url": "https://github.com/derailed/popeye/releases/tag/v0.22.1",
+    "checksum_url": "https://github.com/derailed/popeye/releases/download/v0.22.1/checksums.sha256",
+    "archive_url": "https://github.com/derailed/popeye/releases/download/v0.22.1/popeye_linux_amd64.tar.gz",
+    "checksum_file_sha256": "ace23b878722c6457849c10c8d35b2f66d54cca1ea59d8d527cd0b8b5ed46fe8",
+    "archive_sha256": "d58a3c0ba45805d452c32628320eecdcb5172fd5f42c82e12aeecc7a17eb930b",
+    "binary_sha256": "a9af3fd43bffbf3b4099e68a18e9b1c6a8c1ec735d33390d5fe61ddbb0ffab11",
+    "binary_bytes": 71192728,
+    "host_executed": false
+  },
+  "context": "kind-kuberich-test-23fd0faa4d26408e9ba1255bb77d2312",
+  "namespace": "kuberich-owned-diagnostic-a",
+  "sha256": "da5ad4c360ae0ba99ef1dd51ac710fed58c38c8021245110f121e5a52b1dba5b",
+  "report_time": "2026-11-05T17:02:07+00:00",
+  "returncode": 1,
+  "capture": "Actual official binary output from owned synthetic kind fixtures; not hand-authored.",
+  "capture_runtime_image": "python:3.12-slim@sha256:090ba77e2958f6af52a5341f788b50b032dd4ca28377d2893dcf1ecbdfdfe203",
+  "capture_node_image": "kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed",
+  "normalized_findings": 87,
+  "raw_report_has_uid_or_resource_version": false,
+  "fixture": "actual-owned-pods.json"
+}

@@ -52,6 +52,11 @@ PARSERS = (
         "parse_observability",
         {"value": "observability", "raw": "observability.history"},
     ),
+    (
+        "config/popeye.py",
+        "parse_popeye_settings",
+        {"value": "observability.popeye"},
+    ),
 )
 
 
@@ -137,6 +142,11 @@ def fields(root: Path) -> list[Field]:
             "config/observability.py",
             "parse_observability",
             {"value": "observability.contexts.NAME", "raw": "observability.contexts.NAME.history"},
+        ),
+        (
+            "config/popeye.py",
+            "parse_popeye_settings",
+            {"value": "observability.contexts.NAME.popeye"},
         ),
     )
     for index, (filename, function_name, paths) in enumerate(parsers):

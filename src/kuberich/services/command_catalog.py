@@ -85,6 +85,24 @@ COMMAND_SPECS = (
     _spec(Command.PODS, ("po", "pod", "pods"), "List pods; optionally choose NAMESPACE or *."),
     _spec(Command.PULSE, ("pulse", "overview"), "Open cluster health, budgets and metric history."),
     _spec(
+        Command.DIAGNOSTICS,
+        ("diagnostics",),
+        "Collect namespace diagnostic evidence; :diagnostics cancel stops the active collection.",
+    ),
+    _spec(
+        Command.DIAGNOSE,
+        ("diagnose",),
+        "Explain evidence for the selected Pod or workload.",
+        capability=Capability.WORKLOAD,
+        action="diagnose",
+        generic=False,
+    ),
+    _spec(
+        Command.POPEYE,
+        ("popeye",),
+        "Explicitly run the configured Popeye tool under its local trust policy.",
+    ),
+    _spec(
         Command.RBAC,
         ("rbac",),
         "Browse declared subjects, bindings and roles; accepts an explicit scope.",

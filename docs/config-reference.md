@@ -89,6 +89,11 @@ nullable; the parser still validates it. A null fallback is not permission to su
 | `observability.contexts.NAME.history.port` | 9090 |
 | `observability.contexts.NAME.history.scheme` | "http" |
 | `observability.contexts.NAME.history.service` | null (before validation) |
+| `observability.contexts.NAME.popeye` | null (before validation) |
+| `observability.contexts.NAME.popeye.executable` | null (before validation) |
+| `observability.contexts.NAME.popeye.sections` | ["pods"] |
+| `observability.contexts.NAME.popeye.timeout_seconds` | 60 |
+| `observability.contexts.NAME.popeye.trusted_read_only` | false |
 | `observability.history` | null (before validation) |
 | `observability.history.cluster_label` | null (before validation) |
 | `observability.history.cluster_value` | null (before validation) |
@@ -97,6 +102,11 @@ nullable; the parser still validates it. A null fallback is not permission to su
 | `observability.history.port` | 9090 |
 | `observability.history.scheme` | "http" |
 | `observability.history.service` | null (before validation) |
+| `observability.popeye` | null (before validation) |
+| `observability.popeye.executable` | null (before validation) |
+| `observability.popeye.sections` | ["pods"] |
+| `observability.popeye.timeout_seconds` | 60 |
+| `observability.popeye.trusted_read_only` | false |
 | `observability.schema_version` | 1 |
 | `plugins.commands` | No explicit fallback; see task guide |
 | `plugins.commands.NAME.args` | [] |

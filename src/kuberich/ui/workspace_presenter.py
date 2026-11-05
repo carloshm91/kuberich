@@ -155,6 +155,7 @@ class WorkspacePresenter:
                             continue
                         from kuberich.ui.configuration_data import ConfigurationScreen
                         from kuberich.ui.containers import ContainerScreen
+                        from kuberich.ui.diagnostic_evidence import DiagnosticEvidenceScreen
                         from kuberich.ui.inspection import InspectionScreen
                         from kuberich.ui.logs import LogScreen
                         from kuberich.ui.terminal import ShellScreen
@@ -167,6 +168,7 @@ class WorkspacePresenter:
                                 ContainerScreen,
                                 ShellScreen,
                                 ConfigurationScreen,
+                                DiagnosticEvidenceScreen,
                             ),
                         ):
                             screen.validate_target()
@@ -191,7 +193,14 @@ class WorkspacePresenter:
                                     )
                             if (
                                 (
-                                    isinstance(screen, (ContainerScreen, InspectionScreen))
+                                    isinstance(
+                                        screen,
+                                        (
+                                            ContainerScreen,
+                                            InspectionScreen,
+                                            DiagnosticEvidenceScreen,
+                                        ),
+                                    )
                                     and screen.invalidated
                                 )
                                 or (isinstance(screen, LogScreen) and screen.stale)
@@ -227,6 +236,8 @@ class WorkspacePresenter:
                 if kind == "contexts"
                 else self.navigator.authorization.message(view)
                 if kind == "authorization" and self.navigator.authorization is not None
+                else self.navigator.diagnostics.message(view)
+                if kind == "diagnostics" and self.navigator.diagnostics is not None
                 else view.message
             )
             self.view_status(
@@ -258,6 +269,29 @@ class WorkspacePresenter:
     def show(self, view: ViewObservation) -> None:
         observation = view.connection
         self.header.update_identity()
+        if self.views.route.kind is ViewKind.DIAGNOSTICS:
+            diagnostics = view.diagnostics
+            diagnostic_scope = diagnostics.request.scope if diagnostics is not None else None
+            root = (
+                f" · {diagnostic_scope.root.kind}/{diagnostic_scope.root.name}"
+                if diagnostic_scope is not None and diagnostic_scope.root is not None
+                else ""
+            )
+            self.host.query_one("#resource-view", Vertical).border_title = safe_text(
+                f"Diagnostics · {diagnostic_scope.namespace or 'all'}{root}"
+                if diagnostic_scope is not None
+                else "Diagnostics · waiting for discovery"
+            )
+            self.host.query_one("#empty-state").set_class(True, "populated")
+            self.views.tables.diagnostics.set_class(True, "populated")
+            self.show_sort()
+            self.view_status(
+                view,
+                self.navigator.diagnostics.message(view)
+                if self.navigator.diagnostics is not None
+                else view.message,
+            )
+            return
         if self.views.route.kind is ViewKind.AUTHORIZATION:
             authorization = view.authorization
             self.host.query_one("#resource-view", Vertical).border_title = safe_text(
@@ -418,6 +452,11 @@ class WorkspacePresenter:
 
     def show_sort(self) -> None:
         frame = self.host.query_one("#resource-view", Vertical)
+        if self.views.route.kind is ViewKind.DIAGNOSTICS:
+            frame.border_subtitle = (
+                "Enter evidence · o open object · :diagnostics cancel · Esc previous view"
+            )
+            return
         if self.views.route.kind is ViewKind.AUTHORIZATION:
             frame.border_subtitle = "Informational evidence · Enter follow · o open observed object"
             return

@@ -84,7 +84,26 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     second = catalog.cluster_stages(
         tmp_path, Path("/owned/kind"), Path("/owned/kubectl"), Path("/owned/app.whl"), 2
     )
-    assert len(first) == len(second) == 17
+    assert len(first) == len(second) == 19
+    acquisition = first[0]
+    assert acquisition.name == "kind-1-diagnostic-tools"
+    assert acquisition.command[4:] == (
+        "scripts.diagnostics_tools",
+        "--directory",
+        str(tmp_path / "diagnostic-tools"),
+    )
+    diagnostics = next(stage for stage in first if stage.name == "kind-1-diagnostics")
+    repeated_diagnostics = next(stage for stage in second if stage.name == "kind-2-diagnostics")
+    assert diagnostics.command[diagnostics.command.index("--docker") + 1] == "/usr/bin/docker"
+    assert diagnostics.command[diagnostics.command.index("--popeye") + 1] == str(
+        tmp_path / "diagnostic-tools/popeye"
+    )
+    assert diagnostics.command[diagnostics.command.index("--evidence") + 1] == str(
+        tmp_path / "kind-1-diagnostics/evidence.json"
+    )
+    assert repeated_diagnostics.command[
+        repeated_diagnostics.command.index("--evidence") + 1
+    ] == str(tmp_path / "kind-2-diagnostics/evidence.json")
     pulse = next(stage for stage in first if stage.name == "kind-1-pulse")
     repeated_pulse = next(stage for stage in second if stage.name == "kind-2-pulse")
     pulse_evidence = Path(pulse.command[pulse.command.index("--evidence") + 1])
@@ -112,7 +131,7 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     assert authorization_evidence == tmp_path / "kind-1-authorization" / "evidence.json"
     assert repeated_authorization_evidence == tmp_path / "kind-2-authorization" / "evidence.json"
     assert authorization_evidence.parent != repeated_authorization_evidence.parent
-    for stage in first:
+    for stage in first[1:]:
         module = stage.command[4]
         assert module in body
         assert stage.command[stage.command.index("--kind") + 1] == "/owned/kind"
@@ -778,7 +797,11 @@ def test_kind_cleanup_budget_covers_the_existing_finally_contract(tmp_path):
     stages = catalog.cluster_stages(
         tmp_path, Path("/owned/kind"), Path("/owned/kubectl"), Path("/owned/app.whl"), 1
     )
-    assert all(stage.cleanup_timeout == 219 for stage in stages)
+    assert stages[0].name == "kind-1-diagnostic-tools" and stages[0].cleanup_timeout == 30
+    diagnostics = next(stage for stage in stages if stage.name == "kind-1-diagnostics")
+    assert diagnostics.cleanup_timeout == 264
+    assert catalog.DIAGNOSTIC_CONTAINER_CLEANUP_SECONDS == 45
+    assert all(stage.cleanup_timeout == 219 for stage in stages[1:] if stage is not diagnostics)
     assert catalog.OWNED_KIND_CLEANUP_SECONDS == 2 * 2 * 30 + 90 + 2 * 2 + 5
     assert catalog.Stage("ordinary", ()).cleanup_timeout == 30
 

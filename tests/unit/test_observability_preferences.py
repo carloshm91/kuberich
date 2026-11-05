@@ -3,6 +3,7 @@
 import pytest
 
 from kuberich.config.observability import observability_from, parse_observability
+from kuberich.config.popeye import serialize_popeye_settings
 from kuberich.config.schema import ConfigDocument, parse_document
 from kuberich.errors import AppError
 
@@ -82,3 +83,29 @@ def test_explicit_cluster_binding_and_matchers_are_preserved():
         ("job", "cadvisor"),
         ("namespace", "team"),
     )
+
+
+def test_popeye_contexts_replace_defaults_and_round_trip_without_process_start():
+    raw = {
+        "observability": {
+            "popeye": {"executable": "/opt/tools/popeye", "sections": ["pods", "nodes"]},
+            "contexts": {
+                "production": {
+                    "popeye": {"executable": "/opt/approved/popeye", "trusted_read_only": True}
+                },
+                "disabled": {"popeye": None},
+                "history-only": {"history": BACKEND},
+            },
+        }
+    }
+    document = parse_document(raw)
+    settings = observability_from(document)
+    assert str(settings.for_context("unlisted").popeye.executable) == "/opt/tools/popeye"
+    assert settings.for_context("production").popeye.trusted_read_only
+    assert settings.for_context("production").popeye.sections == ("pods",)
+    assert settings.for_context("disabled").popeye is None
+    assert settings.for_context("history-only").popeye is None
+    serialized = serialize_popeye_settings(settings.popeye)
+    assert parse_observability({"popeye": serialized}).popeye == settings.popeye
+    assert document.to_mapping()["observability"] == raw["observability"]
+    assert not document.unknown

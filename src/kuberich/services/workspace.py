@@ -3,10 +3,20 @@
 import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable
 from dataclasses import dataclass, replace
+from datetime import UTC, datetime
+from typing import Literal, Protocol
 
 from kuberich.adapters.credentials import CredentialLogin
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.domain.authorization import AuthorizationIntent, AuthorizationRequest, rescope_intent
+from kuberich.domain.cluster_diagnostics import (
+    DiagnosticRequest,
+    DiagnosticScope,
+    DiagnosticSnapshot,
+    DiagnosticSource,
+    DiagnosticSourceKind,
+    DiagnosticStatus,
+)
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, namespace_name
 from kuberich.domain.history import HistorySnapshot
 from kuberich.domain.metrics import MetricsSnapshot
@@ -15,12 +25,13 @@ from kuberich.domain.pulse import PulseScope, PulseSnapshot
 from kuberich.domain.relationships import (
     RelationshipMode,
     RelationshipPath,
+    RelationshipRef,
     RelationshipRequest,
     RelationshipScope,
     RelationshipSnapshot,
 )
 from kuberich.domain.resource_queries import ResourceQuery
-from kuberich.domain.resources import ApiResource, Discovery
+from kuberich.domain.resources import ApiResource, Discovery, ResourceRecord
 from kuberich.domain.targets import ResourceTarget
 from kuberich.domain.views import (
     USABLE_CONNECTIONS,
@@ -32,7 +43,10 @@ from kuberich.domain.views import (
 from kuberich.domain.watches import SyncUpdate
 from kuberich.errors import AppError
 from kuberich.security.arguments import validate_argument
+from kuberich.services.access import AccessPolicy
 from kuberich.services.authorization_workspace import AuthorizationWorkspace
+from kuberich.services.cluster_diagnostics import DiagnosticService
+from kuberich.services.diagnostic_workspace import DiagnosticWorkspace
 from kuberich.services.metrics import MetricsPoller, supports_metrics
 from kuberich.services.pulse import PulseService
 from kuberich.services.relationships import RelationshipService
@@ -41,6 +55,20 @@ from kuberich.services.sessions import SessionService
 from kuberich.services.watches import ListWatch
 
 MAX_SUBSCRIPTIONS = 8
+
+
+class DiagnosticPopeye(Protocol):
+    async def __call__(
+        self,
+        client: KubernetesSession,
+        discovery: Discovery,
+        request: DiagnosticRequest,
+        current: Callable[[DiagnosticRequest], bool],
+        *,
+        max_findings: int,
+        max_text_bytes: int,
+        max_source_text_bytes: int,
+    ) -> DiagnosticSnapshot: ...
 
 
 @dataclass(frozen=True)
@@ -56,6 +84,7 @@ class WorkspaceOwnership:
     pulse_count: int = 0
     relationships_count: int = 0
     authorization_count: int = 0
+    diagnostics_count: int = 0
 
 
 class ViewSubscription(AsyncIterator[ViewObservation]):
@@ -104,6 +133,10 @@ class _Selection:
     pulse: bool = False
     relationships: RelationshipRequest | None = None
     authorization: AuthorizationRequest | None = None
+    diagnostics: DiagnosticRequest | None = None
+    diagnostic_producer: Literal["native", "popeye"] = "native"
+    diagnostic_cancel: bool = False
+    diagnostic_client: KubernetesSession | None = None
 
 
 def _cancel_once(task: asyncio.Task[None] | None) -> None:
@@ -133,6 +166,9 @@ class WorkspaceService:
         on_error: Callable[[Exception], None] | None = None,
         pulse_history: Callable[[KubernetesSession, PulseScope], Awaitable[HistorySnapshot]]
         | None = None,
+        diagnostic_policy: AccessPolicy | None = None,
+        diagnostic_now: Callable[[], datetime] | None = None,
+        diagnostic_popeye: DiagnosticPopeye | None = None,
     ) -> None:
         self.sessions = sessions
         self.store = ViewStore()
@@ -150,6 +186,15 @@ class WorkspaceService:
         self._pulse: asyncio.Task[None] | None = None
         self._relationships: asyncio.Task[None] | None = None
         self._authorization = AuthorizationWorkspace()
+        self._diagnostics = DiagnosticWorkspace()
+        self._diagnostic_policy = (
+            diagnostic_policy if diagnostic_policy is not None else AccessPolicy(True)
+        )
+        self._diagnostic_now = (
+            diagnostic_now if diagnostic_now is not None else lambda: datetime.now(UTC)
+        )
+        self._diagnostic_popeye = diagnostic_popeye
+        self._diagnostic_cancelling: DiagnosticRequest | None = None
         self._relationship_request: RelationshipRequest | None = None
         self._relationship_revision = 0
         self._relationship_service: tuple[KubernetesSession, RelationshipService] | None = None
@@ -170,6 +215,7 @@ class WorkspaceService:
             pulse_count=int(self._pulse is not None),
             relationships_count=int(self._relationships is not None),
             authorization_count=int(self._authorization.task is not None),
+            diagnostics_count=int(self._diagnostics.task is not None),
         )
 
     def _require_open(self) -> None:
@@ -198,6 +244,7 @@ class WorkspaceService:
         _cancel_once(self._relationships)
         _cancel_once(self._operation)
         self._authorization.cancel()
+        _cancel_once(self._diagnostics.task)
         self._publish()
         if self.task is None or self.task.done():
             self.task = asyncio.create_task(self._drive(), name="kuberich-workspace")
@@ -212,6 +259,8 @@ class WorkspaceService:
     ) -> asyncio.Task[None]:
         self._require_open()
         validate_argument(context)
+        self._diagnostics.invalidate()
+        self._diagnostic_cancelling = None
         authorization = self.authorization_request
         if authorization is not None:
             if authorization.session.context != context:
@@ -257,6 +306,14 @@ class WorkspaceService:
 
     def select_namespace(self, namespace: str | None) -> asyncio.Task[None]:
         context = self._current_context()
+        if self._diagnostic_scope() is not None:
+            identity = self.store.observation.connection.identity
+            assert identity is not None
+            return self._submit_diagnostics(
+                DiagnosticScope(identity, namespace),
+                header=NamespaceChoice(namespace),
+                force_namespace=True,
+            )
         if self.authorization_request is not None:
             return self.select_authorization(
                 self.authorization_request.intent, scope=NamespaceChoice(namespace)
@@ -307,6 +364,8 @@ class WorkspaceService:
         self._require_open()
         self.selection = resource
         self._authorization.invalidate()
+        self._diagnostics.invalidate()
+        self._diagnostic_cancelling = None
         self.pulse_selected = False
         self._relationship_request = None
         self._relationship_service = None
@@ -316,6 +375,8 @@ class WorkspaceService:
         self._require_open()
         self.pulse_selected = True
         self._authorization.invalidate()
+        self._diagnostics.invalidate()
+        self._diagnostic_cancelling = None
         self._relationship_request = None
         self._relationship_service = None
         context = self.store.observation.context
@@ -337,6 +398,300 @@ class WorkspaceService:
                 pulse=True,
             )
         )
+
+    @property
+    def diagnostic_request(self) -> DiagnosticRequest | None:
+        return self._diagnostics.request if self._diagnostic_cancelling is None else None
+
+    @property
+    def diagnostic_collecting(self) -> bool:
+        return self._diagnostics.collecting
+
+    def _diagnostic_scope(self) -> DiagnosticScope | None:
+        request = self.diagnostic_request
+        snapshot = self.store.observation.diagnostics
+        return (
+            request.scope
+            if request is not None
+            else snapshot.request.scope
+            if snapshot is not None
+            else None
+        )
+
+    def select_diagnostics(
+        self,
+        scope: DiagnosticScope,
+        *,
+        header: NamespaceChoice | None = None,
+    ) -> asyncio.Task[None]:
+        return self._submit_diagnostics(scope, header=header)
+
+    def _submit_diagnostics(
+        self,
+        scope: DiagnosticScope,
+        *,
+        header: NamespaceChoice | None = None,
+        producer: Literal["native", "popeye"] = "native",
+        force_namespace: bool = False,
+    ) -> asyncio.Task[None]:
+        context = self._current_context()
+        connection = self.store.observation.connection
+        if scope.session != connection.identity:
+            raise AppError("The diagnostic scope belongs to an obsolete connection.")
+        namespace = connection.namespace if header is None else header.namespace
+        if scope.root is None and scope.namespace != namespace:
+            raise AppError("Diagnostic overview scope must match the selected header namespace.")
+        connection = replace(connection, namespace=namespace)
+        self._diagnostic_cancelling = None
+        request = self._diagnostics.prepare(scope, producer)
+        self._authorization.invalidate()
+        self.pulse_selected = False
+        self._relationship_request = None
+        self._relationship_service = None
+        revision = self.store.begin(context, connection)
+        self.store.bind_diagnostics(revision, request)
+        retained = self._diagnostics.snapshot
+        if retained is not None:
+            self.store.apply_diagnostics(revision, replace(retained, collecting=True))
+        return self._schedule(
+            _Selection(
+                revision,
+                context,
+                self.selection,
+                change_namespace=force_namespace
+                or header is not None
+                or namespace != self.sessions.observation.namespace,
+                namespace=namespace,
+                diagnostics=request,
+                diagnostic_producer=producer,
+            )
+        )
+
+    def refresh_diagnostics(self) -> asyncio.Task[None]:
+        scope = self._diagnostic_scope()
+        if scope is None:
+            raise AppError("Open diagnostics before refreshing its evidence.")
+        return self._submit_diagnostics(scope)
+
+    def run_popeye(self) -> asyncio.Task[None]:
+        self._current_context()
+        scope = self._diagnostic_scope()
+        if scope is None:
+            connection = self.store.observation.connection
+            assert connection.identity is not None
+            scope = DiagnosticScope(connection.identity, connection.namespace)
+        return self._submit_diagnostics(scope, producer="popeye")
+
+    def cancel_diagnostics(self) -> asyncio.Task[None]:
+        context = self._current_context()
+        if self._diagnostic_cancelling is not None and self.task is not None:
+            return self.task
+        request = self.diagnostic_request
+        if request is None:
+            raise AppError("Open diagnostics before cancelling its collection.")
+        # Invalidate the old producer's outer publication guard synchronously while
+        # preserving its rows. The owned transition drains before binding cancel().
+        self._diagnostic_cancelling = request
+        previous = self.store.observation
+        revision = previous.revision + 1
+        self.store.observation = replace(previous, revision=revision)
+        return self._schedule(
+            _Selection(
+                revision,
+                context,
+                self.selection,
+                diagnostics=request,
+                diagnostic_cancel=True,
+                diagnostic_client=self.sessions.client,
+            )
+        )
+
+    async def _finish_diagnostic_cancel(self, selection: _Selection) -> None:
+        if selection.revision != self.store.observation.revision:
+            return
+        snapshot = await self._diagnostics.cancel()
+        if snapshot is None or selection.revision != self.store.observation.revision:
+            return
+        self._diagnostic_cancelling = None
+        connection = self.store.observation.connection
+        if (
+            selection.diagnostic_client is None
+            or self.sessions.client is not selection.diagnostic_client
+            or self.sessions.observation.state not in USABLE_CONNECTIONS
+            or self.sessions.observation.identity != snapshot.request.scope.session
+            or connection.state not in USABLE_CONNECTIONS
+            or connection.identity != snapshot.request.scope.session
+        ):
+            self._diagnostics.invalidate()
+            return
+        if self.store.bind_diagnostics(selection.revision, snapshot.request):
+            self.store.apply_diagnostics(selection.revision, snapshot)
+            self._publish()
+
+    async def stop_diagnostics(self) -> None:
+        self._diagnostics.invalidate()
+        self._diagnostic_cancelling = None
+        observation = self.store.observation
+        if observation.diagnostics is not None:
+            assert observation.context is not None
+            self.store.begin(observation.context, observation.connection)
+            self._publish()
+        await self._diagnostics.stop()
+
+    def _diagnostic_current(
+        self,
+        client: KubernetesSession,
+        revision: int,
+        request: DiagnosticRequest,
+    ) -> bool:
+        view = self.store.observation
+        return (
+            not self._closed
+            and self.sessions.client is client
+            and self.sessions.observation.state in USABLE_CONNECTIONS
+            and self.sessions.observation.identity == request.scope.session
+            and view.connection.state in USABLE_CONNECTIONS
+            and view.connection.identity == request.scope.session
+            and view.revision == revision
+            and self.diagnostic_request == request
+            and view.diagnostics is not None
+            and view.diagnostics.request == request
+        )
+
+    def _start_diagnostics(
+        self,
+        selection: _Selection,
+        client: KubernetesSession,
+        discovery: Discovery,
+    ) -> None:
+        request = selection.diagnostics
+        assert request is not None
+        if request != self.diagnostic_request:
+            return
+        identity = self.sessions.observation.identity
+        assert identity is not None
+        if request.scope.session != identity:
+            request = self._diagnostics.prepare(
+                replace(request.scope, session=identity), selection.diagnostic_producer
+            )
+        self.store.bind_diagnostics(selection.revision, request)
+        retained = self._diagnostics.snapshot
+        if retained is not None:
+            self.store.apply_diagnostics(selection.revision, replace(retained, collecting=True))
+
+        def current(candidate: DiagnosticRequest) -> bool:
+            return self._diagnostic_current(client, selection.revision, candidate)
+
+        max_findings = self._diagnostics.remaining_findings
+        max_text_bytes = self._diagnostics.remaining_text_bytes
+        max_source_text_bytes = self._diagnostics.remaining_source_text_bytes
+        external = self._diagnostic_popeye
+        service = DiagnosticService(
+            ResourceReader(client),
+            discovery,
+            self._diagnostic_policy,
+            current,
+            now=self._diagnostic_now,
+        )
+
+        async def collect(
+            captured: DiagnosticRequest,
+            publish: Callable[[DiagnosticSnapshot], None],
+        ) -> DiagnosticSnapshot:
+            try:
+                if not current(captured):
+                    raise asyncio.CancelledError
+                if selection.diagnostic_producer == "native":
+                    return await service.collect(captured, publish)
+                source = DiagnosticSource(
+                    "popeye:execution",
+                    DiagnosticSourceKind.POPEYE,
+                    None,
+                    captured.scope.namespace,
+                    DiagnosticStatus.LOADING,
+                    None,
+                    None,
+                    None,
+                    "Explicit Popeye collection; external API read count is unknown.",
+                )
+                publish(DiagnosticSnapshot(captured, (), (source,), True, 0, None))
+                if external is None:
+                    return DiagnosticSnapshot(
+                        captured,
+                        (),
+                        (
+                            replace(
+                                source,
+                                status=DiagnosticStatus.UNAVAILABLE,
+                                observed_at=self._diagnostic_now(),
+                                detail="Popeye integration is not configured. No external tool was run; external API read count is unknown.",
+                            ),
+                        ),
+                        False,
+                        0,
+                        self._diagnostic_now(),
+                    )
+                result = await external(
+                    client,
+                    discovery,
+                    captured,
+                    current,
+                    max_findings=max_findings,
+                    max_text_bytes=max_text_bytes,
+                    max_source_text_bytes=max_source_text_bytes,
+                )
+                if not current(captured):
+                    raise asyncio.CancelledError
+                if result.request != captured:
+                    raise AppError("Diagnostic producer returned a different request.")
+                return result
+            except asyncio.CancelledError:
+                raise
+            except Exception as error:
+                if current(captured):
+                    self._diagnostics.invalidate()
+                    self._unexpected(selection.revision, error)
+                raise
+
+        def publish(snapshot: DiagnosticSnapshot) -> None:
+            if current(snapshot.request) and self.store.apply_diagnostics(
+                selection.revision, snapshot
+            ):
+                self._publish()
+
+        self._diagnostics.start(request, collect, publish)
+        task = self._diagnostics.task
+        assert task is not None
+        task.add_done_callback(
+            lambda completed: None if completed.cancelled() else completed.exception()
+        )
+        self._publish()
+
+    async def resolve_diagnostic(
+        self,
+        request: DiagnosticRequest,
+        ref: RelationshipRef,
+    ) -> ResourceRecord:
+        self._current_context()
+        client, discovery, revision = (
+            self.sessions.client,
+            self.discovery,
+            self.store.observation.revision,
+        )
+        if (
+            client is None
+            or discovery is None
+            or not self._diagnostic_current(client, revision, request)
+        ):
+            raise AppError("Diagnostic evidence belongs to an obsolete request.")
+        service = DiagnosticService(
+            ResourceReader(client),
+            discovery,
+            self._diagnostic_policy,
+            lambda candidate: self._diagnostic_current(client, revision, candidate),
+            now=self._diagnostic_now,
+        )
+        return await service.resolve(request, ref)
 
     @property
     def authorization_request(self) -> AuthorizationRequest | None:
@@ -363,6 +718,8 @@ class WorkspaceService:
             connection = replace(connection, namespace=scope.namespace)
         assert connection.identity is not None
         request = self._authorization.prepare(connection.identity, intent)
+        self._diagnostics.invalidate()
+        self._diagnostic_cancelling = None
         self.pulse_selected = False
         self._relationship_request = None
         self._relationship_service = None
@@ -416,6 +773,8 @@ class WorkspaceService:
         if root.session != connection.identity:
             raise AppError("The relationship root belongs to an obsolete connection.")
         self._authorization.invalidate()
+        self._diagnostics.invalidate()
+        self._diagnostic_cancelling = None
         self._relationship_revision += 1
         scope = RelationshipScope(root, resource, connection.namespace, mode)
         request = RelationshipRequest(scope, self._relationship_revision, expanded)
@@ -487,6 +846,8 @@ class WorkspaceService:
         context = self._current_context()
         self._discovery = None
         self._relationship_service = None
+        if self._diagnostic_scope() is not None:
+            return self.refresh_diagnostics()
         if self.authorization_request is not None:
             return self.refresh_authorization()
         connection = self.store.observation.connection
@@ -516,6 +877,7 @@ class WorkspaceService:
         )
 
     async def _stop_watch(self) -> None:
+        await self._diagnostics.stop()
         await self._authorization.stop()
         relationships = self._relationships
         if relationships is not None:
@@ -585,6 +947,9 @@ class WorkspaceService:
 
     async def _transition(self, selection: _Selection) -> None:
         await self._stop_watch()
+        if selection.diagnostic_cancel:
+            await self._finish_diagnostic_cancel(selection)
+            return
         try:
             if selection.reconnect:
                 self._discovery = None
@@ -616,6 +981,9 @@ class WorkspaceService:
                 self._discovery = client, discovery
             else:
                 discovery = self._discovery[1]
+            if selection.diagnostics is not None:
+                self._start_diagnostics(selection, client, discovery)
+                return
             if selection.authorization is not None:
 
                 def authorization_current(candidate: AuthorizationRequest) -> bool:
@@ -837,6 +1205,8 @@ class WorkspaceService:
         if self._closing is None:
             self._closed = True
             self._authorization.invalidate()
+            self._diagnostics.invalidate()
+            self._diagnostic_cancelling = None
             self.store.disconnect()
             self._desired = None
             _cancel_once(self._operation)

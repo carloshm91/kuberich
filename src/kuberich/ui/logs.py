@@ -179,6 +179,7 @@ class LogScreen(CommandWorkspace):
         selected: str | None = None,
         chrome: WorkspaceChrome | None = None,
         trail: tuple[str, ...] = ("pods",),
+        initial_previous: bool = False,
     ) -> None:
         super().__init__()
         if selected is not None and selected not in containers:
@@ -201,7 +202,12 @@ class LogScreen(CommandWorkspace):
         self.heading = Static("", id="log-title", markup=False)
         self.pause_button = Button("Pause", id="log-pause", compact=True)
         self.previous_button = Button("Previous", id="log-previous", compact=True)
-        self.previous, self.paused, self.wrap, self.timestamps = False, False, False, True
+        self.previous, self.paused, self.wrap, self.timestamps = (
+            initial_previous,
+            False,
+            False,
+            True,
+        )
         self.window = "Tail 1000"
         self.since: datetime | None = None
         self.message = "Choose a container."

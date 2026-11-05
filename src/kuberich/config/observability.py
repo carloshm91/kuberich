@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from kuberich.config.popeye import PopeyeSettings, parse_popeye_settings
 from kuberich.config.schema import ConfigDocument
 from kuberich.domain.history import HistoryBackend
 from kuberich.errors import AppError
@@ -11,15 +12,18 @@ from kuberich.errors import AppError
 class ObservabilityPreferences:
     history: HistoryBackend | None = None
     contexts: tuple[tuple[str, "ObservabilityPreferences"], ...] = ()
+    popeye: PopeyeSettings | None = None
 
     def for_context(self, context: str) -> "ObservabilityPreferences":
         return dict(self.contexts).get(context, self)
 
 
 def parse_observability(value: object, *, context: bool = False) -> ObservabilityPreferences:
-    allowed = {"history"} if context else {"schema_version", "history", "contexts"}
+    allowed = (
+        {"history", "popeye"} if context else {"schema_version", "history", "popeye", "contexts"}
+    )
     if not isinstance(value, dict) or value.keys() - allowed:
-        raise AppError("observability accepts schema_version, history and contexts.")
+        raise AppError("observability accepts schema_version, history, popeye and contexts.")
     if not context and (
         type(value.get("schema_version", 1)) is not int or value.get("schema_version", 1) != 1
     ):
@@ -67,7 +71,9 @@ def parse_observability(value: object, *, context: bool = False) -> Observabilit
         ):
             raise AppError("Observability context names must be bounded text without controls.")
         nested.append((name, parse_observability(spec, context=True)))
-    return ObservabilityPreferences(history, tuple(nested))
+    return ObservabilityPreferences(
+        history, tuple(nested), parse_popeye_settings(value.get("popeye"))
+    )
 
 
 def observability_from(document: ConfigDocument) -> ObservabilityPreferences:

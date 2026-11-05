@@ -54,3 +54,11 @@ identity. Both commands were exercised in an owned local-cluster trial. Missing
 review/list privileges and incomplete who-can evidence remain explicit; these
 informational views do not enable guarded operations. They are unreleased work
 for 0.4.0 and are not part of installed 0.3.0.
+
+Development source adds [failure diagnostics](cluster-diagnostics.md).
+Use `:diagnostics` for the selected namespace or `:diagnose` for a captured Pod
+or supported workload. Findings retain conditions, events, source gaps and
+guarded resource/container-log links. The optional `:popeye` command runs only
+an explicitly configured tool; native refresh and history never rerun it.
+External reports keep their name-only identity limits. These views are not part
+of installed 0.3.0.

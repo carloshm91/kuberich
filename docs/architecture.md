@@ -154,6 +154,33 @@ for 0.x; strict opt-ins and actual source major 1 enforce the unchanged limits.
 RSS/import boundaries, valid output and frames, deadlines, functionality, and
 ownership/cleanup remain mandatory. See the current [quality policy](quality.md).
 
+### Cluster diagnostics
+
+[Diagnostic records](../src/kuberich/domain/cluster_diagnostics.py) and
+[literal rows](../src/kuberich/domain/diagnostic_rows.py) keep source, severity,
+resource identity, observation/server times and uncertainty separate. Native
+classification uses explicit conditions, container states and exact UID-matched
+Events. Selected workloads use verified controller chains; explicit PVC fields
+add storage evidence without reading configuration values.
+
+[DiagnosticService](../src/kuberich/services/cluster_diagnostics.py) owns finite
+native reads and workers. Charged attempts are published before transport waits;
+partial sources and per-evidence age remain visible. Explicit resource/log actions
+have their own fresh identity checks and limits. Table collection never samples
+logs or creates synthetic resource records.
+
+[DiagnosticWorkspace](../src/kuberich/services/diagnostic_workspace.py) serializes
+native collection and an explicitly injected
+[Popeye service](../src/kuberich/services/popeye.py). One combined finding/text
+budget keeps native evidence first and constrains external parsing before
+normalization. Same-scope Popeye keeps native observation times; native refresh
+clears old tool output and never runs a program automatically. Header and root
+collection scope are distinct; namespace/history transitions bind the final
+session generation before work starts, and cancellation drains before rebinding
+retained incomplete results. The
+[diagnostics decision](adr/0036-native-and-external-diagnostics.md) records limits,
+external trust/version semantics, navigation and cleanup boundaries.
+
 ## Dependency direction
 
 ```mermaid

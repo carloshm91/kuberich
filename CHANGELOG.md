@@ -7,6 +7,8 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Added
 
+- Inspect image-pull, scheduling, crash-loop, readiness and volume evidence in native `:diagnostics` and captured-workload `:diagnose` views, with explicit source gaps and guarded resource/log navigation ([#72](https://github.com/carloshm91/kuberich/issues/72)).
+- Run a configured optional Popeye executable explicitly with `:popeye`; keep report severity, provenance, namespace scope and name-only identity limits visible ([#72](https://github.com/carloshm91/kuberich/issues/72)).
 - Browse observed subjects, bindings, role rules and aggregation in a native `:rbac` workspace with UID-safe object opening and normal namespace/history navigation ([#71](https://github.com/carloshm91/kuberich/issues/71)).
 - Ask current-identity `:can-i` questions, read namespace `:rules` and inspect scoped `:who-can` evidence with forbidden, incomplete and unknown results kept explicit ([#71](https://github.com/carloshm91/kuberich/issues/71)).
 
@@ -17,6 +19,10 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 - View current CPU/memory usage, configured requests/limits and labelled percentages in Pod, workload, Node and container tables ([#68](https://github.com/carloshm91/kuberich/issues/68)).
 - Distinguish missing, forbidden, stale, partial and measured-zero metrics; retain numeric sorting and selected resource identity during refresh ([#68](https://github.com/carloshm91/kuberich/issues/68)).
 - Inspect vendor-neutral extended-resource requests/limits and Node capacity without implying GPU utilization or confirmed complex Pod allocation ([#68](https://github.com/carloshm91/kuberich/issues/68)).
+
+### Fixed
+
+- Preserve horizontal scroll and deferred viewport restoration when native table geometry moves the cursor while returning to a relationship view ([#72](https://github.com/carloshm91/kuberich/issues/72)).
 
 ## [0.3.0] - 2026-11-04
 

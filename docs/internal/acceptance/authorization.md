@@ -1,5 +1,28 @@
 # O04 #71: authorization reviews and RBAC evidence
 
+## Protected delivery
+
+PR #313 delivered exact tested head `3087ee88566d2af3fda2801ddf7e0d430742ea00`
+through protected squash `a3f8118e6b7bf8a55948564c80e8bdeec405c1ff` on
+2026-11-05. All 27 selected Application jobs in run 42033845548, Repository
+run 42033845489 and app-bound DCO passed. The tested tree
+`dda33fb550b95592cb3ffbc031a79a85106a49a4`, parent, verified GitHub signature,
+author Gmail, preserved sign-off and actual live protection were checked.
+Issue acceptance, Epic child and project status are complete.
+
+Actual Ubuntu Python 3.13 measured 23,656/23,946 lines (98.7889%),
+7,089/7,382 branches (96.0309%), 99.23% changed lines and all 93 critical
+modules at 100%. The fresh owned-kind trial passed seven checks and 167 API
+calls in 38.274 seconds, with unchanged 226 runtime/configuration/verifier inputs
+and complete private-file, worker and cluster cleanup. Original failed-source
+measurements below retain their boundaries; later passing checks do not relabel
+them. The PR observer drained all 294 owned readers and released its lock.
+
+The automatic-main run 42039539793 later failed a Python 3.14 relationship
+viewport case; its unqualified result is retained. A public horizontal-geometry
+regression and narrow correction are handled within the subsequent diagnostic
+task, with fresh App/platform qualification required.
+
 ## Selected scope and baseline
 
 The implementation starts from protected main
@@ -278,7 +301,7 @@ owned-kind trial passed all seven scenarios and 167 real API calls in 38.274
 seconds (37.476 seconds inside the verifier), with all 226 captured runtime/
 configuration/verifier inputs unchanged. Its native detail checkpoint confirms
 three server-accepted declarations, two repeated-account declarations and two
-distinct displayed subject identities. Earlier SUBJECT navigation also exercises
+distinct displayed declaration representations of that same principal. Earlier SUBJECT navigation also exercises
 semantic grant deduplication. The original environment/kubeconfig, UID/effect
 guards, scopes, cancellation and owned cluster/private-file/process cleanup
 checks remain intact. Exact records are in `artifacts/issue71/kind-trial-3/`.

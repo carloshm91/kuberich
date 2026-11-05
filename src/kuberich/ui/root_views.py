@@ -16,6 +16,7 @@ from kuberich.domain.view_routes import ViewKind, ViewRoute
 from kuberich.services.metadata_filtering import MetadataFilter
 from kuberich.services.pods import ResourceProjection
 from kuberich.ui.authorization import AuthorizationTable
+from kuberich.ui.cluster_diagnostics import ClusterDiagnosticsTable
 from kuberich.ui.contexts import ContextTable
 from kuberich.ui.controllers.base import RenderOutcome, RenderRequest, ViewDriver
 from kuberich.ui.controllers.filtering import FilterOptions, ResourceFilter
@@ -43,6 +44,7 @@ class RootTables:
     pulse: PulseTable
     relationships: RelationshipTable
     authorization: AuthorizationTable
+    diagnostics: ClusterDiagnosticsTable
 
 
 class RootViews:
@@ -74,8 +76,10 @@ class RootViews:
             | StandardTable
             | PulseTable
             | RelationshipTable
-            | AuthorizationTable,
+            | AuthorizationTable
+            | ClusterDiagnosticsTable,
         ] = {
+            ViewKind.DIAGNOSTICS: tables.diagnostics,
             ViewKind.AUTHORIZATION: tables.authorization,
             ViewKind.RELATIONSHIPS: tables.relationships,
             ViewKind.PULSE: tables.pulse,
@@ -95,6 +99,7 @@ class RootViews:
         self._custom: CustomController | None = None
         self.registry = ViewRegistry(
             {
+                ViewKind.DIAGNOSTICS: self._diagnostics,
                 ViewKind.AUTHORIZATION: self._authorization,
                 ViewKind.RELATIONSHIPS: self._relationships,
                 ViewKind.PULSE: self._pulse,
@@ -120,6 +125,7 @@ class RootViews:
         | PulseTable
         | RelationshipTable
         | AuthorizationTable
+        | ClusterDiagnosticsTable
     ):
         return self._by_kind[self.route.kind]
 
@@ -180,6 +186,13 @@ class RootViews:
 
         return ViewEntry(
             ViewDriver(AuthorizationController(self.tables.authorization, self.actions))
+        )
+
+    def _diagnostics(self) -> ViewEntry:
+        from kuberich.ui.controllers.cluster_diagnostics import ClusterDiagnosticsController
+
+        return ViewEntry(
+            ViewDriver(ClusterDiagnosticsController(self.tables.diagnostics, self.actions))
         )
 
     def _standard(self) -> ViewEntry:
