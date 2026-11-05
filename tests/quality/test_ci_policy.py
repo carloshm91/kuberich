@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from scripts.ci_policy import TEST_PARTS, main, matrix, native_matrix, part_matrix
+from scripts.ci_policy import MACOS_RUNNER, TEST_PARTS, main, matrix, native_matrix, part_matrix
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -29,8 +29,8 @@ def test_event_preserves_every_linux_minor_and_declared_mac_coverage(event, ref,
         "3.13",
         "3.14",
     ]
-    assert [job["python"] for job in jobs if job["os"] == "macos-latest"] == mac_versions
-    assert {job["os"] for job in jobs} <= {"ubuntu-24.04", "macos-latest"}
+    assert [job["python"] for job in jobs if job["os"] == "macos-15-intel"] == mac_versions
+    assert {job["os"] for job in jobs} <= {"ubuntu-24.04", "macos-15-intel"}
     assert len({(job["os"], job["python"]) for job in jobs}) == len(jobs)
     parts = part_matrix(event, ref)["include"]
     assert parts == [
@@ -54,6 +54,27 @@ def test_event_preserves_every_linux_minor_and_declared_mac_coverage(event, ref,
 def test_unknown_events_and_wrong_refs_fail_closed(event, ref):
     with pytest.raises(ValueError):
         matrix(event, ref)
+
+
+def test_macos_transport_and_clipboard_steps_follow_the_selected_source_runner():
+    workflow = yaml.safe_load((ROOT / ".github/workflows/quality.yml").read_text())
+    expected = "${{ matrix.os == '" + MACOS_RUNNER + "' }}"
+    for job_name in ("tests", "application"):
+        steps = workflow["jobs"][job_name]["steps"]
+        transport = next(
+            step
+            for step in steps
+            if step.get("name") == "Install real terminal transport test tools on macOS"
+        )
+        assert transport["if"] == expected
+        if job_name == "application":
+            clipboard = next(
+                step
+                for step in steps
+                if step.get("name")
+                == "Verify plaintext clipboard on the owned ephemeral macOS runner"
+            )
+            assert clipboard["if"] == expected
 
 
 @pytest.mark.parametrize("missing", ["GITHUB_EVENT_NAME", "GITHUB_REF", "GITHUB_OUTPUT"])

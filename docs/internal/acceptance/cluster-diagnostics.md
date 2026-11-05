@@ -245,6 +245,19 @@ All 193 related documentation, CI-policy and qualification cases passed in
 55.53 seconds. Product code and earlier scoped runtime evidence are unchanged;
 fresh required hosted checks remain necessary.
 
+The next hosted run passed every Linux test part and all four native build/install
+lanes, including Intel and Apple Silicon macOS. Three source-suite macOS jobs
+were cancelled before runner assignment with the annotation "The job was not
+acquired by Runner of type hosted even after multiple attempts" and an ARM
+capacity notice. These cancellations are not passing verification. The source
+matrix now selects the explicit `macos-15-intel` pool, which completed the native
+Intel lane on that same run. All source Python versions, test parts, coverage
+requirements and both native macOS architectures remain required. A fresh run
+must verify the changed runner policy; no failed run is relabelled as qualified.
+All 442 CI-selection, aggregate-gate, release-policy and qualification tests
+passed locally in 13.03 seconds, including the new regression that keeps macOS
+transport and native-clipboard steps aligned with the selected source runner.
+
 Whole-source coverage, packaging and exact-head hosted platform checks are
 still required before protected delivery. Focused and owned-cluster evidence
 above does not replace them. Only synthetic
