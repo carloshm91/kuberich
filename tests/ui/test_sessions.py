@@ -176,6 +176,9 @@ async def test_no_config_context_namespace_retry_and_cancel_are_actionable() -> 
     async with app.run_test() as pilot:
         await pilot.press("f2")
         assert "No contexts" in str(app.status.content)
+        app.presenter.refresh_ages()
+        await pilot.pause()
+        assert "No contexts" in str(app.status.content)
         await pilot.press("f3")
         assert "Connect to a context" in str(app.status.content)
         await pilot.press("f4")
@@ -268,6 +271,11 @@ async def test_explicit_unknown_context_error_then_choose_valid_context(tmp_path
         async with app.run_test() as pilot:
             await wait_for(lambda: app.state.connection is ConnectionState.CONFIG_ERROR)
             assert app.sessions.observation.state is ConnectionState.CONFIG_ERROR
+            await wait_for(
+                lambda: (
+                    str(app.query_one("#empty-title", Static).content) == "Connection unavailable"
+                )
+            )
             assert str(app.query_one("#empty-title", Static).content) == "Connection unavailable"
             await pilot.press("f2", "enter")
             await connected(app)

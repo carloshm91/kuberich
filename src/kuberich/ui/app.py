@@ -1007,6 +1007,7 @@ class KubeRichApp(App[None]):
             self._process_directory,
             self.views.route,
             isinstance(self.screen, ModalScreen),
+            self.workspace.store.observation.metrics,
         )
 
     def _session_current(self, client: KubernetesSession, identity: SessionIdentity) -> bool:

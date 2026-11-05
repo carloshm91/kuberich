@@ -109,12 +109,75 @@ inspection redacts sensitive values. ConfigMap/Secret reveal is a separate
 Enter on a pod opens regular, init, and existing ephemeral containers. Container
 state, readiness, restarts, image, probes, declared ports, and requests/limits
 come from that pod. The table refreshes from the existing pod watch without a
-separate watch per container. Selection follows container name. CPU/memory show
-requested/limited quantities rather than measured usage.
+separate watch per container. Selection follows container name. The declared
+requests/limits stay separate from the current CPU/memory usage columns below.
 
 Enter on a container opens its logs. Shell and attach open an embedded terminal
 with the selected target displayed. Returning restores the parent selection.
 Deletion, replacement, or scope changes invalidate the old target.
+
+## Current CPU and memory metrics
+
+In development source, native Pod, workload and Node tables also read the
+server's discovered `metrics.k8s.io` API. The installed 0.3.0 release predates
+these columns. A cluster administrator must provide a Metrics API implementation,
+such as metrics-server, and grant the relevant read access. KubeRich does not
+install one. Namespace Pod metrics and cluster Node metrics have independent
+availability and permissions.
+
+`CPU(m)` uses millicores: 1000 m equals one core. `MEM(MiB)` uses mebibytes:
+1 MiB equals 1,048,576 bytes. CPU is the average over the reported sampling
+window; memory is the sampled working set. Requests, limits, capacity and allocatable use the same
+display units. Header percentages name their denominator: `%REQ` means usage /
+configured request, `%LIM` means usage / configured limit, and Node `%ALLOC`
+means usage / allocatable.
+Values can exceed 100%. Zero usage stays `0`; absent or zero denominators show
+`N/A`, and an absent container limit shows `unlimited`.
+
+The `METRICS` field distinguishes `valid`, `no sample`, `API unavailable`,
+`forbidden`, `stale`, `partial` and `read failed`. A failed read clears old usage;
+it never becomes a measured zero. Samples older than 60 seconds expire, including
+in an open container screen. Polls run every 15 seconds after the previous batch
+finishes, using the selected client and namespace. Scope changes and exit stop
+and drain the old poll. Use `:refresh` after changing API installation/discovery.
+
+The main table also expires its cached batch while a subsequent API read is
+pending, independently of the AGE refresh preference. The earliest still-usable
+sample deadline expires that batch and labels it `metrics cache expired`.
+Newer samples in the same batch may therefore lose displayed usage before their
+own 60-second age; original sample timestamps/windows and configured budgets
+remain intact. This is a maximum cache lifetime, not a promise to retain every
+newer sample for 60 seconds. A completed fresh read replaces the expired cache.
+
+CPU/memory quantities, percentages and sampling windows sort by numeric values. `:wide` exposes sample time in UTC,
+window in seconds and generic extended resource names; `:views` can hide or
+reorder metric fields. Existing saved column layouts keep their chosen fields. Workload sample time is the oldest member timestamp and
+window is the largest member window, rather than one shared sampling interval.
+
+Workload totals include actual Pods identified by UID and controller ownership,
+including Deployment → ReplicaSet and CronJob → Job chains. Desired replicas
+and matching labels never establish totals. Missing samples and incomplete
+membership show counts/partial status and suppress full usage percentages.
+Requests/limits are complete only when every required member's budget is known.
+Node usage comes from Node metrics and includes node processes; its Pod request
+sum needs a complete cluster-wide Pod list. Namespace-only RBAC can leave Node
+usage/allocatable percentages available while Pod allocations say incomplete.
+
+Pod allocation with init containers, sidecars, overhead or a Pod-level resource
+budget is explicitly uncertain: usage stays available,
+but effective Pod request/limit totals and their percentages show `N/A (budget)`
+or `N/A`. Container percentages still use that container's declared budget.
+Known requests/limits describe admitted declarations, rather than proof that a
+resize has finished. Matching ordinary Pod/container status fields and omitted
+optional telemetry preserve those declarations. Status differences, including
+kernel-rounded Pod cgroup values, do not erase configured budgets or their
+percentages. They label active allocation unconfirmed; an explicit active or
+unconfirmed resize also receives that label. Node Pod-allocation totals become
+uncertain when a member's active allocation is unconfirmed, while Node usage /
+allocatable stays available. These values do not claim scheduler reservations. Extended resource fields show
+vendor-neutral declared requests/limits and Node capacity/allocatable values;
+the CPU/memory Metrics API provides no GPU utilization. Collection payload/row
+limits still apply. Historical charts and Prometheus metrics are unavailable.
 
 ## Connection state and action results
 

@@ -9,6 +9,7 @@ from kuberich.domain.connections import (
     HttpProblem,
     SessionObservation,
 )
+from kuberich.domain.metrics import MetricsSnapshot
 from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.resources import ApiResource, ResourceSnapshot, api_segment
 from kuberich.domain.targets import SessionIdentity
@@ -76,6 +77,7 @@ class ViewObservation:
     status: ViewStatus = ViewStatus.DISCONNECTED
     snapshot: ResourceSnapshot | None = None
     problem: ConnectionProblem | None = None
+    metrics: MetricsSnapshot | None = None
 
     @property
     def message(self) -> str:

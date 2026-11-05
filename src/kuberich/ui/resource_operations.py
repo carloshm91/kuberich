@@ -15,6 +15,7 @@ from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.config.forwarding import ForwardPreferences
 from kuberich.domain.forward_presets import annotation_preset, resolve_mappings
 from kuberich.domain.interactions import RangeSelection
+from kuberich.domain.metrics import MetricsSnapshot
 from kuberich.domain.operations import MAX_BATCH, ResourceAction
 from kuberich.domain.port_forwards import suggested_port
 from kuberich.domain.targets import SessionIdentity
@@ -43,6 +44,7 @@ class OperationContext:
     directory: Path
     route: ViewRoute
     modal: bool
+    metrics: MetricsSnapshot | None = None
 
 
 class ResourceOperations:
@@ -327,6 +329,9 @@ class ResourceOperations:
             ContainerScreen(
                 stream,
                 record.manifest,
+                metrics=context.metrics.report(record.uid or "")
+                if context.metrics is not None
+                else None,
                 shell=ShellService(
                     client,
                     target,

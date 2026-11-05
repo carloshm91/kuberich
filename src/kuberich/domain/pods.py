@@ -1,11 +1,13 @@
 """Owned pod health and typed ordering, independent of widgets and SDK objects."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from decimal import Decimal
 from enum import StrEnum
 from fractions import Fraction
 from typing import cast
 
+from kuberich.domain.metrics import METRIC_KEYS, MetricReport
 from kuberich.domain.resources import ResourceRecord
 from kuberich.errors import AppError
 
@@ -20,6 +22,20 @@ class PodColumn(StrEnum):
     NODE = "node"
     IP = "ip"
     QOS = "qos"
+    CPU = "cpu"
+    MEMORY = "memory"
+    CPU_REQ = "cpu-req"
+    CPU_LIM = "cpu-lim"
+    MEMORY_REQ = "memory-req"
+    MEMORY_LIM = "memory-lim"
+    CPU_PERCENT_REQUEST = "cpu-percent-request"
+    CPU_PERCENT_LIMIT = "cpu-percent-limit"
+    MEMORY_PERCENT_REQUEST = "memory-percent-request"
+    MEMORY_PERCENT_LIMIT = "memory-percent-limit"
+    METRICS = "metrics"
+    SAMPLE = "sample"
+    WINDOW = "window"
+    EXTENDED = "extended"
 
 
 def _object(value: object) -> dict[str, object]:
@@ -69,6 +85,7 @@ class PodRow:
     node: str = "—"
     ip: str = "—"
     qos: str = "—"
+    metrics: MetricReport = field(default_factory=MetricReport)
 
     def cells(self, now: datetime, *, wide: bool = False) -> tuple[str, ...]:
         cells = (
@@ -79,7 +96,17 @@ class PodRow:
             str(self.restarts),
             age(self.created_at, now),
         )
-        return (*cells, self.node, self.ip, self.qos) if wide else cells
+        return (
+            (
+                *cells,
+                self.node,
+                self.ip,
+                self.qos,
+                *(self.metrics.value(key)[0] for key in METRIC_KEYS[:14]),
+            )
+            if wide
+            else cells
+        )
 
 
 def age(created: datetime | None, now: datetime) -> str:
@@ -200,8 +227,10 @@ def pod_row(record: ResourceRecord) -> PodRow:
     )
 
 
-def sort_value(row: PodRow, column: PodColumn) -> str | int | float | Fraction | None:
+def sort_value(row: PodRow, column: PodColumn) -> str | int | float | Decimal | Fraction | None:
     """Share the actual typed ordering value with incremental table decisions."""
+    if column.value in METRIC_KEYS:
+        return row.metrics.value(column.value)[1]
     if column is PodColumn.NAMESPACE:
         return row.namespace.casefold()
     if column is PodColumn.NAME:
@@ -224,12 +253,12 @@ def order(
 ) -> tuple[PodRow, ...]:
     """Order typed values with stable name/namespace/UID ties and unknown ages last."""
 
-    def key(row: PodRow) -> str | int | float | Fraction:
-        return cast(str | int | float | Fraction, sort_value(row, column))
+    def key(row: PodRow) -> str | int | float | Decimal | Fraction:
+        return cast(str | int | float | Decimal | Fraction, sort_value(row, column))
 
     stable = sorted(rows, key=lambda row: (row.namespace, row.name, row.uid))
-    known = [row for row in stable if column is not PodColumn.AGE or row.created_at is not None]
-    unknown = [row for row in stable if column is PodColumn.AGE and row.created_at is None]
+    known = [row for row in stable if sort_value(row, column) is not None]
+    unknown = [row for row in stable if sort_value(row, column) is None]
     return (*sorted(known, key=key, reverse=descending), *unknown)
 
 

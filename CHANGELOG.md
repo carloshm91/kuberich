@@ -5,7 +5,11 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ## [Unreleased]
 
-No changes yet.
+### Added
+
+- View current CPU/memory usage, configured requests/limits and labelled percentages in Pod, workload, Node and container tables ([#68](https://github.com/carloshm91/kuberich/issues/68)).
+- Distinguish missing, forbidden, stale, partial and measured-zero metrics; retain numeric sorting and selected resource identity during refresh ([#68](https://github.com/carloshm91/kuberich/issues/68)).
+- Inspect vendor-neutral extended-resource requests/limits and Node capacity without implying GPU utilization or confirmed complex Pod allocation ([#68](https://github.com/carloshm91/kuberich/issues/68)).
 
 ## [0.3.0] - 2026-11-04
 

@@ -695,7 +695,7 @@
       ],
       "source": "internal/client/gvrs.go",
       "status": "planned",
-      "difference": "B05 implements Nodes, PVs, PVCs and StorageClasses with typed capacities, scope and inspection. Scheduling, HPA/PDB/quota/limits remain later tasks.",
+      "difference": "B05 implements Nodes, PVs, PVCs and StorageClasses with typed capacities, scope and inspection. Scheduling, HPA/PDB/quota/limits remain later tasks. O01 #68 adds current Node usage/allocatable percentages and generic extended-resource capacity with incomplete Pod-allocation status when cluster-wide Pod reads are unavailable.",
       "partial_evidence": [
         "docs/standard-resources.md",
         "docs/internal/acceptance/standard-resources.md",
@@ -703,9 +703,14 @@
         "tests/ui/test_standard_resources.py",
         "tests/ui/test_standard_table.py",
         "tests/terminal/test_standard_resources.py",
-        "scripts/standard_kind.py"
+        "scripts/standard_kind.py",
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/resource-metrics.md",
+        "tests/unit/test_metrics.py",
+        "tests/contract/test_metrics.py",
+        "tests/ui/test_metrics.py"
       ],
-      "public_summary": "Node, PV, PVC, StorageClass and HPA tables are available. Live usage, scheduling overviews and broader quota/disruption diagnostics are planned.",
+      "public_summary": "Node, PV, PVC, StorageClass and HPA tables are available. Development source adds Node CPU/memory usage, allocatable percentages and vendor-neutral extended-resource capacity; scheduling and broader quota/disruption diagnostics remain planned.",
       "public_status": "partial"
     },
     {
@@ -1239,12 +1244,17 @@
       ],
       "source": "internal/config/k9s.go",
       "status": "planned",
-      "difference": "All schema fields are enumerated in the source inventory; compatible semantics do not imply identical config files. U06 reloads a validated preference file while the app runs, keeps the last valid file and adds per-context read-only/refresh settings. Feature gates and connection/log/metric thresholds remain F03/O01.",
+      "difference": "All schema fields are enumerated in the source inventory; compatible semantics do not imply identical config files. U06 reloads a validated preference file while the app runs, keeps the last valid file and adds per-context read-only/refresh settings. Feature gates and connection/log/metric thresholds remain F03/O01. O01 #68 owns fixed 15-second serialized metrics batches and 60-second current-sample expiry; configurable metric/color thresholds are not implemented.",
       "partial_evidence": [
         "docs/configuration.md",
         "docs/internal/acceptance/reactive-preferences.md",
         "tests/ui/test_live_preferences.py",
-        "tests/unit/test_context_settings.py"
+        "tests/unit/test_context_settings.py",
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/resource-metrics.md",
+        "tests/unit/test_metrics.py",
+        "tests/contract/test_metrics.py",
+        "tests/ui/test_metrics.py"
       ],
       "public_summary": "Valid saved preferences reload while the application runs; an invalid file leaves the last working settings active. Contexts can add read-only mode or a refresh interval. Connection/log/metric threshold controls are unavailable.",
       "public_status": "partial"
@@ -1364,9 +1374,16 @@
       ],
       "source": "internal/client/metrics.go",
       "status": "planned",
-      "difference": "",
-      "public_summary": "Container rows show declared CPU/memory requests and limits. Live usage, percentages, GPU/extended resources and metrics views are planned.",
-      "public_status": "partial"
+      "difference": "O01 #68 implements discovered current CPU/memory metrics in native Pod/workload/Node/container views, UID/controller-chain totals, typed sorting, explicit API/RBAC/no-sample/stale/partial/zero states, declared budgets and vendor-neutral extended-resource requests/capacity. Effective allocation with init/sidecar/overhead/Pod-level budgets/observed resize is labelled uncertain; CPU/memory Metrics API supplies no GPU utilization. Historical charts and Prometheus remain separate O08 work.",
+      "public_summary": "Development source adds current CPU/memory usage, declared requests/limits, labelled percentages and Node/extended-resource capacity. Missing, forbidden, stale, partial and measured-zero values remain distinct. Complex Pod allocations are explicitly uncertain; GPU utilization and history are unavailable. Installed 0.3.0 predates these metrics columns.",
+      "public_status": "partial",
+      "partial_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/resource-metrics.md",
+        "tests/unit/test_metrics.py",
+        "tests/contract/test_metrics.py",
+        "tests/ui/test_metrics.py"
+      ]
     },
     {
       "id": "OBS02",

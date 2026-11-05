@@ -178,7 +178,7 @@ class WorkspaceNavigation:
 
     def contexts(self) -> None:
         if not self.sessions.catalog.names:
-            self.status("No contexts found. Configure KUBECONFIG or use --kubeconfig.")
+            self.notice("No contexts found. Configure KUBECONFIG or use --kubeconfig.")
         elif not isinstance(self.host.screen, ModalScreen):
             if self.resource_name == "contexts":
                 self.host.set_focus(self.views.tables.contexts)

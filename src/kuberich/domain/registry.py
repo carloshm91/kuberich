@@ -1,12 +1,13 @@
 """Standard resource definitions and safe, typed table summaries, without SDK models."""
 
-import re
 from dataclasses import dataclass
 from datetime import datetime
-from decimal import Decimal, localcontext
+from decimal import Decimal
 from typing import cast
 
+from kuberich.domain.metrics import METRIC_KEYS, MetricReport
 from kuberich.domain.pods import age
+from kuberich.domain.quantities import parse_quantity
 from kuberich.domain.resources import ResourceRecord
 from kuberich.domain.views import ResourceSelection
 from kuberich.errors import AppError
@@ -40,6 +41,23 @@ class ResourceDefinition:
             *((Column("namespace"),) if self.namespaced else ()),
             Column("name"),
             *self.fields,
+            *(
+                tuple(
+                    Column(key, key not in {"metrics", "extended"})
+                    for key in (METRIC_KEYS if self.name == "nodes" else METRIC_KEYS[:14])
+                )
+                if self.name
+                in {
+                    "deployments",
+                    "replicasets",
+                    "statefulsets",
+                    "daemonsets",
+                    "jobs",
+                    "cronjobs",
+                    "nodes",
+                }
+                else ()
+            ),
             Column("age", True),
         )
 
@@ -179,45 +197,10 @@ def _external_addresses(spec: dict[str, object], status: dict[str, object]) -> V
     )
 
 
-_QUANTITY = re.compile(r"([+]?(?:\d+(?:\.\d*)?|\.\d+))([numkKMGTPE]|[KMGTPE]i|[eE][+-]?\d+)?")
-_SCALES = {
-    "": 0,
-    "n": -9,
-    "u": -6,
-    "m": -3,
-    "k": 3,
-    "K": 3,
-    "M": 6,
-    "G": 9,
-    "T": 12,
-    "P": 15,
-    "E": 18,
-}
-
-
 def quantity(value: object) -> Value:
-    """Bound storage quantities before Decimal arithmetic; compare bytes, not spelling."""
-    if not isinstance(value, str) or len(value) > 64:
-        return Value("—", None)
-    match = _QUANTITY.fullmatch(value)
-    if match is None:
-        return Value(value[:64] or "—", None)
-    number, suffix = match.groups()
-    suffix = suffix or ""
-    if suffix.endswith("i"):
-        scale = Decimal(1024) ** ("KMGTPE".index(suffix[0]) + 1)
-    else:
-        exponent = (
-            int(suffix[1:])
-            if suffix.startswith(("e", "E")) and len(suffix) > 1
-            else _SCALES[suffix]
-        )
-        if abs(exponent) > 30:
-            return Value(value, None)
-        scale = Decimal(10) ** exponent
-    with localcontext() as context:
-        context.prec = 100
-        return Value(value, Decimal(number) * scale)
+    """Keep literal spelling for display and normalized quantities for ordering."""
+    text = value[:64] or "—" if isinstance(value, str) and len(value) <= 64 else "—"
+    return Value(text, parse_quantity(value))
 
 
 def _timestamp(value: object) -> Value:
@@ -367,6 +350,7 @@ def resource_row(record: ResourceRecord, definition: ResourceDefinition) -> Reso
     fields = {
         "namespace": _text(record.namespace),
         "name": _text(record.name),
+        **{key: Value(*MetricReport().value(key)) for key in METRIC_KEYS},
         **specific,
         "age": Value("—", -record.created_at.timestamp() if record.created_at else None),
     }

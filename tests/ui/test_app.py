@@ -4,7 +4,6 @@ import logging
 from pathlib import Path
 
 import pytest
-from rich.text import Text
 from textual.containers import VerticalScroll
 from textual.events import Paste
 from textual.widgets import Static
@@ -181,22 +180,38 @@ async def test_unknown_and_empty_commands_do_not_echo_input_or_break_navigation(
 
 
 @pytest.mark.asyncio
-async def test_mouse_selects_a_row_and_arrows_preserve_widget_navigation() -> None:
-    # Fixture rows qualify the widget interaction; startup never adds sample resources.
-    app = make_app()
-    async with app.run_test(size=(100, 30)) as pilot:
-        for index in range(4):
-            app.resources.add_row(
-                *(Text(value) for value in ("fixture", f"row-{index}", "0/1", "Pending", "1m"))
-            )
-        await pilot.pause()
-        assert await pilot.click("#resources", offset=(3, 3))
-        assert app.focused is app.resources
-        assert app.resources.cursor_row == 2
-        await pilot.press("up")
-        assert app.resources.cursor_row == 1
-        await pilot.press("down")
-        assert app.resources.cursor_row == 2
+async def test_mouse_selects_a_row_and_arrows_preserve_widget_navigation(tmp_path) -> None:
+    from aiohttp import web
+
+    from tests.support.connections import catalog_fixture, namespaces
+    from tests.support.pods import pod
+    from tests.support.resources import collection
+    from tests.support.workspace import stable_watch, wait_for, workspace_api
+
+    async def namespace_handler(request):
+        return namespaces("team")
+
+    async def resources(request):
+        if "watch" in request.query:
+            return await stable_watch(request)
+        return web.json_response(collection(*(pod(f"row-{index}") for index in range(4))))
+
+    async with workspace_api(namespace_handler, resources) as url:
+        app = KubeRichApp(
+            Settings(), logging.Logger("mouse"), catalog=catalog_fixture(tmp_path, url)
+        )
+        async with app.run_test(size=(100, 30)) as pilot:
+            await wait_for(lambda: app.resources.row_count == 4)
+            await pilot.pause()
+            assert not app.query_one("#empty-state").display
+            target = app.resources.get_row_index("owned-row-2")
+            assert await pilot.click("#resources", offset=(3, app.resources.header_height + target))
+            assert app.focused is app.resources
+            assert app.resources.selected_uid == "owned-row-2"
+            await pilot.press("up")
+            assert app.resources.selected_uid == "owned-row-1"
+            await pilot.press("down")
+            assert app.resources.selected_uid == "owned-row-2"
 
 
 @pytest.mark.asyncio

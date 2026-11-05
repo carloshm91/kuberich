@@ -18,7 +18,9 @@ from kubernetes_asyncio.client import CoreV1Api, V1Namespace, V1ObjectMeta
 from kuberich.config.catalog import load_catalog
 from kuberich.config.schema import Settings
 from kuberich.domain.connections import ConnectionProblem, ConnectionRequest, ConnectionState
+from kuberich.domain.containers import CONTAINER_COLUMNS
 from kuberich.domain.logs import LogBuffer, LogOptions
+from kuberich.domain.metrics import MetricStatus
 from kuberich.domain.pods import pod_row, utc_now
 from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.resources import (
@@ -182,7 +184,19 @@ async def verify_pod_table(reader, resource, catalog, path, context):
         containers = app.screen
         assert containers.stream.target.uid == log_uid
         assert containers.table.row_count >= 1
-        assert len(containers.table.columns) == 10
+        assert len(containers.table.columns) == len(CONTAINER_COLUMNS)
+        async with asyncio.timeout(30):
+            while app.workspace.store.observation.metrics is None:
+                await asyncio.sleep(0.01)
+        report = app.workspace.store.observation.metrics.report(log_uid)
+        assert report.status is MetricStatus.UNAVAILABLE and report.cpu.usage is None
+        assert str(app.resources.get_cell(log_uid, "cpu")) == "N/A"
+        async with asyncio.timeout(30):
+            while not all(
+                row.metrics.status is MetricStatus.UNAVAILABLE for row in containers.rows
+            ):
+                await asyncio.sleep(0.01)
+        assert all(row.metrics.status is MetricStatus.UNAVAILABLE for row in containers.rows)
         assert any(
             "coredns" in row.image.lower() and row.state == "Running" for row in containers.rows
         )
@@ -939,7 +953,9 @@ async def verify(
         )
         workspace_evidence = await verify_workspace(catalog, path, context)
         pod_evidence = await verify_pod_table(reader, pods, catalog, path, context)
-        standard_evidence = await verify_standard_resources(reader, catalog, path, context)
+        standard_evidence = await verify_standard_resources(
+            reader, catalog, path, context, evidence_dir=evidence_dir
+        )
         navigation_evidence = await verify_container_navigation(
             CoreV1Api(sessions.client.api), catalog, path, context
         )

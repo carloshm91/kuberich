@@ -10,6 +10,7 @@ from textual.coordinate import Coordinate
 from textual.message import Message
 from textual.widgets import DataTable
 
+from kuberich.domain.metrics import METRIC_KEYS, METRIC_LABELS
 from kuberich.domain.navigation import Viewport as Viewport
 from kuberich.domain.pods import PodColumn, PodRow, order, sort_value, utc_now
 from kuberich.domain.resource_preferences import ColumnSpec, ViewSpec, applicable_view
@@ -56,11 +57,18 @@ class PodTable(FrameTable[PodCell]):
         self._columns = tuple(
             (PodColumn(spec.key), spec, fields.index(PodColumn(spec.key)))
             for spec in (
-                specs if specs is not None else tuple(ColumnSpec(c.value) for c in fields[:6])
+                specs
+                if specs is not None
+                else tuple(
+                    ColumnSpec(c.value)
+                    for c in (*fields[:6], *(c for c in fields if c.value in METRIC_KEYS[:11]))
+                )
             )
         )
         for column, spec, _ in self._columns:
-            self.add_column(column.name, key=column.value, width=spec.width)
+            self.add_column(
+                METRIC_LABELS.get(column.value, column.name), key=column.value, width=spec.width
+            )
 
     @property
     def visible_columns(self) -> tuple[ColumnSpec, ...]:
@@ -204,7 +212,11 @@ class PodTable(FrameTable[PodCell]):
                     PodCell(
                         uid,
                         values[index],
-                        column in {PodColumn.READY, PodColumn.RESTARTS, PodColumn.AGE},
+                        column in {PodColumn.READY, PodColumn.RESTARTS, PodColumn.AGE}
+                        or (
+                            column.value in METRIC_KEYS
+                            and column.value not in {"metrics", "extended"}
+                        ),
                         spec.justify,
                     )
                     for column, spec, index in self._columns

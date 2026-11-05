@@ -27,3 +27,11 @@ warning-producing `kubetrol` alias.
 
 Real EKS, AKS and GKE cluster trials remain separate from local testing. Follow
 [contexts and authentication](context-sessions.md) for provider prerequisites.
+
+## Resource metrics in development source
+
+Development source for the next 0.4.0 phase adds read-only current CPU/memory
+metrics to Pod, workload, Node and container views. It distinguishes missing APIs, permission
+denial, no sample, stale samples and measured zero. See
+[current metrics](resource-workspace.md#current-cpu-and-memory-metrics) for units,
+percentages and allocation limits. This work is not part of installed 0.3.0.

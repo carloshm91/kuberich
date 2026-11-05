@@ -11,6 +11,7 @@ from textual.coordinate import Coordinate
 from textual.message import Message
 from textual.widgets import DataTable
 
+from kuberich.domain.metrics import METRIC_LABELS
 from kuberich.domain.pods import utc_now
 from kuberich.domain.registry import (
     STANDARD_RESOURCES,
@@ -69,7 +70,7 @@ class StandardTable(FrameTable[PodCell]):
             self.add_column(self.column_label(column.key), key=column.key, width=spec.width)
 
     def column_label(self, key: str) -> str | Text:
-        return key.upper()
+        return METRIC_LABELS.get(key, key.upper())
 
     @property
     def schema_signature(self) -> str | None:

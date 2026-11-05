@@ -1,6 +1,8 @@
 """Pod/container drill-down retains the captured target and the parent viewport."""
 
 import asyncio
+from dataclasses import replace
+from datetime import UTC, datetime
 from typing import Any, ClassVar
 
 from rich.text import Text
@@ -12,6 +14,7 @@ from textual.events import ScreenResume
 from textual.widgets import Button, DataTable, Input, Static
 
 from kuberich.domain.containers import CONTAINER_COLUMNS, ContainerRow, container_rows
+from kuberich.domain.metrics import MetricReport
 from kuberich.domain.resources import ResourceRecord
 from kuberich.domain.transfers import TransferDirection
 from kuberich.errors import AppError
@@ -38,8 +41,8 @@ from kuberich.ui.terminal import ShellScreen
 from kuberich.ui.transfers import TransferScreen
 
 
-def _project_containers(record: ResourceRecord) -> tuple[ContainerRow, ...]:
-    return container_rows(record.manifest)
+def _project_containers(record: ResourceRecord, metrics: MetricReport) -> tuple[ContainerRow, ...]:
+    return container_rows(record.manifest, metrics)
 
 
 class ContainerTable(FrameTable[Text]):
@@ -83,6 +86,7 @@ class ContainerScreen(CommandWorkspace):
         processes: ProcessRunner | None = None,
         chrome: WorkspaceChrome | None = None,
         trail: tuple[str, ...] = ("pods",),
+        metrics: MetricReport | None = None,
     ) -> None:
         super().__init__()
         self.stream = stream
@@ -94,13 +98,14 @@ class ContainerScreen(CommandWorkspace):
         self.attach = attach
         self.transfers = transfers
         self.chrome, self.trail = chrome, (*trail, "containers")
-        self.rows = container_rows(manifest)
+        self._metrics = metrics or MetricReport()
+        self.rows = container_rows(manifest, self._metrics)
         self.names = tuple(row.name for row in self.rows)
         if not self.names:
             raise AppError("The selected pod has no regular/init/ephemeral containers.")
         self.table = ContainerTable(id="containers", cursor_type="row", zebra_stripes=True)
         self.status = Static(
-            "CPU/MEM show requests/limits; usage is not collected.",
+            "CPU(m) and memory(MiB) usage; %REQ and %LIM use declared container budgets.",
             markup=False,
             id="container-status",
         )
@@ -152,6 +157,24 @@ class ContainerScreen(CommandWorkspace):
         for row in self.rows:
             self.table.add_row(*(safe_text(cell) for cell in row.cells()), key=row.name)
         self.validate_target()
+        self.set_interval(1, self._expire_metrics)
+
+    def _expire_metrics(self) -> None:
+        current = self._metrics.fresh(datetime.now(UTC))
+        if self.invalidated or current == self._metrics:
+            return
+        if self._last_record is not None:
+            self.observe_record(self._last_record, current)
+        else:
+            self._metrics = current
+            self.rows = tuple(
+                replace(row, metrics=row.metrics.fresh(datetime.now(UTC))) for row in self.rows
+            )
+            for row in self.rows:
+                for index, cell in enumerate(row.cells()):
+                    rendered = safe_text(cell)
+                    if self.table.get_cell(row.name, str(index)) != rendered:
+                        self.table.update_cell(row.name, str(index), rendered, update_width=True)
 
     def on_screen_resume(self, event: ScreenResume) -> None:
         self.validate_target()
@@ -195,10 +218,16 @@ class ContainerScreen(CommandWorkspace):
             raise AppError("The selected container is no longer present.")
         return name
 
-    def observe_record(self, record: ResourceRecord) -> None:
-        if self.invalidated or record is self._last_record or record.uid != self.stream.target.uid:
+    def observe_record(self, record: ResourceRecord, metrics: MetricReport | None = None) -> None:
+        metrics = metrics or MetricReport()
+        if (
+            self.invalidated
+            or (record is self._last_record and metrics == self._metrics)
+            or record.uid != self.stream.target.uid
+        ):
             return
         self._last_record = record
+        self._metrics = metrics
         self._pending_record = record
         if self._rows_task is None or self._rows_task.done():
             self._rows_task = asyncio.create_task(self._refresh_rows())
@@ -206,14 +235,15 @@ class ContainerScreen(CommandWorkspace):
     async def _refresh_rows(self) -> None:
         while self._pending_record is not None and not self.invalidated:
             record, self._pending_record = self._pending_record, None
-            worker = asyncio.create_task(asyncio.to_thread(_project_containers, record))
+            metrics = self._metrics
+            worker = asyncio.create_task(asyncio.to_thread(_project_containers, record, metrics))
             try:
                 rows = await asyncio.shield(worker)
             except asyncio.CancelledError:
                 await finish_owned(asyncio.gather(worker, return_exceptions=True))
                 raise
             self.validate_target()
-            if self.invalidated or record is not self._last_record:
+            if self.invalidated or record is not self._last_record or metrics is not self._metrics:
                 continue
             table = self.table
             selected = self._selected_name() if table.row_count else None
@@ -243,6 +273,8 @@ class ContainerScreen(CommandWorkspace):
                 self._rows_task.cancel()
             await finish_owned(asyncio.gather(self._rows_task, return_exceptions=True))
         self.names, self.rows = (), ()
+        self._metrics = MetricReport()
+        self._last_record = None
         self.table.clear()
         self.table.disabled = True
 

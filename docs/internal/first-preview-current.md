@@ -33,12 +33,26 @@ This failed attempt does not establish an Intel application-pour result.
 The follow-up verification bounds only Intel dependency setup at 120 minutes
 within a 150-minute job; other hosts retain their 75-minute setup and 90-minute
 job limits. The application install, pour, version, test and uninstall step
-retains its separate 30-minute limit on every host. The changed procedure needs
-a fresh exact-workflow public-consumer run; the original failure stays retained.
-Source guidance can merge after its required Quality gate, Repository checks
-and DCO succeed because the publication facts above are already verified. Website publication still requires
-three actual public-consumer successes and concrete owner approval of the exact
-checked site bytes.
+retains its separate 30-minute limit on every host. The fresh
+[public-consumer run 41917440980](https://github.com/carloshm91/kuberich/actions/runs/41917440980)
+passed all three hosts, including actual public-bottle pour, version, formula
+test and uninstall. Intel dependencies took 77 minutes 12 seconds while the
+application phase took 66 seconds; the original timeout remains a separate failure.
+Its reviewed branch-source evidence remains distinct from protected-main
+release-source qualification.
+
+Protected guidance merged at `25265acfa2424a89bec275bf016b255db3b3448a`
+after all 27 PR jobs, Repository and DCO passed. The automatic main Quality run
+then passed 22/22 jobs and Repository checks. The owner-approved
+[website run 41929743259](https://github.com/carloshm91/kuberich/actions/runs/41929743259)
+published both surfaces successfully on 2026-11-05 UTC. Its manifest SHA-256 is
+`e0e6216605916cc8fcaa9e72ae73552e11302242cf608251cde462c4abf8baa7`.
+Both provider deployment/production hosts verified every served file, header
+and 404; independent custom-host verification matched 35 files and nine
+root/routing checks, including legacy `/docs` and `www` redirects. Both
+`kuberich.com` and `docs.kuberich.com` serve the reviewed public 0.3.0 content.
+The [delivery closeout](https://github.com/carloshm91/kuberich/issues/230#issuecomment-6647028828)
+records deployment IDs, previous deployment targets and the retained receipt.
 Pre-deployment HTTPS checks recorded on 2026-11-04 at 17:01 UTC found both
 production website hosts serving 0.1.0. Source changes do not deploy them.
 
@@ -1235,3 +1249,60 @@ correction. Its source stayed clean and all five owned processes and three
 groups drained. It does not establish normal-finish terminal restoration or a
 complete memory plateau. Final corrected-main qualification remains required;
 no production, workflow, coverage, budget or publication policy is relaxed.
+
+## O01 #68: resource metrics implementation checkpoint
+
+The source now reads current metrics through the selected per-context client,
+with discovered API versions, serialized 15-second batches and 60-second sample
+expiry. Pod/workload/Node/container rows keep numeric sorting and UID selection.
+Availability states, missing/zero denominators, uncertain complex Pod budgets and
+vendor-neutral extended-resource capacity/requests remain explicit. No Metrics API
+installation, Prometheus, historical chart, package or website publication occurs.
+
+The initial focused command passed **135 tests** on Linux CPython 3.12.12; later
+source corrections and qualification results are in the acceptance record:
+
+```sh
+uv run pytest tests/unit/test_metrics.py tests/unit/test_metrics_projection.py tests/contract/test_metrics.py tests/ui/test_metrics.py tests/ui/test_pods.py tests/ui/test_interactions.py -q -n 4 --tb=short
+```
+
+The open-container Pilot trial refreshes values through measured zero, 403, 404
+and valid data, then expires the last good sample while a subsequent HTTP read
+is held. Scope/context/exit contracts close actual local HTTP reads and preserve
+the synthetic kubeconfig. Full source verification is recorded separately in
+[resource metrics acceptance](acceptance/resource-metrics.md); this focused
+checkpoint does not claim hosted/native/provider or release qualification.
+
+The later owned context/native-resource trial passed in **83.7 seconds** on
+frozen `a553ab6`, including exact real ordinary-Pod budget cells and independently
+uncertain init/Node allocation cells. The complete local suite retained
+**7,450 passed / 1 fixture-size failure / 5 native-only skips**; its valid OSC52
+oversize refusal exposed an unbounded success-copy fixture. The corrected
+source/installed-console/installed-module and refusal family passed **54 cases
+with 1 macOS-only skip**, requiring actual decoded 54,611-byte clipboard frames
+and terminal cleanup. The [acceptance record](acceptance/resource-metrics.md#owned-trial-and-retained-full-source-results)
+has the exact commands, failed-suite coverage measurements and original failure
+receipts. Current-head hosted qualification remains pending; these focused
+corrections do not convert the original failed campaign into a pass.
+
+Independent review then found and corrected main-table cache expiry when AGE
+refresh is long and a subsequent metrics request remains pending. One owned
+batch deadline now publishes `metrics cache expired` independently of AGE/read
+completion, retaining budgets, original timestamps and selection. A conservative
+batch can expire a newer member early; it does not invent an older sample time.
+The focused metrics family passed **186 cases**, including actual Pod/Node/workload
+cells, fresh replacement, scope/context/exit cleanup and repeated cancellation
+during timer retirement. The [expiry acceptance](acceptance/resource-metrics.md#main-table-expiry-independent-of-age-and-pending-reads)
+records the command and measured module coverage. Current-head hosted full
+qualification remains pending for the integrated metrics head; original reports are retained.
+
+The branch now integrates completed 0.3.0 delivery from protected main
+`25265acfa2424a89bec275bf016b255db3b3448a` without changing its published
+registry, release notes, changelog history or dependency lock. The integrated
+metrics focus passed **186 cases in 18.19 seconds**; all three new critical
+deterministic modules measured 100% lines/branches, and the I/O poller measured
+98.204%/92.188%. Static/type/plan/reference checks and **140 documentation/site
+contracts** passed. All 198 production-file hashes remained unchanged. See the
+[integration record](acceptance/resource-metrics.md#integration-after-completed-030-delivery)
+for exact commands and limits. Hosted current-head gates remain pending; these
+checks do not replace the retained failed full-suite campaign or qualify a release.

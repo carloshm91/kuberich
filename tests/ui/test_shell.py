@@ -92,11 +92,17 @@ async def test_selected_container_configured_shell_repeat_and_both_retained_view
         app = app_for(tmp_path, url)
         async with app.run_test(size=size) as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
+            await pilot.press("end")
+            await pilot.pause()
+            assert app.resources.scroll_x > 0
             before = app.resources.capture_viewport()
             await pilot.press("colon", *"shell", "enter")
             assert isinstance(app.screen, ContainerScreen)
             containers = app.screen
-            await pilot.press("G", "up")
+            await pilot.press("G", "up", "end")
+            await pilot.pause()
+            assert containers.table.scroll_x > 0
+            horizontal = containers.table.scroll_x
             row, scroll = containers.table.cursor_row, containers.table.scroll_y
             for key in ["s", "x"]:
                 count = len(executed)
@@ -110,6 +116,7 @@ async def test_selected_container_configured_shell_repeat_and_both_retained_view
                 assert "Shell closed" in str(containers.status.content)
                 assert not path.exists() and app.screen is containers
                 assert containers.table.cursor_row == row and containers.table.scroll_y == scroll
+                assert containers.table.scroll_x == horizontal
             output = Path("artifacts/ui").resolve()
             output.mkdir(parents=True, exist_ok=True)
             app.save_screenshot(filename=f"shell-return-{size[0]}.svg", path=str(output))

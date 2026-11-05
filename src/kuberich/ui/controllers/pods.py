@@ -26,4 +26,5 @@ class PodController(ResourceController[PodRow]):
             filtering,
             prepare,
             actions,
+            metrics=True,
         )

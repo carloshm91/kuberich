@@ -17,6 +17,7 @@ from textual.widgets import Button, Checkbox, Static
 
 from kuberich.config.navigation import navigation_from
 from kuberich.domain.custom import CustomLayout
+from kuberich.domain.metrics import METRIC_KEYS, METRIC_LABELS
 from kuberich.domain.navigation import MAX_HISTORY
 from kuberich.domain.pods import PodColumn
 from kuberich.domain.resource_preferences import (
@@ -259,11 +260,11 @@ class ViewPreferences:
             signature = printer_signature(layout.headers)
         elif isinstance(table, PodTable):
             fields = tuple(column.value for column in PodColumn)
-            labels = tuple((key, key.upper()) for key in fields)
+            labels = tuple((key, METRIC_LABELS.get(key, key.upper())) for key in fields)
             key = "v1/pods"
         elif isinstance(table, NamespaceTable):
             fields = ("name", "status", "age")
-            labels = tuple((key, key.upper()) for key in fields)
+            labels = tuple((key, METRIC_LABELS.get(key, key.upper())) for key in fields)
             key = "v1/namespaces"
         else:
             scope = view.scope
@@ -273,7 +274,7 @@ class ViewPreferences:
             ):
                 raise AppError("Wait for this resource to load before opening :views.")
             fields = tuple(column.key for column in table.definition.columns)
-            labels = tuple((key, key.upper()) for key in fields)
+            labels = tuple((key, METRIC_LABELS.get(key, key.upper())) for key in fields)
             key = "/".join(
                 part
                 for part in (scope.resource.group, scope.resource.version, scope.resource.name)
@@ -331,7 +332,7 @@ class ViewPreferences:
                     ).definition.columns
                 )
                 if layout is not None
-                else descriptor.fields[:6]
+                else (*descriptor.fields[:6], *METRIC_KEYS[:11])
                 if descriptor.key == "v1/pods"
                 else descriptor.fields
             )
