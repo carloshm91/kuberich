@@ -20,12 +20,17 @@ checkout. All four observed zero API/helper/network attempts and restored exact
 terminal state. App checks separately verify that an explicit retry then uses
 the owned API. This is development source, not the installed 0.3.0 UI.
 
-The corrected large-log runtime protocol passed, including its strict negative
+The post-CI large-log runtime protocol passed, including its strict negative
 control, complete branch-covered workload and all 337 unchanged input hashes.
-The ordinary UI/log/Root cohort passed 58 cases, CLI/launch/path 278 and
-documentation/source checks 108. Deterministic export domain and service gates
-require 100% lines/branches. Complete-package coverage and the exact-head hosted
-platform matrix remain pending. See [export acceptance](acceptance/local-exports.md).
+The complete local fast suite passed 7,358 cases with one explicit hosted-macOS
+clipboard skip. Scoped authorization navigation passed 142 cases; startup/gate
+controls passed 18 and all 30 unchanged real-PTY startup cases passed. Browser
+error semantics, a disappearing failed-command notice and lost startup readiness
+were corrected with preserved original failures and controlled regressions.
+CLI/launch/path passed 278 cases and documentation/source checks 108.
+Deterministic export domain and service gates require 100% lines/branches.
+Complete-package coverage and the exact-head hosted platform matrix remain
+pending. See [export acceptance](acceptance/local-exports.md).
 
 The prerequisite diagnostics PR #314 is protected-merged at
 `f4c34931dcf49df68f122888d028069af310c29d`. Its final exact-head run 42095675489

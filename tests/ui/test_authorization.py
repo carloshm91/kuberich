@@ -1,5 +1,7 @@
 """Actual native authorization commands and HTTP evidence in the shared App frame."""
 
+import asyncio
+import json
 import logging
 
 import pytest
@@ -14,6 +16,7 @@ from kuberich.domain.authorization import (
 )
 from kuberich.services.authorization_commands import authorization_command
 from kuberich.ui.app import KubeRichApp
+from kuberich.ui.workspace_presenter import WorkspacePresenter
 from tests.support.authorization_ui import GROUP, AuthorizationAPI, authorization_api
 from tests.support.connections import catalog_fixture
 from tests.support.workspace import wait_for
@@ -608,13 +611,67 @@ async def test_startup_authorization_command_resolves_after_current_discovery(tm
 
 
 @pytest.mark.asyncio
-async def test_invalid_deferred_question_and_offline_question_retain_clear_native_notices(tmp_path):
+async def test_invalid_deferred_question_and_offline_question_retain_clear_native_notices(
+    tmp_path, monkeypatch
+):
+    trace = []
+    invalid_shown, live_shown = asyncio.Event(), asyncio.Event()
+    original_notice, original_show, original_status = (
+        WorkspacePresenter.notice,
+        WorkspacePresenter.show,
+        WorkspacePresenter.status,
+    )
+
+    def record(presenter, operation, message=None, view=None):
+        current = presenter.workspace.store.observation
+        trace.append(
+            {
+                "operation": operation,
+                "message": message,
+                "view": id(view) if view is not None else None,
+                "current_view": id(current),
+                "revision": current.revision,
+                "current_status": current.status.name,
+                "foreground": presenter.views.foreground.active,
+                "authorization_request": presenter.workspace.authorization_request is not None,
+            }
+        )
+
+    def notice(presenter, message):
+        record(presenter, "notice", message)
+        original_notice(presenter, message)
+
+    def status(presenter, message):
+        record(presenter, "status", message)
+        original_status(presenter, message)
+        if "not discovered" in message:
+            invalid_shown.set()
+
+    def show(presenter, view):
+        record(presenter, "show", view=view)
+        original_show(presenter, view)
+        if view is presenter.workspace.store.observation and view.status.name == "LIVE":
+            live_shown.set()
+
+    monkeypatch.setattr(WorkspacePresenter, "notice", notice)
+    monkeypatch.setattr(WorkspacePresenter, "status", status)
+    monkeypatch.setattr(WorkspacePresenter, "show", show)
     offline = make_app()
     async with offline.run_test():
         await offline.run_command("rbac")
         assert "Connect to a context" in str(offline.status.content)
     api = AuthorizationAPI()
     api.hold_path = "/api"
+    pod_list_started, release_pod_list = asyncio.Event(), asyncio.Event()
+    original_handler = api.handler
+
+    async def handler(request):
+        if request.path == "/api/v1/namespaces/team/pods" and "watch" not in request.query:
+            pod_list_started.set()
+            await release_pod_list.wait()
+        return await original_handler(request)
+
+    monkeypatch.setattr(api, "handler", handler)
     async with authorization_api(api) as url:
         app = make_app(
             catalog_fixture(tmp_path, url), initial=authorization_command("can-i get absent")
@@ -623,12 +680,20 @@ async def test_invalid_deferred_question_and_offline_question_retain_clear_nativ
             async with app.run_test():
                 await wait_for(api.started.is_set)
                 api.release.set()
-                await wait_for(lambda: "not discovered" in str(app.status.content))
+                await wait_for(pod_list_started.is_set)
+                await wait_for(invalid_shown.is_set)
+                assert "not discovered" in str(app.status.content)
+                release_pod_list.set()
+                await wait_for(live_shown.is_set)
+                assert "not discovered" in str(app.status.content)
                 assert not api.reviews and app.state.view_kind == "authorization"
                 await app.run_command("rbac")
                 await ready(app, AuthorizationMode.SUBJECTS)
+                assert "not discovered" not in str(app.status.content)
         finally:
             api.release.set()
+            release_pod_list.set()
+            (tmp_path / "deferred-authorization-trace.json").write_text(json.dumps(trace, indent=2))
 
 
 @pytest.mark.asyncio
@@ -781,3 +846,60 @@ async def test_ordinary_namespace_picker_remains_an_ordinary_pod_navigation(tmp_
             await pilot.press("enter")
             await pods_ready(app, "default")
             assert app.workspace.authorization_request is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("change", ["namespace", "same-context-session", "context", "departure"])
+async def test_failed_deferred_question_notice_cannot_cross_new_scope_session_or_route(
+    tmp_path, change
+):
+    api = AuthorizationAPI()
+    api.hold_path = "/api"
+    async with authorization_api(api) as url:
+        app = make_app(
+            catalog_fixture(tmp_path, url), initial=authorization_command("can-i get absent")
+        )
+        try:
+            async with app.run_test():
+                await wait_for(api.started.is_set)
+                api.release.set()
+                await wait_for(lambda: app.workspace.store.observation.status.name == "LIVE")
+                await wait_for(lambda: "not discovered" in str(app.status.content))
+                original = app.workspace.store.observation
+                assert app.workspace.authorization_request is None
+                assert not api.reviews and "allowed" not in str(app.status.content).lower()
+                if change == "namespace":
+                    await app.workspace.select_namespace("default")
+                elif change == "same-context-session":
+                    await app.workspace.connect(original.context)
+                elif change == "context":
+                    await app.workspace.connect("kuberich-test-Two")
+                else:
+                    await app.run_command("pods")
+                await wait_for(lambda: app.workspace.store.observation.status.name == "LIVE")
+                await wait_for(lambda: "not discovered" not in str(app.status.content))
+                current = app.workspace.store.observation
+                assert "not discovered" not in app.authorization.message(current)
+                if change == "namespace":
+                    assert current.revision != original.revision
+                    assert (
+                        current.connection.identity.connection_id
+                        == original.connection.identity.connection_id
+                    )
+                    assert (
+                        current.connection.identity.generation
+                        > original.connection.identity.generation
+                    )
+                    assert current.connection.namespace == "default"
+                elif change in {"same-context-session", "context"}:
+                    assert current.connection.identity != original.connection.identity
+                    assert current.context == (
+                        original.context
+                        if change == "same-context-session"
+                        else "kuberich-test-Two"
+                    )
+                else:
+                    assert app.state.view_kind == "pods"
+                assert app.workspace.authorization_request is None and not api.reviews
+        finally:
+            api.release.set()

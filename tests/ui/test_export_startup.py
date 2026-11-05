@@ -1,11 +1,13 @@
 """The installed command's browser route stays local through mount, refresh and Back."""
 
+import asyncio
 import json
 import logging
 
 import pytest
 from aiohttp import web
 from textual.events import ScreenResume, ScreenSuspend
+from textual.messages import InvokeLater
 from textual.screen import ModalScreen
 from textual.widgets import Static
 
@@ -339,3 +341,141 @@ async def test_delayed_root_resume_does_not_activate_rendering_under_startup_bro
         await wait_for(lambda: len(app.screen_stack) == 1 and app.views.foreground.active)
         assert root.is_current and app.sessions.client is None
     assert app.views.foreground.closed and app.exports.operation_count == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("lost_callbacks", [1, 2])
+async def test_discarded_browser_refresh_callback_rearms_after_actual_root_refresh(
+    tmp_path, monkeypatch, lost_callbacks
+):
+    held, api_requests, clients, phases = [], [], [], []
+    entered, returned, root_refreshed = asyncio.Event(), asyncio.Event(), asyncio.Event()
+    original_post = KubeRichApp.post_message
+    original_connect, original_client = SessionService.connect, session_module.KubernetesSession
+
+    def post(app, message):
+        callback = message.callback if isinstance(message, InvokeLater) else None
+        owner = getattr(getattr(callback, "func", None), "__self__", None)
+        if (
+            isinstance(owner, asyncio.Event)
+            and (not held or owner is held[0][1])
+            and len(held) < lost_callbacks
+        ):
+            held.append((message, owner))
+            return True
+        return original_post(app, message)
+
+    async def connect(service, context, **kwargs):
+        before = service.before_connect
+        assert before is not None
+
+        async def before_connect():
+            entered.set()
+            await before()
+            returned.set()
+
+        service.before_connect = before_connect
+        return await original_connect(service, context, **kwargs)
+
+    def client(*args, **kwargs):
+        assert root_refreshed.is_set(), "Transport started before the observed root refresh"
+        clients.append(True)
+        return original_client(*args, **kwargs)
+
+    monkeypatch.setattr(KubeRichApp, "post_message", post)
+    monkeypatch.setattr(SessionService, "connect", connect)
+    monkeypatch.setattr(session_module, "KubernetesSession", client)
+
+    async def ns(request):
+        api_requests.append(request.path)
+        return namespaces("team")
+
+    async def resources(request):
+        api_requests.append(request.path)
+        if "watch" in request.query:
+            return await stable_watch(request)
+        return web.json_response(collection(pod("owned-api")))
+
+    service = service_for(tmp_path)
+    async with workspace_api(ns, resources) as url:
+        app = KubeRichApp(
+            parse_document({"schema_version": 1}).settings,
+            logging.Logger("discarded-browser-refresh", level=100),
+            catalog=catalog_fixture(tmp_path, url),
+            initial_command=Command.EXPORTS,
+            export_service=service,
+            updates=UpdateService("0.3.0", tmp_path / "update-cache"),
+        )
+        try:
+            async with app.run_test(size=(40, 12)):
+                await wait_for(lambda: isinstance(app.screen, ArtifactBrowserScreen))
+                browser = app.screen
+                await wait_for(lambda: browser.listing is not None and browser.operation_count == 0)
+                assert len(held) == 1 and not clients and not api_requests
+                _, readiness = held[0]
+                # Suppress the actual initial readiness notification to model
+                # a transient screen discarding its owned after-refresh queue.
+                # The test injects no replacement readiness signal.
+                await browser.action_back()
+                await wait_for(lambda: len(app.screen_stack) == 1 and not browser.is_attached)
+                assert app.call_after_refresh(root_refreshed.set)
+                await wait_for(root_refreshed.is_set)
+                phases.append(
+                    {
+                        "phase": "root-refreshed",
+                        "readiness_set": readiness.is_set(),
+                        "browser_attached": browser.is_attached,
+                        "foreground": app.views.foreground.active,
+                        "client_count": len(clients),
+                        "api_requests": list(api_requests),
+                    }
+                )
+                assert not clients and not api_requests
+                if lost_callbacks == 2:
+                    assert len(held) == 2 and not readiness.is_set()
+                    await app.run_command(":exports")
+                    await wait_for(lambda: isinstance(app.screen, ArtifactBrowserScreen))
+                    second = app.screen
+                    await wait_for(
+                        lambda: second.listing is not None and second.operation_count == 0
+                    )
+                    root_refreshed.clear()
+                    await second.action_back()
+                    await wait_for(lambda: len(app.screen_stack) == 1 and not second.is_attached)
+                    assert app.call_after_refresh(root_refreshed.set)
+                    await wait_for(root_refreshed.is_set)
+                    phases.append(
+                        {
+                            "phase": "second-root-refreshed",
+                            "readiness_set": readiness.is_set(),
+                            "foreground": app.views.foreground.active,
+                            "client_count": len(clients),
+                            "api_requests": list(api_requests),
+                        }
+                    )
+                    assert not clients and not api_requests
+                await app.run_command(":retry")
+                await wait_for(entered.is_set)
+                try:
+                    await wait_for(lambda: app.resources.row_count == 1)
+                except TimeoutError:
+                    trace = startup_trace(app, [], api_requests)
+                    trace.update(
+                        {
+                            "phases": phases,
+                            "readiness_set": readiness.is_set(),
+                            "before_connect_entered": entered.is_set(),
+                            "before_connect_returned": returned.is_set(),
+                            "client_count": len(clients),
+                        }
+                    )
+                    print(json.dumps(trace, indent=2))
+                    (tmp_path / "discarded-readiness-timeout.json").write_text(
+                        json.dumps(trace, indent=2)
+                    )
+                    raise
+                assert returned.is_set() and readiness.is_set() and len(clients) == 1
+                assert api_requests and app.views.foreground.active
+        finally:
+            (tmp_path / "discarded-readiness-phases.json").write_text(json.dumps(phases, indent=2))
+        assert app.exports.operation_count == 0

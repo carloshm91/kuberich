@@ -224,3 +224,112 @@ production inventory digest is
 filesystem receipts and all ANSI/kernel/offline evidence. These trials cover
 Linux CPython 3.12 only. Full current-source coverage, the declared platform
 matrix and protected delivery remain required. No artifact was published.
+
+## First hosted candidate and corrections
+
+PR #315 source `7fe5ea1606a685148ad7ec9d8e261e25c6c49d4d` passed Repository
+validation 42119592737, including the site/browser checks. Application run
+42119592699 failed Fast tests with 2,869 passed and two failures; the required
+matrix correctly did not expand and Quality gate failed. That candidate remains
+unqualified. The exact-head observer terminated/reaped with all 46 readers and
+their groups drained and its lock released. Logs, annotations, JUnit and original
+fast artifacts are retained under `hosted-pr315-7fe5ea1/`.
+
+The new browser test still expected the old generic word “local” after the typed
+missing-directory correction. It failed unchanged locally in 1.17 seconds. Its
+test-only update now distinguishes a missing default's empty listing from an
+explicitly chosen missing directory, proves noncreation, prevents path/clipboard
+leaks and verifies recovery. The corrected case passed, followed by all 53 export
+UI/path/actual App cases in 39.92 seconds. Production error handling was unchanged.
+`ui/pr315-browser-evidence.json` retains red/green results and hashes.
+
+The existing deferred authorization test also lost its invalid-command notice.
+Controlled real App/HTTP evidence held discovery and the first Pod LIST separately:
+the notice was emitted on observation A, revision one, then normal watch startup
+replaced it with observation B of the same revision and painted “Loading pods…”.
+The new assertion fails immediately after that controlled update, without a
+timeout or an inferred replay of the unrecorded hosted ordering.
+
+The authorization-navigation owner now retains only that failed deferred notice
+for its exact session and workspace revision. New intent, namespace/session/
+context changes and route departure clear it; normal same-revision observations
+do not erase it. The generic presenter's notice policy is unchanged. All eight
+new production lines and their guards were exercised. The final 142-case cohort
+passed in 42.01 seconds, with owner coverage 190/195 lines and 57/62 branches;
+existing gaps are retained. Ruff, formatting and strict typing passed. Original
+traces and the boundary tests are bound in
+`domain/deferred-authorization-handoff.json`. Superseded terminal receipts were
+copied intact to `domain/qualified-7fe-terminal/` before new-source qualification.
+
+## Complete fast-suite startup finding
+
+The first complete local fast suite after those two corrections ran all 7,357
+selected cases: 7,355 passed, one failed and one skipped in 385.15 seconds. The
+skip is the explicit owned-hosted-macOS clipboard test; this Linux run does not
+claim that platform behavior. The only failure was the 40-column offline export
+startup followed by explicit retry. Its trace has an active foreground and
+current root, but CONNECTING state, no snapshot and zero API requests. This is
+distinct from the previously fixed stale-suspend/rendering failure.
+
+Pinned Textual 8.2.8 source routes `InvokeLater` to the screen current at delivery;
+that screen owns its after-refresh queue, which is not migrated when a transient
+screen is removed. Two independent source reviews identified that callback
+ownership risk. A controlled dropped-readiness notification reproduces the
+observed unset Event, entered-but-not-returned connection gate and zero client/
+API calls after an actual root refresh. Locally queued browser interleavings
+that drained successfully are retained as passing diagnostics; they do not
+establish the original unrecorded ordering.
+
+App now owns the readiness Event and uses the existing verified foreground-resume
+callback to request another after-refresh release while it remains unset.
+Readiness is released after an actual refresh, never by mounting, reconnecting,
+focus, a timer or a replacement signal in the test. A second controlled lost
+notification followed by another modal also recovers. No extra WorkspaceScreen
+change, framework-private hook or deadline adjustment is introduced.
+
+The focused startup/root/foreground/coordinator cohort passed 18 cases in 5.63
+seconds. All 30 unchanged real-PTY startup tests passed in 51.87 seconds, including
+first-frame-before-SDK/network/helper order, opted-in release timing, pre-refresh
+quit/cancellation, context replacement and terminal cleanup. Ruff, formatting
+and strict typing passed. `domain/readiness-handoff.json` binds the source,
+controls, traces and preserved failed diagnostics. The earlier full-fast result
+remains a failure; the complete corrected suite and fresh source-bound runtime/
+installed qualification follow separately.
+
+The complete corrected fast suite then passed **7,358 cases**, with the same
+single owned-hosted-macOS clipboard skip, in 372.73 seconds. No tests were removed
+or failures ignored. The final Ruff, all-1,014-file formatting, strict 245-target
+typing and zero-finding test-private audit passed. `root/ci-correction/fast-2.xml`
+and `fast-2.log` retain this result; the earlier failed suite remains intact.
+Fresh runtime and installed-wheel receipts must bind this changed App source
+before the follow-up commit is described as locally qualified.
+
+The fresh post-CI runtime parent then passed in 110.93 seconds, exit zero and
+reaped. Positive completed both rounds at 127.693 ms (20.932 seconds); the strict
+negative callback was correctly rejected at 262.383 ms (13.853 seconds). The
+CTracer branch-covered child completed both rounds in 35.978 seconds; its
+245.960-ms gap remains an advisory instrumentation miss and is explicitly not
+timing qualification. All original record/batch/byte/cycle limits are unchanged.
+All 337 file hashes match the corrected source, every process owner drained,
+child PIDs are absent and registry/read/watch counts are zero after close.
+`ui/aggregate-runtime-post-ci-receipts/summary.json` and `source-binding.json`
+retain this result; binding SHA-256 is
+`39ed0030a8e7dbf1b2a22b47466a15fe6b4ac8f7ac9cf7ac5c6307c5250377c1`.
+Both earlier runtime archives remain unchanged.
+
+Final-source export terminal qualification passed again: source at 40×12 and
+100×30 ran two cases in 6.11 seconds; a fresh outside-checkout wheel ran console
+and module cases in 17.75 seconds. All four retain zero API/helper/DNS/socket
+attempts, active negative network controls, private file/root modes, redacted
+OSC52 bytes, view/refresh/confirmed deletion, disconnected Back and exact
+terminal/process/descriptor cleanup. All 244 packaged runtime files match all
+246 current production inputs. This replaces no earlier receipt.
+
+The final local wheel SHA-256 is
+`7093876b3994eab58d36aaba1a3c3297a3f6b4191de675a9792a2651fe94b340`;
+production inventory digest is
+`24f2340486c8ac2810290d392faa852f2541979d8f6a4ebb64fa852186a0d509`.
+`domain/post-ci-exports-terminal-handoff.json` and its source/filesystem manifests
+bind the post-CI-prefixed ANSI/kernel/offline receipts. The prior
+`qualified-7fe-terminal/` archive remains unchanged. Full-package/platform
+coverage and required exact-head hosted checks still determine protected delivery.

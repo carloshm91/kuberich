@@ -224,7 +224,8 @@ class KubeRichApp(App[None]):
         export_service: ExportService | None = None,
         export_directory: Path | None = None,
     ) -> None:
-        self._foreground = ForegroundGate(lambda: self.views.request())
+        self._startup_ready: asyncio.Event | None = None
+        self._foreground = ForegroundGate(self._resume_foreground)
         super().__init__()
         self.stylesheet = ComponentStylesheet(variables=self.get_css_variables())
         self.title = "KubeRich"
@@ -781,8 +782,17 @@ class KubeRichApp(App[None]):
         super()._register_child(parent, child, before, after)
         child._styles_cache = ColorStylesCache()
 
+    def _resume_foreground(self) -> None:
+        self.views.request()
+        readiness = self._startup_ready
+        if readiness is not None and not readiness.is_set():
+            # An earlier callback may have belonged to a removed modal screen.
+            # Re-arm on a real root resume; release still follows an actual refresh.
+            self.call_after_refresh(readiness.set)
+
     def on_mount(self) -> None:
         first_paint = asyncio.Event()
+        self._startup_ready = first_paint
 
         async def before_connect() -> None:
             await first_paint.wait()

@@ -107,15 +107,33 @@ async def test_missing_default_is_empty_and_directory_change_stays_local(tmp_pat
     async with app.run_test() as pilot:
         await browser_ready(screen)
         assert "No saved" in str(screen.status.content)
-        assert not service.default_root.exists()
-        screen.location.value = str(tmp_path / "missing")
+        assert screen.listing.entries == () and screen.entries == ()
+        assert screen.table.row_count == 0 and not service.default_root.exists()
+        missing = tmp_path / "opaque-selected-location"
+        screen.location.value = str(missing)
         await wait_for(lambda: screen.listing is None)
         screen.location.focus()
         await pilot.press("enter")
-        await wait_for(lambda: screen.operation_count == 0)
-        assert "local" in str(screen.status.content).lower()
-        assert not (tmp_path / "missing").exists()
+        await wait_for(
+            lambda: (
+                screen.operation_count == 0
+                and str(screen.status.content) == "The selected export directory is missing."
+            )
+        )
+        assert screen.listing is None and screen.entries == () and screen.table.row_count == 0
+        assert str(missing) not in str(screen.status.content) and missing.name not in str(
+            screen.status.content
+        )
+        assert not missing.exists() and not service.default_root.exists()
+        assert app.clipboard == ""
+        screen.location.value = str(service.default_root)
+        screen.location.focus()
+        await pilot.press("enter")
+        await browser_ready(screen)
+        assert screen.listing.entries == () and "No saved" in str(screen.status.content)
+        assert not service.default_root.exists()
         await pilot.press("escape")
+        assert screen.operation_count == service.operation_count == 0
     await service.close()
 
 

@@ -10,7 +10,9 @@ audited flags, with explicit unavailable errors for behavior that has not shippe
 Recognizing a flag does not establish Kubernetes or K9s compatibility.
 See the development checkpoint below, [local preferences](configuration.md) and
 [terminal controls](terminal-preview.md).
-No KubeRich application is publicly released yet.
+Public packages are available through the [installation guide](installation.md).
+This audit also records development behavior; the [command reference](cli-reference.md)
+and task guides distinguish unreleased features from the installed release.
 
 Every explicitly registered launch flag is represented below. KubeRich keeps the
 familiar spelling as a compatibility alias; kebab-case aliases may also be
