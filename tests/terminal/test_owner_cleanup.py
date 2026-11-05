@@ -14,6 +14,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from kuberich.diagnostics.logging import LOG_HEADER
 from tests.terminal import pty_support
 from tests.terminal.pty_support import TerminalSession
 
@@ -82,6 +83,140 @@ def assert_descriptors_closed(terminal):
         with pytest.raises(OSError) as error:
             os.fstat(descriptor)
         assert error.value.errno == errno.EBADF
+
+
+def failed_terminal_receipt(tmp_path, monkeypatch):
+    monkeypatch.setattr(pty_support, "ROOT", tmp_path)
+    first = AssertionError("owned behavioral failure before log collection")
+    with (
+        pytest.raises(AssertionError) as observed,
+        TerminalSession(child_command(), tmp_path) as terminal,
+    ):
+        terminal.wait_for(b"cleanup-ready")
+        raise first
+    assert observed.value is first
+    assert terminal.cleanup["status"] == "complete"
+    assert terminal.cleanup["owner_reaped"] and terminal.cleanup["group"] == "gone"
+    assert_descriptors_closed(terminal)
+    receipt = json.loads(next((tmp_path / "artifacts/terminal").glob("failure-*.json")).read_text())
+    assert receipt["error_type"] == "AssertionError" and receipt["body_error"] == str(first)
+    return receipt
+
+
+def test_failed_terminal_receipt_includes_only_sanitized_owned_application_log(
+    tmp_path, monkeypatch
+):
+    (tmp_path / "kuberich.log").write_bytes(
+        LOG_HEADER + b"2026-11-05T00:00:00Z ERROR discovery failed token=owned-log-token "
+        b"password=owned-log-password Bearer owned-bearer "
+        b"https://user:owned-url-password@127.0.0.1 "
+        b"\x1b]52;c;untrusted-clipboard\x07\n"
+    )
+    (tmp_path / "fixture-config").write_text("never include owned kubeconfig contents")
+    monkeypatch.setenv("KUBERICH_LOG_FILE", str(tmp_path / "fixture-config"))
+    receipt = failed_terminal_receipt(tmp_path, monkeypatch)
+    log = receipt["application_log"]
+    assert log["status"] == "included" and not log["truncated"]
+    assert "discovery failed" in log["text"] and "[REDACTED]" in log["text"]
+    assert "\\u001b]52;c;untrusted-clipboard\\u0007" in log["text"]
+    assert "\x1b" not in log["text"] and "\x07" not in log["text"]
+    for secret in (
+        "owned-log-token",
+        "owned-log-password",
+        "owned-bearer",
+        "owned-url-password",
+        "owned kubeconfig contents",
+    ):
+        assert secret not in json.dumps(receipt)
+
+
+@pytest.mark.parametrize("bound", ["read", "sanitized-output"])
+def test_failed_terminal_log_tail_bounds_reads_and_text_without_partial_old_records(
+    tmp_path, monkeypatch, bound
+):
+    prefix = (
+        b"2026-11-05T00:00:00Z DEBUG token=" + b"owned-discarded-secret" * 2000 + b"\n"
+        if bound == "read"
+        else ("2026-11-05T00:00:00Z DEBUG " + "界" * 3000 + "\x1b" * 4000 + "\n").encode()
+    )
+    path = tmp_path / "kuberich.log"
+    path.write_bytes(LOG_HEADER + prefix + b"2026-11-05T00:00:01Z ERROR recent projection failed\n")
+    reads = []
+    original = os.pread
+
+    def pread(descriptor, size, offset):
+        reads.append((size, offset))
+        return original(descriptor, size, offset)
+
+    monkeypatch.setattr(os, "pread", pread)
+    receipt = failed_terminal_receipt(tmp_path, monkeypatch)
+    log = receipt["application_log"]
+    assert log["status"] == "included" and log["truncated"]
+    assert log["text"].endswith("ERROR recent projection failed\n")
+    assert len(log["text"].encode()) <= pty_support.LOG_TAIL_BYTES
+    assert "owned-discarded-secret" not in log["text"] and "\x1b" not in log["text"]
+    assert reads == [
+        (pty_support.LOG_TAIL_BYTES, max(len(LOG_HEADER), path.stat().st_size - 16384))
+    ]
+
+
+@pytest.mark.parametrize("entry", ["missing", "symlink", "fifo", "directory", "foreign", "owner"])
+def test_unavailable_owned_log_cannot_follow_foreign_paths_or_block_terminal_cleanup(
+    tmp_path, monkeypatch, entry
+):
+    path = tmp_path / "kuberich.log"
+    if entry == "symlink":
+        target = tmp_path / "private-unrelated-file"
+        target.write_bytes(LOG_HEADER + b"owned unrelated contents\n")
+        path.symlink_to(target)
+    elif entry == "fifo":
+        os.mkfifo(path)
+    elif entry == "directory":
+        path.mkdir()
+    elif entry == "foreign":
+        path.write_text("owned unrelated contents\n")
+    elif entry == "owner":
+        path.write_bytes(LOG_HEADER + b"owned unrelated contents\n")
+    original_open, original_stat = os.open, os.fstat
+    log_descriptors = set()
+
+    def open_log(target, flags, *args, **kwargs):
+        if target == path:
+            # A regression must fail before opening a FIFO or following a link.
+            assert flags & os.O_NOFOLLOW and flags & os.O_NONBLOCK
+        descriptor = original_open(target, flags, *args, **kwargs)
+        if target == path:
+            log_descriptors.add(descriptor)
+        return descriptor
+
+    def fstat(descriptor):
+        details = original_stat(descriptor)
+        if entry == "owner" and descriptor in log_descriptors:
+            return SimpleNamespace(st_mode=details.st_mode, st_uid=os.geteuid() + 1)
+        return details
+
+    monkeypatch.setattr(os, "open", open_log)
+    monkeypatch.setattr(os, "fstat", fstat)
+    receipt = failed_terminal_receipt(tmp_path, monkeypatch)
+    assert receipt["application_log"]["status"] == "unavailable"
+    assert "text" not in receipt["application_log"]
+    assert "owned unrelated contents" not in json.dumps(receipt)
+
+
+def test_owned_log_read_failure_keeps_first_error_and_cleanup_receipt(tmp_path, monkeypatch):
+    (tmp_path / "kuberich.log").write_bytes(LOG_HEADER + b"owned log record\n")
+
+    def pread(*args):
+        raise OSError(errno.EIO, "owned injected read error token=do-not-record-error-values")
+
+    monkeypatch.setattr(os, "pread", pread)
+    receipt = failed_terminal_receipt(tmp_path, monkeypatch)
+    assert receipt["application_log"] == {
+        "status": "unavailable",
+        "error_type": "OSError",
+        "errno": errno.EIO,
+    }
+    assert "do-not-record-error-values" not in json.dumps(receipt)
 
 
 @pytest.mark.parametrize("system", ["linux", "darwin"])

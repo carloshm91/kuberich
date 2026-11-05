@@ -212,6 +212,15 @@ Its current-source receipt is
 golden remain byte-for-byte; failed trial two is not counted as qualified.
 Required hosted whole-source/platform checks qualify the final formatted tree.
 
+After the lazy-import correction, a fresh fourth local trial passed the same
+eight runtime scenarios in 78.628 seconds. All 239 current production/runtime
+inputs remained unchanged, with complete owned container/cluster/private-file
+cleanup and unchanged caller environment and unrelated container inventory.
+Its separate receipt is `artifacts/issue72/popeye-actual/trial4/evidence.json`;
+earlier receipts retain their original source boundaries. This gives fresh
+current-source native/official-tool evidence while hosted macOS source-suite
+failures are corrected; it does not replace the required whole-platform gate.
+
 ## Hosted-check corrections
 
 Initial PR #314 source `aef8e86` received two CodeQL annotations for substring
@@ -250,13 +259,56 @@ lanes, including Intel and Apple Silicon macOS. Three source-suite macOS jobs
 were cancelled before runner assignment with the annotation "The job was not
 acquired by Runner of type hosted even after multiple attempts" and an ARM
 capacity notice. These cancellations are not passing verification. The source
-matrix now selects the explicit `macos-15-intel` pool, which completed the native
+matrix next selected the explicit `macos-15-intel` pool, which completed the native
 Intel lane on that same run. All source Python versions, test parts, coverage
 requirements and both native macOS architectures remain required. A fresh run
 must verify the changed runner policy; no failed run is relabelled as qualified.
 All 442 CI-selection, aggregate-gate, release-policy and qualification tests
 passed locally in 13.03 seconds, including the new regression that keeps macOS
 transport and native-clipboard steps aligned with the selected source runner.
+
+That Intel source candidate `12089d3` completed 19 expected jobs successfully:
+the Fast selection (6,978 passed), all 12 Linux test parts, all four native targets
+and macOS part three (1,862 passed). Linux Python 3.13's complete suite passed
+9,162 cases; its five skips were the explicitly native/Homebrew qualification
+cases, as verified from the retained JUnit artifacts. The other three Intel
+source parts failed six cases, so the candidate remains unqualified and the
+Application matrices correctly did not expand. All original logs, annotations,
+JUnit files and available runtime/terminal receipts remain retained under
+`artifacts/issue72/hosted-pr314-12089d3/`.
+
+Two failures exposed test lifetime assumptions: a projection fixture expired
+after ten seconds while Pilot was still typing, and a save-conflict test assumed
+the normal two-second preference reload had not occurred. Explicit barriers now
+keep those intended phases controlled and guarantee cleanup; production behavior
+and the original ownership/save-conflict assertions remain unchanged. The
+projection cohort passed three cases in 8.85 seconds. The preference reload
+ordering was reproduced before its test correction; all 75 related appearance,
+live-preference and file-persistence cases passed in 42.21 seconds. Its corrected
+case also releases the real reload and verifies adoption of the external theme.
+
+The Intel bulk-log case processed 32,642 of 32,770 lines before its 30-second
+completion watchdog, with the slow source delivered, bounded retention and zero
+remaining owners. UI runtime positive/negative controls completed in 65.087 and
+58.092 seconds; the instrumented child hit its 120-second whole-workload limit.
+Two terminal cases also failed their existing waits and did not reproduce in the
+focused local baseline. These Intel outcomes are not claimed corrected or
+qualified by a different-platform pass.
+
+Terminal failure receipts now include at most 16 KiB of sanitized text from the
+fixed owned application's log. No-follow/nonblocking regular-file, owner and
+header checks reject unsafe entries; missing/read-error metadata preserves the
+original assertion and cleanup evidence. Ten controls cover this boundary, and
+all 75 related source/installed/SSH/tmux/cleanup cases passed in 46.27 seconds.
+Existing terminal assertions, exact clipboard bytes and deadlines are unchanged.
+
+The final source matrix pins `macos-15` Apple Silicon, whose native lane passed
+on the same run, and preserves the prior source architecture and all declared
+Python/test-part requirements. Native Intel remains independently required.
+Workload, heartbeat, coverage, output and cleanup contracts remain unchanged;
+a fresh exact-head hosted run must qualify this runner policy and test changes.
+The same 442 CI/release/aggregate/qualification policy cases passed with this
+final source runner in 12.21 seconds.
 
 Whole-source coverage, packaging and exact-head hosted platform checks are
 still required before protected delivery. Focused and owned-cluster evidence

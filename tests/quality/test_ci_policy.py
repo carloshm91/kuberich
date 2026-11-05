@@ -29,8 +29,8 @@ def test_event_preserves_every_linux_minor_and_declared_mac_coverage(event, ref,
         "3.13",
         "3.14",
     ]
-    assert [job["python"] for job in jobs if job["os"] == "macos-15-intel"] == mac_versions
-    assert {job["os"] for job in jobs} <= {"ubuntu-24.04", "macos-15-intel"}
+    assert [job["python"] for job in jobs if job["os"] == "macos-15"] == mac_versions
+    assert {job["os"] for job in jobs} <= {"ubuntu-24.04", "macos-15"}
     assert len({(job["os"], job["python"]) for job in jobs}) == len(jobs)
     parts = part_matrix(event, ref)["include"]
     assert parts == [

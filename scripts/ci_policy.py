@@ -7,7 +7,7 @@ from pathlib import Path
 
 PYTHONS = ("3.12", "3.13", "3.14")
 LINUX_RUNNER = "ubuntu-24.04"
-MACOS_RUNNER = "macos-15-intel"
+MACOS_RUNNER = "macos-15"
 TEST_PARTS = 4
 NATIVE_JOBS = (
     {
