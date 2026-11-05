@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "baseline_commit": "d990a5e0273465874df24e1e790887520abeacff",
-  "canonical_user_pages": 24,
+  "canonical_user_pages": 25,
   "reserved_user_pages": 0,
   "migration_state": "user_guides_architecture_and_internal_history_consolidated",
   "scope": "Task guides, generated references, the architecture overview/ADRs and internal engineering-record relocation are implemented. Exact historical payloads remain outside the website; source Git/hash validation does not claim that every pending feature snapshot already has a protected-main anchor. Contribution guidance remains a separate migration.",
@@ -3594,6 +3594,36 @@
         "docs/internal/acceptance/cluster-diagnostics.md"
       ],
       "reason": "Keep diagnostic source bindings, measured behavior, platform limits and disposable-cluster qualification outside user navigation.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/exports.md",
+      "audience": "user",
+      "action": "keep",
+      "destinations": [
+        "docs/exports.md"
+      ],
+      "reason": "Explain frozen source export, private destinations, separate disclosure/overwrite consent and offline local artifact browsing.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0037-reviewed-local-artifacts.md",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0037-reviewed-local-artifacts.md"
+      ],
+      "reason": "Record frozen provenance, default redaction, one-use consent, physical local entry checks and cooperative file worker ownership.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/acceptance/local-exports.md",
+      "audience": "contributor acceptance evidence",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/local-exports.md"
+      ],
+      "reason": "Keep local export source bindings, measured behavior, failures and qualification outside user navigation.",
       "baseline_sha256": null
     }
   ],

@@ -79,7 +79,6 @@ def test_selected_resource_actions_are_refused_at_startup(action, monkeypatch, c
     "arguments,flag,owner",
     [
         (["--splashless"], "--splashless", "startup splash"),
-        (["--screen-dump-dir", "fixture"], "--screen-dump-dir", "screen exports"),
     ],
 )
 def test_pending_flags_name_the_missing_behavior_without_any_io(

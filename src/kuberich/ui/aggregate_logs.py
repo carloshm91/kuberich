@@ -1,9 +1,12 @@
 """Aggregate logs retain the established viewer controls and explicit source admission."""
 
+from __future__ import annotations
+
 import asyncio
 from collections import Counter
 from collections.abc import Callable
-from typing import ClassVar
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, ClassVar
 
 from textual import on
 from textual.app import ComposeResult
@@ -25,7 +28,6 @@ from kuberich.domain.logs import LogLine
 from kuberich.errors import AppError
 from kuberich.security.presentation import safe_text
 from kuberich.services.aggregate_logs import AggregateLogs, format_records
-from kuberich.services.log_export import save_logs
 from kuberich.services.logs import LogStream
 from kuberich.services.ownership import finish_owned
 from kuberich.services.resources import parse_owned
@@ -34,6 +36,9 @@ from kuberich.ui.keybindings import table_bindings
 from kuberich.ui.logs import LogHelpScreen, LogScreen
 from kuberich.ui.presentation import FrameTable
 from kuberich.ui.scopes import ScopeScreen
+
+if TYPE_CHECKING:
+    from kuberich.services.exports import ExportChoices
 
 
 class SourceTable(FrameTable[object]):
@@ -247,6 +252,74 @@ class AggregateLogScreen(LogScreen):
             self._copy_task is not None and not self._copy_task.done()
         )
 
+    def capture_export(self, at: datetime) -> ExportChoices:
+        from kuberich.domain.exports import AggregateLogsSource, ExportPresentation
+        from kuberich.ui.export_captures import captured_lease, header_namespace, target_scope
+
+        producing, epoch = self._export_producing, self._export_epoch
+        if (
+            producing is None
+            or producing[0] != self._generation
+            or self.closed
+            or self.stale
+            or not self.is_mounted
+            or not self.owner.current()
+        ):
+            return ()
+        generation, target, options, head = producing
+        timestamps, query = self.timestamps, self.search.value
+        source_filter, selected, json_mode = (
+            self.aggregate.filter,
+            self.owner.selected,
+            self.aggregate.json_mode,
+        )
+        states = (*self.owner.states.values(), *self.owner.retired)
+        source = AggregateLogsSource(
+            options=options,
+            head_lines=head,
+            records=tuple(self.aggregate.records.values()),
+            dropped_lines=self.aggregate.buffer.dropped_lines,
+            json_mode=json_mode,
+            show_timestamps=timestamps,
+            source_filter=source_filter,
+            selected_sources=selected,
+            source_statuses=tuple(
+                (state.source, state.status + (": " + state.message if state.message else ""))
+                for state in states
+            ),
+            excess=self.owner.excess,
+        )
+        lease = captured_lease(
+            target_scope(
+                at,
+                target,
+                resource=self.owner.resource,
+                source_at=self._export_observed_at,
+                header=header_namespace(self.chrome),
+            ),
+            source,
+            lambda: (
+                self.is_mounted
+                and not self.closed
+                and not self.stale
+                and self._export_producing is producing
+                and self._generation == generation
+                and self._export_epoch == epoch
+                and self.timestamps == timestamps
+                and self.search.value == query
+                and self.aggregate.filter == source_filter
+                and self.owner.selected == selected
+                and self.aggregate.json_mode == json_mode
+                and self.owner.current()
+            ),
+            target=target,
+            presentation=ExportPresentation(view="aggregate-logs", query=query),
+            notices=(
+                "Only retained sanitized log records are included; no sources were reopened for export.",
+            ),
+        )
+        return (("logs", lease), ("screen", lease))
+
     def on_mount(self) -> None:
         # Textual dispatches base-class mount handlers after this one.
         self.query_one("#log-container", Button).label = "Sources"
@@ -265,6 +338,9 @@ class AggregateLogScreen(LogScreen):
         self.owner.retired.clear()
         self.owner.selected = None
         self.aggregate.filter = None
+        options = window_options(self.window, previous=self.previous, since=self.since)
+        head = 1000 if self.window == "Head 1000" else None
+        self._export_producing = (generation, self.owner.target, options, head)
 
         async def retain(source: LogSource, number: int, line: LogLine) -> None:
             await self._resume.wait()
@@ -273,6 +349,7 @@ class AggregateLogScreen(LogScreen):
             if generation != self._generation:
                 raise AppError("The aggregate read window has changed.")
             self.aggregate.retain(source, number, line)
+            self._export_observed_at = datetime.now(UTC)
             self._dirty.set()
 
         def notice(message: str) -> None:
@@ -282,10 +359,10 @@ class AggregateLogScreen(LogScreen):
 
         try:
             await self.owner.run(
-                window_options(self.window, previous=self.previous, since=self.since),
+                options,
                 retain,
                 notice,
-                head_lines=1000 if self.window == "Head 1000" else None,
+                head_lines=head,
             )
         except (AppError, ConnectionProblem) as error:
             notice(str(error))
@@ -348,7 +425,6 @@ class AggregateLogScreen(LogScreen):
                 self._controller,
                 self._renderer,
                 self._read_task,
-                self._save_task,
                 self._copy_task,
             )
         )
@@ -443,19 +519,6 @@ class AggregateLogScreen(LogScreen):
         finally:
             self._status()
 
-    async def _save(self, path: str) -> None:
-        try:
-            text = await self._export_text()
-            self.message = "Saving retained logs…"
-            self._status()
-            await save_logs(path, text)
-            if not self.stale:
-                self.message = "Retained redacted logs saved"
-        except AppError as error:
-            self.message = str(error)
-        finally:
-            self._status()
-
     def _cancel_tasks(self) -> None:
         super()._cancel_tasks()
         if (
@@ -477,7 +540,6 @@ class AggregateLogScreen(LogScreen):
                         self._controller,
                         self._renderer,
                         self._read_task,
-                        self._save_task,
                         self._copy_task,
                     )
                     if task is not None

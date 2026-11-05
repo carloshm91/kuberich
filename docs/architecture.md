@@ -58,6 +58,12 @@ keep replacements separate from valid controller chains.
 
 ### Services
 
+[Exports](../src/kuberich/services/exports.py) binds immutable source captures to
+one-use disclosure and destination reviews. Its filesystem adapter owns physical
+directory traversal, private staged writes and reviewed local entry operations.
+The local browser does not use artifact context metadata to connect to a cluster.
+See [reviewed local artifacts](adr/0037-reviewed-local-artifacts.md).
+
 [Sessions](../src/kuberich/services/sessions.py),
 [workspace](../src/kuberich/services/workspace.py), and
 [watches](../src/kuberich/services/watches.py) own connections and active reads.

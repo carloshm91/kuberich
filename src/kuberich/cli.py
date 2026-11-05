@@ -7,7 +7,12 @@ from collections.abc import Sequence
 from typing import Any, NoReturn
 
 from kuberich.bootstrap import diagnostic_logging, read_config, run_terminal, version
-from kuberich.config.launch import CONNECTION_OPTIONS, PENDING_OPTIONS, require_available
+from kuberich.config.launch import (
+    CONNECTION_OPTIONS,
+    PENDING_OPTIONS,
+    capture_export_directory,
+    require_available,
+)
 from kuberich.diagnostics.redaction import sanitize_text
 from kuberich.errors import AppError, ExitCode
 
@@ -134,7 +139,12 @@ def _parser() -> argparse.ArgumentParser:
         "-c",
         dest="initial_command",
         type=_argument,
-        help="initial terminal command: po, ctx, ns, pulse, overview, themes, views, about, status, retry, back, forward, help or quit",
+        help="initial terminal command: po, ctx, ns, pulse, overview, exports, themes, views, about, status, retry, back, forward, help or quit",
+    )
+    parser.add_argument(
+        "--screen-dump-dir",
+        type=_argument,
+        help="initial local export directory; created privately only on Save",
     )
     for flag in ("headless", "logoless", "crumbsless", "invert"):
         parser.add_argument(
@@ -150,22 +160,13 @@ def _parser() -> argparse.ArgumentParser:
         )
     pending = parser.add_argument_group("Recognized options not yet available (exit 4)")
     for option in PENDING_OPTIONS:
-        if option.boolean:
-            pending.add_argument(
-                *option.flags,
-                dest=option.destination,
-                action="store_true",
-                default=None,
-                help=f"unavailable: {option.owner}",
-            )
-        else:
-            pending.add_argument(
-                *option.flags,
-                dest=option.destination,
-                type=_argument,
-                action="store",
-                help=f"unavailable: {option.owner}",
-            )
+        pending.add_argument(
+            *option.flags,
+            dest=option.destination,
+            action="store_true",
+            default=None,
+            help=f"unavailable: {option.owner}",
+        )
     transport = parser.add_argument_group("Session connection overrides")
     for option in CONNECTION_OPTIONS:
         transport.add_argument(
@@ -257,6 +258,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "read_only",
                     "write",
                     "initial_command",
+                    "screen_dump_dir",
                     "headless",
                     "logoless",
                     "crumbsless",
@@ -295,7 +297,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if arguments.subcommand is not None and any(
             key in runtime
-            for key in ("initial_command", "headless", "logoless", "crumbsless", "invert")
+            for key in (
+                "initial_command",
+                "screen_dump_dir",
+                "headless",
+                "logoless",
+                "crumbsless",
+                "invert",
+            )
         ):
             raise AppError("Command and presentation flags apply only to terminal launch.")
         if arguments.subcommand is not None and any(
@@ -322,6 +331,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             from kuberich.domain.connection_overrides import ConnectionOverrides
             from kuberich.domain.connections import ConnectionRequest, request_duration
 
+            export_directory = (
+                capture_export_directory(Path(arguments.screen_dump_dir), Path.cwd())
+                if arguments.screen_dump_dir is not None
+                else None
+            )
             connection = ConnectionRequest(
                 arguments.kubeconfig,
                 arguments.context,
@@ -451,6 +465,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 Command.XRAY,
                 Command.USED_BY,
                 Command.OPEN_RELATIONSHIP,
+                Command.DIAGNOSE,
+                Command.EXPORT,
                 Command.LOGS_ALL,
                 Command.PORT_FORWARD,
                 Command.DELETE,
@@ -460,7 +476,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 Command.RESUME,
             }:
                 raise AppError(
-                    "--command requires an available startup view; resource actions need an interactive resource selection. Available: po, ctx, ns, deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, no, pvc, pv, sc, status, retry, themes, about, help, quit.",
+                    "--command requires an available startup view; resource actions need an interactive resource selection. Available: po, ctx, ns, deploy, rs, sts, ds, job, cj, svc, ep, ing, cm, sec, no, pvc, pv, sc, status, retry, exports, themes, about, help, quit.",
                     ExitCode.UNAVAILABLE,
                 )
         log_file = log_location(
@@ -533,6 +549,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         ),
                         initial_command=initial,
                         connection=connection,
+                        export_directory=export_directory,
                         preferences=PreferenceSource(
                             location,
                             document,

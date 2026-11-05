@@ -156,6 +156,9 @@ class WorkspaceNavigation:
     def initialize(
         self, initial: ResolvedCommand, apply: Callable[[ResolvedCommand], None]
     ) -> None:
+        if initial is Command.EXPORTS:
+            apply(initial)
+            return
         context = self.sessions.request.context or self.sessions.catalog.current
         if initial is Command.NAMESPACES:
             self.workspace.prepare_resource(ResourceSelection("namespaces"))

@@ -2,6 +2,7 @@
 
 import asyncio
 import configparser
+import hashlib
 import json
 import shutil
 import subprocess
@@ -23,6 +24,7 @@ from tests.support.editing_terminal import terminal_editing
 from tests.support.forward_terminal import terminal_forward
 from tests.support.handoff import terminal_handoff_trial
 from tests.support.interactions_terminal import terminal_interactions
+from tests.support.local_exports import terminal_local_exports
 from tests.support.mutation_terminal import terminal_mutation
 from tests.support.navigation import terminal_navigation
 from tests.support.operation_terminal import terminal_operation
@@ -36,6 +38,24 @@ from tests.support.transports import TerminalTransport
 from tests.support.workload_terminal import terminal_workload
 from tests.support.workloads import workload_api
 from tests.terminal.pty_support import TerminalSession
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+def test_installed_offline_export_browser_restores_terminal_and_never_connects(
+    installed_wheel, artifacts, tmp_path, entry_point
+):
+    binary, _ = installed_wheel
+    command = (
+        [str(binary / "kuberich")]
+        if entry_point == "console"
+        else [str(binary / "python"), "-m", "kuberich"]
+    )
+    terminal_local_exports(
+        command,
+        tmp_path,
+        evidence=f"installed-local-exports-{entry_point}",
+        wheel_sha256=hashlib.sha256(artifacts[0].read_bytes()).hexdigest(),
+    )
 
 
 def test_installed_plugin_modes_use_real_review_terminal_and_owned_cleanup(

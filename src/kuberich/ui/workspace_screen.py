@@ -12,10 +12,14 @@ class WorkspaceScreen(Screen[None]):
         self.foreground = foreground
 
     def on_screen_resume(self, event: ScreenResume) -> None:
-        self.foreground.resume()
+        # is_current also includes visible background screens beneath a modal.
+        # A queued lifecycle message must agree with the actual foreground top.
+        if self.app.screen_stack and self.app.screen_stack[-1] is self:
+            self.foreground.resume()
 
     def on_screen_suspend(self, event: ScreenSuspend) -> None:
-        self.foreground.suspend()
+        if not self.app.screen_stack or self.app.screen_stack[-1] is not self:
+            self.foreground.suspend()
 
     def on_unmount(self) -> None:
         self.foreground.close()

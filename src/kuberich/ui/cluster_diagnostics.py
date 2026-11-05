@@ -1,7 +1,8 @@
 """Native diagnostic findings and source limits in the existing workspace frame."""
 
 from collections.abc import Callable
-from typing import Any
+from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
 from rich.text import Text
 from textual import on
@@ -16,6 +17,9 @@ from kuberich.domain.navigation import Viewport
 from kuberich.security.presentation import safe_text
 from kuberich.ui.presentation import FrameTable
 
+if TYPE_CHECKING:
+    from kuberich.services.exports import ExportChoices
+
 _COLUMNS = ("SEVERITY", "CATEGORY", "NAMESPACE / RESOURCE", "CONTAINER", "SUMMARY", "SOURCE", "AGE")
 _WIDTHS = (9, 14, 36, 18, 64, 12, 22)
 
@@ -25,7 +29,12 @@ class ClusterDiagnosticsTable(FrameTable[Text]):
 
     DEFAULT_CSS = "ClusterDiagnosticsTable { height: 1fr; min-height: 2; background: $background; }"
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        namespace: Callable[[], str | None] | None = None,
+        query: Callable[[], str] = lambda: "",
+    ) -> None:
         self._interaction_revision = 0
         self._geometry_scroll = False
         super().__init__(id="cluster-diagnostics", cursor_type="row", zebra_stripes=False)
@@ -36,6 +45,74 @@ class ClusterDiagnosticsTable(FrameTable[Text]):
         self.snapshot: DiagnosticSnapshot | None = None
         self.sort_column = "severity"
         self.descending = True
+        self._export_namespace = namespace
+        self._export_query = query
+
+    def capture_export(self, at: datetime) -> "ExportChoices":
+        """Freeze full diagnostic facts separately from the currently painted rows."""
+        from dataclasses import replace
+
+        from kuberich.domain.exports import DiagnosticsSource, ExportPresentation, ExportScope
+        from kuberich.ui.export_captures import captured_lease
+
+        snapshot, request = self.snapshot, self.request
+        if (
+            not self.is_mounted
+            or not self.display
+            or snapshot is None
+            or request is None
+            or snapshot.request != request
+        ):
+            return ()
+        header = self._export_namespace() if self._export_namespace is not None else None
+        query, sort, descending = self._export_query(), self.sort_column, self.descending
+        root = request.scope.root
+        scope = ExportScope(
+            export_at=at,
+            source_at=snapshot.observed_at,
+            context=request.scope.session.context,
+            header_namespace=header,
+            collection_namespace=request.scope.namespace,
+            namespace_mode="one" if request.scope.namespace is not None else "all",
+            api_version=root.api_version if root is not None else None,
+            resource=root.resource.name if root is not None and root.resource is not None else None,
+            kind=root.kind if root is not None else None,
+            name=root.name if root is not None else None,
+            uid=root.uid if root is not None else None,
+        )
+        presentation = ExportPresentation(
+            view="diagnostics",
+            query=query,
+            sort=sort,
+            descending=descending,
+            viewport=self.capture_viewport(),
+        )
+
+        def current() -> bool:
+            return (
+                self.is_mounted
+                and self.display
+                and self.request == request
+                and (self._export_namespace() if self._export_namespace is not None else None)
+                == header
+                and self._export_query() == query
+                and self.sort_column == sort
+                and self.descending == descending
+            )
+
+        diagnostic = captured_lease(
+            scope, DiagnosticsSource(snapshot=snapshot), current, presentation=presentation
+        )
+        screen = captured_lease(
+            scope,
+            self.capture_dump(columns=_COLUMNS, concealed_columns=frozenset()),
+            current,
+            presentation=presentation,
+        )
+        return (
+            ("diagnostics", replace(diagnostic, session=request.scope.session)),
+            ("screen", replace(screen, session=request.scope.session)),
+        )
 
     def setup(self) -> None:
         for column, width in zip(_COLUMNS, _WIDTHS, strict=True):

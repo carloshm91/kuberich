@@ -17,7 +17,7 @@ from tests.support.site_source import copy_source
 def test_report_checks_the_real_declarations_navigation_and_repository_links():
     report = check(ROOT)
     assert report["functional_checks_passed"] is True
-    assert report["canonical_user_pages"] == 24
+    assert report["canonical_user_pages"] == 25
     assert report["local_markdown_links"] > 500
     assert isinstance(report["editorial_advisories"], list)
     assert report["external_links"] == []
@@ -88,7 +88,7 @@ def test_long_user_prose_and_banned_word_are_reported_but_do_not_break_a_correct
     assert {"plain-language", "page-length"} <= {item["rule"] for item in findings}
     assert all(item["severity"] == "advisory" for item in findings)
     output = tmp_path / "output"
-    assert build(output, source)["documentation_pages"] == 24
+    assert build(output, source)["documentation_pages"] == 25
     assert verify(output, source)["pages"] > 20
     assert "These owned resources" in (output / "docs/quickstart.html").read_text()
 

@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import Callable
+from datetime import UTC, datetime
 
 from textual.app import App
 from textual.containers import Vertical
@@ -11,7 +12,7 @@ from textual.widgets import Input
 from kuberich.domain.authorization_rows import scope_label
 from kuberich.domain.metrics import MetricsSnapshot
 from kuberich.domain.view_actions import TABLE_ACTIONS, ViewState
-from kuberich.domain.view_routes import ViewKind
+from kuberich.domain.view_routes import ViewKind, ViewRoute
 from kuberich.domain.views import USABLE_CONNECTIONS, ViewObservation, ViewStatus
 from kuberich.security.presentation import safe_text
 from kuberich.services.access import AccessPolicy
@@ -57,6 +58,7 @@ class WorkspacePresenter:
         self.recover = recover
         self._selection_notice: tuple[ViewObservation, str] | None = None
         self._observation_task: asyncio.Task[None] | None = None
+        self.export_frame: tuple[ViewRoute, str, int, datetime] | None = None
 
     def start(self) -> None:
         self._observation_task = asyncio.create_task(self.observe(self.workspace.subscribe()))
@@ -214,6 +216,8 @@ class WorkspacePresenter:
 
     def publish(self, request: RenderRequest, outcome: RenderOutcome) -> None:
         view, query, kind = request.observation, request.query, request.route.display_key
+        if outcome.applied:
+            self.export_frame = (request.route, query, view.revision, datetime.now(UTC))
         count, filtered = outcome.count, outcome.filtered
         if view.revision != self.interactions.scope_revision:
             self.interactions.selection.marked = frozenset()

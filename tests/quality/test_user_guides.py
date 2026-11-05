@@ -19,8 +19,8 @@ from tests.support.site_source import copy_source, refresh
 def test_every_user_page_keeps_tracking_boundaries_and_current_source_reference():
     catalog = load_navigation(ROOT)
     generated = reference_files(ROOT)
-    assert catalog.user_page_count == 24
-    assert len(catalog.guides) == 19 and len(catalog.references) == 4
+    assert catalog.user_page_count == 25
+    assert len(catalog.guides) == 20 and len(catalog.references) == 4
     for guide in catalog.pages:
         text = (
             generated[guide.source]
@@ -83,7 +83,7 @@ def test_all_retired_routes_and_deep_links_reach_active_guidance(tmp_path):
                     if f"[Old guide]({route.source}#{old})" in chunk:
                         assert f'href="{target}#{active}"' in rendered
             assert "guide-history" not in rendered
-        assert manifest["documentation_pages"] == 24
+        assert manifest["documentation_pages"] == 25
     redirects = (output / "docs/_redirects").read_text()
     for route in catalog.legacy_routes:
         # No Location fragment discards the old hash; the active page keeps its ID.

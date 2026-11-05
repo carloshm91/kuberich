@@ -12,11 +12,12 @@
       "tasks": [
         "F05",
         "D13",
-        "Q15"
+        "Q15",
+        "O06"
       ],
       "source": "cmd/root.go",
       "status": "planned",
-      "difference": "F05 implements local inspection, policy, presentation, initial views, periodic table repaint and invocation connection overrides. All audited flags are recognized; splash/inversion/export remain explicitly unavailable under U01/O06 and shell completion remains D13. Q15 adds a local redacted bug-report bundle, recoverable resource-view errors and private post-restoration crash reports.",
+      "difference": "F05 implements local inspection, policy, presentation, initial views, periodic table repaint and invocation connection overrides. All audited flags are recognized; splash remains explicitly unavailable; inversion is delivered under U01 and O06 adds --screen-dump-dir for reviewed local exports. Shell completion remains D13. Q15 adds a local redacted bug-report bundle, recoverable resource-view errors and private post-restoration crash reports.",
       "partial_evidence": [
         "docs/k9s-cli.md",
         "tests/unit/test_launch_contract.py",
@@ -33,9 +34,11 @@
         "docs/troubleshooting.md",
         "tests/contract/test_bug_report_cli.py",
         "tests/ui/test_view_errors.py",
-        "tests/unit/test_diagnostic_reports.py"
+        "tests/unit/test_diagnostic_reports.py",
+        "docs/exports.md",
+        "tests/unit/test_export_cli.py"
       ],
-      "public_summary": "Launch flags provide help, version, local diagnostics, read-only policy, presentation controls, session color inversion, startup views, and connection overrides. Splash, general resource export, and shell completion are unavailable. Create redacted local diagnostic bundles and retry recoverable resource-view errors.",
+      "public_summary": "Launch flags provide help, version, local diagnostics, read-only policy, presentation controls, session color inversion, startup views and connection overrides. Development source adds an export-directory option and local artifact browser startup. Splash and shell completion are unavailable. Create redacted diagnostic bundles and retry recoverable resource-view errors.",
       "public_status": "partial"
     },
     {
@@ -387,7 +390,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40×12 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -568,16 +571,31 @@
         "F05"
       ],
       "source": "internal/view/screen_dump.go",
-      "status": "planned",
-      "difference": "S02 saves retained redacted timestamped logs to an explicit new private file without overwrite. Resource export, saved-export browsing and export path settings remain O06/F05.",
-      "partial_evidence": [
+      "status": "implemented",
+      "difference": "O06 #73 integrates frozen resource/document/log/diagnostic/table exports, inspectable support JSON, private reviewed filesystem operations, separate one-use sensitive/overwrite consent and an offline saved-artifact browser. The --screen-dump-dir override selects the session export root. Focused deterministic codecs, service/adapter behavior, actual Root UI flows and offline/path contracts are verified; exact-source whole-package/platform qualification remains required.",
+      "public_summary": "Development source adds reviewed redacted resource, log, diagnostic, screen and support exports, an explicit directory option and a local saved-artifact browser. Sensitive resource YAML and overwrite/deletion need separate confirmation. Installed 0.3.0 predates the browser.",
+      "public_status": "partial",
+      "evidence": [
         "docs/log-viewer.md",
         "tests/unit/test_log_export.py",
         "tests/ui/test_logs.py",
-        "docs/internal/acceptance/S02.md"
-      ],
-      "public_summary": "Logs can be saved to an explicit new private file without overwrite. A saved-export browser, general resource export and richer export formats are planned.",
-      "public_status": "partial"
+        "docs/internal/acceptance/S02.md",
+        "docs/exports.md",
+        "docs/internal/acceptance/local-exports.md",
+        "tests/unit/test_exports.py",
+        "tests/contract/test_exports.py",
+        "tests/contract/test_artifact_files.py",
+        "tests/ui/test_export_review.py",
+        "tests/ui/test_artifact_browser.py",
+        "tests/ui/test_artifact_viewer.py",
+        "tests/ui/test_export_startup.py",
+        "tests/ui/test_workspace_exports.py",
+        "tests/ui/test_exports_integration.py",
+        "tests/ui/test_inspection_exports.py",
+        "tests/ui/test_export_directory.py",
+        "tests/terminal/test_exports.py",
+        "tests/packaging/test_distribution.py"
+      ]
     },
     {
       "id": "UI10",
@@ -904,16 +922,21 @@
       ],
       "source": "internal/view/log.go",
       "status": "planned",
-      "difference": "S02 implements literal search/match navigation, clear/retained marks/fullscreen, bounded virtualized scrolling, redacted OSC52 copy and exclusive private-file save. Native clipboard, richer search/filter modes and saved-export browsing remain B07/O06.",
+      "difference": "S02/B07 implement literal search, filtering, marks, clear, fullscreen, bounded virtualized history and explicit native/terminal clipboard. O06 #73 routes Save through frozen retained-log review with default redaction, private files, explicit overwrite and local browsing. Log export captures actual producing container/window options and refuses handover sources; no raw-log reveal is offered. Whole-source/platform qualification remains required.",
       "partial_evidence": [
         "docs/log-viewer.md",
         "tests/unit/test_log_view.py",
         "tests/unit/test_log_export.py",
         "tests/ui/test_logs.py",
         "tests/terminal/test_logs.py",
-        "docs/internal/acceptance/S02.md"
+        "docs/internal/acceptance/S02.md",
+        "docs/exports.md",
+        "docs/internal/acceptance/local-exports.md",
+        "tests/ui/test_log_export_captures.py",
+        "tests/ui/test_aggregate_logs.py",
+        "tests/contract/test_exports.py"
       ],
-      "public_summary": "Search, match navigation, marks, clear, fullscreen, redacted copy, and saving a new private file work on kept output. A saved-export browser is unavailable.",
+      "public_summary": "Search, filters, marks, clear, fullscreen and explicit redacted copy work on bounded retained output. Development source adds reviewed log saving and saved-artifact browsing; its frozen source keeps actual container/window provenance and discard notices.",
       "public_status": "partial",
       "public_title": "Log search, marks, copy, save, and history limits"
     },

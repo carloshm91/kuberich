@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID
@@ -31,6 +32,7 @@ from kuberich.ui.chrome import WorkspaceChrome
 from kuberich.ui.target_capture import CapturedResource
 
 if TYPE_CHECKING:
+    from kuberich.services.exports import ExportChoices
     from kuberich.ui.aggregate_logs import AggregateLogScreen
     from kuberich.ui.inspection import Page
 
@@ -79,6 +81,37 @@ class ResourceOperations:
         """Retain viewers through asynchronous cleanup even after DOM removal."""
         return len(self._aggregate_screens)
 
+    def capture_export(self, at: datetime) -> ExportChoices:
+        from uuid import uuid4
+
+        from kuberich.domain.exports import ExportCapture, ResourceSource
+        from kuberich.services.exports import ExportLease, ResourceExportReader
+        from kuberich.ui.export_captures import header_namespace, target_scope
+
+        selection = self.capture(None)
+        if selection is None:
+            return ()
+        client, resource, record, target, current = selection
+        if not current():
+            return ()
+        scope = target_scope(
+            at,
+            target,
+            resource=resource,
+            resource_version=record.resource_version,
+            header=header_namespace(self.context().chrome),
+        )
+        lease = ExportLease(
+            id=uuid4(),
+            capture=ExportCapture(
+                scope=scope, source=ResourceSource(resource=resource, record=record)
+            ),
+            current=current,
+            session=target.session,
+            resource_reader=ResourceExportReader(client, resource, target, self.policy, current),
+        )
+        return (("resource-yaml", lease),)
+
     def inspect(self, page: Page) -> None:
         from kuberich.services.inspection import InspectionService
         from kuberich.ui.inspection import InspectionScreen
@@ -90,6 +123,7 @@ class ResourceOperations:
                 InspectionScreen(
                     InspectionService(client, resource, target, self.policy, current),
                     page,
+                    chrome=self.context().chrome,
                 )
             )
 

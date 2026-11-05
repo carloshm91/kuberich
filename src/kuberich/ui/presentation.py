@@ -2,7 +2,7 @@
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, ClassVar, Self, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Self, TypeVar, cast
 
 from rich.style import Style
 from rich.text import Text
@@ -16,6 +16,9 @@ from kuberich.domain.resource_preferences import Justification
 from kuberich.security.presentation import safe_text
 from kuberich.ui.keybindings import EffectiveKeys, key_hint, table_bindings
 from kuberich.ui.table_cache import RenderCache
+
+if TYPE_CHECKING:
+    from kuberich.domain.exports import TableSource
 
 Cell = TypeVar("Cell")
 
@@ -53,6 +56,42 @@ class FrameTable(DataTable[Cell]):
     _row_order_revision = 0
     _scoped_cell_refresh = False
     _row_repaint_enabled = False
+
+    def capture_dump(
+        self, *, columns: tuple[str, ...], concealed_columns: frozenset[int]
+    ) -> "TableSource":
+        from kuberich.domain.exports import TableSource
+        from kuberich.errors import AppError
+
+        if len(columns) != len(self.columns) or any(
+            type(index) is not int or not 0 <= index < len(columns) for index in concealed_columns
+        ):
+            raise AppError("The current table has no consistent export column projection.")
+        if self.row_count > 10000 or len(columns) > 256:
+            raise AppError("The current table exceeds the screen export capture limit.")
+        rows, keys = [], []
+        for index, row in enumerate(self.ordered_rows):
+            values = []
+            for column, cell in enumerate(self.get_row(row.key)):
+                if column in concealed_columns:
+                    value = "[REDACTED COLUMN]"
+                elif isinstance(cell, TableCell):
+                    value = cell.text
+                elif isinstance(cell, Text):
+                    value = cell.plain
+                elif isinstance(cell, (str, int, float, bool)) or cell is None:
+                    value = "" if cell is None else str(cell)
+                else:
+                    value = "[REDACTED COLUMN]"
+                values.append(value)
+            rows.append(tuple(values))
+            keys.append(row.key.value if row.key.value is not None else str(index))
+        return TableSource(
+            columns=columns,
+            rows=tuple(rows),
+            row_keys=tuple(keys),
+            concealed_columns=concealed_columns,
+        )
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)

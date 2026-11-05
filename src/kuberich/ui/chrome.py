@@ -204,6 +204,7 @@ class WorkspaceChrome:
     build: str
     presentation: Presentation = DEFAULT_PRESENTATION
     keymap: tuple[tuple[str, str], ...] = ()
+    namespace: Callable[[], str | None] | None = None
 
 
 class WorkspaceBars(Vertical):

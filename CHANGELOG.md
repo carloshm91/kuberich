@@ -7,6 +7,8 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Added
 
+- Save reviewed resource YAML, retained logs, diagnostics, literal screen text and inspectable support JSON with default redaction and private files; browse, filter, view, copy and explicitly delete local artifacts with `:exports` ([#73](https://github.com/carloshm91/kuberich/issues/73)).
+- Choose the initial export directory with `--screen-dump-dir` and open the local browser with `--command exports` without automatically connecting or authenticating ([#73](https://github.com/carloshm91/kuberich/issues/73)).
 - Inspect image-pull, scheduling, crash-loop, readiness and volume evidence in native `:diagnostics` and captured-workload `:diagnose` views, with explicit source gaps and guarded resource/log navigation ([#72](https://github.com/carloshm91/kuberich/issues/72)).
 - Run a configured optional Popeye executable explicitly with `:popeye`; keep report severity, provenance, namespace scope and name-only identity limits visible ([#72](https://github.com/carloshm91/kuberich/issues/72)).
 - Browse observed subjects, bindings, role rules and aggregation in a native `:rbac` workspace with UID-safe object opening and normal namespace/history navigation ([#71](https://github.com/carloshm91/kuberich/issues/71)).
@@ -22,6 +24,8 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Fixed
 
+- Ignore delayed root-screen suspend/resume events after returning from a modal, preserving explicit connection retry and live table painting ([#73](https://github.com/carloshm91/kuberich/issues/73)).
+- Export the visible Events permission error from resource inspection instead of an unrelated empty-events document ([#73](https://github.com/carloshm91/kuberich/issues/73)).
 - Preserve horizontal scroll and deferred viewport restoration when native table geometry moves the cursor while returning to a relationship view ([#72](https://github.com/carloshm91/kuberich/issues/72)).
 
 ## [0.3.0] - 2026-11-04
