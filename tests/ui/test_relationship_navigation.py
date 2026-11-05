@@ -273,19 +273,28 @@ async def namespace_handler(request):
 
 
 async def graph_ready(app, *, name=None):
-    await wait_for(
-        lambda: (
+    def rendered():
+        snapshot = app.workspace.store.observation.relationships
+        rows = (
+            tuple(row for row in snapshot.rows if name is None or row.ref.name == name)
+            if snapshot is not None
+            else ()
+        )
+        return (
             app.state.view_kind == "relationships"
-            and app.workspace.store.observation.relationships is not None
+            and snapshot is not None
             and app.relationships_table.request == app.workspace.relationship_request
-            and any(
-                row.status is RelationshipStatus.READY and (name is None or row.ref.name == name)
-                for row in app.workspace.store.observation.relationships.rows
+            and any(row.status is RelationshipStatus.READY for row in rows)
+            and all(
+                relationship_path_key(row.path) in app.relationships_table.rows
+                and app.relationships_table.row_at(row.path) == row
+                for row in rows
             )
             and app.state.status is ViewStatus.LIVE
             and not app.workspace.relationship_collecting
         )
-    )
+
+    await wait_for(rendered)
 
 
 def graph_row(app, name, *, relation=None):
@@ -530,7 +539,30 @@ async def test_graph_history_restores_mode_expansion_filter_and_descendant_viewp
             await pilot.press("slash")
             app.filter_input.value = query
             await pilot.press("enter")
-            await pilot.pause()
+            snapshot = app.workspace.store.observation.relationships
+            matching_names = (
+                {"example"} if mode is RelationshipMode.USED_BY else {"replica", "workload"}
+            )
+            ancestors = {
+                row.path[:depth]
+                for row in snapshot.rows
+                if row.ref.name in matching_names
+                for depth in range(len(row.path) + 1)
+            }
+            expected_visible = {
+                relationship_path_key(row.path) for row in snapshot.rows if row.path in ancestors
+            }
+            graph_keys = {relationship_path_key(row.path) for row in snapshot.rows}
+            await wait_for(
+                lambda: (
+                    graph_keys.intersection(app.relationships_table.rows) == expected_visible
+                    and all(
+                        app.relationships_table.row_at(row.path) == row
+                        for row in snapshot.rows
+                        if row.path in ancestors
+                    )
+                )
+            )
             select_graph(app, selected)
             app.relationships_table.scroll_to(x=9, animate=False, immediate=True, force=True)
             await pilot.pause()
@@ -664,6 +696,68 @@ async def test_context_switch_retires_pending_graph_read_and_rejects_its_late_re
             api.release.set()
         await wait_for(lambda: api.active_watches == 0)
         assert app.sessions.client is None and app.workspace.ownership.relationships_count == 0
+
+
+@pytest.mark.asyncio
+async def test_cross_context_back_restores_graph_under_a_new_session_and_revalidates_root_uid(
+    tmp_path,
+):
+    api = RelationshipAPI()
+    async with workspace_api(namespace_handler, api.handler, discovery_roots=api.roots) as url:
+        app = make_app(catalog_fixture(tmp_path, url))
+        try:
+            async with app.run_test(size=(100, 24)) as pilot:
+                await pods_ready(app)
+                await app.run_command("xray")
+                await graph_ready(app, name="replica")
+                original = app.workspace.relationship_request
+                replica = graph_row(app, "replica", relation=RelationKind.CONTROLLER_OWNER)
+                select_graph(app, replica)
+                await pilot.press("enter")
+                await graph_ready(app, name="workload")
+                bookmark = app.navigator.capture()
+                await app.run_command("ctx kuberich-test-Two")
+                await pods_ready(app, "default")
+                assert app.state.context == "kuberich-test-Two"
+                other_session = app.sessions.observation.identity
+                assert other_session != original.scope.root.session
+                root_path = (
+                    original.scope.resource.path(original.scope.root.namespace)
+                    + "/"
+                    + original.scope.root.name
+                )
+                before_gets = sum(path == root_path for path, _ in api.reads)
+                api.hold_path = "/api"
+                api.route_discovery = True
+                await pilot.press("alt+left")
+                await wait_for(api.started.is_set)
+                assert app.state.context == bookmark.context
+                api.release.set()
+                await graph_ready(app, name="workload")
+                restored = app.workspace.relationship_request
+                session = app.sessions.observation.identity
+                assert session.context == bookmark.context
+                assert session != original.scope.root.session and session != other_session
+                assert restored.scope.root.session == session
+                assert restored.scope.root.uid == original.scope.root.uid == "team-pod-uid"
+                assert restored.scope.root.namespace == original.scope.root.namespace == "team"
+                assert restored.scope.namespace == bookmark.namespace
+                assert restored.expanded == bookmark.relationships.expanded
+                assert sum(path == root_path for path, _ in api.reads) == before_gets + 1
+                root = next(
+                    row
+                    for row in app.workspace.store.observation.relationships.rows
+                    if not row.path
+                )
+                assert root.status is RelationshipStatus.READY
+                assert root.ref.uid == root.observed_uid == "team-pod-uid"
+                await pilot.pause()
+                assert app.relationships_table.capture_viewport().selected == bookmark.selected
+                assert app.workspace.store.observation.scope is None
+        finally:
+            api.release.set()
+        await wait_for(lambda: api.active_watches == 0)
+        assert app.sessions.client is None
 
 
 @pytest.mark.asyncio

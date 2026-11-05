@@ -107,6 +107,31 @@ passed; editorial observations remain advisory. Earlier selections overlap this
 cohort and are not added to it. This is documentation qualification; no deployment
 or browser/platform result is inferred from it.
 
+## Remaining guide-census correction
+
+The initial whole-source campaign retained **4 failed, 8,088 passed and five
+skipped** out of 8,097 cases in 1,220.74 seconds. Two failures came from
+`tests/quality/test_user_guides.py` still expecting 21 total/rendered pages after
+the enrolled relationship guide raised the exact census to 22. Its authored-guide
+expectation also needed to move from 16 to 17; four generated references remain.
+The original campaign remains failed, with evidence in
+`artifacts/issue70/full/pytest.log` and `cases.xml`.
+
+Only these exact census assertions changed. The strict 22-page structural limit,
+existing rejection of one additional page, source-derived reference generation,
+redirect/deep-link checks and byte-exact historical assertions remain in force.
+The whole user-guide test file then passed **20 cases in 21.06 seconds**; Ruff and
+format checks also passed. The command was:
+
+```sh
+uv run pytest tests/quality/test_user_guides.py -n 0 --no-cov -q --junitxml=artifacts/issue70/docs/user-guides-census.xml
+```
+
+Output is retained in `artifacts/issue70/docs/user-guides-census.log`. This focused
+correction does not qualify the other original failures or turn the failed
+whole-source campaign into a pass. Production source and coverage policy did not
+change, and no additional whole-suite run is claimed here.
+
 ## Actual App and disposable-cluster checkpoint
 
 The real App/owned-loopback cohort passed 16 cases in 22.62 seconds. It covers
@@ -160,16 +185,42 @@ network or process-memory guarantee. Missing/denied/truncated families and inval
 supported fields prevent an unqualified unused claim. Even a complete scan
 covers only the supported declarations and selected search scope.
 
-## Acceptance still requiring actual evidence
+## Final qualification checkpoint
 
-- Actual App/Pilot commands, opening, expansion, filtering, history, replacement,
-  context retirement and shutdown against controlled HTTP APIs.
-- The owned disposable-kind workload/endpoint/UsedBy/RBAC/recreation trial, with
-  explicit kubeconfig/context, unchanged caller inputs and complete cleanup.
-- Current-head static/type/private-access checks, complete behavior selection,
-  global independent 90% line/branch/changed-line gates and 100% critical gates.
-- Current-head required hosted checks and applicable terminal, installation,
-  package/native and documentation/site evidence.
+- Actual App/controlled-HTTP and disposable-kind behavior are recorded above.
+  The corrected App cohort adds successful cross-context Back and passes 17 cases
+  both normally and with coverage. The original UsedBy failure happened before
+  Back: the test treated a matching request and completed backend as a committed
+  filtered table. A held public controller reproduced the absent path. Tests now
+  wait for actual rendered path keys/DTOs and post-filter ancestors; exact
+  viewport assertions remain unchanged. Evidence is
+  `artifacts/issue70/app-render-readiness-*`.
+- The new lifecycle test also confused interim LIVE with collection completion.
+  Its corrected waits use `relationship_collecting`; intentionally held/cancelled
+  observations remain interim. The related cohort passed 121 cases in 7.34
+  seconds. Evidence is `artifacts/issue70/workspace-waits-fixed-1/`. These focused
+  selections overlap earlier runs and do not make the original four-failure
+  campaign pass. No production file changed for these corrections.
+- The original complete coverage campaign and successful instrumented replay
+  measured 21,834/22,114 production lines (98.7338%), 6,426/6,700 branches
+  (95.9104%), 89 critical modules at 100% and 1,353/1,382 changed executable lines
+  (97.90%). Original reports/log/XML/data are preserved in
+  `artifacts/issue70/full-original/`; measured gate/runtime merge records are in
+  `artifacts/issue70/full/` and `artifacts/ui/`. Five local skips require owned
+  native Homebrew or macOS workflows; they are not local passes.
+- Ruff, formatting, private access and the actual 253-module strict workflow
+  type union passed. Fresh startup contracts passed with offline RSS at most
+  22,020,096 bytes. Five full-frame paint samples measured 802.97–830.29 ms,
+  retaining the missed advisory 600 ms target. Offline/import targets were met,
+  both strict negative controls rejected their deliberate violations, and no
+  latency policy was changed. Exact receipts are in
+  `artifacts/issue70/startup-final-cd4/`.
+- Complete current-head hosted checks remain required. Earlier run 41980688756
+  failed Fast on the premature lifecycle assertion; its downstream gate failed.
+  Repository and DCO passed. All failed logs/inventories and 22 reaped reader
+  receipts remain in `artifacts/issue70/hosted-pr312-cd4f026/`. Current-head
+  platform/terminal/package and final native-install qualification remain
+  separate; no passing full local rerun or platform certification is invented.
 
 No cloud/provider trial or ambient Kubernetes context is used by the focused
 checks above. Pending work is not delivered acceptance, and baseline #69 results

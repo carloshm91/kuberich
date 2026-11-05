@@ -22,8 +22,14 @@ not qualify the later #70 source.
 The pure focused command passed 133 cases with both modules at 100% lines and
 branches. The corrected UI cohort passed 11 cases; collector cohorts and their
 independent coverage limits are recorded separately. These overlapping results
-are not one combined suite. Actual App integration, owned-kind behavior and
-complete current-head/platform/package evidence remain pending.
+are not one combined suite. Actual App/owned-HTTP integration now passes 17
+cases, including delayed/filter-render readiness and cross-context Back. The
+first disposable-kind trial passed in 38.026 seconds with all 217 source inputs
+unchanged and complete owned cleanup. The initial whole local campaign retained
+four failures; exact guide census and asynchronous test-readiness corrections
+passed their focused cohorts without production changes. Complete current-head
+hosted/platform/package evidence remains pending. See the acceptance record for
+the original failure lineage, measured coverage and scoped corrections.
 
 ```sh
 COVERAGE_FILE=artifacts/issue70/domain/.coverage uv run pytest tests/unit/test_relationships.py tests/unit/test_reference_fields.py -n 0 --cov=kuberich --cov-branch --cov-report=json:artifacts/issue70/domain/coverage-final-qualified.json --cov-report= -q

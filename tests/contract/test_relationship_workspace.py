@@ -124,6 +124,7 @@ def ready(owner, *, name="first"):
     snapshot = owner.store.observation.relationships
     return (
         snapshot is not None
+        and not owner.relationship_collecting
         and owner.store.observation.status is ViewStatus.LIVE
         and any(row.ref.name == name for row in snapshot.rows)
     )
@@ -303,6 +304,7 @@ async def test_retry_same_context_rebinds_session_preserves_root_uid_and_detects
             await wait_for(
                 lambda: (
                     owner.store.observation.relationships is not None
+                    and not owner.relationship_collecting
                     and owner.store.observation.relationships.rows
                     and owner.store.observation.relationships.rows[0].status
                     is RelationshipStatus.REPLACED
@@ -354,6 +356,7 @@ async def test_all_namespaces_capture_keeps_actual_root_namespace_and_usedby_sca
             await wait_for(
                 lambda: (
                     owner.store.observation.status is ViewStatus.LIVE
+                    and not owner.relationship_collecting
                     and owner.store.observation.relationships is not None
                 )
             )
@@ -364,6 +367,7 @@ async def test_all_namespaces_capture_keeps_actual_root_namespace_and_usedby_sca
             await wait_for(
                 lambda: (
                     owner.store.observation.status is ViewStatus.LIVE
+                    and not owner.relationship_collecting
                     and owner.relationship_request.scope.namespace == "default"
                 )
             )
@@ -520,7 +524,12 @@ async def test_failed_collection_retry_and_outer_revision_guard_do_not_publish_o
             await owner.select_relationships(
                 root, resource, RelationshipMode.XRAY, expanded=frozenset({()})
             )
-            await wait_for(lambda: owner.store.observation.status is ViewStatus.FAILED)
+            await wait_for(
+                lambda: (
+                    owner.store.observation.status is ViewStatus.FAILED
+                    and not owner.relationship_collecting
+                )
+            )
             assert len(errors) == 1 and owner.relationship_request is not None
             assert "PRIVATE" not in str(owner.store.observation.problem)
             await owner.refresh_relationships()
@@ -535,7 +544,7 @@ async def test_failed_collection_retry_and_outer_revision_guard_do_not_publish_o
             assert owner.store.bind_relationships(revised, current_request)
             before = len(api.calls)
             api.release.set()
-            await asyncio.sleep(0.03)
+            await wait_for(lambda: not owner.relationship_collecting)
             assert len(api.calls) == before
             assert not owner.store.apply_relationships(previous.revision, previous.relationships)
             assert owner.store.observation.relationships.rows == ()
