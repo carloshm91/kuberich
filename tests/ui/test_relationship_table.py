@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from textual.app import App, ComposeResult
+from textual.geometry import Region
 from textual.widgets import DataTable
 
 from kuberich.domain.navigation import Viewport
@@ -380,6 +381,114 @@ async def test_stale_request_and_scope_guard_cannot_replace_current_rows():
         await app.table.apply_rows((item,), None, lambda: True)
         await pilot.press("right", "left")
         assert not app.expansions
+
+
+@pytest.mark.asyncio
+async def test_pending_horizontal_viewport_survives_another_render_before_refresh():
+    app = TableApp()
+    rows = tuple(row((str(index),), name=f"pod-{index}") for index in range(20))
+    data = snapshot(*rows)
+    async with app.run_test(size=(60, 12)) as pilot:
+        await app.table.apply_rows(rows, data, lambda: True)
+        app.table.move_cursor(row=5)
+        await pilot.pause()
+        original = app.table.capture_viewport()
+        expected = replace(original, x=9)
+        before = {
+            "max_scroll_x": app.table.max_scroll_x,
+            "virtual_size": app.table.virtual_size,
+            "region": app.table.region,
+            "columns": tuple(column.content_width for column in app.table.ordered_columns),
+        }
+        assert before["max_scroll_x"] >= expected.x
+        app.table.restore_viewport(expected)
+        # The render coordinator may apply a timer/progress observation before
+        # the scheduled history scroll has had its first refresh callback.
+        await app.table.apply_rows(rows, data, lambda: True)
+        await pilot.pause()
+        after = {
+            "max_scroll_x": app.table.max_scroll_x,
+            "virtual_size": app.table.virtual_size,
+            "region": app.table.region,
+            "columns": tuple(column.content_width for column in app.table.ordered_columns),
+        }
+        assert after == before
+        assert app.table.capture_viewport() == expected, (before, after)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("interaction", ["selection", "horizontal"])
+async def test_pending_viewport_yields_to_user_interaction_before_a_coalesced_render(interaction):
+    app = TableApp()
+    rows = tuple(row((str(index),), name=f"pod-{index}") for index in range(20))
+    data = snapshot(*rows)
+    async with app.run_test(size=(60, 12)) as pilot:
+        await app.table.apply_rows(rows, data, lambda: True)
+        app.table.move_cursor(row=5)
+        await pilot.pause()
+        app.table.restore_viewport(replace(app.table.capture_viewport(), x=9))
+        if interaction == "selection":
+            app.table.move_cursor(row=6, scroll=False)
+            app.table.move_cursor(row=5, scroll=False)
+        else:
+            app.table.scroll_to(x=4, animate=False, immediate=True, force=True)
+        await app.table.apply_rows(rows, data, lambda: True)
+        await pilot.pause()
+        assert app.table.capture_viewport().x == (0 if interaction == "selection" else 4)
+        assert app.table.selected_path() == rows[5].path
+
+
+@pytest.mark.asyncio
+async def test_native_cursor_reveal_does_not_cancel_exact_viewport_restoration():
+    app = TableApp()
+    rows = tuple(row((str(index),), name=f"pod-{index}") for index in range(20))
+    data = snapshot(*rows)
+    async with app.run_test(size=(60, 12)) as pilot:
+        await app.table.apply_rows(rows, data, lambda: True)
+        await pilot.pause()
+        app.table.scroll_to(y=4, animate=False, immediate=True, force=True)
+        expected = replace(
+            app.table.capture_viewport(),
+            selected=relationship_path_key(rows[15].path),
+            index=15,
+            x=9,
+        )
+        # Selecting a distant row invokes the native row reveal before our
+        # restored viewport; that geometry scroll is not manual intervention.
+        app.table.restore_viewport(expected)
+        row_top = app.table.header_height + sum(
+            app.table.get_row_height(item.key) for item in app.table.ordered_rows[:15]
+        )
+        app.table.scroll_to_region(
+            Region(
+                0,
+                row_top,
+                app.table.virtual_size.width,
+                app.table.get_row_height(expected.selected),
+            ),
+            animate=False,
+        )
+        await pilot.pause()
+        assert app.table.capture_viewport() == expected
+
+
+@pytest.mark.asyncio
+async def test_pending_viewport_yields_to_manual_vertical_scrolling():
+    app = TableApp()
+    rows = tuple(row((str(index),), name=f"pod-{index}") for index in range(20))
+    data = snapshot(*rows)
+    async with app.run_test(size=(60, 12)) as pilot:
+        await app.table.apply_rows(rows, data, lambda: True)
+        app.table.move_cursor(row=5)
+        await pilot.pause()
+        original = app.table.capture_viewport()
+        assert original.y > 0
+        app.table.restore_viewport(replace(original, x=9))
+        app.table.scroll_to(y=0, animate=False, immediate=True, force=True)
+        manual = app.table.capture_viewport()
+        await app.table.apply_rows(rows, data, lambda: True)
+        await pilot.pause()
+        assert app.table.capture_viewport() == manual
 
 
 @pytest.mark.asyncio

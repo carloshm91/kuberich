@@ -312,6 +312,19 @@ def select_graph(app, row):
     app.relationships_table.focus()
 
 
+def graph_geometry(app):
+    table = app.relationships_table
+    return {
+        "max_scroll_x": table.max_scroll_x,
+        "virtual_size": table.virtual_size,
+        "region": table.region,
+        "columns": tuple(
+            (key.value, column.content_width, column.width, column.auto_width)
+            for key, column in table.columns.items()
+        ),
+    }
+
+
 async def pods_ready(app, namespace="team"):
     await wait_for(
         lambda: (
@@ -567,6 +580,7 @@ async def test_graph_history_restores_mode_expansion_filter_and_descendant_viewp
             app.relationships_table.scroll_to(x=9, animate=False, immediate=True, force=True)
             await pilot.pause()
             viewport = app.relationships_table.capture_viewport()
+            original_geometry = graph_geometry(app)
             bookmark = app.navigator.capture()
             assert selected.path in bookmark.relationships.expanded
             assert viewport.selected == relationship_path_key(selected.path) and viewport.x == 9
@@ -588,7 +602,10 @@ async def test_graph_history_restores_mode_expansion_filter_and_descendant_viewp
             assert restored.relationships.mode is mode
             assert restored.relationships.expanded == bookmark.relationships.expanded
             assert app.filter_input.value == query
-            assert app.relationships_table.capture_viewport() == viewport
+            assert app.relationships_table.capture_viewport() == viewport, (
+                original_geometry,
+                graph_geometry(app),
+            )
             await pilot.press("alt+right")
             await wait_for(
                 lambda: app.state.scope is not None and app.state.status is ViewStatus.LIVE
@@ -597,7 +614,10 @@ async def test_graph_history_restores_mode_expansion_filter_and_descendant_viewp
             await graph_ready(app, name=name)
             await pilot.pause()
             assert app.filter_input.value == query
-            assert app.relationships_table.capture_viewport() == viewport
+            assert app.relationships_table.capture_viewport() == viewport, (
+                original_geometry,
+                graph_geometry(app),
+            )
 
 
 @pytest.mark.asyncio

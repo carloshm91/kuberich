@@ -5,10 +5,12 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from rich.text import Text
 from textual.binding import Binding, BindingType
+from textual.coordinate import Coordinate
+from textual.geometry import Offset, Region
 from textual.message import Message
 from textual.widgets.data_table import RowKey
 
@@ -118,10 +120,13 @@ class RelationshipTable(FrameTable[Text]):
             return self.table
 
     def __init__(self) -> None:
+        self._interaction_revision = 0
+        self._geometry_scroll = False
         super().__init__(id="relationships", cursor_type="row", zebra_stripes=False)
         self._rows: dict[str, RelationshipRow] = {}
         self._display_rows: dict[str, _DisplayRow] = {}
         self._restoration = 0
+        self._pending_viewport: tuple[int, Viewport] | None = None
         self.request: RelationshipRequest | None = None
 
     def setup(self) -> None:
@@ -130,6 +135,7 @@ class RelationshipTable(FrameTable[Text]):
 
     def reset(self, revision: int) -> None:
         self._restoration += 1
+        self._pending_viewport = None
         self.clear()
         self._rows.clear()
         self._display_rows.clear()
@@ -191,6 +197,31 @@ class RelationshipTable(FrameTable[Text]):
             position += self.get_row_height(row.key)
         return None
 
+    def watch_cursor_coordinate(
+        self, old_coordinate: Coordinate, new_coordinate: Coordinate
+    ) -> None:
+        self._interaction_revision += old_coordinate != new_coordinate
+        super().watch_cursor_coordinate(old_coordinate, new_coordinate)
+
+    def watch_scroll_x(self, old_value: float, new_value: float) -> None:
+        self._interaction_revision += old_value != new_value
+        super().watch_scroll_x(old_value, new_value)
+
+    def watch_scroll_y(self, old_value: float, new_value: float) -> None:
+        self._interaction_revision += old_value != new_value and not self._geometry_scroll
+        super().watch_scroll_y(old_value, new_value)
+
+    def scroll_to_region(self, region: Region, **kwargs: Any) -> Offset:
+        # DataTable already defers cursor reveal until dimensions settle. Keep
+        # that geometry adjustment synchronous so later manual scrolls remain
+        # distinguishable from the row reveal that precedes viewport restoration.
+        previous = self._geometry_scroll
+        self._geometry_scroll = True
+        try:
+            return super().scroll_to_region(region, **{**kwargs, "immediate": True})
+        finally:
+            self._geometry_scroll = previous
+
     def restore_viewport(self, viewport: Viewport) -> None:
         row = (
             self.get_row_index(viewport.selected)
@@ -200,12 +231,19 @@ class RelationshipTable(FrameTable[Text]):
         self.move_cursor(row=row, scroll=False)
         self._restoration += 1
         revision, selected = self._restoration, self.capture_viewport().selected
+        interaction = self._interaction_revision
+        self._pending_viewport = interaction, viewport
 
         def restore() -> None:
-            if revision == self._restoration and selected == self.capture_viewport().selected:
-                top = self._row_top(viewport.top)
-                y = top + viewport.top_offset if top is not None else viewport.y
-                self.scroll_to(viewport.x, y, animate=False, immediate=True, force=True)
+            if revision == self._restoration:
+                self._pending_viewport = None
+                if (
+                    selected == self.capture_viewport().selected
+                    and interaction == self._interaction_revision
+                ):
+                    top = self._row_top(viewport.top)
+                    y = top + viewport.top_offset if top is not None else viewport.y
+                    self.scroll_to(viewport.x, y, animate=False, immediate=True, force=True)
 
         self.call_after_refresh(restore)
 
@@ -286,7 +324,14 @@ class RelationshipTable(FrameTable[Text]):
                     ),
                 )
             )
-        viewport = self.capture_viewport()
+        pending = self._pending_viewport
+        # A coalesced render may arrive before the previous refresh callback.
+        # Carry its intended viewport instead of overwriting it with an old x/y.
+        viewport = (
+            pending[1]
+            if pending is not None and pending[0] == self._interaction_revision
+            else self.capture_viewport()
+        )
         incoming = {row.key: row for row in display}
         for key in tuple(self._display_rows):
             if key not in incoming:

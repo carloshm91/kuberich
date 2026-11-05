@@ -235,6 +235,32 @@ Final required-check status and source binding are authoritative in
 [PR #312](https://github.com/carloshm91/kuberich/pull/312/checks) and its linked
 delivery closeout; a queued, cancelled or preceding-head run is not qualification.
 
+Head `9910803` then exposed a real deferred-scroll race on macOS: UsedBy Back
+restored every saved viewport field except horizontal x (0 instead of 9).
+Run 41989945789 retained 21 successful jobs, the failing macOS part and its
+downstream gate; the Application matrix did not qualify. Original logs and
+compatible annotations are in `artifacts/issue70/hosted-pr312-9910803/`; all 151
+observer/supplemental readers were reaped. This is not treated as a transient
+platform failure or retried unchanged.
+
+A controlled public widget test reproduced the same x-only loss: another render
+replaced the scheduled desired viewport with the still-current x=0 before its
+callback ran. Geometry was identical (max x 16, virtual size 74×61, viewport
+60×12, column widths 17/6/19/24); the separate actual App geometry trace also
+ruled out width padding as the correction. Pending viewports now survive
+coalesced renders and yield to actual selection and horizontal/vertical user
+changes. Native deferred cursor revelation uses the public region-scroll port
+with synchronous geometry so it does not masquerade as a manual vertical
+interaction. The original manual-y failure and unsuccessful naive symmetric
+watcher are retained; exact Back/Forward viewport assertions are unchanged.
+
+The final affected widget/App cohort passed 34 cases normally and with coverage;
+the widget measured 186/186 lines and 56/56 branches, and its controller 24/24
+lines with no branches. Ruff, formatting, strict widget typing and private-access
+checks passed. Evidence is in `artifacts/issue70/viewport-pending-*` and
+`viewport-vertical-*`. Fresh final-source owned and hosted qualification is
+required; earlier successful runs do not qualify this later widget correction.
+
 - Actual App/controlled-HTTP and disposable-kind behavior are recorded above.
   The corrected App cohort adds successful cross-context Back and passes 17 cases
   both normally and with coverage. The original UsedBy failure happened before
