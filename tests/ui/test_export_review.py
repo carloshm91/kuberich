@@ -90,6 +90,16 @@ async def preview_ready(screen):
         pytest.fail(f"Preview unavailable: {screen.status.content}")
 
 
+async def review_returned(app, screen, service):
+    await wait_for(
+        lambda: (
+            len(app.screen_stack) == 1
+            and screen not in app.screen_stack
+            and screen.operation_count == service.operation_count == 0
+        )
+    )
+
+
 async def saved_ref(
     service, *, text="literal [red] report\n", name="fixture.txt", lease=None, kind="screen"
 ):
@@ -103,7 +113,10 @@ async def saved_ref(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(100, 32), (40, 12)])
-async def test_safe_preview_explicit_save_directory_metadata_and_focus(tmp_path, size):
+@pytest.mark.parametrize("hold_retirement", [False, True])
+async def test_safe_preview_explicit_save_directory_metadata_and_focus(
+    tmp_path, size, hold_retirement, monkeypatch
+):
     service = service_for(tmp_path)
     outcomes = []
     screen = ExportReviewScreen(
@@ -113,25 +126,61 @@ async def test_safe_preview_explicit_save_directory_metadata_and_focus(tmp_path,
         on_finish=outcomes.append,
     )
     app = ExportTestApp(screen)
-    async with app.run_test(size=size) as pilot:
-        await preview_ready(screen)
-        assert not service.default_root.exists()
-        assert "literal [red] report" in screen.viewer.text
-        assert "fixture" in str(screen.metadata.content) and "2026-11-05" in str(
-            screen.metadata.content
-        )
-        assert app.clipboard == "" and not screen.sensitive
-        await pilot.press("tab", "shift+tab")
-        assert app.focused is not None
-        await pilot.click("#export-save")
-        await wait_for(lambda: len(app.screen_stack) == 1)
-        assert outcomes[0].effect == "published"
-        path = outcomes[0].ref.directory.path / outcomes[0].ref.name
-        assert "literal [red] report" in path.read_text()
-        assert stat.S_IMODE(path.stat().st_mode) == 0o600
-        assert screen.viewer.text == "" and screen.subject == ()
-        assert screen.operation_count == service.operation_count == 0
-    await service.close()
+    dismissed, release = asyncio.Event(), asyncio.Event()
+    native_cancel = screen.action_cancel
+
+    async def cancel():
+        await native_cancel()
+        if hold_retirement:
+            dismissed.set()
+            try:
+                await release.wait()
+            except asyncio.CancelledError:
+                await release.wait()
+                raise
+
+    monkeypatch.setattr(screen, "action_cancel", cancel)
+    try:
+        async with app.run_test(size=size) as pilot:
+            await preview_ready(screen)
+            assert not service.default_root.exists()
+            assert "literal [red] report" in screen.viewer.text
+            assert "fixture" in str(screen.metadata.content) and "2026-11-05" in str(
+                screen.metadata.content
+            )
+            assert app.clipboard == "" and not screen.sensitive
+            await pilot.press("tab", "shift+tab")
+            assert app.focused is not None
+            clicked = asyncio.create_task(pilot.click("#export-save"))
+            returned = asyncio.create_task(review_returned(app, screen, service))
+            try:
+                async with asyncio.timeout(5):
+                    if hold_retirement:
+                        await dismissed.wait()
+                        await wait_for(lambda: len(app.screen_stack) == 1)
+                        assert not returned.done()
+                        assert screen.operation_count == 1 and service.operation_count == 0
+                        assert screen.viewer.text == "" and screen.subject == ()
+                        assert outcomes[0].effect == "published"
+                        release.set()
+                    await returned
+                    assert await clicked
+                assert outcomes[0].effect == "published"
+                path = outcomes[0].ref.directory.path / outcomes[0].ref.name
+                assert "literal [red] report" in path.read_text()
+                assert stat.S_IMODE(path.stat().st_mode) == 0o600
+                assert screen.viewer.text == "" and screen.subject == ()
+                assert screen.operation_count == service.operation_count == 0
+            finally:
+                release.set()
+                await screen.stop_owned()
+                for task in (clicked, returned):
+                    if not task.done():
+                        task.cancel()
+                await asyncio.gather(clicked, returned, return_exceptions=True)
+    finally:
+        release.set()
+        await service.close()
 
 
 @pytest.mark.asyncio
@@ -238,7 +287,7 @@ async def test_named_overwrite_has_separate_default_cancel_acknowledgement(
                     await repeated
                 assert app.screen is not first_confirmation and len(presses) == 2
                 assert await pilot.click("#artifact-confirm-yes")
-                await wait_for(lambda: len(app.screen_stack) == 1)
+                await review_returned(app, screen, service)
                 assert "new" in (ref.directory.path / ref.name).read_text()
             finally:
                 for feedback in feedback_timers:
@@ -437,12 +486,18 @@ async def test_live_sensitive_save_requires_separate_ack_and_exact_reader_rechec
         await pilot.press("escape")
         await wait_for(lambda: screen.operation_count == 0)
         assert reader.calls == 0 and not list(service.default_root.iterdir())
+        await wait_for(
+            lambda: (
+                screen.ready_to_save
+                and not screen.query_one("#export-save", Button).has_class("-active")
+            )
+        )
         await pilot.click("#export-save")
         await wait_for(
             lambda: isinstance(app.screen, ArtifactConfirmation) and app.screen.is_mounted
         )
         await pilot.click("#artifact-confirm-yes")
-        await wait_for(lambda: len(app.screen_stack) == 1)
+        await review_returned(app, screen, service)
         assert reader.calls == 1
         path = outcomes[0].ref.directory.path / outcomes[0].ref.name
         assert "ui-secret-value" in path.read_text() and stat.S_IMODE(path.stat().st_mode) == 0o600
@@ -468,7 +523,7 @@ async def test_local_save_copy_default_redacts_and_sensitive_copy_requires_new_a
             lambda: isinstance(app.screen, ArtifactConfirmation) and app.screen.is_mounted
         )
         await pilot.click("#artifact-confirm-yes")
-        await wait_for(lambda: len(app.screen_stack) == 1)
+        await review_returned(app, screen, service)
         assert (
             "ui-secret-value" in (outcomes[0].ref.directory.path / outcomes[0].ref.name).read_text()
         )
@@ -523,7 +578,7 @@ async def test_review_saves_complete_supported_format_with_frozen_scope(tmp_path
         assert screen.prepared.metadata.format == kind
         assert "ui-secret-value" not in screen.viewer.text
         await pilot.click("#export-save")
-        await wait_for(lambda: len(app.screen_stack) == 1)
+        await review_returned(app, screen, service)
         ref = outcomes[0].ref
         prepared = await service.read(ref)
         assert prepared.metadata.scope.context == "fixture"
@@ -601,7 +656,7 @@ async def test_cancel_during_committed_publish_reports_actual_saved_file(tmp_pat
         closing.cancel()
         files.release.set()
         await closing
-        await wait_for(lambda: len(app.screen_stack) == 1)
+        await review_returned(app, screen, service)
         assert outcomes[0].effect == "published"
         assert service.last_outcome == outcomes[0]
         assert (outcomes[0].ref.directory.path / outcomes[0].ref.name).is_file()
@@ -776,7 +831,7 @@ async def test_save_failure_and_overwrite_cancel_keep_the_original_preview_bindi
             )
         )
         await pilot.click("#export-save")
-        await wait_for(lambda: len(app.screen_stack) == 1)
+        await review_returned(app, screen, service)
         assert len(calls) == 3 and calls[-1][1].name == "fresh.txt"
         assert outcomes[0].effect == "published" and outcomes[0].ref.name == "fresh.txt"
         assert "literal [red] report" in (service.default_root / "fresh.txt").read_text()
@@ -855,7 +910,7 @@ async def test_destination_change_drains_sensitive_recheck_and_requires_fresh_co
             )
             assert "moved.yaml" in app.screen.message
             await pilot.click("#artifact-confirm-yes")
-            await wait_for(lambda: len(app.screen_stack) == 1)
+            await review_returned(app, screen, service)
             assert len(attempts) == 2
             assert "ui-secret-value" in (service.default_root / "moved.yaml").read_text()
         finally:

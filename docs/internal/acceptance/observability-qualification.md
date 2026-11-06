@@ -81,6 +81,17 @@ review/browser/root-export scope passes 38 cases in 29.80 seconds. File contents
 separate default-cancel confirmation, operation counts and waiter cleanup remain
 asserted. Production behavior and time budgets are unchanged.
 
+A subsequent Linux/Python 3.14 run passed both overwrite variants but exposed a
+different immediate worker-count assertion after successful publication and
+parent return. A controlled public cancellation-wrapper hold reproduced the
+observed parent stack, review count one/service count zero, correct private
+file and cleared preview. Dismissal does not make the current save worker's
+retirement atomic. The same-file completion predicate now waits for actual
+parent return and both owners drained within the existing five-second budget.
+Held-retirement controls preserve both viewport sizes, file/mode/focus and
+cleanup assertions; the related scope passes 40 cases in 30.42 seconds. No
+production counter is cleared early, and the original hosted failure remains.
+
 The installer helper originally left an owned descendant alive after both a
 successful leader exit and a timeout whose leader exited on SIGTERM. Original
 red receipts retain explicit independent cleanup. The correction always drains

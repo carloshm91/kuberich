@@ -44,6 +44,11 @@ That clean broad selection passed 1,516 cases in 245.17 seconds. A later hosted
 Python 3.14 overwrite-test timeout has a controlled feedback-timer reproduction
 and a narrow save-readiness correction; native/held-feedback controls and the
 38-case export scope pass. Complete exact-head hosted checks remain required.
+Another hosted Python 3.14 case observed the correct saved file and parent
+return before the current save worker retired. Controlled lifecycle coverage
+reproduces this ordering; bounded real-drain predicates and the 40-case export
+scope pass. The next committed-source review also runs all UI and quality
+checks in a separate local Python 3.14 environment before pushing.
 
 ## Unreleased 0.4.0 curated-resource checkpoint
 
