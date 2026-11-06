@@ -62,45 +62,23 @@ last valid preferences active and show a message. Use `config check` for details
 
 ## Configure overview history
 
-Development source can read CPU/memory history for the
-[cluster overview](cluster-overview.md) through a Prometheus Service proxy.
-The installed 0.3.0 release predates this connection. Configure it only for the
-exact context that should use the backend:
+Development source supports configured Prometheus-compatible history for the
+[cluster overview and resource charts](cluster-overview.md#connect-overview-history).
+The installed 0.3.0 release predates these views. Configure a Service endpoint or
+an external URL under `observability.history`; use `observability.contexts.NAME`
+for an exact context override. Service and URL connection fields are mutually
+exclusive. The guide shows both examples and explains their separate credentials.
 
-```yaml
-schema_version: 1
-observability:
-  schema_version: 1
-  contexts:
-    demo-lab:
-      history:
-        namespace: observability
-        service: prometheus
-        port: 9090
-        scheme: http
-        cluster_label: cluster
-        cluster_value: demo
-        matchers:
-          job: cadvisor
-```
+A root history block supplies a fallback only when no exact context block exists.
+An exact context block replaces the whole observability block, including optional
+Popeye settings; fields are not merged. An explicit context `history: null`
+disables the history fallback. Valid backend changes cancel the previous request
+and invalidate old results and export reviews. Theme-only changes preserve the
+connection. Invalid reloads keep the last valid settings.
 
-Replace the fictional Service fields and label values with your backend's
-declarations. Requests use your selected Kubernetes connection and need
-`services/proxy` read access in the backend namespace. The overview adds the
-active namespace to its query; a conflicting configured namespace is refused.
-
-`cluster_label` and `cluster_value` declare a cluster selector together. Omit
-both when that binding is unknown; the chart then labels its backend scope as
-unverified. A context name is not automatically a Prometheus label value.
-Literal `matchers` narrow the backend series without accepting arbitrary PromQL.
-
-A root `observability.history` supplies a fallback for contexts without an
-override. An explicit context `history: null` disables that fallback. Valid
-backend changes cancel the previous query and restart Pulse. Theme-only changes
-keep its collection running, and an invalid reload keeps the last valid settings.
-Checking preferences performs no connection, backend installation or file rewrite.
-See the [generated fields](config-reference.md) and
-[history interpretation](cluster-overview.md#connect-overview-history).
+Checking preferences performs no connection, backend installation, credential-file
+read or file rewrite. See the [generated fields](config-reference.md) for accepted
+provider, endpoint, label, prefix and rate-window declarations.
 
 ## Choose and save a theme
 

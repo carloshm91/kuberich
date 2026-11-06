@@ -129,6 +129,9 @@ class LivePreferences:
         context = app.workspace.store.observation.context
         previous_history = self.observability.for_context(context or "").history
         self.observability = observability_from(document)
+        current_history = self.observability.for_context(context or "").history
+        if previous_history != current_history:
+            app.metric_history.configure(current_history)
         navigation = navigation_from(document)
         restart = (navigation.keys, navigation.mouse) != (app.navigation.keys, app.navigation.mouse)
         app.navigation, app._navigation_invalid = navigation, False
@@ -147,8 +150,9 @@ class LivePreferences:
         app.appearance_controller.apply()
         if (
             app.workspace.pulse_selected
+            and not app.metric_history.detail_active
             and app.workspace.store.observation.connection.identity is not None
-            and previous_history != self.observability.for_context(context or "").history
+            and previous_history != current_history
         ):
             app.workspace.select_pulse()
         app.request_render()  # Saved column views apply to the current table.

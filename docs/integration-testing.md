@@ -83,16 +83,16 @@ not overlap another process creating/removing clusters.
 
 ## Release-time repetition
 
-Required PR/main CI runs the complete suite and all eighteen real rehearsals once
+Required PR/main CI runs the complete suite and all twenty real rehearsals once
 (contexts, lifecycle faults, shell, port forwards, credential interoperability,
 mutations, editing, workloads, resource operations, cleanup, transfers, custom
 resources, aggregate logs, Pulse, relationships, authorization, native/external
-diagnostics and installed quickstart). The diagnostic rehearsal acquires a
+diagnostics, container inspection, historical metrics and installed quickstart). The diagnostic rehearsal acquires a
 checksum-pinned official Popeye fixture through `scripts.diagnostics_tools`.
 It executes the tool only inside its owned container, with a disposable home,
 private connection and owned cluster. Production never downloads the tool.
 Before each canonical stable or RC publication, and after client/runtime or lifecycle
-changes, repeat the contract suite and all eighteen real rehearsals three consecutive
+changes, repeat the contract suite and all twenty real rehearsals three consecutive
 times on the exact candidate checkout. A failure blocks qualification; retain
 its evidence and diagnose before repetition.
 
@@ -102,11 +102,14 @@ Use `--evidence artifacts/cluster/rc-N-contexts.json`, `rc-N-lifecycle.json`,
 `rc-N-operations.json`, `rc-N-cleanup.json`, `rc-N-transfers.json`, `rc-N-custom-resources.json`,
 `rc-N-aggregate-logs.json` and `rc-N-quickstart.json`, for
 N=1,2,3. Use that candidate's exact wheel filename for the quickstart.
-Pulse, relationships, authorization and diagnostics require separate fresh evidence directories, such as
+Pulse, relationships, authorization, diagnostics, container inspection and historical
+metrics require separate fresh evidence directories, such as
 `artifacts/cluster/rc-N-pulse/evidence.json` and
 `artifacts/cluster/rc-N-relationships/evidence.json`,
 `artifacts/cluster/rc-N-authorization/evidence.json` and
-`artifacts/cluster/rc-N-diagnostics/evidence.json`, for their staged receipts.
+`artifacts/cluster/rc-N-diagnostics/evidence.json`,
+`artifacts/cluster/rc-N-container-inspection/evidence.json` and
+`artifacts/cluster/rc-N-metric-history/evidence.json`, for their staged receipts.
 Preserve per-run logs, duration, exit status,
 candidate SHA, tool versions/digests, configuration invariance and node inventory.
 Archive `artifacts/ui`, `artifacts/terminal` and `artifacts/cluster` after each run

@@ -62,6 +62,7 @@ class ContainerScreen(CommandWorkspace):
         Binding("u", "upload", "Upload"),
         Binding("d", "download", "Download"),
         Binding("e", "environment", "Environment / image"),
+        Binding("M", "metric_history", "Metric history", key_display="Shift+M"),
     ]
     DEFAULT_CSS = """
     ContainerScreen { layout: vertical; background: $background; }
@@ -91,6 +92,7 @@ class ContainerScreen(CommandWorkspace):
         trail: tuple[str, ...] = ("pods",),
         metrics: MetricReport | None = None,
         inspect_container: Callable[[ContainerIdentity], None] | None = None,
+        metric_history: Callable[[ContainerIdentity], None] | None = None,
     ) -> None:
         super().__init__()
         self.stream = stream
@@ -102,6 +104,7 @@ class ContainerScreen(CommandWorkspace):
         self.attach = attach
         self.transfers = transfers
         self.inspect_container = inspect_container
+        self.metric_history = metric_history
         self.chrome, self.trail = chrome, (*trail, "containers")
         self._metrics = metrics or MetricReport()
         self.rows = container_rows(manifest, self._metrics)
@@ -253,6 +256,20 @@ class ContainerScreen(CommandWorkspace):
             self._set_status(safe_text(str(error)))
             return
         self.inspect_container(identity)
+
+    def action_metric_history(self) -> None:
+        if (
+            self.app.screen is not self
+            or isinstance(self.focused, Input)
+            or self.metric_history is None
+        ):
+            return
+        try:
+            identity = self.capture_container()
+        except AppError as error:
+            self._set_status(safe_text(str(error)))
+            return
+        self.metric_history(identity)
 
     def observe_record(self, record: ResourceRecord, metrics: MetricReport | None = None) -> None:
         metrics = metrics or MetricReport()

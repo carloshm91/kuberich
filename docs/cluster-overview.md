@@ -6,8 +6,9 @@ source; the installed 0.3.0 release predates it.
 
 You need read access to the resource families you want to inspect. Current usage
 needs a Metrics API implementation such as metrics-server. History needs a
-configured Prometheus Service and permission to read its Kubernetes Service
-proxy. Each source reports its own availability, so missing metrics or denied
+Prometheus-compatible backend with the required metric sources. A Service
+connection needs Kubernetes Service-proxy read permission; an external URL uses
+its own connection settings. Each source reports its own availability, so missing metrics or denied
 access does not hide the resource summaries that you can read.
 
 ## Open the overview
@@ -83,7 +84,7 @@ denominators and init-container, sidecar and resize limits.
 ## Connect overview history
 
 Add an optional history connection to your preferences. This example applies
-only to the exact fictional context `demo-lab`:
+only to the fictional context `demo-lab`:
 
 ```yaml
 schema_version: 1
@@ -95,44 +96,117 @@ observability:
         namespace: observability
         service: prometheus
         port: 9090
-        scheme: http
+        provider: auto
         cluster_label: cluster
         cluster_value: demo
         matchers:
-          job: cadvisor
+          job: kubelet
+        node_matchers:
+          job: node-exporter
+        state_matchers:
+          job: kube-state-metrics
 ```
 
-Set the Service fields and label values to those used by your backend. Requests
-use your selected Kubernetes connection and its Service-proxy permission. Run
-`kuberich config check` after editing. A valid change to the active backend
-restarts Pulse's collection and cancels the previous query. An invalid change
-keeps the last valid preferences.
+Use your actual Service and scrape labels. The three matcher groups select
+container, node-exporter and kube-state-metrics series separately. A configured
+cluster selector applies to every source and join. `cluster_label` and
+`cluster_value` must agree and be configured together. Without them, the chart
+labels its cluster binding unverified; a context name never becomes a label.
+The selected namespace narrows namespaced measurements. A conflicting selector
+is an error, rather than a broader query.
 
-The configured endpoint alone does not prove that its series belong to your
-Kubernetes cluster. `cluster_label` and `cluster_value` declare your chosen
-binding. They must be configured together and agree with any matching selector.
-Without them, charts explicitly report an unverified backend scope. KubeRich
-does not derive a Prometheus cluster label from your context name. The active
-namespace adds a `namespace` matcher; a conflicting configured namespace is an
-error.
+Run `kuberich config check` after editing. Service queries use the selected
+Kubernetes connection and `services/proxy` read permission. Kubernetes authenticates
+the API request; that does not authenticate you to the backend. Its proxy removes
+Authorization and impersonation headers before forwarding. Backend HTTPS through
+this proxy does not provide independent certificate verification by KubeRich.
+Use an external HTTPS connection when you need backend credentials or your own CA.
 
-The backend must already expose `container_cpu_usage_seconds_total` and
-`container_memory_working_set_bytes` with `container` and `pod` labels. The
-queries sum matching containers; CPU uses a five-minute counter rate and memory
-uses working set. Missing matching series appear as no data.
+For an external backend, replace the Service fields with a URL:
 
-The requested interval is the previous 15 minutes at 15-second resolution. Numeric values accompany the sparklines; `·` marks a missing sample.
-Missing values are gaps, while an observed zero stays zero. CPU displays mCPU
-and memory displays MiB. The visible scale uses the available samples.
+```yaml
+history:
+  url: https://metrics.example.com/prometheus
+  provider: prometheus
+  ca_file: /absolute/path/metrics-ca.pem
+  bearer_token_file: /absolute/path/metrics-token
+  cluster_label: cluster
+  cluster_value: demo
+```
 
-The history row shows the backend selectors, query interval, query time and
-availability. Evaluation timestamps do not prove the time of the backend's
-scrape. Empty, partial, failed, forbidden and expired history remain explicit;
-they do not turn into zero usage. Cached charts expire after 60 seconds.
+This is the `history` fragment inside the same observability block. The URL's
+path is the API prefix; it cannot include credentials, query parameters or a
+fragment. Token files require HTTPS. This connection does not inherit Kubernetes
+credentials, client certificates, proxy settings, cookies or environment-based
+credentials. Redirects are refused. Keep the token file private; changing its
+contents replaces the connection credentials on the next request. Checking
+preferences does not read credential files or contact either server.
 
-This overview does not install metrics-server or Prometheus. Broader per-resource
-history, network/filesystem charts and additional backend discovery remain
-unavailable. To disable a context's history, set its `history` to `null`; this
-also overrides a global history connection. See
-[configuration](configuration.md#configure-overview-history) and the generated
-[configuration fields](config-reference.md) for the accepted declarations.
+Supported provider settings are `auto`, `prometheus`, `victoriametrics` and
+`thanos`. Auto checks compatibility without claiming an authenticated product
+identity. Set `api_prefix` for a Service endpoint mounted below the root; an
+external URL already supplies its prefix. Existing Service-only settings remain
+valid. KubeRich installs no metrics components.
+
+## Explore metric history
+
+From Pulse, press Shift+M or enter `:history` for cluster history. From a Node,
+Pod or supported workload table, select a row and use the same action. For a
+specific container, open the Pod with Enter, select its regular, init, sidecar
+or ephemeral container, then press Shift+M. `:hist` is an alias. Read-only mode
+permits these metric reads.
+
+The history workspace keeps the selected entity, backend, selectors and source
+status visible. Without a configured backend, `d` explicitly searches the selected
+namespace for compatible Service candidates. The result can be partial or denied.
+`b` cycles through candidates; choosing one applies only to this screen and does
+not save preferences. Select a namespace before detection if you opened an
+all-namespace view. Detection does not search arbitrary external addresses.
+
+| Key | Action |
+| --- | --- |
+| `1`–`7` | Select 15m, 30m, 1h, 3h, 6h, 12h or 24h |
+| `c`, `m`, `n`, `f` | Show CPU, memory, network or filesystem |
+| `[` / `]` | Previous / next device or mount |
+| `r` | Collect the selected range again |
+| `a` | Switch between Unicode and ASCII charts |
+| `u` | Switch workload historical/current membership |
+| Escape | Return to the previous view |
+
+Numbers always accompany the chart, including last, minimum, maximum and units.
+CPU uses a counter rate; its default lookback is five minutes. `rate_window_seconds`
+accepts 60–3600 seconds. Container memory is working set. Node memory uses
+host total minus available memory. Network shows receive/transmit
+bytes per second. Filesystem shows bytes per device or mount, rather than a
+universal total that can count the same storage twice. Node measurements use
+node-exporter host metrics, separately from sums of container metrics.
+
+Container network is the Pod's shared network, not traffic attributed to a
+single process. Host-network Pods share the host network. The fixed network
+profile requires the explicit `container="POD"` sandbox series; a backend without
+it reports a source gap. Kubelet versions and scrape configurations may omit
+filesystem or sandbox metrics. Missing sources stay unavailable.
+
+Historical workload membership uses kube-state-metrics owner evidence at each
+evaluation time. Names do not prove historical UID identity. Current-member mode
+instead uses the Pods currently returned by Kubernetes and shows the member
+count and observation time. It cannot recover deleted members. Creation and
+replacement boundaries leave gaps, including the CPU/network rate lookback.
+The displayed Kubernetes UID does not establish an equivalent historical binding.
+
+`·` marks a missing sample; measured zero stays zero. Nonfinite, missing-source,
+forbidden, partial and expired values keep their status. Evaluation timestamps
+are not proof of scrape freshness. Ranges use at most 721 points per series and
+collection may stop at its visible query, series or response limits.
+
+Collection is explicit and finite. Rapid range changes replace the pending
+request; previous requests drain before their replacement. A detail view pauses
+Pulse's history reads while health collection continues. The cache keeps results
+for at most 30 seconds; displayed results expire after 60 seconds. The expiry
+indicator does not poll the backend. Press `r` for a new collection.
+
+Valid backend changes cancel previous work and invalidate exports from the old
+configuration; theme-only changes retain results. Changing namespace, context or
+target rejects late results. To disable a context's configured connection, set
+its `history` to `null`. See [configuration](configuration.md#configure-overview-history)
+and [saved exports](exports.md).

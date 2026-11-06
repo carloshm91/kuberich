@@ -183,16 +183,15 @@ terminal.
 **partial** — Translate plugin fields and variables explicitly and install required external tools
 separately. External services and tool features do not become native application capabilities.
 ### CPU/memory usage, requests/limits/percentages, extended/GPU resources
-**partial** — Development source adds current CPU/memory usage, declared requests/limits, labelled
-percentages and Node/extended-resource capacity. Missing, forbidden, stale, partial and measured-
-zero values remain distinct. Complex Pod allocations are explicitly uncertain; GPU utilization and
-broader per-resource history are unavailable; development overview history is separately configured.
-Installed 0.3.0 predates these metrics columns.
+**partial** — Development source adds current CPU/memory usage, declared budgets and Node/extended-
+resource capacity. Configured entity history includes CPU, memory, network and filesystem source
+states; missing sources and uncertain historical identity remain explicit. GPU utilization is
+unavailable. Installed 0.3.0 predates these views.
 ### Pulse cluster overview and CPU/memory drill-downs
-**partial** — Development source adds a native cluster overview with Node/Pod/workload health,
-capacity, current usage and exact resource drill-downs. Configured Prometheus Service-proxy
-CPU/memory history shows numeric values, gaps and explicit backend scope. Broader per-
-resource/network/filesystem history remains unavailable; installed 0.3.0 predates the overview.
+**partial** — Development source adds cluster health and capacity summaries with resource drill-
+downs. Shift+M or :history opens configured entity history with numeric charts, 15m–24h ranges,
+separate devices, explicit source gaps and historical-identity limits. Backend components must
+already exist. Installed 0.3.0 predates these views.
 ### XRay relationships, jump-to-owner/node, service endpoints and UsedBy
 **partial** — Development source provides native :xray and :usedby views for owners, selector
 matches, reported endpoints, placement and supported static configuration/storage/identity

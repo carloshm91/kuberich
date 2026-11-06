@@ -38,7 +38,8 @@ percentages and allocation limits. This work is not part of installed 0.3.0.
 
 Development source also adds the native [cluster overview](cluster-overview.md)
 with health/capacity summaries, exact resource drill-downs and optional configured
-Prometheus CPU/memory history. Its source states distinguish missing, denied,
+Prometheus-compatible history. Shift+M opens selected resource/container charts
+with CPU, memory, network and filesystem source states and 15m–24h ranges. Its source states distinguish missing, denied,
 partial and stale data; it does not install a metrics backend. These capabilities
 remain unreleased work for 0.4.0.
 

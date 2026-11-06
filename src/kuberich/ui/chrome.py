@@ -90,7 +90,7 @@ POD_SHORTCUTS = (
     ("l/L", "Logs / aggregate"),
     ("x", "Shell"),
     ("F", "Forward ports"),
-    ("d", "Details"),
+    ("d / M", "Details / history"),
     ("y/e", "YAML / Events"),
     (":pf", "Forward sessions"),
     ("n / :ns", "Namespaces"),
@@ -141,6 +141,17 @@ def workload_shortcuts(resource: str, read_only: bool) -> tuple[tuple[str, str],
         actions.append((":rollout", "Rollout status"))
     if not read_only:
         actions.append((":delete", "Review deletion"))
+    if resource in {
+        "nodes",
+        "deployments",
+        "replicasets",
+        "statefulsets",
+        "daemonsets",
+        "replicationcontrollers",
+        "jobs",
+        "cronjobs",
+    }:
+        actions.insert(0, ("M", "Metric history"))
     shortcuts: tuple[tuple[str, str], ...] = RESOURCE_SHORTCUTS
     if resource in {"configmaps", "secrets"}:
         shortcuts = (("Enter / v", "Data keys"), ("d", "Details"), *RESOURCE_SHORTCUTS[1:])
@@ -175,6 +186,7 @@ CTX_SHORTCUTS = (
 CONTAINER_SHORTCUTS = (
     ("Enter / l", "Logs"),
     ("e", "Environment / image"),
+    ("M", "Metric history"),
     ("s / x", "Shell"),
     ("a", "Attach"),
     ("u / d", "Upload / download"),

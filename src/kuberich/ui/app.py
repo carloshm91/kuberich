@@ -119,6 +119,7 @@ from kuberich.ui.diagnostic_actions import DiagnosticActions
 from kuberich.ui.diagnostic_navigation import DiagnosticNavigation
 from kuberich.ui.foreground import ForegroundGate
 from kuberich.ui.handoff import terminal_handoff
+from kuberich.ui.history_actions import HistoryActions
 from kuberich.ui.input_dispatch import InputDispatcher
 from kuberich.ui.interactions import Interactions
 from kuberich.ui.jumps import JumpController
@@ -190,6 +191,7 @@ class KubeRichApp(App[None]):
         Binding("n", "namespaces", "Namespaces"),
         Binding("r", "retry", "Retry", show=False),
         Binding("i", "connection_details", "Status", show=False),
+        Binding("M", "metric_history", "Metric history", key_display="Shift+M"),
         Binding("o", "open_relationship", "Open resource", show=False),
         Binding("alt+left", "history_back", "Previous view", show=False),
         Binding("alt+right", "history_forward", "Next view", show=False),
@@ -427,6 +429,19 @@ class KubeRichApp(App[None]):
             self._set_notice,
             self._set_status,
         )
+        self.metric_history = HistoryActions(
+            host=self,
+            sessions=self.sessions,
+            workspace=self.workspace,
+            capture=self.targets.capture,
+            context=self._operation_context,
+            options=lambda context: (
+                self.live_preferences.observability.for_context(context).history
+            ),
+            policy=self.commands.policy,
+            notice=self._set_notice,
+            on_error=self._handle_exception,
+        )
         self.operations = ResourceOperations(
             self,
             self.targets.capture,
@@ -440,6 +455,7 @@ class KubeRichApp(App[None]):
             forwarding=self._forwarding_preferences,
             delete_context=lambda: self._edit_context(ContextChange.DELETE),
             stop_plugins=self.plugins.manager.stop_for_client,
+            metric_history=self.metric_history.open_container,
         )
         from platformdirs import user_state_path
 
@@ -530,6 +546,7 @@ class KubeRichApp(App[None]):
                 Command.PLUGIN_JOBS: self.action_plugin_jobs,
                 Command.QUIT: self.exit,
                 Command.PULSE: self.navigator.pulse,
+                Command.HISTORY: self.action_metric_history,
                 Command.DIAGNOSE: self.diagnostics.diagnose,
                 Command.POPEYE: self.diagnostics.popeye,
                 Command.EXPORT: self.exports.open_export,
@@ -865,6 +882,7 @@ class KubeRichApp(App[None]):
         self.navigator.connect(context, scope=scope, remember=remember, authenticate=authenticate)
 
     def _observation_changed(self) -> None:
+        self.metric_history.observe(self.workspace.store.observation)
         self.plugins.refresh()
         self.plugins.manager.invalidate()
         self.command_input.refresh_choices()
@@ -898,6 +916,7 @@ class KubeRichApp(App[None]):
                 and screen.request.scope.session.context == client.context.name
             ),
             self.operations.close_for_client(client),
+            self.metric_history.close_for_client(client),
             *(
                 (self.exports.close_for_connection(identity.connection_id),)
                 if (identity := self.sessions.observation.identity) is not None
@@ -961,6 +980,7 @@ class KubeRichApp(App[None]):
             await self.command_routes.close()
             await self.interactions.close()
             await self.exports.stop_owned()
+            await self.metric_history.close()
             if self._catalog_task is not None:
                 self._catalog_task.cancel()
                 await finish_owned(asyncio.gather(self._catalog_task, return_exceptions=True))
@@ -1242,10 +1262,15 @@ class KubeRichApp(App[None]):
     async def _read_pulse_history(
         self, client: KubernetesSession, scope: PulseScope
     ) -> HistorySnapshot:
-        from kuberich.services.history import HistoryReader
+        return await self.metric_history.overview(client, scope)
 
-        backend = self.live_preferences.observability.for_context(scope.session.context).history
-        return await HistoryReader().read(client, backend, scope.namespace)
+    def action_metric_history(self) -> None:
+        from kuberich.ui.containers import ContainerScreen
+
+        if isinstance(self.screen, ContainerScreen):
+            self.screen.action_metric_history()
+        else:
+            self.metric_history.open_current()
 
     async def _read_popeye(
         self,

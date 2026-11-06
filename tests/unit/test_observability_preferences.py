@@ -24,8 +24,8 @@ def test_optional_context_history_survives_document_round_trip_without_mutation(
     }
     document = parse_document(raw)
     result = observability_from(document)
-    assert result.history.service == "prometheus"
-    assert result.for_context("owned").history.service == "other"
+    assert result.history.endpoint.service == "prometheus"
+    assert result.for_context("owned").history.endpoint.service == "other"
     assert result.for_context("disabled").history is None
     assert result.for_context("different").history is result.history
     assert document.to_mapping()["observability"] == raw["observability"]
@@ -43,7 +43,6 @@ def test_optional_context_history_survives_document_round_trip_without_mutation(
         {"schema_version": True},
         {"schema_version": 2},
         {"history": []},
-        {"history": {"url": "https://untrusted.example.test"}},
         {"history": {**BACKEND, "matchers": []}},
         {"history": {"namespace": "one"}},
         {"history": {**BACKEND, "namespace": 3}},
@@ -78,7 +77,7 @@ def test_explicit_cluster_binding_and_matchers_are_preserved():
             }
         }
     )
-    assert result.history.labels("team") == (
+    assert result.history.endpoint.labels("team") == (
         ("cluster", "owned"),
         ("job", "cadvisor"),
         ("namespace", "team"),

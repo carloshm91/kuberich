@@ -82,26 +82,44 @@ nullable; the parser still validates it. A null fallback is not permission to su
 | `navigation.views.RESOURCE.sort.key` | "name" |
 | `observability.contexts` | {} |
 | `observability.contexts.NAME.history` | null (before validation) |
+| `observability.contexts.NAME.history.api_prefix` | "" |
+| `observability.contexts.NAME.history.bearer_token_file` | No explicit fallback; see task guide |
+| `observability.contexts.NAME.history.ca_file` | No explicit fallback; see task guide |
 | `observability.contexts.NAME.history.cluster_label` | null (before validation) |
 | `observability.contexts.NAME.history.cluster_value` | null (before validation) |
 | `observability.contexts.NAME.history.matchers` | {} |
 | `observability.contexts.NAME.history.namespace` | null (before validation) |
+| `observability.contexts.NAME.history.node_matchers` | No explicit fallback; see task guide |
 | `observability.contexts.NAME.history.port` | 9090 |
+| `observability.contexts.NAME.history.profile` | "kubernetes-standard" |
+| `observability.contexts.NAME.history.provider` | "auto" |
+| `observability.contexts.NAME.history.rate_window_seconds` | 300 |
 | `observability.contexts.NAME.history.scheme` | "http" |
 | `observability.contexts.NAME.history.service` | null (before validation) |
+| `observability.contexts.NAME.history.state_matchers` | No explicit fallback; see task guide |
+| `observability.contexts.NAME.history.url` | No explicit fallback; see task guide |
 | `observability.contexts.NAME.popeye` | null (before validation) |
 | `observability.contexts.NAME.popeye.executable` | null (before validation) |
 | `observability.contexts.NAME.popeye.sections` | ["pods"] |
 | `observability.contexts.NAME.popeye.timeout_seconds` | 60 |
 | `observability.contexts.NAME.popeye.trusted_read_only` | false |
 | `observability.history` | null (before validation) |
+| `observability.history.api_prefix` | "" |
+| `observability.history.bearer_token_file` | No explicit fallback; see task guide |
+| `observability.history.ca_file` | No explicit fallback; see task guide |
 | `observability.history.cluster_label` | null (before validation) |
 | `observability.history.cluster_value` | null (before validation) |
 | `observability.history.matchers` | {} |
 | `observability.history.namespace` | null (before validation) |
+| `observability.history.node_matchers` | No explicit fallback; see task guide |
 | `observability.history.port` | 9090 |
+| `observability.history.profile` | "kubernetes-standard" |
+| `observability.history.provider` | "auto" |
+| `observability.history.rate_window_seconds` | 300 |
 | `observability.history.scheme` | "http" |
 | `observability.history.service` | null (before validation) |
+| `observability.history.state_matchers` | No explicit fallback; see task guide |
+| `observability.history.url` | No explicit fallback; see task guide |
 | `observability.popeye` | null (before validation) |
 | `observability.popeye.executable` | null (before validation) |
 | `observability.popeye.sections` | ["pods"] |

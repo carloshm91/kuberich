@@ -84,7 +84,7 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     second = catalog.cluster_stages(
         tmp_path, Path("/owned/kind"), Path("/owned/kubectl"), Path("/owned/app.whl"), 2
     )
-    assert len(first) == len(second) == 20
+    assert len(first) == len(second) == 21
     acquisition = first[0]
     assert acquisition.name == "kind-1-diagnostic-tools"
     assert acquisition.command[4:] == (
@@ -142,6 +142,14 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     assert inspection_evidence == tmp_path / "kind-1-container-inspection/evidence.json"
     assert repeated_inspection_evidence == tmp_path / "kind-2-container-inspection/evidence.json"
     assert inspection_evidence.parent != repeated_inspection_evidence.parent
+    history = next(stage for stage in first if stage.name == "kind-1-metric-history")
+    repeated_history = next(stage for stage in second if stage.name == "kind-2-metric-history")
+    assert Path(history.command[history.command.index("--evidence") + 1]) == (
+        tmp_path / "kind-1-metric-history/evidence.json"
+    )
+    assert Path(repeated_history.command[repeated_history.command.index("--evidence") + 1]) == (
+        tmp_path / "kind-2-metric-history/evidence.json"
+    )
     for stage in first[1:]:
         module = stage.command[4]
         assert module in body

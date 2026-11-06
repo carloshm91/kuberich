@@ -183,7 +183,9 @@ uncertain when a member's active allocation is unconfirmed, while Node usage /
 allocatable stays available. These values do not claim scheduler reservations. Extended resource fields show
 vendor-neutral declared requests/limits and Node capacity/allocatable values;
 the CPU/memory Metrics API provides no GPU utilization. Collection payload/row
-limits still apply. Historical charts and Prometheus metrics are unavailable.
+limits still apply. For configured historical charts, select a Node, Pod, workload or container and
+press Shift+M. See [metric history](cluster-overview.md#explore-metric-history)
+for backend requirements, units and identity limits.
 
 ## Connection state and action results
 

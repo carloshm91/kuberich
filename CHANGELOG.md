@@ -7,6 +7,9 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Added
 
+- Open cluster, Node, workload, Pod and container metric history with Shift+M or `:history`; show numeric CPU/memory/network/filesystem charts, 15m–24h ranges and explicit source/identity gaps ([#231](https://github.com/carloshm91/kuberich/issues/231)).
+- Select Prometheus-compatible Service candidates or independently configured HTTPS backends without sharing Kubernetes credentials ([#231](https://github.com/carloshm91/kuberich/issues/231)).
+
 - Inspect container environment sources, precedence and image facts from the container list with `e`; values start hidden and use fresh reveal/copy ([#74](https://github.com/carloshm91/kuberich/issues/74)).
 - Export container inspection metadata while preserving source identity and a Reload-required state after configuration changes ([#74](https://github.com/carloshm91/kuberich/issues/74)).
 - Save reviewed resource YAML, logs, diagnostics, screen text and inspectable support JSON with default redaction and private files ([#73](https://github.com/carloshm91/kuberich/issues/73)).
@@ -24,6 +27,10 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 - View current CPU/memory usage, configured requests/limits and labelled percentages in Pod, workload, Node and container tables ([#68](https://github.com/carloshm91/kuberich/issues/68)).
 - Distinguish missing, forbidden, stale, partial and measured-zero metrics; retain numeric sorting and selected resource identity during refresh ([#68](https://github.com/carloshm91/kuberich/issues/68)).
 - Inspect vendor-neutral extended-resource requests/limits and Node capacity without implying GPU utilization or confirmed complex Pod allocation ([#68](https://github.com/carloshm91/kuberich/issues/68)).
+
+### Changed
+
+- Reserve metric-history chart controls in the `history` key profile; conflicting common table overrides need an explicit per-history override ([#231](https://github.com/carloshm91/kuberich/issues/231)).
 
 ### Fixed
 

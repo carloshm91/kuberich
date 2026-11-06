@@ -1,5 +1,32 @@
 # Development checkpoint
 
+## Active unreleased 0.4.0 historical metrics
+
+Seven of ten technical tasks are protected-delivered. Container inspection PR
+#316 is merged at `5444b7d9c357d389243147a978cc20b248293edb`, with all 27 quality
+jobs, Repository checks and DCO passed on exact final head `c5a2408`. Its final
+hosted Linux Python 3.13 measured 98.6876% lines / 95.5346% branches across 246
+modules, all 102 critical modules at 100% and 97.96% changed lines. The final
+Fast suite passed 7,654 cases with one explicit macOS-only skip. Its actual
+provider-independent kind and installed terminal evidence remains in the
+[container inspection record](acceptance/container-inspection.md). Earlier
+statements below that its platform matrix was pending are historical.
+
+Issue #231 is the only active implementation. Shift+M and `:history` compose
+cluster, Node, workload, Pod and container charts with four measurement families,
+seven ranges and explicit availability/identity gaps. The frozen deterministic
+cohort passed 273 cases at 100% lines/branches in all three modules. Actual App
+and source-terminal trials passed; strengthened source-binding replays, real
+backends, installed entry points and complete source/platform qualification
+remain pending. See the [metric history record](acceptance/metric-history.md).
+
+Focused commands are `uv run pytest tests/ui/test_history.py` and
+`uv run pytest tests/terminal/test_history.py`, using synthetic loopback APIs and
+explicit private configuration. They are development checks; no manual trial is
+requested. Source version stays 0.3.0 and no 0.4 package/tag publication is implied.
+The remaining implementation order is #231, #232, then cumulative #75. Publication
+approval follows a concrete qualified candidate.
+
 ## Active unreleased 0.4.0 container inspection
 
 Six of ten technical tasks are delivered. Local exports are protected-merged in
