@@ -2,7 +2,7 @@
 
 Browse Kubernetes resources, read logs and manage workloads from your terminal.
 
-Current release: [0.3.0](https://github.com/carloshm91/kuberich/releases/tag/v0.3.0).
+Latest published version: [GitHub Releases](https://github.com/carloshm91/kuberich/releases/latest).
 
 [Website](https://kuberich.com/) · [Documentation](https://docs.kuberich.com/) ·
 [Releases](https://github.com/carloshm91/kuberich/releases)
@@ -60,6 +60,20 @@ kubectl on your PATH. See the
 - Pod and Service TCP port forwarding.
 - Manifest editing with dry runs, scaling, restarts, rollbacks and deletion.
 - Themes, configurable shortcuts and local command plugins.
+- Current usage metrics, historical charts and Pulse health overviews.
+- Resource relationships, authorization inspection and workload diagnostics.
+- Container environment provenance and reviewed local reports.
+
+## Releases and compatibility
+
+The source tree can contain features awaiting release. Read the
+[changelog](https://github.com/carloshm91/kuberich/blob/main/CHANGELOG.md) and
+[release notes](https://github.com/carloshm91/kuberich/releases) for the features
+available in your installed version and any migration steps.
+
+Use `kuberich` for launches and scripts. The 0.4 source removes the deprecated
+`kubetrol` alias while preserving legacy preference and log compatibility; see
+the [upgrade guide](https://github.com/carloshm91/kuberich/blob/main/docs/installation.md#upgrade).
 
 ## Community
 

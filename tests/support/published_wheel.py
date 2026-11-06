@@ -17,7 +17,11 @@ PUBLISHED_WHEELS = {
     "0.2.0": {
         "url": "https://files.pythonhosted.org/packages/c1/3c/061a88bd7d498cd186305d5872cc755fb578684c2ea963772935c0f82901/kuberich-0.2.0-py3-none-any.whl",
         "sha256": "5d03bdb259d5b54b77d8100017ce4d59b71c37dde1d49ff8d539a231fe0d272c",
-    }
+    },
+    "0.3.0": {
+        "url": "https://files.pythonhosted.org/packages/cf/d8/875a967347bea2110137838860eb02d37247282acf4c5145b68d506ae0dd/kuberich-0.3.0-py3-none-any.whl",
+        "sha256": "dfe73877f7bacfa33b8b0fb3f57306be789d2a82b24707ad6f092895a23dcd59",
+    },
 }
 MAX_WHEEL_BYTES = 10 * 1024 * 1024
 

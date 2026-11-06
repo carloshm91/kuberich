@@ -33,11 +33,17 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Changed
 
+- Remove the deprecated `kubetrol` command and Python shim in the prepared 0.4.0 source; keep legacy preferences, environment variables and log compatibility ([#75](https://github.com/carloshm91/kuberich/issues/75)).
+- Use a one-time pipx reinstall when crossing from 0.3 to remove obsolete command links; uv and Homebrew keep their normal upgrade path ([#75](https://github.com/carloshm91/kuberich/issues/75)).
+
 - Reserve Events `w`/`t` controls in its navigation profile and Shift+L for inspector Links ([#232](https://github.com/carloshm91/kuberich/issues/232)).
 
 - Reserve metric-history chart controls in the `history` key profile; conflicting common table overrides need an explicit per-history override ([#231](https://github.com/carloshm91/kuberich/issues/231)).
 
 ### Fixed
+
+- Keep explicit Home/End horizontal navigation from being reversed by pending animations or earlier viewport restoration ([#75](https://github.com/carloshm91/kuberich/issues/75)).
+- Show a truncated context identity in single-line headers instead of clipping the complete value ([#75](https://github.com/carloshm91/kuberich/issues/75)).
 
 - Prepare large export previews without constructing unused pages, and close log viewers without late updates accessing removed panels ([#317](https://github.com/carloshm91/kuberich/issues/317)).
 - Repaint saved-artifact filenames at their measured column widths when the first terminal frame precedes automatic sizing ([#317](https://github.com/carloshm91/kuberich/issues/317)).

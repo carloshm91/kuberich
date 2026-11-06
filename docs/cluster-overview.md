@@ -38,6 +38,12 @@ Nodes are cluster-scoped; pods and workloads use your namespace selection.
 zero. `INCOMPLETE` identifies a source whose available rows do not establish a
 complete total.
 
+A zero-desired DaemonSet can remain `unknown` even after its controller has
+observed the current generation. Kubernetes can omit optional zero availability
+and update counters; Pulse keeps missing health evidence distinct from an
+explicit healthy state. Zero counts in the ordinary DaemonSet table do not
+establish Pulse health.
+
 Collections refresh one after another, then wait 15 seconds before the next
 cycle. Sources are observed at different times, rather than as one atomic
 cluster snapshot. Current samples expire after 60 seconds even while a later

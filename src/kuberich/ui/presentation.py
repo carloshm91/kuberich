@@ -54,6 +54,7 @@ class FrameTable(DataTable[Cell]):
     _frame_style: Style | None = None
     _width_metadata_trusted = True
     _row_order_revision = 0
+    _interaction_revision = 0
     _scoped_cell_refresh = False
     _row_repaint_enabled = False
 
@@ -117,6 +118,16 @@ class FrameTable(DataTable[Cell]):
     def action_half_page(self, direction: int) -> None:
         height = max(1, (self.scrollable_content_region.height - self.header_height) // 2)
         self.move_cursor(row=self.cursor_row + direction * height)
+
+    def action_scroll_home(self) -> None:
+        self._interaction_revision += 1
+        super().action_scroll_home()
+        self.scroll_to(x=0, animate=False, immediate=True, force=True)
+
+    def action_scroll_end(self) -> None:
+        self._interaction_revision += 1
+        super().action_scroll_end()
+        self.scroll_to(x=self.max_scroll_x, animate=False, immediate=True, force=True)
 
     def refresh(
         self,

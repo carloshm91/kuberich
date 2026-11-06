@@ -54,10 +54,11 @@ is rejected. Common launch issues #149/#150/#154/#155/#157/#162/#166 stay
 required. #81 (K9sAlpha research) was closed as not planned and is no longer a
 prerequisite.
 
-[D10 #89](https://github.com/carloshm91/kuberich/issues/89) owns initial public
-channel activation and remains open through its real verification. Only initial
-0.1.0 or 0.1.0rcN may transact while #89 is open; patches and later phases require
-it closed. Opt-in provider certification remains Q05's agreed scope.
+[D10 #89](https://github.com/carloshm91/kuberich/issues/89) completed initial
+public channel activation and verification. Its historical approval does not
+authorize another release. Later phases still require cumulative qualification,
+explicit publication approval and actual public-channel verification. Opt-in
+provider certification remains Q05's agreed scope.
 
 The approved development sites are [landing](https://kuberich-site.pages.dev)
 and [initial docs](https://kuberich-docs.pages.dev), delivered by #166. Each public
@@ -77,9 +78,10 @@ compatible fixes use a patch, compatible capabilities a minor, and incompatible
 public changes a major. New minor/major lines need an explicit plan mapping
 before the readiness validator permits publication.
 
-The 0.3 source keeps the previous `kubetrol` command with a fixed stderr warning;
-use `kuberich` for scripts and interactive launches. Actual alias removal is a
-0.4.0 qualification requirement, not a completed 0.3 change. The explicit
+Published 0.3 keeps the previous `kubetrol` command with a fixed stderr warning.
+The prepared 0.4 source removes that console entry and its Python shim; use
+`kuberich` for scripts and interactive launches. Genuine predecessor upgrades
+must verify removal of obsolete exposed scripts as part of qualification. The explicit
 `kuberich config migrate` command keeps previous preferences and prints its
 success notice only when the new file is created. Loading or inspecting settings
 does not migrate them automatically. Legacy environment and log-file compatibility
@@ -104,7 +106,7 @@ Run the checked-in coordinator on a clean, committed candidate. It uses the
 existing checks and never publishes packages, tags, sites or releases:
 
 ```sh
-uv run python scripts/qualify.py 0.3.0 --output artifacts/qualification/candidate
+uv run python scripts/qualify.py 0.4.0 --output artifacts/qualification/candidate
 ```
 
 The default runs lint, formatting, the private-access audit, every strict type
@@ -118,7 +120,7 @@ The changed-coverage base is the branch merge base, or `HEAD^` on main; use
 To collect completed hosted verification without rerunning those checks locally:
 
 ```sh
-uv run python scripts/qualify.py 0.3.0 --collect-only \
+uv run python scripts/qualify.py 0.4.0 --collect-only \
   --quality-run FULL_MATRIX_RUN_ID --repository-run REPOSITORY_RUN_ID \
   --output artifacts/qualification/collected
 ```
@@ -168,14 +170,14 @@ without the owner's explicit authorization. The maintainer has purchased
 1. Finish the selected phase's behavior and cumulative qualification in
    [the backlog](backlog.md). Keep unresolved native/provider evidence explicit;
    opt-in real-provider certification follows Q05 #87's agreed scope.
-2. Complete the pre-publication checklist in #89: all transitive implementation
+2. Complete the pre-publication checklist established for #89: all transitive implementation
    and engineering prerequisites, selected/cumulative phase gates, identity/site
    preparation and tracked launch refinements must be closed with real evidence. The publication gate
-   itself stays open through public channel verification.
+   for the selected release stays incomplete through public channel verification.
 3. Open a release-preparation PR for version/lock changes, authored notes, changelog,
    migrations and verified installation/upgrade documentation. Merge through protected main with the preserved
    maintainer sign-off and successful required checks. This PR may belong to
-   #150 before that issue closes: its exact version is needed for launch-material
+   the selected phase's qualifier: its exact version is needed for launch-material
    qualification. All preparation prerequisites still close before publication.
 4. Dispatch Application quality on that exact main commit. Require every native
    Linux/macOS CPython 3.12/3.13/3.14 job, independent coverage, critical modules,
@@ -210,12 +212,14 @@ without the owner's explicit authorization. The maintainer has purchased
    site/guide notices name the available release and no longer claim unavailable
    packages; retain this evidence alongside domains, HTTPS, headers, links, deployment
    IDs and rollback association; see [website delivery](website.md).
-10. Close #89 only after every promised public channel and site is verified.
-    Record real links and start the next Unreleased section by PR.
+10. Record completion only after every promised public channel and site is verified.
+    Retain real links and start the next Unreleased section by PR. Initial channel
+    activation was recorded in #89; later releases retain their own evidence.
 
-The [observed development matrix](internal/acceptance/private-ci.md) verifies a complete
-matching-source PR/main pair with seven native jobs and four planner/aggregate
-jobs. That reduced development pattern does not qualify a release. Step 4 still
+The [historical development matrix](internal/acceptance/private-ci.md) records
+an earlier matching-source PR/main pair. Current job inventories come from the
+actual verification planner and workflow. Development PR/main patterns do not
+qualify a release. Step 4 still
 requires all six supported combinations on the exact main candidate, with true
 completed/successful statuses and artifact evidence. Retained failures, including
 the warm-route heartbeat finding tracked in #40, need investigation before

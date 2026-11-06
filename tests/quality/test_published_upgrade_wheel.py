@@ -9,11 +9,17 @@ import pytest
 from tests.support import published_wheel as published
 
 
-def wheel(tmp_path, *, version="0.2.0", name="kuberich", requires=()):
-    path = tmp_path / "kuberich-0.2.0-py3-none-any.whl"
+def test_04_candidate_has_a_reviewed_real_03_predecessor_pin():
+    baseline = published.published_baseline("0.4.0")
+    assert baseline["version"] == "0.3.0"
+    assert baseline["version"] in published.PUBLISHED_WHEELS
+
+
+def wheel(tmp_path, *, version="0.2.0", filename_version="0.2.0", name="kuberich", requires=()):
+    path = tmp_path / f"kuberich-{filename_version}-py3-none-any.whl"
     with zipfile.ZipFile(path, "w") as archive:
         archive.writestr(
-            "kuberich-0.2.0.dist-info/METADATA",
+            f"kuberich-{filename_version}.dist-info/METADATA",
             f"Metadata-Version: 2.3\nName: {name}\nVersion: {version}\n"
             + "".join(f"Requires-Dist: {requirement}\n" for requirement in requires),
         )
@@ -23,17 +29,20 @@ def wheel(tmp_path, *, version="0.2.0", name="kuberich", requires=()):
     }
 
 
-def test_immutable_wheel_is_checked_before_use_and_download_is_exclusive(tmp_path, monkeypatch):
-    path, pin = wheel(tmp_path)
+@pytest.mark.parametrize("baseline,candidate", [("0.2.0", "0.3.0"), ("0.3.0", "0.4.0")])
+def test_immutable_wheel_is_checked_before_use_and_download_is_exclusive(
+    tmp_path, monkeypatch, baseline, candidate
+):
+    path, pin = wheel(tmp_path, version=baseline, filename_version=baseline)
     original = path.read_bytes()
-    monkeypatch.setattr(published, "PUBLISHED_WHEELS", {"0.2.0": pin})
+    monkeypatch.setattr(published, "PUBLISHED_WHEELS", {baseline: pin})
     monkeypatch.setattr(published, "urlopen", lambda url, timeout: io.BytesIO(original))
-    downloaded, receipt = published.published_upgrade_wheel(tmp_path / "download", "0.3.0")
+    downloaded, receipt = published.published_upgrade_wheel(tmp_path / "download", candidate)
     assert downloaded.read_bytes() == original
-    assert receipt["version"] == "0.2.0" and receipt["sha256"] == pin["sha256"]
-    assert receipt["source_commit"] and receipt["github"].endswith("/v0.2.0")
+    assert receipt["version"] == baseline and receipt["sha256"] == pin["sha256"]
+    assert receipt["source_commit"] and receipt["github"].endswith("/v" + baseline)
     with pytest.raises(FileExistsError):
-        published.published_upgrade_wheel(tmp_path / "download", "0.3.0")
+        published.published_upgrade_wheel(tmp_path / "download", candidate)
 
 
 @pytest.mark.parametrize("fault", ["bytes", "version", "name", "zip", "size"])
@@ -77,9 +86,9 @@ def test_unreviewed_url_is_refused_before_a_network_request(tmp_path, monkeypatc
 
 
 def test_a_later_predecessor_requires_its_own_reviewed_wheel_pin(tmp_path, monkeypatch):
-    monkeypatch.setattr(published, "published_baseline", lambda _: {"version": "0.3.0"})
+    monkeypatch.setattr(published, "published_baseline", lambda _: {"version": "0.4.0"})
     with pytest.raises(ValueError, match="reviewed immutable"):
-        published.published_upgrade_wheel(tmp_path / "download", "0.4.0")
+        published.published_upgrade_wheel(tmp_path / "download", "0.5.0")
 
 
 def test_existing_locked_wheels_must_satisfy_actual_old_and_new_metadata(tmp_path):

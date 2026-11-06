@@ -34,7 +34,13 @@ Run focused tests while editing; stage new modules and create a signed-off commi
 before the complete suite. Its runtime provenance and image-capture checks require
 a complete tracked inventory and clean committed source. Freeze that candidate
 until the measurements finish.
-`uv run python scripts/qualify.py 0.3.0` runs the actual strict target union,
+
+After changing the candidate source version, refresh its editable installation
+with `uv sync --locked --group dev`. Installed metadata must match
+`pyproject.toml`, and the imported application must belong to that checkout.
+Refresh the runtime before `--no-sync` trials; keep source/version guards enabled.
+
+`uv run python scripts/qualify.py 0.4.0` runs the actual strict target union,
 private-access/startup stages, full suite and existing gates; see
 [phase verification](releases.md#reproduce-phase-verification). Individual tools:
 
@@ -242,6 +248,10 @@ Application run, all four native targets and their original retained artifacts.
 A later failed attempt blocks an older success. Development PR/main matrices do
 not substitute for release qualification. Promised native Homebrew install/upgrade/
 removal and bottle lanes require their own real supported-host results.
+Their separately bounded dependency setup and application checks run on the same
+owned runner and retain exact-source/job receipts. Preinstalled dependencies,
+application source builds and cold/warm bottle pours remain distinct; see
+[native installation budgets](homebrew.md#native-qualification-budgets).
 Repeat release contracts and owned-kind trials three times with separate artifacts;
 these do not replace performance, provider or installation qualification.
 Follow cumulative phase readiness, exact authored notes, source/artifact digests,

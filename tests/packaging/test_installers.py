@@ -21,6 +21,7 @@ import json
 from pathlib import Path
 import sys
 import kuberich
+from kuberich import cli
 package=resources.files('kuberich')
 print(json.dumps({
     'version':metadata.version('kuberich'),
@@ -30,6 +31,8 @@ print(json.dumps({
     'typed':package.joinpath('py.typed').is_file(),
     'css':package.joinpath('ui/kuberich.tcss').read_text(),
     'dependencies':{name:metadata.version(name) for name in ('textual','kubernetes-asyncio','pyte','aiohttp','platformdirs','pyyaml','regex')},
+    'scripts':{p.name:p.value for p in metadata.distribution('kuberich').entry_points if p.group=='console_scripts'},
+    'legacy_main':hasattr(cli,'legacy_main'),
 }))
 """
 
@@ -72,6 +75,8 @@ def test_real_isolated_tool_install_and_execution(artifacts, tmp_path, installer
         command = binary / "kuberich"
         python = venv / "bin/python"
         assert command.is_file() and python.is_file()
+        for retired in (binary / "kubetrol", venv / "bin/kubetrol"):
+            assert not retired.exists() and not retired.is_symlink()
         environment["PATH"] = str(binary) + os.pathsep + os.environ["PATH"]
         assert shutil.which("kuberich", path=environment["PATH"]) == str(command)
         probe = json.loads(run([str(python), "-I", "-c", PROBE], tmp_path).stdout)
@@ -84,6 +89,8 @@ def test_real_isolated_tool_install_and_execution(artifacts, tmp_path, installer
             probe["typed"] and probe["css"] == (ROOT / "src/kuberich/ui/kuberich.tcss").read_text()
         )
         assert all(probe["dependencies"].values())
+        assert probe["scripts"] == {"kuberich": "kuberich.cli:main"}
+        assert probe["legacy_main"] is False
         for argv in (
             ["kuberich", "--help"],
             ["kuberich", "--version"],
@@ -130,6 +137,7 @@ def test_real_isolated_tool_install_and_execution(artifacts, tmp_path, installer
         if installed:
             assert result.returncode == 0, result.stderr
             assert not (binary / "kuberich").exists() and not venv.exists()
+            assert not (binary / "kubetrol").exists() and not (binary / "kubetrol").is_symlink()
             records.append(
                 {"command": [*manager, "uninstall", "kuberich"], "exit": result.returncode}
             )
