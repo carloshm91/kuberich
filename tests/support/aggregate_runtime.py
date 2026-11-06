@@ -223,7 +223,9 @@ async def require_runtime_children(*, measure_coverage: bool = True) -> None:
             if mode == "coverage"
             else ()
         )
-        with runtime_environment(environment, exclusive=mode != "coverage") as child_environment:
+        # Branch tracing is not latency qualification, but its functional UI
+        # waits still need the same isolated worker window as the controls.
+        with runtime_environment(environment, exclusive=True) as child_environment:
             result = await command(
                 (
                     sys.executable,

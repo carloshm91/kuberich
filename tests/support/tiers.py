@@ -71,7 +71,7 @@ def reference_window(directory: Path, *, exclusive: bool) -> Iterator[None]:
 
 
 class ReferenceBatch:
-    """Keep adjacent timing controls isolated; share the coverage replay window."""
+    """Keep adjacent runtime controls and their traced replay isolated."""
 
     def __init__(self, directory: Path) -> None:
         self.directory = directory
@@ -167,7 +167,7 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
             item.add_marker(pytest.mark.xdist_group(group))
 
     # Start runtime owners and long files first. The orchestrators share one
-    # worker so a waiting timing writer cannot serialize the coverage replay.
+    # worker and retain their reference window through each traced replay.
     # Each other file keeps its original order and one evidence owner.
     def cost(item: pytest.Item) -> tuple[bool, float]:
         name = item.path.relative_to(config.rootpath).as_posix()

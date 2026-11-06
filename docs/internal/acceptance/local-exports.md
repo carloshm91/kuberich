@@ -508,3 +508,44 @@ in 3.70 seconds before the narrow guard. Fresh PTYs preserve the original
 unchanged explicit kubeconfig and exact terminal state/reaping. Owned static/type
 and the complete private-access audit passed. Full source/runtime and installed
 console/module geometry checks remain pending.
+
+## Parallel traced-replay and input-fixture corrections
+
+The first complete source/quality attempt on `e783f78` reached 99% and then
+stopped making progress. A controlled interruption preserved its unqualified
+result: 9,473 passed, nine failed and two skipped in 1,577.75 seconds, with the
+owned leader reaped and process group absent. The branch-traced aggregate child
+again missed the five-second preparation wait. Five quality failures came from
+the local launcher selecting a host `diff-cover` shim; rerunning the six changed-
+coverage cases with the project's proper `uv run` environment passed in 1.93
+seconds. That is an execution-environment correction, not a production fix.
+Three ordinary UI cases passed in an isolated branch-covered diagnostic; that
+unchanged passing run does not establish a correction for their full-run failures.
+
+An independent read-only review confirmed that the real UI runtime orchestrator
+reserved an exclusive reference window for positive/negative children but
+explicitly downgraded to shared access for the traced replay. The corrected
+orchestrator reserves the existing exclusive window through all three children.
+No five-/15-/120-second limits, instrumentation classification, receipt/nonce
+validation or strict negative controls change. A real file-lock regression calls
+the actual orchestrator and pytest cleanup: queued readers are blocked during
+coverage and admitted after cleanup, including an injected exception. The old
+callsite fails that control; 57 isolation/runtime-validation tests pass after the
+change. Contention remains an inference until fresh workload qualification.
+
+A separate controlled native delayed-no-op animation shows that a Pilot key can
+be delivered and change the read window while its unrelated global animation
+completion wait never finishes. The prior held-reader fixture could therefore
+wait before reaching its release assertion. The new fixture owns one actual key
+operation, waits for the existing five-second public selection/controller effect,
+and cancels/drains only the remaining test-driver completion wait. Original
+retention, source-lease, new-reader and finally-release assertions remain. The
+same new regression fails with the former Enter barrier and passes with the
+corrected helper; both authorized UI files pass 20 cases in 17.50 seconds. No
+production or framework animation settings change. The interrupted cohort's
+exact animation state was not retrospectively established.
+
+Nested harness fixtures use an explicit minimal environment and synthetic
+sensitive-data sentinels so failed diagnostics cannot copy ambient credentials.
+Fresh actual runtime controls, complete source qualification and installed
+geometry checks remain required before delivery.

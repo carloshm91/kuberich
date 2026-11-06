@@ -3,23 +3,36 @@
 import asyncio
 import json
 import logging
+from types import SimpleNamespace
 
 import pytest
 from textual.app import App
-from textual.widgets import Static
+from textual.widgets import OptionList, Static
 
 from kuberich.config.schema import Settings
 from kuberich.domain.commands import Command
+from kuberich.domain.log_view import WINDOWS
+from kuberich.services.aggregate_logs import AggregateLogs
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.artifact_browser import ArtifactBrowserScreen
 from kuberich.ui.chrome import WorkspaceFrame
 from kuberich.ui.log_body import LogBody
+from kuberich.ui.scopes import ScopeScreen
 from tests.support.connections import catalog_fixture
 from tests.support.export_browser_geometry import seed_browser_artifact
 from tests.support.export_ui import service_for
 from tests.support.workspace import wait_for, workspace_api
 from tests.terminal.pty_support import ROOT
-from tests.ui.test_log_export_captures import ns, open_viewer, owned_app, single_api
+from tests.ui.test_log_export_captures import (
+    AT,
+    ReadGate,
+    choose_scope,
+    ns,
+    open_viewer,
+    owned_app,
+    press_until,
+    single_api,
+)
 
 
 class BrowserHost(App):
@@ -166,3 +179,48 @@ async def test_aggregate_normal_quit_drains_renderer_before_log_frame_teardown(
         assert frame_started.is_set() and body_loaded.is_set(), observed
         assert selected.closed and selected.active_count == 0
     assert api.active == 0 and api.watch_active == 0
+
+
+@pytest.mark.asyncio
+async def test_held_log_transition_observes_enter_without_global_animation_completion(
+    tmp_path, monkeypatch
+):
+    gate = ReadGate(hold=True)
+    monkeypatch.setattr(AggregateLogs, "run", gate.wrap(AggregateLogs.run))
+    api = single_api()
+    completion = None
+    async with workspace_api(ns, api.handler) as url:
+        app, _ = owned_app(tmp_path, url)
+        async with app.run_test() as pilot:
+            try:
+                screen = await open_viewer(app, pilot, aggregate=True, all_namespaces=True)
+                await press_until(pilot, "o", lambda: isinstance(app.screen, ScopeScreen))
+                index = WINDOWS.index("Last 5m")
+                app.screen.query_one(OptionList).highlighted = index
+                # Pinned Textual leaves its public completion wait pending when a
+                # delayed animation reaches an unchanged value while idle.
+                value = SimpleNamespace(value=0.0)
+                app.animator.animate(value, "value", 0.0, duration=0.01, delay=0.01)
+                completion = asyncio.create_task(app.animator.wait_until_complete())
+                await asyncio.sleep(0.05)
+                assert not completion.done()
+                await choose_scope(
+                    app,
+                    pilot,
+                    index,
+                    effect=lambda: screen.window == "Last 5m" and gate.draining.is_set(),
+                )
+                assert not completion.done()  # The key fixture did not disable animations.
+                assert app.screen is screen and screen.window == "Last 5m"
+                assert gate.draining.is_set() and not gate.drained.is_set()
+                assert len(gate.calls) == 1 and not screen.capture_export(AT)
+                gate.release.set()
+                await wait_for(gate.drained.is_set)
+                await wait_for(lambda: len(gate.calls) == 2)
+            finally:
+                gate.release.set()
+                if completion is not None:
+                    completion.cancel()
+                    await asyncio.gather(completion, return_exceptions=True)
+        assert all(task.done() for _, _, _, task in gate.calls)
+        await wait_for(lambda: api.active == 0 and api.watch_active == 0)

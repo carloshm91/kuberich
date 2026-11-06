@@ -5,11 +5,10 @@ import os
 import select
 import subprocess
 import sys
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
-
-from tests.support.tiers import ACTIVE_BATCH, ORCHESTRATOR, ReferenceBatch, runtime_environment
 
 ROOT = Path(__file__).resolve().parents[2]
 MARKERS = ("unit", "contract", "ui", "terminal", "packaging", "quality", "kind", "fast")
@@ -18,7 +17,9 @@ MARKERS = ("unit", "contract", "ui", "terminal", "packaging", "quality", "kind",
 def project(tmp_path):
     (tmp_path / "pytest.ini").write_text(
         "[pytest]\naddopts = --strict-markers\nmarkers =\n"
-        + "".join(f"    {name}: fixture layer\n" for name in (*MARKERS, "performance"))
+        + "".join(
+            f"    {name}: fixture layer\n" for name in (*MARKERS, "performance", "runtime_control")
+        )
     )
     return tmp_path
 
@@ -31,14 +32,21 @@ def module(root, name, content):
 
 def run(root, *arguments):
     environment = {
-        key: value
-        for key, value in os.environ.items()
-        if not key.startswith(("PYTEST_", "KUBERICH_TEST_PART", "COV_CORE_", "COVERAGE_"))
+        "PATH": os.environ["PATH"],
+        "PYTHONPATH": str(ROOT),
+        "PYTHONUTF8": "1",
+        "COVERAGE_FILE": str(root / ".coverage"),
     }
-    environment["PYTHONPATH"] = str(ROOT)
-    environment["COVERAGE_FILE"] = str(root / ".coverage")
     return subprocess.run(
-        [sys.executable, "-m", "pytest", "-p", "tests.support.tiers", *arguments],
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "-p",
+            "tests.support.tiers",
+            f"--basetemp={root / 'nested-tmp'}",
+            *arguments,
+        ],
         cwd=root,
         env=environment,
         capture_output=True,
@@ -160,40 +168,242 @@ def test_timing_control_drains_other_workers_without_losing_tests(tmp_path):
         assert ordinary["end"] <= reference["start"] or ordinary["start"] >= reference["end"]
 
 
-def test_adjacent_timing_children_keep_reader_out_until_coverage_phase(tmp_path, monkeypatch):
-    monkeypatch.setenv(ORCHESTRATOR, str(tmp_path))
-    batch = ReferenceBatch(tmp_path)
-    token = ACTIVE_BATCH.set(batch)
-    process = None
+@contextmanager
+def ordinary_runtime_reader(directory):
+    """Probe real reader admission without relying on a short scheduling timeout."""
+    program = """
+import fcntl
+import sys
+
+with open(sys.argv[1], "a") as entrance, open(sys.argv[2], "a") as active:
+    print("ready", flush=True)
+    for command in sys.stdin:
+        if command.strip() == "quit":
+            break
+        assert command.strip() == "probe"
+        try:
+            fcntl.flock(entrance, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            reply = "blocked"
+        else:
+            try:
+                fcntl.flock(active, fcntl.LOCK_SH | fcntl.LOCK_NB)
+            except BlockingIOError:
+                reply = "blocked"
+            else:
+                reply = "admitted"
+            finally:
+                fcntl.flock(entrance, fcntl.LOCK_UN)
+        print(reply, flush=True)
+"""
+    process = subprocess.Popen(
+        [sys.executable, "-c", program, str(directory / "entrance"), str(directory / "active")],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    assert process.stdin is not None and process.stdout is not None
+
+    def reply():
+        assert select.select([process.stdout], [], [], 5)[0], "Owned lock reader did not answer"
+        return process.stdout.readline().strip()
+
+    def probe():
+        process.stdin.write("probe\n")
+        process.stdin.flush()
+        return reply()
+
     try:
-        with runtime_environment({}, exclusive=True):
-            process = subprocess.Popen(
-                [
-                    sys.executable,
-                    "-c",
-                    "import fcntl,sys; print('waiting',flush=True); "
-                    "f=open(sys.argv[1],'a'); fcntl.flock(f,fcntl.LOCK_SH); "
-                    "print('entered',flush=True)",
-                    str(tmp_path / "active"),
-                ],
-                stdout=subprocess.PIPE,
-                text=True,
-            )
-            assert process.stdout is not None
-            assert select.select([process.stdout], [], [], 5)[0]
-            assert process.stdout.readline() == "waiting\n"
-        with runtime_environment({}, exclusive=True):
-            assert not select.select([process.stdout], [], [], 0.05)[0]
-        with runtime_environment({}, exclusive=False):
-            assert select.select([process.stdout], [], [], 5)[0]
-            assert process.stdout.readline() == "entered\n"
-        assert process.wait(timeout=5) == 0
+        assert reply() == "ready"
+        yield probe, process
     finally:
-        batch.stack.close()
-        ACTIVE_BATCH.reset(token)
-        if process is not None:
-            if process.poll() is None:
-                process.kill()
-            process.wait(timeout=5)
-            if process.stdout is not None:
-                process.stdout.close()
+        try:
+            stdout, stderr = process.communicate("quit\n", timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.communicate(timeout=5)
+            raise
+        assert process.returncode == 0, stdout + stderr
+
+
+def write_runtime_child_result(request, source):
+    """Synthetic validation artifacts, never actual runtime qualification evidence."""
+    import gc
+    from xml.etree import ElementTree
+
+    from kuberich.domain.processes import ProcessResult, ProcessStatus
+    from tests.support import aggregate_runtime as runtime
+    from tests.support.runtime_budget import budget_observation
+
+    mode = request["mode"]
+    directory = Path(request["directory"])
+    negative = mode == "negative"
+    gap = 0.21 if negative else 0.05
+    receipt = {
+        "nonce": request["nonce"],
+        "mode": mode,
+        "source_before": source,
+        "source_after": source,
+        "source_unchanged": True,
+        "development_iri_grammar_absent": True,
+        "instrumentation": {
+            "coverage_version": runtime.coverage_version,
+            "coverage_active": mode == "coverage",
+            "coverage_core": "CTracer" if mode == "coverage" else None,
+            "trace_type": "coverage.CTracer" if mode == "coverage" else None,
+            "profile_type": None,
+        },
+        "pid": 123,
+        "process_group": 123,
+        "after_app_close": {
+            "app_running": False,
+            "aggregate_registry": 0,
+            "api_log_streams": 0,
+            "api_watches": 0,
+        },
+    }
+    heartbeat = {
+        "gc_enabled": True,
+        "gc_thresholds": list(gc.get_threshold()),
+        "limit_seconds": 0.15,
+        "timing_qualifying": mode != "coverage",
+        "runtime_budget": budget_observation(gap, mode=mode),
+        "max_gap_seconds": gap,
+        "maximum_simultaneously_prepared_records": 5000,
+        "maximum_retained_plus_prepared_records": 5001,
+        "input_refill": {
+            "byte_budget": 8192,
+            "records": 5000,
+            "batches": 230,
+            "maximum_batch_records": 22,
+            "maximum_batch_bytes": 8184,
+        },
+        "negative_callback_executed": negative,
+        "completed_full_history_rounds": 0 if negative else 2,
+        "warm_sizes": [[40, 12], [100, 30]],
+        "warm_resources": ["replicasets", "pods"],
+        "warm_reopens": 4,
+        "warm_picker_cycles": 4,
+        "warm_theme_changes": 4,
+        "after_close": {
+            "viewer_closed": True,
+            "owner_closed": True,
+            "owner_tasks": 0,
+            "active_readers": 0,
+            "registry_size": 0,
+            "api_log_streams": 0,
+            "api_watches": 1,
+            "background_watches": 1,
+        },
+    }
+    (directory / "source-receipt.json").write_text(json.dumps(receipt))
+    (directory / "heartbeat.json").write_text(json.dumps(heartbeat))
+    suite = ElementTree.Element("testsuite")
+    case = ElementTree.SubElement(suite, "testcase", name=runtime.NODE.split("::")[1])
+    if negative:
+        ElementTree.SubElement(
+            case, "failure", message="Aggregate runtime heartbeat exceeded 150 ms"
+        )
+    ElementTree.ElementTree(suite).write(directory / "cases.xml")
+    return ProcessResult(
+        ProcessStatus.FAILED if negative else ProcessStatus.SUCCEEDED,
+        1 if negative else 0,
+        stdout=b"Synthetic runtime child result",
+    )
+
+
+@pytest.mark.parametrize("fail_coverage", [False, True], ids=["complete", "coverage-exception"])
+def test_actual_runtime_cohort_blocks_readers_through_coverage_and_releases_after_cleanup(
+    tmp_path, monkeypatch, fail_coverage
+):
+    sentinel = "synthetic-secret-must-not-reach-runtime-children"
+    monkeypatch.setenv("KUBERICH_FIXTURE_SECRET_SENTINEL", sentinel)
+    root = project(tmp_path)
+    record, cleanup = root / "admission.jsonl", root / "reader-cleanup.json"
+    module(
+        root,
+        "tests/unit/test_cohort.py",
+        f"""
+import json
+import os
+from pathlib import Path
+
+import pytest
+
+from tests.support import aggregate_runtime as runtime
+from tests.support.tiers import HELD, ORCHESTRATOR, WINDOW
+from tests.unit.test_test_tiers import ordinary_runtime_reader, write_runtime_child_result
+
+RECORD = Path({str(record)!r})
+CLEANUP = Path({str(cleanup)!r})
+SOURCE = {{"tested_checkout_commit": "synthetic", "files": {{}}}}
+
+
+def retain(mode, reply):
+    with RECORD.open("a") as output:
+        output.write(json.dumps([mode, reply]) + "\\n")
+
+
+@pytest.fixture(scope="module")
+def reader():
+    with ordinary_runtime_reader(Path(os.environ[WINDOW])) as (probe, process):
+        yield probe
+    CLEANUP.write_text(json.dumps({{
+        "returncode": process.returncode,
+        "pipes_closed": all(stream is None or stream.closed for stream in
+                            (process.stdin, process.stdout, process.stderr)),
+    }}))
+
+
+@pytest.mark.runtime_control
+@pytest.mark.asyncio
+async def test_runtime_cohort(reader, monkeypatch, tmp_path):
+    assert os.environ[ORCHESTRATOR] == os.environ[WINDOW]
+    assert "KUBERICH_FIXTURE_SECRET_SENTINEL" not in os.environ
+    monkeypatch.setattr(runtime, "ROOT", tmp_path)
+
+    async def stamp():
+        return SOURCE
+
+    async def child(argv, environment):
+        secret_absent = "KUBERICH_FIXTURE_SECRET_SENTINEL" not in environment
+        environment = {{runtime.REQUEST: environment.get(runtime.REQUEST), HELD: environment.get(HELD)}}
+        assert secret_absent
+        assert runtime.NODE in argv and environment[HELD] == "1"
+        request = json.loads(Path(environment[runtime.REQUEST]).read_text())
+        mode = request["mode"]
+        reply = reader()
+        retain(mode, reply)
+        assert reply == "blocked", mode + " admitted a reader inside the runtime cohort"
+        if mode == "coverage" and {fail_coverage!r}:
+            raise RuntimeError("Owned coverage child exception")
+        return write_runtime_child_result(request, SOURCE)
+
+    monkeypatch.setattr(runtime, "source_stamp", stamp)
+    monkeypatch.setattr(runtime, "command", child)
+    await runtime.require_runtime_children(measure_coverage=True)
+
+
+def test_reader_is_admitted_after_real_pytest_owner_cleanup(reader):
+    reply = reader()
+    retain("after", reply)
+    assert reply == "admitted"
+""",
+    )
+    result = run(root, "-q", "--tb=short")
+    expected = 1 if fail_coverage else 0
+    assert sentinel not in result.stdout + result.stderr
+    assert result.returncode == expected, result.stdout + result.stderr
+    assert json.loads(cleanup.read_text()) == {"returncode": 0, "pipes_closed": True}
+    assert [json.loads(line) for line in record.read_text().splitlines()] == [
+        ["positive", "blocked"],
+        ["negative", "blocked"],
+        ["coverage", "blocked"],
+        ["after", "admitted"],
+    ]
+    if fail_coverage:
+        assert "Owned coverage child exception" in result.stdout
+        assert "1 failed, 1 passed" in result.stdout
+    else:
+        assert "2 passed" in result.stdout
