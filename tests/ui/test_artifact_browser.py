@@ -27,6 +27,26 @@ async def browser_ready(screen):
     await wait_for(lambda: screen.listing is not None and screen.operation_count == 0)
 
 
+async def click_confirmation(app, pilot, confirmation):
+    async with asyncio.timeout(5):
+        assert await confirmation.wait_for_refresh()
+        button = confirmation.query_one("#artifact-confirm-yes", Button)
+        await wait_for(
+            lambda: (
+                app.screen is confirmation
+                and confirmation.is_mounted
+                and button.is_mounted
+                and button.display
+                and button.visible
+                and not button.disabled
+                and not button.has_class("-active")
+                and button.region.area > 0
+                and app.get_widget_at(*button.region.offset)[0] is button
+            )
+        )
+        assert await pilot.click(button)
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(100, 30), (40, 12)])
 async def test_offline_list_filter_refresh_cursor_scroll_and_explicit_view_copy_save(
@@ -265,21 +285,123 @@ async def test_sensitive_browser_copy_requires_fresh_named_ack(tmp_path):
         await wait_for(
             lambda: isinstance(app.screen, ArtifactConfirmation) and app.screen.is_mounted
         )
+        first_confirmation = app.screen
         assert "Copy sensitive" in app.screen.message
         await pilot.press("escape")
-        await wait_for(lambda: screen.operation_count == 0)
+        await wait_for(lambda: app.screen is screen and screen.operation_count == 0)
         assert not copies
         screen.action_copy()
         await wait_for(
             lambda: isinstance(app.screen, ArtifactConfirmation) and app.screen.is_mounted
         )
-        await pilot.click("#artifact-confirm-yes")
+        confirmation = app.screen
+        assert confirmation is not first_confirmation
+        await click_confirmation(app, pilot, confirmation)
         await wait_for(lambda: bool(copies))
         assert "ui-secret-value" in copies[0]
         await wait_for(lambda: screen.operation_count == 0)
         assert not screen.sensitive
         await pilot.press("escape")
     await service.close()
+
+
+@pytest.mark.asyncio
+async def test_sensitive_copy_waits_for_confirm_target_geometry_before_mouse_input(
+    tmp_path, monkeypatch
+):
+    from tests.ui.test_export_review import sensitive_ref
+
+    service = service_for(tmp_path)
+    await sensitive_ref(service)
+    effects = []
+
+    def observe(name, operation):
+        async def observed(*args, **kwargs):
+            effects.append(name)
+            return await operation(*args, **kwargs)
+
+        return observed
+
+    for name in ("approve_sensitive", "read", "copy_text"):
+        monkeypatch.setattr(service, name, observe(name, getattr(service, name)))
+    copies = []
+    screen = browser_for(service, copies=copies)
+    app = ExportTestApp(screen)
+    click = None
+    button = None
+    try:
+        async with app.run_test() as pilot:
+            await browser_ready(screen)
+            screen.action_copy()
+            await wait_for(
+                lambda: isinstance(app.screen, ArtifactConfirmation) and app.screen.is_mounted
+            )
+            first_confirmation = app.screen
+            await pilot.press("escape")
+            await wait_for(lambda: app.screen is screen and screen.operation_count == 0)
+            assert not copies and not effects
+            screen.action_copy()
+            await wait_for(
+                lambda: isinstance(app.screen, ArtifactConfirmation) and app.screen.is_mounted
+            )
+            confirmation = app.screen
+            assert confirmation is not first_confirmation
+            button = confirmation.query_one("#artifact-confirm-yes", Button)
+            pressed = []
+            native_message = button.post_message
+
+            def message(value):
+                if isinstance(value, Button.Pressed):
+                    pressed.append(value)
+                return native_message(value)
+
+            monkeypatch.setattr(button, "post_message", message)
+            # Synthetic unready-target control: mounting alone permits no claim
+            # that the pointer target has an interactive region.
+            button.display = False
+            async with asyncio.timeout(5):
+                assert await confirmation.wait_for_refresh()
+                await wait_for(lambda: button.region.area == 0)
+                assert not await pilot.click(button)
+            assert not pressed and not effects and not copies
+            assert app.screen is confirmation and screen.operation_count == 1
+            refreshed = asyncio.Event()
+            native_refresh = confirmation.wait_for_refresh
+
+            async def refresh():
+                result = await native_refresh()
+                refreshed.set()
+                return result
+
+            monkeypatch.setattr(confirmation, "wait_for_refresh", refresh)
+            click = asyncio.create_task(click_confirmation(app, pilot, confirmation))
+            try:
+                await wait_for(lambda: refreshed.is_set() or click.done())
+                assert refreshed.is_set()
+                assert not click.done()
+                assert not pressed and not effects and not copies
+                button.display = True
+                await click
+            finally:
+                button.display = True
+                if not click.done():
+                    click.cancel()
+                await asyncio.gather(click, return_exceptions=True)
+            await wait_for(lambda: bool(copies) and screen.operation_count == 0)
+            assert len(pressed) == 1
+            assert effects == ["approve_sensitive", "read", "copy_text"]
+            assert len(copies) == 1 and "ui-secret-value" in copies[0]
+            assert app.screen is screen and not screen.sensitive
+            await pilot.press("escape")
+        assert screen.stopped and screen.operation_count == service.operation_count == 0
+    finally:
+        if button is not None:
+            button.display = True
+        if click is not None:
+            if not click.done():
+                click.cancel()
+            await asyncio.gather(click, return_exceptions=True)
+        await service.close()
 
 
 @pytest.mark.asyncio

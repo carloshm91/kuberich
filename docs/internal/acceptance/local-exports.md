@@ -647,3 +647,32 @@ blocker. Protected delivery and the exact-head complete hosted source/native
 matrix are recorded in [PR #318](https://github.com/carloshm91/kuberich/pull/318).
 This section is a source checkpoint, not publication authorization. Earlier
 failed receipts and their stated limits remain preserved above.
+
+## Confirmation input readiness
+
+The documentation-only `6fdfb75` candidate retained 3,200 hosted fast-test passes
+and one timeout after the sensitive-browser copy test attempted its second
+affirmative click. The record did not capture that click's result, target region
+or service phase, so its exact cause remains unproved. Independent source review
+found no demonstrated consent/generation race: each operation creates a fresh
+dialog/future and approval follows only an affirmative result.
+
+Pinned Pilot computes target coordinates before its first layout-processing
+pause. Mounting alone does not establish interactive button geometry, and the
+former test ignored the returned hit-test boolean. A natural batch-update probe
+did not reproduce the failure and remains recorded as such. A separate synthetic
+unready-target control hides the real button until its region is zero: the real
+click returns false, no Button.Pressed or approval/read/copy occurs, and the old
+test times out in 5.87 seconds while awaiting acknowledgement. This establishes
+the input-readiness contract, not the original runner's historical interleaving.
+
+The test helper now bounds public refresh, fresh-dialog identity, visible/enabled
+non-active geometry, actual hit target and the real mouse click inside five
+seconds. It asserts click delivery; the original copy/disclosure assertions and
+five-second response bound remain. The controlled regression first verifies the
+undelivered click and zero side effects, then proves the guarded task waits until
+the target is ready. One real Button.Pressed then leads to exactly one fresh
+approval, read and copy, followed by complete task/service cleanup. Restoring the
+old helper fails that same regression; all 14 browser cases pass in 9.89 seconds
+with the new helper. Ruff, formatting and the complete private-access audit pass.
+No production file or confirmation policy changes in this follow-up.
