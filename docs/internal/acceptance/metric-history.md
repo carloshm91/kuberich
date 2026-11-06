@@ -300,3 +300,37 @@ Back. Existing replacement-during-query, context/configuration, newer-intent and
 parent-cancellation controls still pass. Independent review found no material
 issue in the minimal correction; fresh full provider execution and cumulative
 coverage/platform gates remain outstanding.
+
+## Corrected integrated source qualification
+
+Source `55ee83a` passed the fresh complete `kind-005` trial in 428.53 seconds.
+Prometheus, VictoriaMetrics and Thanos each completed 35 scope/range collections,
+native positive CPU/memory checks, raw reset and bounded rate controls, workload
+rollout comparison and source outage. The old recreated-Pod UID returned the
+required empty configuration conflict; absent-backend state remained explicit.
+The final receipt confirms unchanged source inputs and caller configuration,
+owned-cluster deletion and private-directory deletion. The runner reaped its
+leader and recorded the process group absent. The prior four failed provider
+attempts retain their original outcomes.
+
+The complete local unit/contract/UI selection passed 8,054 cases with one
+explicit hosted-macOS-only clipboard skip in 570.72 seconds. Successful backend
+and UI controls, deliberate negative controls and the branch-covered replay
+passed exact-source verification before replay-only coverage merging. All 252
+production modules remain included without exclusions: lines 31,612/32,062
+(98.5965%), branches 9,547/9,998 (95.4891%), all 104 critical modules at exact
+100% where executable, and changed lines 1,928/1,986 (97.08%). The changed-line
+base is protected main `c6fba0521777bd0a75f660543b0b37e25ad2b258`.
+
+Fresh source history PTYs at both sizes and outside-checkout installed wheel
+console/module entry points passed together: four cases in 44.72 seconds. These
+retain source bindings, genuine keyboard navigation, API audit controls, terminal
+restoration and owned-process drainage. Strict typing over all 300 workflow
+targets, Ruff and formatting pass. Receipts are retained in
+`artifacts/issue231/root/delivery/local-receipt.json`, `root/kind-005/`,
+`root/fast-001-runner/` and `root/terminal-002-runner/`.
+
+This qualifies the stated local selection and focused provider/terminal checks;
+it does not replace the hosted complete quality/packaging/platform matrix.
+GitHub records the final exact-head required checks and protected merge. No
+release version, tag, package, tap or website publication is part of this issue.
