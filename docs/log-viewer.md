@@ -18,6 +18,57 @@ have removed older lines. A quiet open stream shows **Waiting for log output**;
 a normal end shows **Stream complete**. Errors need a deliberate reopen rather
 than an automatic replay.
 
+## Inspect container environment and image facts
+
+In development source for the next release, select a pod, press Enter for its
+containers, then `e` for **Environment / image**. The installed 0.3.0 release
+predates this inspector. Enter on a container continues to open its logs.
+Read-only mode supports inspection. The API needs GET access to the selected pod
+and any referenced ConfigMaps or Secrets; denied sources remain visible.
+
+Use `e` for Environment, `i` for Image and `s` for Sources. Arrows or `j`/`k`
+move through rows; `g`/Shift+G and paging keep their normal meaning. Escape
+returns to the container list with the preceding selection and scroll position.
+Navigation keys use the `container-inspection` profile in [configuration](configuration.md).
+
+Environment rows show declarations, order, source, precedence and resolution.
+Values start hidden, including literal values, ConfigMap data and values derived
+from another variable. Sources identify exact objects, keys, optional references
+and availability. An unavailable or unsupported source stays distinct from a
+known empty value. Overridden declarations retain their provenance.
+
+- `r` or Reveal performs a fresh read and reveals the selected value; `r` hides it.
+- Ctrl+Y or Copy performs its own fresh read before copying a complete text value.
+- Shift+R or Reload collects new metadata and clears any revealed value.
+
+Changing rows or sections, opening another view, reloading or leaving hides
+the previous value. A changed source requires Reload before another disclosure;
+a replaced pod requires selecting the pod again. Revealing a value does not
+authorize a later copy without another freshness check. Clipboard contents remain
+outside the application's control after copying. Previews stop at 16,384
+characters; copy accepts at most 64 KiB of complete text and rejects NUL.
+
+The result describes **current API configuration**. A running process may still
+use older configuration. Image-provided variables, injected Service variables,
+runtime IP fields and node-dependent defaults may be unresolved. Binary data,
+unsupported field selectors and runtime-file sources do not become invented
+empty strings. Dependency expansion uses the declarations available at each
+assignment and preserves unresolved references explicitly.
+
+Image shows the declared image and pull policy separately from the name-matched
+status image, image ID and container ID. These identifiers retain their API
+origin. Regular, init, restartable-init sidecar and ephemeral containers can be
+inspected, including when runtime status is absent.
+
+A collection accepts up to 32 referenced objects and 4,096 provenance rows,
+with a 2 MiB response bound and 4 MiB combined input bound. Incomplete or oversized
+input is labelled. Collection and disclosure have a 30-second deadline; leaving
+waits for owned work to drain. The inspector adds no background polling.
+
+`:export` captures only the selected section's metadata, including when a value
+was revealed. It omits environment values and private content bindings. Application
+screenshots are refused while the inspector remains open. See [local exports](exports.md).
+
 ## Follow, pause, and search
 
 - `f` toggles following the newest line. Moving upward leaves follow mode;

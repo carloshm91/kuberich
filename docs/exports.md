@@ -42,6 +42,11 @@ bytes. Rotation and history limits still apply; see [read logs](log-viewer.md).
 While a container/window change drains its old reader, export is unavailable
 until the new producing read has been established.
 
+The container environment/image inspector exports metadata for its selected
+section. Literal, inherited and derived values stay omitted, including after
+an explicit reveal. Its capture remains tied to the same observation and
+section; reloading or switching sections invalidates the review.
+
 A diagnostic export includes the full retained collection. A screen export
 reflects the filtered table instead. Neither action reruns native diagnostics
 or an external tool. Source observation times, partial results and name-only

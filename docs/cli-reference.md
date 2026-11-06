@@ -146,7 +146,7 @@ Each row is generated from an effective default key profile. Fixed arrows and
 page keys stay available. Table Home/End move horizontally; Ctrl+Home/End select
 first/last rows. Uppercase letters are distinct keys, not Vim sequences.
 
-Profile 1: `table`, `contexts`, `containers`, `data`, `themes`, `forwards`, `sources`.
+Profile 1: `table`, `contexts`, `containers`, `container-inspection`, `data`, `themes`, `forwards`, `sources`.
 Profile 2: `resources`, `namespaces`.
 Profile 3: `logs`, `text`.
 
@@ -174,6 +174,7 @@ Profile 3: `logs`, `text`.
 | Containers | `a` | Attach |
 | Containers | `u` | Upload |
 | Containers | `d` | Download |
+| Containers | `e` | Environment / image |
 | Diagnostic evidence | `o` | Open resource |
 | Diagnostic evidence | `e` | Open Event |
 | Diagnostic evidence | `n` | Next Event |

@@ -67,6 +67,9 @@ Read-only mode allows deliberate reveal and copying but blocks editing. To edit
 ConfigMap or Secret data, close this view and use the manifest workflow above.
 Immutable objects and fields remain subject to server rejection.
 
+To trace a container's declarations and configuration sources, use the
+[container environment inspector](log-viewer.md#inspect-container-environment-and-image-facts).
+
 ## Read the outcome before retrying
 
 `:writes` lists up to 32 recent operation records, including pending and uncertain

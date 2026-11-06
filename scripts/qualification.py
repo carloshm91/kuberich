@@ -44,6 +44,7 @@ KIND_SCENARIOS = (
     ("relationships", "verify_relationships_kind", False),
     ("authorization", "verify_authorization_kind", False),
     ("diagnostics", "verify_diagnostics_kind", False),
+    ("container-inspection", "verify_container_inspection_kind", False),
 )
 
 
@@ -202,7 +203,14 @@ def cluster_stages(
                     "--evidence",
                     str(
                         output / f"kind-{repetition}-{name}" / "evidence.json"
-                        if name in {"pulse", "relationships", "authorization", "diagnostics"}
+                        if name
+                        in {
+                            "pulse",
+                            "relationships",
+                            "authorization",
+                            "diagnostics",
+                            "container-inspection",
+                        }
                         else output / f"kind-{repetition}-{name}.json"
                     ),
                 ),

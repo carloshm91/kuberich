@@ -82,7 +82,10 @@ def shortcut_keys(
 
 
 _FIXED_HELP = {
-    "containers": "Enter/l logs · s/x shell · a attach · u upload · d download",
+    "containers": "Enter/l logs · e environment/image · s/x shell · a attach · u upload · d download",
+    "container-inspection": (
+        "e environment · i image · s sources · r reveal/hide · Shift+R reload · Ctrl+Y explicit copy"
+    ),
     "data": "r reveal/hide · x encoding · Shift+R reload · Ctrl+Y explicit copy",
     "themes": "Enter previews · Tab selects controls · Global/Context explicitly save",
     "forwards": "s stops the selected owned forward · / filters",

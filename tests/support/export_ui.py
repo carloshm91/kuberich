@@ -38,7 +38,14 @@ async def open_review(app, pilot) -> ExportReviewScreen:
     await pilot.press("ctrl+s")
     await wait_for(lambda: isinstance(app.screen, ExportReviewScreen))
     review = app.screen
-    await wait_for(lambda: review.ready_to_save)
+    try:
+        await wait_for(lambda: review.ready_to_save)
+    except TimeoutError as error:
+        raise AssertionError(
+            f"Export preview did not become ready: status={review.status.content!s}; "
+            f"operations={review.operation_count}; mounted={review.is_mounted}; "
+            f"stopped={review.stopped}; prepared={review.prepared is not None}"
+        ) from error
     return review
 
 

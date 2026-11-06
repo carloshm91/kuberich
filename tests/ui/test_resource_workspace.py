@@ -96,6 +96,8 @@ async def test_top_input_namespace_table_drilldown_escape_and_actual_view_hints(
                 assert "Shell" in str(containers.query_one("#view-actions", Static).content)
             else:
                 assert "shell" in str(containers.query_one("#container-hints", Static).content)
+                assert "e env" in str(containers.query_one("#container-hints", Static).content)
+                assert "Enter logs" in str(containers.query_one("#container-hints", Static).content)
             assert "containers" in str(containers.query_one("#breadcrumbs", Static).content)
             assert containers.query_one("#container-dialog").region == frame
             assert (

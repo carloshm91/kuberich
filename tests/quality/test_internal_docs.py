@@ -29,8 +29,8 @@ def test_history_moves_to_one_internal_area_with_exact_original_git_evidence():
             assert not (ROOT / old).is_file()
     for record in plan["preserved_sources"] + plan["operational_sources"]:
         assert mapped[record["path"]]["baseline_sha256"] == record["sha256"]
-    assert len(mapped) == 357
-    assert validate_documentation_plan(ROOT, list(mapped)) == 357
+    assert len(mapped) == 359
+    assert validate_documentation_plan(ROOT, list(mapped)) == 359
     assert not (ROOT / "docs/status.md").exists()
 
 
@@ -173,14 +173,27 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
         "docs/adr/0036-native-and-external-diagnostics.md",
         "docs/internal/acceptance/cluster-diagnostics.md",
     ]
-    assert [item["source"] for item in current["documents"][354:]] == [
+    exports = json.loads(
+        git_bytes(
+            ROOT, "show", "b781c793cbb7834d2dfe2c1bbe55c2caef1f7005:docs/documentation-plan.json"
+        )
+    )
+    assert len(exports["documents"]) == 357
+    assert exports["documents"][:354] == diagnostics["documents"]
+    assert current["documents"][:357] == exports["documents"]
+    assert [item["source"] for item in current["documents"][354:357]] == [
         "docs/exports.md",
         "docs/adr/0037-reviewed-local-artifacts.md",
         "docs/internal/acceptance/local-exports.md",
     ]
+    assert [item["source"] for item in current["documents"][357:]] == [
+        "docs/adr/0038-container-configuration-provenance.md",
+        "docs/internal/acceptance/container-inspection.md",
+    ]
     assert all(item["baseline_sha256"] is None for item in current["documents"][348:])
     assert authorization["canonical_user_pages"] == 23
     assert diagnostics["canonical_user_pages"] == 24
+    assert exports["canonical_user_pages"] == 25
     assert current["canonical_user_pages"] == 25
     assert {
         key: value

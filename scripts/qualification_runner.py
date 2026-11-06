@@ -61,7 +61,16 @@ def archive(root: Path, destination: Path) -> None:
             shutil.copy2(root / name, destination / name)
     if (root / "dist").is_dir():
         shutil.copytree(root / "dist", destination / "dist", symlinks=True)
-    for name in ("ui", "backend", "terminal", "security", "cluster", "quickstart", "distribution"):
+    for name in (
+        "ui",
+        "backend",
+        "terminal",
+        "security",
+        "cluster",
+        "quickstart",
+        "distribution",
+        "container-inspection",
+    ):
         source = root / "artifacts" / name
         if source.is_dir():
             shutil.copytree(source, destination / name, symlinks=True)

@@ -390,7 +390,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40×12 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -1201,9 +1201,9 @@
         "O07"
       ],
       "source": "internal/view/secret.go",
-      "status": "planned",
-      "difference": "M05 adds explicit ConfigMap/Secret key metadata, reveal/copy and UTF-8/Base64 controls with fresh UID/version-bound reads, plus common guarded Secret editing. Permission browsing and environment provenance remain later work; full family parity is not claimed.",
-      "public_summary": "ConfigMap and Secret data have per-key reveal/copy, UTF-8/Base64 choice, and explicit manifest editing. Tracing application environment values to all their sources is unavailable.",
+      "status": "implemented",
+      "difference": "ConfigMap/Secret key inspection and editing remain M05. O07 adds current API environment provenance, precedence, bounded field/resource resolution and separate image facts for all container families, with fresh one-use disclosure and metadata-only export. Actual process environment, image ENV, injected Service variables and unsupported runtime sources remain outside observation. Full family parity is not claimed.",
+      "public_summary": "ConfigMap and Secret keys have explicit reveal/copy and editing. Development source also traces container environment sources and image facts; values require fresh disclosure.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/configuration-data.md",
@@ -1212,9 +1212,28 @@
         "tests/contract/test_configuration_data.py",
         "tests/ui/test_configuration_data.py",
         "tests/terminal/test_standard_resources.py",
-        "scripts/verify_editing_kind.py"
+        "scripts/verify_editing_kind.py",
+        "docs/log-viewer.md",
+        "docs/internal/acceptance/container-inspection.md",
+        "tests/unit/test_container_inspection.py",
+        "tests/unit/test_container_environment.py",
+        "tests/contract/test_container_inspection.py",
+        "tests/ui/test_container_inspection.py",
+        "tests/terminal/test_container_inspection.py",
+        "scripts/verify_container_inspection_kind.py"
       ],
-      "public_title": "Configuration data and environment sources"
+      "public_title": "Configuration data and environment sources",
+      "verification": "development",
+      "evidence": [
+        "docs/log-viewer.md",
+        "docs/internal/acceptance/container-inspection.md",
+        "tests/unit/test_container_inspection.py",
+        "tests/unit/test_container_environment.py",
+        "tests/contract/test_container_inspection.py",
+        "tests/ui/test_container_inspection.py",
+        "tests/terminal/test_container_inspection.py",
+        "scripts/verify_container_inspection_kind.py"
+      ]
     },
     {
       "id": "OPS07",
@@ -1582,11 +1601,11 @@
       "id": "OBS06",
       "capability": "Opt-in image vulnerability scans, severity/package/fix views and advisory links",
       "tasks": [
-        "O07"
+        "X03"
       ],
       "source": "internal/view/img_scan.go",
       "status": "planned",
-      "difference": "",
+      "difference": "The approved phase plan assigns vulnerability scanning to X03 #245 in v0.7.0; O07 #74 covers environment and image configuration inspection.",
       "public_summary": "Opt-in image vulnerability scanning and advisory/package/fix views are planned.",
       "public_status": "planned"
     },

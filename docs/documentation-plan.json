@@ -3625,6 +3625,26 @@
       ],
       "reason": "Keep local export source bindings, measured behavior, failures and qualification outside user navigation.",
       "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0038-container-configuration-provenance.md",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0038-container-configuration-provenance.md"
+      ],
+      "reason": "Record value-free current API container provenance, bounded fresh disclosure and owned lifetime/export boundaries.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/acceptance/container-inspection.md",
+      "audience": "contributor acceptance evidence",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/container-inspection.md"
+      ],
+      "reason": "Retain actual container inspection source bindings, controlled failures and qualification outside user navigation.",
+      "baseline_sha256": null
     }
   ],
   "inventory_rule": "Every tracked Markdown file, every file under docs/, LICENSE, NOTICE, and contribution issue templates at the baseline commit; new structure contracts are mapped too.",

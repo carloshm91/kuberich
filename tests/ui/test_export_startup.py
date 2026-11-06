@@ -199,7 +199,7 @@ async def test_sensitive_export_screenshot_guard_survives_overlay_and_clears_aft
         cover = ExportCover()
         app.push_screen(cover)
         await wait_for(lambda: cover.is_mounted)
-        with pytest.raises(AppError, match="Close sensitive export"):
+        with pytest.raises(AppError, match="Close sensitive views"):
             app.export_screenshot()
         assert app.deliver_screenshot("refused.svg", str(tmp_path)) is None
         assert not (tmp_path / "refused.svg").exists()

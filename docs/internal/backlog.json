@@ -1053,15 +1053,16 @@
       "requires": [
         "O03",
         "M05",
-        "U04"
+        "U04",
+        "O06"
       ],
-      "scope": "Present declared/resolved environment provenance and optional image scan reports using a free scanner adapter such as Trivy.",
+      "scope": "Inspect container environment declarations and configuration-source provenance, with separate declared and observed image facts. Vulnerability scanning belongs to X03.",
       "acceptance": [
-        "Show env/envFrom/fieldRef/resourceFieldRef sources with explicit secret reveal; distinguish declared config from actual process environment.",
-        "Run scans only on explicit opt-in with bounded concurrency/cache/disk usage; show image digest, scan time, severity, affected package and fixed version.",
-        "Handle private registry auth through external tool configuration, offline DB, scanner failure and advisory links; never launch browsers from untrusted arbitrary URLs."
+        "Show env/envFrom/fieldRef/resourceFieldRef declarations, precedence and source availability; keep values hidden until explicit fresh reveal/copy and distinguish current API configuration from actual process environment.",
+        "Show declared image and pull policy separately from family/name-matched container status image, image ID and container ID for regular, init, sidecar and ephemeral containers.",
+        "Preserve captured Pod/container/scope identity, bounded reads and cancellation, parent navigation and metadata-only exports; report denied, missing, unsupported and stale sources explicitly."
       ],
-      "verification": "Contract fixtures cover env expansion/source failures, secret redaction, scanner JSON schema, malformed output, cancellation and registry failures; no network scan in ordinary unit CI.",
+      "verification": "Pure semantic vectors, real owned HTTP, Pilot, source/installed PTYs and owned-kind fixtures cover expansion, precedence, source failures, default concealment, fresh disclosure, identity changes, bounded cancellation and image facts. No process environment, registry lookup or scanner runs.",
       "priority": "P1"
     },
     {
@@ -1889,7 +1890,7 @@
     },
     {
       "id": "D15",
-      "title": "Register the revised 0.3–0.9 phase plan in the release policy",
+      "title": "Register the revised 0.3\u20130.9 phase plan in the release policy",
       "epic": "E13",
       "milestone": "v0.3.0",
       "requires": [],
@@ -1910,8 +1911,8 @@
       "requires": [],
       "scope": "The docs are not pleasant to read:",
       "acceptance": [
-        "Adopt Diátaxis (tutorials, how-to guides, reference, explanation). The user documentation is at most 20 pages, listed in one navigation file.",
-        "`docs/STYLE.md` sets the rules: plain English, second person, present tense, short sentences; one task per page, at most 250 lines per page; a banned-term list with replacements (e.g. \"owned\" → \"started by KubeRich\", \"bounded\" → \"limited to N\", \"captured\" → \"selected\"); no issue numbers, run IDs or evidence in user pages",
+        "Adopt Di\u00e1taxis (tutorials, how-to guides, reference, explanation). The user documentation is at most 20 pages, listed in one navigation file.",
+        "`docs/STYLE.md` sets the rules: plain English, second person, present tense, short sentences; one task per page, at most 250 lines per page; a banned-term list with replacements (e.g. \"owned\" \u2192 \"started by KubeRich\", \"bounded\" \u2192 \"limited to N\", \"captured\" \u2192 \"selected\"); no issue numbers, run IDs or evidence in user pages",
         "The PR maps every existing document to keep, merge, move or delete."
       ],
       "verification": "Behavior, failure and cleanup tests at the relevant layer, with measured results attached to the pull request.",
@@ -1962,7 +1963,7 @@
       ],
       "scope": "`docs/architecture.md` is a 1,237-line decision log with the newest entries first. It is not an architecture overview, and new contributors cannot learn the system from it.",
       "acceptance": [
-        "`docs/architecture.md` is at most 300 lines and covers: layers (domain, services, adapters, ui); data flow (watch → store → projection → table); the concurrency and lifecycle model; security boundaries; Mermaid diagrams",
+        "`docs/architecture.md` is at most 300 lines and covers: layers (domain, services, adapters, ui); data flow (watch \u2192 store \u2192 projection \u2192 table); the concurrency and lifecycle model; security boundaries; Mermaid diagrams",
         "Decisions move to `docs/adr/NNNN-title.md`, one per decision, from a template. The old log is archived, not deleted.",
         "CONTRIBUTING.md links to the overview, and each layer section names its main modules."
       ],
@@ -2067,7 +2068,7 @@
         "W11",
         "D07"
       ],
-      "scope": "Every v0.3.0 task: Q08 #211, Q09 #210, Q10 #209, Q12 #213, Q13 #214, Q14 #215, Q15 #216, Q16 #217, Q17 #218, Q18 #219, Q19 #220, D15 #221, W04 #222–W11 #229, #208, dependency refresh #270 and opened plugin output correction #272, observable log startup #274. Also requires the 0.2.0 gate #65. Required verification follow-ups also include generic resource plugin capture #278, owned X11 selection readiness #281 and migration from retired macOS 14 runners #291.",
+      "scope": "Every v0.3.0 task: Q08 #211, Q09 #210, Q10 #209, Q12 #213, Q13 #214, Q14 #215, Q15 #216, Q16 #217, Q17 #218, Q18 #219, Q19 #220, D15 #221, W04 #222\u2013W11 #229, #208, dependency refresh #270 and opened plugin output correction #272, observable log startup #274. Also requires the 0.2.0 gate #65. Required verification follow-ups also include generic resource plugin capture #278, owned X11 selection readiness #281 and migration from retired macOS 14 runners #291.",
       "acceptance": [
         "The qualification command from Q17 #218 passes on the complete Linux/macOS matrix.",
         "Delivered ownership/controller changes pass their functional, cancellation and platform checks. Numeric App/module size and complete private-framework removal are tracked improvement goals for stable #88/#212, not 0.3.0 blockers. All startup latency objectives remain explicit and advisory for 0.x, with original strict-startup/stable limits retained. Offline RSS limits and absence of forbidden imports remain mandatory, along with valid output/source/frame/cleanup contracts. Keep relevant large-collection safeguards and honest measured limits.",
@@ -2156,7 +2157,7 @@
       "acceptance": [
         "The catalog reads contexts from the `KUBECONFIG` list and configured directories, and watches them for changes.",
         "Each cluster shows labels, a color or icon, notes, connection state and last use.",
-        "Pin clusters, namespaces, resources or commands to hotbar slots 1–9 for instant jumps.",
+        "Pin clusters, namespaces, resources or commands to hotbar slots 1\u20139 for instant jumps.",
         "Per-cluster settings: default namespace, read-only, theme and metrics source.",
         "No kubeconfig changes without an explicit action (rename and delete belong to #63)."
       ],
@@ -2276,7 +2277,7 @@
         "L07",
         "D09"
       ],
-      "scope": "L01 #235–L07 #241, plus every earlier phase gate (#82).",
+      "scope": "L01 #235\u2013L07 #241, plus every earlier phase gate (#82).",
       "acceptance": [
         "The qualification command passes on the full matrix, with multi-cluster tests on at least three disposable clusters.",
         "Measured memory and latency for the catalog and multi-cluster views are published.",
@@ -2385,7 +2386,7 @@
         "X05",
         "D17"
       ],
-      "scope": "X01 #243–X05 #247, plus D17 #242.",
+      "scope": "X01 #243\u2013X05 #247, plus D17 #242.",
       "acceptance": [
         "The qualification command passes. The reference extensions install from the index on clean hosts.",
         "A redaction audit of the MCP and AI paths, with negative controls.",

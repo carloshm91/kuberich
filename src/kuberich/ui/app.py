@@ -1036,9 +1036,7 @@ class KubeRichApp(App[None]):
             )
             return None
         if any(getattr(screen, "sensitive", False) is True for screen in self.screen_stack):
-            self.notify(
-                "Close sensitive export views before taking a screenshot.", severity="warning"
-            )
+            self.notify("Close sensitive views before taking a screenshot.", severity="warning")
             return None
         return super().deliver_screenshot(filename, path, time_format)
 
@@ -1053,7 +1051,7 @@ class KubeRichApp(App[None]):
                 "Close the configuration data view or plugin input view before exporting a screenshot."
             )
         if any(getattr(screen, "sensitive", False) is True for screen in self.screen_stack):
-            raise AppError("Close sensitive export views before exporting a screenshot.")
+            raise AppError("Close sensitive views before exporting a screenshot.")
         return super().export_screenshot(title=title, simplify=simplify)
 
     def action_inspect_yaml(self) -> None:
@@ -1225,6 +1223,7 @@ class KubeRichApp(App[None]):
             self.views.route,
             isinstance(self.screen, ModalScreen),
             self.workspace.store.observation.metrics,
+            self.workspace.discovery,
         )
 
     def _session_current(self, client: KubernetesSession, identity: SessionIdentity) -> bool:

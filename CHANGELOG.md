@@ -7,6 +7,8 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Added
 
+- Inspect container environment sources, precedence and image facts from the container list with `e`; values start hidden and use fresh reveal/copy ([#74](https://github.com/carloshm91/kuberich/issues/74)).
+- Export container inspection metadata while preserving source identity and a Reload-required state after configuration changes ([#74](https://github.com/carloshm91/kuberich/issues/74)).
 - Save reviewed resource YAML, logs, diagnostics, screen text and inspectable support JSON with default redaction and private files ([#73](https://github.com/carloshm91/kuberich/issues/73)).
 - Browse, filter, view, copy and explicitly delete saved local artifacts with `:exports` ([#73](https://github.com/carloshm91/kuberich/issues/73)).
 - Choose the initial export directory with `--screen-dump-dir` and open the local browser with `--command exports` without automatically connecting or authenticating ([#73](https://github.com/carloshm91/kuberich/issues/73)).

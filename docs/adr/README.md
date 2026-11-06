@@ -56,6 +56,7 @@ implemented decisions are kept separately without rewriting that history:
 | [0035: Authorization evidence](0035-authorization-evidence-and-reviews.md) | Fresh self-reviews, explicit RBAC completeness and independent question/header scope |
 | [0036: Native and external diagnostics](0036-native-and-external-diagnostics.md) | Qualified failure evidence, exact root/header scope and one cancelled/drained native or external producer |
 | [0037: Reviewed local artifacts](0037-reviewed-local-artifacts.md) | Frozen source provenance, explicit disclosure/file consent and offline saved-artifact browsing |
+| [0038: Container configuration provenance](0038-container-configuration-provenance.md) | Value-free current-API snapshots, bounded dependency resolution and separate fresh disclosure intents |
 | [Application composition](app-composition.md) | Integrated typed views, command metadata, navigation and operation owners; remaining stable-release work stays explicit |
 
 The composition record retains its existing filename; it is not renumbered into

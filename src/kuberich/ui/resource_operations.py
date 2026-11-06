@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Awaitable, Callable, Mapping
-from dataclasses import dataclass
-from datetime import datetime
+from dataclasses import dataclass, replace
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID
@@ -32,8 +32,11 @@ from kuberich.ui.chrome import WorkspaceChrome
 from kuberich.ui.target_capture import CapturedResource
 
 if TYPE_CHECKING:
+    from kuberich.domain.container_inspection import ContainerIdentity
+    from kuberich.domain.resources import Discovery
     from kuberich.services.exports import ExportChoices
     from kuberich.ui.aggregate_logs import AggregateLogScreen
+    from kuberich.ui.container_inspection import ContainerInspectionScreen
     from kuberich.ui.inspection import Page
 
 
@@ -47,6 +50,7 @@ class OperationContext:
     route: ViewRoute
     modal: bool
     metrics: MetricsSnapshot | None = None
+    discovery: Discovery | None = None
 
 
 class ResourceOperations:
@@ -74,12 +78,18 @@ class ResourceOperations:
         self.session_current, self.forwarding = session_current, forwarding
         self.delete_context, self.stop_plugins = delete_context, stop_plugins
         self._aggregate_screens: set[AggregateLogScreen] = set()
+        self._inspection_screens: set[ContainerInspectionScreen] = set()
         self._auto_forward_contexts: set[str] = set()
 
     @property
     def retained_aggregate_count(self) -> int:
         """Retain viewers through asynchronous cleanup even after DOM removal."""
         return len(self._aggregate_screens)
+
+    @property
+    def retained_inspection_count(self) -> int:
+        """Keep captured inspectors owned until their asynchronous cleanup finishes."""
+        return len(self._inspection_screens)
 
     def capture_export(self, at: datetime) -> ExportChoices:
         from uuid import uuid4
@@ -394,10 +404,48 @@ class ResourceOperations:
                 ),
                 chrome=context.chrome,
                 trail=context.trail,
+                inspect_container=lambda identity: self.open_container_inspection(
+                    selection, identity
+                ),
             )
             if containers_first
             else LogScreen(stream, containers, chrome=context.chrome, trail=context.trail)
         )
+
+    def open_container_inspection(
+        self, selection: CapturedResource[KubernetesSession], identity: ContainerIdentity
+    ) -> None:
+        from kuberich.services.container_inspection import ContainerInspectionService
+        from kuberich.ui.container_inspection import ContainerInspectionScreen
+
+        context = self.context()
+        client, resource, _, target, current = selection
+        if context.discovery is None:
+            self.status("Container inspection needs current resource discovery; reconnect first.")
+            return
+        service = ContainerInspectionService(
+            client,
+            resource,
+            replace(target, container=identity.name),
+            identity,
+            context.discovery,
+            self.policy,
+            current,
+            now=lambda: datetime.now(UTC),
+        )
+        try:
+            service.require_current()
+        except AppError as error:
+            self.status(str(error))
+            return
+        screen = ContainerInspectionScreen(
+            service,
+            chrome=context.chrome,
+            trail=(*context.trail, "containers"),
+            stopped=lambda: self._inspection_screens.discard(screen),
+        )
+        self._inspection_screens.add(screen)
+        self.host.push_screen(screen)
 
     def logs_all(self) -> None:
         from kuberich.domain.aggregate_logs import workload_kind
@@ -484,6 +532,11 @@ class ResourceOperations:
                 screen.stop_owned()
                 for screen in tuple(self._aggregate_screens)
                 if screen.owner.client is client
+            ),
+            *(
+                screen.stop_owned()
+                for screen in tuple(self._inspection_screens)
+                if screen.service.client is client
             ),
             *(
                 screen.stop_owned()

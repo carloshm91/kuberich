@@ -39,6 +39,7 @@ MAX_RESOURCES = 8192
 MAX_ITEMS = MAX_RESOURCE_ITEMS
 MAX_PAGES = 256
 MAX_SNAPSHOT_BYTES = MAX_RESOURCE_BYTES
+MAX_GET_RESPONSE_BYTES = 8 * 1024 * 1024
 
 
 async def parse_owned[T](operation: Callable[[], T]) -> T:
@@ -220,8 +221,17 @@ class ResourceReader:
         self._table_failed.add((resource.group, resource.version, resource.name))
 
     async def get(
-        self, resource: ApiResource, name: str, namespace: str | None = None
+        self,
+        resource: ApiResource,
+        name: str,
+        namespace: str | None = None,
+        *,
+        max_bytes: int | None = None,
     ) -> ResourceRecord:
+        if max_bytes is not None and (
+            type(max_bytes) is not int or not 1 <= max_bytes <= MAX_GET_RESPONSE_BYTES
+        ):
+            raise AppError("Resource response limit must be an integer from 1 byte to 8 MiB.")
         if "get" not in resource.verbs:
             raise AppError("This discovered resource does not advertise get support.")
         path = resource.path(namespace) + "/" + quote(resource_name(name), safe="")
@@ -232,15 +242,16 @@ class ResourceReader:
                     try:
                         if self.budget is not None:
                             self.budget.charge()
-                        payload = await self.session.get_json(
-                            path,
-                            accept=TABLE_ACCEPT
-                            if self.uses_tables(resource)
-                            else "application/json",
-                            params={"includeObject": "Object"}
-                            if self.uses_tables(resource)
-                            else None,
-                        )
+                        accept = TABLE_ACCEPT if self.uses_tables(resource) else "application/json"
+                        params = {"includeObject": "Object"} if self.uses_tables(resource) else None
+                        if max_bytes is None:
+                            payload = await self.session.get_json(
+                                path, accept=accept, params=params
+                            )
+                        else:
+                            payload = await self.session.get_json(
+                                path, accept=accept, params=params, max_bytes=max_bytes
+                            )
                     except HttpProblem as problem:
                         if self.uses_tables(resource) and problem.status in {406, 415}:
                             self.disable_tables(resource)
