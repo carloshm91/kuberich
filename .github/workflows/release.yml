@@ -163,7 +163,7 @@ jobs:
           --version "$RELEASE_VERSION" --index pypi
       - name: Publish only absent files with PyPI Trusted Publishing
         if: ${{ steps.missing.outputs.count != '0' }}
-        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
         with:
           repository-url: ${{ inputs.index == 'pypi' && 'https://upload.pypi.org/legacy/' || 'https://test.pypi.org/legacy/' }}
           packages-dir: missing/
