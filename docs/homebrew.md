@@ -35,8 +35,9 @@ Link the generated directory into an owned Homebrew environment as the local
 `kuberich/tap`, then require these real checks:
 
 ```sh
+brew trust --formula kuberich/tap/kuberich
 brew style kuberich/tap/kuberich
-brew audit --strict kuberich/tap/kuberich
+brew audit --strict --online kuberich/tap/kuberich
 brew install --build-from-source kuberich/tap/kuberich
 brew test kuberich/tap/kuberich
 brew uninstall kuberich/tap/kuberich
@@ -52,6 +53,32 @@ sources are pinned. Homebrew's standard
 helper still resolves isolated build backends, so this is not a fully hermetic
 compiler/build environment. Dependency licenses and original notices remain their
 own, including Pyte's LGPL source and replacement rights.
+
+## Native qualification budgets
+
+The native installation workflow uses fresh owned Actions hosts for source and
+bottle checks on Linux x86_64, macOS Apple Silicon and macOS Intel. It first
+prepares the formula's core dependencies on the same host, with a separate
+75-minute command limit inside an 80-minute step. Application verification keeps
+its own 60-minute source or 90-minute bottle step limit; each source installation
+or application build still has a 30-minute command limit. The total job budget
+includes these stages and 15 minutes of runner/setup/artifact overhead. A stage
+timeout fails qualification.
+
+The retained dependency receipt records the exact source, workflow job,
+Homebrew executable/prefix, installed versions before and after preparation,
+missing dependencies, commands and elapsed times. Application checks require that
+successful receipt from the same source and runner. They retain their own
+installation, upgrade, removal and terminal evidence. Preparing dependencies
+does not install KubeRich or update the public tap.
+
+Preinstalled dependencies remain labelled as preinstalled. Application build
+times and cold/warm bottle pours are reported separately from dependency setup;
+none is advertised as an end-to-end cold installation. A cold bottle pour means
+the candidate archive was absent from Homebrew's cache, with dependencies
+already prepared. Installation latency is advisory for 0.x; incomplete commands,
+incorrect installed bytes, failed cleanup and changed caller files remain
+failures. The preparation helper refuses personal Homebrew installations.
 
 ## Bottles
 
@@ -125,4 +152,5 @@ channel ownership or qualify an activated package.
 
 Sources: [Homebrew Python formulae](https://docs.brew.sh/Language-Specific-Formulae),
 [installation](https://docs.brew.sh/Installation),
-[formula cookbook](https://docs.brew.sh/Formula-Cookbook).
+[formula cookbook](https://docs.brew.sh/Formula-Cookbook),
+[command reference](https://docs.brew.sh/Manpage).

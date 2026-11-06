@@ -1,6 +1,63 @@
 # Development checkpoint
 
+## Active 0.4.0 cumulative qualification
+
+Curated resources are protected-merged in PR #320 at
+`389babca15ab15e0ef8317a815afbeda1e8e9f73`. All 27 final Application job keys,
+Repository checks and DCO passed, and the squash tree matches the tested merge
+tree. The complete clean local cohort passed 11,664 tests with five explicit
+skips. Independent coverage measured 98.6012% lines, 95.5241% branches and
+98.62% changed lines; all 113 critical modules reached 100% lines/branches.
+Original helper-oracle failures and macOS runner-capacity cancellations remain
+retained; they are not relabelled as passes. The final corrected helper also
+passed fresh runtime replay and source/installed terminal checks.
+
+Issue #75 now owns the cumulative qualifier. Its source preparation sets
+metadata to 0.4.0 and removes the deprecated `kubetrol` console entry and shim;
+legacy preference/environment/log compatibility remains. Published channels
+still deliver 0.3.0. No new tag, package, tap or website publication is authorized.
+
+An owned Kubernetes 1.36.4 review observed a zero-desired DaemonSet whose
+optional update/availability zero counters were omitted. Pulse truthfully kept
+`unknown`; all 17 controls and cluster/configuration cleanup checks passed.
+The new Homebrew setup separates bounded core dependencies from application
+verification on the same owned runner and records preinstalled state, exact
+source/job identity and elapsed times. Those new native lanes, the full final
+platform matrix, three cumulative cluster rounds and sustained performance
+evidence remain pending on the eventual clean candidate.
+
+The current focused command is
+`uv run --no-sync pytest -q tests/unit/test_cli.py tests/unit/test_legacy_cli.py tests/unit/test_identity_migration.py tests/quality/test_published_upgrade_wheel.py`.
+The scoped CLI/migration/published-artifact controls pass 52 cases. They do not
+qualify the complete package, hosted matrix or cumulative release gate. Continue
+implementation without requesting an intermediate manual trial.
+The [qualification preparation record](acceptance/observability-qualification.md)
+retains the measured cohorts, original pipx/process/UI failures and remaining gate.
+The first clean broad interface run passed 1,334 cases and failed the new native
+probe's partial-frame/scroll witness. Corrected native checks pass three cases
+with default/fragmented reads, explicit live table rows and full fields through
+the same-UID Inspector/YAML path. Rapid horizontal input remains a recorded
+limit. The two new documentation enrollments and stale 0.3 text assertions are
+corrected, with 33 documentation/oracle cases passing. The next clean broad run
+must qualify these followups; original failures remain retained.
+That clean broad selection passed 1,516 cases in 245.17 seconds. A later hosted
+Python 3.14 overwrite-test timeout has a controlled feedback-timer reproduction
+and a narrow save-readiness correction; native/held-feedback controls and the
+38-case export scope pass. Complete exact-head hosted checks remain required.
+Another hosted Python 3.14 case observed the correct saved file and parent
+return before the current save worker retired. Controlled lifecycle coverage
+reproduces this ordering; bounded real-drain predicates and the 40-case export
+scope pass. The next committed-source review also runs all UI and quality
+checks in a separate local Python 3.14 environment before pushing.
+That Python 3.14 selection passed all 3,291 UI/quality cases, with one skip and
+one fragmented native probe failure caused by an accepted loading graph. The
+observer now waits for the fixture's final known member and exact observed UID;
+four controls pass on 3.12. Targeted 3.14 verification is required before push.
+
 ## Unreleased 0.4.0 curated-resource checkpoint
+
+This section preserves the pre-delivery #232 checkpoint. Its pending-delivery
+statements are superseded by the protected-delivery summary above.
 
 Historical metrics are protected-merged in PR #319 at
 `5060b4dcd35968e3b990bd833eba731539938cff`. All 27 Application quality jobs,

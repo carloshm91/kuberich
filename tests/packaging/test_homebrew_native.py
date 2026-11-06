@@ -5,13 +5,17 @@ import json
 import os
 import platform
 import shutil
+import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
+from packaging.version import Version
 
 from scripts.homebrew import FORMULA, prepare
 from tests.support.distribution import PROJECT, ROOT, clean_environment, run
+from tests.support.homebrew_dependencies import prepared_dependencies
 from tests.support.navigation import terminal_navigation
 from tests.support.shell import terminal_shell
 from tests.support.source_candidate import (
@@ -32,6 +36,7 @@ def test_native_source_install_real_version_upgrade_and_uninstall(tmp_path, base
     assert os.environ.get("GITHUB_ACTIONS") == "true" and os.environ.get("RUNNER_TEMP")
     brew = shutil.which("brew")
     assert brew is not None
+    dependency_preparation = prepared_dependencies(brew)
     outside = tmp_path / "outside"
     outside.mkdir()
     environment = clean_environment(outside)
@@ -40,6 +45,7 @@ def test_native_source_install_real_version_upgrade_and_uninstall(tmp_path, base
             "HOMEBREW_NO_ANALYTICS": "1",
             "HOMEBREW_NO_AUTO_UPDATE": "1",
             "HOMEBREW_NO_INSTALL_CLEANUP": "1",
+            "HOMEBREW_NO_AUTOREMOVE": "1",
         }
     )
     prefix = Path(run([brew, "--prefix"], outside, environment=environment).stdout.strip())
@@ -61,18 +67,26 @@ def test_native_source_install_real_version_upgrade_and_uninstall(tmp_path, base
 
     def execute(arguments, timeout=120):
         command = [brew, *arguments]
-        result = run(command, outside, timeout, check=False, environment=environment)
-        records.append(
-            {
-                "command": command,
-                "exit": result.returncode,
-                "stdout": result.stdout,
-                "stderr": result.stderr,
-            }
-        )
-        (output / f"{evidence}-commands.json").write_text(json.dumps(records, indent=2) + "\n")
-        assert result.returncode == 0, result.stdout + result.stderr
-        return result
+        started = time.monotonic()
+        record = {"command": command, "timeout_seconds": timeout}
+        records.append(record)
+        try:
+            result = run(command, outside, timeout, check=False, environment=environment)
+            record.update(exit=result.returncode, stdout=result.stdout, stderr=result.stderr)
+            assert result.returncode == 0, result.stdout + result.stderr
+            return result
+        except BaseException as error:
+            record["error"] = type(error).__name__
+            if isinstance(error, subprocess.TimeoutExpired):
+                for name in ("stdout", "stderr"):
+                    value = getattr(error, name)
+                    record[name] = (
+                        value.decode(errors="replace") if isinstance(value, bytes) else value
+                    )
+            raise
+        finally:
+            record["elapsed_seconds"] = round(time.monotonic() - started, 3)
+            (output / f"{evidence}-commands.json").write_text(json.dumps(records, indent=2) + "\n")
 
     help_trust = run([brew, "help", "trust"], outside, check=False, environment=environment)
     trusts = help_trust.returncode == 0
@@ -140,6 +154,32 @@ def test_native_source_install_real_version_upgrade_and_uninstall(tmp_path, base
                 run([str(binary), "--version"], outside, environment=environment).stdout
                 == f"kuberich {version}\n"
             )
+            if Version(version).release >= (0, 4, 0):
+                for alias in (
+                    prefix / "bin/kubetrol",
+                    prefix / "opt/kuberich/libexec/bin/kubetrol",
+                ):
+                    assert not alias.exists() and not alias.is_symlink()
+                interpreter = str(prefix / "opt/kuberich/libexec/bin/python")
+                assert (
+                    run(
+                        [interpreter, "-m", "kuberich", "--version"],
+                        outside,
+                        environment=environment,
+                    ).stdout
+                    == f"kuberich {version}\n"
+                )
+                run(
+                    [
+                        interpreter,
+                        "-c",
+                        "import kuberich.cli; assert not hasattr(kuberich.cli, 'legacy_main')",
+                    ],
+                    outside,
+                    environment=environment,
+                )
+            elif published is not None:
+                assert (prefix / "bin/kubetrol").is_file()
             info = json.loads(run([str(binary), "info"], outside, environment=environment).stdout)
             assert (
                 info["preferences"]["read_only"] is True
@@ -176,6 +216,7 @@ def test_native_source_install_real_version_upgrade_and_uninstall(tmp_path, base
         if tap.exists():
             shutil.rmtree(tap)
     assert not (prefix / "bin/kuberich").exists() and not (prefix / "Cellar/kuberich").exists()
+    assert not (prefix / "bin/kubetrol").exists() and not (prefix / "bin/kubetrol").is_symlink()
     assert preferences.read_bytes() == before and caller.read_bytes() == caller_before
     (output / f"{evidence}-result.json").write_text(
         json.dumps(
@@ -187,6 +228,9 @@ def test_native_source_install_real_version_upgrade_and_uninstall(tmp_path, base
                 "brew": execute(["--version"]).stdout,
                 "candidates": candidates,
                 "baseline_kind": baseline_kind,
+                "dependency_preparation": dependency_preparation,
+                "application_checks_use_prepared_dependencies": True,
+                "end_to_end_cold_install": False,
                 "normal_manager_version_upgrade": True,
                 "actual_upgraded_navigation_and_shell": True,
                 "all_versions_uninstalled": True,

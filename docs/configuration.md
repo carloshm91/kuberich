@@ -185,10 +185,12 @@ and config check stay offline. Nothing is downloaded or installed automatically.
 
 ## Legacy files and diagnostic logs
 
-The `kubetrol` console command is a deprecated alias in the 0.3 source. It prints
-a fixed warning to stderr, then runs the same CLI; help/version stdout and exit
-codes stay unchanged. Use `kuberich` or `python -m kuberich`. The previous console
-alias is scheduled for removal in 0.4.0; it is not a second Python package.
+Published 0.3 retains the deprecated `kubetrol` command with a fixed stderr
+warning. The prepared 0.4 source removes that console entry and its Python shim.
+Use `kuberich` or `python -m kuberich`; canonical stdout and exit behavior remain
+unchanged. This removes a command alias, without renaming the Python package or
+discarding legacy preferences and logs. See [upgrade guidance](installation.md#upgrade)
+for installer-specific migration.
 
 `KUBETROL_*` preference variables remain fallbacks after corresponding
 `KUBERICH_*` variables. If the new default preference file is absent, the old

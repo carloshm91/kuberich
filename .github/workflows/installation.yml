@@ -9,6 +9,7 @@ name: Native installation qualification
       - tests/packaging/test_homebrew_native.py
       - tests/packaging/test_homebrew_bottle_native.py
       - tests/support/source_candidate.py
+      - tests/support/homebrew_dependencies.py
 permissions:
   contents: read
 concurrency:
@@ -18,7 +19,8 @@ jobs:
   homebrew:
     name: Homebrew (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    # Separate bounded core setup (80m), application checks (60m), and runner overhead.
+    timeout-minutes: 155
     strategy:
       fail-fast: false
       matrix:
@@ -42,7 +44,11 @@ jobs:
           else
             brew --version
           fi
+      - name: Prepare and time core dependencies on this owned runner
+        timeout-minutes: 80
+        run: uv run python -m tests.support.homebrew_dependencies
       - name: Qualify real source installation and version upgrade
+        timeout-minutes: 60
         env:
           KUBERICH_QUALIFY_HOMEBREW: '1'
         run: uv run pytest -q --tb=short tests/packaging/test_homebrew_native.py
@@ -59,7 +65,8 @@ jobs:
   bottle:
     name: Homebrew bottle (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 90
+    # Separate bounded core setup (80m), bottle checks (90m), and runner overhead.
+    timeout-minutes: 185
     strategy:
       fail-fast: false
       matrix:
@@ -83,7 +90,11 @@ jobs:
           else
             brew --version
           fi
+      - name: Prepare and time core dependencies on this owned runner
+        timeout-minutes: 80
+        run: uv run python -m tests.support.homebrew_dependencies
       - name: Build a candidate bottle and pour it on upgrade from the published release
+        timeout-minutes: 90
         env:
           KUBERICH_QUALIFY_HOMEBREW_BOTTLES: '1'
         run: uv run pytest -q --tb=short tests/packaging/test_homebrew_bottle_native.py

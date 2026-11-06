@@ -29,8 +29,8 @@ def test_history_moves_to_one_internal_area_with_exact_original_git_evidence():
             assert not (ROOT / old).is_file()
     for record in plan["preserved_sources"] + plan["operational_sources"]:
         assert mapped[record["path"]]["baseline_sha256"] == record["sha256"]
-    assert len(mapped) == 364
-    assert validate_documentation_plan(ROOT, list(mapped)) == 364
+    assert len(mapped) == 366
+    assert validate_documentation_plan(ROOT, list(mapped)) == 366
     assert not (ROOT / "docs/status.md").exists()
 
 
@@ -209,11 +209,22 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
         "docs/adr/0039-context-owned-metric-history.md",
         "docs/internal/acceptance/metric-history.md",
     ]
-    assert len(current["documents"]) == 364
-    assert [item["source"] for item in current["documents"][361:]] == [
+    curated = json.loads(
+        git_bytes(
+            ROOT, "show", "389babca15ab15e0ef8317a815afbeda1e8e9f73:docs/documentation-plan.json"
+        )
+    )
+    assert len(curated["documents"]) == 364
+    assert current["documents"][:364] == curated["documents"]
+    assert [item["source"] for item in current["documents"][361:364]] == [
         "docs/adr/0040-curated-resource-observations.md",
         "docs/internal/acceptance/curated-resources.md",
         "docs/internal/curated-resource-inventory.json",
+    ]
+    assert len(current["documents"]) == 366
+    assert [item["source"] for item in current["documents"][364:]] == [
+        "docs/release-notes/0.4.0.md",
+        "docs/internal/acceptance/observability-qualification.md",
     ]
     assert all(item["baseline_sha256"] is None for item in current["documents"][348:])
     assert authorization["canonical_user_pages"] == 23

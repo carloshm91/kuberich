@@ -1,4 +1,4 @@
-"""The deprecated console name preserves behavior and keeps its warning on stderr."""
+"""The retired console shim is absent; canonical invocation preserves its contracts."""
 
 import sys
 
@@ -6,10 +6,9 @@ import pytest
 
 from kuberich import cli
 
-NOTICE = (
-    "Warning: kubetrol is deprecated; use kuberich instead. "
-    "This command will be removed in 0.4.0.\n"
-)
+
+def test_retired_legacy_python_entry_point_is_absent():
+    assert not hasattr(cli, "legacy_main")
 
 
 def invoke(command, arguments, capsys):
@@ -22,7 +21,7 @@ def invoke(command, arguments, capsys):
 
 
 @pytest.mark.parametrize("arguments", [["--help"], ["--version"], ["version", "--short"]])
-def test_legacy_help_and_versions_keep_canonical_stdout_without_loading_preferences(
+def test_canonical_help_and_versions_do_not_load_preferences_or_warn_about_an_alias(
     arguments, monkeypatch, capsys
 ):
     def forbidden(*args, **kwargs):
@@ -31,45 +30,46 @@ def test_legacy_help_and_versions_keep_canonical_stdout_without_loading_preferen
     monkeypatch.setattr(cli, "read_config", forbidden)
     monkeypatch.setattr(cli, "run_terminal", forbidden)
     current = invoke(cli.main, arguments, capsys)
-    previous = invoke(cli.legacy_main, arguments, capsys)
-    assert current[0] == previous[0] == 0
-    assert current[1] == previous[1] and current[2] == ""
-    assert previous[2] == NOTICE
+    assert current[0] == 0 and current[2] == ""
+    assert "kuberich" in current[1] or arguments == ["version", "--short"]
+    assert "kubetrol" not in current[1]
+    if arguments == ["--version"]:
+        assert current[1] == f"kuberich {cli.version('kuberich')}\n"
+    elif arguments == ["version", "--short"]:
+        assert current[1] == f"{cli.version('kuberich')}\n"
+    else:
+        assert "usage: kuberich" in current[1]
 
 
 @pytest.mark.parametrize("arguments", [["--unexpected", "token=private-marker"], ["--command", ""]])
-def test_legacy_failures_preserve_the_exit_code_and_do_not_echo_sensitive_arguments(
+def test_canonical_failures_preserve_the_exit_code_and_do_not_echo_sensitive_arguments(
     arguments, capsys
 ):
     current = invoke(cli.main, arguments, capsys)
-    previous = invoke(cli.legacy_main, arguments, capsys)
-    assert current[0] == previous[0] == 2
-    assert current[1] == previous[1] == ""
-    assert previous[2] == NOTICE + current[2]
-    assert "private-marker" not in previous[2]
+    assert current[0] == 2 and current[1] == ""
+    assert "invalid command line" in current[2]
+    assert "private-marker" not in current[2] and "deprecated" not in current[2]
 
 
-def test_console_invocation_uses_process_arguments_and_keeps_canonical_identity(
+def test_canonical_invocation_keeps_its_identity_regardless_of_process_program_name(
     monkeypatch, capsys
 ):
     monkeypatch.setattr(sys, "argv", ["kubetrol", "--version"])
     with pytest.raises(SystemExit) as caught:
-        cli.legacy_main()
+        cli.main()
     assert caught.value.code == 0
     captured = capsys.readouterr()
     assert captured.out == f"kuberich {cli.version('kuberich')}\n"
-    assert captured.err == NOTICE
+    assert captured.err == ""
 
 
-def test_legacy_info_retains_real_read_only_inspection_and_safe_json(tmp_path, capsys):
+def test_canonical_info_retains_real_read_only_inspection_and_safe_json(tmp_path, capsys):
     config = tmp_path / "preferences.yaml"
     original = "schema_version: 1\nread_only: true\nprivate_note: private-marker\n"
     config.write_text(original)
     arguments = ["--config", str(config), "info"]
     current = invoke(cli.main, arguments, capsys)
-    previous = invoke(cli.legacy_main, arguments, capsys)
-    assert current[0] == previous[0] == 0
-    assert current[1] == previous[1] and previous[2] == NOTICE
-    assert "private-marker" not in previous[1] + previous[2]
+    assert current[0] == 0 and current[2] == ""
+    assert "private-marker" not in current[1] + current[2]
     assert config.read_text() == original
     assert list(tmp_path.iterdir()) == [config]

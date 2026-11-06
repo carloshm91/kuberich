@@ -87,6 +87,11 @@ def run(
                 os.killpg(process.pid, signal.SIGKILL)
             process.communicate()
         raise
+    finally:
+        # A leader can exit while a descendant closes its pipes and stays alive.
+        with suppress(ProcessLookupError):
+            os.killpg(process.pid, signal.SIGKILL)
+        process.wait()
     if check and process.returncode:
         raise subprocess.CalledProcessError(process.returncode, command, stdout, stderr)
     return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)

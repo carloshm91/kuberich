@@ -5,6 +5,28 @@ This record documents the implementation and scoped verification checkpoints for
 not establish complete acceptance or release qualification. The reviewed base is
 protected main `5060b4dcd35968e3b990bd833eba731539938cff` after PR #319.
 
+## Protected delivery
+
+PR [#320](https://github.com/carloshm91/kuberich/pull/320) delivered this behavior
+at protected main `389babca15ab15e0ef8317a815afbeda1e8e9f73`. Its final head
+`fa20bc6424e62f93f65e0d98bb851481fca9fda7` passed all 27 expected Application
+job keys in [run 42274318207](https://github.com/carloshm91/kuberich/actions/runs/42274318207),
+plus Repository checks and DCO. Three unacquired macOS jobs in attempt one were
+rerun at the same source; completed same-head outputs were reused. Original
+runner-capacity cancellations and earlier helper-oracle failures remain retained.
+The protected squash tree matches the tested merge tree, with maintainer email
+and sign-off verified.
+
+The clean complete local cohort passed 11,664 tests with five explicit skips.
+Verified runtime replay and independent gates measured 98.6012% lines,
+95.5241% branches, 98.62% changed lines and all 113 designated critical modules
+at 100% lines/branches across 264 production modules. Final source and installed
+terminal replays passed four cases each in 30.19 and 37.72 seconds; all 266 wheel
+payload files matched source. The wheel SHA-256 is
+`cebcae508dc6509dd79eef3fd620bbc7ff4723e133bbbce58407abc10b96bfac`.
+These results deliver the scoped issue; cumulative 0.4.0 qualification remains
+separate in #75. Statements below about pending #232 delivery are historical.
+
 ## Scope
 
 Eighteen ordinary resource families use the standard table, with a separate

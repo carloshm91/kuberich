@@ -97,10 +97,8 @@ def test_complete_wheel_payload_and_runtime_metadata(artifacts):
     assert_metadata(payload[f"{prefix}/METADATA"])
     entries = configparser.ConfigParser()
     entries.read_string(payload[f"{prefix}/entry_points.txt"].decode())
-    assert dict(entries["console_scripts"]) == {
-        "kuberich": "kuberich.cli:main",
-        "kubetrol": "kuberich.cli:legacy_main",
-    }
+    assert dict(entries["console_scripts"]) == {"kuberich": "kuberich.cli:main"}
+    assert b"legacy_main" not in payload["kuberich/cli.py"]
     assert list(entries) == ["DEFAULT", "console_scripts"]
     wheel = BytesParser().parsebytes(payload[f"{prefix}/WHEEL"])
     assert wheel["Root-Is-Purelib"] == "true"

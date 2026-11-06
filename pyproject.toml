@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "kuberich"
-version = "0.3.0"
+version = "0.4.0"
 description = "A Kubernetes terminal UI built with Python and Textual"
 readme = "README.md"
 requires-python = ">=3.12,<3.15"
@@ -39,7 +39,6 @@ dependencies = [
 
 [project.scripts]
 kuberich = "kuberich.cli:main"
-kubetrol = "kuberich.cli:legacy_main"
 
 [project.urls]
 Homepage = "https://github.com/carloshm91/kuberich"

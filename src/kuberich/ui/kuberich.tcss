@@ -6,7 +6,7 @@ Screen {
 
 #workspace-top { height: 6; padding: 0 1; background: $background; }
 #scope-bar { width: 40%; min-width: 24; height: 6; }
-#scope-bar Static { height: 1; text-overflow: ellipsis; }
+#scope-bar Static { height: 1; text-wrap: nowrap; text-overflow: ellipsis; }
 #build-info { color: $text-muted; }
 #app-header { width: 1fr; height: 6; }
 #view-actions { width: 1fr; height: 6; color: $text-muted; text-overflow: ellipsis; }

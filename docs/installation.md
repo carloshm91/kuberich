@@ -117,6 +117,29 @@ archive directory until the replacement works.
 Homebrew keeps old versions until `brew cleanup` removes them; it has no general
 downgrade command. An exact Python version pin needs an explicit version change.
 
+### Upcoming 0.4 command migration
+
+The prepared 0.4 source removes the deprecated `kubetrol` command. Published
+channels still deliver 0.3. Use `kuberich` in scripts and launchers now.
+
+When 0.4 becomes available, an unpinned pipx installation needs a one-time
+`pipx reinstall kuberich` directly from 0.3, before plain `pipx upgrade`.
+The reinstall removes the old command links while selecting the new version.
+Plain upgrade can leave a dangling `kubetrol` link after removing its target.
+
+If the recorded pipx requirement explicitly pins 0.3, reinstall preserves that
+constraint. Deliberately replace it through the same manager after publication:
+
+```sh
+pipx uninstall kuberich
+pipx install --python python3.12 kuberich==0.4.0
+```
+
+These operations keep application preferences, diagnostic logs and kubeconfig.
+Uv and Homebrew retain their normal upgrade commands; explicit version pins
+still need deliberate replacement. The [prepared notes](release-notes/0.4.0.md)
+describe the remaining compatibility changes.
+
 ## Remove the application
 
 Use `brew uninstall kuberich/tap/kuberich`, `uv tool uninstall kuberich`, or

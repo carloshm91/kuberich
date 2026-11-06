@@ -15,9 +15,12 @@ Later releases retain those project identities and immutable file checks.
 The private preview was previously named Kubetrol. Checkout upgrades use
 `uv sync --locked --group dev`, then `uv run kuberich`; the local directory name
 does not determine the CLI name. A pre-existing isolated `uv tool`/`pipx`
-installation of the old distribution must be uninstalled before installing
-the new local candidate, because both expose the retained `kubetrol` alias.
-Uninstalling a tool does not delete its preference files. See [preference compatibility](configuration.md) before changing installations.
+installation of the old distribution should be removed before changing package
+identity. Published 0.3 retains the deprecated `kubetrol` alias; the prepared
+0.4 candidate exposes only `kuberich`. Pipx users crossing from 0.3 need the
+one-time reinstall/spec migration in [upgrade guidance](installation.md#upcoming-04-command-migration).
+Uninstalling a tool does not delete its preference files. See
+[preference compatibility](configuration.md) before changing installations.
 
 The published Homebrew command is:
 
@@ -80,9 +83,9 @@ publish packages or create a release.
 
 ## Supported targets
 
-The six source qualification environments are Ubuntu 24.04 x86_64 and macOS 26
+The six source qualification environments are Ubuntu 24.04 x86_64 and macOS 15
 ARM, each on CPython 3.12, 3.13 and 3.14. Native Homebrew source trials cover
-Ubuntu 24.04 x86_64, macOS 14 ARM and macOS 15 Intel with formula Python 3.14.
+Ubuntu 24.04 x86_64, macOS 15 ARM and macOS 15 Intel with formula Python 3.14.
 Broader source/architecture combinations and physical macOS 14 Intel remain
 unclaimed. The exact prepared version must pass these checks before release;
 see the [installation scope](installation.md#qualification-scope).

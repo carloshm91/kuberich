@@ -1,10 +1,12 @@
 """Opt-in real bottle build, pour and upgrade from the published tap on an owned Actions host."""
 
+import hashlib
 import json
 import os
 import platform
 import re
 import shutil
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -14,6 +16,7 @@ from packaging.version import Version
 
 from scripts.homebrew import BOTTLE_BLOCK, FORMULA, bottle_records, prepare, with_bottles
 from tests.support.distribution import PROJECT, ROOT, clean_environment, run
+from tests.support.homebrew_dependencies import prepared_dependencies
 from tests.support.navigation import terminal_navigation
 from tests.support.shell import terminal_shell
 from tests.support.source_candidate import (
@@ -33,6 +36,7 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
     assert os.environ.get("GITHUB_ACTIONS") == "true" and os.environ.get("RUNNER_TEMP")
     brew = shutil.which("brew")
     assert brew is not None
+    dependency_preparation = prepared_dependencies(brew)
     outside = tmp_path / "outside"
     outside.mkdir()
     environment = clean_environment(outside)
@@ -67,20 +71,29 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
     def execute(arguments, timeout=180, phase=None, cwd=outside):
         command = [brew, *arguments]
         started = time.monotonic()
-        result = run(command, cwd, timeout, check=False, environment=environment)
-        if phase is not None:
-            timings[phase] = round(time.monotonic() - started, 1)
-        records.append(
-            {
-                "command": command,
-                "exit": result.returncode,
-                "stdout": result.stdout,
-                "stderr": result.stderr,
-            }
-        )
-        (output / f"bottle-{target}-commands.json").write_text(json.dumps(records, indent=2) + "\n")
-        assert result.returncode == 0, result.stdout + result.stderr
-        return result
+        record = {"command": command, "timeout_seconds": timeout}
+        records.append(record)
+        try:
+            result = run(command, cwd, timeout, check=False, environment=environment)
+            record.update(exit=result.returncode, stdout=result.stdout, stderr=result.stderr)
+            assert result.returncode == 0, result.stdout + result.stderr
+            return result
+        except BaseException as error:
+            record["error"] = type(error).__name__
+            if isinstance(error, subprocess.TimeoutExpired):
+                for name in ("stdout", "stderr"):
+                    value = getattr(error, name)
+                    record[name] = (
+                        value.decode(errors="replace") if isinstance(value, bytes) else value
+                    )
+            raise
+        finally:
+            record["elapsed_seconds"] = elapsed = round(time.monotonic() - started, 3)
+            if phase is not None:
+                timings[phase] = elapsed
+            (output / f"bottle-{target}-commands.json").write_text(
+                json.dumps(records, indent=2) + "\n"
+            )
 
     def commit(message):
         run(["git", "add", "."], tap)
@@ -126,7 +139,11 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
         # Build the bottle from the candidate source formula, timing each part separately.
         (tap / FORMULA).write_text(candidate)
         built = commit("test: owned unpublished source formula")
-        execute(["install", "--only-dependencies", "kuberich/tap/kuberich"], 1800, "dependencies")
+        execute(
+            ["install", "--only-dependencies", "kuberich/tap/kuberich"],
+            1800,
+            "candidate_dependency_check",
+        )
         execute(["fetch", "--build-from-source", "kuberich/tap/kuberich"], 600, "source_download")
         execute(
             ["install", "--build-bottle", "kuberich/tap/kuberich"], 1800, "source_build_install"
@@ -155,6 +172,7 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
             baseline, installed_baseline.stdout + installed_baseline.stderr
         )
         assert installed() == f"kuberich {baseline['version']}\n"
+        assert (prefix / "bin/kubetrol").is_file()
         (tap / FORMULA).write_text(with_bottles(candidate, bottle, root_url))
         commit("test: owned unpublished bottle formula")
         execute(["style", "kuberich/tap/kuberich"])
@@ -166,6 +184,24 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
         assert "Resource kuberich--" not in log and "files.pythonhosted.org" not in log
         assert (prefix / "Cellar/kuberich" / baseline["version"]).is_dir()
         assert installed() == f"kuberich {version}\n"
+        for alias in (prefix / "bin/kubetrol", prefix / "opt/kuberich/libexec/bin/kubetrol"):
+            assert not alias.exists() and not alias.is_symlink()
+        interpreter = str(prefix / "opt/kuberich/libexec/bin/python")
+        assert (
+            run(
+                [interpreter, "-m", "kuberich", "--version"], outside, environment=environment
+            ).stdout
+            == f"kuberich {version}\n"
+        )
+        run(
+            [
+                interpreter,
+                "-c",
+                "import kuberich.cli; assert not hasattr(kuberich.cli, 'legacy_main')",
+            ],
+            outside,
+            environment=environment,
+        )
         execute(["test", "kuberich/tap/kuberich"])
         binary = str(prefix / "bin/kuberich")
         help_text = run([binary, "--help"], outside, environment=environment).stdout
@@ -186,11 +222,16 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
         cached = Path(execute(["--cache", "kuberich/tap/kuberich"]).stdout.strip())
         assert cached.name.endswith(f".{tag}.bottle.tar.gz")
         cached.unlink(missing_ok=True)
+        assert not cached.exists() and not cached.is_symlink()
         cold = execute(["install", "kuberich/tap/kuberich"], 900, "bottle_cold_install")
         assert "Pouring" in cold.stdout + cold.stderr
         execute(["uninstall", "--force", "kuberich/tap/kuberich"])
+        assert cached.is_file()
+        warm_cache_sha256 = hashlib.sha256(cached.read_bytes()).hexdigest()
+        assert warm_cache_sha256 == bottle[tag]["sha256"]
         warm = execute(["install", "kuberich/tap/kuberich"], 900, "bottle_warm_install")
         assert "Pouring" in warm.stdout + warm.stderr
+        assert hashlib.sha256(cached.read_bytes()).hexdigest() == warm_cache_sha256
         assert installed() == f"kuberich {version}\n"
         dependencies = execute(["deps", "--installed", "kuberich/tap/kuberich"]).stdout.split()
     finally:
@@ -202,6 +243,7 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
         if tap.exists():
             shutil.rmtree(tap)
     assert not (prefix / "bin/kuberich").exists() and not (prefix / "Cellar/kuberich").exists()
+    assert not (prefix / "bin/kubetrol").exists() and not (prefix / "bin/kubetrol").is_symlink()
     assert preferences.read_bytes() == before and caller.read_bytes() == caller_before
     assert not BOTTLE_BLOCK.search(candidate)
     (output / f"bottle-{target}-result.json").write_text(
@@ -223,7 +265,12 @@ def test_native_bottle_pours_on_upgrade_from_the_published_release(tmp_path):
                 "cellar": bottle[tag]["cellar"],
                 "sha256": bottle[tag]["sha256"],
                 "dependencies": dependencies,
+                "dependency_preparation": dependency_preparation,
+                "application_checks_use_prepared_dependencies": True,
+                "end_to_end_cold_install": False,
                 "timings_seconds": timings,
+                "cold_bottle_archive_absent_before_install": True,
+                "warm_bottle_cache_sha256": warm_cache_sha256,
                 "upgrade_kept_previous_keg_until_cleanup": True,
                 "actual_poured_navigation_and_shell": True,
                 "all_versions_uninstalled": True,

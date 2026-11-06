@@ -2,7 +2,7 @@
   "schema_version": 1,
   "issue": 232,
   "source_base": "5060b4dcd35968e3b990bd833eba731539938cff",
-  "status": "source_implemented; complete-suite, exact-head platform checks and protected issue delivery pending",
+  "status": "protected_delivered; cumulative 0.4.0 qualification remains separate",
   "source_pin_notice": "Immutable primary/public source pins inherited from the read-only planning review. Original retrieval times and hashes are retained; this file does not claim a fresh fetch or runtime product parity.",
   "remote_sources": [
     {
@@ -2407,5 +2407,14 @@
       }
     }
   ],
-  "acceptance": "acceptance/curated-resources.md"
+  "acceptance": "acceptance/curated-resources.md",
+  "delivery": {
+    "issue": 232,
+    "pull_request": 320,
+    "main_commit": "389babca15ab15e0ef8317a815afbeda1e8e9f73",
+    "final_head": "fa20bc6424e62f93f65e0d98bb851481fca9fda7",
+    "quality_run": 42274318207,
+    "acceptance": "docs/internal/acceptance/curated-resources.md",
+    "parity_claim": false
+  }
 }

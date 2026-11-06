@@ -29,6 +29,7 @@ from scripts.supply_chain import digest
 TAP = "kuberich/homebrew-tap"
 TAP_OWNER = "kuberich"
 FORMULA = "Formula/kuberich.rb"
+RUNTIME_FORMULAE = ("kubernetes-cli", "libyaml", "python@3.14")
 SCAFFOLD = ROOT / "packaging/homebrew"
 # New bottles use macOS 15 ARM/Intel and Ubuntu 24.04 x86_64 hosts.
 BOTTLE_TAGS = ("arm64_sequoia", "sequoia", "x86_64_linux")
@@ -114,6 +115,7 @@ def formula(bundle: Path, root: Path, url: str, *, candidate: bool = False) -> s
         f"    sha256 {ruby(item['sha256'])}\n  end"
         for item in resources(bundle, root)
     )
+    dependencies = "\n".join(f"  depends_on {ruby(name)}" for name in RUNTIME_FORMULAE)
     return f"""# Source version: {version}
 # Source commit: {sha}
 class Kuberich < Formula
@@ -125,9 +127,7 @@ class Kuberich < Formula
   sha256 {ruby(digest(archive))}
   license "Apache-2.0"
 
-  depends_on "kubernetes-cli"
-  depends_on "libyaml"
-  depends_on "python@3.14"
+{dependencies}
 
 {blocks}
 

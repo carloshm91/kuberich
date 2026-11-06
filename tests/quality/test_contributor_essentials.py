@@ -40,7 +40,7 @@ def test_contribution_guide_keeps_delivery_architecture_identity_and_real_comman
         "git fetch --no-tags https://github.com/carloshm91/kuberich.git refs/pull/277/head refs/pull/290/head"
         in guide
     )
-    assert "scripts/qualify.py 0.3.0" in guide and "private-access" in guide
+    assert "scripts/qualify.py 0.4.0" in guide and "private-access" in guide
     assert "docs/internal/first-preview-current.md" in guide
 
 

@@ -260,26 +260,41 @@ def test_wheel_metadata_entry_point_and_assets(artifacts: tuple[Path, Path]) -> 
         entry_name = next(name for name in names if name.endswith(".dist-info/entry_points.txt"))
         entry_points = configparser.ConfigParser()
         entry_points.read_string(archive.read(entry_name).decode())
-        assert entry_points["console_scripts"]["kuberich"] == "kuberich.cli:main"
-        assert entry_points["console_scripts"]["kubetrol"] == "kuberich.cli:legacy_main"
+        assert dict(entry_points["console_scripts"]) == {"kuberich": "kuberich.cli:main"}
+        assert b"legacy_main" not in archive.read("kuberich/cli.py")
         assert not any(name.startswith(("tests/", ".venv/", ".github/")) for name in names)
 
 
-def test_installed_legacy_console_alias_uses_current_metadata(installed_wheel) -> None:
+def test_installed_console_is_canonical_and_has_no_retired_shim(installed_wheel) -> None:
     binary, directory = installed_wheel
-    for executable in ("kuberich", "kubetrol"):
-        result = run([str(binary / executable), "--version"], directory, 10)
-        assert result.stdout == f"kuberich {PROJECT['version']}\n"
-        assert ("deprecated" in result.stderr) is (executable == "kubetrol")
-        assert ("0.4.0" in result.stderr) is (executable == "kubetrol")
-        result = run([str(binary / executable), "--help"], directory, 10)
-        assert "usage: kuberich" in result.stdout and "--context" in result.stdout
-        assert ("deprecated" in result.stderr) is (executable == "kubetrol")
+    assert not (binary / "kubetrol").exists() and not (binary / "kubetrol").is_symlink()
+    result = run([str(binary / "kuberich"), "--version"], directory, 10)
+    assert result.stdout == f"kuberich {PROJECT['version']}\n" and result.stderr == ""
+    result = run([str(binary / "kuberich"), "--help"], directory, 10)
+    assert "usage: kuberich" in result.stdout and "--context" in result.stdout
+    assert result.stderr == "" and "deprecated" not in result.stdout
+    probe = run(
+        [
+            str(binary / "python"),
+            "-I",
+            "-c",
+            "import importlib.metadata as m, importlib.util, json; from kuberich import cli; "
+            "print(json.dumps({'scripts': {p.name:p.value for p in m.distribution('kuberich').entry_points "
+            "if p.group=='console_scripts'}, 'shim':hasattr(cli,'legacy_main'), "
+            "'old_module':importlib.util.find_spec('kubetrol') is not None}))",
+        ],
+        directory,
+        10,
+    )
+    assert json.loads(probe.stdout) == {
+        "scripts": {"kuberich": "kuberich.cli:main"},
+        "shim": False,
+        "old_module": False,
+    }
 
 
-@pytest.mark.parametrize("executable", ["kuberich", "kubetrol"])
 def test_installed_default_preferences_migrate_without_losing_legacy_state(
-    installed_wheel, tmp_path: Path, executable: str
+    installed_wheel, tmp_path: Path
 ) -> None:
     binary, _ = installed_wheel
     home = tmp_path / "owned-home"
@@ -310,7 +325,7 @@ def test_installed_default_preferences_migrate_without_losing_legacy_state(
     source.parent.mkdir(parents=True)
     original = b"readonly: true\nrefresh: 3.5\nopaque-private-field: owned-private-value\n"
     source.write_bytes(original)
-    command = [str(binary / executable)]
+    command = [str(binary / "kuberich")]
     before = run([*command, "info"], tmp_path, 10, environment=environment, unset_environment=unset)
     data = json.loads(before.stdout)
     assert data["config_file"] == str(source) and data["migration_pending"]
