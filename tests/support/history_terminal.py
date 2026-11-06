@@ -3,6 +3,7 @@
 import hashlib
 import json
 import shutil
+import sys
 import threading
 import time
 from contextlib import suppress
@@ -62,6 +63,7 @@ def _source_hashes():
                 "tests/support/history.py",
                 "tests/support/container_inspection_terminal.py",
                 "tests/terminal/test_history.py",
+                "tests/quality/test_history_terminal.py",
                 "pyproject.toml",
                 "uv.lock",
             )
@@ -70,6 +72,25 @@ def _source_hashes():
     return {
         path.relative_to(ROOT).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
         for path in sorted(paths)
+    }
+
+
+def return_to_parent(terminal, title, selected, *, absent=("Metric history ·",)):
+    """Wait for the actual parent, never a shared name in a partial history paint."""
+    deadline = time.monotonic() + 15
+    marker = terminal.send(b"\x1b")
+    for expected in (title, selected):
+        remaining = deadline - time.monotonic()
+        assert remaining > 0, "History parent frame exceeded its original 15-second deadline."
+        terminal.wait_for_screen(expected, since=marker, absent=absent, timeout=remaining)
+    assert time.monotonic() < deadline, "History parent frame exceeded its original deadline."
+    display = "\n".join(terminal.screen.display)
+    assert title in display and selected in display and all(text not in display for text in absent)
+    return {
+        "title": title,
+        "selected": selected,
+        "screen": terminal.screen.display.copy(),
+        "timeout_seconds": 15,
     }
 
 
@@ -111,7 +132,12 @@ def terminal_history(command, directory, *, evidence, size=(100, 30), wheel_sha2
         "KUBERICH_INSPECTION_PORT": str(server.server_port),
     }
     scopes = []
+    parent_witnesses = []
     source = _source_hashes()
+    terminal = None
+    stage = "terminal-start"
+    normal_finish_observed = False
+    passed = False
     try:
         with TerminalSession(
             [*command, "--kubeconfig", str(kubeconfig), "--readonly", "-n", NAMESPACE],
@@ -119,9 +145,13 @@ def terminal_history(command, directory, *, evidence, size=(100, 30), wheel_sha2
             size=size,
             environment=environment,
         ) as terminal:
+            stage = "initial-pod-frame"
+            terminal.wait_for_screen(f"pods({NAMESPACE})[1]")
             terminal.wait_for_screen(POD_NAME)
 
             def open_history(kind):
+                nonlocal stage
+                stage = "open-history:" + kind
                 marker = terminal.send(b"M")
                 terminal.wait_for_screen("Metric history ·", since=marker)
                 terminal.wait_for_screen("partial", since=marker)
@@ -131,52 +161,75 @@ def terminal_history(command, directory, *, evidence, size=(100, 30), wheel_sha2
             for key, label in zip(
                 b"1234567", ("15m", "30m", "1h", "3h", "6h", "12h", "24h"), strict=True
             ):
+                stage = "range:" + label
                 marker = terminal.send(bytes((key,)))
                 terminal.wait_for_screen("partial · " + label + " ·", since=marker)
             terminal.resize(100, 30)
+            stage = "network"
             marker = terminal.send(b"n")
             terminal.wait_for_screen("network", since=marker)
+            stage = "ascii-mode"
             marker = terminal.send(b"a")
             terminal.wait_for_screen("ASCII", since=marker)
+            stage = "filesystem"
             marker = terminal.send(b"f")
             terminal.wait_for_screen("filesystem", since=marker)
+            stage = "filesystem-device"
             marker = terminal.send(b"]")
             terminal.wait_for_screen("synthetic-b", since=marker)
+            stage = "detect-backends"
             marker = terminal.send(b"d")
             terminal.wait_for_screen("Detected 2 candidates", since=marker)
+            stage = "select-backend"
             marker = terminal.send(b"b")
             terminal.wait_for_screen("partial", since=marker)
+            stage = "resize-short"
             terminal.resize(40, 12)
             terminal.wait_for_screen("partial")
             terminal.resize(100, 30)
-            marker = terminal.send(b"\x1b")
-            terminal.wait_for_screen(POD_NAME, since=marker, absent=("Metric history ·",))
+            stage = "back-to-pods-after-resize"
+            parent_witnesses.append(return_to_parent(terminal, f"pods({NAMESPACE})[1]", POD_NAME))
+            stage = "open-containers"
             marker = terminal.send(b"\r")
-            terminal.wait_for_screen("containers(", since=marker)
+            container_title = f"containers({NAMESPACE}/{POD_NAME})[4]"
+            terminal.wait_for_screen(container_title, since=marker)
             for ordinal, name in enumerate(("app", "init", "sidecar", "debug")):
                 if ordinal:
                     terminal.send(b"\x1b[B")
                 open_history("container:" + name)
+                stage = "container-network:" + name
                 marker = terminal.send(b"n")
                 terminal.wait_for_screen("network", since=marker)
-                marker = terminal.send(b"\x1b")
-                terminal.wait_for_screen("containers(", since=marker, absent=("Metric history ·",))
-            marker = terminal.send(b"\x1b")
-            terminal.wait_for_screen(POD_NAME, since=marker, absent=("containers(",))
-            for route, item, kind in (
-                (b"nodes", "history-node", "node"),
-                (b"deployments", "history-workload", "workload"),
-                (b"pulse", "Pulse", "cluster"),
+                stage = "back-to-container:" + name
+                parent_witnesses.append(return_to_parent(terminal, container_title, name))
+            stage = "back-to-pods-from-containers"
+            parent_witnesses.append(
+                return_to_parent(
+                    terminal,
+                    f"pods({NAMESPACE})[1]",
+                    POD_NAME,
+                    absent=("Metric history ·", "containers("),
+                )
+            )
+            for route, item, kind, title in (
+                (b"nodes", "history-node", "node", "nodes(cluster)[1]"),
+                (b"deployments", "history-workload", "workload", f"deployments({NAMESPACE})[1]"),
+                (b"pulse", "Pulse", "cluster", f"pulse({NAMESPACE})"),
             ):
+                stage = "route:" + kind
                 marker = terminal.send(b":" + route + b"\r")
+                terminal.wait_for_screen(title, since=marker)
                 terminal.wait_for_screen(item, since=marker)
                 open_history(kind)
-                marker = terminal.send(b"\x1b")
-                terminal.wait_for_screen(item, since=marker, absent=("Metric history ·",))
+                stage = "back-to-parent:" + kind
+                parent_witnesses.append(return_to_parent(terminal, title, item))
+            stage = "quit-and-terminal-restoration"
             terminal.send(b"\x11")
             terminal.finish()
+            normal_finish_observed = True
             terminal.save_evidence(evidence)
             (output / (evidence + ".ansi")).chmod(0o600)
+        stage = "audit-source-and-request-controls"
         assert kubeconfig.read_bytes() == before
         events = [json.loads(line) for line in audit.read_text().splitlines()]
         assert events[0] == {"event": "loaded"}
@@ -190,7 +243,11 @@ def terminal_history(command, directory, *, evidence, size=(100, 30), wheel_sha2
         ]
         durations = {int(float(query["end"]) - float(query["start"])) for query in queries}
         assert durations >= {900, 1800, 3600, 10800, 21600, 43200, 86400}
-        assert any('container="debug"' in query["query"] for query in queries)
+        container_query_counts = {
+            name: sum(f'container="{name}"' in query["query"] for query in queries)
+            for name in ("app", "init", "sidecar", "debug")
+        }
+        assert all(container_query_counts.values()), container_query_counts
         assert any("node_cpu_seconds_total" in query["query"] for query in queries)
         assert any("kube_replicaset_owner" in query["query"] for query in queries)
         assert _source_hashes() == source, "History terminal source changed during the trial."
@@ -202,14 +259,43 @@ def terminal_history(command, directory, *, evidence, size=(100, 30), wheel_sha2
             "audit_controls": controls,
             "entry_command": command,
             "scopes": scopes,
+            "container_query_counts": container_query_counts,
+            "parent_witnesses": parent_witnesses,
             "ranges": sorted(durations),
             "native_availability": "Explicit synthetic HTTP vectors only",
             "source": source,
         }
         (output / (evidence + "-history.json")).write_text(json.dumps(receipt, indent=2) + "\n")
+        passed = True
     finally:
-        server.stopping.set()
-        server.shutdown()
-        thread.join(timeout=2)
-        server.server_close()
-        assert not thread.is_alive()
+        original_failure = sys.exception()
+        try:
+            if terminal is not None:
+                # Keep named raw evidence even when a wait fails before normal finish.
+                raw_path = output / (evidence + ".ansi")
+                raw_path.write_bytes(terminal.transcript)
+                raw_path.chmod(0o600)
+                if not passed:
+                    failure = {
+                        "result": "failed",
+                        "failed_stage": stage,
+                        "normal_finish_observed": normal_finish_observed,
+                        "screen": terminal.screen.display,
+                        "terminal_completion": terminal.completion,
+                        "cleanup": terminal.cleanup,
+                        "parent_witnesses": parent_witnesses,
+                        "source": source,
+                    }
+                    (output / (evidence + ".json")).write_text(json.dumps(failure, indent=2) + "\n")
+        except BaseException as archive_error:
+            if original_failure is None:
+                raise
+            original_failure.add_note(
+                "History terminal archive failed: " + type(archive_error).__name__
+            )
+        finally:
+            server.stopping.set()
+            server.shutdown()
+            thread.join(timeout=2)
+            server.server_close()
+            assert not thread.is_alive()

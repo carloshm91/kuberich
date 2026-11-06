@@ -334,3 +334,39 @@ This qualifies the stated local selection and focused provider/terminal checks;
 it does not replace the hosted complete quality/packaging/platform matrix.
 GitHub records the final exact-head required checks and protected merge. No
 release version, tag, package, tap or website publication is part of this issue.
+
+## Hosted input-contract corrections
+
+PR #319's first exact-head application run `42210506880` failed two test parts.
+Linux Python 3.12 part 4 passed 2,028 cases with two skips, then timed out waiting
+for a second Delete confirmation after cancelling the first. macOS Python 3.12
+part 2 passed 2,972 cases with three skips and failed four source/installed
+history terminal cases waiting for the container parent. All four native jobs
+and the other test parts passed; complete application qualification did not.
+Original logs, job outcomes and the failed macOS part artifact are retained.
+
+The export integration test now waits for native refresh, a visible/enabled and
+inactive button, usable geometry and a hit target before one asserted real click.
+An owned native-feedback timer control reproduced the former five-second wait:
+the second click hit the button but generated no second press while feedback was
+active. Both terminal sizes with normal/held feedback pass: four cases in 16.80
+seconds. All overwrite, cancellation, privacy, copy, no-API and cleanup assertions
+remain. This controlled mechanism does not establish the original CI cause.
+
+The history terminal driver formerly accepted the Pod name plus temporary
+absence of the history title after resize. That name also appears in the history
+banner. Real PTY/Pyte fragmented-paint controls prove that this witness can pass
+before Escape dispatch, allowing Enter too early. The driver now requires the
+actual counted parent border and row in the same observed screen within one
+unchanged 15-second budget. Actual query selectors independently prove visits
+to each regular, init, sidecar and ephemeral container. Failed trials retain
+private raw terminal output and a named stage; diagnostic write failures preserve
+the original error, and cleanup never substitutes for normal exit.
+
+Nine focused contracts plus both source terminal sizes and installed
+console/module entry points pass together: 13 cases in 47.53 seconds. Each actual
+terminal receipt includes nine parent witnesses and queries for all four
+containers, with normal exit and complete terminal restoration. Independent
+review found no material issue. Production bytes remain unchanged. These are
+local test-contract corrections; original macOS input ordering remains unproved
+and a fresh exact-head hosted matrix is required before protected delivery.
