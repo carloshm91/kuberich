@@ -15,10 +15,15 @@ statements below that its platform matrix was pending are historical.
 Issue #231 is the only active implementation. Shift+M and `:history` compose
 cluster, Node, workload, Pod and container charts with four measurement families,
 seven ranges and explicit availability/identity gaps. The frozen deterministic
-cohort passed 273 cases at 100% lines/branches in all three modules. Actual App
-and source-terminal trials passed; strengthened source-binding replays, real
-backends, installed entry points and complete source/platform qualification
-remain pending. See the [metric history record](acceptance/metric-history.md).
+cohort passed 273 cases at 100% lines/branches in all three modules. Actual App, source-terminal and installed-entry trials passed. The complete
+local application attempt passed 8,431 cases with five failures and four skips;
+two navigation fixture corrections passed 129 cases. Independent coverage floors
+and all 104 critical modules passed, but three export-workflow failures and the
+aggregate runtime receipt remain unresolved. Actual providers supplied native
+CPU/memory in all five scopes and completed 105 scope/range collections before
+a synthetic reset probe timed out; that failed attempt remains preserved.
+Complete corrected provider/runtime and exact-head platform qualification remain
+pending. See the [metric history record](acceptance/metric-history.md).
 
 Focused commands are `uv run pytest tests/ui/test_history.py` and
 `uv run pytest tests/terminal/test_history.py`, using synthetic loopback APIs and

@@ -140,6 +140,8 @@ def stack_values() -> dict[str, Any]:
                 "version": "v3.16.0",
                 "scrapeInterval": "5s",
                 "evaluationInterval": "5s",
+                "serviceMonitorSelectorNilUsesHelmValues": False,
+                "serviceMonitorSelector": {"matchLabels": {"release": "owned-history"}},
                 "retention": "1d",
                 "externalLabels": {"cluster": "owned-history-fixture"},
                 "resources": {
@@ -420,6 +422,12 @@ def reset_manifests() -> tuple[dict[str, Any], ...]:
                                 "name": "exporter",
                                 "image": SHELL_IMAGE,
                                 "command": ["sh", "-c", "exec nc -lk -p 9101 -e /owned/respond"],
+                                "ports": [{"name": "metrics", "containerPort": 9101}],
+                                "readinessProbe": {
+                                    "httpGet": {"path": "/metrics", "port": "metrics"},
+                                    "periodSeconds": 2,
+                                    "timeoutSeconds": 1,
+                                },
                                 "volumeMounts": [
                                     {"name": "responder", "mountPath": "/owned", "readOnly": True}
                                 ],
@@ -435,7 +443,7 @@ def reset_manifests() -> tuple[dict[str, Any], ...]:
             "metadata": {"name": "owned-reset", "labels": {"owned-history": "reset"}},
             "spec": {
                 "selector": {"owned-history": "reset"},
-                "ports": [{"name": "metrics", "port": 9101}],
+                "ports": [{"name": "metrics", "port": 9101, "targetPort": "metrics"}],
             },
         },
         {
@@ -444,7 +452,10 @@ def reset_manifests() -> tuple[dict[str, Any], ...]:
             "metadata": {"name": "owned-reset", "labels": {"release": "owned-history"}},
             "spec": {
                 "selector": {"matchLabels": {"owned-history": "reset"}},
-                "endpoints": [{"port": "metrics", "interval": "2s"}],
+                "namespaceSelector": {"matchNames": [NAMESPACE]},
+                "endpoints": [
+                    {"port": "metrics", "path": "/metrics", "interval": "2s", "scrapeTimeout": "1s"}
+                ],
             },
         },
     )
@@ -719,6 +730,301 @@ async def verify_proxy_headers(
     }
 
 
+def reset_numbers(document: object) -> tuple[str, ...]:
+    """Retain only bounded numeric values from the separately labeled reset fixture."""
+    if not isinstance(document, dict) or document.get("status") != "success":
+        raise AssertionError("Synthetic reset query did not succeed.")
+    results = document.get("data", {}).get("result", [])
+    if not isinstance(results, list) or len(results) > 8:
+        raise AssertionError("Synthetic reset query exceeded its series bound.")
+    values = []
+    for item in results:
+        pair = item.get("value") if isinstance(item, dict) else None
+        if (
+            not isinstance(pair, list)
+            or len(pair) != 2
+            or not isinstance(pair[1], str)
+            or len(pair[1]) > 64
+        ):
+            raise AssertionError("Synthetic reset query did not return bounded numeric samples.")
+        if item.get("metric", {}).get("fixture") != "synthetic-reset":
+            raise AssertionError("Synthetic reset query returned another fixture identity.")
+        numeric = Decimal(pair[1])
+        if not numeric.is_finite() or not 0 <= numeric <= Decimal("1e20"):
+            raise AssertionError("Synthetic reset query returned an invalid value.")
+        values.append(pair[1])
+    return tuple(values)
+
+
+def scrape_error_kind(message: object) -> str:
+    """Classify an owned target error without exporting its response, URL or paths."""
+    if not isinstance(message, str) or not message:
+        return "none"
+    lowered = message.lower()
+    for fragment, category in (
+        ("connection refused", "connection-refused"),
+        ("no such host", "dns"),
+        ("timeout", "timeout"),
+        ("deadline exceeded", "timeout"),
+        ("content-type", "content-type"),
+        ("text format parsing", "exposition-format"),
+        ("expected", "exposition-format"),
+        ("server returned http", "http-status"),
+        ("eof", "connection-eof"),
+    ):
+        if fragment in lowered:
+            return category
+    return "other"
+
+
+async def reset_diagnostics(
+    client: KubernetesSession,
+    cluster: OwnedCluster,
+    kubectl: str,
+    directory: Path,
+    provider: Provider,
+    stage: str,
+) -> None:
+    """Keep bounded object, target and actual responder evidence before owned cleanup."""
+    evidence: dict[str, Any] = {
+        "provider": provider,
+        "stage": stage,
+        "observed_at": datetime.now(UTC).isoformat(),
+    }
+    try:
+        async with asyncio.timeout(20):
+            for name, path in {
+                "service": f"/api/v1/namespaces/{NAMESPACE}/services/owned-reset",
+                "deployment": f"/apis/apps/v1/namespaces/{NAMESPACE}/deployments/owned-reset",
+                "monitor": f"/apis/monitoring.coreos.com/v1/namespaces/{NAMESPACE}/servicemonitors/owned-reset",
+                "prometheus": f"/apis/monitoring.coreos.com/v1/namespaces/{NAMESPACE}/prometheuses/owned-stack",
+            }.items():
+                document = await client.get_json(path, max_bytes=1024 * 1024)
+                spec = document.get("spec", {})
+                evidence[name] = {
+                    "labels": document.get("metadata", {}).get("labels", {}),
+                    "spec": {
+                        key: spec[key]
+                        for key in (
+                            "ports",
+                            "selector",
+                            "endpoints",
+                            "namespaceSelector",
+                            "serviceMonitorSelector",
+                            "serviceMonitorNamespaceSelector",
+                        )
+                        if key in spec
+                    },
+                }
+                if name == "deployment":
+                    evidence[name]["status"] = {
+                        key: document.get("status", {}).get(key)
+                        for key in (
+                            "replicas",
+                            "readyReplicas",
+                            "availableReplicas",
+                            "updatedReplicas",
+                        )
+                    }
+            endpoint_slices = await client.get_json(
+                f"/apis/discovery.k8s.io/v1/namespaces/{NAMESPACE}/endpointslices",
+                params={"labelSelector": "kubernetes.io/service-name=owned-reset", "limit": "8"},
+                max_bytes=1024 * 1024,
+            )
+            evidence["endpoint_slices"] = [
+                {
+                    "ports": item.get("ports", []),
+                    "endpoint_count": len(item.get("endpoints", [])),
+                    "ready_count": sum(
+                        endpoint.get("conditions", {}).get("ready") is True
+                        for endpoint in item.get("endpoints", [])
+                    ),
+                }
+                for item in endpoint_slices.get("items", [])[:8]
+            ]
+            pods = await client.get_json(
+                f"/api/v1/namespaces/{NAMESPACE}/pods",
+                params={"labelSelector": "owned-history=reset", "limit": "8"},
+                max_bytes=1024 * 1024,
+            )
+            evidence["source_pods"] = [
+                {
+                    "name": pod.get("metadata", {}).get("name"),
+                    "phase": pod.get("status", {}).get("phase"),
+                    "conditions": [
+                        {key: condition.get(key) for key in ("type", "status", "reason")}
+                        for condition in pod.get("status", {}).get("conditions", [])[:8]
+                    ],
+                    "containers": [
+                        {
+                            "name": container.get("name"),
+                            "ready": container.get("ready"),
+                            "restart_count": container.get("restartCount"),
+                            "state": {
+                                state: {
+                                    key: value.get(key)
+                                    for key in ("reason", "exitCode", "startedAt", "finishedAt")
+                                    if key in value
+                                }
+                                for state, value in container.get("state", {}).items()
+                                if state in {"waiting", "running", "terminated"}
+                            },
+                        }
+                        for container in pod.get("status", {}).get("containerStatuses", [])[:4]
+                    ],
+                }
+                for pod in pods.get("items", [])[:8]
+            ]
+            targets = await client.get_json(
+                HistoryBackend(NAMESPACE, "owned-stack-prometheus").path.removesuffix("query_range")
+                + "targets",
+                params={"state": "active"},
+                max_bytes=1024 * 1024,
+            )
+            active = targets.get("data", {}).get("activeTargets", [])
+            evidence["scrape_targets"] = [
+                {
+                    "health": target.get("health"),
+                    "last_scrape": target.get("lastScrape"),
+                    "scrape_interval": target.get("scrapeInterval"),
+                    "scrape_timeout": target.get("scrapeTimeout"),
+                    "last_error_kind": scrape_error_kind(target.get("lastError")),
+                    "last_error_sha256": hashlib.sha256(
+                        str(target.get("lastError", "")).encode()
+                    ).hexdigest(),
+                }
+                for target in active[:128]
+                if target.get("labels", {}).get("service") == "owned-reset"
+                or target.get("discoveredLabels", {}).get("__meta_kubernetes_service_name")
+                == "owned-reset"
+            ][:8]
+            log = await _command(
+                cluster,
+                kubectl,
+                "logs",
+                "deployment/owned-reset",
+                "--container=exporter",
+                "--tail=20",
+                "--limit-bytes=4096",
+                timeout=5,
+            )
+            evidence["source_log"] = "".join(
+                character
+                for character in log[:4096]
+                if character in "\n\t" or 32 <= ord(character) <= 126
+            )
+            for name, url in (
+                ("loopback", "http://127.0.0.1:9101/metrics"),
+                ("service_dns", f"http://owned-reset.{NAMESPACE}.svc:9101/metrics"),
+            ):
+                output = await _command(
+                    cluster,
+                    kubectl,
+                    "exec",
+                    "deployment/owned-reset",
+                    "--container=exporter",
+                    "--",
+                    "wget",
+                    "-qO-",
+                    "-T",
+                    "3",
+                    url,
+                    timeout=5,
+                )
+                evidence[name] = {
+                    "body_sha256": hashlib.sha256(output.encode()).hexdigest(),
+                    "synthetic_samples": [
+                        line
+                        for line in output.splitlines()[:8]
+                        if re.fullmatch(
+                            r'kuberich_fixture_(?:counter_total|gauge)\{fixture="synthetic-reset"\} [0-9]+',
+                            line,
+                        )
+                    ],
+                }
+    except Exception as error:
+        evidence["diagnostic_failure_type"] = type(error).__name__
+    finally:
+        (directory / f"{provider}-reset-{stage}.json").write_text(
+            json.dumps(evidence, indent=2) + "\n"
+        )
+
+
+async def verify_reset(
+    transport: ServiceHistoryTransport,
+    provider: Provider,
+    client: KubernetesSession,
+    cluster: OwnedCluster,
+    kubectl: str,
+    directory: Path,
+) -> dict[str, Any]:
+    """Check real scrape/reset readiness before any long native creation warmup."""
+    await reset_diagnostics(client, cluster, kubectl, directory, provider, "before")
+    attempts = 0
+
+    async def query(key: str, expression: str) -> tuple[str, ...]:
+        record: dict[str, Any] = {"query": expression}
+        parameters = {"query": expression, "timeout": "8s"}
+        if provider == "thanos":
+            parameters.update(dedup="true", partial_response="false", max_source_resolution="0s")
+        try:
+            values = reset_numbers(
+                await transport.get_json("query", parameters, max_bytes=1024 * 1024)
+            )
+            record.update(result_count=len(values), values=values)
+            return values
+        except BaseException as error:
+            record.update(
+                error_type=type(error).__name__,
+                http_status=error.status if isinstance(error, HttpProblem) else None,
+            )
+            raise
+        finally:
+            with (directory / "reset-query-observations.jsonl").open("a") as stream:
+                stream.write(
+                    json.dumps(
+                        {
+                            "provider": provider,
+                            "attempt": attempts,
+                            "observed_at": datetime.now(UTC).isoformat(),
+                            "queries": {key: record},
+                        }
+                    )
+                    + "\n"
+                )
+
+    try:
+
+        async def observed() -> bool:
+            nonlocal attempts
+            attempts += 1
+            values = {}
+            for key, expression in {
+                "counter": 'kuberich_fixture_counter_total{fixture="synthetic-reset"}',
+                "gauge": 'kuberich_fixture_gauge{fixture="synthetic-reset"}',
+                "resets": 'resets(kuberich_fixture_counter_total{fixture="synthetic-reset"}[1m])',
+            }.items():
+                values[key] = await query(key, expression)
+            return bool(values["gauge"]) and any(Decimal(value) >= 1 for value in values["resets"])
+
+        await until(observed, timeout=180)
+        rate = "rate_prometheus" if provider == "victoriametrics" else "rate"
+        rates = await query(
+            "rate", f'{rate}(kuberich_fixture_counter_total{{fixture="synthetic-reset"}}[1m])'
+        )
+        assert rates and all(0 < Decimal(value) < 10 for value in rates)
+        await reset_diagnostics(client, cluster, kubectl, directory, provider, "ready")
+        return {
+            "fixture": "separate synthetic reset exporter; not native availability evidence",
+            "function": rate,
+            "observed_rates": rates,
+            "actual_reset_observed": True,
+        }
+    except BaseException:
+        await reset_diagnostics(client, cluster, kubectl, directory, provider, "failure")
+        raise
+
+
 async def _command(
     cluster: OwnedCluster,
     kubectl: str,
@@ -917,6 +1223,7 @@ async def verify(
     client = KubernetesSession(catalog.select(cluster.context), 10)
     await client.open()
     workspaces: list[HistoryWorkspace] = []
+    reset_transports: list[tuple[Provider, ServiceHistoryTransport]] = []
     try:
         reader = ResourceReader(client)
         discovery = await reader.discover()
@@ -927,7 +1234,7 @@ async def verify(
             ("thanos", "owned-thanos", 10902),
         )
         observations: dict[str, Any] = {}
-        reset_transports: list[tuple[Provider, ServiceHistoryTransport]] = []
+        reset_evidence: dict[str, Any] = {}
         for provider, service_name, port in providers:
             backend = HistoryBackend(NAMESPACE, service_name, port)
             selected = await reader.get(discovery.find("services"), service_name, NAMESPACE)
@@ -950,6 +1257,13 @@ async def verify(
                     return False
 
             await until(ready, timeout=240)
+            reset_evidence[provider] = await verify_reset(
+                transport, provider, client, cluster, kubectl, directory
+            )
+        for (provider, service_name, port), (_, transport) in zip(
+            providers, reset_transports, strict=True
+        ):
+            backend = HistoryBackend(NAMESPACE, service_name, port)
             probes = {}
             for key, expression in {
                 "cadvisor-cpu": 'topk(4,container_cpu_usage_seconds_total{pod!="",container!="",container!="POD"})',
@@ -1147,45 +1461,6 @@ async def verify(
                 if isinstance(build, dict)
                 else {}
             )
-        reset_evidence: dict[str, Any] = {}
-        for provider, transport in reset_transports:
-
-            async def reset_observed(transport: ServiceHistoryTransport = transport) -> bool:
-                response = await transport.get_json(
-                    "query",
-                    {
-                        "query": 'resets(kuberich_fixture_counter_total{fixture="synthetic-reset"}[1m])',
-                        "timeout": "8s",
-                    },
-                    max_bytes=1024 * 1024,
-                )
-                values = (
-                    response.get("data", {}).get("result", []) if isinstance(response, dict) else []
-                )
-                return bool(values) and Decimal(values[0]["value"][1]) >= 1
-
-            await until(reset_observed, timeout=180)
-            rate = "rate_prometheus" if provider == "victoriametrics" else "rate"
-            response = await transport.get_json(
-                "query",
-                {
-                    "query": f'{rate}(kuberich_fixture_counter_total{{fixture="synthetic-reset"}}[1m])',
-                    "timeout": "8s",
-                },
-                max_bytes=1024 * 1024,
-            )
-            assert isinstance(response, dict)
-            values = response.get("data", {}).get("result", [])
-            assert values and all(
-                Decimal(value["value"][1]).is_finite() and 0 < Decimal(value["value"][1]) < 10
-                for value in values
-            )
-            reset_evidence[provider] = {
-                "fixture": "separate synthetic reset exporter; not native availability evidence",
-                "function": rate,
-                "observed_rates": [value["value"][1] for value in values],
-                "actual_reset_observed": True,
-            }
         old_pod = await reader.get(discovery.find("pods"), "owned-recreated", NAMESPACE)
         previous_members = await reader.list(
             discovery.find("pods"),
@@ -1371,6 +1646,8 @@ async def verify(
     finally:
         for workspace in workspaces:
             await workspace.close()
+        for _, transport in reset_transports:
+            await transport.close()
         await client.close()
 
 

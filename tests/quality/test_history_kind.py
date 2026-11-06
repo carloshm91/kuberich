@@ -1,5 +1,6 @@
 """The real-provider verifier refuses drifting artifacts before cluster creation."""
 
+import json
 import re
 import subprocess
 from dataclasses import replace
@@ -240,3 +241,164 @@ async def test_mixed_manifest_apply_preserves_namespaces_and_owned_destination(
             "other",
             ({"kind": "Pod", "metadata": {"name": "outside", "namespace": "unselected"}},),
         )
+
+
+def test_reset_scrape_contract_uses_one_explicit_named_port_and_matching_monitor_selector():
+    documents = {document["kind"]: document for document in verifier.reset_manifests()}
+    container = documents["Deployment"]["spec"]["template"]["spec"]["containers"][0]
+    port = container["ports"][0]
+    service = documents["Service"]
+    monitor = documents["ServiceMonitor"]
+    assert port == {"name": "metrics", "containerPort": 9101}
+    assert service["spec"]["ports"][0]["targetPort"] == port["name"]
+    assert monitor["spec"]["endpoints"][0] == {
+        "port": port["name"],
+        "path": "/metrics",
+        "interval": "2s",
+        "scrapeTimeout": "1s",
+    }
+    assert container["readinessProbe"]["httpGet"] == {"path": "/metrics", "port": port["name"]}
+    assert monitor["spec"]["selector"]["matchLabels"] == service["metadata"]["labels"]
+    assert monitor["spec"]["namespaceSelector"]["matchNames"] == [verifier.NAMESPACE]
+    selector = verifier.stack_values()["prometheus"]["prometheusSpec"]["serviceMonitorSelector"][
+        "matchLabels"
+    ]
+    assert all(monitor["metadata"]["labels"].get(key) == value for key, value in selector.items())
+
+
+def test_reset_queries_retain_only_finite_numeric_values_for_the_synthetic_fixture():
+    def document(value="2", fixture="synthetic-reset"):
+        return {
+            "status": "success",
+            "data": {"result": [{"metric": {"fixture": fixture}, "value": [0, value]}]},
+        }
+
+    assert verifier.reset_numbers({"status": "success", "data": {"result": []}}) == ()
+    assert verifier.reset_numbers(document()) == ("2",)
+    for value in ("NaN", "Inf", "-1", "9" * 65):
+        with pytest.raises(AssertionError):
+            verifier.reset_numbers(document(value))
+    with pytest.raises(AssertionError, match="another fixture"):
+        verifier.reset_numbers(document(fixture="unrelated"))
+    assert verifier.scrape_error_kind("connection refused") == "connection-refused"
+    assert (
+        verifier.scrape_error_kind("text format parsing error: private-response")
+        == "exposition-format"
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("provider", ["prometheus", "victoriametrics", "thanos"])
+async def test_reset_failure_retains_provider_queries_and_calls_bounded_diagnostics(
+    tmp_path, monkeypatch, provider
+):
+    stages = []
+
+    class EmptyTransport:
+        async def get_json(self, suffix, params, *, max_bytes):
+            assert suffix == "query" and max_bytes == 1024 * 1024
+            if provider == "thanos":
+                assert params["partial_response"] == "false" and params["dedup"] == "true"
+            return {"status": "success", "data": {"result": []}}
+
+    async def diagnostics(client, cluster, kubectl, directory, observed_provider, stage):
+        stages.append((observed_provider, stage))
+
+    async def original_deadline(operation, *, timeout):
+        assert timeout == 180
+        assert not await operation()
+        raise TimeoutError
+
+    monkeypatch.setattr(verifier, "reset_diagnostics", diagnostics)
+    monkeypatch.setattr(verifier, "until", original_deadline)
+    with pytest.raises(TimeoutError):
+        await verifier.verify_reset(
+            EmptyTransport(), provider, None, None, "owned-kubectl", tmp_path
+        )
+    assert stages == [(provider, "before"), (provider, "failure")]
+    records = [
+        json.loads(line)
+        for line in (tmp_path / "reset-query-observations.jsonl").read_text().splitlines()
+    ]
+    assert len(records) == 3 and all(record["provider"] == provider for record in records)
+    queries = {key: value for record in records for key, value in record["queries"].items()}
+    assert set(queries) == {"counter", "gauge", "resets"}
+    assert all(query["result_count"] == 0 and query["values"] == [] for query in queries.values())
+
+
+@pytest.mark.asyncio
+async def test_reset_diagnostics_keep_only_source_job_health_and_bounded_source_state(
+    tmp_path, monkeypatch
+):
+    class Client:
+        async def get_json(self, path, **kwargs):
+            if path.endswith("/targets"):
+                return {
+                    "data": {
+                        "activeTargets": [
+                            {
+                                "labels": {"service": "owned-reset"},
+                                "health": "down",
+                                "lastError": "connection refused synthetic-sensitive-detail",
+                            },
+                            {
+                                "labels": {"service": "unrelated"},
+                                "health": "down",
+                                "lastError": "unrelated-private",
+                            },
+                        ]
+                    }
+                }
+            if path.endswith("/pods"):
+                return {
+                    "items": [
+                        {
+                            "metadata": {"name": "owned-reset-pod"},
+                            "status": {
+                                "phase": "Pending",
+                                "conditions": [
+                                    {
+                                        "type": "Ready",
+                                        "status": "False",
+                                        "reason": "ContainersNotReady",
+                                    }
+                                ],
+                                "containerStatuses": [
+                                    {
+                                        "name": "exporter",
+                                        "ready": False,
+                                        "restartCount": 3,
+                                        "state": {
+                                            "waiting": {
+                                                "reason": "CrashLoopBackOff",
+                                                "message": "private-runtime-message",
+                                            }
+                                        },
+                                    }
+                                ],
+                            },
+                        }
+                    ]
+                }
+            return {"metadata": {}, "spec": {}}
+
+    async def command(cluster, kubectl, *arguments, **kwargs):
+        if arguments[0] == "logs":
+            assert "--tail=20" in arguments and "--limit-bytes=4096" in arguments
+            return "owned exporter startup\n"
+        return 'kuberich_fixture_counter_total{fixture="synthetic-reset"} 7\n'
+
+    monkeypatch.setattr(verifier, "_command", command)
+    await verifier.reset_diagnostics(
+        Client(), None, "owned-kubectl", tmp_path, "victoriametrics", "failure"
+    )
+    text = (tmp_path / "victoriametrics-reset-failure.json").read_text()
+    observed = json.loads(text)
+    assert len(observed["scrape_targets"]) == 1
+    assert observed["scrape_targets"][0]["last_error_kind"] == "connection-refused"
+    assert observed["source_pods"][0]["containers"][0]["restart_count"] == 3
+    assert observed["source_log"] == "owned exporter startup\n"
+    assert not any(
+        marker in text
+        for marker in ("synthetic-sensitive-detail", "unrelated-private", "private-runtime-message")
+    )
