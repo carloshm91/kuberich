@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import pytest
 from aiohttp import web
+from textual.widgets import Button
 
 from kuberich.config.paths import ConfigLocation
 from kuberich.config.schema import parse_document
@@ -213,7 +214,23 @@ async def test_actual_export_review_save_browser_view_copy_is_numeric_sanitized_
         await wait_for(lambda: isinstance(app.screen, ArtifactBrowserScreen))
         browser = app.screen
         await wait_for(lambda: browser.listing is not None and browser.operation_count == 0)
-        await pilot.click("#artifacts-view")
+        async with asyncio.timeout(5):
+            assert await browser.wait_for_refresh()
+            view_button = browser.query_one("#artifacts-view", Button)
+            await wait_for(
+                lambda: (
+                    app.screen is browser
+                    and browser.is_mounted
+                    and view_button.is_mounted
+                    and view_button.display
+                    and view_button.visible
+                    and not view_button.disabled
+                    and not view_button.has_class("-active")
+                    and view_button.region.area > 0
+                    and app.get_widget_at(*view_button.region.offset)[0] is view_button
+                )
+            )
+            assert await pilot.click(view_button)
         await wait_for(lambda: isinstance(app.screen, ArtifactViewerScreen))
         viewer = app.screen
         await wait_for(lambda: viewer.prepared is not None and viewer.operation_count == 0)

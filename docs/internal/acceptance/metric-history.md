@@ -2,7 +2,8 @@
 
 Issue: [O08 #231](https://github.com/carloshm91/kuberich/issues/231), milestone
 v0.4.0. Protected baseline: `5444b7d9c357d389243147a978cc20b248293edb`.
-This is an active implementation record, not whole-source or release acceptance.
+The later protected-base integration is recorded below. This is an active
+implementation record, not whole-source or release acceptance.
 Publication remains a separate authorized task.
 
 ## Boundaries
@@ -155,3 +156,34 @@ endpoint readiness/port/scrape contracts and records per-provider observations
 and bounded diagnostics. All reset checks now precede long native warmup with
 the original 180-second deadline. Fourteen focused verifier tests and static/type
 checks passed. A fresh actual trial is pending after application regressions.
+
+
+## Protected export-fix integration
+
+The prepared four-commit feature was integrated onto protected main
+`c6fba0521777bd0a75f660543b0b37e25ad2b258` after PR #318 delivered the independent
+export corrections. Integration source `07ebfe0` preserves all four protected
+production fixes byte for byte and all 23 feature production files from the
+prepared `c3129f2` source. The only merge conflicts were the maintained checkpoint
+and two neighboring installed-test additions; both artifact geometry and history
+console/module contracts remain enrolled. The fresh isolated environment resolves
+the package from this integration checkout.
+
+All 273 deterministic history cases pass in 16.65 seconds, with exact 100% lines
+and branches in history (424/116), queries (323/168) and membership (73/40).
+The isolated report retains all 252 production modules without exclusions; these
+three-module results do not replace complete-source coverage. The six-file
+history/Pulse/live-preferences UI group passes 90 cases in 47.39 seconds. A
+history export-roundtrip input now waits for public browser refresh and an actual
+visible/enabled hit target before asserting real mouse delivery, preserving its
+saved numeric, sanitization, lease, view and copy assertions.
+
+The adapter/workspace/configuration/provider-verifier cohort passes 123 cases in
+5.52 seconds; the complete strict target union passes 300 source files. Ruff and
+formatting pass. Fresh source history PTYs pass both terminal sizes in 18.14
+seconds, and outside-checkout installed console/module PTYs pass in 26.11 seconds,
+with owned source bindings, API audit controls, resize/navigation, terminal
+restoration and process reaping retained. These are focused integration checks.
+The fresh actual three-provider kind trial and complete source/platform gates
+remain separate requirements. No package, tag, tap or website publication is
+implied.
