@@ -597,7 +597,11 @@ async def test_graph_history_restores_mode_expansion_filter_and_descendant_viewp
             assert app.workspace.relationship_collecting
             api.release.set()
             await graph_ready(app, name=name)
-            await pilot.pause()
+            async with asyncio.timeout(5):
+                await wait_for(
+                    lambda: app.relationships_table.capture_viewport().selected == viewport.selected
+                )
+                assert await app.relationships_table.wait_for_refresh()
             restored = app.navigator.capture()
             assert restored.relationships.mode is mode
             assert restored.relationships.expanded == bookmark.relationships.expanded
@@ -612,7 +616,11 @@ async def test_graph_history_restores_mode_expansion_filter_and_descendant_viewp
             )
             await pilot.press("alt+left")
             await graph_ready(app, name=name)
-            await pilot.pause()
+            async with asyncio.timeout(5):
+                await wait_for(
+                    lambda: app.relationships_table.capture_viewport().selected == viewport.selected
+                )
+                assert await app.relationships_table.wait_for_refresh()
             assert app.filter_input.value == query
             assert app.relationships_table.capture_viewport() == viewport, (
                 original_geometry,

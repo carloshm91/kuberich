@@ -412,3 +412,46 @@ passed. The third hosted observer finished and reaped all 185 readers, with
 groups absent and its lock released. Its Application jobs were correctly skipped
 after the part failures; the resulting Quality gate is failed. The test-only
 correction and local replay do not replace the final exact-head hosted matrix.
+
+## Fourth hosted candidate: history restoration has two phases
+
+Source `c3194fc08ff03f76348d4aa9779ef56cc6ee8832` passed Repository run
+42133240842, all four native targets, all four Linux Python 3.12 and 3.14 parts,
+and all four macOS Python 3.12 parts. Its complete fast selection passed 7,358
+cases with one owned-macOS clipboard skip in 330.145 seconds. Application run
+42133240679 nevertheless remains failed: the Python 3.13 part found one inherited
+relationship-history viewport assertion, with 2,317 cases passed and two skips.
+The downstream Application jobs did not qualify, and Quality gate correctly
+failed. `hosted-pr315-c3194fc/` retains the original logs, annotations and fast
+evidence. Its observer reaped all 202 readers with groups absent and lock released.
+
+The failure observes the saved descendant selection but x=0, y=4, the child top
+row and offset=0, rather than the saved x=9, y=3, root top row and offset=3.
+A controlled actual controller/refresh interleaving reproduces all six viewport
+fields at the original assertion in 4.21 seconds. Releasing its already-scheduled
+history-restore callback restores every saved field on the first real refresh;
+two additional refreshes retain that result. No persistent product loss or new
+watcher defect is established, and the prior manual-scroll fixes remain intact.
+
+The first test-only refresh barrier was insufficient: final row publication can
+precede the navigator committing its saved descendant selection. That controlled
+failure is retained too. The refined checkpoint waits for public saved-selection
+equality and then the public Textual refresh barrier inside one unchanged
+five-second bound. The existing complete viewport, mode, expansion and query
+assertions remain after that barrier, at both delayed Back and Forward/Back.
+The corrected controlled case passed under Python 3.13 with branch tracing in
+5.34 seconds; its barrier-entry observations retain the original intermediate
+viewport and prove the real queued callback produces the correct final state.
+
+All 35 relationship-navigation/table/widget/user-scroll cases then passed under
+isolated Python 3.13 with branch tracing in 48.31 seconds. The unchanged table
+retained 186/186 lines and 56/56 branches, and its controller 24/24 lines. Ruff,
+formatting and whitespace checks passed. Every diagnostic/test process was reaped.
+`ui/relationship-viewport-investigation/evidence-final.json` retains the original,
+intermediate and corrected source hashes and three-refresh persistence evidence.
+Only `tests/ui/test_relationship_navigation.py` changes behavior in the test
+harness; it is outside the aggregate runtime's 337-file input inventory.
+Root verified all 337 runtime inputs and 246 installed-wheel production inputs
+are byte-identical to their retained receipts. The complete test-private audit,
+documentation validator and both-site build/check passed (53 HTML pages, 2,162
+local links/assets and 70 files). Required exact-head CI still determines delivery.
