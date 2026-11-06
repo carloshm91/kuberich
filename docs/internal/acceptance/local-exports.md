@@ -564,3 +564,10 @@ the existing offline browser at both sizes, initial/resize filename geometry and
 aggregate logs. Each retains its original restoration, connection isolation and
 owned-process checks. A complete fresh source/quality run and the required
 exact-head hosted platform matrix remain pending before protected delivery.
+
+The first hosted fast run on `07b4f40` retained 3,398 passes and one failure:
+the new lifecycle fixture wrote its receipt into a directory present in the
+developer checkout but absent on the clean runner. The fixture now creates its
+owned evidence directory before writing. The failure remains preserved; no
+product behavior, assertion, deadline or platform selection changes. Fresh
+exact-head qualification is still required.

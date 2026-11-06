@@ -152,9 +152,10 @@ async def test_aggregate_normal_quit_drains_renderer_before_log_frame_teardown(
             async with app.run_test() as pilot:
                 selected = await open_viewer(app, pilot, aggregate=aggregate, all_namespaces=True)
         finally:
+            directory = ROOT / "artifacts/issue317/ui"
+            directory.mkdir(parents=True, exist_ok=True)
             (
-                ROOT
-                / "artifacts/issue317/ui"
+                directory
                 / (
                     "log-teardown-fixed-"
                     + ("aggregate-" if aggregate else "single-")
