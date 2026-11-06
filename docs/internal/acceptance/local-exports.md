@@ -549,3 +549,18 @@ Nested harness fixtures use an explicit minimal environment and synthetic
 sensitive-data sentinels so failed diagnostics cannot copy ambient credentials.
 Fresh actual runtime controls, complete source qualification and installed
 geometry checks remain required before delivery.
+
+The next frozen-source runtime cohort on `79a5081` passed both actual parent
+workloads in 134.29 seconds, including their positive, strict negative and
+branch-traced children with unchanged deadlines. The replay-only coverage merge
+validated all 246 production modules. At this checkpoint, independent gates
+measured 98.4517% lines, 95.1803% branches, all 102 critical modules at exactly
+100%, and all six changed executable lines covered. These measurements include
+the earlier interrupted parent cohort; they are not a complete-suite pass.
+
+Fresh outside-checkout wheel tests passed all six console/module offline-browser
+and geometry cases in 18.77 seconds. Five source PTY cases passed in 15.26 seconds:
+the existing offline browser at both sizes, initial/resize filename geometry and
+aggregate logs. Each retains its original restoration, connection isolation and
+owned-process checks. A complete fresh source/quality run and the required
+exact-head hosted platform matrix remain pending before protected delivery.

@@ -11,11 +11,16 @@ UTF-8 equivalence/redaction and actual frame-lifetime guards are being verified.
 The original browser geometry symptom remains recorded without an attributed
 cause. See the [export acceptance record](acceptance/local-exports.md).
 
-The source remains 0.3.0 and these changes target the unreleased 0.4.0 phase.
-Complete runtime, coverage, source/installed terminal and hosted checks remain
-pending. No intermediate manual trial or publication is requested.
+The actual backend/UI runtime controls passed, including strict negative
+controls and branch-traced replays. All six outside-checkout installed browser
+cases and five source PTY cases passed. The current independent coverage gate
+passes all 102 critical modules completely; it includes an earlier interrupted
+parent cohort and does not establish a full-suite pass. A fresh complete source
+run and exact-head hosted checks remain pending. The source stays 0.3.0; these
+changes target the unreleased 0.4.0 phase. No intermediate manual trial or
+publication is requested.
 
-## Active unreleased 0.4.0 container inspection
+## Previous 0.4.0 container-inspection checkpoint
 
 Six of ten technical tasks are delivered. Local exports are protected-merged in
 PR #315 at `b781c793cbb7834d2dfe2c1bbe55c2caef1f7005`, with all 27 quality jobs,
@@ -26,7 +31,8 @@ completely; changed lines measured 97.58%. The final hosted matrix includes
 actual owned-kind regressions and all four native targets. Earlier pending
 export statements below are historical.
 
-Issue #74 is the sole implementation task. Development source now opens a
+Issue #74 was the sole implementation task at this prior checkpoint. Its protected
+delivery is PR #316 at `5444b7d9c357d389243147a978cc20b248293edb`. Development source opens a
 captured container's Environment / Image / Sources workspace from Pod → Enter
 → `e`. Values start hidden; reveal and copy each use a fresh one-use read.
 This describes current API configuration, not actual process environment.
@@ -68,7 +74,7 @@ Remaining phase work follows in order: broader historical metrics, the remaining
 curated resource families, then cumulative qualification in #75. Publication is
 separate from these development checkpoints.
 
-## Active unreleased 0.4.0 local exports
+## Previous 0.4.0 local-exports checkpoint
 
 Five of ten technical tasks are delivered: metrics, Pulse, relationships,
 authorization and diagnostics. Issue #73 is the sole active implementation:
