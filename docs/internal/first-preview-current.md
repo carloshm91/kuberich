@@ -1,5 +1,20 @@
 # Development checkpoint
 
+## Active export-regression correction
+
+Issue #317 is the sole active implementation; the prepared historical-metrics
+feature #231 waits for its protected delivery. The original full application
+attempt exposed existing large-export preparation and log-view teardown defects.
+A pure profile localized unnecessary all-page preview work, and a public-lifecycle
+regression reproduced the removed-frame failure on protected source. First-page
+UTF-8 equivalence/redaction and actual frame-lifetime guards are being verified.
+The original browser geometry symptom remains recorded without an attributed
+cause. See the [export acceptance record](acceptance/local-exports.md).
+
+The source remains 0.3.0 and these changes target the unreleased 0.4.0 phase.
+Complete runtime, coverage, source/installed terminal and hosted checks remain
+pending. No intermediate manual trial or publication is requested.
+
 ## Active unreleased 0.4.0 container inspection
 
 Six of ten technical tasks are delivered. Local exports are protected-merged in

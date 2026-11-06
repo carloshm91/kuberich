@@ -199,6 +199,7 @@ class LogScreen(CommandWorkspace):
         self.container = selected if selected is not None else containers[0]
         self._selected = selected
         self.history: LogHistory | AggregateHistory = LogHistory()
+        self.frame = WorkspaceFrame(id="log-dialog")
         self.body = LogBody()
         self.search = NavigationInput(
             lambda: self.set_focus(self.body), placeholder="Literal search · /", id="log-search"
@@ -302,7 +303,7 @@ class LogScreen(CommandWorkspace):
                 markup=False,
                 id="log-hints",
             )
-        with WorkspaceFrame(id="log-dialog"):
+        with self.frame:
             yield self.heading
             with Horizontal(id="log-targets"):
                 yield Button("Container", id="log-container", compact=True)
@@ -480,11 +481,16 @@ class LogScreen(CommandWorkspace):
             self.app._handle_exception(error)
 
     def _status(self) -> None:
-        if self.closed or not self.heading.is_mounted:
+        if (
+            self.closed
+            or not self.heading.is_mounted
+            or not self.frame.is_mounted
+            or self.frame not in self.children
+        ):
             return
         mode = "previous" if self.previous else "current"
         target = self.stream.target
-        frame = self.query_one("#log-dialog")
+        frame = self.frame
         title = safe_text(f"logs({target.namespace}/{target.name}:{self.container}) · {mode}")
         if frame.border_title != title.markup:
             frame.border_title = title

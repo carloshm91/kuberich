@@ -17,6 +17,9 @@ change Kubernetes resources. Nothing is uploaded automatically.
 4. Read the outcome before leaving. A saved artifact includes source and export
    times independently; saving old evidence does not make it fresh.
 
+The preview shows the first page of the redacted content. Save writes the full
+capture within the format limits; the local browser can show its other pages.
+
 The review captures its source before opening. Ordinary arriving log lines and
 table updates do not silently replace that capture. Changing its context,
 namespace, selected target or relevant source options invalidates the review.

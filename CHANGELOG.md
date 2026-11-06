@@ -27,6 +27,8 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Fixed
 
+- Prepare large export previews without constructing unused pages, and close log viewers without late updates accessing removed panels ([#317](https://github.com/carloshm91/kuberich/issues/317)).
+
 - Keep failed initial authorization questions visible through normal data updates, and connect after a short-lived offline startup screen without losing first-paint ordering ([#73](https://github.com/carloshm91/kuberich/issues/73)).
 - Ignore delayed root-screen suspend/resume events after returning from a modal, preserving explicit connection retry and live table painting ([#73](https://github.com/carloshm91/kuberich/issues/73)).
 - Export the visible Events permission error from resource inspection instead of an unrelated empty-events document ([#73](https://github.com/carloshm91/kuberich/issues/73)).

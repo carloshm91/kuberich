@@ -455,3 +455,56 @@ Root verified all 337 runtime inputs and 246 installed-wheel production inputs
 are byte-identical to their retained receipts. The complete test-private audit,
 documentation validator and both-site build/check passed (53 HTML pages, 2,162
 local links/assets and 70 files). Required exact-head CI still determines delivery.
+
+
+## Export qualification regressions
+
+Follow-up [#317](https://github.com/carloshm91/kuberich/issues/317) is independent
+of the prepared historical-metrics feature. Its protected baseline is
+`5444b7d9c357d389243147a978cc20b248293edb`; the affected production files match
+that baseline byte for byte before correction. The original complete application
+attempt selected 8,440 cases: 8,431 passed, five failed and four skipped in
+1,249.19 seconds. Two history-navigation fixture failures are handled separately
+in #231. Three export-workflow observations remain preserved for this correction.
+
+The instrumented large-log runtime child missed its unchanged five-second
+preview-readiness wait while the preparation worker remained owned and the UI
+continued responding. A single pure 5,000-record capture produced a 2,555,116-byte
+payload and 262,144-byte preview. CTracer/cProfile observed 9.18 seconds including
+profiler overhead: 4.54 seconds constructed all ten preview pages and discarded
+nine, making 2.55 million per-character UTF-8 encode calls. This is a hot-path
+observation, not a latency qualification. First-page preparation now uses a
+UTF-8-safe byte prefix after complete redaction/escaping. Full payload and artifact
+paging semantics remain unchanged; boundary/equivalence regressions verify them.
+
+A controlled public normal-shutdown boundary reproduces an aggregate renderer
+querying a removed `#log-dialog` while its status sibling remains mounted. The
+original protected-source test fails deterministically. Log viewers now retain
+the actual target frame and gate single/aggregate status updates on that mounted
+child, rather than querying a removed node. No blanket exception catch or owner
+cancellation bypass is introduced. Complete stream/renderer/client drainage stays
+part of the lifecycle assertions.
+
+The original 100×30 offline-browser PTY waited 15 seconds with one row present,
+but retained only header-width columns and truncated the filename. Four fresh
+headless cases and two real source PTYs did not reproduce it; the cause remains
+unproved. Browser production behavior is not changed speculatively. Fresh source
+and outside-checkout installed geometry/terminal contracts must qualify the
+current candidate while preserving the original failed receipt.
+
+Original logs/JUnit, five-file baseline comparisons, raw synthetic terminal
+receipts and the pure profile are retained under `artifacts/issue317/original/`,
+with the larger original inventory in the preserved #231 worktree. Source
+version stays 0.3.0. Static, complete behavioral/runtime coverage, installed and
+exact-head hosted results remain pending; this record does not close the issue
+or authorize publication.
+
+The focused corrected cohorts passed: all 157 domain export cases, with the
+complete critical module at 771/771 lines and 326/326 branches; 19 UI cases
+including the original aggregate window/previous transition file; and two real
+source geometry PTYs in 4.52 seconds. The protected-source teardown control failed
+in 3.70 seconds before the narrow guard. Fresh PTYs preserve the original
+15-second filename deadline, verify filter-clear/two-file refresh, zero network,
+unchanged explicit kubeconfig and exact terminal state/reaping. Owned static/type
+and the complete private-access audit passed. Full source/runtime and installed
+console/module geometry checks remain pending.

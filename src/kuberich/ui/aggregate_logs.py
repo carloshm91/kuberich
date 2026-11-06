@@ -404,7 +404,13 @@ class AggregateLogScreen(LogScreen):
         super()._display_changed()
 
     def _status(self) -> None:
-        if not self.status.is_mounted:
+        # A sibling may still be mounted after this frame leaves the DOM during
+        # shutdown. Retain the real target and reject that late renderer update.
+        if (
+            not self.status.is_mounted
+            or not self.frame.is_mounted
+            or self.frame not in self.children
+        ):
             return
         target = self.owner.target
         counts = Counter(state.status for state in self.owner.states.values())
@@ -412,9 +418,7 @@ class AggregateLogScreen(LogScreen):
         if not stopped:
             self.pause_button.label = "Resume" if self.paused else "Pause"
             self.previous_button.label = "Current" if self.previous else "Previous"
-            self.query_one("#log-dialog").border_title = safe_text(
-                f"aggregate({target.namespace}/{target.name})"
-            )
+            self.frame.border_title = safe_text(f"aggregate({target.namespace}/{target.name})")
         active = 0 if stopped else counts["active"]
         receiving = (
             "Reception stopped" if stopped else "Paused" if self.paused else "Receiving enabled"

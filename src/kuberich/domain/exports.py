@@ -1216,7 +1216,8 @@ def _prepared(
         id=artifact_id,
         metadata=metadata,
         payload=payload,
-        preview=_page_text(preview)[0],
+        # Preview redaction is complete; retain only its first UTF-8 page.
+        preview=preview.encode("utf-8")[:MAX_PAGE_BYTES].decode("utf-8", errors="ignore"),
         sha256=hashlib.sha256(payload).hexdigest(),
     )
 
