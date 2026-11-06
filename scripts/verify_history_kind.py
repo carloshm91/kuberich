@@ -14,7 +14,7 @@ import urllib.request
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, cast
 from uuid import uuid4
@@ -730,13 +730,38 @@ async def verify_proxy_headers(
     }
 
 
-def reset_numbers(document: object) -> tuple[str, ...]:
-    """Retain only bounded numeric values from the separately labeled reset fixture."""
+def reset_value(value: object) -> Decimal:
+    """Validate a bounded, nonnegative numeric sample without retaining errors."""
+    if (
+        not isinstance(value, str)
+        or len(value) > 64
+        or not re.fullmatch(r"[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?", value)
+    ):
+        raise AssertionError("Synthetic reset query did not return bounded numeric samples.")
+    try:
+        numeric = Decimal(value)
+    except InvalidOperation:
+        raise AssertionError("Synthetic reset query returned an invalid value.") from None
+    if not numeric.is_finite() or not 0 <= numeric <= Decimal("1e20"):
+        raise AssertionError("Synthetic reset query returned an invalid value.")
+    return numeric
+
+
+def reset_results(document: object, result_type: str) -> list[Any]:
     if not isinstance(document, dict) or document.get("status") != "success":
         raise AssertionError("Synthetic reset query did not succeed.")
-    results = document.get("data", {}).get("result", [])
+    data = document.get("data")
+    if not isinstance(data, dict) or data.get("resultType") != result_type:
+        raise AssertionError("Synthetic reset query returned another result type.")
+    results = data.get("result")
     if not isinstance(results, list) or len(results) > 8:
         raise AssertionError("Synthetic reset query exceeded its series bound.")
+    return results
+
+
+def reset_numbers(document: object) -> tuple[str, ...]:
+    """Retain only bounded numeric values from the separately labeled reset fixture."""
+    results = reset_results(document, "vector")
     values = []
     for item in results:
         pair = item.get("value") if isinstance(item, dict) else None
@@ -747,13 +772,93 @@ def reset_numbers(document: object) -> tuple[str, ...]:
             or len(pair[1]) > 64
         ):
             raise AssertionError("Synthetic reset query did not return bounded numeric samples.")
-        if item.get("metric", {}).get("fixture") != "synthetic-reset":
+        metric = item.get("metric")
+        if not isinstance(metric, dict) or metric.get("fixture") != "synthetic-reset":
             raise AssertionError("Synthetic reset query returned another fixture identity.")
-        numeric = Decimal(pair[1])
-        if not numeric.is_finite() or not 0 <= numeric <= Decimal("1e20"):
-            raise AssertionError("Synthetic reset query returned an invalid value.")
+        reset_value(pair[1])
         values.append(pair[1])
     return tuple(values)
+
+
+@dataclass(frozen=True)
+class RawResetSeries:
+    identity_sha256: str
+    samples: tuple[tuple[float, str], ...]
+
+
+@dataclass(frozen=True)
+class RawResetObservation:
+    query_timestamp: float
+    result_count: int
+    sample_count: int
+    adjacent_decreases: int
+    series: tuple[RawResetSeries, ...]
+
+
+def raw_reset_observation(document: object, *, query_time: float) -> RawResetObservation:
+    """Prove same-series counter drops in an explicit, fresh one-minute raw window."""
+    evaluation = Decimal(str(query_time))
+    if not evaluation.is_finite():
+        raise AssertionError("Synthetic reset query time is not finite.")
+    results = reset_results(document, "matrix")
+    observed = []
+    identities = set()
+    sample_count = decreases = 0
+    for item in results:
+        metric = item.get("metric") if isinstance(item, dict) else None
+        if (
+            not isinstance(metric, dict)
+            or not 2 <= len(metric) <= 32
+            or metric.get("__name__") != "kuberich_fixture_counter_total"
+            or metric.get("fixture") != "synthetic-reset"
+            or any(
+                not isinstance(key, str)
+                or not re.fullmatch(r"[a-zA-Z_][a-zA-Z0-9_]{0,63}", key)
+                or not isinstance(value, str)
+                or len(value) > 256
+                or any(ord(char) < 32 or ord(char) == 127 for char in value)
+                for key, value in metric.items()
+            )
+        ):
+            raise AssertionError("Synthetic raw reset query returned another fixture identity.")
+        identity = tuple(sorted(metric.items()))
+        if identity in identities:
+            raise AssertionError("Synthetic raw reset query repeated a series identity.")
+        identities.add(identity)
+        samples = item.get("values")
+        if not isinstance(samples, list) or not 1 <= len(samples) <= 64:
+            raise AssertionError("Synthetic raw reset query exceeded its sample bound.")
+        previous_time = previous_value = None
+        retained = []
+        for pair in samples:
+            if (
+                not isinstance(pair, list)
+                or len(pair) != 2
+                or isinstance(pair[0], bool)
+                or not isinstance(pair[0], (int, float))
+            ):
+                raise AssertionError("Synthetic raw reset query returned malformed samples.")
+            timestamp = Decimal(str(pair[0]))
+            if (
+                not timestamp.is_finite()
+                or not evaluation - 60 < timestamp <= evaluation
+                or (previous_time is not None and timestamp <= previous_time)
+            ):
+                raise AssertionError("Synthetic raw reset query returned invalid sample times.")
+            numeric = reset_value(pair[1])
+            if previous_value is not None and numeric < previous_value:
+                decreases += 1
+            previous_time, previous_value = timestamp, numeric
+            retained.append((float(timestamp), pair[1]))
+        if previous_time is None or evaluation - previous_time > 30:
+            raise AssertionError("Synthetic raw reset query returned stale samples.")
+        sample_count += len(retained)
+        observed.append(
+            RawResetSeries(
+                hashlib.sha256(json.dumps(identity).encode()).hexdigest(), tuple(retained)
+            )
+        )
+    return RawResetObservation(query_time, len(results), sample_count, decreases, tuple(observed))
 
 
 def scrape_error_kind(message: object) -> str:
@@ -962,15 +1067,22 @@ async def verify_reset(
     await reset_diagnostics(client, cluster, kubectl, directory, provider, "before")
     attempts = 0
 
-    async def query(key: str, expression: str) -> tuple[str, ...]:
+    async def query(key: str, expression: str) -> tuple[str, ...] | RawResetObservation:
         record: dict[str, Any] = {"query": expression}
         parameters = {"query": expression, "timeout": "8s"}
+        query_time = datetime.now(UTC).timestamp()
+        if key == "raw":
+            parameters["time"] = str(query_time)
+            record["query_timestamp"] = query_time
         if provider == "thanos":
             parameters.update(dedup="true", partial_response="false", max_source_resolution="0s")
         try:
-            values = reset_numbers(
-                await transport.get_json("query", parameters, max_bytes=1024 * 1024)
-            )
+            document = await transport.get_json("query", parameters, max_bytes=1024 * 1024)
+            if key == "raw":
+                observation = raw_reset_observation(document, query_time=query_time)
+                record.update(asdict(observation))
+                return observation
+            values = reset_numbers(document)
             record.update(result_count=len(values), values=values)
             return values
         except BaseException as error:
@@ -993,10 +1105,13 @@ async def verify_reset(
                     + "\n"
                 )
 
+    raw_observation: RawResetObservation | None = None
+    observed_rates: tuple[str, ...] = ()
+    rate = "rate_prometheus" if provider == "victoriametrics" else "rate"
     try:
 
         async def observed() -> bool:
-            nonlocal attempts
+            nonlocal attempts, raw_observation, observed_rates
             attempts += 1
             values = {}
             for key, expression in {
@@ -1005,20 +1120,46 @@ async def verify_reset(
                 "resets": 'resets(kuberich_fixture_counter_total{fixture="synthetic-reset"}[1m])',
             }.items():
                 values[key] = await query(key, expression)
-            return bool(values["gauge"]) and any(Decimal(value) >= 1 for value in values["resets"])
+            # v0.42.5 maps resets() to COUNTER and adjusts resets before deduplication:
+            # https://github.com/thanos-io/thanos/blob/v0.42.5/pkg/query/iter.go#L129-L134
+            # A raw range selector avoids that function hint; production rate options stay intact.
+            raw = await query(
+                "raw", 'kuberich_fixture_counter_total{fixture="synthetic-reset"}[1m]'
+            )
+            assert isinstance(raw, RawResetObservation)
+            raw_observation = raw
+            resets = values["resets"]
+            assert isinstance(resets, tuple)
+            reset_ready = (
+                bool(values["counter"])
+                and bool(values["gauge"])
+                and bool(resets)
+                and raw.adjacent_decreases >= 1
+                and (provider == "thanos" or any(Decimal(value) >= 1 for value in resets))
+            )
+            if not reset_ready:
+                return False
+            rates = await query(
+                "rate", f'{rate}(kuberich_fixture_counter_total{{fixture="synthetic-reset"}}[1m])'
+            )
+            assert isinstance(rates, tuple) and all(Decimal(value) < 10 for value in rates)
+            # The first 18 -> 0 pair has zero corrected increase. Wait for a positive
+            # rate within this same deadline, re-proving a fresh raw drop each time.
+            if not rates or not all(Decimal(value) > 0 for value in rates):
+                return False
+            observed_rates = rates
+            return True
 
         await until(observed, timeout=180)
-        rate = "rate_prometheus" if provider == "victoriametrics" else "rate"
-        rates = await query(
-            "rate", f'{rate}(kuberich_fixture_counter_total{{fixture="synthetic-reset"}}[1m])'
-        )
-        assert rates and all(0 < Decimal(value) < 10 for value in rates)
+        assert raw_observation is not None and observed_rates
         await reset_diagnostics(client, cluster, kubectl, directory, provider, "ready")
         return {
             "fixture": "separate synthetic reset exporter; not native availability evidence",
             "function": rate,
-            "observed_rates": rates,
+            "observed_rates": observed_rates,
             "actual_reset_observed": True,
+            "raw_reset_observation": asdict(raw_observation),
+            "resets_function_role": "diagnostic" if provider == "thanos" else "required",
         }
     except BaseException:
         await reset_diagnostics(client, cluster, kubectl, directory, provider, "failure")

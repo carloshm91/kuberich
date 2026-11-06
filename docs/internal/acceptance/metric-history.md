@@ -187,3 +187,72 @@ restoration and process reaping retained. These are focused integration checks.
 The fresh actual three-provider kind trial and complete source/platform gates
 remain separate requirements. No package, tag, tap or website publication is
 implied.
+
+
+## Three-provider reset observation
+
+The fresh `kind-003` run on source `0925940`, verifier `5e0933`, failed its
+unchanged 180-second Thanos reset-readiness wait. Its final record confirms the
+owned cluster and private directory were deleted, inputs were unchanged and the
+runner/process group were reaped. The measured verifier stage lasted 299.27
+seconds; chart preparation and runner lifetime are recorded separately. This
+failed trial remains unqualified.
+
+Prometheus and VictoriaMetrics observed positive reset counts and passed their
+rate controls. Thanos returned fresh counter values with nine observed wraps
+across roughly 178 seconds, a constant gauge of 42, and zero from every recorded
+`resets(...[1m])` query. Its source Pod remained ready without restarts, its
+scrape target was up and the loopback/Service-DNS observations matched. Sequential
+readiness did not simply miss a single reset: the fixture wraps every 20 seconds.
+The earlier `kind-002` provider failure remains unattributed because that run
+lacked this provider-specific evidence.
+
+Pinned [Thanos query selection](https://github.com/thanos-io/thanos/blob/v0.42.5/pkg/query/querier.go#L239-L257)
+routes `resets()` through counter aggregation. Its
+[iterator implementation](https://github.com/thanos-io/thanos/blob/v0.42.5/pkg/query/iter.go#L129-L155)
+applies reset correction and records the resulting
+[upstream limitation](https://github.com/thanos-io/thanos/issues/3644).
+That stage precedes deduplication, so disabling deduplication alone is not a
+valid correction. The pinned source manifest is retained separately from the
+actual provider receipts.
+
+The verifier correction must prove a decrease within one bounded, correctly
+identified raw sample series in the current one-minute window, retain the
+reported `resets()` diagnostic, and require the unchanged positive bounded
+production-profile rate afterward. Prometheus/VM still require their positive
+reported reset count; Thanos's known zero cannot substitute for raw reset proof.
+The original window, 180-second deadline, provider request parameters, response
+bounds and cleanup requirements remain in force. Fresh execution is required;
+source review and the failed run do not qualify the corrected verifier.
+
+
+## Raw reset-proof verifier
+
+The corrected verifier uses the same instant API with an explicit evaluation
+`time` and a one-minute range selector for the synthetic counter. A pure parser
+requires an exact matrix/metric/fixture identity, unique bounded label sets,
+strictly increasing finite timestamps within `(time−60, time]`, a latest sample
+at most 30 seconds old, at most eight series and 64 samples per series, and
+bounded finite nonnegative values. It detects an adjacent decrease within one
+series from the current response, never across series or polling attempts.
+Thanos's hintless selector follows its raw-chunk fallback rather than the
+reset-normalizing counter iterator; this is not an explicit `Aggr_RAW` request.
+
+Every provider must supply that raw reset witness and a gauge. Prometheus and
+VictoriaMetrics additionally retain the positive reported-reset requirement;
+Thanos's valid zero stays recorded as an unsupported diagnostic. The unchanged
+provider-specific rate function/options must produce `0 < rate < 10` before
+readiness is admitted. A legitimate initial `18→0` pair can still have zero
+corrected increase: valid empty/zero rates therefore remain unready inside the
+same 180-second loop, with fresh raw evidence required on each attempt.
+Negative/nonfinite/oversized values and protocol/transport failures still fail;
+no window, deadline or production query code changes.
+
+All 70 focused verifier cases pass in 0.66 seconds, including monotonic raw
+false positives, cross-series/attempt mixing, wrong/stale/future/oversized data,
+zero-rate startup, rate bounds and request-parameter controls. Ruff, formatting
+and strict verifier typing pass. Independent review found no remaining material
+issue in verifier `6c3612f2dc9eac12211c7ad0728bc611e8e3ea504ec5d2d1bd835be7b7b4ba7b`
+and test source `ce728cab9ca1f4d82dfa6d14654a19ef8e1c413f099d0a18e3c58c74d017dd38`.
+Those results qualify the correction's local contracts; fresh owned-provider
+execution remains required.

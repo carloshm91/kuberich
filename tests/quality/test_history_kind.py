@@ -3,6 +3,7 @@
 import json
 import re
 import subprocess
+from copy import deepcopy
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
@@ -10,6 +11,7 @@ from decimal import Decimal
 import pytest
 import yaml
 
+from kuberich.domain.connections import HttpProblem
 from kuberich.domain.history import (
     HistoryPoint,
     HistorySeries,
@@ -270,12 +272,20 @@ def test_reset_queries_retain_only_finite_numeric_values_for_the_synthetic_fixtu
     def document(value="2", fixture="synthetic-reset"):
         return {
             "status": "success",
-            "data": {"result": [{"metric": {"fixture": fixture}, "value": [0, value]}]},
+            "data": {
+                "resultType": "vector",
+                "result": [{"metric": {"fixture": fixture}, "value": [0, value]}],
+            },
         }
 
-    assert verifier.reset_numbers({"status": "success", "data": {"result": []}}) == ()
+    assert (
+        verifier.reset_numbers(
+            {"status": "success", "data": {"resultType": "vector", "result": []}}
+        )
+        == ()
+    )
     assert verifier.reset_numbers(document()) == ("2",)
-    for value in ("NaN", "Inf", "-1", "9" * 65):
+    for value in ("NaN", "Inf", "-1", "9" * 65, "malformed", "1e21"):
         with pytest.raises(AssertionError):
             verifier.reset_numbers(document(value))
     with pytest.raises(AssertionError, match="another fixture"):
@@ -299,7 +309,8 @@ async def test_reset_failure_retains_provider_queries_and_calls_bounded_diagnost
             assert suffix == "query" and max_bytes == 1024 * 1024
             if provider == "thanos":
                 assert params["partial_response"] == "false" and params["dedup"] == "true"
-            return {"status": "success", "data": {"result": []}}
+            result_type = "matrix" if "time" in params else "vector"
+            return {"status": "success", "data": {"resultType": result_type, "result": []}}
 
     async def diagnostics(client, cluster, kubectl, directory, observed_provider, stage):
         stages.append((observed_provider, stage))
@@ -320,10 +331,390 @@ async def test_reset_failure_retains_provider_queries_and_calls_bounded_diagnost
         json.loads(line)
         for line in (tmp_path / "reset-query-observations.jsonl").read_text().splitlines()
     ]
-    assert len(records) == 3 and all(record["provider"] == provider for record in records)
+    assert len(records) == 4 and all(record["provider"] == provider for record in records)
     queries = {key: value for record in records for key, value in record["queries"].items()}
-    assert set(queries) == {"counter", "gauge", "resets"}
-    assert all(query["result_count"] == 0 and query["values"] == [] for query in queries.values())
+    assert set(queries) == {"counter", "gauge", "resets", "raw"}
+    assert all(queries[key]["values"] == [] for key in ("counter", "gauge", "resets"))
+    assert all(query["result_count"] == 0 for query in queries.values())
+    assert queries["raw"]["adjacent_decreases"] == queries["raw"]["sample_count"] == 0
+
+
+def raw_reset_document(query_time, values=("18", "0")):
+    return {
+        "status": "success",
+        "data": {
+            "resultType": "matrix",
+            "result": [
+                {
+                    "metric": {
+                        "__name__": "kuberich_fixture_counter_total",
+                        "fixture": "synthetic-reset",
+                        "instance": "owned-reset:9101",
+                    },
+                    "values": [
+                        [query_time - 4 + index * 2, value] for index, value in enumerate(values)
+                    ],
+                }
+            ],
+        },
+    }
+
+
+def test_raw_reset_proof_uses_adjacent_samples_from_each_series_in_the_api_time_window():
+    query_time = datetime(2026, 11, 6, tzinfo=UTC).timestamp()
+    document = raw_reset_document(query_time)
+    observation = verifier.raw_reset_observation(document, query_time=query_time)
+    assert observation.adjacent_decreases == 1
+    assert observation.result_count == 1 and observation.sample_count == 2
+    assert observation.query_timestamp == query_time
+    assert observation.series[0].samples == ((query_time - 4, "18"), (query_time - 2, "0"))
+    assert len(observation.series[0].identity_sha256) == 64
+    # Two individually monotonic series cannot manufacture a drop at their boundary.
+    document = raw_reset_document(query_time, ("17", "18"))
+    other = deepcopy(document["data"]["result"][0])
+    other["metric"]["instance"] = "owned-reset-other:9101"
+    other["values"] = [[query_time - 4, "0"], [query_time - 2, "1"]]
+    document["data"]["result"].append(other)
+    assert verifier.raw_reset_observation(document, query_time=query_time).adjacent_decreases == 0
+    document = raw_reset_document(query_time)
+    document["data"]["result"][0]["values"] = [[query_time - 59.999, "18"], [query_time, "0"]]
+    assert verifier.raw_reset_observation(document, query_time=query_time).adjacent_decreases == 1
+
+
+def test_raw_reset_proof_bounds_all_series_and_does_not_invent_startup_resets():
+    query_time = datetime(2026, 11, 6, tzinfo=UTC).timestamp()
+    one_sample = raw_reset_document(query_time, ("0",))
+    assert verifier.raw_reset_observation(one_sample, query_time=query_time).adjacent_decreases == 0
+    document = raw_reset_document(query_time)
+    template = document["data"]["result"][0]
+    template["values"] = [[query_time - 31.5 + index / 2, "1"] for index in range(64)]
+    document["data"]["result"] = []
+    for index in range(8):
+        series = deepcopy(template)
+        series["metric"]["instance"] = f"owned-{index}:9101"
+        document["data"]["result"].append(series)
+    observation = verifier.raw_reset_observation(document, query_time=query_time)
+    assert observation.sample_count == 512 and observation.result_count == 8
+    assert observation.adjacent_decreases == 0
+    for invalid_time in (float("nan"), float("inf")):
+        with pytest.raises(AssertionError, match="query time"):
+            verifier.raw_reset_observation(document, query_time=invalid_time)
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        "wrong-type",
+        "missing-data",
+        "wrong-fixture",
+        "wrong-metric",
+        "bad-label",
+        "duplicate-series",
+        "too-many-series",
+        "empty-samples",
+        "too-many-samples",
+        "malformed-pair",
+        "string-timestamp",
+        "bool-timestamp",
+        "nan-timestamp",
+        "infinite-timestamp",
+        "duplicate-time",
+        "reverse-time",
+        "left-boundary",
+        "future",
+        "stale",
+        "negative",
+        "nan",
+        "infinite",
+        "malformed-value",
+        "whitespace-value",
+        "underscore-value",
+        "large-value",
+        "long-value",
+    ],
+)
+def test_raw_reset_proof_rejects_invalid_identity_protocol_values_times_and_bounds(case):
+    query_time = datetime(2026, 11, 6, tzinfo=UTC).timestamp()
+    document = raw_reset_document(query_time)
+    results = document["data"]["result"]
+    metric, samples = results[0]["metric"], results[0]["values"]
+    if case == "wrong-type":
+        document["data"]["resultType"] = "vector"
+    elif case == "missing-data":
+        document["data"] = None
+    elif case == "wrong-fixture":
+        metric["fixture"] = "unrelated"
+    elif case == "wrong-metric":
+        metric["__name__"] = "kuberich_fixture_gauge"
+    elif case == "bad-label":
+        metric["instance"] = "owned\nprivate"
+    elif case == "duplicate-series":
+        results.append(deepcopy(results[0]))
+    elif case == "too-many-series":
+        results.extend(deepcopy(results[0]) for _ in range(8))
+    elif case == "empty-samples":
+        samples.clear()
+    elif case == "too-many-samples":
+        samples[:] = [[query_time - 59 + index / 2, "1"] for index in range(65)]
+    elif case == "malformed-pair":
+        samples[0] = [query_time - 4]
+    elif case in {"string-timestamp", "bool-timestamp", "nan-timestamp", "infinite-timestamp"}:
+        samples[0][0] = {
+            "string-timestamp": str(query_time - 4),
+            "bool-timestamp": True,
+            "nan-timestamp": float("nan"),
+            "infinite-timestamp": float("inf"),
+        }[case]
+    elif case == "duplicate-time":
+        samples[1][0] = samples[0][0]
+    elif case == "reverse-time":
+        samples.reverse()
+    elif case == "left-boundary":
+        samples[0][0] = query_time - 60
+    elif case == "future":
+        samples[1][0] = query_time + 0.001
+    elif case == "stale":
+        samples[:] = [[query_time - 34, "18"], [query_time - 32, "0"]]
+    else:
+        samples[1][1] = {
+            "negative": "-1",
+            "nan": "NaN",
+            "infinite": "Inf",
+            "malformed-value": "invalid",
+            "whitespace-value": " 1",
+            "underscore-value": "1_0",
+            "large-value": "1e21",
+            "long-value": "9" * 65,
+        }[case]
+    with pytest.raises(AssertionError):
+        verifier.raw_reset_observation(document, query_time=query_time)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("provider", ["prometheus", "victoriametrics", "thanos"])
+@pytest.mark.parametrize("actual_drop", [True, False])
+async def test_reset_readiness_requires_raw_drop_before_unchanged_positive_provider_rate(
+    tmp_path, monkeypatch, provider, actual_drop
+):
+    stages, queries = [], []
+
+    class Transport:
+        async def get_json(self, suffix, params, *, max_bytes):
+            assert suffix == "query" and max_bytes == 1024 * 1024 and params["timeout"] == "8s"
+            queries.append(dict(params))
+            if provider == "thanos":
+                assert {
+                    key: params[key]
+                    for key in ("dedup", "partial_response", "max_source_resolution")
+                } == {"dedup": "true", "partial_response": "false", "max_source_resolution": "0s"}
+            expression = params["query"]
+            if "time" in params:
+                assert expression == 'kuberich_fixture_counter_total{fixture="synthetic-reset"}[1m]'
+                return raw_reset_document(
+                    float(params["time"]), ("18", "0" if actual_drop else "19")
+                )
+            if expression.startswith("resets("):
+                value = "0" if provider == "thanos" and actual_drop else "1"
+            elif expression.startswith("rate"):
+                expected = "rate_prometheus" if provider == "victoriametrics" else "rate"
+                assert (
+                    expression
+                    == f'{expected}(kuberich_fixture_counter_total{{fixture="synthetic-reset"}}[1m])'
+                )
+                value = "0.9"
+            else:
+                value = "42" if "gauge" in expression else "2"
+            return {
+                "status": "success",
+                "data": {
+                    "resultType": "vector",
+                    "result": [{"metric": {"fixture": "synthetic-reset"}, "value": [0, value]}],
+                },
+            }
+
+    async def diagnostics(client, cluster, kubectl, directory, observed_provider, stage):
+        stages.append(stage)
+
+    async def original_deadline(operation, *, timeout):
+        assert timeout == 180
+        ready = await operation()
+        assert ready == actual_drop
+        if not ready:
+            raise TimeoutError
+
+    monkeypatch.setattr(verifier, "reset_diagnostics", diagnostics)
+    monkeypatch.setattr(verifier, "until", original_deadline)
+    if actual_drop:
+        result = await verifier.verify_reset(Transport(), provider, None, None, "owned", tmp_path)
+        assert result["actual_reset_observed"] is True
+        assert result["raw_reset_observation"]["adjacent_decreases"] == 1
+        assert result["observed_rates"] == ("0.9",)
+        assert result["resets_function_role"] == (
+            "diagnostic" if provider == "thanos" else "required"
+        )
+        assert stages == ["before", "ready"] and len(queries) == 5
+    else:
+        with pytest.raises(TimeoutError):
+            await verifier.verify_reset(Transport(), provider, None, None, "owned", tmp_path)
+        assert stages == ["before", "failure"] and len(queries) == 4
+        assert all(not params["query"].startswith("rate") for params in queries)
+    records = [
+        json.loads(line)
+        for line in (tmp_path / "reset-query-observations.jsonl").read_text().splitlines()
+    ]
+    raw = next(record["queries"]["raw"] for record in records if "raw" in record["queries"])
+    assert raw["adjacent_decreases"] == int(actual_drop)
+    assert raw["query_timestamp"] == float(
+        next(params["time"] for params in queries if "time" in params)
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "failure",
+    [
+        "resets-http",
+        "raw-http",
+        "raw-malformed",
+        "missing-gauge",
+        "rate-empty",
+        "rate-zero",
+        "rate-large",
+        "rate-nan",
+        "rate-negative",
+    ],
+)
+async def test_thanos_diagnostic_reset_zero_cannot_bypass_transport_raw_gauge_or_rate_failure(
+    tmp_path, monkeypatch, failure
+):
+    stages = []
+
+    class Transport:
+        async def get_json(self, suffix, params, *, max_bytes):
+            expression = params["query"]
+            if failure == "resets-http" and expression.startswith("resets("):
+                raise HttpProblem(503)
+            if "time" in params:
+                if failure == "raw-http":
+                    raise HttpProblem(503)
+                document = raw_reset_document(float(params["time"]))
+                if failure == "raw-malformed":
+                    document["data"]["result"][0]["values"][1][1] = "invalid"
+                return document
+            value = "0" if expression.startswith("resets(") else "42"
+            result = [{"metric": {"fixture": "synthetic-reset"}, "value": [0, value]}]
+            if failure == "missing-gauge" and "gauge" in expression:
+                result = []
+            if expression.startswith("rate("):
+                value = {
+                    "rate-zero": "0",
+                    "rate-large": "10",
+                    "rate-nan": "NaN",
+                    "rate-negative": "-1",
+                }.get(failure, "0.9")
+                result[0]["value"][1] = value
+                if failure == "rate-empty":
+                    result = []
+            return {"status": "success", "data": {"resultType": "vector", "result": result}}
+
+    async def diagnostics(client, cluster, kubectl, directory, observed_provider, stage):
+        stages.append(stage)
+
+    async def original_deadline(operation, *, timeout):
+        assert timeout == 180
+        if not await operation():
+            raise TimeoutError
+
+    monkeypatch.setattr(verifier, "reset_diagnostics", diagnostics)
+    monkeypatch.setattr(verifier, "until", original_deadline)
+    expected = (
+        HttpProblem
+        if failure.endswith("http")
+        else TimeoutError
+        if failure in {"missing-gauge", "rate-empty", "rate-zero"}
+        else AssertionError
+    )
+    with pytest.raises(expected):
+        await verifier.verify_reset(Transport(), "thanos", None, None, "owned", tmp_path)
+    assert stages == ["before", "failure"]
+    records = [
+        json.loads(line)
+        for line in (tmp_path / "reset-query-observations.jsonl").read_text().splitlines()
+    ]
+    errors = [
+        entry for record in records for entry in record["queries"].values() if "error_type" in entry
+    ]
+    if failure.endswith("http"):
+        assert len(errors) == 1 and errors[0]["http_status"] == 503
+    elif failure in {"raw-malformed", "rate-nan", "rate-negative"}:
+        assert len(errors) == 1 and errors[0]["error_type"] == "AssertionError"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("provider", ["prometheus", "victoriametrics", "thanos"])
+@pytest.mark.parametrize(
+    "case", ["zero-to-positive", "empty-to-positive", "lost-raw-witness", "reset-function-zero"]
+)
+async def test_reset_retries_share_original_deadline_and_require_fresh_raw_and_provider_evidence(
+    tmp_path, monkeypatch, provider, case
+):
+    raw_calls, rate_calls = [], []
+    stages = []
+    succeeds = case in {"zero-to-positive", "empty-to-positive"} or (
+        case == "reset-function-zero" and provider == "thanos"
+    )
+
+    class Transport:
+        async def get_json(self, suffix, params, *, max_bytes):
+            expression = params["query"]
+            if "time" in params:
+                raw_calls.append(dict(params))
+                drops = case != "lost-raw-witness" or len(raw_calls) == 1
+                return raw_reset_document(float(params["time"]), ("18", "0" if drops else "19"))
+            value = "42"
+            if expression.startswith("resets("):
+                value = "0" if case == "reset-function-zero" or provider == "thanos" else "1"
+            elif expression.startswith("rate"):
+                rate_calls.append(dict(params))
+                value = "0" if len(rate_calls) == 1 and case != "reset-function-zero" else "0.5"
+            results = [{"metric": {"fixture": "synthetic-reset"}, "value": [0, value]}]
+            if (
+                expression.startswith("rate")
+                and case == "empty-to-positive"
+                and len(rate_calls) == 1
+            ):
+                results = []
+            return {"status": "success", "data": {"resultType": "vector", "result": results}}
+
+    async def diagnostics(client, cluster, kubectl, directory, observed_provider, stage):
+        stages.append(stage)
+
+    async def original_deadline(operation, *, timeout):
+        assert timeout == 180
+        for _ in range(2):
+            if await operation():
+                return
+        raise TimeoutError
+
+    monkeypatch.setattr(verifier, "reset_diagnostics", diagnostics)
+    monkeypatch.setattr(verifier, "until", original_deadline)
+    if succeeds:
+        result = await verifier.verify_reset(Transport(), provider, None, None, "owned", tmp_path)
+        assert result["observed_rates"] == ("0.5",)
+        assert result["raw_reset_observation"]["query_timestamp"] == float(raw_calls[-1]["time"])
+        assert stages == ["before", "ready"]
+    else:
+        with pytest.raises(TimeoutError):
+            await verifier.verify_reset(Transport(), provider, None, None, "owned", tmp_path)
+        assert stages == ["before", "failure"]
+    if case in {"zero-to-positive", "empty-to-positive"}:
+        assert len(raw_calls) == len(rate_calls) == 2
+    elif case == "lost-raw-witness":
+        assert len(raw_calls) == 2 and len(rate_calls) == 1
+    elif provider != "thanos":
+        assert len(raw_calls) == 2 and not rate_calls
+    else:
+        assert len(raw_calls) == len(rate_calls) == 1
 
 
 @pytest.mark.asyncio
