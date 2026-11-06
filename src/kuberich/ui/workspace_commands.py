@@ -169,8 +169,8 @@ class WorkspaceCommands:
         except AppError as error:
             self.host.notify(str(error), severity="error")
             return
-        if command in {Command.EXPORT, Command.EXPORTS}:
-            # The source must still be mounted when its immutable capture is made.
+        if command in {Command.EXPORT, Command.EXPORTS, Command.HISTORY}:
+            # Capture exports/history before changing the originating selection.
             # Local artifact browsing also retains the originating view for Back.
             if command is Command.EXPORT and self.export_current is not None:
                 self.export_current(origin)

@@ -529,7 +529,13 @@ class WorkspaceNavigation:
             if resource == "authorization"
             else (("Enter", "Expand"), ("o", "Open"), ("/", "Filter"), ("Esc", "Previous"))
             if resource == "relationships"
-            else (("Enter", "Drill down"), (":", "Command"), ("/", "Filter"), ("Esc", "Previous"))
+            else (
+                ("Enter", "Drill down"),
+                ("M", "Metric history"),
+                (":", "Command"),
+                ("/", "Filter"),
+                ("Esc", "Previous"),
+            )
             if resource in {"pulse", "relationships", "authorization", "diagnostics"}
             else CTX_SHORTCUTS
             if resource == "contexts"

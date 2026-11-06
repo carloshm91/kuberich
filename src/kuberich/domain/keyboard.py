@@ -30,6 +30,7 @@ TABLE_PROFILES = (
     "contexts",
     "containers",
     "container-inspection",
+    "history",
     "data",
     "themes",
     "forwards",
@@ -69,14 +70,37 @@ _SAFETY = frozenset(
         "f5",
     }
 )
-_RESOURCE = frozenset({"c", "n", "l", "L", "x", "F", "d", "y", "e", "E", "v", "r", "i", "ctrl+d"})
+_RESOURCE = frozenset(
+    {"c", "n", "l", "L", "x", "F", "d", "y", "e", "E", "v", "r", "i", "M", "ctrl+d"}
+)
 FIXED_KEYS = {
     "table": _SAFETY,
     "resources": _SAFETY | _RESOURCE,
     "namespaces": _SAFETY | _RESOURCE | {"0"},
     "contexts": _SAFETY | _RESOURCE,
-    "containers": _SAFETY | {"s", "x", "a", "u", "d", "l", "e"},
+    "containers": _SAFETY | {"s", "x", "a", "u", "d", "l", "e", "M"},
     "container-inspection": _SAFETY | {"e", "i", "s", "r", "R"},
+    "history": _SAFETY
+    | {
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "c",
+        "m",
+        "n",
+        "f",
+        "r",
+        "d",
+        "b",
+        "a",
+        "u",
+        "left_square_bracket",
+        "right_square_bracket",
+    },
     "data": _SAFETY | {"r", "R", "x"},
     "themes": _SAFETY,
     "forwards": _SAFETY | {"s"},

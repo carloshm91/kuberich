@@ -85,6 +85,12 @@ COMMAND_SPECS = (
     _spec(Command.PODS, ("po", "pod", "pods"), "List pods; optionally choose NAMESPACE or *."),
     _spec(Command.PULSE, ("pulse", "overview"), "Open cluster health, budgets and metric history."),
     _spec(
+        Command.HISTORY,
+        ("history", "hist"),
+        "Open captured resource or cluster metric history.",
+        action="metric_history",
+    ),
+    _spec(
         Command.DIAGNOSTICS,
         ("diagnostics",),
         "Collect namespace diagnostic evidence; :diagnostics cancel stops the active collection.",

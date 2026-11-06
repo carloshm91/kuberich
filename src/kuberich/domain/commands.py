@@ -14,6 +14,7 @@ class Command(Enum):
     QUIT = auto()
     PODS = auto()
     PULSE = auto()
+    HISTORY = auto()
     DIAGNOSTICS = auto()
     DIAGNOSE = auto()
     POPEYE = auto()

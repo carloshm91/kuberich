@@ -213,3 +213,129 @@ async def test_cancellation_propagates_and_drains_a_held_parser_even_after_secon
         with pytest.raises(asyncio.CancelledError):
             await task
         assert finished.is_set()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "mode,status",
+    [
+        (401, HistoryStatus.UNAUTHORIZED),
+        (403, HistoryStatus.FORBIDDEN),
+        (404, HistoryStatus.UNAVAILABLE),
+        (429, HistoryStatus.UNAVAILABLE),
+        (503, HistoryStatus.UNAVAILABLE),
+        (500, HistoryStatus.FAILED),
+        ("malformed", HistoryStatus.INVALID_RESPONSE),
+        ("empty", HistoryStatus.NO_DATA),
+    ],
+)
+async def test_finite_engine_preserves_precise_failure_states_and_endpoint_bounds(
+    tmp_path, mode, status
+):
+    from uuid import uuid4
+
+    from kuberich.domain.history import (
+        HistoryOptions,
+        HistoryRequest,
+        HistoryScope,
+        MembershipEvidence,
+        build_history_plan,
+        history_window,
+    )
+    from kuberich.domain.targets import SessionIdentity
+    from kuberich.services.history import ServiceHistoryTransport
+    from tests.support.history import matrix
+
+    async def handler(incoming):
+        if isinstance(mode, int):
+            return web.Response(status=mode, text="synthetic-private-error")
+        if mode == "malformed":
+            return web.json_response({"unexpected": True})
+        document = matrix(incoming.query)
+        document["data"]["result"] = []
+        return web.json_response(document)
+
+    start, end, step = history_window(NOW, 900)
+    session = SessionIdentity("owned", 1)
+    request = HistoryRequest(
+        uuid4(),
+        HistoryScope(session, "cluster", "team"),
+        HistoryOptions(BACKEND),
+        start,
+        end,
+        step,
+        ("cpu", "memory"),
+        0,
+    )
+    async with reader_fixture(tmp_path, handler) as reader:
+        transport = ServiceHistoryTransport(
+            reader.session, BACKEND, "owned-service", prefix="/tenant"
+        )
+        try:
+            result = await HistoryReader().collect(
+                transport,
+                build_history_plan(request, MembershipEvidence()),
+                lambda: True,
+                now=lambda: NOW,
+            )
+            assert result.status is status and not any(series.points for series in result.series)
+            assert "synthetic-private" not in repr(result)
+            for suffix, limit in (("../query", 1024), ("query", 0)):
+                with pytest.raises(Exception, match="fixed API suffix"):
+                    await transport.get_json(suffix, {}, max_bytes=limit)
+        finally:
+            await transport.close()
+        with pytest.raises(Exception, match="fixed API suffix"):
+            await transport.get_json("query", {}, max_bytes=1024)
+
+
+@pytest.mark.asyncio
+async def test_finite_engine_rejects_obsolete_intent_and_propagates_caller_cancellation(tmp_path):
+    from uuid import uuid4
+
+    from kuberich.domain.history import (
+        HistoryOptions,
+        HistoryRequest,
+        HistoryScope,
+        MembershipEvidence,
+        build_history_plan,
+        history_window,
+    )
+    from kuberich.domain.targets import SessionIdentity
+    from kuberich.services.history import ServiceHistoryTransport
+
+    entered, release = asyncio.Event(), asyncio.Event()
+
+    async def handler(incoming):
+        entered.set()
+        await release.wait()
+        return web.json_response(payload(incoming))
+
+    start, end, step = history_window(NOW, 900)
+    session = SessionIdentity("owned", 1)
+    request = HistoryRequest(
+        uuid4(),
+        HistoryScope(session, "cluster", "team"),
+        HistoryOptions(BACKEND),
+        start,
+        end,
+        step,
+        ("cpu", "memory"),
+        0,
+    )
+    plan = build_history_plan(request, MembershipEvidence())
+    async with reader_fixture(tmp_path, handler) as reader:
+        with pytest.raises(Exception, match="captured UID"):
+            ServiceHistoryTransport(reader.session, BACKEND, "")
+        transport = ServiceHistoryTransport(reader.session, BACKEND, "owned")
+        with pytest.raises(asyncio.CancelledError):
+            await HistoryReader().collect(transport, plan, lambda: False, now=lambda: NOW)
+        task = asyncio.create_task(
+            HistoryReader().collect(transport, plan, lambda: True, now=lambda: NOW)
+        )
+        await asyncio.wait_for(entered.wait(), 5)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        release.set()
+        await transport.close()

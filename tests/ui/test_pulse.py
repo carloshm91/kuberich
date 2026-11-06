@@ -29,6 +29,7 @@ from kuberich.ui.controllers.base import RenderRequest, ViewDriver
 from kuberich.ui.controllers.pulse import PulseController
 from kuberich.ui.pulse import PulseTable, history_cells, sparkline
 from tests.support.connections import catalog_fixture, namespaces
+from tests.support.history import service
 from tests.support.pods import pod
 from tests.support.resources import collection, descriptor, legacy_roots, pod_resource
 from tests.support.workspace import stable_watch, wait_for, workspace_api
@@ -531,10 +532,16 @@ async def test_configured_history_renders_real_service_proxy_data_and_scope(tmp_
         return namespaces("team")
 
     async def resources(request):
+        if request.path == "/api/v1/namespaces/observability/services/prometheus":
+            return web.json_response(service("prometheus", namespace="observability"))
         if request.path.endswith("/query_range"):
             queries.append((request.path, request.query["query"]))
             start, end, step = (float(request.query[name]) for name in ("start", "end", "step"))
-            value = "0.5" if "container_cpu_usage" in request.query["query"] else str(2**24)
+            value = (
+                "1"
+                if request.query["query"].startswith("count(")
+                else ("0.5" if "container_cpu_usage" in request.query["query"] else str(2**24))
+            )
             values = [
                 [start + index * step, value]
                 for index in range(int((end - start) / step) + 1)
@@ -550,7 +557,12 @@ async def test_configured_history_renders_real_service_proxy_data_and_scope(tmp_
             return await stable_watch(request)
         return web.json_response(collection())
 
-    async with workspace_api(ns, resources) as url:
+    def history_roots():
+        roots = legacy_roots()
+        roots["/api/v1"]["resources"].append(descriptor("services", kind="Service"))
+        return roots
+
+    async with workspace_api(ns, resources, discovery_roots=history_roots) as url:
         app, _, _ = owned_app(
             tmp_path,
             {"observability": {"history": {"namespace": "observability", "service": "prometheus"}}},
@@ -567,7 +579,7 @@ async def test_configured_history_renders_real_service_proxy_data_and_scope(tmp_
                 "partial\nbackend unverified"
             )
             assert "binding unverified" in app.pulse_table.get_cell("history:0", "DETAIL").plain
-            assert len(queries) == 2 and all(
+            assert len(queries) == 5 and all(
                 path.startswith(
                     "/api/v1/namespaces/observability/services/http:prometheus:9090/proxy/"
                 )

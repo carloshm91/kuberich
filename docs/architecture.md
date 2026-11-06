@@ -84,9 +84,14 @@ not widgets, and enforce policy independently of a button or shortcut.
 [PulseService](../src/kuberich/services/pulse.py) owns serial overview collection
 within the selected workspace session. It publishes per-source progress and
 shares a combined retained-payload budget across resource families and samples.
-[HistoryReader](../src/kuberich/services/history.py) uses that session's relative
-Service-proxy transport for optional Prometheus CPU/memory history. Its fixed
-queries, literal selectors and matrix bounds remain separate from UI rendering.
+[HistoryWorkspace](../src/kuberich/services/history_workspace.py) owns finite
+historical queries, target/configuration generations and a limited cache per
+connection. Its detail claim pauses overview history while Pulse health continues.
+[HistoryReader](../src/kuberich/services/history.py) verifies the selected Service
+proxy; [external HTTP](../src/kuberich/adapters/history_http.py) has separate TLS
+and credential state. Fixed queries and membership evidence remain independent
+of rendering. [ADR 0039](adr/0039-context-owned-metric-history.md) records limits,
+identity gaps, credential boundaries and review-screen lifetime.
 
 [RelationshipService](../src/kuberich/services/relationships.py) owns one graph's
 compact facts, expansion and cumulative [read budget](../src/kuberich/domain/read_budget.py).
@@ -126,7 +131,7 @@ The typed Pulse route uses a dedicated native controller in the same frame.
 Navigation preserves its aggregate selection and variable-height viewport;
 drill-downs carry the actual API/version, namespace, predicate, sort and UID.
 The [overview decision](adr/0033-cluster-overview-and-history.md) records ownership,
-expiry, configured backend scope and the separately planned broader history.
+expiry and configured backend scope; ADR 0039 extends finite resource history.
 
 The [relationship table](../src/kuberich/ui/relationships.py) and
 [controller](../src/kuberich/ui/controllers/relationships.py) show visible graph

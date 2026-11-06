@@ -3,13 +3,13 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from decimal import Decimal
+from decimal import MAX_EMAX, MIN_EMIN, Decimal, localcontext
 
 from rich.text import Text
 from textual.widgets.data_table import RowKey
 
 from kuberich.domain.history import HistorySeries, HistorySnapshot
-from kuberich.domain.metrics import MetricReport, number
+from kuberich.domain.metrics import MetricReport
 from kuberich.domain.navigation import Viewport
 from kuberich.domain.pulse import (
     PulseDrilldown,
@@ -32,7 +32,27 @@ def timestamp(value: datetime | None) -> str:
     return value.astimezone(UTC).isoformat(timespec="seconds") if value is not None else "never"
 
 
-def sparkline(series: HistorySeries, width: int = 32) -> str:
+def history_number(value: Decimal | None, unit: str) -> str:
+    """Bound precision and output size, including adversarial Decimal exponents."""
+    if value is None or not value.is_finite() or not 0 <= value <= Decimal("1e30"):
+        return "N/A"
+    with localcontext() as context:
+        context.prec = 12
+        context.Emax, context.Emin = MAX_EMAX, MIN_EMIN
+        scaled = value * 1000 if unit == "cores" else value / 1048576 if unit == "bytes" else value
+        rendered = format(scaled, ".4g")
+        return (
+            rendered.rstrip("0").rstrip(".")
+            if "." in rendered and "e" not in rendered.lower()
+            else rendered
+        )
+
+
+def history_unit(unit: str) -> str:
+    return "mCPU" if unit == "cores" else "MiB" if unit == "bytes" else unit
+
+
+def sparkline(series: HistorySeries, width: int = 32, *, ascii_only: bool = False) -> str:
     """Retain gaps when downsampling; neither missing nor zero implies health."""
     points = series.points
     if not points:
@@ -41,17 +61,24 @@ def sparkline(series: HistorySeries, width: int = 32) -> str:
     values: list[Decimal | None] = []
     for index in range(size):
         bucket = points[index * len(points) // size : (index + 1) * len(points) // size]
-        present = tuple(point.value for point in bucket if point.value is not None)
+        present = tuple(
+            point.value
+            for point in bucket
+            if point.value is not None and point.value.is_finite() and point.value >= 0
+        )
         values.append(max(present) if len(present) == len(bucket) else None)
     maximum = max((value for value in values if value is not None), default=Decimal(0))
-    return "".join(
-        "·"
-        if value is None
-        else _BLOCKS[min(7, int(value * 7 / maximum))]
-        if maximum
-        else _BLOCKS[0]
-        for value in values
-    )
+    blocks, gap = ("._-:=+*#", "?") if ascii_only else (_BLOCKS, "·")
+    with localcontext() as context:
+        context.prec = 12
+        return "".join(
+            gap
+            if value is None
+            else blocks[min(7, int(value / maximum * 7))]
+            if maximum
+            else blocks[0]
+            for value in values
+        )
 
 
 def history_cells(history: HistorySnapshot) -> tuple[tuple[str, str, str, str], ...]:
@@ -73,15 +100,14 @@ def history_cells(history: HistorySnapshot) -> tuple[tuple[str, str, str, str], 
     charts = []
     for series in history.series:
         value = series.points[-1].value if series.points else None
-        scale = series.key if series.key in {"cpu", "memory"} else ""
-        unit = "mCPU" if scale == "cpu" else "MiB" if scale == "memory" else series.unit
+        unit = history_unit(series.unit)
         maximum = max(
             (point.value for point in series.points if point.value is not None), default=None
         )
         charts.append(
             (
                 series.label,
-                f"{number(value, scale)} {unit} · 0..{number(maximum, scale)}\n{sparkline(series)}",
+                f"{history_number(value, series.unit)} {unit} · 0..{history_number(maximum, series.unit)}\n{sparkline(series)}",
                 str(history.status),
                 f"{series.key} · scale uses available samples · {history.scope_label}",
             )

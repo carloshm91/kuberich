@@ -25,6 +25,7 @@ from tests.support.editing_terminal import terminal_editing
 from tests.support.export_browser_geometry import terminal_export_browser_geometry
 from tests.support.forward_terminal import terminal_forward
 from tests.support.handoff import terminal_handoff_trial
+from tests.support.history_terminal import terminal_history
 from tests.support.interactions_terminal import terminal_interactions
 from tests.support.local_exports import terminal_local_exports
 from tests.support.mutation_terminal import terminal_mutation
@@ -40,6 +41,25 @@ from tests.support.transports import TerminalTransport
 from tests.support.workload_terminal import terminal_workload
 from tests.support.workloads import workload_api
 from tests.terminal.pty_support import TerminalSession
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+def test_installed_metric_history_uses_owned_sources_and_restores_terminal(
+    installed_wheel, artifacts, tmp_path, entry_point
+):
+    binary, _ = installed_wheel
+    command = (
+        [str(binary / "kuberich")]
+        if entry_point == "console"
+        else [str(binary / "python"), "-m", "kuberich"]
+    )
+    terminal_history(
+        command,
+        tmp_path,
+        evidence=f"installed-metric-history-{entry_point}",
+        size=(100, 30),
+        wheel_sha256=hashlib.sha256(artifacts[0].read_bytes()).hexdigest(),
+    )
 
 
 @pytest.mark.parametrize("entry_point", ["console", "module"])

@@ -6,6 +6,7 @@ import asyncio
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID
@@ -71,12 +72,15 @@ class ResourceOperations:
         forwarding: Callable[[], ForwardPreferences],
         delete_context: Callable[[], None],
         stop_plugins: Callable[[KubernetesSession], Awaitable[None]],
+        metric_history: Callable[[CapturedResource[KubernetesSession], ContainerIdentity], None]
+        | None = None,
     ) -> None:
         self.host, self.capture, self.context = host, capture, context
         self.policy, self.mutations, self.forwards = policy, mutations, forwards
         self.processes, self.status = processes, status
         self.session_current, self.forwarding = session_current, forwarding
         self.delete_context, self.stop_plugins = delete_context, stop_plugins
+        self.metric_history = metric_history
         self._aggregate_screens: set[AggregateLogScreen] = set()
         self._inspection_screens: set[ContainerInspectionScreen] = set()
         self._auto_forward_contexts: set[str] = set()
@@ -406,6 +410,11 @@ class ResourceOperations:
                 trail=context.trail,
                 inspect_container=lambda identity: self.open_container_inspection(
                     selection, identity
+                ),
+                metric_history=(
+                    partial(self.metric_history, selection)
+                    if self.metric_history is not None
+                    else None
                 ),
             )
             if containers_first
