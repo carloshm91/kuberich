@@ -277,6 +277,146 @@ def test_target_observation_rejects_recreation_creation_change_and_container_rem
         workspace.observe_target(replace(scope, created_at=NOW), record)
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("phase", ["initial", "after-query", "cache-hit"])
+@pytest.mark.parametrize("change", ["uid", "container"])
+async def test_target_rejection_returns_conflict_and_revokes_data_without_cancelling_itself(
+    tmp_path, phase, change
+):
+    target_reads = 0
+    reject = [phase != "cache-hit"]
+    paths = []
+
+    async def handler(incoming):
+        nonlocal target_reads
+        paths.append(incoming.path)
+        if incoming.path.endswith("/pods/one"):
+            target_reads += 1
+            changed = reject[0] and (phase == "initial" or target_reads >= 2)
+            document = item(uid="replacement" if changed and change == "uid" else "owned-one")
+            if changed and change == "container":
+                document["spec"]["containers"] = []
+            return web.json_response(document)
+        if incoming.path.endswith("/services/metrics"):
+            return web.json_response(service())
+        return web.json_response(
+            matrix(
+                incoming.query,
+                labels={"namespace": "team", "pod": "one", "uid": "owned-one"}
+                if incoming.query["query"].startswith("max by(namespace,pod,uid)")
+                else {},
+            )
+        )
+
+    async with reader_fixture(tmp_path, handler) as reader:
+        session = SessionIdentity("owned", 1)
+        workspace = owner(reader.session, session)
+        scope = HistoryScope(
+            session,
+            "container" if change == "container" else "pod",
+            "team",
+            ResourceTarget(
+                session,
+                "",
+                "pods",
+                "team",
+                "one",
+                "owned-one",
+                "app" if change == "container" else None,
+            ),
+            history_discovery().find("pods"),
+            container_field="containers" if change == "container" else None,
+        )
+        try:
+            if phase == "cache-hit":
+                first = await workspace.collect(request(session, scope=scope))
+                assert first.status in {
+                    HistoryStatus.VALID,
+                    HistoryStatus.PARTIAL,
+                    HistoryStatus.NO_DATA,
+                }
+                assert workspace.retained_bytes > 0
+                reject[0] = True
+                target_reads = 0
+                paths.clear()
+            revision = workspace.config_revision
+            incoming = request(session, scope=scope, revision=revision)
+            rejected = await workspace.collect(incoming)
+            assert rejected.status is HistoryStatus.CONFIGURATION_CONFLICT
+            assert rejected.request_id == incoming.id and not rejected.series
+            assert workspace.config_revision == revision + 1
+            assert (
+                workspace.retained_points
+                == workspace.retained_bytes
+                == workspace.operation_count
+                == 0
+            )
+            assert workspace.snapshot.status is HistoryStatus.UNCONFIGURED
+            assert workspace.snapshot.request_id is None and not workspace.snapshot.series
+            assert target_reads == (1 if phase == "initial" else 2)
+            assert bool([path for path in paths if "/proxy/" in path]) == (phase == "after-query")
+            assert (await reader.session.get_json("/api/v1/namespaces/team/services/metrics"))[
+                "kind"
+            ] == "Service"
+        finally:
+            await workspace.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("revocation", ["caller", "observed-target"])
+async def test_external_cancellation_or_target_revocation_still_cancels_and_drains_collection(
+    tmp_path, revocation
+):
+    entered, release = asyncio.Event(), asyncio.Event()
+
+    async def handler(incoming):
+        if incoming.path.endswith("/pods/one"):
+            return web.json_response(item())
+        if incoming.path.endswith("/services/metrics"):
+            return web.json_response(service())
+        entered.set()
+        await release.wait()
+        return web.json_response(matrix(incoming.query))
+
+    async with reader_fixture(tmp_path, handler) as reader:
+        session = SessionIdentity("owned", 1)
+        workspace = owner(reader.session, session)
+        resource = history_discovery().find("pods")
+        scope = HistoryScope(
+            session,
+            "pod",
+            "team",
+            ResourceTarget(session, "", "pods", "team", "one", "owned-one"),
+            resource,
+        )
+        task = asyncio.create_task(workspace.collect(request(session, scope=scope)))
+        try:
+            await asyncio.wait_for(entered.wait(), 5)
+            if revocation == "caller":
+                task.cancel()
+            else:
+                with pytest.raises(AppError, match="target changed"):
+                    workspace.observe_target(
+                        scope, resource_record(resource, item(uid="replacement"))
+                    )
+            with pytest.raises(asyncio.CancelledError):
+                await task
+            assert (
+                workspace.retained_bytes
+                == workspace.retained_points
+                == workspace.operation_count
+                == 0
+            )
+            assert not workspace.snapshot.series
+            assert (await reader.session.get_json("/api/v1/namespaces/team/services/metrics"))[
+                "kind"
+            ] == "Service"
+        finally:
+            release.set()
+            await workspace.close()
+            await asyncio.gather(task, return_exceptions=True)
+
+
 def test_candidate_selection_preserves_literal_source_and_cluster_bindings():
     session = SessionIdentity("owned", 1)
     workspace = owner(None, session)

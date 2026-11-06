@@ -343,6 +343,48 @@ async def test_actual_backend_detection_is_explicit_and_keyboard_selects_one_can
 
 
 @pytest.mark.asyncio
+async def test_actual_refresh_rejects_replaced_uid_before_backend_queries_and_clears_previous_values(
+    tmp_path,
+):
+    async with app_fixture(tmp_path) as (app, api, *_), app.run_test() as pilot:
+        await root_ready(app)
+        parent, screen = await open_history(app, pilot)
+        lease = screen.capture_export(datetime.now(UTC))[0][1]
+        assert lease.current() and screen.table.row_count > 0 and "last " in text(screen)
+        captured_target = screen.scope.target
+        before = len(api.requests)
+        # Keep the root's captured observation unchanged. The real service must
+        # reject this replacement in its first target GET, before any backend IO.
+        api.records[POD_PATH]["metadata"]["uid"] = "replacement-before-refresh"
+        await pilot.press("r")
+        await wait_for(lambda: screen.operation_count == 0)
+        assert any(path == POD_PATH for path, _ in api.requests[before:])
+        assert not any("/services/" in path for path, _ in api.requests[before:])
+        assert not lease.current()
+        assert screen.invalidated, (
+            str(screen.status.content),
+            screen.table.row_count,
+            screen.table.disabled,
+        )
+        assert screen.scope.target is captured_target and screen.snapshot is None
+        assert screen.table.disabled and screen.table.row_count == 0 and text(screen) == ""
+        assert "target changed" in str(screen.status.content)
+        assert "loading" not in str(screen.status.content) and "reading" not in str(
+            screen.status.content
+        )
+        assert not screen.capture_export(datetime.now(UTC))
+        await pilot.press("escape")
+        await wait_for(
+            lambda: (
+                app.screen is parent
+                and app.metric_history.retained_screen_count == 0
+                and app.metric_history.operation_count == 0
+            )
+        )
+        assert not app.metric_history.detail_active
+
+
+@pytest.mark.asyncio
 async def test_actual_uid_replacement_during_finite_read_cannot_publish_or_export(tmp_path):
     async with (
         app_fixture(tmp_path) as (app, api, _path, entered, release, hold),

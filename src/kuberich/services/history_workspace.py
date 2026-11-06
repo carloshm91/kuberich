@@ -158,8 +158,13 @@ class HistoryWorkspace:
         self._cache.clear()
         self._snapshot = HistorySnapshot()
         self._overview_snapshot = HistorySnapshot()
+        try:
+            current = asyncio.current_task()
+        except RuntimeError:
+            current = None
         for task in (self._active, self._detection):
-            if task is not None:
+            # Target validation revokes this collector before returning a typed conflict.
+            if task is not None and task is not current:
                 task.cancel()
 
     def enter_detail(self, scope: HistoryScope) -> None:

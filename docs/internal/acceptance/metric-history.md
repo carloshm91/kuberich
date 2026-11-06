@@ -256,3 +256,47 @@ issue in verifier `6c3612f2dc9eac12211c7ad0728bc611e8e3ea504ec5d2d1bd835be7b7b4b
 and test source `ce728cab9ca1f4d82dfa6d14654a19ef8e1c413f099d0a18e3c58c74d017dd38`.
 Those results qualify the correction's local contracts; fresh owned-provider
 execution remains required.
+
+## Recreated-target rejection
+
+The fresh `kind-004` trial on source `9ff39f7` passed all 105 provider/scope/range
+collections. Each provider supplied native positive CPU/memory in all five
+scopes, a current raw reset witness, the required reported-reset diagnostic and
+a positive bounded production-profile rate. The three-provider rollout check
+also distinguished newly captured current members from historical name-inferred
+membership without presenting parent-owner names as UID proof.
+
+The trial then failed at the recreated-Pod negative control: collection of the
+old UID raised `CancelledError` instead of returning an empty configuration
+conflict. The final receipt records unchanged inputs, owned-cluster deletion and
+private-directory deletion. The verifier stage lasted 394.58 seconds; its
+passing intermediate checks do not qualify this failed complete trial.
+
+Read-only service/UI review identified self-cancellation during target rejection:
+`observe_target` synchronously revokes the intent, configuration revision, cache
+and snapshots, then `invalidate` cancels the same collection task that must
+return the conflict. The intended correction preserves immediate revocation
+and cancellation of other owned tasks while allowing this semantic rejection
+to return. External invalidation, supersession and caller cancellation must
+remain cancellation; rejected results must never be published or cached. The
+existing screen revision gate must clear rows, revoke exports and show the
+target-change notice. Controlled service/UI regressions and fresh complete
+provider execution remain required.
+
+Controlled regressions reproduced the original service failure for initial UID
+and container-declaration rejection, and the actual App retained old visible rows
+after its refresh drained. The correction skips cancelling only the executing
+owner task; synchronous revocation, other-task cancellation and the existing
+screen revision guard remain unchanged. No cancellation is translated or erased.
+All 94 focused service/adapter/contract cases pass in 5.58 seconds, including
+initial, post-query and cache-hit rejection, genuine caller cancellation and
+external target revocation. A rejected request returns an empty typed conflict
+but leaves the owner's snapshot unconfigured with no request identity or cache.
+
+Nine actual-service/UI lifetime cases pass in 7.41 seconds. The new regression
+requires a fresh target read with no backend request, cleared/disabled rows, a
+target-change notice, revoked exports and complete detail-owner retirement on
+Back. Existing replacement-during-query, context/configuration, newer-intent and
+parent-cancellation controls still pass. Independent review found no material
+issue in the minimal correction; fresh full provider execution and cumulative
+coverage/platform gates remain outstanding.
