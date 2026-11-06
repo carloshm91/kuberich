@@ -110,3 +110,48 @@ explicit namespaces, supplies the fixture namespace only for unqualified objects
 and omits the namespace override only for apply. An exact argv/environment and
 mixed-manifest regression passed among eight verifier tests. The fresh second
 trial is separate; the original failure is not relabelled.
+
+Read-only triage found the second trial's initial 24h cluster no-data result
+consistent with a new backend's aligned grid: its 120-second end was 05:28:00Z,
+while the first positive warmup observation was 05:29:46Z. The exact first scrape
+time was not independently established. The preceding short-range
+CPU/memory chart contained real values; 15m–3h collections retained both sources,
+6h/12h retained memory and 24h had no sources yet. Shared CPU/memory/membership
+QuerySpecs are identical between two-family and four-family requests; query/read
+budgets were not exhausted. This observation remains no data rather than an
+invented value or a relaxed assertion.
+
+## Complete local application attempt
+
+The fixed production source cohort selected all unit, contract, UI, terminal and
+packaging tests: 8,431 passed, five failed and four skipped in 1,249.19 seconds.
+The bounded runner reaped its child and verified its process group absent.
+The original JUnit/log, raw coverage and runtime children are preserved under
+`artifacts/issue231/root/application-01/`; this attempt remains failed.
+
+Two navigation fixtures still used the newly reserved common `b` binding. One
+now supplies the documented history override; the legacy migration fixture uses
+an otherwise valid shared key without changing its migration assertions. All
+129 related cases passed. With that meaningful append, independent production
+coverage measured 31,593/32,050 lines (98.5741%) and 9,540/9,996 branches
+(95.4382%) across all 252 modules. All 104 critical modules reached exact 100%;
+changed lines measured 97.07%. These floors passed separately, while runtime
+qualification remains failed because the successful aggregate-runtime outer
+receipt is absent.
+
+Three export-workflow failures require investigation before delivery: the large
+retained-log instrumented preview missed its unchanged five-second readiness
+wait; an aggregate window transition accessed a removed frame; the offline
+artifact browser retained header-width columns and truncated its filename at
+100×30. Original cleanup receipts are preserved. A single pure 5,000-record
+profile found unnecessary full-preview paging: 2.55 million per-character encode
+calls generated ten pages only to keep the first. Its 9.18-second CTracer/cProfile
+observation includes profiler overhead and is not a latency qualification.
+Read-only investigation and controlled regressions must establish corrections;
+coverage percentages do not waive these failures.
+
+The reset verifier follow-up retains the original unknown cause, adds explicit
+endpoint readiness/port/scrape contracts and records per-provider observations
+and bounded diagnostics. All reset checks now precede long native warmup with
+the original 180-second deadline. Fourteen focused verifier tests and static/type
+checks passed. A fresh actual trial is pending after application regressions.

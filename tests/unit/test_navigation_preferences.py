@@ -49,11 +49,17 @@ from tests.unit.test_generic_commands import catalogue
 
 def test_effective_profiles_use_common_then_owner_and_preserve_view_actions():
     overrides = parse_keys(
-        {"table": {"down": "b"}, "resources": {"down": "j", "sort": "a"}, "logs": {"last": "K"}}
+        {
+            "table": {"down": "b"},
+            "resources": {"down": "j", "sort": "a"},
+            "history": {"down": "alt+j"},
+            "logs": {"last": "K"},
+        }
     )
     assert keys_for(overrides, "resources")["down"] == "j"
     assert keys_for(overrides, "resources")["sort"] == "a"
     assert keys_for(overrides, "containers")["down"] == "b"
+    assert keys_for(overrides, "history")["down"] == "alt+j"
     assert "sort" not in keys_for(overrides, "containers")
     assert keys_for(overrides, "logs")["down"] == "j"
     assert keys_for(overrides, "logs")["last"] == "K"
@@ -343,7 +349,7 @@ def test_schema_evidence_prevents_positional_reinterpretation_but_not_descriptio
 
 def test_legacy_views_migrate_in_memory_without_overwriting_input():
     raw = {
-        "keys": {"down": "b"},
+        "keys": {"down": "9"},
         "aliases": {"work": "pods"},
         "views": {
             "v1/pods": {

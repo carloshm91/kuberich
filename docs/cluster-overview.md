@@ -197,7 +197,9 @@ The displayed Kubernetes UID does not establish an equivalent historical binding
 `·` marks a missing sample; measured zero stays zero. Nonfinite, missing-source,
 forbidden, partial and expired values keep their status. Evaluation timestamps
 are not proof of scrape freshness. Ranges use at most 721 points per series and
-collection may stop at its visible query, series or response limits.
+collection may stop at its visible query, series or response limits. Range ends
+are aligned to their resolution; a new backend can have no samples on a coarse
+grid even when the most recent short-range chart has data.
 
 Collection is explicit and finite. Rapid range changes replace the pending
 request; previous requests drain before their replacement. A detail view pauses
