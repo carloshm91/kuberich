@@ -18,6 +18,7 @@ class ViewKind(Enum):
     PODS = "pods"
     NAMESPACES = "namespaces"
     CONTEXTS = "contexts"
+    EVENTS = "events"
     STANDARD = "standard"
     CUSTOM = "custom"
 
@@ -53,6 +54,10 @@ class ViewRoute:
             selection.name != self.kind.value or selection.group
         ):
             raise AppError("A built-in view requires its matching core API resource.")
+        if self.kind is ViewKind.EVENTS and (
+            selection.name != "events" or selection.group not in {"", "events.k8s.io"}
+        ):
+            raise AppError("An Events view requires a discovered Event API selection.")
         if (
             self.kind is ViewKind.STANDARD
             and not selection.group
@@ -84,6 +89,10 @@ class ViewRoute:
     @classmethod
     def contexts(cls) -> ViewRoute:
         return cls(ViewKind.CONTEXTS)
+
+    @classmethod
+    def events(cls, selection: ResourceSelection) -> ViewRoute:
+        return cls(ViewKind.EVENTS, selection)
 
     @classmethod
     def pulse(cls) -> ViewRoute:

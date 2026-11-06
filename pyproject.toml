@@ -176,6 +176,15 @@ show_contexts = true
 [tool.kuberich.coverage]
 # Extend this reviewed list when deterministic security/state decisions are added.
 critical_modules = [
+    "src/kuberich/domain/table_values.py",
+    "src/kuberich/domain/curated.py",
+    "src/kuberich/domain/curated_navigation.py",
+    "src/kuberich/domain/curated_scaling.py",
+    "src/kuberich/domain/curated_policy.py",
+    "src/kuberich/domain/curated_access.py",
+    "src/kuberich/domain/events.py",
+    "src/kuberich/ui/event_source.py",
+    "src/kuberich/services/curated_navigation.py",
     "src/kuberich/domain/container_inspection.py",
     "src/kuberich/domain/container_environment.py",
     "src/kuberich/domain/exports.py",

@@ -26,6 +26,7 @@ LOG_KEYS = tuple(
 TABLE_PROFILES = (
     "table",
     "resources",
+    "events",
     "namespaces",
     "contexts",
     "containers",
@@ -37,7 +38,7 @@ TABLE_PROFILES = (
     "sources",
 )
 PROFILES = (*TABLE_PROFILES, "logs", "text")
-SORT_PROFILES = frozenset({"resources", "namespaces"})
+SORT_PROFILES = frozenset({"resources", "namespaces", "events"})
 _SAFETY = frozenset(
     {
         "escape",
@@ -76,6 +77,7 @@ _RESOURCE = frozenset(
 FIXED_KEYS = {
     "table": _SAFETY,
     "resources": _SAFETY | _RESOURCE,
+    "events": _SAFETY | _RESOURCE | {"w", "t"},
     "namespaces": _SAFETY | _RESOURCE | {"0"},
     "contexts": _SAFETY | _RESOURCE,
     "containers": _SAFETY | {"s", "x", "a", "u", "d", "l", "e", "M"},
@@ -105,7 +107,7 @@ FIXED_KEYS = {
     "themes": _SAFETY,
     "forwards": _SAFETY | {"s"},
     "sources": _SAFETY | {"space", "r", "a"},
-    "text": _SAFETY | {"y", "d", "e", "m", "n", "N"},
+    "text": _SAFETY | {"y", "d", "e", "m", "n", "N", "L"},
     "logs": _SAFETY
     | {"c", "v", "o", "p", "f", "t", "w", "L", "C", "m", "z", "n", "N", "ctrl+s", "s", "J"},
 }

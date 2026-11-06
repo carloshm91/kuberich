@@ -8,6 +8,7 @@ from typing import Any
 import yaml
 
 from kuberich.diagnostics.redaction import sanitize_text
+from kuberich.domain.curated import CuratedDetails
 from kuberich.domain.resources import ResourceRecord
 from kuberich.domain.targets import ResourceTarget
 from kuberich.errors import AppError
@@ -26,7 +27,7 @@ def redacted(value: Any, *, key: str = "", secret: bool = False, depth: int = 0)
     """Conservative default: hide opaque payloads, annotations and inline execution data."""
     if depth > 64:
         raise AppError("Resource nesting exceeds the inspection limit.")
-    if key in {"annotations", "fieldsV1", "command", "args"} or _SENSITIVE.search(key):
+    if key in {"annotations", "fieldsV1", "command", "args", "caBundle"} or _SENSITIVE.search(key):
         return REDACTED
     if secret and key in {"data", "stringData", "binaryData"}:
         return {name: REDACTED for name in value} if isinstance(value, dict) else REDACTED
@@ -64,7 +65,11 @@ class InspectionDocuments:
 
 
 def inspection_documents(
-    manifest: dict[str, Any], events: tuple[ResourceRecord, ...], target: ResourceTarget
+    manifest: dict[str, Any],
+    events: tuple[ResourceRecord, ...],
+    target: ResourceTarget,
+    curated: CuratedDetails | None = None,
+    metadata_fallback: bool = False,
 ) -> InspectionDocuments:
     safe = redacted(manifest, secret=manifest.get("kind") in {"Secret", "ConfigMap"})
     managed_yaml = document(safe)
@@ -72,7 +77,44 @@ def inspection_documents(
     metadata.pop("managedFields", None)
     ordinary = document(safe)
     details = {"kind": safe.get("kind"), "apiVersion": safe.get("apiVersion"), "metadata": metadata}
-    if safe.get("kind") == "Pod":
+    if curated is not None or metadata_fallback:
+        details["metadata"] = {
+            key: metadata[key]
+            for key in (
+                "name",
+                "namespace",
+                "uid",
+                "resourceVersion",
+                "creationTimestamp",
+                "generation",
+            )
+            if key in metadata
+        }
+        if curated is not None:
+            details["sections"] = [
+                {
+                    "title": section.title,
+                    "columns": list(section.columns),
+                    "rows": [list(row) for row in section.rows],
+                    "omittedRows": section.omitted_rows,
+                }
+                for section in curated.sections
+            ]
+            details["links"] = [
+                {
+                    "label": link.label,
+                    "provenance": link.provenance,
+                    "availability": link.unavailable_reason
+                    or ("Available" if link.destination is not None else "Unavailable"),
+                }
+                for link in curated.links
+            ]
+            details["notices"] = list(curated.notices)
+        else:
+            details["notice"] = (
+                "Curated details unavailable for this served API version; metadata only."
+            )
+    elif safe.get("kind") == "Pod":
         spec = safe.get("spec", {})
         if not isinstance(spec, dict):
             raise AppError("Invalid pod specification for inspection.")
@@ -86,7 +128,8 @@ def inspection_documents(
         details["volumes"] = spec.get("volumes", [])
     else:
         details["spec"] = safe.get("spec", {})
-    details["status"] = safe.get("status", {})
+    if curated is None and not metadata_fallback:
+        details["status"] = safe.get("status", {})
     related = []
     for event in events:
         raw = event.manifest

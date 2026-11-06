@@ -38,6 +38,7 @@ EXPECTED = (
     ("2Gi", "ReadWriteOnce", "Retain", "Bound", "team/owned-claim", "owned"),
     ("kubernetes.io/no-provisioner", "Retain", "Immediate", "false"),
 )
+LEGACY_RESOURCES = tuple(definition for definition in STANDARD_RESOURCES if not definition.curated)
 
 
 def test_an_edited_manifest_never_changes_the_next_one():
@@ -48,8 +49,8 @@ def test_an_edited_manifest_never_changes_the_next_one():
 
 @pytest.mark.parametrize(
     "definition,expected",
-    tuple(zip(STANDARD_RESOURCES, EXPECTED, strict=True)),
-    ids=[d.name for d in STANDARD_RESOURCES],
+    tuple(zip(LEGACY_RESOURCES, EXPECTED, strict=True)),
+    ids=[d.name for d in LEGACY_RESOURCES],
 )
 def test_all_resource_columns_are_meaningful_and_endpoint_scope_is_explicit(definition, expected):
     row = resource_row(row_record(definition), definition)

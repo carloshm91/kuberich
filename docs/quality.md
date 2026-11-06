@@ -30,6 +30,10 @@ N/A, not a new 100% result.
 ## Running the gates
 
 Use [explicit source-history setup](../CONTRIBUTING.md#toolchain) first.
+Run focused tests while editing; stage new modules and create a signed-off commit
+before the complete suite. Its runtime provenance and image-capture checks require
+a complete tracked inventory and clean committed source. Freeze that candidate
+until the measurements finish.
 `uv run python scripts/qualify.py 0.3.0` runs the actual strict target union,
 private-access/startup stages, full suite and existing gates; see
 [phase verification](releases.md#reproduce-phase-verification). Individual tools:

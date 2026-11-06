@@ -204,11 +204,12 @@
         "C05",
         "B05",
         "B06",
-        "O03"
+        "O03",
+        "O09"
       ],
       "source": "internal/dao/registry.go",
       "status": "planned",
-      "difference": "C05/B06 provide discovery-qualified aliases and explicit versions, live generic tables with typed server columns or metadata fallback, bounded session-local column selection, captured YAML/details, scope/history routing and owned discovery/removal refresh. Generic mutations, persistent custom preferences/hotkeys and reactive jump chains retain M05/U02/U06; full parity is not claimed. O03 #70 follows actual discovered owner GVKs in native development-source graphs; it does not infer arbitrary custom-resource reference fields. Complete issue/current-head qualification remains pending.",
+      "difference": "C05/B06 provide discovery-qualified aliases and explicit versions, live generic tables with typed server columns or metadata fallback, bounded session-local column selection, captured YAML/details, scope/history routing and owned discovery/removal refresh. Generic mutations, persistent custom preferences/hotkeys and reactive jump chains retain M05/U02/U06; full parity is not claimed. O03 #70 follows actual discovered owner GVKs in native development-source graphs; it does not infer arbitrary custom-resource reference fields. Complete issue/current-head qualification remains pending. Development source adds descriptor-bound read-only summaries for 18 additional families and a separate Events view; unknown versions retain metadata fallback.",
       "partial_evidence": [
         "docs/resource-discovery.md",
         "tests/unit/test_resources.py",
@@ -236,9 +237,14 @@
         "docs/resource-relationships.md",
         "docs/internal/acceptance/resource-relationships.md",
         "tests/unit/test_relationships.py",
-        "tests/contract/test_relationships.py"
+        "tests/contract/test_relationships.py",
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "docs/internal/curated-resource-inventory.json",
+        "tests/ui/test_curated_resources.py",
+        "tests/ui/test_events_workspace.py"
       ],
-      "public_summary": "Discovery chooses served API versions and unambiguous aliases. Generic tables provide server columns, metadata fallback and saved layouts. Development source follows discovered owners; generic mutations and arbitrary custom-resource reference scanning remain unavailable.",
+      "public_summary": "Discovery and generic browsing remain available. Development source adds 18 curated read-only families and an identity-safe Events workspace; installed 0.3.0 predates them.",
       "public_status": "partial"
     },
     {
@@ -390,7 +396,7 @@
       ],
       "source": "internal/view/table.go",
       "status": "planned",
-      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40\u00d712 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
+      "difference": "B02 qualifies live row navigation, paging, horizontal scrolling, Unicode, responsive 40×12 layouts and UID/scroll retention under updates. Broader B07 interaction and platform qualification remain separate from Q02 local transport evidence. Focused #127 adds inline command suggestions without an overlay and stable shared frame/header geometry with mouse/resize checks. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. Q02 #33 adds actual Linux SSH/tmux/SSH-to-tmux workspace/log/shell resize, Unicode, focus and standard-color checks, with fresh-wheel trials. Wider B07 interaction and actual macOS/emulator qualification remain open. B07 #61: Next-release source adds independent configurable read-only text/help navigation, explicit mouse opt-in, owned remote clipboard transport trials and live container watch updates preserving selected name/viewport. Fatal permission/scope/UID invalidation is sticky, drains covered work and rejects late worker results. Physical emulator certification remains separate.",
       "partial_evidence": [
         "docs/terminal-preview.md",
         "tests/ui/test_app.py",
@@ -634,11 +640,12 @@
         "B02",
         "B04",
         "B05",
-        "S04"
+        "S04",
+        "O09"
       ],
       "source": "internal/view/registrar.go",
       "status": "planned",
-      "difference": "Live UID-based pod tables and captured regular/init container navigation are implemented. Preview #125 adds the real Namespace LIST/WATCH table with lifecycle/age, filtering, all-scope action and Enter/Escape restoration. B05 adds the standard resource tables. Live container status and ephemeral containers remain #61 and #78. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage.",
+      "difference": "Live UID-based pod tables and captured regular/init container navigation are implemented. Preview #125 adds the real Namespace LIST/WATCH table with lifecycle/age, filtering, all-scope action and Enter/Escape restoration. B05 adds the standard resource tables. Live container status and ephemeral containers remain #61 and #78. Focused #129 adds a bordered command bar and local context workspace table with retained filtering/history; captured container rows expose name-matched status/specification columns without claiming live usage. O09 #232 adds raw Event objects and separate reason/object occurrence groups, warning filtering, bounded details and UID-guarded navigation; it does not add Event mutations or infer incident duration.",
       "partial_evidence": [
         "docs/pod-table.md",
         "tests/unit/test_pods.py",
@@ -670,9 +677,13 @@
         "https://github.com/carloshm91/kuberich/issues/129",
         "docs/internal/acceptance/context-container-workspace.md",
         "tests/ui/test_context_workspace.py",
-        "tests/unit/test_container_rows.py"
+        "tests/unit/test_container_rows.py",
+        "docs/internal/acceptance/curated-resources.md",
+        "docs/internal/curated-resource-inventory.json",
+        "tests/ui/test_curated_resources.py",
+        "tests/ui/test_events_workspace.py"
       ],
-      "public_summary": "Pods and namespaces have live tables. Pod Enter opens regular, init, sidecar, and existing ephemeral container rows. State updates from the pod watch; Enter on a container opens its logs.",
+      "public_summary": "Browse live Pods, containers and namespaces. Development source adds Events warning filtering, occurrence groups and individual member inspection; installed 0.3.0 predates these Event views.",
       "public_status": "partial"
     },
     {
@@ -710,11 +721,12 @@
       "tasks": [
         "B05",
         "O03",
-        "A05"
+        "A05",
+        "O09"
       ],
       "source": "internal/client/gvrs.go",
       "status": "planned",
-      "difference": "B05/B06 provide networking resource browsing. O03 #70 adds separately labelled Service selector membership, discovered EndpointSlice associations, available legacy Endpoints fallback and backend targetRef identity/readiness/ports in development source. Denied and incomplete endpoint sources remain explicit; broader networking diagnostics remain separate.",
+      "difference": "B05/B06 provide networking resource browsing. O03 #70 adds separately labelled Service selector membership, discovered EndpointSlice associations, available legacy Endpoints fallback and backend targetRef identity/readiness/ports in development source. Denied and incomplete endpoint sources remain explicit; broader networking diagnostics remain separate. O09 #232 adds descriptor-bound read-only EndpointSlice, NetworkPolicy and IngressClass columns, details and guarded links in development source.",
       "partial_evidence": [
         "docs/standard-resources.md",
         "docs/internal/acceptance/standard-resources.md",
@@ -730,7 +742,7 @@
         "tests/contract/test_relationships.py",
         "tests/ui/test_relationship_table.py"
       ],
-      "public_summary": "Service, EndpointSlice, Ingress and NetworkPolicy views are available. Development source adds reported service backends and separate selector matches, preserving unknown endpoint identity and incomplete reads.",
+      "public_summary": "Service and Ingress tables are available. Development source adds curated EndpointSlice, NetworkPolicy and IngressClass tables and reported service backends with separate selector matches, preserving unknown endpoint identity and incomplete reads.",
       "public_status": "partial"
     },
     {
@@ -740,11 +752,12 @@
         "B05",
         "O01",
         "A05",
-        "O03"
+        "O03",
+        "O09"
       ],
       "source": "internal/client/gvrs.go",
       "status": "planned",
-      "difference": "B05 implements Nodes, PVs, PVCs and StorageClasses with typed capacities, scope and inspection. Scheduling, HPA/PDB/quota/limits remain later tasks. O01 #68 adds current Node usage/allocatable percentages and generic extended-resource capacity with incomplete Pod-allocation status when cluster-wide Pod reads are unavailable. O03 #70 adds declared Pod/node placement and explicit PV/PVC/PriorityClass reference relationships in development source; scheduling constraints are not placement and unknown implicit PV Secret namespaces stay incomplete.",
+      "difference": "B05 implements Nodes, PVs, PVCs and StorageClasses with typed capacities, scope and inspection. O09 #232 adds read-only HPA, VPA, PDB, PriorityClass, RuntimeClass, ResourceQuota and LimitRange summaries, details and guarded links in development source; broader scheduling diagnostics and enforcement remain separate. O01 #68 adds current Node usage/allocatable percentages and generic extended-resource capacity with incomplete Pod-allocation status when cluster-wide Pod reads are unavailable. O03 #70 adds declared Pod/node placement and explicit PV/PVC/PriorityClass reference relationships in development source; scheduling constraints are not placement and unknown implicit PV Secret namespaces stay incomplete.",
       "partial_evidence": [
         "docs/standard-resources.md",
         "docs/internal/acceptance/standard-resources.md",
@@ -765,7 +778,7 @@
         "tests/contract/test_relationships.py",
         "tests/ui/test_relationship_table.py"
       ],
-      "public_summary": "Node, PV, PVC, StorageClass and HPA tables are available. Development source adds Node CPU/memory usage, allocatable percentages and vendor-neutral extended-resource capacity; the development cluster overview adds known pressure/unscheduled states, while broader quota/disruption diagnostics remain planned. Development relationships distinguish declared placement, PV/PVC bindings and static PriorityClass references.",
+      "public_summary": "Node, PV, PVC and StorageClass tables are available. Development source adds curated HPA/VPA, PDB, scheduling-class, quota and limit tables, Node CPU/memory usage, allocatable percentages and vendor-neutral extended-resource capacity. The development cluster overview adds known pressure/unscheduled states; broader quota/disruption diagnostics remain planned. Development relationships distinguish declared placement, PV/PVC bindings and static PriorityClass references.",
       "public_status": "partial"
     },
     {
@@ -775,11 +788,12 @@
         "B05",
         "M05",
         "O04",
-        "O03"
+        "O03",
+        "O09"
       ],
       "source": "internal/view/registrar.go",
       "status": "planned",
-      "difference": "M05 adds explicit ConfigMap/Secret key metadata, reveal/copy and UTF-8/Base64 controls with fresh UID/version-bound reads, plus common guarded Secret editing. Environment provenance remains O07; full family parity is not claimed. O04 #71 adds native role/binding/subject evidence and current-identity permission reviews. O03 #70 adds supported static ConfigMap/Secret/ServiceAccount UsedBy declarations without values or proof of process consumption; scoped acceptance is recorded in the relationship delivery.",
+      "difference": "M05 adds explicit ConfigMap/Secret key metadata, reveal/copy and UTF-8/Base64 controls with fresh UID/version-bound reads, plus common guarded Secret editing. Environment provenance remains O07; full family parity is not claimed. O04 #71 adds native role/binding/subject evidence and current-identity permission reviews. O03 #70 adds supported static ConfigMap/Secret/ServiceAccount UsedBy declarations without values or proof of process consumption; scoped acceptance is recorded in the relationship delivery. O09 #232 adds allowlisted ServiceAccount and four RBAC resource tables/details, reusing authorization evidence rather than duplicating role matching or adding RBAC writes.",
       "partial_evidence": [
         "docs/standard-resources.md",
         "docs/internal/acceptance/standard-resources.md",
@@ -811,9 +825,14 @@
         "tests/contract/test_authorization_service.py",
         "tests/contract/test_authorization_workspace.py",
         "tests/ui/test_authorization.py",
-        "scripts/verify_authorization_kind.py"
+        "scripts/verify_authorization_kind.py",
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "docs/internal/curated-resource-inventory.json",
+        "tests/ui/test_curated_resources.py",
+        "tests/ui/test_events_workspace.py"
       ],
-      "public_summary": "ConfigMap and Secret values stay hidden until deliberate reveal or copy. Development source includes static configuration/ServiceAccount relationships, observed RBAC browsing and current-identity permission reviews with explicit scope and uncertainty.",
+      "public_summary": "ConfigMap/Secret payload views remain deliberate. Development source adds read-only ServiceAccount and RBAC summaries with declared links and authorization evidence; installed 0.3.0 predates those summaries.",
       "public_status": "partial"
     },
     {
@@ -1510,8 +1529,8 @@
       ],
       "source": "internal/view/pulse.go",
       "status": "planned",
-      "difference": "O02 #69 adds native Pulse health, capacity, current usage, exact drill-downs and independent source expiry. O08 #231 adds finite cluster/Node/workload/Pod/container history, 15m\u201324h ranges, numeric CPU/memory/network/filesystem charts, explicit backend detection and separate Service/external HTTPS transports. Historical owner names and current API UID membership are distinct; native metric absence stays visible. Focused tests are measured in the acceptance record; actual providers, installed artifacts and complete-source/platform qualification remain pending. No complete parity claim is made.",
-      "public_summary": "Development source adds cluster health and capacity summaries with resource drill-downs. Shift+M or :history opens configured entity history with numeric charts, 15m\u201324h ranges, separate devices, explicit source gaps and historical-identity limits. Backend components must already exist. Installed 0.3.0 predates these views.",
+      "difference": "O02 #69 adds native Pulse health, capacity, current usage, exact drill-downs and independent source expiry. O08 #231 adds finite cluster/Node/workload/Pod/container history, 15m–24h ranges, numeric CPU/memory/network/filesystem charts, explicit backend detection and separate Service/external HTTPS transports. Historical owner names and current API UID membership are distinct; native metric absence stays visible. Focused tests are measured in the acceptance record; actual providers, installed artifacts and complete-source/platform qualification remain pending. No complete parity claim is made.",
+      "public_summary": "Development source adds cluster health and capacity summaries with resource drill-downs. Shift+M or :history opens configured entity history with numeric charts, 15m–24h ranges, separate devices, explicit source gaps and historical-identity limits. Backend components must already exist. Installed 0.3.0 predates these views.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/cluster-overview.md",
@@ -1674,13 +1693,21 @@
       "id": "ADV05",
       "capability": "Policy/quota/admission/scheduling views and removed-API handling",
       "tasks": [
-        "A05"
+        "A05",
+        "O09"
       ],
       "source": "internal/client/gvrs.go",
       "status": "planned",
-      "difference": "",
-      "public_summary": "Expanded policy, quota, admission and scheduling diagnostics are planned. Discovery already reports removed APIs without fabricating a table.",
-      "public_status": "partial"
+      "difference": "O09 #232 adds read-only HPA/VPA/PDB, NetworkPolicy/EndpointSlice/IngressClass, scheduling/Lease, quota/limits and webhook declaration/status summaries. Wider policy/admission enforcement diagnostics remain A05 #80; a declaration does not prove enforcement.",
+      "public_summary": "Development source adds read-only scaling, policy, scheduling, quota and webhook summaries. Wider enforcement diagnostics remain planned; unknown or removed APIs do not fabricate supported schemas.",
+      "public_status": "partial",
+      "partial_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "docs/internal/curated-resource-inventory.json",
+        "tests/ui/test_curated_resources.py",
+        "tests/ui/test_events_workspace.py"
+      ]
     },
     {
       "id": "DIST01",

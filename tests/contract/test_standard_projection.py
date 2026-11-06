@@ -11,6 +11,29 @@ from tests.support.standard import api, row_record
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"version": "v99"},
+        {"kind": "Other"},
+        {"namespaced": False},
+        {"group": "other.example"},
+        {"name": "other"},
+    ],
+)
+async def test_explicit_standard_descriptor_rejects_replaced_versions_kinds_and_scopes(change):
+    definition = next(d for d in STANDARD_RESOURCES if d.name == "services")
+    descriptor = api(definition)
+    projection = StandardProjection(definition, descriptor)
+    snapshot = ResourceSnapshot(descriptor, "team", "owned-rv", (row_record(definition),))
+    first = (await projection.project(snapshot))[0]
+    assert projection.cached_count == 1
+    assert await projection.project(replace(snapshot, resource=replace(descriptor, **change))) == ()
+    assert projection.cached_count == 0
+    assert (await projection.project(snapshot))[0] is not first
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("definition", STANDARD_RESOURCES, ids=[d.name for d in STANDARD_RESOURCES])
 async def test_standard_projection_is_group_scoped_incremental_and_uid_bound(definition):
     projection = StandardProjection(definition)

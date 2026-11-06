@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 
 from textual.app import App
 from textual.containers import Vertical
+from textual.css.query import NoMatches
 from textual.screen import ModalScreen
 from textual.widgets import Input
 
@@ -91,11 +92,17 @@ class WorkspacePresenter:
             self.recover(self.capture(), error)
 
     def available_actions(self, request: RenderRequest) -> frozenset[str]:
+        scope, snapshot = request.observation.scope, request.observation.snapshot
         view = ViewState(
             request.route.display_key,
             generic=request.route.kind is ViewKind.CUSTOM,
             modal=isinstance(self.host.screen, ModalScreen),
             typing=isinstance(self.host.focused, Input),
+            descriptor=scope.resource
+            if scope is not None
+            else snapshot.resource
+            if snapshot is not None
+            else None,
         )
         names = TABLE_ACTIONS | frozenset(
             spec.ui_action for spec in COMMAND_CATALOG.specs if spec.ui_action is not None
@@ -106,6 +113,8 @@ class WorkspacePresenter:
         view, query = self.workspace.store.observation, self.filter_input.value
         route, interaction_revision = self.views.route, self.interactions.revision
         expected_uid = self.views.expected_uid
+        curated = self.views.curated
+        event_options = self.views.event_options
 
         def current() -> bool:
             return (
@@ -116,9 +125,13 @@ class WorkspacePresenter:
                 and route == self.views.route
                 and interaction_revision == self.interactions.revision
                 and expected_uid == self.views.expected_uid
+                and curated == self.views.curated
+                and event_options == self.views.event_options
             )
 
-        return RenderRequest(view, query, current, route, self.views.drilldown, expected_uid)
+        return RenderRequest(
+            view, query, current, route, self.views.drilldown, expected_uid, curated
+        )
 
     def refresh_ages(self) -> None:
         if not self.host.is_running or isinstance(self.host.screen, ModalScreen):
@@ -396,7 +409,9 @@ class WorkspacePresenter:
             self.view_status(view, view.message)
             return
         usable = observation.state in USABLE_CONNECTIONS
-        incomplete = view.snapshot is not None and not view.snapshot.collection.complete
+        incomplete = (view.snapshot is not None and not view.snapshot.collection.complete) or (
+            self.views.route.kind is ViewKind.EVENTS and self.views.tables.events.limited
+        )
         self.host.query_one("#empty-title", WorkspaceLabel).update_text(
             "Captured resource is not in the retained results"
             if self.views.expected_uid is not None
@@ -455,7 +470,10 @@ class WorkspacePresenter:
         self.host.query_one("#empty-state").set_class(bool(self.views.table.row_count), "populated")
         self.views.table.set_class(bool(self.views.table.row_count), "populated")
         self.show_sort()
-        self.view_status(view, view.message)
+        event_notices = (
+            self.views.tables.events.notices if self.views.route.kind is ViewKind.EVENTS else ()
+        )
+        self.view_status(view, " · ".join((view.message, *event_notices)))
 
     def view_status(self, view: ViewObservation, message: str) -> None:
         if self._selection_notice is not None:
@@ -472,7 +490,30 @@ class WorkspacePresenter:
         self.status(message)
 
     def show_sort(self) -> None:
-        frame = self.host.query_one("#resource-view", Vertical)
+        try:
+            frame = self.host.query_one("#resource-view", Vertical)
+        except NoMatches:
+            # A table message can arrive after the workspace frame is removed.
+            return
+        if self.views.route.kind is ViewKind.EVENTS:
+            options = self.views.event_options
+            source = self.views.tables.events.source
+            observed = (
+                source.snapshot_seen_at.astimezone(UTC)
+                .isoformat(timespec="seconds")
+                .replace("+00:00", "Z")
+                if source is not None
+                else "unavailable"
+            )
+            frame.border_subtitle = (
+                f"Observed {observed} · "
+                + ("Group members · " if options.members is not None else "")
+                + ("Warnings · " if options.warnings_only else "All types · ")
+                + ("Grouped · " if options.grouped else "Raw Events · ")
+                + self.views.tables.events.sort_summary
+                + " · w warnings · t group/raw"
+            )
+            return
         if self.views.route.kind is ViewKind.DIAGNOSTICS:
             frame.border_subtitle = (
                 "Enter evidence · o open object · :diagnostics cancel · Esc previous view"
@@ -501,7 +542,7 @@ class WorkspacePresenter:
                 f"Pulse: {self.views.drilldown.predicate.value} · {self.views.table.sort_summary}"
             )
             return
-        self.host.query_one("#resource-view", Vertical).border_subtitle = (
+        frame.border_subtitle = (
             self.views.tables.pods.sort_summary
             if self.views.route.display_key == "pods"
             else "Name ↑ · Enter connect · * selected session"

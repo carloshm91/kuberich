@@ -5,9 +5,16 @@ from contextlib import asynccontextmanager
 
 from aiohttp import web
 
+from kuberich.domain.curated import known_family
+from kuberich.domain.curated_policy import FAMILIES as POLICY_FAMILIES
 from kuberich.domain.registry import STANDARD_RESOURCES
 from kuberich.domain.resources import api_resource, resource_record
 from tests.support.connections import namespaces
+from tests.support.curated_access import access_manifest, access_resource
+from tests.support.curated_policy import policy_manifest, policy_resource
+from tests.support.curated_scaling import SAMPLES as SCALING_SAMPLES
+from tests.support.curated_scaling import api as scaling_api
+from tests.support.curated_scaling import record as scaling_record
 from tests.support.resources import descriptor, item, legacy_roots, reader_fixture
 from tests.support.workspace import stable_watch
 
@@ -107,9 +114,27 @@ FIXTURES = (
 )
 
 
+def _curated_sample(definition):
+    family = known_family(definition.group, definition.name)
+    assert family is not None
+    if family.kind in SCALING_SAMPLES:
+        resource = scaling_api(family.kind)
+        return resource, scaling_record(resource).manifest
+    if family.resource in {item.resource for item in POLICY_FAMILIES}:
+        return policy_resource(family.resource), policy_manifest(family.resource)
+    return access_resource(family.kind), access_manifest(family.kind)
+
+
+_CURATED = tuple(_curated_sample(item) for item in STANDARD_RESOURCES if item.curated)
+_VERSIONS = (*("v1" for _ in KINDS), *(resource.version for resource, _ in _CURATED))
+KINDS = (*KINDS, *(resource.kind for resource, _ in _CURATED))
+FIXTURES = (*FIXTURES, *(fixture for _, fixture in _CURATED))
+
+
 def api(definition):
     index = STANDARD_RESOURCES.index(definition)
-    version = f"{definition.group}/v1" if definition.group else "v1"
+    selected = _VERSIONS[index]
+    version = f"{definition.group}/{selected}" if definition.group else selected
     return api_resource(
         version, descriptor(definition.name, kind=KINDS[index], namespaced=definition.namespaced)
     )
@@ -123,7 +148,13 @@ def manifest(definition, *, name="owned-one", namespace="team", uid=None, overri
     # Callers may edit the result, so never share nested fixture data between tests.
     fixture = copy.deepcopy(FIXTURES[STANDARD_RESOURCES.index(definition)])
     value.update({key: val for key, val in fixture.items() if key != "metadata"})
-    value["metadata"].update(fixture.get("metadata", {}))
+    value["metadata"].update(
+        {
+            key: val
+            for key, val in fixture.get("metadata", {}).items()
+            if key not in {"name", "uid", "namespace", "resourceVersion", "creationTimestamp"}
+        }
+    )
     if overrides:
         value.update(overrides)
     return value
@@ -139,27 +170,36 @@ def row_record(definition, **kwargs):
 
 def roots():
     result = legacy_roots()
-    groups = sorted({definition.group for definition in STANDARD_RESOURCES if definition.group})
+    resources = tuple(api(definition) for definition in STANDARD_RESOURCES)
+    groups = sorted({resource.group for resource in resources if resource.group})
     result["/apis"]["groups"] = [
         {
             "name": group,
-            "versions": [{"groupVersion": f"{group}/v1", "version": "v1"}],
-            "preferredVersion": {"groupVersion": f"{group}/v1", "version": "v1"},
+            "versions": [
+                {"groupVersion": f"{group}/{version}", "version": version}
+                for version in sorted(
+                    {resource.version for resource in resources if resource.group == group}
+                )
+            ],
+            "preferredVersion": {
+                "groupVersion": f"{group}/{'v2' if group == 'autoscaling' else 'v1'}",
+                "version": "v2" if group == "autoscaling" else "v1",
+            },
         }
         for group in groups
     ]
-    for group in ("", *groups):
-        path = f"/apis/{group}/v1" if group else "/api/v1"
+    for group, version in sorted({(resource.group, resource.version) for resource in resources}):
+        path = f"/apis/{group}/{version}" if group else "/api/v1"
         existing = result.get(path, {}).get("resources", [])
         result[path] = {
             "kind": "APIResourceList",
-            "groupVersion": f"{group}/v1" if group else "v1",
+            "groupVersion": f"{group}/{version}" if group else version,
             "resources": [
                 *existing,
                 *(
-                    descriptor(d.name, namespaced=d.namespaced, kind=api(d).kind)
-                    for d in STANDARD_RESOURCES
-                    if d.group == group
+                    descriptor(resource.name, namespaced=resource.namespaced, kind=resource.kind)
+                    for resource in resources
+                    if (resource.group, resource.version) == (group, version)
                 ),
             ],
         }

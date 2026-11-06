@@ -47,3 +47,17 @@ def test_projection_enriches_pod_and_standard_numeric_values_and_leaves_other_vi
     stale_node = with_metrics((node_value,), expired_view)[0]
     assert stale_node.values[index].text == "N/A" and stale_node.values[index].sort is None
     assert report.cpu.usage == Decimal(".25")
+
+
+def test_hpa_declared_metric_count_is_not_a_current_usage_status_column():
+    definition = RESOURCE_ALIASES["hpa"]
+    resource = api(definition)
+    source = row_record(definition)
+    row = resource_row(source, definition, resource=resource)
+    index = [column.key for column in definition.columns].index("metrics")
+    assert row.values[index].text == "1" and row.values[index].sort == 1
+    view = ViewObservation(
+        scope=ResourceScope(SessionIdentity("owned", 1), resource, "team"),
+        metrics=MetricsSnapshot(status=MetricStatus.NO_SAMPLE, detail="Waiting for metrics"),
+    )
+    assert with_metrics((row,), view) == (row,)

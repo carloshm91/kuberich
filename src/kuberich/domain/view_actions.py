@@ -2,6 +2,11 @@
 
 from dataclasses import dataclass
 
+from kuberich.domain.curated import curated_read_only
+from kuberich.domain.resources import ApiResource
+
+MUTATING_TABLE_ACTIONS = frozenset({"edit", "review_delete", "annotate", "cleanup_pods", "upload"})
+
 WORKLOAD_LOG_VIEWS = frozenset(
     {
         "pods",
@@ -52,9 +57,16 @@ class ViewState:
     generic: bool = False
     modal: bool = False
     typing: bool = False
+    descriptor: ApiResource | None = None
 
 
 def action_available(action: str, view: ViewState) -> bool:
+    if (
+        view.descriptor is not None
+        and curated_read_only(view.descriptor)
+        and action in MUTATING_TABLE_ACTIONS
+    ):
+        return False
     if action == "metric_history":
         return (
             view.resource in WORKLOAD_LOG_VIEWS | {"nodes", "pulse"}

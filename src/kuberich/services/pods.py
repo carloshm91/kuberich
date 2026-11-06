@@ -7,7 +7,7 @@ from kuberich.domain.custom import CustomLayout
 from kuberich.domain.namespaces import NamespaceRow, namespace_row
 from kuberich.domain.pods import PodRow, pod_row
 from kuberich.domain.registry import ResourceDefinition, ResourceRow, resource_row
-from kuberich.domain.resources import ResourceRecord, ResourceSnapshot
+from kuberich.domain.resources import ApiResource, ResourceRecord, ResourceSnapshot
 
 
 class ResourceProjection[T: PodRow | NamespaceRow | ResourceRow]:
@@ -18,10 +18,12 @@ class ResourceProjection[T: PodRow | NamespaceRow | ResourceRow]:
         group: str = "",
         *,
         version: str | None = None,
+        descriptor: ApiResource | None = None,
     ) -> None:
         self._resource, self._project_record = resource, project
         self._group = group
         self._version = version
+        self._descriptor = descriptor
         self._cache: dict[str, tuple[ResourceRecord, T]] = {}
 
     @property
@@ -48,6 +50,7 @@ class ResourceProjection[T: PodRow | NamespaceRow | ResourceRow]:
             or snapshot.resource.group != self._group
             or snapshot.resource.name != self._resource
             or (self._version is not None and snapshot.resource.version != self._version)
+            or (self._descriptor is not None and snapshot.resource != self._descriptor)
         ):
             self._cache.clear()
             return ()
@@ -81,9 +84,13 @@ class NamespaceProjection(ResourceProjection[NamespaceRow]):
 
 
 class StandardProjection(ResourceProjection[ResourceRow]):
-    def __init__(self, definition: ResourceDefinition) -> None:
+    def __init__(self, definition: ResourceDefinition, resource: ApiResource | None = None) -> None:
         super().__init__(
-            definition.name, lambda record: resource_row(record, definition), definition.group
+            definition.name,
+            lambda record: resource_row(record, definition, resource=resource),
+            definition.group,
+            version=resource.version if resource is not None else None,
+            descriptor=resource,
         )
 
 

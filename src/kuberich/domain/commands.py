@@ -13,6 +13,7 @@ class Command(Enum):
     PLUGIN_JOBS = auto()
     QUIT = auto()
     PODS = auto()
+    EVENTS = auto()
     PULSE = auto()
     HISTORY = auto()
     DIAGNOSTICS = auto()

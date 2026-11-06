@@ -482,14 +482,34 @@ async def test_actual_usedby_scans_all_five_root_types_without_publishing_values
             await app.run_command(
                 f"resource {resource.name}.{resource.group or 'core'}/{resource.version}"
             )
+            native = resource in (ACCOUNTS, PRIORITIES)
+            table = app.standard_table if native else app.custom_table
             await wait_for(
                 lambda: (
                     app.state.scope is not None
-                    and app.state.scope.resource.name == resource.name
+                    and (
+                        app.state.scope.resource.group,
+                        app.state.scope.resource.version,
+                        app.state.scope.resource.name,
+                        app.state.scope.resource.kind,
+                        app.state.scope.resource.namespaced,
+                    )
+                    == (
+                        resource.group,
+                        resource.version,
+                        resource.name,
+                        resource.kind,
+                        resource.namespaced,
+                    )
                     and app.state.status is ViewStatus.LIVE
-                    and app.custom_table.row_count == 1
+                    and table.display
+                    and table.row_count == 1
+                    and table.selected_uid == uid
                 )
             )
+            assert app.views.route.kind is (ViewKind.STANDARD if native else ViewKind.CUSTOM)
+            assert app.state.scope.namespace == ("team" if resource.namespaced else None)
+            assert app.state.namespace == "team" and app.state.selected == uid
             await pilot.press("colon", *"usedby", "enter")
             await graph_ready(app, name="example")
             snapshot = app.workspace.store.observation.relationships
@@ -638,11 +658,24 @@ async def test_namespace_picker_keeps_cluster_root_separate_from_its_new_search_
             await app.run_command("resource priorityclasses.scheduling.k8s.io/v1")
             await wait_for(
                 lambda: (
-                    app.custom_table.row_count == 1
+                    app.views.route.kind is ViewKind.STANDARD
+                    and app.standard_table.display
+                    and app.standard_table.row_count == 1
+                    and app.standard_table.selected_uid == "batch-uid"
+                    and app.state.status is ViewStatus.LIVE
                     and app.state.scope is not None
-                    and app.state.scope.resource.name == "priorityclasses"
+                    and (
+                        app.state.scope.resource.group,
+                        app.state.scope.resource.version,
+                        app.state.scope.resource.name,
+                        app.state.scope.resource.kind,
+                        app.state.scope.resource.namespaced,
+                    )
+                    == ("scheduling.k8s.io", "v1", "priorityclasses", "PriorityClass", False)
                 )
             )
+            assert app.state.scope.namespace is None and app.state.namespace == "team"
+            assert "priority" in app.standard_table.columns and not app.custom_table.display
             await app.run_command("usedby")
             await graph_ready(app, name="example")
             root = app.workspace.relationship_request.scope.root

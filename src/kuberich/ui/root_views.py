@@ -3,15 +3,23 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 
 from kuberich.config.catalog import KubeCatalog
+from kuberich.domain.curated_navigation import ResolvedCollectionBookmark
 from kuberich.domain.custom import CustomLayout
+from kuberich.domain.events import EventOptions
 from kuberich.domain.namespaces import NamespaceRow
 from kuberich.domain.pods import PodRow
 from kuberich.domain.pulse import PulseDrilldown
-from kuberich.domain.registry import RESOURCE_ALIASES, ResourceDefinition, ResourceRow
+from kuberich.domain.registry import (
+    EVENT_METADATA_DEFINITION,
+    RESOURCE_ALIASES,
+    ResourceDefinition,
+    ResourceRow,
+)
+from kuberich.domain.resources import ApiResource
 from kuberich.domain.view_routes import ViewKind, ViewRoute
 from kuberich.services.metadata_filtering import MetadataFilter
 from kuberich.services.pods import ResourceProjection
@@ -23,6 +31,8 @@ from kuberich.ui.controllers.filtering import FilterOptions, ResourceFilter
 from kuberich.ui.controllers.registry import ViewEntry, ViewRegistry
 from kuberich.ui.controllers.rendering import RenderCoordinator
 from kuberich.ui.custom import CustomTable
+from kuberich.ui.event_source import EventSourceClock
+from kuberich.ui.events import EventsTable
 from kuberich.ui.foreground import ForegroundGate
 from kuberich.ui.namespaces import NamespaceTable
 from kuberich.ui.pods import PodTable
@@ -45,6 +55,7 @@ class RootTables:
     relationships: RelationshipTable
     authorization: AuthorizationTable
     diagnostics: ClusterDiagnosticsTable
+    events: EventsTable
 
 
 class RootViews:
@@ -63,7 +74,9 @@ class RootViews:
         *,
         pod_projection: Callable[[], ResourceProjection[PodRow]],
         namespace_projection: Callable[[], ResourceProjection[NamespaceRow]],
-        standard_projection: Callable[[ResourceDefinition], ResourceProjection[ResourceRow]],
+        standard_projection: Callable[
+            [ResourceDefinition, ApiResource | None], ResourceProjection[ResourceRow]
+        ],
         custom_projection: Callable[[CustomLayout], ResourceProjection[ResourceRow]],
         recover: Callable[[RenderRequest, Exception | None], None] | None = None,
     ) -> None:
@@ -77,7 +90,8 @@ class RootViews:
             | PulseTable
             | RelationshipTable
             | AuthorizationTable
-            | ClusterDiagnosticsTable,
+            | ClusterDiagnosticsTable
+            | EventsTable,
         ] = {
             ViewKind.DIAGNOSTICS: tables.diagnostics,
             ViewKind.AUTHORIZATION: tables.authorization,
@@ -88,12 +102,16 @@ class RootViews:
             ViewKind.CONTEXTS: tables.contexts,
             ViewKind.STANDARD: tables.standard,
             ViewKind.CUSTOM: tables.custom,
+            ViewKind.EVENTS: tables.events,
         }
         self.catalog, self.preferences, self.actions = catalog, preferences, actions
         self.filtering = ResourceFilter(metadata, options)
         self.route = ViewRoute.pods()
         self.drilldown: PulseDrilldown | None = None
         self.expected_uid: str | None = None
+        self.curated: ResolvedCollectionBookmark | None = None
+        self.event_options = EventOptions()
+        self.event_source = EventSourceClock()
         self._pod_factory, self._namespace_factory = pod_projection, namespace_projection
         self._standard_factory, self._custom_factory = standard_projection, custom_projection
         self._custom: CustomController | None = None
@@ -108,6 +126,7 @@ class RootViews:
                 ViewKind.CONTEXTS: self._contexts,
                 ViewKind.STANDARD: self._standard,
                 ViewKind.CUSTOM: self._custom_entry,
+                ViewKind.EVENTS: self._events,
             }
         )
         self.renderer = RenderCoordinator(
@@ -126,6 +145,7 @@ class RootViews:
         | RelationshipTable
         | AuthorizationTable
         | ClusterDiagnosticsTable
+        | EventsTable
     ):
         return self._by_kind[self.route.kind]
 
@@ -135,7 +155,11 @@ class RootViews:
         for table in self._by_kind.values():
             table.display = table is selected
         if route.kind is ViewKind.STANDARD:
-            definition = RESOURCE_ALIASES[route.resource_name or ""]
+            definition = (
+                replace(EVENT_METADATA_DEFINITION, group=route.selection.group)
+                if route.selection is not None and route.resource_name == "events"
+                else RESOURCE_ALIASES[route.resource_name or ""]
+            )
             if self.tables.standard.definition != definition:
                 self.tables.standard.configure(definition)
 
@@ -195,6 +219,17 @@ class RootViews:
             ViewDriver(ClusterDiagnosticsController(self.tables.diagnostics, self.actions))
         )
 
+    def _events(self) -> ViewEntry:
+        from kuberich.ui.controllers.events import EventsController
+
+        controller = EventsController(
+            self.tables.events,
+            lambda: self.event_options,
+            self.event_source.capture,
+            self.actions,
+        )
+        return ViewEntry(ViewDriver(controller), controller.retire_projection)
+
     def _standard(self) -> ViewEntry:
         from kuberich.ui.controllers.standard import StandardController
 
@@ -227,6 +262,9 @@ class RootViews:
 
     def reset_context(self) -> None:
         self.expected_uid = None
+        self.curated = None
+        self.event_options = EventOptions()
+        self.event_source.reset()
         if self._custom is not None:
             self._custom.reset_context()
 

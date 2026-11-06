@@ -14,6 +14,8 @@ from kuberich.domain.authorization import (
     RbacSubjectKind,
     ReviewDecision,
 )
+from kuberich.domain.view_routes import ViewKind
+from kuberich.domain.views import ViewStatus
 from kuberich.services.authorization_commands import authorization_command
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.workspace_presenter import WorkspacePresenter
@@ -32,6 +34,32 @@ async def pods_ready(app, namespace="team"):
             and app.resources.row_count == 1
         )
     )
+
+
+async def opened_role_ready(app, ref, *, present=True):
+    expected = (ref.uid,) if present else ()
+    await wait_for(
+        lambda: (
+            app.views.route.kind is ViewKind.STANDARD
+            and app.standard_table.display
+            and app.state.status is ViewStatus.LIVE
+            and app.state.scope is not None
+            and (
+                app.state.scope.resource.group,
+                app.state.scope.resource.version,
+                app.state.scope.resource.name,
+                app.state.scope.resource.kind,
+                app.state.scope.resource.namespaced,
+            )
+            == (GROUP, "v1", "roles", "Role", True)
+            and app.state.scope.namespace == ref.namespace
+            and tuple(row.key.value for row in app.standard_table.ordered_rows) == expected
+        )
+    )
+    assert not app.custom_table.display and "rules" in app.standard_table.columns
+    assert app.views.expected_uid == ref.uid
+    assert app.state.selected == (ref.uid if present else None)
+    assert not any(app.check_action(action, ()) for action in ("edit", "annotate", "review_delete"))
 
 
 async def ready(app, mode):
@@ -199,13 +227,7 @@ async def test_subject_binding_role_drilldowns_preserve_native_frame_and_observe
                 app, lambda row: row.object_ref is not None and row.object_ref.kind == "Role"
             )
             await app.run_command("open")
-            await wait_for(
-                lambda: (
-                    app.state.scope is not None
-                    and app.state.scope.resource.name == "roles"
-                    and app.custom_table.row_count == 1
-                )
-            )
+            await opened_role_ready(app, role.object_ref)
             assert app.views.expected_uid == role.object_ref.uid
             assert app.state.selected == role.object_ref.uid
             assert app.state.scope.resource.group == GROUP
@@ -461,13 +483,7 @@ async def test_object_open_from_question_namespace_restores_header_scope_and_exa
             viewport = app.authorization_table.capture_viewport()
             assert viewport.x == 9
             await app.run_command("open")
-            await wait_for(
-                lambda: (
-                    app.state.scope is not None
-                    and app.state.scope.resource.name == "roles"
-                    and app.custom_table.row_count == 1
-                )
-            )
+            await opened_role_ready(app, role.object_ref)
             assert app.state.namespace == app.state.scope.namespace == "other"
             assert app.state.selected == app.views.expected_uid == role.object_ref.uid
             await pilot.press("escape")
@@ -544,15 +560,10 @@ async def test_opened_rbac_uid_does_not_select_a_same_name_list_replacement(tmp_
             )
             api.list_replacements[(GROUP, "roles", "team", row.object_ref.name)] = "replacement-uid"
             await pilot.press("o")
-            await wait_for(
-                lambda: (
-                    app.state.scope is not None
-                    and app.state.scope.resource.name == "roles"
-                    and app.state.status.name == "LIVE"
-                )
-            )
-            assert app.views.expected_uid == row.object_ref.uid
-            assert app.custom_table.row_count == 0 and app.state.selected is None
+            await opened_role_ready(app, row.object_ref, present=False)
+            assert tuple(
+                record.uid for record in app.workspace.store.observation.snapshot.items
+            ) == ("replacement-uid",)
 
 
 @pytest.mark.asyncio
@@ -754,9 +765,7 @@ async def test_same_context_back_waits_for_discovery_then_restores_captured_auth
                     app, lambda row: row.object_ref is not None and row.object_ref.kind == "Role"
                 )
                 await pilot.press("o")
-                await wait_for(
-                    lambda: app.state.scope is not None and app.custom_table.row_count == 1
-                )
+                await opened_role_ready(app, selected.object_ref)
                 api.hold_path = "/api"
                 await app.run_command("refresh")
                 await wait_for(api.started.is_set)

@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 
 import pytest
+import yaml
 from aiohttp import web
 
 from kuberich.config.schema import Settings
@@ -15,10 +16,15 @@ from kuberich.ui.app import KubeRichApp
 from kuberich.ui.configuration_data import ConfigurationScreen
 from kuberich.ui.inspection import InspectionScreen
 from tests.support.connections import catalog_fixture
+from tests.support.curated_policy import ANNOTATION_CANARY, CA_CANARY, URL_CANARIES
 from tests.support.root_calls import root_calls as root_calls
 from tests.support.standard import api, manifest, standard_api
 from tests.support.watches import frame
 from tests.support.workspace import wait_for
+
+INSPECTION_ANNOTATION_CANARY = "synthetic-ui-inspection-annotation-canary"
+SAFE_LABEL = "owned-ui-inspection-label"
+WEBHOOKS = frozenset({"mutatingwebhookconfigurations", "validatingwebhookconfigurations"})
 
 
 def app_for(tmp_path, url, initial=None):
@@ -52,7 +58,17 @@ async def command(app, pilot, value):
 async def test_every_resource_has_discovered_list_watch_detail_and_correct_hints(
     tmp_path, definition, root_calls
 ):
-    async with standard_api(tmp_path) as (url, reads):
+    async def inspected(request, selected):
+        if not request.path.endswith("/owned-one"):
+            return None
+        body = manifest(selected)
+        body["metadata"].setdefault("annotations", {})["synthetic.example.test/inspection"] = (
+            INSPECTION_ANNOTATION_CANARY
+        )
+        body["metadata"].setdefault("labels", {})["synthetic.example.test/inspection"] = SAFE_LABEL
+        return web.json_response(body)
+
+    async with standard_api(tmp_path, inspected) as (url, reads):
         app = app_for(tmp_path, url)
         async with app.run_test(size=(100, 30)) as pilot:
             await wait_for(lambda: app.workspace.store.observation.status is ViewStatus.LIVE)
@@ -92,10 +108,42 @@ async def test_every_resource_has_discovered_list_watch_detail_and_correct_hints
                 app.screen.page == "details"
                 and definition.name[:-1].casefold()[:5] in app.screen.viewer.text.casefold()
             )
+            assert INSPECTION_ANNOTATION_CANARY not in app.screen.viewer.text
+            assert ANNOTATION_CANARY not in app.screen.viewer.text
+            if definition.name in WEBHOOKS:
+                assert CA_CANARY not in app.screen.viewer.text
+                assert not any(value in app.screen.viewer.text for value in URL_CANARIES)
+                assert "URL (not fetched)" in app.screen.viewer.text
             assert any(p == path + "/owned-one" for p, _ in reads)
             await pilot.press("y")
             assert "owned-owned-one" in app.screen.viewer.text
-            assert "private-" not in app.screen.viewer.text
+            document = yaml.safe_load(app.screen.viewer.text)
+            assert document["metadata"]["uid"] == "owned-owned-one"
+            assert document["metadata"]["labels"]["synthetic.example.test/inspection"] == SAFE_LABEL
+            assert document["metadata"]["annotations"] == "[REDACTED]"
+            assert INSPECTION_ANNOTATION_CANARY not in app.screen.viewer.text
+            assert ANNOTATION_CANARY not in app.screen.viewer.text
+            if definition.name in WEBHOOKS:
+                clients = [hook["clientConfig"] for hook in document["webhooks"]]
+                assert all(client["caBundle"] == "[REDACTED]" for client in clients)
+                assert CA_CANARY not in app.screen.viewer.text
+                assert not any(URL_CANARIES[index] in app.screen.viewer.text for index in (0, 1, 3))
+                # Deliberate YAML retains ordinary URL path data; default Details
+                # above exposes only the client classification and safe links.
+                url_client = next(client for client in clients if "url" in client)
+                assert url_client["url"] == (
+                    "https://[REDACTED]@example.test/private-path-canary?token=[REDACTED]"
+                )
+                service = next(client["service"] for client in clients if "service" in client)
+                assert (service["namespace"], service["name"]) == ("team", "owned-webhook")
+            elif definition.name == "configmaps":
+                assert document["data"] == {"config": "[REDACTED]"}
+                assert document["binaryData"] == {"binary": "[REDACTED]"}
+                assert "private-config-payload" not in app.screen.viewer.text
+                assert "cHJpdmF0ZS1iaW5hcnktcGF5bG9hZA==" not in app.screen.viewer.text
+            elif definition.name == "secrets":
+                assert document["data"] == {"token": "[REDACTED]"}
+                assert "cHJpdmF0ZS1zZWNyZXQtcGF5bG9hZA==" not in app.screen.viewer.text
             await pilot.press("e")
             assert "No related events" in app.screen.viewer.text
             await pilot.press("escape")

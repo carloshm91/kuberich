@@ -81,13 +81,18 @@ def test_completions_are_literal_bounded_case_preserving_and_deduplicated():
         "contexts",
         "ctx",
         "cj",
+        "clusterrole",
+        "clusterrolebindings",
+        "clusterroles",
         "cm",
-        "columns",
-        "configmap",
-        "configmaps",
     )
     assert suggestions("ct", (), ()) == ("ctx",)
-    assert suggestions("cl", (), ()) == ("cleanup",)
+    assert suggestions("cl", (), ()) == (
+        "clusterrole",
+        "clusterrolebindings",
+        "clusterroles",
+        "cleanup",
+    )
     assert suggestions("ren", (), ()) == ("rename",)
     assert suggestions(":ctx p", ("Production", "prod[red]", "Production"), ()) == (
         "ctx prod[red]",

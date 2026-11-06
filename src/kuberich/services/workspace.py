@@ -973,7 +973,10 @@ class WorkspaceService:
                 return
             client = self.sessions.client
             assert client is not None and observation.identity is not None
-            reader = ResourceReader(client, tables=selection.resource.server_columns)
+            reader = ResourceReader(
+                client,
+                tables=selection.resource.server_columns or selection.resource.query.compact,
+            )
             if self._discovery is None or self._discovery[0] is not client:
                 discovery = await reader.discover()
                 if selection.revision != self.store.observation.revision:

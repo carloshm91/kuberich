@@ -65,12 +65,16 @@ uv run python -m scripts.verify_editing_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_workloads_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_operations_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_cleanup_kind --kind /absolute/path/to/kind
-uv run python -m scripts.verify_cleanup_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_transfers_kind --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
 uv run python -m scripts.verify_custom_resources_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_aggregate_logs_kind --kind /absolute/path/to/kind
 uv run python -m scripts.verify_pulse_kind --kind /absolute/path/to/kind --evidence artifacts/local-pulse/evidence.json
 uv run python -m scripts.verify_relationships_kind --kind /absolute/path/to/kind --evidence artifacts/local-relationships/evidence.json
+uv run python -m scripts.verify_authorization_kind --kind /absolute/path/to/kind --evidence artifacts/local-authorization/evidence.json
+uv run python -m scripts.verify_diagnostics_kind --kind /absolute/path/to/kind --evidence artifacts/local-diagnostics/evidence.json
+uv run python -m scripts.verify_container_inspection_kind --kind /absolute/path/to/kind --evidence artifacts/local-container-inspection/evidence.json
+uv run python -m scripts.verify_history_kind --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl --evidence artifacts/local-metric-history/evidence.json
+uv run python -m scripts.verify_curated_resources_kind --kind /absolute/path/to/kind --evidence artifacts/local-curated-resources/evidence.json
 uv build
 uv run python -m scripts.verify_quickstart --wheel /absolute/path/to/candidate.whl --kind /absolute/path/to/kind --kubectl /absolute/path/to/kubectl
 ```
@@ -83,16 +87,17 @@ not overlap another process creating/removing clusters.
 
 ## Release-time repetition
 
-Required PR/main CI runs the complete suite and all twenty real rehearsals once
+Required PR/main CI runs the complete suite and all twenty-one real rehearsals once
 (contexts, lifecycle faults, shell, port forwards, credential interoperability,
 mutations, editing, workloads, resource operations, cleanup, transfers, custom
 resources, aggregate logs, Pulse, relationships, authorization, native/external
-diagnostics, container inspection, historical metrics and installed quickstart). The diagnostic rehearsal acquires a
+diagnostics, container inspection, historical metrics, curated resources and
+installed quickstart). The diagnostic rehearsal acquires a
 checksum-pinned official Popeye fixture through `scripts.diagnostics_tools`.
 It executes the tool only inside its owned container, with a disposable home,
 private connection and owned cluster. Production never downloads the tool.
 Before each canonical stable or RC publication, and after client/runtime or lifecycle
-changes, repeat the contract suite and all twenty real rehearsals three consecutive
+changes, repeat the contract suite and all twenty-one real rehearsals three consecutive
 times on the exact candidate checkout. A failure blocks qualification; retain
 its evidence and diagnose before repetition.
 
@@ -102,14 +107,20 @@ Use `--evidence artifacts/cluster/rc-N-contexts.json`, `rc-N-lifecycle.json`,
 `rc-N-operations.json`, `rc-N-cleanup.json`, `rc-N-transfers.json`, `rc-N-custom-resources.json`,
 `rc-N-aggregate-logs.json` and `rc-N-quickstart.json`, for
 N=1,2,3. Use that candidate's exact wheel filename for the quickstart.
-Pulse, relationships, authorization, diagnostics, container inspection and historical
-metrics require separate fresh evidence directories, such as
+Pulse, relationships, authorization, diagnostics, container inspection, historical
+metrics and curated resources require separate fresh evidence directories, such as
 `artifacts/cluster/rc-N-pulse/evidence.json` and
 `artifacts/cluster/rc-N-relationships/evidence.json`,
 `artifacts/cluster/rc-N-authorization/evidence.json` and
 `artifacts/cluster/rc-N-diagnostics/evidence.json`,
 `artifacts/cluster/rc-N-container-inspection/evidence.json` and
-`artifacts/cluster/rc-N-metric-history/evidence.json`, for their staged receipts.
+`artifacts/cluster/rc-N-metric-history/evidence.json`, and
+`artifacts/cluster/rc-N-curated-resources/evidence.json`, for their staged receipts.
+The curated rehearsal checks native tables, typed values, read-only App flows
+and representative links across 18 ordinary families plus Events. Its minimal
+VPA CRD is an explicitly unapproved disposable fixture without an autoscaler
+controller; it does not certify an installed VPA implementation. Source hashes,
+API observations and cleanup remain required even when latency is advisory.
 Preserve per-run logs, duration, exit status,
 candidate SHA, tool versions/digests, configuration invariance and node inventory.
 Archive `artifacts/ui`, `artifacts/terminal` and `artifacts/cluster` after each run

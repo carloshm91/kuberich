@@ -470,17 +470,36 @@ async def test_input_failure_releases_the_key_barrier_and_does_not_hang_exit():
 @pytest.mark.asyncio
 async def test_narrow_completions_keep_selected_choice_visible_and_cursor_edits_hide_them():
     app = make_app()
+    candidates = (
+        "context",
+        "contexts",
+        "ctx",
+        "configmap",
+        "cm",
+        "cronjob",
+        "cronjobs",
+        "configmaps",
+    )
+    app.command_input.provider = lambda value: tuple(
+        candidate for candidate in candidates if candidate.startswith(value)
+    )
     async with app.run_test(size=(40, 12)) as pilot:
         await pilot.press("colon", *(["down"] * 7))
-        assert app.command_input.selected == 7
+        assert app.command_input.choices == candidates and app.command_input.selected == 7
         selected = app.command_input.choices[7]
+        await pilot.press("down")
+        assert app.command_input.selected == 0
+        await pilot.press("up")
+        assert app.command_input.selected == 7
         assert app.command_input.value == ""  # Cycling is intent, not entered text.
         await pilot.pause()
         assert not app.command_input.inline_completion  # Empty input uses its placeholder.
+        assert "Tab completes" in app.command_input.render_line(0).text
         assert app.command_input.region.height == 1
+        assert app.focused is app.command_input
         assert not app.query("#completion")
         await pilot.press("tab")
-        assert app.command_input.value == selected
+        assert app.command_input.value == selected and app.focused is app.command_input
         await pilot.press("escape", "colon", "c", "left")
         assert not app.command_input.inline_completion
         await pilot.press("right")

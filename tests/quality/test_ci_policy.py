@@ -224,6 +224,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
         "scripts.verify_diagnostics_kind",
         "scripts.verify_container_inspection_kind",
         "scripts.verify_history_kind",
+        "scripts.verify_curated_resources_kind",
         "scripts.verify_quickstart",
         "uv build",
         "twine check",
@@ -247,7 +248,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     cluster_steps = [
         step for step in application["steps"] if "python -m scripts.verify" in step.get("run", "")
     ]
-    assert len(cluster_steps) == 20
+    assert len(cluster_steps) == 21
     for step in cluster_steps:
         assert step["if"] == "${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}"
     upload = next(
@@ -261,6 +262,19 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert "artifacts/authorization/**" in upload["with"]["path"].splitlines()
     assert "artifacts/container-inspection/**" in upload["with"]["path"].splitlines()
     assert "artifacts/metric-history/**" in upload["with"]["path"].splitlines()
+    assert "artifacts/curated-resources/**" in upload["with"]["path"].splitlines()
+    assert (
+        "uv run mypy --strict scripts/curated_kind.py scripts/verify_curated_resources_kind.py"
+        in commands
+    )
+    curated = next(
+        step
+        for step in cluster_steps
+        if "python -m scripts.verify_curated_resources_kind" in step["run"]
+    )
+    assert '--kind "$RUNNER_TEMP/kuberich-kind"' in curated["run"]
+    assert "--docker /usr/bin/docker" in curated["run"]
+    assert "--evidence artifacts/curated-resources/evidence.json" in curated["run"]
 
 
 @pytest.mark.parametrize(

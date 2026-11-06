@@ -46,6 +46,7 @@ KIND_SCENARIOS = (
     ("diagnostics", "verify_diagnostics_kind", False),
     ("container-inspection", "verify_container_inspection_kind", False),
     ("metric-history", "verify_history_kind", True),
+    ("curated-resources", "verify_curated_resources_kind", False),
 )
 
 
@@ -212,6 +213,7 @@ def cluster_stages(
                             "diagnostics",
                             "container-inspection",
                             "metric-history",
+                            "curated-resources",
                         }
                         else output / f"kind-{repetition}-{name}.json"
                     ),

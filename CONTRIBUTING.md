@@ -65,6 +65,11 @@ git fetch --no-tags https://github.com/carloshm91/kuberich.git refs/pull/277/hea
 ```
 
 This changes no remote configuration. Validators stay offline and fail closed.
+Use focused tests during development. Before running the complete qualification,
+stage new files and create a signed-off implementation commit with `git commit -s`.
+The runtime inventory uses tracked paths, and application-image capture requires
+clean committed source. Keep that candidate unchanged throughout measurement;
+test artifacts belong in the ignored output directories.
 For the full current strict-target, private-access, startup and coverage stages,
 use `uv run python scripts/qualify.py 0.3.0`; see [phase verification](docs/releases.md#reproduce-phase-verification).
 The individual tools include:

@@ -77,6 +77,10 @@ Field terms support equality and inequality for metadata name/namespace, Pod
 phase/node/scheduler/hostNetwork, Node unschedulable, and Job successful count.
 Arbitrary JSON paths, annotations, and Secret data are excluded.
 
+Events filters match retained summary text using literal, fuzzy or regular
+expression queries. They do not interpret `label:` or `field:` selectors. Use
+`:server label` or `:server field` to narrow the Event API request instead.
+
 Queries accept up to 256 characters and eight selector terms. Regex matching has
 a 50 ms total budget; metadata filters have 250 ms. Invalid or timed-out filters
 show an error and all rows, never a misleading partial result. Sorting remains
@@ -92,10 +96,18 @@ snapshots with redacted values. `/` searches text, `n`/Shift+N move between matc
 and Escape returns. `m` toggles managed fields where offered. ConfigMap and Secret
 values have a separate [deliberate reveal workflow](editing.md#inspect-configuration-data).
 
+Development-source inspectors also offer **Links** with Shift+L. The pane lists
+declared destinations and why they are available or unavailable; Enter follows a
+current destination. Lowercase `l` retains horizontal text scrolling. See
+[curated views and Events](resource-workspace.md#curated-read-only-views) for
+scope, identity, warnings and grouping behavior.
+
 `:wide` temporarily expands available columns. `:views` changes columns, widths,
 alignment, and sort; Apply affects this session, while Global or Context saves
 preferences explicitly. A hidden field may still be used in sorting or filtering.
 Hiding a column is not a confidentiality control.
+The Events table has seven fixed columns; `:views` customization does not apply
+to that workspace.
 
 ## Follow a related object
 

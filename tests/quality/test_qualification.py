@@ -84,7 +84,7 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     second = catalog.cluster_stages(
         tmp_path, Path("/owned/kind"), Path("/owned/kubectl"), Path("/owned/app.whl"), 2
     )
-    assert len(first) == len(second) == 21
+    assert len(first) == len(second) == 22
     acquisition = first[0]
     assert acquisition.name == "kind-1-diagnostic-tools"
     assert acquisition.command[4:] == (
@@ -150,6 +150,19 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     assert Path(repeated_history.command[repeated_history.command.index("--evidence") + 1]) == (
         tmp_path / "kind-2-metric-history/evidence.json"
     )
+    curated = next(stage for stage in first if stage.name == "kind-1-curated-resources")
+    repeated_curated = next(stage for stage in second if stage.name == "kind-2-curated-resources")
+    assert curated.command[4] == "scripts.verify_curated_resources_kind"
+    assert "--kubectl" not in curated.command and "--docker" not in curated.command
+    assert Path(curated.command[curated.command.index("--evidence") + 1]) == (
+        tmp_path / "kind-1-curated-resources/evidence.json"
+    )
+    assert Path(repeated_curated.command[repeated_curated.command.index("--evidence") + 1]) == (
+        tmp_path / "kind-2-curated-resources/evidence.json"
+    )
+    assert curated.cleanup_timeout == catalog.OWNED_KIND_CLEANUP_SECONDS
+    assert "scripts/curated_kind.py" in catalog.type_command(ROOT)
+    assert "scripts/verify_curated_resources_kind.py" in catalog.type_command(ROOT)
     for stage in first[1:]:
         module = stage.command[4]
         assert module in body
