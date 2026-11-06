@@ -455,3 +455,224 @@ Root verified all 337 runtime inputs and 246 installed-wheel production inputs
 are byte-identical to their retained receipts. The complete test-private audit,
 documentation validator and both-site build/check passed (53 HTML pages, 2,162
 local links/assets and 70 files). Required exact-head CI still determines delivery.
+
+
+## Export qualification regressions
+
+Follow-up [#317](https://github.com/carloshm91/kuberich/issues/317) is independent
+of the prepared historical-metrics feature. Its protected baseline is
+`5444b7d9c357d389243147a978cc20b248293edb`; the affected production files match
+that baseline byte for byte before correction. The original complete application
+attempt selected 8,440 cases: 8,431 passed, five failed and four skipped in
+1,249.19 seconds. Two history-navigation fixture failures are handled separately
+in #231. Three export-workflow observations remain preserved for this correction.
+
+The instrumented large-log runtime child missed its unchanged five-second
+preview-readiness wait while the preparation worker remained owned and the UI
+continued responding. A single pure 5,000-record capture produced a 2,555,116-byte
+payload and 262,144-byte preview. CTracer/cProfile observed 9.18 seconds including
+profiler overhead: 4.54 seconds constructed all ten preview pages and discarded
+nine, making 2.55 million per-character UTF-8 encode calls. This is a hot-path
+observation, not a latency qualification. First-page preparation now uses a
+UTF-8-safe byte prefix after complete redaction/escaping. Full payload and artifact
+paging semantics remain unchanged; boundary/equivalence regressions verify them.
+
+A controlled public normal-shutdown boundary reproduces an aggregate renderer
+querying a removed `#log-dialog` while its status sibling remains mounted. The
+original protected-source test fails deterministically. Log viewers now retain
+the actual target frame and gate single/aggregate status updates on that mounted
+child, rather than querying a removed node. No blanket exception catch or owner
+cancellation bypass is introduced. Complete stream/renderer/client drainage stays
+part of the lifecycle assertions.
+
+The original 100×30 offline-browser PTY waited 15 seconds with one row present,
+but retained only header-width columns and truncated the filename. Four fresh
+headless cases and two real source PTYs did not reproduce it; the cause remains
+unproved. Browser production behavior is not changed speculatively. Fresh source
+and outside-checkout installed geometry/terminal contracts must qualify the
+current candidate while preserving the original failed receipt.
+
+Original logs/JUnit, five-file baseline comparisons, raw synthetic terminal
+receipts and the pure profile are retained under `artifacts/issue317/original/`,
+with the larger original inventory in the preserved #231 worktree. Source
+version stays 0.3.0. Static, complete behavioral/runtime coverage, installed and
+exact-head hosted results remain pending; this record does not close the issue
+or authorize publication.
+
+The focused corrected cohorts passed: all 157 domain export cases, with the
+complete critical module at 771/771 lines and 326/326 branches; 19 UI cases
+including the original aggregate window/previous transition file; and two real
+source geometry PTYs in 4.52 seconds. The protected-source teardown control failed
+in 3.70 seconds before the narrow guard. Fresh PTYs preserve the original
+15-second filename deadline, verify filter-clear/two-file refresh, zero network,
+unchanged explicit kubeconfig and exact terminal state/reaping. Owned static/type
+and the complete private-access audit passed. Full source/runtime and installed
+console/module geometry checks remain pending.
+
+## Parallel traced-replay and input-fixture corrections
+
+The first complete source/quality attempt on `e783f78` reached 99% and then
+stopped making progress. A controlled interruption preserved its unqualified
+result: 9,473 passed, nine failed and two skipped in 1,577.75 seconds, with the
+owned leader reaped and process group absent. The branch-traced aggregate child
+again missed the five-second preparation wait. Five quality failures came from
+the local launcher selecting a host `diff-cover` shim; rerunning the six changed-
+coverage cases with the project's proper `uv run` environment passed in 1.93
+seconds. That is an execution-environment correction, not a production fix.
+Three ordinary UI cases passed in an isolated branch-covered diagnostic; that
+unchanged passing run does not establish a correction for their full-run failures.
+
+An independent read-only review confirmed that the real UI runtime orchestrator
+reserved an exclusive reference window for positive/negative children but
+explicitly downgraded to shared access for the traced replay. The corrected
+orchestrator reserves the existing exclusive window through all three children.
+No five-/15-/120-second limits, instrumentation classification, receipt/nonce
+validation or strict negative controls change. A real file-lock regression calls
+the actual orchestrator and pytest cleanup: queued readers are blocked during
+coverage and admitted after cleanup, including an injected exception. The old
+callsite fails that control; 57 isolation/runtime-validation tests pass after the
+change. Contention remains an inference until fresh workload qualification.
+
+A separate controlled native delayed-no-op animation shows that a Pilot key can
+be delivered and change the read window while its unrelated global animation
+completion wait never finishes. The prior held-reader fixture could therefore
+wait before reaching its release assertion. The new fixture owns one actual key
+operation, waits for the existing five-second public selection/controller effect,
+and cancels/drains only the remaining test-driver completion wait. Original
+retention, source-lease, new-reader and finally-release assertions remain. The
+same new regression fails with the former Enter barrier and passes with the
+corrected helper; both authorized UI files pass 20 cases in 17.50 seconds. No
+production or framework animation settings change. The interrupted cohort's
+exact animation state was not retrospectively established.
+
+Nested harness fixtures use an explicit minimal environment and synthetic
+sensitive-data sentinels so failed diagnostics cannot copy ambient credentials.
+Fresh actual runtime controls, complete source qualification and installed
+geometry checks remain required before delivery.
+
+The next frozen-source runtime cohort on `79a5081` passed both actual parent
+workloads in 134.29 seconds, including their positive, strict negative and
+branch-traced children with unchanged deadlines. The replay-only coverage merge
+validated all 246 production modules. At this checkpoint, independent gates
+measured 98.4517% lines, 95.1803% branches, all 102 critical modules at exactly
+100%, and all six changed executable lines covered. These measurements include
+the earlier interrupted parent cohort; they are not a complete-suite pass.
+
+Fresh outside-checkout wheel tests passed all six console/module offline-browser
+and geometry cases in 18.77 seconds. Five source PTY cases passed in 15.26 seconds:
+the existing offline browser at both sizes, initial/resize filename geometry and
+aggregate logs. Each retains its original restoration, connection isolation and
+owned-process checks. A complete fresh source/quality run and the required
+exact-head hosted platform matrix remain pending before protected delivery.
+
+The first hosted fast run on `07b4f40` retained 3,398 passes and one failure:
+the new lifecycle fixture wrote its receipt into a directory present in the
+developer checkout but absent on the clean runner. The fixture now creates its
+owned evidence directory before writing. The failure remains preserved; no
+product behavior, assertion, deadline or platform selection changes. Fresh
+exact-head qualification is still required.
+
+## Native terminal and early-paint qualification
+
+The next complete local cohort on `07b4f40` retained 9,907 passes and five
+explicit platform/channel skips. One native PTY Ctrl-C test remained in its
+unbounded final child-exit wait, leaving its other three file cases unstarted.
+Controlled supervisor interruption preserved the unqualified result at 1,780.15
+seconds. The owned child, worker and process group were all reaped; no external
+signal was supplied to satisfy the Ctrl-C assertion. Post-observation signal and
+terminal flags do not establish why the original byte did not terminate it.
+
+That interruption did not produce complete parent coverage: only five of six
+workers emitted data, and runtime merging correctly rejected the incomplete
+parent. The previous runtime-cohort JSON/XML reports remained on disk and must
+not be described as fresh complete-suite coverage. Original worker data, stale
+report identities, process observations and the failed merge remain preserved.
+
+The test now bounds the original Ctrl-C write/exit observation to five seconds.
+A controlled byte-drop fails at that bound in 5.71 seconds while the actual
+owned child remains alive. Normal context cleanup then returns SIGTERM, closes
+the master, finishes the owner and reaps the child/group; that cleanup is not
+counted as Ctrl-C success. All four clean native PTY cases pass in 0.47 seconds
+without the injection. This fixes the unbounded test wait, not an established
+production signal-delivery cause.
+
+The second hosted candidate passed the fast gate, every Linux source part and
+all four native targets. Its macOS Python 3.12 source geometry case retained a
+40×12 first-frame filename clipped to `owned-ex` before the planned resize.
+The original 15-second filename requirement remains intact at both sizes.
+
+A public early-render/idle interleaving reproduces stale filename paint with
+correct width metadata on pinned native DataTable, FrameTable and the original
+ArtifactTable. Fixed allocated height is necessary: a later widget-size change
+can invalidate the caches and mask the defect. Native cell/row/line cache keys
+omit column widths, and native fixed-height measurement does not invalidate
+the earlier paint. The narrow ArtifactTable adapter now invalidates those caches
+and refreshes only after actual rendered widths change; other tables are
+unchanged. See the [compatibility decision](../../adr/0025-native-table-cache-retirement.md#artifact-browser-width-invalidation).
+
+The controlled mechanism is consistent with the retained terminal symptoms;
+the historical failed processes were not instrumented to prove that exact
+interleaving retrospectively. Fresh source/installed PTYs, complete exact-head
+qualification and coverage remain required for the new candidate.
+
+All four new permanent geometry controls fail with the preserved original table
+and pass with the adapter. The complete existing browser suite, four new visible-
+paint controls and four earlier width characterizations pass 21 cases in 13.33
+seconds. The pinned native DataTable and unrelated FrameTable retain the same
+controlled stale-paint failure, while the adapted ArtifactTable passes. Strict
+typing, Ruff, formatting and the complete test-private-dependency audit pass.
+
+
+## Frozen source qualification checkpoint
+
+On source `7ec2f63`, the complete local unit/contract/UI fast selection passed
+7,683 cases with one explicit hosted-macOS-only clipboard skip. Source-bound
+positive/strict-negative/traced runtime receipts passed their independent merge
+for all 246 production modules. Fresh independent coverage measured
+29,711/30,105 lines (98.6912%) and 8,903/9,318 branches (95.5463%); all 102
+critical modules and all 14 changed executable lines are fully covered. This
+qualifies that complete fast selection and those source inputs, not the earlier
+interrupted monolithic local suite.
+
+Five correctly source-bound PTY cases passed in 16.05 seconds; six outside-
+checkout installed console/module browser cases passed in 18.54 seconds. They
+retain full-name assertions at 40×12 and 100×30, filtering/refresh, zero network,
+unchanged explicit kubeconfig, actual terminal restoration and child reaping.
+The final strict union passed all 293 targets; Ruff, formatting, private-access,
+documentation source validation and the two-surface site build/check passed
+(53 pages, 2,170 local links/assets and 70 files).
+
+The final independent read-only review found no material production or test
+blocker. Protected delivery and the exact-head complete hosted source/native
+matrix are recorded in [PR #318](https://github.com/carloshm91/kuberich/pull/318).
+This section is a source checkpoint, not publication authorization. Earlier
+failed receipts and their stated limits remain preserved above.
+
+## Confirmation input readiness
+
+The documentation-only `6fdfb75` candidate retained 3,200 hosted fast-test passes
+and one timeout after the sensitive-browser copy test attempted its second
+affirmative click. The record did not capture that click's result, target region
+or service phase, so its exact cause remains unproved. Independent source review
+found no demonstrated consent/generation race: each operation creates a fresh
+dialog/future and approval follows only an affirmative result.
+
+Pinned Pilot computes target coordinates before its first layout-processing
+pause. Mounting alone does not establish interactive button geometry, and the
+former test ignored the returned hit-test boolean. A natural batch-update probe
+did not reproduce the failure and remains recorded as such. A separate synthetic
+unready-target control hides the real button until its region is zero: the real
+click returns false, no Button.Pressed or approval/read/copy occurs, and the old
+test times out in 5.87 seconds while awaiting acknowledgement. This establishes
+the input-readiness contract, not the original runner's historical interleaving.
+
+The test helper now bounds public refresh, fresh-dialog identity, visible/enabled
+non-active geometry, actual hit target and the real mouse click inside five
+seconds. It asserts click delivery; the original copy/disclosure assertions and
+five-second response bound remain. The controlled regression first verifies the
+undelivered click and zero side effects, then proves the guarded task waits until
+the target is ready. One real Button.Pressed then leads to exactly one fresh
+approval, read and copy, followed by complete task/service cleanup. Restoring the
+old helper fails that same regression; all 14 browser cases pass in 9.89 seconds
+with the new helper. Ruff, formatting and the complete private-access audit pass.
+No production file or confirmation policy changes in this follow-up.

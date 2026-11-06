@@ -1,6 +1,45 @@
 # Development checkpoint
 
-## Active unreleased 0.4.0 container inspection
+## Export-regression source checkpoint
+
+The export correction is tracked in [issue #317](https://github.com/carloshm91/kuberich/issues/317)
+and [PR #318](https://github.com/carloshm91/kuberich/pull/318). GitHub records its
+protected delivery and exact-head hosted results. Historical metrics follow in
+#231 after that prerequisite.
+
+Source `7ec2f63` prepares only the first UTF-8 export preview page after complete
+redaction, rejects log status updates after their target frame is removed, and
+invalidates stale artifact-table paint after native column sizing. Public
+controls reproduce the old failures and verify the corrected visible behavior.
+The pinned table adapter and removal condition are recorded in the
+[export acceptance record](acceptance/local-exports.md).
+
+The complete local unit/contract/UI selection passed 7,683 cases with one
+explicit hosted-macOS-only clipboard skip. The replay-only runtime coverage merge
+validated all 246 production modules; independent gates measured 98.6912% lines,
+95.5463% branches, all 102 critical modules at exactly 100%, and all 14 changed
+executable lines covered. This is the complete fast selection, not the complete
+local quality/terminal/packaging suite.
+
+Tested source commands include `uv run pytest tests/unit tests/contract tests/ui
+-m fast -n 6 --cov=kuberich --cov-branch --cov-report=xml --cov-report=json`,
+followed by `uv run python -m scripts.merge_runtime_coverage` and the independent
+coverage gates. Five source PTY cases and six outside-checkout installed browser
+cases also passed, including both sizes, full filenames, filtering, refresh,
+connection isolation and terminal restoration. Development entry:
+`uv run kuberich --command exports`.
+
+The earlier monolithic local cohort retained 9,907 passes and five explicit
+channel/platform skips but required interruption at an unbounded PTY exit wait;
+it did not produce complete parent coverage. The fixture now has a controlled
+five-second failure/cleanup contract. Original failed/interrupted records remain
+unqualified, and their exact historical signal/paint interleavings are not
+claimed as retrospectively proved.
+
+The source stays 0.3.0 and targets the unreleased 0.4.0 phase. This checkpoint
+requests no intermediate manual trial or publication.
+
+## Previous 0.4.0 container-inspection checkpoint
 
 Six of ten technical tasks are delivered. Local exports are protected-merged in
 PR #315 at `b781c793cbb7834d2dfe2c1bbe55c2caef1f7005`, with all 27 quality jobs,
@@ -11,7 +50,8 @@ completely; changed lines measured 97.58%. The final hosted matrix includes
 actual owned-kind regressions and all four native targets. Earlier pending
 export statements below are historical.
 
-Issue #74 is the sole implementation task. Development source now opens a
+Issue #74 was the sole implementation task at this prior checkpoint. Its protected
+delivery is PR #316 at `5444b7d9c357d389243147a978cc20b248293edb`. Development source opens a
 captured container's Environment / Image / Sources workspace from Pod → Enter
 → `e`. Values start hidden; reveal and copy each use a fresh one-use read.
 This describes current API configuration, not actual process environment.
@@ -53,7 +93,7 @@ Remaining phase work follows in order: broader historical metrics, the remaining
 curated resource families, then cumulative qualification in #75. Publication is
 separate from these development checkpoints.
 
-## Active unreleased 0.4.0 local exports
+## Previous 0.4.0 local-exports checkpoint
 
 Five of ten technical tasks are delivered: metrics, Pulse, relationships,
 authorization and diagnostics. Issue #73 is the sole active implementation:

@@ -69,8 +69,9 @@ are disabled. Crashes and failed tests fail the run. Workers get separate pytest
 temporary directories and ephemeral API ports; coordinate separate commands so
 one run cannot delete another's retained temporary files or artifacts.
 
-Uninstrumented backend/UI runtime children take an exclusive controller lock,
-including setup and cleanup; other tests drain and resume afterward. Separate
+Backend/UI runtime children, including the branch-traced UI replay, take an
+exclusive controller lock through setup and cleanup. Other tests drain and
+resume afterward. Tracing still does not qualify runtime latency. Separate
 pytest commands have separate locks, so coordinate host-wide timing windows.
 Every fast run keeps the full positive and deliberate negative runtime controls.
 Coverage runs additionally require the instrumented replay; fast-only receipts

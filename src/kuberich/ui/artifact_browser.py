@@ -1,7 +1,7 @@
 """Offline, literal local artifact browsing with explicit file actions."""
 
 import asyncio
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterable
 from pathlib import Path
 from typing import ClassVar
 
@@ -12,6 +12,7 @@ from textual.binding import Binding, BindingType
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, DataTable, Input, Static
+from textual.widgets.data_table import RowKey
 
 from kuberich.domain.exports import (
     ArtifactEntry,
@@ -34,6 +35,15 @@ from kuberich.ui.presentation import FrameTable
 class ArtifactTable(FrameTable[str | Text]):
     BINDING_PROFILE = "table"
     BINDINGS: ClassVar[list[BindingType]] = table_bindings("table")
+
+    def _update_dimensions(self, new_rows: Iterable[RowKey]) -> None:
+        widths = tuple(column.get_render_width(self) for column in self.ordered_columns)
+        super()._update_dimensions(new_rows)
+        if widths != tuple(column.get_render_width(self) for column in self.ordered_columns):
+            # Native fixed-height sizing can grow widths after a row was painted.
+            # Its render caches omit those widths; invalidate the earlier paint.
+            self._clear_caches()
+            self.refresh()
 
 
 class ArtifactBrowserScreen(ModalScreen[None]):

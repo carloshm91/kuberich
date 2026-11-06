@@ -86,10 +86,32 @@ def owned_app(tmp_path, url):
     return app, service
 
 
-async def choose_scope(app, pilot, index):
+async def press_until(pilot, key, effect):
+    """Own one key until its effect, independently of global animation completion."""
+    operation = asyncio.create_task(pilot.press(key))
+
+    def applied():
+        if operation.done():
+            operation.result()
+        return effect()
+
+    try:
+        await wait_for(applied)
+    finally:
+        if not operation.done():
+            operation.cancel()
+        await asyncio.gather(operation, return_exceptions=True)
+        if not operation.cancelled():
+            operation.result()
+
+
+async def choose_scope(app, pilot, index, *, effect=None):
     await wait_for(lambda: isinstance(app.screen, ScopeScreen))
     app.screen.query_one(OptionList).highlighted = index
-    await pilot.press("enter")
+    if effect is None:
+        await pilot.press("enter")
+    else:
+        await press_until(pilot, "enter", effect)
 
 
 async def open_viewer(app, pilot, *, aggregate=False, all_namespaces=False):
@@ -166,10 +188,20 @@ async def test_single_log_transition_refuses_capture_while_old_reader_drains(
                 assert old.current() and old.session == screen.stream.target.session
                 if change == "container":
                     await pilot.click("#log-container")
-                    await choose_scope(app, pilot, 1)
+                    await choose_scope(
+                        app,
+                        pilot,
+                        1,
+                        effect=lambda: screen.container == "sidecar" and gate.draining.is_set(),
+                    )
                 elif change == "window":
                     await pilot.click("#log-window")
-                    await choose_scope(app, pilot, WINDOWS.index("Head 1000"))
+                    await choose_scope(
+                        app,
+                        pilot,
+                        WINDOWS.index("Head 1000"),
+                        effect=lambda: screen.window == "Head 1000" and gate.draining.is_set(),
+                    )
                 else:
                     await pilot.click("#log-previous")
                 await wait_for(gate.draining.is_set)
@@ -315,10 +347,17 @@ async def test_aggregate_transition_waits_for_old_owner_and_never_relabels_old_r
                     and old.capture.scope.container is None
                 )
                 if change == "window":
-                    await pilot.press("o")
-                    await choose_scope(app, pilot, WINDOWS.index("Last 5m"))
+                    await press_until(pilot, "o", lambda: isinstance(app.screen, ScopeScreen))
+                    await choose_scope(
+                        app,
+                        pilot,
+                        WINDOWS.index("Last 5m"),
+                        effect=lambda: screen.window == "Last 5m" and gate.draining.is_set(),
+                    )
                 else:
-                    await pilot.press("v")
+                    await press_until(
+                        pilot, "v", lambda: screen.previous and gate.draining.is_set()
+                    )
                 await wait_for(gate.draining.is_set)
                 assert not old.current() and screen.capture_export(AT) == ()
                 assert "old-app-window" in screen.aggregate.export()

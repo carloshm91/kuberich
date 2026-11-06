@@ -483,6 +483,48 @@ def test_paging_complete_utf8_bounded_and_safe_preview():
 
 
 @pytest.mark.parametrize(
+    "character,remaining_bytes",
+    [
+        (character, remaining)
+        for character in ("a", "¢", "€", "💫")
+        for remaining in range(len(character.encode("utf-8")) + 1)
+    ],
+)
+def test_first_preview_matches_paging_at_ascii_and_multibyte_boundaries(character, remaining_bytes):
+    block = "a" * 32767 + "\n"
+    text = block * 7 + "a" * (32768 - remaining_bytes) + character + "after-boundary\nTAIL\n"
+    result = prepared(DocumentSource(page="evidence", text=text), "screen")
+    first, second = (artifact_page(result, index) for index in (0, 1))
+    assert first.total == second.total == 2
+    assert result.preview == first.text
+    assert len(result.preview.encode("utf-8")) <= MAX_PAGE_BYTES
+    assert result.preview.encode("utf-8").decode("utf-8") == result.preview
+    assert first.text + second.text == text
+    assert result.payload.decode("utf-8").partition("\n")[2] == text
+
+
+def test_first_preview_keeps_full_payload_redaction_and_complete_later_pages():
+    lines = ["public-" + "x" * 32760 for _ in range(9)]
+    lines += [
+        "-----BEGIN PRIVATE KEY-----",
+        "BEYOND_PREVIEW_PRIVATE_SENTINEL",
+        "-----END PRIVATE KEY-----",
+        '{"kind":"ConfigMap","data":{"key":"BEYOND_PREVIEW_CONFIG_SENTINEL"}}',
+        "tail survives redaction beyond the preview",
+    ]
+    result = prepared(single_source(text=lines), "logs")
+    assert len(result.payload) > MAX_PAGE_BYTES and len(result.preview.encode()) <= MAX_PAGE_BYTES
+    assert b"BEYOND_PREVIEW_PRIVATE_SENTINEL" not in result.payload
+    assert b"BEYOND_PREVIEW_CONFIG_SENTINEL" not in result.payload
+    assert b"tail survives redaction beyond the preview" in result.payload
+    first = artifact_page(result, 0)
+    assert result.preview == first.text
+    pages = [first, *(artifact_page(result, index) for index in range(1, first.total))]
+    assert all(len(page.text.encode("utf-8")) <= MAX_PAGE_BYTES for page in pages)
+    assert "".join(page.text for page in pages) == result.payload.decode().partition("\n")[2]
+
+
+@pytest.mark.parametrize(
     "name",
     [
         "",

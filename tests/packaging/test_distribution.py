@@ -22,6 +22,7 @@ from tests.support.credential_handoff import credential_terminal_trial, encrypte
 from tests.support.custom_terminal import terminal_custom_views
 from tests.support.distribution import PROJECT, run
 from tests.support.editing_terminal import terminal_editing
+from tests.support.export_browser_geometry import terminal_export_browser_geometry
 from tests.support.forward_terminal import terminal_forward
 from tests.support.handoff import terminal_handoff_trial
 from tests.support.interactions_terminal import terminal_interactions
@@ -39,6 +40,26 @@ from tests.support.transports import TerminalTransport
 from tests.support.workload_terminal import terminal_workload
 from tests.support.workloads import workload_api
 from tests.terminal.pty_support import TerminalSession
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+@pytest.mark.parametrize("resize", [False, True])
+def test_installed_export_browser_preserves_filename_geometry(
+    installed_wheel, artifacts, tmp_path, entry_point, resize
+):
+    binary, _ = installed_wheel
+    command = (
+        [str(binary / "kuberich")]
+        if entry_point == "console"
+        else [str(binary / "python"), "-m", "kuberich"]
+    )
+    terminal_export_browser_geometry(
+        command,
+        tmp_path,
+        evidence=f"installed-export-geometry-{entry_point}-{'resize' if resize else 'native'}",
+        resize=resize,
+        wheel_sha256=hashlib.sha256(artifacts[0].read_bytes()).hexdigest(),
+    )
 
 
 @pytest.mark.parametrize("entry_point", ["console", "module"])
