@@ -621,3 +621,29 @@ paint controls and four earlier width characterizations pass 21 cases in 13.33
 seconds. The pinned native DataTable and unrelated FrameTable retain the same
 controlled stale-paint failure, while the adapted ArtifactTable passes. Strict
 typing, Ruff, formatting and the complete test-private-dependency audit pass.
+
+
+## Frozen source qualification checkpoint
+
+On source `7ec2f63`, the complete local unit/contract/UI fast selection passed
+7,683 cases with one explicit hosted-macOS-only clipboard skip. Source-bound
+positive/strict-negative/traced runtime receipts passed their independent merge
+for all 246 production modules. Fresh independent coverage measured
+29,711/30,105 lines (98.6912%) and 8,903/9,318 branches (95.5463%); all 102
+critical modules and all 14 changed executable lines are fully covered. This
+qualifies that complete fast selection and those source inputs, not the earlier
+interrupted monolithic local suite.
+
+Five correctly source-bound PTY cases passed in 16.05 seconds; six outside-
+checkout installed console/module browser cases passed in 18.54 seconds. They
+retain full-name assertions at 40×12 and 100×30, filtering/refresh, zero network,
+unchanged explicit kubeconfig, actual terminal restoration and child reaping.
+The final strict union passed all 293 targets; Ruff, formatting, private-access,
+documentation source validation and the two-surface site build/check passed
+(53 pages, 2,170 local links/assets and 70 files).
+
+The final independent read-only review found no material production or test
+blocker. Protected delivery and the exact-head complete hosted source/native
+matrix are recorded in [PR #318](https://github.com/carloshm91/kuberich/pull/318).
+This section is a source checkpoint, not publication authorization. Earlier
+failed receipts and their stated limits remain preserved above.

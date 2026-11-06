@@ -1,31 +1,43 @@
 # Development checkpoint
 
-## Active export-regression correction
+## Export-regression source checkpoint
 
-Issue #317 is the sole active implementation; the prepared historical-metrics
-feature #231 waits for its protected delivery. The original full application
-attempt exposed existing large-export preparation and log-view teardown defects.
-A pure profile localized unnecessary all-page preview work, and a public-lifecycle
-regression reproduced the removed-frame failure on protected source. First-page
-UTF-8 equivalence/redaction and actual frame-lifetime guards are being verified.
-An early-render/idle control also reproduces correct column measurements with
-stale truncated filename paint. A narrow pinned-framework adapter repairs the
-artifact table's cache invalidation. The historical terminal failure remains
-preserved without a retrospectively proven interleaving. See the
+The export correction is tracked in [issue #317](https://github.com/carloshm91/kuberich/issues/317)
+and [PR #318](https://github.com/carloshm91/kuberich/pull/318). GitHub records its
+protected delivery and exact-head hosted results. Historical metrics follow in
+#231 after that prerequisite.
+
+Source `7ec2f63` prepares only the first UTF-8 export preview page after complete
+redaction, rejects log status updates after their target frame is removed, and
+invalidates stale artifact-table paint after native column sizing. Public
+controls reproduce the old failures and verify the corrected visible behavior.
+The pinned table adapter and removal condition are recorded in the
 [export acceptance record](acceptance/local-exports.md).
 
-The actual backend/UI runtime controls passed, including strict negative
-controls and branch-traced replays. All six outside-checkout installed browser
-cases and five source PTY cases passed. The current independent coverage gate
-passes all 102 critical modules completely; it includes an earlier interrupted
-parent cohort and does not establish a full-suite pass. A fresh complete source
-run and exact-head hosted checks remain pending. A later full local run retained
-9,907 passes but required interruption at an unbounded PTY test wait; it did not
-produce complete coverage. That test now has a controlled five-second failure
-and cleanup contract. Fresh qualification of the browser adapter remains
-pending. The source stays 0.3.0; these
-changes target the unreleased 0.4.0 phase. No intermediate manual trial or
-publication is requested.
+The complete local unit/contract/UI selection passed 7,683 cases with one
+explicit hosted-macOS-only clipboard skip. The replay-only runtime coverage merge
+validated all 246 production modules; independent gates measured 98.6912% lines,
+95.5463% branches, all 102 critical modules at exactly 100%, and all 14 changed
+executable lines covered. This is the complete fast selection, not the complete
+local quality/terminal/packaging suite.
+
+Tested source commands include `uv run pytest tests/unit tests/contract tests/ui
+-m fast -n 6 --cov=kuberich --cov-branch --cov-report=xml --cov-report=json`,
+followed by `uv run python -m scripts.merge_runtime_coverage` and the independent
+coverage gates. Five source PTY cases and six outside-checkout installed browser
+cases also passed, including both sizes, full filenames, filtering, refresh,
+connection isolation and terminal restoration. Development entry:
+`uv run kuberich --command exports`.
+
+The earlier monolithic local cohort retained 9,907 passes and five explicit
+channel/platform skips but required interruption at an unbounded PTY exit wait;
+it did not produce complete parent coverage. The fixture now has a controlled
+five-second failure/cleanup contract. Original failed/interrupted records remain
+unqualified, and their exact historical signal/paint interleavings are not
+claimed as retrospectively proved.
+
+The source stays 0.3.0 and targets the unreleased 0.4.0 phase. This checkpoint
+requests no intermediate manual trial or publication.
 
 ## Previous 0.4.0 container-inspection checkpoint
 
