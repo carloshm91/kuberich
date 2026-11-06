@@ -17,6 +17,7 @@ from kuberich.domain.cluster_diagnostics import (
     DiagnosticSnapshot,
 )
 from kuberich.domain.connections import ConnectionState, SessionObservation
+from kuberich.domain.events import EventOptions
 from kuberich.domain.exports import (
     DiagnosticsSource,
     DocumentSource,
@@ -170,6 +171,8 @@ class SourceState:
         self.diagnostics.capture_export = lambda at: self.diagnostics.choices
         self.views = SimpleNamespace(
             route=ViewRoute.pods(),
+            curated=None,
+            event_options=EventOptions(),
             table=app.table,
             renderer=self.renderer,
             catalog=lambda: self.catalog[0],

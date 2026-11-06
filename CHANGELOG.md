@@ -7,6 +7,9 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Added
 
+- Browse 18 additional read-only resource families with typed columns, bounded details and captured links ([#232](https://github.com/carloshm91/kuberich/issues/232)).
+- Filter warnings, group Events by reason and object identity, and open individual members through normal navigation history ([#232](https://github.com/carloshm91/kuberich/issues/232)).
+
 - Open cluster, Node, workload, Pod and container metric history with Shift+M or `:history`; show numeric CPU/memory/network/filesystem charts, 15m–24h ranges and explicit source/identity gaps ([#231](https://github.com/carloshm91/kuberich/issues/231)).
 - Select Prometheus-compatible Service candidates or independently configured HTTPS backends without sharing Kubernetes credentials ([#231](https://github.com/carloshm91/kuberich/issues/231)).
 
@@ -29,6 +32,8 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 - Inspect vendor-neutral extended-resource requests/limits and Node capacity without implying GPU utilization or confirmed complex Pod allocation ([#68](https://github.com/carloshm91/kuberich/issues/68)).
 
 ### Changed
+
+- Reserve Events `w`/`t` controls in its navigation profile and Shift+L for inspector Links ([#232](https://github.com/carloshm91/kuberich/issues/232)).
 
 - Reserve metric-history chart controls in the `history` key profile; conflicting common table overrides need an explicit per-history override ([#231](https://github.com/carloshm91/kuberich/issues/231)).
 

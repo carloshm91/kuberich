@@ -45,6 +45,12 @@ changes, logging, navigation, and validation. Domain code imports neither Textua
 nor generated SDK models. Raw Kubernetes field names remain intact in records;
 display and sorting use separate derived values.
 
+[Curated families](../src/kuberich/domain/curated.py) bind allowlisted facts to
+actual group/version/plural/kind/scope descriptors. Scaling, policy and access
+extractors share bounded values and literal destinations. [Events](../src/kuberich/domain/events.py)
+keep individual API objects separate from aggregate occurrence groups, without
+retaining freeform notes in their derived facts.
+
 [Pulse](../src/kuberich/domain/pulse.py) defines scoped overview sources,
 health summaries and exact resource predicates. [History](../src/kuberich/domain/history.py)
 defines bounded aggregate series, backend-scope declarations and explicit gaps.
@@ -80,6 +86,13 @@ detached inspectors. See [container configuration provenance](adr/0038-container
 loop. Commands, access policy, logs, resource changes, transfers, plugins, and
 forwards use their own service owners. Services return observations/results,
 not widgets, and enforce policy independently of a button or shortcut.
+
+[Curated navigation](../src/kuberich/services/curated_navigation.py) owns finite
+source/target reads, UID and opaque version checks. Inspectors retain both their
+fresh GET version and the parent table's observed version anchor. The
+[Event projection](../src/kuberich/services/events.py) applies membership and
+presentation options inside one owned worker, without another watch or client.
+See [curated resource observations](adr/0040-curated-resource-observations.md).
 
 [PulseService](../src/kuberich/services/pulse.py) owns serial overview collection
 within the selected workspace session. It publishes per-source progress and

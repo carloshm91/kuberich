@@ -24,6 +24,8 @@ from kuberich.ui.inspection import InspectionScreen
 from scripts.owned_kind import SHELL_IMAGE
 from tests.support.workers import CoroutineCalls
 
+BASELINE_RESOURCES = tuple(resource for resource in STANDARD_RESOURCES if not resource.curated)
+
 
 @contextmanager
 def presentation_owners(app: KubeRichApp) -> Iterator[tuple[CoroutineCalls, CoroutineCalls]]:
@@ -158,7 +160,7 @@ async def verify_standard_resources(
     targets = {}
     resources = {}
     for definition, fixture in zip(
-        STANDARD_RESOURCES, fixtures(namespace, volume, storage), strict=True
+        BASELINE_RESOURCES, fixtures(namespace, volume, storage), strict=True
     ):
         resource = discovery.find(definition.name, group=definition.group)
         assert resource.namespaced == definition.namespaced
@@ -294,7 +296,7 @@ async def verify_standard_resources(
         connection=ConnectionRequest(
             kubeconfig=str(path), context=context, namespace=namespace, timeout=15
         ),
-        initial_command=ResourceCommand(STANDARD_RESOURCES[0]),
+        initial_command=ResourceCommand(BASELINE_RESOURCES[0]),
     )
     evidence = []
     with presentation_owners(app) as (observations, renders):
@@ -372,7 +374,7 @@ async def verify_standard_resources(
                 str(app.resources.get_cell(controlled["metrics-init"], "cpu-req")) == "N/A (budget)"
             )
             assert str(app.resources.get_cell(controlled["metrics-ordinary"], "cpu")) == "N/A"
-            for definition in STANDARD_RESOURCES:
+            for definition in BASELINE_RESOURCES:
                 name, uid = targets[definition.name]
                 if app._resource_name != definition.name:
                     await pilot.press("colon")

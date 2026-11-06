@@ -4,8 +4,10 @@ import asyncio
 import time
 from dataclasses import dataclass
 
+from kuberich.diagnostics.redaction import sanitize_text
 from kuberich.domain.authorization_rows import AuthorizationRow
 from kuberich.domain.diagnostic_rows import DiagnosticRow
+from kuberich.domain.events import EventGroupRow, EventObjectRow
 from kuberich.domain.namespaces import NamespaceRow
 from kuberich.domain.navigation import ContextRow
 from kuberich.domain.pods import PodRow
@@ -26,6 +28,8 @@ class FilterResult[
     | RelationshipRow
     | AuthorizationRow
     | DiagnosticRow
+    | EventObjectRow
+    | EventGroupRow
 ]:
     rows: tuple[T, ...]
     problem: str | None = None
@@ -40,8 +44,20 @@ def search_text(
     | PulseRow
     | RelationshipRow
     | AuthorizationRow
-    | DiagnosticRow,
+    | DiagnosticRow
+    | EventObjectRow
+    | EventGroupRow,
 ) -> str:
+    if isinstance(row, EventObjectRow):
+        return " ".join(
+            (
+                row.fact.namespace,
+                sanitize_text(row.fact.name),
+                *(value.text for value in row.values),
+            )
+        )
+    if isinstance(row, EventGroupRow):
+        return " ".join((row.group.key.namespace, *(value.text for value in row.values)))
     if isinstance(row, DiagnosticRow):
         return " ".join(
             (
@@ -95,6 +111,8 @@ def filter_rows[
     | RelationshipRow
     | AuthorizationRow
     | DiagnosticRow
+    | EventObjectRow
+    | EventGroupRow
 ](rows: tuple[T, ...], query: str, kind: str = "pods") -> FilterResult[T]:
     if not query:
         return FilterResult(rows)
@@ -158,6 +176,8 @@ async def apply_filter[
     | RelationshipRow
     | AuthorizationRow
     | DiagnosticRow
+    | EventObjectRow
+    | EventGroupRow
 ](rows: tuple[T, ...], query: str, kind: str = "pods") -> FilterResult[T]:
     if not query:
         return FilterResult(rows)

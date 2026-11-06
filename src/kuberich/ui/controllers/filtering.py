@@ -4,6 +4,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, replace
 from functools import partial
 
+from kuberich.domain.curated_navigation import ResolvedCollectionBookmark
 from kuberich.domain.namespaces import NamespaceRow
 from kuberich.domain.pods import PodRow
 from kuberich.domain.pulse import PulseDrilldown
@@ -34,6 +35,18 @@ def _drilldown_rows[T: PodRow | NamespaceRow | ResourceRow](
     return tuple(row for row in rows if row.uid in matches)
 
 
+def _curated_rows[T: PodRow | NamespaceRow | ResourceRow](
+    rows: tuple[T, ...], records: tuple[ResourceRecord, ...], bookmark: ResolvedCollectionBookmark
+) -> tuple[T, ...]:
+    matches = {
+        record.uid
+        for record in records
+        if (bookmark.namespace is None or record.namespace == bookmark.namespace)
+        and bookmark.predicate.matches(bookmark.resource, record)
+    }
+    return tuple(row for row in rows if row.uid in matches)
+
+
 class ResourceFilter:
     def __init__(
         self,
@@ -47,6 +60,19 @@ class ResourceFilter:
     ) -> FilterResult[T]:
         view, kind = request.observation, request.route.display_key
         records = view.snapshot.items if view.snapshot else ()
+        if request.curated is not None:
+            bookmark, scope = request.curated, view.scope
+            if (
+                scope is None
+                or scope.resource != bookmark.resource
+                or scope.namespace != bookmark.namespace
+                or scope.query != bookmark.query
+                or view.snapshot is None
+                or view.snapshot.resource != bookmark.resource
+            ):
+                rows = ()
+            else:
+                rows = await parse_owned(partial(_curated_rows, rows, records, bookmark))
         if request.drilldown is not None:
             rows = await parse_owned(partial(_drilldown_rows, rows, records, request.drilldown))
         result = await self.metadata.apply(

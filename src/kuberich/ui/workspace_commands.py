@@ -246,6 +246,7 @@ class WorkspaceCommands:
             Command.CONTEXTS,
             Command.NAMESPACES,
             Command.PODS,
+            Command.EVENTS,
             Command.PULSE,
             Command.BACK,
             Command.FORWARD,

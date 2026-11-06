@@ -117,6 +117,7 @@ from kuberich.ui.controllers.filtering import FilterOptions
 from kuberich.ui.custom import CustomTable
 from kuberich.ui.diagnostic_actions import DiagnosticActions
 from kuberich.ui.diagnostic_navigation import DiagnosticNavigation
+from kuberich.ui.events import EventsTable
 from kuberich.ui.foreground import ForegroundGate
 from kuberich.ui.handoff import terminal_handoff
 from kuberich.ui.history_actions import HistoryActions
@@ -297,6 +298,10 @@ class KubeRichApp(App[None]):
         self.context_table.display = False
         self.standard_table = StandardTable()
         self.standard_table.display = False
+        self.events_table = EventsTable(
+            options_changed=lambda options: self.navigator.events_options(options)
+        )
+        self.events_table.display = False
         self.custom_table = CustomTable()
         self.custom_table.display = False
         self.pulse_table = PulseTable()
@@ -351,6 +356,7 @@ class KubeRichApp(App[None]):
                 self.relationships_table,
                 self.authorization_table,
                 self.diagnostics_table,
+                self.events_table,
             ),
             self._foreground,
             lambda: self.sessions.catalog,
@@ -363,7 +369,9 @@ class KubeRichApp(App[None]):
             self._handle_exception,
             pod_projection=lambda: PodProjection(),
             namespace_projection=lambda: NamespaceProjection(),
-            standard_projection=lambda definition: StandardProjection(definition),
+            standard_projection=lambda definition, resource: StandardProjection(
+                definition, resource
+            ),
             custom_projection=lambda layout: CustomProjection(layout),
             recover=self._view_rendered,
         )
@@ -456,6 +464,8 @@ class KubeRichApp(App[None]):
             delete_context=lambda: self._edit_context(ContextChange.DELETE),
             stop_plugins=self.plugins.manager.stop_for_client,
             metric_history=self.metric_history.open_container,
+            navigate_curated=self.navigator.open_curated,
+            current_curated=self.navigator.curated_current,
         )
         from platformdirs import user_state_path
 
@@ -595,6 +605,7 @@ class KubeRichApp(App[None]):
                     self.diagnostics.cancel() if value == "cancel" else self.diagnostics.overview()
                 ),
                 Command.PODS: self._command_pods,
+                Command.EVENTS: self.navigator.events,
                 Command.NAMESPACES: lambda value: (
                     self.navigator.namespaces()
                     if value is None
@@ -717,6 +728,7 @@ class KubeRichApp(App[None]):
         | RelationshipTable
         | AuthorizationTable
         | ClusterDiagnosticsTable
+        | EventsTable
     ):
         return self.views.table
 
@@ -776,6 +788,7 @@ class KubeRichApp(App[None]):
             yield self.relationships_table
             yield self.authorization_table
             yield self.diagnostics_table
+            yield self.events_table
             with Vertical(id="empty-state"):
                 yield WorkspaceLabel("No cluster connection", id="empty-title", markup=False)
                 yield WorkspaceLabel(
@@ -830,6 +843,7 @@ class KubeRichApp(App[None]):
             self.relationships_table,
             self.authorization_table,
             self.diagnostics_table,
+            self.events_table,
         ):
             table.effective_keys = self.navigation_keymap
         if not self.is_headless and not self.is_web:
@@ -848,6 +862,7 @@ class KubeRichApp(App[None]):
         self.authorization_table.setup()
         self.diagnostics_table.setup()
         self.standard_table.setup()
+        self.events_table.setup()
         self.query_one("#resource-view", Vertical).border_title = "Resources · no connection"
         self.screen.set_class(self.size.width < 70, "compact")
         self.screen.set_class(self.size.height < 16, "short")
@@ -895,6 +910,7 @@ class KubeRichApp(App[None]):
 
     @on(PodTable.SortChanged)
     @on(StandardTable.SortChanged)
+    @on(EventsTable.SortChanged)
     @on(NamespaceTable.SortChanged)
     def sort_changed(self) -> None:
         self.view_preferences.remember_sort()
@@ -1023,6 +1039,12 @@ class KubeRichApp(App[None]):
         if not self.custom_table.display and self._resource_name in {"configmaps", "secrets"}:
             self.action_configuration_data()
         else:
+            self._inspect("details")
+
+    @on(DataTable.RowSelected, "#events")
+    def event_selected(self, event: DataTable.RowSelected) -> None:
+        event.stop()
+        if not self.navigator.events_selected():
             self._inspect("details")
 
     def action_configuration_data(self) -> None:
@@ -1229,6 +1251,10 @@ class KubeRichApp(App[None]):
             if modal
             or self.views.route.kind
             in {ViewKind.CONTEXTS, ViewKind.PULSE, ViewKind.RELATIONSHIPS, ViewKind.AUTHORIZATION}
+            else (
+                self.events_table.selected_event_uid() if self.navigator.events_current() else None
+            )
+            if self.views.route.kind is ViewKind.EVENTS
             else self.views.table.capture_viewport().selected,
             modal,
         )
@@ -1244,6 +1270,7 @@ class KubeRichApp(App[None]):
             isinstance(self.screen, ModalScreen),
             self.workspace.store.observation.metrics,
             self.workspace.discovery,
+            self.workspace.store.observation.revision,
         )
 
     def _session_current(self, client: KubernetesSession, identity: SessionIdentity) -> bool:
@@ -1495,11 +1522,18 @@ class KubeRichApp(App[None]):
         self.screen_stack[0].set_class(event.size.height < 16, "short")
 
     def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        observation = self.workspace.store.observation
+        scope, snapshot = observation.scope, observation.snapshot
         view = ViewState(
             self._resource_name,
             generic=self.custom_table.display,
             modal=isinstance(self.screen, ModalScreen),
             typing=isinstance(self.focused, Input),
+            descriptor=scope.resource
+            if scope is not None
+            else snapshot.resource
+            if snapshot is not None
+            else None,
         )
         return COMMAND_CATALOG.available(action, view)
 

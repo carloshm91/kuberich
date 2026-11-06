@@ -82,6 +82,7 @@ def shortcut_keys(
 
 
 _FIXED_HELP = {
+    "events": "w warnings/all · t grouped/raw · Enter opens group members or Event details",
     "containers": "Enter/l logs · e environment/image · s/x shell · a attach · u upload · d download",
     "container-inspection": (
         "e environment · i image · s sources · r reveal/hide · Shift+R reload · Ctrl+Y explicit copy"

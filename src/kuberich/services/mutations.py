@@ -11,6 +11,7 @@ from weakref import WeakSet
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.adapters.mutations import conditional_patch
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, HttpProblem
+from kuberich.domain.curated import curated_read_only
 from kuberich.domain.mutations import (
     MutationIntent,
     MutationResult,
@@ -65,6 +66,8 @@ class MutationService:
 
     def require_current(self) -> None:
         self.policy.require(Action.MUTATE)
+        if curated_read_only(self.resource):
+            raise AppError("This resource supports reading, inspection and navigation only.")
         mutation_path(self.resource, self.target)
         if not self.current() or self.client.context.name != self.target.session.context:
             raise AppError("Mutation target/connection changed. Select the resource again.")

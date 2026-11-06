@@ -9,6 +9,7 @@ from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.adapters.mutations import conditional_patch
 from kuberich.adapters.operations import resource_write
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, HttpProblem
+from kuberich.domain.curated import curated_read_only
 from kuberich.domain.mutations import MutationIntent, MutationResult, MutationState
 from kuberich.domain.operations import (
     MAX_BATCH,
@@ -54,6 +55,8 @@ class ResourceOperationService:
 
     def require_current(self) -> None:
         self.policy.require(Action.MUTATE)
+        if curated_read_only(self.resource):
+            raise AppError("This resource supports reading, inspection and navigation only.")
         operation_path(self.resource, self.target, self.action)
         if not self.current() or self.client.context.name != self.target.session.context:
             raise AppError("Operation target/connection changed. Select and review again.")
@@ -236,6 +239,8 @@ class BatchDeleteService:
     def require_current(self) -> None:
         for source in self.sources:
             source.policy.require(Action.MUTATE)
+            if curated_read_only(source.resource):
+                raise AppError("This resource supports reading, inspection and navigation only.")
         if self.client.context.name != self.target.session.context:
             raise AppError("Batch captured connection changed.")
 

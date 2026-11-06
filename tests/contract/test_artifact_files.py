@@ -408,6 +408,7 @@ def test_creation_race_uses_existing_directory_without_chmod(files, tmp_path, mo
 
     def race(name, mode, **kwargs):
         mkdir(name, 0o750, **kwargs)
+        os.chmod(name, 0o750, dir_fd=kwargs.get("dir_fd"))
         raise FileExistsError()
 
     monkeypatch.setattr(os, "mkdir", race)

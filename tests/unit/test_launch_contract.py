@@ -9,7 +9,8 @@ import pytest
 
 from kuberich import cli
 from kuberich.config.schema import Settings
-from kuberich.services.commands import Command
+from kuberich.domain.registry import RESOURCE_ALIASES
+from kuberich.services.commands import Command, ResourceCommand
 from kuberich.ui.presentation import Presentation
 
 
@@ -330,14 +331,28 @@ def test_readonly_initial_commands_use_the_service_policy_before_launch(
     assert not (tmp_path / "logs").exists()
 
 
-@pytest.mark.parametrize(
-    "command", ["networkpolicies", "shell", "help extra", "xray", "usedby", "open"]
-)
+@pytest.mark.parametrize("command", ["shell", "help extra", "xray", "usedby", "open"])
 def test_initial_commands_require_real_behavior(
     command: str, capsys: pytest.CaptureFixture[str]
 ) -> None:
     assert cli.main(["-c", command]) == 4
     assert "Available: po, ctx, ns" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "command,scope", [("networkpolicies", None), ("networkpolicies team", "team")]
+)
+def test_curated_network_policies_are_available_as_readonly_startup_views(
+    command, scope, monkeypatch, capsys
+):
+    captured = []
+    monkeypatch.setattr(
+        cli, "run_terminal", lambda *args, **kwargs: captured.append(kwargs["initial_command"])
+    )
+    assert cli.main(["--context", "owned-not-loaded", "--readonly", "-c", command]) == 0
+    assert captured == [ResourceCommand(RESOURCE_ALIASES["networkpolicies"], scope)]
+    output = capsys.readouterr()
+    assert output.out == output.err == ""
 
 
 @pytest.mark.parametrize("command", [" ", ":", ": "])

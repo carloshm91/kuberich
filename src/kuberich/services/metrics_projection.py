@@ -26,6 +26,7 @@ def with_metrics[T: PodRow | NamespaceRow | ResourceRow](
                 for definition in STANDARD_RESOURCES
                 if definition.name == view.scope.resource.name
                 and definition.group == view.scope.resource.group
+                and not definition.curated
             ),
             (),
         )

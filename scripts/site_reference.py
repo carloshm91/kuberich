@@ -53,6 +53,7 @@ class Contracts(TypedDict):
     options: list[Option]
     local_commands: list[LocalCommand]
     resources: list[Resource]
+    event_columns: list[str]
     commands: list[Command]
     interactions: list[str]
     keymaps: list[Keymap]
@@ -71,6 +72,7 @@ import sys
 sys.path.insert(0, sys.argv[1])
 from kuberich.cli import _parser
 from kuberich.domain.registry import STANDARD_RESOURCES
+from kuberich.domain.events import EVENT_FIELDS
 from kuberich.services.commands import ALIASES
 from kuberich.domain.interactions import INTERACTION_VERBS
 from kuberich.domain.keyboard import PROFILES, keys_for
@@ -82,6 +84,7 @@ from kuberich.ui.containers import ContainerScreen
 from kuberich.ui.inspection import InspectionScreen
 from kuberich.ui.terminal import ShellScreen
 from kuberich.ui.relationships import RelationshipTable
+from kuberich.ui.events import EventsTable
 from kuberich.ui.diagnostic_evidence import DiagnosticEvidenceScreen
 parser = _parser()
 options = []
@@ -112,6 +115,7 @@ bindings = {}
 for label, owner in (("Workspace", KubeRichApp), ("Logs", LogScreen), ("Containers", ContainerScreen),
                      ("Inspection", InspectionScreen), ("Embedded terminal", ShellScreen),
                      ("Relationships", RelationshipTable),
+                     ("Events", EventsTable),
                      ("Diagnostic evidence", DiagnosticEvidenceScreen)):
     grouped = {}
     for item in owner.BINDINGS:
@@ -125,6 +129,7 @@ for label, owner in (("Workspace", KubeRichApp), ("Logs", LogScreen), ("Containe
                        for (action, description), keys in grouped.items()]
 settings = Settings()
 print(json.dumps({"options": options, "local_commands": local_commands, "resources": resources,
+    "event_columns": ["namespace", *EVENT_FIELDS],
     "commands": [{"action": action, "aliases": sorted(aliases)} for action, aliases in sorted(commands.items())],
     "interactions": sorted(INTERACTION_VERBS),
     "keymaps": [{"profiles": profiles, "keys": dict(keys)} for keys, profiles in keymaps.items()],
@@ -280,6 +285,14 @@ def generated_guides(root: Path, version: str) -> dict[str, str]:
             f"| {names} | {item['group'] or 'core'} | {scope} | {', '.join(item['columns'])} |"
         )
     resources += [
+        "",
+        "## Events",
+        "",
+        "The dedicated `:events` view uses its discovered Event API. Its columns are:",
+        ", ".join(f"`{key}`" for key in data["event_columns"]) + ".",
+        "Raw rows identify individual Events; grouped rows summarize retained observations",
+        "by type, reason and object identity. Group rows are not Kubernetes objects.",
+        "See [Events and curated views](resource-workspace.md#curated-read-only-views).",
         "",
         "See [the workspace explanation](resource-workspace.md) for standard and discovered views.",
     ]

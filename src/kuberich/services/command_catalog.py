@@ -83,6 +83,11 @@ COMMAND_SPECS = (
     _spec(Command.PLUGIN_JOBS, ("pluginjobs",), "Inspect and stop owned plugin jobs."),
     _spec(Command.QUIT, ("quit", "q", "exit"), "Close owned work and quit."),
     _spec(Command.PODS, ("po", "pod", "pods"), "List pods; optionally choose NAMESPACE or *."),
+    _spec(
+        Command.EVENTS,
+        ("events", "event", "ev"),
+        "Browse Events; optionally choose NAMESPACE or *.",
+    ),
     _spec(Command.PULSE, ("pulse", "overview"), "Open cluster health, budgets and metric history."),
     _spec(
         Command.HISTORY,

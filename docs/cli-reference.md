@@ -91,6 +91,7 @@ Resource aliases are in the [resource reference](resource-reference.md).
 | `diagnostics` | diagnostics |
 | `download` | download |
 | `edit` | edit |
+| `ev`, `event`, `events` | events |
 | `export` | export |
 | `exports` | exports |
 | `forward` | forward |
@@ -148,7 +149,7 @@ page keys stay available. Table Home/End move horizontally; Ctrl+Home/End select
 first/last rows. Uppercase letters are distinct keys, not Vim sequences.
 
 Profile 1: `table`, `contexts`, `containers`, `container-inspection`, `history`, `data`, `themes`, `forwards`, `sources`.
-Profile 2: `resources`, `namespaces`.
+Profile 2: `resources`, `events`, `namespaces`.
 Profile 3: `logs`, `text`.
 
 | Action | Profile 1 | Profile 2 | Profile 3 |
@@ -187,9 +188,25 @@ Profile 3: `logs`, `text`.
 | Embedded terminal | `tab` | Focus Next |
 | Embedded terminal | `shift+tab` | Focus Previous |
 | Embedded terminal | `ctrl+c,super+c` | Copy selected text |
+| Events | `j` | Down |
+| Events | `k` | Up |
+| Events | `g` | First row |
+| Events | `G` | Last row |
+| Events | `ctrl+b` | Page up |
+| Events | `ctrl+f` | Page down |
+| Events | `ctrl+u` | Half page up |
+| Events | `J` | Half page down |
+| Events | `h` | Scroll left |
+| Events | `alt+l` | Scroll right |
+| Events | `s` | Next sort field |
+| Events | `S` | Reverse sort |
+| Events | `question_mark` | Keys |
+| Events | `w` | Warnings |
+| Events | `t` | Groups |
 | Inspection | `y` | YAML |
 | Inspection | `d` | Details |
 | Inspection | `e` | Events |
+| Inspection | `L` | Links |
 | Inspection | `m` | Managed fields |
 | Inspection | `slash` | Search |
 | Inspection | `n` | Next match |

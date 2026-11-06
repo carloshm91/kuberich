@@ -2,9 +2,36 @@
 
 import pytest
 
+from kuberich.domain.curated import READ_ONLY_FAMILIES
+from kuberich.domain.resources import ApiResource
 from kuberich.domain.view_actions import TABLE_ACTIONS, ViewState, action_available
 from kuberich.services.access import Action
 from kuberich.services.command_catalog import COMMAND_SPECS
+
+
+@pytest.mark.parametrize("group,name", sorted(READ_ONLY_FAMILIES))
+def test_curated_table_registration_keeps_reading_actions_without_mutation_hints(group, name):
+    descriptor = ApiResource(
+        group, "unknown", name, "Unknown", True, frozenset({"patch", "delete"})
+    )
+    view = ViewState(name, descriptor=descriptor)
+    for action in ("edit", "review_delete", "annotate", "cleanup_pods", "upload"):
+        assert not action_available(action, view)
+    for action in (
+        "inspect_yaml",
+        "inspect_details",
+        "inspect_events",
+        "copy_selection",
+        "focus_filter",
+    ):
+        assert action_available(action, view)
+
+
+def test_curated_policy_does_not_match_a_same_plural_in_an_unrelated_api_group():
+    descriptor = ApiResource(
+        "unrelated.example", "v1", "horizontalpodautoscalers", "Other", True, frozenset()
+    )
+    assert action_available("edit", ViewState(descriptor.name, descriptor=descriptor))
 
 
 @pytest.mark.parametrize(

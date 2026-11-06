@@ -1,30 +1,20 @@
 """Standard resource definitions and safe, typed table summaries, without SDK models."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
-from decimal import Decimal
 from typing import cast
 
+from kuberich.diagnostics.redaction import sanitize_text
+from kuberich.domain.curated import curated_cells, curated_families, known_family, supported_family
 from kuberich.domain.metrics import METRIC_KEYS, MetricReport
 from kuberich.domain.pods import age
 from kuberich.domain.quantities import parse_quantity
-from kuberich.domain.resources import ResourceRecord
+from kuberich.domain.resources import ApiResource, ResourceRecord
+from kuberich.domain.table_values import Column as Column
+from kuberich.domain.table_values import SortValue as SortValue
+from kuberich.domain.table_values import Value as Value
 from kuberich.domain.views import ResourceSelection
 from kuberich.errors import AppError
-
-SortValue = str | int | float | Decimal | tuple[int, float]
-
-
-@dataclass(frozen=True)
-class Value:
-    text: str
-    sort: SortValue | None
-
-
-@dataclass(frozen=True)
-class Column:
-    key: str
-    numeric: bool = False
 
 
 @dataclass(frozen=True)
@@ -34,6 +24,7 @@ class ResourceDefinition:
     namespaced: bool
     aliases: tuple[str, ...]
     fields: tuple[Column, ...]
+    curated: bool = False
 
     @property
     def columns(self) -> tuple[Column, ...]:
@@ -58,6 +49,7 @@ class ResourceDefinition:
                 }
                 else ()
             ),
+            *((Column("info"),) if self.curated else ()),
             Column("age", True),
         )
 
@@ -109,12 +101,34 @@ STANDARD_RESOURCES = (
         "provisioner reclaim binding expansion",
         namespaced=False,
     ),
+    *(
+        ResourceDefinition(
+            family.resource, family.group, family.namespaced, family.aliases, family.fields, True
+        )
+        for family in curated_families()
+    ),
 )
 RESOURCE_ALIASES = {
     alias: definition
     for definition in STANDARD_RESOURCES
     for alias in (definition.name, *definition.aliases)
 }
+EVENT_METADATA_DEFINITION = ResourceDefinition("events", "", True, ("ev",), (), True)
+
+
+def definition_for_resource(
+    resource: ApiResource, *, metadata_only: bool = False
+) -> ResourceDefinition | None:
+    definition = RESOURCE_ALIASES.get(resource.name)
+    if resource.name == "events" and resource.group in {"", "events.k8s.io"}:
+        return replace(
+            EVENT_METADATA_DEFINITION, group=resource.group, namespaced=resource.namespaced
+        )
+    if definition is None or definition.group != resource.group:
+        return None
+    if definition.curated and (metadata_only or supported_family(resource) is None):
+        return replace(definition, namespaced=resource.namespaced, fields=())
+    return definition
 
 
 def resource_selection(name: str) -> ResourceSelection:
@@ -343,10 +357,30 @@ def _specific(name: str, manifest: dict[str, object]) -> dict[str, Value]:
     }
 
 
-def resource_row(record: ResourceRecord, definition: ResourceDefinition) -> ResourceRow:
+def resource_row(
+    record: ResourceRecord, definition: ResourceDefinition, *, resource: ApiResource | None = None
+) -> ResourceRow:
     if record.uid is None:
         raise AppError("Resource tables require Kubernetes UID identity.")
-    specific = _specific(definition.name, record.manifest)
+    if definition.curated:
+        specific = {column.key: Value("—", None) for column in definition.fields}
+        if resource is None:
+            info = "Resource version unavailable"
+        elif (
+            known_family(resource.group, resource.name) is None
+            or supported_family(resource) is None
+        ):
+            info = "Unsupported API version or schema"
+        elif record.metadata_only or not definition.fields:
+            info = "Metadata only; values unavailable"
+        else:
+            extracted = curated_cells(resource, record)
+            specific.update(extracted.values)
+            info = " · ".join(extracted.notices) or "Object fields"
+        safe_info = sanitize_text(info)[:256]
+        specific["info"] = Value(safe_info, safe_info)
+    else:
+        specific = _specific(definition.name, record.manifest)
     fields = {
         "namespace": _text(record.namespace),
         "name": _text(record.name),

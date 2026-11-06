@@ -49,12 +49,17 @@ class ResourceSelection:
             raise AppError("Server-column selection must be boolean.")
         if not isinstance(self.query, ResourceQuery):
             raise AppError("Resource selection requires a validated server query.")
-        if self.query.compact and (
-            not self.server_columns or (not self.group and self.name in {"pods", "services"})
-        ):
-            raise AppError(
-                "Native Pod/Service views require full objects; compact mode is for generic server columns."
-            )
+        if self.query.compact:
+            # Deferred to avoid a views -> Events -> views import cycle. Compact
+            # transport does not turn a curated view into a printer-column view.
+            from kuberich.domain.curated import READ_ONLY_FAMILIES
+
+            if (not self.server_columns and (self.group, self.name) not in READ_ONLY_FAMILIES) or (
+                not self.group and self.name in {"pods", "services"}
+            ):
+                raise AppError(
+                    "Compact metadata requires a generic or curated read-only view; Pods/Services retain full objects."
+                )
 
 
 @dataclass(frozen=True)

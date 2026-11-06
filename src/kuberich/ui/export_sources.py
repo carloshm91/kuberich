@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from collections.abc import Callable
-from dataclasses import replace
+from dataclasses import asdict, astuple, replace
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 from uuid import uuid4
@@ -42,7 +44,7 @@ class CapturableView(Protocol):
 
 
 _RESOURCE_VIEWS = frozenset(
-    {ViewKind.PODS, ViewKind.NAMESPACES, ViewKind.STANDARD, ViewKind.CUSTOM}
+    {ViewKind.PODS, ViewKind.NAMESPACES, ViewKind.STANDARD, ViewKind.CUSTOM, ViewKind.EVENTS}
 )
 _PUBLICATION_NOTICE = "Source time is the display publication time; API read time is unavailable."
 
@@ -74,7 +76,11 @@ class WorkspaceExportSources:
     def _frame_ready(self, route: ViewRoute, query: str, view: ViewObservation) -> bool:
         frame = self.presenter.export_frame
         return (
-            frame is not None
+            (
+                route.kind is not ViewKind.EVENTS
+                or self.views.tables.events.options == self.views.event_options
+            )
+            and frame is not None
             and frame[:3] == (route, query, view.revision)
             and not self.views.renderer.is_failed(self.presenter.capture())
         )
@@ -183,6 +189,11 @@ class WorkspaceExportSources:
         published = self.presenter.export_frame
         assert published is not None
         scope = replace(self._scope(at, route, view), source_at=published[3])
+        curated = self.views.curated
+        event_options = self.views.event_options
+        event_source = self.views.tables.events.source if route.kind is ViewKind.EVENTS else None
+        if event_source is not None:
+            scope = replace(scope, source_at=event_source.snapshot_seen_at)
 
         def current() -> bool:
             return (
@@ -191,8 +202,19 @@ class WorkspaceExportSources:
                 and self.views.route == route
                 and self.query() == query
                 and self.views.table is table
+                and self.views.curated == curated
                 and getattr(table, "sort_summary", None) == sort
                 and bool(getattr(table, "descending", False)) == descending
+                and (
+                    route.kind is not ViewKind.EVENTS
+                    or (
+                        self.views.event_options == event_options
+                        and self.views.tables.events.options == event_options
+                        and self.views.tables.events.source == event_source
+                        and self.workspace.store.observation.scope == view.scope
+                        and self.workspace.store.observation.revision == view.revision
+                    )
+                )
                 and (
                     (self.views.catalog() is catalog)
                     if route.kind is ViewKind.CONTEXTS
@@ -206,6 +228,46 @@ class WorkspaceExportSources:
         notices: tuple[str, ...] = (_PUBLICATION_NOTICE,)
         if route.kind is not ViewKind.CONTEXTS:
             notices += (view.message,)
+        if curated is not None:
+            digest = hashlib.sha256(
+                json.dumps(
+                    asdict(curated.predicate),
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            ).hexdigest()
+            notices += (
+                f"Captured local membership: {type(curated.predicate).__name__}; SHA-256 {digest} "
+                "(predicate identity only; not a reconstructible query).",
+            )
+        if route.kind is ViewKind.EVENTS:
+            notices += self.views.tables.events.notices
+            notices += (
+                f"Event presentation: warnings_only={str(event_options.warnings_only).lower()}; "
+                f"grouped={str(event_options.grouped).lower()}.",
+            )
+            if event_options.members is None:
+                notices += ("Event local membership: all retained Event objects.",)
+            else:
+                # The complete, unclipped predicate uses the EventGroup row-key
+                # identity; raw reason/reference text never enters metadata.
+                digest = hashlib.sha256(
+                    json.dumps(
+                        astuple(event_options.members.key),
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                    ).encode("utf-8")
+                ).hexdigest()
+                notices += (
+                    f"Event local membership: event-group:{digest} "
+                    "(exact captured group predicate identity; not a reconstructible query).",
+                )
+            notices += (
+                ("Grouped Events are aggregate observations, not Kubernetes objects.",)
+                if event_options.grouped
+                else ("Raw Events retain their individual API identities.",)
+            )
         lease = ExportLease(
             id=uuid4(),
             capture=ExportCapture(

@@ -369,7 +369,7 @@ def _safe_text(text: str) -> str:
 
 
 def _redact(value: Any, *, key: str = "", secret: bool = False) -> Any:
-    if key in {"annotations", "fieldsV1", "command", "args"} or _SENSITIVE.search(key):
+    if key in {"annotations", "fieldsV1", "command", "args", "caBundle"} or _SENSITIVE.search(key):
         return REDACTED
     if secret and key in {"data", "stringData", "binaryData"}:
         return (

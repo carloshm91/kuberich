@@ -28,9 +28,8 @@ observed RBAC browsing; SOCKS5 streaming limits remain explicit.
 **partial** — Selecting a context leaves kubeconfig unchanged. Renaming or deleting a context uses
 explicit review and a backup. Local per-context display preferences can be saved.
 ### API discovery, resource aliases and dynamic/CRD server columns
-**partial** — Discovery chooses served API versions and unambiguous aliases. Generic tables provide
-server columns, metadata fallback and saved layouts. Development source follows discovered owners;
-generic mutations and arbitrary custom-resource reference scanning remain unavailable.
+**partial** — Discovery and generic browsing remain available. Development source adds 18 curated
+read-only families and an identity-safe Events workspace; installed 0.3.0 predates them.
 ### Live resource updates, manual refresh, retry/reconnect and errors
 **partial** — Live lists and watches keep a last snapshot during temporary failures and reconnect or
 relist as needed. Refresh renews discovery and the selected resource stream. A stale snapshot does
@@ -73,27 +72,27 @@ YAML and overwrite/deletion need separate confirmation. Installed 0.3.0 predates
 **partial** — About shows the installed version and license. Stable-release notices are opt-in and
 can use a cached result; they never install an update.
 ### Pods/containers including init and ephemeral containers, events and namespaces
-**partial** — Pods and namespaces have live tables. Pod Enter opens regular, init, sidecar, and
-existing ephemeral container rows. State updates from the pod watch; Enter on a container opens its
-logs.
+**partial** — Browse live Pods, containers and namespaces. Development source adds Events warning
+filtering, occurrence groups and individual member inspection; installed 0.3.0 predates these Event
+views.
 ### Deployments, StatefulSets, DaemonSets, ReplicaSets, replication controllers, workloads
 **partial** — Standard workload tables support reviewed scaling, restart and explicit revision
 rollback. Development source adds native controller and Pod relationships; selector matches remain
 separate from ownership.
 ### Services, Endpoints, EndpointSlices, Ingresses and NetworkPolicies
-**partial** — Service, EndpointSlice, Ingress and NetworkPolicy views are available. Development
-source adds reported service backends and separate selector matches, preserving unknown endpoint
-identity and incomplete reads.
+**partial** — Service and Ingress tables are available. Development source adds curated
+EndpointSlice, NetworkPolicy and IngressClass tables and reported service backends with separate
+selector matches, preserving unknown endpoint identity and incomplete reads.
 ### Nodes, PV/PVC, StorageClasses, priority/scheduling, HPA/PDB/quota/limits
-**partial** — Node, PV, PVC, StorageClass and HPA tables are available. Development source adds Node
-CPU/memory usage, allocatable percentages and vendor-neutral extended-resource capacity; the
-development cluster overview adds known pressure/unscheduled states, while broader quota/disruption
-diagnostics remain planned. Development relationships distinguish declared placement, PV/PVC
-bindings and static PriorityClass references.
+**partial** — Node, PV, PVC and StorageClass tables are available. Development source adds curated
+HPA/VPA, PDB, scheduling-class, quota and limit tables, Node CPU/memory usage, allocatable
+percentages and vendor-neutral extended-resource capacity. The development cluster overview adds
+known pressure/unscheduled states; broader quota/disruption diagnostics remain planned. Development
+relationships distinguish declared placement, PV/PVC bindings and static PriorityClass references.
 ### ConfigMaps, Secrets, service accounts and RBAC resource families
-**partial** — ConfigMap and Secret values stay hidden until deliberate reveal or copy. Development
-source includes static configuration/ServiceAccount relationships, observed RBAC browsing and
-current-identity permission reviews with explicit scope and uncertainty.
+**partial** — ConfigMap/Secret payload views remain deliberate. Development source adds read-only
+ServiceAccount and RBAC summaries with declared links and authorization evidence; installed 0.3.0
+predates those summaries.
 ### Custom resources, unknown APIs and custom columns/jump chains
 **partial** — Discovered APIs provide served-version selection, typed printer columns, inspection
 and saved schema-pinned layouts. Development source follows discovered owners in native graphs;
@@ -218,8 +217,9 @@ are planned.
 ### HTTP benchmarks, per-context options, results browser and cancellation
 **planned** — HTTP benchmarking, results browsing and benchmark cancellation are planned.
 ### Policy/quota/admission/scheduling views and removed-API handling
-**partial** — Expanded policy, quota, admission and scheduling diagnostics are planned. Discovery
-already reports removed APIs without fabricating a table.
+**partial** — Development source adds read-only scaling, policy, scheduling, quota and webhook
+summaries. Wider enforcement diagnostics remain planned; unknown or removed APIs do not fabricate
+supported schemas.
 ### Linux/macOS downloads, source installs and Homebrew
 **partial** — Install from PyPI, the project Homebrew tap, or GitHub Release archives. Linux/macOS
 and Python support depend on the selected channel and its documented platform requirements.

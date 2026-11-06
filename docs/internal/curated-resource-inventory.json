@@ -1,0 +1,2411 @@
+{
+  "schema_version": 1,
+  "issue": 232,
+  "source_base": "5060b4dcd35968e3b990bd833eba731539938cff",
+  "status": "source_implemented; complete-suite, exact-head platform checks and protected issue delivery pending",
+  "source_pin_notice": "Immutable primary/public source pins inherited from the read-only planning review. Original retrieval times and hashes are retained; this file does not claim a fresh fetch or runtime product parity.",
+  "remote_sources": [
+    {
+      "id": "kubernetes-api:autoscaling/v1/types.go",
+      "url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/autoscaling/v1/types.go",
+      "resolved_url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/autoscaling/v1/types.go",
+      "commit": "9a6751a483334b2c0209afd37e790f2b37c5e524",
+      "sha256": "ab10da716388987895cb94be11cf776b5632644128de7959cd97bc37b5b874c6",
+      "bytes": 28774,
+      "retrieved_at": "2026-11-05T23:18:22.359160+00:00",
+      "status": "retrieved",
+      "anchors": [
+        {
+          "symbol": "type HorizontalPodAutoscalerSpec struct {",
+          "line": 40
+        },
+        {
+          "symbol": "type HorizontalPodAutoscalerStatus struct {",
+          "line": 68
+        },
+        {
+          "symbol": "type MetricStatus struct {",
+          "line": 362
+        }
+      ],
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "kubernetes-api:autoscaling/v2/types.go",
+      "url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/autoscaling/v2/types.go",
+      "resolved_url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/autoscaling/v2/types.go",
+      "commit": "9a6751a483334b2c0209afd37e790f2b37c5e524",
+      "sha256": "68f36b28a6bb91cb0c9ca53591d8e5d52778f7f2ca69cea3120ba7eae95910aa",
+      "bytes": 30599,
+      "retrieved_at": "2026-11-05T23:18:22.561596+00:00",
+      "status": "retrieved",
+      "anchors": [
+        {
+          "symbol": "type HorizontalPodAutoscalerSpec struct {",
+          "line": 52
+        },
+        {
+          "symbol": "type MetricTarget struct {",
+          "line": 370
+        },
+        {
+          "symbol": "type MetricTargetType string",
+          "line": 393
+        },
+        {
+          "symbol": "type HorizontalPodAutoscalerStatus struct {",
+          "line": 405
+        },
+        {
+          "symbol": "type MetricStatus struct {",
+          "line": 482
+        }
+      ],
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "kubernetes-api:policy/v1/types.go",
+      "url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/policy/v1/types.go",
+      "resolved_url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/policy/v1/types.go",
+      "commit": "9a6751a483334b2c0209afd37e790f2b37c5e524",
+      "sha256": "74b315b469f29db121b4ec9d3ac529e40c4a99ebc22bf521652357e9565ef856",
+      "bytes": 10941,
+      "retrieved_at": "2026-11-05T23:18:22.279707+00:00",
+      "status": "retrieved",
+      "anchors": [
+        {
+          "symbol": "type PodDisruptionBudgetSpec struct {",
+          "line": 28
+        }
+      ],
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "kubernetes-api:policy/v1beta1/types.go",
+      "url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/policy/v1beta1/types.go",
+      "resolved_url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/policy/v1beta1/types.go",
+      "commit": "9a6751a483334b2c0209afd37e790f2b37c5e524",
+      "sha256": "a4e41009eb7b83f789b33ba96d581ba683b12cd58727cd972e670959987c0fd5",
+      "bytes": 11217,
+      "retrieved_at": "2026-11-05T23:18:22.528291+00:00",
+      "status": "retrieved",
+      "anchors": [
+        {
+          "symbol": "type PodDisruptionBudgetSpec struct {",
+          "line": 25
+        }
+      ],
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "kubernetes-api:networking/v1/types.go",
+      "url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/networking/v1/types.go",
+      "resolved_url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/networking/v1/types.go",
+      "commit": "9a6751a483334b2c0209afd37e790f2b37c5e524",
+      "sha256": "4ecd933fd7813323c1ba478905fd1df143724317353c7ad25dba1a861c3c3a93",
+      "bytes": 37522,
+      "retrieved_at": "2026-11-06T09:40:13.096602+00:00",
+      "status": "retrieved_during_refresh",
+      "anchors": [],
+      "provenance": "Read-only primary-source bytes re-fetched during refresh",
+      "prior_sha256": "4ecd933fd7813323c1ba478905fd1df143724317353c7ad25dba1a861c3c3a93",
+      "changed_since_prior": false,
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "kubernetes-api:discovery/v1/types.go",
+      "url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/discovery/v1/types.go",
+      "resolved_url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/discovery/v1/types.go",
+      "commit": "9a6751a483334b2c0209afd37e790f2b37c5e524",
+      "sha256": "1b42067dbd371c28b1d9c1c5b5a25267e991e893d0fc781285409818f86eadd6",
+      "bytes": 11016,
+      "retrieved_at": "2026-11-05T23:18:22.281333+00:00",
+      "status": "retrieved",
+      "anchors": [
+        {
+          "symbol": "type EndpointConditions struct {",
+          "line": 145
+        }
+      ],
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "kubernetes-api:scheduling/v1/types.go",
+      "url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/scheduling/v1/types.go",
+      "resolved_url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/scheduling/v1/types.go",
+      "commit": "9a6751a483334b2c0209afd37e790f2b37c5e524",
+      "sha256": "3895051203aa464fdeecb6b9d786ef917c7d56187d9c34f7adbed3daa45f7199",
+      "bytes": 3152,
+      "retrieved_at": "2026-11-05T23:18:22.541510+00:00",
+      "status": "retrieved",
+      "anchors": [
+        {
+          "symbol": "type PriorityClass struct {",
+          "line": 31
+        }
+      ],
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "kubernetes-api:node/v1/types.go",
+      "url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/node/v1/types.go",
+      "resolved_url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/node/v1/types.go",
+      "commit": "9a6751a483334b2c0209afd37e790f2b37c5e524",
+      "sha256": "ee9a6247f78d83a07e47c485b4e33bf9a4f464095982649dad23fb25536eb7eb",
+      "bytes": 5025,
+      "retrieved_at": "2026-11-05T23:18:22.543266+00:00",
+      "status": "retrieved",
+      "anchors": [
+        {
+          "symbol": "type RuntimeClass struct {",
+          "line": 36
+        }
+      ],
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "kubernetes-api:coordination/v1/types.go",
+      "url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/coordination/v1/types.go",
+      "resolved_url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/coordination/v1/types.go",
+      "commit": "9a6751a483334b2c0209afd37e790f2b37c5e524",
+      "sha256": "bca731e4e1fb343905759f523f9a77ea5e78151f3f08d0e523adc6359ca863eb",
+      "bytes": 4763,
+      "retrieved_at": "2026-11-05T23:18:22.566443+00:00",
+      "status": "retrieved",
+      "anchors": [
+        {
+          "symbol": "type LeaseSpec struct {",
+          "line": 53
+        }
+      ],
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "kubernetes-api:core/v1/types.go",
+      "url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/core/v1/types.go",
+      "resolved_url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/core/v1/types.go",
+      "commit": "9a6751a483334b2c0209afd37e790f2b37c5e524",
+      "sha256": "335f6d034eb92b6751e9fc3833e5c027aa0da8138de44acaaadf62c5cf25183a",
+      "bytes": 450028,
+      "retrieved_at": "2026-11-05T23:18:23.164662+00:00",
+      "status": "retrieved",
+      "anchors": [
+        {
+          "symbol": "type Event struct {",
+          "line": 7579
+        },
+        {
+          "symbol": "type EventSeries struct {",
+          "line": 7646
+        },
+        {
+          "symbol": "type LimitRangeItem struct {",
+          "line": 7690
+        },
+        {
+          "symbol": "type ResourceQuotaStatus struct {",
+          "line": 7880
+        }
+      ],
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "kubernetes-api:admissionregistration/v1/types.go",
+      "url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/admissionregistration/v1/types.go",
+      "resolved_url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/admissionregistration/v1/types.go",
+      "commit": "9a6751a483334b2c0209afd37e790f2b37c5e524",
+      "sha256": "35f58a673ffd825f9bf1ba7ac36795be353978e9d0db507eb7874b8d86bc9b74",
+      "bytes": 81791,
+      "retrieved_at": "2026-11-05T23:18:22.862105+00:00",
+      "status": "retrieved",
+      "anchors": [
+        {
+          "symbol": "type WebhookClientConfig struct {",
+          "line": 1479
+        }
+      ],
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "kubernetes-api:rbac/v1/types.go",
+      "url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/rbac/v1/types.go",
+      "resolved_url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/rbac/v1/types.go",
+      "commit": "9a6751a483334b2c0209afd37e790f2b37c5e524",
+      "sha256": "1a4918c1845ec5cf1515240d66612b50f11f0fd2b6f5ef8a1e204a29f8792a81",
+      "bytes": 11379,
+      "retrieved_at": "2026-11-05T23:18:22.808754+00:00",
+      "status": "retrieved",
+      "anchors": [],
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "kubernetes-api:events/v1/types.go",
+      "url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/events/v1/types.go",
+      "resolved_url": "https://raw.githubusercontent.com/kubernetes/api/9a6751a483334b2c0209afd37e790f2b37c5e524/events/v1/types.go",
+      "commit": "9a6751a483334b2c0209afd37e790f2b37c5e524",
+      "sha256": "9cdf7c0d778bf006ec1c5269d60a5c0c6cca025df40452d06f09168ae23d6c2e",
+      "bytes": 6371,
+      "retrieved_at": "2026-11-06T09:40:13.096602+00:00",
+      "status": "retrieved_during_refresh",
+      "anchors": [
+        {
+          "symbol": "type Event struct {",
+          "line": 34
+        },
+        {
+          "symbol": "type EventSeries struct {",
+          "line": 105
+        }
+      ],
+      "provenance": "Read-only primary-source bytes re-fetched during refresh",
+      "prior_sha256": "9cdf7c0d778bf006ec1c5269d60a5c0c6cca025df40452d06f09168ae23d6c2e",
+      "changed_since_prior": false,
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "vpa-types",
+      "url": "https://raw.githubusercontent.com/kubernetes/autoscaler/3716d7520d793955d422dee07d262ec0a2ceed56/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1/types.go",
+      "resolved_url": "https://raw.githubusercontent.com/kubernetes/autoscaler/3716d7520d793955d422dee07d262ec0a2ceed56/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1/types.go",
+      "commit": "3716d7520d793955d422dee07d262ec0a2ceed56",
+      "sha256": "d875f92f092fb086bd6c84b250e9764b40538d8f2edaaf203bc427da2cfeb7a6",
+      "bytes": 22536,
+      "retrieved_at": "2026-11-05T23:18:22.923807+00:00",
+      "status": "retrieved",
+      "anchors": [
+        {
+          "symbol": "type VerticalPodAutoscalerSpec struct {",
+          "line": 74
+        },
+        {
+          "symbol": "type PodUpdatePolicy struct {",
+          "line": 134
+        },
+        {
+          "symbol": "type RecommendedContainerResources struct {",
+          "line": 287
+        }
+      ],
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "lens-public-menu",
+      "url": "https://raw.githubusercontent.com/lensapp/lens/f1a960fd785b62a118acd8b1525d879f39917e21/packages/core/src/features/cluster/sidebar-and-tab-navigation-for-core.test.tsx",
+      "resolved_url": "https://raw.githubusercontent.com/lensapp/lens/f1a960fd785b62a118acd8b1525d879f39917e21/packages/core/src/features/cluster/sidebar-and-tab-navigation-for-core.test.tsx",
+      "commit": "f1a960fd785b62a118acd8b1525d879f39917e21",
+      "sha256": "afff87b7fbc4900c3c49e4043728bae972f8f636645a8a3f87c7eeafbffa3d09",
+      "bytes": 11404,
+      "retrieved_at": "2026-11-05T23:18:22.838235+00:00",
+      "status": "retrieved",
+      "usage": "Inspected generic synthetic navigation fixture; not evidence of a real resource menu label.",
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "lens-docs:config/",
+      "url": "https://docs.lenshq.io/k8slens/using-lens/config/",
+      "resolved_url": "https://docs.lenshq.io/k8slens/using-lens/config/",
+      "commit": null,
+      "sha256": "a091c1b6cf2f7e95a88a8b720bae1193fcd564bfe50570b5392f3cbd7e4d3794",
+      "bytes": 196406,
+      "retrieved_at": "2026-11-06T09:40:13.096602+00:00",
+      "status": "retrieved_during_refresh",
+      "provenance": "Read-only primary-source bytes re-fetched during refresh",
+      "prior_sha256": "a091c1b6cf2f7e95a88a8b720bae1193fcd564bfe50570b5392f3cbd7e4d3794",
+      "changed_since_prior": false,
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "lens-docs:network/",
+      "url": "https://docs.lenshq.io/k8slens/using-lens/network/",
+      "resolved_url": "https://docs.lenshq.io/k8slens/using-lens/network/",
+      "commit": null,
+      "sha256": "731d0af07dd9aa15426cd6c3c05926481a1aa7301a2830772c7d28dc2df5b136",
+      "bytes": 196055,
+      "retrieved_at": "2026-11-06T09:40:13.096602+00:00",
+      "status": "retrieved_during_refresh",
+      "provenance": "Read-only primary-source bytes re-fetched during refresh",
+      "prior_sha256": "731d0af07dd9aa15426cd6c3c05926481a1aa7301a2830772c7d28dc2df5b136",
+      "changed_since_prior": false,
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "lens-docs:access-control/",
+      "url": "https://docs.lenshq.io/k8slens/using-lens/access-control/",
+      "resolved_url": "https://docs.lenshq.io/k8slens/using-lens/access-control/",
+      "commit": null,
+      "sha256": "b77aef00dd04b4c59e1c12ef87f77271c96a4e01fa053e2123d1b58198308d96",
+      "bytes": 196122,
+      "retrieved_at": "2026-11-06T09:40:13.096602+00:00",
+      "status": "retrieved_during_refresh",
+      "provenance": "Read-only primary-source bytes re-fetched during refresh",
+      "prior_sha256": "b77aef00dd04b4c59e1c12ef87f77271c96a4e01fa053e2123d1b58198308d96",
+      "changed_since_prior": false,
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "lens-docs:events/",
+      "url": "https://docs.lenshq.io/k8slens/using-lens/events/",
+      "resolved_url": "https://docs.lenshq.io/k8slens/using-lens/events/",
+      "commit": null,
+      "sha256": "3bcd4ef9a79ff1e938590b41f6baf9db8f45f70e75e93defaf548313b2aaa6d5",
+      "bytes": 198270,
+      "retrieved_at": "2026-11-06T09:40:13.096602+00:00",
+      "status": "retrieved_during_refresh",
+      "provenance": "Read-only primary-source bytes re-fetched during refresh",
+      "prior_sha256": "3bcd4ef9a79ff1e938590b41f6baf9db8f45f70e75e93defaf548313b2aaa6d5",
+      "changed_since_prior": false,
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "lens-docs:workloads/",
+      "url": "https://docs.lenshq.io/k8slens/using-lens/workloads/",
+      "resolved_url": "https://docs.lenshq.io/k8slens/using-lens/workloads/",
+      "commit": null,
+      "sha256": "5c3883a2283cdad81eab9f17b08e445e2eb91cb70efa4a7faadc0340fa89dbf9",
+      "bytes": 196530,
+      "retrieved_at": "2026-11-06T09:40:13.096602+00:00",
+      "status": "retrieved_during_refresh",
+      "provenance": "Read-only primary-source bytes re-fetched during refresh",
+      "prior_sha256": "5c3883a2283cdad81eab9f17b08e445e2eb91cb70efa4a7faadc0340fa89dbf9",
+      "changed_since_prior": false,
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "lens-docs:storage/",
+      "url": "https://docs.lenshq.io/k8slens/using-lens/storage/",
+      "resolved_url": "https://docs.lenshq.io/k8slens/using-lens/storage/",
+      "commit": null,
+      "sha256": "66176487f2b2e7e27cbd818ea3f747938398ed8a9711ffbd6ca6aeefb2c848a4",
+      "bytes": 196001,
+      "retrieved_at": "2026-11-06T09:40:13.096602+00:00",
+      "status": "retrieved_during_refresh",
+      "provenance": "Read-only primary-source bytes re-fetched during refresh",
+      "prior_sha256": "66176487f2b2e7e27cbd818ea3f747938398ed8a9711ffbd6ca6aeefb2c848a4",
+      "changed_since_prior": false,
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "lens-docs:device-resources/",
+      "url": "https://docs.lenshq.io/k8slens/using-lens/device-resources/",
+      "resolved_url": "https://docs.lenshq.io/k8slens/using-lens/device-resources/",
+      "commit": null,
+      "sha256": "774f4bf8ab2c650053c40b783c6d7ea19cac6d2c1db180c4870a75c9ff2cfb2e",
+      "bytes": 200064,
+      "retrieved_at": "2026-11-06T09:40:13.096602+00:00",
+      "status": "retrieved_during_refresh",
+      "provenance": "Read-only primary-source bytes re-fetched during refresh",
+      "prior_sha256": "774f4bf8ab2c650053c40b783c6d7ea19cac6d2c1db180c4870a75c9ff2cfb2e",
+      "changed_since_prior": false,
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "lens-docs:network/gateway-api/",
+      "url": "https://docs.lenshq.io/k8slens/using-lens/network/gateway-api/",
+      "resolved_url": "https://docs.lenshq.io/k8slens/using-lens/network/gateway-api/",
+      "commit": null,
+      "sha256": "3cae6deb06949c66b477e7f9f79566ec6f80f17ad2b4c99b9b51109514500a84",
+      "bytes": 219566,
+      "retrieved_at": "2026-11-06T09:40:13.096602+00:00",
+      "status": "retrieved_during_refresh",
+      "provenance": "Read-only primary-source bytes re-fetched during refresh",
+      "prior_sha256": "3cae6deb06949c66b477e7f9f79566ec6f80f17ad2b4c99b9b51109514500a84",
+      "changed_since_prior": false,
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "lens-docs:config/admission-policies/",
+      "url": "https://docs.lenshq.io/k8slens/using-lens/config/admission-policies/",
+      "resolved_url": "https://docs.lenshq.io/k8slens/using-lens/config/admission-policies/",
+      "commit": null,
+      "sha256": "126b5628167aa9f9ffb8b61c5d0bbd5a35b12bd6b23e0a38bee5adeddc5d7551",
+      "bytes": 215485,
+      "retrieved_at": "2026-11-06T09:40:13.096602+00:00",
+      "status": "retrieved_during_refresh",
+      "provenance": "Read-only primary-source bytes re-fetched during refresh",
+      "prior_sha256": "126b5628167aa9f9ffb8b61c5d0bbd5a35b12bd6b23e0a38bee5adeddc5d7551",
+      "changed_since_prior": false,
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "lens-public-menu-snapshot",
+      "url": "https://raw.githubusercontent.com/lensapp/lens/f1a960fd785b62a118acd8b1525d879f39917e21/packages/core/src/features/cluster/__snapshots__/sidebar-and-tab-navigation-for-core.test.tsx.snap",
+      "commit": "f1a960fd785b62a118acd8b1525d879f39917e21",
+      "sha256": "63bd90bc948865569d392dc12846ea015a63986373a96505a0df0ac80e11ac45",
+      "bytes": 144880,
+      "retrieved_at": "2026-11-05T23:29:54.031267+00:00",
+      "status": "retrieved",
+      "usage": "Inspected generic synthetic navigation fixture; not evidence of a real resource menu label.",
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "lens-sidebar:custom-resources",
+      "url": "https://raw.githubusercontent.com/lensapp/lens/f1a960fd785b62a118acd8b1525d879f39917e21/packages/core/src/renderer/components/custom-resources/sidebar-item.injectable.tsx",
+      "commit": "f1a960fd785b62a118acd8b1525d879f39917e21",
+      "sha256": "39823a86f5f03f356f1aa12b7c157cb1530aa09861866c910bd41c21c5600857",
+      "bytes": 757,
+      "retrieved_at": "2026-11-05T23:30:28.405735+00:00",
+      "status": "retrieved",
+      "usage": "Historical menu declaration only; no implementation copied",
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "lens-sidebar:replicationcontrollers",
+      "url": "https://raw.githubusercontent.com/lensapp/lens/f1a960fd785b62a118acd8b1525d879f39917e21/packages/core/src/renderer/components/workloads-replication-controllers/replication-controller-sidebar-item.injectable.tsx",
+      "commit": "f1a960fd785b62a118acd8b1525d879f39917e21",
+      "sha256": "f154d856f10255cb3bd45145d226a9ef58c03f1d3816cce63d50b0ec3f48761a",
+      "bytes": 1382,
+      "retrieved_at": "2026-11-05T23:30:28.386006+00:00",
+      "status": "retrieved",
+      "usage": "Historical menu declaration only; no implementation copied",
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "lens-sidebar:serviceaccounts",
+      "url": "https://raw.githubusercontent.com/lensapp/lens/f1a960fd785b62a118acd8b1525d879f39917e21/packages/core/src/renderer/components/user-management/service-accounts/service-accounts-sidebar-item.injectable.tsx",
+      "commit": "f1a960fd785b62a118acd8b1525d879f39917e21",
+      "sha256": "8d47cdf1eb69a64ee46c0d0c961310ec3e36ca502fd11174a6ae9968d0294929",
+      "bytes": 1377,
+      "retrieved_at": "2026-11-05T23:30:28.396069+00:00",
+      "status": "retrieved",
+      "usage": "Historical menu declaration only; no implementation copied",
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "lens-sidebar:podsecuritypolicies",
+      "url": "https://raw.githubusercontent.com/lensapp/lens/f1a960fd785b62a118acd8b1525d879f39917e21/packages/core/src/renderer/components/pod-security-policies/pod-security-policies-sidebar-item.injectable.tsx",
+      "commit": "f1a960fd785b62a118acd8b1525d879f39917e21",
+      "sha256": "6bc91eedf511e4ae1eeebe962aca1ce1118bda0571824bbda239ddeab5cdf5e3",
+      "bytes": 1438,
+      "retrieved_at": "2026-11-05T23:30:28.399681+00:00",
+      "status": "retrieved",
+      "usage": "Historical menu declaration only; no implementation copied",
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "lens-sidebar:vpa",
+      "url": "https://raw.githubusercontent.com/lensapp/lens/f1a960fd785b62a118acd8b1525d879f39917e21/packages/core/src/renderer/components/config-vertical-pod-autoscalers/sidebar-item.injectable.ts",
+      "commit": "f1a960fd785b62a118acd8b1525d879f39917e21",
+      "sha256": "ce6a579beba12f22c2f469e49810fd303e62145039a89360327b42b2fa74aed8",
+      "bytes": 1421,
+      "retrieved_at": "2026-11-05T23:30:28.666796+00:00",
+      "status": "retrieved",
+      "usage": "Historical menu declaration only; no implementation copied",
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "lens-sidebar:hpa",
+      "url": "https://raw.githubusercontent.com/lensapp/lens/f1a960fd785b62a118acd8b1525d879f39917e21/packages/core/src/renderer/components/config-horizontal-pod-autoscalers/sidebar-item.injectable.ts",
+      "commit": "f1a960fd785b62a118acd8b1525d879f39917e21",
+      "sha256": "f475619e18845175e15e9a47c6fd672112363f23f03665258d40895f0f8d6540",
+      "bytes": 1445,
+      "retrieved_at": "2026-11-05T23:30:28.658418+00:00",
+      "status": "retrieved",
+      "usage": "Historical menu declaration only; no implementation copied",
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "lens-sidebar:events",
+      "url": "https://raw.githubusercontent.com/lensapp/lens/f1a960fd785b62a118acd8b1525d879f39917e21/packages/core/src/renderer/components/events/events-sidebar-item.injectable.tsx",
+      "commit": "f1a960fd785b62a118acd8b1525d879f39917e21",
+      "sha256": "dd9342bc0deea8c91bb6ba8c4378454057cb29d2a53a23ef480f26ec776c96c6",
+      "bytes": 1213,
+      "retrieved_at": "2026-11-05T23:30:28.672908+00:00",
+      "status": "retrieved",
+      "usage": "Historical menu declaration only; no implementation copied",
+      "provenance": "Inherited immutable source pin from prior read-only plan; not re-fetched during this refresh",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    },
+    {
+      "id": "vpa-crd-fixture",
+      "url": "https://raw.githubusercontent.com/kubernetes/autoscaler/3716d7520d793955d422dee07d262ec0a2ceed56/vertical-pod-autoscaler/deploy/vpa-v1-crd-gen.yaml",
+      "commit": "3716d7520d793955d422dee07d262ec0a2ceed56",
+      "sha256": "893b556b1a92c38ac417369c61abe2dadea7dec3661b3c74a450b6e540287064",
+      "bytes": 41427,
+      "retrieved_at": "2026-11-06T09:40:13.096602+00:00",
+      "status": "read_only_source_inspected_not_applied",
+      "selected_document": "verticalpodautoscalers.autoscaling.k8s.io",
+      "exclude_documents": [
+        "verticalpodautoscalercheckpoints.autoscaling.k8s.io"
+      ],
+      "scope": "Namespaced",
+      "served_version": "v1",
+      "status_subresource": true,
+      "unserved_version": "v1beta2",
+      "limitation": "CRD-only planned fixture; no VPA controllers/webhooks installed or recommendation behavior qualified",
+      "final_candidate_refresh_notice": "Inherited prior verified primary-source pin; not re-fetched during this source-only final-candidate refresh. Original retrieval times and limits retained."
+    }
+  ],
+  "named_families": [
+    {
+      "kind": "HorizontalPodAutoscaler",
+      "group": "autoscaling",
+      "resource": "horizontalpodautoscalers",
+      "versions": [
+        "v2",
+        "v1"
+      ],
+      "namespaced": true,
+      "details": [
+        "target identity",
+        "v1 CPU percent versus all v2 source types",
+        "paired target/current values by complete metric identity",
+        "observedGeneration and conditions"
+      ],
+      "drilldowns": [
+        "fresh resolved scaleTargetRef",
+        "target relationship/workload route"
+      ],
+      "required_edge_cases": [
+        "missing status versus explicit zero",
+        "v1/v2 shapes",
+        "reordered/missing duplicate metrics",
+        "mixed percent/quantity units",
+        "missing named target or wrong UID"
+      ],
+      "api_sources": [
+        "kubernetes-api:autoscaling/v1/types.go",
+        "kubernetes-api:autoscaling/v2/types.go"
+      ],
+      "lens_sources": [
+        "lens-docs:config/",
+        "lens-sidebar:hpa"
+      ],
+      "availability": "actual matching discovery descriptor and real request permissions required",
+      "unsupported_version": "safe metadata-only fallback with visible unsupported-curation notice; no guessed API or arbitrary printer columns",
+      "columns": [
+        {
+          "key": "target",
+          "numeric": false
+        },
+        {
+          "key": "min",
+          "numeric": true
+        },
+        {
+          "key": "max",
+          "numeric": true
+        },
+        {
+          "key": "current",
+          "numeric": true
+        },
+        {
+          "key": "desired",
+          "numeric": true
+        },
+        {
+          "key": "metrics",
+          "numeric": false
+        },
+        {
+          "key": "conditions",
+          "numeric": false
+        }
+      ],
+      "implementation_status": "source_implemented; acceptance record separates focused evidence from final delivery",
+      "issue": 232,
+      "implementation_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "tests/ui/test_curated_resources.py",
+        "scripts/curated_kind.py"
+      ]
+    },
+    {
+      "kind": "VerticalPodAutoscaler",
+      "group": "autoscaling.k8s.io",
+      "resource": "verticalpodautoscalers",
+      "versions": [
+        "v1"
+      ],
+      "namespaced": true,
+      "details": [
+        "per-container target/lower/upper/uncapped recommendations",
+        "configured mode/default provenance",
+        "resource policy summaries and source conditions"
+      ],
+      "drilldowns": [
+        "fresh resolved targetRef"
+      ],
+      "required_edge_cases": [
+        "CRD absent/denied/partial discovery",
+        "Off/Initial/Recreate/InPlaceOrRecreate/Auto/future mode",
+        "empty versus absent recommendation",
+        "per-resource units",
+        "same-name target replacement"
+      ],
+      "api_sources": [
+        "vpa-types",
+        "vpa-crd-fixture"
+      ],
+      "lens_sources": [
+        "lens-docs:config/",
+        "lens-sidebar:vpa"
+      ],
+      "availability": "actual matching discovery descriptor and real request permissions required",
+      "unsupported_version": "safe metadata-only fallback with visible unsupported-curation notice; no guessed API or arbitrary printer columns",
+      "columns": [
+        {
+          "key": "target",
+          "numeric": false
+        },
+        {
+          "key": "mode",
+          "numeric": false
+        },
+        {
+          "key": "recommended-containers",
+          "numeric": true
+        },
+        {
+          "key": "conditions",
+          "numeric": false
+        }
+      ],
+      "implementation_status": "source_implemented; acceptance record separates focused evidence from final delivery",
+      "issue": 232,
+      "implementation_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "tests/ui/test_curated_resources.py",
+        "scripts/curated_kind.py"
+      ]
+    },
+    {
+      "kind": "PodDisruptionBudget",
+      "group": "policy",
+      "resource": "poddisruptionbudgets",
+      "versions": [
+        "v1"
+      ],
+      "namespaced": true,
+      "details": [
+        "selector with null/empty semantics",
+        "reported counts and observedGeneration",
+        "unhealthyPodEvictionPolicy with default provenance"
+      ],
+      "drilldowns": [
+        "exact selector-matching Pods in object namespace"
+      ],
+      "required_edge_cases": [
+        "null selector none versus empty all",
+        "v1beta1 not decoded as v1",
+        "count versus percent sort tags",
+        "missing/zero/status generation mismatch"
+      ],
+      "api_sources": [
+        "kubernetes-api:policy/v1/types.go",
+        "kubernetes-api:policy/v1beta1/types.go"
+      ],
+      "lens_sources": [
+        "lens-docs:config/"
+      ],
+      "availability": "actual matching discovery descriptor and real request permissions required",
+      "unsupported_version": "safe metadata-only fallback with visible unsupported-curation notice; no guessed API or arbitrary printer columns",
+      "columns": [
+        {
+          "key": "min-available",
+          "numeric": true
+        },
+        {
+          "key": "max-unavailable",
+          "numeric": true
+        },
+        {
+          "key": "allowed",
+          "numeric": true
+        },
+        {
+          "key": "current-healthy",
+          "numeric": true
+        },
+        {
+          "key": "desired-healthy",
+          "numeric": true
+        },
+        {
+          "key": "expected-pods",
+          "numeric": true
+        },
+        {
+          "key": "status",
+          "numeric": false
+        }
+      ],
+      "implementation_status": "source_implemented; acceptance record separates focused evidence from final delivery",
+      "issue": 232,
+      "implementation_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "tests/ui/test_curated_resources.py",
+        "scripts/curated_kind.py"
+      ]
+    },
+    {
+      "kind": "NetworkPolicy",
+      "group": "networking.k8s.io",
+      "resource": "networkpolicies",
+      "versions": [
+        "v1"
+      ],
+      "namespaced": true,
+      "details": [
+        "bounded pod selector",
+        "declared peer/port rules",
+        "policyTypes with default origin",
+        "no reachability verdict"
+      ],
+      "drilldowns": [
+        "exact selected Pods in policy namespace"
+      ],
+      "required_edge_cases": [
+        "empty/missing default selector",
+        "empty egress policy type",
+        "matchExpressions",
+        "malformed bounded peer lists",
+        "no CNI enforcement claim"
+      ],
+      "api_sources": [
+        "kubernetes-api:networking/v1/types.go"
+      ],
+      "lens_sources": [
+        "lens-docs:network/"
+      ],
+      "availability": "actual matching discovery descriptor and real request permissions required",
+      "unsupported_version": "safe metadata-only fallback with visible unsupported-curation notice; no guessed API or arbitrary printer columns",
+      "columns": [
+        {
+          "key": "selector",
+          "numeric": false
+        },
+        {
+          "key": "policy-types",
+          "numeric": false
+        },
+        {
+          "key": "ingress-rules",
+          "numeric": true
+        },
+        {
+          "key": "egress-rules",
+          "numeric": true
+        }
+      ],
+      "implementation_status": "source_implemented; acceptance record separates focused evidence from final delivery",
+      "issue": 232,
+      "implementation_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "tests/ui/test_curated_resources.py",
+        "scripts/curated_kind.py"
+      ]
+    },
+    {
+      "kind": "EndpointSlice",
+      "group": "discovery.k8s.io",
+      "resource": "endpointslices",
+      "versions": [
+        "v1"
+      ],
+      "namespaced": true,
+      "details": [
+        "tri-state ready/serving/terminating plus documented consumer defaults",
+        "bounded endpoint/port/target refs",
+        "address type and service association"
+      ],
+      "drilldowns": [
+        "declared service",
+        "UID-verified targetRef via existing relationships"
+      ],
+      "required_edge_cases": [
+        "missing flags",
+        "nil port versus zero",
+        "multiple addresses one endpoint",
+        "dual-stack duplicates not Pod counts",
+        "wrong target UID",
+        "custom slice without Service"
+      ],
+      "api_sources": [
+        "kubernetes-api:discovery/v1/types.go"
+      ],
+      "lens_sources": [
+        "lens-docs:network/"
+      ],
+      "availability": "actual matching discovery descriptor and real request permissions required",
+      "unsupported_version": "safe metadata-only fallback with visible unsupported-curation notice; no guessed API or arbitrary printer columns",
+      "columns": [
+        {
+          "key": "address-type",
+          "numeric": false
+        },
+        {
+          "key": "service",
+          "numeric": false
+        },
+        {
+          "key": "endpoints",
+          "numeric": true
+        },
+        {
+          "key": "ready",
+          "numeric": true
+        },
+        {
+          "key": "not-ready",
+          "numeric": true
+        },
+        {
+          "key": "unspecified",
+          "numeric": true
+        },
+        {
+          "key": "ports",
+          "numeric": false
+        }
+      ],
+      "implementation_status": "source_implemented; acceptance record separates focused evidence from final delivery",
+      "issue": 232,
+      "implementation_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "tests/ui/test_curated_resources.py",
+        "scripts/curated_kind.py"
+      ]
+    },
+    {
+      "kind": "IngressClass",
+      "group": "networking.k8s.io",
+      "resource": "ingressclasses",
+      "versions": [
+        "v1"
+      ],
+      "namespaced": false,
+      "details": [
+        "only recognized default annotation reduced to boolean",
+        "parameters group/kind/name/scope/namespace",
+        "controller literal"
+      ],
+      "drilldowns": [
+        "Ingresses with exact spec.ingressClassName in selected namespace/all",
+        "resolved parameters object with actual discovery scope"
+      ],
+      "required_edge_cases": [
+        "cluster versus Namespace parameters",
+        "ambiguous kind discovery",
+        "default annotation malformed",
+        "raw annotations hidden",
+        "legacy annotation not silently equivalent"
+      ],
+      "api_sources": [
+        "kubernetes-api:networking/v1/types.go"
+      ],
+      "lens_sources": [
+        "lens-docs:network/"
+      ],
+      "availability": "actual matching discovery descriptor and real request permissions required",
+      "unsupported_version": "safe metadata-only fallback with visible unsupported-curation notice; no guessed API or arbitrary printer columns",
+      "columns": [
+        {
+          "key": "controller",
+          "numeric": false
+        },
+        {
+          "key": "default",
+          "numeric": true
+        },
+        {
+          "key": "parameters-kind",
+          "numeric": false
+        },
+        {
+          "key": "parameters-scope",
+          "numeric": false
+        }
+      ],
+      "implementation_status": "source_implemented; acceptance record separates focused evidence from final delivery",
+      "issue": 232,
+      "implementation_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "tests/ui/test_curated_resources.py",
+        "scripts/curated_kind.py"
+      ]
+    },
+    {
+      "kind": "PriorityClass",
+      "group": "scheduling.k8s.io",
+      "resource": "priorityclasses",
+      "versions": [
+        "v1"
+      ],
+      "namespaced": false,
+      "details": [
+        "signed priority",
+        "explicit default provenance",
+        "safe bounded description"
+      ],
+      "drilldowns": [
+        "existing #70 UsedBy under selected namespace/all"
+      ],
+      "required_edge_cases": [
+        "negative/zero/positive ordering",
+        "bool rejected as numeric",
+        "no namespace on root",
+        "header search scope retained"
+      ],
+      "api_sources": [
+        "kubernetes-api:scheduling/v1/types.go"
+      ],
+      "lens_sources": [
+        "lens-docs:config/"
+      ],
+      "availability": "actual matching discovery descriptor and real request permissions required",
+      "unsupported_version": "safe metadata-only fallback with visible unsupported-curation notice; no guessed API or arbitrary printer columns",
+      "columns": [
+        {
+          "key": "priority",
+          "numeric": true
+        },
+        {
+          "key": "global-default",
+          "numeric": false
+        },
+        {
+          "key": "preemption",
+          "numeric": false
+        }
+      ],
+      "implementation_status": "source_implemented; acceptance record separates focused evidence from final delivery",
+      "issue": 232,
+      "implementation_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "tests/ui/test_curated_resources.py",
+        "scripts/curated_kind.py"
+      ]
+    },
+    {
+      "kind": "RuntimeClass",
+      "group": "node.k8s.io",
+      "resource": "runtimeclasses",
+      "versions": [
+        "v1"
+      ],
+      "namespaced": false,
+      "details": [
+        "overhead resource map by unit",
+        "declared scheduling selector/tolerations",
+        "handler string without runtime health claim"
+      ],
+      "drilldowns": [
+        "Pods with exact spec.runtimeClassName under selected namespace/all"
+      ],
+      "required_edge_cases": [
+        "absent overhead not zero",
+        "binary/decimal quantities",
+        "empty node selector",
+        "future fields ignored",
+        "no runtime exec"
+      ],
+      "api_sources": [
+        "kubernetes-api:node/v1/types.go"
+      ],
+      "lens_sources": [
+        "lens-docs:config/"
+      ],
+      "availability": "actual matching discovery descriptor and real request permissions required",
+      "unsupported_version": "safe metadata-only fallback with visible unsupported-curation notice; no guessed API or arbitrary printer columns",
+      "columns": [
+        {
+          "key": "handler",
+          "numeric": false
+        },
+        {
+          "key": "overhead-cpu",
+          "numeric": true
+        },
+        {
+          "key": "overhead-memory",
+          "numeric": true
+        },
+        {
+          "key": "node-selector",
+          "numeric": false
+        },
+        {
+          "key": "tolerations",
+          "numeric": true
+        }
+      ],
+      "implementation_status": "source_implemented; acceptance record separates focused evidence from final delivery",
+      "issue": 232,
+      "implementation_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "tests/ui/test_curated_resources.py",
+        "scripts/curated_kind.py"
+      ]
+    },
+    {
+      "kind": "Lease",
+      "group": "coordination.k8s.io",
+      "resource": "leases",
+      "versions": [
+        "v1"
+      ],
+      "namespaced": true,
+      "details": [
+        "acquire/renew time and provenance",
+        "optional strategy/preferred holder",
+        "no clock-based authority claim"
+      ],
+      "drilldowns": [
+        "UID-bearing explicit owners when present",
+        "own UID-scoped Events",
+        "namespace"
+      ],
+      "required_edge_cases": [
+        "missing/zero duration or transitions",
+        "clock skew/future time",
+        "missing owner has explicit no-reference reason",
+        "holder is not Pod/Node identity"
+      ],
+      "api_sources": [
+        "kubernetes-api:coordination/v1/types.go"
+      ],
+      "lens_sources": [
+        "lens-docs:config/"
+      ],
+      "availability": "actual matching discovery descriptor and real request permissions required",
+      "unsupported_version": "safe metadata-only fallback with visible unsupported-curation notice; no guessed API or arbitrary printer columns",
+      "columns": [
+        {
+          "key": "holder",
+          "numeric": false
+        },
+        {
+          "key": "duration-seconds",
+          "numeric": true
+        },
+        {
+          "key": "renew-time",
+          "numeric": false
+        },
+        {
+          "key": "transitions",
+          "numeric": true
+        }
+      ],
+      "implementation_status": "source_implemented; acceptance record separates focused evidence from final delivery",
+      "issue": 232,
+      "implementation_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "tests/ui/test_curated_resources.py",
+        "scripts/curated_kind.py"
+      ]
+    },
+    {
+      "kind": "ResourceQuota",
+      "group": "",
+      "resource": "resourcequotas",
+      "versions": [
+        "v1"
+      ],
+      "namespaced": true,
+      "details": [
+        "per-key desired spec.hard versus enforced status.hard",
+        "used/remaining/utilization per resource",
+        "scope/selector declarations",
+        "unknown accounting states"
+      ],
+      "drilldowns": [
+        "namespace",
+        "namespace quotas/limits",
+        "scoped resource browse clearly not accounting proof"
+      ],
+      "required_edge_cases": [
+        "missing used versus zero",
+        "zero denominator",
+        "CPU versus memory/count units",
+        "spec/status differences",
+        "partial status map",
+        "no cross-resource sum"
+      ],
+      "api_sources": [
+        "kubernetes-api:core/v1/types.go"
+      ],
+      "lens_sources": [
+        "lens-docs:config/"
+      ],
+      "availability": "actual matching discovery descriptor and real request permissions required",
+      "unsupported_version": "safe metadata-only fallback with visible unsupported-curation notice; no guessed API or arbitrary printer columns",
+      "columns": [
+        {
+          "key": "resources",
+          "numeric": true
+        },
+        {
+          "key": "usage",
+          "numeric": false
+        },
+        {
+          "key": "scopes",
+          "numeric": false
+        },
+        {
+          "key": "exceeded",
+          "numeric": true
+        }
+      ],
+      "implementation_status": "source_implemented; acceptance record separates focused evidence from final delivery",
+      "issue": 232,
+      "implementation_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "tests/ui/test_curated_resources.py",
+        "scripts/curated_kind.py"
+      ]
+    },
+    {
+      "kind": "LimitRange",
+      "group": "",
+      "resource": "limitranges",
+      "versions": [
+        "v1"
+      ],
+      "namespaced": true,
+      "details": [
+        "rows keyed item index/type/resource",
+        "separate min/max/default/defaultRequest/ratio",
+        "dimensionless ratios versus quantities"
+      ],
+      "drilldowns": [
+        "namespace",
+        "namespace Pods/PVCs by declared type"
+      ],
+      "required_edge_cases": [
+        "duplicate type/resource items retained separately",
+        "Container/Pod/PVC units",
+        "missing defaults",
+        "zero quantities",
+        "scope browse not validation verdict"
+      ],
+      "api_sources": [
+        "kubernetes-api:core/v1/types.go"
+      ],
+      "lens_sources": [
+        "lens-docs:config/"
+      ],
+      "availability": "actual matching discovery descriptor and real request permissions required",
+      "unsupported_version": "safe metadata-only fallback with visible unsupported-curation notice; no guessed API or arbitrary printer columns",
+      "columns": [
+        {
+          "key": "types",
+          "numeric": false
+        },
+        {
+          "key": "items",
+          "numeric": true
+        },
+        {
+          "key": "defaults",
+          "numeric": false
+        },
+        {
+          "key": "constraints",
+          "numeric": false
+        }
+      ],
+      "implementation_status": "source_implemented; acceptance record separates focused evidence from final delivery",
+      "issue": 232,
+      "implementation_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "tests/ui/test_curated_resources.py",
+        "scripts/curated_kind.py"
+      ]
+    },
+    {
+      "kind": "MutatingWebhookConfiguration",
+      "group": "admissionregistration.k8s.io",
+      "resource": "mutatingwebhookconfigurations",
+      "versions": [
+        "v1"
+      ],
+      "namespaced": false,
+      "details": [
+        "bounded names/rules/operations/resources/match policy/selectors",
+        "declared review versions/failure policy/side effects/timeouts",
+        "safe Service refs and URL client classification",
+        "CA source classification, never bytes or trust verdict"
+      ],
+      "drilldowns": [
+        "declared webhook Services in their explicit namespaces",
+        "explicit owners/own Events when no Service reference"
+      ],
+      "required_edge_cases": [
+        "URL-only and mixed clients",
+        "URL userinfo/path/query canaries",
+        "public caBundle default concealment",
+        "partial/malformed webhooks",
+        "unknown enum capability not trust",
+        "no URL fetch"
+      ],
+      "api_sources": [
+        "kubernetes-api:admissionregistration/v1/types.go"
+      ],
+      "lens_sources": [
+        "lens-docs:config/"
+      ],
+      "availability": "actual matching discovery descriptor and real request permissions required",
+      "unsupported_version": "safe metadata-only fallback with visible unsupported-curation notice; no guessed API or arbitrary printer columns",
+      "columns": [
+        {
+          "key": "webhooks",
+          "numeric": true
+        },
+        {
+          "key": "review-versions",
+          "numeric": false
+        },
+        {
+          "key": "failure-policies",
+          "numeric": false
+        },
+        {
+          "key": "side-effects",
+          "numeric": false
+        },
+        {
+          "key": "clients",
+          "numeric": false
+        },
+        {
+          "key": "timeout-min",
+          "numeric": true
+        },
+        {
+          "key": "timeout-max",
+          "numeric": true
+        }
+      ],
+      "implementation_status": "source_implemented; acceptance record separates focused evidence from final delivery",
+      "issue": 232,
+      "implementation_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "tests/ui/test_curated_resources.py",
+        "scripts/curated_kind.py"
+      ]
+    },
+    {
+      "kind": "ValidatingWebhookConfiguration",
+      "group": "admissionregistration.k8s.io",
+      "resource": "validatingwebhookconfigurations",
+      "versions": [
+        "v1"
+      ],
+      "namespaced": false,
+      "details": [
+        "bounded names/rules/operations/resources/match policy/selectors",
+        "declared review versions/failure policy/side effects/timeouts",
+        "safe Service refs and URL client classification",
+        "CA source classification, never bytes or trust verdict"
+      ],
+      "drilldowns": [
+        "declared webhook Services in their explicit namespaces",
+        "explicit owners/own Events when no Service reference"
+      ],
+      "required_edge_cases": [
+        "URL-only and mixed clients",
+        "URL userinfo/path/query canaries",
+        "public caBundle default concealment",
+        "partial/malformed webhooks",
+        "unknown enum capability not trust",
+        "no URL fetch"
+      ],
+      "api_sources": [
+        "kubernetes-api:admissionregistration/v1/types.go"
+      ],
+      "lens_sources": [
+        "lens-docs:config/"
+      ],
+      "availability": "actual matching discovery descriptor and real request permissions required",
+      "unsupported_version": "safe metadata-only fallback with visible unsupported-curation notice; no guessed API or arbitrary printer columns",
+      "columns": [
+        {
+          "key": "webhooks",
+          "numeric": true
+        },
+        {
+          "key": "review-versions",
+          "numeric": false
+        },
+        {
+          "key": "failure-policies",
+          "numeric": false
+        },
+        {
+          "key": "side-effects",
+          "numeric": false
+        },
+        {
+          "key": "clients",
+          "numeric": false
+        },
+        {
+          "key": "timeout-min",
+          "numeric": true
+        },
+        {
+          "key": "timeout-max",
+          "numeric": true
+        }
+      ],
+      "implementation_status": "source_implemented; acceptance record separates focused evidence from final delivery",
+      "issue": 232,
+      "implementation_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "tests/ui/test_curated_resources.py",
+        "scripts/curated_kind.py"
+      ]
+    },
+    {
+      "kind": "ServiceAccount",
+      "group": "",
+      "resource": "serviceaccounts",
+      "versions": [
+        "v1"
+      ],
+      "namespaced": true,
+      "details": [
+        "automount inherited/explicit policy",
+        "safe named Secret/imagePullSecret references",
+        "no token/data read"
+      ],
+      "drilldowns": [
+        "#71 subject AuthorizationIntent",
+        "existing #70 UsedBy",
+        "UID-safe declared refs when selected"
+      ],
+      "required_edge_cases": [
+        "missing automount versus false",
+        "missing optional lists versus empty",
+        "Secret data canary",
+        "preserved ServiceAccount namespace and group uncertainty"
+      ],
+      "api_sources": [
+        "kubernetes-api:core/v1/types.go"
+      ],
+      "lens_sources": [
+        "lens-docs:access-control/",
+        "lens-sidebar:serviceaccounts"
+      ],
+      "availability": "actual matching discovery descriptor and real request permissions required",
+      "unsupported_version": "safe metadata-only fallback with visible unsupported-curation notice; no guessed API or arbitrary printer columns",
+      "columns": [
+        {
+          "key": "automount",
+          "numeric": false
+        },
+        {
+          "key": "secrets",
+          "numeric": true
+        },
+        {
+          "key": "image-pull-secrets",
+          "numeric": true
+        }
+      ],
+      "implementation_status": "source_implemented; acceptance record separates focused evidence from final delivery",
+      "issue": 232,
+      "implementation_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "tests/ui/test_curated_resources.py",
+        "scripts/curated_kind.py"
+      ]
+    },
+    {
+      "kind": "Role",
+      "group": "rbac.authorization.k8s.io",
+      "resource": "roles",
+      "versions": [
+        "v1"
+      ],
+      "namespaced": true,
+      "details": [
+        "existing parsed RbacRule fields",
+        "aggregation declarations for ClusterRole",
+        "no effective-access certainty from declarations"
+      ],
+      "drilldowns": [
+        "#71 role intent including aggregate contributors",
+        "existing explicit object references"
+      ],
+      "required_edge_cases": [
+        "role scope",
+        "wildcards/nonresource rules",
+        "ClusterRole aggregation",
+        "parser bounds",
+        "forbidden related evidence never grants actions"
+      ],
+      "api_sources": [
+        "kubernetes-api:rbac/v1/types.go"
+      ],
+      "lens_sources": [
+        "lens-docs:access-control/"
+      ],
+      "availability": "actual matching discovery descriptor and real request permissions required",
+      "unsupported_version": "safe metadata-only fallback with visible unsupported-curation notice; no guessed API or arbitrary printer columns",
+      "columns": [
+        {
+          "key": "rules",
+          "numeric": true
+        },
+        {
+          "key": "resource-rules",
+          "numeric": true
+        },
+        {
+          "key": "nonresource-rules",
+          "numeric": true
+        },
+        {
+          "key": "aggregation-selectors",
+          "numeric": true
+        }
+      ],
+      "implementation_status": "source_implemented; acceptance record separates focused evidence from final delivery",
+      "issue": 232,
+      "implementation_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "tests/ui/test_curated_resources.py",
+        "scripts/curated_kind.py"
+      ]
+    },
+    {
+      "kind": "ClusterRole",
+      "group": "rbac.authorization.k8s.io",
+      "resource": "clusterroles",
+      "versions": [
+        "v1"
+      ],
+      "namespaced": false,
+      "details": [
+        "existing parsed RbacRule fields",
+        "aggregation declarations for ClusterRole",
+        "no effective-access certainty from declarations"
+      ],
+      "drilldowns": [
+        "#71 role intent including aggregate contributors",
+        "existing explicit object references"
+      ],
+      "required_edge_cases": [
+        "role scope",
+        "wildcards/nonresource rules",
+        "ClusterRole aggregation",
+        "parser bounds",
+        "forbidden related evidence never grants actions"
+      ],
+      "api_sources": [
+        "kubernetes-api:rbac/v1/types.go"
+      ],
+      "lens_sources": [
+        "lens-docs:access-control/"
+      ],
+      "availability": "actual matching discovery descriptor and real request permissions required",
+      "unsupported_version": "safe metadata-only fallback with visible unsupported-curation notice; no guessed API or arbitrary printer columns",
+      "columns": [
+        {
+          "key": "rules",
+          "numeric": true
+        },
+        {
+          "key": "resource-rules",
+          "numeric": true
+        },
+        {
+          "key": "nonresource-rules",
+          "numeric": true
+        },
+        {
+          "key": "aggregation-selectors",
+          "numeric": true
+        }
+      ],
+      "implementation_status": "source_implemented; acceptance record separates focused evidence from final delivery",
+      "issue": 232,
+      "implementation_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "tests/ui/test_curated_resources.py",
+        "scripts/curated_kind.py"
+      ]
+    },
+    {
+      "kind": "RoleBinding",
+      "group": "rbac.authorization.k8s.io",
+      "resource": "rolebindings",
+      "versions": [
+        "v1"
+      ],
+      "namespaced": true,
+      "details": [
+        "existing parsed subjects and roleRef",
+        "declared role versus current fetched role",
+        "binding grant scope"
+      ],
+      "drilldowns": [
+        "#71 binding/role/subject intents"
+      ],
+      "required_edge_cases": [
+        "RoleBinding to ClusterRole retains namespace grant",
+        "ClusterRoleBinding cannot reference Role",
+        "ServiceAccount explicit/default namespace",
+        "unresolved group membership",
+        "same-name role UID replacement"
+      ],
+      "api_sources": [
+        "kubernetes-api:rbac/v1/types.go"
+      ],
+      "lens_sources": [
+        "lens-docs:access-control/"
+      ],
+      "availability": "actual matching discovery descriptor and real request permissions required",
+      "unsupported_version": "safe metadata-only fallback with visible unsupported-curation notice; no guessed API or arbitrary printer columns",
+      "columns": [
+        {
+          "key": "role-kind",
+          "numeric": false
+        },
+        {
+          "key": "role",
+          "numeric": false
+        },
+        {
+          "key": "service-accounts",
+          "numeric": true
+        },
+        {
+          "key": "users",
+          "numeric": true
+        },
+        {
+          "key": "groups",
+          "numeric": true
+        }
+      ],
+      "implementation_status": "source_implemented; acceptance record separates focused evidence from final delivery",
+      "issue": 232,
+      "implementation_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "tests/ui/test_curated_resources.py",
+        "scripts/curated_kind.py"
+      ]
+    },
+    {
+      "kind": "ClusterRoleBinding",
+      "group": "rbac.authorization.k8s.io",
+      "resource": "clusterrolebindings",
+      "versions": [
+        "v1"
+      ],
+      "namespaced": false,
+      "details": [
+        "existing parsed subjects and roleRef",
+        "declared role versus current fetched role",
+        "binding grant scope"
+      ],
+      "drilldowns": [
+        "#71 binding/role/subject intents"
+      ],
+      "required_edge_cases": [
+        "RoleBinding to ClusterRole retains namespace grant",
+        "ClusterRoleBinding cannot reference Role",
+        "ServiceAccount explicit/default namespace",
+        "unresolved group membership",
+        "same-name role UID replacement"
+      ],
+      "api_sources": [
+        "kubernetes-api:rbac/v1/types.go"
+      ],
+      "lens_sources": [
+        "lens-docs:access-control/"
+      ],
+      "availability": "actual matching discovery descriptor and real request permissions required",
+      "unsupported_version": "safe metadata-only fallback with visible unsupported-curation notice; no guessed API or arbitrary printer columns",
+      "columns": [
+        {
+          "key": "role-kind",
+          "numeric": false
+        },
+        {
+          "key": "role",
+          "numeric": false
+        },
+        {
+          "key": "service-accounts",
+          "numeric": true
+        },
+        {
+          "key": "users",
+          "numeric": true
+        },
+        {
+          "key": "groups",
+          "numeric": true
+        }
+      ],
+      "implementation_status": "source_implemented; acceptance record separates focused evidence from final delivery",
+      "issue": 232,
+      "implementation_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "tests/ui/test_curated_resources.py",
+        "scripts/curated_kind.py"
+      ]
+    },
+    {
+      "kind": "Event",
+      "group": "events.k8s.io | core",
+      "resource": "events",
+      "versions": [
+        "events.k8s.io/v1",
+        "v1"
+      ],
+      "namespaced": true,
+      "details": [
+        "source endpoint and exact regarding identity",
+        "count/time provenance and unknown members",
+        "safe note/message",
+        "group member count and source completeness/freshness"
+      ],
+      "drilldowns": [
+        "group to raw Events exact structured predicate",
+        "raw Event inspection",
+        "UID-checked regarding object"
+      ],
+      "required_edge_cases": [
+        "legacy/new shapes and singleton count",
+        "series MODIFIED count replacement not accumulation",
+        "Warning filter before grouping",
+        "same name different UID/namespace",
+        "missing regarding UID isolated by Event UID",
+        "deletion/expiry removes member",
+        "partial/403/410/reconnect/cancel",
+        "raw/group action/export separation",
+        "quiet unchanged watch is not declared stale by a fixed timer; repaint cannot refresh source evidence"
+      ],
+      "api_sources": [
+        "kubernetes-api:events/v1/types.go",
+        "kubernetes-api:core/v1/types.go"
+      ],
+      "lens_sources": [
+        "lens-docs:events/",
+        "lens-sidebar:events"
+      ],
+      "availability": "actual matching discovery descriptor and real request permissions required",
+      "unsupported_version": "safe metadata-only fallback with visible unsupported-curation notice; no guessed API or arbitrary printer columns",
+      "columns": [
+        {
+          "key": "type",
+          "sort": "string"
+        },
+        {
+          "key": "reason",
+          "sort": "string"
+        },
+        {
+          "key": "object",
+          "sort": "string"
+        },
+        {
+          "key": "occurrences",
+          "sort": "integer"
+        },
+        {
+          "key": "last-seen",
+          "sort": "aware timestamp"
+        },
+        {
+          "key": "reporter",
+          "sort": "string"
+        }
+      ],
+      "implementation_status": "source_implemented; acceptance record separates focused evidence from final delivery",
+      "issue": 232,
+      "implementation_evidence": [
+        "docs/resource-workspace.md",
+        "docs/internal/acceptance/curated-resources.md",
+        "tests/ui/test_events_workspace.py",
+        "scripts/curated_kind.py"
+      ]
+    }
+  ],
+  "preexisting_resources": [
+    {
+      "group": "",
+      "resource": "pods",
+      "kind": "Pod",
+      "namespaced": true,
+      "status": "implemented_source",
+      "evidence": "dedicated Pods/Namespaces or registry STANDARD_RESOURCES; no tests run in this planning task",
+      "lens_sources": [
+        "lens-docs:workloads/"
+      ],
+      "parity_claim": "curated KubeRich resource browser exists; full Lens behavioral equivalence not audited"
+    },
+    {
+      "group": "apps",
+      "resource": "deployments",
+      "kind": "Deployment",
+      "namespaced": true,
+      "status": "implemented_source",
+      "evidence": "dedicated Pods/Namespaces or registry STANDARD_RESOURCES; no tests run in this planning task",
+      "lens_sources": [
+        "lens-docs:workloads/"
+      ],
+      "parity_claim": "curated KubeRich resource browser exists; full Lens behavioral equivalence not audited"
+    },
+    {
+      "group": "apps",
+      "resource": "replicasets",
+      "kind": "ReplicaSet",
+      "namespaced": true,
+      "status": "implemented_source",
+      "evidence": "dedicated Pods/Namespaces or registry STANDARD_RESOURCES; no tests run in this planning task",
+      "lens_sources": [
+        "lens-docs:workloads/"
+      ],
+      "parity_claim": "curated KubeRich resource browser exists; full Lens behavioral equivalence not audited"
+    },
+    {
+      "group": "apps",
+      "resource": "statefulsets",
+      "kind": "StatefulSet",
+      "namespaced": true,
+      "status": "implemented_source",
+      "evidence": "dedicated Pods/Namespaces or registry STANDARD_RESOURCES; no tests run in this planning task",
+      "lens_sources": [
+        "lens-docs:workloads/"
+      ],
+      "parity_claim": "curated KubeRich resource browser exists; full Lens behavioral equivalence not audited"
+    },
+    {
+      "group": "apps",
+      "resource": "daemonsets",
+      "kind": "DaemonSet",
+      "namespaced": true,
+      "status": "implemented_source",
+      "evidence": "dedicated Pods/Namespaces or registry STANDARD_RESOURCES; no tests run in this planning task",
+      "lens_sources": [
+        "lens-docs:workloads/"
+      ],
+      "parity_claim": "curated KubeRich resource browser exists; full Lens behavioral equivalence not audited"
+    },
+    {
+      "group": "batch",
+      "resource": "jobs",
+      "kind": "Job",
+      "namespaced": true,
+      "status": "implemented_source",
+      "evidence": "dedicated Pods/Namespaces or registry STANDARD_RESOURCES; no tests run in this planning task",
+      "lens_sources": [
+        "lens-docs:workloads/"
+      ],
+      "parity_claim": "curated KubeRich resource browser exists; full Lens behavioral equivalence not audited"
+    },
+    {
+      "group": "batch",
+      "resource": "cronjobs",
+      "kind": "CronJob",
+      "namespaced": true,
+      "status": "implemented_source",
+      "evidence": "dedicated Pods/Namespaces or registry STANDARD_RESOURCES; no tests run in this planning task",
+      "lens_sources": [
+        "lens-docs:workloads/"
+      ],
+      "parity_claim": "curated KubeRich resource browser exists; full Lens behavioral equivalence not audited"
+    },
+    {
+      "group": "",
+      "resource": "services",
+      "kind": "Service",
+      "namespaced": true,
+      "status": "implemented_source",
+      "evidence": "dedicated Pods/Namespaces or registry STANDARD_RESOURCES; no tests run in this planning task",
+      "lens_sources": [
+        "lens-docs:network/"
+      ],
+      "parity_claim": "curated KubeRich resource browser exists; full Lens behavioral equivalence not audited"
+    },
+    {
+      "group": "",
+      "resource": "endpoints",
+      "kind": "Endpoints",
+      "namespaced": true,
+      "status": "implemented_source",
+      "evidence": "dedicated Pods/Namespaces or registry STANDARD_RESOURCES; no tests run in this planning task",
+      "lens_sources": [
+        "lens-docs:network/"
+      ],
+      "parity_claim": "curated KubeRich resource browser exists; full Lens behavioral equivalence not audited"
+    },
+    {
+      "group": "networking.k8s.io",
+      "resource": "ingresses",
+      "kind": "Ingress",
+      "namespaced": true,
+      "status": "implemented_source",
+      "evidence": "dedicated Pods/Namespaces or registry STANDARD_RESOURCES; no tests run in this planning task",
+      "lens_sources": [
+        "lens-docs:network/"
+      ],
+      "parity_claim": "curated KubeRich resource browser exists; full Lens behavioral equivalence not audited"
+    },
+    {
+      "group": "",
+      "resource": "configmaps",
+      "kind": "ConfigMap",
+      "namespaced": true,
+      "status": "implemented_source",
+      "evidence": "dedicated Pods/Namespaces or registry STANDARD_RESOURCES; no tests run in this planning task",
+      "lens_sources": [
+        "lens-docs:config/"
+      ],
+      "parity_claim": "curated KubeRich resource browser exists; full Lens behavioral equivalence not audited"
+    },
+    {
+      "group": "",
+      "resource": "secrets",
+      "kind": "Secret",
+      "namespaced": true,
+      "status": "implemented_source",
+      "evidence": "dedicated Pods/Namespaces or registry STANDARD_RESOURCES; no tests run in this planning task",
+      "lens_sources": [
+        "lens-docs:config/"
+      ],
+      "parity_claim": "curated KubeRich resource browser exists; full Lens behavioral equivalence not audited"
+    },
+    {
+      "group": "",
+      "resource": "nodes",
+      "kind": "Node",
+      "namespaced": false,
+      "status": "implemented_source",
+      "evidence": "dedicated Pods/Namespaces or registry STANDARD_RESOURCES; no tests run in this planning task",
+      "lens_sources": [
+        "lens-docs:config/"
+      ],
+      "parity_claim": "curated KubeRich resource browser exists; full Lens behavioral equivalence not audited"
+    },
+    {
+      "group": "",
+      "resource": "persistentvolumeclaims",
+      "kind": "PersistentVolumeClaim",
+      "namespaced": true,
+      "status": "implemented_source",
+      "evidence": "dedicated Pods/Namespaces or registry STANDARD_RESOURCES; no tests run in this planning task",
+      "lens_sources": [
+        "lens-docs:storage/"
+      ],
+      "parity_claim": "curated KubeRich resource browser exists; full Lens behavioral equivalence not audited"
+    },
+    {
+      "group": "",
+      "resource": "persistentvolumes",
+      "kind": "PersistentVolume",
+      "namespaced": false,
+      "status": "implemented_source",
+      "evidence": "dedicated Pods/Namespaces or registry STANDARD_RESOURCES; no tests run in this planning task",
+      "lens_sources": [
+        "lens-docs:storage/"
+      ],
+      "parity_claim": "curated KubeRich resource browser exists; full Lens behavioral equivalence not audited"
+    },
+    {
+      "group": "storage.k8s.io",
+      "resource": "storageclasses",
+      "kind": "StorageClass",
+      "namespaced": false,
+      "status": "implemented_source",
+      "evidence": "dedicated Pods/Namespaces or registry STANDARD_RESOURCES; no tests run in this planning task",
+      "lens_sources": [
+        "lens-docs:storage/"
+      ],
+      "parity_claim": "curated KubeRich resource browser exists; full Lens behavioral equivalence not audited"
+    },
+    {
+      "group": "",
+      "resource": "namespaces",
+      "kind": "Namespace",
+      "namespaced": false,
+      "status": "implemented_source",
+      "evidence": "dedicated Pods/Namespaces or registry STANDARD_RESOURCES; no tests run in this planning task",
+      "lens_sources": [
+        "lens-docs:config/"
+      ],
+      "parity_claim": "curated KubeRich resource browser exists; full Lens behavioral equivalence not audited"
+    }
+  ],
+  "additional_public_menu_entries": [
+    {
+      "kind": "ReplicationController",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:workloads/",
+        "lens-sidebar:replicationcontrollers"
+      ],
+      "kuberich_status": "generic discovered browsing and some existing workload/relationship operations; curated table absent",
+      "owner": {
+        "proposed": "#252/#88 audit; implementation issue not assigned"
+      },
+      "availability": "core/v1 when served",
+      "notes": "Do not silently drop this historical/current Lens menu item or claim it is part of the existing 15 curated definitions.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "ValidatingAdmissionPolicy",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:config/admission-policies/"
+      ],
+      "kuberich_status": "generic discovered browser; curated policy exploration planned",
+      "owner": {
+        "existing": [
+          80
+        ]
+      },
+      "availability": "admissionregistration.k8s.io resources only if actually served; current public Lens page lists v1",
+      "notes": "Separate from webhook configurations explicitly in #232; broader admission/CEL explanation remains #80; no policy trust or execution claim.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "ValidatingAdmissionPolicyBinding",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:config/admission-policies/"
+      ],
+      "kuberich_status": "generic discovered browser; curated policy exploration planned",
+      "owner": {
+        "existing": [
+          80
+        ]
+      },
+      "availability": "admissionregistration.k8s.io resources only if actually served; current public Lens page lists v1",
+      "notes": "Separate from webhook configurations explicitly in #232; broader admission/CEL explanation remains #80; no policy trust or execution claim.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "MutatingAdmissionPolicy",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:config/admission-policies/"
+      ],
+      "kuberich_status": "generic discovered browser; curated policy exploration planned",
+      "owner": {
+        "existing": [
+          80
+        ]
+      },
+      "availability": "admissionregistration.k8s.io resources only if actually served; current public Lens page lists v1",
+      "notes": "Separate from webhook configurations explicitly in #232; broader admission/CEL explanation remains #80; no policy trust or execution claim.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "MutatingAdmissionPolicyBinding",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:config/admission-policies/"
+      ],
+      "kuberich_status": "generic discovered browser; curated policy exploration planned",
+      "owner": {
+        "existing": [
+          80
+        ]
+      },
+      "availability": "admissionregistration.k8s.io resources only if actually served; current public Lens page lists v1",
+      "notes": "Separate from webhook configurations explicitly in #232; broader admission/CEL explanation remains #80; no policy trust or execution claim.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "GatewayClass",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:network/gateway-api/"
+      ],
+      "kuberich_status": "generic discovered browsing; no curated profile in candidate",
+      "owner": {
+        "proposed": "#252/#88 audit; dedicated implementation issue not assigned"
+      },
+      "availability": "matching installed gateway.networking.k8s.io CRD/version from discovery",
+      "notes": "Public Lens page lists this kind; per-kind served version/channel depends on installed CRDs. This planning task does not qualify those API schemas.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "Gateway",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:network/gateway-api/"
+      ],
+      "kuberich_status": "generic discovered browsing; no curated profile in candidate",
+      "owner": {
+        "proposed": "#252/#88 audit; dedicated implementation issue not assigned"
+      },
+      "availability": "matching installed gateway.networking.k8s.io CRD/version from discovery",
+      "notes": "Public Lens page lists this kind; per-kind served version/channel depends on installed CRDs. This planning task does not qualify those API schemas.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "HTTPRoute",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:network/gateway-api/"
+      ],
+      "kuberich_status": "generic discovered browsing; no curated profile in candidate",
+      "owner": {
+        "proposed": "#252/#88 audit; dedicated implementation issue not assigned"
+      },
+      "availability": "matching installed gateway.networking.k8s.io CRD/version from discovery",
+      "notes": "Public Lens page lists this kind; per-kind served version/channel depends on installed CRDs. This planning task does not qualify those API schemas.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "GRPCRoute",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:network/gateway-api/"
+      ],
+      "kuberich_status": "generic discovered browsing; no curated profile in candidate",
+      "owner": {
+        "proposed": "#252/#88 audit; dedicated implementation issue not assigned"
+      },
+      "availability": "matching installed gateway.networking.k8s.io CRD/version from discovery",
+      "notes": "Public Lens page lists this kind; per-kind served version/channel depends on installed CRDs. This planning task does not qualify those API schemas.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "TCPRoute",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:network/gateway-api/"
+      ],
+      "kuberich_status": "generic discovered browsing; no curated profile in candidate",
+      "owner": {
+        "proposed": "#252/#88 audit; dedicated implementation issue not assigned"
+      },
+      "availability": "matching installed gateway.networking.k8s.io CRD/version from discovery",
+      "notes": "Public Lens page lists this kind; per-kind served version/channel depends on installed CRDs. This planning task does not qualify those API schemas.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "UDPRoute",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:network/gateway-api/"
+      ],
+      "kuberich_status": "generic discovered browsing; no curated profile in candidate",
+      "owner": {
+        "proposed": "#252/#88 audit; dedicated implementation issue not assigned"
+      },
+      "availability": "matching installed gateway.networking.k8s.io CRD/version from discovery",
+      "notes": "Public Lens page lists this kind; per-kind served version/channel depends on installed CRDs. This planning task does not qualify those API schemas.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "TLSRoute",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:network/gateway-api/"
+      ],
+      "kuberich_status": "generic discovered browsing; no curated profile in candidate",
+      "owner": {
+        "proposed": "#252/#88 audit; dedicated implementation issue not assigned"
+      },
+      "availability": "matching installed gateway.networking.k8s.io CRD/version from discovery",
+      "notes": "Public Lens page lists this kind; per-kind served version/channel depends on installed CRDs. This planning task does not qualify those API schemas.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "ListenerSet",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:network/gateway-api/"
+      ],
+      "kuberich_status": "generic discovered browsing; no curated profile in candidate",
+      "owner": {
+        "proposed": "#252/#88 audit; dedicated implementation issue not assigned"
+      },
+      "availability": "matching installed gateway.networking.k8s.io CRD/version from discovery",
+      "notes": "Public Lens page lists this kind; per-kind served version/channel depends on installed CRDs. This planning task does not qualify those API schemas.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "ReferenceGrant",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:network/gateway-api/"
+      ],
+      "kuberich_status": "generic discovered browsing; no curated profile in candidate",
+      "owner": {
+        "proposed": "#252/#88 audit; dedicated implementation issue not assigned"
+      },
+      "availability": "matching installed gateway.networking.k8s.io CRD/version from discovery",
+      "notes": "Public Lens page lists this kind; per-kind served version/channel depends on installed CRDs. This planning task does not qualify those API schemas.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "BackendTLSPolicy",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:network/gateway-api/"
+      ],
+      "kuberich_status": "generic discovered browsing; no curated profile in candidate",
+      "owner": {
+        "proposed": "#252/#88 audit; dedicated implementation issue not assigned"
+      },
+      "availability": "matching installed gateway.networking.k8s.io CRD/version from discovery",
+      "notes": "Public Lens page lists this kind; per-kind served version/channel depends on installed CRDs. This planning task does not qualify those API schemas.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "ResourceClaim",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:device-resources/"
+      ],
+      "kuberich_status": "generic discovered browsing; no curated profile in candidate",
+      "owner": {
+        "proposed": "#252/#88 audit; dedicated implementation issue not assigned"
+      },
+      "availability": "served resource.k8s.io kind/version; current public Lens page uses v1",
+      "notes": "Current Lens DRA menu evidence; no claim of driver/device/claim relationship parity or installed availability.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "ResourceClaimTemplate",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:device-resources/"
+      ],
+      "kuberich_status": "generic discovered browsing; no curated profile in candidate",
+      "owner": {
+        "proposed": "#252/#88 audit; dedicated implementation issue not assigned"
+      },
+      "availability": "served resource.k8s.io kind/version; current public Lens page uses v1",
+      "notes": "Current Lens DRA menu evidence; no claim of driver/device/claim relationship parity or installed availability.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "DeviceClass",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:device-resources/"
+      ],
+      "kuberich_status": "generic discovered browsing; no curated profile in candidate",
+      "owner": {
+        "proposed": "#252/#88 audit; dedicated implementation issue not assigned"
+      },
+      "availability": "served resource.k8s.io kind/version; current public Lens page uses v1",
+      "notes": "Current Lens DRA menu evidence; no claim of driver/device/claim relationship parity or installed availability.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "ResourceSlice",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:device-resources/"
+      ],
+      "kuberich_status": "generic discovered browsing; no curated profile in candidate",
+      "owner": {
+        "proposed": "#252/#88 audit; dedicated implementation issue not assigned"
+      },
+      "availability": "served resource.k8s.io kind/version; current public Lens page uses v1",
+      "notes": "Current Lens DRA menu evidence; no claim of driver/device/claim relationship parity or installed availability.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "PodSecurityPolicy",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:access-control/",
+        "lens-sidebar:podsecuritypolicies"
+      ],
+      "kuberich_status": "generic discovery only if an older/extension API actually serves it",
+      "owner": {
+        "existing": [
+          80
+        ],
+        "audit": [
+          252,
+          88
+        ]
+      },
+      "availability": "removed upstream API on modern Kubernetes; never fabricated or required",
+      "notes": "Public Lens menu retains a historical entry; menu presence is not modern-cluster availability.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "Custom resource groups",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-sidebar:custom-resources"
+      ],
+      "kuberich_status": "generic discovery/Table/metadata inspection implemented by #52/#53",
+      "owner": {
+        "existing": [
+          52,
+          53
+        ],
+        "audit": [
+          252,
+          88
+        ]
+      },
+      "availability": "actual discovered CRDs/resources and permission",
+      "notes": "Historical public source declares a generic custom-resource sidebar group. Generic browsing does not establish per-CRD curated details or availability.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "Helm Charts",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:config/"
+      ],
+      "kuberich_status": "separate planned operations feature",
+      "owner": {
+        "existing": [
+          233
+        ]
+      },
+      "availability": "explicit configured/local Helm and repository contracts, not a Kubernetes API family",
+      "notes": "Main navigation references this non-core category; no #232 Helm implementation.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "Helm Releases",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:config/"
+      ],
+      "kuberich_status": "separate planned operations feature",
+      "owner": {
+        "existing": [
+          66,
+          233
+        ]
+      },
+      "availability": "explicit Helm backend and permissions",
+      "notes": "No #232 Helm implementation.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "Port Forwarding",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:network/"
+      ],
+      "kuberich_status": "existing explicit owned Pod/Service forwarding",
+      "owner": {
+        "existing": [
+          61,
+          62
+        ],
+        "audit": [
+          252,
+          88
+        ]
+      },
+      "availability": "supported Pod/Service target and access policy",
+      "notes": "Non-resource navigation/action; existing functionality, not full Lens UI parity.",
+      "implementation_evidence": null,
+      "refresh_status": "Comparison entry retained; no additional implementation accepted by this planning refresh"
+    },
+    {
+      "kind": "Overview, Applications, Navigator, Terminal and metrics navigation",
+      "scope": "outside explicit named #232 acceptance; retain comparison gap",
+      "sources": [
+        "lens-docs:config/"
+      ],
+      "kuberich_status": "Existing Pulse/terminal/workspaces; #231 history is protected-delivered in PR #319 at main 5060b4dcd35968e3b990bd833eba731539938cff, with exact-head required checks and recorded acceptance. This does not establish complete Lens menu equivalence.",
+      "owner": {
+        "existing": [
+          69,
+          231
+        ],
+        "audit": [
+          252,
+          88
+        ]
+      },
+      "availability": "depends on connected/discovered APIs and configured history backend",
+      "notes": "Menu categories, not additional #232 resource families; no blanket equivalence claim.",
+      "implementation_evidence": [
+        "docs/internal/acceptance/metric-history.md",
+        "https://github.com/carloshm91/kuberich/pull/319"
+      ],
+      "refresh_status": "Current delivery status refreshed after protected PR #319; original public-source snapshot provenance is unchanged."
+    }
+  ],
+  "unverifiable": [
+    {
+      "category": "undocumented/paid-only Lens catalog",
+      "status": "unverifiable",
+      "reason": "No private product catalog or entitled runtime was used; public menu/source is not proof of complete Pro feature coverage.",
+      "owner": {
+        "existing": [
+          252,
+          88
+        ]
+      }
+    }
+  ],
+  "acceptance": "acceptance/curated-resources.md"
+}

@@ -105,6 +105,85 @@ provide their applicable mutation, log, shell, transfer, or forwarding actions.
 workspace. Arbitrary custom fields can contain sensitive information that
 redaction does not recognize; inspect resources appropriate to your access.
 
+## Curated read-only views
+
+Development source adds HPA, VPA, PDB, NetworkPolicy, EndpointSlice, IngressClass,
+PriorityClass, RuntimeClass, Lease, ResourceQuota, LimitRange, admission webhook,
+ServiceAccount and RBAC tables. The installed 0.3.0 release predates these views.
+Use their aliases from the [resource reference](resource-reference.md), for example:
+
+```text
+:hpa demo-apps
+:pdb demo-apps
+:netpol demo-apps
+:sa demo-apps
+:resource horizontalpodautoscalers.autoscaling/v1 demo-apps
+```
+
+Each view binds its actual discovered API group, version, kind and scope. A
+specific HPA version keeps that version's interpretation rather than silently
+switching to another API. Unknown versions and metadata-only responses show
+metadata with an explanation instead of interpreting arbitrary printer cells.
+`:server compact` requests metadata for these read-only views; `:server full`
+restores the complete resource representation. APIs and objects still require
+permission. VPA must already be installed in the cluster; KubeRich installs no
+autoscaler or other controller.
+
+Details summarize declared configuration and observed status separately.
+Unavailable facts stay unknown, while fields with defined API defaults retain
+those defaults. Zero, false and an explicitly empty list keep their meanings.
+Long sections report omitted entries. Webhook trust bundles, secret values,
+annotations and command arguments stay concealed in default views. HPA's metric
+configuration is distinct from live CPU/memory usage. A PDB declaration does not
+prove an eviction will succeed, and NetworkPolicy declarations do not prove
+network reachability.
+
+Use **Links** or Shift+L in an inspector to see declared destinations and their
+provenance. Enter follows an available link through the normal resource,
+relationship or authorization workspace. Literal selectors, namespace scope and
+observed UIDs stay attached to the destination. Missing APIs, ambiguous kinds,
+UID mismatches and changed source declarations remain explicit failures.
+Declared references without a UID open the current named object after a fresh
+read; they do not establish historical continuity.
+Changing the parent cursor does not retarget an open inspector. Escape and
+Back/Forward preserve the parent selection, filter and scroll position.
+Changing a server selector keeps the declared local membership restriction; it
+narrows the API request within that scope. Screen exports record the captured
+membership type and a bounded identity fingerprint, rather than copying raw
+selector values into report metadata. A fingerprint identifies the observation's
+scope; it is not a query that can be reconstructed and run later.
+
+These additional tables expose read-only navigation and inspection even when
+the application permits writes elsewhere. They do not add scale, edit, delete
+or admission/policy mutation commands.
+
+### Events
+
+`:events demo-apps` opens individual Events; `:ev *` selects all namespaces.
+KubeRich chooses a discovered `events.k8s.io/v1` API, with core `v1` as a fallback
+when that API is absent. An explicit `:resource events.core/v1 demo-apps` or
+`:resource events.events.k8s.io/v1 demo-apps` keeps that source. It never combines
+both API collections or switches source after a permission error.
+
+Press `w` to switch between warnings and all types, and `t` to group or ungroup.
+Groups distinguish type, reason, namespace and referenced object identity.
+Objects with the same name and different UIDs remain separate; missing object
+UIDs do not imply a match. Enter on a group opens its retained individual Event
+members; Escape returns to that group. Enter on an individual Event opens its
+details. A referenced-object link requires an observed UID and a fresh matching
+read. A group is an aggregate observation, not a resource or mutation target.
+
+Occurrence counts describe the retained observations, not incident duration or
+the number of affected Pods. Unknown counts stay separate from known counts.
+Reported last-occurrence times are distinct from the displayed **Observed**
+snapshot time. Filtering, sorting and a quiet watch do not create a newer source
+sample. Partial, stale, denied and limited sources remain visible; filtering
+unknown Event types does not establish that there were no warnings. Event
+messages and notes are excluded from default summary rows and text matching.
+Server-query changes retain the warnings, grouping and member choices. Screen
+exports record those choices and, for members, the exact group's identity
+fingerprint. Export metadata does not include raw Event messages or notes.
+
 ## Snapshot inspection and live containers
 
 Details, YAML, and events show a selected resource read snapshot. They do not

@@ -1,5 +1,7 @@
 """Own context/resource history and restoration through explicit workspace ports."""
 
+from __future__ import annotations
+
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
@@ -10,7 +12,9 @@ from textual.widgets import Input
 
 from kuberich.adapters.credentials import CredentialLogin
 from kuberich.domain.cluster_diagnostics import DiagnosticBookmark
+from kuberich.domain.curated_navigation import AllResources, ResolvedCollectionBookmark
 from kuberich.domain.custom import CustomLayout
+from kuberich.domain.events import EventGroupMembers, EventOptions, event_descriptor_supported
 from kuberich.domain.navigation import NamespaceChoice, NavigationHistory, NavigationState, Viewport
 from kuberich.domain.pods import PodColumn
 from kuberich.domain.registry import RESOURCE_ALIASES, resource_selection
@@ -26,7 +30,7 @@ from kuberich.domain.resource_queries import ResourceQuery, query_command
 from kuberich.domain.resources import ApiResource
 from kuberich.domain.targets import ResourceTarget
 from kuberich.domain.view_routes import ViewKind, ViewRoute
-from kuberich.domain.views import USABLE_CONNECTIONS, ResourceSelection, ViewObservation
+from kuberich.domain.views import USABLE_CONNECTIONS, ResourceSelection, ViewObservation, ViewStatus
 from kuberich.errors import AppError
 from kuberich.security.arguments import validate_argument
 from kuberich.security.presentation import safe_text
@@ -53,6 +57,7 @@ from kuberich.ui.chrome import (
 from kuberich.ui.cluster_diagnostics import ClusterDiagnosticsTable
 from kuberich.ui.commands import CommandInput
 from kuberich.ui.contexts import ContextTable
+from kuberich.ui.events import EventsTable
 from kuberich.ui.namespaces import NamespaceTable
 from kuberich.ui.pods import PodTable
 from kuberich.ui.root_views import RootViews
@@ -60,6 +65,7 @@ from kuberich.ui.standard import StandardTable
 from kuberich.ui.views import ViewPreferences
 
 if TYPE_CHECKING:
+    from kuberich.services.curated_navigation import CuratedOrigin, ResolvedCuratedDestination
     from kuberich.ui.authorization_navigation import AuthorizationNavigation
     from kuberich.ui.diagnostic_navigation import DiagnosticNavigation
 
@@ -176,6 +182,12 @@ class WorkspaceNavigation:
                 scope = NamespaceChoice(None if initial.scope == "*" else initial.scope)
         if isinstance(initial, GenericResourceCommand):
             self._pending_generic = initial
+        if initial is Command.EVENTS or (
+            isinstance(initial, ScopedCommand) and initial.command is Command.EVENTS
+        ):
+            self._pending_generic = GenericResourceCommand(
+                "events", scope=initial.argument if isinstance(initial, ScopedCommand) else None
+            )
         if (
             context is not None
             and initial is not Command.THEMES
@@ -419,17 +431,25 @@ class WorkspaceNavigation:
         *,
         uid: str | None = None,
         query: str = "",
+        bookmark: ResolvedCollectionBookmark | None = None,
     ) -> None:
         """Open a discovered descriptor through the normal navigation/history path."""
+        namespace = namespace if resource.namespaced else None
+        if bookmark is not None and (
+            bookmark.resource != resource or bookmark.namespace != namespace
+        ):
+            self.notice("The captured collection does not match its resource destination.")
+            return
         discovery = self.workspace.discovery
         known = RESOURCE_ALIASES.get(resource.name)
         preferred = discovery is not None and resource == discovery.resolve(
             resource.name, group=resource.group
         )
         builtin = (
-            (not resource.group and resource.name in {"pods", "namespaces"})
+            (resource.name == "events" and resource.group in {"", "events.k8s.io"})
+            or (not resource.group and resource.name in {"pods", "namespaces"})
             or (known is not None and known.group == resource.group)
-        ) and preferred
+        ) and (preferred or (known is not None and known.curated) or resource.name == "events")
         generic = (
             None
             if builtin
@@ -447,11 +467,162 @@ class WorkspaceNavigation:
             selected=uid,
             resource=resource.name if builtin else resource.name + "." + (resource.group or "core"),
             generic=generic,
+            server_query=bookmark.query if bookmark is not None else ResourceQuery(),
             expected_uid=uid,
+            curated=bookmark
+            or (
+                ResolvedCollectionBookmark(resource, namespace, AllResources(), ResourceQuery())
+                if (known is not None and known.group == resource.group and known.curated)
+                or (resource.name == "events" and resource.group in {"", "events.k8s.io"})
+                else None
+            ),
         )
         self.select_resource(
             state.resource, restore=state, scope=NamespaceChoice(state.namespace), generic=generic
         )
+
+    def events_options(self, options: EventOptions) -> None:
+        """Change local Events presentation without restarting its owned watch."""
+        if self.views.route.kind is not ViewKind.EVENTS:
+            return
+        if self.views.expected_uid is not None and options.grouped:
+            self.notice("This view follows one captured Event; use :events before grouping.")
+            return
+        if options == self.views.event_options:
+            return
+        self.remember()
+        self.views.event_options = options
+        self.views.request()
+
+    def events(self, namespace: str | None = None) -> None:
+        """Choose an actually discovered Event API; explicit GVR commands remain exact."""
+        discovery = self.workspace.discovery
+        if discovery is None:
+            self.notice("Wait for the current resource catalogue before browsing Events.")
+            return
+        candidates = tuple(
+            resource
+            for resource in discovery.resources
+            if resource.name == "events" and resource.group in {"", "events.k8s.io"}
+        )
+        supported = tuple(
+            resource for resource in candidates if event_descriptor_supported(resource)
+        )
+        resource = next((item for item in supported if item.group == "events.k8s.io"), None)
+        resource = resource or (
+            supported[0] if supported else candidates[0] if candidates else None
+        )
+        if resource is None:
+            self.notice("No Event API was discovered; check discovery and permissions.")
+            return
+        if namespace is not None and not resource.namespaced:
+            self.notice(
+                "The discovered Event resource is cluster-scoped; omit the namespace argument."
+            )
+            return
+        self.open_resource(
+            resource,
+            (None if namespace == "*" else namespace)
+            if namespace is not None
+            else self.workspace.store.observation.connection.namespace,
+        )
+
+    def events_current(self) -> bool:
+        if self.views.route.kind is not ViewKind.EVENTS:
+            return False
+        table = self.views.tables.events
+        source = table.source
+        observation = self.workspace.store.observation
+        return (
+            source is not None
+            and source.scope == observation.scope
+            and source.revision == observation.revision
+            and table.options == self.views.event_options
+        )
+
+    def events_selected(self) -> bool:
+        """Handle a group or refuse obsolete rows; False permits current raw inspection."""
+        if not self.events_current():
+            self.notice("The Events source or options changed; wait for current rows.")
+            return True
+        table = self.views.tables.events
+        group = table.selected_group()
+        if group is None:
+            if table.selected_event_uid() is not None:
+                return False
+            self.notice("Select a current Event or group before opening it.")
+            return True
+        self.events_options(
+            replace(table.options, grouped=False, members=EventGroupMembers(group.key))
+        )
+        return True
+
+    def curated_current(self, origin: CuratedOrigin) -> bool:
+        """Keep fresh GET identity compatible with its unchanged observed baseline."""
+        view = self.workspace.store.observation
+        if (
+            view.revision != origin.revision
+            or view.scope is None
+            or view.scope.session != origin.session
+            or self.sessions.observation.identity != origin.session
+            or view.scope.resource != origin.resource
+            or view.snapshot is None
+            or view.status is ViewStatus.FAILED
+        ):
+            return False
+        return any(
+            record.uid == origin.record_uid
+            and record.name == origin.record_name
+            and record.namespace == origin.namespace
+            and record.resource_version
+            in {
+                origin.observed_resource_version,
+                origin.resource_version,
+            }
+            for record in view.snapshot.items
+        )
+
+    def open_curated(self, origin: CuratedOrigin, destination: ResolvedCuratedDestination) -> None:
+        """Apply an explicit inspector intent without recapturing another selected row."""
+        from kuberich.domain.curated_navigation import (
+            AuthorizationDestination,
+            RelationshipDestination,
+        )
+        from kuberich.services.curated_navigation import ResolvedCollection, ResolvedObject
+
+        if len(self.host.screen_stack) != 1 or not self.curated_current(origin):
+            self.notice("The captured resource changed; reopen its details before navigating.")
+            return
+        if isinstance(destination, ResolvedCollection):
+            self.open_resource(
+                destination.resource,
+                destination.namespace,
+                bookmark=ResolvedCollectionBookmark(
+                    destination.resource,
+                    destination.namespace,
+                    destination.predicate,
+                    destination.query,
+                ),
+            )
+        elif isinstance(destination, ResolvedObject):
+            self.open_resource(
+                destination.resource, destination.record.namespace, uid=destination.record.uid
+            )
+        elif isinstance(destination, RelationshipDestination):
+            self.relationships(
+                ResourceTarget(
+                    origin.session,
+                    origin.resource.group,
+                    origin.resource.name,
+                    origin.namespace,
+                    origin.record_name,
+                    origin.record_uid,
+                ),
+                origin.resource,
+                destination.mode,
+            )
+        elif isinstance(destination, AuthorizationDestination) and self.authorization is not None:
+            self.authorization.open(destination.intent)
 
     def open_relationship(self, path: RelationshipPath | None) -> None:
         table = self.views.tables.relationships
@@ -486,7 +657,12 @@ class WorkspaceNavigation:
             self.select_resource("namespaces", restore=self._namespace_state)
 
     def display(
-        self, resource: str, *, focus: bool = True, generic: ResourceSelection | None = None
+        self,
+        resource: str,
+        *,
+        focus: bool = True,
+        generic: ResourceSelection | None = None,
+        selection: ResourceSelection | None = None,
     ) -> None:
         route = (
             ViewRoute.custom(generic)
@@ -503,10 +679,24 @@ class WorkspaceNavigation:
             if resource == "diagnostics"
             else ViewRoute.namespaces()
             if resource == "namespaces"
+            else ViewRoute.events(selection or ResourceSelection("events"))
+            if resource == "events"
             else ViewRoute.pods()
             if resource == "pods"
             else ViewRoute.standard(RESOURCE_ALIASES[resource])
         )
+        if selection is not None and generic is None and route.selection is not None:
+            route = ViewRoute(route.kind, selection)
+        if (
+            route.kind is ViewKind.EVENTS
+            and route.selection is not None
+            and self.workspace.discovery is not None
+        ):
+            descriptor = self.workspace.discovery.resolve(
+                route.selection.name, group=route.selection.group, version=route.selection.version
+            )
+            if not event_descriptor_supported(descriptor):
+                route = ViewRoute(ViewKind.STANDARD, route.selection)
         self.views.select(route)
         if self.authorization is not None:
             self.authorization.departing(route.kind)
@@ -514,6 +704,8 @@ class WorkspaceNavigation:
             self.diagnostics.departing(route.kind)
         self.views.drilldown = None
         self.views.expected_uid = None
+        self.views.curated = None
+        self.views.event_options = EventOptions()
         self._column_notice = None
         namespaces = route.kind is ViewKind.NAMESPACES
         self.host.query_one("#all-namespaces").display = namespaces
@@ -529,6 +721,14 @@ class WorkspaceNavigation:
             if resource == "authorization"
             else (("Enter", "Expand"), ("o", "Open"), ("/", "Filter"), ("Esc", "Previous"))
             if resource == "relationships"
+            else (
+                ("Enter", "Details/members"),
+                ("w", "Warnings"),
+                ("t", "Group/raw"),
+                ("/", "Filter"),
+                ("Esc", "Previous"),
+            )
+            if route.kind is ViewKind.EVENTS
             else (
                 ("Enter", "Drill down"),
                 ("M", "Metric history"),
@@ -552,6 +752,8 @@ class WorkspaceNavigation:
         self.header.binding_profile = (
             "table"
             if resource in {"pulse", "relationships", "authorization", "diagnostics"}
+            else "events"
+            if route.kind is ViewKind.EVENTS
             else "contexts"
             if resource == "contexts"
             else "namespaces"
@@ -581,6 +783,7 @@ class WorkspaceNavigation:
             and scope is None
             and self.views.drilldown is None
             and self.views.expected_uid is None
+            and self.views.curated is None
             and restore is None
         ):
             self.host.set_focus(self.views.table)
@@ -588,6 +791,14 @@ class WorkspaceNavigation:
         try:
             selection = (
                 ResourceSelection(
+                    restore.curated.resource.name,
+                    restore.curated.resource.group,
+                    restore.curated.resource.version,
+                    generic is not None,
+                    restore.curated.query,
+                )
+                if restore is not None and restore.curated is not None
+                else ResourceSelection(
                     restore.drilldown.resource.name,
                     restore.drilldown.resource.group,
                     restore.drilldown.resource.version,
@@ -612,9 +823,11 @@ class WorkspaceNavigation:
                 self._namespace_route = True
             elif resource == "namespaces":
                 self._namespace_parent = current
-        self.display(resource, generic=generic)
+        self.display(resource, generic=generic, selection=selection)
         self.views.drilldown = restore.drilldown if restore is not None else None
         self.views.expected_uid = restore.expected_uid if restore is not None else None
+        self.views.curated = restore.curated if restore is not None else None
+        self.views.event_options = restore.events if restore is not None else EventOptions()
         self.clear_rows()
         self.filter_input.value = restore.query if restore is not None else ""
         if restore is not None:
@@ -720,12 +933,32 @@ class WorkspaceNavigation:
 
     def generic(self, command: GenericResourceCommand) -> None:
         try:
+            if command.name == "events" and command.group is None and command.version is None:
+                self.events(command.scope)
+                return
             discovery = self.workspace.discovery
             if discovery is None:
                 raise AppError("Wait for the current resource catalogue or use :refresh.")
             resource = discovery.resolve(command.name, group=command.group, version=command.version)
             if command.scope is not None and not resource.namespaced:
                 raise AppError("This resource is cluster-scoped; omit the namespace argument.")
+            known = RESOURCE_ALIASES.get(resource.name)
+            if resource.name == "events" and resource.group in {"", "events.k8s.io"}:
+                self.open_resource(
+                    resource,
+                    (None if command.scope == "*" else command.scope)
+                    if command.scope is not None
+                    else self.workspace.store.observation.connection.namespace,
+                )
+                return
+            if known is not None and known.group == resource.group and known.curated:
+                self.open_resource(
+                    resource,
+                    (None if command.scope == "*" else command.scope)
+                    if command.scope is not None
+                    else self.workspace.store.observation.connection.namespace,
+                )
+                return
             selection = ResourceSelection(
                 resource.name, resource.group, command.version, server_columns=True
             )
@@ -845,10 +1078,14 @@ class WorkspaceNavigation:
         if previous is not None:
             self.history.visit(previous)
         generic = self.generic_selection
+        curated, event_options = self.views.curated, self.views.event_options
         self.display(
             self.resource_name,
             generic=replace(generic, query=query) if generic is not None else None,
+            selection=self.workspace.selection,
         )
+        self.views.curated = replace(curated, query=query) if curated is not None else None
+        self.views.event_options = event_options
         self.clear_rows()
         self.views.request()
 
@@ -865,12 +1102,14 @@ class WorkspaceNavigation:
             self.filter_input.value,
             self.views.table.sort_column
             if isinstance(
-                self.views.table, (StandardTable, NamespaceTable, ClusterDiagnosticsTable)
+                self.views.table,
+                (StandardTable, NamespaceTable, ClusterDiagnosticsTable, EventsTable),
             )
             else self.views.tables.pods.sort_column,
             self.views.table.descending
             if isinstance(
-                self.views.table, (StandardTable, NamespaceTable, ClusterDiagnosticsTable)
+                self.views.table,
+                (StandardTable, NamespaceTable, ClusterDiagnosticsTable, EventsTable),
             )
             else self.views.tables.pods.descending,
             viewport.selected,
@@ -911,6 +1150,8 @@ class WorkspaceNavigation:
             DiagnosticBookmark(diagnostic.request.scope.namespace, diagnostic.request.scope.root)
             if self.resource_name == "diagnostics" and (diagnostic := view.diagnostics) is not None
             else None,
+            self.views.curated,
+            self.views.event_options,
         )
 
     def remember(self) -> None:
@@ -1000,6 +1241,12 @@ class WorkspaceNavigation:
             state.generic
             or (
                 ResourceSelection(
+                    state.curated.resource.name,
+                    state.curated.resource.group,
+                    state.curated.resource.version,
+                )
+                if state.curated is not None
+                else ResourceSelection(
                     state.drilldown.resource.name,
                     state.drilldown.resource.group,
                     state.drilldown.resource.version,
@@ -1014,17 +1261,19 @@ class WorkspaceNavigation:
         if state.context == current.context and current.connection.state in USABLE_CONNECTIONS:
             self.workspace.select_resource(selection)
             self.workspace.select_namespace(state.namespace)
-            self.display(state.resource, generic=generic)
+            self.display(state.resource, generic=generic, selection=selection)
             self.clear_rows()
             self.header.update_identity()
         else:
             self.workspace.prepare_resource(selection)
-            self.display(state.resource, generic=generic)
+            self.display(state.resource, generic=generic, selection=selection)
             self.connect(state.context, scope=scope, remember=False)
         self.filter_input.value = state.query
         self.set_errors(state.errors)
         self.views.drilldown = state.drilldown
         self.views.expected_uid = state.expected_uid
+        self.views.curated = state.curated
+        self.views.event_options = state.events
         self._restore_state = self.workspace.store.observation.revision, state
 
     def history_back(self) -> None:
@@ -1070,11 +1319,11 @@ class WorkspaceNavigation:
             )
         ):
             state = self._restore_state[1]
-            if isinstance(self.views.table, (PodTable, StandardTable, NamespaceTable)):
+            if isinstance(self.views.table, (PodTable, StandardTable, NamespaceTable, EventsTable)):
                 if self.resource_name == "pods":
                     self.views.tables.pods.restore_sort(PodColumn(state.column), state.descending)
                 elif (
-                    isinstance(self.views.table, (StandardTable, NamespaceTable))
+                    isinstance(self.views.table, (StandardTable, NamespaceTable, EventsTable))
                     and not self.views.tables.custom.display
                 ):
                     self.views.table.restore_sort(state.column, state.descending)
@@ -1096,7 +1345,12 @@ class WorkspaceNavigation:
 
     def trail(self) -> NavigationTrail:
         trail = (
-            ("pulse", self.resource_name)
+            ("events", "group members")
+            if self.views.route.kind is ViewKind.EVENTS
+            and self.views.event_options.members is not None
+            else (self.history.previous[-1].resource, self.resource_name)
+            if self.views.curated is not None and self.history.previous
+            else ("pulse", self.resource_name)
             if self.views.drilldown is not None
             else ("namespaces", "pods")
             if self._namespace_route and self.resource_name == "pods"
@@ -1124,6 +1378,8 @@ class WorkspaceNavigation:
             else "Previous view"
             if self.resource_name in {"pulse", "relationships", "authorization", "diagnostics"}
             or self.views.expected_uid is not None
+            or self.views.curated is not None
+            or self.views.route.kind is ViewKind.EVENTS
             else f"Stay in {self.resource_name}"
         )
         return NavigationTrail(trail, destination)
@@ -1133,6 +1389,8 @@ class WorkspaceNavigation:
             self.resource_name in {"pulse", "relationships", "authorization", "diagnostics"}
             or self.views.drilldown is not None
             or self.views.expected_uid is not None
+            or self.views.curated is not None
+            or self.views.route.kind is ViewKind.EVENTS
         ):
             self.history_back()
         elif self.resource_name == "contexts":

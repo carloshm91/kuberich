@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 from kuberich.domain.authorization import AuthorizationIntent
 from kuberich.domain.cluster_diagnostics import DiagnosticBookmark
 from kuberich.domain.connections import namespace_name
+from kuberich.domain.curated_navigation import ResolvedCollectionBookmark
+from kuberich.domain.events import EventOptions
 from kuberich.domain.pods import PodColumn
 from kuberich.domain.pulse import PulseDrilldown
 from kuberich.domain.relationships import RelationshipBookmark
@@ -69,6 +71,8 @@ class NavigationState:
     expected_uid: str | None = None
     authorization: AuthorizationIntent | None = None
     diagnostics: DiagnosticBookmark | None = None
+    curated: ResolvedCollectionBookmark | None = None
+    events: EventOptions = field(default_factory=EventOptions)
 
 
 class NavigationHistory:

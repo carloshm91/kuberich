@@ -3665,6 +3665,36 @@
       ],
       "reason": "Retain historical metrics source bindings, controlled failures and actual provider/terminal qualification outside user navigation.",
       "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0040-curated-resource-observations.md",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0040-curated-resource-observations.md"
+      ],
+      "reason": "Record exact curated schemas, bounded literal navigation, source version anchors and identity-safe Event aggregates.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/acceptance/curated-resources.md",
+      "audience": "contributor acceptance evidence",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/curated-resources.md"
+      ],
+      "reason": "Retain curated-family and Events behavioral evidence, original failures and qualification limits outside user navigation.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/curated-resource-inventory.json",
+      "audience": "contributor source and acceptance audit",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/curated-resource-inventory.json"
+      ],
+      "reason": "Pin primary API/public menu sources and retain all named-family/additional-menu coverage gaps without inferring parity.",
+      "baseline_sha256": null
     }
   ],
   "inventory_rule": "Every tracked Markdown file, every file under docs/, LICENSE, NOTICE, and contribution issue templates at the baseline commit; new structure contracts are mapped too.",

@@ -35,10 +35,11 @@ from kuberich.ui.target_capture import CapturedResource
 if TYPE_CHECKING:
     from kuberich.domain.container_inspection import ContainerIdentity
     from kuberich.domain.resources import Discovery
+    from kuberich.services.curated_navigation import CuratedOrigin, ResolvedCuratedDestination
     from kuberich.services.exports import ExportChoices
     from kuberich.ui.aggregate_logs import AggregateLogScreen
     from kuberich.ui.container_inspection import ContainerInspectionScreen
-    from kuberich.ui.inspection import Page
+    from kuberich.ui.inspection import InspectionScreen, Page
 
 
 @dataclass(frozen=True)
@@ -52,6 +53,7 @@ class OperationContext:
     modal: bool
     metrics: MetricsSnapshot | None = None
     discovery: Discovery | None = None
+    revision: int = 0
 
 
 class ResourceOperations:
@@ -74,6 +76,8 @@ class ResourceOperations:
         stop_plugins: Callable[[KubernetesSession], Awaitable[None]],
         metric_history: Callable[[CapturedResource[KubernetesSession], ContainerIdentity], None]
         | None = None,
+        navigate_curated: Callable[[CuratedOrigin, ResolvedCuratedDestination], None] | None = None,
+        current_curated: Callable[[CuratedOrigin], bool] | None = None,
     ) -> None:
         self.host, self.capture, self.context = host, capture, context
         self.policy, self.mutations, self.forwards = policy, mutations, forwards
@@ -81,8 +85,11 @@ class ResourceOperations:
         self.session_current, self.forwarding = session_current, forwarding
         self.delete_context, self.stop_plugins = delete_context, stop_plugins
         self.metric_history = metric_history
+        self.navigate_curated = navigate_curated
+        self.current_curated = current_curated
         self._aggregate_screens: set[AggregateLogScreen] = set()
         self._inspection_screens: set[ContainerInspectionScreen] = set()
+        self._general_inspection_screens: set[InspectionScreen] = set()
         self._auto_forward_contexts: set[str] = set()
 
     @property
@@ -94,6 +101,10 @@ class ResourceOperations:
     def retained_inspection_count(self) -> int:
         """Keep captured inspectors owned until their asynchronous cleanup finishes."""
         return len(self._inspection_screens)
+
+    @property
+    def retained_general_inspection_count(self) -> int:
+        return len(self._general_inspection_screens)
 
     def capture_export(self, at: datetime) -> ExportChoices:
         from uuid import uuid4
@@ -127,19 +138,70 @@ class ResourceOperations:
         return (("resource-yaml", lease),)
 
     def inspect(self, page: Page) -> None:
+        from kuberich.domain.resources import Discovery
+        from kuberich.services.curated_navigation import CuratedNavigator
         from kuberich.services.inspection import InspectionService
+        from kuberich.ui.export_captures import header_namespace
         from kuberich.ui.inspection import InspectionScreen
 
+        if self._general_inspection_screens:
+            self.status("Previous inspection is closing; wait for owned cleanup to finish.")
+            return
+        context = self.context()
         selection = self.capture(None)
         if selection is not None:
-            client, resource, _, target, current = selection
-            self.host.push_screen(
-                InspectionScreen(
-                    InspectionService(client, resource, target, self.policy, current),
-                    page,
-                    chrome=self.context().chrome,
+            client, resource, record, target, captured_current = selection
+            revision = context.revision
+
+            def current() -> bool:
+                return (
+                    captured_current()
+                    and self.session_current(client, target.session)
+                    and self.context().revision == revision
                 )
+
+            def origin_current(origin: CuratedOrigin) -> bool:
+                return (
+                    current()
+                    and (self.current_curated is None or self.current_curated(origin))
+                    and (
+                        origin.session,
+                        origin.revision,
+                        origin.resource,
+                        origin.record_name,
+                        origin.record_uid,
+                        origin.namespace,
+                    )
+                    == (
+                        target.session,
+                        revision,
+                        resource,
+                        target.name,
+                        target.uid,
+                        target.namespace,
+                    )
+                )
+
+            navigator = CuratedNavigator(
+                client,
+                context.discovery or Discovery((resource,)),
+                self.policy,
+                origin_current,
+                selected_namespace=lambda: header_namespace(self.context().chrome),
             )
+            screen = InspectionScreen(
+                InspectionService(client, resource, target, self.policy, current),
+                page,
+                chrome=context.chrome,
+                navigator=navigator,
+                revision=revision,
+                observed_resource_version=record.resource_version,
+                current_curated=origin_current,
+                navigate_curated=self.navigate_curated,
+                stopped=lambda: self._general_inspection_screens.discard(screen),
+            )
+            self._general_inspection_screens.add(screen)
+            self.host.push_screen(screen)
 
     def annotate(self) -> None:
         from kuberich.ui.mutations import AnnotationScreen
@@ -545,6 +607,11 @@ class ResourceOperations:
             *(
                 screen.stop_owned()
                 for screen in tuple(self._inspection_screens)
+                if screen.service.client is client
+            ),
+            *(
+                screen.stop_owned()
+                for screen in tuple(self._general_inspection_screens)
                 if screen.service.client is client
             ),
             *(

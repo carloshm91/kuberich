@@ -380,7 +380,16 @@ def native_selector(resource: ApiResource, record: ResourceRecord) -> Relationsh
     spec = fact_mapping(relationship_manifest(record).get("spec"))
     if "selector" not in spec or spec["selector"] is None:
         return None
-    raw = fact_mapping(spec["selector"])
+    return structured_selector(
+        spec["selector"], direct=direct, empty_matches=family != ("", "services")
+    )
+
+
+def structured_selector(
+    value: object, *, direct: bool = False, empty_matches: bool = True
+) -> RelationshipSelector:
+    """Validate a Kubernetes selector with explicit caller-owned empty semantics."""
+    raw = fact_mapping(value)
     if not direct and set(raw) - {"matchLabels", "matchExpressions"}:
         raise AppError("Invalid relationship selector fields.")
     labels = _labels(raw if direct else raw.get("matchLabels", {}))
@@ -406,7 +415,7 @@ def native_selector(resource: ApiResource, record: ResourceRecord) -> Relationsh
         or sum(len(item.key) + sum(map(len, item.values)) for item in result) > MAX_FACT_BYTES
     ):
         raise AppError("Excessive relationship selector.")
-    return RelationshipSelector(tuple(result), family != ("", "services"))
+    return RelationshipSelector(tuple(result), empty_matches)
 
 
 def selector_matches(selector: RelationshipSelector, labels: Mapping[str, str]) -> bool:
@@ -478,8 +487,16 @@ def endpoint_references(
     groups: list[tuple[str, Any, bool | None, tuple[str, ...]]] = []
     if family == ("discovery.k8s.io", "endpointslices"):
         manifest = relationship_manifest(record)
+        endpoints, ports = manifest.get("endpoints"), manifest.get("ports")
+        # These optional EndpointSlice lists serialize as null for a nil slice.
+        # Normalize only their API-defined empty state, never malformed values.
         groups.append(
-            ("endpoints", manifest.get("endpoints", []), None, _ports(manifest.get("ports", [])))
+            (
+                "endpoints",
+                [] if endpoints is None else endpoints,
+                None,
+                _ports([] if ports is None else ports),
+            )
         )
     elif family == ("", "endpoints"):
         for index, raw in enumerate(fact_list(relationship_manifest(record).get("subsets", []))):

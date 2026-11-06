@@ -7,7 +7,9 @@ from dataclasses import dataclass, replace
 from typing import Protocol
 
 from kuberich.domain.authorization_rows import AuthorizationRow
+from kuberich.domain.curated_navigation import ResolvedCollectionBookmark
 from kuberich.domain.diagnostic_rows import DiagnosticRow
+from kuberich.domain.events import EventGroupRow, EventObjectRow
 from kuberich.domain.namespaces import NamespaceRow
 from kuberich.domain.navigation import ContextRow, Viewport
 from kuberich.domain.pods import PodRow
@@ -27,6 +29,8 @@ type ViewRow = (
     | RelationshipRow
     | AuthorizationRow
     | DiagnosticRow
+    | EventObjectRow
+    | EventGroupRow
 )
 
 
@@ -38,6 +42,7 @@ class RenderRequest:
     route: ViewRoute
     drilldown: PulseDrilldown | None = None
     expected_uid: str | None = None
+    curated: ResolvedCollectionBookmark | None = None
 
 
 @dataclass(frozen=True)
@@ -95,8 +100,11 @@ class ViewDriver[T: ViewRow]:
             rows = tuple(
                 row
                 for row in rows
-                if not isinstance(row, PodRow | NamespaceRow | ResourceRow)
-                or row.uid == request.expected_uid
+                if not isinstance(row, EventGroupRow)
+                and (
+                    not isinstance(row, PodRow | NamespaceRow | ResourceRow | EventObjectRow)
+                    or row.uid == request.expected_uid
+                )
             )
         result = await self.controller.filter(rows, guarded)
         applied = await self.controller.apply(result.rows, guarded)

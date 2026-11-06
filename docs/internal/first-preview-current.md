@@ -1,5 +1,48 @@
 # Development checkpoint
 
+## Unreleased 0.4.0 curated-resource checkpoint
+
+Historical metrics are protected-merged in PR #319 at
+`5060b4dcd35968e3b990bd833eba731539938cff`. All 27 Application quality jobs,
+Repository checks and DCO passed on the exact final head. The protected squash
+tree matches the tested merge tree. The four hosted source environments passed
+the independent production, changed-line and critical-module coverage gates.
+Original failed runs and final evidence remain in the
+[metric-history acceptance record](acceptance/metric-history.md).
+
+The implementation for [issue #232](https://github.com/carloshm91/kuberich/issues/232)
+extends the ordinary registry with
+18 additional read-only families with descriptor-bound facts, typed sorting and
+bounded details. The ordinary App cohort passes 35 cases; the integrated Events
+cohort passes 10 cases. Inspector/navigation controls pass 157 cases, including
+actual watch updates around held and queued target navigation. The focused
+1,694-case cohort covers all nine newly enrolled critical modules at exactly
+100% lines/branches. These scoped results do not qualify the full production or
+platform matrix. Source terminals have exercised all 18 families and Events at
+100 and 40 columns. Four outside-checkout installed console/module cases pass on
+the final Home/End-corrected source in 37.26 seconds, with all 373 input pins
+unchanged and all 266 wheel payload files matching the checkout. The fresh
+disposable-kind rehearsal passes all 19 families
+in 53.36 seconds with unchanged input hashes, real API observations and verified
+App/session/cluster/private-directory cleanup. Final acceptance requires complete
+production/changed-line coverage and exact-head hosted platform checks. Consult
+the live issue and its linked pull request for the exact global results and
+protected-delivery state.
+
+Final review controls pass 38 actual App cases for server-query membership,
+Event options/export metadata and late sort messages after frame removal. A
+native Home/End animation defect has a narrow Event-only correction: 30 focused
+cases cover all 204 table lines and 34 branches, and the fresh four-case source
+terminal replay passes with its original strict frame/Back/cleanup assertions.
+
+The focused source-clock command is `uv run pytest tests/unit/test_event_source.py`:
+seven cases pass, with all 27 executable lines and four branches covered. It checks
+that an idle watch/repaint does not change the source timestamp and that the clock
+retains no resource payload. A separate focused navigation/filter/export cohort
+passes 134 cases. These are development checks, not a request for a manual trial.
+The reviewed sequence places #232 before cumulative qualifier #75. The source
+version stays 0.3.0; no new release, package or website publication is implied.
+
 ## Active unreleased 0.4.0 historical metrics
 
 Container inspection PR #316 is protected-merged at
