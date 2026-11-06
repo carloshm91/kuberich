@@ -69,6 +69,18 @@ controlled failures, then updated to the actual 0.4 contract while retaining
 explicit migration, canonical output/exit and legacy-file/privacy requirements.
 The full requested documentation/oracle selection passed 33 cases.
 
+The corrected clean broad selection then passed 1,516 cases in 245.17 seconds.
+Hosted Linux/Python 3.14 subsequently exposed a separate existing overwrite
+test's second-click timeout. A controlled unchanged-test reproduction held only
+the Save button's native feedback timer: the second pointer click reported a
+hit, but no second Pressed message was accepted while the button remained active.
+This establishes the mechanism, without proving the original runner's exact
+state. The test now waits for the existing public save-ready/non-active barrier.
+Native and held-feedback variants pass two cases in 4.10 seconds; the complete
+review/browser/root-export scope passes 38 cases in 29.80 seconds. File contents,
+separate default-cancel confirmation, operation counts and waiter cleanup remain
+asserted. Production behavior and time budgets are unchanged.
+
 The installer helper originally left an owned descendant alive after both a
 successful leader exit and a timeout whose leader exited on SIGTERM. Original
 red receipts retain explicit independent cleanup. The correction always drains

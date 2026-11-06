@@ -40,6 +40,10 @@ the same-UID Inspector/YAML path. Rapid horizontal input remains a recorded
 limit. The two new documentation enrollments and stale 0.3 text assertions are
 corrected, with 33 documentation/oracle cases passing. The next clean broad run
 must qualify these followups; original failures remain retained.
+That clean broad selection passed 1,516 cases in 245.17 seconds. A later hosted
+Python 3.14 overwrite-test timeout has a controlled feedback-timer reproduction
+and a narrow save-readiness correction; native/held-feedback controls and the
+38-case export scope pass. Complete exact-head hosted checks remain required.
 
 ## Unreleased 0.4.0 curated-resource checkpoint
 

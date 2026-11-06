@@ -166,7 +166,10 @@ async def test_cancel_and_invalid_destination_leave_review_usable(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_named_overwrite_has_separate_default_cancel_acknowledgement(tmp_path):
+@pytest.mark.parametrize("hold_feedback", [False, True])
+async def test_named_overwrite_has_separate_default_cancel_acknowledgement(
+    tmp_path, hold_feedback, monkeypatch
+):
     service = service_for(tmp_path)
     ref = await saved_ref(service, text="old\n", name="kuberich-screen.txt")
     screen = ExportReviewScreen(
@@ -176,25 +179,76 @@ async def test_named_overwrite_has_separate_default_cancel_acknowledgement(tmp_p
         on_finish=lambda _: None,
     )
     app = ExportTestApp(screen)
-    async with app.run_test() as pilot:
-        await preview_ready(screen)
-        await pilot.click("#export-save")
-        await wait_for(
-            lambda: isinstance(app.screen, ArtifactConfirmation) and app.screen.is_mounted
-        )
-        assert ref.name in app.screen.message and str(ref.directory.path) in app.screen.message
-        assert app.focused.id == "artifact-confirm-cancel"
-        await pilot.press("escape")
-        await wait_for(lambda: screen.operation_count == 0)
-        assert "old" in (ref.directory.path / ref.name).read_text()
-        await pilot.click("#export-save")
-        await wait_for(
-            lambda: isinstance(app.screen, ArtifactConfirmation) and app.screen.is_mounted
-        )
-        await pilot.click("#artifact-confirm-yes")
-        await wait_for(lambda: len(app.screen_stack) == 1)
-        assert "new" in (ref.directory.path / ref.name).read_text()
-    await service.close()
+    try:
+        async with app.run_test() as pilot:
+            await preview_ready(screen)
+            save = screen.query_one("#export-save", Button)
+            native_timer, native_message = save.set_timer, save.post_message
+            feedback_timers, presses = [], []
+
+            def timer(*args, **kwargs):
+                result = native_timer(*args, **kwargs)
+                if hold_feedback and not feedback_timers:
+                    result.pause()
+                    feedback_timers.append(result)
+                return result
+
+            def message(value):
+                if isinstance(value, Button.Pressed):
+                    presses.append(value)
+                return native_message(value)
+
+            monkeypatch.setattr(save, "set_timer", timer)
+            monkeypatch.setattr(save, "post_message", message)
+            repeated = None
+            try:
+                assert await pilot.click("#export-save")
+                await wait_for(
+                    lambda: isinstance(app.screen, ArtifactConfirmation) and app.screen.is_mounted
+                )
+                first_confirmation = app.screen
+                assert (
+                    ref.name in app.screen.message and str(ref.directory.path) in app.screen.message
+                )
+                assert app.focused.id == "artifact-confirm-cancel" and len(presses) == 1
+                await pilot.press("escape")
+                await wait_for(lambda: screen.operation_count == 0)
+                original = (ref.directory.path / ref.name).read_bytes()
+                assert "old" in (ref.directory.path / ref.name).read_text()
+
+                async def save_again():
+                    await wait_for(lambda: screen.ready_to_save and not save.has_class("-active"))
+                    assert await pilot.click("#export-save")
+                    await wait_for(
+                        lambda: (
+                            isinstance(app.screen, ArtifactConfirmation) and app.screen.is_mounted
+                        )
+                    )
+
+                repeated = asyncio.create_task(save_again())
+                async with asyncio.timeout(5):
+                    if hold_feedback:
+                        await pilot.pause()
+                        assert feedback_timers and save.has_class("-active")
+                        assert not repeated.done() and app.screen is screen
+                        assert screen.operation_count == service.operation_count == 0
+                        assert screen.ready_to_save and len(presses) == 1
+                        assert (ref.directory.path / ref.name).read_bytes() == original
+                        feedback_timers[0].resume()
+                    await repeated
+                assert app.screen is not first_confirmation and len(presses) == 2
+                assert await pilot.click("#artifact-confirm-yes")
+                await wait_for(lambda: len(app.screen_stack) == 1)
+                assert "new" in (ref.directory.path / ref.name).read_text()
+            finally:
+                for feedback in feedback_timers:
+                    feedback.resume()
+                if repeated is not None:
+                    if not repeated.done():
+                        repeated.cancel()
+                    await asyncio.gather(repeated, return_exceptions=True)
+    finally:
+        await service.close()
 
 
 @pytest.mark.asyncio
