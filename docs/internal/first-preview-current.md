@@ -8,15 +8,22 @@ attempt exposed existing large-export preparation and log-view teardown defects.
 A pure profile localized unnecessary all-page preview work, and a public-lifecycle
 regression reproduced the removed-frame failure on protected source. First-page
 UTF-8 equivalence/redaction and actual frame-lifetime guards are being verified.
-The original browser geometry symptom remains recorded without an attributed
-cause. See the [export acceptance record](acceptance/local-exports.md).
+An early-render/idle control also reproduces correct column measurements with
+stale truncated filename paint. A narrow pinned-framework adapter repairs the
+artifact table's cache invalidation. The historical terminal failure remains
+preserved without a retrospectively proven interleaving. See the
+[export acceptance record](acceptance/local-exports.md).
 
 The actual backend/UI runtime controls passed, including strict negative
 controls and branch-traced replays. All six outside-checkout installed browser
 cases and five source PTY cases passed. The current independent coverage gate
 passes all 102 critical modules completely; it includes an earlier interrupted
 parent cohort and does not establish a full-suite pass. A fresh complete source
-run and exact-head hosted checks remain pending. The source stays 0.3.0; these
+run and exact-head hosted checks remain pending. A later full local run retained
+9,907 passes but required interruption at an unbounded PTY test wait; it did not
+produce complete coverage. That test now has a controlled five-second failure
+and cleanup contract. Fresh qualification of the browser adapter remains
+pending. The source stays 0.3.0; these
 changes target the unreleased 0.4.0 phase. No intermediate manual trial or
 publication is requested.
 

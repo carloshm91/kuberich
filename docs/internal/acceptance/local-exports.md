@@ -571,3 +571,53 @@ developer checkout but absent on the clean runner. The fixture now creates its
 owned evidence directory before writing. The failure remains preserved; no
 product behavior, assertion, deadline or platform selection changes. Fresh
 exact-head qualification is still required.
+
+## Native terminal and early-paint qualification
+
+The next complete local cohort on `07b4f40` retained 9,907 passes and five
+explicit platform/channel skips. One native PTY Ctrl-C test remained in its
+unbounded final child-exit wait, leaving its other three file cases unstarted.
+Controlled supervisor interruption preserved the unqualified result at 1,780.15
+seconds. The owned child, worker and process group were all reaped; no external
+signal was supplied to satisfy the Ctrl-C assertion. Post-observation signal and
+terminal flags do not establish why the original byte did not terminate it.
+
+That interruption did not produce complete parent coverage: only five of six
+workers emitted data, and runtime merging correctly rejected the incomplete
+parent. The previous runtime-cohort JSON/XML reports remained on disk and must
+not be described as fresh complete-suite coverage. Original worker data, stale
+report identities, process observations and the failed merge remain preserved.
+
+The test now bounds the original Ctrl-C write/exit observation to five seconds.
+A controlled byte-drop fails at that bound in 5.71 seconds while the actual
+owned child remains alive. Normal context cleanup then returns SIGTERM, closes
+the master, finishes the owner and reaps the child/group; that cleanup is not
+counted as Ctrl-C success. All four clean native PTY cases pass in 0.47 seconds
+without the injection. This fixes the unbounded test wait, not an established
+production signal-delivery cause.
+
+The second hosted candidate passed the fast gate, every Linux source part and
+all four native targets. Its macOS Python 3.12 source geometry case retained a
+40×12 first-frame filename clipped to `owned-ex` before the planned resize.
+The original 15-second filename requirement remains intact at both sizes.
+
+A public early-render/idle interleaving reproduces stale filename paint with
+correct width metadata on pinned native DataTable, FrameTable and the original
+ArtifactTable. Fixed allocated height is necessary: a later widget-size change
+can invalidate the caches and mask the defect. Native cell/row/line cache keys
+omit column widths, and native fixed-height measurement does not invalidate
+the earlier paint. The narrow ArtifactTable adapter now invalidates those caches
+and refreshes only after actual rendered widths change; other tables are
+unchanged. See the [compatibility decision](../../adr/0025-native-table-cache-retirement.md#artifact-browser-width-invalidation).
+
+The controlled mechanism is consistent with the retained terminal symptoms;
+the historical failed processes were not instrumented to prove that exact
+interleaving retrospectively. Fresh source/installed PTYs, complete exact-head
+qualification and coverage remain required for the new candidate.
+
+All four new permanent geometry controls fail with the preserved original table
+and pass with the adapter. The complete existing browser suite, four new visible-
+paint controls and four earlier width characterizations pass 21 cases in 13.33
+seconds. The pinned native DataTable and unrelated FrameTable retain the same
+controlled stale-paint failure, while the adapted ArtifactTable passes. Strict
+typing, Ruff, formatting and the complete test-private-dependency audit pass.
