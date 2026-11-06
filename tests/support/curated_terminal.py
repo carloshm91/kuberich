@@ -267,16 +267,33 @@ def _drive(command, directory, url, api, *, evidence, flow, size, source, instal
                         "mutatingwebhookconfigurations",
                     }:
                         selected = "owned-" + ("a" if order[0] == 0 else "b")
-                        marker = terminal.send(b"\r")
+                        resource = api.resource(name, group=definition.group)
+                        namespace = "team" if definition.namespaced else None
+                        selected_uid = next(
+                            body["metadata"]["uid"]
+                            for body in api.objects(resource, namespace)
+                            if body["metadata"]["name"] == selected
+                        )
+                        target_path = resource.path(namespace) + "/" + selected
+                        read_from = len(api.requests)
+                        marker = terminal.send(b"g\r")
                         location = ("team/" if definition.namespaced else "Cluster/") + selected
                         wait(
                             "details:" + name,
                             (
                                 f"details({location})",
-                                "kind: " + api.resource(name, group=definition.group).kind,
+                                "kind: " + resource.kind,
+                                "apiVersion: " + resource.api_version,
+                                "uid: " + selected_uid,
                                 "sections:",
                             ),
                             since=marker,
+                            predicate=lambda display, path=target_path, start=read_from: any(
+                                entry.method == "GET"
+                                and entry.path == path
+                                and "watch" not in entry.query
+                                for entry in api.requests[start:]
+                            ),
                         )
                         marker = terminal.send(b"L")
                         link = {
