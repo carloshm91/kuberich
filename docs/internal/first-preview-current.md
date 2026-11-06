@@ -33,6 +33,13 @@ qualify the complete package, hosted matrix or cumulative release gate. Continue
 implementation without requesting an intermediate manual trial.
 The [qualification preparation record](acceptance/observability-qualification.md)
 retains the measured cohorts, original pipx/process/UI failures and remaining gate.
+The first clean broad interface run passed 1,334 cases and failed the new native
+probe's partial-frame/scroll witness. Corrected native checks pass three cases
+with default/fragmented reads, explicit live table rows and full fields through
+the same-UID Inspector/YAML path. Rapid horizontal input remains a recorded
+limit. The two new documentation enrollments and stale 0.3 text assertions are
+corrected, with 33 documentation/oracle cases passing. The next clean broad run
+must qualify these followups; original failures remain retained.
 
 ## Unreleased 0.4.0 curated-resource checkpoint
 

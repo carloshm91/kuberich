@@ -267,7 +267,19 @@ def test_local_reference_contains_new_commands_and_current_behavior_guidance():
     for contract in ("kuberich bug-report", "mode-0600", "**Retry**", "wl-copy"):
         assert contract in troubleshooting
     configuration = (ROOT / "docs/configuration.md").read_text()
-    assert "stderr" in configuration and "scheduled for removal in 0.4.0" in configuration
+    compatibility = " ".join(configuration.split())
+    for contract in (
+        "Published 0.3 retains the deprecated `kubetrol` command with a fixed stderr warning.",
+        "prepared 0.4 source removes that console entry and its Python shim.",
+        "canonical stdout and exit behavior remain unchanged.",
+        "`KUBETROL_*` preference variables remain fallbacks after corresponding `KUBERICH_*` variables.",
+        "Run `kuberich config migrate` explicitly",
+        "Migration does not move kubeconfig, credentials, logs, or tool installations.",
+        "Existing legacy log/lock headers and archives remain accepted",
+        "Diagnostics omit raw kubeconfig, helper output, resource bodies, and editor drafts.",
+    ):
+        assert contract in compatibility
+    assert "scheduled for removal in 0.4.0" not in configuration
     assert "success notice appears only when a" in configuration
     plugins = (ROOT / "docs/plugins.md").read_text()
     assert "opened background-job result updates" in plugins

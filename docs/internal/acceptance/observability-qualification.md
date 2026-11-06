@@ -37,6 +37,7 @@ repetitions. The ignored originals remain under `artifacts/issue75/`.
 | Shared ordinary/Events navigation | 30 passed in 17.32 seconds | Home/End, selected identity, cursor modes and deferred restoration |
 | Actual App and SVG headers | Three passed in 7.77 seconds | Nine captures at 120, 100 and 40 columns |
 | Native header/identity/navigation | One passed in 7.54 seconds | Forty-four positive frame stages, expected/observed UID, Back, rules and terminal cleanup |
+| Corrected native frame/access path | Three passed in 14.35 seconds | Default and fragmented reads, explicit live rows, same-UID Inspector/YAML, one horizontal step, Back and mixed-frame rejection |
 | Zero-desired DaemonSet | Owned API proof plus 17 controls passed | Kubernetes 1.36.4 omitted optional zero counters; Pulse correctly retained unknown |
 | Documentation and authored-note contracts | 148 passed in 34.78 seconds | Source structure/links and note machinery; final publication remains separate |
 | Strict workflow-derived type targets | 314 source files passed | Source preparation, not a full runtime result |
@@ -54,6 +55,20 @@ configuration/log bytes and ownership, actual installed navigation/shell,
 restoration and removal remain required. This does not prove that reinstall
 after an already-completed problematic upgrade repairs its exposed links.
 
+The first clean committed broad interface cohort passed 1,334 cases and failed
+the new native header probe while waiting for its first horizontal heading
+translation. Its original log, XML and native frame directory remain retained;
+the earlier isolated native success does not qualify that broadened result.
+Independent tracked-document review also found two missing disposition entries
+after the new Markdown files were staged. Exactly two entries were appended;
+all 364 existing records and 105 historical pins remain unchanged, with nine
+focused internal-document/navigation/source checks passing after the correction.
+Original hosted failures also exposed two stale text oracles requiring the 0.3
+qualifier command and a future alias-removal notice. Both were reproduced as
+controlled failures, then updated to the actual 0.4 contract while retaining
+explicit migration, canonical output/exit and legacy-file/privacy requirements.
+The full requested documentation/oracle selection passed 33 cases.
+
 The installer helper originally left an owned descendant alive after both a
 successful leader exit and a timeout whose leader exited on SIGTERM. Original
 red receipts retain explicit independent cleanup. The correction always drains
@@ -63,10 +78,22 @@ Initial UI controls reproduced four pending-animation and four queued-restoratio
 failures. Original blank-header App/SVG/native captures remain intact. Several
 new native capture oracles sampled loading or partial resized frames; corrected
 proof requires complete positive layout/source witnesses. A one-packet batch of
-twenty `h` inputs did not expose rule prefixes. The passing native sequence uses
-twenty individually acknowledged real inputs and does not qualify or relabel
+twenty `h` inputs did not expose rule prefixes. An earlier isolated passing native
+sequence used twenty individually acknowledged real inputs and did not qualify or relabel
 that batched path. Wide rule/relationship cells still need horizontal navigation;
 no density redesign or complete product parity is claimed.
+
+A later default-size native read also failed the ninth one-cell acknowledgment,
+while fragmented reads completed that sequence. Pixel movement is not a
+quiescence fence for deferred/animated scrolling. The final native acceptance
+checks one horizontal step and full rule fields through the supported
+`o` → same-UID Role table → Inspector/YAML path, with a fresh exact object GET,
+strict Back/viewport and explicit live-row guards. It does not claim to fix rapid
+input or qualify twenty exact native increments. The original fixed output
+directory was overwritten by a later failed broad run; its original green XML
+remains historical, while the current raw bytes belong to that failure. New
+native runs retain unique private directories under
+`artifacts/terminal/header-identity`, covered by the existing CI artifact policy.
 
 ## Final gate
 

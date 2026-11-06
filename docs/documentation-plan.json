@@ -3695,6 +3695,26 @@
       ],
       "reason": "Pin primary API/public menu sources and retain all named-family/additional-menu coverage gaps without inferring parity.",
       "baseline_sha256": null
+    },
+    {
+      "source": "docs/release-notes/0.4.0.md",
+      "audience": "user release notes",
+      "action": "keep",
+      "destinations": [
+        "docs/release-notes/0.4.0.md"
+      ],
+      "reason": "Keep authored 0.4.0 features, migration, upgrade commands and known limits source-bound before approved publication.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/acceptance/observability-qualification.md",
+      "audience": "contributor acceptance evidence",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/observability-qualification.md"
+      ],
+      "reason": "Retain observability preparation measurements, original failures and cumulative qualification requirements outside user navigation.",
+      "baseline_sha256": null
     }
   ],
   "inventory_rule": "Every tracked Markdown file, every file under docs/, LICENSE, NOTICE, and contribution issue templates at the baseline commit; new structure contracts are mapped too.",
