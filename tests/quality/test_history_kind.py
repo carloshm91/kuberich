@@ -7,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 import pytest
+import yaml
 
 from kuberich.domain.history import (
     HistoryPoint,
@@ -17,7 +18,7 @@ from kuberich.domain.history import (
     MembershipEvidence,
 )
 from scripts import verify_history_kind as verifier
-from scripts.owned_kind import NODE_IMAGE, SHELL_IMAGE
+from scripts.owned_kind import NODE_IMAGE, SHELL_IMAGE, OwnedCluster
 
 
 def test_actual_provider_images_chart_sources_and_dependency_locks_are_pinned():
@@ -182,3 +183,60 @@ def test_rollout_comparison_rejects_old_uid_rebind_lost_history_and_fabricated_y
     ):
         with pytest.raises(AssertionError):
             verifier.rollout_comparison(previous, current, frozenset({"old-uid"}))
+
+
+@pytest.mark.asyncio
+async def test_mixed_manifest_apply_preserves_namespaces_and_owned_destination(
+    tmp_path, monkeypatch
+):
+    cluster = OwnedCluster(
+        "owned", tmp_path / "owned-kubeconfig", tmp_path, "kind-owned", ("owned-node",)
+    )
+    calls = []
+
+    def capture(argv, environment, timeout):
+        calls.append((argv, environment["KUBECONFIG"]))
+        return "owned result"
+
+    monkeypatch.setattr(verifier, "run_owned", capture)
+    documents = (
+        {
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {"name": "system", "namespace": "kube-system"},
+        },
+        {"apiVersion": "v1", "kind": "Pod", "metadata": {"name": "fixture"}},
+        {
+            "apiVersion": "rbac.authorization.k8s.io/v1",
+            "kind": "ClusterRole",
+            "metadata": {"name": "owned-role"},
+        },
+    )
+    await verifier._apply(cluster, "owned-kubectl", "mixed", documents)
+    argv, config = calls[0]
+    assert argv[:5] == [
+        "owned-kubectl",
+        "--kubeconfig",
+        str(cluster.path),
+        "--context",
+        cluster.context,
+    ]
+    assert "--namespace" not in argv and argv[5] == "apply"
+    assert config == str(cluster.path)
+    written = tuple(yaml.safe_load_all((tmp_path / "mixed.yaml").read_text()))
+    assert written[0]["metadata"]["namespace"] == "kube-system"
+    assert written[1]["metadata"]["namespace"] == verifier.NAMESPACE
+    assert "namespace" not in written[2]["metadata"]
+    assert "namespace" not in documents[1]["metadata"]
+    await verifier._command(cluster, "owned-kubectl", "get", "pods")
+    ordinary, _ = calls[1]
+    assert ordinary[5:7] == ["--namespace", verifier.NAMESPACE]
+    with pytest.raises(ValueError, match="manifest application"):
+        await verifier._command(cluster, "owned-kubectl", "get", "pods", namespace=None)
+    with pytest.raises(ValueError, match="owned fixture"):
+        await verifier._apply(
+            cluster,
+            "owned-kubectl",
+            "other",
+            ({"kind": "Pod", "metadata": {"name": "outside", "namespace": "unselected"}},),
+        )

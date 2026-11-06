@@ -720,8 +720,18 @@ async def verify_proxy_headers(
 
 
 async def _command(
-    cluster: OwnedCluster, kubectl: str, *arguments: str, timeout: float = 60
+    cluster: OwnedCluster,
+    kubectl: str,
+    *arguments: str,
+    timeout: float = 60,
+    namespace: str | None = NAMESPACE,
 ) -> str:
+    if namespace != NAMESPACE and (
+        namespace is not None or not arguments or arguments[0] != "apply"
+    ):
+        raise ValueError(
+            "Only explicitly namespaced manifest application can omit the fixture namespace."
+        )
     environment = dict(os.environ)
     environment["KUBECONFIG"] = str(cluster.path)
     return await parse_owned(
@@ -732,8 +742,7 @@ async def _command(
                 str(cluster.path),
                 "--context",
                 cluster.context,
-                "--namespace",
-                NAMESPACE,
+                *(["--namespace", namespace] if namespace is not None else []),
                 *arguments,
             ],
             environment,
@@ -746,7 +755,22 @@ async def _apply(
     cluster: OwnedCluster, kubectl: str, name: str, documents: tuple[dict[str, Any], ...]
 ) -> None:
     path = cluster.directory / (name + ".yaml")
-    path.write_text(yaml.safe_dump_all(documents))
+    explicit = []
+    for document in documents:
+        metadata = dict(document.get("metadata", {}))
+        if document.get("kind") not in {
+            "CustomResourceDefinition",
+            "ClusterRole",
+            "ClusterRoleBinding",
+            "Namespace",
+        }:
+            metadata.setdefault("namespace", NAMESPACE)
+            if metadata["namespace"] not in {NAMESPACE, "kube-system"}:
+                raise ValueError(
+                    "Provider manifests must use an explicit owned fixture or system namespace."
+                )
+        explicit.append({**document, "metadata": metadata})
+    path.write_text(yaml.safe_dump_all(explicit))
     await _command(
         cluster,
         kubectl,
@@ -756,6 +780,7 @@ async def _apply(
         "-f",
         str(path),
         timeout=120,
+        namespace=None,
     )
 
 

@@ -100,3 +100,13 @@ versus valid/invalid configuration reload. Production bytes were unchanged.
 The frozen actual-provider verifier is now running against one owned kind
 cluster with checksum-verified kind/kubectl and pinned charts/images. Its result
 remains pending; preparation and startup alone do not establish acceptance.
+
+The first real provider trial failed before installation: a chart includes a
+`kube-system` object, while the verifier passed the fixture namespace to mixed
+manifest apply. The 45.09-second original remains in `root/kind-001/`; inputs
+were unchanged, the cluster/private directory were removed and the owned runner
+reaped its child with the process group absent. The verifier now preserves
+explicit namespaces, supplies the fixture namespace only for unqualified objects
+and omits the namespace override only for apply. An exact argv/environment and
+mixed-manifest regression passed among eight verifier tests. The fresh second
+trial is separate; the original failure is not relabelled.
