@@ -194,6 +194,8 @@ critical_modules = [
     "src/kuberich/domain/read_budget.py",
     "src/kuberich/config/observability.py",
     "src/kuberich/domain/history.py",
+    "src/kuberich/domain/history_queries.py",
+    "src/kuberich/domain/history_membership.py",
     "src/kuberich/domain/pulse.py",
     "src/kuberich/services/metrics_projection.py",
     "src/kuberich/domain/quantities.py",

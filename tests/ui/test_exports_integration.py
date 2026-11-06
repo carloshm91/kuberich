@@ -1,10 +1,12 @@
 """Real root command, cancellation and local-browser flow with owned HTTP/files."""
 
+import asyncio
 import logging
 from uuid import uuid4
 
 import pytest
 from aiohttp import web
+from textual.widgets import Button
 
 from kuberich.config.schema import Settings
 from kuberich.domain.exports import read_artifact
@@ -19,9 +21,32 @@ from tests.support.resources import collection
 from tests.support.workspace import stable_watch, wait_for, workspace_api
 
 
+async def click_ready(app, pilot, screen, selector):
+    async with asyncio.timeout(5):
+        assert await screen.wait_for_refresh()
+        button = screen.query_one(selector, Button)
+        await wait_for(
+            lambda: (
+                app.screen is screen
+                and screen.is_mounted
+                and button.is_mounted
+                and button.display
+                and button.visible
+                and not button.disabled
+                and not button.has_class("-active")
+                and button.region.area > 0
+                and app.get_widget_at(*button.region.offset)[0] is button
+            )
+        )
+        assert await pilot.click(button)
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
-async def test_root_export_overwrite_cancel_save_browser_copy_and_delete(tmp_path, size):
+@pytest.mark.parametrize("hold_feedback", [False, True])
+async def test_root_export_overwrite_cancel_save_browser_copy_and_delete(
+    tmp_path, size, hold_feedback, monkeypatch
+):
     requests = []
 
     async def ns(request):
@@ -68,14 +93,14 @@ async def test_root_export_overwrite_cancel_save_browser_copy_and_delete(tmp_pat
             review = app.screen
             await wait_for(lambda: review.prepared is not None and review.operation_count == 0)
             await choose_destination(review, destination)
-            await pilot.click("#export-save")
+            await click_ready(app, pilot, review, "#export-save")
             await wait_for(lambda: isinstance(app.screen, ArtifactConfirmation))
             await pilot.press("escape")
             await wait_for(lambda: app.screen is review and review.operation_count == 0)
             assert destination.read_text() == "existing local text\n"
-            await pilot.click("#export-save")
+            await click_ready(app, pilot, review, "#export-save")
             await wait_for(lambda: isinstance(app.screen, ArtifactConfirmation))
-            await pilot.click("#artifact-confirm-yes")
+            await click_ready(app, pilot, app.screen, "#artifact-confirm-yes")
             await wait_for(lambda: review.stopped and len(app.screen_stack) == 1)
             prepared = read_artifact(destination.read_bytes(), artifact_id=uuid4())
             assert prepared.metadata.format == "resource-yaml"
@@ -92,7 +117,7 @@ async def test_root_export_overwrite_cancel_save_browser_copy_and_delete(tmp_pat
             browser = app.screen
             await wait_for(lambda: browser.listing is not None and browser.operation_count == 0)
             assert browser.table.row_count == 1
-            await pilot.click("#artifacts-view")
+            await click_ready(app, pilot, browser, "#artifacts-view")
             await wait_for(lambda: isinstance(app.screen, ArtifactViewerScreen))
             viewer = app.screen
             await wait_for(lambda: viewer.prepared is not None and viewer.operation_count == 0)
@@ -103,15 +128,59 @@ async def test_root_export_overwrite_cancel_save_browser_copy_and_delete(tmp_pat
             assert "kind: Pod" in app.clipboard
             await pilot.press("escape")
             await wait_for(lambda: app.screen is browser and viewer.stopped)
-            await pilot.click("#artifacts-delete")
-            await wait_for(lambda: isinstance(app.screen, ArtifactConfirmation))
-            await pilot.press("escape")
-            await wait_for(lambda: app.screen is browser and browser.operation_count == 0)
-            assert destination.exists()
-            await pilot.click("#artifacts-delete")
-            await wait_for(lambda: isinstance(app.screen, ArtifactConfirmation))
-            await pilot.click("#artifact-confirm-yes")
-            await wait_for(lambda: browser.operation_count == 0 and not destination.exists())
+            delete = browser.query_one("#artifacts-delete", Button)
+            native_timer, native_message = delete.set_timer, delete.post_message
+            feedback_timers, delete_presses = [], []
+
+            def timer(*args, **kwargs):
+                result = native_timer(*args, **kwargs)
+                if hold_feedback and not feedback_timers:
+                    result.pause()
+                    feedback_timers.append(result)
+                return result
+
+            def message(value):
+                if isinstance(value, Button.Pressed):
+                    delete_presses.append(value)
+                return native_message(value)
+
+            monkeypatch.setattr(delete, "set_timer", timer)
+            monkeypatch.setattr(delete, "post_message", message)
+            repeated = None
+            try:
+                await click_ready(app, pilot, browser, "#artifacts-delete")
+                await wait_for(lambda: isinstance(app.screen, ArtifactConfirmation))
+                first_confirmation = app.screen
+                assert len(delete_presses) == 1
+                await pilot.press("escape")
+                await wait_for(lambda: app.screen is browser and browser.operation_count == 0)
+                assert destination.exists()
+
+                async def delete_again():
+                    await click_ready(app, pilot, browser, "#artifacts-delete")
+                    await wait_for(lambda: isinstance(app.screen, ArtifactConfirmation))
+
+                repeated = asyncio.create_task(delete_again())
+                async with asyncio.timeout(5):
+                    if hold_feedback:
+                        # Drain queued UI work while native feedback stays held.
+                        await pilot.pause()
+                        assert feedback_timers and delete.has_class("-active")
+                        assert not repeated.done() and app.screen is browser
+                        assert browser.operation_count == 0 and destination.exists()
+                        assert len(delete_presses) == 1
+                        feedback_timers[0].resume()
+                    await repeated
+                assert app.screen is not first_confirmation and len(delete_presses) == 2
+                await click_ready(app, pilot, app.screen, "#artifact-confirm-yes")
+                await wait_for(lambda: browser.operation_count == 0 and not destination.exists())
+            finally:
+                for feedback in feedback_timers:
+                    feedback.resume()
+                if repeated is not None:
+                    if not repeated.done():
+                        repeated.cancel()
+                    await asyncio.gather(repeated, return_exceptions=True)
             await pilot.press("escape")
             await wait_for(lambda: len(app.screen_stack) == 1 and browser.stopped)
             assert app.sessions.client is connected and len(requests) == before

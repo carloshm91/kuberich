@@ -55,6 +55,12 @@ class ViewState:
 
 
 def action_available(action: str, view: ViewState) -> bool:
+    if action == "metric_history":
+        return (
+            view.resource in WORKLOAD_LOG_VIEWS | {"nodes", "pulse"}
+            and not view.modal
+            and not view.typing
+        )
     if action == "diagnose" and (view.generic or view.resource not in WORKLOAD_LOG_VIEWS):
         return False
     if action == "open_relationship" and view.resource not in {

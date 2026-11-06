@@ -95,6 +95,7 @@ Resource aliases are in the [resource reference](resource-reference.md).
 | `exports` | exports |
 | `forward` | forward |
 | `?`, `help` | help |
+| `hist`, `history` | history |
 | `jump` | jump |
 | `login` | login |
 | `logsall` | logs all |
@@ -146,7 +147,7 @@ Each row is generated from an effective default key profile. Fixed arrows and
 page keys stay available. Table Home/End move horizontally; Ctrl+Home/End select
 first/last rows. Uppercase letters are distinct keys, not Vim sequences.
 
-Profile 1: `table`, `contexts`, `containers`, `container-inspection`, `data`, `themes`, `forwards`, `sources`.
+Profile 1: `table`, `contexts`, `containers`, `container-inspection`, `history`, `data`, `themes`, `forwards`, `sources`.
 Profile 2: `resources`, `namespaces`.
 Profile 3: `logs`, `text`.
 
@@ -175,6 +176,7 @@ Profile 3: `logs`, `text`.
 | Containers | `u` | Upload |
 | Containers | `d` | Download |
 | Containers | `e` | Environment / image |
+| Containers | `M` | Metric history |
 | Diagnostic evidence | `o` | Open resource |
 | Diagnostic evidence | `e` | Open Event |
 | Diagnostic evidence | `n` | Next Event |
@@ -240,6 +242,7 @@ Profile 3: `logs`, `text`.
 | Workspace | `n, f3` | Namespaces |
 | Workspace | `r, f4` | Retry |
 | Workspace | `i, f5` | Status |
+| Workspace | `M` | Metric history |
 | Workspace | `o` | Open resource |
 | Workspace | `alt+left` | Previous view |
 | Workspace | `alt+right` | Next view |

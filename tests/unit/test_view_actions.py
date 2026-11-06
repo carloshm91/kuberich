@@ -26,6 +26,13 @@ from kuberich.services.command_catalog import COMMAND_SPECS
         ("shell", ViewState("pods"), True),
         ("shell", ViewState("deployments"), False),
         ("quit", ViewState("pods", modal=True, typing=True), True),
+        ("metric_history", ViewState("pods"), True),
+        ("metric_history", ViewState("nodes"), True),
+        ("metric_history", ViewState("deployments", generic=True), True),
+        ("metric_history", ViewState("pulse"), True),
+        ("metric_history", ViewState("pods", typing=True), False),
+        ("metric_history", ViewState("nodes", modal=True), False),
+        ("metric_history", ViewState("services"), False),
     ],
 )
 def test_actions_follow_the_current_view(action, view, expected):

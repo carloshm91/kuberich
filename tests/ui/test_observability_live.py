@@ -8,7 +8,9 @@ from aiohttp import web
 from kuberich.services.commands import Command
 from tests.contract.test_history import payload
 from tests.support.connections import namespaces
+from tests.support.history import service
 from tests.support.pulse import pulse_resource, pulse_roots
+from tests.support.resources import descriptor
 from tests.support.workspace import wait_for, workspace_api
 from tests.ui.test_live_preferences import owned_app, save
 
@@ -34,12 +36,26 @@ async def test_history_reload_retires_held_query_but_theme_and_invalid_reload_ke
 
     async def resources(request):
         calls.append(request.path)
+        if (
+            request.path.startswith("/api/v1/namespaces/observability/services/")
+            and "/proxy/" not in request.path
+        ):
+            return web.json_response(
+                service(request.path.rsplit("/", 1)[-1], namespace="observability")
+            )
         if request.path.endswith("query_range"):
             if ":one:" in request.path:
                 entered.set()
                 await release.wait()
             return web.json_response(
-                payload(request, value="0.5" if "rate(" in request.query["query"] else "1048576")
+                payload(
+                    request,
+                    value="1"
+                    if request.query["query"].startswith("count(")
+                    else "0.5"
+                    if "rate(" in request.query["query"]
+                    else "1048576",
+                )
             )
         name = request.path.rsplit("/", 1)[-1]
         resource = pulse_resource(name)
@@ -55,7 +71,12 @@ async def test_history_reload_retires_held_query_but_theme_and_invalid_reload_ke
             }
         )
 
-    async with workspace_api(ns, resources, discovery_roots=pulse_roots) as url:
+    def history_roots():
+        roots = pulse_roots()
+        roots["/api/v1"]["resources"].append(descriptor("services", kind="Service"))
+        return roots
+
+    async with workspace_api(ns, resources, discovery_roots=history_roots) as url:
         app, path, notes = owned_app(
             tmp_path, {"observability": observability()}, url=url, initial=Command.PULSE
         )
@@ -83,7 +104,7 @@ async def test_history_reload_retires_held_query_but_theme_and_invalid_reload_ke
                 )
                 await app.live_preferences.check()
                 assert app.preferences.document is document
-                assert app.live_preferences.observability.history.service == "one"
+                assert app.live_preferences.observability.history.endpoint.service == "one"
                 assert calls.count("/api/v1/nodes") == initial_nodes
                 assert "last valid preferences remain active" in notes[-1][0]
 
@@ -91,7 +112,7 @@ async def test_history_reload_retires_held_query_but_theme_and_invalid_reload_ke
                 updated["contexts"] = {"kuberich-test-one": observability("two")}
                 save(path, {"observability": updated})
                 await app.live_preferences.check()
-                await wait_for(lambda: sum(":two:" in item for item in calls) == 2)
+                await wait_for(lambda: sum(":two:" in item for item in calls) == 5)
                 await wait_for(
                     lambda: (
                         "history:1" in app.pulse_table.rows
@@ -102,7 +123,7 @@ async def test_history_reload_retires_held_query_but_theme_and_invalid_reload_ke
                 assert (
                     app.live_preferences.observability.for_context(
                         app.state.context
-                    ).history.service
+                    ).history.endpoint.service
                     == "two"
                 )
                 assert calls.count("/api/v1/nodes") > initial_nodes

@@ -223,6 +223,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
         "scripts.diagnostics_tools --directory",
         "scripts.verify_diagnostics_kind",
         "scripts.verify_container_inspection_kind",
+        "scripts.verify_history_kind",
         "scripts.verify_quickstart",
         "uv build",
         "twine check",
@@ -246,7 +247,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     cluster_steps = [
         step for step in application["steps"] if "python -m scripts.verify" in step.get("run", "")
     ]
-    assert len(cluster_steps) == 19
+    assert len(cluster_steps) == 20
     for step in cluster_steps:
         assert step["if"] == "${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}"
     upload = next(
@@ -259,6 +260,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert "artifacts/backend/*" in upload["with"]["path"].splitlines()
     assert "artifacts/authorization/**" in upload["with"]["path"].splitlines()
     assert "artifacts/container-inspection/**" in upload["with"]["path"].splitlines()
+    assert "artifacts/metric-history/**" in upload["with"]["path"].splitlines()
 
 
 @pytest.mark.parametrize(

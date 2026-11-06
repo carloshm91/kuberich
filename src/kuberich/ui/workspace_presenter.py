@@ -485,7 +485,9 @@ class WorkspacePresenter:
             frame.border_subtitle = "Enter expand · o open · Left/Right tree · Shift+arrows scroll"
             return
         if self.views.route.kind is ViewKind.PULSE:
-            frame.border_subtitle = "Enter drill down · :back / :forward · arrows scroll"
+            frame.border_subtitle = (
+                "Enter drill down · M history · :back / :forward · arrows scroll"
+            )
             return
         if self.views.expected_uid is not None and isinstance(
             self.views.table, (PodTable, StandardTable)

@@ -1,11 +1,52 @@
 # Development checkpoint
 
-## Export-regression source checkpoint
+## Active unreleased 0.4.0 historical metrics
+
+Container inspection PR #316 is protected-merged at
+`5444b7d9c357d389243147a978cc20b248293edb`, with all 27 quality
+jobs, Repository checks and DCO passed on exact final head `c5a2408`. Its final
+hosted Linux Python 3.13 measured 98.6876% lines / 95.5346% branches across 246
+modules, all 102 critical modules at 100% and 97.96% changed lines. The final
+Fast suite passed 7,654 cases with one explicit macOS-only skip. Its actual
+provider-independent kind and installed terminal evidence remains in the
+[container inspection record](acceptance/container-inspection.md). Earlier
+statements below that its platform matrix was pending are historical.
+
+Issue #231 tracks historical metrics delivery. Shift+M and `:history` compose
+cluster, Node, workload, Pod and container charts with four measurement families,
+seven ranges and explicit availability/identity gaps. The frozen deterministic
+cohort passed 273 cases at 100% lines/branches in all three modules. The feature
+is now integrated on protected export-fix PR #318. Fresh focused integration
+passed 90 UI cases, 123 adapter/workspace/configuration/verifier cases, both source
+terminal sizes and outside-checkout installed console/module entry points.
+The corrected owned-cluster trial passed all 105 provider/scope/range collections,
+native CPU/memory checks, raw counter-reset/rate controls, rollout membership,
+recreated-Pod rejection, source outage and absent-backend behavior for Prometheus,
+VictoriaMetrics and Thanos. Source `55ee83a` passed the complete local
+unit/contract/UI selection: 8,054 cases and one explicit hosted-macOS-only skip.
+The verified runtime replay merge measures 98.5965% lines, 95.4891% branches,
+all 104 critical modules at 100% and 97.08% changed lines across 252 production
+modules. Both source terminal sizes and outside-checkout installed console/module
+entry points passed together: four cases in 44.72 seconds. Strict typing covers
+300 files; Ruff and formatting pass. GitHub remains authoritative for the
+remaining exact-head full-suite/platform checks and protected delivery. Earlier
+failed attempts remain in the [metric history record](acceptance/metric-history.md).
+
+Focused commands are `uv run pytest tests/ui/test_history.py` and
+`uv run pytest tests/terminal/test_history.py`, using synthetic loopback APIs and
+explicit private configuration. They are development checks; no manual trial is
+requested. Source version stays 0.3.0 and no 0.4 package/tag publication is implied.
+The remaining implementation order is #231, #232, then cumulative #75. Publication
+approval follows a concrete qualified candidate.
+
+## Delivered export-regression source checkpoint
 
 The export correction is tracked in [issue #317](https://github.com/carloshm91/kuberich/issues/317)
 and [PR #318](https://github.com/carloshm91/kuberich/pull/318). GitHub records its
-protected delivery and exact-head hosted results. Historical metrics follow in
-#231 after that prerequisite.
+protected delivery and exact-head hosted results. PR #318 is protected-merged
+at `c6fba0521777bd0a75f660543b0b37e25ad2b258`, with all 27 quality jobs,
+Repository checks and DCO passed; its actual squash tree matches the tested tree.
+Historical metrics now resume after that prerequisite.
 
 Source `7ec2f63` prepares only the first UTF-8 export preview page after complete
 redaction, rejects log status updates after their target frame is removed, and

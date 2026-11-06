@@ -45,6 +45,7 @@ KIND_SCENARIOS = (
     ("authorization", "verify_authorization_kind", False),
     ("diagnostics", "verify_diagnostics_kind", False),
     ("container-inspection", "verify_container_inspection_kind", False),
+    ("metric-history", "verify_history_kind", True),
 )
 
 
@@ -210,6 +211,7 @@ def cluster_stages(
                             "authorization",
                             "diagnostics",
                             "container-inspection",
+                            "metric-history",
                         }
                         else output / f"kind-{repetition}-{name}.json"
                     ),

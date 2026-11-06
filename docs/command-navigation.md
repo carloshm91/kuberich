@@ -145,3 +145,16 @@ namespaces. Favorites do not create rows or grant namespace-list permission.
 A configured `:jump` opens a related resource view with a filter from the selected
 row. If several match, use `:jump NAME`. Templates read fields; they run no code.
 See [configuration](configuration.md#define-a-resource-jump) for an example.
+
+## Keep history controls separate from navigation
+
+Shift+M and `:history` open [metric history](cluster-overview.md#explore-metric-history)
+from a supported resource or Pulse. A container selection opens that container's
+history. Input fields keep letters literal.
+
+The `history` navigation-key profile reserves `1`–`7`, `c`, `m`, `n`, `f`, `r`,
+`d`, `b`, `a` and `u` for chart actions. A shared table navigation override must
+avoid those keys or provide an explicit `keys.history` override. For example,
+keep a shared `down: b` by setting `keys.history.down: alt+j`; otherwise validation
+reports a fixed-action conflict. This is an additional configuration restriction
+for the upcoming 0.4 minor release. Native exit, input and arrow keys stay reserved.

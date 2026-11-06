@@ -157,6 +157,7 @@ jobs:
           uv run mypy --strict scripts/verify_authorization_kind.py
           uv run mypy --strict scripts/diagnostics_tools.py scripts/verify_diagnostics_kind.py scripts/diagnostics_kind_runtime.py
           uv run mypy --strict scripts/verify_container_inspection_kind.py
+          uv run mypy --strict scripts/verify_history_kind.py
       - name: Verify fresh-process CLI and real-terminal startup budgets
         run: uv run python -m scripts.check_startup --output artifacts/startup/qualification
       - name: Verify plaintext clipboard on the owned ephemeral macOS runner
@@ -238,6 +239,9 @@ jobs:
       - name: Verify current API container environment image facts and source freshness
         if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_container_inspection_kind --kind "$RUNNER_TEMP/kuberich-kind" --docker /usr/bin/docker --evidence artifacts/container-inspection/evidence.json
+      - name: Verify historical metrics on Prometheus VictoriaMetrics and Thanos
+        if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
+        run: uv run python -m scripts.verify_history_kind --kind "$RUNNER_TEMP/kuberich-kind" --kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl" --docker /usr/bin/docker --evidence artifacts/metric-history/evidence.json
       - name: Enforce independent production and critical-module coverage
         run: uv run python scripts/check_coverage.py coverage.json
       - name: Enforce changed executable-line coverage against the merge base
@@ -281,6 +285,7 @@ jobs:
             artifacts/authorization/**
             artifacts/diagnostics/**
             artifacts/container-inspection/**
+            artifacts/metric-history/**
             artifacts/quickstart/*
             artifacts/startup/**
           if-no-files-found: error

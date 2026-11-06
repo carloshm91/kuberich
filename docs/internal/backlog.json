@@ -2087,7 +2087,7 @@
       "requires": [
         "O01"
       ],
-      "scope": "Lens shows CPU, memory, network and filesystem history on its overview, node and pod pages, backed by Prometheus. KubeRich shows no metrics yet; #68 plans metrics-server only. Without history, users still need a separate dashboard.",
+      "scope": "Current CPU/memory metrics and a short configured Pulse history are delivered. Add broader fixed Prometheus-compatible history for cluster, node, workload, pod and container scopes, including network/filesystem source states and terminal ranges. Historical identity evidence and backend credentials must remain explicit.",
       "acceptance": [
         "Detect Prometheus, VictoriaMetrics or Thanos (in-cluster service proxy or a configured URL) per context, with explicit availability states.",
         "Terminal charts (braille or sparklines) for cluster, node, workload, pod and container: CPU, memory, network and filesystem. Ranges from 15m to 24h. Numeric values are always shown, so color is never the only signal.",
