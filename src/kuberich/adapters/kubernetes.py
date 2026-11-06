@@ -25,6 +25,7 @@ from kuberich.domain.connections import (
     ConnectionProblem,
     ConnectionState,
     HttpProblem,
+    ResponseLimitExceeded,
     namespace_name,
 )
 from kuberich.domain.credential_helpers import bearer_token
@@ -748,7 +749,7 @@ class KubernetesSession:
                     async for chunk in response.content.iter_chunked(16384):
                         data.extend(chunk)
                         if len(data) > max_bytes:
-                            raise ValueError
+                            raise ResponseLimitExceeded(max_bytes)
                 return await _decode_owned(bytes(data))
         except (TimeoutError, ProxyTimeoutError):
             raise ConnectionProblem(

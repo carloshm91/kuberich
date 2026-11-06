@@ -64,6 +64,14 @@ directory traversal, private staged writes and reviewed local entry operations.
 The local browser does not use artifact context metadata to connect to a cluster.
 See [reviewed local artifacts](adr/0037-reviewed-local-artifacts.md).
 
+[Container inspection](../src/kuberich/services/container_inspection.py) owns
+finite Pod/configuration reads and separate fresh disclosure intents. Its
+[pure model](../src/kuberich/domain/container_inspection.py) and
+[resolver](../src/kuberich/domain/container_environment.py) publish metadata
+without retained values. The nested viewer reuses existing captured-target,
+clipboard and metadata-export boundaries; connection teardown drains even
+detached inspectors. See [container configuration provenance](adr/0038-container-configuration-provenance.md).
+
 [Sessions](../src/kuberich/services/sessions.py),
 [workspace](../src/kuberich/services/workspace.py), and
 [watches](../src/kuberich/services/watches.py) own connections and active reads.

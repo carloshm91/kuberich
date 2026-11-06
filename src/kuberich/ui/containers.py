@@ -1,6 +1,7 @@
 """Pod/container drill-down retains the captured target and the parent viewport."""
 
 import asyncio
+from collections.abc import Callable
 from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Any, ClassVar
@@ -13,6 +14,7 @@ from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.events import ScreenResume
 from textual.widgets import Button, DataTable, Input, Static
 
+from kuberich.domain.container_inspection import ContainerIdentity
 from kuberich.domain.containers import CONTAINER_COLUMNS, ContainerRow, container_rows
 from kuberich.domain.metrics import MetricReport
 from kuberich.domain.resources import ResourceRecord
@@ -59,6 +61,7 @@ class ContainerScreen(CommandWorkspace):
         Binding("a", "attach", "Attach"),
         Binding("u", "upload", "Upload"),
         Binding("d", "download", "Download"),
+        Binding("e", "environment", "Environment / image"),
     ]
     DEFAULT_CSS = """
     ContainerScreen { layout: vertical; background: $background; }
@@ -87,6 +90,7 @@ class ContainerScreen(CommandWorkspace):
         chrome: WorkspaceChrome | None = None,
         trail: tuple[str, ...] = ("pods",),
         metrics: MetricReport | None = None,
+        inspect_container: Callable[[ContainerIdentity], None] | None = None,
     ) -> None:
         super().__init__()
         self.stream = stream
@@ -97,6 +101,7 @@ class ContainerScreen(CommandWorkspace):
         self.shell, self.processes = shell, processes
         self.attach = attach
         self.transfers = transfers
+        self.inspect_container = inspect_container
         self.chrome, self.trail = chrome, (*trail, "containers")
         self._metrics = metrics or MetricReport()
         self.rows = container_rows(manifest, self._metrics)
@@ -128,7 +133,11 @@ class ContainerScreen(CommandWorkspace):
                     id="container-title",
                 )
                 yield Static(
-                    "Containers · s shell" if self.shell is not None else "Containers Enter logs",
+                    "e env · s shell · Enter logs"
+                    if self.inspect_container is not None
+                    else "Containers · s shell"
+                    if self.shell is not None
+                    else "Containers Enter logs",
                     markup=False,
                     id="container-hints",
                 )
@@ -218,6 +227,33 @@ class ContainerScreen(CommandWorkspace):
             raise AppError("The selected container is no longer present.")
         return name
 
+    def capture_container(self) -> ContainerIdentity:
+        """Freeze the selected row's declaration family before starting any work."""
+        self.validate_target()
+        name = self._selected_name()
+        row = next(row for row in self.rows if row.name == name)
+        if row.kind == "App":
+            return ContainerIdentity("containers", name, "App")
+        if row.kind == "Ephemeral":
+            return ContainerIdentity("ephemeralContainers", name, "Ephemeral")
+        if row.kind == "Sidecar":
+            return ContainerIdentity("initContainers", name, "Sidecar")
+        return ContainerIdentity("initContainers", name, "Init")
+
+    def action_environment(self) -> None:
+        if (
+            self.app.screen is not self
+            or isinstance(self.focused, Input)
+            or self.inspect_container is None
+        ):
+            return
+        try:
+            identity = self.capture_container()
+        except AppError as error:
+            self._set_status(safe_text(str(error)))
+            return
+        self.inspect_container(identity)
+
     def observe_record(self, record: ResourceRecord, metrics: MetricReport | None = None) -> None:
         metrics = metrics or MetricReport()
         if (
@@ -290,6 +326,8 @@ class ContainerScreen(CommandWorkspace):
             return self.attach is not None and self.processes is not None
         if action in {"upload", "download"}:
             return self.transfers is not None
+        if action == "environment":
+            return self.inspect_container is not None and bool(self.names)
         return True
 
     def action_shell(self) -> None:

@@ -156,6 +156,7 @@ class WorkspacePresenter:
                         if not isinstance(screen, ModalScreen):
                             continue
                         from kuberich.ui.configuration_data import ConfigurationScreen
+                        from kuberich.ui.container_inspection import ContainerInspectionScreen
                         from kuberich.ui.containers import ContainerScreen
                         from kuberich.ui.diagnostic_evidence import DiagnosticEvidenceScreen
                         from kuberich.ui.inspection import InspectionScreen
@@ -170,6 +171,7 @@ class WorkspacePresenter:
                                 ContainerScreen,
                                 ShellScreen,
                                 ConfigurationScreen,
+                                ContainerInspectionScreen,
                                 DiagnosticEvidenceScreen,
                             ),
                         ):
@@ -194,6 +196,20 @@ class WorkspacePresenter:
                                         ),
                                     )
                             if (
+                                isinstance(screen, ContainerInspectionScreen)
+                                and observation.snapshot is not None
+                            ):
+                                record = next(
+                                    (
+                                        item
+                                        for item in observation.snapshot.items
+                                        if item.uid == screen.service.target.uid
+                                    ),
+                                    None,
+                                )
+                                if record is not None:
+                                    screen.observe_pod(record)
+                            if (
                                 (
                                     isinstance(
                                         screen,
@@ -201,6 +217,7 @@ class WorkspacePresenter:
                                             ContainerScreen,
                                             InspectionScreen,
                                             DiagnosticEvidenceScreen,
+                                            ContainerInspectionScreen,
                                         ),
                                     )
                                     and screen.invalidated

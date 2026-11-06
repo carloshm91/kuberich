@@ -174,6 +174,7 @@ CTX_SHORTCUTS = (
 )
 CONTAINER_SHORTCUTS = (
     ("Enter / l", "Logs"),
+    ("e", "Environment / image"),
     ("s / x", "Shell"),
     ("a", "Attach"),
     ("u / d", "Upload / download"),
@@ -181,6 +182,16 @@ CONTAINER_SHORTCUTS = (
     ("g/G", "First / last"),
     ("Esc", "Pods"),
     ("Ctrl+Q", "Quit"),
+)
+CONTAINER_INSPECTION_SHORTCUTS = (
+    ("e / i / s", "Environment / image / sources"),
+    ("r", "Reveal / hide"),
+    ("Shift+R", "Reload"),
+    ("Ctrl+Y", "Copy value"),
+    ("j/k", "Down / up"),
+    ("g/G", "First / last"),
+    (":", "Command"),
+    ("Esc", "Containers"),
 )
 LOG_SHORTCUTS = (
     ("c", "Container"),

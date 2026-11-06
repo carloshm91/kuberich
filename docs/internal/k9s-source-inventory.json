@@ -1073,7 +1073,7 @@
       "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/dao/img_scan.go",
       "sha256": "6b68ee39a5c2cb038229976e5ef785f828669c3a8ee6030e396f614a627fdcfb",
       "tasks": [
-        "O07",
+        "X03",
         "U03"
       ],
       "symbols": {}
@@ -2233,7 +2233,7 @@
       "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/render/img_scan.go",
       "sha256": "09b28aeba55bbc235b1d94551cfa739a26b95165d307d96f4d3580741b98aa71",
       "tasks": [
-        "O07",
+        "X03",
         "U03"
       ],
       "symbols": {}
@@ -3498,7 +3498,7 @@
       "url": "https://github.com/derailed/k9s/blob/558caafe7ba067467de46b320cc22ef11fef9c34/internal/view/img_scan.go",
       "sha256": "c261e8c24ac216cf51f04544f31be21d8461376ca20539078e85ff9ff87f2c53",
       "tasks": [
-        "O07",
+        "X03",
         "U03"
       ],
       "symbols": {
@@ -6354,7 +6354,7 @@
       {
         "source": "internal/render/img_scan.go",
         "tasks": [
-          "O07",
+          "X03",
           "U03"
         ]
       },

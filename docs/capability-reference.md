@@ -145,8 +145,8 @@ failed pods in the current view.
 **available** — Review Job/CronJob suspension and resume, or create an independent manual Job from
 the selected CronJob template. The schedule and concurrency policy do not govern a manual run.
 ### Configuration data and environment sources
-**partial** — ConfigMap and Secret data have per-key reveal/copy, UTF-8/Base64 choice, and explicit
-manifest editing. Tracing application environment values to all their sources is unavailable.
+**partial** — ConfigMap and Secret keys have explicit reveal/copy and editing. Development source
+also traces container environment sources and image facts; values require fresh disclosure.
 ### Local manifest directories, YAML edit, apply/delete and Kustomize
 **planned** — Local manifest directories, apply/delete workflows and Kustomize integration are
 planned.

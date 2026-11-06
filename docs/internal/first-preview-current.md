@@ -1,5 +1,50 @@
 # Development checkpoint
 
+## Active unreleased 0.4.0 container inspection
+
+Six of ten technical tasks are delivered. Local exports are protected-merged in
+PR #315 at `b781c793cbb7834d2dfe2c1bbe55c2caef1f7005`, with all 27 quality jobs,
+Repository checks and DCO passed on final head `9fe187d`. Independent coverage
+was 98.7095% lines / 95.5652% branches on Linux Python 3.13 and 98.7130% /
+95.5764% on macOS Python 3.12, covering all 242 modules and 100 critical modules
+completely; changed lines measured 97.58%. The final hosted matrix includes
+actual owned-kind regressions and all four native targets. Earlier pending
+export statements below are historical.
+
+Issue #74 is the sole implementation task. Development source now opens a
+captured container's Environment / Image / Sources workspace from Pod → Enter
+→ `e`. Values start hidden; reveal and copy each use a fresh one-use read.
+This describes current API configuration, not actual process environment.
+Source version remains 0.3.0; the published release predates this inspector.
+
+The deterministic cohort passed 184 cases with exact 100% line/branch coverage
+for both new critical modules. The reviewed service cohort passed 69 cases;
+Root reader-limit, navigation-key and existing resource cases passed 209, and
+typed-error/qualification enrollment cases passed 75. Actual App UI trials cover
+all container families, stale source Reload, focus, parent viewport, metadata-only
+export/browser/view/copy and screenshot blocking. The final source command
+`uv run pytest tests/terminal/test_container_inspection.py -q` passed both 40×12
+and 100×30 cases, including deliberate network/subprocess audit controls and
+exact restoration. Final outside-checkout installed console/module PTYs passed
+both cases in 22.77 seconds. The latest owned-kind trial passed seven scenarios
+in 35.7932 seconds, with 133 observed product GETs, unchanged source bindings and
+complete cleanup. Integrated qualification caught and corrected the compact
+shell-hint regression; all four workspace sizes passed afterward. A large-log
+instrumented export wait failed in the initial concurrent suite, while its
+isolated three-mode diagnostic passed; full hosted qualification remains
+required. After a server restart interrupted the next application run, its
+bounded replacement passed 7,648 cases with one hosted-macOS-only skip in
+593.65 seconds. Independent coverage passed across all 246 modules: 98.6876%
+lines, 95.5453% branches, all 102 critical modules completely covered and
+97.96% changed lines. Static/type/documentation/site-build checks passed; the
+complete exact-head hosted behavioral/source/native matrix remains pending.
+No manual trial is requested. See the
+[container inspection acceptance record](acceptance/container-inspection.md).
+
+Remaining phase work follows in order: broader historical metrics, the remaining
+curated resource families, then cumulative qualification in #75. Publication is
+separate from these development checkpoints.
+
 ## Active unreleased 0.4.0 local exports
 
 Five of ten technical tasks are delivered: metrics, Pulse, relationships,

@@ -75,6 +75,16 @@ class ConnectionProblem(Exception):
         self.state = state
 
 
+class ResponseLimitExceeded(ConnectionProblem):
+    """The streamed body exceeded its bound, distinct from HTTP or JSON failures."""
+
+    def __init__(self, limit: int) -> None:
+        super().__init__(
+            ConnectionState.API_ERROR, "Invalid or oversized Kubernetes JSON response."
+        )
+        self.limit = limit
+
+
 class HttpProblem(ConnectionProblem):
     """Carry an HTTP status without retaining the server body or credentials."""
 

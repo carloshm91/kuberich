@@ -84,7 +84,7 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     second = catalog.cluster_stages(
         tmp_path, Path("/owned/kind"), Path("/owned/kubectl"), Path("/owned/app.whl"), 2
     )
-    assert len(first) == len(second) == 19
+    assert len(first) == len(second) == 20
     acquisition = first[0]
     assert acquisition.name == "kind-1-diagnostic-tools"
     assert acquisition.command[4:] == (
@@ -131,6 +131,17 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     assert authorization_evidence == tmp_path / "kind-1-authorization" / "evidence.json"
     assert repeated_authorization_evidence == tmp_path / "kind-2-authorization" / "evidence.json"
     assert authorization_evidence.parent != repeated_authorization_evidence.parent
+    inspection = next(stage for stage in first if stage.name == "kind-1-container-inspection")
+    repeated_inspection = next(
+        stage for stage in second if stage.name == "kind-2-container-inspection"
+    )
+    inspection_evidence = Path(inspection.command[inspection.command.index("--evidence") + 1])
+    repeated_inspection_evidence = Path(
+        repeated_inspection.command[repeated_inspection.command.index("--evidence") + 1]
+    )
+    assert inspection_evidence == tmp_path / "kind-1-container-inspection/evidence.json"
+    assert repeated_inspection_evidence == tmp_path / "kind-2-container-inspection/evidence.json"
+    assert inspection_evidence.parent != repeated_inspection_evidence.parent
     for stage in first[1:]:
         module = stage.command[4]
         assert module in body

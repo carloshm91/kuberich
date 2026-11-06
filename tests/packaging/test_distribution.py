@@ -17,6 +17,7 @@ import pytest
 from tests.support.aggregate_terminal import terminal_aggregate_logs
 from tests.support.azure_handoff import azure_terminal_trial
 from tests.support.connections import fake_api
+from tests.support.container_inspection_terminal import terminal_container_inspection
 from tests.support.credential_handoff import credential_terminal_trial, encrypted_key_terminal_trial
 from tests.support.custom_terminal import terminal_custom_views
 from tests.support.distribution import PROJECT, run
@@ -38,6 +39,25 @@ from tests.support.transports import TerminalTransport
 from tests.support.workload_terminal import terminal_workload
 from tests.support.workloads import workload_api
 from tests.terminal.pty_support import TerminalSession
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+def test_installed_container_inspection_uses_fresh_reads_and_restores_terminal(
+    installed_wheel, artifacts, tmp_path, entry_point
+):
+    binary, _ = installed_wheel
+    command = (
+        [str(binary / "kuberich")]
+        if entry_point == "console"
+        else [str(binary / "python"), "-m", "kuberich"]
+    )
+    terminal_container_inspection(
+        command,
+        tmp_path,
+        evidence=f"installed-container-inspection-{entry_point}",
+        size=(100, 30),
+        wheel_sha256=hashlib.sha256(artifacts[0].read_bytes()).hexdigest(),
+    )
 
 
 @pytest.mark.parametrize("entry_point", ["console", "module"])
