@@ -4,6 +4,7 @@ import asyncio
 import threading
 
 import pytest
+from textual.widgets import Button
 
 from kuberich.adapters.artifact_files import ArtifactFiles
 from kuberich.ui.artifact_browser import ArtifactBrowserScreen
@@ -72,13 +73,31 @@ async def test_offline_list_filter_refresh_cursor_scroll_and_explicit_view_copy_
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("size", [(100, 30), (40, 12)])
-async def test_named_delete_cancel_then_confirm_refreshes_selection(tmp_path, size):
+@pytest.mark.parametrize("hold_feedback", [False, True])
+async def test_named_delete_cancel_then_confirm_refreshes_selection(
+    tmp_path, size, hold_feedback, monkeypatch
+):
     service = service_for(tmp_path)
     ref = await saved_ref(service)
     screen = browser_for(service)
     app = ExportTestApp(screen)
     async with app.run_test(size=size) as pilot:
         await browser_ready(screen)
+        selected = screen.selected_entry().ref
+        delete = screen.query_one("#artifacts-delete", Button)
+        native_timer = delete.set_timer
+        feedback_timers = []
+
+        def timer(*args, **kwargs):
+            result = native_timer(*args, **kwargs)
+            if hold_feedback and not feedback_timers:
+                # Hold the native press-feedback callback independently of
+                # confirmation cancellation and service-task drainage.
+                result.pause()
+                feedback_timers.append(result)
+            return result
+
+        monkeypatch.setattr(delete, "set_timer", timer)
         await pilot.click("#artifacts-delete")
         await wait_for(
             lambda: isinstance(app.screen, ArtifactConfirmation) and app.screen.is_mounted
@@ -87,10 +106,39 @@ async def test_named_delete_cancel_then_confirm_refreshes_selection(tmp_path, si
         await pilot.press("escape")
         await wait_for(lambda: screen.operation_count == 0)
         assert (ref.directory.path / ref.name).exists()
-        await pilot.click("#artifacts-delete")
-        await wait_for(
-            lambda: isinstance(app.screen, ArtifactConfirmation) and app.screen.is_mounted
-        )
+
+        async def delete_again():
+            # A drained operation does not end Textual's mouse-click debounce.
+            await wait_for(
+                lambda: (
+                    app.screen is screen
+                    and screen.operation_count == 0
+                    and not delete.has_class("-active")
+                )
+            )
+            await pilot.click("#artifacts-delete")
+            await wait_for(
+                lambda: isinstance(app.screen, ArtifactConfirmation) and app.screen.is_mounted
+            )
+
+        repeated = asyncio.create_task(delete_again())
+        try:
+            async with asyncio.timeout(5):
+                if hold_feedback:
+                    await pilot.pause()
+                    assert feedback_timers and delete.has_class("-active")
+                    assert not repeated.done() and app.screen is screen
+                    assert screen.operation_count == 0 and screen.selected_entry().ref == selected
+                    assert (ref.directory.path / ref.name).exists()
+                    feedback_timers[0].resume()
+                await repeated
+        finally:
+            for feedback_timer in feedback_timers:
+                feedback_timer.resume()
+            if not repeated.done():
+                repeated.cancel()
+            await asyncio.gather(repeated, return_exceptions=True)
+        assert ref.name in app.screen.message and str(ref.directory.path) in app.screen.message
         await pilot.click("#artifact-confirm-yes")
         await wait_for(lambda: screen.table.row_count == 0 and screen.operation_count == 0)
         assert not (ref.directory.path / ref.name).exists()

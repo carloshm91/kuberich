@@ -38,6 +38,10 @@ bounded replacement passed 7,648 cases with one hosted-macOS-only skip in
 lines, 95.5453% branches, all 102 critical modules completely covered and
 97.96% changed lines. Static/type/documentation/site-build checks passed; the
 complete exact-head hosted behavioral/source/native matrix remains pending.
+The first hosted candidate passed Fast tests, Repository checks, DCO and every
+native target, but stale workflow/documentation inventory assertions and a
+repeat-click browser fixture kept it unqualified. Test-only corrections preserve
+all product inputs; the browser cohort passed all 13 cases on Python 3.12/3.14.
 No manual trial is requested. See the
 [container inspection acceptance record](acceptance/container-inspection.md).
 

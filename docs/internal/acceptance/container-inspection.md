@@ -174,6 +174,38 @@ documentation-source and both-site build/check commands passed: 53 pages,
 2,170 local links/assets and 70 files. These are local build results, not a
 website deployment. Logs remain under `artifacts/issue74/root/`.
 
+## First hosted candidate and test-only corrections
+
+PR #316 candidate `a958753c65e79617daaf690320fc9e8a9c6bc2ec` passed Fast tests,
+Repository checks, DCO and all four native targets. It remains unqualified:
+the full source matrix exposed stale kind/documentation enrollment assertions
+and a repeat-click fixture race. Original job logs and annotations remain under
+`artifacts/issue74/delivery/hosted-pr316-a958753/`.
+
+The workflow now has 19 mandatory owned-cluster stages rather than 18. The
+policy test names the inspector verifier and retained evidence explicitly.
+Documentation enrollment now has 359 records; exact protected export history
+at `b781c793cbb7834d2dfe2c1bbe55c2caef1f7005` preserves all 357 earlier records,
+with precisely the new ADR and acceptance record appended. All earlier hash,
+history and canonical-page assertions remain in force. The focused workflow
+policy/enrollment/verifier cohort passed 48 cases.
+
+On Python 3.14, a second Delete click could arrive while Textual's native button
+press feedback still suppressed clicks, even though service work had drained.
+An actual paused native feedback Timer reproduced the original five-second
+failure. The test now waits for the originating browser, drained operation and
+cleared native feedback before clicking again. Controlled held-feedback cases
+prove that the file and metadata selection remain intact until the timer resumes,
+followed by a fresh named confirmation and actual deletion/refresh. Both Python
+3.14.3 and 3.12.12 passed all 13 browser cases, in 8.51 and 11.70 seconds.
+The repeated-click flow retains its original five-second bound. No production
+code, dependencies or qualified kind input changed.
+
+The complete local quality selection passed 1,807 cases with one skip; two media
+capture cases correctly refused the still-dirty source tree. Their unchanged
+clean-committed-source precondition must be met before final local capture
+verification. This attempt is retained as failed, not as a complete green suite.
+
 ## Remaining qualification
 
 The complete exact-head hosted behavioral/source/native matrix remains required,
