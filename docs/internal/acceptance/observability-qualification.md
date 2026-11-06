@@ -92,6 +92,23 @@ Held-retirement controls preserve both viewport sizes, file/mode/focus and
 cleanup assertions; the related scope passes 40 cases in 30.42 seconds. No
 production counter is cleared early, and the original hosted failure remains.
 
+An isolated clean Python 3.14.3 UI/quality/native selection passed 3,291 cases
+with one explicit skip and one fragmented-terminal failure in 285.99 seconds.
+All UI/quality cases passed; the new native graph probe had accepted a loading
+root whose observed UID was still unverified. Its early End position was valid
+for that smaller graph, then became a different viewport once later members
+arrived. The footer can also say Observed references between child requests,
+so it does not establish this fixture's final geometry by itself.
+
+The corrected witness waits for the fixture's verified last child,
+PriorityClass/batch, then clears its filter, explicitly reselects the root and
+checks exact expected/observed root UIDs before opening and after Back. Both
+native request traces establish that child GET order, without a generic graph
+completeness claim. Default/fragmented paths and the mixed/loading/early-observed
+negative controls pass four cases in 15.19 seconds on Python 3.12. The failed
+3.14 raw frames, unchanged source and original result remain retained; the new
+committed observer still needs its targeted Python 3.14 verification.
+
 The installer helper originally left an owned descendant alive after both a
 successful leader exit and a timeout whose leader exited on SIGTERM. Original
 red receipts retain explicit independent cleanup. The correction always drains

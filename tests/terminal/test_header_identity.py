@@ -66,6 +66,41 @@ def role_table_complete(display):
     )
 
 
+def relationships_observed(display):
+    return (
+        "xray · Pod/example" in display[10]
+        and "Observed references" in display[35]
+        and "Loading references" not in display[35]
+    )
+
+
+def relationship_last_member_ready(display):
+    return (
+        relationships_observed(display)
+        and "Pod/example" in display[12]
+        and "ready" in display[12]
+        and any("PriorityClass/batch" in line and "ready" in line for line in display[12:33])
+    )
+
+
+def relationship_root_complete(display):
+    return (
+        relationships_observed(display)
+        and display[6].startswith(" / Filter resources")
+        and "Pod/example" in display[12]
+        and "ready" in display[12]
+        and any("ReplicaSet/replica" in line and "ready" in line for line in display[12:33])
+    )
+
+
+def relationship_identity_verified(display, uid):
+    return (
+        relationships_observed(display)
+        and "expected UID: " + uid in display[12]
+        and "observed UID: " + uid in display[13]
+    )
+
+
 def drive(directory, path, api, stopping, output, read_size):
     terminal = None
     frames = {}
@@ -119,12 +154,35 @@ def drive(directory, path, api, stopping, output, read_size):
             frame("pods-back", ("pods(", "example", "live"), marker)
             marker = terminal.send(b":xray\r")
             frame("relationships", ("xray", "Pod/example"), marker)
+            # The footer can say Observed after the root GET, before the last
+            # child exists. This fixture's final sorted child is PriorityClass/batch.
+            marker = terminal.send(b"/batch\r")
+            frame("relationship-last-member", (), marker, predicate=relationship_last_member_ready)
+            marker = terminal.send(b"\x1b")
+            frame(
+                "relationship-filter-cleared",
+                (" / Filter resources", "Observed references"),
+                marker,
+            )
+            marker = terminal.send(b"g")
+            frame("relationship-root-complete", (), marker, predicate=relationship_root_complete)
+            pod_uid = api.objects["", "pods", NS, "example"]["metadata"]["uid"]
             marker = terminal.send(b"\x1b[F")
-            frame("relationship-identity", ("expected UID:", "observed UID:"), marker)
+            frame(
+                "relationship-identity",
+                (),
+                marker,
+                predicate=lambda display: relationship_identity_verified(display, pod_uid),
+            )
             marker = terminal.send(b"o")
             frame("relationship-open", ("pods(", "example", "live"), marker)
             marker = terminal.send(b"\x1b")
-            frame("relationship-back", ("xray", "expected UID:", "observed UID:"), marker)
+            frame(
+                "relationship-back",
+                (),
+                marker,
+                predicate=lambda display: relationship_identity_verified(display, pod_uid),
+            )
             marker = terminal.send(b"\x1b[H")
             frame("relationship-left", ("xray", "RESOURCE"), marker)
             resized("relationships", "xray", "RESOURCE")
@@ -266,3 +324,23 @@ def test_far_right_oracle_rejects_a_mixed_repaint_before_the_first_horizontal_ke
     loading[21] = f" │ observed UID: roles-{NS}-{ROLE}"
     assert "roles(" in "\n".join(loading) and ROLE in "\n".join(loading)
     assert not role_table_complete(loading)
+
+
+def test_relationship_readiness_rejects_unverified_and_early_observed_root():
+    loading = [" " * 120 for _ in range(36)]
+    loading[10] = "xray · Pod/example"
+    loading[12] = "Pod/example loading expected UID: team-pod-uid"
+    loading[13] = "observed UID: unverified"
+    loading[35] = "xray relationships · Loading references"
+    assert "expected UID:" in loading[12] and "observed UID:" in loading[13]
+    assert not relationship_last_member_ready(loading)
+    assert not relationship_identity_verified(loading, "team-pod-uid")
+    observed = loading.copy()
+    observed[12] = "Pod/example ready expected UID: team-pod-uid"
+    observed[13] = "observed UID: team-pod-uid"
+    observed[35] = "xray relationships · Observed references"
+    assert relationships_observed(observed)
+    assert not relationship_last_member_ready(observed)
+    observed[16] = "PriorityClass/batch ready"
+    assert relationship_last_member_ready(observed)
+    assert relationship_identity_verified(observed, "team-pod-uid")

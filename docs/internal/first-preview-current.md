@@ -49,6 +49,10 @@ return before the current save worker retired. Controlled lifecycle coverage
 reproduces this ordering; bounded real-drain predicates and the 40-case export
 scope pass. The next committed-source review also runs all UI and quality
 checks in a separate local Python 3.14 environment before pushing.
+That Python 3.14 selection passed all 3,291 UI/quality cases, with one skip and
+one fragmented native probe failure caused by an accepted loading graph. The
+observer now waits for the fixture's final known member and exact observed UID;
+four controls pass on 3.12. Targeted 3.14 verification is required before push.
 
 ## Unreleased 0.4.0 curated-resource checkpoint
 
