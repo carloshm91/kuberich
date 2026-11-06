@@ -7,7 +7,7 @@ import json
 import sys
 import threading
 import weakref
-from contextlib import aclosing
+from contextlib import aclosing, asynccontextmanager
 from pathlib import Path
 
 import pytest
@@ -566,47 +566,133 @@ async def test_watch_timeout_resumes_version_after_backoff(tmp_path: Path) -> No
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("checkpoint", [False, True])
+@pytest.mark.parametrize("slow_initial_list", [False, True])
 async def test_quiet_watch_outlives_request_deadline_and_renews_without_stale_state(
-    tmp_path: Path, checkpoint: bool
+    tmp_path: Path, checkpoint: bool, slow_initial_list: bool
 ) -> None:
     lists, versions, updates, clock = [], [], [], Clock()
+    release_initial_list, drained = asyncio.Event(), asyncio.Event()
+    baseline = None
+    active = 0
 
     async def handler(request):
-        if "watch" not in request.query:
-            lists.append(True)
-            return web.json_response(collection(item(), rv="initial-checkpoint"))
-        versions.append(request.query["resourceVersion"])
-        assert request.query["timeoutSeconds"] == "1"
-        response = web.StreamResponse()
-        await response.prepare(request)
-        if checkpoint and len(versions) == 1:
-            await response.write(frame(bookmark("renewed-checkpoint")))
-        await asyncio.sleep(int(request.query["timeoutSeconds"]))
-        await response.write_eof()
-        return response
+        nonlocal active
+        active += 1
+        drained.clear()
+        try:
+            if "watch" not in request.query:
+                lists.append(True)
+                if slow_initial_list and len(lists) == 1:
+                    # Release only after the finite LIST deadline has actually
+                    # expired, independently of host scheduling speed.
+                    await release_initial_list.wait()
+                return web.json_response(collection(item(), rv="initial-checkpoint"))
+            versions.append(request.query["resourceVersion"])
+            assert request.query["timeoutSeconds"] == "1"
+            response = web.StreamResponse()
+            await response.prepare(request)
+            if checkpoint and len(versions) == 1:
+                await response.write(frame(bookmark("renewed-checkpoint")))
+            if len(versions) == 3:
+                while request.transport is not None and not request.transport.is_closing():
+                    await asyncio.sleep(0.01)
+            else:
+                await asyncio.sleep(int(request.query["timeoutSeconds"]))
+                await response.write_eof()
+            return response
+        finally:
+            active -= 1
+            if active == 0:
+                drained.set()
 
     async def sink(update):
+        nonlocal baseline
+        if update.status is SyncStatus.SNAPSHOT:
+            assert baseline is None, "Quiet watch unexpectedly relisted after its snapshot."
+            assert versions == []
+            # Watch establishment and every renewal remain inside the observed
+            # interval; finite cold-LIST failures precede that contract.
+            baseline = len(lists), tuple(clock.delays), len(updates)
         updates.append(update)
+        if update.status is SyncStatus.RETRYING and baseline is None:
+            assert update.problem.state is ConnectionState.TIMEOUT
+            assert update.snapshot is None
+            if lists:
+                release_initial_list.set()
         if update.status is SyncStatus.LIVE and len(versions) == 3:
             raise Finished
 
     async with reader_fixture(tmp_path, handler, timeout=0.1) as reader:
+        pool = reader.session.api.rest_client.pool_manager
         before = (tmp_path / "fixture-config").read_bytes()
         async with asyncio.timeout(5):
             with pytest.raises(Finished):
                 await ListWatch(reader, sleep=clock.sleep).run(pod_resource(), "team", sink)
-        assert not reader.session.api.rest_client.pool_manager.connector._acquired
+            await drained.wait()
+        assert active == 0 and not pool.connector._acquired
         assert (tmp_path / "fixture-config").read_bytes() == before
+    assert pool.closed and reader.session.api is None
     assert versions == [
         "initial-checkpoint",
         "renewed-checkpoint" if checkpoint else "initial-checkpoint",
         "renewed-checkpoint" if checkpoint else "initial-checkpoint",
     ]
-    assert len(lists) == 1 and clock.delays == []
+    assert baseline is not None
+    list_count, startup_delays, snapshot_index = baseline
+    assert len(lists) == list_count, "Quiet watch unexpectedly relisted after its snapshot."
+    assert tuple(clock.delays) == startup_delays, "Quiet watch unexpectedly backed off."
+    startup = updates[1:snapshot_index]
+    assert updates[0].status is SyncStatus.LOADING
     assert all(
-        update.status not in {SyncStatus.RETRYING, SyncStatus.RELISTING} for update in updates
+        update.status is SyncStatus.RETRYING
+        and update.problem.state is ConnectionState.TIMEOUT
+        and update.snapshot is None
+        for update in startup
     )
+    assert len(startup) == len(startup_delays)
+    if slow_initial_list:
+        assert list_count >= 2 and startup
+    assert updates[snapshot_index].status is SyncStatus.SNAPSHOT
+    assert all(update.status is SyncStatus.LIVE for update in updates[snapshot_index + 1 :])
     assert updates[-1].snapshot.items[0].uid == "owned-one"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "status,reason",
+    [(503, "Quiet watch unexpectedly backed off"), (410, "Quiet watch unexpectedly relisted")],
+)
+async def test_quiet_watch_contract_rejects_failure_after_establishment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, status: int, reason: str
+) -> None:
+    original_fixture = reader_fixture
+    watch_requests = 0
+    cleanup = []
+
+    @asynccontextmanager
+    async def failing_fixture(directory, handler, *, timeout):
+        async def fail_renewal(request):
+            nonlocal watch_requests
+            if "watch" in request.query:
+                watch_requests += 1
+                if watch_requests == 2:
+                    return web.Response(status=status)
+            return await handler(request)
+
+        try:
+            async with original_fixture(directory, fail_renewal, timeout=timeout) as reader:
+                pool = reader.session.api.rest_client.pool_manager
+                yield reader
+        finally:
+            cleanup.append((pool.closed, reader.session.api is None))
+
+    monkeypatch.setattr(sys.modules[__name__], "reader_fixture", failing_fixture)
+    with pytest.raises(AssertionError, match=reason):
+        await test_quiet_watch_outlives_request_deadline_and_renews_without_stale_state(
+            tmp_path, checkpoint=True, slow_initial_list=True
+        )
+    assert watch_requests == (4 if status == 503 else 2)
+    assert cleanup == [(True, True)]
 
 
 @pytest.mark.asyncio

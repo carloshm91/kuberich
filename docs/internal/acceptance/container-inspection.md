@@ -206,6 +206,37 @@ capture cases correctly refused the still-dirty source tree. Their unchanged
 clean-committed-source precondition must be met before final local capture
 verification. This attempt is retained as failed, not as a complete green suite.
 
+## Second hosted candidate and quiet-watch observation boundary
+
+Candidate `44d9bcf997814f9f8fc7ba5affaf76aa10a299fb` passed Repository checks
+and DCO but failed Fast tests before the full matrix could start. An existing
+quiet-watch contract observed two initial LIST requests while all three watch
+resourceVersions matched the expected checkpoints. The hosted log does not
+include the intermediate problem type. Its original failure and completed
+unqualified result remain under `artifacts/issue74/delivery/hosted-pr316-44d9bcf/`.
+
+A controlled real HTTP fixture held the first finite LIST until the unchanged
+0.1-second deadline produced TIMEOUT/RETRYING without a snapshot. That reproduced
+the same two-LIST/three-correct-watch observation, followed by successful
+renewals. This establishes a concrete startup-timeout path, not certainty about
+the original hosted problem type. Earlier probe cleanup-observation failures
+remain retained separately.
+
+The test now captures its observation baseline exactly once at the first valid
+SNAPSHOT. Every earlier retry must be a TIMEOUT without a snapshot; establishment
+and every renewal must retain strict no-LIST/no-backoff/no-stale-transition
+assertions. Real HTTP 503 and 410 faults on the second watch must fail those
+specific post-baseline assertions. Deliberately delayed initial LIST variants
+exercise the normal startup-recovery path. Finite and total deadlines remain
+0.1 and five seconds; handlers, client pool and session must drain and fixture
+configuration must stay unchanged.
+
+All 63 watch contracts passed on Python 3.12.12 in 19.96 seconds. All six changed
+cases passed on Python 3.13.12 and 3.14.3 in 12.67 and 12.72 seconds. Ruff,
+formatting and private-access checks passed. No production/helper code,
+dependency or qualified kind input changed. Exact source hashes, originals,
+negative controls and cleanup receipts remain in `artifacts/issue74/watch-ci/`.
+
 ## Remaining qualification
 
 The complete exact-head hosted behavioral/source/native matrix remains required,

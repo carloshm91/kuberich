@@ -36,6 +36,8 @@ docs/internal/backlog.json records the reviewed plan and release phases.
 - Pass explicit argv/kubeconfig/context/namespace; never interpolate resource names into shell strings.
 - Enforce read-only, target identity and confirmation policy at effectful service boundaries.
 - Escape remote markup/control sequences and redact credentials in display, logs and exports.
+- Inspect only task-owned processes; never dump global process arguments or
+  environments, which can contain credentials.
 - Keep temporary credential material private and clean it up through failure and cancellation.
 - Use disposable owned clusters and fixtures; never automate tests against the user's active context.
 - Real provider trials and real-cluster changes require explicit task authorization.

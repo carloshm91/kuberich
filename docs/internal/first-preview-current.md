@@ -42,6 +42,10 @@ The first hosted candidate passed Fast tests, Repository checks, DCO and every
 native target, but stale workflow/documentation inventory assertions and a
 repeat-click browser fixture kept it unqualified. Test-only corrections preserve
 all product inputs; the browser cohort passed all 13 cases on Python 3.12/3.14.
+The second candidate exposed an existing quiet-watch test's initial-LIST
+observation boundary. A controlled timeout reproduction and strict post-SNAPSHOT
+503/410 negative controls now cover that path without widening deadlines:
+63 watch cases passed on Python 3.12 and all six changed cases on 3.13/3.14.
 No manual trial is requested. See the
 [container inspection acceptance record](acceptance/container-inspection.md).
 
