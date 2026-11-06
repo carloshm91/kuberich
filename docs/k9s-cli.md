@@ -5,12 +5,14 @@ Reference: K9s v0.51.0,
 This is the first-release contract. The development build implements help/version
 commands, `info`, `config init`/`check`, log options, read-only policy, initial
 view/scope/help commands, three terminal visibility flags, context/namespace sessions,
-effective refresh and invocation connection overrides. It recognizes all 26
+effective refresh, invocation connection overrides and the initial local export directory. It recognizes all 26
 audited flags, with explicit unavailable errors for behavior that has not shipped.
 Recognizing a flag does not establish Kubernetes or K9s compatibility.
 See the development checkpoint below, [local preferences](configuration.md) and
 [terminal controls](terminal-preview.md).
-No KubeRich application is publicly released yet.
+Public packages are available through the [installation guide](installation.md).
+This audit also records development behavior; the [command reference](cli-reference.md)
+and task guides distinguish unreleased features from the installed release.
 
 Every explicitly registered launch flag is represented below. KubeRich keeps the
 familiar spelling as a compatibility alias; kebab-case aliases may also be
@@ -31,7 +33,7 @@ scheduled later report that limitation until their owning task is implemented.
 | `--command`, `-c` | Initial resource/view command; B03/F05 |
 | `--readonly` | Enforce read-only policy in services and UI; F04/F05/M01 |
 | `--write` | Explicitly override configured read-only preference; F05/M01 |
-| `--screen-dump-dir` | Chosen export directory; O06 |
+| `--screen-dump-dir` | Initial local export/browser directory for this invocation; O06 |
 | `--kubeconfig` | Explicit kubeconfig path; C01/F05 |
 | `--request-timeout` | Validated API request timeout; C01/F05 |
 | `--context` | Explicit initial context; C01/F05 |
@@ -63,19 +65,20 @@ scheduled later report that limitation until their owning task is implemented.
 | `--kubeconfig`, `--context`, `--namespace`/`-n`, `--all-namespaces`/`-A`, `--request-timeout` | Read-only catalogue, explicit background client and namespace discovery/selection; see [C01](context-sessions.md) |
 | Cluster/user/token/TLS/impersonation CLI overrides | Per-invocation effective connection shared by API reads, watches, logs and captured kubectl shells; source kubeconfigs stay unchanged |
 | `--invert` | Next-release source: invert the selected session palette with contrast repair; saved theme names and the terminal palette remain unchanged |
-| `--splashless`, `--screen-dump-dir` | Exit 4; there is currently no splash or screen export to control |
+| `--screen-dump-dir` | Initial local export/browser directory; relative paths use launch cwd, `~` expands explicitly, and only Save creates a missing private default directory |
+| `--splashless` | Exit 4; there is currently no splash to control |
 
 Place global options before a subcommand. Scalar options repeated on the command
 line use their last value; `--as-group` preserves every occurrence in order, but
 impersonation requires API-server authorization. `--as-group` requires `--as`; client key and client
 certificate must be supplied together. Namespace/all-namespaces and readonly/write
 are mutually exclusive, with owned errors that identify the conflicting flags.
-Syntax/type errors do not echo rejected values. Pending string arguments are
+Syntax/type errors do not echo rejected values. Option values are
 bounded and reject controls; transport-specific validation and missing-file checks
 are applied by the owning adapter. A missing explicit `--kubeconfig` now returns
 local I/O exit 3; an absent default opens disconnected.
 
-Connection, presentation and initial-command options are terminal-only and are refused by
+Connection, presentation, export-directory and initial-command options are terminal-only and are refused by
 `info`/`config`. Runtime preference options are allowed by `info`/`config check`,
 where they affect the effective settings, but refused by `config init`.
 `help`/`version` subcommands bypass preferences and credential loading and refuse

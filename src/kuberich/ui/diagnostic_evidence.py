@@ -3,7 +3,7 @@
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from datetime import UTC, datetime
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar, cast
 
 from textual import on
 from textual.app import ComposeResult
@@ -17,6 +17,7 @@ from kuberich.domain.cluster_diagnostics import (
     DiagnosticIdentity,
     DiagnosticLogMode,
     DiagnosticRequest,
+    DiagnosticSnapshot,
     DiagnosticSource,
     DiagnosticSourceKind,
 )
@@ -33,6 +34,9 @@ from kuberich.ui.chrome import (
 from kuberich.ui.nested import CommandWorkspace
 from kuberich.ui.read_only_text import ReadOnlyText
 from kuberich.ui.text_navigation import text_bindings
+
+if TYPE_CHECKING:
+    from kuberich.services.exports import ExportChoices
 
 _SHORTCUTS = (
     ("o", "Open resource"),
@@ -175,12 +179,16 @@ class DiagnosticEvidenceScreen(CommandWorkspace):
         open_object: Callable[[RelationshipRef], Awaitable[None]],
         open_logs: Callable[[DiagnosticLogMode], Awaitable[None]],
         refresh: Callable[[], None],
+        snapshot: Callable[[DiagnosticRequest], DiagnosticSnapshot | None] | None = None,
+        header_namespace: Callable[[], str | None] | None = None,
     ) -> None:
         super().__init__()
         self.request, self.finding, self.sources = request, finding, sources
         self.current = current
         self.open_object, self.open_logs, self.refresh_evidence = open_object, open_logs, refresh
         self.invalidated = False
+        self._export_snapshot = snapshot
+        self._export_namespace = header_namespace
         self._action_worker: Worker[None] | None = None
         self.events = tuple(
             item
@@ -204,6 +212,96 @@ class DiagnosticEvidenceScreen(CommandWorkspace):
             markup=False,
             id="diagnostic-evidence-status",
         )
+
+    def capture_export(self, at: datetime) -> "ExportChoices":
+        """Capture rendered evidence and, when available, its exact retained request."""
+        from dataclasses import replace
+
+        from kuberich.domain.exports import (
+            DiagnosticsSource,
+            DocumentSource,
+            ExportPresentation,
+            ExportScope,
+        )
+        from kuberich.ui.export_captures import captured_lease
+
+        if not self.is_mounted or self.invalidated or not self.current():
+            return ()
+        request, finding = self.request, self.finding
+        header = self._export_namespace() if self._export_namespace is not None else None
+        snapshot = self._export_snapshot(request) if self._export_snapshot is not None else None
+        if snapshot is not None and snapshot.request != request:
+            snapshot = None
+        times = tuple(item.observed_at for item in finding.evidence) + tuple(
+            source.observed_at for source in self.sources if source.observed_at is not None
+        )
+        scope = ExportScope(
+            export_at=at,
+            source_at=snapshot.observed_at if snapshot is not None else max(times, default=None),
+            context=request.scope.session.context,
+            header_namespace=header,
+            collection_namespace=request.scope.namespace,
+            namespace_mode="one" if request.scope.namespace is not None else "all",
+            api_version=finding.subject.api_version if finding.subject is not None else None,
+            resource=finding.subject.resource.name
+            if finding.subject is not None and finding.subject.resource is not None
+            else None,
+            kind=finding.subject.kind if finding.subject is not None else None,
+            name=finding.subject.name if finding.subject is not None else None,
+            uid=finding.subject.uid if finding.subject is not None else None,
+            container=finding.container,
+        )
+
+        def current() -> bool:
+            return (
+                self.is_mounted
+                and not self.invalidated
+                and self.current()
+                and self.request == request
+                and self.finding is finding
+                and (self._export_namespace() if self._export_namespace is not None else None)
+                == header
+            )
+
+        document = captured_lease(
+            scope,
+            DocumentSource(page="evidence", text=self.viewer.text),
+            current,
+            presentation=ExportPresentation(view="diagnostic-evidence"),
+        )
+        choices: ExportChoices = (("screen", replace(document, session=request.scope.session)),)
+        if snapshot is not None:
+            root = request.scope.root
+            diagnostic_scope = replace(
+                scope,
+                api_version=root.api_version if root is not None else None,
+                resource=root.resource.name
+                if root is not None and root.resource is not None
+                else None,
+                kind=root.kind if root is not None else None,
+                name=root.name if root is not None else None,
+                uid=root.uid if root is not None else None,
+                container=None,
+            )
+
+            snapshot_reader = cast(
+                Callable[[DiagnosticRequest], DiagnosticSnapshot | None], self._export_snapshot
+            )
+
+            def diagnostics_current() -> bool:
+                if not current():
+                    return False
+                retained = snapshot_reader(request)
+                return retained is not None and retained.request == request
+
+            diagnostic = captured_lease(
+                diagnostic_scope,
+                DiagnosticsSource(snapshot=snapshot),
+                diagnostics_current,
+                presentation=ExportPresentation(view="diagnostics"),
+            )
+            choices += (("diagnostics", replace(diagnostic, session=request.scope.session)),)
+        return choices
 
     def compose(self) -> ComposeResult:
         if hasattr(self.app, "chrome"):

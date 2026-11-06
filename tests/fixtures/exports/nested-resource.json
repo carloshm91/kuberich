@@ -1,0 +1,11 @@
+{
+  "apiVersion": "v1",
+  "kind": "List",
+  "metadata": {"name": "synthetic-list", "uid": "list-uid", "namespace": "fixture", "resourceVersion": "7", "annotations": {"last-applied": "ANNOTATION_SENTINEL"}},
+  "items": [
+    {"kind": "Secret", "data": {"normal": "BINARY_SENTINEL"}, "stringData": {"safe": "SECRET_SENTINEL"}, "binaryData": {"bytes": "ENCODED_SENTINEL"}},
+    {"kind": "ConfigMap", "data": {"setting": "CONFIG_SENTINEL"}},
+    {"kind": "Pod", "spec": {"containers": [{"name": "app", "env": [{"name": "INNOCENT", "value": "ENV_SENTINEL"}], "command": ["COMMAND_SENTINEL"], "args": ["ARG_SENTINEL"], "envFrom": [{"secretRef": {"name": "safe-reference"}}]}]}},
+    {"kind": "Other", "spec": {"password": "PASSWORD_SENTINEL", "url": "https://user:URL_SENTINEL@example.invalid/", "auth": "Bearer BEARER_SENTINEL", "basic": "Basic BASIC_SENTINEL", "jwt": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmaXh0dXJlIn0.signature", "aws": "AKIA1234567890ABCDEF", "key": "-----BEGIN PRIVATE KEY-----\nPRIVATE_SENTINEL\n-----END PRIVATE KEY-----", "markup": "[bold]literal[/bold]", "control": "hello\u001b]52;c;CONTROL_SENTINEL\u0007\r\u202e"}}
+  ]
+}

@@ -3,6 +3,7 @@
 import asyncio
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import UTC, datetime
 
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.domain.connections import ConnectionProblem, HttpProblem
@@ -20,6 +21,8 @@ EVENTS = ApiResource("", "v1", "events", "Event", True, frozenset({"list"}))
 class InspectionResult:
     documents: InspectionDocuments
     events_error: str | None = None
+    resource_version: str | None = None
+    observed_at: datetime | None = None
 
 
 def read_error(error: AppError | ConnectionProblem) -> str:
@@ -68,6 +71,7 @@ class InspectionService:
         self.target.require_current(self.target.session, uid=record.uid or "")
         if record.name != self.target.name:
             raise AppError("API response does not match the selected resource name.")
+        observed_at = datetime.now(UTC)
         events: tuple[ResourceRecord, ...] = ()
         events_error = None
         try:
@@ -88,4 +92,4 @@ class InspectionService:
             await asyncio.gather(worker, return_exceptions=True)
             raise
         self.require_current()
-        return InspectionResult(documents, events_error)
+        return InspectionResult(documents, events_error, record.resource_version, observed_at)

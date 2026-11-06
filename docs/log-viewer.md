@@ -69,10 +69,13 @@ aggregate logs. Narrow the workload if its source count exceeds the limit.
 
 ## Copy or save output
 
-Ctrl+Y copies up to 1 MiB of redacted, timestamped kept output. Ctrl+S saves to an
-explicit new file. The parent directory must exist; an existing file or symlink
-is refused. A saved file is readable only by your user. In aggregate logs, the
-current source filter and plain/JSON mode apply to export too.
+Ctrl+Y copies up to 1 MiB of redacted, timestamped kept output. In development
+source, Ctrl+S or `:export` opens a review with a frozen retained-log capture,
+redacted preview, directory and filename. Existing files need a separate
+overwrite confirmation; symlinks are refused. Saved files are private to your
+user. In aggregate logs, the source filter and plain/JSON mode apply to export
+too. Use `:exports` to browse saved artifacts; see [local exports](exports.md).
+The installed 0.3.0 release still uses its new-file-only Save dialog.
 
 Copy and save escape terminal controls and redact recognized credential patterns.
 Structured JSON is parsed within depth and size limits; malformed or excessive

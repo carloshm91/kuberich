@@ -19,6 +19,11 @@ resource does not accept a namespace argument.
 At launch, `--command 'pods demo-apps'` selects a starting view. Commands that need
 a selected row or confirmation are unavailable at launch.
 
+Development source adds `:export` for a reviewed local capture and `:exports`
+for saved artifacts. `--command exports` opens that browser without connecting;
+Back remains disconnected until an explicit context selection or retry. See
+[save and browse local exports](exports.md) for formats and disclosure controls.
+
 Use `:rbac` for observed subjects, bindings and roles. `:can-i` asks the server
 about your current identity; `:who-can` explains the RBAC evidence you can read.
 See [inspect permissions](authorization.md) for exact questions, scope and limits.

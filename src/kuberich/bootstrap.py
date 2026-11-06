@@ -42,6 +42,7 @@ def run_terminal(
     initial_command: ResolvedCommand | None = None,
     connection: ConnectionRequest | None = None,
     preferences: PreferenceSource | None = None,
+    export_directory: Path | None = None,
 ) -> None:
     from kuberich.domain.connections import DEFAULT_CONNECTION
     from kuberich.services.commands import Command
@@ -55,4 +56,5 @@ def run_terminal(
         initial_command=Command.EMPTY if initial_command is None else initial_command,
         connection=DEFAULT_CONNECTION if connection is None else connection,
         preferences=preferences,
+        export_directory=export_directory,
     )

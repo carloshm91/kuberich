@@ -1,0 +1,4 @@
+# kuberich-export: {"schema_version":1,"format":"logs","scope":{"export_at":"2026-11-05T12:30:00Z","source_at":"2026-11-05T12:29:50Z","context":"synthetic","header_namespace":"header","collection_namespace":"fixture","namespace_mode":"one","api_version":"v1","resource":"lists","kind":"List","name":"synthetic-list","uid":"list-uid","resource_version":"7","container":"app"},"sensitive":false,"presentation":{"view":"fixture","query":"running","sort":"name","descending":true,"viewport":{"selected":"list-uid","index":2,"x":1.5,"y":3,"top":"top","top_offset":0.5}},"notices":["Retained observations only."]}
+# kuberich-log-source: {"follow":true,"previous":true,"timestamps":true,"tail_lines":1000,"since_seconds":60,"since_time":null,"head_lines":1000,"dropped_lines":3,"retained_only":true,"tag":"single-logs"}
+2026-11-05T12:29:50Z ready
+Bearer [REDACTED]

@@ -103,6 +103,16 @@ COMMAND_SPECS = (
         "Explicitly run the configured Popeye tool under its local trust policy.",
     ),
     _spec(
+        Command.EXPORT,
+        ("export",),
+        "Review and save a redacted snapshot of the current supported view.",
+    ),
+    _spec(
+        Command.EXPORTS,
+        ("exports",),
+        "Browse saved local artifacts without starting a cluster connection.",
+    ),
+    _spec(
         Command.RBAC,
         ("rbac",),
         "Browse declared subjects, bindings and roles; accepts an explicit scope.",

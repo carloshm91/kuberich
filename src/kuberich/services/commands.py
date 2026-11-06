@@ -285,7 +285,16 @@ class CommandService:
             if parts[1] != "cancel":
                 raise AppError("Use :diagnostics or :diagnostics cancel.")
             return ScopedCommand(command, "cancel")
-        if command in {Command.DIAGNOSE, Command.POPEYE} and len(parts) != 1:
+        if (
+            command
+            in {
+                Command.DIAGNOSE,
+                Command.POPEYE,
+                Command.EXPORT,
+                Command.EXPORTS,
+            }
+            and len(parts) != 1
+        ):
             raise AppError(f"Use :{verb} without arguments.")
         if len(parts) == 1:
             return command

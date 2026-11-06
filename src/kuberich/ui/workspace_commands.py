@@ -81,10 +81,13 @@ class WorkspaceCommands:
         bound: BoundCommands,
         plugin: Callable[[str], None],
         sources: Callable[[], CompletionSources],
+        *,
+        export: Callable[[CommandWorkspace], None] | None = None,
     ) -> None:
         self.host, self.resolve, self.workspace = host, resolve, workspace
         self.navigator, self.views, self.interactions = navigator, views, interactions
         self.sources = sources
+        self.export_current = export
         self.router = CommandRouter(
             bound,
             interactions.apply,
@@ -165,6 +168,15 @@ class WorkspaceCommands:
                 return
         except AppError as error:
             self.host.notify(str(error), severity="error")
+            return
+        if command in {Command.EXPORT, Command.EXPORTS}:
+            # The source must still be mounted when its immutable capture is made.
+            # Local artifact browsing also retains the originating view for Back.
+            if command is Command.EXPORT and self.export_current is not None:
+                self.export_current(origin)
+            else:
+                self.apply(command)
+            self.interactions.history.record(value)
             return
         if isinstance(command, InteractionCommand) and command.verb in {
             "headless",

@@ -50,14 +50,13 @@ def _recent_log(path: Path | None) -> dict[str, str]:
     }
 
 
-def write_report(
+def report_payload(
     *,
     config_status: ConfigStatus,
     log_path: Path | None = None,
     error: Exception | None = None,
-    output: Path | None = None,
-) -> Path:
-    """Create a mode-0600 JSON bundle; never overwrite a destination or read kubeconfig."""
+) -> bytes:
+    """Build the safe report body without collecting configuration or credentials."""
     terminal: dict[str, object] = {
         "stdin_tty": sys.stdin.isatty(),
         "stdout_tty": sys.stdout.isatty(),
@@ -95,7 +94,18 @@ def write_report(
                 )
             ],
         }
-    payload = (json.dumps(report, ensure_ascii=True, indent=2) + "\n").encode("utf-8")
+    return (json.dumps(report, ensure_ascii=True, indent=2) + "\n").encode("utf-8")
+
+
+def write_report(
+    *,
+    config_status: ConfigStatus,
+    log_path: Path | None = None,
+    error: Exception | None = None,
+    output: Path | None = None,
+) -> Path:
+    """Create a mode-0600 JSON bundle; never overwrite a destination or read kubeconfig."""
+    payload = report_payload(config_status=config_status, log_path=log_path, error=error)
     destination: Path
     try:
         if output is None:

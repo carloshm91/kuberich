@@ -29,8 +29,8 @@ def test_history_moves_to_one_internal_area_with_exact_original_git_evidence():
             assert not (ROOT / old).is_file()
     for record in plan["preserved_sources"] + plan["operational_sources"]:
         assert mapped[record["path"]]["baseline_sha256"] == record["sha256"]
-    assert len(mapped) == 354
-    assert validate_documentation_plan(ROOT, list(mapped)) == 354
+    assert len(mapped) == 357
+    assert validate_documentation_plan(ROOT, list(mapped)) == 357
     assert not (ROOT / "docs/status.md").exists()
 
 
@@ -62,14 +62,14 @@ def test_status_is_short_and_every_user_page_avoids_evidence_links():
                     "architecture-history",
                 )
             ), (name, target)
-    assert navigation.user_page_count == 24
+    assert navigation.user_page_count == 25
 
 
 def test_public_surfaces_and_search_never_include_internal_records(tmp_path):
     output = tmp_path / "site"
     manifest = build(output, ROOT)
     verify(output, ROOT)
-    assert manifest["documentation_pages"] == 24
+    assert manifest["documentation_pages"] == 25
     for path in output.rglob("*"):
         assert "internal" not in path.relative_to(output).parts
         if path.is_file() and (path.suffix == ".html" or path.name.startswith("search")):
@@ -160,14 +160,28 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
         "docs/adr/0035-authorization-evidence-and-reviews.md",
         "docs/internal/acceptance/authorization.md",
     ]
-    assert [item["source"] for item in current["documents"][351:]] == [
+    diagnostics = json.loads(
+        git_bytes(
+            ROOT, "show", "f4c34931dcf49df68f122888d028069af310c29d:docs/documentation-plan.json"
+        )
+    )
+    assert len(diagnostics["documents"]) == 354
+    assert diagnostics["documents"][:351] == authorization["documents"]
+    assert current["documents"][:354] == diagnostics["documents"]
+    assert [item["source"] for item in current["documents"][351:354]] == [
         "docs/cluster-diagnostics.md",
         "docs/adr/0036-native-and-external-diagnostics.md",
         "docs/internal/acceptance/cluster-diagnostics.md",
     ]
+    assert [item["source"] for item in current["documents"][354:]] == [
+        "docs/exports.md",
+        "docs/adr/0037-reviewed-local-artifacts.md",
+        "docs/internal/acceptance/local-exports.md",
+    ]
     assert all(item["baseline_sha256"] is None for item in current["documents"][348:])
     assert authorization["canonical_user_pages"] == 23
-    assert current["canonical_user_pages"] == 24
+    assert diagnostics["canonical_user_pages"] == 24
+    assert current["canonical_user_pages"] == 25
     assert {
         key: value
         for key, value in current.items()

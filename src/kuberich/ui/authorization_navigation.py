@@ -53,6 +53,7 @@ class AuthorizationNavigation:
         self._picker_parent: NavigationState | None = None
         self._picker_session: SessionIdentity | None = None
         self._transition_notice: tuple[AuthorizationRequest, str] | None = None
+        self._deferred_notice: tuple[SessionIdentity | None, int, str] | None = None
 
     @property
     def active(self) -> bool:
@@ -63,6 +64,7 @@ class AuthorizationNavigation:
         self._pending = None
         self._picker_parent = None
         self._picker_session = None
+        self._deferred_notice = None
 
     def departing(self, kind: ViewKind) -> None:
         if kind is ViewKind.AUTHORIZATION:
@@ -164,6 +166,7 @@ class AuthorizationNavigation:
             elif pending.state is not None:
                 self.restore(pending.state)
         except AppError as error:
+            self._deferred_notice = view.connection.identity, view.revision, str(error)
             self.navigation.notice(str(error))
 
     def restore(self, state: NavigationState) -> None:
@@ -289,6 +292,11 @@ class AuthorizationNavigation:
         )
 
     def message(self, view: ViewObservation) -> str:
+        if self._deferred_notice is not None:
+            session, revision, message = self._deferred_notice
+            if view.connection.identity == session and view.revision == revision:
+                return message
+            self._deferred_notice = None
         request = self.workspace.authorization_request
         if self._transition_notice is not None and request is not None:
             original, message = self._transition_notice

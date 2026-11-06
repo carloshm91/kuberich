@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "page_budget": 24,
+  "page_budget": 25,
   "index_title": "Start here",
   "sections": [
     {
@@ -158,6 +158,16 @@
           "title": "Investigate workload failures",
           "sources": [
             "cluster-diagnostics.md"
+          ],
+          "generated": false,
+          "retired_sources": [],
+          "anchors": {}
+        },
+        {
+          "source": "exports.md",
+          "title": "Save and browse exports",
+          "sources": [
+            "exports.md"
           ],
           "generated": false,
           "retired_sources": [],

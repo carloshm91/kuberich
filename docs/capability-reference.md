@@ -10,9 +10,9 @@ Real cloud accounts, terminals, and provider policies can need additional setup.
 
 ### All 26 explicitly registered launch flags; help/version/info and completion
 **partial** — Launch flags provide help, version, local diagnostics, read-only policy, presentation
-controls, session color inversion, startup views, and connection overrides. Splash, general resource
-export, and shell completion are unavailable. Create redacted local diagnostic bundles and retry
-recoverable resource-view errors.
+controls, session color inversion, startup views and connection overrides. Development source adds
+an export-directory option and local artifact browser startup. Splash and shell completion are
+unavailable. Create redacted diagnostic bundles and retry recoverable resource-view errors.
 ### Context/kubeconfig/cluster/user/namespace selection and connection overrides
 **partial** — Select kubeconfig files, context, namespace, connection overrides, and user settings
 explicitly. Each context uses its own connection and passes that identity to delegated tools.
@@ -66,8 +66,9 @@ terminal OSC52 with tmux framing. Wayland takes precedence locally; automatic SS
 OSC52. Native text accepts up to 1 MiB and terminal copy 64 KiB. Text stays on stdin for native
 helpers. A sent request does not prove a compositor or outer terminal accepted it.
 ### Save resources/logs, screen-dump browser and export path settings
-**partial** — Logs can be saved to an explicit new private file without overwrite. A saved-export
-browser, general resource export and richer export formats are planned.
+**partial** — Development source adds reviewed redacted resource, log, diagnostic, screen and
+support exports, an explicit directory option and a local saved-artifact browser. Sensitive resource
+YAML and overwrite/deletion need separate confirmation. Installed 0.3.0 predates the browser.
 ### About/branding and optional update notification
 **partial** — About shows the installed version and license. Stable-release notices are opt-in and
 can use a cached result; they never install an update.
@@ -106,8 +107,9 @@ Readers follow controller membership and identify each source independently.
 independent viewport following. History has line and byte limits; rotated server output may be
 unavailable.
 ### Log search, marks, copy, save, and history limits
-**partial** — Search, match navigation, marks, clear, fullscreen, redacted copy, and saving a new
-private file work on kept output. A saved-export browser is unavailable.
+**partial** — Search, filters, marks, clear, fullscreen and explicit redacted copy work on bounded
+retained output. Development source adds reviewed log saving and saved-artifact browsing; its frozen
+source keeps actual container/window provenance and discard notices.
 ### Shell exec with chosen container and configurable shell command
 **partial** — A selected container opens an embedded kubectl shell with local history, search, and
 copy. Write mode, kubectl, and exec permission are required. Advanced terminal protocols are

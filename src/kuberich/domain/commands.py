@@ -17,6 +17,8 @@ class Command(Enum):
     DIAGNOSTICS = auto()
     DIAGNOSE = auto()
     POPEYE = auto()
+    EXPORT = auto()
+    EXPORTS = auto()
     RBAC = auto()
     CAN_I = auto()
     WHO_CAN = auto()

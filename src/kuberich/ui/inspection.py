@@ -1,7 +1,10 @@
 """Literal read-only resource viewer; owns reads and restores the underlying table."""
 
+from __future__ import annotations
+
 import asyncio
-from typing import ClassVar, Literal
+from datetime import datetime
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 from rich.text import Text
 from textual import on
@@ -19,12 +22,16 @@ from kuberich.ui.chrome import (
     TEXT_SHORTCUTS,
     Breadcrumbs,
     WorkspaceBars,
+    WorkspaceChrome,
     WorkspaceFrame,
     WorkspaceHeader,
 )
 from kuberich.ui.commands import NavigationInput
 from kuberich.ui.nested import CommandWorkspace
 from kuberich.ui.read_only_text import ReadOnlyText
+
+if TYPE_CHECKING:
+    from kuberich.services.exports import ExportChoices
 
 Page = Literal["yaml", "details", "events"]
 
@@ -54,9 +61,16 @@ class InspectionScreen(CommandWorkspace):
     #inspection-status { padding: 0 1; text-overflow: ellipsis; color: $text-muted; }
     """
 
-    def __init__(self, service: InspectionService, page: Page = "details") -> None:
+    def __init__(
+        self,
+        service: InspectionService,
+        page: Page = "details",
+        *,
+        chrome: WorkspaceChrome | None = None,
+    ) -> None:
         super().__init__()
         self.service = service
+        self.chrome = chrome
         self.invalidated = False
         self.page = page
         self.managed = False
@@ -77,6 +91,48 @@ class InspectionScreen(CommandWorkspace):
         self.status = Static("Loading selected resource…", markup=False, id="inspection-status")
         self.matches: tuple[tuple[int, int, int], ...] = ()
         self.match_index = -1
+
+    def capture_export(self, at: datetime) -> ExportChoices:
+        from kuberich.domain.exports import DocumentSource, ExportPresentation
+        from kuberich.ui.export_captures import captured_lease, header_namespace, target_scope
+
+        result, page, managed = self.result, self.page, self.managed
+        if result is None or self.invalidated or not self.is_mounted or not self.service.current():
+            return ()
+        field = "managed_yaml" if page == "yaml" and managed else page
+        text = getattr(result.documents, field)
+        if page == "events" and result.events_error is not None:
+            text = result.events_error
+        source_page = "managed-yaml" if page == "yaml" and managed else page
+        lease = captured_lease(
+            target_scope(
+                at,
+                self.service.target,
+                resource=self.service.resource,
+                resource_version=result.resource_version,
+                source_at=result.observed_at,
+                header=header_namespace(self.chrome),
+            ),
+            DocumentSource(page=source_page, text=text),
+            lambda: (
+                self.is_mounted
+                and not self.invalidated
+                and self.service.current()
+                and self.result is result
+                and self.page == page
+                and self.managed == managed
+            ),
+            target=self.service.target,
+            presentation=ExportPresentation(
+                view="inspection/" + source_page, query=self.search.value
+            ),
+            notices=(result.events_error,) if result.events_error else (),
+        )
+        return (
+            (("resource-yaml", lease), ("screen", lease))
+            if page == "yaml"
+            else (("screen", lease),)
+        )
 
     def compose(self) -> ComposeResult:
         target = self.service.target

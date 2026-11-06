@@ -14,7 +14,7 @@ from importlib.metadata import version
 from pathlib import Path
 from types import MappingProxyType
 from typing import TYPE_CHECKING, ClassVar
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from rich.console import RenderableType
 from textual import on
@@ -24,7 +24,7 @@ from textual.containers import Horizontal, Vertical
 from textual.dom import DOMNode
 from textual.events import DescendantFocus, Event, Resize
 from textual.geometry import Size
-from textual.screen import ModalScreen
+from textual.screen import ModalScreen, Screen
 from textual.widget import Widget
 from textual.widgets import Button, DataTable, Input, Static
 from textual.worker import Worker, WorkerCancelled
@@ -146,6 +146,7 @@ from kuberich.ui.workspace_presenter import WorkspacePresenter
 from kuberich.ui.workspace_screen import WorkspaceScreen
 
 if TYPE_CHECKING:
+    from kuberich.services.exports import ExportService
     from kuberich.ui.context_admin import ContextEditResult
     from kuberich.ui.diagnostic_evidence import DiagnosticEvidenceScreen
     from kuberich.ui.inspection import Page
@@ -220,8 +221,11 @@ class KubeRichApp(App[None]):
         environment: Mapping[str, str] | None = None,
         directory: Path | None = None,
         clipboard: NativeClipboard | None = None,
+        export_service: ExportService | None = None,
+        export_directory: Path | None = None,
     ) -> None:
-        self._foreground = ForegroundGate(lambda: self.views.request())
+        self._startup_ready: asyncio.Event | None = None
+        self._foreground = ForegroundGate(self._resume_foreground)
         super().__init__()
         self.stylesheet = ComponentStylesheet(variables=self.get_css_variables())
         self.title = "KubeRich"
@@ -299,13 +303,17 @@ class KubeRichApp(App[None]):
         self.relationships_table.display = False
         self.authorization_table = AuthorizationTable()
         self.authorization_table.display = False
-        self.diagnostics_table = ClusterDiagnosticsTable()
+        self.diagnostics_table = ClusterDiagnosticsTable(
+            namespace=lambda: self.sessions.observation.namespace,
+            query=lambda: self.filter_input.value,
+        )
         self.diagnostics_table.display = False
         self.chrome = WorkspaceChrome(
             partial(header_identity, self.workspace.store, self.sessions),
             f"KubeRich: {version('kuberich')} · {self._mode}",
             presentation,
             self.navigation_keymap,
+            namespace=lambda: self.sessions.observation.namespace,
         )
         self.header = WorkspaceHeader(self.chrome, POD_SHORTCUTS)
         self.breadcrumbs = Breadcrumbs(
@@ -433,6 +441,55 @@ class KubeRichApp(App[None]):
             delete_context=lambda: self._edit_context(ContextChange.DELETE),
             stop_plugins=self.plugins.manager.stop_for_client,
         )
+        from platformdirs import user_state_path
+
+        from kuberich.adapters.artifact_files import ArtifactFiles
+        from kuberich.config.launch import capture_export_directory
+        from kuberich.diagnostics.reports import report_payload
+        from kuberich.services.exports import ExportService
+        from kuberich.ui.export_actions import ExportActions
+        from kuberich.ui.export_sources import WorkspaceExportSources
+
+        log_path = next(
+            (
+                Path(handler.baseFilename)
+                for handler in logger.handlers
+                if isinstance(handler, logging.FileHandler)
+            ),
+            None,
+        )
+        self.export_sources = WorkspaceExportSources(
+            workspace=self.workspace,
+            sessions=self.sessions,
+            views=self.views,
+            operations=self.operations,
+            presenter=self.presenter,
+            screen=lambda: self.screen,
+            query=lambda: self.filter_input.value,
+        )
+        self.exports = ExportActions(
+            service=export_service
+            if export_service is not None
+            else ExportService(
+                files=ArtifactFiles(cwd=self._process_directory),
+                default_root=(
+                    capture_export_directory(export_directory, self._process_directory)
+                    if export_directory is not None
+                    else user_state_path("kuberich", appauthor=False) / "exports"
+                ),
+                report_payload=lambda: report_payload(
+                    config_status="valid" if preferences is not None else "unavailable",
+                    log_path=log_path,
+                ),
+                clock=lambda: datetime.now(UTC),
+                new_id=uuid4,
+            ),
+            capture=self.export_sources.capture,
+            push_screen=self._push_export,
+            copy_to_clipboard=self.copy_to_clipboard,
+            notice=self._set_notice,
+            clock=lambda: datetime.now(UTC),
+        )
         self.command_routes = WorkspaceCommands(
             self,
             lambda value: self.commands.resolve(value, self.workspace.discovery),
@@ -448,10 +505,17 @@ class KubeRichApp(App[None]):
                 tuple(plugin.name for plugin in self.plugins.plugins),
                 self.jumps.names,
             ),
+            export=self._export_origin,
         )
         self.nested_commands = NestedCommands(
             self.command_routes.suggestions, self.interactions.history, self.route_nested
         )
+
+    def _push_export(self, screen: Screen[None]) -> None:
+        self.push_screen(screen)
+
+    def _export_origin(self, origin: CommandWorkspace) -> None:
+        self.exports.open_export(lambda at: self.export_sources.origin(origin, at))
 
     def _bind_commands(self) -> BoundCommands:
         return bind_commands(
@@ -468,6 +532,8 @@ class KubeRichApp(App[None]):
                 Command.PULSE: self.navigator.pulse,
                 Command.DIAGNOSE: self.diagnostics.diagnose,
                 Command.POPEYE: self.diagnostics.popeye,
+                Command.EXPORT: self.exports.open_export,
+                Command.EXPORTS: self.exports.open_browser,
                 Command.RBAC: lambda: self.authorization.command(authorization_command("rbac")),
                 Command.CAN_I: lambda: self.authorization.command(authorization_command("can-i")),
                 Command.WHO_CAN: lambda: self.authorization.command(
@@ -716,8 +782,17 @@ class KubeRichApp(App[None]):
         super()._register_child(parent, child, before, after)
         child._styles_cache = ColorStylesCache()
 
+    def _resume_foreground(self) -> None:
+        self.views.request()
+        readiness = self._startup_ready
+        if readiness is not None and not readiness.is_set():
+            # An earlier callback may have belonged to a removed modal screen.
+            # Re-arm on a real root resume; release still follows an actual refresh.
+            self.call_after_refresh(readiness.set)
+
     def on_mount(self) -> None:
         first_paint = asyncio.Event()
+        self._startup_ready = first_paint
 
         async def before_connect() -> None:
             await first_paint.wait()
@@ -764,7 +839,8 @@ class KubeRichApp(App[None]):
         self.appearance_controller.attach_build_info(self.header.query_one("#build-info", Static))
         self.live_preferences.start((self.appearance_controller.warning, self._navigation_warning))
         if self._initial_command is not Command.QUIT:
-            self.call_after_refresh(self.appearance_controller.start_updates)
+            if self._initial_command is not Command.EXPORTS:
+                self.call_after_refresh(self.appearance_controller.start_updates)
             self.presenter.start()
             self.views.start()
             self.navigator.initialize(self._initial_command, self.command_routes.apply)
@@ -822,6 +898,11 @@ class KubeRichApp(App[None]):
                 and screen.request.scope.session.context == client.context.name
             ),
             self.operations.close_for_client(client),
+            *(
+                (self.exports.close_for_connection(identity.connection_id),)
+                if (identity := self.sessions.observation.identity) is not None
+                else ()
+            ),
             return_exceptions=True,
         )
         cancelled: asyncio.CancelledError | None = None
@@ -879,6 +960,7 @@ class KubeRichApp(App[None]):
         try:
             await self.command_routes.close()
             await self.interactions.close()
+            await self.exports.stop_owned()
             if self._catalog_task is not None:
                 self._catalog_task.cancel()
                 await finish_owned(asyncio.gather(self._catalog_task, return_exceptions=True))
@@ -953,6 +1035,11 @@ class KubeRichApp(App[None]):
                 severity="warning",
             )
             return None
+        if any(getattr(screen, "sensitive", False) is True for screen in self.screen_stack):
+            self.notify(
+                "Close sensitive export views before taking a screenshot.", severity="warning"
+            )
+            return None
         return super().deliver_screenshot(filename, path, time_format)
 
     def export_screenshot(self, *, title: str | None = None, simplify: bool = False) -> str:
@@ -965,6 +1052,8 @@ class KubeRichApp(App[None]):
             raise AppError(
                 "Close the configuration data view or plugin input view before exporting a screenshot."
             )
+        if any(getattr(screen, "sensitive", False) is True for screen in self.screen_stack):
+            raise AppError("Close sensitive export views before exporting a screenshot.")
         return super().export_screenshot(title=title, simplify=simplify)
 
     def action_inspect_yaml(self) -> None:
@@ -1445,7 +1534,10 @@ class KubeRichApp(App[None]):
 
     async def action_back(self) -> None:
         from kuberich.ui.appearance import ThemeScreen
+        from kuberich.ui.artifact_browser import ArtifactBrowserScreen
+        from kuberich.ui.artifact_viewer import ArtifactViewerScreen
         from kuberich.ui.editing import EditingScreen
+        from kuberich.ui.export_review import ArtifactConfirmation, ExportReviewScreen
         from kuberich.ui.inspection import InspectionScreen
         from kuberich.ui.logs import LogScreen
         from kuberich.ui.mutations import AnnotationScreen
@@ -1455,7 +1547,13 @@ class KubeRichApp(App[None]):
 
         if isinstance(self.screen, CommandWorkspace) and self.screen.leave_command():
             return
-        if isinstance(self.screen, (InspectionScreen, LogScreen, ThemeScreen, ViewScreen)):
+        if isinstance(self.screen, ExportReviewScreen):
+            await self.screen.action_cancel()
+        elif isinstance(self.screen, (ArtifactBrowserScreen, ArtifactViewerScreen)):
+            await self.screen.action_back()
+        elif isinstance(self.screen, ArtifactConfirmation):
+            self.screen.action_cancel()
+        elif isinstance(self.screen, (InspectionScreen, LogScreen, ThemeScreen, ViewScreen)):
             self.screen.back()
         elif isinstance(self.screen, TransferScreen):
             await self.screen.cancel()

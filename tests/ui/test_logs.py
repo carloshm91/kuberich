@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+from contextlib import nullcontext
 from pathlib import Path
 
 import pytest
@@ -18,13 +19,20 @@ from textual.widgets import Input, OptionList
 from kuberich.config.schema import Settings
 from kuberich.domain.log_view import WINDOWS, LogEntry
 from kuberich.domain.logs import LogLine
+from kuberich.services.exports import ExportService
 from kuberich.services.logs import LogStream
-from kuberich.ui import logs
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.log_body import LogBody
 from kuberich.ui.logs import LogScreen
 from kuberich.ui.scopes import ScopeScreen
 from tests.support.connections import catalog_fixture, namespaces
+from tests.support.export_ui import (
+    choose_destination,
+    open_review,
+    read_logs,
+    save_review,
+    service_for,
+)
 from tests.support.pods import pod
 from tests.support.resources import collection
 from tests.support.watches import frame
@@ -44,7 +52,7 @@ def log_calls(monkeypatch):
     calls = LogCalls()
     monkeypatch.setattr(LogStream, "run", calls.read.observe(LogStream.run))
     monkeypatch.setattr(LogBody, "load", calls.render.observe(LogBody.load))
-    monkeypatch.setattr(logs, "save_logs", calls.save.observe(logs.save_logs))
+    monkeypatch.setattr(ExportService, "publish", calls.save.observe(ExportService.publish))
     return calls
 
 
@@ -52,11 +60,12 @@ async def ns(request):
     return namespaces("team", "default")
 
 
-def app_for(tmp_path, url):
+def app_for(tmp_path, url, *, export_service=None):
     return KubeRichApp(
         Settings(read_only=True),
         logging.Logger("logs", level=100),
         catalog=catalog_fixture(tmp_path, url),
+        export_service=export_service or service_for(tmp_path),
     )
 
 
@@ -136,9 +145,11 @@ async def test_log_body_raw_controls_tab_spans_and_theme_without_new_layout(prep
 @pytest.mark.parametrize("size", [(40, 12), (100, 30)])
 async def test_live_view_search_vim_modes_copy_save_resize_and_return(tmp_path, size, log_calls):
     closed = asyncio.Event()
+    requests = []
     needle = "wrap-你好-e\u0301-" + "x" * 110
 
     async def handler(request):
+        requests.append((request.path, dict(request.query)))
         if "watch" in request.query:
             return await stable_watch(request)
         if request.path.endswith("/log"):
@@ -273,15 +284,25 @@ async def test_live_view_search_vim_modes_copy_save_resize_and_return(tmp_path, 
             await pilot.press("slash", "ctrl+a", "ctrl+k", "enter")
             assert "No matching" in screen.message
             log_calls.save.clear()
-            await pilot.press("ctrl+s")
+            snapshot = screen.history.export()
+            before_export = list(requests)
+            review = await open_review(app, pilot)
             destination = tmp_path / "retained.log"
-            app.screen.query_one("#log-value", Input).value = str(destination)
-            await pilot.press("enter")
-            await wait_for(lambda: destination.exists())
+            await save_review(app, pilot, review, destination)
             await wait_for(
                 lambda: log_calls.save.latest is not None and log_calls.save.latest.done()
             )
-            assert destination.read_text() == screen.history.export()
+            metadata, provenance, retained = read_logs(destination)
+            assert retained.splitlines() == snapshot.splitlines()
+            assert (
+                metadata.scope.context == "kuberich-test-one"
+                and metadata.scope.collection_namespace == "team"
+            )
+            assert metadata.scope.name == "api" and metadata.scope.container == "app"
+            assert provenance["retained_only"] and provenance["tag"] == "single-logs"
+            assert not provenance["previous"] and "hidden-log-value" not in destination.read_text()
+            assert requests == before_export and log_calls.read.latest is read_task
+            assert app.screen is screen and app.focused is screen.body
             await pilot.press("question_mark")
             assert type(app.screen).__name__ == "LogHelpScreen"
             await pilot.press("escape")
@@ -367,17 +388,36 @@ async def test_regular_init_previous_windows_since_validation_buttons_and_save_e
             await pilot.click("#log-timestamps")
             await pilot.click("#log-help")
             await pilot.click("#log-help-back")
+            from kuberich.ui.export_review import ArtifactConfirmation
+
             log_calls.save.clear()
-            await pilot.press("ctrl+s")
-            field = app.screen.query_one("#log-value", Input)
-            await pilot.press("enter")
-            assert "Enter a value" in str(app.screen.query_one("#log-request-error").content)
+            baseline = list(requests)
+            origin_focus = app.focused
+            review = await open_review(app, pilot)
+            await choose_destination(review, tmp_path / "invalid")
+            review.filename.value = ""
+            await wait_for(lambda: review.operation_count == 0 and review.filename.value == "")
+            await pilot.click("#export-save")
+            await wait_for(
+                lambda: (
+                    "filename" in str(review.status.content).lower()
+                    or "artifact" in str(review.status.content).lower()
+                )
+            )
             path = tmp_path / "already"
             path.write_text("keep")
-            field.value = str(path)
-            await pilot.press("enter")
-            await wait_for(lambda: "Cannot save logs" in screen.message)
-            assert path.read_text() == "keep"
+            await choose_destination(review, path)
+            await pilot.click("#export-save")
+            await wait_for(
+                lambda: isinstance(app.screen, ArtifactConfirmation) and app.screen.is_mounted
+            )
+            assert path.name in app.screen.message and str(path.parent) in app.screen.message
+            await pilot.press("escape")
+            await wait_for(lambda: review.operation_count == 0)
+            assert path.read_text() == "keep" and log_calls.save.latest is None
+            assert requests == baseline
+            await pilot.press("escape")
+            assert app.screen is screen and app.focused is origin_focus
             await pilot.click("#log-back")
 
 
@@ -605,10 +645,6 @@ async def test_quiet_open_and_empty_snapshot_show_distinct_states_and_close(
 async def test_unexpected_failure_uses_app_cleanup_and_drains_viewer_tasks(
     tmp_path, monkeypatch, stage, log_calls
 ):
-    from kuberich.services.logs import LogStream
-    from kuberich.ui import logs
-    from kuberich.ui.log_body import LogBody
-
     failed = asyncio.Event()
 
     async def broken(*args, **kwargs):
@@ -620,7 +656,7 @@ async def test_unexpected_failure_uses_app_cleanup_and_drains_viewer_tasks(
     elif stage == "render":
         monkeypatch.setattr(LogBody, "load", log_calls.render.observe(broken))
     else:
-        monkeypatch.setattr(logs, "save_logs", log_calls.save.observe(broken))
+        monkeypatch.setattr(ExportService, "publish", log_calls.save.observe(broken))
 
     async def handler(request):
         if "watch" in request.query:
@@ -633,7 +669,11 @@ async def test_unexpected_failure_uses_app_cleanup_and_drains_viewer_tasks(
 
     async with workspace_api(ns, handler) as url:
         app = app_for(tmp_path, url)
-        with pytest.raises(RuntimeError, match="owned-log-failure"):
+        with (
+            pytest.raises(RuntimeError, match="owned-log-failure")
+            if stage != "save"
+            else nullcontext()
+        ):
             async with app.run_test() as pilot:
                 await wait_for(lambda: app.resources.row_count == 1)
                 # Direct invocation captures the screen before an immediate fault.
@@ -642,12 +682,22 @@ async def test_unexpected_failure_uses_app_cleanup_and_drains_viewer_tasks(
                 if stage == "save":
                     await wait_for(lambda: len(screen.body.rows) == 1)
                     log_calls.save.clear()
-                    await pilot.press("ctrl+s")
-                    app.screen.query_one("#log-value", Input).value = str(tmp_path / "save")
-                    await pilot.press("enter")
+                    review = await open_review(app, pilot)
+                    await choose_destination(review, tmp_path / "save")
+                    await pilot.click("#export-save")
                     await wait_for(
                         lambda: log_calls.save.latest is not None and log_calls.save.latest.done()
                     )
+                    assert app.is_running and "Export operation failed" in str(
+                        review.status.content
+                    )
+                    assert (
+                        "owned-log-failure" not in str(review.status.content)
+                        and not (tmp_path / "save").exists()
+                    )
+                    await pilot.press("escape")
+                    assert app.screen is screen
+                    await pilot.press("ctrl+q")
                 elif stage == "render":
                     await wait_for(failed.is_set)
                 else:

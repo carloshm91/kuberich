@@ -1,0 +1,43 @@
+# kuberich-export: {"schema_version":1,"format":"resource-yaml","scope":{"export_at":"2026-11-05T12:30:00Z","source_at":"2026-11-05T12:29:50Z","context":"synthetic","header_namespace":"header","collection_namespace":"fixture","namespace_mode":"one","api_version":"v1","resource":"lists","kind":"List","name":"synthetic-list","uid":"list-uid","resource_version":"7","container":"app"},"sensitive":false,"presentation":{"view":"fixture","query":"running","sort":"name","descending":true,"viewport":{"selected":"list-uid","index":2,"x":1.5,"y":3,"top":"top","top_offset":0.5}},"notices":["Retained observations only."]}
+apiVersion: v1
+kind: List
+metadata:
+  name: synthetic-list
+  uid: list-uid
+  namespace: fixture
+  resourceVersion: '7'
+  annotations: '[REDACTED]'
+items:
+- kind: Secret
+  data:
+    normal: '[REDACTED]'
+  stringData:
+    safe: '[REDACTED]'
+  binaryData:
+    bytes: '[REDACTED]'
+- kind: ConfigMap
+  data:
+    setting: '[REDACTED]'
+- kind: Pod
+  spec:
+    containers:
+    - name: app
+      env:
+      - name: INNOCENT
+        value: '[REDACTED]'
+      command: '[REDACTED]'
+      args: '[REDACTED]'
+      envFrom:
+      - secretRef:
+          name: safe-reference
+- kind: Other
+  spec:
+    password: '[REDACTED]'
+    url: https://[REDACTED]@example.invalid/
+    auth: Bearer [REDACTED]
+    basic: Basic [REDACTED]
+    jwt: '[REDACTED JWT]'
+    aws: '[REDACTED AWS KEY]'
+    key: '[REDACTED KEY]'
+    markup: '[bold]literal[/bold]'
+    control: hello\u001b]52;c;CONTROL_SENTINEL\u0007\u000d\u202e

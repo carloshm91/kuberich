@@ -1,5 +1,50 @@
 # Development checkpoint
 
+## Active unreleased 0.4.0 local exports
+
+Five of ten technical tasks are delivered: metrics, Pulse, relationships,
+authorization and diagnostics. Issue #73 is the sole active implementation:
+reviewed redacted resource/log/diagnostic/screen/support exports, a private local
+artifact browser and an explicit export directory. Source version remains
+0.3.0. The next tasks are environment/image inspection, the remaining curated
+resource families and phase qualification. No publication is implied.
+
+Development command: `uv run kuberich --command exports`. Actual source and
+outside-checkout installed console/module trials verified offline browsing,
+redacted copy, refresh, confirmed deletion and disconnected Back. Their explicit
+invocations include `--config PATH --kubeconfig PATH --context owned-export-context
+--readonly --command exports --screen-dump-dir PATH`, with synthetic owned files.
+The source command `uv run pytest tests/terminal/test_exports.py -q` passed both
+40×12 and 100×30 cases; the installed console/module cases passed outside the
+checkout. All four observed zero API/helper/network attempts and restored exact
+terminal state. App checks separately verify that an explicit retry then uses
+the owned API. This is development source, not the installed 0.3.0 UI.
+
+The post-CI large-log runtime protocol passed, including its strict negative
+control, complete branch-covered workload and all 337 unchanged input hashes.
+The complete local fast suite passed 7,358 cases with one explicit hosted-macOS
+clipboard skip. Scoped authorization navigation passed 142 cases; startup/gate
+controls passed 18 and all 30 unchanged real-PTY startup cases passed. Browser
+error semantics, a disappearing failed-command notice and lost startup readiness
+were corrected with preserved original failures and controlled regressions.
+CLI/launch/path passed 278 cases and documentation/source checks 108.
+Deterministic export domain and service gates require 100% lines/branches.
+Complete-package coverage and the exact-head hosted platform matrix remain
+pending. See [export acceptance](acceptance/local-exports.md).
+
+The prerequisite diagnostics PR #314 is protected-merged at
+`f4c34931dcf49df68f122888d028069af310c29d`. Its final exact-head run 42095675489
+passed all 27 quality jobs, Repository checks and DCO. Linux Python 3.13 ran
+9,172 cases with five expected platform/opt-in skips; macOS Python 3.12 ran
+9,163 with fourteen skips, including native lanes exercised separately.
+Independent coverage was 98.840280% lines / 96.111801% branches on Linux and
+98.847935% / 96.099379% on macOS; all 98 critical modules reached 100% and
+changed lines measured 99.36%. The final actual owned-kind trial passed eight
+scenarios in 78.6275 seconds with all 239 inputs unchanged and all owned
+resources removed. Automatic-main Application quality run 42102279461 and
+Repository run 42102279479 also passed. These results qualify the prerequisite,
+not the new export source. Earlier pending statements below are historical.
+
 ## Unreleased 0.4.0 diagnostic work
 
 Issue #72 is the single active implementation task. Native `:diagnostics` and

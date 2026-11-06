@@ -13,6 +13,7 @@ from kuberich.domain.cluster_diagnostics import (
     DiagnosticLogMode,
     DiagnosticRequest,
     DiagnosticScope,
+    DiagnosticSnapshot,
     DiagnosticSourceKind,
 )
 from kuberich.domain.navigation import NamespaceChoice, NavigationState
@@ -294,6 +295,11 @@ class DiagnosticNavigation:
 
         snapshot = self.workspace.store.observation.diagnostics
         assert snapshot is not None
+
+        def retained(expected: DiagnosticRequest) -> DiagnosticSnapshot | None:
+            value = self.workspace.store.observation.diagnostics
+            return value if value is not None and value.request == expected else None
+
         self.show_evidence(
             DiagnosticEvidenceScreen(
                 request,
@@ -307,6 +313,8 @@ class DiagnosticNavigation:
                 open_object=open_object,
                 open_logs=open_logs,
                 refresh=self.refresh,
+                snapshot=retained,
+                header_namespace=lambda: self.workspace.sessions.observation.namespace,
             )
         )
 

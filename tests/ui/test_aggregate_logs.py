@@ -14,18 +14,19 @@ from pathlib import Path
 
 import pytest
 from coverage import Coverage
-from textual.widgets import Input, OptionList, Static
+from textual.widgets import OptionList, Static
 
 from kuberich.config.schema import Settings
 from kuberich.domain.aggregate_logs import AggregateHistory, LogSource
 from kuberich.domain.logs import LogDecoder
 from kuberich.domain.views import ViewStatus
+from kuberich.services.exports import ExportService
 from kuberich.services.resources import parse_owned
-from kuberich.ui import aggregate_logs as log_module
 from kuberich.ui.aggregate_logs import AggregateLogScreen, LogSourcesScreen
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.containers import ContainerScreen
 from kuberich.ui.logs import LogScreen
+from kuberich.ui.scopes import ScopeScreen
 from tests.support.aggregate_logs import AggregateApi
 from tests.support.aggregate_runtime import (
     MODE,
@@ -34,6 +35,15 @@ from tests.support.aggregate_runtime import (
     require_runtime_children,
 )
 from tests.support.connections import catalog_fixture, namespaces
+from tests.support.export_ui import (
+    FailingPublication,
+    HeldPublication,
+    choose_destination,
+    open_review,
+    read_logs,
+    save_review,
+    service_for,
+)
 from tests.support.runtime_budget import budget_enforced, budget_observation
 from tests.support.standard import roots
 from tests.support.workers import CoroutineCalls
@@ -43,7 +53,7 @@ from tests.support.workspace import wait_for, workspace_api
 @pytest.fixture
 def save_calls(monkeypatch):
     calls = CoroutineCalls()
-    monkeypatch.setattr(log_module, "save_logs", calls.observe(log_module.save_logs))
+    monkeypatch.setattr(ExportService, "publish", calls.observe(ExportService.publish))
     return calls
 
 
@@ -51,11 +61,12 @@ async def ns(request):
     return namespaces("team", "default")
 
 
-def app_for(tmp_path, url):
+def app_for(tmp_path, url, *, export_service=None):
     return KubeRichApp(
         Settings(read_only=True),
         logging.Logger("aggregate", level=100),
         catalog=catalog_fixture(tmp_path, url),
+        export_service=export_service or service_for(tmp_path),
     )
 
 
@@ -72,9 +83,8 @@ async def test_public_aggregate_controls_reuse_history_with_json_filter_export_a
     api.pods["pod-00"]["spec"].update(
         initContainers=[{"name": "init"}], ephemeralContainers=[{"name": "debug"}]
     )
-    api.initial["pod-00", "app"] = (
-        b'2026-10-09T12:00:03Z {"pass\\u0077ord":"hidden-json-value","message":"owned-json","control":"\\u001b[red]"}\n'
-    )
+    app_initial = b'2026-10-09T12:00:03Z {"pass\\u0077ord":"hidden-json-value","message":"owned-json","control":"\\u001b[red]"}\n'
+    api.initial["pod-00", "app"] = b""
     api.initial["pod-00", "init"] = b'2026-10-09T11:00:00-02:00 init earlier-clock\n{"bad-json":\n'
     async with workspace_api(ns, api.handler) as url:
         app = app_for(tmp_path, url)
@@ -84,6 +94,13 @@ async def test_public_aggregate_controls_reuse_history_with_json_filter_export_a
             await pilot.press("L")
             await wait_for(lambda: isinstance(app.screen, AggregateLogScreen))
             screen = app.screen
+            # Readers arrive independently; exercise a source picker whose first
+            # retained source is not the app stream used by the later append.
+            await wait_for(lambda: len(screen.body.rows) == 3 and api.active == 3)
+            assert all(
+                record.source.container != "app" for record in screen.aggregate.records.values()
+            )
+            await api.emit("pod-00", "app", app_initial)
             await wait_for(lambda: len(screen.body.rows) == 4)
             assert api.active == 3 and not api.requests["pod-01", "app"]
             assert "hidden-json-value" not in rendered(screen) and "owned-pod-00" in rendered(
@@ -114,26 +131,44 @@ async def test_public_aggregate_controls_reuse_history_with_json_filter_export_a
             await pilot.pause()
             assert len(screen.body.matches) == 1 and screen.aggregate.marks
             await pilot.press("s")
-            app.screen.query_one(OptionList).highlighted = 1
+            picker = app.screen
+            assert isinstance(picker, ScopeScreen)
+            app_source = screen.owner.states["owned-pod-00", "app"]
+            app_label = app_source.source.label(app_source.number)
+            picker.query_one(OptionList).highlighted = picker.values.index(app_label)
             await pilot.press("enter")
-            await wait_for(lambda: screen.aggregate.filter is not None)
+            await wait_for(lambda: screen.aggregate.filter == app_source.source.key)
             await pilot.press("ctrl+y")
             await wait_for(lambda: app.clipboard == screen.aggregate.export())
             assert app.clipboard == screen.aggregate.export()
             assert api.requests == baseline
-            await pilot.press("ctrl+s")
+            frozen = tuple(json.loads(line) for line in screen.aggregate.export().splitlines())
+            source_filter = screen.aggregate.filter
+            review = await open_review(app, pilot)
+            await api.emit("pod-00", "app", b"arrived-after-review\n")
+            await wait_for(lambda: "arrived-after-review" in screen.aggregate.export())
             destination = tmp_path / "aggregate.jsonl"
-            app.screen.query_one("#log-value", Input).value = str(destination)
-            await pilot.press("enter")
-            await wait_for(
-                lambda: (
-                    destination.exists()
-                    and save_calls.latest is not None
-                    and save_calls.latest.done()
-                )
+            await save_review(app, pilot, review, destination)
+            await wait_for(lambda: save_calls.latest is not None and save_calls.latest.done())
+            metadata, provenance, retained = read_logs(destination)
+            records = tuple(json.loads(line) for line in retained.splitlines())
+            assert records == frozen and "arrived-after-review" not in retained
+            assert records and all(record["source"]["container"] == "app" for record in records)
+            assert (
+                metadata.scope.context == "kuberich-test-one"
+                and metadata.scope.collection_namespace == "team"
             )
-            assert destination.read_text() == screen.aggregate.export()
+            assert provenance["retained_only"] and provenance["tag"] == "aggregate-logs"
+            assert provenance["source_filter"] == list(source_filter)
+            assert provenance["json_mode"] and len(provenance["source_statuses"]) == 3
+            assert all(record["source"]["uid"] == "owned-pod-00" for record in records)
+            assert (
+                "hidden-json-value" not in destination.read_text()
+                and "\x1b" not in destination.read_text()
+            )
+            assert api.requests == baseline
             assert destination.stat().st_mode & 0o777 == 0o600
+            assert app.screen is screen and app.focused is screen.body
             await pilot.press("question_mark")
             assert "source admission" in app.screen.status
             await pilot.press("escape")
@@ -253,52 +288,66 @@ async def test_source_picker_uid_recreation_expired_selection_and_manual_space(t
 
 
 @pytest.mark.asyncio
-async def test_detached_export_is_drained_before_context_client_cleanup(
-    tmp_path, monkeypatch, save_calls
-):
+async def test_detached_export_is_drained_before_context_client_cleanup(tmp_path, save_calls):
     api = AggregateApi(count=1)
-    entered, release, finished = asyncio.Event(), asyncio.Event(), asyncio.Event()
-
-    async def held_save(path, text):
-        entered.set()
-        # Model an already-started write that finishes even when its waiter is cancelled.
-        while not release.is_set():
-            try:
-                await release.wait()
-            except asyncio.CancelledError:
-                continue
-        finished.set()
-
-    monkeypatch.setattr(log_module, "save_logs", save_calls.observe(held_save))
+    files = HeldPublication()
+    service = service_for(tmp_path, files=files)
     async with workspace_api(ns, api.handler) as url:
-        app = app_for(tmp_path, url)
+        app = app_for(tmp_path, url, export_service=service)
         async with app.run_test() as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
             await pilot.press("L")
-            await wait_for(lambda: isinstance(app.screen, AggregateLogScreen) and api.active == 1)
+            await wait_for(
+                lambda: (
+                    isinstance(app.screen, AggregateLogScreen)
+                    and api.active == 1
+                    and bool(app.screen.body.rows)
+                )
+            )
             screen = app.screen
-            await pilot.press("ctrl+s")
-            app.screen.query_one("#log-value", Input).value = str(tmp_path / "held.log")
-            await pilot.press("enter")
-            await wait_for(entered.is_set)
-            client = screen.owner.client
+            frozen = tuple(
+                json.loads(record.text(json_mode=True, timestamps=True))
+                for record in screen.aggregate.records.values()
+            )
+            review = await open_review(app, pilot)
+            destination = tmp_path / "held.log"
+            await choose_destination(review, destination)
             try:
+                await pilot.click("#export-save")
+                assert await asyncio.to_thread(files.committed.wait, 5)
+                client = screen.owner.client
                 escape = asyncio.create_task(pilot.press("escape"))
-                await wait_for(lambda: screen not in app.screen_stack)
-                assert app.retained_aggregate_log_view_count == 1
+                await wait_for(files.cancelled.is_set)
+                assert review in app.screen_stack and review.operation_count > 0
                 before = api.requests.copy()
-                app.action_logs_all()
-                assert app.retained_aggregate_log_view_count == 1 and api.requests == before
-                assert "closing" in str(app.status.content)
                 connecting = app.workspace.connect("kuberich-test-two")
-                await asyncio.sleep(0.1)
+                await wait_for(
+                    lambda: screen.closed and screen.owner.controller_count == 0 and api.active == 0
+                )
                 assert not connecting.done() and client.api is not None
+                assert app.exports.operation_count > 0 and api.requests == before
+                retained_owners = app.retained_aggregate_log_view_count
+                app.action_logs_all()
+                assert app.retained_aggregate_log_view_count == retained_owners
+                assert api.requests == before and api.active == 0
             finally:
-                release.set()
+                files.release.set()
             await connecting
             await escape
-            assert finished.is_set() and save_calls.latest is not None and save_calls.latest.done()
+            await wait_for(lambda: app.exports.operation_count == 0)
+            assert (
+                files.finished.is_set()
+                and save_calls.latest is not None
+                and save_calls.latest.done()
+            )
             assert app.retained_aggregate_log_view_count == 0
+            metadata, provenance, retained = read_logs(destination)
+            assert metadata.scope.context == "kuberich-test-one" and provenance["retained_only"]
+            assert tuple(json.loads(line) for line in retained.splitlines()) == frozen
+            assert (
+                service.last_outcome.effect == "published"
+                and service.last_outcome.ref.name == destination.name
+            )
 
 
 @pytest.mark.asyncio
@@ -380,7 +429,8 @@ async def exercise_aggregate_runtime(tmp_path, request):
     preparation_seconds = time.monotonic() - preparation_started
     api = AggregateApi(count=1)
     async with workspace_api(ns, api.handler, discovery_roots=roots) as url:
-        app = app_for(tmp_path, url)
+        failed_files = FailingPublication("existing.log")
+        app = app_for(tmp_path, url, export_service=service_for(tmp_path, files=failed_files))
         request["_runtime_app"], request["_runtime_api"] = app, api
         async with app.run_test() as pilot:
             await wait_for(lambda: app.resources.row_count == 1)
@@ -611,12 +661,27 @@ async def exercise_aggregate_runtime(tmp_path, request):
                     destination = tmp_path / "existing.log"
                     destination.write_text("keep-existing")
                     phase = f"round {iteration} save"
-                    await pilot.press("ctrl+s")
-                    app.screen.query_one("#log-value", Input).value = str(destination)
-                    await pilot.press("enter")
-                    await wait_for(lambda: "Cannot save logs" in str(screen.status.content))
-                    assert "Cannot save logs" in str(screen.status.content)
+                    from kuberich.ui.export_review import ArtifactConfirmation
+
+                    review = await open_review(app, pilot)
+                    await choose_destination(review, destination)
+                    await pilot.click("#export-save")
+                    await wait_for(
+                        lambda: (
+                            isinstance(app.screen, ArtifactConfirmation) and app.screen.is_mounted
+                        )
+                    )
+                    assert destination.name in app.screen.message
+                    await pilot.click("#artifact-confirm-yes")
+                    await wait_for(
+                        lambda review=review: (
+                            "Cannot save the selected local artifact" in str(review.status.content)
+                        )
+                    )
+                    assert failed_files.calls == iteration and app.is_running
                     assert destination.read_text() == "keep-existing"
+                    await pilot.press("escape")
+                    assert app.screen is screen and app.focused is screen.body
                     if budget_enforced(request["mode"]):
                         assert gaps and max(gaps) < 0.15, (
                             "Aggregate runtime heartbeat exceeded 150 ms",
@@ -714,3 +779,50 @@ async def exercise_aggregate_runtime(tmp_path, request):
                     )
                     + "\n"
                 )
+
+
+@pytest.mark.asyncio
+async def test_reviewed_save_failure_is_nonfatal_preserves_named_entry_and_retained_source(
+    tmp_path,
+):
+    from kuberich.ui.export_review import ArtifactConfirmation
+
+    api = AggregateApi(count=1)
+    files = FailingPublication("existing.log")
+    service = service_for(tmp_path, files=files)
+    async with workspace_api(ns, api.handler) as url:
+        app = app_for(tmp_path, url, export_service=service)
+        async with app.run_test() as pilot:
+            await wait_for(lambda: app.resources.row_count == 1)
+            await pilot.press("L")
+            await wait_for(
+                lambda: isinstance(app.screen, AggregateLogScreen) and bool(app.screen.body.rows)
+            )
+            screen = app.screen
+            baseline = api.requests.copy()
+            retained = tuple(screen.aggregate.records.values())
+            destination = tmp_path / "existing.log"
+            destination.write_text("keep-existing")
+            review = await open_review(app, pilot)
+            await choose_destination(review, destination)
+            await pilot.click("#export-save")
+            await wait_for(
+                lambda: isinstance(app.screen, ArtifactConfirmation) and app.screen.is_mounted
+            )
+            assert (
+                destination.name in app.screen.message
+                and str(destination.parent) in app.screen.message
+            )
+            assert files.calls == 0 and destination.read_text() == "keep-existing"
+            await pilot.click("#artifact-confirm-yes")
+            await wait_for(
+                lambda: "Cannot save the selected local artifact" in str(review.status.content)
+            )
+            assert files.calls == 1 and app.is_running
+            assert destination.read_text() == "keep-existing" and api.requests == baseline
+            assert tuple(screen.aggregate.records.values()) == retained
+            await pilot.press("escape")
+            assert app.screen is screen and app.focused is screen.body
+            await pilot.press("escape")
+            await wait_for(lambda: api.active == 0)
+            assert app.exports.operation_count == 0

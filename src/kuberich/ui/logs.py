@@ -1,11 +1,13 @@
 """Captured-container logs with owned read/render/export tasks and deliberate follow."""
 
+from __future__ import annotations
+
 import asyncio
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import replace
-from datetime import datetime
-from typing import ClassVar
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, ClassVar
 
 from textual import on
 from textual.app import ComposeResult
@@ -19,11 +21,11 @@ from textual.widgets import Button, Input, Static
 from kuberich.domain.aggregate_logs import AggregateHistory
 from kuberich.domain.connections import ConnectionProblem
 from kuberich.domain.log_view import WINDOWS, LogHistory, parse_start_time, window_options
-from kuberich.domain.logs import LogLine
+from kuberich.domain.logs import LogLine, LogOptions
+from kuberich.domain.targets import ResourceTarget
 from kuberich.errors import AppError
 from kuberich.security.presentation import safe_text
-from kuberich.services.log_export import save_logs
-from kuberich.services.logs import LogStream
+from kuberich.services.logs import PODS, LogStream
 from kuberich.ui.chrome import (
     LOG_SHORTCUTS,
     TEXT_SHORTCUTS,
@@ -36,9 +38,12 @@ from kuberich.ui.chrome import (
 from kuberich.ui.commands import NavigationInput
 from kuberich.ui.keybindings import key_hint, navigation_help
 from kuberich.ui.log_body import LogBody
-from kuberich.ui.nested import CommandWorkspace
+from kuberich.ui.nested import CommandWorkspace, NestedCommands
 from kuberich.ui.scopes import ScopeScreen
 from kuberich.ui.text_navigation import ReadOnlyScroll
+
+if TYPE_CHECKING:
+    from kuberich.services.exports import ExportChoices
 
 
 class TextRequestScreen(ModalScreen[str | None]):
@@ -220,15 +225,68 @@ class LogScreen(CommandWorkspace):
         self._read_task: asyncio.Task[None] | None = None
         self._controller: asyncio.Task[None] | None = None
         self._renderer: asyncio.Task[None] | None = None
-        self._save_task: asyncio.Task[None] | None = None
         self._layout_lock = asyncio.Lock()
+        self._export_producing: tuple[int, ResourceTarget, LogOptions, int | None] | None = None
+        self._export_epoch = 0
+        self._export_observed_at: datetime | None = None
+
+    def capture_export(self, at: datetime) -> ExportChoices:
+        from kuberich.domain.exports import ExportPresentation, SingleLogsSource
+        from kuberich.ui.export_captures import captured_lease, header_namespace, target_scope
+
+        producing, epoch = self._export_producing, self._export_epoch
+        if (
+            producing is None
+            or producing[0] != self._generation
+            or self.closed
+            or self.stale
+            or not self.is_mounted
+            or not self.stream.current()
+            or not isinstance(self.history, LogHistory)
+        ):
+            return ()
+        generation, target, options, head = producing
+        timestamps, query = self.timestamps, self.search.value
+        lease = captured_lease(
+            target_scope(
+                at,
+                target,
+                resource=PODS,
+                source_at=self._export_observed_at,
+                header=header_namespace(self.chrome),
+            ),
+            SingleLogsSource(
+                options=options,
+                head_lines=head,
+                entries=tuple(self.history.entries),
+                dropped_lines=self.history.buffer.dropped_lines,
+                show_timestamps=timestamps,
+            ),
+            lambda: (
+                self.is_mounted
+                and not self.closed
+                and not self.stale
+                and self._export_producing is producing
+                and self._generation == generation
+                and self._export_epoch == epoch
+                and self.timestamps == timestamps
+                and self.search.value == query
+                and self.stream.current()
+            ),
+            target=target,
+            presentation=ExportPresentation(view="logs", query=query),
+            notices=(
+                "Only retained sanitized log lines are included; no logs were fetched for export.",
+            ),
+        )
+        return (("logs", lease), ("screen", lease))
 
     @property
     def active_count(self) -> int:
-        """Count unfinished owned controller, reader, renderer and export operations."""
+        """Count unfinished owned controller, reader and renderer operations."""
         return sum(
             task is not None and not task.done()
-            for task in (self._controller, self._read_task, self._renderer, self._save_task)
+            for task in (self._controller, self._read_task, self._renderer)
         )
 
     def compose(self) -> ComposeResult:
@@ -304,6 +362,7 @@ class LogScreen(CommandWorkspace):
             self._status()
             return
         self._generation += 1
+        self._export_producing = None
         self._display_generation += 1
         self.message = "Opening selected container logs…"
         self._change.set()
@@ -319,6 +378,8 @@ class LogScreen(CommandWorkspace):
                 if self.stale:
                     continue
                 self.history.clear()
+                self._export_epoch += 1
+                self._export_observed_at = None
                 self.body.clear()
                 self.body.follow = True
                 self._dirty.set()
@@ -335,9 +396,13 @@ class LogScreen(CommandWorkspace):
             await asyncio.gather(self._read_task, return_exceptions=True)
 
     async def _read(self, generation: int) -> None:
+        target = replace(self.stream.target, container=self.container)
+        options = window_options(self.window, previous=self.previous, since=self.since)
+        head = self.window == "Head 1000"
+        self._export_producing = (generation, target, options, 1000 if head else None)
         stream = LogStream(
             self.stream.client,
-            replace(self.stream.target, container=self.container),
+            target,
             self.stream.policy,
             lambda: (
                 not self.closed
@@ -347,7 +412,6 @@ class LogScreen(CommandWorkspace):
             ),
         )
         received = 0
-        head = self.window == "Head 1000"
 
         def opened() -> None:
             self.message = "Waiting for log output"
@@ -358,6 +422,7 @@ class LogScreen(CommandWorkspace):
             await self._resume.wait()
             stream.require_current()
             self.history.append(line)
+            self._export_observed_at = datetime.now(UTC)
             received += 1
             self.message = "Receiving logs"
             self._dirty.set()
@@ -368,7 +433,7 @@ class LogScreen(CommandWorkspace):
 
         try:
             await stream.run(
-                window_options(self.window, previous=self.previous, since=self.since),
+                options,
                 retain,
                 opened=opened,
             )
@@ -514,6 +579,8 @@ class LogScreen(CommandWorkspace):
         self._status()
 
     def action_clear(self) -> None:
+        self._export_epoch += 1
+        self._export_observed_at = None
         count = self.history.clear()
         self.body.clear()
         self.message = f"Cleared {count} retained lines"
@@ -591,30 +658,12 @@ class LogScreen(CommandWorkspace):
         self._status()
 
     def action_save(self) -> None:
-        def selected(value: str | None) -> None:
-            if value is not None and (self._save_task is None or self._save_task.done()):
-                self._save_task = asyncio.create_task(self._save(value))
-
-        self.app.push_screen(
-            TextRequestScreen("Save retained redacted logs to a NEW file"), selected
-        )
-
-    async def _save(self, path: str) -> None:
-        try:
-            self.require_current()
-            text = self.history.export()
-            self.message = "Saving captured redacted logs…"
+        commands = getattr(self.app, "nested_commands", None)
+        if isinstance(commands, NestedCommands):
+            commands.route(self, "export")
+        else:
+            self.message = "Open this viewer in KubeRich to review and save a local export."
             self._status()
-            await save_logs(path, text)
-            if not self.stale:
-                self.message = "Captured redacted logs saved"
-        except AppError as error:
-            self.message = str(error)
-        except Exception as error:
-            self.app._handle_exception(error)
-        finally:
-            if not self.closed:
-                self._status()
 
     def back(self) -> None:
         if isinstance(self.focused, Input):
@@ -637,7 +686,7 @@ class LogScreen(CommandWorkspace):
 
     def _cancel_tasks(self) -> None:
         self.closed = True
-        for task in (self._controller, self._renderer, self._save_task):
+        for task in (self._controller, self._renderer):
             if task is not None and not task.done() and not task.cancelling():
                 task.cancel()
 
@@ -648,11 +697,7 @@ class LogScreen(CommandWorkspace):
     async def stop_owned(self) -> None:
         self._cancel_tasks()
         await asyncio.gather(
-            *(
-                task
-                for task in (self._controller, self._renderer, self._save_task)
-                if task is not None
-            ),
+            *(task for task in (self._controller, self._renderer) if task is not None),
             return_exceptions=True,
         )
 

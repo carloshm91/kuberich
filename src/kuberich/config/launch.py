@@ -1,9 +1,11 @@
-"""Audited launch options whose owning product behavior has not shipped yet."""
+"""Audited launch availability and lexical export-directory capture."""
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from pathlib import Path
 
 from kuberich.errors import AppError, ExitCode
+from kuberich.security.arguments import validate_argument
 
 
 @dataclass(frozen=True)
@@ -15,10 +17,7 @@ class PendingOption:
     repeated: bool = False
 
 
-PENDING_OPTIONS = (
-    PendingOption(("--splashless",), "splashless", "startup splash", boolean=True),
-    PendingOption(("--screen-dump-dir",), "screen_dump_dir", "screen exports"),
-)
+PENDING_OPTIONS = (PendingOption(("--splashless",), "splashless", "startup splash", boolean=True),)
 
 CONNECTION_OPTIONS = (
     PendingOption(("--cluster",), "cluster", "connection overrides"),
@@ -55,3 +54,13 @@ def require_available(values: Mapping[str, object]) -> None:
                 f"requires {option.owner}.",
                 ExitCode.UNAVAILABLE,
             )
+
+
+def capture_export_directory(path: Path, directory: Path) -> Path:
+    """Anchor a launch path without resolving links or touching directories."""
+    validate_argument(str(path))
+    try:
+        expanded = path.expanduser()
+    except (OSError, RuntimeError):
+        raise AppError("Cannot capture the selected export directory.") from None
+    return expanded if expanded.is_absolute() else directory / expanded
