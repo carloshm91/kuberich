@@ -92,7 +92,10 @@ The existing Pulse regression cohort initially passed 200 cases and failed two
 outdated fake backends before their proxy handlers were reached. It retained
 `root/pulse-01.log` and JUnit. Those fixtures lacked newly required Service
 discovery/UID reads and treated contributor probes as ordinary metric values.
-Their correction and subsequent result must be recorded before acceptance.
+Both corrected regressions passed in 3.42 seconds with unchanged five-second
+deadlines; `service/pulse-fixtures-001.xml` retains their result. The preserved
+assertions cover numeric samples, gaps, scope, held-query cancellation and theme
+versus valid/invalid configuration reload. Production bytes were unchanged.
 
 The frozen actual-provider verifier is now running against one owned kind
 cluster with checksum-verified kind/kubectl and pinned charts/images. Its result
