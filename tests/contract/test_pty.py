@@ -66,8 +66,9 @@ input()
             assert b"columns=80, lines=25" in await until(endpoint, b"lines=25")
             endpoint.write("unicode á\r".encode())
             assert "INPUT unicode á".encode() in await until(endpoint, b"WAIT")
-            endpoint.write(b"\x03")
-            result = await session.wait()
+            async with asyncio.timeout(5):
+                endpoint.write(b"\x03")
+                result = await session.wait()
             assert result.status is ProcessStatus.SIGNALLED and result.returncode == -signal.SIGINT
         assert endpoint.closed and endpoint.slave == -1
         with pytest.raises(OSError):
