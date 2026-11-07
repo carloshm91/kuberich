@@ -24,7 +24,9 @@ It preserves the captured Pod identity, output and position during that reload.
 A confirmed deletion, replacement or context/namespace change still stops the
 old view; select the Pod again to open another read. Reopening checks the Pod's
 identity again. Other container actions retain their normal current-selection
-checks. This continuity change is not in the installed 0.3.0 release.
+checks. A delayed deletion event for a different Pod UID does not stop the
+current read merely because its name matches. This continuity change is not
+in the installed 0.3.0 release.
 
 ## Inspect container environment and image facts
 

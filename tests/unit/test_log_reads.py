@@ -12,7 +12,7 @@ from kuberich.domain.resource_queries import ResourceQuery
 from kuberich.domain.resources import CollectionState, resource_record
 from kuberich.domain.targets import ResourceTarget, SessionIdentity
 from kuberich.domain.views import USABLE_CONNECTIONS, ResourceScope, ViewObservation, ViewStatus
-from kuberich.domain.watches import watch_event
+from kuberich.domain.watches import WatchState, watch_event
 from kuberich.errors import AppError
 from tests.support.pods import pod, snapshot
 
@@ -161,6 +161,29 @@ def test_explicit_delete_or_same_name_replacement_cannot_be_hidden_by_coalescing
 def test_same_uid_under_another_namespace_in_an_event_is_inconsistent_identity():
     state, view = admitted(all_namespaces=True)
     state.observe(view, event=resource_event(view, "MODIFIED", namespace="other"))
+    assert not state.current
+
+
+def test_accepted_delete_of_an_old_incarnation_preserves_the_current_uid():
+    state, view = admitted()
+    change = resource_event(view, "DELETED", uid="old-incarnation-uid")
+    watch = WatchState(view.snapshot)
+    assert watch.apply(change)
+    data = watch.snapshot
+    assert any(item.uid == state.target.uid for item in data.items)
+    state.observe(replace(view, snapshot=data), event=change)
+    assert state.current and not state.membership_unknown
+
+
+@pytest.mark.parametrize("limited", [False, True])
+def test_old_incarnation_delete_does_not_hide_authoritative_absence(limited):
+    state, view = admitted()
+    state.observe(
+        replace(view, snapshot=without_target(view, complete=not limited, limited=limited)),
+        event=resource_event(view, "DELETED", uid="old-incarnation-uid"),
+    )
+    assert not state.current
+    state.observe(view)
     assert not state.current
 
 

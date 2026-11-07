@@ -212,10 +212,21 @@ terminal failure and scope/client/revision changes still revoke it. Existing
 pre-open and post-open Pod GET verification and strict sibling operations stay
 in place. Direct and shared container/log viewers own and release their handles.
 
-The pure-state controls pass 53 cases with 71/71 statements and 34/34 branch
-outcomes covered. Initial actual-App controls pass both relist forms, held
-partial pages and the six hard invalidation cases; source ownership and further
-integration controls remain in review. These measurements are scoped to the
+The final pure-state controls pass 56 cases with 71/71 statements and 34/34
+branch outcomes covered. An additional real WatchState control and actual-App
+HTTP stream both exposed incorrect invalidation on an accepted delayed DELETE
+for an older UID with the captured name. WatchState retains the current UID;
+that event is not replacement evidence. The correction excludes only that
+event from the replacement shortcut and still checks authoritative membership.
+Own-UID deletion, same-name ADDED/MODIFIED replacement and complete/limited
+absence remain sticky invalidations. The original unit failure and paired
+HTTP result (one failure, one passing unrelated-delete control) remain retained.
+The final actual-App/owned-HTTP replay passes 26 cases in 63.99 seconds, including
+both relist forms, held partial pages, the delayed deletion and hard invalidation
+cases. It verifies a subsequent real log marker on the original reader and
+drained requests, readers, leases and retained screens. The earlier related
+202-case cohort and 34-case post-review direct/shared/aggregate cohort remain
+separate measurements. These measurements are scoped to the
 correction worktree and do not qualify final main. New-source hosted checks,
 protected delivery and all cumulative #75 requirements remain pending. The
 separate native-horizontal and typed-row readiness CI failures are retained

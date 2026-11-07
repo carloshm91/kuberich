@@ -486,15 +486,28 @@ async def test_quiet_log_read_stays_revoked_when_ui_coalesces_later_presence(
 
 
 @pytest.mark.asyncio
-async def test_unrelated_delete_preserves_the_captured_quiet_log_read(tmp_path, monkeypatch):
-    async with opened_log(tmp_path, monkeypatch) as (app, _pilot, screen, api, calls, _capture):
+@pytest.mark.parametrize("deleted", ["unrelated", "old-incarnation"])
+async def test_unrelated_delete_preserves_the_captured_quiet_log_read(
+    tmp_path, monkeypatch, deleted
+):
+    async with opened_log(tmp_path, monkeypatch) as (app, _pilot, screen, api, calls, capture):
         owner = calls.latest
-        await api.commands.put({"type": "DELETED", "object": api.other})
-        await wait_for(lambda: len(app.workspace.store.observation.snapshot.items) == 1)
-        await api.log_lines.put(b"after-unrelated-delete\n")
-        await wait_for(
-            lambda: any("after-unrelated-delete" in str(e.line) for e in screen.history.entries)
-        )
+        target = screen.stream.target
+        record = copy.deepcopy(api.other if deleted == "unrelated" else api.selected)
+        if deleted == "old-incarnation":
+            record["metadata"]["uid"] = "older-pod-incarnation-uid"
+        version = "accepted-delete-" + deleted
+        record["metadata"]["resourceVersion"] = version
+        await api.commands.put({"type": "DELETED", "object": record})
+        await wait_for(lambda: app.workspace.store.observation.snapshot.resource_version == version)
+        snapshot = app.workspace.store.observation.snapshot
+        assert any(item.uid == TARGET_UID and item.name == TARGET for item in snapshot.items)
+        assert screen.stream.target == target
+        capture("accepted-" + deleted + "-delete")
+        assert not screen.stale and screen.stream.current()
+        marker = "after-" + deleted + "-delete"
+        await api.log_lines.put((marker + "\n").encode())
+        await wait_for(lambda: any(marker in str(e.line) for e in screen.history.entries))
         assert not screen.stale and screen.stream.current()
         assert calls.latest is owner and not owner.done() and api.log_count == 1
 

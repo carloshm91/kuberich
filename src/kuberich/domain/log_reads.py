@@ -62,7 +62,12 @@ class LogReadState:
                 same_uid
                 and ((event is not None and event.type is EventType.DELETED) or not same_name)
             )
-            or (same_name and not same_uid)
+            or (
+                same_name
+                and not same_uid
+                and event is not None
+                and event.type is not EventType.DELETED
+            )
         ):
             self.invalidate()
             return

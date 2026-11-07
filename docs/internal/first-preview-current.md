@@ -20,12 +20,19 @@ cache.
 
 The current pure-state command is
 `uv run --no-sync pytest tests/unit/test_log_reads.py --cov=kuberich.domain.log_reads --cov-branch`.
-Its 53 cases pass with all 71 statements and 34 branch outcomes covered. The
-initial actual-App regression passes both 410 cases and six target-invalidation
-controls. Shared-parent ownership, strict sibling actions, fresh-opening races
-and complete source/platform qualification remain under review. These scoped
-results do not close #323 or qualify a release. Two additional retained final-main
-CI failures concern native horizontal navigation and a row-order readiness
+Its 56 cases pass with all 71 statements and 34 branch outcomes covered.
+A further accepted-event control exposed a delayed deletion of an older Pod UID
+with the same name incorrectly staling the current read; the narrow correction
+keeps that read while still rejecting actual deletion, replacement and complete
+or limited absence. The original unit and owned-HTTP failures remain retained.
+The initial related App/service cohort passes 202 cases, with 34 post-review
+direct/shared/aggregate cases passing separately. The final focused command,
+`uv run --no-sync pytest tests/ui/test_log_relist.py`, passes 26 actual-App/HTTP
+controls in 63.99 seconds, including the delayed-delete case, both relist forms,
+strict invalidation and drained requests/readers/leases/screens. Complete source/platform
+qualification remains pending. These scoped results do not close #323 or qualify
+a release. Two additional retained final-main CI failures concern native
+horizontal navigation and a row-order readiness
 oracle; their diagnosis is separate from the log lifetime fix.
 
 Published channels still deliver 0.3.0. No 0.4.0 package, tag, tap, website or DNS
