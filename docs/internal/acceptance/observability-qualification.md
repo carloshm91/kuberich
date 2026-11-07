@@ -135,6 +135,53 @@ remains historical, while the current raw bytes belong to that failure. New
 native runs retain unique private directories under
 `artifacts/terminal/header-identity`, covered by the existing CI artifact policy.
 
+The first frozen-candidate container-inspection round stopped after its owned
+ConfigMap write with a generic `AppError`. Its original GET ledger lacks the
+message and callsite needed to attribute that exact failure. Separate instrumented
+owned-cluster diagnostics observed same-UID, unchanged-spec Pod status/version
+updates: one occurred before an old-snapshot rejection, and another occurred
+between the first and final Pod reads of an initial positive disclosure. The
+product correctly rejected those expired full-object bindings. Neither diagnostic
+is a corrected candidate qualification or proves the original failure's placement.
+
+Three deterministic owned-HTTP controls reproduce the original verifier's actual
+stale-binding error before a positive disclosure, during its source reads and
+between two positive values. The verifier now permits at most two explicit
+reloads per positive group, within its unchanged deadline. Recovery requires the
+exact stale-binding error, a retired snapshot and a current captured target;
+fresh indexing retains the same Pod UID and disclosure uses a new one-use intent.
+The latest snapshot is returned for subsequent mutation checks. Wrong or
+unresolved values, other errors, cancellation, replacement UID, failed indexing
+and exhausted recovery remain failures. Product source and stale-binding guards
+are unchanged.
+
+The three deliberate stale-source, optional-source-appearance and Pod-recreation
+checks still use the raw disclosure path. They require a current snapshot before
+mutation, require the exact stale rejection and record its read count. A fixed-Pod,
+changed-source HTTP control reaches both source reads and the final Pod check,
+proving source invalidation separately from Pod-status invalidation. A generic
+error or already-expired intent cannot substitute for these controls. Original
+failed logs and the first focused fixture-message mismatch remain retained under
+`artifacts/issue75/container-failure-review/`; final candidate rounds remain
+required.
+
+The focused verifier, owned-HTTP service and actual-App inspector scope passes
+121 cases in 110.97 seconds. The final verifier/enrollment/internal-document
+scope passes 45 cases in 12.46 seconds, including the added input/result UID
+guards. The new positive helper covers all 29 statements and 12 branch outcomes;
+this is a tooling-function result, not whole-product coverage.
+
+A controlled real-kind run then passes in 37.07 seconds after an explicit
+same-UID status update before the initial BASE disclosure. Its one reload advances
+Pod version 565 to 567; source-change, source-appearance and recreation negatives
+read six, six and one objects respectively. An unmodified corrected-verifier run
+passes in 33.37 seconds with no reload. Its source-change check stops on the first
+Pod GET, so that particular rejection is not credited as ConfigMap-branch proof;
+the controlled run and fixed-Pod HTTP control provide that separate evidence.
+Both runs retain unchanged input/environment checks and drained sessions, deleted
+private directories and deleted owned clusters. They are scoped correction proofs,
+not the complete frozen-candidate release qualification.
+
 ## Final gate
 
 After protected preparation delivery, freeze the exact main candidate. Require
