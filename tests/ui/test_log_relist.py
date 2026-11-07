@@ -2,6 +2,7 @@
 
 import asyncio
 import copy
+import inspect
 import json
 import logging
 import tempfile
@@ -510,6 +511,128 @@ async def test_unrelated_delete_preserves_the_captured_quiet_log_read(
         await wait_for(lambda: any(marker in str(e.line) for e in screen.history.entries))
         assert not screen.stale and screen.stream.current()
         assert calls.latest is owner and not owner.done() and api.log_count == 1
+
+
+@pytest.mark.asyncio
+async def test_native_display_timeout_does_not_lose_the_log_screen_stop(tmp_path, monkeypatch):
+    loop = asyncio.get_running_loop()
+    previous_factory = loop.get_task_factory()
+    renderer_source = inspect.getsourcefile(LogScreen)
+    timeout_source = inspect.getsourcefile(asyncio.Timeout)
+    state = {"armed": False, "renderer": None, "screen": None, "stop": None}
+    native_cancel = asyncio.Event()
+    cancellations = []
+    evidence = {}
+
+    class RendererTask(asyncio.Task):
+        def cancel(self, msg=None):
+            frame = inspect.currentframe()
+            try:
+                assert frame is not None and frame.f_back is not None
+                caller_code = frame.f_back.f_code
+            finally:
+                del frame
+            native = (
+                caller_code.co_filename == timeout_source and caller_code.co_name == "_on_timeout"
+            )
+            cancellations.append((asyncio.current_task(), native))
+            inject = state["armed"] and state["stop"] is None and native
+            if inject:
+                assert self.cancelling() == 0
+                evidence["native_callback"] = {
+                    "file": caller_code.co_filename,
+                    "function": caller_code.co_name,
+                    "count_before": self.cancelling(),
+                }
+                # Queue the real non-eager close before native cancel queues
+                # the renderer wakeup. The timeout delivers its own cancellation.
+
+                async def stop_in_native_window():
+                    evidence["first_stop_entry"] = {
+                        "task_id": id(asyncio.current_task()),
+                        "renderer_task_id": id(self),
+                        "renderer_cancellation_count": self.cancelling(),
+                    }
+                    assert self.cancelling() == 1
+                    return await state["screen"].stop_owned()
+
+                state["stop"] = asyncio.Task(stop_in_native_window(), loop=loop, eager_start=False)
+            result = super().cancel(msg)
+            if inject:
+                evidence["native_callback"]["count_after"] = self.cancelling()
+                native_cancel.set()
+            return result
+
+    def factory(loop, coroutine, **kwargs):
+        code = getattr(coroutine, "cr_code", None)
+        if (
+            code is not None
+            and code.co_filename == renderer_source
+            and code.co_name == "_render_logs"
+        ):
+            assert state["renderer"] is None
+            state["renderer"] = RendererTask(coroutine, loop=loop, **kwargs)
+            return state["renderer"]
+        if previous_factory is not None:
+            return previous_factory(loop, coroutine, **kwargs)
+        return asyncio.Task(coroutine, loop=loop, **kwargs)
+
+    loop.set_task_factory(factory)
+    try:
+        async with opened_log(tmp_path, monkeypatch) as (app, _pilot, screen, api, calls, capture):
+            reader = calls.latest
+            assert reader is not None and not reader.done()
+            assert not screen.closed and screen.stream.current() and api.log_count == 1
+            assert state["renderer"] is not None
+            state["screen"] = screen
+            directory = Path(tempfile.mkdtemp(prefix=tmp_path.name + "-native-", dir=EVIDENCE))
+            directory.chmod(0o700)
+            try:
+                # Arm only after all live-read preconditions returned normally.
+                state["armed"] = True
+                await api.log_lines.put(b"native-timeout-owned-marker\n")
+                await wait_for(native_cancel.is_set)
+                stop, renderer = state["stop"], state["renderer"]
+                done, _ = await asyncio.wait({stop}, timeout=5)
+                evidence["first_stop"] = {
+                    "stop_task_id": id(stop),
+                    "renderer_task_id": id(renderer),
+                    "done": stop.done(),
+                    "renderer_done": renderer.done(),
+                    "reader_done": reader.done(),
+                    "renderer_cancellation_count": renderer.cancelling(),
+                    "registered_leases": app.workspace.log_read_count,
+                    "retained_log_screens": app.operations.retained_log_count,
+                }
+                assert stop in done, "First log stop did not drain after the native timeout"
+                stop.result()
+                assert renderer.done() and reader.done() and calls.latest is reader
+                assert screen.active_count == 0 and api.log_count == 1
+                assert app.workspace.log_read_count == app.operations.retained_log_count == 0
+                # A later presenter close must not rescue the request under test.
+                assert all(native or task is stop for task, native in cancellations)
+                assert evidence["first_stop_entry"]["task_id"] == id(stop)
+                assert evidence["first_stop_entry"]["renderer_task_id"] == id(renderer)
+                assert evidence["native_callback"]["count_after"] == 1
+                capture("native-timeout-first-stop")
+            finally:
+                state["armed"] = False
+                api.release()
+                # This later close is cleanup only, never a successful first stop.
+                await screen.stop_owned()
+                if state["stop"] is not None:
+                    await asyncio.gather(state["stop"], return_exceptions=True)
+                evidence["cleanup"] = {
+                    "readers_drained": all(task.done() for task in calls.tasks),
+                    "registered_leases": app.workspace.log_read_count,
+                    "retained_log_screens": app.operations.retained_log_count,
+                }
+                path = directory / "native-timeout.json"
+                path.write_text(json.dumps(evidence, indent=2) + "\n")
+                path.chmod(0o600)
+                print(f"Native log-timeout evidence: {directory}")
+    finally:
+        loop.set_task_factory(previous_factory)
 
 
 @pytest.mark.asyncio

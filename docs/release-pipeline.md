@@ -39,7 +39,7 @@ Before preparing or publishing, require all of the following:
 - Successful latest main-dispatch quality and main-push repository runs for that exact commit,
   including **every Linux/macOS Python 3.12/3.13/3.14 job**, not a green aggregate
   or an older successful attempt beside a failed rerun.
-  Linux jobs must request `ubuntu-24.04`, macOS jobs `macos-latest`; completed
+  Linux jobs must request `ubuntu-24.04`, macOS jobs `macos-15`; completed
   successful planner/aggregate/Repository jobs must also request `ubuntu-24.04`.
   A matching display name with a different or missing runner label fails.
   Dispatch Application quality on main before the release workflow; routine

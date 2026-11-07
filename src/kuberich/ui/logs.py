@@ -472,7 +472,7 @@ class LogScreen(CommandWorkspace):
 
     async def _render_logs(self) -> None:
         try:
-            while True:
+            while not self.closed:
                 await self._dirty.wait()
                 with suppress(TimeoutError):
                     await asyncio.wait_for(self._display_ready.wait(), timeout=0.05)
