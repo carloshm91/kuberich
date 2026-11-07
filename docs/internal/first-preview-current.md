@@ -1,5 +1,51 @@
 # Development checkpoint
 
+## Measurement and peer readiness before final qualification
+
+Typed-row preparation is protected-merged in PR #327 at
+`c8d5b999202332d4a0fc2f17c6df9858f7420f52`. The subsequent exact-source
+manual matrix retains a Linux/Python 3.13 pacing-test failure: 82 resource
+events over 1.164720 seconds exceeded the original count-error tolerance of
+three. That test ran with branch coverage alongside another xdist worker; it
+did not reserve the documented timing window. The original failure remains
+failed, and its precise scheduling cause is unproven.
+
+The same source's completed 30-minute normal-interpreter observation passes
+the scoped memory, descriptor, thread, terminal-restoration and cleanup checks.
+Its actual source interval is 1,800.235959 seconds, with 180,024 resource
+events and 3,600,480 log lines. Both actual rates meet the original count
+tolerances. Input P95 is 144.2 ms against the advisory 100 ms target. These
+results do not replace the failed matrix or complete release qualification.
+
+The narrow preparation preserves the generator, pause semantics, rates and
+all end-to-end assertions while moving the short rate measurement into a fresh,
+uninstrumented child under the existing exclusive test window. Controlled
+underproduction still fails the original rate assertion and drains its owners.
+The final child/window controls pass two cases in 4.29 seconds, including real
+ordinary-reader exclusion and re-admission after cleanup. Child identity, normal
+GC, absent instrumentation and retained private evidence are verified.
+
+The same manual matrix also retains a macOS/Python 3.14 metrics test failure:
+the server-side transport was still open immediately after the workspace
+closed. A public paused-reading control reproduces the old final assertion
+while local metrics owners are already zero, the client is closed and all
+expiry timers have finished. The correction preserves those immediate local
+checks and waits separately for actual peer EOF within one five-second budget.
+Ordinary and held-peer variants pass two focused cases in 0.91 seconds. This
+is a test-readiness correction; the production shutdown behavior is unchanged.
+The exact-source manual run remains failed, with neither failure hidden by the
+successful reduced push run. Fresh protected delivery and qualification remain
+required.
+
+The final combined metrics, paced-source and test-window files pass 66 cases
+in 16.83 seconds under parent branch coverage with two xdist workers, no skips
+or failures and 861 unchanged input pins. Ruff, formatting of 1,133 files,
+strict types over 316 source files, 154 documentation checks, private-access
+and plan/link validation pass. All 268 production files remain byte-identical
+to the protected predecessor; these tests make no new whole-product coverage
+claim. Preparation is ready for protected delivery under #75; no new candidate
+is qualified. Earlier preparation checkpoints below are historical.
+
 ## Final observability qualification preparation
 
 The log-read and horizontal-navigation blockers are protected-merged through

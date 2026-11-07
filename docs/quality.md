@@ -224,6 +224,12 @@ The real-CLI workload uses 10,000 resource rows, 100 resource events/second and
 2,000 log lines/second with 10,000 retained lines. Its reference p95 input target
 is below 100 ms; evaluate memory over a 30-minute soak, not a short demonstration.
 Use `uv run python -m tests.support.performance_terminal --seconds 1800 --output NEW_PATH`.
+The short paced-source rate contract also requires an exclusive reference window
+and a fresh, uninstrumented interpreter. Its actual HTTP records, original
+100-event/2,000-line rates, count tolerances, sequences and drained owners remain
+mandatory. The covered parent validates the child identity and cleanup receipt;
+instrumented replay or a generic child failure cannot establish the rate contract
+or its deliberate underproduction control.
 After ten warmup minutes, review four five-minute windows with at least 54 samples.
 For app/source/observer RSS, ranges of window medians and p95s stay within the
 larger of 8 MiB or 5% of the minimum median; descriptor range is at most two and
