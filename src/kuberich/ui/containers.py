@@ -93,9 +93,13 @@ class ContainerScreen(CommandWorkspace):
         metrics: MetricReport | None = None,
         inspect_container: Callable[[ContainerIdentity], None] | None = None,
         metric_history: Callable[[ContainerIdentity], None] | None = None,
+        release_read: Callable[[], None] | None = None,
+        stopped: Callable[[], None] | None = None,
     ) -> None:
         super().__init__()
         self.stream = stream
+        self._release_read, self._stopped = release_read, stopped
+        self._log_children: set[LogScreen] = set()
         self.invalidated = False
         self._pending_record: ResourceRecord | None = None
         self._last_record: ResourceRecord | None = None
@@ -321,15 +325,32 @@ class ContainerScreen(CommandWorkspace):
     async def stop_owned(self) -> None:
         self.invalidated = True
         self._pending_record = None
-        if self._rows_task is not None:
-            if not self._rows_task.done() and not self._rows_task.cancelling():
-                self._rows_task.cancel()
-            await finish_owned(asyncio.gather(self._rows_task, return_exceptions=True))
-        self.names, self.rows = (), ()
-        self._metrics = MetricReport()
-        self._last_record = None
-        self.table.clear()
-        self.table.disabled = True
+        if (
+            self._rows_task is not None
+            and not self._rows_task.done()
+            and not self._rows_task.cancelling()
+        ):
+            self._rows_task.cancel()
+        try:
+            await finish_owned(
+                asyncio.gather(
+                    *((self._rows_task,) if self._rows_task is not None else ()),
+                    *(screen.stop_owned() for screen in tuple(self._log_children)),
+                    return_exceptions=True,
+                )
+            )
+        finally:
+            self.names, self.rows = (), ()
+            self._metrics = MetricReport()
+            self._last_record = None
+            self.table.clear()
+            self.table.disabled = True
+            release, self._release_read = self._release_read, None
+            stopped, self._stopped = self._stopped, None
+            if release is not None:
+                release()
+            if stopped is not None:
+                stopped()
 
     async def on_unmount(self) -> None:
         await self.stop_owned()
@@ -396,15 +417,29 @@ class ContainerScreen(CommandWorkspace):
     def _open(self, name: str) -> None:
         if self.app.screen is not self:
             return
+        if self._log_children:
+            self._set_status("Previous log view is closing; wait for owned cleanup to finish.")
+            return
         try:
             self.stream.require_current()
         except AppError as error:
             self.validate_target()
             self._set_status(safe_text(str(error)))
             return
-        self.app.push_screen(
-            LogScreen(self.stream, self.names, selected=name, chrome=self.chrome, trail=self.trail)
+        screen = LogScreen(
+            self.stream,
+            self.names,
+            selected=name,
+            chrome=self.chrome,
+            trail=self.trail,
+            stopped=lambda: self._log_children.discard(screen),
         )
+        self._log_children.add(screen)
+        try:
+            self.app.push_screen(screen)
+        except BaseException:
+            self._log_children.discard(screen)
+            raise
 
     @on(Button.Pressed, "#container-back")
     def back(self) -> None:

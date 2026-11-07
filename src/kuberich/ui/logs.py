@@ -185,11 +185,14 @@ class LogScreen(CommandWorkspace):
         chrome: WorkspaceChrome | None = None,
         trail: tuple[str, ...] = ("pods",),
         initial_previous: bool = False,
+        release_read: Callable[[], None] | None = None,
+        stopped: Callable[[], None] | None = None,
     ) -> None:
         super().__init__()
         if selected is not None and selected not in containers:
             raise AppError("Selected log container is unavailable in this pod.")
         self.stream, self.containers = stream, containers
+        self._release_read, self._stopped_callback = release_read, stopped
         self.chrome, self.trail = chrome, trail
         self.breadcrumbs = Breadcrumbs(
             (*trail, "logs"),
@@ -702,10 +705,22 @@ class LogScreen(CommandWorkspace):
 
     async def stop_owned(self) -> None:
         self._cancel_tasks()
-        await asyncio.gather(
-            *(task for task in (self._controller, self._renderer) if task is not None),
-            return_exceptions=True,
-        )
+        from kuberich.services.ownership import finish_owned
+
+        try:
+            await finish_owned(
+                asyncio.gather(
+                    *(task for task in (self._controller, self._renderer) if task is not None),
+                    return_exceptions=True,
+                )
+            )
+        finally:
+            release, self._release_read = self._release_read, None
+            stopped, self._stopped_callback = self._stopped_callback, None
+            if release is not None:
+                release()
+            if stopped is not None:
+                stopped()
 
     async def on_unmount(self) -> None:
         await self.stop_owned()

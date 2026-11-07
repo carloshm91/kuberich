@@ -466,6 +466,9 @@ class KubeRichApp(App[None]):
             metric_history=self.metric_history.open_container,
             navigate_curated=self.navigator.open_curated,
             current_curated=self.navigator.curated_current,
+            log_read=lambda selection: self.workspace.open_log_read(
+                selection.client, selection.target, selection.current
+            ),
         )
         from platformdirs import user_state_path
 

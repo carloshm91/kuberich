@@ -37,9 +37,12 @@ if TYPE_CHECKING:
     from kuberich.domain.resources import Discovery
     from kuberich.services.curated_navigation import CuratedOrigin, ResolvedCuratedDestination
     from kuberich.services.exports import ExportChoices
+    from kuberich.services.log_reads import LogReadLease
     from kuberich.ui.aggregate_logs import AggregateLogScreen
     from kuberich.ui.container_inspection import ContainerInspectionScreen
+    from kuberich.ui.containers import ContainerScreen
     from kuberich.ui.inspection import InspectionScreen, Page
+    from kuberich.ui.logs import LogScreen
 
 
 @dataclass(frozen=True)
@@ -78,6 +81,7 @@ class ResourceOperations:
         | None = None,
         navigate_curated: Callable[[CuratedOrigin, ResolvedCuratedDestination], None] | None = None,
         current_curated: Callable[[CuratedOrigin], bool] | None = None,
+        log_read: Callable[[CapturedResource[KubernetesSession]], LogReadLease] | None = None,
     ) -> None:
         self.host, self.capture, self.context = host, capture, context
         self.policy, self.mutations, self.forwards = policy, mutations, forwards
@@ -87,10 +91,16 @@ class ResourceOperations:
         self.metric_history = metric_history
         self.navigate_curated = navigate_curated
         self.current_curated = current_curated
+        self.log_read = log_read
+        self._log_screens: set[ContainerScreen | LogScreen] = set()
         self._aggregate_screens: set[AggregateLogScreen] = set()
         self._inspection_screens: set[ContainerInspectionScreen] = set()
         self._general_inspection_screens: set[InspectionScreen] = set()
         self._auto_forward_contexts: set[str] = set()
+
+    @property
+    def retained_log_count(self) -> int:
+        return len(self._log_screens)
 
     @property
     def retained_aggregate_count(self) -> int:
@@ -434,54 +444,83 @@ class ResourceOperations:
         except AppError as error:
             self.status(str(error))
             return
-        stream = LogStream(client, target, self.policy, current)
-        self.host.push_screen(
-            ContainerScreen(
-                stream,
-                record.manifest,
-                metrics=context.metrics.report(record.uid or "")
-                if context.metrics is not None
-                else None,
-                shell=ShellService(
-                    client,
-                    target,
-                    self.policy,
-                    current,
-                    shell=context.shell,
-                    environment=context.environment,
-                    directory=context.directory,
-                ),
-                processes=self.processes,
-                attach=AttachService(
-                    client,
-                    target,
-                    self.policy,
-                    current,
-                    environment=context.environment,
-                    directory=context.directory,
-                ),
-                transfers=TransferService(
-                    client,
-                    target,
-                    self.policy,
-                    current,
-                    environment=context.environment,
-                    directory=context.directory,
-                ),
-                chrome=context.chrome,
-                trail=context.trail,
-                inspect_container=lambda identity: self.open_container_inspection(
-                    selection, identity
-                ),
-                metric_history=(
-                    partial(self.metric_history, selection)
-                    if self.metric_history is not None
-                    else None
-                ),
+        try:
+            lease = self.log_read(selection) if self.log_read is not None else None
+        except AppError as error:
+            self.status(str(error))
+            return
+        stream = LogStream(client, target, self.policy, lease.read_current if lease else current)
+        screen: ContainerScreen | LogScreen | None = None
+
+        def stopped() -> None:
+            if screen is not None:
+                self._log_screens.discard(screen)
+
+        try:
+            screen = (
+                ContainerScreen(
+                    stream,
+                    record.manifest,
+                    metrics=context.metrics.report(record.uid or "")
+                    if context.metrics is not None
+                    else None,
+                    shell=ShellService(
+                        client,
+                        target,
+                        self.policy,
+                        current,
+                        shell=context.shell,
+                        environment=context.environment,
+                        directory=context.directory,
+                    ),
+                    processes=self.processes,
+                    attach=AttachService(
+                        client,
+                        target,
+                        self.policy,
+                        current,
+                        environment=context.environment,
+                        directory=context.directory,
+                    ),
+                    transfers=TransferService(
+                        client,
+                        target,
+                        self.policy,
+                        current,
+                        environment=context.environment,
+                        directory=context.directory,
+                    ),
+                    chrome=context.chrome,
+                    trail=context.trail,
+                    inspect_container=lambda identity: self.open_container_inspection(
+                        selection, identity
+                    ),
+                    metric_history=(
+                        partial(self.metric_history, selection)
+                        if self.metric_history is not None
+                        else None
+                    ),
+                    release_read=lease.release if lease else None,
+                    stopped=stopped,
+                )
+                if containers_first
+                else LogScreen(
+                    stream,
+                    containers,
+                    chrome=context.chrome,
+                    trail=context.trail,
+                    release_read=lease.release if lease else None,
+                    stopped=stopped,
+                )
             )
-            if containers_first
-            else LogScreen(stream, containers, chrome=context.chrome, trail=context.trail)
-        )
+            self._log_screens.add(screen)
+            self.host.push_screen(screen)
+        except BaseException:
+            if lease is not None:
+                lease.release()
+            if screen is not None:
+                self._log_screens.discard(screen)
+            raise
 
     def open_container_inspection(
         self, selection: CapturedResource[KubernetesSession], identity: ContainerIdentity
@@ -580,7 +619,7 @@ class ResourceOperations:
         closing = asyncio.gather(
             *(
                 screen.stop_owned()
-                for screen in tuple(self.host.screen_stack)
+                for screen in {*self.host.screen_stack, *self._log_screens}
                 if isinstance(screen, (InspectionScreen, ContainerScreen, LogScreen, ShellScreen))
                 and (
                     screen.service.client

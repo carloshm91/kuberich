@@ -19,6 +19,7 @@ from kuberich.domain.cluster_diagnostics import (
 )
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, namespace_name
 from kuberich.domain.history import HistorySnapshot
+from kuberich.domain.log_reads import LogReadState
 from kuberich.domain.metrics import MetricsSnapshot
 from kuberich.domain.navigation import NamespaceChoice
 from kuberich.domain.pulse import PulseScope, PulseSnapshot
@@ -40,13 +41,14 @@ from kuberich.domain.views import (
     ViewObservation,
     ViewStore,
 )
-from kuberich.domain.watches import SyncUpdate
+from kuberich.domain.watches import SyncUpdate, WatchEvent
 from kuberich.errors import AppError
 from kuberich.security.arguments import validate_argument
 from kuberich.services.access import AccessPolicy
 from kuberich.services.authorization_workspace import AuthorizationWorkspace
 from kuberich.services.cluster_diagnostics import DiagnosticService
 from kuberich.services.diagnostic_workspace import DiagnosticWorkspace
+from kuberich.services.log_reads import LogReadLease
 from kuberich.services.metrics import MetricsPoller, supports_metrics
 from kuberich.services.pulse import PulseService
 from kuberich.services.relationships import RelationshipService
@@ -55,6 +57,7 @@ from kuberich.services.sessions import SessionService
 from kuberich.services.watches import ListWatch
 
 MAX_SUBSCRIPTIONS = 8
+MAX_LOG_READS = 8
 
 
 class DiagnosticPopeye(Protocol):
@@ -177,6 +180,7 @@ class WorkspaceService:
         self._pulse_history = pulse_history
         self._on_error = on_error
         self._subscriptions: set[ViewSubscription] = set()
+        self._log_reads: set[LogReadLease] = set()
         self._desired: _Selection | None = None
         self.task: asyncio.Task[None] | None = None
         self._operation: asyncio.Task[None] | None = None
@@ -232,7 +236,47 @@ class WorkspaceService:
         self._subscriptions.add(subscription)
         return subscription
 
-    def _publish(self) -> None:
+    @property
+    def log_read_count(self) -> int:
+        return len(self._log_reads)
+
+    def open_log_read(
+        self, client: KubernetesSession, target: ResourceTarget, current: Callable[[], bool]
+    ) -> LogReadLease:
+        self._require_open()
+        view = self.store.observation
+        if (
+            view.scope is None
+            or view.snapshot is None
+            or client is not self.sessions.client
+            or not current()
+        ):
+            raise AppError("Select a current Pod before opening logs.")
+        if len(self._log_reads) >= MAX_LOG_READS:
+            raise AppError("Too many open Pod log readers.")
+        state = LogReadState(view.scope, view.revision, target)
+        state.observe(view)
+
+        def bound() -> bool:
+            observation = self.store.observation
+            return (
+                not self._closed
+                and self.sessions.client is client
+                and self.sessions.observation.identity == target.session
+                and self.sessions.observation.state in USABLE_CONNECTIONS
+                and observation.scope == state.scope
+                and observation.revision == state.revision
+            )
+
+        lease = LogReadLease(state, bound, lambda: self._log_reads.discard(lease))
+        if not lease.read_current():
+            raise AppError("Select a current Pod before opening logs.")
+        self._log_reads.add(lease)
+        return lease
+
+    def _publish(self, *, event: WatchEvent | None = None) -> None:
+        for lease in self._log_reads:
+            lease.observe(self.store.observation, event=event)
         for subscription in self._subscriptions:
             subscription.offer(self.store.observation)
 
@@ -1153,7 +1197,7 @@ class WorkspaceService:
             ):
                 if self._metrics_poller is not None:
                     self._metrics_poller.wake()
-                self._publish()
+                self._publish(event=update.event)
 
         try:
             await ListWatch(reader, query=scope.query, progress=True).run(
@@ -1207,6 +1251,8 @@ class WorkspaceService:
     async def close(self) -> None:
         if self._closing is None:
             self._closed = True
+            for lease in tuple(self._log_reads):
+                lease.release()
             self._authorization.invalidate()
             self._diagnostics.invalidate()
             self._diagnostic_cancelling = None

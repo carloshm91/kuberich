@@ -18,6 +18,16 @@ have removed older lines. A quiet open stream shows **Waiting for log output**;
 a normal end shows **Stream complete**. Errors need a deliberate reopen rather
 than an automatic replay.
 
+Development source keeps an already-open individual container log read active
+while the resource table recovers from an expired watch or unfinished list pages.
+It preserves the captured Pod identity, output and position during that reload.
+A confirmed deletion, replacement or context/namespace change still stops the
+old view; select the Pod again to open another read. Reopening checks the Pod's
+identity again. Other container actions retain their normal current-selection
+checks. A delayed deletion event for a different Pod UID does not stop the
+current read merely because its name matches. This continuity change is not
+in the installed 0.3.0 release.
+
 ## Inspect container environment and image facts
 
 In development source for the next release, select a pod, press Enter for its
