@@ -26,11 +26,17 @@ async def until(endpoint, marker):
 
 
 @pytest.mark.asyncio
-async def test_actual_child_pty_geometry_input_unicode_and_ctrl_c(tmp_path):
+@pytest.mark.parametrize("inherited_ignore", [False, True], ids=["native", "inherited-ignore"])
+async def test_actual_child_pty_geometry_input_unicode_and_ctrl_c(tmp_path, inherited_ignore):
+    outer_handler = signal.getsignal(signal.SIGINT)
+    outer_blocked = signal.SIGINT in signal.pthread_sigmask(signal.SIG_BLOCK, set())
     # Signal handlers must not re-enter stdout while the initial print flushes.
     # Observe the signal in normal child execution before printing its geometry.
     code = """
 import os, signal, time
+# This synthetic target tests the native OS signal, not KeyboardInterrupt finalization.
+signal.signal(signal.SIGINT, signal.SIG_DFL)
+assert signal.SIGINT not in signal.pthread_sigmask(signal.SIG_BLOCK, set())
 resized = False
 def resize(*_):
     global resized
@@ -44,10 +50,23 @@ print('INPUT', input(), flush=True)
 print('WAIT', flush=True)
 input()
 """
+    if inherited_ignore:
+        code = "import signal\nassert signal.getsignal(signal.SIGINT) == signal.SIG_IGN\n" + code
     script = tmp_path / "resize_child.py"
     script.write_text(code)
+    argv = [sys.executable, str(script)]
+    if inherited_ignore:
+        predecessor = tmp_path / "ignoring_predecessor.py"
+        predecessor.write_text("""
+import os,signal,sys
+signal.signal(signal.SIGINT,signal.SIG_IGN)
+assert signal.SIGINT not in signal.pthread_sigmask(signal.SIG_BLOCK,set())
+print('IGNORING PREDECESSOR',os.getpid(),signal.getsignal(signal.SIGINT)==signal.SIG_IGN,flush=True)
+os.execv(sys.executable,[sys.executable,sys.argv[1]])
+""")
+        argv = [sys.executable, str(predecessor), str(script)]
     captured = capture_command(
-        [sys.executable, str(script)],
+        argv,
         environment=dict(os.environ),
         directory=tmp_path,
         mode=ProcessMode.FOREGROUND,
@@ -62,6 +81,8 @@ input()
         ) as (endpoint, session):
             data = await until(endpoint, b"lines=19")
             assert b"OWNER True xterm-256color" in data
+            if inherited_ignore:
+                assert f"IGNORING PREDECESSOR {session.pid} True".encode() in data
             endpoint.resize(80, 25)
             assert b"columns=80, lines=25" in await until(endpoint, b"lines=25")
             endpoint.write("unicode á\r".encode())
@@ -70,6 +91,51 @@ input()
                 endpoint.write(b"\x03")
                 result = await session.wait()
             assert result.status is ProcessStatus.SIGNALLED and result.returncode == -signal.SIGINT
+        assert endpoint.closed and endpoint.slave == -1
+        with pytest.raises(OSError):
+            os.fstat(endpoint.master)
+        assert runner.active_count == 0
+
+    assert signal.getsignal(signal.SIGINT) == outer_handler
+    assert (signal.SIGINT in signal.pthread_sigmask(signal.SIG_BLOCK, set())) == outer_blocked
+
+
+@pytest.mark.asyncio
+async def test_pty_respects_a_target_ignoring_interrupt_until_its_owner_closes(tmp_path):
+    script = tmp_path / "ignoring_child.py"
+    script.write_text("""
+import os,signal
+signal.signal(signal.SIGINT,signal.SIG_IGN)
+assert signal.SIGINT not in signal.pthread_sigmask(signal.SIG_BLOCK,set())
+print('IGNORED OWNER',signal.getsignal(signal.SIGINT)==signal.SIG_IGN,os.getpgrp()==os.tcgetpgrp(0),flush=True)
+value=input()
+assert value=='after-owned-interrupt'
+print('ORDINARY ACK after-owned-interrupt',flush=True)
+input()
+""")
+    captured = capture_command(
+        [sys.executable, str(script)],
+        environment=dict(os.environ),
+        directory=tmp_path,
+        mode=ProcessMode.FOREGROUND,
+        purpose=ProcessPurpose.PLUGIN,
+    )
+    async with ProcessRunner(AccessPolicy(False)) as runner:
+        async with runner.terminal(captured, width=71, height=19, guard=lambda: None) as (
+            endpoint,
+            session,
+        ):
+            assert b"IGNORED OWNER True True" in await until(endpoint, b"IGNORED OWNER True True")
+            endpoint.write(b"\x03")
+            endpoint.write(b"after-owned-interrupt\r")
+            assert b"ORDINARY ACK after-owned-interrupt" in await until(
+                endpoint, b"ORDINARY ACK after-owned-interrupt"
+            )
+            assert session.running and not session.output.exited.done()
+            assert session.transport.get_returncode() is None
+            result = await session.close()
+            assert result.status is ProcessStatus.CANCELLED
+            assert result.returncode in {-signal.SIGTERM, -signal.SIGKILL}
         assert endpoint.closed and endpoint.slave == -1
         with pytest.raises(OSError):
             os.fstat(endpoint.master)

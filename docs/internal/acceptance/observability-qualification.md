@@ -555,6 +555,53 @@ pins. Protected delivery and fresh cumulative qualification must follow.
 The release guide now uses the actual `macos-15` runner requirement enforced by
 the frozen policy and release preflight, correcting its earlier stale label.
 
+## Native PTY signal probe
+
+Protected PR #330 delivers the renderer correction as exact main
+`47bea430357630fbce9d9750adc6d6a18750eaa1`. Its original full manual verification
+fails in the real-child PTY geometry/input/Ctrl+C contract: after foreground,
+resize, Unicode and WAIT observations, writing byte 03 and awaiting process
+completion exceeds the existing five-second window. The original result is one
+failure, 9,401 passes and one skip. No result-status assertion is reached; the
+record does not establish delivery, child exit or the responsible delay. The
+dependent full matrices do not run. A successful reduced push run contains a
+passing unchanged case, which is a diagnostic counterexample, not a correction.
+
+That frozen source's six native installation jobs pass nine actual cases,
+with 21 source-bound payloads and 18 terminal-restoration receipts. Its separate
+30-minute combined observation passes the scoped mandatory resource, retention
+and cleanup criteria; 141.846 ms input-paint P95 remains an advisory miss.
+Those positive records do not repair the failed full manual run.
+
+An isolated unmodified replay on the same CPython 3.12.3 patch passes in 0.98
+seconds without draining more PTY output. A disposable controller that deliberately
+ignores SIGINT reproduces a missing fixture precondition: the child inherits the
+ignored disposition and remains alive after byte 03, so the original five-second
+assertion fails. The controller's original signal state is restored, and ordinary
+owner cleanup drains every recorded process and descriptor.
+
+The probe now explicitly selects the native default SIGINT disposition and
+asserts that SIGINT is unblocked before its visible geometry marker. It retains
+the real foreground, geometry, Unicode, input, byte-03, deadline and cleanup
+checks. This clarifies the existing SIGNALLED/-SIGINT contract; it does not change
+product signal handling or prove the original CI timeout's cause. The same
+controlled inherited-ignore setup then passes in 0.26 seconds, with native SIGINT
+pending before the actual child exit and result retrieval, before owner cleanup.
+
+A control dropping only byte 03 still fails the same five-second assertion.
+A separate target that intentionally ignores SIGINT acknowledges later ordinary
+input and remains alive until explicit owner close. Both controls preserve their
+source pins and verify group and descriptor cleanup. They establish that the
+clarification neither invents interrupt delivery nor overrides target-selected
+handling. Fresh tracked regression checks and protected delivery follow.
+
+The 369 declared inputs of the retained resource observation currently match
+the diagnostic checkout; this PTY test file is outside that manifest. This is
+scoped input equivalence, not a new observation or automatic new-head
+qualification. The original commit, interpreter, machine, raw flags and failed
+manual result remain unchanged; final acceptance must verify the final inputs
+and retain those distinctions.
+
 ## Final gate
 
 After protected preparation delivery, freeze the exact main candidate. Require
