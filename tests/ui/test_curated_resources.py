@@ -4,14 +4,17 @@ import asyncio
 import copy
 import json
 import logging
+import tempfile
 from dataclasses import asdict, replace
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from kuberich.config.schema import Settings
 from kuberich.domain.registry import STANDARD_RESOURCES
 from kuberich.domain.views import ViewStatus
+from kuberich.ui import standard as standard_ui
 from kuberich.ui.app import KubeRichApp
 from tests.support.connections import catalog_fixture
 from tests.support.curated_access import CANARY as ACCESS_CANARY
@@ -23,6 +26,7 @@ from tests.support.curated_resources import (
     curated_resources_api,
 )
 from tests.support.root_calls import root_calls as root_calls
+from tests.support.workers import CoroutineCalls
 from tests.support.workspace import wait_for
 
 CURATED = tuple(definition for definition in STANDARD_RESOURCES if definition.curated)
@@ -421,30 +425,148 @@ async def test_normalized_missing_type_words_use_the_served_factory_descriptor(t
             assert_private_payloads_hidden(app.standard_table)
 
 
+def observe_typed_apply(table, uid, monkeypatch, *, hold):
+    """Observe this update's real apply call and optionally hold its changed batch."""
+    gate = SimpleNamespace(
+        entered=asyncio.Event(),
+        release=asyncio.Event(),
+        returned=asyncio.Event(),
+        calls=CoroutineCalls(),
+        active=None,
+        held=None,
+        owner=None,
+        result=None,
+    )
+    original_apply = table.apply_rows
+    real_sleep = asyncio.sleep
+
+    async def apply_rows(*args, **kwargs):
+        invocation = object()
+        gate.active = invocation
+        gate.calls.capture()
+        result = await original_apply(*args, **kwargs)
+        if gate.held is invocation or (not hold and table.get_cell(uid, "desired").text == "20"):
+            gate.owner, gate.result = asyncio.current_task(), result
+            gate.returned.set()
+        return result
+
+    async def held_yield(delay):
+        owner = asyncio.current_task()
+        if (
+            delay == 0
+            and not gate.entered.is_set()
+            and owner is gate.calls.latest
+            and table.get_cell(uid, "desired").text == "20"
+        ):
+            gate.held, gate.owner = gate.active, owner
+            gate.entered.set()
+            await gate.release.wait()
+        await real_sleep(delay)
+
+    monkeypatch.setattr(table, "apply_rows", apply_rows)
+    if hold:
+        monkeypatch.setattr(standard_ui, "asyncio", SimpleNamespace(sleep=held_yield))
+    return gate
+
+
 @pytest.mark.asyncio
-async def test_watch_value_change_reorders_typed_rows_without_rebinding_selected_uid(tmp_path):
-    async with curated_resources_api(tmp_path) as (url, api):
-        app = app_for(tmp_path, url)
-        async with app.run_test() as pilot:
-            await started(app, pilot)
-            await app.run_command("hpa team")
-            resource = api.resource("horizontalpodautoscalers")
-            await loaded(app, pilot, resource)
-            path = resource.path("team")
-            await asyncio.wait_for(api.watch(path).entered.wait(), 5)
-            bodies = sorted(api.objects(resource), key=lambda body: body["metadata"]["name"])
-            a, b = (body["metadata"]["uid"] for body in bodies)
-            app.standard_table.restore_sort("desired", False)
-            await pilot.pause()
-            app.standard_table.move_cursor(row=app.standard_table.get_row_index(b))
-            await pilot.pause()
-            changed = copy.deepcopy(bodies[0])
-            changed["metadata"]["resourceVersion"] = "owned/update-typed"
-            changed["status"]["desiredReplicas"] = 20
-            api.emit(path, changed)
-            await wait_for(lambda: app.standard_table.get_cell(a, "desired").text == "20")
-            assert ordered_uids(app.standard_table) == (b, a)
-            assert app.standard_table.selected_uid == b
+@pytest.mark.parametrize("hold_batch", [False, True])
+async def test_watch_value_change_reorders_typed_rows_without_rebinding_selected_uid(
+    tmp_path, monkeypatch, hold_batch
+):
+    app = api = gate = None
+    evidence = {"held_variant": hold_batch}
+    try:
+        async with curated_resources_api(tmp_path) as (url, api):
+            app = app_for(tmp_path, url)
+            async with app.run_test() as pilot:
+                await started(app, pilot)
+                await app.run_command("hpa team")
+                resource = api.resource("horizontalpodautoscalers")
+                await loaded(app, pilot, resource)
+                path = resource.path("team")
+                await asyncio.wait_for(api.watch(path).entered.wait(), 5)
+                bodies = sorted(api.objects(resource), key=lambda body: body["metadata"]["name"])
+                a, b = (body["metadata"]["uid"] for body in bodies)
+                table = app.standard_table
+                table.restore_sort("desired", False)
+                await pilot.pause()
+                table.move_cursor(row=table.get_row_index(b))
+                await pilot.pause()
+                captured_uid = table.selected_uid
+                assert captured_uid == b
+                gate = observe_typed_apply(table, a, monkeypatch, hold=hold_batch)
+                changed = copy.deepcopy(bodies[0])
+                changed["metadata"]["resourceVersion"] = "owned/update-typed"
+                changed["status"]["desiredReplicas"] = 20
+                evaluated = asyncio.Event()
+                waiter = None
+
+                def complete():
+                    evaluated.set()
+                    return (
+                        table.get_cell(a, "desired").text == "20"
+                        and ordered_uids(table) == (b, a)
+                        and table.selected_uid == captured_uid
+                    )
+
+                try:
+                    async with asyncio.timeout(5):
+                        api.emit(path, changed)
+                        if hold_batch:
+                            await gate.entered.wait()
+                            evidence["held"] = {
+                                "cell": table.get_cell(a, "desired").text,
+                                "order": ordered_uids(table),
+                                "selected": table.selected_uid,
+                                "apply_returned": gate.returned.is_set(),
+                            }
+                            assert table.get_cell(a, "desired").text == "20"
+                            assert ordered_uids(table) == (a, b) and table.selected_uid == b
+                            assert not gate.returned.is_set()
+                            waiter = asyncio.create_task(wait_for(complete))
+                            await evaluated.wait()
+                            evidence["waiter_completed_while_held"] = waiter.done()
+                            assert not waiter.done()
+                            gate.release.set()
+                            await waiter
+                        else:
+                            await wait_for(complete)
+                        assert ordered_uids(table) == (b, a)
+                        assert table.selected_uid == b
+                        await gate.returned.wait()
+                        evidence["completed"] = {
+                            "cell": table.get_cell(a, "desired").text,
+                            "order": ordered_uids(table),
+                            "selected": table.selected_uid,
+                            "apply_returned": gate.returned.is_set(),
+                            "apply_result": gate.result,
+                            "owner_done_before_teardown": gate.owner.done(),
+                        }
+                finally:
+                    gate.release.set()
+                    if waiter is not None:
+                        waiter.cancel()
+                        await asyncio.gather(waiter, return_exceptions=True)
+    finally:
+        evidence["cleanup"] = {
+            "client_closed": app is None or app.sessions.client is None,
+            "apply_owners_drained": gate is None or all(task.done() for task in gate.calls.tasks),
+            "active_requests": len(api.active_requests) if api is not None else 0,
+            "watch_queues": sum(len(w.queues) for w in api.watches.values())
+            if api is not None
+            else 0,
+        }
+        parent = Path("artifacts/terminal/typed-row-readiness")
+        parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        directory = Path(tempfile.mkdtemp(prefix=tmp_path.name + "-", dir=parent))
+        directory.chmod(0o700)
+        output = directory / "observation.json"
+        output.write_text(json.dumps(evidence, indent=2) + "\n")
+        output.chmod(0o600)
+        print(f"Owned typed-row readiness evidence: {directory}")
+        assert evidence["cleanup"]["client_closed"] and evidence["cleanup"]["apply_owners_drained"]
+        assert evidence["cleanup"]["active_requests"] == evidence["cleanup"]["watch_queues"] == 0
 
 
 @pytest.mark.asyncio

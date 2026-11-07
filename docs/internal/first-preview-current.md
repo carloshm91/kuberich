@@ -1,57 +1,57 @@
 # Development checkpoint
 
-## Horizontal navigation blocker before final qualification
+## Final observability qualification preparation
 
-Log continuity bug #323 is protected-merged through PR #325 at
-`7f081e44d3aae9940e6b741ed4c6d2b603b33068`. Its tree matches the tested merge,
-with the maintainer email, sign-off and verified GitHub signature. All 27
-selected PR quality jobs, Repository checks, DCO and CodeQL passed. All four
-Application environments passed independent production line/branch and
-115-critical-module gates; changed-line coverage was 93.65%. The fast cohort
-passed 9,351 cases with one existing skip. These are issue-delivery results,
-not the cumulative release qualification.
+The log-read and horizontal-navigation blockers are protected-merged through
+PRs #325 and #326. The latest product correction was delivered at
+`eb4a68a8c1c89d69abc3f2b6ff92bcfa0b5ea25e`; each delivery matches its
+tested tree and preserves the maintainer email, sign-off and verified signature.
+Each final PR passed all 27 selected quality jobs, Repository checks, DCO and
+CodeQL. All four final #326 Application environments passed independent
+production/115-critical-module coverage gates and 100% changed-line coverage.
+Its fast cohort passed 9,400 cases with one existing skip. These results deliver
+the corrections; they do not complete cumulative release qualification.
 
-The log-only lifetime preserves an admitted Pod read across expired-watch
-relisting and unfinished pages. Confirmed loss/replacement and client/scope
-changes remain sticky invalidations; writes, shell, attach, transfers and
-configuration keep strict selection guards. The final focused command,
-`uv run --no-sync pytest tests/ui/test_log_relist.py`, passes 26 actual-App/HTTP
-cases. The pure-state command,
-`uv run --no-sync pytest tests/unit/test_log_reads.py --cov=kuberich.domain.log_reads --cov-branch`,
-passes 56 cases with all 71 statements and 34 branch outcomes covered. Original
-failed soak, relist and delayed-old-UID-delete controls remain retained.
+The final horizontal correction passed 43 focused cases, 33 ordinary/native
+cursor cases and 107 shared-view cases. Both original native read sizes and
+both controlled normal-refresh reproductions passed on committed source,
+preserving one `h`, the original 15-second witness, exact UID/Inspector/Back and
+terminal/API/process cleanup. Programmatic animation, native cell/column cursor
+behavior and explicit later history restoration remain supported. The proven
+race was animated displayed-position/target divergence; the historical CI
+failure's exact cause remains unproven. Rapid batched keys have not been
+requalified after this correction.
 
-Issue #324 is now the sole implementation issue. The original fragmented PTY
-failure did not observe one horizontal step within its unchanged 15-second
-budget. Controlled table and native-input traces identify an ordering where
-the displayed position is still animating toward its requested target, then a
-normal refresh captures the old coordinate and restores it over that target. The original
-historical failure's exact cause remains unproven.
+Only #75 remains open in the 0.4.0 milestone. Its feature prerequisites are
+verified closed and its project status remains In Progress. The remaining
+preparation concerns a test that waits for an updated HPA cell, then immediately
+asserts sorted row order and selected UID. The real row updater yields before
+finishing that sort. A held-batch control reproduces that old-oracle failure:
+the ordinary variant passes and the held variant fails its original immediate
+order assertion, with cell 20, prior order and unchanged selected UID. Both
+owners drain. The corrected native and held variants pass two cases in 2.40
+seconds; the held waiter evaluates and rejects the incomplete state before
+release, then requires combined cell/order/captured-UID completion. The full
+36-case test file passes in 46.42 seconds, with no skips or deselections and
+unchanged selected inputs. The package's 268 files remain byte-identical to the
+protected predecessor. Ruff/format, private-access and plan validation pass,
+as do strict types over 316 source files and 181 documentation checks. The
+product sorter is unchanged. These are preparation results; final exact-main
+qualification follows protected delivery and is recorded in the live #75 receipt.
+The selected reproduction file is
+`uv run --no-sync pytest tests/ui/test_curated_resources.py`.
 
-A separate older test timed out before sending Home because it polled a
-transient intermediate coordinate. A controlled native-animation completion
-barrier reproduces that oracle failure while a public watcher proves the
-intermediate position existed. The revised pending-motion cases start and verify the real
-native animation at actual key-action entry, before yielding, then delegate
-the product action. The unchanged five-second interaction budget includes
-refresh completion; all final UID/cursor/scroll assertions remain. The scoped
-command `uv run --no-sync pytest tests/ui/test_ordinary_horizontal_intent.py`
-passes 33 cases in 9.11 seconds, including native visible/hidden cursor modes. Bypassing only the existing synchronous Home
-behavior at runtime makes its target assertion fail, a separate negative
-control. The separate product correction applies manual horizontal intent immediately,
-including native row/hidden-cursor arrow fallbacks. Visible cell/column movement
-and programmatic animation retain their native behavior. Its focused controls
-pass 43 cases in 18.23 seconds, including normal App refresh, no-movement bounds,
-SkipAction and deliberately later history restoration. The six-file shared-view
-cohort passes 107 cases with no skips or deselections. Ruff/format, private-access,
-plan validation, strict types over 316 source files and 181 documentation checks
-pass. Protected delivery and committed-source native verification remain pending.
+After protected preparation delivery, freeze the exact final main. Require its
+full supported platform/native matrix, normal sustained observation and the
+canonical three contract/owned-cluster rounds, with rebuilt audited artifacts,
+source identity, caller invariance and owned cleanup. Original failed candidates
+remain failed; no unchanged retry is promoted. Verified kind/kubectl and the
+explicit local Docker prerequisite are available; no maintainer Kubernetes
+context was used by the preflight.
 
-The separate typed-row readiness finding remains under #75. Final exact-main
-platform/native, sustained-resource and three-round cumulative qualification
-must follow the remaining correction. Published channels still deliver 0.3.0;
-no 0.4.0 tag, package, tap, website or DNS publication is authorized. Historical
-preparation statements below are superseded by this current checkpoint.
+Published channels still deliver 0.3.0. No 0.4.0 tag, package, tap, website or
+DNS publication is authorized. Historical preparation statements below are
+superseded by this current checkpoint.
 
 ## Active 0.4.0 cumulative qualification
 

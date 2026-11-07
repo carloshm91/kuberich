@@ -287,8 +287,55 @@ deselections under its explicit non-performance/non-runtime-control selection.
 Its 107 selected input pins stay unchanged. Ruff/format, private-access, plan
 validation and strict types over 316 source files pass; 181 documentation checks
 pass. These are scoped correction results, not new whole-product coverage or
-release qualification. Committed-source native verification and protected
-delivery remain pending.
+release qualification. On clean committed source, the unchanged original native
+selection then passes four cases; the byte-identical normal-refresh reproducer
+passes both default and fragmented reads (7.29 and 7.11 seconds). Displayed x
+and target are already 190 when the actual refresh captures/restores x=190.
+All measured runtime/harness inputs stay unchanged, and API watches and terminal
+owners drain.
+
+Protected PR #326 passes all 27 selected quality jobs, Repository checks, DCO
+and CodeQL. All four Application environments pass independent production and
+115-critical-module gates; changed-line coverage is 100% in each. Delivered main
+`eb4a68a8c1c89d69abc3f2b6ff92bcfa0b5ea25e` matches the tested tree,
+with maintainer email, sign-off and verified signature. Bug #324 is closed.
+This does not qualify the complete release. The separate typed-row readiness
+finding and final exact-main cumulative requirements remain under #75.
+
+## Typed-row readiness before the final freeze
+
+The retained Linux/Python 3.13 test failure sampled an HPA cell after its value
+changed but before the table finished sorting. StandardTable deliberately
+yields at its real batch boundary. The product is unchanged in this preparation.
+A module-local asyncio proxy holds only that real zero-delay yield in the
+captured apply_rows owner, after the public cell becomes 20. Other asyncio
+modules and the global clock/sleep are unchanged.
+
+The controlled baseline passes the ordinary variant and fails the held variant
+at the original ordering assertion (one failure, one pass, 34 deselected in
+4.66 seconds). Its public observations show cell 20, prior UID order (a, b),
+selected UID b and an apply_rows invocation that has not returned. Releasing
+the gate immediately before the old already-true cell predicate lets that wait
+return without yielding; it does not establish completed sorting. Original logs,
+JUnit and input pins are retained. Both clients close, actual render owners
+drain, and requests/watch queues reach zero.
+
+The correction retains the original final order/selection assertions and one
+five-second emit-to-completion budget while waiting for combined cell value,
+ordered UIDs and captured selection. The held waiter evaluates the incomplete
+state and remains pending until release. Invocation completion is separate from
+the render task's lifetime; result and pre-teardown task state are diagnostics,
+and actual owner drainage is required after App teardown. Every owned waiter
+is released, cancelled and awaited in finally.
+
+Both corrected variants pass (two cases in 2.40 seconds). The full curated
+resource file passes 36 cases in 46.42 seconds, with zero skips/deselections;
+all 371 selected package/test/helper/config pins stay unchanged. All 268 package
+files match the protected predecessor byte-for-byte. This is a test-readiness
+correction, with no production, dependency, workflow or new coverage claim.
+Ruff/format, private-access, plan validation and strict types over 316 source
+files pass; 181 documentation checks pass. These preparation results require
+protected delivery before the final exact-main cumulative qualification.
 
 ## Final gate
 
