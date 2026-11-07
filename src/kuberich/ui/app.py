@@ -469,6 +469,7 @@ class KubeRichApp(App[None]):
             log_read=lambda selection: self.workspace.open_log_read(
                 selection.client, selection.target, selection.current
             ),
+            notice=self._set_notice,
         )
         from platformdirs import user_state_path
 
