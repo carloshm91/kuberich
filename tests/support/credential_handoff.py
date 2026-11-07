@@ -73,11 +73,19 @@ def credential_terminal_trial(python, parent, scenario, *, name):
     helper = directory / "oidc-helper"
     helper.write_text(
         f"#!{python}\n"
-        "import os,json,sys\nfrom pathlib import Path\n"
+        "import os,json,select,sys,time\nfrom pathlib import Path\n"
         "info=json.loads(os.environ['KUBERNETES_EXEC_INFO'])\n"
         "Path('helper.pid').write_text(str(os.getpid()))\n"
         "if not os.isatty(2): sys.exit(1)\n"
         "assert info['spec']['interactive'] is os.isatty(0)\n"
+        "Path('helper-spawned.json').write_text(json.dumps({'pid':os.getpid(),'group':os.getpgrp(),'foreground':os.tcgetpgrp(2)}))\n"
+        "print('GENERIC LOGIN SPAWNED',file=sys.stderr,flush=True)\n"
+        "deadline=time.monotonic()+15\n"
+        "while os.tcgetpgrp(2)!=os.getpgrp():\n"
+        "    remaining=deadline-time.monotonic()\n"
+        "    assert remaining>0,'Credential helper did not acquire the foreground terminal'\n"
+        "    select.select([],[],[],min(0.01,remaining))\n"
+        "Path('helper-ready.json').write_text(json.dumps({'pid':os.getpid(),'group':os.getpgrp(),'foreground':os.tcgetpgrp(2)}))\n"
         "print('GENERIC LOGIN READY',file=sys.stderr,flush=True)\n"
         "if info['spec']['interactive']: assert sys.stdin.readline().strip()=='complete'\n"
         f"print(json.dumps({{'apiVersion':'client.authentication.k8s.io/v1','kind':'ExecCredential','status':{{'token':{TOKEN!r}}}}}))\n"
@@ -128,6 +136,8 @@ def credential_terminal_trial(python, parent, scenario, *, name):
         terminal.wait_for(b"configured credential helper authentication", since=marker)
         terminal.wait_for(b"GENERIC LOGIN READY", since=marker)
         pid = int((directory / "helper.pid").read_text())
+        ready = json.loads((directory / "helper-ready.json").read_text())
+        assert ready["pid"] == ready["group"] == ready["foreground"] == pid
         if scenario == "parent_shutdown":
             os.kill(int((directory / "azure-parent.pid").read_text()), signal.SIGTERM)
             terminal.finish(expected=143)
