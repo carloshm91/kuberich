@@ -1,5 +1,42 @@
 # Development checkpoint
 
+## Container feedback and credential foreground readiness
+
+Preparation PR #328 is protected-merged at
+`bc846249219be6de70d53219040ce249650e8b01`. Its final full manual matrix
+retains a macOS/Python 3.14 Ctrl+C credential-login failure: the terminal
+observer received KeyboardInterrupt and exited before writing restoration
+evidence. A separate reduced push retains a Linux/Python 3.14 container-error
+failure: a normal table refresh replaced the expected validation message.
+Both attempts remain failed. No final six-environment Application gate ran.
+
+The same source's normal 30-minute observation passes scoped hard memory,
+descriptor, thread, rate, terminal-restoration and cleanup criteria. All four
+late windows have 58 samples. P95 is 144.88 ms against the advisory 100 ms
+target; raw diagnostic/qualification flags remain unchanged. Nine actual native
+installation cases pass, and all 21 retained wheel/sdist/bottle payloads match
+the tested runtime source. These results do not dispose either CI failure.
+
+The next correction keeps an empty-Pod validation error visible through a real
+refresh of the same observation, using the existing notice mechanism. An actual
+namespace change clears it. Target capture, read leases and stream ownership
+are unchanged. The controlled baseline passes ordinarily and fails after a
+normal refresh; the byte-identical corrected control passes both cases.
+
+The synthetic credential helper now declares READY only after its own terminal
+descriptor confirms foreground ownership. Held-claim and premature-readiness
+controls retain the original 15-second budget, real Ctrl+C, Auth Error/help,
+terminal modes, privacy and owned cleanup. Production credential code, signal
+dispositions and the PTY observer are unchanged. Earlier premature-input
+failures and their cleanup limitations remain separately recorded.
+
+The final committed-code integration passes 91 cases in 82.55 seconds with
+no failures or skips. Those files include the complete container, credential,
+handoff, PTY and ownership-control selections. Preparation requires protected
+delivery and a fresh final exact-main qualification before closing #75.
+Published channels still deliver 0.3.0; no 0.4.0 publication is authorized.
+Earlier checkpoints below are historical.
+
 ## Measurement and peer readiness before final qualification
 
 Typed-row preparation is protected-merged in PR #327 at

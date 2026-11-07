@@ -5,6 +5,10 @@ Select a pod, press Enter for containers, then Enter on a container for its logs
 Escape returns through logs → containers → pods. The `l` shortcut on a pod opens
 a single regular container directly or offers a container choice.
 
+In development source, a Pod without regular, init or ephemeral containers stays
+in the resource table and shows a validation message. That message remains
+visible during table refreshes. Choosing a different namespace clears it.
+
 ## Choose the output
 
 Use **Container** (`c`) to change container, **Previous** (`v`) for the previous

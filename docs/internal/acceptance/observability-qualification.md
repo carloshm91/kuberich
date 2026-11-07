@@ -428,6 +428,95 @@ private-access, plan/link validation, strict types over 316 source files and
 to the protected predecessor. The manual candidate remains failed; protected
 delivery and fresh exact-main qualification must follow this preparation.
 
+## Credential foreground readiness and container validation feedback
+
+Protected PR #328 delivers main
+`bc846249219be6de70d53219040ce249650e8b01`. Its original full manual run
+[42356615037](https://github.com/carloshm91/kuberich/actions/runs/42356615037)
+fails the macOS/Python 3.14 credential Ctrl+C contract. The actual trace ends in
+the session observer's KeyboardInterrupt before restoration JSON is written;
+the helper READY marker did not establish its foreground ownership. Original
+signal timing and application restoration after observer death remain unproved.
+The full run ends with 32 actual records: 29 successful, the direct failure,
+the failed dependent gate and an unexecuted generic Application placeholder.
+None of its six final Application environments ran.
+
+The separate reduced push
+[42356478180](https://github.com/carloshm91/kuberich/actions/runs/42356478180)
+fails the Linux/Python 3.14 empty-container validation-message assertion. It
+ends with 20 actual records: 17 successful, the direct failure, the failed
+dependent gate and an unexecuted Application placeholder. Its unchanged
+full-manual counterpart passes; that is a diagnostic counterexample, not a
+correction. Both complete original logs, attempts and failed inventories remain
+retained.
+
+The same exact source completes its normal CLI observation in 1,800.075383
+seconds with 6,284 paint samples and four late windows of 58 process samples
+each. App/source/observer RSS median ranges are 84/36/2,188 KiB and p95 ranges
+84/32/2,260 KiB, within the original allowances; all descriptor and thread
+ranges are zero. Its actual source interval is 1,800.078472055 seconds, with
+180,008 resource events and 3,600,160 log lines. Original count errors are
+0.152795 and 3.055890, within three events/40 lines. Scoped hard criteria pass.
+P95 is 144.883641 ms against the advisory 100 ms target. Raw flags, 175 watch
+timeouts, 21 zero-watch samples and the absence of forced 410 remain explicit.
+All 369 measured inputs match before/after/current hashes. Three bounded failed
+log-read attempts and read-only diagnosis coactivity are recorded; diagnostics
+and private evidence reads do not become extra performance qualification.
+
+Native verification has six successful lanes and nine actual passed cases,
+with no reported skips. All six ZIPs match their API digests and all 21
+payloads match the 268 tested runtime files. Eighteen native terminal receipts
+report exit zero and restoration. Prepared dependencies and the absence of an
+end-to-end cold-install claim remain explicit. Neither native nor soak success
+repairs the failed workflows.
+
+For container feedback, a public status observer records the real error and
+requests the normal age-refresh path. The actual render reuses the same
+ViewObservation and overwrites the message with Live. The ordinary baseline
+passes and the forced-refresh variant fails the original message assertion
+(one failure, one pass in 4.40 seconds). A post-run baseline snapshot was not
+taken before edits; its 375 before-input pins match committed source and
+tracked changes start after the recorded baseline exit. The narrow correction
+adds an optional notice port, defaulting to the existing status port, and uses
+it only for pre-owner container-log validation errors. The existing presenter
+keeps the notice for that observation. Capture, lease, presenter and workspace
+implementation bytes are unchanged.
+
+The byte-identical control then passes both cases in 1.93 seconds, with 374
+selected package/helper/metadata pins unchanged; the unexecuted original test
+file is authored after that run. All clients, watches and workspace owners
+drain and caller configuration bytes remain unchanged. The tracked ordinary
+and real-refresh regression passes two cases in 2.07 seconds and also requires
+the notice to clear after a real namespace change. All three related files
+pass 29 cases in 50.55 seconds; strict source types, Ruff and formatting pass.
+The two changed executable lines reach 100% changed-line coverage. This is
+scoped evidence, not a whole-product coverage result.
+
+For the credential contract, a held public claim reproduces the original
+observer interruption before foreground transfer. A separately protected-owner
+early-input diagnostic times out at the original 15 seconds, exits through
+cleanup with -15 and has unequal modes; it remains failed evidence. The
+observed application signal handler is asyncio Runner's cancellation handler,
+not evidence of intentional SIGINT ignoring or successful early restoration.
+Foreground-confirmed real Ctrl+C controls retain successful Auth Error/help,
+resize, quit, terminal modes, privacy and helper/group cleanup.
+
+The portable correction belongs to the synthetic helper: its own terminal
+descriptor must report its process group before READY. It publishes bounded
+foreground evidence, and the driver verifies it before sending input. A held
+claim proves readiness stays pending; a deliberately premature marker is
+rejected before any Ctrl+C. Atomic phase records and constructor-failure FIFO
+cleanup preserve the controls' ownership. Production credential, signal and
+PTY-observer code are unchanged. Earlier 62-case evidence and intermediate
+guard changes remain distinct; the final two controls pass in 5.96 seconds
+with a matching 377-input before/after pair. Independent reviews find no
+remaining blocker.
+
+After integration on committed code, the complete affected UI, credential,
+handoff, PTY and ownership selections pass 91 cases in 82.55 seconds with no
+failures or skips. Protected delivery and fresh exact-main qualification must
+follow; neither failed candidate is relabelled as passed.
+
 ## Final gate
 
 After protected preparation delivery, freeze the exact main candidate. Require
