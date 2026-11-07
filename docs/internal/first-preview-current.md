@@ -1,43 +1,57 @@
 # Development checkpoint
 
-## Live-log relist correction before final qualification
+## Horizontal navigation blocker before final qualification
 
-The protected #75 preparation and verifier-only follow-up were merged through
-PRs #321 and #322. The frozen main `0d7e9fffdd50453548275bc2cd014a53b4ab1ad8`
-remains unqualified: its sustained observation stopped with an empty, stale log
-view after about 200 seconds. All owned processes and terminal resources were
-cleaned up; the original receipt, ANSI and failure frame are retained. Its
-164 ms p95 is a separate 0.x advisory miss, not the functional failure.
+Log continuity bug #323 is protected-merged through PR #325 at
+`7f081e44d3aae9940e6b741ed4c6d2b603b33068`. Its tree matches the tested merge,
+with the maintainer email, sign-off and verified GitHub signature. All 27
+selected PR quality jobs, Repository checks, DCO and CodeQL passed. All four
+Application environments passed independent production line/branch and
+115-critical-module gates; changed-line coverage was 93.65%. The fast cohort
+passed 9,351 cases with one existing skip. These are issue-delivery results,
+not the cumulative release qualification.
 
-Bug #323 blocks #75. Actual-App/owned-HTTP controls reproduce log invalidation
-at a held relist for both in-stream and HTTP 410 responses. They also exercise
-an unfinished list prefix before the selected UID returns on a later page.
-The new log-only lifetime preserves that existing read while generic captures
-for writes, shell, attach, transfers and configuration remain strict. Contrary
-membership evidence is processed before UI coalescing and cannot be reversed
-by a later positive frame. The root collection is not retained as an expired
-cache.
-
-The current pure-state command is
-`uv run --no-sync pytest tests/unit/test_log_reads.py --cov=kuberich.domain.log_reads --cov-branch`.
-Its 56 cases pass with all 71 statements and 34 branch outcomes covered.
-A further accepted-event control exposed a delayed deletion of an older Pod UID
-with the same name incorrectly staling the current read; the narrow correction
-keeps that read while still rejecting actual deletion, replacement and complete
-or limited absence. The original unit and owned-HTTP failures remain retained.
-The initial related App/service cohort passes 202 cases, with 34 post-review
-direct/shared/aggregate cases passing separately. The final focused command,
+The log-only lifetime preserves an admitted Pod read across expired-watch
+relisting and unfinished pages. Confirmed loss/replacement and client/scope
+changes remain sticky invalidations; writes, shell, attach, transfers and
+configuration keep strict selection guards. The final focused command,
 `uv run --no-sync pytest tests/ui/test_log_relist.py`, passes 26 actual-App/HTTP
-controls in 63.99 seconds, including the delayed-delete case, both relist forms,
-strict invalidation and drained requests/readers/leases/screens. Complete source/platform
-qualification remains pending. These scoped results do not close #323 or qualify
-a release. Two additional retained final-main CI failures concern native
-horizontal navigation and a row-order readiness
-oracle; their diagnosis is separate from the log lifetime fix.
+cases. The pure-state command,
+`uv run --no-sync pytest tests/unit/test_log_reads.py --cov=kuberich.domain.log_reads --cov-branch`,
+passes 56 cases with all 71 statements and 34 branch outcomes covered. Original
+failed soak, relist and delayed-old-UID-delete controls remain retained.
 
-Published channels still deliver 0.3.0. No 0.4.0 package, tag, tap, website or DNS
-publication is authorized. Earlier pending and numerical statements below are
-historical preparation cohorts, not the status of this correction.
+Issue #324 is now the sole implementation issue. The original fragmented PTY
+failure did not observe one horizontal step within its unchanged 15-second
+budget. Controlled table and native-input traces identify an ordering where
+the displayed position is still animating toward its requested target, then a
+normal refresh captures the old coordinate and restores it over that target. The original
+historical failure's exact cause remains unproven.
+
+A separate older test timed out before sending Home because it polled a
+transient intermediate coordinate. A controlled native-animation completion
+barrier reproduces that oracle failure while a public watcher proves the
+intermediate position existed. The revised pending-motion cases start and verify the real
+native animation at actual key-action entry, before yielding, then delegate
+the product action. The unchanged five-second interaction budget includes
+refresh completion; all final UID/cursor/scroll assertions remain. The scoped
+command `uv run --no-sync pytest tests/ui/test_ordinary_horizontal_intent.py`
+passes 33 cases in 9.11 seconds, including native visible/hidden cursor modes. Bypassing only the existing synchronous Home
+behavior at runtime makes its target assertion fail, a separate negative
+control. The separate product correction applies manual horizontal intent immediately,
+including native row/hidden-cursor arrow fallbacks. Visible cell/column movement
+and programmatic animation retain their native behavior. Its focused controls
+pass 43 cases in 18.23 seconds, including normal App refresh, no-movement bounds,
+SkipAction and deliberately later history restoration. The six-file shared-view
+cohort passes 107 cases with no skips or deselections. Ruff/format, private-access,
+plan validation, strict types over 316 source files and 181 documentation checks
+pass. Protected delivery and committed-source native verification remain pending.
+
+The separate typed-row readiness finding remains under #75. Final exact-main
+platform/native, sustained-resource and three-round cumulative qualification
+must follow the remaining correction. Published channels still deliver 0.3.0;
+no 0.4.0 tag, package, tap, website or DNS publication is authorized. Historical
+preparation statements below are superseded by this current checkpoint.
 
 ## Active 0.4.0 cumulative qualification
 

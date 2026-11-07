@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Self, TypeVar, cast
 
 from rich.style import Style
 from rich.text import Text
+from textual.actions import SkipAction
 from textual.binding import BindingType
 from textual.geometry import Region
 from textual.strip import Strip
@@ -118,6 +119,32 @@ class FrameTable(DataTable[Cell]):
     def action_half_page(self, direction: int) -> None:
         height = max(1, (self.scrollable_content_region.height - self.header_height) // 2)
         self.move_cursor(row=self.cursor_row + direction * height)
+
+    def action_scroll_left(self) -> None:
+        # Commit manual intent before a refresh captures its viewport.
+        if not self.allow_horizontal_scroll:
+            raise SkipAction()
+        self._interaction_revision += 1
+        self.scroll_left(animate=False, immediate=True)
+
+    def action_scroll_right(self) -> None:
+        if not self.allow_horizontal_scroll:
+            raise SkipAction()
+        self._interaction_revision += 1
+        self.scroll_right(animate=False, immediate=True)
+
+    def action_cursor_left(self) -> None:
+        # Native row/hidden-cursor fallbacks bypass our scroll action.
+        if self.show_cursor and self.cursor_type in {"cell", "column"}:
+            super().action_cursor_left()
+        else:
+            self.action_scroll_left()
+
+    def action_cursor_right(self) -> None:
+        if self.show_cursor and self.cursor_type in {"cell", "column"}:
+            super().action_cursor_right()
+        else:
+            self.action_scroll_right()
 
     def action_scroll_home(self) -> None:
         self._interaction_revision += 1

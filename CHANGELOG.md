@@ -43,6 +43,7 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 ### Fixed
 
 - Keep opened individual container logs through recoverable resource-watch relists and unfinished list pages, while still stopping for confirmed target loss or replacement ([#323](https://github.com/carloshm91/kuberich/issues/323)).
+- Keep individual horizontal steps when a table refresh restores its viewport ([#324](https://github.com/carloshm91/kuberich/issues/324)).
 - Keep explicit Home/End horizontal navigation from being reversed by pending animations or earlier viewport restoration ([#75](https://github.com/carloshm91/kuberich/issues/75)).
 - Show a truncated context identity in single-line headers instead of clipping the complete value ([#75](https://github.com/carloshm91/kuberich/issues/75)).
 

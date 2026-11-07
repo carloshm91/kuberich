@@ -52,6 +52,10 @@ horizontally. Home/End move horizontally; Ctrl+Home/Ctrl+End select first/last r
 A capital letter is one uppercase key; Vim counts and multi-key grammar are not
 implemented. Resource and namespace `s`/Shift+S cycle or reverse typed sorting.
 
+Development source keeps an individual horizontal step through a table refresh,
+within the table's current bounds. Back/Forward still restore their saved
+viewports. This correction is not in the installed 0.3.0 release.
+
 Container `s` opens a shell. Resource `l` opens logs and Ctrl+D opens deletion
 review in write mode. Logs and text documents use their independent movement
 keys. Keys depend on the focused view; the embedded shell passes them to the
