@@ -182,6 +182,46 @@ Both runs retain unchanged input/environment checks and drained sessions, delete
 private directories and deleted owned clusters. They are scoped correction proofs,
 not the complete frozen-candidate release qualification.
 
+## Live-log relist blocker
+
+Protected main `0d7e9fffdd50453548275bc2cd014a53b4ab1ad8` includes the verified
+container-inspection correction from PR #322. Its new sustained observation
+failed before the memory warmup completed: after 665 input observations,
+the observer did not see fresh terminal bytes. The retained terminal frame shows a stale empty log view; source
+facts record one expired watch and a relist. Owned process groups and terminal
+state were cleaned up; tracked source inputs stayed unchanged. Memory windows
+are incomplete, not a measured memory failure; 164 ms p95 remains an advisory 0.x miss. The original failed
+receipt, ANSI and source pins are preserved without relabelling a retry.
+
+Bug #323 independently reproduces a supported defect: a held in-stream or HTTP
+410 emits no current collection, then an unfinished list can omit the selected
+Pod. Generic target validation permanently stales the log view even though its
+captured UID remains valid. The controlled red records both failures with 22
+strict/negative controls passing and eight sessions drained. Its downstream
+partial-page assertions were behind the initial no-snapshot failure, so they
+are not credited as isolated baseline reds. An earlier test-owned cleanup-guard
+failure remains retained separately. The original soak's exact causal sequence
+is still unproven; these controls establish the defect without inventing it.
+
+The correction gives only individual log reads an explicitly owned lifetime.
+Its pure state retains bounded identity and a weak snapshot anchor. Workspace
+publication folds every accepted observation into sticky validity before UI
+coalescing. Missing membership is tolerated only within a tracked relist and
+its unfinished non-limited pages; deletion, replacement, final/limited absence,
+terminal failure and scope/client/revision changes still revoke it. Existing
+pre-open and post-open Pod GET verification and strict sibling operations stay
+in place. Direct and shared container/log viewers own and release their handles.
+
+The pure-state controls pass 53 cases with 71/71 statements and 34/34 branch
+outcomes covered. Initial actual-App controls pass both relist forms, held
+partial pages and the six hard invalidation cases; source ownership and further
+integration controls remain in review. These measurements are scoped to the
+correction worktree and do not qualify final main. New-source hosted checks,
+protected delivery and all cumulative #75 requirements remain pending. The
+separate native-horizontal and typed-row readiness CI failures are retained
+and require their own precise disposition; this change does not claim to repair
+them.
+
 ## Final gate
 
 After protected preparation delivery, freeze the exact main candidate. Require

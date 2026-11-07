@@ -87,6 +87,15 @@ loop. Commands, access policy, logs, resource changes, transfers, plugins, and
 forwards use their own service owners. Services return observations/results,
 not widgets, and enforce policy independently of a button or shortcut.
 
+[Log-read identity](../src/kuberich/domain/log_reads.py) distinguishes a known
+missing Pod from temporarily unknown membership during a list resynchronization.
+The [owned handle](../src/kuberich/services/log_reads.py) observes accepted
+workspace publications before UI coalescing and retains no expired collection.
+It is specific to an admitted log read; shell, transfer, configuration and write
+operations keep their strict captured-selection guards. Direct log viewers own
+their handle, while a container chooser owns the shared handle across its child
+log viewers. Client teardown and viewer cleanup release that registration.
+
 [Curated navigation](../src/kuberich/services/curated_navigation.py) owns finite
 source/target reads, UID and opaque version checks. Inspectors retain both their
 fresh GET version and the parent table's observed version anchor. The

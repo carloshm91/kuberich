@@ -1,5 +1,37 @@
 # Development checkpoint
 
+## Live-log relist correction before final qualification
+
+The protected #75 preparation and verifier-only follow-up were merged through
+PRs #321 and #322. The frozen main `0d7e9fffdd50453548275bc2cd014a53b4ab1ad8`
+remains unqualified: its sustained observation stopped with an empty, stale log
+view after about 200 seconds. All owned processes and terminal resources were
+cleaned up; the original receipt, ANSI and failure frame are retained. Its
+164 ms p95 is a separate 0.x advisory miss, not the functional failure.
+
+Bug #323 blocks #75. Actual-App/owned-HTTP controls reproduce log invalidation
+at a held relist for both in-stream and HTTP 410 responses. They also exercise
+an unfinished list prefix before the selected UID returns on a later page.
+The new log-only lifetime preserves that existing read while generic captures
+for writes, shell, attach, transfers and configuration remain strict. Contrary
+membership evidence is processed before UI coalescing and cannot be reversed
+by a later positive frame. The root collection is not retained as an expired
+cache.
+
+The current pure-state command is
+`uv run --no-sync pytest tests/unit/test_log_reads.py --cov=kuberich.domain.log_reads --cov-branch`.
+Its 53 cases pass with all 71 statements and 34 branch outcomes covered. The
+initial actual-App regression passes both 410 cases and six target-invalidation
+controls. Shared-parent ownership, strict sibling actions, fresh-opening races
+and complete source/platform qualification remain under review. These scoped
+results do not close #323 or qualify a release. Two additional retained final-main
+CI failures concern native horizontal navigation and a row-order readiness
+oracle; their diagnosis is separate from the log lifetime fix.
+
+Published channels still deliver 0.3.0. No 0.4.0 package, tag, tap, website or DNS
+publication is authorized. Earlier pending and numerical statements below are
+historical preparation cohorts, not the status of this correction.
+
 ## Active 0.4.0 cumulative qualification
 
 Curated resources are protected-merged in PR #320 at
