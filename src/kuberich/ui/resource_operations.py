@@ -82,10 +82,12 @@ class ResourceOperations:
         navigate_curated: Callable[[CuratedOrigin, ResolvedCuratedDestination], None] | None = None,
         current_curated: Callable[[CuratedOrigin], bool] | None = None,
         log_read: Callable[[CapturedResource[KubernetesSession]], LogReadLease] | None = None,
+        notice: Callable[[str], None] | None = None,
     ) -> None:
         self.host, self.capture, self.context = host, capture, context
         self.policy, self.mutations, self.forwards = policy, mutations, forwards
         self.processes, self.status = processes, status
+        self.notice = status if notice is None else notice
         self.session_current, self.forwarding = session_current, forwarding
         self.delete_context, self.stop_plugins = delete_context, stop_plugins
         self.metric_history = metric_history
@@ -442,7 +444,7 @@ class ResourceOperations:
             if not containers:
                 raise AppError("The selected pod has no regular/init/ephemeral containers.")
         except AppError as error:
-            self.status(str(error))
+            self.notice(str(error))
             return
         try:
             lease = self.log_read(selection) if self.log_read is not None else None

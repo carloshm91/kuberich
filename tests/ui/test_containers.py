@@ -295,22 +295,79 @@ async def test_recreation_between_snapshot_and_log_verification_never_reads_repl
 
 
 @pytest.mark.asyncio
-async def test_empty_or_invalid_container_spec_reports_error_without_drilldown(tmp_path):
+@pytest.mark.parametrize("refresh_after_error", [False, True])
+async def test_empty_or_invalid_container_spec_reports_error_without_drilldown(
+    tmp_path, monkeypatch, refresh_after_error
+):
     value = pod("api")
     value["spec"]["containers"] = []
+    error_seen = False
+    refresh_requested = False
+    expected_view = None
+    same_view = False
+    rendered = asyncio.Event()
 
     async def handler(request):
         if "watch" in request.query:
             return await stable_watch(request)
-        return web.json_response(collection(value))
+        return web.json_response(
+            collection() if "/namespaces/default/" in request.path else collection(value)
+        )
 
     async with workspace_api(ns, handler) as url:
         app = app_for(tmp_path, url)
+        config_before = (tmp_path / "fixture-config").read_bytes()
         async with app.run_test() as pilot:
-            await wait_for(lambda: app.resources.row_count == 1)
+            original_status = app.presenter.status
+            original_view_status = app.presenter.view_status
+
+            def observe_status(message):
+                nonlocal error_seen, refresh_requested, expected_view
+                original_status(message)
+                if "no regular/init" in message and not refresh_requested:
+                    error_seen = True
+                    expected_view = app.workspace.store.observation
+                    if refresh_after_error:
+                        refresh_requested = True
+                        app.presenter.refresh_ages()
+
+            def observe_view_status(view, message):
+                nonlocal same_view
+                original_view_status(view, message)
+                if refresh_requested and not rendered.is_set():
+                    same_view = view is expected_view
+                    rendered.set()
+
+            monkeypatch.setattr(app.presenter, "status", observe_status)
+            monkeypatch.setattr(app.presenter, "view_status", observe_view_status)
+            await wait_for(
+                lambda: (
+                    app.resources.row_count == 1
+                    and app.resources.selected_uid == value["metadata"]["uid"]
+                    and "Live" in str(app.query_one("#status", Static).content)
+                )
+            )
             await pilot.press("enter")
+            if refresh_after_error:
+                await asyncio.wait_for(rendered.wait(), 5)
+                assert same_view
+            assert error_seen
             assert len(app.screen_stack) == 1
             assert "no regular/init" in str(app.query_one("#status", Static).content)
+            await app.workspace.select_namespace("default")
+            await wait_for(
+                lambda: (
+                    app.workspace.store.observation.scope is not None
+                    and app.workspace.store.observation.scope.namespace == "default"
+                    and app.resources.row_count == 0
+                    and "Live" in str(app.query_one("#status", Static).content)
+                    and "no regular/init" not in str(app.query_one("#status", Static).content)
+                )
+            )
+        assert app.workspace.sessions.client is None
+        assert app.workspace.ownership.close_complete
+        assert app.workspace.ownership.watch_count == app.workspace.ownership.metrics_count == 0
+        assert (tmp_path / "fixture-config").read_bytes() == config_before
 
 
 def test_container_and_log_constructor_reject_missing_selection():
