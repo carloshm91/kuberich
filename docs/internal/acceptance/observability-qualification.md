@@ -227,11 +227,68 @@ cases. It verifies a subsequent real log marker on the original reader and
 drained requests, readers, leases and retained screens. The earlier related
 202-case cohort and 34-case post-review direct/shared/aggregate cohort remain
 separate measurements. These measurements are scoped to the
-correction worktree and do not qualify final main. New-source hosted checks,
-protected delivery and all cumulative #75 requirements remain pending. The
-separate native-horizontal and typed-row readiness CI failures are retained
-and require their own precise disposition; this change does not claim to repair
-them.
+correction worktree and do not qualify final main. Protected PR #325 then
+passed all 27 quality jobs, Repository checks, DCO and CodeQL on its final head.
+All four Application environments passed the independent production and
+115-critical-module gates; changed-line coverage was 93.65%. Protected main
+`7f081e44d3aae9940e6b741ed4c6d2b603b33068` has the exact tested tree,
+maintainer email, sign-off and verified signature. Bug #323 is closed. The
+separate native-horizontal and typed-row readiness failures are retained;
+#324 and #75 still require their own disposition and cumulative qualification.
+
+## Horizontal intent and refresh ordering
+
+Bug #324 retains the original exact-main fragmented native failure: one `h`
+after a complete right-edge witness did not show its one-column destination
+within 15 seconds. The original archive lacks action/offset ordering, so its
+precise cause remains unproven. Unchanged passing controls do not repair it.
+
+Controlled actual-AuthorizationTable tests distinguish the behavior: both
+no-refresh directions pass, while unchanged-row refreshes queued before or
+after the action erase the requested step (four failures). The actual App's
+normal `presenter.refresh_ages()` route reproduces both directions with the
+same snapshot, Role UID, selected row, focus and vertical position and no
+additional API reads (two failures).
+
+The instrumented owned PTY controls use the original driver, single `h`,
+default/fragmented reads, full UID/Inspector/Back/resize witnesses and 15-second
+one-left deadline. Both normal controls pass. Both controlled normal-refresh
+paths fail: real focused input requests x=190 from x=191, then the actual
+`apply_rows()` captures the still-displayed x=191 and its own restore replaces
+the target with x=191. Input dispatch, requested destination and restoring
+owner are recorded through bounded public-method primitives. Every measured
+runtime input stays unchanged; API watches and terminal/process owners drain.
+These establish the supported defect without attributing the historical run.
+
+Separate diagnostic runs deliberately invoke a fresh explicit old-viewport
+restore after the action. Those restorations are valid later history operations;
+their failed one-left witness is not a correction oracle. The product must keep
+that explicit restore working. Their originals remain separately labelled.
+
+The first logical-action correction then exposes a native-arrow bypass:
+DataTable's row/hidden-cursor arrow fallback calls Widget's scroll action
+directly. Paired controls retain 10 failures and 18 passes: logical inputs and
+no-refresh cases pass, while native-arrow refresh paths still lose the step.
+The narrow correction applies accepted horizontal actions immediately and routes
+only native cursor fallbacks through that same action. Visible cell/column
+cursor behavior delegates to DataTable; programmatic animations remain native.
+The final focused selection passes 43 cases in 18.23 seconds (37 new controls
+and six existing authorization-table cases). The independent ordinary/native
+cursor selection passes 33 cases in 9.11 seconds on unchanged measured source;
+it retains selected UID, row/column semantics and exact boundary/arrow targets.
+The revised pending-motion witness observes real native ownership at actual
+Pilot dispatch, not a transient pixel. A separate runtime-only bypass of
+synchronous Home behavior makes the target assertion fail. The original setup
+oracle failure and its controlled missed-transient reproduction remain retained.
+All new post-input refresh waits stay inside the original five-second budget.
+The broader authorization, relationships, diagnostics, standard-table and
+navigation cohort passes 107 cases in 98.89 seconds, with zero skips and zero
+deselections under its explicit non-performance/non-runtime-control selection.
+Its 107 selected input pins stay unchanged. Ruff/format, private-access, plan
+validation and strict types over 316 source files pass; 181 documentation checks
+pass. These are scoped correction results, not new whole-product coverage or
+release qualification. Committed-source native verification and protected
+delivery remain pending.
 
 ## Final gate
 

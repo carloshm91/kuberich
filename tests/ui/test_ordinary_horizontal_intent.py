@@ -9,7 +9,6 @@ from textual.app import App, ComposeResult
 
 from kuberich.ui.presentation import FrameTable
 from tests.support.curated_resources import curated_resources_api
-from tests.support.workspace import wait_for
 from tests.ui.test_curated_resources import app_for, loaded, started
 
 
@@ -34,21 +33,39 @@ async def ordinary_table(tmp_path, kind):
             yield app, pilot, table
 
 
-async def moving(table, key):
-    start, target = (0, 60) if key == "home" else (60, 0)
-    table.scroll_to(start, 0, animate=False, immediate=True, force=True)
-    table.scroll_to(target, 0, animate=True, duration=0.5, immediate=True, force=True)
-    await wait_for(lambda: 0 < table.scroll_x < 60)
+def pending_at_action(monkeypatch, table, key):
+    """Start native motion at actual key dispatch, before yielding to its ticks."""
+    action_name = "action_scroll_" + key
+    action = getattr(table, action_name)
+    phases = []
+
+    def delivered():
+        assert table.max_scroll_x >= 60
+        start, target = (0, 60) if key == "home" else (60, 0)
+        table.scroll_to(start, 0, animate=False, immediate=True, force=True)
+        table.scroll_to(target, 0, animate=True, duration=0.5, immediate=True, force=True)
+        phases.append((table.scroll_x, table.scroll_target_x))
+        assert phases[-1] == (start, target)
+        assert table.app.animator.is_being_animated(table, "scroll_x")
+        action()
+
+    monkeypatch.setattr(table, action_name, delivered)
+    return phases
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("kind", ["pods", "standard"])
 @pytest.mark.parametrize("key", ["home", "end"])
-async def test_real_ordinary_boundary_key_wins_over_pending_animation(tmp_path, kind, key):
+async def test_real_ordinary_boundary_key_wins_over_pending_animation(
+    tmp_path, monkeypatch, kind, key
+):
     async with ordinary_table(tmp_path, kind) as (_, pilot, table):
         selected = table.selected_uid
-        await moving(table, key)
-        await asyncio.wait_for(pilot.press(key), 5)
+        phases = pending_at_action(monkeypatch, table, key)
+        async with asyncio.timeout(5):
+            await pilot.press(key)
+            await table.wait_for_refresh()
+        assert len(phases) == 1
         desired = 0 if key == "home" else table.max_scroll_x
         assert table.scroll_x == table.scroll_target_x == desired
         assert table.selected_uid == selected
@@ -98,13 +115,18 @@ class CursorHost(App[None]):
 @pytest.mark.parametrize("cursor_type", ["row", "cell", "column"])
 @pytest.mark.parametrize("show_cursor", [False, True])
 @pytest.mark.parametrize("key", ["home", "end"])
-async def test_shared_boundary_keeps_native_cursor_semantics(cursor_type, show_cursor, key):
+async def test_shared_boundary_keeps_native_cursor_semantics(
+    monkeypatch, cursor_type, show_cursor, key
+):
     app = CursorHost(cursor_type, show_cursor)
     async with app.run_test(size=(100, 30)) as pilot:
         table = app.table
         await table.wait_for_refresh()
-        await moving(table, key)
-        await asyncio.wait_for(pilot.press(key), 5)
+        phases = pending_at_action(monkeypatch, table, key)
+        async with asyncio.timeout(5):
+            await pilot.press(key)
+            await table.wait_for_refresh()
+        assert len(phases) == 1
         desired = 0 if key == "home" else table.max_scroll_x
         assert table.scroll_x == table.scroll_target_x == desired
         assert table.cursor_row == 1
@@ -114,13 +136,44 @@ async def test_shared_boundary_keeps_native_cursor_semantics(cursor_type, show_c
 
 
 @pytest.mark.asyncio
-async def test_new_arrow_motion_starts_from_the_requested_boundary():
+async def test_new_arrow_motion_starts_from_the_requested_boundary(monkeypatch):
     app = CursorHost("row", True)
     async with app.run_test(size=(100, 30)) as pilot:
         table = app.table
         await table.wait_for_refresh()
-        await moving(table, "home")
+        home = pending_at_action(monkeypatch, table, "home")
+        end = pending_at_action(monkeypatch, table, "end")
         await asyncio.wait_for(pilot.press("home", "right"), 5)
+        assert len(home) == 1
         assert table.scroll_x == table.scroll_target_x == 1
         await asyncio.wait_for(pilot.press("end", "left"), 5)
+        assert len(end) == 1
         assert table.scroll_x == table.scroll_target_x == table.max_scroll_x - 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("cursor_type", ["row", "cell", "column"])
+@pytest.mark.parametrize("show_cursor", [False, True])
+@pytest.mark.parametrize("key, direction", [("left", -1), ("right", 1)])
+async def test_native_arrow_keeps_visible_cell_and_hidden_cursor_semantics(
+    cursor_type, show_cursor, key, direction
+):
+    app = CursorHost(cursor_type, show_cursor)
+    async with app.run_test(size=(100, 30)) as pilot:
+        table = app.table
+        await asyncio.wait_for(table.wait_for_refresh(), 5)
+        table.scroll_to(40, 0, animate=False, immediate=True, force=True)
+        await asyncio.wait_for(table.wait_for_refresh(), 5)
+        before = table.scroll_x
+        selected = table.coordinate_to_cell_key(table.cursor_coordinate).row_key
+        async with asyncio.timeout(5):
+            await pilot.press(key)
+            await table.wait_for_refresh()
+        assert table.cursor_row == 1
+        assert table.coordinate_to_cell_key(table.cursor_coordinate).row_key == selected
+        if show_cursor and cursor_type in {"cell", "column"}:
+            assert table.cursor_column == 1 + direction
+            assert 0 <= table.scroll_x <= table.max_scroll_x
+        else:
+            assert table.cursor_column == 1
+            assert table.scroll_x == table.scroll_target_x == before + direction
