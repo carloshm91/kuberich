@@ -56,6 +56,19 @@ review/list privileges and incomplete who-can evidence remain explicit; these
 informational views do not enable guarded operations. They are unreleased work
 for 0.4.0 and are not part of installed 0.3.0.
 
+Development source also keeps container-validation notices visible during table
+refreshes and finishes closing log views when a refresh deadline overlaps
+shutdown. A controlled shutdown check requires the first close request to finish
+and release the log reader and lease. Cumulative 0.4.0 verification remains in
+progress; installed channels still provide 0.3.0.
+
+In a development checkout, the verified version command is:
+
+```sh
+uv run kuberich --version
+# kuberich 0.4.0
+```
+
 Development source adds [failure diagnostics](cluster-diagnostics.md).
 Use `:diagnostics` for the selected namespace or `:diagnose` for a captured Pod
 or supported workload. Findings retain conditions, events, source gaps and

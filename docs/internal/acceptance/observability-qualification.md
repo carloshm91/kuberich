@@ -517,6 +517,44 @@ handoff, PTY and ownership selections pass 91 cases in 82.55 seconds with no
 failures or skips. Protected delivery and fresh exact-main qualification must
 follow; neither failed candidate is relabelled as passed.
 
+## Log renderer shutdown observation
+
+Exact main `bd02e27ca1144a4d81b54de0b23658f4a64cee2b` passes all 37 hosted
+quality jobs and all six native installation lanes. Its separate 30-minute
+combined observation passes the scoped mandatory resource and cleanup criteria;
+the 144.45 ms input-paint P95 remains an advisory miss. The local cumulative
+run then waits in a log-view test's `app.run_test` exit after its final capture.
+The responsible suspended coroutine is not established by the retained thread
+snapshot. Normal coordinator cancellation drains every recorded process and
+the UI's resources, preserves source bytes and returns 143; its test stage
+returns 130 after 7,187 passes and one skip. This is not a complete-suite,
+coverage or three-round qualification pass.
+
+A separate ordinary replay drains normally. A native-timeout control observes
+the renderer's cancellation count rise to one, shutdown skip its own request,
+and the timeout clear that count. The closed renderer then waits for another
+dirty event. Earlier diagnostics finish only after a later presenter stop;
+they are not a correction. The final control keeps the actual source quiet
+and requires the first public stop to finish within the existing five-second
+window. It fails that specific assertion in 9.34 seconds, with 375 matching
+before/after input pins. A second public stop is used only after the failure
+observation to drain cleanup. No synthetic cancellation suppression is added.
+
+The one-line correction makes the renderer loop observe the existing closed
+flag. The byte-identical native and observer helpers then pass in 4.01 seconds;
+only the production renderer file differs between those controlled runs. The
+first stop returns with renderer and reader done and leases released, before
+source release or the cleanup stop. Final HTTP, reader, lease and retained-screen
+counts drain. The control establishes this timer/shutdown mechanism, without
+proving the original frozen run's exact scheduling. The tracked regression also
+requires first-stop entry while the actual native cancellation count is one,
+rejects a later presenter rescue and preserves the original five-second window.
+Its final scoped run passes one case in 4.19 seconds with 372 matching input
+pins. Protected delivery and fresh cumulative qualification must follow.
+
+The release guide now uses the actual `macos-15` runner requirement enforced by
+the frozen policy and release preflight, correcting its earlier stale label.
+
 ## Final gate
 
 After protected preparation delivery, freeze the exact main candidate. Require
