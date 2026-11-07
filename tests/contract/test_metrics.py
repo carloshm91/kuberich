@@ -704,12 +704,21 @@ async def test_fresh_batch_drains_old_expiry_before_publication_and_preserves_pa
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("hold_peer_eof", [False, True])
 async def test_workspace_cancels_and_awaits_expiry_with_pending_reads_on_scope_context_and_exit(
-    tmp_path, monkeypatch
+    tmp_path, monkeypatch, hold_peer_eof
 ):
     expiry = ExpiryGate()
     held, releases = [], asyncio.Event()
     counts = {}
+    peer_checked = asyncio.Event()
+    peer_waiter = None
+
+    def peers_closed():
+        closed = all(transport.is_closing() for transport in held)
+        if not closed:
+            peer_checked.set()
+        return closed
 
     class ControlledPoller(MetricsPoller):
         def __init__(self, *args, **kwargs):
@@ -744,22 +753,45 @@ async def test_workspace_cancels_and_awaits_expiry_with_pending_reads_on_scope_c
             await workspace.connect("kuberich-test-one")
             await wait_for(lambda: len(held) == 1 and len(expiry.waits) == 1)
             await workspace.select_namespace("default")
-            await wait_for(lambda: len(held) == 2 and len(expiry.waits) == 2)
+            await wait_for(
+                lambda: len(held) == 2 and len(expiry.waits) == 2 and held[0].is_closing()
+            )
             assert 0 in expiry.finished and held[0].is_closing()
             await workspace.connect("kuberich-test-Two")
-            await wait_for(lambda: len(held) == 3 and len(expiry.waits) == 3)
+            await wait_for(
+                lambda: len(held) == 3 and len(expiry.waits) == 3 and held[1].is_closing()
+            )
             assert 1 in expiry.finished and held[1].is_closing()
+            if hold_peer_eof:
+                held[2].pause_reading()
+                assert not held[2].is_reading() and not held[2].is_closing()
             await workspace.close()
             assert expiry.finished == {0, 1, 2}
-            assert held[2].is_closing() and workspace.ownership.metrics_count == 0
+            assert workspace.ownership.metrics_count == 0
             assert workspace.sessions.client is None
             assert (tmp_path / "fixture-config").read_bytes() == before
             assert not [
                 task for task in asyncio.all_tasks() if task.get_name() == "kuberich-metrics-expiry"
             ]
+            # Local owners are drained; peer EOF is a separate asynchronous observation.
+            peer_waiter = asyncio.create_task(wait_for(peers_closed))
+            if hold_peer_eof:
+                await asyncio.wait_for(peer_checked.wait(), 5)
+                assert not peer_waiter.done()
+                held[2].resume_reading()
+            await peer_waiter
+            assert all(transport.is_closing() for transport in held)
         finally:
-            await workspace.close()
-            releases.set()
+            for transport in held:
+                if not transport.is_closing():
+                    transport.resume_reading()
+            if peer_waiter is not None:
+                peer_waiter.cancel()
+                await asyncio.gather(peer_waiter, return_exceptions=True)
+            try:
+                await workspace.close()
+            finally:
+                releases.set()
 
 
 @pytest.mark.asyncio

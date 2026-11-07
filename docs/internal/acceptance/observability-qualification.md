@@ -337,6 +337,97 @@ Ruff/format, private-access, plan validation and strict types over 316 source
 files pass; 181 documentation checks pass. These preparation results require
 protected delivery before the final exact-main cumulative qualification.
 
+## Paced-source measurement isolation
+
+Protected typed-row preparation delivers main
+`c8d5b999202332d4a0fc2f17c6df9858f7420f52` through PR #327. Its
+subsequent manual Quality run
+[42348410449](https://github.com/carloshm91/kuberich/actions/runs/42348410449)
+retains an original Linux/Python 3.13 part-two failure in the short paced-source
+contract: 82 actual resource events over 1.1647200159999898 seconds miss the
+original count-error tolerance of three. The job reports one failed and 3,129
+passed cases. Its original log is retained with its digest and exact checkout;
+the second rate assertion was not reached. The test ran under branch coverage
+with two xdist workers and an ordinary shared window. This differs from the
+documented timing method; it does not establish the original failure's cause.
+
+The unchanged source's normal 30-minute observation completes in 1,800.232533
+seconds and retains 6,297 paint samples. Scoped hard resource and cleanup
+criteria pass; P95 is 144.2 ms against the advisory 100 ms target. The source's
+own start-to-pause interval is 1,800.2359587959945 seconds. Its 180,024 events
+and 3,600,480 lines differ from the original target counts by 0.404120 and
+8.082408 respectively, within the original three-event/40-line tolerances.
+Raw diagnostic/runtime-qualified flags remain unchanged. There was no forced
+410 in this observation, so it does not independently establish that recovery
+path. The failed manual matrix still prevents release qualification.
+
+The selected correction keeps the generator, pause semantics and original
+end-to-end rate/sequence/cleanup assertions. Only the short measurement moves
+to a fresh uninstrumented child in the existing exclusive test window. A
+specific underproduction control must retain an actual rate-oracle failure and
+drain all owners.
+
+Controlled runs of the original async body distinguish recovered work from
+pause-truncated backlog. The unchanged targeted local Python 3.12 baseline
+passes. An explicitly injected early 400 ms loop hold allows recovery and
+passes both original count tolerances. A late 400 ms loop hold fails the
+original resource-rate assertion, with 84 events and 1,680 log lines over
+approximately 1.20649 seconds. A separate late source-condition hold also
+fails that assertion, with 82 events and 1,640 lines over approximately
+1.05267 seconds. Both source streams and all producer/hold tasks drain;
+381 selected input pins remain unchanged. Wiring failures and uninjected
+attempts are retained without credit. These controls establish the scheduling
+assumption, not the original hosted failure's cause.
+
+The final fresh-child and actual-window controls pass two cases in 4.29
+seconds. A competing ordinary reader is blocked through each real wrapper's
+child teardown and admitted after exclusive-window release. Both children
+retain their private request/receipt/raw logs inside the existing CI artifact
+boundary. Their current source hashes, nonce, mode, interpreter, normal GC,
+absent tracing/profiling/coverage and drained owners are verified. The real
+late publication stall still fails the exact original resource-rate assertion;
+generic process failure cannot satisfy this control. Earlier 20-case evidence
+and wiring failures remain distinct from this final helper's results.
+
+## Metrics peer-EOF readiness
+
+The same original manual run retains a distinct macOS/Python 3.14 part-two
+[failure](https://github.com/carloshm91/kuberich/actions/runs/42348410449/job/128332588028)
+in the metrics workspace cleanup contract. After awaited workspace closure,
+the server-side transport's immediate `is_closing()` assertion is false. Its
+short-circuited expression does not establish the metrics-owner count. The
+original job reports one failed and 3,129 passed cases; its exact-source log
+and digest remain retained.
+
+A declared control pauses reading on the actual third pending server transport
+through its public API. The original final assertion passes ordinarily and
+fails with held peer EOF (one failure, one pass in 1.03 seconds). Immediately
+before that assertion, both variants have zero local metrics owners, a closed
+client and all three expiry timers finished. The held server transport alone
+has not observed closure. Finally resumes reading; every transport closes,
+expiry tasks are zero and caller configuration bytes stay unchanged. All 273
+selected input pins remain unchanged. An earlier plugin-import invocation
+error is preserved without behavioral credit. This proves the asynchronous
+peer-observation distinction, not the original macOS failure's exact cause.
+
+The correction retains immediate local ownership/client/expiry/configuration
+assertions. Earlier peer-closure predicates join their existing phase waits.
+The final peer waiter uses one existing five-second budget. Its held variant
+must evaluate the incomplete peer state and remain pending before reading
+resumes; both ordinary and held variants then require actual closure. Finally
+resumes transports, cancels and awaits the waiter, closes the workspace and
+releases pending handlers. The focused two cases pass in 0.91 seconds with
+273 unchanged selected inputs. Production shutdown code is unchanged. This is
+scoped preparation, with no new whole-product coverage or release claim.
+
+The complete final metrics, paced-source and test-window files then pass 66
+cases in 16.83 seconds under parent branch coverage with two xdist workers,
+zero skips/failures and 861 unchanged selected input pins. Ruff/format,
+private-access, plan/link validation, strict types over 316 source files and
+154 documentation cases pass. All 268 production files remain byte-identical
+to the protected predecessor. The manual candidate remains failed; protected
+delivery and fresh exact-main qualification must follow this preparation.
+
 ## Final gate
 
 After protected preparation delivery, freeze the exact main candidate. Require

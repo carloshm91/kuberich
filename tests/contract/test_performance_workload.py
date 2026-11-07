@@ -97,9 +97,9 @@ async def test_snapshot_stays_frozen_while_independent_events_modify_every_row()
         assert len(source.snapshots) == 0
 
 
-@pytest.mark.asyncio
-async def test_both_streams_receive_independently_paced_sequences_and_pause_drains_workers():
+async def paced_stream_contract(observed):
     async with workload(10) as (source, client):
+        observed["source"] = source
         watch = await client.get(
             "/api/v1/namespaces/team/pods", params={"watch": "true", "resourceVersion": "q03/0"}
         )
@@ -119,6 +119,7 @@ async def test_both_streams_receive_independently_paced_sequences_and_pause_drai
                 lines.append(line)
 
         consumers = [asyncio.create_task(read_events()), asyncio.create_task(read_logs())]
+        observed["consumers"] = consumers
         try:
             async with client.post("/__q03/start") as response:
                 assert response.status == 200
@@ -128,8 +129,8 @@ async def test_both_streams_receive_independently_paced_sequences_and_pause_drai
             await wait_for(lambda: all(task.done() for task in source.workers))
             await wait_for(lambda: len(events) == source.serial and len(lines) == source.log_serial)
             duration = source.paused - source.started
-            assert abs(source.serial - 100 * duration) <= 3
-            assert abs(source.log_serial - 2000 * duration) <= 40
+            assert abs(source.serial - 100 * duration) <= 3, "resource-rate"
+            assert abs(source.log_serial - 2000 * duration) <= 40, "log-rate"
             assert [event["object"]["metadata"]["resourceVersion"] for event in events] == [
                 f"q03/{n}" for n in range(1, source.serial + 1)
             ]
@@ -149,6 +150,24 @@ async def test_both_streams_receive_independently_paced_sequences_and_pause_drai
             await wait_for(
                 lambda: source.stats["active_watches"] == source.stats["active_logs"] == 0
             )
+
+
+@pytest.mark.performance
+@pytest.mark.asyncio
+async def test_both_streams_receive_independently_paced_sequences_and_pause_drains_workers(
+    tmp_path,
+):
+    from tests.support.pacing_runtime import require_pacing_child
+
+    await require_pacing_child(tmp_path, mode="positive")
+
+
+@pytest.mark.performance
+@pytest.mark.asyncio
+async def test_real_late_source_stall_fails_original_rate_and_drains_workers(tmp_path):
+    from tests.support.pacing_runtime import require_pacing_child
+
+    await require_pacing_child(tmp_path, mode="late-stall")
 
 
 @pytest.mark.asyncio
