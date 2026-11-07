@@ -5,7 +5,8 @@ import base64
 import copy
 import json
 import sys
-from contextlib import contextmanager
+from contextlib import asynccontextmanager, contextmanager
+from dataclasses import replace
 from datetime import UTC, datetime
 from types import SimpleNamespace
 
@@ -17,21 +18,311 @@ from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.domain.connections import HttpProblem
 from kuberich.domain.container_inspection import ContainerIdentity
 from kuberich.domain.targets import ResourceTarget, SessionIdentity
+from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
-from kuberich.services.container_inspection import ContainerInspectionService
+from kuberich.services.container_inspection import STALE_MESSAGE, ContainerInspectionService
 from kuberich.services.resources import ResourceReader
 from scripts import verify_container_inspection_kind as verification
 from scripts.owned_kind import NODE_IMAGE, SHELL_IMAGE
 from tests.support.connections import catalog_fixture
 from tests.support.container_inspection import (
+    CONFIG_PATH,
     NAMESPACE,
     POD_NAME,
     POD_PATH,
     POD_UID,
+    SECRET_PATH,
     descriptor,
     discovery,
     inspection_api,
 )
+
+
+@asynccontextmanager
+async def positive_source(tmp_path):
+    async with inspection_api() as (url, api):
+        client = KubernetesSession(catalog_fixture(tmp_path, url).select("kuberich-test-one"), 2)
+        await client.open()
+        current = [True]
+        service = ContainerInspectionService(
+            client,
+            descriptor("Pod"),
+            ResourceTarget(
+                SessionIdentity("kuberich-test-one", 1), "", "pods", NAMESPACE, POD_NAME, POD_UID
+            ),
+            ContainerIdentity("containers", "app", "App"),
+            discovery(),
+            AccessPolicy(True),
+            lambda: current[0],
+            now=lambda: datetime.now(UTC),
+        )
+        try:
+            yield service, api, current
+        finally:
+            api.release.set()
+            await verification.close_owned([service], [client])
+            assert service.operation_count == 0 and api.active == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("update_at", ["before-first", "during-source", "between-values"])
+async def test_positive_values_reload_status_only_updates_after_explicit_source_refresh(
+    tmp_path, update_at
+):
+    async with positive_source(tmp_path) as (service, api, _):
+        initial = await service.index()
+        original_spec = copy.deepcopy(api.records[POD_PATH]["spec"])
+        api.records[CONFIG_PATH]["data"]["CONFIG"] = "updated-current-api"
+        api.records[CONFIG_PATH]["metadata"]["resourceVersion"] = "config-version-2"
+        before = len(api.requests)
+        with pytest.raises(AppError, match=r"^Container configuration changed; reload required\.$"):
+            await verification.selected(service, initial, "EXPANDED")
+        assert [path for _, path, _ in api.requests[before:]] == [
+            POD_PATH,
+            CONFIG_PATH,
+            SECRET_PATH,
+            POD_PATH,
+        ]
+        assert service.snapshot is None and not service.snapshot_current(initial.id)
+        refreshed = await service.index()
+        assert refreshed.pod == initial.pod
+        before = len(api.requests)
+
+        def update_status():
+            api.records[POD_PATH]["metadata"]["resourceVersion"] = "pod-version-2"
+            api.records[POD_PATH]["status"]["phase"] = "Running"
+            assert api.records[POD_PATH]["metadata"]["uid"] == POD_UID
+            assert api.records[POD_PATH]["spec"] == original_spec
+
+        if update_at == "before-first":
+            update_status()
+        else:
+
+            def update_during_read(api, path):
+                offset = 3 if update_at == "during-source" else 5
+                if len(api.requests) == before + offset:
+                    update_status()
+
+            api.before_response = update_during_read
+        expected = {
+            "CONFIG": "updated-current-api",
+            "EXPANDED": "synthetic-literal/updated-current-api",
+        }
+        reloads = []
+        latest, values = await verification.positive_values(
+            service, refreshed, expected, phase="controlled-positive", reloads=reloads
+        )
+        assert values == expected
+        assert latest.id != refreshed.id and latest.pod.resource_version == "pod-version-2"
+        assert latest.pod.uid == refreshed.pod.uid == POD_UID
+        assert service.snapshot_current(latest.id) and not service.snapshot_current(refreshed.id)
+        assert len(reloads) == 1 and reloads[0] == {
+            "phase": "controlled-positive",
+            "entry": "EXPANDED" if update_at == "between-values" else "CONFIG",
+            "container_family": "containers",
+            "attempt": 1,
+            "previous_snapshot": str(refreshed.id),
+            "previous_resource_version": refreshed.pod.resource_version,
+            "reason": "retired-stale-binding",
+            "state": "completed",
+            "snapshot": str(latest.id),
+            "resource_version": latest.pod.resource_version,
+        }
+        assert "updated-current-api" not in json.dumps(reloads)
+        api.before_response = None
+        api.records[CONFIG_PATH]["data"]["CONFIG"] = "later-source"
+        before = len(api.requests)
+        with pytest.raises(AppError, match=r"^Container configuration changed; reload required\.$"):
+            await verification.selected(service, latest, "EXPANDED")
+        assert len(api.requests) - before == 4
+        assert service.snapshot is None and service.operation_count == 0
+
+
+@pytest.mark.asyncio
+async def test_positive_values_keep_a_current_snapshot_without_reloads(tmp_path):
+    async with positive_source(tmp_path) as (service, api, _):
+        snapshot = await service.index()
+        reloads = []
+        latest, values = await verification.positive_values(
+            service, snapshot, {"LITERAL": "synthetic-literal"}, phase="stable", reloads=reloads
+        )
+        assert latest is snapshot and values == {"LITERAL": "synthetic-literal"}
+        assert latest.pod.uid == POD_UID and service.snapshot_current(latest.id)
+        assert not reloads and len(api.requests) == 8
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("failure", ["wrong-value", "unresolved", "invalid-pod", "replacement"])
+async def test_positive_values_do_not_hide_wrong_unresolved_invalid_or_replaced_objects(
+    tmp_path, failure
+):
+    async with positive_source(tmp_path) as (service, api, _):
+        if failure == "unresolved":
+            api.statuses[SECRET_PATH] = 403
+        snapshot = await service.index()
+        expected = {"LITERAL": "wrong-value"}
+        error, match = AssertionError, "did not match"
+        if failure == "unresolved":
+            expected = {"CHOSEN": "unavailable"}
+            match = "unresolved"
+        elif failure == "invalid-pod":
+            api.records[POD_PATH]["metadata"]["resourceVersion"] = ""
+            error, match = AppError, "Container disclosure read failed"
+        elif failure == "replacement":
+            api.records[POD_PATH]["metadata"]["uid"] = "same-name-replacement-uid"
+            error, match = AppError, "reload required"
+        before = len(api.requests)
+        reloads = []
+        with pytest.raises(error, match=match):
+            await verification.positive_values(
+                service, snapshot, expected, phase="must-fail", reloads=reloads
+            )
+        assert service.target.uid == POD_UID and service.operation_count == 0
+        if failure == "replacement":
+            assert service.snapshot is None and len(api.requests) - before == 2
+            assert len(reloads) == 1 and reloads[0]["state"] == "started"
+        else:
+            assert not reloads and service.snapshot_current(snapshot.id)
+            assert len(api.requests) - before == (1 if failure == "invalid-pod" else 4)
+
+
+@pytest.mark.asyncio
+async def test_positive_values_do_not_reload_a_still_current_snapshot(tmp_path, monkeypatch):
+    async with positive_source(tmp_path) as (service, api, _):
+        snapshot = await service.index()
+
+        async def stale_without_retirement(*args):
+            raise AppError(STALE_MESSAGE)
+
+        monkeypatch.setattr(verification, "selected", stale_without_retirement)
+        reloads = []
+        with pytest.raises(AppError, match="reload required"):
+            await verification.positive_values(
+                service,
+                snapshot,
+                {"LITERAL": "synthetic-literal"},
+                phase="unexplained-stale",
+                reloads=reloads,
+            )
+        assert not reloads and len(api.requests) == 4 and service.snapshot_current(snapshot.id)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("mismatch_at", ["input", "reload"])
+async def test_positive_values_refuse_a_foreign_uid_in_supplied_or_reloaded_snapshot(
+    tmp_path, monkeypatch, mismatch_at
+):
+    async with positive_source(tmp_path) as (service, api, _):
+        snapshot = await service.index()
+
+        def foreign_uid(snapshot):
+            return replace(snapshot, pod=replace(snapshot.pod, uid="foreign-snapshot-uid"))
+
+        if mismatch_at == "input":
+            snapshot = foreign_uid(snapshot)
+        else:
+            api.records[POD_PATH]["metadata"]["resourceVersion"] = "new-status-version"
+            index = service.index
+
+            async def malformed_index_result():
+                return foreign_uid(await index())
+
+            monkeypatch.setattr(service, "index", malformed_index_result)
+        reloads = []
+        with pytest.raises(AssertionError, match="captured UID"):
+            await verification.positive_values(
+                service,
+                snapshot,
+                {"LITERAL": "synthetic-literal"},
+                phase="foreign-snapshot",
+                reloads=reloads,
+            )
+        assert service.target.uid == POD_UID and service.operation_count == 0
+        assert len(api.requests) == (4 if mismatch_at == "input" else 9)
+        assert len(reloads) == (0 if mismatch_at == "input" else 1)
+
+
+@pytest.mark.asyncio
+async def test_positive_values_recheck_current_target_before_reload(tmp_path, monkeypatch):
+    async with positive_source(tmp_path) as (service, api, current):
+        snapshot = await service.index()
+        api.records[POD_PATH]["metadata"]["resourceVersion"] = "pod-new-status-version"
+        selected = verification.selected
+
+        async def lose_target_after_retirement(*args):
+            try:
+                return await selected(*args)
+            except AppError:
+                current[0] = False
+                raise
+
+        monkeypatch.setattr(verification, "selected", lose_target_after_retirement)
+        reloads = []
+        with pytest.raises(AppError, match="target is unavailable"):
+            await verification.positive_values(
+                service,
+                snapshot,
+                {"LITERAL": "synthetic-literal"},
+                phase="obsolete-target",
+                reloads=reloads,
+            )
+        assert not reloads and len(api.requests) == 5 and service.snapshot is None
+
+
+@pytest.mark.asyncio
+async def test_positive_values_propagate_cancellation_and_drain_held_owned_http(tmp_path):
+    async with positive_source(tmp_path) as (service, api, _):
+        snapshot = await service.index()
+        api.started.clear()
+        api.held_paths.add(POD_PATH)
+        reloads = []
+        task = asyncio.create_task(
+            verification.positive_values(
+                service,
+                snapshot,
+                {"LITERAL": "synthetic-literal"},
+                phase="cancelled",
+                reloads=reloads,
+            )
+        )
+        try:
+            await asyncio.wait_for(api.started.wait(), 5)
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+            assert service.operation_count == 0 and not reloads
+            assert len(api.requests) == 5
+        finally:
+            api.release.set()
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+
+
+@pytest.mark.asyncio
+async def test_positive_values_exhaustion_is_finite_without_disclosing_old_values(tmp_path):
+    async with positive_source(tmp_path) as (service, api, _):
+        snapshot = await service.index()
+        before = len(api.requests)
+
+        def change_each_disclosure(api, path):
+            offset = len(api.requests) - before
+            if offset in {1, 6, 11}:
+                api.records[POD_PATH]["metadata"]["resourceVersion"] = f"status-{offset}"
+                api.records[POD_PATH]["status"]["phase"] = "Running"
+
+        api.before_response = change_each_disclosure
+        reloads = []
+        with pytest.raises(AssertionError, match="reload budget exhausted"):
+            await verification.positive_values(
+                service,
+                snapshot,
+                {"LITERAL": "synthetic-literal"},
+                phase="churning-status",
+                reloads=reloads,
+            )
+        assert len(api.requests) - before == 11 and len(reloads) == 2
+        assert all(item["state"] == "completed" for item in reloads)
+        assert service.snapshot is None and service.operation_count == 0
 
 
 def test_fixture_declares_real_ordered_sources_secret_storage_and_each_container_family():

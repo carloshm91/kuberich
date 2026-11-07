@@ -27,7 +27,7 @@ from kuberich.domain.resources import Discovery
 from kuberich.domain.targets import ResourceTarget, SessionIdentity
 from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
-from kuberich.services.container_inspection import ContainerInspectionService
+from kuberich.services.container_inspection import STALE_MESSAGE, ContainerInspectionService
 from kuberich.services.ownership import finish_owned
 from kuberich.services.resources import ResourceReader
 from scripts.diagnostics_tools import KIND_SHA256, sha256_file
@@ -42,6 +42,7 @@ MISSING = "owned-optional-missing"
 READER = "owned-inspection-reader"
 RBAC_VERSION = "rbac.authorization.k8s.io/v1"
 VERIFY_SECONDS = 600
+POSITIVE_RELOAD_LIMIT = 2
 _STATUS_REASONS = frozenset(
     {
         "Unknown",
@@ -439,6 +440,61 @@ async def selected(
     return result.text
 
 
+async def positive_values(
+    service: ContainerInspectionService,
+    snapshot: InspectionSnapshot,
+    expected: dict[str, str],
+    *,
+    phase: str,
+    reloads: list[dict[str, Any]],
+) -> tuple[InspectionSnapshot, dict[str, str]]:
+    """Explicitly reload expired positive observations, never deliberate negatives."""
+    captured_uid = service.target.uid
+    if snapshot.pod.uid != captured_uid:
+        raise AssertionError("Positive inspection snapshot has another captured UID.")
+    attempts = 0
+    values: dict[str, str] = {}
+    for name, wanted in expected.items():
+        while True:
+            try:
+                actual = await selected(service, snapshot, name)
+            except AppError as error:
+                if str(error) != STALE_MESSAGE or service.snapshot_current(snapshot.id):
+                    raise
+                service.require_current()
+                if attempts >= POSITIVE_RELOAD_LIMIT:
+                    raise AssertionError("Positive inspection reload budget exhausted.") from error
+                attempts += 1
+                receipt: dict[str, Any] = {
+                    "phase": phase,
+                    "entry": name,
+                    "container_family": service.container.field,
+                    "attempt": attempts,
+                    "previous_snapshot": str(snapshot.id),
+                    "previous_resource_version": snapshot.pod.resource_version,
+                    "reason": "retired-stale-binding",
+                    "state": "started",
+                }
+                reloads.append(receipt)
+                snapshot = await service.index()
+                if snapshot.pod.uid != captured_uid:
+                    raise AssertionError(
+                        "Positive inspection reload changed the captured UID."
+                    ) from None
+                assert service.snapshot_current(snapshot.id)
+                receipt.update(
+                    state="completed",
+                    snapshot=str(snapshot.id),
+                    resource_version=snapshot.pod.resource_version,
+                )
+            else:
+                if actual != wanted:
+                    raise AssertionError("Synthetic fixture value did not match its expectation.")
+                values[name] = actual
+                break
+    return snapshot, values
+
+
 async def close_owned(
     services: list[ContainerInspectionService], clients: list[KubernetesSession]
 ) -> None:
@@ -470,6 +526,10 @@ async def verify(
     services: list[ContainerInspectionService] = []
     private_paths: list[Path] = []
     receipts: list[dict[str, Any]] = []
+    reloads: list[dict[str, Any]] = []
+    stale_checks: list[dict[str, Any]] = []
+    progress["positive_reloads"] = reloads
+    progress["stale_checks"] = stale_checks
     checks: list[str] = []
     evidence_dir.mkdir(parents=True, exist_ok=True)
     try:
@@ -587,8 +647,9 @@ async def verify(
                     "CPU_MILLI": "250",
                     "MEMORY_MIB": "32",
                 }
-                for name, value in expected.items():
-                    assert await selected(app, snapshot, name) == value
+                snapshot, _ = await positive_values(
+                    app, snapshot, expected, phase=progress["phase"], reloads=reloads
+                )
                 assert snapshot.image.declared == SHELL_IMAGE
                 assert snapshot.image.pull_policy == "IfNotPresent"
                 assert (
@@ -607,7 +668,13 @@ async def verify(
                 ):
                     owner = service(admin, identity)
                     family_snapshot = await owner.index()
-                    assert await selected(owner, family_snapshot, "FAMILY") == identity.kind
+                    await positive_values(
+                        owner,
+                        family_snapshot,
+                        {"FAMILY": identity.kind},
+                        phase=progress["phase"],
+                        reloads=reloads,
+                    )
                 checks.append(
                     "regular-init-restartable-init-sidecar-and-precreated-ephemeral-identity"
                 )
@@ -637,19 +704,29 @@ async def verify(
             config_body = config.manifest
             config_body["data"]["BASE"] = "base-current-api"
             progress["phase"] = "updating-owned-configuration"
+            assert app.snapshot_current(snapshot.id)
             await write(config_resource.path(NAMESPACE) + "/" + CONFIG, config_body, "PUT")
             with inspection_receipts(receipts):
+                before = len(receipts)
                 try:
                     await selected(app, snapshot, "SNAP")
-                except AppError:
-                    pass
+                except AppError as error:
+                    assert str(error) == STALE_MESSAGE and not app.snapshot_current(snapshot.id)
+                    stale_checks.append(
+                        {"mutation": "source-change", "gets": len(receipts) - before}
+                    )
                 else:
                     raise AssertionError("Changed source unexpectedly reused the old binding.")
                 refreshed = await app.index()
-                assert await selected(app, refreshed, "BASE") == "base-current-api"
-                assert (
-                    await selected(app, refreshed, "SNAP")
-                    == "base-current-api/explicit/secret-order"
+                refreshed, _ = await positive_values(
+                    app,
+                    refreshed,
+                    {
+                        "BASE": "base-current-api",
+                        "SNAP": "base-current-api/explicit/secret-order",
+                    },
+                    phase=progress["phase"],
+                    reloads=reloads,
                 )
             assert await startup_log() == startup
             checks.append(
@@ -670,7 +747,13 @@ async def verify(
                     next(item.state for item in denied.sources if item.ref.name == SECRET)
                     == "forbidden"
                 )
-                assert await selected(restricted, denied, "ORDER") == "explicit"
+                denied, _ = await positive_values(
+                    restricted,
+                    denied,
+                    {"ORDER": "explicit"},
+                    phase=progress["phase"],
+                    reloads=reloads,
+                )
                 token_entry = next(item for item in denied.entries if item.name == "TOKEN")
                 result = await restricted.disclose(
                     restricted.new_intent(denied.id, token_entry.id, "copy")
@@ -681,6 +764,7 @@ async def verify(
             )
 
             progress["phase"] = "creating-formerly-absent-optional-source"
+            assert app.snapshot_current(refreshed.id)
             await write(
                 config_resource.path(NAMESPACE),
                 {
@@ -691,16 +775,21 @@ async def verify(
                 },
             )
             with inspection_receipts(receipts):
+                before = len(receipts)
                 try:
                     await selected(app, refreshed, "ORDER")
-                except AppError:
-                    pass
+                except AppError as error:
+                    assert str(error) == STALE_MESSAGE and not app.snapshot_current(refreshed.id)
+                    stale_checks.append(
+                        {"mutation": "optional-source-appearance", "gets": len(receipts) - before}
+                    )
                 else:
                     raise AssertionError("Formerly absent optional source did not require reload.")
                 before_recreation = await app.index()
             checks.append("formerly-absent-optional-source-appearance-requires-reload")
 
             progress["phase"] = "recreating-owned-pod"
+            assert app.snapshot_current(before_recreation.id)
             await write(
                 pod_path,
                 {
@@ -727,10 +816,16 @@ async def verify(
             replacement = await reader.get(pods, POD, NAMESPACE)
             assert replacement.uid != target.uid
             with inspection_receipts(receipts):
+                before = len(receipts)
                 try:
                     await selected(app, before_recreation, "ORDER")
-                except AppError:
-                    pass
+                except AppError as error:
+                    assert str(error) == STALE_MESSAGE and not app.snapshot_current(
+                        before_recreation.id
+                    )
+                    stale_checks.append(
+                        {"mutation": "pod-recreation", "gets": len(receipts) - before}
+                    )
                 else:
                     raise AssertionError("Same-name replacement rebound the captured inspector.")
             checks.append("same-name-pod-recreation-never-rebinds-captured-uid")
