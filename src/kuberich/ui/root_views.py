@@ -34,6 +34,7 @@ from kuberich.ui.custom import CustomTable
 from kuberich.ui.event_source import EventSourceClock
 from kuberich.ui.events import EventsTable
 from kuberich.ui.foreground import ForegroundGate
+from kuberich.ui.helm import HelmReleaseTable
 from kuberich.ui.namespaces import NamespaceTable
 from kuberich.ui.pods import PodTable
 from kuberich.ui.pulse import PulseTable
@@ -56,6 +57,7 @@ class RootTables:
     authorization: AuthorizationTable
     diagnostics: ClusterDiagnosticsTable
     events: EventsTable
+    helm: HelmReleaseTable
 
 
 class RootViews:
@@ -91,8 +93,10 @@ class RootViews:
             | RelationshipTable
             | AuthorizationTable
             | ClusterDiagnosticsTable
-            | EventsTable,
+            | EventsTable
+            | HelmReleaseTable,
         ] = {
+            ViewKind.HELM: tables.helm,
             ViewKind.DIAGNOSTICS: tables.diagnostics,
             ViewKind.AUTHORIZATION: tables.authorization,
             ViewKind.RELATIONSHIPS: tables.relationships,
@@ -117,6 +121,7 @@ class RootViews:
         self._custom: CustomController | None = None
         self.registry = ViewRegistry(
             {
+                ViewKind.HELM: self._helm,
                 ViewKind.DIAGNOSTICS: self._diagnostics,
                 ViewKind.AUTHORIZATION: self._authorization,
                 ViewKind.RELATIONSHIPS: self._relationships,
@@ -146,6 +151,7 @@ class RootViews:
         | AuthorizationTable
         | ClusterDiagnosticsTable
         | EventsTable
+        | HelmReleaseTable
     ):
         return self._by_kind[self.route.kind]
 
@@ -218,6 +224,11 @@ class RootViews:
         return ViewEntry(
             ViewDriver(ClusterDiagnosticsController(self.tables.diagnostics, self.actions))
         )
+
+    def _helm(self) -> ViewEntry:
+        from kuberich.ui.controllers.helm import HelmController
+
+        return ViewEntry(ViewDriver(HelmController(self.tables.helm, self.actions)))
 
     def _events(self) -> ViewEntry:
         from kuberich.ui.controllers.events import EventsController

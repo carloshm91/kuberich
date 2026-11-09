@@ -148,9 +148,12 @@ traces container environment sources and image facts; values require fresh discl
 **planned** — Local manifest directories, apply/delete workflows and Kustomize integration are
 planned.
 ### Helm list/status/notes/values/all-values/manifest/history
-**planned** — Helm release browsing, status, notes, values, manifests and history are planned.
+**partial** — Development source for 0.5 adds Helm release browsing, status, notes,
+supplied/computed values, manifests and revision history with an optional supported CLI. Published
+0.4.0 does not include this workspace.
 ### Helm rollback and uninstall with history options
-**planned** — Helm rollback and uninstall workflows are planned.
+**partial** — Development source for 0.5 adds reviewed Helm rollback; installation, upgrade and
+uninstall remain planned. Published 0.4.0 predates Helm management.
 ### Global/per-context themes, transparent colors, light/dark inversion, icon settings
 **partial** — Themes support global/context palettes, terminal-default background, preview, explicit
 save, live reload, and session inversion. Icon preferences are unavailable.

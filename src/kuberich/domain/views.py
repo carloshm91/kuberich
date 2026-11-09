@@ -15,6 +15,7 @@ from kuberich.domain.connections import (
     HttpProblem,
     SessionObservation,
 )
+from kuberich.domain.helm import HelmRequest, HelmSnapshot
 from kuberich.domain.metrics import MetricsSnapshot
 from kuberich.domain.pulse import PulseScope, PulseSnapshot, PulseStatus
 from kuberich.domain.relationships import (
@@ -99,6 +100,7 @@ class ViewObservation:
     relationships: RelationshipSnapshot | None = None
     authorization: AuthorizationSnapshot | None = None
     diagnostics: DiagnosticSnapshot | None = None
+    helm: HelmSnapshot | None = None
 
     @property
     def message(self) -> str:
@@ -116,6 +118,17 @@ class ViewObservation:
             return f"{prefix}{action} · {self.problem}"
         if self.status is ViewStatus.FAILED:
             return self.connection.message
+        if self.helm is not None:
+            helm = self.helm
+            if helm.problem is not None:
+                prefix = "Helm · Stale releases" if helm.listing is not None else "Helm unavailable"
+                return f"{prefix} · {helm.problem}"
+            if helm.collecting:
+                return "Helm · Loading releases"
+            if helm.listing is None:
+                return "Helm · No release data available"
+            suffix = "" if helm.listing.complete else " · INCOMPLETE · narrow the namespace"
+            return f"Helm · {len(helm.listing.releases)} releases{suffix}"
         if self.diagnostics is not None:
             diagnostic = self.diagnostics
             if diagnostic.collecting:
@@ -252,6 +265,7 @@ class ViewStore:
             relationships=None,
             authorization=None,
             diagnostics=None,
+            helm=None,
         )
         return True
 
@@ -287,6 +301,7 @@ class ViewStore:
             relationships=None,
             authorization=None,
             diagnostics=None,
+            helm=None,
         )
         return True
 
@@ -329,6 +344,7 @@ class ViewStore:
             relationships=RelationshipSnapshot(request, (), (), 0, None),
             authorization=None,
             diagnostics=None,
+            helm=None,
             status=ViewStatus.LOADING,
             problem=None,
         )
@@ -366,6 +382,7 @@ class ViewStore:
             relationships=None,
             authorization=AuthorizationSnapshot(request, None, None, None, None, None, True),
             diagnostics=None,
+            helm=None,
             status=ViewStatus.LOADING,
             problem=None,
         )
@@ -407,6 +424,7 @@ class ViewStore:
             relationships=None,
             authorization=None,
             diagnostics=DiagnosticSnapshot(request, (), (), True, 0, None),
+            helm=None,
             status=ViewStatus.LOADING,
             problem=None,
         )
@@ -426,6 +444,53 @@ class ViewStore:
             self.observation,
             diagnostics=snapshot,
             status=ViewStatus.LOADING if snapshot.collecting else ViewStatus.LIVE,
+        )
+        return True
+
+    def bind_helm(self, revision: int, request: HelmRequest) -> bool:
+        if revision != self.observation.revision:
+            return False
+        connection = self.observation.connection
+        if (
+            connection.state not in USABLE_CONNECTIONS
+            or connection.identity != request.scope.session
+            or connection.namespace != request.scope.namespace
+        ):
+            raise AppError("Helm scope does not belong to the active connection.")
+        self.observation = replace(
+            self.observation,
+            scope=None,
+            snapshot=None,
+            metrics=None,
+            pulse=None,
+            relationships=None,
+            authorization=None,
+            diagnostics=None,
+            helm=HelmSnapshot(request, None, True, None),
+            status=ViewStatus.LOADING,
+            problem=None,
+        )
+        return True
+
+    def apply_helm(self, revision: int, snapshot: HelmSnapshot) -> bool:
+        connection = self.observation.connection
+        if (
+            revision != self.observation.revision
+            or self.observation.helm is None
+            or self.observation.helm.request != snapshot.request
+            or connection.state not in USABLE_CONNECTIONS
+            or connection.identity != snapshot.request.scope.session
+            or connection.namespace != snapshot.request.scope.namespace
+        ):
+            return False
+        self.observation = replace(
+            self.observation,
+            helm=snapshot,
+            status=ViewStatus.LOADING
+            if snapshot.collecting
+            else ViewStatus.STALE
+            if snapshot.problem is not None and snapshot.listing is not None
+            else ViewStatus.LIVE,
         )
         return True
 

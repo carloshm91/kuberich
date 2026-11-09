@@ -1,0 +1,30 @@
+{{- if .Values.rollbackHooks.enabled }}
+{{- range $event := list "pre-rollback" "post-rollback" }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $.Release.Name }}-{{ $event }}
+  annotations:
+    helm.sh/hook: {{ $event }}
+    helm.sh/hook-delete-policy: before-hook-creation
+  labels:
+    kuberich.io/owned-helm-hook: {{ $.Release.Name | quote }}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 30
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      containers:
+        - name: hook
+          image: {{ $.Values.rollbackHooks.image | quote }}
+          command: ["sh", "-c"]
+          args:
+            - {{ printf "sleep %v; exit %s" $.Values.rollbackHooks.sleepSeconds (ternary "1" "0" $.Values.rollbackHooks.fail) | quote }}
+          resources:
+            requests: {cpu: 10m, memory: 8Mi}
+            limits: {cpu: 100m, memory: 32Mi}
+{{- end }}
+{{- end }}

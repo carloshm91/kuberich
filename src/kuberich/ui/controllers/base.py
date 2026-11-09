@@ -10,6 +10,7 @@ from kuberich.domain.authorization_rows import AuthorizationRow
 from kuberich.domain.curated_navigation import ResolvedCollectionBookmark
 from kuberich.domain.diagnostic_rows import DiagnosticRow
 from kuberich.domain.events import EventGroupRow, EventObjectRow
+from kuberich.domain.helm import HelmRelease
 from kuberich.domain.namespaces import NamespaceRow
 from kuberich.domain.navigation import ContextRow, Viewport
 from kuberich.domain.pods import PodRow
@@ -31,6 +32,7 @@ type ViewRow = (
     | DiagnosticRow
     | EventObjectRow
     | EventGroupRow
+    | HelmRelease
 )
 
 

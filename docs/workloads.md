@@ -6,7 +6,7 @@ corresponding Kubernetes permissions. Progress viewing also works read-only.
 
 ## Follow the controller chain
 
-In development source, select a workload and use `:xray` to inspect its owners,
+In 0.4.0 and later, select a workload and use `:xray` to inspect its owners,
 children, selector matches and declared configuration/storage references.
 Template declarations remain visible at zero replicas. Enter/arrows expand or
 collapse; `o` or `:open` opens a current readable object in its resource view.
@@ -107,3 +107,87 @@ invalidate it; Confirm can be used once. No automatic retry follows a rejected,
 interrupted, or lost write response. Inspect current state before another review.
 `:writes` keeps recent results for this application session, not a persistent
 audit log. See [edit and change resources](editing.md) for shared result meanings.
+
+## Browse Helm releases in development source
+
+The Helm workspace is new development work for 0.5. It is not included in the
+published 0.4.0 packages. Install an optional supported Helm CLI yourself;
+KubeRich does not download Helm or invoke it during ordinary startup.
+The initial tested versions are **3.22.1** and **4.3.1**. Other versions produce
+a feature-specific compatibility message.
+
+Use `:helm` for the selected namespace, `:helm demo-apps` for a fictional
+namespace, or `:helm *` for all namespaces. The normal namespace picker, filter,
+sort and navigation history work in this view. Press F4 to refresh explicitly;
+Helm releases do not use a live Kubernetes resource watch. Enter opens the
+selected release, retaining its namespace when names repeat across namespaces.
+
+Helm uses Secret storage by default. `HELM_DRIVER=secret` or `secrets` selects
+that backend; `configmap` or `configmaps` selects ConfigMap storage. SQL, memory
+and unknown drivers are refused without falling back to another backend.
+Only the selected storage backend is listed. Reading Helm storage grants access
+to chart contents, including sensitive values; Kubernetes permissions still apply.
+
+The list retains at most 500 releases. **INCOMPLETE** means that more releases
+exist: narrow the namespace instead of treating the retained rows as exhaustive.
+This limit bounds KubeRich's retained rows, not Helm's internal API reads or
+memory. Helm's normal status filters do not include arbitrary unknown stored
+states. A failed refresh keeps prior rows visibly stale.
+
+### Inspect one release
+
+Use sections 1–6 for status, notes, supplied values, computed values, manifest
+and revision history. Supplied values contain explicit overrides; computed
+values also include chart defaults. History retains the newest 200 revisions
+and identifies omitted older revisions.
+
+Status and history show metadata. Notes and freeform descriptions start hidden;
+value scalars and sensitive manifest fields are redacted. Malformed documents
+produce an error instead of falling back to raw text. Press `r` in a document
+section, review the release/revision and confirm **Reveal once** to read current
+contents. Press `r` again to hide them. Changing sections, opening another
+screen or leaving the inspector clears revealed text. Revealed contents have
+no export or clipboard action in this workspace.
+
+The inspector reads the selected namespace and exact release revision. Missing
+release storage, denied metadata access, a newer revision, or a replaced storage
+object requires a fresh selection. Read access to ordinary resources alone does
+not grant access to a Helm release.
+Identity checks require a complete storage-history scan, bounded to 2,000
+revision records, ten pages and 4 MiB of metadata. Exceeding these limits
+disables inspection-sensitive actions instead of trusting an incomplete scan.
+
+### Roll back a Helm release
+
+In the history section, select an explicit earlier revision and choose the
+local rollback action. The ordinary `:rollback` command still operates on
+workloads, and `:history` still opens metric history.
+
+Review the context, namespace, release, current and target revision, timeout,
+wait behavior and hooks. **Prepare review**, then confirm separately. Read-only
+mode blocks rollback. Editing options invalidates the prepared confirmation;
+confirmations are single-use and are invalidated by refresh or scope changes.
+
+Rollback starts with hooks disabled, resource/Job waiting enabled and a
+300-second timeout. Timeouts range from 1 to 600 seconds. Enable hooks explicitly
+only after reviewing their effect: chart hooks can run arbitrary cluster Jobs.
+Helm 3 uses its legacy wait behavior; Helm 4 explicitly uses legacy waiting
+when enabled and hook-only waiting otherwise. The timeout applies to Helm's
+individual operations; a separate finite process deadline bounds the command.
+Rollback does not force replacement, automatically clean up new objects or
+prune old release history.
+
+The current release must be deployed or failed, and the chosen prior revision
+must be deployed or superseded. Pending, uninstalling, uninstalled or unknown
+states refuse rollback. KubeRich rereads actual storage identity immediately
+before execution. Helm's name/revision command has no atomic identity condition:
+another operator can still change the release after that check.
+
+Successful command exit is followed by a fresh observation of the expected new
+deployed revision. Failed hooks, timeouts, interruptions or lost connections can
+leave a partially applied or pending release. **Unknown** means that the remote
+outcome is unverified; refresh status/history and inspect the cluster before
+another review. No automatic retry or compensating rollback runs. Closing the
+screen stops owned work without undoing changes already accepted by Kubernetes.
+
+Installing, upgrading, uninstalling and repository/OCI management remain planned.

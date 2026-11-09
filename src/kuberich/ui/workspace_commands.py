@@ -221,6 +221,7 @@ class WorkspaceCommands:
         self, origin: CommandWorkspace, command: ResolvedCommand, value: str
     ) -> None:
         from kuberich.ui.containers import ContainerScreen
+        from kuberich.ui.helm_inspection import HelmInspectionScreen, HelmRollbackReviewScreen
         from kuberich.ui.inspection import InspectionScreen
         from kuberich.ui.logs import LogScreen
 
@@ -247,6 +248,7 @@ class WorkspaceCommands:
             Command.NAMESPACES,
             Command.PODS,
             Command.EVENTS,
+            Command.HELM,
             Command.PULSE,
             Command.BACK,
             Command.FORWARD,
@@ -269,6 +271,8 @@ class WorkspaceCommands:
                     raise AppError("This command requires a captured resource view.")
                 source.require_current()
             if command is Command.BACK:
+                if isinstance(origin, (HelmInspectionScreen, HelmRollbackReviewScreen)):
+                    await origin.stop_owned()
                 await origin.dismiss()
                 self.interactions.history.record(value)
                 return
@@ -278,7 +282,16 @@ class WorkspaceCommands:
                     raise AppError(
                         "Close the current review before navigating to another workspace."
                     )
-                if isinstance(screen, (ContainerScreen, LogScreen, InspectionScreen)):
+                if isinstance(
+                    screen,
+                    (
+                        ContainerScreen,
+                        LogScreen,
+                        InspectionScreen,
+                        HelmInspectionScreen,
+                        HelmRollbackReviewScreen,
+                    ),
+                ):
                     await screen.stop_owned()
             if requires_target and source is not None:
                 source.require_current()

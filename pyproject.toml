@@ -175,6 +175,10 @@ show_contexts = true
 [tool.kuberich.coverage]
 # Extend this reviewed list when deterministic security/state decisions are added.
 critical_modules = [
+    "src/kuberich/domain/helm.py",
+    "src/kuberich/domain/helm_cli.py",
+    "src/kuberich/domain/helm_documents.py",
+    "src/kuberich/services/helm_workspace.py",
     "src/kuberich/domain/table_values.py",
     "src/kuberich/domain/curated.py",
     "src/kuberich/domain/curated_navigation.py",

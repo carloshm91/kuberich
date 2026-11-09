@@ -1,0 +1,2 @@
+Owned synthetic chart {{ .Release.Name }} in {{ .Release.Namespace }}.
+Synthetic note credential: {{ .Values.credentials.password }}

@@ -52,6 +52,7 @@ from kuberich.domain.connections import (
     ConnectionRequest,
 )
 from kuberich.domain.credential_helpers import helper_start_failure
+from kuberich.domain.helm import HelmRequest, HelmSettings
 from kuberich.domain.history import HistorySnapshot
 from kuberich.domain.interactions import InteractionCommand
 from kuberich.domain.keyboard import effective_keymap
@@ -95,7 +96,7 @@ from kuberich.services.port_forwards import ForwardManager
 from kuberich.services.processes import ProcessRunner
 from kuberich.services.sessions import SessionService
 from kuberich.services.updates import UpdateResult, UpdateService
-from kuberich.services.workspace import WorkspaceService
+from kuberich.services.workspace import HelmFactory, WorkspaceService
 from kuberich.ui.appearance_controller import AppearanceController
 from kuberich.ui.authorization import AuthorizationTable
 from kuberich.ui.authorization_navigation import AuthorizationNavigation
@@ -120,6 +121,9 @@ from kuberich.ui.diagnostic_navigation import DiagnosticNavigation
 from kuberich.ui.events import EventsTable
 from kuberich.ui.foreground import ForegroundGate
 from kuberich.ui.handoff import terminal_handoff
+from kuberich.ui.helm import HelmReleaseTable
+from kuberich.ui.helm_actions import HelmActions
+from kuberich.ui.helm_navigation import HelmNavigation
 from kuberich.ui.history_actions import HistoryActions
 from kuberich.ui.input_dispatch import InputDispatcher
 from kuberich.ui.interactions import Interactions
@@ -149,6 +153,7 @@ from kuberich.ui.workspace_screen import WorkspaceScreen
 
 if TYPE_CHECKING:
     from kuberich.services.exports import ExportService
+    from kuberich.services.helm import HelmService
     from kuberich.ui.context_admin import ContextEditResult
     from kuberich.ui.diagnostic_evidence import DiagnosticEvidenceScreen
     from kuberich.ui.inspection import Page
@@ -226,6 +231,7 @@ class KubeRichApp(App[None]):
         clipboard: NativeClipboard | None = None,
         export_service: ExportService | None = None,
         export_directory: Path | None = None,
+        helm_factory: HelmFactory | None = None,
     ) -> None:
         self._startup_ready: asyncio.Event | None = None
         self._foreground = ForegroundGate(self._resume_foreground)
@@ -245,6 +251,7 @@ class KubeRichApp(App[None]):
             pulse_history=self._read_pulse_history,
             diagnostic_policy=policy,
             diagnostic_popeye=self._read_popeye,
+            helm_factory=helm_factory or self._create_helm_service,
         )
         self.history = NavigationHistory()
         self.interactions = Interactions(self)
@@ -308,6 +315,8 @@ class KubeRichApp(App[None]):
         self.pulse_table.display = False
         self.relationships_table = RelationshipTable()
         self.relationships_table.display = False
+        self.helm_table = HelmReleaseTable()
+        self.helm_table.display = False
         self.authorization_table = AuthorizationTable()
         self.authorization_table.display = False
         self.diagnostics_table = ClusterDiagnosticsTable(
@@ -357,6 +366,7 @@ class KubeRichApp(App[None]):
                 self.authorization_table,
                 self.diagnostics_table,
                 self.events_table,
+                self.helm_table,
             ),
             self._foreground,
             lambda: self.sessions.catalog,
@@ -395,6 +405,11 @@ class KubeRichApp(App[None]):
             errors=lambda: self.interactions.errors,
             set_errors=self.interactions.set_errors,
         )
+        self.helm_navigation = HelmNavigation(
+            self.workspace, self.views, self.navigator, self._helm_settings
+        )
+        self.navigator.helm = self.helm_navigation
+        self.helm_actions = HelmActions(self)
         self.authorization = AuthorizationNavigation(
             self.workspace, self.views, self.navigator, self.workspace.select_authorization
         )
@@ -605,6 +620,7 @@ class KubeRichApp(App[None]):
                 ),
             },
             {
+                Command.HELM: self.helm_navigation.command,
                 Command.DIAGNOSTICS: lambda value: (
                     self.diagnostics.cancel() if value == "cancel" else self.diagnostics.overview()
                 ),
@@ -733,6 +749,7 @@ class KubeRichApp(App[None]):
         | AuthorizationTable
         | ClusterDiagnosticsTable
         | EventsTable
+        | HelmReleaseTable
     ):
         return self.views.table
 
@@ -789,6 +806,7 @@ class KubeRichApp(App[None]):
             yield self.standard_table
             yield self.custom_table
             yield self.pulse_table
+            yield self.helm_table
             yield self.relationships_table
             yield self.authorization_table
             yield self.diagnostics_table
@@ -848,6 +866,7 @@ class KubeRichApp(App[None]):
             self.authorization_table,
             self.diagnostics_table,
             self.events_table,
+            self.helm_table,
         ):
             table.effective_keys = self.navigation_keymap
         if not self.is_headless and not self.is_web:
@@ -867,6 +886,7 @@ class KubeRichApp(App[None]):
         self.diagnostics_table.setup()
         self.standard_table.setup()
         self.events_table.setup()
+        self.helm_table.setup()
         self.query_one("#resource-view", Vertical).border_title = "Resources · no connection"
         self.screen.set_class(self.size.width < 70, "compact")
         self.screen.set_class(self.size.height < 16, "short")
@@ -912,6 +932,7 @@ class KubeRichApp(App[None]):
     def _set_notice(self, message: str) -> None:
         self.presenter.notice(message)
 
+    @on(HelmReleaseTable.SortChanged)
     @on(PodTable.SortChanged)
     @on(StandardTable.SortChanged)
     @on(EventsTable.SortChanged)
@@ -922,6 +943,7 @@ class KubeRichApp(App[None]):
 
     async def _close_client_operations(self, client: KubernetesSession) -> None:
         from kuberich.ui.diagnostic_evidence import DiagnosticEvidenceScreen
+        from kuberich.ui.helm_inspection import HelmInspectionScreen, HelmRollbackReviewScreen
 
         async def drain(worker: Worker[object]) -> None:
             with suppress(WorkerCancelled):
@@ -929,6 +951,13 @@ class KubeRichApp(App[None]):
 
         closing = asyncio.gather(
             *(drain(worker) for worker in self.workers.cancel_group(self, "diagnostic-object")),
+            *(drain(worker) for worker in self.workers.cancel_group(self, "helm-inspection")),
+            *(
+                screen.stop_owned()
+                for screen in tuple(self.screen_stack)
+                if isinstance(screen, (HelmInspectionScreen, HelmRollbackReviewScreen))
+                and screen.service.client is client
+            ),
             *(
                 screen.stop_owned()
                 for screen in tuple(self.screen_stack)
@@ -997,6 +1026,15 @@ class KubeRichApp(App[None]):
         self.appearance_controller.stop()
         await self.appearance_controller.close()
         try:
+            from kuberich.ui.helm_inspection import HelmInspectionScreen, HelmRollbackReviewScreen
+
+            await asyncio.gather(
+                *(
+                    screen.stop_owned()
+                    for screen in tuple(self.screen_stack)
+                    if isinstance(screen, (HelmInspectionScreen, HelmRollbackReviewScreen))
+                )
+            )
             await self.command_routes.close()
             await self.interactions.close()
             await self.exports.stop_owned()
@@ -1254,7 +1292,13 @@ class KubeRichApp(App[None]):
             None
             if modal
             or self.views.route.kind
-            in {ViewKind.CONTEXTS, ViewKind.PULSE, ViewKind.RELATIONSHIPS, ViewKind.AUTHORIZATION}
+            in {
+                ViewKind.CONTEXTS,
+                ViewKind.PULSE,
+                ViewKind.RELATIONSHIPS,
+                ViewKind.AUTHORIZATION,
+                ViewKind.HELM,
+            }
             else (
                 self.events_table.selected_event_uid() if self.navigator.events_current() else None
             )
@@ -1288,6 +1332,25 @@ class KubeRichApp(App[None]):
     def _forwarding_preferences(self) -> ForwardPreferences:
         return (
             forwarding_from(self.preferences.document) if self.preferences else ForwardPreferences()
+        )
+
+    def _helm_settings(self) -> HelmSettings:
+        from kuberich.domain.helm_cli import helm_settings
+
+        return helm_settings(self._process_environment)
+
+    def _create_helm_service(
+        self, client: KubernetesSession, current: Callable[[HelmRequest], bool]
+    ) -> HelmService:
+        from kuberich.services.helm import HelmService
+
+        return HelmService(
+            client,
+            self.commands.policy,
+            self._helm_settings(),
+            self._process_environment,
+            self._process_directory,
+            current,
         )
 
     async def _read_pulse_history(
@@ -1418,6 +1481,13 @@ class KubeRichApp(App[None]):
     def _show_diagnostic_evidence(self, screen: DiagnosticEvidenceScreen) -> None:
         self.push_screen(screen)
 
+    @on(DataTable.RowSelected, "#helm-releases")
+    def helm_selected(self, event: DataTable.RowSelected) -> None:
+        event.stop()
+        _worker: Worker[None] = self.run_worker(
+            self.helm_actions.inspect, group="helm-inspection", exclusive=True
+        )
+
     @on(DataTable.RowSelected, "#cluster-diagnostics")
     def diagnostic_selected(self, event: DataTable.RowSelected) -> None:
         event.stop()
@@ -1475,7 +1545,10 @@ class KubeRichApp(App[None]):
         self.navigator.namespace_selected(value)
 
     def action_retry(self) -> None:
-        self.navigator.retry()
+        if self.helm_navigation.active:
+            self.helm_navigation.refresh()
+        else:
+            self.navigator.retry()
 
     def _apply_generic(self, command: GenericResourceCommand) -> None:
         self.navigator.generic(command)
@@ -1600,6 +1673,7 @@ class KubeRichApp(App[None]):
         from kuberich.ui.artifact_viewer import ArtifactViewerScreen
         from kuberich.ui.editing import EditingScreen
         from kuberich.ui.export_review import ArtifactConfirmation, ExportReviewScreen
+        from kuberich.ui.helm_inspection import HelmInspectionScreen, HelmRollbackReviewScreen
         from kuberich.ui.inspection import InspectionScreen
         from kuberich.ui.logs import LogScreen
         from kuberich.ui.mutations import AnnotationScreen
@@ -1625,6 +1699,8 @@ class KubeRichApp(App[None]):
             screen = self.screen
             await screen.stop_owned()
             screen.dismiss()
+        elif isinstance(self.screen, (HelmInspectionScreen, HelmRollbackReviewScreen)):
+            await self.screen.action_back()
         elif isinstance(self.screen, ModalScreen):
             self.screen.dismiss()
         elif isinstance(self.focused, Input):

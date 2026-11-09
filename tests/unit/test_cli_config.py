@@ -167,6 +167,27 @@ def test_unexpected_runtime_failure_has_safe_console_message_and_debug_locations
     assert "opaque-sensitive-runtime-data" not in contents
 
 
+@pytest.mark.parametrize("command", ["helm", "helm team", "helm *"])
+def test_initial_helm_command_is_admitted_without_startup_probe(command, monkeypatch):
+    from kuberich.domain.commands import Command
+    from kuberich.services.commands import ScopedCommand
+
+    captured = []
+
+    def launch(*args, **kwargs):
+        captured.append(kwargs)
+
+    monkeypatch.setattr(cli, "run_terminal", launch)
+    monkeypatch.setenv("HELM_DRIVER", "unsupported-at-startup")
+    assert main(["--command", command]) == 0
+    initial = captured[0]["initial_command"]
+    assert (
+        initial is Command.HELM
+        if command == "helm"
+        else initial == ScopedCommand(Command.HELM, command.split()[1])
+    )
+
+
 def test_logging_failure_returns_io_code_without_raw_fallback(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:

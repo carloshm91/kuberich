@@ -29,6 +29,8 @@ class ProcessPurpose(Enum):
     DOWNLOAD = auto()
     UPLOAD = auto()
     CLIPBOARD = auto()
+    HELM_READ = auto()
+    HELM_MUTATE = auto()
 
     @property
     def action(self) -> Action:
@@ -42,6 +44,8 @@ class ProcessPurpose(Enum):
             ProcessPurpose.DOWNLOAD: Action.READ,
             ProcessPurpose.UPLOAD: Action.MUTATE,
             ProcessPurpose.CLIPBOARD: Action.READ,
+            ProcessPurpose.HELM_READ: Action.READ,
+            ProcessPurpose.HELM_MUTATE: Action.MUTATE,
         }[self]
 
 

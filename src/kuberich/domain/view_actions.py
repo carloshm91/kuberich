@@ -61,6 +61,10 @@ class ViewState:
 
 
 def action_available(action: str, view: ViewState) -> bool:
+    if view.resource == "helm" and action in (
+        TABLE_ACTIONS - {"focus_filter", "focus_command", "history_back", "history_forward"}
+    ) | {"annotate", "cleanup_pods", "views"}:
+        return False
     if (
         view.descriptor is not None
         and curated_read_only(view.descriptor)

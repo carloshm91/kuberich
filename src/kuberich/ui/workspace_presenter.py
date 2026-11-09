@@ -11,6 +11,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Input
 
 from kuberich.domain.authorization_rows import scope_label
+from kuberich.domain.connections import ConnectionState
 from kuberich.domain.metrics import MetricsSnapshot
 from kuberich.domain.view_actions import TABLE_ACTIONS, ViewState
 from kuberich.domain.view_routes import ViewKind, ViewRoute
@@ -172,6 +173,7 @@ class WorkspacePresenter:
                         from kuberich.ui.container_inspection import ContainerInspectionScreen
                         from kuberich.ui.containers import ContainerScreen
                         from kuberich.ui.diagnostic_evidence import DiagnosticEvidenceScreen
+                        from kuberich.ui.helm_inspection import HelmInspectionScreen
                         from kuberich.ui.inspection import InspectionScreen
                         from kuberich.ui.logs import LogScreen
                         from kuberich.ui.terminal import ShellScreen
@@ -180,6 +182,7 @@ class WorkspacePresenter:
                             screen,
                             (
                                 InspectionScreen,
+                                HelmInspectionScreen,
                                 LogScreen,
                                 ContainerScreen,
                                 ShellScreen,
@@ -229,6 +232,7 @@ class WorkspacePresenter:
                                         (
                                             ContainerScreen,
                                             InspectionScreen,
+                                            HelmInspectionScreen,
                                             DiagnosticEvidenceScreen,
                                             ContainerInspectionScreen,
                                         ),
@@ -270,6 +274,8 @@ class WorkspacePresenter:
                 if kind == "contexts"
                 else self.navigator.authorization.message(view)
                 if kind == "authorization" and self.navigator.authorization is not None
+                else self.navigator.helm.message(view)
+                if kind == "helm" and self.navigator.helm is not None
                 else self.navigator.diagnostics.message(view)
                 if kind == "diagnostics" and self.navigator.diagnostics is not None
                 else view.message
@@ -303,6 +309,47 @@ class WorkspacePresenter:
     def show(self, view: ViewObservation) -> None:
         observation = view.connection
         self.header.update_identity()
+        if self.views.route.kind is ViewKind.HELM:
+            helm_snapshot = view.helm
+            listing = helm_snapshot.listing if helm_snapshot is not None else None
+            incomplete = listing is not None and not listing.complete
+            stale = helm_snapshot is not None and (
+                helm_snapshot.collecting or helm_snapshot.problem is not None
+            )
+            connection_failed = view.connection.state not in USABLE_CONNECTIONS | {
+                ConnectionState.CONNECTING,
+                ConnectionState.DISCONNECTED,
+            }
+            self.host.query_one("#resource-view", Vertical).border_title = safe_text(
+                ("INCOMPLETE · " if incomplete else "")
+                + f"Helm({view.connection.namespace or 'all'})[{self.views.tables.helm.row_count}]"
+                + (" · STALE" if stale and listing is not None else "")
+            )
+            populated = bool(self.views.tables.helm.row_count)
+            self.host.query_one("#empty-state").set_class(populated, "populated")
+            self.views.tables.helm.set_class(populated, "populated")
+            self.host.query_one("#empty-title", WorkspaceLabel).update_text(
+                "Connection unavailable"
+                if connection_failed
+                else "Helm releases unavailable"
+                if helm_snapshot is not None and helm_snapshot.problem is not None
+                else "Loading Helm releases"
+                if helm_snapshot is None or helm_snapshot.collecting
+                else "No Helm releases in this scope"
+            )
+            self.host.query_one("#empty-description", WorkspaceLabel).update_text(
+                view.connection.message
+                if connection_failed
+                else str(helm_snapshot.problem)
+                if helm_snapshot is not None and helm_snapshot.problem is not None
+                else "F4 refresh · :helm NAMESPACE or * · :ns namespace picker"
+            )
+            self.show_sort()
+            self.view_status(
+                view,
+                self.navigator.helm.message(view) if self.navigator.helm is not None else "Helm",
+            )
+            return
         if self.views.route.kind is ViewKind.DIAGNOSTICS:
             diagnostics = view.diagnostics
             diagnostic_scope = diagnostics.request.scope if diagnostics is not None else None
@@ -494,6 +541,11 @@ class WorkspacePresenter:
             frame = self.host.query_one("#resource-view", Vertical)
         except NoMatches:
             # A table message can arrive after the workspace frame is removed.
+            return
+        if self.views.route.kind is ViewKind.HELM:
+            frame.border_subtitle = (
+                self.views.tables.helm.sort_summary + " · Enter inspect · F4 refresh"
+            )
             return
         if self.views.route.kind is ViewKind.EVENTS:
             options = self.views.event_options

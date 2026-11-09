@@ -19,6 +19,11 @@ resource does not accept a namespace argument.
 At launch, `--command 'pods demo-apps'` selects a starting view. Commands that need
 a selected row or confirmation are unavailable at launch.
 
+Development source for 0.5 also provides `:helm [NAMESPACE|*]` for release
+browsing. This is not in published 0.4.0 packages. Read the optional prerequisites
+and [Helm inspection and rollback](workloads.md#browse-helm-releases-in-development-source)
+before using it. Metric `:history` and workload `:rollback` retain their meanings.
+
 Use `:export` for a reviewed local capture and `:exports`
 for saved artifacts. `--command exports` opens that browser without connecting;
 Back remains disconnected until an explicit context selection or retry. See

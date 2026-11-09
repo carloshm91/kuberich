@@ -380,6 +380,7 @@ architecture links useful.
 | Own kubeconfig preparation and make migration explicit | [0032](adr/0032-kubeconfig-loader-contract.md) |
 | Preserve graph identity, evidence and per-root collection ownership | [0034](adr/0034-native-resource-relationships.md) |
 | Compose typed views, commands, navigation, and operation owners | [Application composition](adr/app-composition.md) |
+| Keep Helm release authority separate from Kubernetes resource targets | [0041](adr/0041-helm-release-identity.md) |
 
 ## Historical source
 

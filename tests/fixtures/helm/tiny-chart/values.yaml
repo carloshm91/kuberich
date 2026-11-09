@@ -1,0 +1,12 @@
+color: blue
+defaultOnly: computed-default
+credentials:
+  username: synthetic-user
+  password: synthetic-chart-password
+rollbackHooks:
+  enabled: true
+  fail: false
+  sleepSeconds: 0
+  image: alpine@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b
+readinessJob:
+  enabled: false

@@ -90,6 +90,11 @@ COMMAND_SPECS = (
     ),
     _spec(Command.PULSE, ("pulse", "overview"), "Open cluster health, budgets and metric history."),
     _spec(
+        Command.HELM,
+        ("helm",),
+        "Browse Helm releases; optionally choose NAMESPACE or *. Enter inspects and reviews rollback.",
+    ),
+    _spec(
         Command.HISTORY,
         ("history", "hist"),
         "Open captured resource or cluster metric history.",

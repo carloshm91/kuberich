@@ -178,7 +178,7 @@ def suggestions(
             values = ("cancel",)
         elif effective in {"can-i", "who-can"}:
             values = ("get ", "list ", "watch ", "create ", "update ", "patch ", "delete ")
-        elif command in {Command.NAMESPACES, Command.PODS, Command.EVENTS} or (
+        elif command in {Command.NAMESPACES, Command.PODS, Command.EVENTS, Command.HELM} or (
             effective in RESOURCE_ALIASES and RESOURCE_ALIASES[effective].namespaced
         ):
             values = namespaces
@@ -304,6 +304,7 @@ class CommandService:
             Command.NAMESPACES,
             Command.PODS,
             Command.EVENTS,
+            Command.HELM,
             Command.SCALE,
             Command.ROLLBACK,
             Command.RENAME,
