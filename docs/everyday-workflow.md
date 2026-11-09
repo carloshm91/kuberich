@@ -6,10 +6,9 @@ logs. Start in read-only mode; this walkthrough changes no resources.
 
 ## Start with the workload
 
-When you need a wider starting point, development source provides a
+When you need a wider starting point, open the
 [cluster overview](cluster-overview.md). Open `:pulse` to inspect health, capacity
 and usage, then press Enter on a summary to open its matching resource list.
-The installed 0.3.0 release predates this overview.
 
 ```sh
 kuberich --context demo-lab --namespace demo-apps --readonly
@@ -26,7 +25,7 @@ inspection pages are redacted.
 
 ## Follow owners and dependencies
 
-Development source adds `:xray` on the selected Deployment. Expand its controller
+Use `:xray` on the selected Deployment. Expand its controller
 and Pod relationships with Enter/Right; selector matches remain separate from
 UID-checked ownership. Select a current object and use `o` or `:open` to open its
 resource view. Use `:back` to return to the graph and its expansion state.
@@ -34,7 +33,7 @@ resource view. Use `:back` to return to the graph and its expansion state.
 For a ConfigMap, Secret, ServiceAccount, PVC or PriorityClass, `:usedby` lists
 supported static declarations. An empty incomplete scan does not prove unused.
 See [resource relationships](resource-relationships.md) for supported fields,
-source scope and permission limits. Installed 0.3.0 predates these views.
+source scope and permission limits.
 
 ## Read logs across the workload
 
@@ -55,7 +54,7 @@ See [read logs](log-viewer.md) for export limits and current/previous instances.
 Type `:pods`, filter to the pod you want, and press Enter. The container table
 shows regular, init, and existing ephemeral containers. State, readiness, restart
 counts, and other displayed fields update while the same pod remains selected.
-The declared CPU/memory requests and limits stay visible. Development source
+The declared CPU/memory requests and limits stay visible. Version 0.4
 also shows live CPU(m), memory(MiB), explicitly labelled usage percentages and
 sample availability. See [current metrics](resource-workspace.md#current-cpu-and-memory-metrics)
 for read permissions, units, partial totals and uncertain allocation limits.

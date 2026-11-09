@@ -3,8 +3,7 @@
 Use Diagnostics to connect observed Pod or workload failures with conditions,
 container state, Events and referenced storage. It explains the evidence and
 its limits so you can decide what to inspect next. It performs no automatic
-remediation. These views are available in
-development source; the installed 0.3.0 release predates them.
+remediation. These views are available from version 0.4.
 
 Start with a context and namespace you are allowed to read:
 

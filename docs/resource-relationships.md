@@ -3,7 +3,7 @@
 Use XRay to follow owners, workload pods, service backends and node placement.
 Use UsedBy to find supported declarations that refer to a ConfigMap, Secret,
 ServiceAccount, PersistentVolumeClaim or PriorityClass. These views are available
-in development source for 0.4.0; installed 0.3.0 predates them.
+from version 0.4.
 
 You need read access to the selected resource and the related resource families.
 A graph does not grant additional access. Start in your permitted scope:

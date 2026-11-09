@@ -38,7 +38,7 @@
         "docs/exports.md",
         "tests/unit/test_export_cli.py"
       ],
-      "public_summary": "Launch flags provide help, version, local diagnostics, read-only policy, presentation controls, session color inversion, startup views and connection overrides. Development source adds an export-directory option and local artifact browser startup. Splash and shell completion are unavailable. Create redacted diagnostic bundles and retry recoverable resource-view errors.",
+      "public_summary": "Launch flags provide help, version, local diagnostics, read-only policy, presentation controls, session color inversion, startup views and connection overrides. Version 0.4 adds an export-directory option and local artifact browser startup. Splash and shell completion are unavailable. Create redacted diagnostic bundles and retry recoverable resource-view errors.",
       "public_status": "partial"
     },
     {
@@ -168,7 +168,7 @@
         "tests/ui/test_authorization.py",
         "scripts/verify_authorization_kind.py"
       ],
-      "public_summary": "CA and client certificates, TLS names, timeouts, proxy settings and repeated impersonation are supported. Development source adds current-identity permission reviews and observed RBAC browsing; SOCKS5 streaming limits remain explicit.",
+      "public_summary": "CA and client certificates, TLS names, timeouts, proxy settings and repeated impersonation are supported. Version 0.4 adds current-identity permission reviews and observed RBAC browsing; SOCKS5 streaming limits remain explicit.",
       "public_status": "partial"
     },
     {
@@ -244,7 +244,7 @@
         "tests/ui/test_curated_resources.py",
         "tests/ui/test_events_workspace.py"
       ],
-      "public_summary": "Discovery and generic browsing remain available. Development source adds 18 curated read-only families and an identity-safe Events workspace; installed 0.3.0 predates them.",
+      "public_summary": "Discovery and generic browsing remain available. Version 0.4 adds 18 curated read-only families and an identity-safe Events workspace.",
       "public_status": "partial"
     },
     {
@@ -579,7 +579,7 @@
       "source": "internal/view/screen_dump.go",
       "status": "implemented",
       "difference": "O06 #73 integrates frozen resource/document/log/diagnostic/table exports, inspectable support JSON, private reviewed filesystem operations, separate one-use sensitive/overwrite consent and an offline saved-artifact browser. The --screen-dump-dir override selects the session export root. Focused deterministic codecs, service/adapter behavior, actual Root UI flows and offline/path contracts are verified; exact-source whole-package/platform qualification remains required.",
-      "public_summary": "Development source adds reviewed redacted resource, log, diagnostic, screen and support exports, an explicit directory option and a local saved-artifact browser. Sensitive resource YAML and overwrite/deletion need separate confirmation. Installed 0.3.0 predates the browser.",
+      "public_summary": "Version 0.4 adds reviewed redacted resource, log, diagnostic, screen and support exports, an explicit directory option and a local saved-artifact browser. Sensitive resource YAML and overwrite/deletion need separate confirmation.",
       "public_status": "partial",
       "evidence": [
         "docs/log-viewer.md",
@@ -683,7 +683,7 @@
         "tests/ui/test_curated_resources.py",
         "tests/ui/test_events_workspace.py"
       ],
-      "public_summary": "Browse live Pods, containers and namespaces. Development source adds Events warning filtering, occurrence groups and individual member inspection; installed 0.3.0 predates these Event views.",
+      "public_summary": "Browse live Pods, containers and namespaces. Version 0.4 adds Events warning filtering, occurrence groups and individual member inspection.",
       "public_status": "partial"
     },
     {
@@ -712,7 +712,7 @@
         "tests/contract/test_relationships.py",
         "tests/ui/test_relationship_table.py"
       ],
-      "public_summary": "Standard workload tables support reviewed scaling, restart and explicit revision rollback. Development source adds native controller and Pod relationships; selector matches remain separate from ownership.",
+      "public_summary": "Standard workload tables support reviewed scaling, restart and explicit revision rollback. Version 0.4 adds native controller and Pod relationships; selector matches remain separate from ownership.",
       "public_status": "partial"
     },
     {
@@ -742,7 +742,7 @@
         "tests/contract/test_relationships.py",
         "tests/ui/test_relationship_table.py"
       ],
-      "public_summary": "Service and Ingress tables are available. Development source adds curated EndpointSlice, NetworkPolicy and IngressClass tables and reported service backends with separate selector matches, preserving unknown endpoint identity and incomplete reads.",
+      "public_summary": "Service and Ingress tables are available. Version 0.4 adds curated EndpointSlice, NetworkPolicy and IngressClass tables and reported service backends with separate selector matches, preserving unknown endpoint identity and incomplete reads.",
       "public_status": "partial"
     },
     {
@@ -778,7 +778,7 @@
         "tests/contract/test_relationships.py",
         "tests/ui/test_relationship_table.py"
       ],
-      "public_summary": "Node, PV, PVC and StorageClass tables are available. Development source adds curated HPA/VPA, PDB, scheduling-class, quota and limit tables, Node CPU/memory usage, allocatable percentages and vendor-neutral extended-resource capacity. The development cluster overview adds known pressure/unscheduled states; broader quota/disruption diagnostics remain planned. Development relationships distinguish declared placement, PV/PVC bindings and static PriorityClass references.",
+      "public_summary": "Node, PV, PVC and StorageClass tables are available. Version 0.4 adds curated HPA/VPA, PDB, scheduling-class, quota and limit tables, Node CPU/memory usage, allocatable percentages and vendor-neutral extended-resource capacity. The cluster overview adds known pressure/unscheduled states; broader quota/disruption diagnostics remain planned. Relationships distinguish declared placement, PV/PVC bindings and static PriorityClass references.",
       "public_status": "partial"
     },
     {
@@ -832,7 +832,7 @@
         "tests/ui/test_curated_resources.py",
         "tests/ui/test_events_workspace.py"
       ],
-      "public_summary": "ConfigMap/Secret payload views remain deliberate. Development source adds read-only ServiceAccount and RBAC summaries with declared links and authorization evidence; installed 0.3.0 predates those summaries.",
+      "public_summary": "ConfigMap/Secret payload views remain deliberate. Version 0.4 adds read-only ServiceAccount and RBAC summaries with declared links and authorization evidence.",
       "public_status": "partial"
     },
     {
@@ -878,7 +878,7 @@
         "tests/unit/test_relationships.py",
         "tests/contract/test_relationships.py"
       ],
-      "public_summary": "Discovered APIs provide served-version selection, typed printer columns, inspection and saved schema-pinned layouts. Development source follows discovered owners in native graphs; configured jumps share navigation history. Generic mutation and arbitrary custom-resource reference scanning remain unavailable.",
+      "public_summary": "Discovered APIs provide served-version selection, typed printer columns, inspection and saved schema-pinned layouts. Version 0.4 follows discovered owners in native graphs; configured jumps share navigation history. Generic mutation and arbitrary custom-resource reference scanning remain unavailable.",
       "public_status": "partial"
     },
     {
@@ -955,7 +955,7 @@
         "tests/ui/test_aggregate_logs.py",
         "tests/contract/test_exports.py"
       ],
-      "public_summary": "Search, filters, marks, clear, fullscreen and explicit redacted copy work on bounded retained output. Development source adds reviewed log saving and saved-artifact browsing; its frozen source keeps actual container/window provenance and discard notices.",
+      "public_summary": "Search, filters, marks, clear, fullscreen and explicit redacted copy work on bounded retained output. Version 0.4 adds reviewed log saving and saved-artifact browsing; its frozen source keeps actual container/window provenance and discard notices.",
       "public_status": "partial",
       "public_title": "Log search, marks, copy, save, and history limits"
     },
@@ -1161,7 +1161,7 @@
         "tests/contract/test_relationships.py",
         "tests/ui/test_relationship_table.py"
       ],
-      "public_summary": "Review scale, restart or one explicit available revision rollback for supported controllers. Development source adds owner/ReplicaSet navigation; open an ordinary resource view before changing a resource.",
+      "public_summary": "Review scale, restart or one explicit available revision rollback for supported controllers. Version 0.4 adds owner/ReplicaSet navigation; open an ordinary resource view before changing a resource.",
       "public_status": "partial"
     },
     {
@@ -1222,7 +1222,7 @@
       "source": "internal/view/secret.go",
       "status": "implemented",
       "difference": "ConfigMap/Secret key inspection and editing remain M05. O07 adds current API environment provenance, precedence, bounded field/resource resolution and separate image facts for all container families, with fresh one-use disclosure and metadata-only export. Actual process environment, image ENV, injected Service variables and unsupported runtime sources remain outside observation. Full family parity is not claimed.",
-      "public_summary": "ConfigMap and Secret keys have explicit reveal/copy and editing. Development source also traces container environment sources and image facts; values require fresh disclosure.",
+      "public_summary": "ConfigMap and Secret keys have explicit reveal/copy and editing. Version 0.4 also traces container environment sources and image facts; values require fresh disclosure.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/configuration-data.md",
@@ -1353,7 +1353,7 @@
       "source": "internal/config/json/schemas/jumps.json",
       "status": "planned",
       "difference": "U06 #64 implements named jumps from a source GVR to a target GVR with namespace, label and field templates. Templates only read literal field paths; values are restricted to selector-safe characters and validated as local label/field filters. The target view opens with the filter in the filter box rather than a server-side selector. Reactive reload and per-context jump overrides remain planned. O03 #70 adds native discovered custom-owner navigation within the same history model. It does not recursively infer arbitrary CR reference fields; full current-head acceptance remains pending.",
-      "public_summary": "Define preference-file jumps and use :jump to open related views with a local filter. Development source adds native discovered-owner graphs using the same history; arbitrary custom-resource reference discovery is unavailable.",
+      "public_summary": "Define preference-file jumps and use :jump to open related views with a local filter. Version 0.4 adds native discovered-owner graphs using the same history; arbitrary custom-resource reference discovery is unavailable.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/resource-jumps.md",
@@ -1510,7 +1510,7 @@
       "source": "internal/client/metrics.go",
       "status": "planned",
       "difference": "O01 #68 implements discovered current CPU/memory metrics in native Pod/workload/Node/container views, UID/controller-chain totals, typed sorting, explicit API/RBAC/no-sample/stale/partial/zero states, declared budgets and vendor-neutral extended-resource requests/capacity. Effective allocation with init/sidecar/overhead/Pod-level budgets/observed resize is labelled uncertain; CPU/memory Metrics API supplies no GPU utilization. O02 #69 adds configured overview CPU/memory history; O08 #231 adds fixed multi-range entity history with separate host/container measurements, explicit source gaps and historical-identity limits; actual provider and whole-source qualification remain pending.",
-      "public_summary": "Development source adds current CPU/memory usage, declared budgets and Node/extended-resource capacity. Configured entity history includes CPU, memory, network and filesystem source states; missing sources and uncertain historical identity remain explicit. GPU utilization is unavailable. Installed 0.3.0 predates these views.",
+      "public_summary": "Version 0.4 adds current CPU/memory usage, declared budgets and Node/extended-resource capacity. Configured entity history includes CPU, memory, network and filesystem source states; missing sources and uncertain historical identity remain explicit. GPU utilization is unavailable.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/resource-workspace.md",
@@ -1530,7 +1530,7 @@
       "source": "internal/view/pulse.go",
       "status": "planned",
       "difference": "O02 #69 adds native Pulse health, capacity, current usage, exact drill-downs and independent source expiry. O08 #231 adds finite cluster/Node/workload/Pod/container history, 15m–24h ranges, numeric CPU/memory/network/filesystem charts, explicit backend detection and separate Service/external HTTPS transports. Historical owner names and current API UID membership are distinct; native metric absence stays visible. Focused tests are measured in the acceptance record; actual providers, installed artifacts and complete-source/platform qualification remain pending. No complete parity claim is made.",
-      "public_summary": "Development source adds cluster health and capacity summaries with resource drill-downs. Shift+M or :history opens configured entity history with numeric charts, 15m–24h ranges, separate devices, explicit source gaps and historical-identity limits. Backend components must already exist. Installed 0.3.0 predates these views.",
+      "public_summary": "Version 0.4 adds cluster health and capacity summaries with resource drill-downs. Shift+M or :history opens configured entity history with numeric charts, 15m–24h ranges, separate devices, explicit source gaps and historical-identity limits. Backend components must already exist.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/cluster-overview.md",
@@ -1559,7 +1559,7 @@
       "source": "internal/view/xray.go",
       "status": "implemented",
       "difference": "O03 #70 provides native XRay/UsedBy collectors, UID-guarded opening, path-local cycle handling, source coverage and history restoration. Protected PR #312 passed all selected source/native jobs; actual owned-cluster evidence is retained in the relationship acceptance record. Supported static Pod/workload, ServiceAccount and storage declarations preserve field paths and namespace scope; arbitrary CR references and proof of process consumption remain outside this implementation.",
-      "public_summary": "Development source provides native :xray and :usedby views for owners, selector matches, reported endpoints, placement and supported static configuration/storage/identity declarations. Replacement UIDs and incomplete scans remain explicit; installed 0.3.0 predates these views.",
+      "public_summary": "Version 0.4 provides native :xray and :usedby views for owners, selector matches, reported endpoints, placement and supported static configuration/storage/identity declarations. Replacement UIDs and incomplete scans remain explicit.",
       "public_status": "partial",
       "evidence": [
         "docs/resource-relationships.md",
@@ -1579,7 +1579,7 @@
       "source": "internal/view/rbac.go",
       "status": "implemented",
       "difference": "O04 #71 adds native observed subjects/bindings/roles, individual current-identity SSAR, namespace SSRR and bounded local who-can. Actual owned-kind behavior covers name/subresource/non-resource scopes, aggregation, current-group evidence, partial/forbidden sources and unchanged effect guards. External authorizers and unknown membership remain explicit limits; final whole-source/platform checks remain required.",
-      "public_summary": "Development source includes role and subject browsing, namespace rules, current-identity access reviews and RBAC who-can evidence. Partial reads, unknown group membership and external-authorizer limits remain visible.",
+      "public_summary": "Version 0.4 includes role and subject browsing, namespace rules, current-identity access reviews and RBAC who-can evidence. Partial reads, unknown group membership and external-authorizer limits remain visible.",
       "public_status": "partial",
       "evidence": [
         "docs/authorization.md",
@@ -1605,7 +1605,7 @@
       "source": "README.md",
       "status": "implemented",
       "difference": "O05 #72 provides bounded native diagnostics for five Pod/workload failure categories, UID-linked resource/Event/log actions and explicit per-context Popeye 0.22.1 ingestion. Actual owned-kind/native/official-binary trials passed eight runtime scenarios with all 239 bound source inputs unchanged and complete container/cluster/private-file cleanup; external API read count and name-only historical identity remain explicit limits. The 198-case native/Workspace and 162-case UI/regression cohorts passed. Exact-head whole-source/platform checks and protected delivery remain required.",
-      "public_summary": "Development source adds native :diagnostics and captured-workload :diagnose evidence, plus explicit optional :popeye report ingestion. Source gaps, stale evidence and name-only report identity remain visible; installed 0.3.0 predates these views.",
+      "public_summary": "Version 0.4 adds native :diagnostics and captured-workload :diagnose evidence, plus explicit optional :popeye report ingestion. Source gaps, stale evidence and name-only report identity remain visible.",
       "public_status": "partial",
       "evidence": [
         "docs/cluster-diagnostics.md",
@@ -1699,7 +1699,7 @@
       "source": "internal/client/gvrs.go",
       "status": "planned",
       "difference": "O09 #232 adds read-only HPA/VPA/PDB, NetworkPolicy/EndpointSlice/IngressClass, scheduling/Lease, quota/limits and webhook declaration/status summaries. Wider policy/admission enforcement diagnostics remain A05 #80; a declaration does not prove enforcement.",
-      "public_summary": "Development source adds read-only scaling, policy, scheduling, quota and webhook summaries. Wider enforcement diagnostics remain planned; unknown or removed APIs do not fabricate supported schemas.",
+      "public_summary": "Version 0.4 adds read-only scaling, policy, scheduling, quota and webhook summaries. Wider enforcement diagnostics remain planned; unknown or removed APIs do not fabricate supported schemas.",
       "public_status": "partial",
       "partial_evidence": [
         "docs/resource-workspace.md",

@@ -16,9 +16,9 @@ The private preview was previously named Kubetrol. Checkout upgrades use
 `uv sync --locked --group dev`, then `uv run kuberich`; the local directory name
 does not determine the CLI name. A pre-existing isolated `uv tool`/`pipx`
 installation of the old distribution should be removed before changing package
-identity. Published 0.3 retains the deprecated `kubetrol` alias; the prepared
-0.4 candidate exposes only `kuberich`. Pipx users crossing from 0.3 need the
-one-time reinstall/spec migration in [upgrade guidance](installation.md#upcoming-04-command-migration).
+identity. Published 0.3 retains the deprecated `kubetrol` alias; version
+0.4 exposes only `kuberich`. Pipx users crossing from 0.3 need the
+one-time reinstall/spec migration in [upgrade guidance](installation.md#upgrade-from-03-to-04).
 Uninstalling a tool does not delete its preference files. See
 [preference compatibility](configuration.md) before changing installations.
 
@@ -36,10 +36,10 @@ uv tool install kuberich
 pipx install kuberich
 ```
 
-Version 0.3.0 is published on PyPI, GitHub Releases and the Homebrew tap,
-including its three prebuilt Homebrew bottle targets. See
+Version 0.4.0 is published on PyPI, GitHub Releases and the Homebrew tap,
+including its three prebuilt bottle targets. See
 [installation](installation.md) for platform scope and the
-[release](https://github.com/carloshm91/kuberich/releases/tag/v0.3.0) for four
+[release](https://github.com/carloshm91/kuberich/releases/tag/v0.4.0) for four
 native archives, checksums and provenance. Published 0.2.0 Homebrew bottles
 retain their immutable platform files.
 
@@ -132,7 +132,7 @@ with its license and replacement instructions. A local diagnostic trial exercise
 an actual compatible source replacement in a copied bundle. The entire directory,
 including `_internal` and notices, must be retained; the launcher alone is not a
 portable installation. Public standalone archives are available from the
-[release](https://github.com/carloshm91/kuberich/releases/tag/v0.3.0).
+[release](https://github.com/carloshm91/kuberich/releases/tag/v0.4.0).
 
 The freezing interpreter now comes from the full Python Build Standalone archive,
 not the developer's interpreter or an install-only download. The reviewed

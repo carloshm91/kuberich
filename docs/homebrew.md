@@ -8,7 +8,7 @@ use `brew upgrade kuberich/tap/kuberich` for an existing installation. See
 Release tooling generates a source formula from the immutable published sdist
 and audited dependency hashes, then proposes a tap pull request. Native checks
 and maintainer review are required before merging. Source qualification, public
-formula activation and bottle activation are separate steps. Version 0.3.0
+formula activation and bottle activation are separate steps. Version 0.4.0
 is available from the source formula and the three bottle targets below.
 
 ## Local candidate
@@ -25,8 +25,8 @@ verifies metadata, source identity, audits, notices and complete bundle digests:
 uv run --locked python -m scripts.homebrew prepare --source /path/to/qualified-source --bundle /path/to/release-candidate --output /path/to/new-local-tap
 ```
 
-Output is exclusive. The formula names the verified local sdist and 29 locked
-runtime sources with SHA-256. Public source URLs cannot change registry host,
+Output is exclusive. The formula names the verified local sdist and audited,
+locked runtime sources with SHA-256. Public source URLs cannot change registry host,
 traverse paths, include credentials/query parameters or inject Ruby interpolation.
 Development versions are refused. Keep the candidate readable by the owned test
 account. Local file URLs never enter the public update path.
@@ -74,7 +74,10 @@ does not install KubeRich or update the public tap.
 
 Preinstalled dependencies remain labelled as preinstalled. Application build
 times and cold/warm bottle pours are reported separately from dependency setup;
-none is advertised as an end-to-end cold installation. A cold bottle pour means
+none is advertised as an end-to-end cold installation. The 0.4.0 Intel producer
+measured 5,344 seconds for Core dependencies and 468 seconds for the application
+build after dependency setup. Those separate measurements do not establish a
+complete cold-install time. A cold bottle pour means
 the candidate archive was absent from Homebrew's cache, with dependencies
 already prepared. Installation latency is advisory for 0.x; incomplete commands,
 incorrect installed bytes, failed cleanup and changed caller files remain

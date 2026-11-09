@@ -19,7 +19,7 @@ resource does not accept a namespace argument.
 At launch, `--command 'pods demo-apps'` selects a starting view. Commands that need
 a selected row or confirmation are unavailable at launch.
 
-Development source adds `:export` for a reviewed local capture and `:exports`
+Use `:export` for a reviewed local capture and `:exports`
 for saved artifacts. `--command exports` opens that browser without connecting;
 Back remains disconnected until an explicit context selection or retry. See
 [save and browse local exports](exports.md) for formats and disclosure controls.
@@ -52,9 +52,9 @@ horizontally. Home/End move horizontally; Ctrl+Home/Ctrl+End select first/last r
 A capital letter is one uppercase key; Vim counts and multi-key grammar are not
 implemented. Resource and namespace `s`/Shift+S cycle or reverse typed sorting.
 
-Development source keeps an individual horizontal step through a table refresh,
+Version 0.4 keeps an individual horizontal step through a table refresh,
 within the table's current bounds. Back/Forward still restore their saved
-viewports. This correction is not in the installed 0.3.0 release.
+viewports.
 
 Container `s` opens a shell. Resource `l` opens logs and Ctrl+D opens deletion
 review in write mode. Logs and text documents use their independent movement
@@ -100,7 +100,7 @@ snapshots with redacted values. `/` searches text, `n`/Shift+N move between matc
 and Escape returns. `m` toggles managed fields where offered. ConfigMap and Secret
 values have a separate [deliberate reveal workflow](editing.md#inspect-configuration-data).
 
-Development-source inspectors also offer **Links** with Shift+L. The pane lists
+Inspectors also offer **Links** with Shift+L. The pane lists
 declared destinations and why they are available or unavailable; Enter follows a
 current destination. Lowercase `l` retains horizontal text scrolling. See
 [curated views and Events](resource-workspace.md#curated-read-only-views) for
@@ -115,7 +115,7 @@ to that workspace.
 
 ## Follow a related object
 
-Development source provides `:xray` from a selected resource and `:usedby` for
+Use `:xray` from a selected resource and `:usedby` for
 supported configuration, storage and identity targets. Enter or Right expands
 a graph branch; Left collapses it. Shift+Left/Right scroll horizontally. Press
 `o` or use `:open` to open a readable object after its identity is checked.
@@ -124,8 +124,7 @@ The graph uses the same filter bar and Back/Forward history. Visible matches
 keep their ancestors; filtering does not scan unopened branches. Graph rows
 explain relationships and are not mutation targets. See
 [resource relationships](resource-relationships.md) for evidence, namespace
-scope, UID replacements and incomplete source states. Installed 0.3.0 predates
-these views.
+scope, UID replacements and incomplete source states.
 
 ## Mark rows and copy
 
@@ -172,5 +171,5 @@ The `history` navigation-key profile reserves `1`–`7`, `c`, `m`, `n`, `f`, `r`
 `d`, `b`, `a` and `u` for chart actions. A shared table navigation override must
 avoid those keys or provide an explicit `keys.history` override. For example,
 keep a shared `down: b` by setting `keys.history.down: alt+j`; otherwise validation
-reports a fixed-action conflict. This is an additional configuration restriction
-for the upcoming 0.4 minor release. Native exit, input and arrow keys stay reserved.
+reports a fixed-action conflict. This configuration restriction was added in
+0.4. Native exit, input and arrow keys stay reserved.

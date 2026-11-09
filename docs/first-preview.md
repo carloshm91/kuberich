@@ -1,78 +1,65 @@
 # Status
 
-KubeRich 0.3.0 is published on [PyPI](https://pypi.org/project/kuberich/0.3.0/),
-[GitHub Releases](https://github.com/carloshm91/kuberich/releases/tag/v0.3.0) and
-[Homebrew](https://github.com/kuberich/homebrew-tap), including prebuilt
-Homebrew bottles on the supported targets.
+KubeRich 0.4.0 is published on [PyPI](https://pypi.org/project/kuberich/0.4.0/),
+[GitHub Releases](https://github.com/carloshm91/kuberich/releases/tag/v0.4.0) and
+the [Homebrew tap](https://github.com/kuberich/homebrew-tap), including prebuilt
+bottles on its supported targets.
 
-Choose one installation method:
+Install the current Python package with Python 3.12–3.14:
 
 ```sh
-brew install kuberich/tap/kuberich
-# Or, with Python 3.12–3.14:
 uv tool install --python 3.12 kuberich
 kuberich --version
-```
-
-Read [Install](installation.md) for Homebrew, pipx, standalone downloads,
-upgrades and removal. The [quick start](quickstart.md) explains choosing your
-context and namespace and starting in read-only mode.
-
-The published release includes resource browsing, logs, shells, file transfers,
-port forwarding, workload changes, themes, navigation preferences and local
-plugins. Version 0.3.0 adds reliability fixes, collection limits and clearer task
-guides. See the [0.3.0 release notes](release-notes/0.3.0.md) for the changes.
-Existing 0.2.0 preferences load unchanged; use `kuberich` instead of the
-warning-producing `kubetrol` alias.
-
-Real EKS, AKS and GKE cluster trials remain separate from local testing. Follow
-[contexts and authentication](context-sessions.md) for provider prerequisites.
-
-## Resource metrics in development source
-
-Development source for the next 0.4.0 phase adds read-only current CPU/memory
-metrics to Pod, workload, Node and container views. It distinguishes missing APIs, permission
-denial, no sample, stale samples and measured zero. See
-[current metrics](resource-workspace.md#current-cpu-and-memory-metrics) for units,
-percentages and allocation limits. This work is not part of installed 0.3.0.
-
-Development source also adds the native [cluster overview](cluster-overview.md)
-with health/capacity summaries, exact resource drill-downs and optional configured
-Prometheus-compatible history. Shift+M opens selected resource/container charts
-with CPU, memory, network and filesystem source states and 15m–24h ranges. Its source states distinguish missing, denied,
-partial and stale data; it does not install a metrics backend. These capabilities
-remain unreleased work for 0.4.0.
-
-Development source adds [resource relationships](resource-relationships.md):
-`:xray` follows owners, selectors, endpoints and placement; `:usedby` finds
-supported configuration, storage and identity declarations. UID replacement and
-incomplete source scans remain explicit. These views are not in installed 0.3.0.
-
-Development source also adds [permission inspection](authorization.md). Use
-`:rbac` to browse observed subjects, bindings and roles, or
-`:can-i list pods --all-namespaces` to ask the API server about your current
-identity. Both commands were exercised in an owned local-cluster trial. Missing
-review/list privileges and incomplete who-can evidence remain explicit; these
-informational views do not enable guarded operations. They are unreleased work
-for 0.4.0 and are not part of installed 0.3.0.
-
-Development source also keeps container-validation notices visible during table
-refreshes and finishes closing log views when a refresh deadline overlaps
-shutdown. A controlled shutdown check requires the first close request to finish
-and release the log reader and lease. Cumulative 0.4.0 verification remains in
-progress; installed channels still provide 0.3.0.
-
-In a development checkout, the verified version command is:
-
-```sh
-uv run kuberich --version
 # kuberich 0.4.0
 ```
 
-Development source adds [failure diagnostics](cluster-diagnostics.md).
-Use `:diagnostics` for the selected namespace or `:diagnose` for a captured Pod
-or supported workload. Findings retain conditions, events, source gaps and
-guarded resource/container-log links. The optional `:popeye` command runs only
-an explicitly configured tool; native refresh and history never rerun it.
-External reports keep their name-only identity limits. These views are not part
-of installed 0.3.0.
+The version command was verified from the published package in an isolated
+installation. Read [Install](installation.md) for Homebrew, pipx, standalone
+downloads, upgrades and removal. The [quick start](quickstart.md) explains
+choosing your context and namespace and starting in read-only mode.
+
+Version 0.4.0 adds observability and investigation tools to the existing resource
+browser, logs, shells, file transfers, port forwarding, workload changes,
+themes, navigation preferences and local plugins:
+
+- Read current CPU/memory usage, requests and limits in Pod, workload, Node and
+  container tables. [Current metrics](resource-workspace.md#current-cpu-and-memory-metrics)
+  distinguishes missing APIs, denied access, absent or stale samples and measured zero.
+- Open the native [cluster overview](cluster-overview.md) for scoped health,
+  capacity summaries and exact resource drill-downs. Shift+M opens supported
+  resource/container charts with CPU, memory, network and filesystem source
+  states and 15m–24h ranges. History needs an explicitly selected compatible
+  backend; KubeRich does not install one.
+- Follow owners, selectors, endpoints and placement with `:xray`, or inspect
+  supported configuration, storage and identity declarations with `:usedby`.
+  [Resource relationships](resource-relationships.md) keeps UID replacements
+  and incomplete source scans explicit.
+- Use `:rbac` for observed subjects, bindings and roles, or
+  `:can-i list pods --all-namespaces` to ask the API server about your current
+  identity. [Permission inspection](authorization.md) distinguishes missing
+  privileges, incomplete evidence and unknown results. Informational views do
+  not enable guarded operations.
+- Open `:diagnostics` for the selected namespace or `:diagnose` for a captured
+  Pod or supported workload. [Failure diagnostics](cluster-diagnostics.md)
+  retains conditions, events, source gaps and guarded resource/log links.
+  Optional `:popeye` runs only an explicitly configured tool.
+- [Review and save local exports](exports.md), including redacted resource YAML,
+  logs, diagnostics, screen text and support JSON. Browse saved files with `:exports`.
+- [Inspect container configuration](log-viewer.md#inspect-container-environment-and-image-facts) with `e` from
+  the container list. Environment sources, precedence and image facts are
+  available while values remain hidden until a separate review.
+- Browse additional curated resource families and filter or group Events. See
+  [curated views](resource-workspace.md#curated-read-only-views) for scope and limits.
+
+See the [0.4.0 release notes](release-notes/0.4.0.md) for fixes and known limits.
+Existing preferences, legacy environment variables and log locations remain
+supported. Version 0.4 removes the deprecated `kubetrol` command and Python shim;
+use `kuberich` in scripts and launchers. Pipx users crossing from 0.3 need the
+[one-time reinstall](installation.md#upgrade-from-03-to-04), with explicit
+replacement of pinned 0.3 requirements. Upgrades leave preferences and kubeconfig
+intact.
+
+Real EKS, AKS and GKE cluster trials remain separate from local testing. Follow
+[contexts and authentication](context-sessions.md) for provider prerequisites.
+Startup and large-collection latency goals remain advisory during 0.x; this
+release does not claim complete K9s parity or in-app Helm release management.

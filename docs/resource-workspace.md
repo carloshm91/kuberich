@@ -76,7 +76,7 @@ identify their available subset explicitly.
 
 ## Standard and discovered views
 
-Development source also provides a native [cluster overview](cluster-overview.md)
+Open the native [cluster overview](cluster-overview.md)
 through `:pulse` or `:overview`. Its summaries carry their own scope, observation
 time and availability. Enter opens the underlying resource list with the same
 health/phase predicate; current CPU/memory rows open the corresponding list sorted
@@ -107,9 +107,9 @@ redaction does not recognize; inspect resources appropriate to your access.
 
 ## Curated read-only views
 
-Development source adds HPA, VPA, PDB, NetworkPolicy, EndpointSlice, IngressClass,
+Version 0.4 adds HPA, VPA, PDB, NetworkPolicy, EndpointSlice, IngressClass,
 PriorityClass, RuntimeClass, Lease, ResourceQuota, LimitRange, admission webhook,
-ServiceAccount and RBAC tables. The installed 0.3.0 release predates these views.
+ServiceAccount and RBAC tables.
 Use their aliases from the [resource reference](resource-reference.md), for example:
 
 ```text
@@ -203,9 +203,8 @@ Deletion, replacement, or scope changes invalidate the old target.
 
 ## Current CPU and memory metrics
 
-In development source, native Pod, workload and Node tables also read the
-server's discovered `metrics.k8s.io` API. The installed 0.3.0 release predates
-these columns. A cluster administrator must provide a Metrics API implementation,
+Native Pod, workload and Node tables read the server's discovered
+`metrics.k8s.io` API. A cluster administrator must provide a Metrics API implementation,
 such as metrics-server, and grant the relevant read access. KubeRich does not
 install one. Namespace Pod metrics and cluster Node metrics have independent
 availability and permissions.

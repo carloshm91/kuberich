@@ -10,8 +10,8 @@ Real cloud accounts, terminals, and provider policies can need additional setup.
 
 ### All 26 explicitly registered launch flags; help/version/info and completion
 **partial** — Launch flags provide help, version, local diagnostics, read-only policy, presentation
-controls, session color inversion, startup views and connection overrides. Development source adds
-an export-directory option and local artifact browser startup. Splash and shell completion are
+controls, session color inversion, startup views and connection overrides. Version 0.4 adds an
+export-directory option and local artifact browser startup. Splash and shell completion are
 unavailable. Create redacted diagnostic bundles and retry recoverable resource-view errors.
 ### Context/kubeconfig/cluster/user/namespace selection and connection overrides
 **partial** — Select kubeconfig files, context, namespace, connection overrides, and user settings
@@ -22,14 +22,14 @@ available. Local provider-shaped tests do not certify real cloud accounts or ide
 Legacy auth-provider/basic entries require migration.
 ### TLS/CA/client certificates, proxy, request timeout and impersonation
 **partial** — CA and client certificates, TLS names, timeouts, proxy settings and repeated
-impersonation are supported. Development source adds current-identity permission reviews and
-observed RBAC browsing; SOCKS5 streaming limits remain explicit.
+impersonation are supported. Version 0.4 adds current-identity permission reviews and observed RBAC
+browsing; SOCKS5 streaming limits remain explicit.
 ### Context rename/delete and persisted per-context view/namespace preferences
 **partial** — Selecting a context leaves kubeconfig unchanged. Renaming or deleting a context uses
 explicit review and a backup. Local per-context display preferences can be saved.
 ### API discovery, resource aliases and dynamic/CRD server columns
-**partial** — Discovery and generic browsing remain available. Development source adds 18 curated
-read-only families and an identity-safe Events workspace; installed 0.3.0 predates them.
+**partial** — Discovery and generic browsing remain available. Version 0.4 adds 18 curated read-only
+families and an identity-safe Events workspace.
 ### Live resource updates, manual refresh, retry/reconnect and errors
 **partial** — Live lists and watches keep a last snapshot during temporary failures and reconnect or
 relist as needed. Refresh renews discovery and the selected resource stream. A stale snapshot does
@@ -65,39 +65,37 @@ terminal OSC52 with tmux framing. Wayland takes precedence locally; automatic SS
 OSC52. Native text accepts up to 1 MiB and terminal copy 64 KiB. Text stays on stdin for native
 helpers. A sent request does not prove a compositor or outer terminal accepted it.
 ### Save resources/logs, screen-dump browser and export path settings
-**partial** — Development source adds reviewed redacted resource, log, diagnostic, screen and
-support exports, an explicit directory option and a local saved-artifact browser. Sensitive resource
-YAML and overwrite/deletion need separate confirmation. Installed 0.3.0 predates the browser.
+**partial** — Version 0.4 adds reviewed redacted resource, log, diagnostic, screen and support
+exports, an explicit directory option and a local saved-artifact browser. Sensitive resource YAML
+and overwrite/deletion need separate confirmation.
 ### About/branding and optional update notification
 **partial** — About shows the installed version and license. Stable-release notices are opt-in and
 can use a cached result; they never install an update.
 ### Pods/containers including init and ephemeral containers, events and namespaces
-**partial** — Browse live Pods, containers and namespaces. Development source adds Events warning
-filtering, occurrence groups and individual member inspection; installed 0.3.0 predates these Event
-views.
+**partial** — Browse live Pods, containers and namespaces. Version 0.4 adds Events warning
+filtering, occurrence groups and individual member inspection.
 ### Deployments, StatefulSets, DaemonSets, ReplicaSets, replication controllers, workloads
 **partial** — Standard workload tables support reviewed scaling, restart and explicit revision
-rollback. Development source adds native controller and Pod relationships; selector matches remain
-separate from ownership.
+rollback. Version 0.4 adds native controller and Pod relationships; selector matches remain separate
+from ownership.
 ### Services, Endpoints, EndpointSlices, Ingresses and NetworkPolicies
-**partial** — Service and Ingress tables are available. Development source adds curated
-EndpointSlice, NetworkPolicy and IngressClass tables and reported service backends with separate
-selector matches, preserving unknown endpoint identity and incomplete reads.
+**partial** — Service and Ingress tables are available. Version 0.4 adds curated EndpointSlice,
+NetworkPolicy and IngressClass tables and reported service backends with separate selector matches,
+preserving unknown endpoint identity and incomplete reads.
 ### Nodes, PV/PVC, StorageClasses, priority/scheduling, HPA/PDB/quota/limits
-**partial** — Node, PV, PVC and StorageClass tables are available. Development source adds curated
-HPA/VPA, PDB, scheduling-class, quota and limit tables, Node CPU/memory usage, allocatable
-percentages and vendor-neutral extended-resource capacity. The development cluster overview adds
-known pressure/unscheduled states; broader quota/disruption diagnostics remain planned. Development
-relationships distinguish declared placement, PV/PVC bindings and static PriorityClass references.
+**partial** — Node, PV, PVC and StorageClass tables are available. Version 0.4 adds curated HPA/VPA,
+PDB, scheduling-class, quota and limit tables, Node CPU/memory usage, allocatable percentages and
+vendor-neutral extended-resource capacity. The cluster overview adds known pressure/unscheduled
+states; broader quota/disruption diagnostics remain planned. Relationships distinguish declared
+placement, PV/PVC bindings and static PriorityClass references.
 ### ConfigMaps, Secrets, service accounts and RBAC resource families
-**partial** — ConfigMap/Secret payload views remain deliberate. Development source adds read-only
-ServiceAccount and RBAC summaries with declared links and authorization evidence; installed 0.3.0
-predates those summaries.
+**partial** — ConfigMap/Secret payload views remain deliberate. Version 0.4 adds read-only
+ServiceAccount and RBAC summaries with declared links and authorization evidence.
 ### Custom resources, unknown APIs and custom columns/jump chains
 **partial** — Discovered APIs provide served-version selection, typed printer columns, inspection
-and saved schema-pinned layouts. Development source follows discovered owners in native graphs;
-configured jumps share navigation history. Generic mutation and arbitrary custom-resource reference
-scanning remain unavailable.
+and saved schema-pinned layouts. Version 0.4 follows discovered owners in native graphs; configured
+jumps share navigation history. Generic mutation and arbitrary custom-resource reference scanning
+remain unavailable.
 ### Current/previous logs, container selection and all-container/workload logs
 **available** — Read current or previous container output and aggregate supported workload logs.
 Readers follow controller membership and identify each source independently.
@@ -107,8 +105,8 @@ independent viewport following. History has line and byte limits; rotated server
 unavailable.
 ### Log search, marks, copy, save, and history limits
 **partial** — Search, filters, marks, clear, fullscreen and explicit redacted copy work on bounded
-retained output. Development source adds reviewed log saving and saved-artifact browsing; its frozen
-source keeps actual container/window provenance and discard notices.
+retained output. Version 0.4 adds reviewed log saving and saved-artifact browsing; its frozen source
+keeps actual container/window provenance and discard notices.
 ### Shell exec with chosen container and configurable shell command
 **partial** — A selected container opens an embedded kubectl shell with local history, search, and
 copy. Write mode, kubectl, and exec permission are required. Advanced terminal protocols are
@@ -134,8 +132,8 @@ inspect a redacted diff, validate with a strict server dry-run, and choose Apply
 includes deliberate Secret editing.
 ### Scale, restart and rollback workloads; deployment ReplicaSet drill-down
 **partial** — Review scale, restart or one explicit available revision rollback for supported
-controllers. Development source adds owner/ReplicaSet navigation; open an ordinary resource view
-before changing a resource.
+controllers. Version 0.4 adds owner/ReplicaSet navigation; open an ordinary resource view before
+changing a resource.
 ### Delete/force-delete/bulk actions and pod completed/error cleanup
 **available** — Single/batch deletion reviews identity, grace and propagation, then reports each
 result separately. It never silently removes finalizers. :cleanup reviews deleting the completed and
@@ -144,8 +142,8 @@ failed pods in the current view.
 **available** — Review Job/CronJob suspension and resume, or create an independent manual Job from
 the selected CronJob template. The schedule and concurrency policy do not govern a manual run.
 ### Configuration data and environment sources
-**partial** — ConfigMap and Secret keys have explicit reveal/copy and editing. Development source
-also traces container environment sources and image facts; values require fresh disclosure.
+**partial** — ConfigMap and Secret keys have explicit reveal/copy and editing. Version 0.4 also
+traces container environment sources and image facts; values require fresh disclosure.
 ### Local manifest directories, YAML edit, apply/delete and Kustomize
 **planned** — Local manifest directories, apply/delete workflows and Kustomize integration are
 planned.
@@ -161,8 +159,8 @@ save, live reload, and session inversion. Icon preferences are unavailable.
 columns and sort. Inputs keep normal text editing; invalid overrides leave working defaults.
 ### Custom GVR relationship jumps with selectors/templates/namespace
 **partial** — Define preference-file jumps and use :jump to open related views with a local filter.
-Development source adds native discovered-owner graphs using the same history; arbitrary custom-
-resource reference discovery is unavailable.
+Version 0.4 adds native discovered-owner graphs using the same history; arbitrary custom-resource
+reference discovery is unavailable.
 ### Reactive settings reload, paths, feature gates, connection/log/metric thresholds
 **partial** — Valid saved preferences reload while the application runs; an invalid file leaves the
 last working settings active. Contexts can add read-only mode or a refresh interval.
@@ -182,28 +180,25 @@ terminal.
 **partial** — Translate plugin fields and variables explicitly and install required external tools
 separately. External services and tool features do not become native application capabilities.
 ### CPU/memory usage, requests/limits/percentages, extended/GPU resources
-**partial** — Development source adds current CPU/memory usage, declared budgets and Node/extended-
-resource capacity. Configured entity history includes CPU, memory, network and filesystem source
-states; missing sources and uncertain historical identity remain explicit. GPU utilization is
-unavailable. Installed 0.3.0 predates these views.
+**partial** — Version 0.4 adds current CPU/memory usage, declared budgets and Node/extended-resource
+capacity. Configured entity history includes CPU, memory, network and filesystem source states;
+missing sources and uncertain historical identity remain explicit. GPU utilization is unavailable.
 ### Pulse cluster overview and CPU/memory drill-downs
-**partial** — Development source adds cluster health and capacity summaries with resource drill-
-downs. Shift+M or :history opens configured entity history with numeric charts, 15m–24h ranges,
-separate devices, explicit source gaps and historical-identity limits. Backend components must
-already exist. Installed 0.3.0 predates these views.
+**partial** — Version 0.4 adds cluster health and capacity summaries with resource drill-downs.
+Shift+M or :history opens configured entity history with numeric charts, 15m–24h ranges, separate
+devices, explicit source gaps and historical-identity limits. Backend components must already exist.
 ### XRay relationships, jump-to-owner/node, service endpoints and UsedBy
-**partial** — Development source provides native :xray and :usedby views for owners, selector
-matches, reported endpoints, placement and supported static configuration/storage/identity
-declarations. Replacement UIDs and incomplete scans remain explicit; installed 0.3.0 predates these
-views.
+**partial** — Version 0.4 provides native :xray and :usedby views for owners, selector matches,
+reported endpoints, placement and supported static configuration/storage/identity declarations.
+Replacement UIDs and incomplete scans remain explicit.
 ### RBAC can/user/group/service-account policies and rule inspection
-**partial** — Development source includes role and subject browsing, namespace rules, current-
-identity access reviews and RBAC who-can evidence. Partial reads, unknown group membership and
-external-authorizer limits remain visible.
+**partial** — Version 0.4 includes role and subject browsing, namespace rules, current-identity
+access reviews and RBAC who-can evidence. Partial reads, unknown group membership and external-
+authorizer limits remain visible.
 ### Popeye/cluster diagnostic reports and actionable failure evidence
-**partial** — Development source adds native :diagnostics and captured-workload :diagnose evidence,
-plus explicit optional :popeye report ingestion. Source gaps, stale evidence and name-only report
-identity remain visible; installed 0.3.0 predates these views.
+**partial** — Version 0.4 adds native :diagnostics and captured-workload :diagnose evidence, plus
+explicit optional :popeye report ingestion. Source gaps, stale evidence and name-only report
+identity remain visible.
 ### Opt-in image vulnerability scans, severity/package/fix views and advisory links
 **planned** — Opt-in image vulnerability scanning and advisory/package/fix views are planned.
 ### Node shell helper pods, configurable image/namespace/limits/host mounts
@@ -217,9 +212,9 @@ are planned.
 ### HTTP benchmarks, per-context options, results browser and cancellation
 **planned** — HTTP benchmarking, results browsing and benchmark cancellation are planned.
 ### Policy/quota/admission/scheduling views and removed-API handling
-**partial** — Development source adds read-only scaling, policy, scheduling, quota and webhook
-summaries. Wider enforcement diagnostics remain planned; unknown or removed APIs do not fabricate
-supported schemas.
+**partial** — Version 0.4 adds read-only scaling, policy, scheduling, quota and webhook summaries.
+Wider enforcement diagnostics remain planned; unknown or removed APIs do not fabricate supported
+schemas.
 ### Linux/macOS downloads, source installs and Homebrew
 **partial** — Install from PyPI, the project Homebrew tap, or GitHub Release archives. Linux/macOS
 and Python support depend on the selected channel and its documented platform requirements.

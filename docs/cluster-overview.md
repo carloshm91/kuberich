@@ -1,8 +1,7 @@
 # Inspect cluster health
 
 Use Pulse to compare node, pod and workload summaries, then open the resource
-list behind a count. The overview described here is available in development
-source; the installed 0.3.0 release predates it.
+list behind a count. Pulse is available from version 0.4.
 
 You need read access to the resource families you want to inspect. Current usage
 needs a Metrics API implementation such as metrics-server. History needs a

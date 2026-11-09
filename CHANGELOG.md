@@ -5,6 +5,10 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-08
+
+[Release notes](docs/release-notes/0.4.0.md). Changes by [Carlos J. Herrera](https://github.com/carloshm91).
+
 ### Added
 
 - Browse 18 additional read-only resource families with typed columns, bounded details and captured links ([#232](https://github.com/carloshm91/kuberich/issues/232)).
@@ -33,7 +37,7 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Changed
 
-- Remove the deprecated `kubetrol` command and Python shim in the prepared 0.4.0 source; keep legacy preferences, environment variables and log compatibility ([#75](https://github.com/carloshm91/kuberich/issues/75)).
+- Remove the deprecated `kubetrol` command and Python shim; keep legacy preferences, environment variables and log compatibility ([#75](https://github.com/carloshm91/kuberich/issues/75)).
 - Use a one-time pipx reinstall when crossing from 0.3 to remove obsolete command links; uv and Homebrew keep their normal upgrade path ([#75](https://github.com/carloshm91/kuberich/issues/75)).
 
 - Reserve Events `w`/`t` controls in its navigation profile and Shift+L for inspector Links ([#232](https://github.com/carloshm91/kuberich/issues/232)).
