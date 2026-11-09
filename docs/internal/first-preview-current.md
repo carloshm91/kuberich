@@ -74,6 +74,17 @@ not a hardware-equivalence claim or a passing CI gate. The actual hosted fast
 configuration uses four workers and grouped scheduling. No application deadline,
 coverage requirement or failure assertion was relaxed for these corrections.
 
+On `2228315`, the complete fast cohort passed locally and on GitHub: 9,809
+passes and one explicit clipboard skip reserved for an owned macOS runner.
+The four standalone targets also passed. The expanded source matrix then found
+a 40×12 terminal test waiting for the fifth status line without scrolling its
+four-row viewport. Its original Linux/Python 3.13 failure frame and artifact
+remain retained. A public real-PTY probe confirms that four Down keys scroll
+the focused document to the state line; the corrected test preserves its exact
+visible-state assertion and deadline. An unchanged local attempt passed; it
+does not reproduce or erase the hosted failure. The live PR reports subsequent
+exact-candidate qualification.
+
 The unchanged-main operational retry of run `42563497108`, attempt 2, passed:
 actual Linux 3.12 Application job `129413472495` and aggregate `129428097343`.
 Twenty prior successful job results were reused, not reexecuted. The original

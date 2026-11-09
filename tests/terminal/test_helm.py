@@ -123,6 +123,9 @@ def test_native_helm_sections_resize_refresh_and_quit_restore_terminal(tmp_path,
             terminal.wait_for_screen("Helm(team)[1]")
             marker = terminal.send(b"\r")
             terminal.wait_for_screen("revision 3", since=marker)
+            terminal.wait_for_screen("Revision: 3", since=marker)
+            # State is the fifth document line, below the compact viewport.
+            marker = terminal.send(b"\x1b[B" * 4)
             terminal.wait_for_screen("State: deployed", since=marker)
             marker = terminal.send(b"2")
             terminal.wait_for_screen("withheld", since=marker)
