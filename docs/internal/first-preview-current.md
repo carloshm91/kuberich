@@ -52,6 +52,28 @@ startup and delayed disclosure completion beneath another screen. Both are
 fixed; 15 independent regression cases pass. The final owned-cluster trial binds
 the corrected source. See [Helm acceptance](acceptance/helm-releases.md).
 
+The first correctly isolated full local suite on `9f14984` finished with 12,329
+passes, eight failures and five explicit skips. The failures were documentation
+enrollment, actual CLI help snapshots and test observation/purpose assumptions;
+383 affected-file cases subsequently passed on `d3bedcf`. The independent
+retained production profile passed 98.6171% line, 95.4545% branch and 98.96%
+changed-line coverage; all 119 critical modules passed 100% lines and branches.
+These coverage results do not convert that failed suite into a passing test gate.
+An earlier interrupted invocation put installer environments under the checkout;
+its four isolation failures and original logs are retained separately.
+
+Hosted attempts exposed two additional test observation races: a table can have
+accepted a backend result before its rows are published, and a descendant can
+close its inherited pipes just before its OS state reports exit. Test-only
+corrections observe the actual published frame and bounded process-state
+transition; the latter also retains a live-child negative control. Original
+failed jobs remain visible in [PR #334](https://github.com/carloshm91/kuberich/pull/334).
+A supplemental twelve-worker run restricted to two logical CPUs finished with
+9,800 passes, eight failures and one skip. It is retained as stress evidence,
+not a hardware-equivalence claim or a passing CI gate. The actual hosted fast
+configuration uses four workers and grouped scheduling. No application deadline,
+coverage requirement or failure assertion was relaxed for these corrections.
+
 The unchanged-main operational retry of run `42563497108`, attempt 2, passed:
 actual Linux 3.12 Application job `129413472495` and aggregate `129428097343`.
 Twenty prior successful job results were reused, not reexecuted. The original

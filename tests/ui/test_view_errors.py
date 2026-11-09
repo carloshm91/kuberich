@@ -99,7 +99,20 @@ async def test_faulted_view_shows_safe_inline_retry_and_other_view_navigation_st
         button = app.query_one("#view-error-retry")
         assert button.visible and button.region.height >= 1
         assert button.region.right <= size[0] and button.region.bottom <= size[1]
-        assert await pilot.click("#view-error-retry")
+        await wait_for(
+            lambda: (
+                button.region.width > 0
+                and app.get_widget_at(
+                    button.region.x + button.region.width // 2,
+                    button.region.y + button.region.height // 2,
+                )[0]
+                is button
+            )
+        )
+        assert await pilot.click(
+            "#view-error-retry",
+            offset=(button.region.width // 2, button.region.height // 2),
+        )
         await wait_for(lambda: not panel.has_class("failed") and len(calls) == 2)
         assert str(app.query_one("#empty-title", Static).content) == "No cluster connection"
         assert app.views.renderer.active_count == 1

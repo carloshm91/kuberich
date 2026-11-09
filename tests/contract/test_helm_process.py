@@ -23,10 +23,50 @@ from tests.support.helm import (
 )
 
 
-async def wait_path(path):
+async def wait_pid(path):
     async with asyncio.timeout(3):
-        while not path.exists():
+        while True:
+            try:
+                value = path.read_text()
+            except FileNotFoundError:
+                pass
+            else:
+                if value.isascii() and value.isdecimal() and int(value) > 0:
+                    return int(value)
             await asyncio.sleep(0.01)
+
+
+@pytest.mark.asyncio
+async def test_child_pid_wait_requires_a_positive_published_payload(tmp_path, monkeypatch):
+    marker = tmp_path / "child.pid"
+    marker.touch()
+    empty_observed, zero_observed = asyncio.Event(), asyncio.Event()
+    original = Path.read_text
+
+    def observe_read(path, *args, **options):
+        value = original(path, *args, **options)
+        if path == marker:
+            if value == "":
+                empty_observed.set()
+            elif value == "0":
+                zero_observed.set()
+        return value
+
+    monkeypatch.setattr(Path, "read_text", observe_read)
+    operation = asyncio.create_task(wait_pid(marker))
+    try:
+        async with asyncio.timeout(3):
+            await empty_observed.wait()
+            assert not operation.done()
+            marker.write_text("0")
+            await zero_observed.wait()
+            assert not operation.done()
+            marker.write_text(str(os.getpid()))
+            assert await operation == os.getpid()
+    finally:
+        if not operation.done():
+            operation.cancel()
+        await asyncio.gather(operation, return_exceptions=True)
 
 
 @pytest.mark.asyncio
@@ -198,8 +238,7 @@ async def test_cancellation_reaps_process_groups_before_private_file_removal(
     async with adapter_source(tmp_path, **options) as (adapter, client, _, request, _, record):
         operation = asyncio.create_task(adapter.list(request, lambda: None))
         child_path = Path(str(record) + ".child")
-        await wait_path(child_path)
-        child = int(child_path.read_text())
+        child = await wait_pid(child_path)
         assert os.getpgid(child) == calls(record)[-1]["pid"]
         before_cancel = owned_process_state(child)
         owned_paths = list(Path(client.directory.name).glob("helm-*"))

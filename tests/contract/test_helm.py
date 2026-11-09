@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import os
 import threading
 from dataclasses import replace
 from pathlib import Path
@@ -644,7 +645,7 @@ async def test_actual_write_timeout_records_unknown_and_does_not_refresh_or_repl
         request,
         _,
         scenario,
-        record,
+        _,
     ):
         inspection = await service.inspect(request, release())
         approval = service.confirm(
@@ -659,10 +660,27 @@ async def test_actual_write_timeout_records_unknown_and_does_not_refresh_or_repl
             )
 
         monkeypatch.setattr(ProcessRunner, "capture", deadline)
+        loop = asyncio.get_running_loop()
+        spawn = loop.subprocess_exec
+        launches = []
+
+        async def observe_spawn(protocol_factory, *argv, **options):
+            transport, protocol = await spawn(protocol_factory, *argv, **options)
+            launches.append((argv, transport))
+            return transport, protocol
+
+        monkeypatch.setattr(loop, "subprocess_exec", observe_spawn)
         result = await service.rollback(approval)
         assert result.outcome is HelmOutcome.UNKNOWN and result.may_have_started
         assert service.last_rollback is result
-        assert sum("rollback" in item["argv"] for item in calls(record)) == 1
+        # The deadline can expire before Python reaches the fixture's log write.
+        # A successful OS spawn independently proves one launch without a replay.
+        assert len(launches) == 1 and "rollback" in launches[0][0]
+        transport = launches[0][1]
+        assert transport.get_returncode() is not None
+        with pytest.raises(ProcessLookupError):
+            os.kill(transport.get_pid(), 0)
+        assert service.operation_count == 0
         assert not list(Path(service.client.directory.name).glob("helm-*"))
 
 
