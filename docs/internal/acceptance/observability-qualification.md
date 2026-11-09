@@ -627,6 +627,34 @@ window is sufficient. A fresh protected-workflow run must complete all three
 build/local-pour stages before publication approval. Published 0.4.0 source,
 package/tag bytes, dependency lock and previously retained timings are unchanged.
 
+## Public bottle consumer pipeline failures
+
+Actual public bottle witnesses in
+[run 42553811030](https://github.com/carloshm91/kuberich/actions/runs/42553811030)
+belong to driver `8f422296a91e5593dc75886a1d1d79a0f4aa8c1f`, published
+product source `78ff8f720d4ffde34ea91193593823685433515f` and merged tap
+`6a1d0dcace8499cf78344a47158f4c2f53a39854`. Completed positive witnesses show
+actual bottle pouring, version checks, formula tests and removal. The original
+application step piped `brew install` through `tee` under default Bash `-e`,
+without pipeline failure handling. Its original bytes do not record the brew
+member's exit status; no historical exit zero is reconstructed from later checks.
+
+The correction selects explicit `shell: bash` for that application step,
+enabling GitHub's Bash `-e -o pipefail`. Run bodies, setup, targets, time budgets,
+product and bottle bytes stay unchanged. The frozen actual-YAML controls first
+retain four expected negative failures and four positive passes with the old
+shell: an owned install prints the valid Pouring witness and exits 23, yet later
+successful commands hide that failure. The corrected eight consumer controls
+and fourteen existing producer controls pass. They verify both Linuxbrew PATH
+branches and command progression using owned shell functions on Linux, without
+running Homebrew, KubeRich, a cluster or native macOS jobs.
+
+Real public runtime results and the corrected shell contract remain separate
+evidence. Completion requires all three actual public consumer outcomes and the
+latest source's required CI. No corrected-driver three-host runtime execution or
+unrecorded old brew exit is claimed. A failed runtime result or changed command
+body, setup or artifact invalidates this narrow reuse and requires review.
+
 ## Final gate
 
 After protected preparation delivery, freeze the exact main candidate. Require
