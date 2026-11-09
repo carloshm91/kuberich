@@ -14,6 +14,17 @@ GitHub Releases on 2026-11-04 from protected source
 three bottle targets are active. Site updates for each release need separate
 approval.
 
+Version 0.4.0 was published to PyPI and
+[GitHub Releases](https://github.com/carloshm91/kuberich/releases/tag/v0.4.0)
+on 2026-11-08 from protected source
+`78ff8f720d4ffde34ea91193593823685433515f`. Its wheel, source distribution
+and four standalone archives are available. The Homebrew source formula and
+three bottle targets are active. Public bottle installation evidence is linked
+in the [current checkpoint](internal/first-preview-current.md); actual successful
+consumer verification remains required for completion. The hosted website still
+serves 0.3.0; preparing updated documentation
+does not deploy it or authorize website/DNS changes.
+
 The maintainer changed the release policy on 2026-10-09 to usable, qualified
 **0.x phases**, beginning with **0.1.0**. This supersedes #154's earlier
 first-public-1.0-only policy. The core/workload qualifier #51 is complete, and
@@ -79,7 +90,7 @@ public changes a major. New minor/major lines need an explicit plan mapping
 before the readiness validator permits publication.
 
 Published 0.3 keeps the previous `kubetrol` command with a fixed stderr warning.
-The prepared 0.4 source removes that console entry and its Python shim; use
+Version 0.4 removes that console entry and its Python shim; use
 `kuberich` for scripts and interactive launches. Genuine predecessor upgrades
 must verify removal of obsolete exposed scripts as part of qualification. The explicit
 `kuberich config migrate` command keeps previous preferences and prints its

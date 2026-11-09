@@ -627,6 +627,56 @@ window is sufficient. A fresh protected-workflow run must complete all three
 build/local-pour stages before publication approval. Published 0.4.0 source,
 package/tag bytes, dependency lock and previously retained timings are unchanged.
 
+## Public bottle consumer pipeline failures
+
+Actual public bottle witnesses in
+[run 42553811030](https://github.com/carloshm91/kuberich/actions/runs/42553811030)
+belong to driver `8f422296a91e5593dc75886a1d1d79a0f4aa8c1f`, published
+product source `78ff8f720d4ffde34ea91193593823685433515f` and merged tap
+`6a1d0dcace8499cf78344a47158f4c2f53a39854`. Completed positive witnesses show
+actual bottle pouring, version checks, formula tests and removal. The original
+application step piped `brew install` through `tee` under default Bash `-e`,
+without pipeline failure handling. Its original bytes do not record the brew
+member's exit status; no historical exit zero is reconstructed from later checks.
+
+The correction selects explicit `shell: bash` for that application step,
+enabling GitHub's Bash `-e -o pipefail`. Run bodies, setup, targets, time budgets,
+product and bottle bytes stay unchanged. The frozen actual-YAML controls first
+retain four expected negative failures and four positive passes with the old
+shell: an owned install prints the valid Pouring witness and exits 23, yet later
+successful commands hide that failure. The corrected eight consumer controls
+and fourteen existing producer controls pass. They verify both Linuxbrew PATH
+branches and command progression using owned shell functions on Linux, without
+running Homebrew, KubeRich, a cluster or native macOS jobs.
+
+Real public runtime results and the corrected shell contract remain separate
+evidence. Completion requires all three actual public consumer outcomes and the
+latest source's required CI. No corrected-driver three-host runtime execution or
+unrecorded old brew exit is claimed. A failed runtime result or changed command
+body, setup or artifact invalidates this narrow reuse and requires review.
+
+## Published command-migration guide oracle
+
+Superseded source `62a70bff0341081e680612df1b963b1061299f6a` retained two
+[Application failures](https://github.com/carloshm91/kuberich/actions/runs/42554591132):
+Python 3.13 and 3.14 part-three jobs each reported one failure and 3,150 passes.
+The guide correctly said “Version 0.4 removes that console entry and its Python
+shim.” The test still required the obsolete prepared-source sentence. Both
+original failures and their job logs remain retained; they are not attributed
+to the separate consumer shell correction.
+
+The oracle now requires the published sentence and explicitly rejects the
+obsolete prepared-source phrase. Canonical output/exit, legacy environment
+fallbacks, explicit migration, unchanged kubeconfig/log destinations and
+redaction assertions stay intact. The entire `tests/quality/test_user_guides.py`
+file passes all 20 cases in 18.98 seconds using an owned temporary directory,
+with no failures or skips.
+
+That file was outside the original 218-case documentation/site selection; those
+results retain their original source and do not qualify this oracle correction.
+Public guide text, product/bottle bytes and static-site inputs are unchanged.
+No new product, browser, cluster or native-platform trial is claimed.
+
 ## Final gate
 
 After protected preparation delivery, freeze the exact main candidate. Require

@@ -2,8 +2,7 @@
 
 Use `:export` to review a capture of the current resource, retained logs,
 diagnostics or supported table. Use `:exports` to browse files saved locally.
-These features are in development source for the next release; the installed
-0.3.0 release predates them. Saving is available in read-only mode and does not
+These features are available from version 0.4. Saving works in read-only mode and does not
 change Kubernetes resources. Nothing is uploaded automatically.
 
 ## Review and save

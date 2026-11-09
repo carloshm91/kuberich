@@ -5,7 +5,7 @@ Select a pod, press Enter for containers, then Enter on a container for its logs
 Escape returns through logs → containers → pods. The `l` shortcut on a pod opens
 a single regular container directly or offers a container choice.
 
-In development source, a Pod without regular, init or ephemeral containers stays
+A Pod without regular, init or ephemeral containers stays
 in the resource table and shows a validation message. That message remains
 visible during table refreshes. Choosing a different namespace clears it.
 
@@ -22,21 +22,19 @@ have removed older lines. A quiet open stream shows **Waiting for log output**;
 a normal end shows **Stream complete**. Errors need a deliberate reopen rather
 than an automatic replay.
 
-Development source keeps an already-open individual container log read active
+An already-open individual container log read stays active
 while the resource table recovers from an expired watch or unfinished list pages.
 It preserves the captured Pod identity, output and position during that reload.
 A confirmed deletion, replacement or context/namespace change still stops the
 old view; select the Pod again to open another read. Reopening checks the Pod's
 identity again. Other container actions retain their normal current-selection
 checks. A delayed deletion event for a different Pod UID does not stop the
-current read merely because its name matches. This continuity change is not
-in the installed 0.3.0 release.
+current read merely because its name matches.
 
 ## Inspect container environment and image facts
 
-In development source for the next release, select a pod, press Enter for its
-containers, then `e` for **Environment / image**. The installed 0.3.0 release
-predates this inspector. Enter on a container continues to open its logs.
+Select a pod, press Enter for its containers, then `e` for **Environment / image**.
+Enter on a container continues to open its logs.
 Read-only mode supports inspection. The API needs GET access to the selected pod
 and any referenced ConfigMaps or Secrets; denied sources remain visible.
 
@@ -134,13 +132,12 @@ aggregate logs. Narrow the workload if its source count exceeds the limit.
 
 ## Copy or save output
 
-Ctrl+Y copies up to 1 MiB of redacted, timestamped kept output. In development
-source, Ctrl+S or `:export` opens a review with a frozen retained-log capture,
+Ctrl+Y copies up to 1 MiB of redacted, timestamped kept output.
+Ctrl+S or `:export` opens a review with a frozen retained-log capture,
 redacted preview, directory and filename. Existing files need a separate
 overwrite confirmation; symlinks are refused. Saved files are private to your
 user. In aggregate logs, the source filter and plain/JSON mode apply to export
 too. Use `:exports` to browse saved artifacts; see [local exports](exports.md).
-The installed 0.3.0 release still uses its new-file-only Save dialog.
 
 Copy and save escape terminal controls and redact recognized credential patterns.
 Structured JSON is parsed within depth and size limits; malformed or excessive

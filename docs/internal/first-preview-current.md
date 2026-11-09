@@ -1,5 +1,120 @@
 # Development checkpoint
 
+## Published 0.4.0 artifacts — 2026-11-09 UTC
+
+The maintainer approved publication of the qualified observability release under
+[D08 #75](https://github.com/carloshm91/kuberich/issues/75). Its frozen product
+source is `78ff8f720d4ffde34ea91193593823685433515f`, tree
+`cd2197b66fbce6b7c56426020eec68de297f8d16`. The actual
+[production run](https://github.com/carloshm91/kuberich/actions/runs/42527236008)
+succeeded; the [GitHub release](https://github.com/carloshm91/kuberich/releases/tag/v0.4.0)
+was published at 2026-11-08T21:56:35Z with 24 assets.
+[PyPI 0.4.0](https://pypi.org/project/kuberich/0.4.0/) serves the qualified
+wheel and source distribution. Their SHA-256 values are
+`a3168424374dceb2b804900ff4b6a25bbead14ffa5c6d132b5b872f0b73676fd` and
+`4dd6b83d5c5080973349eb404fbe41de6806b466b1a534448f9ab769ba3305fc`.
+The Homebrew source formula is pinned to
+`d5c4d4203353c1801c286ead0e0c3570a4be70da` ([tap PR #7](https://github.com/kuberich/homebrew-tap/pull/7));
+the bottle formula is pinned to
+`6a1d0dcace8499cf78344a47158f4c2f53a39854` ([tap PR #8](https://github.com/kuberich/homebrew-tap/pull/8)),
+merged at 2026-11-09T02:57:18Z. The three immutable assets in
+[tap release 438689558](https://github.com/kuberich/homebrew-tap/releases/tag/kuberich-v0.4.0)
+were published at 2026-11-09T02:43:05Z. Actual public downloads match the retained
+producer bytes and formula hashes:
+
+| Bottle target | SHA-256 |
+| --- | --- |
+| `arm64_sequoia` | `8aaf0aa24662d9988b06b5f4b3c9b6d69717516f3e3d8904f5e3c11ccfd154d6` |
+| `sequoia` | `855e988db219c60325e22ef7955251ae09f8a94aa20ade4b6cd3cc9bd9d234f3` |
+| `x86_64_linux` | `4df7171a3a22813d04ee412b947a6a157c02b78269092b4f8255dfc7049a1f12` |
+
+The corrected [producer run](https://github.com/carloshm91/kuberich/actions/runs/42542966629)
+completed all three native build/local-pour/test/uninstall cases. Its Intel Core
+dependency setup took 5,344 seconds; the later application build took 468 seconds.
+These are separate measurements, not a complete cold-install timing. The original
+[producer run](https://github.com/carloshm91/kuberich/actions/runs/42528905909)
+remains cancelled at its 90-minute job limit during Core setup, before an Intel
+application build or publisher write. Protected PR #332 separated producer
+phases without changing published product bytes or consumer/native budgets.
+
+Public bottle installation evidence:
+[the actual three-host consumer run](https://github.com/carloshm91/kuberich/actions/runs/42553811030).
+This checkpoint records artifact activation and the completed measurements
+identified above. Release completion additionally requires that run's actual
+successful installation, pour, version, test and uninstall results on all three
+supported hosts.
+
+The fresh exact-source
+[Application quality run](https://github.com/carloshm91/kuberich/actions/runs/42520745198)
+completed all 37 jobs successfully. The
+[refreshed dry-run](https://github.com/carloshm91/kuberich/actions/runs/42526862803)
+retains candidate artifact `13635168522`, archive digest
+`4099b12aab01591a6bff9e59fdc3d7d00bc1d253138446263d7391b775f5cfe1`
+and manifest digest
+`5023e8c45ac676dfe4cbaa60700c32ba7a6f4e8db214519c8530e4f760c174de`.
+The original production attempt
+[42519998306](https://github.com/carloshm91/kuberich/actions/runs/42519998306)
+failed before uploads because its dependency audit was older than 24 hours.
+That failure remains failed. The refreshed audit generated at
+2026-11-08T20:46:55Z reports zero vulnerabilities in each 30-dependency locked
+and fresh resolution, preserving the qualified wheel/sdist bytes and frozen
+release-note body. The normal protected environment owner review was used;
+no bypass is claimed.
+
+Actual public 0.3-to-0.4 transitions passed with `uv tool upgrade kuberich`
+and the documented one-time `pipx reinstall kuberich`. Both installations match
+all 268 runtime files, preserve preferences and kubeconfig, remove the retired
+alias and uninstall cleanly. In those isolated public installations:
+
+```sh
+kuberich --version
+# kuberich 0.4.0
+```
+
+The ignored originals remain in the frozen candidate checkout under
+`artifacts/issue75/production040/public-installations/{uv,pipx}/transition.json`.
+These public transitions are distinct from the original 87 local gate records
+and 63 owned-cluster rehearsals on 2026-11-07; those are retained evidence,
+not new executions. The exact-wheel installed quickstart belongs to original
+Application job `128864902868` in run `42520745198`, artifact `13635721083`.
+Its unedited `artifacts/quickstart/installed.json` has SHA-256
+`45f1bb4e64985c736a233e6c963b0348043fe60a25bf3e22fd3949115de408fd`;
+the separate source/public-byte binding records the exact run/source and wheel.
+This is the original owned-cluster execution, not a new public-channel trial.
+Documentation-only work claims no new application
+coverage or provider certification.
+
+The initial backend-runtime parent/child raw trees were overwritten by repeated
+contracts in rolling `artifacts/backend/runtime-receipt.json` and
+`artifacts/backend/runtime/{positive,negative}` outputs; their first raw bytes
+were not recovered. The retained original independent assessment, logs, JUnit,
+coverage and initial merge hash, together with separately verified later-round
+raw evidence, support the recorded gates. No rerun, reconstruction or rebinding
+is claimed. See the
+[qualification acceptance](https://github.com/carloshm91/kuberich/issues/75#issuecomment-6711779967)
+and [scoped follow-up](https://github.com/carloshm91/kuberich/issues/82#issuecomment-6711792596).
+
+The release includes current metrics, Pulse/history, relationships, authorization,
+diagnostics, reviewed exports, container inspection and curated resource/Event
+views. See [current user status](../first-preview.md), the frozen
+[release notes](../release-notes/0.4.0.md) and
+[observability acceptance](acceptance/observability-qualification.md) for scope,
+original failures and limits. Startup/paint and input-latency advisory misses
+remain recorded; rapid batched horizontal keys and real-provider certification
+are not claimed.
+
+The live website still serves 0.3.0. This documentation patch prepares updated
+source and offline static output only. Website publication and DNS changes
+remain separately unapproved; no Cloudflare deployment is performed.
+
+## Historical checkpoints
+
+The sections below retain earlier preparation and publication observations.
+Their source versions, failed results, authorization status and pending work
+are historical; the dated checkpoint above describes current artifact availability.
+The [0.3.0 publication checkpoint](#qualified-030-source) remains below with its
+2026-11-04 source and channel evidence.
+
 ## Container feedback and credential foreground readiness
 
 Preparation PR #328 is protected-merged at

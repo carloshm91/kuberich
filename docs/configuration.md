@@ -62,9 +62,9 @@ last valid preferences active and show a message. Use `config check` for details
 
 ## Configure overview history
 
-Development source supports configured Prometheus-compatible history for the
+Version 0.4 supports configured Prometheus-compatible history for the
 [cluster overview and resource charts](cluster-overview.md#connect-overview-history).
-The installed 0.3.0 release predates these views. Configure a Service endpoint or
+Configure a Service endpoint or
 an external URL under `observability.history`; use `observability.contexts.NAME`
 for an exact context override. Service and URL connection fields are mutually
 exclusive. The guide shows both examples and explains their separate credentials.
@@ -186,7 +186,7 @@ and config check stay offline. Nothing is downloaded or installed automatically.
 ## Legacy files and diagnostic logs
 
 Published 0.3 retains the deprecated `kubetrol` command with a fixed stderr
-warning. The prepared 0.4 source removes that console entry and its Python shim.
+warning. Version 0.4 removes that console entry and its Python shim.
 Use `kuberich` or `python -m kuberich`; canonical stdout and exit behavior remain
 unchanged. This removes a command alias, without renaming the Python package or
 discarding legacy preferences and logs. See [upgrade guidance](installation.md#upgrade)
