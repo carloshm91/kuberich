@@ -110,6 +110,21 @@ After the source formula for a release is merged, the maintainer runs the
 3. After that pull request is merged, `operation: verify` installs from the tap
    on each host and requires Homebrew to pour the bottle.
 
+The public bottle producer separates bootstrap (10 minutes), Core dependency
+preparation (120 minutes on macOS Intel, 75 minutes on the other hosts), one
+combined application stage (90 minutes), and artifact upload (5 minutes). The
+application stage retains source fetch/build, bottle creation, the local pour,
+CLI checks, formula test and uninstall within that single deadline. Its explicit
+Bash pipeline failure handling stops the job if a command fails, including a
+command whose output is piped through `tee`.
+
+The Intel producer job has a 225-minute total limit. The other producer jobs
+retain their 90-minute total limit, which can expire before an individual stage
+limit. Separating dependency preparation does not certify an application build
+or a complete cold install. The merged-tap consumer keeps its separate dependency
+setup and 30-minute application verification limits; the prepublication native
+qualification budgets above are unchanged.
+
 Users install from the tap without extra steps. The tap and native workflows
 trust only `kuberich/tap/kuberich` on their temporary hosts before Homebrew
 online audit, tests and bottle operations. Scoped formula trust is a prerequisite;

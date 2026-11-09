@@ -27,7 +27,10 @@ jobs:
     name: Build bottle (${{ matrix.tag }})
     if: ${{ inputs.operation != 'verify' }}
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 90
+    timeout-minutes: ${{ matrix.os == 'macos-15-intel' && 225 || 90 }}
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: true
       matrix:
@@ -37,6 +40,8 @@ jobs:
           - {os: ubuntu-24.04, tag: x86_64_linux}
     steps:
       - name: Select the runner's Homebrew and the published tap formula
+        id: bootstrap
+        timeout-minutes: 10
         run: |
           if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
             echo /home/linuxbrew/.linuxbrew/bin >> "$GITHUB_PATH"
@@ -51,36 +56,44 @@ jobs:
             echo "The tap formula already has bottles." >&2
             exit 1
           fi
-      - name: Build from source with separate dependency, download and build timings
+      - name: Prepare runtime dependencies with separate setup timing
+        id: dependencies
+        timeout-minutes: ${{ matrix.os == 'macos-15-intel' && 120 || 75 }}
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: '1'
+        run: |
+          {
+            echo "### ${{ matrix.tag }} dependencies"
+            start=$SECONDS
+            brew install --only-dependencies kuberich/tap/kuberich
+            echo "- \`brew install --only-dependencies\`: $((SECONDS - start)) s"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Build, create and verify the exact local bottle
+        id: producer
+        timeout-minutes: 90
         env:
           HOMEBREW_NO_AUTO_UPDATE: '1'
         run: |
           mkdir bottles
           {
             echo "### ${{ matrix.tag }}"
-            for step in "install --only-dependencies" "fetch --build-from-source" "install --build-bottle"; do
+            for step in "fetch --build-from-source" "install --build-bottle"; do
               start=$SECONDS
               brew $step kuberich/tap/kuberich
               echo "- \`brew $step\`: $((SECONDS - start)) s"
             done
           } | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: Create the bottle and check the tag
-        working-directory: bottles
-        env:
-          HOMEBREW_NO_AUTO_UPDATE: '1'
-        run: |
-          root="https://github.com/kuberich/homebrew-tap/releases/download/kuberich-v$BOTTLE_VERSION"
-          brew bottle --json --no-rebuild --root-url="$root" kuberich/tap/kuberich
-          brew uninstall --force kuberich/tap/kuberich
-          mv "kuberich--$BOTTLE_VERSION.${{ matrix.tag }}.bottle.tar.gz" \
-            "kuberich-$BOTTLE_VERSION.${{ matrix.tag }}.bottle.tar.gz"
-          sed "s|$root|file://$PWD|" "kuberich--$BOTTLE_VERSION.${{ matrix.tag }}.bottle.json" \
-            > "$RUNNER_TEMP/kuberich--$BOTTLE_VERSION.${{ matrix.tag }}.bottle.json"
-          shasum -a 256 ./*.tar.gz | tee -a "$GITHUB_STEP_SUMMARY"
-      - name: Pour the exact bottle on this host from local storage
-        env:
-          HOMEBREW_NO_AUTO_UPDATE: '1'
-        run: |
+          (
+            cd bottles
+            root="https://github.com/kuberich/homebrew-tap/releases/download/kuberich-v$BOTTLE_VERSION"
+            brew bottle --json --no-rebuild --root-url="$root" kuberich/tap/kuberich
+            brew uninstall --force kuberich/tap/kuberich
+            mv "kuberich--$BOTTLE_VERSION.${{ matrix.tag }}.bottle.tar.gz" \
+              "kuberich-$BOTTLE_VERSION.${{ matrix.tag }}.bottle.tar.gz"
+            sed "s|$root|file://$PWD|" "kuberich--$BOTTLE_VERSION.${{ matrix.tag }}.bottle.json" \
+              > "$RUNNER_TEMP/kuberich--$BOTTLE_VERSION.${{ matrix.tag }}.bottle.json"
+            shasum -a 256 ./*.tar.gz | tee -a "$GITHUB_STEP_SUMMARY"
+          )
           tap="$(brew --repository kuberich/tap)"
           # Homebrew loads formulae for `brew bottle --merge` only from a trusted tap.
           # The trust stays on this disposable runner.
@@ -99,6 +112,8 @@ jobs:
           brew uninstall --force kuberich/tap/kuberich
           git -C "$tap" checkout -- Formula
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        id: upload
+        timeout-minutes: 5
         with:
           name: bottle-${{ matrix.tag }}
           path: bottles/

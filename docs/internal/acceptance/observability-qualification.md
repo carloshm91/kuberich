@@ -602,6 +602,31 @@ qualification. The original commit, interpreter, machine, raw flags and failed
 manual result remain unchanged; final acceptance must verify the final inputs
 and retain those distinctions.
 
+## Public bottle producer budget follow-up
+
+The approved 0.4.0 bottle producer run `42528905909` retained successful Apple
+Silicon and Linux build/local-pour artifacts. Its Intel job `128878505104` reached
+the actual 90-minute job limit while still installing Core dependencies. The
+completed log records source compilation of kubernetes-cli, CMake and Python;
+it does not record a KubeRich build, local pour or Intel artifact. Publication
+was skipped. Those two scoped successes and the cancelled Intel result remain
+unchanged evidence, rather than a completed three-target bottle delivery.
+
+The producer-only correction separates 10-minute bootstrap, Core dependency
+setup (Intel 120 minutes, other hosts 75), one 90-minute application stage and
+5-minute artifact upload. Intel receives a 225-minute job limit; non-Intel jobs
+retain the outer 90-minute cap. Explicit build-job Bash pipeline failure handling
+also prevents successful summary/pour `tee` commands from hiding a failed brew.
+The application commands, three targets and formula/pour/CLI checks remain;
+consumer and prepublication native qualification budgets are unchanged.
+
+Owned fake-command Bash tests verify stage ordering, bounded failure propagation
+and the original local bottle paths without running Homebrew or executing the
+published application. These tests do not prove that the new Intel dependency
+window is sufficient. A fresh protected-workflow run must complete all three
+build/local-pour stages before publication approval. Published 0.4.0 source,
+package/tag bytes, dependency lock and previously retained timings are unchanged.
+
 ## Final gate
 
 After protected preparation delivery, freeze the exact main candidate. Require
