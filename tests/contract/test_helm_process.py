@@ -15,7 +15,12 @@ from kuberich.domain.helm import HelmProblem
 from kuberich.services.access import AccessPolicy
 from kuberich.services.delegation import ConnectionFile
 from kuberich.services.processes import ProcessRunner
-from tests.support.helm import adapter_source, calls
+from tests.support.helm import (
+    adapter_source,
+    calls,
+    owned_process_state,
+    wait_owned_process_stopped,
+)
 
 
 async def wait_path(path):
@@ -195,6 +200,8 @@ async def test_cancellation_reaps_process_groups_before_private_file_removal(
         child_path = Path(str(record) + ".child")
         await wait_path(child_path)
         child = int(child_path.read_text())
+        assert os.getpgid(child) == calls(record)[-1]["pid"]
+        before_cancel = owned_process_state(child)
         owned_paths = list(Path(client.directory.name).glob("helm-*"))
         assert bool(owned_paths) is not version_probe
         operation.cancel()
@@ -205,14 +212,42 @@ async def test_cancellation_reaps_process_groups_before_private_file_removal(
         for invocation in calls(record):
             with pytest.raises(ProcessLookupError):
                 os.kill(invocation["pid"], 0)
-        child_stat = Path(f"/proc/{child}/stat")
-        if sys.platform == "linux" and child_stat.exists():
-            assert child_stat.read_text().split()[2] == "Z"
-        else:
-            with pytest.raises(ProcessLookupError):
-                os.kill(child, 0)
+        states = await wait_owned_process_stopped(
+            child, tmp_path / "descendant-stop.json", before_cancel=before_cancel
+        )
+        assert states[-1] in {"absent", "Z"}
         await adapter.close()
         await adapter.close()
+
+
+@pytest.mark.asyncio
+async def test_descendant_stop_observation_rejects_a_live_owned_child(tmp_path):
+    process = await asyncio.create_subprocess_exec(
+        sys.executable,
+        "-I",
+        "-c",
+        "import time; time.sleep(60)",
+        cwd=tmp_path,
+        env={},
+        stdin=asyncio.subprocess.DEVNULL,
+        stdout=asyncio.subprocess.DEVNULL,
+        stderr=asyncio.subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    evidence = tmp_path / "live-descendant-stop.json"
+    try:
+        with pytest.raises(AssertionError, match="did not terminate"):
+            await wait_owned_process_stopped(
+                process.pid, evidence, before_cancel=owned_process_state(process.pid), timeout=0.05
+            )
+        assert process.returncode is None
+    finally:
+        process.kill()
+        await process.wait()
+    states = await wait_owned_process_stopped(
+        process.pid, tmp_path / "reaped-descendant-stop.json", before_cancel="reaped"
+    )
+    assert states == ("absent",)
 
 
 @pytest.mark.asyncio

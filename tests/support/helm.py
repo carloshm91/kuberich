@@ -37,6 +37,60 @@ PRIVATE_VALUE = "synthetic-private-helm-value"
 KEY = HelmReleaseKey("team", "demo")
 
 
+def owned_process_state(pid: int) -> str:
+    """Observe only a PID captured from this fixture; never inspect args or environment."""
+    if sys.platform == "linux":
+        try:
+            fields = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()
+        except FileNotFoundError:
+            return "absent"
+        return fields[0]
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return "absent"
+    return "exists"
+
+
+async def wait_owned_process_stopped(
+    pid: int, evidence: Path, *, before_cancel: str, timeout: float = 1.0
+) -> tuple[str, ...]:
+    """Require termination within a fixed observation window, without sending signals.
+
+    Linux closes inherited pipes before exit_notify publishes EXIT_ZOMBIE, so
+    draining ProcessRunner's pipes can precede that last observable transition.
+    An orphan zombie has finished execution; its adopter owns final reaping.
+    """
+    loop = asyncio.get_running_loop()
+    started = loop.time()
+    observations: list[dict[str, float | str]] = []
+    try:
+        async with asyncio.timeout(timeout):
+            while True:
+                state = owned_process_state(pid)
+                observations.append({"elapsed_seconds": loop.time() - started, "state": state})
+                if state in {"absent", "Z"}:
+                    return tuple(str(item["state"]) for item in observations)
+                await asyncio.sleep(0.005)
+    except TimeoutError:
+        raise AssertionError(
+            f"Owned descendant {pid} did not terminate within {timeout}s: {observations}"
+        ) from None
+    finally:
+        evidence.write_text(
+            json.dumps(
+                {
+                    "pid": pid,
+                    "before_cancel": before_cancel,
+                    "timeout_seconds": timeout,
+                    "observations": observations,
+                },
+                indent=2,
+            )
+            + "\n"
+        )
+
+
 def request(driver: HelmDriver = HelmDriver.SECRET, namespace: str | None = "team") -> HelmRequest:
     return HelmRequest(HelmScope(SessionIdentity("kuberich-test-one", 1), namespace, driver), 1)
 
