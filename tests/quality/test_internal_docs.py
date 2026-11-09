@@ -29,8 +29,8 @@ def test_history_moves_to_one_internal_area_with_exact_original_git_evidence():
             assert not (ROOT / old).is_file()
     for record in plan["preserved_sources"] + plan["operational_sources"]:
         assert mapped[record["path"]]["baseline_sha256"] == record["sha256"]
-    assert len(mapped) == 366
-    assert validate_documentation_plan(ROOT, list(mapped)) == 366
+    assert len(mapped) == 370
+    assert validate_documentation_plan(ROOT, list(mapped)) == 370
     assert not (ROOT / "docs/status.md").exists()
 
 
@@ -221,10 +221,52 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
         "docs/internal/acceptance/curated-resources.md",
         "docs/internal/curated-resource-inventory.json",
     ]
-    assert len(current["documents"]) == 366
-    assert [item["source"] for item in current["documents"][364:]] == [
+    observability = json.loads(
+        git_bytes(
+            ROOT, "show", "eee30e4d1a595fa15f54449d6b0c5026e74869ce:docs/documentation-plan.json"
+        )
+    )
+    assert len(observability["documents"]) == 366
+    assert observability["documents"][:364] == curated["documents"]
+    assert current["documents"][:366] == observability["documents"]
+    assert [item["source"] for item in observability["documents"][364:366]] == [
         "docs/release-notes/0.4.0.md",
         "docs/internal/acceptance/observability-qualification.md",
+    ]
+    assert len(current["documents"]) == 370
+    assert current["documents"][366:] == [
+        {
+            "source": "docs/adr/0041-helm-release-identity.md",
+            "audience": "development",
+            "action": "keep",
+            "destinations": ["docs/adr/0041-helm-release-identity.md"],
+            "reason": "Record actual Helm storage identity, optional CLI ownership, default disclosure policy and non-atomic rollback outcomes.",
+            "baseline_sha256": None,
+        },
+        {
+            "source": "docs/internal/acceptance/helm-releases.md",
+            "audience": "contributor acceptance evidence",
+            "action": "keep",
+            "destinations": ["docs/internal/acceptance/helm-releases.md"],
+            "reason": "Retain Helm implementation boundaries and measured verification outside public user navigation.",
+            "baseline_sha256": None,
+        },
+        {
+            "source": "tests/fixtures/helm/README.md",
+            "audience": "contributor test fixture provenance",
+            "action": "keep",
+            "destinations": ["tests/fixtures/helm/README.md"],
+            "reason": "Retain upstream Helm fixture attribution, pinned source hashes and synthetic parser-shape provenance outside user navigation.",
+            "baseline_sha256": None,
+        },
+        {
+            "source": "tests/fixtures/helm/tiny-chart/README.md",
+            "audience": "contributor test fixture provenance",
+            "action": "keep",
+            "destinations": ["tests/fixtures/helm/tiny-chart/README.md"],
+            "reason": "Document the original synthetic chart, owned-cluster fixture behavior and rollback verification scope outside user navigation.",
+            "baseline_sha256": None,
+        },
     ]
     assert all(item["baseline_sha256"] is None for item in current["documents"][348:])
     assert authorization["canonical_user_pages"] == 23

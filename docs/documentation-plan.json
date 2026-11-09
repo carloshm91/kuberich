@@ -3735,6 +3735,26 @@
       ],
       "reason": "Retain Helm implementation boundaries and measured verification outside public user navigation.",
       "baseline_sha256": null
+    },
+    {
+      "source": "tests/fixtures/helm/README.md",
+      "audience": "contributor test fixture provenance",
+      "action": "keep",
+      "destinations": [
+        "tests/fixtures/helm/README.md"
+      ],
+      "reason": "Retain upstream Helm fixture attribution, pinned source hashes and synthetic parser-shape provenance outside user navigation.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "tests/fixtures/helm/tiny-chart/README.md",
+      "audience": "contributor test fixture provenance",
+      "action": "keep",
+      "destinations": [
+        "tests/fixtures/helm/tiny-chart/README.md"
+      ],
+      "reason": "Document the original synthetic chart, owned-cluster fixture behavior and rollback verification scope outside user navigation.",
+      "baseline_sha256": null
     }
   ],
   "inventory_rule": "Every tracked Markdown file, every file under docs/, LICENSE, NOTICE, and contribution issue templates at the baseline commit; new structure contracts are mapped too.",
