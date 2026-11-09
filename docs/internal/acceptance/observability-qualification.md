@@ -655,6 +655,28 @@ latest source's required CI. No corrected-driver three-host runtime execution or
 unrecorded old brew exit is claimed. A failed runtime result or changed command
 body, setup or artifact invalidates this narrow reuse and requires review.
 
+## Published command-migration guide oracle
+
+Superseded source `62a70bff0341081e680612df1b963b1061299f6a` retained two
+[Application failures](https://github.com/carloshm91/kuberich/actions/runs/42554591132):
+Python 3.13 and 3.14 part-three jobs each reported one failure and 3,150 passes.
+The guide correctly said “Version 0.4 removes that console entry and its Python
+shim.” The test still required the obsolete prepared-source sentence. Both
+original failures and their job logs remain retained; they are not attributed
+to the separate consumer shell correction.
+
+The oracle now requires the published sentence and explicitly rejects the
+obsolete prepared-source phrase. Canonical output/exit, legacy environment
+fallbacks, explicit migration, unchanged kubeconfig/log destinations and
+redaction assertions stay intact. The entire `tests/quality/test_user_guides.py`
+file passes all 20 cases in 18.98 seconds using an owned temporary directory,
+with no failures or skips.
+
+That file was outside the original 218-case documentation/site selection; those
+results retain their original source and do not qualify this oracle correction.
+Public guide text, product/bottle bytes and static-site inputs are unchanged.
+No new product, browser, cluster or native-platform trial is claimed.
+
 ## Final gate
 
 After protected preparation delivery, freeze the exact main candidate. Require

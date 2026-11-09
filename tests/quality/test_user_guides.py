@@ -270,7 +270,7 @@ def test_local_reference_contains_new_commands_and_current_behavior_guidance():
     compatibility = " ".join(configuration.split())
     for contract in (
         "Published 0.3 retains the deprecated `kubetrol` command with a fixed stderr warning.",
-        "prepared 0.4 source removes that console entry and its Python shim.",
+        "Version 0.4 removes that console entry and its Python shim.",
         "canonical stdout and exit behavior remain unchanged.",
         "`KUBETROL_*` preference variables remain fallbacks after corresponding `KUBERICH_*` variables.",
         "Run `kuberich config migrate` explicitly",
@@ -279,6 +279,7 @@ def test_local_reference_contains_new_commands_and_current_behavior_guidance():
         "Diagnostics omit raw kubeconfig, helper output, resource bodies, and editor drafts.",
     ):
         assert contract in compatibility
+    assert "prepared 0.4 source removes" not in compatibility
     assert "scheduled for removal in 0.4.0" not in configuration
     assert "success notice appears only when a" in configuration
     plugins = (ROOT / "docs/plugins.md").read_text()
