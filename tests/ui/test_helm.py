@@ -1,5 +1,6 @@
 """Native Helm routes with owned HTTP metadata and an actual fixture executable."""
 
+import asyncio
 import json
 import logging
 from contextlib import asynccontextmanager
@@ -110,7 +111,7 @@ async def helm_app(
             api.release.set()
 
 
-async def helm_ready(app):
+async def helm_ready(app, *, row_count=None):
     await wait_for(
         lambda: (
             app.views.route.kind is ViewKind.HELM
@@ -121,8 +122,10 @@ async def helm_ready(app):
                 or app.workspace.store.observation.helm.problem is not None
             )
             and app.helm_table.request == app.workspace.helm_request
+            and (row_count is None or app.helm_table.row_count == row_count)
         )
     )
+    assert await asyncio.wait_for(app.helm_table.wait_for_refresh(), 5)
 
 
 async def open_inspector(app, pilot):
@@ -456,10 +459,14 @@ async def test_initial_helm_connection_failure_is_visible_and_retry_preserves_na
             await pilot.press("f4")
         else:
             await app.run_command("refresh")
-        await helm_ready(app)
+        # The loading frame already has this request, before completed rows render.
+        await helm_ready(app, row_count=1)
         assert app.workspace.store.observation.helm.problem is None
         assert app.workspace.helm_request.scope.namespace == expected_namespace
         assert app.sessions.observation.namespace == expected_namespace
         assert app.workspace.helm_request.scope.session != failure_identity
+        assert app.helm_table.request == app.workspace.helm_request
         assert app.helm_table.row_count == 1
+        assert app.helm_table.capture_viewport().selected == "team/demo"
+        assert app.helm_table.selected_release().key == HelmReleaseKey("team", "demo")
         assert len(services) == 1
