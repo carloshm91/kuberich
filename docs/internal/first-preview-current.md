@@ -23,8 +23,24 @@ and the offline `:benchmarks` browser are implemented; 51 focused UI/CLI cases a
 actual pinned-tool terminal diagnostics cover completion, cancellation, repeated
 interrupts, missing-tool refusal, terminal restoration and result reopening.
 Use `--benchmark-directory /absolute/path` to keep saved results separate.
-The final signed source still requires its exact-source installed/owned-cluster
-proofs and ordinary protected matrix before merge. Source has conservative
+Frozen source `a3a8f7a281ef03e3c3f40464239e8c7cb201d961` subsequently passes
+419 focused cases, all four new critical modules at 100% lines/branches, six
+source PTY cases, four installed wheel/sdist cases and all ten actual owned-kind
+groups. The rebuilt Linux native archive also passes its normal full verifier,
+including benchmark completion, cancellation, missing-tool refusal and offline
+reopening. That native cohort uses an authenticated tool and an owned compiled
+TCP bridge; the separate kind trial proves actual kubectl forwarding. Neither
+certifies a provider or complete release readiness.
+
+Three ordinary hosted attempts expose stale collection, scan and UI assertions;
+their original failures remain retained. The complete local Fast selection then
+finishes 11,326 cases within the original ten-minute bound: 11,323 pass, two stale
+CLI/navigation expectations fail and one owned-macOS clipboard case skips on
+Linux. Corrected expectations pass all 292 related cases, with native help
+captured from actual Python 3.12/3.13/3.14 interpreters. These test-only corrections
+leave all 331 kind and 458 native proof inputs unchanged; original receipts keep
+their actual source commit. The fresh ordinary protected matrix remains required
+before merge. Source has conservative
 request/load limits, explicit one-use review, context-owned cleanup, private
 normalized records and a local-only browser. The initial service proof does not
 qualify later UI/installed changes, the full coverage gates, platform matrix,

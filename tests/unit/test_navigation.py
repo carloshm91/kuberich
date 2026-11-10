@@ -41,6 +41,7 @@ def test_aliases_share_one_readonly_initial_and_interactive_parser(alias, comman
         Command.ATTACH,
         Command.UPLOAD,
         Command.PORT_FORWARD,
+        Command.BENCHMARK,
         Command.ANNOTATE,
         Command.EDIT,
         Command.SCALE,

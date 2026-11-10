@@ -283,3 +283,20 @@ workers in 11.22 seconds. Production and the retained kind/native proof inputs
 remain unchanged. Original job logs and the authenticated failed artifact/XML
 remain retained. A fresh complete local Fast selection and ordinary exact-head
 matrix remain required; the original hosted failure stays failed.
+
+The subsequent complete local Fast selection runs all 11,326 selected cases
+without fail-fast, with the authenticated optional tool and the unchanged
+10-minute process limit. It finishes in 568.87 seconds: 11,323 pass, two fail
+and one skips. The sole skip is the host-clipboard write that requires an
+explicitly owned ephemeral macOS runner; it is not a missing benchmark tool.
+The original `freeze08-fast.log` and XML preserve both failures: the help
+snapshots omit the new benchmark directory/initial command, and the parser's
+read-only expectation omits the benchmark command.
+
+Actual CLI output from CPython 3.12.12, 3.13.12 and 3.14.3 refreshes the two
+reviewed native-format snapshots; 3.13 and 3.14 produce identical bytes. The
+existing exact-output oracle and every unrelated help field remain intact.
+The navigation test adds benchmarks to its expected-denial set. All 292 related
+launch/navigation cases pass with four workers in 2.89 seconds. No runtime,
+process bound or proof input changes. These corrections do not relabel the
+failed complete selection or replace the required fresh hosted matrix.
