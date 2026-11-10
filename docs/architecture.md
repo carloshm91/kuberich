@@ -381,6 +381,7 @@ architecture links useful.
 | Preserve graph identity, evidence and per-root collection ownership | [0034](adr/0034-native-resource-relationships.md) |
 | Compose typed views, commands, navigation, and operation owners | [Application composition](adr/app-composition.md) |
 | Keep Helm release authority separate from Kubernetes resource targets | [0041](adr/0041-helm-release-identity.md) |
+| Bind local sources to reviewed named creates and conditional manifest batches | [0042](adr/0042-local-manifest-batches.md) |
 
 ## Historical source
 

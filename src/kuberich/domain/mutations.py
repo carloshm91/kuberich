@@ -8,7 +8,7 @@ from typing import Any, NoReturn
 from uuid import UUID, uuid4
 
 from kuberich.domain.resources import ApiResource, ResourceRecord, api_segment, resource_object
-from kuberich.domain.targets import ResourceTarget
+from kuberich.domain.targets import MutationTarget, ResourceTarget
 from kuberich.errors import AppError
 from kuberich.security.arguments import validate_argument
 
@@ -35,6 +35,8 @@ def decode_patch(body: bytes) -> list[dict[str, Any]]:
 def mutation_path(
     resource: ApiResource, target: ResourceTarget, subresource: str | None = None
 ) -> str:
+    if not isinstance(target, ResourceTarget):
+        raise AppError("Ordinary mutation requires an existing captured resource UID.")
     if resource.group:
         api_segment(resource.group)
     api_segment(resource.version)
@@ -208,6 +210,7 @@ def annotation_intent(
 class MutationState(Enum):
     SUCCEEDED = "Succeeded"
     ACCEPTED = "Accepted; deletion pending"
+    PARTIAL = "Partial batch"
     BLOCKED = "Blocked"
     STALE = "Stale target"
     DENIED = "Permission denied"
@@ -225,7 +228,7 @@ class MutationState(Enum):
 class MutationResult:
     state: MutationState
     message: str
-    items: tuple[tuple[ResourceTarget, "MutationResult"], ...] = ()
+    items: tuple[tuple[MutationTarget, "MutationResult"], ...] = ()
 
 
 def status_result(status: int) -> MutationResult:

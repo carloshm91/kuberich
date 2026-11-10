@@ -29,8 +29,8 @@ def test_history_moves_to_one_internal_area_with_exact_original_git_evidence():
             assert not (ROOT / old).is_file()
     for record in plan["preserved_sources"] + plan["operational_sources"]:
         assert mapped[record["path"]]["baseline_sha256"] == record["sha256"]
-    assert len(mapped) == 370
-    assert validate_documentation_plan(ROOT, list(mapped)) == 370
+    assert len(mapped) == 372
+    assert validate_documentation_plan(ROOT, list(mapped)) == 372
     assert not (ROOT / "docs/status.md").exists()
 
 
@@ -233,8 +233,15 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
         "docs/release-notes/0.4.0.md",
         "docs/internal/acceptance/observability-qualification.md",
     ]
-    assert len(current["documents"]) == 370
-    assert current["documents"][366:] == [
+    helm = json.loads(
+        git_bytes(
+            ROOT, "show", "e11236e0a108c4ff4bf79a119648a02bc9a61bdc:docs/documentation-plan.json"
+        )
+    )
+    assert len(helm["documents"]) == 370
+    assert current["documents"][:370] == helm["documents"]
+    assert len(current["documents"]) == 372
+    assert current["documents"][366:370] == [
         {
             "source": "docs/adr/0041-helm-release-identity.md",
             "audience": "development",
@@ -265,6 +272,24 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
             "action": "keep",
             "destinations": ["tests/fixtures/helm/tiny-chart/README.md"],
             "reason": "Document the original synthetic chart, owned-cluster fixture behavior and rollback verification scope outside user navigation.",
+            "baseline_sha256": None,
+        },
+    ]
+    assert current["documents"][370:] == [
+        {
+            "source": "docs/adr/0042-local-manifest-batches.md",
+            "audience": "development",
+            "action": "keep",
+            "destinations": ["docs/adr/0042-local-manifest-batches.md"],
+            "reason": "Record anchored local sources, builtin rendering, named create identity and guarded declarative batch outcomes.",
+            "baseline_sha256": None,
+        },
+        {
+            "source": "docs/internal/acceptance/local-manifests.md",
+            "audience": "contributor acceptance evidence",
+            "action": "keep",
+            "destinations": ["docs/internal/acceptance/local-manifests.md"],
+            "reason": "Retain local manifest implementation boundaries, original failures and measured verification outside public user navigation.",
             "baseline_sha256": None,
         },
     ]

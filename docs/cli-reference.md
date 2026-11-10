@@ -35,7 +35,7 @@ Press `?` in a view for its current actions. See [navigation](command-navigation
 | `--refresh`, `-r` | periodic table refresh seconds (0.1-3600); watch changes remain live |
 | `--readonly` | block mutations, shell, attach and plugins |
 | `--write` | override the configured read-only preference for this session |
-| `--command`, `-c` | initial terminal command: po, ctx, ns, helm, pulse, overview, exports, themes, views, about, status, retry, back, forward, help or quit |
+| `--command`, `-c` | initial terminal command: po, ctx, ns, helm, manifests, pulse, overview, exports, themes, views, about, status, retry, back, forward, help or quit |
 | `--screen-dump-dir` | initial local export directory; created privately only on Save |
 | `--headless` | hide the application header |
 | `--logoless` | hide the brand in the header |
@@ -101,6 +101,7 @@ Resource aliases are in the [resource reference](resource-reference.md).
 | `jump` | jump |
 | `login` | login |
 | `logsall` | logs all |
+| `manifests` | manifests |
 | `namespace`, `namespaces`, `ns` | namespaces |
 | `open` | open relationship |
 | `pluginjobs` | plugin jobs |

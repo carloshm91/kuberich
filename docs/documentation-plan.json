@@ -3755,6 +3755,26 @@
       ],
       "reason": "Document the original synthetic chart, owned-cluster fixture behavior and rollback verification scope outside user navigation.",
       "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0042-local-manifest-batches.md",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0042-local-manifest-batches.md"
+      ],
+      "reason": "Record anchored local sources, builtin rendering, named create identity and guarded declarative batch outcomes.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/acceptance/local-manifests.md",
+      "audience": "contributor acceptance evidence",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/local-manifests.md"
+      ],
+      "reason": "Retain local manifest implementation boundaries, original failures and measured verification outside public user navigation.",
+      "baseline_sha256": null
     }
   ],
   "inventory_rule": "Every tracked Markdown file, every file under docs/, LICENSE, NOTICE, and contribution issue templates at the baseline commit; new structure contracts are mapped too.",

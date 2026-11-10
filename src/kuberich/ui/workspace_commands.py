@@ -169,7 +169,7 @@ class WorkspaceCommands:
         except AppError as error:
             self.host.notify(str(error), severity="error")
             return
-        if command in {Command.EXPORT, Command.EXPORTS, Command.HISTORY}:
+        if command in {Command.EXPORT, Command.EXPORTS, Command.MANIFESTS, Command.HISTORY}:
             # Capture exports/history before changing the originating selection.
             # Local artifact browsing also retains the originating view for Back.
             if command is Command.EXPORT and self.export_current is not None:

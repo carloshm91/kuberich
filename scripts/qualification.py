@@ -48,6 +48,7 @@ KIND_SCENARIOS = (
     ("metric-history", "verify_history_kind", True),
     ("curated-resources", "verify_curated_resources_kind", False),
     ("helm", "verify_helm_kind", False),
+    ("manifests", "verify_manifests_kind", True),
 )
 
 
@@ -228,6 +229,7 @@ def cluster_stages(
                         if name == "helm"
                         else ()
                     ),
+                    *(("--docker", "/usr/bin/docker") if name == "manifests" else ()),
                     "--evidence",
                     str(
                         output / f"kind-{repetition}-{name}" / "evidence.json"
@@ -241,6 +243,7 @@ def cluster_stages(
                             "metric-history",
                             "curated-resources",
                             "helm",
+                            "manifests",
                         }
                         else output / f"kind-{repetition}-{name}.json"
                     ),

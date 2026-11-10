@@ -57,3 +57,34 @@ class ResourceTarget:
         """
         if session != self.session or uid != self.uid:
             raise AppError("The selected target is stale; select the resource again.")
+
+
+@dataclass(frozen=True, slots=True)
+class ResourceAddress:
+    """A discovered named destination; absence never invents an object UID."""
+
+    session: SessionIdentity
+    group: str
+    resource: str
+    namespace: str | None
+    name: str
+
+    def __post_init__(self) -> None:
+        from kuberich.domain.connections import namespace_name
+        from kuberich.domain.resources import api_segment
+
+        if not isinstance(self.session, SessionIdentity):
+            raise AppError("An address requires an explicit client session identity.")
+        if self.group != "":
+            api_segment(self.group)
+        for value in (self.resource, self.name):
+            api_segment(value)
+        if self.namespace is not None:
+            namespace_name(self.namespace)
+
+    @property
+    def uid(self) -> None:
+        return None
+
+
+type MutationTarget = ResourceTarget | ResourceAddress

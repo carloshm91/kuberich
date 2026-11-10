@@ -131,3 +131,40 @@ async def test_capture_survives_a_selection_change_across_an_await() -> None:
     assert (captured.name, captured.uid) == ("first-pod", "first-uid")
     with pytest.raises(AppError, match="target is stale"):
         captured.require_current(SESSION, uid=selected["uid"])
+
+
+def test_named_destination_has_no_uid_and_cannot_become_an_existing_target() -> None:
+    from kuberich.domain.targets import ResourceAddress
+
+    address = ResourceAddress(SESSION, "", "configmaps", "fixture-ns", "new-name")
+    assert address.uid is None
+    assert address.name == "new-name" and address.namespace == "fixture-ns"
+    assert ResourceAddress(SESSION, "apps", "deployments", None, "new-name").namespace is None
+    with pytest.raises(FrozenInstanceError):
+        address.name = "changed"
+    with pytest.raises(AppError):
+        ResourceTarget(SESSION, "", "configmaps", "fixture-ns", "new-name", address.uid)
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"session": {}},
+        {"group": None},
+        {"group": "bad/group"},
+        {"resource": "--force"},
+        {"resource": "pods/log"},
+        {"name": "-f"},
+        {"name": "../other"},
+        {"namespace": ""},
+        {"namespace": "team/other"},
+        {"name": "private\x1b[2J"},
+    ],
+)
+def test_addresses_reject_unsafe_path_or_session_fields(changes: dict[str, object]) -> None:
+    from kuberich.domain.targets import ResourceAddress
+
+    fields = dict(session=SESSION, group="", resource="configmaps", namespace="team", name="new")
+    fields.update(changes)
+    with pytest.raises(AppError):
+        ResourceAddress(**fields)

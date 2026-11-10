@@ -191,3 +191,56 @@ another review. No automatic retry or compensating rollback runs. Closing the
 screen stops owned work without undoing changes already accepted by Kubernetes.
 
 Installing, upgrading, uninstalling and repository/OCI management remain planned.
+
+## Local manifests and Kustomize in development source
+
+Development source for 0.5 adds `:manifests`. Open it after connecting to the
+intended context, or start with `kuberich --command manifests` for offline local
+inspection. Browsing does not execute a helper or connect to a cluster.
+After offline inspection, use Back, select the intended connection with `:ctx`,
+then reopen `:manifests` to review cluster changes.
+
+1. Choose a local root containing your manifests and any shared bases. Enter a
+   directory to navigate; parent navigation stops at that root. Symlinks and
+   special files are unavailable. Changing the root discards old source reviews.
+2. Inspect a resource YAML/JSON file with Enter. Sensitive values start redacted.
+   Multi-document files and ordinary Kubernetes `List` wrappers are supported.
+   Inspecting a Kustomization shows structure only and never runs its build.
+   Other non-resource YAML can be edited locally; this browser cannot inspect it.
+3. Enter a file to capture it; open a directory before choosing Preview directory
+   or Render Kustomize. Both buttons use the currently opened directory.
+   Directory previews include immediate manifest files in sorted order. Local
+   rendering requires `kubectl`; missing or failed rendering blocks it.
+4. Configure [your editor](editing.md#edit-a-manifest), acknowledge disclosure and
+   choose Open editor. Review the returned diff and choose Save local; this does not apply.
+   Changed source requires a new capture and validation. Hard-linked files
+   cannot be replaced through this workflow.
+5. Review every resolved resource, context and destination namespace. Explicit
+   manifest namespaces remain intact; missing namespaces use the reviewed
+   fallback. All-namespaces mode requires a fallback when a document lacks one.
+6. Validate against the server, inspect the redacted diff and confirm Apply or
+   Delete. A failed dry-run blocks the batch. Delete reviews cluster resources
+   and leaves local files in place. Back is focused when the review opens.
+
+Read-only mode permits browsing, inspection and local rendering; editing, saving
+and cluster mutation are blocked. Fixed resource names are required; generated
+names, automatic namespace/CRD installation, force and pruning are unsupported.
+Create prerequisite Namespaces or CRDs separately before validating dependants.
+
+Kustomize supports bounded local bases/components, patches, generators, images
+and namespace/name transforms. Remote/Git/URL dependencies, executable plugins,
+Helm inflation, absolute references and root escapes are refused before build.
+Choose a common root for `overlays/dev` and `base`; the renderer retains its
+normal root-only loading rules and never retries with unrestricted loading.
+Sources are limited to 256 files/8 MiB and 100 resources; editable files and
+individual resource requests are limited to 1 MiB. Split larger inputs.
+
+Existing objects use declarative merge previews followed by exact UID/version
+conditional writes. New names use atomic creation; concurrent creation becomes
+a conflict. Execution is sequential and stops at the first failure: earlier
+changes remain, and later items are explicitly unsent. There is no batch
+transaction, automatic rollback or blind replay. A lost response after write
+admission is uncertain and requires inspection before another reviewed attempt.
+Accepted deletion can remain pending because of finalizers. Errors show safe
+categories, codes and limited known field paths; freeform server details and
+arbitrary mapping keys are withheld because they can contain submitted values.

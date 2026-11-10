@@ -70,7 +70,7 @@ from kuberich.domain.resources import Discovery
 from kuberich.domain.targets import SessionIdentity
 from kuberich.domain.view_actions import ViewState
 from kuberich.domain.view_routes import ViewKind
-from kuberich.domain.views import ResourceSelection
+from kuberich.domain.views import USABLE_CONNECTIONS, ResourceSelection
 from kuberich.domain.workloads import WorkloadAction
 from kuberich.errors import AppError, ExecutableUnavailable
 from kuberich.services.access import AccessPolicy, Action
@@ -157,6 +157,7 @@ if TYPE_CHECKING:
     from kuberich.ui.context_admin import ContextEditResult
     from kuberich.ui.diagnostic_evidence import DiagnosticEvidenceScreen
     from kuberich.ui.inspection import Page
+    from kuberich.ui.manifest_actions import ManifestActions, ManifestConnection
 
 
 def __getattr__(name: str) -> object:
@@ -241,6 +242,7 @@ class KubeRichApp(App[None]):
         self.sub_title = "Local preview"
         self._diagnostic_logger = logger
         self._initial_command = initial_command
+        self.manifests: ManifestActions | None = None
         policy = AccessPolicy(settings.read_only)
         self.sessions = SessionService(
             catalog if catalog is not None else KubeCatalog(), connection
@@ -580,6 +582,7 @@ class KubeRichApp(App[None]):
                 Command.POPEYE: self.diagnostics.popeye,
                 Command.EXPORT: self.exports.open_export,
                 Command.EXPORTS: self.exports.open_browser,
+                Command.MANIFESTS: self.action_manifests,
                 Command.RBAC: lambda: self.authorization.command(authorization_command("rbac")),
                 Command.CAN_I: lambda: self.authorization.command(authorization_command("can-i")),
                 Command.WHO_CAN: lambda: self.authorization.command(
@@ -895,7 +898,7 @@ class KubeRichApp(App[None]):
         self.appearance_controller.attach_build_info(self.header.query_one("#build-info", Static))
         self.live_preferences.start((self.appearance_controller.warning, self._navigation_warning))
         if self._initial_command is not Command.QUIT:
-            if self._initial_command is not Command.EXPORTS:
+            if self._initial_command not in {Command.EXPORTS, Command.MANIFESTS}:
                 self.call_after_refresh(self.appearance_controller.start_updates)
             self.presenter.start()
             self.views.start()
@@ -966,6 +969,7 @@ class KubeRichApp(App[None]):
             ),
             self.operations.close_for_client(client),
             self.metric_history.close_for_client(client),
+            *((self.manifests.close_for_client(client),) if self.manifests is not None else ()),
             *(
                 (self.exports.close_for_connection(identity.connection_id),)
                 if (identity := self.sessions.observation.identity) is not None
@@ -1038,6 +1042,8 @@ class KubeRichApp(App[None]):
             await self.command_routes.close()
             await self.interactions.close()
             await self.exports.stop_owned()
+            if self.manifests is not None:
+                await self.manifests.stop_owned()
             await self.metric_history.close()
             if self._catalog_task is not None:
                 self._catalog_task.cancel()
@@ -1328,6 +1334,61 @@ class KubeRichApp(App[None]):
             and observed is not None
             and observed.connection_id == identity.connection_id
         )
+
+    def _manifest_connection(self) -> ManifestConnection | None:
+        from kuberich.domain.manifests import ManifestScope
+        from kuberich.ui.manifest_actions import ManifestConnection
+
+        client = self.sessions.client
+        observation = self.sessions.observation
+        discovery = self.workspace.discovery
+        identity = observation.identity
+        if (
+            client is None
+            or identity is None
+            or discovery is None
+            or observation.state not in USABLE_CONNECTIONS
+        ):
+            return None
+        namespace = observation.namespace
+
+        def current() -> bool:
+            observed = self.sessions.observation
+            return (
+                self.sessions.client is client
+                and observed.identity == identity
+                and observed.namespace == namespace
+                and observed.state in USABLE_CONNECTIONS
+                and self.workspace.store.observation.connection.identity == identity
+                and self.workspace.store.observation.connection.state in USABLE_CONNECTIONS
+            )
+
+        return ManifestConnection(
+            client=client,
+            scope=ManifestScope(session=identity, namespace=namespace),
+            discovery=discovery,
+            current=current,
+        )
+
+    def _push_manifest_screen(self, screen: Screen[None]) -> None:
+        self.push_screen(screen)
+
+    def action_manifests(self) -> None:
+        if self.manifests is None:
+            from kuberich.services.local_manifests import LocalManifestService
+            from kuberich.ui.manifest_actions import ManifestActions
+
+            self.manifests = ManifestActions(
+                local=LocalManifestService(
+                    self.commands.policy, self._process_environment, self._process_directory
+                ),
+                manager=self.mutations,
+                runner=self.processes,
+                capture_connection=self._manifest_connection,
+                push_screen=self._push_manifest_screen,
+                notice=self._set_notice,
+            )
+        self.manifests.open_browser()
 
     def _forwarding_preferences(self) -> ForwardPreferences:
         return (
@@ -1668,6 +1729,19 @@ class KubeRichApp(App[None]):
             self.view_preferences.open()
 
     async def action_back(self) -> None:
+        if self.manifests is not None:
+            from kuberich.ui.manifest_browser import ManifestBrowserScreen
+            from kuberich.ui.manifest_editor import ManifestEditorScreen
+            from kuberich.ui.manifest_review import ManifestReviewScreen
+
+            manifest_screen = self.screen
+            if isinstance(
+                manifest_screen,
+                (ManifestBrowserScreen, ManifestEditorScreen, ManifestReviewScreen),
+            ):
+                # App priority Escape must drain ownership before popping the screen.
+                await manifest_screen.action_back()
+                return
         from kuberich.ui.appearance import ThemeScreen
         from kuberich.ui.artifact_browser import ArtifactBrowserScreen
         from kuberich.ui.artifact_viewer import ArtifactViewerScreen

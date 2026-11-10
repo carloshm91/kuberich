@@ -292,6 +292,7 @@ class CommandService:
                 Command.POPEYE,
                 Command.EXPORT,
                 Command.EXPORTS,
+                Command.MANIFESTS,
                 Command.HISTORY,
             }
             and len(parts) != 1

@@ -84,7 +84,7 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     second = catalog.cluster_stages(
         tmp_path, Path("/owned/kind"), Path("/owned/kubectl"), Path("/owned/app.whl"), 2
     )
-    assert len(first) == len(second) == 24
+    assert len(first) == len(second) == 25
     acquisition = first[0]
     assert acquisition.name == "kind-1-diagnostic-tools"
     assert acquisition.command[4:] == (
@@ -163,6 +163,19 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     assert curated.cleanup_timeout == catalog.OWNED_KIND_CLEANUP_SECONDS
     assert "scripts/curated_kind.py" in catalog.type_command(ROOT)
     assert "scripts/verify_curated_resources_kind.py" in catalog.type_command(ROOT)
+    manifests = next(stage for stage in first if stage.name == "kind-1-manifests")
+    repeated_manifests = next(stage for stage in second if stage.name == "kind-2-manifests")
+    assert manifests.command[4] == "scripts.verify_manifests_kind"
+    assert manifests.command[manifests.command.index("--kubectl") + 1] == "/owned/kubectl"
+    assert manifests.command[manifests.command.index("--docker") + 1] == "/usr/bin/docker"
+    assert Path(manifests.command[manifests.command.index("--evidence") + 1]) == (
+        tmp_path / "kind-1-manifests/evidence.json"
+    )
+    assert Path(repeated_manifests.command[repeated_manifests.command.index("--evidence") + 1]) == (
+        tmp_path / "kind-2-manifests/evidence.json"
+    )
+    assert manifests.cleanup_timeout == catalog.OWNED_KIND_CLEANUP_SECONDS
+    assert "scripts/verify_manifests_kind.py" in catalog.type_command(ROOT)
     for stage in first:
         module = stage.command[4]
         assert module in body

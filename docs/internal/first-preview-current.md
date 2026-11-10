@@ -1,6 +1,72 @@
 # Development checkpoint
 
-## Helm implementation in progress — 2026-11-09 UTC
+## Local manifest implementation candidate — 2026-11-10 UTC
+
+M07 #67 starts from protected main
+`e11236e0a108c4ff4bf79a119648a02bc9a61bdc` on `feat/67-local-manifests`.
+Source, parser, filesystem, renderer, editor and cluster batch contracts are
+implemented, including the public UI. Frozen owned-cluster and source/installed
+terminal trials pass; the protected PR requires complete exact-head platform,
+production/critical/changed-line coverage, native and repository gates.
+These source changes are not part of the published 0.4.0 packages.
+
+Before extensive UI work, the actual owned-kind create/update/managed-key-removal
+proof passed 14 checks with an unrelated live key preserved, unchanged UID,
+version changes only on real writes, non-persisting dry-runs, unchanged measured
+inputs and verified private-file/cluster cleanup. A first failed preview receipt
+required a narrow correction for a generated dry-run object without a persistent
+resourceVersion. Both attempts and their original outcomes remain retained.
+See [local manifest acceptance](acceptance/local-manifests.md).
+
+An independent public service regression found that cancellation during
+post-delete observation could allow the next deletion. The corrected direct
+and `MutationManager.cancel` paths pass independently: the first actual accepted
+result remains visible, the next item is unsent and only one write occurs.
+The first frozen full kind trial exposed a DELETE dry-run request error before
+integration: query-only dry-run options do not override a nonempty `DeleteOptions`
+body. An independent four-case owned diagnostic confirms the required body flag
+and unchanged stored objects with that flag. The original failure remains retained.
+Corrected frozen candidate `d8b484fff9149fea4bce0d5d94e877e75b34d99d` passes
+58 full application/API/Pilot checks with 293 unchanged measured inputs and
+verified cleanup. Both installed entry points and seven source terminal cases
+pass together (9 cases, 28.33 seconds). See the acceptance record for exact commands,
+the original interrupted local full run and the advisory startup latency miss.
+
+Focused source/API/UI/real-editor terminal cases pass, but counts overlap and
+do not replace full production coverage, installed trials or required hosted CI.
+
+The first hosted matrix fails: a new changelog entry exceeds its word limit,
+macOS exposes a temporary-path alias assumption in a renderer test, and App's
+priority Escape dismisses the editor before private-draft cleanup. The original
+logs remain failed. The shortened note, physical-identity test and awaited
+ownership route pass their focused corrections; public App/native-CLI held-close
+controls reproduce the original bug and pass after the fix. Fresh committed
+candidate `cc6f8c73e7cd09f149ebd2f4677d023581381d1a` repeats all 58 real-cluster
+checks and 10 source/installed terminal cases successfully, with measured inputs
+unchanged and cleanup verified. The new startup trial preserves its advisory
+600 ms miss and passes hard contracts. The protected PR still requires every
+complete source/platform/native/coverage gate on the corrected exact head.
+
+The early exploratory command is retained in the issue checkout:
+`uv run --locked python -m artifacts.issue67.early_apply_proof --kind VERIFIED_KIND --kubectl VERIFIED_KUBECTL --output FRESH_REPORT`.
+It uses an explicit owned cluster and is limited to initial API merge semantics.
+The supported full verifier is now `python -m scripts.verify_manifests_kind` with
+explicit verified `--kind`, `--kubectl`, `--docker` and fresh `--evidence` arguments;
+run it sequentially with no competing measurements. This is not a phase release
+qualification or publication approval.
+
+## Helm delivered in development source — 2026-11-10 UTC
+
+[PR #334](https://github.com/carloshm91/kuberich/pull/334) merged as
+`e11236e0a108c4ff4bf79a119648a02bc9a61bdc`, after all 27 current-head quality
+jobs and the app-bound Repository/DCO checks passed. The squash tree exactly
+matches the qualified issue head. Author email is `carloshm91@gmail.com` and the
+sign-off is preserved. M06 #66 is closed and its roadmap item is Done.
+The final hosted Helm report passes four version/storage combinations and
+64 checks with owned-cluster deletion verified. Linux/Python 3.12 production
+coverage is 98.6171% lines / 95.4634% branches, changed lines 98.96%, and all
+119 then-critical modules satisfy their 100% gates. No release or hosting was
+published by the feature merge; phase qualification remains separate.
 
 The maintainer started v0.5.0 with M06 #66 on `feat/66-helm-releases`, based on
 protected main `eee30e4d1a595fa15f54449d6b0c5026e74869ce`. No new version/tag,

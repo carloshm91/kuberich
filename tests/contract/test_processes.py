@@ -249,6 +249,7 @@ async def test_natural_parent_exit_cleans_descendants_holding_output_pipes(tmp_p
             ProcessPurpose.DOWNLOAD,
             ProcessPurpose.CLIPBOARD,
             ProcessPurpose.HELM_READ,
+            ProcessPurpose.MANIFEST_RENDER,
         }
     ],
 )
@@ -273,7 +274,13 @@ async def test_read_only_blocks_every_effectful_process_before_executable_resolu
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "purpose", [ProcessPurpose.AUTHENTICATE, ProcessPurpose.DOWNLOAD, ProcessPurpose.HELM_READ]
+    "purpose",
+    [
+        ProcessPurpose.AUTHENTICATE,
+        ProcessPurpose.DOWNLOAD,
+        ProcessPurpose.HELM_READ,
+        ProcessPurpose.MANIFEST_RENDER,
+    ],
 )
 async def test_explicit_read_processes_are_allowed_in_read_only_and_output_is_captured(
     tmp_path, purpose

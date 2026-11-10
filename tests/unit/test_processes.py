@@ -64,6 +64,8 @@ def command(tmp_path, **changes):
         (ProcessPurpose.CLIPBOARD, Action.READ),
         (ProcessPurpose.HELM_READ, Action.READ),
         (ProcessPurpose.HELM_MUTATE, Action.MUTATE),
+        (ProcessPurpose.MANIFEST_RENDER, Action.READ),
+        (ProcessPurpose.MANIFEST_PREVIEW, Action.MUTATE),
     ],
 )
 def test_purpose_has_explicit_effect_policy(purpose, action):

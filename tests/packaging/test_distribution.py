@@ -28,6 +28,7 @@ from tests.support.handoff import terminal_handoff_trial
 from tests.support.history_terminal import terminal_history
 from tests.support.interactions_terminal import terminal_interactions
 from tests.support.local_exports import terminal_local_exports
+from tests.support.local_manifest_terminal import terminal_local_manifests
 from tests.support.mutation_terminal import terminal_mutation
 from tests.support.navigation import terminal_navigation
 from tests.support.operation_terminal import terminal_operation
@@ -203,6 +204,23 @@ def test_installed_manifest_editor_and_terminal_restoration(installed_wheel, ent
         else [str(binary / "python"), "-m", "kuberich"]
     )
     terminal_editing(command, directory, f"installed-editor-{entry_point}")
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+def test_installed_local_manifest_editor_save_and_terminal_restoration(
+    installed_wheel, entry_point
+):
+    binary, directory = installed_wheel
+    command = (
+        [str(binary / "kuberich")]
+        if entry_point == "console"
+        else [str(binary / "python"), "-m", "kuberich"]
+    )
+    local_directory = directory / f"local-manifests-{entry_point}"
+    local_directory.mkdir()
+    terminal_local_manifests(
+        command, local_directory, f"installed-local-manifests-{entry_point}", size=(80, 24)
+    )
 
 
 @pytest.mark.asyncio

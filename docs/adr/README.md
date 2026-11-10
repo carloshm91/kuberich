@@ -60,6 +60,7 @@ implemented decisions are kept separately without rewriting that history:
 | [0039: Context-owned metric history](0039-context-owned-metric-history.md) | Fixed measurements, independent backend credentials, historical identity gaps and finite per-connection ownership |
 | [0040: Curated resource observations](0040-curated-resource-observations.md) | Exact schemas, literal navigation, observed/fresh identity, bounded details and separate Event aggregates |
 | [0041: Helm release identity](0041-helm-release-identity.md) | Actual storage identity, explicit optional CLI contracts, owned disclosure/rollback and uncertain effects |
+| [0042: Local manifest batches](0042-local-manifest-batches.md) | Anchored local sources, frozen builtin rendering, real named creation, guarded declarative updates and explicit partial outcomes |
 | [Application composition](app-composition.md) | Integrated typed views, command metadata, navigation and operation owners; remaining stable-release work stays explicit |
 
 The composition record retains its existing filename; it is not renumbered into
