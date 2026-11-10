@@ -5,11 +5,14 @@ import asyncio
 import hashlib
 import json
 import os
+import re
+import shutil
+import signal
 import ssl
 import sys
 import time
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -17,18 +20,20 @@ from typing import Any
 from kubernetes_asyncio import client as sdk
 
 from kuberich.adapters.kubernetes import KubernetesSession
+from kuberich.adapters.node_shell import session_fingerprint
 from kuberich.adapters.node_shell_files import NodeShellJournal
 from kuberich.config.catalog import Entry, load_catalog
 from kuberich.config.node_shell import NodeShellSettings
 from kuberich.domain.connection_overrides import ConnectionOverrides
 from kuberich.domain.connections import ConnectionRequest, HttpProblem
 from kuberich.domain.mutations import MutationState
-from kuberich.domain.resources import ApiResource
+from kuberich.domain.resources import ApiResource, resource_text
 from kuberich.domain.targets import ResourceTarget, SessionIdentity
 from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
 from kuberich.services.node_shell import NodeShellManager, NodeShellService, NodeShellState
 from kuberich.services.node_shell_recovery import NodeShellRecovery
+from kuberich.services.ownership import finish_owned
 from kuberich.services.processes import ProcessRunner
 from scripts.diagnostics_tools import KIND_SHA256, sha256_file
 from scripts.owned_kind import (
@@ -45,6 +50,64 @@ VERIFY_SECONDS = 600
 KUBECTL_SHA256 = "8b8f088da2dab964f853b38464033b1be15ede2839eca751482357c45abdd05a"
 
 
+# Static, source-hashed producer: arguments only identify this owned fixture.
+CRASH_PRODUCER = r"""
+import asyncio, json, os, sys
+from pathlib import Path
+from kuberich.adapters.kubernetes import KubernetesSession
+from kuberich.adapters.node_shell_files import NodeShellJournal
+from kuberich.config.catalog import load_catalog
+from kuberich.config.node_shell import NodeShellSettings
+from kuberich.domain.connections import ConnectionRequest
+from kuberich.domain.mutations import MutationState
+from kuberich.domain.resources import ApiResource
+from kuberich.domain.targets import ResourceTarget, SessionIdentity
+from kuberich.services.access import AccessPolicy
+from kuberich.services.node_shell import NodeShellManager, NodeShellState
+
+async def run():
+    kubeconfig, context, namespace, node, uid, state, image = sys.argv[1:]
+    selected = load_catalog(ConnectionRequest(kubeconfig=kubeconfig, context=context), {}).select(context)
+    assert not selected.user.data.get('exec') and not selected.user.data.get('auth-provider')
+    connection = KubernetesSession(selected, 15)
+    assert Path(connection.directory.name).parent == Path(os.environ['TMPDIR'])
+    manager = NodeShellManager(NodeShellJournal(Path(state)))
+    try:
+        await connection.open()
+        assert connection.credentials is None
+        assert connection.configuration.cert_file and connection.configuration.key_file
+        owner = manager.create(connection,
+            ApiResource('', 'v1', 'nodes', 'Node', False, frozenset({'get', 'list'})),
+            ResourceTarget(SessionIdentity(context, 1), '', 'nodes', None, node, uid),
+            AccessPolicy(False), lambda: True,
+            settings=NodeShellSettings(enabled=True, image=image, namespace=namespace,
+                startup_timeout_seconds=120, session_timeout_seconds=60),
+            config_generation=1, current_config=lambda: 1,
+            environment={}, directory=Path(state).parent)
+        intent = await owner.prepare()
+        result = await owner.execute(owner.confirm(intent))
+        owner.raise_failure()
+        assert result.state is MutationState.SUCCEEDED
+        assert owner.observation.state is NodeShellState.READY
+        record = await owner.durable_record()
+        assert record is not None and record.pod_uid == owner.observation.pod_uid
+        print(json.dumps({'state':'ready', 'operation_id':record.operation_id,
+                          'pod_name':record.pod_name, 'pod_uid':record.pod_uid}), flush=True)
+        await asyncio.Event().wait()
+    finally:
+        try:
+            await manager.close()
+        finally:
+            await connection.close()
+
+try:
+    asyncio.run(run())
+except BaseException as error:
+    print(json.dumps({'state':'failed', 'failure_type':type(error).__name__}), flush=True)
+    raise SystemExit(1) from None
+"""
+
+
 async def absent(connection: KubernetesSession, name: str, namespace: str = NAMESPACE) -> bool:
     try:
         await connection.get_json(f"/api/v1/namespaces/{namespace}/pods/{name}")
@@ -59,6 +122,162 @@ async def wait_absent(connection: KubernetesSession, name: str) -> None:
     async with asyncio.timeout(20):
         while not await absent(connection, name):
             await asyncio.sleep(0.2)
+
+
+def producer_receipt(raw: bytes) -> dict[str, str]:
+    """Accept only the bounded metadata handoff, never raw producer output."""
+    try:
+        if not isinstance(raw, bytes) or not 1 <= len(raw) <= 4096:
+            raise ValueError
+        pairs = json.loads(raw, object_pairs_hook=lambda items: items)
+        if (
+            not isinstance(pairs, list)
+            or len(pairs) != 4
+            or any(not isinstance(item, tuple) or len(item) != 2 for item in pairs)
+        ):
+            raise ValueError
+        value = dict(pairs)
+        if (
+            set(value) != {"state", "operation_id", "pod_name", "pod_uid"}
+            or value["state"] != "ready"
+            or not all(isinstance(item, str) for item in value.values())
+        ):
+            raise ValueError
+        operation = resource_text(value["operation_id"])
+        pod_name, pod_uid = resource_text(value["pod_name"]), resource_text(value["pod_uid"])
+        if (
+            re.fullmatch(r"[a-f0-9]{32}", operation) is None
+            or pod_name != "kuberich-node-shell-" + operation
+            or len(pod_uid) > 253
+        ):
+            raise ValueError
+        return {
+            "state": "ready",
+            "operation_id": operation,
+            "pod_name": pod_name,
+            "pod_uid": pod_uid,
+        }
+    except (AppError, ValueError, TypeError, UnicodeError, RecursionError):
+        raise AppError("Owned crash-producer readiness could not be verified.") from None
+
+
+async def reap_producer(process: asyncio.subprocess.Process) -> None:
+    """Kill the owned producer through its guarded handle and bound its reap.
+
+    The certificate-only producer launches no external programs. Its SDK/file
+    workers are threads and end with this one process; there is no child tree.
+    """
+    if process.returncode is None:
+        with suppress(ProcessLookupError):
+            process.kill()
+    async with asyncio.timeout(5):
+        await process.wait()
+
+
+async def verify_crash_recovery(
+    cluster: OwnedCluster,
+    target: ResourceTarget,
+    progress: dict[str, Any],
+) -> str:
+    private = cluster.directory / "crash-producer-private"
+    private.mkdir(mode=0o700)
+    state = cluster.directory / "state-producer-crash"
+    journal = NodeShellJournal(state)
+    process: asyncio.subprocess.Process | None = None
+    fresh: KubernetesSession | None = None
+    receipt: dict[str, Any] = {
+        "producer_reaped": False,
+        "fresh_session_closed": False,
+        "crash_private_removed": False,
+    }
+    progress["crash_recovery"] = receipt
+    try:
+        environment = {**os.environ, "KUBECONFIG": str(cluster.path), "TMPDIR": str(private)}
+        launch = asyncio.create_task(
+            asyncio.create_subprocess_exec(
+                sys.executable,
+                "-c",
+                CRASH_PRODUCER,
+                str(cluster.path),
+                cluster.context,
+                NAMESPACE,
+                target.name,
+                target.uid,
+                str(state),
+                SHELL_IMAGE,
+                cwd=Path(__file__).resolve().parents[1],
+                env=environment,
+                stdin=asyncio.subprocess.DEVNULL,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL,
+                start_new_session=True,
+                limit=4096,
+            )
+        )
+        try:
+            process = await asyncio.shield(launch)
+        except asyncio.CancelledError:
+            await finish_owned(launch)
+            process = launch.result()
+            raise
+        assert process.stdout is not None
+        async with asyncio.timeout(150):
+            marker = producer_receipt(await process.stdout.readline())
+        assert process.returncode is None
+        await reap_producer(process)
+        assert process.returncode == -signal.SIGKILL
+        receipt["producer_reaped"], receipt["producer_exit_signal"] = True, "SIGKILL"
+        (record,) = await journal.scan()
+        assert record.operation_id == marker["operation_id"]
+        assert record.pod_name == marker["pod_name"] and record.pod_uid == marker["pod_uid"]
+        assert record.pod_uid is not None
+        selected = load_catalog(
+            ConnectionRequest(
+                kubeconfig=str(cluster.path),
+                context=cluster.context,
+            ),
+            {},
+        ).select(cluster.context)
+        assert not selected.user.data.get("exec") and not selected.user.data.get("auth-provider")
+        fresh = KubernetesSession(selected, 15)
+        await fresh.open()
+        configuration = fresh.configuration
+        assert fresh.credentials is None and configuration is not None and configuration.cert_file
+        assert await session_fingerprint(fresh) == record.connection_fingerprint
+        receipt["fresh_certificate_fingerprint_matches"] = True
+        recovery = NodeShellRecovery(journal, fresh, AccessPolicy(False), lambda: True)
+        try:
+            assert (await recovery.inspect(record)).code == "present_owned"
+            review = await recovery.prepare_cleanup(record)
+            assert (
+                await recovery.cleanup(recovery.confirm(review))
+            ).state is MutationState.SUCCEEDED
+        finally:
+            await recovery.close()
+        assert await absent(fresh, record.pod_name) and await journal.scan() == ()
+        receipt["known_uid_deleted_and_journal_removed"] = True
+        return "real-producer-sigkill-fresh-certificate-session-reviewed-uid-recovery"
+    finally:
+        try:
+            if process is not None:
+                await finish_owned(asyncio.create_task(reap_producer(process)))
+                receipt["producer_reaped"] = process.returncode is not None
+        finally:
+            try:
+                if fresh is not None:
+                    fresh_private = Path(fresh.directory.name)
+                    await finish_owned(asyncio.create_task(fresh.close()))
+                    receipt["fresh_session_closed"] = not fresh_private.exists()
+                    assert receipt["fresh_session_closed"]
+            finally:
+                # SIGKILL skips Python's private TemporaryDirectory cleanup.
+                # Remove only this fixture subtree after its producer is reaped.
+                if process is None or process.returncode is not None:
+                    await finish_owned(
+                        asyncio.create_task(asyncio.to_thread(shutil.rmtree, private))
+                    )
+                    receipt["crash_private_removed"] = not private.exists()
+                    assert receipt["crash_private_removed"]
 
 
 class FaultProxy:
@@ -715,6 +934,8 @@ async def verify(
             failures = await verify_failures(
                 cluster, connection, target, descriptor, settings, kubectl, progress, transcript
             )
+            progress["phase"] = "real-producer-sigkill-fresh-certificate-recovery"
+            failures.append(await verify_crash_recovery(cluster, target, progress))
             assert (
                 await api.read_namespaced_pod("unrelated-sentinel", NAMESPACE)
             ).metadata.uid == sentinel_uid

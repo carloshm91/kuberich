@@ -1,7 +1,9 @@
 """The owned-kind rehearsal pins inputs and exercises actual bounded HTTP fault injection."""
 
+import ast
 import asyncio
 import json
+import signal
 import sys
 from contextlib import contextmanager
 from types import SimpleNamespace
@@ -13,6 +15,7 @@ from aiohttp import web
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.adapters.node_shell_files import NodeShellJournal
 from kuberich.domain.mutations import MutationState
+from kuberich.errors import AppError
 from kuberich.services.node_shell import NodeShellManager, NodeShellState
 from scripts import verify_node_shell_kind as rehearsal
 from tests.contract.test_node_shell import create, source_fixture
@@ -187,3 +190,122 @@ async def test_absence_requires_404_and_wait_uses_a_finite_deadline():
         await rehearsal.absent(Client(), "owned")
     assert rehearsal.VERIFY_SECONDS <= 600
     assert asyncio.iscoroutinefunction(rehearsal.wait_absent)
+
+
+def producer_marker():
+    return {
+        "state": "ready",
+        "operation_id": "a" * 32,
+        "pod_name": "kuberich-node-shell-" + "a" * 32,
+        "pod_uid": "owned-kubernetes-uid",
+    }
+
+
+def test_producer_handoff_accepts_only_bounded_operation_metadata():
+    marker = producer_marker()
+    assert rehearsal.producer_receipt(json.dumps(marker).encode()) == marker
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        b"",
+        b"x" * 4097,
+        b"\xff",
+        b"not-json",
+        b"[]",
+        b"null",
+        json.dumps({**producer_marker(), "certificate": "synthetic-private-TLS-material"}).encode(),
+        json.dumps({**producer_marker(), "state": "failed"}).encode(),
+        json.dumps({**producer_marker(), "pod_uid": ""}).encode(),
+        json.dumps({**producer_marker(), "pod_uid": "a" * 254}).encode(),
+        json.dumps({**producer_marker(), "pod_uid": "synthetic-private\u001b[31m"}).encode(),
+        json.dumps({**producer_marker(), "pod_uid": {"private-key": "synthetic-private"}}).encode(),
+        json.dumps({**producer_marker(), "operation_id": "not-an-operation"}).encode(),
+        json.dumps({**producer_marker(), "pod_name": "unrelated-pod"}).encode(),
+        b'{"state":"ready","state":"ready","operation_id":"a","pod_name":"p","pod_uid":"u"}',
+        json.dumps(list(producer_marker().items())).encode(),
+    ],
+)
+def test_unverified_producer_output_is_refused_without_echoing_tls_or_raw_bytes(payload):
+    with pytest.raises(AppError, match="readiness could not be verified") as failure:
+        rehearsal.producer_receipt(payload)
+    assert "synthetic-private" not in str(failure.value) and "\x1b" not in str(failure.value)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "already_exited,lookup_race", [(False, False), (True, False), (False, True)]
+)
+async def test_producer_reap_uses_only_guarded_owned_handle_and_awaits_exit(
+    already_exited, lookup_race
+):
+    calls = []
+
+    class Process:
+        returncode = 0 if already_exited else None
+
+        def kill(self):
+            calls.append("kill")
+            if lookup_race:
+                raise ProcessLookupError
+
+        async def wait(self):
+            calls.append("wait")
+            self.returncode = 0 if already_exited else -signal.SIGKILL
+            return self.returncode
+
+    process = Process()
+    await rehearsal.reap_producer(process)
+    assert calls == (["wait"] if already_exited else ["kill", "wait"])
+    assert process.returncode is not None
+
+
+@pytest.mark.asyncio
+async def test_producer_reap_has_a_finite_wait_deadline(monkeypatch):
+    timeout = asyncio.timeout
+    monkeypatch.setattr(rehearsal.asyncio, "timeout", lambda duration: timeout(0.01))
+
+    class Process:
+        returncode = None
+
+        def kill(self):
+            pass
+
+        async def wait(self):
+            await asyncio.Event().wait()
+
+    with pytest.raises(TimeoutError):
+        await rehearsal.reap_producer(Process())
+
+
+def test_static_crash_producer_is_valid_and_prints_only_reviewed_metadata():
+    tree = ast.parse(rehearsal.CRASH_PRODUCER)
+    output_keys = []
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "print"
+        ):
+            assert len(node.args) == 1 and isinstance(node.args[0], ast.Call)
+            payload = node.args[0].args[0]
+            assert isinstance(payload, ast.Dict)
+            output_keys.append({key.value for key in payload.keys if isinstance(key, ast.Constant)})
+    assert output_keys == [set(producer_marker()), {"state", "failure_type"}]
+
+
+def test_verifier_hash_pins_its_embedded_crash_producer(tmp_path):
+    source = tmp_path / "src/kuberich"
+    source.mkdir(parents=True)
+    (tmp_path / "scripts").mkdir()
+    for name in ("pyproject.toml", "uv.lock", "scripts/owned_kind.py"):
+        (tmp_path / name).write_text(name)
+    verifier = tmp_path / "scripts/verify_node_shell_kind.py"
+    verifier.write_text(rehearsal.CRASH_PRODUCER)
+    captured = rehearsal.input_hashes(tmp_path)
+    verifier.write_text(rehearsal.CRASH_PRODUCER + "\n# changed fixture\n")
+    assert (
+        rehearsal.input_hashes(tmp_path)["scripts/verify_node_shell_kind.py"]
+        != captured["scripts/verify_node_shell_kind.py"]
+    )
