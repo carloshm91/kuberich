@@ -49,7 +49,7 @@ async def evict_pod(
     accepted: list[bool] = []
 
     def receipt(body: bytes) -> MutationResult:
-        if not eviction_receipt(decode_json(body)):
+        if not eviction_receipt(decode_json(body), metadata[0].status):
             raise AppError("Eviction acceptance could not be verified.")
         # Retain validated acceptance synchronously, even if cancellation races parser completion.
         accepted.append(True)
@@ -79,7 +79,7 @@ async def evict_pod(
         path=f"/api/v1/namespaces/{target.namespace}/pods/{target.name}/eviction",
         body=pod.eviction_body,
         content_type="application/json",
-        accepted=(200,),
+        accepted=(200, 201),
         receipt=receipt,
         error_receipt=refusal,
         response_metadata=metadata.append,

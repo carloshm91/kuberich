@@ -71,6 +71,8 @@ class MaintenanceApi:
         self.retry_seconds = None
         self.delete_accepted = True
         self.post_mode = "normal"
+        self.success_status = 200
+        self.receipt_override = None
         self.patch_mode = "normal"
         self.patch_status = None
         self.read_status = None
@@ -140,7 +142,15 @@ class MaintenanceApi:
             if self.post_mode == "bad-receipt":
                 return web.json_response({"status": "Success"})
             return web.json_response(
-                {"apiVersion": "v1", "kind": "Status", "status": "Success", "code": 200}
+                self.receipt_override
+                if self.receipt_override is not None
+                else {
+                    "apiVersion": "v1",
+                    "kind": "Status",
+                    "status": "Success",
+                    "code": self.success_status,
+                },
+                status=self.success_status,
             )
         self.reads.append((path, dict(request.query)))
         if path == "/api/v1/nodes/node-one":

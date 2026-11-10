@@ -4,7 +4,7 @@ import logging
 from contextlib import asynccontextmanager
 
 import pytest
-from textual.widgets import Checkbox, Input
+from textual.widgets import Button, Checkbox, Input
 
 from kuberich.config.schema import Settings
 from kuberich.domain.node_maintenance import NodeState, PodState
@@ -38,7 +38,7 @@ async def review(app, command=":drain"):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("size", [(44, 14), (120, 36)])
+@pytest.mark.parametrize("size", [(40, 12), (120, 36)])
 async def test_review_is_read_only_default_cancel_and_independent_consents(tmp_path, size):
     async with maintenance_app(tmp_path) as (app, api):
         api.pods = {
@@ -56,14 +56,14 @@ async def test_review_is_read_only_default_cancel_and_independent_consents(tmp_p
             screen.query_one("#node-maintenance-force", Checkbox).value = True
             await pilot.pause()
             assert screen.review is None and screen.confirm_button.disabled
-            screen.prepare()
+            screen.query_one("#node-maintenance-review", Button).press()
             await wait_for(lambda: screen.review is not None and not screen.busy)
             assert screen.confirm_button.disabled
             assert any("emptyDir" in blocker for blocker in screen.review.blockers)
             screen.query_one("#node-maintenance-emptydir", Checkbox).value = True
             screen.query_one("#node-maintenance-daemonsets", Checkbox).value = True
             await pilot.pause()
-            screen.prepare()
+            screen.query_one("#node-maintenance-review", Button).press()
             await wait_for(lambda: screen.review is not None and not screen.busy)
             assert not screen.confirm_button.disabled and app.focused is screen.cancel_button
             assert any(pod.target.namespace == "team" for pod in screen.review.pods)
@@ -121,7 +121,8 @@ async def test_timeout_edit_invalidates_confirmation_and_rejects_invalid_range(t
         screen.query_one("#node-maintenance-timeout", Input).value = "0"
         await pilot.pause()
         assert screen.review is None and screen.confirm_button.disabled
-        screen.prepare()
+        screen.query_one("#node-maintenance-review", Button).press()
+        await pilot.pause()
         await wait_for(lambda: not screen.busy)
         assert screen.review is None
         assert "Review unavailable" in str(screen.feedback.content)
@@ -146,7 +147,7 @@ async def test_policy_tightening_stops_live_drain_and_preserves_observation(tmp_
 
 
 @pytest.mark.asyncio
-async def test_read_only_and_wrong_resource_reject_before_preparation(tmp_path):
+async def test_read_only_rejects_before_preparation(tmp_path):
     async with maintenance_app(tmp_path, readonly=True) as (app, api), app.run_test():
         await wait_for(lambda: app.standard_table.row_count == 1)
         before = len(api.requests)
@@ -156,3 +157,150 @@ async def test_read_only_and_wrong_resource_reject_before_preparation(tmp_path):
         assert not any(
             path == "/api/v1/nodes/owned-maintenance-node" for _, path, _ in api.requests[before:]
         )
+
+
+@pytest.mark.asyncio
+async def test_wrong_resource_and_generic_node_identity_use_actual_descriptor(tmp_path):
+    async with maintenance_app(tmp_path) as (app, api), app.run_test() as pilot:
+        await wait_for(lambda: app.standard_table.row_count == 1)
+        await app.run_command(":pods")
+        await wait_for(lambda: app.state.view_kind == "pods")
+        before = len(api.requests)
+        for command in (":cordon", ":drain", ":uncordon"):
+            await app.run_command(command)
+        await pilot.pause()
+        assert app.retained_node_maintenance_view_count == 0
+        assert not any(
+            path == "/api/v1/nodes/owned-maintenance-node" for _, path, _ in api.requests[before:]
+        )
+        await app.run_command(":resource nodes.core/v1")
+        await pilot.pause(0.3)
+        assert app.state.view_kind == "nodes.core", (app.state, api.requests)
+        await wait_for(lambda: app.custom_table.row_count == 1)
+        screen = await review(app, ":cordon")
+        assert screen.review is not None and not screen.review.node_unschedulable
+        screen.confirm_button.press()
+        await wait_for(lambda: screen.finished)
+        assert api.node["spec"]["unschedulable"]
+        assert screen.owner.progress.node.state is NodeState.CORDONED
+
+
+@pytest.mark.asyncio
+async def test_accepted_terminating_pod_is_not_replayed_and_stop_preserves_evidence(tmp_path):
+    async with maintenance_app(tmp_path) as (app, api), app.run_test(size=(40, 12)) as pilot:
+        api.blocked = False
+        api.terminating = True
+        api.pods["workload"]["metadata"]["finalizers"] = ["owned.example/retain"]
+        await wait_for(lambda: app.standard_table.row_count == 1)
+        screen = await review(app)
+        assert "Finalizers: 1" in str(screen.detail.content)
+        screen.confirm_button.press()
+        await wait_for(
+            lambda: any(pod.state is PodState.ACCEPTED for pod in screen.owner.progress.pods)
+        )
+        assert not screen.finished
+        await wait_for(
+            lambda: any(pod.state is PodState.TERMINATING for pod in screen.owner.progress.pods)
+        )
+        assert sum(method == "POST" for method, *_ in api.requests) == 1
+        await pilot.press("escape")
+        assert app.retained_node_maintenance_view_count == 0
+        assert screen.owner.operation_count == 0
+        assert screen.owner.progress.pods[0].state is PodState.TERMINATING
+        assert api.node["spec"]["unschedulable"]
+        assert "workload" in api.pods
+
+
+@pytest.mark.asyncio
+async def test_observed_absence_finishes_http_drain_and_keeps_completed_outcomes(tmp_path):
+    async with maintenance_app(tmp_path) as (app, api), app.run_test() as pilot:
+        api.blocked = False
+        await wait_for(lambda: app.standard_table.row_count == 1)
+        screen = await review(app)
+        screen.confirm_button.press()
+        await wait_for(lambda: screen.finished)
+        assert screen.owner.progress.pods[0].state is PodState.ABSENT
+        assert "Original UID absent" in str(screen.progress.content)
+        final = screen.owner.progress
+        app.workspace.connect("kuberich-test-Two")
+        await wait_for(lambda: app.state.context == "kuberich-test-Two")
+        assert screen.owner.progress == final
+        await pilot.press("escape")
+        assert app.retained_node_maintenance_view_count == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("preparing", [False, True])
+async def test_context_replacement_drains_preparation_or_live_write_before_old_client_closes(
+    tmp_path, preparing
+):
+    async with maintenance_app(tmp_path) as (app, api), app.run_test():
+        await wait_for(lambda: app.standard_table.row_count == 1)
+        if preparing:
+            api.node_gate.clear()
+            api.node_requested.clear()
+            await app.run_command(":drain")
+            await wait_for(
+                lambda: (
+                    isinstance(app.screen, NodeMaintenanceScreen) and api.node_requested.is_set()
+                )
+            )
+            screen = app.screen
+        else:
+            screen = await review(app)
+            screen.confirm_button.press()
+            await wait_for(
+                lambda: any(pod.state is PodState.RETRYING for pod in screen.owner.progress.pods)
+            )
+        owner = screen.owner
+        app.workspace.connect("kuberich-test-Two")
+        await wait_for(lambda: app.retained_node_maintenance_view_count == 0)
+        assert owner.operation_count == 0 and app.mutations.active_count == 0
+        await wait_for(lambda: owner.client.api is None)
+        assert screen.finished
+        assert screen.query_one("#node-maintenance-review", Button).disabled
+        assert owner.progress.node.state is NodeState.UNKNOWN
+        if preparing:
+            assert not any(method in {"POST", "PATCH"} for method, *_ in api.requests)
+        else:
+            assert api.node["spec"]["unschedulable"]
+
+
+@pytest.mark.asyncio
+async def test_options_changing_during_review_need_a_fresh_intent_and_enter_only_reviews(tmp_path):
+    async with maintenance_app(tmp_path) as (app, api), app.run_test() as pilot:
+        await wait_for(lambda: app.standard_table.row_count == 1)
+        api.node_gate.clear()
+        api.node_requested.clear()
+        await app.run_command(":drain")
+        await wait_for(
+            lambda: isinstance(app.screen, NodeMaintenanceScreen) and api.node_requested.is_set()
+        )
+        screen = app.screen
+        timeout = screen.query_one("#node-maintenance-timeout", Input)
+        timeout.value = "2"
+        await pilot.pause()
+        api.node_gate.set()
+        await wait_for(lambda: not screen.busy)
+        assert screen.review is None and screen.confirm_button.disabled
+        timeout.focus()
+        await pilot.press("enter")
+        await wait_for(lambda: screen.review is not None and not screen.busy)
+        assert screen.review.options.timeout_seconds == 2
+        assert not any(method in {"POST", "PATCH"} for method, *_ in api.requests)
+
+
+@pytest.mark.asyncio
+async def test_failed_node_read_cannot_confirm_and_cleanup_remains_owned(tmp_path):
+    async with maintenance_app(tmp_path) as (app, api), app.run_test() as pilot:
+        await wait_for(lambda: app.standard_table.row_count == 1)
+        api.node_status = 403
+        await app.run_command(":cordon")
+        await wait_for(
+            lambda: isinstance(app.screen, NodeMaintenanceScreen) and not app.screen.busy
+        )
+        screen = app.screen
+        assert screen.review is None and screen.confirm_button.disabled
+        await pilot.press("escape")
+        assert app.retained_node_maintenance_view_count == 0
+        assert not any(method in {"POST", "PATCH"} for method, *_ in api.requests)

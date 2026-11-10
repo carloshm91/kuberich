@@ -250,6 +250,38 @@ async def verify(cluster: OwnedCluster, progress: dict[str, Any]) -> dict[str, A
             progress["phase"] = "production-pdb-allowance-recovery-same-reviewed-version"
             await apps.patch_namespaced_deployment("managed", NAMESPACE, {"spec": {"replicas": 2}})
             result = await operation
+            progress["pdb_recovery_result"] = {
+                "state": result.state.value,
+                "message": result.message,
+                "node": {
+                    "state": drain.progress.node.state.value,
+                    "uid": drain.progress.node.uid,
+                    "observed_at": drain.progress.node.observed_at,
+                },
+                "pods": [
+                    {
+                        "uid": pod.uid,
+                        "namespace": pod.namespace,
+                        "name": pod.name,
+                        "state": pod.state.value,
+                        "attempts": pod.attempts,
+                        "http_status": pod.http_status,
+                    }
+                    for pod in drain.progress.pods
+                ],
+                "reviewed_uid": reviewed.target.uid,
+                "reviewed_resource_version": reviewed.resource_version,
+            }
+            try:
+                observed = await core.read_namespaced_pod(reviewed.target.name, NAMESPACE)
+                progress["pdb_recovery_result"]["current_pod"] = {
+                    "uid": observed.metadata.uid,
+                    "resource_version": observed.metadata.resource_version,
+                    "terminating": observed.metadata.deletion_timestamp is not None,
+                    "node": observed.spec.node_name,
+                }
+            except ApiException as error:
+                progress["pdb_recovery_result"]["current_pod"] = {"http_status": error.status}
             assert result.state is MutationState.SUCCEEDED, result.state.value
             assert drain.progress.node.state is NodeState.CORDONED
             completed = next(pod for pod in drain.progress.pods if pod.uid == reviewed.target.uid)
@@ -349,6 +381,20 @@ def main() -> None:
         result["status"] = "passed"
     except BaseException as error:
         result["failure_type"] = type(error).__name__
+        frames = []
+        trace = error.__traceback__
+        while trace is not None:
+            filename = Path(trace.tb_frame.f_code.co_filename).resolve()
+            if filename.is_relative_to(root):
+                frames.append(
+                    {
+                        "file": str(filename.relative_to(root)),
+                        "line": trace.tb_lineno,
+                        "function": trace.tb_frame.f_code.co_name,
+                    }
+                )
+            trace = trace.tb_next
+        result["failure_locations"] = frames
         if cluster is not None:
             result["private_directory_deleted"] = not cluster.directory.exists()
         raise

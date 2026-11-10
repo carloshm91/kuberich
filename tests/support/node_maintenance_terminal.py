@@ -142,7 +142,7 @@ class MaintenanceHandler(BaseHTTPRequestHandler):
         elif parsed.path == "/api/v1/nodes/owned-maintenance-node":
             self.server.node_requested.set()
             self.server.node_gate.wait(10)
-            self.respond(copy.deepcopy(self.server.node))
+            self.respond(copy.deepcopy(self.server.node), status=self.server.node_status)
         elif parsed.path == "/api/v1/pods":
             if "fieldSelector" in query:
                 assert query["fieldSelector"] == ["spec.nodeName=owned-maintenance-node"]
@@ -170,7 +170,8 @@ class MaintenanceHandler(BaseHTTPRequestHandler):
                             "desiredHealthy": 1,
                             "observedGeneration": 1,
                         },
-                    }
+                    },
+                    *self.server.extra_pdbs,
                 )
             )
         elif parsed.path.endswith("/controller"):
@@ -253,6 +254,8 @@ class MaintenanceServer(ThreadingHTTPServer):
         self.requests = []
         self.blocked = True
         self.terminating = False
+        self.node_status = 200
+        self.extra_pdbs = []
 
 
 @contextmanager

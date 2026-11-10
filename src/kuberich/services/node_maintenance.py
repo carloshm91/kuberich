@@ -334,6 +334,7 @@ class NodeMaintenanceService:
         *,
         attempts: int | None = None,
         retry_at: float | None = None,
+        http_status: int | None = None,
     ) -> None:
         self._progress = replace(
             self._progress,
@@ -344,6 +345,7 @@ class NodeMaintenanceService:
                     message=message,
                     attempts=p.attempts if attempts is None else attempts,
                     retry_at=retry_at,
+                    http_status=p.http_status if http_status is None else http_status,
                 )
                 if p.uid == uid
                 else p
@@ -414,7 +416,11 @@ class NodeMaintenanceService:
                 # Publish the receipt before another await can observe cancellation.
                 if attempt.result.state is MutationState.ACCEPTED:
                     self._pod_progress(
-                        uid, PodState.ACCEPTED, attempt.result.message, attempts=count
+                        uid,
+                        PodState.ACCEPTED,
+                        attempt.result.message,
+                        attempts=count,
+                        http_status=attempt.status,
                     )
                     due[uid] = self.clock() + 1
                 elif attempt.retry_seconds is not None:
@@ -425,6 +431,7 @@ class NodeMaintenanceService:
                         attempt.result.message,
                         attempts=count,
                         retry_at=due[uid],
+                        http_status=attempt.status,
                     )
                 else:
                     state = (
@@ -432,7 +439,13 @@ class NodeMaintenanceService:
                         if attempt.result.state is MutationState.UNCERTAIN
                         else PodState.FAILED
                     )
-                    self._pod_progress(uid, state, attempt.result.message, attempts=count)
+                    self._pod_progress(
+                        uid,
+                        state,
+                        attempt.result.message,
+                        attempts=count,
+                        http_status=attempt.status,
+                    )
                     if attempt.status == 404:
                         observed = await self._pod(pod)
                         if observed is None:

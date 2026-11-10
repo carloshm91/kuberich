@@ -48,6 +48,10 @@ class NodeMaintenanceActions:
                 raise AppError(
                     "Node maintenance is active or draining. Stop it before a fresh review."
                 )
+            if not self.context().live:
+                raise AppError(
+                    "The Node table is stale or loading. Wait for a live observation and review again."
+                )
             selection = self.capture(None)
             if selection is None:
                 return
@@ -58,7 +62,7 @@ class NodeMaintenanceActions:
                 target,
                 self.context().discovery or Discovery((resource,)),
                 self.policy,
-                current,
+                lambda: current() and self.context().live,
             )
             owner.require_current()
         except AppError as error:

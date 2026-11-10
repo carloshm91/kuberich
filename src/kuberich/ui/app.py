@@ -71,7 +71,7 @@ from kuberich.domain.resources import Discovery
 from kuberich.domain.targets import SessionIdentity
 from kuberich.domain.view_actions import ViewState
 from kuberich.domain.view_routes import ViewKind
-from kuberich.domain.views import USABLE_CONNECTIONS, ResourceSelection
+from kuberich.domain.views import USABLE_CONNECTIONS, ResourceSelection, ViewStatus
 from kuberich.domain.workloads import WorkloadAction
 from kuberich.errors import AppError, ExecutableUnavailable
 from kuberich.services.access import AccessPolicy, Action
@@ -762,6 +762,11 @@ class KubeRichApp(App[None]):
         return self.operations.node_shells.retained_count
 
     @property
+    def retained_node_maintenance_view_count(self) -> int:
+        """Maintenance viewers remain owned until preparation and execution drain."""
+        return self.operations.node_maintenance.retained_count
+
+    @property
     def pending_node_shell_record_count(self) -> int:
         return len(self.operations.node_shells.pending_records)
 
@@ -1371,6 +1376,10 @@ class KubeRichApp(App[None]):
             self.workspace.store.observation.metrics,
             self.workspace.discovery,
             self.workspace.store.observation.revision,
+            live=(
+                self.workspace.store.observation.status is ViewStatus.LIVE
+                and self.sessions.observation.state in USABLE_CONNECTIONS
+            ),
         )
 
     def _session_current(self, client: KubernetesSession, identity: SessionIdentity) -> bool:

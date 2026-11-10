@@ -146,6 +146,7 @@ class PodProgress:
     message: str = ""
     attempts: int = 0
     retry_at: float | None = None
+    http_status: int | None = None
 
 
 @dataclass(frozen=True)
@@ -374,11 +375,14 @@ def retry_delay(header: str | None, status_seconds: object, now: float) -> float
     return max(1.0, max(hints)) if hints else 5.0
 
 
-def eviction_receipt(data: object) -> bool:
+def eviction_receipt(data: object, http_status: int = 200) -> bool:
     status = resource_object(data)
+    code = status.get("code", http_status)
     return (
-        status.get("apiVersion") == "v1"
+        http_status in (200, 201)
+        and status.get("apiVersion") == "v1"
         and status.get("kind") == "Status"
         and status.get("status") == "Success"
-        and status.get("code", 200) == 200
+        and type(code) is int
+        and code == http_status
     )

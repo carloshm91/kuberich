@@ -72,7 +72,7 @@ class NodeMaintenanceScreen(ModalScreen[None]):
         self._stop_task: asyncio.Task[None] | None = None
         self._write: UUID | None = None
         self._stopping = False
-        self._rows: dict[str, tuple[object, ...]] = {}
+        self._rows: dict[str, str] = {}
         self.table: DataTable[object] = DataTable(
             id="node-maintenance-pods", cursor_type="row", zebra_stripes=True
         )
@@ -85,6 +85,7 @@ class NodeMaintenanceScreen(ModalScreen[None]):
         self.confirm_button = Button(
             "Confirm", id="node-maintenance-confirm", compact=True, variant="warning", disabled=True
         )
+        self.review_button = Button("Review", id="node-maintenance-review", compact=True)
         self.cancel_button = Button("Cancel", id="node-maintenance-cancel", compact=True)
 
     @property
@@ -136,7 +137,7 @@ class NodeMaintenanceScreen(ModalScreen[None]):
             yield self.progress
             yield self.feedback
             with Horizontal(id="node-maintenance-buttons"):
-                yield Button("Review", id="node-maintenance-review", compact=True)
+                yield self.review_button
                 yield self.confirm_button
                 yield self.cancel_button
 
@@ -239,7 +240,7 @@ class NodeMaintenanceScreen(ModalScreen[None]):
                 safe_text(", ".join(pdb.name for pdb in pod.pdbs) or "No matching PDB"),
                 safe_text("Retained" if pod.retained else "Reviewed"),
             )
-            self._rows[target.uid] = row
+            self._rows[target.uid] = ""
             self.table.add_row(*row, key=target.uid)
         self.selection_changed()
 
@@ -257,7 +258,7 @@ class NodeMaintenanceScreen(ModalScreen[None]):
         lines = [
             f"Pod: {target.namespace}/{target.name} · UID: {target.uid} · version: {pod.resource_version}",
             f"Owner: {pod.owner} · {'managed' if pod.managed else 'unmanaged/orphaned'}",
-            f"DaemonSet: {pod.daemonset} · Mirror/static: {pod.mirror} · Already terminating: {pod.terminating}",
+            f"DaemonSet: {pod.daemonset} · Mirror/static: {pod.mirror} · Already terminating: {pod.terminating} · Finalizers: {pod.finalizer_count}",
         ]
         lines.extend(pod.storage)
         lines.extend(pod.blockers)
@@ -290,7 +291,7 @@ class NodeMaintenanceScreen(ModalScreen[None]):
             return
         self.started = True
         self.confirm_button.disabled = True
-        self.query_one("#node-maintenance-review", Button).disabled = True
+        self.review_button.disabled = True
         for field in self.query("Input, Checkbox"):
             field.disabled = True
         self.cancel_button.label = "Stop drain" if self.mode is MaintenanceMode.DRAIN else "Stop"
@@ -315,21 +316,27 @@ class NodeMaintenanceScreen(ModalScreen[None]):
             counts = Counter(item.state.value for item in progress.pods)
             summary = " · ".join(f"{state}: {count}" for state, count in counts.items())
             for item in progress.pods:
-                if item.uid in self._rows:
+                value = f"{item.state.value} · attempts {item.attempts} · {item.message}"
+                if item.uid in self._rows and self._rows[item.uid] != value:
                     self.table.update_cell(
                         item.uid,
                         self.table.ordered_columns[-1].key,
-                        safe_text(
-                            f"{item.state.value} · attempts {item.attempts} · {item.message}"
-                        ),
+                        safe_text(value),
                     )
+                    self._rows[item.uid] = value
         else:
             summary = "No write started."
         node = progress.node
         age = max(0, time.time() - node.observed_at)
+        previous = "This observation is separate from a successful cordon request."
+        if node.last_known_state is not None and node.last_observed_at is not None:
+            previous = (
+                f"Last known: {node.last_known_state.value} · "
+                f"age {max(0, time.time() - node.last_observed_at):.0f}s; current state remains unknown."
+            )
         self.progress.update(
             safe_text(
-                f"{summary}\nFinal/current Node observation: {node.state.value} · age {age:.0f}s · observed UID {node.uid or 'unknown'}\nThis observation is separate from a successful cordon request.",
+                f"{summary}\nNode observation: {node.state.value} · age {age:.0f}s · UID {node.uid or 'unknown'}\n{previous}",
                 multiline=True,
             )
         )
@@ -343,8 +350,14 @@ class NodeMaintenanceScreen(ModalScreen[None]):
             self.request_stop()
 
     def request_stop(self) -> None:
+        if self._stopping:
+            return
         self._stopping = True
         self.confirm_button.disabled = True
+        self.review_button.disabled = True
+        if self.is_mounted:
+            for field in self.query("Input, Checkbox"):
+                field.disabled = True
         if self._stop_task is None:
             self._stop_task = asyncio.create_task(self._stop())
 

@@ -60,6 +60,7 @@ class OperationContext:
     metrics: MetricsSnapshot | None = None
     discovery: Discovery | None = None
     revision: int = 0
+    live: bool = True
 
 
 class ResourceOperations:

@@ -64,6 +64,59 @@ async def test_complete_review_and_exact_conditional_policy_eviction(tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_actual_named_create_201_eviction_receipt_is_accepted_then_observed_absent(tmp_path):
+    async with maintenance_source(tmp_path) as (source, api, _):
+        api.success_status = 201
+        review = await source.prepare(MaintenanceMode.DRAIN)
+        result = await source.execute(source.confirm(review))
+        assert result.state is MutationState.SUCCEEDED
+        assert source.progress.pods[0].state is PodState.ABSENT
+        assert source.progress.pods[0].http_status == 201
+        assert len(api.requests) == 2
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "http_status,receipt",
+    [
+        (200, {"apiVersion": "v1", "kind": "Status", "status": "Success"}),
+        (201, {"apiVersion": "v1", "kind": "Status", "status": "Success"}),
+    ],
+)
+async def test_optional_status_code_may_be_omitted(http_status, receipt, tmp_path):
+    async with maintenance_source(tmp_path) as (source, api, _):
+        api.success_status, api.receipt_override = http_status, receipt
+        review = await source.prepare(MaintenanceMode.DRAIN)
+        assert (await source.execute(source.confirm(review))).state is MutationState.SUCCEEDED
+        assert source.progress.pods[0].http_status == http_status
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "http_status,receipt",
+    [
+        (201, {"apiVersion": "v1", "kind": "Status", "status": "Success", "code": 200}),
+        (200, {"apiVersion": "v1", "kind": "Status", "status": "Success", "code": 201}),
+        (200, {"apiVersion": "v1", "kind": "Status", "status": "Success", "code": 200.0}),
+        (201, {"apiVersion": "v1", "kind": "Status", "status": "Failure", "code": 201}),
+        (201, {"apiVersion": "policy/v1", "kind": "Status", "status": "Success", "code": 201}),
+        (201, {"apiVersion": "v1", "kind": "Eviction", "status": "Success", "code": 201}),
+        (202, {"apiVersion": "v1", "kind": "Status", "status": "Success", "code": 202}),
+        (204, {}),
+    ],
+)
+async def test_success_shape_or_status_mismatch_is_uncertain_without_replay(
+    http_status, receipt, tmp_path
+):
+    async with maintenance_source(tmp_path) as (source, api, _):
+        api.success_status, api.receipt_override = http_status, receipt
+        review = await source.prepare(MaintenanceMode.DRAIN)
+        assert (await source.execute(source.confirm(review))).state is MutationState.UNCERTAIN
+        assert source.progress.pods[0].state is PodState.UNCERTAIN
+        assert len(api.requests) == 2
+
+
+@pytest.mark.asyncio
 async def test_429_does_not_stall_other_pods_and_reuses_exact_body(tmp_path):
     now = [0.0]
     sleeps = []
