@@ -243,6 +243,16 @@ Earlier successful receipts remain valid for their recorded source; they do not
 qualify later runtime changes. Complete protected checks on the corrected PR
 head are still required.
 
+The second hosted Fast run, `42803716846` on `562ff1f`, also remains failed:
+824 cases pass before another stale `:c` expectation in the authorization grammar
+test fails. A repository-wide search finds no other old three-choice context
+expectation. The corrected authorization/navigation/catalog cohort passes 408
+cases in 2.64 seconds; the seven additional completion-related unit files pass
+491 cases in 2.69 seconds. These are separate focused runs, not a full-suite or
+coverage claim. Only tests and documentation change after `10ba07d`; all 308
+measured runtime/verifier inputs still match the successful kind report, and
+the installed-wheel source association remains current.
+
 ## Completion limits
 
 Full production coverage of at least 90% lines and 90% branches, at least 90%

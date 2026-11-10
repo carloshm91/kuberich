@@ -30,9 +30,11 @@ Independent cross-review reproduces and fixes interrupted 429-cleanup retries,
 contradictory final-success reporting and stale details after an empty re-review.
 The scoped core cohort passes 194 cases and navigation/maintenance Pilot passes
 51. Fresh source/installed PTY verification passes eight cases in 39.89 seconds;
-all 304 wheel runtime files match corrected source. The original hosted Fast
-failure from an outdated `:c` completion expectation remains retained, alongside
-all earlier failed and successful trials in
+all 304 wheel runtime files match corrected source. Two hosted Fast failures
+from outdated `:c` expectations remain retained (UI and authorization grammar).
+The corrected command cohort passes 408 cases; seven additional completion unit
+files pass 491 cases. No runtime inputs change after the successful candidate.
+See all earlier failed and successful trials in
 [maintenance acceptance](acceptance/node-maintenance.md).
 
 Full production/changed-line coverage, all 125 critical modules and the complete
