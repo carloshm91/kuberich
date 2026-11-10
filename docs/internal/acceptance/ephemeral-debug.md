@@ -515,3 +515,36 @@ Original control source, logs and JUnit remain under
 validation pass. The unchanged local actual/installed proofs are not rerun for
 this test-only correction. A complete new exact-head hosted matrix remains
 required before protected delivery.
+
+## Fifth hosted attempt: plugin refusal presentation
+
+Run `42859993315` measures `426472d9737122fae6078f7ae5d72bb96fd62714`.
+Fast passes 10,987 cases with one skip in 485.38 seconds, all four native jobs
+pass, and the corrected Python 3.14 second part passes 3,219 cases with one skip
+in 422.35 seconds. The Python 3.13 second part fails an existing invalid-plugin-
+manifest assertion: the status label shows the live Pod view instead of the
+refusal after its owner completes. It retains 3,218 passes and one skip in
+452.14 seconds. The original full log remains at
+`artifacts/issue78/control/hosted-py313-part2-05.log`; the superseded remainder
+is cancelled and the run does not qualify delivery.
+
+Controlled same-observation presentation erases the original manifest,
+missing-plugin and offline-capture refusals on Python 3.13.12 with branch tracing
+(three failures, one read-only case already retained through another notice,
+5.31 seconds). All three plugin refusal paths now use the existing presenter
+notice, which survives redraws of that observation and retires on a new one.
+This changes only `src/kuberich/ui/plugins.py` in production; no new timer,
+retry or status architecture is introduced. Four variants preserve catalogue
+refusal, zero process jobs and drained owners; connected variants also change
+namespace through the owned HTTP fixture and verify the old notice retires.
+
+The full plugin/collection-notice cohort passes 19 cases in 35.12 seconds:
+
+```sh
+COVERAGE_FILE=/tmp/kuberich-78-delivery-04/.coverage /tmp/kuberich-78-delivery-py313-env/bin/python -m pytest -q tests/ui/test_plugins.py tests/ui/test_collection_limits.py --basetemp=/tmp/kuberich-78-delivery-04/basetemp --cov=kuberich --cov-branch --cov-report= --junitxml=/tmp/kuberich-78-delivery-04/junit.xml
+```
+
+Original control source, logs and JUnit remain under
+`artifacts/issue78/plugin-notice-fix-01/`. The production input change requires
+fresh frozen real-kind debug, installed-feature and inspection evidence before
+another complete exact-head hosted matrix can qualify delivery.

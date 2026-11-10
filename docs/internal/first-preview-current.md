@@ -49,6 +49,15 @@ the test-only correction. Original failures remain retained, application and
 debug/inspection proof inputs are unchanged, and a new exact-head matrix is
 required before delivery.
 
+The fifth hosted attempt passes Fast, all native jobs and the formerly failing
+Python 3.14 part. A different existing plugin-refusal assertion fails on Python
+3.13 when resource presentation replaces its transient error. Controlled
+same-observation redraws reproduce the lost refusal. The three plugin refusal
+paths now use the existing view notice; 19 branch-traced plugin/collection cases
+pass, including notice retirement on an actual namespace change. Fresh real,
+installed and full hosted evidence must bind this production correction before
+delivery; original failures remain retained.
+
 ## Node maintenance delivered in development source — 2026-11-10 UTC
 
 [PR #337](https://github.com/carloshm91/kuberich/pull/337) merged normally as

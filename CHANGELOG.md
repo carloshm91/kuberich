@@ -20,6 +20,8 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Fixed
 
+- Keep local plugin refusal messages visible through redraws of the current resource observation ([#78](https://github.com/carloshm91/kuberich/issues/78)).
+
 - Reveal the first matching relationship rows when delayed data replaces an empty filtered view ([#76](https://github.com/carloshm91/kuberich/issues/76)).
 
 ## [0.4.0] - 2026-11-08

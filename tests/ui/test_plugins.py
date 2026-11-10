@@ -279,6 +279,55 @@ async def test_invalid_explicit_manifest_refuses_catalogue_without_executing(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("refusal", ["manifest", "missing", "readonly", "offline"])
+async def test_plugin_refusal_survives_same_observation_render(tmp_path, plugin_tasks, refusal):
+    async with workspace_api(ns, api) as url:
+        if refusal == "offline":
+            app = KubeRichApp(Settings(), logging.Logger("offline", level=100))
+            command, expected = "plugin missing", "connected context"
+        else:
+            app = app_for(
+                tmp_path,
+                url,
+                readonly=refusal == "readonly",
+                definitions={"unsafe": {"command": "missing"}},
+                extension={"schema_version": 1, "locations": ["missing.yaml"]}
+                if refusal == "manifest"
+                else None,
+            )
+            command, expected = {
+                "manifest": ("plugins", "plugin"),
+                "missing": ("plugin missing", "not configured"),
+                "readonly": ("plugin unsafe", "Read-only"),
+            }[refusal]
+        async with app.run_test() as pilot:
+            if refusal != "offline":
+                await wait_for(
+                    lambda: (
+                        app.resources.row_count == 1
+                        and (app.plugins.error is not None or bool(app.plugins.plugins))
+                    )
+                )
+            await pilot.pause()
+            await app.run_command(command)
+            await wait_for(lambda: plugin_tasks.latest.done())
+            assert expected in str(app.status.content)
+            view = app.workspace.store.observation
+            app.presenter.show(view)
+            assert app.workspace.store.observation is view
+            assert expected in str(app.status.content) and len(app.screen_stack) == 1
+            assert not app.plugins.manager.jobs
+            if refusal != "offline":
+                notice = str(app.status.content)
+                await app.workspace.select_namespace("default")
+                current = app.workspace.store.observation
+                assert current is not view
+                app.presenter.show(current)
+                assert str(app.status.content) != notice
+        assert all(task.done() for task in plugin_tasks.tasks)
+
+
+@pytest.mark.asyncio
 async def test_loading_captures_the_original_row_before_waiting_and_does_not_retarget(
     tmp_path, monkeypatch
 ):

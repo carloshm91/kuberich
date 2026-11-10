@@ -174,7 +174,7 @@ class PluginController:
         try:
             source = self.capture_source() if name is not None else None
         except AppError as error:
-            self.app._set_status(str(error))
+            self.app.presenter.notice(str(error))
             return
         if self._loader is not None:
             await asyncio.shield(self._loader)
@@ -187,7 +187,7 @@ class PluginController:
         ):
             return
         if self.error is not None:
-            app._set_status(self.error)
+            app.presenter.notice(self.error)
             return
         if name is None:
             from kuberich.ui.plugin_screens import PluginCatalogue
@@ -210,7 +210,7 @@ class PluginController:
 
             app.push_screen(PluginScreen(plugin, source, self.manager))
         except AppError as error:
-            app._set_status(str(error))
+            app.presenter.notice(str(error))
 
     async def close(self) -> None:
         self._closed = True
