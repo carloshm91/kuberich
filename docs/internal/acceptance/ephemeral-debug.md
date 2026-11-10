@@ -361,3 +361,38 @@ formatting pass; the isolated Python 3.14 environment does not replace the
 checkout's Python 3.12 environment. Documentation contracts pass 27 cases in
 26.46 seconds. Fresh real-kind/installed evidence must bind the changed helper,
 and the complete exact-head hosted matrix remains pending.
+
+## Rebound actual and installed evidence
+
+Frozen candidate `f29d55aa128617c9b2e25aa2603e875a9ba854a8` passes all 16
+real-kind groups in 46.97 seconds after the terminal correction. The exact
+command is:
+
+```sh
+uv run --no-sync python -m scripts.verify_ephemeral_debug_kind --kind /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kind --kubectl /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kubectl --docker /usr/bin/docker --evidence artifacts/issue78/full-kind-04/evidence.json
+```
+
+The report SHA-256 is
+`03dee83eda5ae07011b07dc78ccb445b57e1da3bb47ffd89adcd9cde481ee546`.
+All 318 inputs, including the changed terminal helper, remain unchanged;
+every owner/private-file/caller-state/cluster-absence guard passes. This retains
+actual verified-kubectl attachment and independently observed remote completion.
+
+The fresh installed feature cohort passes all four cases in 26.09 seconds:
+
+```sh
+uv run --no-sync pytest tests/packaging/test_distribution.py -k installed_ephemeral_debug -q --basetemp=/tmp/kuberich-78-installed-02 --junitxml=artifacts/issue78/installed-02.xml
+```
+
+All 309 wheel runtime files match tracked source bytes; the unchanged wheel
+SHA-256 is `2a139d0fb07dacf56baa2504538136ab320dc33cc643037249be7526fb6fb20b`.
+JUnit, wheel, sdist and the byte-comparison receipt are retained under
+`artifacts/issue78/installed-02*`. The first receipt helper counts pytest's
+`artifactscurrent` symlink twice; selecting the physical owned artifact directory
+corrects recording without changing or rerunning the four passing trials.
+The subsequent manual report check initially uses system Python without the SDK;
+the same read-only check passes under the locked project interpreter. Neither
+recording error is an application test failure or an additional behavior pass.
+
+Fresh full exact-head hosted coverage, platform and protected merge checks
+remain required. No tags, packages or hosting are published by these trials.

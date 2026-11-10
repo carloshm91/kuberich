@@ -7,15 +7,16 @@ options, complete irreversible-addition review, strict server dry-run, guarded
 append and separate embedded attachment. The exact tested real invocation is:
 
 ```sh
-uv run python -m scripts.verify_ephemeral_debug_kind --kind /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kind --kubectl /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kubectl --docker /usr/bin/docker --evidence artifacts/issue78/full-kind-03/evidence.json
+uv run --no-sync python -m scripts.verify_ephemeral_debug_kind --kind /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kind --kubectl /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kubectl --docker /usr/bin/docker --evidence artifacts/issue78/full-kind-04/evidence.json
 ```
 
-Source `fa2678d8cfbd857e998b5eaac1f11da36009a051` passes all 16 real groups
-in 45.10 seconds with 318 unchanged inputs and complete cleanup. Actual CLI plus
+Source `f29d55aa128617c9b2e25aa2603e875a9ba854a8` passes all 16 real groups
+in 46.97 seconds with 318 unchanged inputs and complete cleanup. Actual CLI plus
 verified kubectl, independent remote completion, admission/attach denial,
 immutable entries, replacement, target restart and lost receipts are observed.
-Source CLI passes 15 cases, Pilot 43, service contracts 55 and outside-checkout
-wheel behavior four. All 309 wheel runtime files match source. Exact commands,
+Source CLI passes 18 cases, Pilot 43, service contracts 55 and outside-checkout
+wheel behavior four. Four Python 3.14 branch-instrumented terminal regressions
+also pass. All 309 wheel runtime files match source. Exact commands,
 independent focused coverage and original failures are in
 [debugging acceptance](acceptance/ephemeral-debug.md). Full production/changed-line
 coverage, critical-module/platform qualification and protected delivery remain
@@ -24,8 +25,10 @@ pending. Published packages remain 0.4.0; no publication is performed here.
 The second hosted attempt passes Fast, repository/DCO checks and all four native
 builds, but fails two Python 3.14 terminal interactions and an outdated workflow
 inventory assertion. Its remaining jobs are cancelled. The original failed
-receipts remain retained; controlled interaction correction and a fresh complete
-exact-head matrix are required before this candidate can merge.
+receipts remain retained. The interaction correction passes controlled old-failing
+regressions, fresh installed behavior and all real-kind groups; the corrected
+workflow cohort also passes. A fresh complete exact-head matrix is required
+before this candidate can merge.
 
 ## Node maintenance delivered in development source — 2026-11-10 UTC
 
