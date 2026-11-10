@@ -22,6 +22,8 @@ MIRRORS = {
 PACKAGES = frozenset({"openssh-server", "tmux", "xclip", "xvfb", "gcc", "libc6-dev", "binutils"})
 APT_OPTIONS = (
     "-o",
+    "Acquire::Languages=none",
+    "-o",
     "Acquire::Retries=1",
     "-o",
     "Acquire::http::Timeout=15",
@@ -100,7 +102,10 @@ def bootstrap(packages: Sequence[str]) -> None:
             timeout=15,
         )
 
-    print("CI APT: updating signed indexes (120-second command deadline).", flush=True)
+    print(
+        "CI APT: updating signed indexes without translations (120-second command deadline).",
+        flush=True,
+    )
     subprocess.run(
         _root_command(("/usr/bin/apt-get", *APT_OPTIONS, "update", "--error-on=any"), 120),
         stdin=subprocess.DEVNULL,

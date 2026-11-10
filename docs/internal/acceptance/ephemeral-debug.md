@@ -267,3 +267,23 @@ line/branch and changed-line gates remain authoritative in the hosted matrix.
 Its four final lifecycle/update cases also pass separately in 5.23 seconds.
 The full production, all critical modules, exact-head platform and protected
 merge checks remain pending. No tags, packages or hosting are published.
+
+## First hosted attempt
+
+Application quality run `42833552212` on head
+`844cb69e7ac7a6bc53cd93e8ed6a942d465d7bcd` fails before Fast tests execute.
+The private-access audit passes, then the Ubuntu APT update exceeds its unchanged
+120-second command deadline (exit 124) while downloading signed package and
+Translation-en indexes. The full matrices do not run. Repository validation
+`42833552164` and DCO pass independently; they do not qualify the application.
+The original job log is retained in `artifacts/issue78/control/hosted-fast-01.log`.
+
+The CI-only correction requests `Acquire::Languages=none`, the documented
+[APT setting](https://manpages.ubuntu.com/manpages/noble/man5/apt.conf.5.html#the-acquire-group)
+for disabling translation indexes. Package closure, official HTTPS sources,
+signature/TLS verification, retries and 120/180-second command deadlines are
+unchanged. No local privileged command or APT update is run. The owned-command
+bootstrap/qualification cohort passes 124 cases in 8.30 seconds, plus Ruff,
+formatting and strict typing. Actual hosted setup and the complete exact-head
+matrix must pass on the corrected head before delivery; local argv contracts
+do not establish mirror throughput or erase the first failure.

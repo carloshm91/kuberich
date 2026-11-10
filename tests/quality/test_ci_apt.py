@@ -150,6 +150,8 @@ def test_bounded_signed_update_and_noninteractive_install_preserve_exact_package
     update, install = owned_commands.calls[2][1], owned_commands.calls[3][1]
     options = (
         "-o",
+        "Acquire::Languages=none",
+        "-o",
         "Acquire::Retries=1",
         "-o",
         "Acquire::http::Timeout=15",
