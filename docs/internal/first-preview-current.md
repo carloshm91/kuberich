@@ -4,10 +4,10 @@
 
 A02 #77 is implemented in [PR #337](https://github.com/carloshm91/kuberich/pull/337)
 from protected main `7c8c7cb1595a3609c2d6a5748087d53917ce9af8`.
-Corrected clean candidate `10ba07d858d7cd7f787d6294ec653a287bd2849f` passes all
-13 actual three-node kind groups in 88.71 seconds, with 308 unchanged measured
+Corrected clean candidate `25382a4dc1dd592890f58f70ff0e1ba1323b180f` passes all
+13 actual three-node kind groups in 85.48 seconds, with 308 unchanged measured
 inputs and verified owner/private-file/caller-state/cluster cleanup. Report
-SHA-256: `2fb4e1a938f210a5782d05f897cc75640a6ef26f5c2a43e5603f4e6d75a7f4f7`.
+SHA-256: `bb6695b6dc21d2761c1d8cfc7af7f96d466ae12ced9e77471ca971d3b3d520d8`.
 
 The source adds selected-Node cordon, disruption-aware drain and deliberately
 confirmed uncordon. Actual checks cover fixed UID/version eviction, PDB
@@ -23,17 +23,19 @@ uv run python -m scripts.verify_node_maintenance_kind \
   --kind /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kind \
   --kubectl /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kubectl \
   --docker /usr/bin/docker \
-  --evidence artifacts/issue77/full-kind-05/evidence.json
+  --evidence artifacts/issue77/full-kind-06/evidence.json
 ```
 
 Independent cross-review reproduces and fixes interrupted 429-cleanup retries,
 contradictory final-success reporting and stale details after an empty re-review.
 The scoped core cohort passes 194 cases and navigation/maintenance Pilot passes
-51. Fresh source/installed PTY verification passes eight cases in 39.89 seconds;
+51. Fresh source/installed PTY verification passes eight cases in 39.94 seconds;
 all 304 wheel runtime files match corrected source. Two hosted Fast failures
 from outdated `:c` expectations remain retained (UI and authorization grammar).
 The corrected command cohort passes 408 cases; seven additional completion unit
-files pass 491 cases. No runtime inputs change after the successful candidate.
+files pass 491 cases. A later 403 regression fixes an empty label on a blocked inventory; all 19
+maintenance Pilot cases pass. The superseded third CI run is cancelled before
+its matrices; fresh 06/03 evidence above binds the corrected runtime.
 See all earlier failed and successful trials in
 [maintenance acceptance](acceptance/node-maintenance.md).
 

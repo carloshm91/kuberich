@@ -249,9 +249,40 @@ test fails. A repository-wide search finds no other old three-choice context
 expectation. The corrected authorization/navigation/catalog cohort passes 408
 cases in 2.64 seconds; the seven additional completion-related unit files pass
 491 cases in 2.69 seconds. These are separate focused runs, not a full-suite or
-coverage claim. Only tests and documentation change after `10ba07d`; all 308
-measured runtime/verifier inputs still match the successful kind report, and
-the installed-wheel source association remains current.
+coverage claim. At `26410ce`, only tests and documentation change after `10ba07d`; all 308
+measured inputs still match its successful kind report. The later UI correction
+below requires and receives fresh source-bound measurements.
+
+## Denied inventory is distinct from empty
+
+A subsequent owned HTTP 403 regression finds that the new empty-detail label
+can describe an incomplete blocked review as complete-empty. Confirmation is
+already disabled and stale facts are cleared, but the label is incorrect.
+The original one-case failure takes 2.40 seconds at
+`/tmp/kuberich-77-ui-pdb-denied-red-01`. The label now requires an unblocked empty
+review; a denied inventory leaves details blank and keeps its explicit blocker.
+All 19 maintenance Pilot cases pass in 23.54 seconds at
+`/tmp/kuberich-77-ui-pdb-denied-green-01`, including exact PDB 403 routing, no old
+UID/PDB facts, no empty claim and no write request.
+
+Application run `42804859918` on `26410ce` is deliberately cancelled during Fast
+before its source/native matrices to supersede that candidate. Its Quality gate
+fails as designed; no partial run becomes qualification. Repository validation
+`42804858055` succeeds for that earlier head.
+
+Clean corrected candidate `25382a4dc1dd592890f58f70ff0e1ba1323b180f`, tree
+`6396545da24791d759328b0fccd197ba3ee0c90a`, repeats the same 13 actual kind
+groups in 85.48 seconds. All 308 measured inputs remain unchanged and every
+owned cluster, private-file, owner and caller-state check passes. Evidence:
+`artifacts/issue77/full-kind-06/evidence.json`, SHA-256
+`bb6695b6dc21d2761c1d8cfc7af7f96d466ae12ced9e77471ca971d3b3d520d8`.
+Use the verifier invocation above with this fresh evidence path.
+
+The fresh eight-case source/installed PTY run passes in 39.94 seconds, using
+`--basetemp=/tmp/kuberich-77-installed-03`. All 304 wheel runtime files match
+this source; `artifacts/issue77/installed-03/wheel-receipt.json` records SHA-256
+`17ae25c2c4a885a5ff8f8954a32068d47688375070bfc9a70a8e93c6d0a449ab`.
+The older 05/02 receipts remain historical after this runtime change.
 
 ## Completion limits
 
