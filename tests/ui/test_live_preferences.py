@@ -140,6 +140,39 @@ async def test_invalid_reload_keeps_the_last_valid_preferences_and_reports_once(
 
 
 @pytest.mark.asyncio
+async def test_invalid_node_shell_reload_retains_valid_preferences(tmp_path):
+    app, path, notes = owned_app(tmp_path, {"node_shell": {"enabled": False}})
+    async with app.run_test():
+        await app.live_preferences.check()
+        document = app.preferences.document
+        assert not app.live_preferences.node_shell.enabled
+        assert app.live_preferences.node_shell_generation == 0
+        save(path, {"node_shell": {"enabled": True, "image": "example/diagnostic:latest"}})
+        await app.live_preferences.check()
+        assert app.preferences.document is document
+        assert app.live_preferences.node_shell_generation == 0
+        assert len(notes) == 1 and notes[0][1] == "warning"
+        assert "The last valid preferences remain active." in notes[0][0]
+
+
+@pytest.mark.asyncio
+async def test_valid_reload_updates_node_shell_review_generation(tmp_path):
+    app, path, _notes = owned_app(tmp_path, {})
+    async with app.run_test():
+        await app.live_preferences.check()
+        image = "example/diagnostic@sha256:" + "a" * 64
+        save(path, {"node_shell": {"enabled": True, "image": image, "namespace": "diagnostics"}})
+        await app.live_preferences.check()
+        assert app.live_preferences.node_shell.enabled
+        assert app.live_preferences.node_shell.image == image
+        assert app.live_preferences.node_shell_generation == 1
+        save(path, {"node_shell": {"enabled": False}})
+        await app.live_preferences.check()
+        assert not app.live_preferences.node_shell.enabled
+        assert app.live_preferences.node_shell_generation == 2
+
+
+@pytest.mark.asyncio
 async def test_startup_reports_invalid_and_unsupported_sections_without_a_second_notice(tmp_path):
     raw = {"other": True, "context_settings": {"contexts": {"kuberich-test-one": {}}}}
     app, _path, notes = owned_app(tmp_path, raw)

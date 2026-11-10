@@ -29,8 +29,8 @@ def test_history_moves_to_one_internal_area_with_exact_original_git_evidence():
             assert not (ROOT / old).is_file()
     for record in plan["preserved_sources"] + plan["operational_sources"]:
         assert mapped[record["path"]]["baseline_sha256"] == record["sha256"]
-    assert len(mapped) == 372
-    assert validate_documentation_plan(ROOT, list(mapped)) == 372
+    assert len(mapped) == 374
+    assert validate_documentation_plan(ROOT, list(mapped)) == 374
     assert not (ROOT / "docs/status.md").exists()
 
 
@@ -240,7 +240,7 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
     )
     assert len(helm["documents"]) == 370
     assert current["documents"][:370] == helm["documents"]
-    assert len(current["documents"]) == 372
+    assert len(current["documents"]) == 374
     assert current["documents"][366:370] == [
         {
             "source": "docs/adr/0041-helm-release-identity.md",
@@ -275,7 +275,7 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
             "baseline_sha256": None,
         },
     ]
-    assert current["documents"][370:] == [
+    assert current["documents"][370:372] == [
         {
             "source": "docs/adr/0042-local-manifest-batches.md",
             "audience": "development",
@@ -290,6 +290,31 @@ def test_authorization_docs_append_only_exact_enrollment_without_rewriting_histo
             "action": "keep",
             "destinations": ["docs/internal/acceptance/local-manifests.md"],
             "reason": "Retain local manifest implementation boundaries, original failures and measured verification outside public user navigation.",
+            "baseline_sha256": None,
+        },
+    ]
+    manifests = json.loads(
+        git_bytes(
+            ROOT, "show", "6f3e597f5a1a36caa72c09a1193a09097ea2ce23:docs/documentation-plan.json"
+        )
+    )
+    assert len(manifests["documents"]) == 372
+    assert current["documents"][:372] == manifests["documents"]
+    assert current["documents"][372:] == [
+        {
+            "source": "docs/adr/0043-owned-node-shell-sessions.md",
+            "audience": "development",
+            "action": "keep",
+            "destinations": ["docs/adr/0043-owned-node-shell-sessions.md"],
+            "reason": "Record explicit privileged node diagnostics, single-attempt creation, returned-UID cleanup and private recovery ownership.",
+            "baseline_sha256": None,
+        },
+        {
+            "source": "docs/internal/acceptance/node-shell.md",
+            "audience": "contributor acceptance evidence",
+            "action": "keep",
+            "destinations": ["docs/internal/acceptance/node-shell.md"],
+            "reason": "Retain node-shell implementation boundaries, original failures and measured verification outside public user navigation.",
             "baseline_sha256": None,
         },
     ]

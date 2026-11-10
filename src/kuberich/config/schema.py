@@ -17,6 +17,7 @@ EXTENSIONS = frozenset(
         "jumps",
         "context_settings",
         "observability",
+        "node_shell",
     }
 )
 LOG_LEVELS = frozenset({"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"})

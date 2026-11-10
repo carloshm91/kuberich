@@ -38,6 +38,7 @@ TABLE_ACTIONS = frozenset(
         "logs",
         "logs_all",
         "shell",
+        "node_shell",
         "attach",
         "upload",
         "download",
@@ -61,6 +62,25 @@ class ViewState:
 
 
 def action_available(action: str, view: ViewState) -> bool:
+    if action == "node_shell":
+        descriptor = view.descriptor
+        return (
+            view.resource == "nodes"
+            and not view.modal
+            and not view.typing
+            and (
+                not view.generic
+                if descriptor is None
+                else (
+                    descriptor.group,
+                    descriptor.version,
+                    descriptor.name,
+                    descriptor.kind,
+                    descriptor.namespaced,
+                )
+                == ("", "v1", "nodes", "Node", False)
+            )
+        )
     if view.resource == "helm" and action in (
         TABLE_ACTIONS - {"focus_filter", "focus_command", "history_back", "history_forward"}
     ) | {"annotate", "cleanup_pods", "views"}:

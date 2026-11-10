@@ -206,8 +206,9 @@ identity remain visible.
 ### Opt-in image vulnerability scans, severity/package/fix views and advisory links
 **planned** — Opt-in image vulnerability scanning and advisory/package/fix views are planned.
 ### Node shell helper pods, configurable image/namespace/limits/host mounts
-**planned** — Node helper-pod shells and configurable host-mount/image/namespace controls are
-planned.
+**partial** — Development source for 0.5 adds explicitly configured Linux node diagnostic shells
+with privilege review, bounded sessions, cleanup by Pod UID and local recovery. Published 0.4.0
+predates this action.
 ### Cordon/uncordon/drain, disruption constraints and explicit overrides
 **planned** — Reviewed cordon, uncordon and drain with disruption constraints and explicit overrides
 are planned.

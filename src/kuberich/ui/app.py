@@ -154,6 +154,7 @@ from kuberich.ui.workspace_screen import WorkspaceScreen
 if TYPE_CHECKING:
     from kuberich.services.exports import ExportService
     from kuberich.services.helm import HelmService
+    from kuberich.services.node_shell import NodeShellManager
     from kuberich.ui.context_admin import ContextEditResult
     from kuberich.ui.diagnostic_evidence import DiagnosticEvidenceScreen
     from kuberich.ui.inspection import Page
@@ -233,6 +234,7 @@ class KubeRichApp(App[None]):
         export_service: ExportService | None = None,
         export_directory: Path | None = None,
         helm_factory: HelmFactory | None = None,
+        node_shell_manager: NodeShellManager | None = None,
     ) -> None:
         self._startup_ready: asyncio.Event | None = None
         self._foreground = ForegroundGate(self._resume_foreground)
@@ -487,7 +489,18 @@ class KubeRichApp(App[None]):
                 selection.client, selection.target, selection.current
             ),
             notice=self._set_notice,
+            node_shell_manager=node_shell_manager,
+            node_shell_settings=lambda: self.live_preferences.node_shell,
+            node_shell_generation=lambda: self.live_preferences.node_shell_generation,
+            connection=lambda: (
+                (self.sessions.client, identity)
+                if self.sessions.client is not None
+                and (identity := self.sessions.observation.identity) is not None
+                and self.sessions.observation.state in USABLE_CONNECTIONS
+                else None
+            ),
         )
+        self.live_preferences.node_shell_changed = self.operations.node_shells.observe
         from platformdirs import user_state_path
 
         from kuberich.adapters.artifact_files import ArtifactFiles
@@ -598,6 +611,8 @@ class KubeRichApp(App[None]):
                 Command.BACK: self.navigator.history_back,
                 Command.FORWARD: self.navigator.history_forward,
                 Command.SHELL: self.action_shell,
+                Command.NODE_SHELL: self.operations.open_node_shell,
+                Command.NODE_SHELL_RECOVER: self.operations.open_node_shell_recovery,
                 Command.ATTACH: self.action_attach,
                 Command.UPLOAD: self.action_upload,
                 Command.DOWNLOAD: self.action_download,
@@ -726,6 +741,19 @@ class KubeRichApp(App[None]):
     @property
     def retained_aggregate_log_view_count(self) -> int:
         return self.operations.retained_aggregate_count
+
+    @property
+    def node_shell_manager(self) -> NodeShellManager:
+        """The bounded public lifecycle observations for diagnostic sessions."""
+        return self.operations.node_shells.manager
+
+    @property
+    def retained_node_shell_view_count(self) -> int:
+        return self.operations.node_shells.retained_count
+
+    @property
+    def pending_node_shell_record_count(self) -> int:
+        return len(self.operations.node_shells.pending_records)
 
     def get_default_screen(self) -> WorkspaceScreen:
         return WorkspaceScreen(self._foreground)
@@ -856,6 +884,7 @@ class KubeRichApp(App[None]):
 
         self.sessions.before_connect = before_connect
         self.call_after_refresh(first_paint.set)
+        self.operations.node_shells.start_scan(first_paint)
         self.set_keymap(dict(self.navigation_keymap))
         self.plugins.refresh()
         for table in (
@@ -898,7 +927,11 @@ class KubeRichApp(App[None]):
         self.appearance_controller.attach_build_info(self.header.query_one("#build-info", Static))
         self.live_preferences.start((self.appearance_controller.warning, self._navigation_warning))
         if self._initial_command is not Command.QUIT:
-            if self._initial_command not in {Command.EXPORTS, Command.MANIFESTS}:
+            if self._initial_command not in {
+                Command.EXPORTS,
+                Command.MANIFESTS,
+                Command.NODE_SHELL_RECOVER,
+            }:
                 self.call_after_refresh(self.appearance_controller.start_updates)
             self.presenter.start()
             self.views.start()
@@ -924,6 +957,7 @@ class KubeRichApp(App[None]):
         self.navigator.connect(context, scope=scope, remember=remember, authenticate=authenticate)
 
     def _observation_changed(self) -> None:
+        self.operations.node_shells.observe()
         self.metric_history.observe(self.workspace.store.observation)
         self.plugins.refresh()
         self.plugins.manager.invalidate()
@@ -1051,6 +1085,7 @@ class KubeRichApp(App[None]):
             await self.clipboard_queue.close()
             await self.live_preferences.close()
             await self.plugins.close()
+            await self.operations.node_shells.close()
             await self.mutations.close()
             await self.forwards.close()
             await self.processes.close()
@@ -1729,6 +1764,11 @@ class KubeRichApp(App[None]):
             self.view_preferences.open()
 
     async def action_back(self) -> None:
+        from kuberich.ui.node_shell import NodeShellRecoveryScreen, NodeShellScreen
+
+        if isinstance(self.screen, (NodeShellScreen, NodeShellRecoveryScreen)):
+            await self.screen.action_back()
+            return
         if self.manifests is not None:
             from kuberich.ui.manifest_browser import ManifestBrowserScreen
             from kuberich.ui.manifest_editor import ManifestEditorScreen

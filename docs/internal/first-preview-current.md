@@ -1,5 +1,89 @@
 # Development checkpoint
 
+## Node diagnostic implementation candidate — 2026-11-10 UTC
+
+A01 #76 is the next unblocked v0.5.0 issue, on `feat/76-node-shell` from
+`6f3e597f5a1a36caa72c09a1193a09097ea2ce23`. The reviewed contract requires
+explicit enablement, a digest-pinned image, an existing namespace, visible
+host-root privileges and returned-UID cleanup. Parallel model/journal, transport
+and UI lanes work within this single issue. The early real-kind create/durable
+UID/embedded PTY/host-namespace/delete/absence proof passes all four contracts in
+33.77 seconds before extensive UI integration. All 300 measured inputs stay
+unchanged, the unrelated sentinel is preserved and private/cluster cleanup passes.
+The expanded owned-kind trial passes 15 real contract groups in 55.06 seconds,
+including policy/RBAC denials, scheduler timeout, interrupted wait/exec, admitted
+profile drift, explicit recovery and post-commit response loss/replacement races.
+All 303 inputs remain unchanged and cleanup passes. Focused models/journal,
+HTTP recovery and public Pilot trials also pass. Final committed verifier
+`f898c5bbd200bf363dca4e73744066d14fac04b3` passes all 16 real contract groups,
+including actual producer SIGKILL and explicit recovery in a fresh certificate
+session. Its 303 inputs stay unchanged, the sentinel survives, and every owned
+process/private directory/cluster is cleaned up. Nine source CLI scenarios and
+both fresh-wheel entry points pass (11 cases, 47.34 seconds), with all 299 runtime
+files byte-identical to the later verifier candidate. The focused cohort passes
+866 cases and 97.19% changed-line coverage; full production coverage is separate.
+Startup passes hard contracts and retains its advisory 600 ms UI timing miss.
+Complete protected exact-head source/coverage/platform/native gates remain pending. See
+[acceptance](acceptance/node-shell.md) for exact commands, source hashes and limits.
+
+The first hosted Fast gate fails a stale navigation-test inventory: it expects
+the new privileged command to be allowed in read-only mode, while production
+correctly refuses it. The rejection inventory is corrected; all 301 navigation,
+catalog and launch cases pass. The original hosted failure remains retained and
+the complete matrix must pass on the corrected head before merge.
+
+The second run passes Fast (10,530 tests, one skip), 15 source parts and three
+native targets, then is cancelled after two Linux jobs stall about 25 minutes
+fetching APT indexes. Their original logs remain retained. A CI-only bootstrap
+now uses official architecture-matched HTTPS mirrors, bounded privileged commands
+and strict failures, preserving the package closure and every qualification gate.
+All 149 focused bootstrap/workflow/qualification contracts pass. A fresh complete
+hosted matrix is required; partial results do not qualify production coverage.
+
+That fresh run passes Fast, all four native targets and 15 source parts, but a
+macOS native header scenario fails during progressive relationship filtering.
+A public held-HTTP/keyboard regression reproduces a source-row viewport anchor
+hiding the first real matches. The narrow table correction preserves real-resource
+selection behavior and the original native deadline. Original failed evidence
+remains retained; the application coverage matrix did not run. The earlier local
+wheel source association is historical after this runtime correction, and a fresh
+complete exact-head matrix remains required.
+
+The final configuration-guide audit removes a nonexistent `:reload` step and
+documents the implemented automatic two-second preference reload. It finds no
+other command/configuration mismatch. The final source head still requires its
+complete protected checks; these source changes publish no artifacts or hosting.
+
+The next hosted run passes all 16 source parts, four native targets and three
+application profiles, including the original macOS header scenarios. Those three
+profiles measure 98.47–98.50% lines, 94.82–95.08% branches and over 97% changed
+lines, with all 124 critical modules passing. The remaining Linux application job
+fails in an existing positive container-inspection index during restricted reads;
+the full Quality gate remains failed. A status/version update independently
+reproduces the stale-index mechanism, although the original changed field is not
+recorded. A verifier-only bounded reload correction passes 48 focused cases and
+all seven actual inspection groups. Renewed committed-source node-shell trials
+pass all 16 real groups, with 303 unchanged inputs and verified cleanup. See
+[acceptance](acceptance/node-shell.md) for original receipts, hashes and limits.
+Complete protected exact-head qualification remains required before merge.
+
+## Local manifests delivered in development source — 2026-11-10 UTC
+
+[PR #335](https://github.com/carloshm91/kuberich/pull/335) merged normally as
+`6f3e597f5a1a36caa72c09a1193a09097ea2ce23`, with the same tree as qualified
+head `66fdf186a8843c3de28c2ea0856eee2ea47f62b8`. All 27 exact-head application
+quality jobs and app-bound Repository/DCO checks passed; the author email and
+sign-off are preserved. M07 #67 is closed and its roadmap item is Done.
+
+Hosted Linux/Python 3.12 source parts passed 12,716 tests with five skips.
+Production coverage is 38,564/39,128 lines (98.5586%) and 11,512/12,092 branches
+(95.2034%), with 97.74% changed-line coverage. All 121 critical modules pass
+their 100% line/branch gates. The hosted owned-kind verifier passes 58 checks,
+records 293 unchanged measured inputs and confirms owned-cluster deletion.
+Linux 3.13/3.14, macOS 3.12, four native targets and required repository checks
+also pass. Original failed attempts below remain unchanged evidence.
+These source changes do not update published 0.4.0 artifacts or hosting.
+
 ## Local manifest implementation candidate — 2026-11-10 UTC
 
 M07 #67 starts from protected main

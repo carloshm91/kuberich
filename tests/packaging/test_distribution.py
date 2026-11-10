@@ -31,6 +31,7 @@ from tests.support.local_exports import terminal_local_exports
 from tests.support.local_manifest_terminal import terminal_local_manifests
 from tests.support.mutation_terminal import terminal_mutation
 from tests.support.navigation import terminal_navigation
+from tests.support.node_shell_terminal import terminal_node_shell
 from tests.support.operation_terminal import terminal_operation
 from tests.support.operations import operation_api
 from tests.support.plugins_terminal import terminal_plugins
@@ -221,6 +222,19 @@ def test_installed_local_manifest_editor_save_and_terminal_restoration(
     terminal_local_manifests(
         command, local_directory, f"installed-local-manifests-{entry_point}", size=(80, 24)
     )
+
+
+@pytest.mark.parametrize("entry_point", ["console", "module"])
+def test_installed_node_shell_owns_uid_cleanup_and_restores_terminal(installed_wheel, entry_point):
+    binary, directory = installed_wheel
+    command = (
+        [str(binary / "kuberich")]
+        if entry_point == "console"
+        else [str(binary / "python"), "-m", "kuberich"]
+    )
+    owned = directory / f"node-shell-{entry_point}"
+    owned.mkdir()
+    terminal_node_shell(command, owned, "success", evidence=f"installed-node-shell-{entry_point}")
 
 
 @pytest.mark.asyncio

@@ -64,6 +64,12 @@ keep replacements separate from valid controller chains.
 
 ### Services
 
+[Node diagnostics](../src/kuberich/services/node_shell.py) retains the returned Pod
+UID through reviewed creation, embedded exec and cleanup. The private journal and
+[explicit recovery](../src/kuberich/services/node_shell_recovery.py) never adopt
+unknown creates or connect from local records. See
+[owned node-shell sessions](adr/0043-owned-node-shell-sessions.md).
+
 [Exports](../src/kuberich/services/exports.py) binds immutable source captures to
 one-use disclosure and destination reviews. Its filesystem adapter owns physical
 directory traversal, private staged writes and reviewed local entry operations.

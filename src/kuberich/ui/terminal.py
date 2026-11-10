@@ -27,9 +27,8 @@ from kuberich.domain.terminal_history import SEARCH_CHARACTERS, TerminalCell, Te
 from kuberich.errors import AppError, ExecutableUnavailable
 from kuberich.security.controls import escape_controls
 from kuberich.security.presentation import safe_text
-from kuberich.services.attach import AttachService
 from kuberich.services.processes import ProcessRunner
-from kuberich.services.shell import ShellRequest, ShellService
+from kuberich.services.shell import ShellRequest, ShellSession
 
 
 @lru_cache(maxsize=256)
@@ -174,11 +173,18 @@ class ShellScreen(ModalScreen[str]):
     """
 
     def __init__(
-        self, shell: ShellService | AttachService, runner: ProcessRunner, request: ShellRequest
+        self,
+        shell: ShellSession,
+        runner: ProcessRunner,
+        request: ShellRequest,
+        *,
+        heading: str | None = None,
+        target_detail: str | None = None,
     ) -> None:
         super().__init__()
         self.shell, self.runner, self.request = shell, runner, request
         self.attach_mode = request.command.purpose is ProcessPurpose.ATTACH
+        self.heading, self.target_detail = heading, target_detail
         self.detach_pending = False
         self.terminal = TerminalWidget()
         self._session_task: asyncio.Task[None] | None = None
@@ -196,16 +202,25 @@ class ShellScreen(ModalScreen[str]):
         assert target is not None
         with Vertical(id="shell-frame"):
             yield Static(
-                "KubeRich · Attach to existing process"
-                if self.attach_mode
-                else "KubeRich · Container shell",
+                safe_text(
+                    self.heading
+                    or (
+                        "KubeRich · Attach to existing process"
+                        if self.attach_mode
+                        else "KubeRich · Container shell"
+                    )
+                ),
                 id="shell-heading",
                 markup=False,
             )
             yield Static(safe_text(f"Context: {target.session.context}"), id="shell-context")
             yield Static(
-                safe_text(f"Pod: {target.namespace}/{target.name} · Container: {target.container}"),
+                safe_text(
+                    self.target_detail
+                    or f"Pod: {target.namespace}/{target.name} · Container: {target.container}"
+                ),
                 id="shell-target",
+                markup=False,
             )
             yield self.terminal
             with Horizontal(id="shell-toolbar"):

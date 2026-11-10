@@ -38,6 +38,8 @@ class Command(Enum):
     BACK = auto()
     FORWARD = auto()
     SHELL = auto()
+    NODE_SHELL = auto()
+    NODE_SHELL_RECOVER = auto()
     ATTACH = auto()
     UPLOAD = auto()
     DOWNLOAD = auto()

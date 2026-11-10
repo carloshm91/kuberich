@@ -33,11 +33,13 @@ from kuberich.ui.chrome import WorkspaceChrome
 from kuberich.ui.target_capture import CapturedResource
 
 if TYPE_CHECKING:
+    from kuberich.config.node_shell import NodeShellSettings
     from kuberich.domain.container_inspection import ContainerIdentity
     from kuberich.domain.resources import Discovery
     from kuberich.services.curated_navigation import CuratedOrigin, ResolvedCuratedDestination
     from kuberich.services.exports import ExportChoices
     from kuberich.services.log_reads import LogReadLease
+    from kuberich.services.node_shell import NodeShellManager
     from kuberich.ui.aggregate_logs import AggregateLogScreen
     from kuberich.ui.container_inspection import ContainerInspectionScreen
     from kuberich.ui.containers import ContainerScreen
@@ -83,6 +85,10 @@ class ResourceOperations:
         current_curated: Callable[[CuratedOrigin], bool] | None = None,
         log_read: Callable[[CapturedResource[KubernetesSession]], LogReadLease] | None = None,
         notice: Callable[[str], None] | None = None,
+        node_shell_manager: NodeShellManager | None = None,
+        node_shell_settings: Callable[[], NodeShellSettings] | None = None,
+        node_shell_generation: Callable[[], int] | None = None,
+        connection: Callable[[], tuple[KubernetesSession, SessionIdentity] | None] | None = None,
     ) -> None:
         self.host, self.capture, self.context = host, capture, context
         self.policy, self.mutations, self.forwards = policy, mutations, forwards
@@ -99,6 +105,30 @@ class ResourceOperations:
         self._inspection_screens: set[ContainerInspectionScreen] = set()
         self._general_inspection_screens: set[InspectionScreen] = set()
         self._auto_forward_contexts: set[str] = set()
+        from kuberich.config.node_shell import NodeShellSettings
+        from kuberich.services.node_shell import NodeShellManager
+        from kuberich.ui.node_shell_actions import NodeShellActions
+
+        self.node_shells = NodeShellActions(
+            host,
+            node_shell_manager if node_shell_manager is not None else NodeShellManager(),
+            policy,
+            mutations,
+            processes,
+            capture,
+            context,
+            node_shell_settings if node_shell_settings is not None else NodeShellSettings,
+            node_shell_generation if node_shell_generation is not None else lambda: 0,
+            self.notice,
+            connection if connection is not None else lambda: None,
+            session_current,
+        )
+
+    def open_node_shell(self) -> None:
+        self.node_shells.open()
+
+    def open_node_shell_recovery(self) -> None:
+        self.node_shells.open_recovery()
 
     @property
     def retained_log_count(self) -> int:
@@ -606,6 +636,7 @@ class ResourceOperations:
             self.port_forwards(identity)
 
     async def close_for_client(self, client: KubernetesSession) -> None:
+        await self.node_shells.close_for_client(client)
         from kuberich.ui.configuration_data import ConfigurationScreen
         from kuberich.ui.containers import ContainerScreen
         from kuberich.ui.editing import EditingScreen

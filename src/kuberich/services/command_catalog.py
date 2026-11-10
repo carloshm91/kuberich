@@ -13,6 +13,7 @@ from kuberich.services.access import AccessPolicy, Action
 
 class Capability(Enum):
     POD = auto()
+    NODE = auto()
     WORKLOAD = auto()
     RESOURCE = auto()
     CONTEXT = auto()
@@ -213,6 +214,19 @@ COMMAND_SPECS = (
         capability=Capability.POD,
         action="shell",
         generic=False,
+    ),
+    _spec(
+        Command.NODE_SHELL,
+        ("node-shell",),
+        "Review a privileged diagnostic Pod and open a shell for the selected Linux Node.",
+        policy=Action.MUTATE,
+        capability=Capability.NODE,
+        action="node_shell",
+    ),
+    _spec(
+        Command.NODE_SHELL_RECOVER,
+        ("node-shell-recover",),
+        "Review local pending node-shell records; remote cleanup requires a separate confirmation.",
     ),
     _spec(
         Command.ATTACH,

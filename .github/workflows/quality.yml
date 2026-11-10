@@ -39,9 +39,8 @@ jobs:
       - name: Reject private test dependencies on application implementation
         run: uv run python scripts/check_private_access.py
       - name: Install the owned X11 clipboard test tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes xclip xvfb
+        timeout-minutes: 6
+        run: uv run python -m scripts.ci_apt xclip xvfb
       - name: Run every unit, contract and UI test before the full qualification
         env:
           PYTHONFAULTHANDLER: '1'
@@ -86,9 +85,9 @@ jobs:
         run: uv sync --locked --group dev
       - name: Install real terminal transport test tools on Linux
         if: ${{ matrix.os == 'ubuntu-24.04' }}
+        timeout-minutes: 6
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes openssh-server tmux xclip xvfb
+          uv run python -m scripts.ci_apt openssh-server tmux xclip xvfb
           sudo install -d -m 0755 /run/sshd
       - name: Install real terminal transport test tools on macOS
         if: ${{ matrix.os == 'macos-15' }}
@@ -136,9 +135,9 @@ jobs:
         run: uv sync --locked --group dev
       - name: Install real terminal transport test tools on Linux
         if: ${{ matrix.os == 'ubuntu-24.04' }}
+        timeout-minutes: 6
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes openssh-server tmux xclip xvfb
+          uv run python -m scripts.ci_apt openssh-server tmux xclip xvfb
           sudo install -d -m 0755 /run/sshd
       - name: Install real terminal transport test tools on macOS
         if: ${{ matrix.os == 'macos-15' }}
@@ -161,6 +160,8 @@ jobs:
           uv run mypy --strict scripts/curated_kind.py scripts/verify_curated_resources_kind.py
           uv run mypy --strict scripts/helm_tools.py scripts/verify_helm_kind.py
           uv run mypy --strict scripts/verify_manifests_kind.py
+          uv run mypy --strict scripts/verify_node_shell_kind.py
+          uv run mypy --strict scripts/ci_apt.py
       - name: Verify fresh-process CLI and real-terminal startup budgets
         run: uv run python -m scripts.check_startup --output artifacts/startup/qualification
       - name: Verify plaintext clipboard on the owned ephemeral macOS runner
@@ -265,6 +266,9 @@ jobs:
       - name: Verify local manifests Kustomize reviewed batches and actual cancellation
         if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
         run: uv run python -m scripts.verify_manifests_kind --kind "$RUNNER_TEMP/kuberich-kind" --kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl" --docker /usr/bin/docker --evidence artifacts/manifests/evidence.json
+      - name: Verify owned node diagnostic shells and UID-conditioned cleanup
+        if: ${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}
+        run: uv run python -m scripts.verify_node_shell_kind --kind "$RUNNER_TEMP/kuberich-kind" --kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl" --docker /usr/bin/docker --evidence artifacts/node-shell/evidence.json
       - name: Enforce independent production and critical-module coverage
         run: uv run python scripts/check_coverage.py coverage.json
       - name: Enforce changed executable-line coverage against the merge base
@@ -312,6 +316,7 @@ jobs:
             artifacts/curated-resources/**
             artifacts/helm/**
             artifacts/manifests/**
+            artifacts/node-shell/**
             artifacts/quickstart/*
             artifacts/startup/**
           if-no-files-found: error
@@ -344,9 +349,9 @@ jobs:
         run: uv sync --locked --group dev --group standalone
       - name: Install the Linux native compiler and inspection tools
         if: ${{ startsWith(matrix.target, 'linux-') }}
+        timeout-minutes: 6
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes gcc libc6-dev binutils
+          uv run python -m scripts.ci_apt gcc libc6-dev binutils
           docker version
       - name: Build the original native archive with reviewed interpreter pins
         run: uv run python -m scripts.build_standalone --output "$KUBERICH_NATIVE_DIR/candidate" --target "$KUBERICH_NATIVE_TARGET"

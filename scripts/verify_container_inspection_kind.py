@@ -440,6 +440,57 @@ async def selected(
     return result.text
 
 
+async def positive_index(
+    service: ContainerInspectionService,
+    *,
+    phase: str,
+    reloads: list[dict[str, Any]],
+) -> InspectionSnapshot:
+    """Bound fresh positive observations whose initial/final Pod binding changed."""
+    captured_uid = service.target.uid
+    attempts = 0
+    receipt: dict[str, Any] | None = None
+    while True:
+        service.require_current()
+        if service.target.uid != captured_uid:
+            raise AssertionError("Positive inspection index changed the captured UID.")
+        try:
+            snapshot = await service.index()
+        except AppError as error:
+            if str(error) != STALE_MESSAGE or service.snapshot is not None:
+                raise
+            service.require_current()
+            if service.target.uid != captured_uid:
+                raise AssertionError(
+                    "Positive inspection index changed the captured UID."
+                ) from None
+            if receipt is not None:
+                receipt["state"] = "stale"
+            if attempts >= POSITIVE_RELOAD_LIMIT:
+                raise
+            attempts += 1
+            receipt = {
+                "phase": phase,
+                "container_family": service.container.field,
+                "attempt": attempts,
+                "reason": "index-stale-binding",
+                "state": "started",
+            }
+            reloads.append(receipt)
+        else:
+            service.require_current()
+            if service.target.uid != captured_uid or snapshot.pod.uid != captured_uid:
+                raise AssertionError("Positive inspection index changed the captured UID.")
+            assert service.snapshot_current(snapshot.id)
+            if receipt is not None:
+                receipt.update(
+                    state="completed",
+                    snapshot=str(snapshot.id),
+                    resource_version=snapshot.pod.resource_version,
+                )
+            return snapshot
+
+
 async def positive_values(
     service: ContainerInspectionService,
     snapshot: InspectionSnapshot,
@@ -447,9 +498,11 @@ async def positive_values(
     *,
     phase: str,
     reloads: list[dict[str, Any]],
+    index_reloads: list[dict[str, Any]] | None = None,
 ) -> tuple[InspectionSnapshot, dict[str, str]]:
     """Explicitly reload expired positive observations, never deliberate negatives."""
     captured_uid = service.target.uid
+    index_reloads = [] if index_reloads is None else index_reloads
     if snapshot.pod.uid != captured_uid:
         raise AssertionError("Positive inspection snapshot has another captured UID.")
     attempts = 0
@@ -476,7 +529,7 @@ async def positive_values(
                     "state": "started",
                 }
                 reloads.append(receipt)
-                snapshot = await service.index()
+                snapshot = await positive_index(service, phase=phase, reloads=index_reloads)
                 if snapshot.pod.uid != captured_uid:
                     raise AssertionError(
                         "Positive inspection reload changed the captured UID."
@@ -527,8 +580,10 @@ async def verify(
     private_paths: list[Path] = []
     receipts: list[dict[str, Any]] = []
     reloads: list[dict[str, Any]] = []
+    index_reloads: list[dict[str, Any]] = []
     stale_checks: list[dict[str, Any]] = []
     progress["positive_reloads"] = reloads
+    progress["positive_index_reloads"] = index_reloads
     progress["stale_checks"] = stale_checks
     checks: list[str] = []
     evidence_dir.mkdir(parents=True, exist_ok=True)
@@ -629,7 +684,7 @@ async def verify(
             app = service(admin, ContainerIdentity("containers", "app", "App"))
             progress["phase"] = "checking-product-environment-and-container-families"
             with inspection_receipts(receipts):
-                snapshot = await app.index()
+                snapshot = await positive_index(app, phase=progress["phase"], reloads=index_reloads)
                 assert len(snapshot.sources) == 4
                 assert (
                     next(item.state for item in snapshot.sources if item.ref.name == MISSING)
@@ -648,7 +703,12 @@ async def verify(
                     "MEMORY_MIB": "32",
                 }
                 snapshot, _ = await positive_values(
-                    app, snapshot, expected, phase=progress["phase"], reloads=reloads
+                    app,
+                    snapshot,
+                    expected,
+                    phase=progress["phase"],
+                    reloads=reloads,
+                    index_reloads=index_reloads,
                 )
                 assert snapshot.image.declared == SHELL_IMAGE
                 assert snapshot.image.pull_policy == "IfNotPresent"
@@ -667,13 +727,16 @@ async def verify(
                     ContainerIdentity("ephemeralContainers", "debug", "Ephemeral"),
                 ):
                     owner = service(admin, identity)
-                    family_snapshot = await owner.index()
+                    family_snapshot = await positive_index(
+                        owner, phase=progress["phase"], reloads=index_reloads
+                    )
                     await positive_values(
                         owner,
                         family_snapshot,
                         {"FAMILY": identity.kind},
                         phase=progress["phase"],
                         reloads=reloads,
+                        index_reloads=index_reloads,
                     )
                 checks.append(
                     "regular-init-restartable-init-sidecar-and-precreated-ephemeral-identity"
@@ -717,7 +780,9 @@ async def verify(
                     )
                 else:
                     raise AssertionError("Changed source unexpectedly reused the old binding.")
-                refreshed = await app.index()
+                refreshed = await positive_index(
+                    app, phase=progress["phase"], reloads=index_reloads
+                )
                 refreshed, _ = await positive_values(
                     app,
                     refreshed,
@@ -727,6 +792,7 @@ async def verify(
                     },
                     phase=progress["phase"],
                     reloads=reloads,
+                    index_reloads=index_reloads,
                 )
             assert await startup_log() == startup
             checks.append(
@@ -742,7 +808,9 @@ async def verify(
             restricted = service(low, ContainerIdentity("containers", "app", "App"))
             progress["phase"] = "checking-restricted-source-reads"
             with inspection_receipts(receipts):
-                denied = await restricted.index()
+                denied = await positive_index(
+                    restricted, phase=progress["phase"], reloads=index_reloads
+                )
                 assert (
                     next(item.state for item in denied.sources if item.ref.name == SECRET)
                     == "forbidden"
@@ -753,6 +821,7 @@ async def verify(
                     {"ORDER": "explicit"},
                     phase=progress["phase"],
                     reloads=reloads,
+                    index_reloads=index_reloads,
                 )
                 token_entry = next(item for item in denied.entries if item.name == "TOKEN")
                 result = await restricted.disclose(
@@ -785,7 +854,9 @@ async def verify(
                     )
                 else:
                     raise AssertionError("Formerly absent optional source did not require reload.")
-                before_recreation = await app.index()
+                before_recreation = await positive_index(
+                    app, phase=progress["phase"], reloads=index_reloads
+                )
             checks.append("formerly-absent-optional-source-appearance-requires-reload")
 
             progress["phase"] = "recreating-owned-pod"

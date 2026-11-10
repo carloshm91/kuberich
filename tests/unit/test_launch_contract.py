@@ -28,6 +28,18 @@ def test_native_pulse_can_be_selected_at_startup_without_loading_a_context(
     assert output.out == output.err == ""
 
 
+@pytest.mark.parametrize("command", ["node-shell-recover", ":node-shell-recover"])
+def test_node_shell_recovery_is_a_local_initial_destination(command, monkeypatch, capsys):
+    captured = []
+    monkeypatch.setattr(
+        cli, "run_terminal", lambda *args, **kwargs: captured.append(kwargs["initial_command"])
+    )
+    assert cli.main(["--command", command]) == 0
+    assert captured == [Command.NODE_SHELL_RECOVER]
+    output = capsys.readouterr()
+    assert output.out == output.err == ""
+
+
 @pytest.mark.parametrize(
     "action",
     [
@@ -54,6 +66,7 @@ def test_native_pulse_can_be_selected_at_startup_without_loading_a_context(
         "rollback 1",
         "rollout",
         "attach",
+        "node-shell",
         "upload",
         "download",
         "columns",

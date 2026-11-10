@@ -1,6 +1,7 @@
 """Apply per-context settings and reload the preference file while the app runs."""
 
 import os
+from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -10,6 +11,7 @@ from textual.timer import Timer
 from kuberich.adapters.editing import file_worker
 from kuberich.config.context_settings import ContextSettings, context_settings_from
 from kuberich.config.navigation import navigation_from
+from kuberich.config.node_shell import NodeShellSettings, node_shell_from
 from kuberich.config.observability import ObservabilityPreferences, observability_from
 from kuberich.config.schema import ConfigDocument, Settings
 from kuberich.config.store import read_config
@@ -38,6 +40,9 @@ class LivePreferences:
         self.settings = settings
         self.context_settings = ContextSettings()
         self.observability = ObservabilityPreferences()
+        self.node_shell = NodeShellSettings()
+        self.node_shell_generation = 0
+        self.node_shell_changed: Callable[[], None] | None = None
         self.error: str | None = None
         self.refresh_seconds = settings.refresh_seconds
         self._refresh_timer: Timer | None = None
@@ -53,12 +58,18 @@ class LivePreferences:
                 self.observability = observability_from(app.preferences.document)
             except AppError as error:
                 self.error = str(error)
+            try:
+                self.node_shell = node_shell_from(app.preferences.document)
+            except AppError as error:
+                self.error = str(error)
 
     def apply(self, context: str | None) -> None:
         """Use the settings of the context being shown."""
         pinned = self.app.preferences.pinned if self.app.preferences is not None else ()
         read_only, refresh = self.context_settings.effective(self.settings, pinned, context)
         self.app.commands.policy.restrict(read_only)
+        if self.node_shell_changed is not None:
+            self.node_shell_changed()
         if refresh != self.refresh_seconds:
             self.refresh_seconds = refresh
             if self._refresh_timer is not None:
@@ -129,6 +140,8 @@ class LivePreferences:
         context = app.workspace.store.observation.context
         previous_history = self.observability.for_context(context or "").history
         self.observability = observability_from(document)
+        node_shell = node_shell_from(document)
+        self.node_shell, self.node_shell_generation = node_shell, self.node_shell_generation + 1
         current_history = self.observability.for_context(context or "").history
         if previous_history != current_history:
             app.metric_history.configure(current_history)
@@ -139,6 +152,8 @@ class LivePreferences:
         app.appearance_controller.adopt(document, settings.theme)
         if settings.read_only:
             app.commands.policy.tighten()
+        if self.node_shell_changed is not None:
+            self.node_shell_changed()
         app._shell = settings.shell
         self.settings, self.context_settings, self.error = (
             settings,

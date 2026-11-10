@@ -49,6 +49,7 @@ KIND_SCENARIOS = (
     ("curated-resources", "verify_curated_resources_kind", False),
     ("helm", "verify_helm_kind", False),
     ("manifests", "verify_manifests_kind", True),
+    ("node-shell", "verify_node_shell_kind", True),
 )
 
 
@@ -229,7 +230,11 @@ def cluster_stages(
                         if name == "helm"
                         else ()
                     ),
-                    *(("--docker", "/usr/bin/docker") if name == "manifests" else ()),
+                    *(
+                        ("--docker", "/usr/bin/docker")
+                        if name in {"manifests", "node-shell"}
+                        else ()
+                    ),
                     "--evidence",
                     str(
                         output / f"kind-{repetition}-{name}" / "evidence.json"
@@ -244,6 +249,7 @@ def cluster_stages(
                             "curated-resources",
                             "helm",
                             "manifests",
+                            "node-shell",
                         }
                         else output / f"kind-{repetition}-{name}.json"
                     ),
