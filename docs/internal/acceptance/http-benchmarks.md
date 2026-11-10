@@ -211,3 +211,10 @@ before its cohort runs. It now selects its fixed owned fixture directory with
 `--workdir`; command and filesystem tests enforce that private journal boundary.
 Final rebuilt native/runtime receipts remain separate from these original
 failed attempts.
+
+The next native runtime attempt passes that baseline but stops before benchmark
+load at the optional-tool physical-directory guard: the generic tools folder
+inherited a group-writable host umask. The original `native-runtime-03.log` is
+retained. The verifier now creates its owned tools directory with mode 0700;
+the benchmark adapter independently refuses group-writable or linked tool
+folders before copy/compile. Authentication and filesystem guards are preserved.

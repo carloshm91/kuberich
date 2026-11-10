@@ -191,6 +191,13 @@ def verify_native_benchmarks(
         raise ValueError("Use the owned native host's fixed benchmark fixture directory.")
     tool_digest = verify_benchmark_binary(vegeta)
     tools = host.directory / "tools"
+    tool_directory = tools.lstat()
+    if (
+        not stat.S_ISDIR(tool_directory.st_mode)
+        or tool_directory.st_uid != os.getuid()
+        or tool_directory.st_mode & 0o022
+    ):
+        raise ValueError("Native benchmark tools require an owned private physical directory.")
     target = tools / "vegeta"
     if target.exists() or target.is_symlink():
         raise ValueError("Native benchmark tool destination already exists.")

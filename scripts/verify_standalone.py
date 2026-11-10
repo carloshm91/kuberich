@@ -325,7 +325,7 @@ def verify(
         bundle = directory / "unpacked/kuberich"
         native = inspect_bundle(bundle, manifest)
         tools = directory / "tools"
-        tools.mkdir()
+        tools.mkdir(mode=0o700)
         helper = tools / "owned-auth"
         compilation = subprocess.run(
             [

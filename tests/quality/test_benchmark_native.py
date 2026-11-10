@@ -39,7 +39,7 @@ def fixture(tmp_path, monkeypatch):
     (source / "tests/support/benchmark_terminal.py").write_text("synthetic driver source")
     (source / "artifacts/terminal").mkdir(parents=True)
     parent = tmp_path / "native"
-    (parent / "tools").mkdir(parents=True)
+    (parent / "tools").mkdir(mode=0o700, parents=True)
     bundle = parent / "bundle"
     bundle.mkdir()
     (bundle / "kuberich").write_bytes(b"exact native bytes")
@@ -264,3 +264,19 @@ def test_wrapper_changes_only_benchmark_docker_process_identity_and_explicit_fix
     host.linux = False
     command = native.benchmark_command(host, ["/native/kuberich"], {})
     assert command == ["sandbox-exec", "-f", "owned.sb", "/native/kuberich"]
+
+
+@pytest.mark.parametrize("unsafe", ["writable", "symlink"])
+def test_native_tools_directory_refuses_shared_write_or_link_before_copy_and_compile(
+    fixture, unsafe
+):
+    tools = fixture["host"].directory / "tools"
+    if unsafe == "writable":
+        tools.chmod(0o770)
+    else:
+        actual = fixture["host"].directory / "real-tools"
+        tools.rename(actual)
+        tools.symlink_to(actual, target_is_directory=True)
+    with pytest.raises(ValueError, match="private physical"):
+        verify(fixture)
+    assert not fixture["driver"] and not fixture["compiler"] and not (tools / "vegeta").exists()
