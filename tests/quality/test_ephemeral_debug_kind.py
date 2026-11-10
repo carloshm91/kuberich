@@ -11,6 +11,8 @@ from types import SimpleNamespace
 import aiohttp
 import pytest
 from aiohttp import web
+from kubernetes_asyncio import client as sdk
+from kubernetes_asyncio.client.exceptions import ApiException
 
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.domain.processes import ProcessMode, ProcessPurpose, capture_command
@@ -402,6 +404,92 @@ async def test_watch_relay_delivers_a_frame_before_the_upstream_stream_closes():
             ]
         finally:
             release.set()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "status,fresh_uid,fresh_version,expected",
+    [
+        (200, "pod-uid", "v1", False),
+        (403, "pod-uid", "v1", True),
+        (422, "pod-uid", "v2", False),
+        (422, "pod-uid", "v1", None),
+        (422, "replacement-uid", "v2", None),
+        (500, "pod-uid", "v2", None),
+    ],
+)
+async def test_fixture_admission_probe_refreshes_only_proven_same_uid_version_conflicts(
+    tmp_path, status, fresh_uid, fresh_version, expected
+):
+    reads, patches = [], []
+
+    async def api(request):
+        if request.method == "GET":
+            reads.append(request.path)
+            return web.json_response(
+                {
+                    "metadata": {
+                        "uid": "pod-uid" if len(reads) == 1 else fresh_uid,
+                        "resourceVersion": "v1" if len(reads) == 1 else fresh_version,
+                    }
+                }
+            )
+        patches.append((dict(request.query), await request.json(), request.headers["Content-Type"]))
+        return web.json_response(
+            {
+                "reason": "Invalid" if status == 422 else "Forbidden",
+                "message": "synthetic-private-owned-fixture-message",
+                "details": {
+                    "causes": [
+                        {"reason": "FieldValueInvalid", "message": "synthetic-private-cause-value"}
+                    ]
+                },
+            },
+            status=status,
+        )
+
+    async with server(api) as endpoint:
+        client = KubernetesSession(
+            catalog_fixture(tmp_path, endpoint).select("kuberich-test-one"), 2
+        )
+        await client.open()
+        try:
+            core = sdk.CoreV1Api(client.api)
+            progress = {}
+
+            async def read():
+                return await client.get_json("/api/v1/namespaces/owned/pods/workload")
+
+            invocation = proof.fixture_admission_probe(
+                core, read, "pod-uid", {"name": "debug-admission-denied"}, progress
+            )
+            if expected is None:
+                with pytest.raises(AssertionError, match="proven version conflict"):
+                    await invocation
+            else:
+                assert await invocation is expected
+            assert progress["fixture_admission_probe_statuses"] == [status]
+            assert len(patches) == 1 and patches[0][0] == {"dryRun": "All"}
+            assert patches[0][1][:2] == [
+                {"op": "test", "path": "/metadata/uid", "value": "pod-uid"},
+                {"op": "test", "path": "/metadata/resourceVersion", "value": "v1"},
+            ]
+            assert patches[0][2] == "application/json-patch+json"
+            probe = progress["fixture_admission_probes"][0]
+            assert ("owned_fixture_refresh" in probe) is (status == 422 and expected is False)
+            assert "synthetic-private" not in json.dumps(progress)
+        finally:
+            await client.close()
+
+
+@pytest.mark.parametrize(
+    "body", ["invalid-json", "[]", '{"reason":[],"details":{"causes":[{"reason":{}}]}}']
+)
+def test_fixture_status_metadata_does_not_retain_messages_or_fail_on_bad_classifications(body):
+    error = ApiException(status=422)
+    error.body = body
+    result = proof.fixture_status_metadata(error)
+    assert result.get("status") == 422 and "reason" not in result
 
 
 @pytest.mark.asyncio

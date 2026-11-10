@@ -330,6 +330,88 @@ async def owned_marker(endpoint: PtyEndpoint, marker: bytes, transcript: bytearr
     return commands
 
 
+def fixture_status_metadata(error: ApiException) -> dict[str, Any]:
+    """Keep fixed Status classifications, never server messages or attempted values."""
+    metadata: dict[str, Any] = {"status": error.status}
+    try:
+        value = json.loads(error.body or "{}")
+    except (ValueError, TypeError):
+        return metadata
+    if not isinstance(value, dict):
+        return metadata
+    reason = value.get("reason")
+    if isinstance(reason, str) and reason in {
+        "Forbidden",
+        "Invalid",
+        "Conflict",
+        "BadRequest",
+        "NotFound",
+        "InternalError",
+    }:
+        metadata["reason"] = reason
+    details = value.get("details")
+    if isinstance(details, dict) and isinstance(details.get("causes"), list):
+        metadata["cause_types"] = [
+            cause["reason"]
+            for cause in details["causes"][:16]
+            if isinstance(cause, dict)
+            and isinstance(cause.get("reason"), str)
+            and cause.get("reason")
+            in {
+                "FieldValueInvalid",
+                "FieldValueForbidden",
+                "FieldValueDuplicate",
+                "FieldValueRequired",
+                "FieldValueNotSupported",
+                "UnexpectedServerResponse",
+            }
+        ]
+    return metadata
+
+
+async def fixture_admission_probe(
+    core: Any,
+    read: Callable[[], Awaitable[dict[str, Any]]],
+    uid: str,
+    entry: dict[str, Any],
+    progress: dict[str, Any],
+) -> bool:
+    """A setup-only dry-run may refresh only a proven same-UID version conflict."""
+    pod = await read()
+    version = pod["metadata"]["resourceVersion"]
+    assert pod["metadata"]["uid"] == uid
+    patch = [
+        {"op": "test", "path": "/metadata/uid", "value": uid},
+        {"op": "test", "path": "/metadata/resourceVersion", "value": version},
+        {"op": "add", "path": "/spec/ephemeralContainers/-", "value": entry},
+    ]
+    probe: dict[str, Any] = {"uid": uid, "resource_version": version}
+    progress.setdefault("fixture_admission_probes", []).append(probe)
+    try:
+        await core.patch_namespaced_pod_ephemeralcontainers(
+            "workload", NAMESPACE, patch, dry_run="All", _content_type="application/json-patch+json"
+        )
+    except ApiException as error:
+        progress.setdefault("fixture_admission_probe_statuses", []).append(error.status)
+        probe.update(fixture_status_metadata(error))
+        if error.status == 403:
+            return True
+        if error.status == 422:
+            fresh = await read()
+            same_uid = fresh["metadata"]["uid"] == uid
+            changed = fresh["metadata"]["resourceVersion"] != version
+            probe.update(same_uid=same_uid, resource_version_changed=changed)
+            if same_uid and changed:
+                probe["owned_fixture_refresh"] = "same-uid-version-changed"
+                return False
+        raise AssertionError(
+            "Owned admission fixture probe failed without a proven version conflict."
+        ) from None
+    probe["status"] = 200
+    progress.setdefault("fixture_admission_probe_statuses", []).append(200)
+    return False
+
+
 async def terminal_trial(
     service: EphemeralDebugService, name: str, *, detach: bool, progress: dict[str, Any]
 ) -> dict[str, Any]:
@@ -947,36 +1029,11 @@ async def verify(cluster: OwnedCluster, progress: dict[str, Any], kubectl: Path)
                     },
                 }
             )
-            admission_fixture_probes: list[int] = []
-            progress["fixture_admission_probe_statuses"] = admission_fixture_probes
 
             async def admission_ready() -> bool:
-                pod = await manifest()
                 entry = dict(progress["first_append"]["declaration"])
                 entry["name"] = "debug-admission-denied"
-                patch = [
-                    {"op": "test", "path": "/metadata/uid", "value": uid},
-                    {
-                        "op": "test",
-                        "path": "/metadata/resourceVersion",
-                        "value": pod["metadata"]["resourceVersion"],
-                    },
-                    {"op": "add", "path": "/spec/ephemeralContainers/-", "value": entry},
-                ]
-                try:
-                    await core.patch_namespaced_pod_ephemeralcontainers(
-                        "workload",
-                        NAMESPACE,
-                        patch,
-                        dry_run="All",
-                        _content_type="application/json-patch+json",
-                    )
-                except ApiException as error:
-                    assert error.status == 403
-                    admission_fixture_probes.append(error.status)
-                    return True
-                admission_fixture_probes.append(200)
-                return False
+                return await fixture_admission_probe(core, manifest, uid, entry, progress)
 
             await wait_for(admission_ready)
             refused = owner()
