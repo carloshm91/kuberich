@@ -4,26 +4,40 @@
 
 A02 #77 starts from protected main
 `7c8c7cb1595a3609c2d6a5748087d53917ce9af8` on
-`feat/77-node-maintenance`. Its reviewed scope is one captured Node, explicit
-cordon/drain/uncordon reviews, server-authoritative policy/v1 eviction, separate
-unmanaged and emptyDir consents, finite retries/cancellation and an independently
-observed final scheduling state. Implementation and focused checks are in
-progress. The owned kind helper now supports an explicitly bounded worker count
-while preserving the single-node default. The first actual three-node trial
-fails during PDB recovery; its original evidence and successful cleanup remain
-retained. An HTTP success-code contract omitted 201, which the pinned server's
-create handler uses. The targeted correction passes 133 focused cases and keeps
-exact UID/version guards and uncertain-response handling.
+`feat/77-node-maintenance`. Clean candidate
+`1a824b52beea7fc057c84dea6de00c8ab9a0baa2` passes all 13 actual owned-kind
+contract groups in 90.40 seconds, with 308 unchanged measured inputs and
+verified owner/private-file/caller-state/three-node cleanup. The report SHA-256
+is `c585b31e5974ad43ca99d36c787201f440cdf17adc2e76ac207c94915a607eda`.
 
-Clean committed `787800cb1a6bcbe834087993ce6f741e938a40a4` then passes all
-four early real API groups in 47.81 seconds: conditional cordon/conflict/uncordon,
-actual PDB 429 followed by same-reviewed-UID/version HTTP 201, original-UID
-absence, replacement capacity on the other worker and explicit fresh uncordon.
-All 308 inputs stay unchanged and all owners/private files/caller state/three
-nodes are cleaned up. See [maintenance acceptance](acceptance/node-maintenance.md)
-for exact source, retained failure and report digest. Expanded fault, storage,
-cancellation and UI cases, full coverage and protected hosted qualification remain
-pending; this early checkpoint does not qualify a release.
+The source supports selected-Node cordon, disruption-aware drain and separately
+confirmed uncordon. Actual API observations cover fixed UID/version eviction,
+PDB refusal/recovery, finalizer-pending acceptance, independent consents, real
+DaemonSet/static-mirror retention, partial cancellation, RBAC denial, replacement
+and arrival guards, external uncordon and final scheduling state. Stop sends
+zero production requests beyond the refused Pod's actual retry deadline.
+An owned post-commit response-loss fault remains uncertain without replay;
+it is explicitly distinguished from a real provider/network failure.
+
+The final actual command is:
+
+```sh
+uv run python -m scripts.verify_node_maintenance_kind \
+  --kind /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kind \
+  --kubectl /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kubectl \
+  --docker /usr/bin/docker \
+  --evidence artifacts/issue77/full-kind-04/evidence.json
+```
+
+The scoped core cohort passes 186 cases; the verifier cohort passes 14. The
+separate source/fresh-wheel PTY rehearsal passes eight cases in 40.41 seconds,
+with all 304 runtime files matched to the frozen source. Full production and
+changed-line coverage, all 125 critical modules and all 27 protected exact-head
+hosted jobs remain pending. The retained initial HTTP 201 contract failure and
+expanded proxy, cancellation-oracle and SDK-default failures remain documented
+in [maintenance acceptance](acceptance/node-maintenance.md); the final report
+corroborates the SDK's omitted scheduling field as schedulable. No artifacts,
+tags or hosting are published; packages remain 0.4.0.
 
 ## Node diagnostics delivered in development source — 2026-11-10 UTC
 

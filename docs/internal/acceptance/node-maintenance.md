@@ -90,10 +90,117 @@ Both commands use the verified absolute tools above and fresh evidence paths;
 source changes require new qualification; these four early groups do not
 establish all issue acceptance criteria or release readiness.
 
+## Expanded owned-cluster verification
+
+Run from the issue checkout with the same checksum-verified tools:
+
+```sh
+uv run python -m scripts.verify_node_maintenance_kind \
+  --kind /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kind \
+  --kubectl /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kubectl \
+  --docker /usr/bin/docker \
+  --evidence artifacts/issue77/full-kind-04/evidence.json
+```
+
+The final committed candidate
+`1a824b52beea7fc057c84dea6de00c8ab9a0baa2`, tree
+`967796c3e7388b55dc5bb29989263b712a1e1360`, passes all 13 real contract groups
+in 90.40 seconds. The report SHA-256 is
+`c585b31e5974ad43ca99d36c787201f440cdf17adc2e76ac207c94915a607eda`.
+`artifacts/issue77/control/full-kind-04-candidate.json` records the clean source
+before execution. All 308 measured inputs remain byte-identical throughout.
+
+The actual observations establish:
+
+- Conditional cordon, conflict refusal and separate uncordon; actual PDB 429
+  followed by HTTP 201 on unchanged reviewed Pod UID/version bytes, original-UID
+  absence and replacement scheduling on the other worker.
+- Accepted eviction with a retained finalizer remains pending until absence.
+  The deadline leaves the Node observed cordoned without shortening normal
+  grace, removing finalizers or automatically uncordoning.
+- Independent unmanaged, emptyDir and DaemonSet choices block when missing.
+  Both overrides still receive PDB refusal. Real control-plane mirror and
+  DaemonSet UIDs remain; other ordinary control-plane Pods stay in the review
+  and can progress independently.
+- Stop preserves an independently absent Pod and another PDB-refused Pod. The
+  observation extends beyond its actual scheduled retry deadline, with zero
+  further production requests. A fresh explicit uncordon follows separately.
+- Real restricted RBAC refuses eviction after cordon. Separately labelled
+  owned HTTP response loss after upstream HTTP 201 remains uncertain without
+  replay, even after the original UID becomes absent. This injected fault does
+  not claim a real provider/network failure. Production receipts contain no
+  direct Pod DELETE or PDB mutation; fixture cleanup is recorded separately.
+- A replacement UID is never adopted by an old confirmation. An unreviewed
+  arrival prevents complete-drain reporting, and external uncordon stops new
+  evictions. The final fresh read matches the selected Node UID and records
+  `unschedulable_field: null`, corroborating the SDK's omitted-field default as
+  schedulable; explicit `true` is never accepted as schedulable.
+
+Every production write is an exact Node PATCH or policy/v1 eviction POST; each
+eviction's UID/version pair belongs to a reviewed intent and uses normal grace.
+The unrelated sentinel UID, caller's synthetic kubeconfig sentinel, environment
+and owned kubeconfig remain unchanged. All owners and private sessions drain;
+all three owned nodes are deleted and absence is verified.
+
+### Retained expanded-trial failures
+
+The original reports and logs remain under `artifacts/issue77/`:
+
+- `full-kind-01` fails in 39.06 seconds because the owned forwarder sends an
+  empty byte payload for GET, causing aiohttp to add an octet-stream content
+  type that discovery rejects with HTTP 415. A mutual-TLS discovery regression
+  reproduces it before the verifier-only correction to a bodyless GET.
+- `full-kind-02` fails in 50.78 seconds because the scenario stops immediately
+  after one PDB refusal while another reviewed control-plane eviction is in
+  flight. The upstream returns HTTP 201; production truthfully reports that
+  interrupted write as uncertain. The scenario now uses a reviewed four-second
+  deadline and verifies independent outcomes. Explicit Stop is tested later
+  after queued writes settle and retry deadlines are still in the future.
+- `full-kind-03` fails in 84.60 seconds at its final SDK assertion, which requires
+  an explicit `False`. It reaches the behavior observations, including a final
+  schedulable state, but does not retain that last SDK field's literal value.
+  Its omitted-field explanation remains an inference for that attempt. The
+  corrected oracle records the field before asserting; `full-kind-04` supplies
+  the actual `null` observation above.
+
+Every failed expanded attempt retains verified source invariance and owned
+cluster/private-file/owner cleanup. None is relabelled as a successful run.
+
+## Scoped contracts and terminal evidence
+
+The core cohort passes 186 focused cases, with the deterministic maintenance
+domain at 100% lines and applicable branches. These scoped measurements do not
+replace full-package coverage or the complete critical inventory. The proof
+controller and mutual-TLS forwarder cohort passes 14 cases in 2.16 seconds:
+
+```sh
+uv run pytest tests/quality/test_node_maintenance_kind.py -q --basetemp=/tmp/kuberich-77-proof-20
+```
+
+The separate installed rehearsal passes eight actual PTY cases in 40.41 seconds:
+four source scenarios and console/module entry points for success/uncordon and
+context-switch cleanup from a fresh wheel. It checks real terminal behavior
+against an owned loopback API, rather than claiming those PTYs use kind.
+
+```sh
+uv run pytest tests/terminal/test_node_maintenance.py tests/packaging/test_distribution.py -k node_maintenance -q --basetemp=/tmp/kuberich-77-installed-01
+```
+
+`artifacts/issue77/installed-01/wheel-receipt.json` binds all 304 packaged runtime
+files byte-for-byte to the frozen source; later changes affect only verifiers.
+The wheel SHA-256 is
+`c938e164875b9769976199904e69399b99b29ff01b905de1a770ae867d869b63`.
+It is a local verification artifact, not a published package.
+
+Ruff/format, the complete strict type target union, private-access, plan and
+documentation checks pass. The source/runtime association and individual
+cohorts remain separate from complete hosted application qualification.
+
 ## Completion limits
 
-Expanded multi-node scenarios, public UI/PTY behavior, full production/critical/
-changed-line coverage and every required hosted exact-head job remain pending.
-The ordinary PR matrix has 27 jobs; release-time manual six-environment
+Full production coverage of at least 90% lines and 90% branches, at least 90%
+changed-line coverage, all 125 critical modules at 100%, and every required
+hosted exact-head job remain pending. The ordinary PR matrix has 27 jobs;
+release-time manual six-environment
 qualification and three repetitions remain separate. Published artifacts remain
 0.4.0. This issue does not authorize tags, packages, hosting or DNS changes.
