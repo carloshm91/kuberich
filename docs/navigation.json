@@ -288,10 +288,16 @@
           "generated": false,
           "retired_sources": [],
           "anchors": {
+            "browse-saved-results-locally": "benchmarks--browse-saved-results-locally",
+            "choose-one-backend-and-review-the-request": "benchmarks--choose-one-backend-and-review-the-request",
+            "configure-the-optional-program": "benchmarks--configure-the-optional-program",
             "connection-and-resource-lifetime": "list-and-stop-sessions",
+            "keep-the-load-small-and-stop-it": "benchmarks--keep-the-load-small-and-stop-it",
             "kubectl-transport-selection": "select-a-kubectl-transport",
             "managed-tcp-port-forwards": "start-a-forward",
-            "presets-and-annotation-shortcuts": "save-a-preset"
+            "presets-and-annotation-shortcuts": "save-a-preset",
+            "read-the-result": "benchmarks--read-the-result",
+            "run-an-http-benchmark": "benchmarks--run-an-http-benchmark"
           }
         },
         {
@@ -705,9 +711,16 @@
     {
       "source": "benchmarks.md",
       "target": "port-forwards.md",
-      "anchor": "benchmarks--run-an-http-benchmark",
+      "anchor": "legacy-benchmarks",
       "heading": "benchmarks--run-an-http-benchmark",
-      "fragments": {}
+      "fragments": {
+        "run-an-http-benchmark": "benchmarks--run-an-http-benchmark",
+        "configure-the-optional-program": "benchmarks--configure-the-optional-program",
+        "choose-one-backend-and-review-the-request": "benchmarks--choose-one-backend-and-review-the-request",
+        "keep-the-load-small-and-stop-it": "benchmarks--keep-the-load-small-and-stop-it",
+        "read-the-result": "benchmarks--read-the-result",
+        "browse-saved-results-locally": "benchmarks--browse-saved-results-locally"
+      }
     }
   ]
 }
