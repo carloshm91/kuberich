@@ -617,8 +617,14 @@ async def verify_extended(
     assert (
         await core.read_namespaced_pod(sentinel.metadata.name, NAMESPACE)
     ).metadata.uid == sentinel.metadata.uid
-    assert (await core.read_node(target.name)).metadata.uid == target.uid
-    assert (await core.read_node(target.name)).spec.unschedulable is False
+    final_node = await core.read_node(target.name)
+    progress["final_fresh_node"] = {
+        "uid": final_node.metadata.uid,
+        "unschedulable_field": final_node.spec.unschedulable,
+        "observed_at": time.time(),
+    }
+    assert final_node.metadata.uid == target.uid
+    assert final_node.spec.unschedulable is None or final_node.spec.unschedulable is False
     progress["unrelated_sentinel_uid"] = sentinel.metadata.uid
     progress["phase"] = "all-real-scenarios-observed"
     checks.append(
