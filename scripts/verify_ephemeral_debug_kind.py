@@ -1008,6 +1008,7 @@ async def verify(cluster: OwnedCluster, progress: dict[str, Any], kubectl: Path)
                             {
                                 "expression": "!has(object.spec.ephemeralContainers) || object.spec.ephemeralContainers.all(c, c.name != 'debug-admission-denied')",
                                 "message": "Owned debug proof refuses this synthetic name.",
+                                "reason": "Forbidden",
                             }
                         ],
                     },
