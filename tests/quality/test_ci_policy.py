@@ -77,6 +77,60 @@ def test_macos_transport_and_clipboard_steps_follow_the_selected_source_runner()
             assert clipboard["if"] == expected
 
 
+def test_retained_test_parts_preserve_clean_source_before_debug_preflight(tmp_path):
+    from scripts.verify_ephemeral_debug_kind import source_identity
+
+    workflow = yaml.safe_load((ROOT / ".github/workflows/quality.yml").read_text())
+    application = workflow["jobs"]["application"]
+    download = next(
+        step
+        for step in application["steps"]
+        if step.get("uses", "").startswith("actions/download-artifact@")
+    )
+
+    def git(*arguments):
+        return subprocess.run(
+            ["git", *arguments], cwd=tmp_path, check=True, capture_output=True, text=True
+        ).stdout.strip()
+
+    (tmp_path / ".gitignore").write_bytes((ROOT / ".gitignore").read_bytes())
+    source = tmp_path / "src/kuberich/fixture.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("value = 1\n")
+    git("init", "--quiet")
+    git("add", ".gitignore", "src")
+    git(
+        "-c",
+        "user.name=Owned fixture",
+        "-c",
+        "user.email=fixture@example.invalid",
+        "-c",
+        "commit.gpgsign=false",
+        "commit",
+        "--quiet",
+        "-m",
+        "Owned source fixture",
+    )
+    commit = git("rev-parse", "HEAD")
+    assert source_identity(tmp_path) == commit
+    part = tmp_path / download["with"]["path"] / "test-part-fixture-1/coverage-part.data"
+    part.parent.mkdir(parents=True)
+    part.write_bytes(b"retained original coverage part")
+    assert source_identity(tmp_path) == commit
+    assert part.read_bytes() == b"retained original coverage part"
+
+    untracked = source.with_name("untracked.py")
+    untracked.write_text("value = 2\n")
+    with pytest.raises(ValueError, match="freeze clean tracked source"):
+        source_identity(tmp_path)
+    untracked.unlink()
+    source.write_text("value = 3\n")
+    with pytest.raises(ValueError, match="freeze clean tracked source"):
+        source_identity(tmp_path)
+    source.write_text("value = 1\n")
+    assert source_identity(tmp_path) == commit and part.is_file()
+
+
 @pytest.mark.parametrize("missing", ["GITHUB_EVENT_NAME", "GITHUB_REF", "GITHUB_OUTPUT"])
 def test_cli_refuses_missing_github_inputs(monkeypatch, tmp_path, capsys, missing):
     monkeypatch.setenv("GITHUB_EVENT_NAME", "push")
@@ -198,7 +252,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
         assert all("continue-on-error" not in step for step in job["steps"])
     commands = "\n".join(step.get("run", "") for step in application["steps"])
     for required in (
-        "scripts.combine_test_parts --parts parts",
+        "scripts.combine_test_parts --parts artifacts/test-parts",
         "scripts.merge_runtime_coverage",
         "scripts/check_coverage.py coverage.json",
         "diff-cover coverage.xml",
@@ -230,6 +284,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
         "scripts.verify_manifests_kind",
         "scripts.verify_node_shell_kind",
         "scripts.verify_node_maintenance_kind",
+        "scripts.verify_ephemeral_debug_kind",
         "scripts.verify_quickstart",
         "uv build",
         "twine check",
@@ -256,7 +311,7 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     cluster_steps = [
         step for step in application["steps"] if "python -m scripts.verify" in step.get("run", "")
     ]
-    assert len(cluster_steps) == 25
+    assert len(cluster_steps) == 26
     for step in cluster_steps:
         assert step["if"] == "${{ matrix.os == 'ubuntu-24.04' && matrix.python == '3.12' }}"
     upload = next(
@@ -266,6 +321,10 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     )
     assert upload["with"]["name"] == "quality-${{ matrix.os }}-python-${{ matrix.python }}"
     assert upload["if"] == "${{ always() }}"
+    assert not any(
+        path.startswith("artifacts/test-parts") or path == "artifacts/**"
+        for path in upload["with"]["path"].splitlines()
+    )
     assert "artifacts/backend/*" in upload["with"]["path"].splitlines()
     assert "artifacts/authorization/**" in upload["with"]["path"].splitlines()
     assert "artifacts/container-inspection/**" in upload["with"]["path"].splitlines()
@@ -278,6 +337,17 @@ def test_workflow_keeps_required_event_checks_full_behavior_and_independent_gate
     assert "uv run mypy --strict scripts/verify_node_shell_kind.py" in commands
     assert "artifacts/node-maintenance/**" in upload["with"]["path"].splitlines()
     assert "uv run mypy --strict scripts/verify_node_maintenance_kind.py" in commands
+    assert "artifacts/ephemeral-debug/**" in upload["with"]["path"].splitlines()
+    assert "uv run mypy --strict scripts/verify_ephemeral_debug_kind.py" in commands
+    ephemeral_debug = next(
+        step
+        for step in cluster_steps
+        if "python -m scripts.verify_ephemeral_debug_kind" in step["run"]
+    )
+    assert '--kind "$RUNNER_TEMP/kuberich-kind"' in ephemeral_debug["run"]
+    assert '--kubectl "$RUNNER_TEMP/kuberich-shell/bin/kubectl"' in ephemeral_debug["run"]
+    assert "--docker /usr/bin/docker" in ephemeral_debug["run"]
+    assert "--evidence artifacts/ephemeral-debug/evidence.json" in ephemeral_debug["run"]
     assert "uv run mypy --strict scripts/ci_apt.py" in commands
     assert (
         "uv run mypy --strict scripts/curated_kind.py scripts/verify_curated_resources_kind.py"

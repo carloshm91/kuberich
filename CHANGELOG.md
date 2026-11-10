@@ -7,6 +7,8 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 
 ### Added
 
+- Review and permanently add an ephemeral debug container to a selected Pod, inspect its remote state and explicitly attach through the embedded terminal ([#78](https://github.com/carloshm91/kuberich/issues/78)).
+
 - Cordon, drain and uncordon a selected Node with disruption-aware progress, separate data-loss consents and explicit final scheduling observations ([#77](https://github.com/carloshm91/kuberich/issues/77)).
 
 - Open configured Linux node diagnostic shells with privilege review, bounded sessions, cleanup by Pod UID and explicit local recovery ([#76](https://github.com/carloshm91/kuberich/issues/76)).
@@ -17,6 +19,8 @@ See [release policy](docs/releases.md) for the project's versioning rules.
 - Review and confirm one prior Helm revision for rollback, with captured storage identity, read-only enforcement, explicit hook/wait/timeout options and uncertain-outcome reporting ([#66](https://github.com/carloshm91/kuberich/issues/66)).
 
 ### Fixed
+
+- Keep local plugin refusal messages visible through redraws of the current resource observation ([#78](https://github.com/carloshm91/kuberich/issues/78)).
 
 - Reveal the first matching relationship rows when delayed data replaces an empty filtered view ([#76](https://github.com/carloshm91/kuberich/issues/76)).
 

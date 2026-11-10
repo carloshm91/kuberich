@@ -253,6 +253,14 @@ COMMAND_SPECS = (
         action="uncordon",
     ),
     _spec(
+        Command.DEBUG,
+        ("debug",),
+        "Inspect ephemeral sessions and review a permanent debug-container addition to this Pod.",
+        capability=Capability.POD,
+        action="debug",
+        generic=False,
+    ),
+    _spec(
         Command.ATTACH,
         ("attach",),
         "Attach to a selected pod container.",

@@ -64,6 +64,12 @@ keep replacements separate from valid controller chains.
 
 ### Services
 
+[Ephemeral debugging](../src/kuberich/services/ephemeral_debug.py) separates a
+reviewed permanent addition from readiness, remote container status and a local
+attach lease. Its conditional subresource adapter uses the captured client;
+cleanup drains local work without deleting the Pod or its debug declaration.
+See [reviewed ephemeral debugging](adr/0044-reviewed-ephemeral-debugging.md).
+
 [Node diagnostics](../src/kuberich/services/node_shell.py) retains the returned Pod
 UID through reviewed creation, embedded exec and cleanup. The private journal and
 [explicit recovery](../src/kuberich/services/node_shell_recovery.py) never adopt

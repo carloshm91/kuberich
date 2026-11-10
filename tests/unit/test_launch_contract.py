@@ -70,6 +70,7 @@ def test_node_shell_recovery_is_a_local_initial_destination(command, monkeypatch
         "cordon",
         "drain",
         "uncordon",
+        "debug",
         "upload",
         "download",
         "columns",

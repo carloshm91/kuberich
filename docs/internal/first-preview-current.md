@@ -1,5 +1,117 @@
 # Development checkpoint
 
+## Ephemeral debugging verified candidate — 2026-11-10 UTC
+
+A03 #78 adds `:debug` for a captured Pod: explicit image/target/nonprivileged
+options, complete irreversible-addition review, strict server dry-run, guarded
+append and separate embedded attachment. The exact tested real invocation is:
+
+```sh
+uv run --no-sync python -m scripts.verify_ephemeral_debug_kind --kind /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kind --kubectl /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kubectl --docker /usr/bin/docker --evidence artifacts/issue78/full-kind-04/evidence.json
+```
+
+Source `f29d55aa128617c9b2e25aa2603e875a9ba854a8` passes all 16 real groups
+in 46.97 seconds with 318 unchanged inputs and complete cleanup. Actual CLI plus
+verified kubectl, independent remote completion, admission/attach denial,
+immutable entries, replacement, target restart and lost receipts are observed.
+Source CLI passes 18 cases, Pilot 43, service contracts 55 and outside-checkout
+wheel behavior four. Four Python 3.14 branch-instrumented terminal regressions
+also pass. All 309 wheel runtime files match source. Exact commands,
+independent focused coverage and original failures are in
+[debugging acceptance](acceptance/ephemeral-debug.md). Full production/changed-line
+coverage, critical-module/platform qualification and protected delivery remain
+pending. Published packages remain 0.4.0; no publication is performed here.
+
+The second hosted attempt passes Fast, repository/DCO checks and all four native
+builds, but fails two Python 3.14 terminal interactions and an outdated workflow
+inventory assertion. Its remaining jobs are cancelled. The original failed
+receipts remain retained. The interaction correction passes controlled old-failing
+regressions, fresh installed behavior and all real-kind groups; the corrected
+workflow cohort also passes. A fresh complete exact-head matrix is required
+before this candidate can merge.
+
+The third hosted attempt passes all source parts, native targets and three full
+Application profiles, including the corrected terminal/inventory regressions.
+Its remaining Linux 3.12 job fails in an earlier container-inspection verifier's
+restricted-read check; the later hosted debug proof does not execute. Original
+receipts and partial coverage remain preserved. The narrow verifier correction
+passes 68 focused cases and all seven actual inspection groups in 35.24 seconds,
+with its original reload budget, mandatory 403s and complete cleanup. All 318
+debug-proof inputs remain unchanged. Complete protected qualification is still
+required before delivery.
+
+The fourth hosted attempt passes Fast and all four native jobs, then fails an
+existing Python 3.14 sensitive-artifact-viewer test's second mouse activation.
+A controlled native button-feedback delay reproduces the lost activation;
+waiting for actual inactive readiness preserves one click and the original
+deadline. All 47 branch-traced viewer/browser/export-review cases pass after
+the test-only correction. Original failures remain retained, application and
+debug/inspection proof inputs are unchanged, and a new exact-head matrix is
+required before delivery.
+
+The fifth hosted attempt passes Fast, all native jobs and the formerly failing
+Python 3.14 part. A different existing plugin-refusal assertion fails on Python
+3.13 when resource presentation replaces its transient error. Controlled
+same-observation redraws reproduce the lost refusal. The three plugin refusal
+paths now use the existing view notice; 19 branch-traced plugin/collection cases
+pass, including notice retirement on an actual namespace change. Fresh real,
+installed and full hosted evidence must bind this production correction before
+delivery; original failures remain retained.
+
+Frozen plugin correction `35e60f0` subsequently passes all 16 actual debug groups
+(47.13 seconds), four fresh installed cases (25.89 seconds) and seven actual
+inspection groups (36.99 seconds), with all measured inputs stable and cleanup
+verified. All 309 wheel runtime files match source. Exact commands and report
+digests are in [debugging acceptance](acceptance/ephemeral-debug.md). A complete
+new exact-head hosted matrix and protected merge still remain required.
+
+The sixth hosted attempt passes all source/native jobs and three complete
+Application profiles with all 307 production modules and 126 critical modules
+enrolled. Canonical Node maintenance also passes; the new debug verifier then
+refuses startup because downloaded test parts are retained outside ignored
+artifact directories. A real temporary-Git control reproduces the strict-source
+refusal. Moving downloads/combination into `artifacts/test-parts/` preserves the
+guard and original bytes; 90 focused cases pass. Original failed/partial evidence
+remains retained, and another full exact-head matrix remains required.
+
+The seventh hosted attempt passes Fast and all native jobs, then a macOS source
+part reads an incomplete live-helper PID receipt in an existing Popeye test.
+Held-open writers reproduce that race and two equivalent adjacent readiness
+fixtures. Atomic sibling publication preserves the original cleanup assertions
+and deadlines; all 67 branch-traced process/render/preview cases pass. No
+production or verifier input changes, and complete exact-head hosted
+qualification is still required before delivery.
+
+## Node maintenance delivered in development source — 2026-11-10 UTC
+
+[PR #337](https://github.com/carloshm91/kuberich/pull/337) merged normally as
+`4a39d458a6801a103bab1ee5b305ed45cbba24b1`. Its tree
+`f273ff33cb85b0d8f2bf3c95805c45494db848cd` matches the qualified candidate.
+A02 #77 is closed and Done. Application quality run `42811137464` passes all
+27 selected jobs, with app-bound Repository checks and DCO passing separately.
+The canonical Linux 3.12 measurement covers all 302 production modules:
+41,369/41,986 lines (98.5305%) and 12,231/12,856 branches (95.1385%), with
+99.63% changed-line coverage. All 125 critical modules meet 100% lines and
+applicable branches. Every source profile passes its independent coverage gate.
+
+The hosted actual three-node trial passes all 13 maintenance groups with 308
+unchanged measured inputs and verified process, private-file, caller-state and
+cluster cleanup. Its report SHA-256 is
+`ea0a3971361ec1e2fe1662c3b06bafcd86f0f04b3b868473ec0442baa0c6c74e`.
+The exact tested command and original failed trials remain in
+[maintenance acceptance](acceptance/node-maintenance.md) and below. These source
+changes publish no artifacts or hosting; published packages remain 0.4.0.
+
+A03 #78 is now the only implementation issue. Its reviewed workflow uses a
+conditional ephemeral-container append, strict server dry-run, an explicit
+irreversible-addition review and the existing embedded attach terminal. The first complete
+owned-kind service/PTY spine passes all 12 groups in 37.74 seconds on
+`21341e19f8caa69fda6fae1d4cd70d2e6a3703e3`, with 314 unchanged inputs and
+verified cleanup. Report SHA-256:
+`0bff4e17bf74128b0c2e93e3ef0f468ab5d22f2239252a93a1d8f0895bc8e75c`.
+Product UI/installed evidence and exact-head protected delivery remain pending;
+this result does not establish runtime/provider certification.
+
 ## Node maintenance corrected candidate — 2026-11-10 UTC
 
 A02 #77 is implemented in [PR #337](https://github.com/carloshm91/kuberich/pull/337)

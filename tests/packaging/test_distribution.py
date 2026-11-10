@@ -22,6 +22,7 @@ from tests.support.credential_handoff import credential_terminal_trial, encrypte
 from tests.support.custom_terminal import terminal_custom_views
 from tests.support.distribution import PROJECT, run
 from tests.support.editing_terminal import terminal_editing
+from tests.support.ephemeral_debug_terminal import terminal_ephemeral_debug
 from tests.support.export_browser_geometry import terminal_export_browser_geometry
 from tests.support.forward_terminal import terminal_forward
 from tests.support.handoff import terminal_handoff_trial
@@ -256,6 +257,34 @@ def test_installed_node_maintenance_owns_operations_and_restores_terminal(
         owned,
         scenario,
         evidence=f"installed-node-maintenance-{entry_point}-{scenario}",
+    )
+
+
+@pytest.mark.parametrize(
+    "entry_point,scenario",
+    [
+        ("console", "completion"),
+        ("module", "completion"),
+        ("console", "detach"),
+        ("module", "uncertain"),
+    ],
+)
+def test_installed_ephemeral_debug_review_attach_and_terminal_restoration(
+    installed_wheel, entry_point, scenario
+):
+    binary, directory = installed_wheel
+    command = (
+        [str(binary / "kuberich")]
+        if entry_point == "console"
+        else [str(binary / "python"), "-m", "kuberich"]
+    )
+    owned = directory / f"ephemeral-debug-{entry_point}-{scenario}"
+    owned.mkdir()
+    terminal_ephemeral_debug(
+        command,
+        owned,
+        scenario,
+        evidence=f"installed-ephemeral-debug-{entry_point}-{scenario}",
     )
 
 

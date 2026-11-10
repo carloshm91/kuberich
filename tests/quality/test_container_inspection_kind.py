@@ -8,6 +8,7 @@ import sys
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import replace
 from datetime import UTC, datetime
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -16,7 +17,7 @@ from kubernetes_asyncio.client.exceptions import ApiException
 
 from kuberich.adapters.kubernetes import KubernetesSession
 from kuberich.domain.connections import HttpProblem
-from kuberich.domain.container_inspection import ContainerIdentity
+from kuberich.domain.container_inspection import ContainerIdentity, ResolvedValue, SourceRef
 from kuberich.domain.targets import ResourceTarget, SessionIdentity
 from kuberich.errors import AppError
 from kuberich.services.access import AccessPolicy
@@ -176,6 +177,240 @@ async def test_status_only_update_during_initial_restricted_index_explains_stale
         assert api.records[POD_PATH]["metadata"]["uid"] == service.target.uid == POD_UID
         assert api.records[POD_PATH]["spec"] == original_spec
         assert service.snapshot is None and service.operation_count == 0
+
+
+@pytest.mark.asyncio
+async def test_refused_copy_uses_fresh_snapshot_after_status_only_drift(tmp_path):
+    service = api = None
+    try:
+        async with positive_source(tmp_path) as (service, api, _):
+            api.statuses[SECRET_PATH] = 403
+            snapshot = await service.index()
+            assert await verification.selected(service, snapshot, "LITERAL") == "synthetic-literal"
+            before = len(api.requests)
+            original_spec = copy.deepcopy(api.records[POD_PATH]["spec"])
+
+            def update_status(api, path):
+                if path == SECRET_PATH and len(api.requests) == before + 3:
+                    api.records[POD_PATH]["metadata"]["resourceVersion"] = "status-copy-version-2"
+                    api.records[POD_PATH]["status"]["phase"] = "Running"
+
+            api.before_response = update_status
+            receipts = []
+            reloads = []
+            with verification.inspection_receipts(receipts):
+                latest, result = await verification.refused_copy(
+                    service,
+                    snapshot,
+                    "CHOSEN",
+                    SourceRef("Secret", NAMESPACE, "inspection-secret"),
+                    phase="restricted-copy",
+                    reloads=reloads,
+                    index_reloads=[],
+                )
+            assert result.text is None and not result.complete
+            assert (
+                latest.id != snapshot.id and latest.pod.resource_version == "status-copy-version-2"
+            )
+            assert len(reloads) == 1 and reloads[0]["state"] == "completed"
+            assert len(receipts) == 12
+            assert api.records[POD_PATH]["metadata"]["uid"] == POD_UID
+            assert api.records[POD_PATH]["spec"] == original_spec
+            assert [item["status"] for item in receipts if item["path"] == SECRET_PATH] == [403] * 3
+    finally:
+        if service is not None and api is not None:
+            assert service.operation_count == 0 and api.active == 0
+            assert not Path(service.client.directory.name).exists()
+            print(
+                "Restricted-copy reproduction cleanup: operations=0 HTTP=0 private-directory=absent"
+            )
+
+
+@pytest.mark.asyncio
+async def test_direct_refused_copy_keeps_stale_binding_and_safe_owned_failure_location(tmp_path):
+    async with positive_source(tmp_path) as (service, api, _):
+        api.statuses[SECRET_PATH] = 403
+        snapshot = await service.index()
+        before = len(api.requests)
+
+        def update_status(api, path):
+            if path == SECRET_PATH:
+                api.records[POD_PATH]["metadata"]["resourceVersion"] = "copy-status-change"
+
+        api.before_response = update_status
+        entry = next(item for item in snapshot.entries if item.name == "CHOSEN")
+        with pytest.raises(AppError) as failure:
+            await service.disclose(service.new_intent(snapshot.id, entry.id, "copy"))
+        assert str(failure.value) == STALE_MESSAGE
+        assert service.snapshot is None and service.operation_count == 0
+        assert len(api.requests) - before == 4
+        diagnostic = verification.failure_diagnostic(failure.value)
+        assert diagnostic["code"] == "stale-binding"
+        assert (
+            diagnostic["owned_frames"][-1]["path"]
+            == "src/kuberich/services/container_inspection.py"
+        )
+        assert "/tmp" not in json.dumps(diagnostic)
+
+
+@pytest.mark.asyncio
+async def test_refused_copy_exhausts_existing_budget_without_accepting_stale_denial(tmp_path):
+    async with positive_source(tmp_path) as (service, api, _):
+        api.statuses[SECRET_PATH] = 403
+        snapshot = await service.index()
+        before = len(api.requests)
+
+        def update_copy_status(api, path):
+            if path == SECRET_PATH and service.snapshot is not None:
+                api.records[POD_PATH]["metadata"]["resourceVersion"] = (
+                    f"copy-status-{len(api.requests)}"
+                )
+
+        api.before_response = update_copy_status
+        reloads, index_reloads = [], []
+        with pytest.raises(AssertionError, match="Refused-copy reload budget exhausted"):
+            await verification.refused_copy(
+                service,
+                snapshot,
+                "CHOSEN",
+                SourceRef("Secret", NAMESPACE, "inspection-secret"),
+                phase="churning-refused-copy",
+                reloads=reloads,
+                index_reloads=index_reloads,
+            )
+        assert len(reloads) == verification.POSITIVE_RELOAD_LIMIT == 2
+        assert not index_reloads
+        assert len(api.requests) - before == 4 * (2 * verification.POSITIVE_RELOAD_LIMIT + 1)
+        assert service.snapshot is None and service.operation_count == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("allowed_at", ["initial", "refresh"])
+async def test_refused_copy_requires_forbidden_secret_on_every_snapshot(tmp_path, allowed_at):
+    async with positive_source(tmp_path) as (service, api, _):
+        if allowed_at == "refresh":
+            api.statuses[SECRET_PATH] = 403
+        snapshot = await service.index()
+        before = len(api.requests)
+
+        def allow_after_copy(api, path):
+            if path == SECRET_PATH and len(api.requests) == before + 3:
+                api.records[POD_PATH]["metadata"]["resourceVersion"] = "copy-status-change"
+            elif path == POD_PATH and len(api.requests) == before + 4:
+                api.statuses[SECRET_PATH] = 200
+
+        api.before_response = allow_after_copy
+        with pytest.raises(AssertionError, match="still establish the forbidden Secret"):
+            await verification.refused_copy(
+                service,
+                snapshot,
+                "CHOSEN",
+                SourceRef("Secret", NAMESPACE, "inspection-secret"),
+                phase="must-stay-forbidden",
+                reloads=[],
+                index_reloads=[],
+            )
+        assert len(api.requests) - before == (0 if allowed_at == "initial" else 8)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("fault", ["current-stale", "other-error", "complete", "text"])
+async def test_refused_copy_does_not_reload_or_accept_unexplained_disclosure(
+    tmp_path, monkeypatch, fault
+):
+    async with positive_source(tmp_path) as (service, api, _):
+        api.statuses[SECRET_PATH] = 403
+        snapshot = await service.index()
+        before = len(api.requests)
+
+        async def unexpected(intent):
+            if fault == "current-stale":
+                raise AppError(STALE_MESSAGE)
+            if fault == "other-error":
+                service.invalidate()
+                raise AppError("synthetic-private-detail")
+            return ResolvedValue(
+                "synthetic-private-value" if fault == "text" else None, fault == "complete", ()
+            )
+
+        monkeypatch.setattr(service, "disclose", unexpected)
+        reloads = []
+        with pytest.raises((AppError, AssertionError)) as failure:
+            await verification.refused_copy(
+                service,
+                snapshot,
+                "CHOSEN",
+                SourceRef("Secret", NAMESPACE, "inspection-secret"),
+                phase="must-refuse-unexplained",
+                reloads=reloads,
+                index_reloads=[],
+            )
+        assert not reloads and len(api.requests) == before
+        assert "synthetic-private" not in json.dumps(verification.failure_diagnostic(failure.value))
+
+
+@pytest.mark.asyncio
+async def test_refused_copy_rechecks_retired_target_before_reload(tmp_path):
+    async with positive_source(tmp_path) as (service, api, current):
+        api.statuses[SECRET_PATH] = 403
+        snapshot = await service.index()
+        before = len(api.requests)
+
+        def retire_target(api, path):
+            if path == SECRET_PATH:
+                current[0] = False
+
+        api.before_response = retire_target
+        reloads = []
+        with pytest.raises(AppError, match="target is unavailable"):
+            await verification.refused_copy(
+                service,
+                snapshot,
+                "CHOSEN",
+                SourceRef("Secret", NAMESPACE, "inspection-secret"),
+                phase="retired-target",
+                reloads=reloads,
+                index_reloads=[],
+            )
+        assert not reloads and len(api.requests) - before == 3
+
+
+@pytest.mark.asyncio
+async def test_refused_copy_refuses_foreign_snapshot_before_any_read(tmp_path):
+    async with positive_source(tmp_path) as (service, api, _):
+        api.statuses[SECRET_PATH] = 403
+        snapshot = await service.index()
+        before = len(api.requests)
+        foreign = replace(snapshot, pod=replace(snapshot.pod, uid="foreign-pod-uid"))
+        with pytest.raises(AssertionError, match="captured Pod UID"):
+            await verification.refused_copy(
+                service,
+                foreign,
+                "CHOSEN",
+                SourceRef("Secret", NAMESPACE, "inspection-secret"),
+                phase="foreign-snapshot",
+                reloads=[],
+                index_reloads=[],
+            )
+        assert len(api.requests) == before
+
+
+@pytest.mark.parametrize(
+    "error,code",
+    [
+        (AppError(STALE_MESSAGE), "stale-binding"),
+        (AppError("synthetic-private-detail"), "application-error"),
+        (AssertionError("synthetic-private-detail"), "assertion"),
+        (TimeoutError("synthetic-private-detail"), "deadline"),
+        (asyncio.CancelledError("synthetic-private-detail"), "cancelled"),
+        (ApiException(status=403, reason="synthetic-private-detail"), "api-error"),
+        (RuntimeError("synthetic-private-detail"), "unexpected-error"),
+    ],
+)
+def test_failure_diagnostic_retains_fixed_codes_without_error_text(error, code):
+    diagnostic = verification.failure_diagnostic(error)
+    assert diagnostic == {"code": code, "owned_frames": []}
+    assert "synthetic-private" not in json.dumps(diagnostic)
 
 
 @pytest.mark.asyncio
@@ -842,6 +1077,9 @@ def test_main_records_failure_only_after_owned_cluster_cleanup_and_preserves_saf
     result = json.loads(evidence.read_text())
     assert result["status"] == "failed" and result["owned_cluster_deleted"] is True
     assert result["private_directory_deleted"] is True and result["failure_type"] == "RuntimeError"
+    assert result["failure"]["code"] == "unexpected-error"
+    assert result["failure"]["owned_frames"]
+    assert all(item["path"].startswith("scripts/") for item in result["failure"]["owned_frames"])
     assert result["phase"] == "creating-Pod" and result["last_write"]["method"] == "POST"
     assert "synthetic-private-failure" not in evidence.read_text()
 

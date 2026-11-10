@@ -109,11 +109,15 @@ class ResourceOperations:
         self._auto_forward_contexts: set[str] = set()
         from kuberich.config.node_shell import NodeShellSettings
         from kuberich.services.node_shell import NodeShellManager
+        from kuberich.ui.ephemeral_debug_actions import EphemeralDebugActions
         from kuberich.ui.node_maintenance_actions import NodeMaintenanceActions
         from kuberich.ui.node_shell_actions import NodeShellActions
 
         self.node_maintenance = NodeMaintenanceActions(
             host, capture, context, policy, mutations, self.notice
+        )
+        self.ephemeral_debug = EphemeralDebugActions(
+            host, capture, context, policy, mutations, processes, self.notice
         )
 
         self.node_shells = NodeShellActions(
@@ -133,6 +137,9 @@ class ResourceOperations:
 
     def open_node_maintenance(self, mode: MaintenanceMode) -> None:
         self.node_maintenance.open(mode)
+
+    def open_ephemeral_debug(self) -> None:
+        self.ephemeral_debug.open()
 
     def observe_node_operations(self) -> None:
         self.node_shells.observe()
@@ -650,6 +657,7 @@ class ResourceOperations:
             self.port_forwards(identity)
 
     async def close_for_client(self, client: KubernetesSession) -> None:
+        await self.ephemeral_debug.close_for_client(client)
         await self.node_maintenance.close_for_client(client)
         await self.node_shells.close_for_client(client)
         from kuberich.ui.configuration_data import ConfigurationScreen

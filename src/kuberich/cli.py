@@ -445,6 +445,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 Command.CORDON,
                 Command.DRAIN,
                 Command.UNCORDON,
+                Command.DEBUG,
                 Command.ATTACH,
                 Command.UPLOAD,
                 Command.DOWNLOAD,

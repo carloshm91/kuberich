@@ -54,6 +54,8 @@ def test_curated_policy_does_not_match_a_same_plural_in_an_unrelated_api_group()
         ("port_forward", ViewState("deployments"), False),
         ("shell", ViewState("pods"), True),
         ("shell", ViewState("deployments"), False),
+        ("debug", ViewState("pods"), True),
+        ("debug", ViewState("deployments"), False),
         ("quit", ViewState("pods", modal=True, typing=True), True),
         ("metric_history", ViewState("pods"), True),
         ("metric_history", ViewState("nodes"), True),

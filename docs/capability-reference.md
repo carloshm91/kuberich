@@ -214,7 +214,9 @@ predates this action.
 separate uncordon with explicit consents and final scheduling observations. Published 0.4.0 predates
 these actions.
 ### Ephemeral debug containers and diagnostic sessions
-**planned** — Creating ephemeral debug containers and their managed sessions is planned.
+**partial** — Development work for 0.5 adds reviewed permanent debug-container additions and
+separate session inspection/attachment. Published 0.4.0 predates this workflow; compatibility and
+qualification limits remain explicit.
 ### HTTP benchmarks, per-context options, results browser and cancellation
 **planned** — HTTP benchmarking, results browsing and benchmark cancellation are planned.
 ### Policy/quota/admission/scheduling views and removed-API handling

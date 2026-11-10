@@ -73,6 +73,19 @@ def test_node_shell_commands_separate_privileged_creation_from_local_recovery_li
     assert "node-shell-recover" in suggestions(":node-shell-", (), ())
 
 
+def test_debug_inspection_remains_readable_but_requires_an_interactive_pod_selection():
+    for readonly in (False, True):
+        parser = CommandService(AccessPolicy(readonly))
+        assert parser.resolve(":debug") is Command.DEBUG
+        with pytest.raises(AppError, match="without arguments"):
+            parser.resolve(":debug another-pod")
+    spec = COMMAND_CATALOG.by_command[Command.DEBUG]
+    assert spec.policy is Action.READ
+    assert spec.capabilities == frozenset({Capability.POD})
+    assert spec.ui_action == "debug" and not spec.generic_allowed
+    assert suggestions(":deb", (), ()) == ("debug",)
+
+
 def test_bound_handlers_preserve_scoped_argument_and_refuse_before_handler_lookup():
     captured = []
     handlers = {"scale": lambda argument: captured.append(argument)}

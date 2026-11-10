@@ -211,29 +211,62 @@ async def test_forged_remote_or_incomplete_frozen_closure_never_launches_helper(
 
 
 @pytest.mark.asyncio
-async def test_cancellation_drains_running_helper_before_private_staging_removal(tmp_path):
+@pytest.mark.parametrize("hold_receipt", [False, True])
+async def test_cancellation_drains_running_helper_before_private_staging_removal(
+    tmp_path, hold_receipt
+):
     snapshots = capture(tmp_path)
     record = tmp_path / "running.json"
+    entered, release = tmp_path / "writer-open", tmp_path / "publish-receipt"
     helper(
         tmp_path,
-        "import json,os,time\nfrom pathlib import Path\nPath(os.environ['RECORD']).write_text(json.dumps({'pid':os.getpid(),'root':str(Path.cwd())}))\ntime.sleep(60)\n",
+        """import json,os,time
+from pathlib import Path
+record=Path(os.environ['RECORD'])
+staged=record.with_name(record.name+'.staged')
+with staged.open('w') as receipt:
+    if os.environ['HOLD_RECEIPT']=='1':
+        Path(os.environ['RECORD_OPENED']).touch()
+        while not Path(os.environ['RECORD_RELEASE']).exists(): time.sleep(0.01)
+    receipt.write(json.dumps({'pid':os.getpid(),'root':str(Path.cwd())}))
+staged.replace(record)
+time.sleep(60)
+""",
     )
     renderer = KustomizeRenderer(
-        AccessPolicy(False), {"PATH": str(tmp_path), "RECORD": str(record)}, tmp_path
+        AccessPolicy(False),
+        {
+            "PATH": str(tmp_path),
+            "RECORD": str(record),
+            "HOLD_RECEIPT": "1" if hold_receipt else "0",
+            "RECORD_OPENED": str(entered),
+            "RECORD_RELEASE": str(release),
+        },
+        tmp_path,
     )
     rendering = asyncio.create_task(renderer.render(snapshots, "", guard=lambda: None))
-    async with asyncio.timeout(5):
-        while not record.exists():
-            await asyncio.sleep(0.01)
-    observed = json.loads(record.read_text())
-    assert Path(observed["root"]).exists()
-    rendering.cancel()
-    await asyncio.sleep(0)
-    rendering.cancel()
-    with pytest.raises(asyncio.CancelledError):
-        await rendering
-    assert not Path(observed["root"]).exists()
-    with pytest.raises(ProcessLookupError):
-        os.kill(observed["pid"], 0)
-    await renderer.close()
-    assert renderer.operation_count == 0
+    try:
+        async with asyncio.timeout(5):
+            if hold_receipt:
+                while not entered.exists():
+                    await asyncio.sleep(0.01)
+                assert not record.exists() and not rendering.done()
+                release.touch()
+            while not record.exists():
+                await asyncio.sleep(0.01)
+        observed = json.loads(record.read_text())
+        assert Path(observed["root"]).exists()
+        rendering.cancel()
+        await asyncio.sleep(0)
+        rendering.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await rendering
+        assert not Path(observed["root"]).exists()
+        with pytest.raises(ProcessLookupError):
+            os.kill(observed["pid"], 0)
+        await renderer.close()
+        assert renderer.operation_count == 0
+    finally:
+        release.touch()
+        await renderer.close()
+        await asyncio.gather(rendering, return_exceptions=True)

@@ -273,10 +273,27 @@ async def test_scope_or_policy_change_during_version_prevents_staging(tmp_path, 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("phase", ["version", "scan", "leader-exits"])
-async def test_close_or_cancellation_reaps_owned_children_before_private_cleanup(tmp_path, phase):
+@pytest.mark.parametrize("hold_receipt", [False, True])
+async def test_close_or_cancellation_reaps_owned_children_before_private_cleanup(
+    tmp_path, phase, hold_receipt
+):
     marker = tmp_path / "pids.json"
+    entered, release = tmp_path / "writer-open", tmp_path / "publish-receipt"
     child = "import os,signal,time;signal.signal(signal.SIGTERM,signal.SIG_IGN);time.sleep(30)"
-    start = f"child=subprocess.Popen([sys.executable,'-c',{child!r}]);Path({str(marker)!r}).write_text(json.dumps([os.getpid(),child.pid]));"
+    start = (
+        f"child=subprocess.Popen([sys.executable,'-c',{child!r}])\n"
+        f"marker=Path({str(marker)!r})\n"
+        "staged=marker.with_name(marker.name+'.staged')\n"
+        "with staged.open('w') as receipt:\n"
+        + (
+            f"    Path({str(entered)!r}).touch()\n"
+            f"    while not Path({str(release)!r}).exists(): time.sleep(0.01)\n"
+            if hold_receipt
+            else ""
+        )
+        + "    receipt.write(json.dumps([os.getpid(),child.pid]))\n"
+        "staged.replace(marker)\n"
+    )
     body = start + (
         "print(json.dumps(report),flush=True);raise SystemExit(0)"
         if phase == "leader-exits"
@@ -289,7 +306,15 @@ async def test_close_or_cancellation_reaps_owned_children_before_private_cleanup
     )
     async with owner(tmp_path, path, timeout=30) as (service, request, private):
         task = asyncio.create_task(service.run(request))
-        await wait_for_file(marker)
+        try:
+            if hold_receipt:
+                await wait_for_file(entered)
+                assert not marker.exists()
+                assert not task.done()
+                release.touch()
+            await wait_for_file(marker)
+        finally:
+            release.touch()
         pids = json.loads(marker.read_text())
         if phase == "leader-exits":
             result = await task

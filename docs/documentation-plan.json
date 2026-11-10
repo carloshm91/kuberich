@@ -3805,6 +3805,26 @@
       ],
       "reason": "Retain fixed-set Node maintenance boundaries, actual eviction observations, original failures and measured verification outside public user navigation.",
       "baseline_sha256": null
+    },
+    {
+      "source": "docs/adr/0044-reviewed-ephemeral-debugging.md",
+      "audience": "development",
+      "action": "keep",
+      "destinations": [
+        "docs/adr/0044-reviewed-ephemeral-debugging.md"
+      ],
+      "reason": "Record irreversible ephemeral-container additions, exact review receipts and retained local attach ownership.",
+      "baseline_sha256": null
+    },
+    {
+      "source": "docs/internal/acceptance/ephemeral-debug.md",
+      "audience": "contributor acceptance evidence",
+      "action": "keep",
+      "destinations": [
+        "docs/internal/acceptance/ephemeral-debug.md"
+      ],
+      "reason": "Retain ephemeral-container API and terminal observations, original failures and measured verification outside public user navigation.",
+      "baseline_sha256": null
     }
   ],
   "inventory_rule": "Every tracked Markdown file, every file under docs/, LICENSE, NOTICE, and contribution issue templates at the baseline commit; new structure contracts are mapped too.",
