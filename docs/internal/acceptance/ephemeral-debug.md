@@ -211,3 +211,59 @@ context/policy/quit drainage, complete-preview bounds and fatal rendering faults
 The repeated-Back regression prevents dismissing the root before delayed
 Unmount. Failed waiting-reason and pre-entry cancellation/quit assumptions
 remain retained in earlier attempts. Final focused additions remain pending.
+
+## Final actual API and product proof
+
+Clean source `fa2678d8cfbd857e998b5eaac1f11da36009a051` passes all 16 real
+groups in 45.10 seconds at `artifacts/issue78/full-kind-03/evidence.json`.
+Report SHA-256:
+`26a52d16f026dcc3d1f44d2d1146dedd1cb8696ab5e32dffc391f7b490bf69f2`.
+All 318 runtime/tool/controller/helper inputs remain unchanged. Owner, process,
+private-session/directory and cluster cleanup pass; the owned kubeconfig, caller
+sentinel and environment remain unchanged.
+
+Beyond the early 12 groups, this trial proves actual attach RBAC refusal while
+the confirmed entry remains running, explicit admission refusal with no addition
+or privilege fallback, a real source CLI review/add/verified-kubectl attach/return
+and a same-name Pod replacement refusing the original UID before dry-run.
+The real CLI's local attach result and the independently read remote exit seven
+remain separate. Fixture-only Pod deletion is recorded separately from production
+traffic; the product sends no Pod DELETE or declaration removal.
+
+### Retained extended-trial failures
+
+`full-kind-01` fails in 40.46 seconds at the admission readiness assertion after
+12 successful groups. Its first accepted fixture probe records HTTP 200, but
+the following exception's status was not recorded before the assertion.
+The next verifier records every status and permits another bounded setup
+dry-run only when HTTP 422 accompanies the same UID and a changed opaque
+version. Six owned HTTP/SDK cases verify that rule and refusals; production
+requests never gain a retry.
+
+`full-kind-02` fails in 40.51 seconds with fixture probes 200, 200, 422. Its
+verified same UID and unchanged version 547 disprove the proposed version-churn
+explanation for that attempt. Kubernetes' [pinned validation type](https://github.com/kubernetes/api/blob/v0.36.4/admissionregistration/v1/types.go#L332-L339)
+defaults an omitted policy reason to Invalid. The fixture now explicitly chooses
+Forbidden to bind its intended HTTP 403; application code and status gates stay
+unchanged. The final actual probes are 200, 200, 403. Both original failures
+retain successful cleanup and unchanged measured inputs; neither is relabelled.
+Verifier quality passes 28 cases, with Ruff, formatting and strict typing passing.
+
+## Installed feature proof
+
+Four outside-checkout wheel cases pass in 24.10 seconds with
+`/tmp/kuberich-78-installed-01`, using both console/module completion, console
+detach and module uncertain-response flows. All 309 wheel runtime files are
+byte-identical to tracked current source. Wheel SHA-256:
+`2a139d0fb07dacf56baa2504538136ab320dc33cc643037249be7526fb6fb20b`.
+The original wheel/sdist, JUnit and byte-comparison summary are retained under
+`artifacts/issue78/installed-01*`. Subsequent controller-only edits do not change
+those runtime bytes. This remains installed feature evidence, not the complete
+platform matrix or a public package upload.
+
+The final 43-case Pilot cohort passes in 75.08 seconds. Independent focused UI
+coverage is 355/368 lines (96.47%) and 78/88 branches (88.64%); the whole-package
+line/branch and changed-line gates remain authoritative in the hosted matrix.
+Its four final lifecycle/update cases also pass separately in 5.23 seconds.
+The full production, all critical modules, exact-head platform and protected
+merge checks remain pending. No tags, packages or hosting are published.

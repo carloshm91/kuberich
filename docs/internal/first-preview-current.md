@@ -1,5 +1,26 @@
 # Development checkpoint
 
+## Ephemeral debugging verified candidate — 2026-11-10 UTC
+
+A03 #78 adds `:debug` for a captured Pod: explicit image/target/nonprivileged
+options, complete irreversible-addition review, strict server dry-run, guarded
+append and separate embedded attachment. The exact tested real invocation is:
+
+```sh
+uv run python -m scripts.verify_ephemeral_debug_kind --kind /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kind --kubectl /home/develop/projects/personal/kubetrol/artifacts/qualification-tools-linux-amd64-ewfuxtag/kubectl --docker /usr/bin/docker --evidence artifacts/issue78/full-kind-03/evidence.json
+```
+
+Source `fa2678d8cfbd857e998b5eaac1f11da36009a051` passes all 16 real groups
+in 45.10 seconds with 318 unchanged inputs and complete cleanup. Actual CLI plus
+verified kubectl, independent remote completion, admission/attach denial,
+immutable entries, replacement, target restart and lost receipts are observed.
+Source CLI passes 15 cases, Pilot 43, service contracts 55 and outside-checkout
+wheel behavior four. All 309 wheel runtime files match source. Exact commands,
+independent focused coverage and original failures are in
+[debugging acceptance](acceptance/ephemeral-debug.md). Full production/changed-line
+coverage, critical-module/platform qualification and protected delivery remain
+pending. Published packages remain 0.4.0; no publication is performed here.
+
 ## Node maintenance delivered in development source — 2026-11-10 UTC
 
 [PR #337](https://github.com/carloshm91/kuberich/pull/337) merged normally as

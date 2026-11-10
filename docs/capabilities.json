@@ -1747,7 +1747,7 @@
       ],
       "source": "plugins/debug-container.yaml",
       "status": "planned",
-      "difference": "A03 development source uses a strict server dry-run, exact Pod UID/resourceVersion JSON Patch and one-use irreversible-addition review. Digest-pinned nonprivileged Linux options and target running-instance checks precede reuse of the existing attach terminal. Append identity, admitted profile, startup, remote status and local connection remain separate; cleanup never deletes the Pod or its permanent declaration. Twelve actual owned-kind groups pass, including completion/detach, immutable entries, conflicts, subresource denial, target restart and lost receipts. Product UI, installed-platform and cumulative phase qualification remain pending. The original U05 interactive recipe execs an existing container and is not ephemeral creation.",
+      "difference": "A03 development source provides strict server dry-run, exact Pod UID/resourceVersion append and one-use irreversible-addition review. Digest-pinned nonprivileged Linux options and target-instance checks precede explicit embedded attachment. Append identity, admitted profile, startup, remote status and local connection remain separate; cleanup never deletes the Pod or its permanent declaration. Sixteen real owned-kind groups pass, including actual CLI/kubectl attachment, admission/attach denial, replacement, irreversible entries, target restart and lost receipts. Source CLI, Pilot and fresh installed-wheel behavior also pass; full exact-head platform/coverage and cumulative phase qualification remain separate. Arbitrary privileged profiles and universal runtime namespace visibility are not claimed. The original U05 recipe execs an existing container rather than creating one.",
       "public_summary": "Development work for 0.5 adds reviewed permanent debug-container additions and separate session inspection/attachment. Published 0.4.0 predates this workflow; compatibility and qualification limits remain explicit.",
       "public_status": "partial",
       "partial_evidence": [
@@ -1763,7 +1763,12 @@
         "scripts/verify_ephemeral_debug_kind.py",
         "tests/quality/test_ephemeral_debug_kind.py",
         "docs/plugin-compatibility.md",
-        "docs/plugin-compatibility.json"
+        "docs/plugin-compatibility.json",
+        "src/kuberich/ui/ephemeral_debug.py",
+        "src/kuberich/ui/ephemeral_debug_actions.py",
+        "tests/ui/test_ephemeral_debug.py",
+        "tests/terminal/test_ephemeral_debug.py",
+        "tests/packaging/test_distribution.py"
       ]
     },
     {

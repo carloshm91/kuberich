@@ -1,6 +1,6 @@
 # Reviewed ephemeral-container debugging
 
-Status: implementation in progress; integration and actual runtime evidence are pending.
+Status: implemented in development source; protected delivery and cumulative phase qualification remain separate.
 
 ## Context
 
