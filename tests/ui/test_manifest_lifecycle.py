@@ -1,6 +1,8 @@
 """Captured session generations and retained local/cluster UI owners."""
 
+import asyncio
 import logging
+from pathlib import Path
 
 import pytest
 from aiohttp import web
@@ -9,6 +11,7 @@ from textual.widgets import Button
 from kuberich.config.schema import Settings
 from kuberich.domain.manifests import ManifestScope
 from kuberich.domain.mutations import MutationState
+from kuberich.domain.processes import ProcessResult, ProcessStatus
 from kuberich.domain.resources import Discovery
 from kuberich.domain.targets import SessionIdentity
 from kuberich.services.access import AccessPolicy
@@ -18,9 +21,16 @@ from kuberich.services.processes import ProcessRunner
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.manifest_actions import ManifestActions, ManifestConnection
 from kuberich.ui.manifest_browser import ManifestBrowserScreen
+from kuberich.ui.manifest_editor import ManifestEditorScreen
 from kuberich.ui.manifest_review import ManifestReviewScreen
 from tests.support.connections import catalog_fixture, namespaces
-from tests.support.manifest_ui import RESOURCE, ManifestTestApp, OwnedClient, review_fixture
+from tests.support.manifest_ui import (
+    RESOURCE,
+    ManifestTestApp,
+    OwnedClient,
+    click_ready,
+    review_fixture,
+)
 from tests.support.pods import pod
 from tests.support.resources import collection
 from tests.support.workspace import stable_watch, wait_for, workspace_api
@@ -179,3 +189,68 @@ async def test_action_changes_need_fresh_review_and_absent_delete_sends_no_reque
         await screen.stop_owned()
         await manager.close()
         await local.close()
+
+
+@pytest.mark.asyncio
+async def test_actual_app_escape_keeps_editor_foreground_until_private_draft_cleanup(
+    tmp_path, monkeypatch
+):
+    from kuberich.domain.commands import Command
+
+    path = tmp_path / "owned.yaml"
+    path.write_text("apiVersion: v1\nkind: ConfigMap\nmetadata: {name: owned}\n")
+    drafts = []
+    entered, release = asyncio.Event(), asyncio.Event()
+    original_close = LocalManifestService.close_draft
+
+    async def close_draft(service):
+        if drafts and drafts[-1].parent.exists() and not release.is_set():
+            entered.set()
+            await release.wait()
+        await original_close(service)
+
+    async def handoff(app, runner, command, *, guard):
+        guard()
+        drafts.append(Path(command.argv[-1]))
+        return ProcessResult(ProcessStatus.SUCCEEDED, 0)
+
+    monkeypatch.setattr(LocalManifestService, "close_draft", close_draft)
+    monkeypatch.setattr("kuberich.ui.manifest_editor.terminal_handoff", handoff)
+    app = KubeRichApp(
+        Settings(),
+        logging.Logger("manifest-priority-escape"),
+        directory=tmp_path,
+        initial_command=Command.MANIFESTS,
+    )
+    async with app.run_test(size=(120, 36)) as pilot:
+        await wait_for(
+            lambda: (
+                isinstance(app.screen, ManifestBrowserScreen)
+                and app.screen.listing is not None
+                and app.screen.operation_count == 0
+            )
+        )
+        browser = app.screen
+        await click_ready(app, pilot, browser.query_one("#manifests-edit", Button))
+        await wait_for(
+            lambda: (
+                isinstance(app.screen, ManifestEditorScreen)
+                and app.screen.disclosure is not None
+                and app.screen.operation_count == 0
+            )
+        )
+        editor = app.screen
+        editor.query_one("#manifest-editor-disclosure").value = True
+        await click_ready(app, pilot, editor.query_one("#manifest-editor-open", Button))
+        await wait_for(lambda: bool(drafts) and editor.operation_count == 0)
+        assert drafts[-1].parent.exists()
+        pressed = asyncio.create_task(pilot.press("escape"))
+        try:
+            await wait_for(entered.is_set)
+            assert app.screen is editor, "Escape exposed the browser before draft cleanup drained"
+            assert drafts[-1].parent.exists()
+        finally:
+            release.set()
+            await pressed
+        await wait_for(lambda: app.screen is browser and not drafts[-1].parent.exists())
+        assert editor.stopped and editor.operation_count == 0

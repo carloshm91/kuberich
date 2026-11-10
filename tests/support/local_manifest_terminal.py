@@ -5,6 +5,7 @@ import os
 import shlex
 import signal
 import sys
+import time
 from pathlib import Path
 
 from tests.terminal.pty_support import TerminalSession
@@ -34,7 +35,9 @@ if action=='edit':
 """
 
 
-def terminal_local_manifests(command, directory, evidence, *, scenario="success", size=(120, 36)):
+def terminal_local_manifests(
+    command, directory, evidence, *, scenario="success", size=(120, 36), cleanup_gate=None
+):
     source = directory / "owned.yaml"
     source.write_text(
         "apiVersion: v1\nkind: ConfigMap\nmetadata: {name: owned-local}\ndata: {private: local-pty-private-source}\n"
@@ -107,6 +110,28 @@ def terminal_local_manifests(command, directory, evidence, *, scenario="success"
         terminal.resize(120, 36)
         terminal.wait_for_screen("Edit local manifest")
         terminal.send(b"\x1b")
+        if cleanup_gate is not None:
+            receipt, release = cleanup_gate
+            try:
+                deadline = time.monotonic() + 5
+                while not receipt.exists():
+                    terminal.read(0.01)
+                    assert time.monotonic() < deadline, (
+                        "Owned private-draft cleanup was not entered"
+                    )
+                observed = json.loads(receipt.read_text())
+                assert observed["foreground"] == "ManifestEditorScreen", (
+                    "Escape exposed another screen before private-draft cleanup: "
+                    + observed["foreground"]
+                )
+                assert draft.parent.exists(), "The held owned cleanup no longer controls its draft"
+            finally:
+                if receipt.exists():
+                    descriptor = os.open(release, os.O_WRONLY | os.O_NONBLOCK)
+                    try:
+                        os.write(descriptor, b"1")
+                    finally:
+                        os.close(descriptor)
         terminal.wait_for_screen("Local manifests · inspect", absent=("Edit local manifest",))
         assert not draft.parent.exists()
         terminal.send(b"\x1b\x11")

@@ -182,3 +182,49 @@ platform receipts belong to the issue PR's exact-head Application quality run.
 
 These trials do not certify real cloud providers, the operator's cluster, or a
 published 0.5 artifact. The cumulative phase qualifier remains #82.
+
+## First hosted matrix and follow-up corrections
+
+[Application quality 42739320776](https://github.com/carloshm91/kuberich/actions/runs/42739320776)
+on `ec6d3489c4afd578a23ade0cd953de26cc9bce22` remains **failed**. Its full Fast
+selection passes 10,160 cases with one expected owned-macOS clipboard omission
+on Linux in 469.35 seconds. The retained Fast artifact digest is
+`de7e5569218d2211131872a9c22bdc799055ab3056a512ce8b1101adae2ed3dd`;
+streamed JUnit verification confirms 10,161 cases, no failures/errors and the
+single platform-specific reason. All four native targets pass on that source.
+Repository checks and app-bound DCO also pass.
+
+Five source cohorts fail: part 4 on each Linux Python version and on macOS,
+plus macOS part 1. The other eleven source cohorts pass. Application combination
+and its independent coverage gates are skipped after these required failures;
+the aggregate correctly fails. Those partial successes do not qualify the head.
+
+The new changelog entry has 27 visible words against the existing maximum 25,
+causing the same style failure in all four part-4 environments. Its shortened
+entry passes all five unchanged style tests locally in 0.55 seconds.
+
+The macOS renderer test additionally confuses temporary-root spelling with
+filesystem identity: `/var` aliases `/private/var`. An owned Linux symlink-base
+control reproduces the original failed assertion. The test-only correction
+preserves exact complete argv, private config/cache/source names, permissions,
+all loader/plugin/network flags and cleanup, and now compares live device/inode
+identities for the working directory and source file. Normal and aliased bases
+pass with all ten renderer cases in 1.35 seconds. The original macOS failure and
+local red/green logs remain retained; production rendering is unchanged.
+
+The macOS no-op terminal case returns to the browser while its draft directory
+still exists. The retained failure is `failure-1794276761522751000.json`/ANSI in
+the digest-verified macOS part-1 artifact
+`8e2242e09b841a8464a418c77279c447508693c2f50d856c0303adeaca5f7c8f`.
+Its original assertion and cleanup evidence are preserved. The App's priority
+Escape route bypassed each new screen's asynchronous ownership handler through
+generic modal dismissal. Public actual-App and native-CLI cleanup barriers
+independently reproduce the failure before the fix (2.21 and 2.54 seconds).
+
+The correction awaits the owned browser/editor/review Back action before popping
+the screen, with imports still behind the existing lazy owner. Thirty Pilot cases
+pass in 18.64 seconds and all eight source terminal cases pass in 20.02 seconds.
+The final two held-cleanup controls pass in 4.41 seconds after atomic publication
+of their fixture receipt. The original immediate draft-removal assertion and
+all deadlines remain unchanged. Counts overlap; fresh committed-source kind,
+installed-terminal and required hosted gates must qualify the follow-up head.

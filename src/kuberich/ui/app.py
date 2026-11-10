@@ -1729,6 +1729,19 @@ class KubeRichApp(App[None]):
             self.view_preferences.open()
 
     async def action_back(self) -> None:
+        if self.manifests is not None:
+            from kuberich.ui.manifest_browser import ManifestBrowserScreen
+            from kuberich.ui.manifest_editor import ManifestEditorScreen
+            from kuberich.ui.manifest_review import ManifestReviewScreen
+
+            manifest_screen = self.screen
+            if isinstance(
+                manifest_screen,
+                (ManifestBrowserScreen, ManifestEditorScreen, ManifestReviewScreen),
+            ):
+                # App priority Escape must drain ownership before popping the screen.
+                await manifest_screen.action_back()
+                return
         from kuberich.ui.appearance import ThemeScreen
         from kuberich.ui.artifact_browser import ArtifactBrowserScreen
         from kuberich.ui.artifact_viewer import ArtifactViewerScreen

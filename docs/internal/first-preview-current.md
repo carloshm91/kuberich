@@ -35,6 +35,14 @@ the original interrupted local full run and the advisory startup latency miss.
 Focused source/API/UI/real-editor terminal cases pass, but counts overlap and
 do not replace full production coverage, installed trials or required hosted CI.
 
+The first hosted matrix fails: a new changelog entry exceeds its word limit,
+macOS exposes a temporary-path alias assumption in a renderer test, and App's
+priority Escape dismisses the editor before private-draft cleanup. The original
+logs remain failed. The shortened note, physical-identity test and awaited
+ownership route pass their focused corrections; public App/native-CLI held-close
+controls reproduce the original bug and pass after the fix. A fresh committed
+candidate must repeat the applicable trials and every required hosted gate.
+
 The early exploratory command is retained in the issue checkout:
 `uv run --locked python -m artifacts.issue67.early_apply_proof --kind VERIFIED_KIND --kubectl VERIFIED_KUBECTL --output FRESH_REPORT`.
 It uses an explicit owned cluster and is limited to initial API merge semantics.

@@ -67,6 +67,10 @@ Execute sequentially, revalidate each item and stop on the first
 failure or uncertainty. Preserve completed results and mark every later item
 unsent. There is no compensating rollback or automatic write replay.
 
+The App's priority Escape route delegates to each manifest screen's awaited Back
+handler. Parent navigation waits for that screen's file/process/request cleanup;
+generic modal dismissal followed by asynchronous unmount cleanup is insufficient.
+
 ## Consequences and verification
 
 All resources must validate before confirmation. Namespace/CRD prerequisites

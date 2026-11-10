@@ -4,6 +4,7 @@ import asyncio
 import json
 import os
 import sys
+import tempfile
 from dataclasses import replace
 from pathlib import Path
 
@@ -40,12 +41,46 @@ def helper(tmp_path, body):
 
 
 @pytest.mark.asyncio
-async def test_explicit_render_uses_exact_private_config_cache_and_frozen_tree(tmp_path):
+@pytest.mark.parametrize("symlinked_temp_base", [False, True])
+async def test_explicit_render_uses_exact_private_config_cache_and_frozen_tree(
+    tmp_path, monkeypatch, symlinked_temp_base
+):
+    if symlinked_temp_base:
+        physical = tmp_path / "physical-temp"
+        physical.mkdir(mode=0o700)
+        alias = tmp_path / "alias-temp"
+        alias.symlink_to(physical, target_is_directory=True)
+        monkeypatch.setattr(tempfile, "tempdir", str(alias))
     snapshots = capture(tmp_path)
     record = tmp_path / "record.json"
     helper(
         tmp_path,
-        "import json,os,sys\nfrom pathlib import Path\nroot=Path.cwd()\nconfig=Path(sys.argv[1].split('=',1)[1])\njson.dump({'argv':sys.argv[1:],'cwd':str(root),'config':config.read_text(),'config_mode':config.stat().st_mode&511,'file_mode':(root/'source/resource.yaml').stat().st_mode&511,'kuberc':os.environ.get('KUBECTL_KUBERC'),'kubeconfig':os.environ.get('KUBECONFIG')},open(os.environ['RECORD'],'w'))\nprint((root/'source/resource.yaml').read_text())\n",
+        """import json,os,sys
+from pathlib import Path
+
+def identity(path):
+    info = path.stat()
+    return [info.st_dev, info.st_ino]
+
+arguments = sys.argv[1:]
+root = Path.cwd()
+config = Path(arguments[0].split('=', 1)[1])
+cache = Path(arguments[1].split('=', 1)[1])
+target = Path(arguments[3])
+json.dump({
+    'argv': arguments, 'cwd': str(root), 'config': config.read_text(),
+    'config_mode': config.stat().st_mode & 511,
+    'file_mode': (root/'source/resource.yaml').stat().st_mode & 511,
+    'cwd_identity': identity(root), 'config_parent_identity': identity(config.parent),
+    'cache_parent_identity': identity(cache.parent),
+    'source_identity': identity(root/'source'), 'target_identity': identity(target),
+    'source_file_identity': identity(root/'source/resource.yaml'),
+    'target_file_identity': identity(target/'resource.yaml'),
+    'kuberc': os.environ.get('KUBECTL_KUBERC'),
+    'kubeconfig': os.environ.get('KUBECONFIG'),
+}, open(os.environ['RECORD'], 'w'))
+print((root/'source/resource.yaml').read_text())
+""",
     )
     renderer = KustomizeRenderer(
         AccessPolicy(True),
@@ -57,20 +92,31 @@ async def test_explicit_render_uses_exact_private_config_cache_and_frozen_tree(t
     assert manifest_documents(rendered, source_path="rendered")[0].name == "owned"
     observed = json.loads(record.read_text())
     root = Path(observed["cwd"])
+    staged_root = Path(observed["kubeconfig"]).parent
     assert (
         observed["kuberc"] == "false" and observed["config_mode"] == observed["file_mode"] == 0o600
     )
     assert observed["kubeconfig"] == observed["argv"][0].split("=", 1)[1]
     assert "contexts: []" in observed["config"] and "ambient-do-not-read" not in observed["config"]
-    assert observed["argv"][2:] == [
+    assert observed["argv"] == [
+        f"--kubeconfig={staged_root / 'empty-config.yaml'}",
+        f"--cache-dir={staged_root / 'cache'}",
         "kustomize",
-        str(root / "source"),
+        str(staged_root / "source"),
         "--load-restrictor=LoadRestrictionsRootOnly",
         "--enable-alpha-plugins=false",
         "--enable-helm=false",
         "--network=false",
     ]
-    assert not root.exists() and renderer.operation_count == 0
+    # Path.cwd() reports the physical directory; temp roots may use an alias
+    # such as macOS /var -> /private/var. Compare actual live filesystem identity.
+    assert observed["cwd_identity"] == observed["config_parent_identity"]
+    assert observed["cwd_identity"] == observed["cache_parent_identity"]
+    assert observed["source_identity"] == observed["target_identity"]
+    assert observed["source_file_identity"] == observed["target_file_identity"]
+    if symlinked_temp_base:
+        assert staged_root.parent == alias and root.parent == physical.resolve()
+    assert not root.exists() and not staged_root.exists() and renderer.operation_count == 0
     await renderer.close()
     await renderer.close()
     with pytest.raises(AppError):
