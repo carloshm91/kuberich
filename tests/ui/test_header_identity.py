@@ -192,3 +192,48 @@ async def test_long_header_values_survive_actual_observability_views_and_svg(tmp
                 == api.objects["rbac.authorization.k8s.io", "roles", NS, ROLE]["metadata"]["uid"]
             )
     assert api.active_watches == 0
+
+
+@pytest.mark.asyncio
+async def test_late_filtered_relationship_replaces_source_fallback_with_visible_resource(tmp_path):
+    api = ReviewAPI()
+    api.hold_path = "/apis/scheduling.k8s.io/v1/priorityclasses/batch"
+    async with authorization_api(api) as url:
+        path = config(tmp_path, url)
+        catalog = load_catalog(ConnectionRequest(kubeconfig=str(path)), {})
+        app = KubeRichApp(
+            Settings(read_only=True),
+            logging.Logger("progressive-relationship-filter"),
+            catalog=catalog,
+        )
+        async with app.run_test(size=(120, 36)) as pilot:
+            await wait_for(lambda: app.resources.row_count == 1)
+            await app.run_command("xray")
+            await wait_for(lambda: api.started.is_set())
+            table = app.relationships_table
+            await pilot.press("slash", *"batch", "enter")
+            await wait_for(
+                lambda: (
+                    "Filter active · 0/7 relationships" in str(app.status.content)
+                    and table.row_count > 0
+                    and table.row_at(()) is None
+                )
+            )
+            await table.wait_for_refresh()
+            assert app.filter_input.value == "batch" and app.focused is table
+            assert table.selected_path() is None
+            assert table.get_row_at(0)[0].plain.startswith("Source ")
+            api.release.set()
+            await wait_for(
+                lambda: (
+                    not app.workspace.relationship_collecting
+                    and "Filter active · 2/8 relationships" in str(app.status.content)
+                )
+            )
+            await table.wait_for_refresh()
+            assert table.selected_path() == ()
+            assert table.scroll_y == 0
+            visible = "\n".join(table.render_line(index).text for index in range(table.size.height))
+            assert "Pod/example" in visible and "PriorityClass/batch" in visible
+            assert app.filter_input.value == "batch" and app.focused is table
+    assert api.active_watches == 0

@@ -40,6 +40,15 @@ and strict failures, preserving the package closure and every qualification gate
 All 149 focused bootstrap/workflow/qualification contracts pass. A fresh complete
 hosted matrix is required; partial results do not qualify production coverage.
 
+That fresh run passes Fast, all four native targets and 15 source parts, but a
+macOS native header scenario fails during progressive relationship filtering.
+A public held-HTTP/keyboard regression reproduces a source-row viewport anchor
+hiding the first real matches. The narrow table correction preserves real-resource
+selection behavior and the original native deadline. Original failed evidence
+remains retained; the application coverage matrix did not run. The earlier local
+wheel source association is historical after this runtime correction, and a fresh
+complete exact-head matrix remains required.
+
 ## Local manifests delivered in development source — 2026-11-10 UTC
 
 [PR #335](https://github.com/carloshm91/kuberich/pull/335) merged normally as

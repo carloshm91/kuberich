@@ -209,6 +209,34 @@ fake-bootstrap, workflow-policy and qualification contracts pass in 8.63 seconds
 the additional helper passes strict typing. All platform/test/coverage gates are
 retained for a fresh complete hosted run.
 
+The next complete attempt, `42769208798` at
+`4411639642a786417c22321b46fef9aef75528a8`, passes Fast (10,530 tests, one
+skip), all four native targets and 15 of 16 source parts. Package setup succeeds;
+the Fast runner's APT stage takes 25 seconds. macOS source part three fails one
+existing native relationship/header scenario (3,338 pass, four skips). The final
+application matrix is skipped and Quality gate fails, so whole-production
+coverage is still unqualified. Its original log, ANSI/JSON and verified artifact
+`13742540946` remain retained, with ZIP SHA-256
+`1203446d4fc40aee30c4c8aaebe57a1e752c630ffcde44b12d6e8a4a3f4c89a7`.
+
+Retained frames show a zero-match relationship filter before the last resource
+arrives. The table then preserves a synthetic source-row selection/vertical
+anchor, hiding the first actual matches. An independently held HTTP response and
+public keyboard/Pilot regression reproduce the bug. The correction resets that
+empty-to-resource vertical selection while preserving horizontal position and
+the existing nonempty-resource identity rules. The original native deadline and
+predicate remain intact. This shared UI correction changes a runtime file after
+the earlier local wheel/verifier trials; their byte-identity association above
+is historical, not qualification of this corrected candidate. Fresh exact-head
+qualification remains required.
+
+The deterministic regression is retained red (one failure in 3.04 seconds) and
+passes after the three-line table correction. The unchanged header/table/navigation
+cohort passes 39 cases in 37.04 seconds; the original native/fragmented terminal
+file passes four cases on local Linux in 15.06 seconds with unchanged 15-second
+stage deadlines. Ruff, formatting and strict module types pass. These results do
+not claim a macOS pass; the next exact-head hosted matrix must establish it.
+
 The protected PR must pass complete exact-head hosted source/platform/native,
 production/critical/changed-line coverage and app-bound repository/DCO gates.
 No version bump, tag, package publication, hosting deployment or DNS change is

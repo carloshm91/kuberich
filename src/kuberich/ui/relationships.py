@@ -332,6 +332,9 @@ class RelationshipTable(FrameTable[Text]):
             if pending is not None and pending[0] == self._interaction_revision
             else self.capture_viewport()
         )
+        if not self._rows and rows:
+            # Source-only fallback rows cannot anchor newly available resource matches.
+            viewport = Viewport(None, 0, viewport.x, 0, None)
         incoming = {row.key: row for row in display}
         for key in tuple(self._display_rows):
             if key not in incoming:
