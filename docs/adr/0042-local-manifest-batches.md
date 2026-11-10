@@ -1,6 +1,6 @@
 # 0042: Anchored local sources and reviewed manifest batches
 
-Status: source/API/UI boundaries implemented; complete verification in progress.
+Status: implemented; complete source/platform gates are enforced by the protected PR.
 
 ## Context
 

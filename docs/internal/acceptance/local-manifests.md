@@ -6,10 +6,11 @@ Issue: M07 #67. Phase: v0.5.0. Templates remain #234 and Helm lifecycle remains
 ## Current status
 
 Source/parser/filesystem, renderer, local editing, cluster batches and public UI
-are implemented in the issue branch. Integrated candidate verification is in
-progress. No stub or focused test count completes the issue;
-full candidate coverage, installed/terminal/owned-cluster checks and required
-hosted gates remain pending. No version/tag/package/hosting/DNS change is made.
+are implemented in the issue branch. Frozen owned-cluster and source/installed
+terminal trials pass. The protected PR enforces complete source/platform suites,
+production/critical/changed-line coverage, native packaging and repository checks
+on its exact final head before merge. Local scoped results below do not replace
+those checks. No version/tag/package/hosting/DNS change is made.
 
 The issue starts from protected main
 `e11236e0a108c4ff4bf79a119648a02bc9a61bdc`, after #66/#334 passed all 27 quality
@@ -89,7 +90,7 @@ confirmation, complete batch history and already-completed task publication.
 Known persisted/accepted requests followed by a stop produce `Partial batch`;
 an uncertain request retains precedence. No-op/absent rows do not fabricate
 progress. The final source editor PTY set passes seven scenarios; fourteen
-focused review/history UI cases pass. Installed entry points remain pending.
+focused review/history UI cases pass. See the final installed trial below.
 
 ## Frozen DELETE dry-run failure and correction
 
@@ -121,12 +122,63 @@ the cleanup flag only on normal return; the original false flag is preserved.
 The original log and separate `delete-receipt-probe-01-cleanup.json` verify exact
 owned-node absence. This diagnostic does not qualify the corrected application.
 
-The correction must derive a DELETE validation body containing `dryRun: [All]`,
+The correction derives a DELETE validation body containing `dryRun: [All]`,
 retain the reviewed UID/version preconditions, and leave the confirmation's
 persisting request unchanged. Fake APIs must model the real body-option semantics.
-The complete verifier must independently GET both ordinary and finalizer-backed
+The complete verifier independently GETs both ordinary and finalizer-backed
 objects after preparation and prove unchanged stored identity/version/deletion
-state before confirmation. Final frozen application execution remains pending.
+state before confirmation. The corrected frozen application trial follows.
 
-Final measured commands/results will be appended after the complete implementation
-and frozen-candidate verification. The cumulative phase qualifier remains #82.
+## Frozen application and installed evidence
+
+Signed-off corrected candidate `d8b484fff9149fea4bce0d5d94e877e75b34d99d`
+passes `uv run --locked python -m scripts.verify_manifests_kind --kind VERIFIED_KIND
+--kubectl VERIFIED_KUBECTL --docker /usr/bin/docker --evidence FRESH_REPORT`.
+The pinned tool hashes are retained in the report. `frozen-kind-02.json` records
+58 checks, 293 unchanged measured inputs, preserved owned kubeconfig/sentinel,
+drained services/workers/private delegation, and verified owned-node deletion.
+Report SHA-256: `0d668fc3ae618be960a03cbf44fe1d168cf05fb9bcc177356a8c3d8d12be801a`.
+
+This includes actual declarative create/update/managed-field removal, unchanged
+no-op review, multi-document/directory/local nested Kustomize, explicit mixed
+namespace/cluster scope, strict schema/immutable/quota denial, service-account
+revocation, UID/version and atomic POST conflicts, partial apply, guarded deletion
+and finalizers. A loopback forwarder holds the response after a real API PATCH
+commit: Stop retains uncertainty, does not replay it and leaves later targets
+unsent. Holding observation after an accepted DELETE retains its accepted result
+and stops later deletion. Public Pilot Validate/Confirm controls cause real apply
+and delete effects only after their separate reviews.
+
+The final source/installed terminal command passes **9 cases in 28.33 seconds**:
+
+```sh
+uv run --locked pytest tests/terminal/test_local_manifests.py tests/packaging/test_distribution.py::test_installed_local_manifest_editor_save_and_terminal_restoration --basetemp=/tmp/kuberich-67-installed-pty-01 -n 0 -q
+```
+
+Both console/module wheel entry points run outside the checkout in fresh
+environments at 80×24. Source scenarios cover success, no-op, editor failure,
+malformed output, Ctrl-C, SIGTERM and repeated editing, including larger viewport
+and resize/restoration assertions. `installed-pty-01.log`/XML retain the result.
+
+Ruff passes and formatting checks 1,199 files. The actual workflow target union
+passes strict mypy for 341 source files. On each separately selected Python 3.12
+and 3.13 environment, 25 CLI/config cases pass. Generated references, plan and
+163 focused CLI/documentation/CI/qualifier cases pass; the original catalog-count
+failure is retained separately. The critical inventory now contains 121 modules;
+whole-production gates enforce every required 100% critical line/branch result.
+
+The frozen startup trial passes its hard output/import/RSS/frame/ownership
+contracts. Offline/import targets are met. Five initial frames measure
+1,006.49–1,029.17 ms against the unchanged 600 ms advisory 0.x target; the miss
+remains in `startup-01/report.json`, with strict negative controls preserved.
+
+The complete local covered run `full-01` was deliberately interrupted with
+SIGINT to avoid duplicating the mandatory complete hosted source/platform matrix
+after final guide corrections. It exits 2 with **637 passed in 1,056.97 seconds**,
+not a passing complete-suite or coverage gate. The original log/XML, partial
+coverage, exact tracked input snapshot and interruption reason remain retained;
+all owned pytest workers drain. Final authoritative whole-suite coverage and
+platform receipts belong to the issue PR's exact-head Application quality run.
+
+These trials do not certify real cloud providers, the operator's cluster, or a
+published 0.5 artifact. The cumulative phase qualifier remains #82.

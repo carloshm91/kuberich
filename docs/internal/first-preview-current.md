@@ -1,11 +1,13 @@
 # Development checkpoint
 
-## Local manifest implementation in progress — 2026-11-10 UTC
+## Local manifest implementation candidate — 2026-11-10 UTC
 
 M07 #67 starts from protected main
 `e11236e0a108c4ff4bf79a119648a02bc9a61bdc` on `feat/67-local-manifests`.
 Source, parser, filesystem, renderer, editor and cluster batch contracts are
-implemented, including the public UI; complete candidate verification is in progress.
+implemented, including the public UI. Frozen owned-cluster and source/installed
+terminal trials pass; the protected PR requires complete exact-head platform,
+production/critical/changed-line coverage, native and repository gates.
 These source changes are not part of the published 0.4.0 packages.
 
 Before extensive UI work, the actual owned-kind create/update/managed-key-removal
@@ -23,17 +25,23 @@ result remains visible, the next item is unsent and only one write occurs.
 The first frozen full kind trial exposed a DELETE dry-run request error before
 integration: query-only dry-run options do not override a nonempty `DeleteOptions`
 body. An independent four-case owned diagnostic confirms the required body flag
-and unchanged stored objects with that flag. The original failure remains retained;
-the corrected full application trial is still pending.
+and unchanged stored objects with that flag. The original failure remains retained.
+Corrected frozen candidate `d8b484fff9149fea4bce0d5d94e877e75b34d99d` passes
+58 full application/API/Pilot checks with 293 unchanged measured inputs and
+verified cleanup. Both installed entry points and seven source terminal cases
+pass together (9 cases, 28.33 seconds). See the acceptance record for exact commands,
+the original interrupted local full run and the advisory startup latency miss.
 
 Focused source/API/UI/real-editor terminal cases pass, but counts overlap and
 do not replace full production coverage, installed trials or required hosted CI.
 
 The early exploratory command is retained in the issue checkout:
 `uv run --locked python -m artifacts.issue67.early_apply_proof --kind VERIFIED_KIND --kubectl VERIFIED_KUBECTL --output FRESH_REPORT`.
-It uses an explicit owned cluster and is limited to initial API merge semantics;
-it is not a completed feature or release qualification. The final supported
-verifier and reproducible commands are being added with the implementation.
+It uses an explicit owned cluster and is limited to initial API merge semantics.
+The supported full verifier is now `python -m scripts.verify_manifests_kind` with
+explicit verified `--kind`, `--kubectl`, `--docker` and fresh `--evidence` arguments;
+run it sequentially with no competing measurements. This is not a phase release
+qualification or publication approval.
 
 ## Helm delivered in development source — 2026-11-10 UTC
 
