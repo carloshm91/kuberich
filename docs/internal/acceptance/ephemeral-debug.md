@@ -575,3 +575,52 @@ Original logs, reports, wheel, sdist and runtime-byte comparison remain under
 and `control/`. Whole-checkout Ruff, formatting, private-access validation and
 strict plugin-controller typing pass. Complete exact-head hosted qualification
 and protected merge remain required; no artifacts or hosting are published.
+
+## Sixth hosted attempt: retained test-part layout
+
+Run `42864915997` measures `6bb99e7f30aea5222eb4445cd47aa6fd5188ccaf`.
+Fast passes 10,991 cases with one skip in 396.25 seconds. All 16 source parts,
+four native targets and three full Application profiles pass. Their original
+ZIPs match GitHub's artifact digests and exact head/run metadata; each includes
+all 307 production modules, over 98% lines, 94% branches and 98% changed lines,
+with all 126 critical modules at 100% lines and applicable branches. Those three
+profile observations remain partial rather than whole-run qualification.
+
+The canonical profile passes every actual trial through multi-node maintenance,
+then ephemeral-debug startup fails with ValueError before cluster creation.
+There is no debug report in its checksum-verified original archive. The full log
+is `artifacts/issue78/control/hosted-application-312-06.log`; archive SHA-256 is
+`4289aa597de699b3c45df81d0c57369223e92e2712bdd4a5dcd2f0e2f606a712`.
+The original receipt reports the exception type without its value. It must not
+be described as a Node-maintenance failure: that step explicitly passed before
+the new verifier started. The canonical job and aggregate fail; 25 of 27 jobs
+pass, and the complete run remains unqualified.
+
+The workflow downloads original test parts under unignored `parts/`. Its retained
+`coverage-part.data` files make the strict whole-checkout source guard refuse
+the hosted layout even though runtime inputs are committed. A real temporary
+Git checkout using that workflow-derived path reproduces the startup refusal
+(one failure in 0.78 seconds). Downloads and combination now use the already
+ignored `artifacts/test-parts/`; original part bytes remain intact and existing
+quality archive subtrees do not widen. The source guard, ignore policy and
+production/verifier code remain unchanged. Controls still reject untracked
+runtime files and modified tracked source, and nested evidence retains exactly
+the expected copied files.
+
+The corrected CI/part/debug-preflight cohort passes 90 cases in 16.38 seconds:
+
+```sh
+uv run --no-sync pytest -q tests/quality/test_ci_policy.py tests/quality/test_test_parts.py tests/quality/test_ephemeral_debug_kind.py --basetemp=/tmp/kuberich-78-delivery-06/basetemp --junitxml=/tmp/kuberich-78-delivery-06/junit.xml
+```
+
+Original control source, logs and JUnit remain under
+`artifacts/issue78/ci-parts-fix-01/`. Review of the remaining coverage, diff,
+build, security and installed-quickstart steps finds explicit existing inputs
+and no additional whole-checkout preflight mismatch with the new download root.
+Current actual/installed proofs retain identical runtime/proof inputs and are
+not rerun for the layout correction. A complete new exact-head hosted matrix,
+all four new canonical archives and protected merge remain required.
+
+Whole-checkout Ruff, formatting and private-access validation pass. Read-only
+binding checks confirm all 318 debug inputs, 313 inspection inputs and 309
+installed wheel runtime files remain byte-identical to the rebound proofs.

@@ -65,6 +65,15 @@ verified. All 309 wheel runtime files match source. Exact commands and report
 digests are in [debugging acceptance](acceptance/ephemeral-debug.md). A complete
 new exact-head hosted matrix and protected merge still remain required.
 
+The sixth hosted attempt passes all source/native jobs and three complete
+Application profiles with all 307 production modules and 126 critical modules
+enrolled. Canonical Node maintenance also passes; the new debug verifier then
+refuses startup because downloaded test parts are retained outside ignored
+artifact directories. A real temporary-Git control reproduces the strict-source
+refusal. Moving downloads/combination into `artifacts/test-parts/` preserves the
+guard and original bytes; 90 focused cases pass. Original failed/partial evidence
+remains retained, and another full exact-head matrix remains required.
+
 ## Node maintenance delivered in development source — 2026-11-10 UTC
 
 [PR #337](https://github.com/carloshm91/kuberich/pull/337) merged normally as

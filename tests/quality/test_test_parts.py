@@ -149,18 +149,28 @@ def _part(parts: Path, name: str, evidence: dict[str, bytes] | None = None) -> P
     return part
 
 
+@pytest.mark.parametrize("nested", [False, True])
 def test_evidence_from_every_part_is_copied_and_identical_copies_are_accepted(
     tmp_path: Path,
+    nested: bool,
 ) -> None:
-    parts, root = tmp_path / "parts", tmp_path / "root"
+    root = tmp_path / "root"
+    root.mkdir()
+    parts = root / "artifacts/test-parts" if nested else tmp_path / "parts"
     _part(parts, "p-1", {"ui/receipt.json": b"ui", "shared.txt": b"same"})
     _part(parts, "p-2", {"backend/receipt.json": b"backend", "shared.txt": b"same"})
-    root.mkdir()
+    original = {path: path.read_bytes() for path in parts.rglob("*") if path.is_file()}
     data = collect(parts, "p-", 2, root)
     assert data == [parts / "p-1" / DATA, parts / "p-2" / DATA]
     assert (root / "artifacts/ui/receipt.json").read_bytes() == b"ui"
     assert (root / "artifacts/backend/receipt.json").read_bytes() == b"backend"
     assert (root / "artifacts/shared.txt").read_bytes() == b"same"
+    assert all(path.read_bytes() == value for path, value in original.items())
+    assert {
+        path.relative_to(root / "artifacts").as_posix()
+        for path in (root / "artifacts").rglob("*")
+        if path.is_file() and not path.is_relative_to(parts)
+    } == {"ui/receipt.json", "backend/receipt.json", "shared.txt"}
 
 
 @pytest.mark.parametrize("names", [[], ["p-1"], ["p-1", "p-2", "p-3"], ["p-1", "q-2"]])
