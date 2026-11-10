@@ -483,3 +483,35 @@ environment and cluster-absence checks pass. No incidental reload is needed in
 this actual trial; the controlled HTTP cohort separately proves that branch.
 Whole-checkout Ruff, formatting and private-access validation pass. Full
 exact-head hosted qualification remains required before delivery.
+
+## Fourth hosted attempt: existing artifact-viewer interaction
+
+Run `42856086931` measures `e7f1a4486a4767b27c28da3e57eb84e70a0139af`.
+Fast passes 10,986 cases with one skip in 505.81 seconds, and all four native
+jobs pass. The Python 3.14 second source part fails the existing sensitive local
+artifact viewer test: after cancelling confirmation, its second mouse click
+does not open another confirmation. That part retains 3,217 passes and one
+skip; the remaining run is cancelled and does not qualify delivery. Its original
+full log remains at `artifacts/issue78/control/hosted-py314-part2-04.log`.
+
+A controlled Python 3.14.3 branch-traced test pauses Textual's native first-click
+feedback timer. The viewer has drained its operation and retains no sensitive
+text, but the button's active effect still suppresses the original second click.
+The original interaction fails its unchanged five-second deadline. The narrow
+test correction waits for the same current viewer, drained operation and ended
+button effect before one second click. It preserves cancellation, fresh
+confirmation, stale-file rejection and no-disclosure assertions; application
+behavior, deadlines and all measured debug/inspection inputs remain unchanged.
+
+The controlled original fails once in 6.32 seconds; the corrected viewer,
+browser and export-review cohort passes 47 cases in 34.50 seconds:
+
+```sh
+COVERAGE_FILE=/tmp/kuberich-78-delivery-02/.coverage /tmp/kuberich-78-proof-py314-env/bin/python -m pytest -q tests/ui/test_artifact_viewer.py tests/ui/test_artifact_browser.py tests/ui/test_export_review.py --basetemp=/tmp/kuberich-78-delivery-02/basetemp --cov=kuberich --cov-branch --cov-report= --junitxml=/tmp/kuberich-78-delivery-02/junit.xml
+```
+
+Original control source, logs and JUnit remain under
+`artifacts/issue78/artifact-viewer-fix-01/`. Ruff, formatting and private-access
+validation pass. The unchanged local actual/installed proofs are not rerun for
+this test-only correction. A complete new exact-head hosted matrix remains
+required before protected delivery.

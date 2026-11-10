@@ -40,6 +40,15 @@ with its original reload budget, mandatory 403s and complete cleanup. All 318
 debug-proof inputs remain unchanged. Complete protected qualification is still
 required before delivery.
 
+The fourth hosted attempt passes Fast and all four native jobs, then fails an
+existing Python 3.14 sensitive-artifact-viewer test's second mouse activation.
+A controlled native button-feedback delay reproduces the lost activation;
+waiting for actual inactive readiness preserves one click and the original
+deadline. All 47 branch-traced viewer/browser/export-review cases pass after
+the test-only correction. Original failures remain retained, application and
+debug/inspection proof inputs are unchanged, and a new exact-head matrix is
+required before delivery.
+
 ## Node maintenance delivered in development source — 2026-11-10 UTC
 
 [PR #337](https://github.com/carloshm91/kuberich/pull/337) merged normally as

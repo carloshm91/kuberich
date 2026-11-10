@@ -3,6 +3,7 @@
 import asyncio
 
 import pytest
+from textual.widgets import Button
 
 from kuberich.ui.artifact_viewer import ArtifactViewerScreen
 from tests.support.workspace import wait_for
@@ -136,7 +137,10 @@ async def test_sensitive_view_and_copy_have_distinct_fresh_acknowledgements(tmp_
 
 
 @pytest.mark.asyncio
-async def test_sensitive_ack_cancel_close_and_stale_entry_never_disclose(tmp_path):
+@pytest.mark.parametrize("hold_feedback", [False, True])
+async def test_sensitive_ack_cancel_close_and_stale_entry_never_disclose(
+    tmp_path, hold_feedback, monkeypatch
+):
     from kuberich.ui.export_review import ArtifactConfirmation
     from tests.ui.test_export_review import sensitive_ref
 
@@ -146,6 +150,24 @@ async def test_sensitive_ack_cancel_close_and_stale_entry_never_disclose(tmp_pat
     app = ExportTestApp(screen)
     async with app.run_test() as pilot:
         await viewer_ready(screen)
+        sensitive = screen.query_one("#artifact-sensitive", Button)
+        native_timer, native_message = sensitive.set_timer, sensitive.post_message
+        feedback_timers, presses = [], []
+
+        def timer(*args, **kwargs):
+            result = native_timer(*args, **kwargs)
+            if hold_feedback and not feedback_timers:
+                result.pause()
+                feedback_timers.append(result)
+            return result
+
+        def message(value):
+            if isinstance(value, Button.Pressed):
+                presses.append(value)
+            return native_message(value)
+
+        monkeypatch.setattr(sensitive, "set_timer", timer)
+        monkeypatch.setattr(sensitive, "post_message", message)
         await pilot.click("#artifact-sensitive")
         await wait_for(
             lambda: isinstance(app.screen, ArtifactConfirmation) and app.screen.is_mounted
@@ -155,10 +177,39 @@ async def test_sensitive_ack_cancel_close_and_stale_entry_never_disclose(tmp_pat
         assert not screen.sensitive and not screen.viewer.text
         screen.action_copy()
         assert "validated" in str(screen.status.content)
-        await pilot.click("#artifact-sensitive")
-        await wait_for(
-            lambda: isinstance(app.screen, ArtifactConfirmation) and app.screen.is_mounted
-        )
+
+        async def view_again():
+            # Operation drainage does not end Textual's mouse-click feedback.
+            await wait_for(
+                lambda: (
+                    app.screen is screen
+                    and screen.operation_count == 0
+                    and not sensitive.has_class("-active")
+                )
+            )
+            assert await pilot.click("#artifact-sensitive")
+            await wait_for(
+                lambda: isinstance(app.screen, ArtifactConfirmation) and app.screen.is_mounted
+            )
+
+        repeated = asyncio.create_task(view_again())
+        try:
+            async with asyncio.timeout(5):
+                if hold_feedback:
+                    await pilot.pause()
+                    assert feedback_timers and sensitive.has_class("-active")
+                    assert not repeated.done() and app.screen is screen
+                    assert screen.operation_count == service.operation_count == 0
+                    assert not screen.sensitive and not screen.viewer.text and len(presses) == 1
+                    feedback_timers[0].resume()
+                await repeated
+            assert len(presses) == 2
+        finally:
+            for feedback in feedback_timers:
+                feedback.resume()
+            if not repeated.done():
+                repeated.cancel()
+            await asyncio.gather(repeated, return_exceptions=True)
         (ref.directory.path / ref.name).write_text("changed local entry")
         await pilot.click("#artifact-confirm-yes")
         await wait_for(lambda: screen.operation_count == 0)
