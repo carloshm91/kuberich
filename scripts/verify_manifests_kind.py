@@ -150,7 +150,14 @@ class LoopbackProxy:
         body = await request.read()
         if len(body) > 1024 * 1024:
             raise ValueError("Owned fault-proxy input exceeds its bound.")
-        mutation = request.method in {"POST", "PATCH", "DELETE"} and "dryRun" not in request.query
+        dry_run = request.query.get("dryRun") == "All"
+        if request.method == "DELETE" and body:
+            try:
+                options = json.loads(body)
+            except (ValueError, UnicodeError, RecursionError):
+                options = None
+            dry_run = isinstance(options, dict) and options.get("dryRun") == ["All"]
+        mutation = request.method in {"POST", "PATCH", "DELETE"} and not dry_run
         if mutation and self.before_write is not None:
             callback, self.before_write = self.before_write, None
             await callback()
@@ -723,17 +730,28 @@ async def rbac_cases(h: Harness) -> None:
 
 async def deletion_cases(h: Harness) -> None:
     h.report["active_case"] = "guarded-deletion-finalizers-and-absence"
+    before: dict[str, tuple[object, ...]] = {}
+
+    def metadata_snapshot(value: Any) -> tuple[object, ...]:
+        return (
+            value.metadata.uid,
+            value.metadata.resource_version,
+            value.metadata.deletion_timestamp,
+            tuple(value.metadata.finalizers or ()),
+        )
+
     for name, finalizers in (
         ("owned-delete-one", None),
         ("owned-delete-finalizer", ["example.io/kuberich-owned"]),
     ):
-        await h.core.create_namespaced_config_map(
+        value = await h.core.create_namespaced_config_map(
             NAMESPACE,
             client.V1ConfigMap(
                 metadata=client.V1ObjectMeta(name=name, finalizers=finalizers),
                 data={"managed": "one"},
             ),
         )
+        before[name] = metadata_snapshot(value)
     service, plan = await h.reviewed(
         "delete.yaml",
         tuple(
@@ -742,6 +760,12 @@ async def deletion_cases(h: Harness) -> None:
         ),
         action="delete",
     )
+    for name, snapshot in before.items():
+        observed = await h.require_cm(name)
+        h.check(
+            name + "-delete-dryrun-preserves-live-uid-version-timestamp-finalizers",
+            metadata_snapshot(observed) == snapshot,
+        )
     h.check(
         "delete-review-fresh-real-uids-and-explicit-absent-row",
         plan.ready

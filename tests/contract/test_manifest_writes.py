@@ -69,7 +69,11 @@ class ManifestApi:
             return web.json_response(
                 {"reason": "Forbidden", "message": "private-error-value"}, status=status
             )
-        dry = request.query.get("dryRun") == "All"
+        dry = (
+            body.get("dryRun") == ["All"]
+            if request.method == "DELETE"
+            else request.query.get("dryRun") == "All"
+        )
         if request.method == "POST":
             if self.value is not None:
                 return web.Response(status=409)
@@ -96,9 +100,19 @@ class ManifestApi:
             }:
                 return web.Response(status=409)
             value = copy.deepcopy(self.value)
+            if value["metadata"].get("finalizers"):
+                value["metadata"].update(
+                    deletionTimestamp="2026-11-09T00:00:00Z", deletionGracePeriodSeconds=0
+                )
+                if not dry:
+                    value["metadata"]["resourceVersion"] = "2"
             status = 200
         if not dry:
-            self.value = None if request.method == "DELETE" else copy.deepcopy(value)
+            self.value = (
+                None
+                if request.method == "DELETE" and not value["metadata"].get("finalizers")
+                else copy.deepcopy(value)
+            )
         if self.receipt_change:
             self.receipt_change(value)
         self.entered.set()
@@ -272,11 +286,13 @@ async def test_read_only_prevents_preparation_and_write_before_any_http(tmp_path
         assert not api.requests
 
 
-async def delete_intent_fixture(adapter, api):
+async def delete_intent_fixture(adapter, api, *, finalizer=False):
     from kuberich.domain.operations import DeleteOptions, delete_intent
 
     create = create_intent()
     assert (await adapter.execute(create, lambda: None)).state is MutationState.SUCCEEDED
+    if finalizer:
+        api.value["metadata"]["finalizers"] = ["example.io/owned-finalizer"]
     record = await adapter.read(RESOURCE, create.target, lambda: None)
     target = ResourceTarget(SESSION, "", "configmaps", "team", "owned-one", record.uid)
     return delete_intent(RESOURCE, target, record, DeleteOptions(propagation="Background"))
@@ -284,18 +300,28 @@ async def delete_intent_fixture(adapter, api):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("status_receipt", [False, True])
+@pytest.mark.parametrize("finalizer", [False, True])
 async def test_delete_strict_preview_and_preconditioned_exact_request_do_not_observe_dry_run(
-    tmp_path, status_receipt
+    tmp_path, status_receipt, finalizer
 ):
     async with adapter_fixture(tmp_path) as (adapter, api):
-        intent = await delete_intent_fixture(adapter, api)
+        intent = await delete_intent_fixture(adapter, api, finalizer=finalizer)
         api.status_receipt = status_receipt
+        before = copy.deepcopy(api.value)
         preview = await adapter.validate(intent, lambda: None)
         assert preview.result.state is MutationState.SUCCEEDED and preview.body
-        assert api.value is not None
+        assert api.value == before
         outcome = await adapter.execute(intent, lambda: None)
-        assert outcome.state is MutationState.ACCEPTED and api.value is None
-        assert api.requests[1][3] == api.requests[2][3] == json.loads(intent.body)
+        assert outcome.state is MutationState.ACCEPTED
+        if finalizer:
+            assert api.value["metadata"]["deletionTimestamp"]
+            assert api.value["metadata"]["resourceVersion"] == "2"
+            assert api.value["metadata"]["finalizers"] == before["metadata"]["finalizers"]
+        else:
+            assert api.value is None
+        assert api.requests[1][3] == {**json.loads(intent.body), "dryRun": ["All"]}
+        assert api.requests[2][3] == json.loads(intent.body)
+        assert "dryRun" not in json.loads(intent.body)
         assert api.requests[1][2] == {"fieldValidation": "Strict", "dryRun": "All"}
         assert api.requests[2][3]["preconditions"] == {
             "uid": "actual-server-uid",

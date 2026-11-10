@@ -345,3 +345,38 @@ def test_failure_diagnostics_omit_payloads_previews_and_control_credentials():
     assert all(len(row["safe_message"]) <= 2048 for row in review)
     assert "owned-name" in encoded and "Rejected" in encoded
     assert "private-" not in encoded and "\x1b" not in encoded
+
+
+@pytest.mark.asyncio
+async def test_delete_fault_proxy_observes_body_options_precedence_over_query_dry_run():
+    commits = []
+
+    async def backend(request):
+        body = await request.read()
+        if body:
+            options = json.loads(body)
+            dry = options.get("dryRun") == ["All"]
+        else:
+            dry = request.query.get("dryRun") == "All"
+        if not dry:
+            commits.append(request.method)
+        return web.json_response({"dry_run": dry})
+
+    async with (
+        backend_fixture(backend) as url,
+        aiohttp.ClientSession() as transport,
+        verifier.LoopbackProxy(healthy_client(transport, url)) as proxy,
+        aiohttp.ClientSession() as frontend,
+    ):
+        async with frontend.delete(
+            proxy.url + "/owned", params={"dryRun": "All"}, json={"kind": "DeleteOptions"}
+        ) as response:
+            assert response.status == 200 and not (await response.json())["dry_run"]
+        assert commits == ["DELETE"] and proxy.writes == [("DELETE", "/owned", 200)]
+        async with frontend.delete(
+            proxy.url + "/owned",
+            params={"dryRun": "All"},
+            json={"kind": "DeleteOptions", "dryRun": ["All"]},
+        ) as response:
+            assert response.status == 200 and (await response.json())["dry_run"]
+        assert commits == ["DELETE"] and proxy.writes == [("DELETE", "/owned", 200)]

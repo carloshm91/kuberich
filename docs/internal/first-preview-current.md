@@ -5,7 +5,7 @@
 M07 #67 starts from protected main
 `e11236e0a108c4ff4bf79a119648a02bc9a61bdc` on `feat/67-local-manifests`.
 Source, parser, filesystem, renderer, editor and cluster batch contracts are
-implemented; public UI and complete candidate verification are in progress.
+implemented, including the public UI; complete candidate verification is in progress.
 These source changes are not part of the published 0.4.0 packages.
 
 Before extensive UI work, the actual owned-kind create/update/managed-key-removal
@@ -20,6 +20,12 @@ An independent public service regression found that cancellation during
 post-delete observation could allow the next deletion. The corrected direct
 and `MutationManager.cancel` paths pass independently: the first actual accepted
 result remains visible, the next item is unsent and only one write occurs.
+The first frozen full kind trial exposed a DELETE dry-run request error before
+integration: query-only dry-run options do not override a nonempty `DeleteOptions`
+body. An independent four-case owned diagnostic confirms the required body flag
+and unchanged stored objects with that flag. The original failure remains retained;
+the corrected full application trial is still pending.
+
 Focused source/API/UI/real-editor terminal cases pass, but counts overlap and
 do not replace full production coverage, installed trials or required hosted CI.
 

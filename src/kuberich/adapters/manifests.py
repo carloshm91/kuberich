@@ -15,7 +15,7 @@ from kuberich.adapters.operations import operation_receipt
 from kuberich.domain.connections import HttpProblem
 from kuberich.domain.manifests import ManifestCreateIntent, manifest_status
 from kuberich.domain.mutations import MutationIntent, MutationResult, MutationState
-from kuberich.domain.operations import ResourceAction, ResourceIntent
+from kuberich.domain.operations import ResourceAction, ResourceIntent, operation_json
 from kuberich.domain.processes import ProcessCommand, ProcessMode, ProcessPurpose, ProcessStatus
 from kuberich.domain.resources import (
     ApiResource,
@@ -353,12 +353,20 @@ class ManifestAdapter:
         create = isinstance(intent, ManifestCreateIntent)
         if isinstance(intent, ResourceIntent) and intent.action is not ResourceAction.DELETE:
             raise AppError("Manifest operations admit only explicit deletion intents.")
+        body = intent.body
+        if dry_run and isinstance(intent, ResourceIntent):
+            # Kubernetes decodes a nonempty DeleteOptions body instead of its
+            # query options. Put the non-persistence directive in that body;
+            # the immutable confirmed DELETE retains its original preconditions.
+            body = await parse_owned(
+                lambda: operation_json({**decode_json(intent.body), "dryRun": ["All"]})
+            )
         result = await guarded_request(
             self.client,
             partial(self._check, guard),
             method="PATCH" if patch else "POST" if create else "DELETE",
             path=intent.path,
-            body=intent.body,
+            body=body,
             content_type="application/json-patch+json" if patch else "application/json",
             accepted=(200,) if patch else (201,) if create else (200, 202),
             receipt=receipt,

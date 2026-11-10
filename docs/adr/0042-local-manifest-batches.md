@@ -1,6 +1,6 @@
 # 0042: Anchored local sources and reviewed manifest batches
 
-Status: source/API boundaries implemented; UI integration and complete verification in progress.
+Status: source/API/UI boundaries implemented; complete verification in progress.
 
 ## Context
 
@@ -51,6 +51,11 @@ last-applied annotation. A create dry-run can have no resourceVersion; that is
 not a persistent identity. Actual successful creation still requires a real UID
 and version. An atomic POST conflict never becomes an update. Delete captures
 real UID/version and uses API preconditions; accepted deletion can remain pending.
+DELETE validation derives a `DeleteOptions` body with `dryRun: [All]`; a query-only
+option does not override a nonempty options body. The confirmed request retains
+the reviewed preconditions and excludes the simulation flag. Actual API trials
+must independently prove that preparation preserves ordinary and finalizer-backed
+stored objects before any confirmation.
 
 One-use confirmation binds exact source, scope, ordered destinations, requests
 and dry-run results. A fallback namespace applies only to documents without one;

@@ -283,3 +283,197 @@ async def test_pre_entry_cancel_retains_two_exact_targets_and_scoped_history(tmp
             assert all("UID=(not captured)" in effect for effect in history.effects)
         assert (await service.execute(proof)).state is MutationState.BLOCKED
         await manager.close()
+
+
+class DeleteBodyApi:
+    """Pinned API semantics: a nonempty DeleteOptions body replaces query options."""
+
+    def __init__(self, finalizer, corrupt_receipt):
+        import copy
+
+        self.requests = []
+        self.effects = []
+        self.corrupt_receipt = corrupt_receipt
+        self.values = {}
+        for name in ("owned", "query-control"):
+            metadata = {
+                "name": name,
+                "namespace": "team",
+                "uid": "uid-" + name,
+                "resourceVersion": "opaque-baseline",
+            }
+            if finalizer:
+                metadata["finalizers"] = ["example.io/owned-review"]
+            self.values[name] = {
+                "apiVersion": "v1",
+                "kind": "ConfigMap",
+                "metadata": metadata,
+                "data": {"managed": "fixture-value"},
+            }
+        self.original = copy.deepcopy(self.values["owned"])
+
+    async def handle(self, request):
+        import copy
+        import json
+
+        from aiohttp import web
+
+        name = request.match_info["name"]
+        value = self.values.get(name)
+        if request.method == "GET":
+            return web.Response(status=404) if value is None else web.json_response(value)
+        assert request.method == "DELETE"
+        raw = await request.read()
+        # Kubernetes v1.36.4 delete.go decodes URL options only for an empty body.
+        options = json.loads(raw) if raw else {"dryRun": request.query.getall("dryRun", [])}
+        self.requests.append(
+            {
+                "method": request.method,
+                "path": request.path,
+                "query": dict(request.query),
+                "body": copy.deepcopy(options),
+            }
+        )
+        if value is None:
+            return web.Response(status=404)
+        if options.get("preconditions") != {
+            "uid": value["metadata"]["uid"],
+            "resourceVersion": value["metadata"]["resourceVersion"],
+        }:
+            return web.Response(status=409)
+        dry = options.get("dryRun") == ["All"]
+        if value["metadata"].get("finalizers"):
+            response = copy.deepcopy(value)
+            response["metadata"].update(
+                deletionTimestamp="2026-11-10T00:00:00Z", deletionGracePeriodSeconds=0
+            )
+            if not dry:
+                response["metadata"]["resourceVersion"] = "opaque-after-delete"
+                self.values[name] = copy.deepcopy(response)
+        else:
+            response = {
+                "apiVersion": "v1",
+                "kind": "Status",
+                "status": "Success",
+                "details": {"name": name, "uid": value["metadata"]["uid"]},
+            }
+            if not dry:
+                del self.values[name]
+        if not dry:
+            self.effects.append(name)
+        if name == "owned" and self.corrupt_receipt is not None:
+            response["metadata"][self.corrupt_receipt] = "wrong-receipt-identity"
+        return web.json_response(response)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "finalizer,corrupt_receipt",
+    [(False, None), (True, None), (True, "uid"), (True, "resourceVersion")],
+)
+async def test_delete_validation_uses_body_dry_run_and_close_without_confirmation_preserves_storage(
+    tmp_path, finalizer, corrupt_receipt
+):
+    import json
+    from pathlib import Path
+
+    from aiohttp import ClientSession, web
+
+    from kuberich.adapters.kubernetes import KubernetesSession
+    from kuberich.adapters.manifests import ManifestAdapter
+    from kuberich.domain.manifests import ManifestScope
+    from kuberich.domain.resources import Discovery
+    from kuberich.errors import AppError
+    from kuberich.services.access import AccessPolicy
+    from kuberich.services.local_manifests import LocalManifestService
+    from kuberich.services.manifests import ManifestMutationService
+    from tests.contract.test_manifest_writes import RESOURCE, SESSION
+    from tests.support.connections import catalog_fixture
+
+    api = DeleteBodyApi(finalizer, corrupt_receipt)
+    server = web.Application()
+    server.router.add_route("*", "/api/v1/namespaces/team/configmaps/{name}", api.handle)
+    runner = web.AppRunner(server, shutdown_timeout=0.1)
+    await runner.setup()
+    site = web.TCPSite(runner, "127.0.0.1", 0)
+    await site.start()
+    url = f"http://127.0.0.1:{runner.addresses[0][1]}"
+    policy = AccessPolicy(False)
+    client = KubernetesSession(catalog_fixture(tmp_path, url).select(SESSION.context), 2)
+    local = LocalManifestService(policy, {}, tmp_path)
+    service = None
+    adapter = None
+    try:
+        # This explicit positive control would expose the original query-only bug.
+        control = api.values["query-control"]["metadata"]
+        options = {
+            "apiVersion": "v1",
+            "kind": "DeleteOptions",
+            "preconditions": {"uid": control["uid"], "resourceVersion": control["resourceVersion"]},
+            "propagationPolicy": "Background",
+        }
+        async with (
+            ClientSession(trust_env=False) as http,
+            http.delete(
+                url + "/api/v1/namespaces/team/configmaps/query-control",
+                params={"dryRun": "All"},
+                json=options,
+            ) as response,
+        ):
+            assert response.status == 200
+            await response.read()
+        assert api.effects == ["query-control"]
+        if finalizer:
+            assert api.values["query-control"]["metadata"]["deletionTimestamp"]
+        else:
+            assert "query-control" not in api.values
+        (tmp_path / "owned.yaml").write_text(
+            "apiVersion: v1\nkind: ConfigMap\nmetadata: {name: owned, namespace: team}\n"
+        )
+        await client.open()
+        await local.open_root(Path("."))
+        source = await local.capture("owned.yaml", "file")
+        adapter = ManifestAdapter(client, policy, {}, tmp_path)
+        service = ManifestMutationService(
+            client,
+            ManifestScope(session=SESSION, namespace="team"),
+            Discovery((RESOURCE,)),
+            policy,
+            source,
+            lambda: True,
+            lambda: local.require_source(source),
+            {},
+            tmp_path,
+            adapter=adapter,
+        )
+        plan = await service.prepare("delete")
+        assert plan.ready is (corrupt_receipt is None)
+        assert (
+            plan.items[0].target.uid == "uid-owned"
+            and plan.items[0].resource_version == "opaque-baseline"
+        )
+        requests = [request for request in api.requests if request["path"].endswith("/owned")]
+        assert len(requests) == 1
+        assert requests[0]["body"]["dryRun"] == ["All"]
+        assert requests[0]["body"]["preconditions"] == {
+            "uid": "uid-owned",
+            "resourceVersion": "opaque-baseline",
+        }
+        assert "dryRun" not in json.loads(plan.items[0].request.body)
+        if corrupt_receipt is not None:
+            with pytest.raises(AppError):
+                service.confirm(plan)
+        assert await client.get_json("/api/v1/namespaces/team/configmaps/owned") == api.original
+        await service.close()  # No confirmation or execute call: stopping review cannot delete.
+        assert service.operation_count == 0
+        assert await client.get_json("/api/v1/namespaces/team/configmaps/owned") == api.original
+        assert api.effects == ["query-control"]
+        assert len([request for request in api.requests if request["path"].endswith("/owned")]) == 1
+    finally:
+        if service is not None:
+            await service.close()
+        elif adapter is not None:
+            await adapter.close()
+        await local.close()
+        await client.close()
+        await runner.cleanup()
