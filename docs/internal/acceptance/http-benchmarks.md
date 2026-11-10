@@ -184,3 +184,30 @@ It retains those counts and cleanup facts incrementally, rejects a new ready
 forward or a consumed review, and fails any deliberately injected post-drain
 traffic. Product code, load limits, cleanup deadlines and source guards are
 unchanged. The original failed attempt remains failed.
+
+## Retained local native environment and readiness failures
+
+The first workstation native build correctly fails the unchanged GLIBC 2.35
+floor: this host's `libstdc++.so.6` requires GLIBC 2.38. The original
+`artifacts/issue79/native-build-01.log` and build environment remain retained.
+A pinned Ubuntu 22.04 builder with read-only source, isolated writable output,
+the same full interpreter and lock passes that original floor. Its archive and
+input hashes are retained separately; the failed workstation build is not
+qualified or relabeled.
+
+The first normal runtime verifier of that archive fails before the benchmark
+cohort: it sends `G` immediately after changing terminal size, before observing
+the compact container layout, and the required `worker` field remains outside
+the viewport. The original `native-runtime-02.log` and
+`terminal/failure-1794347073097713008` receipt/ANSI retain the failure and terminal
+cleanup. Controlled public Pilot cases reproduce the old-layout ordering and
+prove that observing the compact 40-column/12-line frame before one `G` reveals
+the actual worker field. A source PTY confirms the same protocol. The verifier
+adds only that frame-readiness guard; its single command, original field
+assertion and deadline remain unchanged. No production table code changes.
+
+Review also identifies the Linux benchmark wrapper's missing working directory
+before its cohort runs. It now selects its fixed owned fixture directory with
+`--workdir`; command and filesystem tests enforce that private journal boundary.
+Final rebuilt native/runtime receipts remain separate from these original
+failed attempts.

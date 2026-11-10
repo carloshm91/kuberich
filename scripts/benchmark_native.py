@@ -86,7 +86,13 @@ def benchmark_command(host: NativeHost, argv: list[str], environment: dict[str, 
             raise ValueError(
                 "The native benchmark host did not provide an owned Docker run."
             ) from None
-        command[position:position] = ["--user", f"{os.getuid()}:{os.getgid()}", "--pid=host"]
+        command[position:position] = [
+            "--user",
+            f"{os.getuid()}:{os.getgid()}",
+            "--pid=host",
+            "--workdir",
+            str(host.directory / "benchmark"),
+        ]
     return command
 
 

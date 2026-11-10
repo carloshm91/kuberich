@@ -245,7 +245,7 @@ def test_wrapper_changes_only_benchmark_docker_process_identity_and_explicit_fix
     host = Host(tmp_path, tmp_path / "bundle")
     environment = {"OWNED_BENCHMARK_PORT": "4321"}
     command = native.benchmark_command(host, [host.executable], environment)
-    assert command[:8] == [
+    assert command[:10] == [
         "docker",
         "--host",
         "unix:///fixture",
@@ -253,6 +253,8 @@ def test_wrapper_changes_only_benchmark_docker_process_identity_and_explicit_fix
         "--user",
         f"{os.getuid()}:{os.getgid()}",
         "--pid=host",
+        "--workdir",
+        str(tmp_path / "benchmark"),
         "--rm",
     ]
     assert environment["TMPDIR"] == str(tmp_path / "benchmark")
