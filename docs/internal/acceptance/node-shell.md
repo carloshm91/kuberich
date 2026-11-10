@@ -177,6 +177,17 @@ verifier candidate. Startup report SHA-256:
 
 ## Protected qualification still required
 
+The first hosted run, `42761940112` at
+`1302f8f5705378fd386009c771a2b26ac3c104ea`, **fails** its Fast tests gate:
+8,959 pass, one is skipped and one fails before fail-fast stops the remainder
+(462.83 seconds). The shared navigation alias test omitted `NODE_SHELL` from its
+explicit read-only rejection inventory. Production correctly raises the existing
+read-only error; the test incorrectly expected it to be allowed. Add that command
+to the rejection inventory, preserving every guard. The corrected navigation,
+catalog and launch cohort passes 301 cases in 2.21 seconds. No production code,
+threshold, exclusion or skip changes. The original hosted log and checksum-verified
+JUnit artifact remain retained; its blocked matrix is not a platform pass.
+
 The protected PR must pass complete exact-head hosted source/platform/native,
 production/critical/changed-line coverage and app-bound repository/DCO gates.
 No version bump, tag, package publication, hosting deployment or DNS change is

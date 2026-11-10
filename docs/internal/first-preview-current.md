@@ -26,6 +26,12 @@ Startup passes hard contracts and retains its advisory 600 ms UI timing miss.
 Complete protected exact-head source/coverage/platform/native gates remain pending. See
 [acceptance](acceptance/node-shell.md) for exact commands, source hashes and limits.
 
+The first hosted Fast gate fails a stale navigation-test inventory: it expects
+the new privileged command to be allowed in read-only mode, while production
+correctly refuses it. The rejection inventory is corrected; all 301 navigation,
+catalog and launch cases pass. The original hosted failure remains retained and
+the complete matrix must pass on the corrected head before merge.
+
 ## Local manifests delivered in development source — 2026-11-10 UTC
 
 [PR #335](https://github.com/carloshm91/kuberich/pull/335) merged normally as
