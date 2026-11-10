@@ -8,6 +8,7 @@ from kuberich.diagnostics.redaction import sanitize_text
 from kuberich.domain.authorization_rows import AuthorizationRow
 from kuberich.domain.diagnostic_rows import DiagnosticRow
 from kuberich.domain.events import EventGroupRow, EventObjectRow
+from kuberich.domain.helm import HelmRelease
 from kuberich.domain.namespaces import NamespaceRow
 from kuberich.domain.navigation import ContextRow
 from kuberich.domain.pods import PodRow
@@ -30,6 +31,7 @@ class FilterResult[
     | DiagnosticRow
     | EventObjectRow
     | EventGroupRow
+    | HelmRelease
 ]:
     rows: tuple[T, ...]
     problem: str | None = None
@@ -46,8 +48,21 @@ def search_text(
     | AuthorizationRow
     | DiagnosticRow
     | EventObjectRow
-    | EventGroupRow,
+    | EventGroupRow
+    | HelmRelease,
 ) -> str:
+    if isinstance(row, HelmRelease):
+        return " ".join(
+            (
+                row.key.namespace,
+                row.key.name,
+                str(row.revision),
+                row.status,
+                row.chart,
+                row.app_version,
+                row.updated,
+            )
+        )
     if isinstance(row, EventObjectRow):
         return " ".join(
             (
@@ -113,6 +128,7 @@ def filter_rows[
     | DiagnosticRow
     | EventObjectRow
     | EventGroupRow
+    | HelmRelease
 ](rows: tuple[T, ...], query: str, kind: str = "pods") -> FilterResult[T]:
     if not query:
         return FilterResult(rows)
@@ -178,6 +194,7 @@ async def apply_filter[
     | DiagnosticRow
     | EventObjectRow
     | EventGroupRow
+    | HelmRelease
 ](rows: tuple[T, ...], query: str, kind: str = "pods") -> FilterResult[T]:
     if not query:
         return FilterResult(rows)

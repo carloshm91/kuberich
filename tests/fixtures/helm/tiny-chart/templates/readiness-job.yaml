@@ -1,0 +1,20 @@
+{{- if .Values.readinessJob.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-readiness
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 30
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      containers:
+        - name: deliberate-failure
+          image: {{ .Values.rollbackHooks.image | quote }}
+          command: ["sh", "-c", "exit 1"]
+          resources:
+            requests: {cpu: 10m, memory: 8Mi}
+            limits: {cpu: 100m, memory: 32Mi}
+{{- end }}

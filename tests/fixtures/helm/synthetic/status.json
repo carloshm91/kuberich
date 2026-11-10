@@ -1,0 +1,32 @@
+{
+  "name": "demo",
+  "namespace": "team",
+  "version": 3,
+  "info": {
+    "first_deployed": "2026-11-09T12:00:00Z",
+    "last_deployed": "2026-11-09T12:10:00Z",
+    "status": "deployed",
+    "notes": "SYNTHETIC_NOTES_SECRET",
+    "description": "SYNTHETIC_DESCRIPTION_SECRET"
+  },
+  "config": {
+    "innocent": "SYNTHETIC_CONFIG_SECRET"
+  },
+  "manifest": "SYNTHETIC_MANIFEST_SECRET",
+  "hooks": [
+    {
+      "name": "demo-hook",
+      "kind": "Job",
+      "events": [
+        "pre-rollback",
+        "post-rollback"
+      ],
+      "manifest": "SYNTHETIC_HOOK_SECRET"
+    }
+  ],
+  "chart": {
+    "values": {
+      "opaque": "SYNTHETIC_CHART_SECRET"
+    }
+  }
+}

@@ -1,5 +1,101 @@
 # Development checkpoint
 
+## Helm implementation in progress — 2026-11-09 UTC
+
+The maintainer started v0.5.0 with M06 #66 on `feat/66-helm-releases`, based on
+protected main `eee30e4d1a595fa15f54449d6b0c5026e74869ce`. No new version/tag,
+package, website deployment or DNS change is authorized by starting this phase.
+Published 0.4.0 packages do not include the new Helm workspace. The separately
+prepared 0.4 website remains pending its hosting approval.
+
+The source adds native `:helm [NAMESPACE|*]`, metadata/status, notes,
+supplied/computed values, manifests, revision history and reviewed rollback.
+Existing metric `:history` and workload `:rollback` keep their meanings.
+Installation, upgrade, uninstall, repository and OCI operations remain #233.
+The initial optional CLI contracts are Helm 3.22.1 and 4.3.1, with Secret or
+ConfigMap storage. No binary is required or probed at ordinary startup.
+
+Measured development evidence so far:
+
+- `uv run --locked pytest tests/unit/test_helm.py tests/unit/test_helm_cli.py tests/unit/test_helm_documents.py tests/unit/test_processes.py`:
+  278 focused cases passed; all three new deterministic Helm modules have 100%
+  lines/branches (614 statements and 198 branches), independently retained in
+  `artifacts/issue66/domain-coverage-final.json`.
+- `uv run --locked pytest tests/unit/test_helm_view_store.py tests/contract/test_helm_workspace_integration.py tests/unit/test_views.py tests/contract/test_workspace.py -q`:
+  107 cases passed, including real HTTP/session switching and controlled producer
+  cleanup. These producer doubles do not establish actual Helm process behavior.
+- `uv run --locked pytest tests/terminal/test_helm.py -q -x`: two actual PTY cases
+  passed at 100×30 and 40×12, with fixture CLI/HTTP metadata, terminal restoration
+  and unchanged owned kubeconfig. No customer context or revealed-data capture.
+- The first `scripts.verify_helm_kind` trial exercised both exact CLI versions
+  and both storage drivers with the original chart. Each functional case reached
+  its success checks: install plus two upgrades as fixture setup, duplicate names,
+  all documents, deliberate disclosure, actual rollback, reviewed hooks and
+  storage-object recreation refusal. Owned cluster deletion was verified.
+  The overall run remains **failed** because parallel implementation changed its
+  measured source inputs. Original `artifacts/issue66/kind-01/evidence.json` and
+  log remain retained. It is exploratory behavior evidence, not a frozen passing
+  qualification. The final frozen trial below supersedes its implementation
+  snapshot while retaining the original failure.
+
+The final frozen `artifacts/issue66/kind-04/evidence.json` passed all four CLI/
+storage combinations with 16 checks each, 290 unchanged measured inputs,
+eight actual metadata-only list/history fixture captures and verified cleanup.
+It covers actual RBAC denial, pending hook failure, timeout, cancellation and a
+completed failure with an observed failed revision and partial resource effects.
+SHA-256: `95ec2a01ffde9a1ebc053b5b4376f8fdef1cebcece7493fd5398a5c4bd8854b5`.
+The corrected delegation check matches `helm-*` before client close; earlier
+02/03 `.yaml` checks were weaker and are not relabeled as this proof.
+
+Independent review found and reproduced two UI defects: retry after failed Helm
+startup and delayed disclosure completion beneath another screen. Both are
+fixed; 15 independent regression cases pass. The final owned-cluster trial binds
+the corrected source. See [Helm acceptance](acceptance/helm-releases.md).
+
+The first correctly isolated full local suite on `9f14984` finished with 12,329
+passes, eight failures and five explicit skips. The failures were documentation
+enrollment, actual CLI help snapshots and test observation/purpose assumptions;
+383 affected-file cases subsequently passed on `d3bedcf`. The independent
+retained production profile passed 98.6171% line, 95.4545% branch and 98.96%
+changed-line coverage; all 119 critical modules passed 100% lines and branches.
+These coverage results do not convert that failed suite into a passing test gate.
+An earlier interrupted invocation put installer environments under the checkout;
+its four isolation failures and original logs are retained separately.
+
+Hosted attempts exposed two additional test observation races: a table can have
+accepted a backend result before its rows are published, and a descendant can
+close its inherited pipes just before its OS state reports exit. Test-only
+corrections observe the actual published frame and bounded process-state
+transition; the latter also retains a live-child negative control. Original
+failed jobs remain visible in [PR #334](https://github.com/carloshm91/kuberich/pull/334).
+A supplemental twelve-worker run restricted to two logical CPUs finished with
+9,800 passes, eight failures and one skip. It is retained as stress evidence,
+not a hardware-equivalence claim or a passing CI gate. The actual hosted fast
+configuration uses four workers and grouped scheduling. No application deadline,
+coverage requirement or failure assertion was relaxed for these corrections.
+
+On `2228315`, the complete fast cohort passed locally and on GitHub: 9,809
+passes and one explicit clipboard skip reserved for an owned macOS runner.
+The four standalone targets also passed. The expanded source matrix then found
+a 40×12 terminal test waiting for the fifth status line without scrolling its
+four-row viewport. Its original Linux/Python 3.13 failure frame and artifact
+remain retained. A public real-PTY probe confirms that four Down keys scroll
+the focused document to the state line; the corrected test preserves its exact
+visible-state assertion and deadline. An unchanged local attempt passed; it
+does not reproduce or erase the hosted failure. The live PR reports subsequent
+exact-candidate qualification.
+
+The unchanged-main operational retry of run `42563497108`, attempt 2, passed:
+actual Linux 3.12 Application job `129413472495` and aggregate `129428097343`.
+Twenty prior successful job results were reused, not reexecuted. The original
+HTTP-504 Popeye-download failure remains retained. This is an external-download
+recovery, not a product source fix or a new release qualification.
+
+This checkpoint records feature-level local evidence. The live issue and its
+implementation PR report the final candidate, independent coverage and required
+hosted checks; this record does not qualify the cumulative v0.5 phase or authorize
+publication. The phase qualifier remains D09 #82.
+
 ## Published 0.4.0 artifacts — 2026-11-09 UTC
 
 The maintainer approved publication of the qualified observability release under

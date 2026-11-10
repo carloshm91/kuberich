@@ -7,6 +7,7 @@ from kuberich.domain.cluster_diagnostics import DiagnosticBookmark
 from kuberich.domain.connections import namespace_name
 from kuberich.domain.curated_navigation import ResolvedCollectionBookmark
 from kuberich.domain.events import EventOptions
+from kuberich.domain.helm import HelmReleaseKey
 from kuberich.domain.pods import PodColumn
 from kuberich.domain.pulse import PulseDrilldown
 from kuberich.domain.relationships import RelationshipBookmark
@@ -49,6 +50,18 @@ class NamespaceChoice:
 
 
 @dataclass(frozen=True)
+class HelmBookmark:
+    """Presentation only; returning always obtains a fresh request and identity."""
+
+    namespace: str | None
+    selected: HelmReleaseKey | None = None
+
+    def __post_init__(self) -> None:
+        if self.namespace is not None:
+            namespace_name(self.namespace)
+
+
+@dataclass(frozen=True)
 class NavigationState:
     context: str
     namespace: str | None
@@ -73,6 +86,7 @@ class NavigationState:
     diagnostics: DiagnosticBookmark | None = None
     curated: ResolvedCollectionBookmark | None = None
     events: EventOptions = field(default_factory=EventOptions)
+    helm: HelmBookmark | None = None
 
 
 class NavigationHistory:

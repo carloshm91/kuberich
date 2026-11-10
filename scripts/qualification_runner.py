@@ -70,6 +70,7 @@ def archive(root: Path, destination: Path) -> None:
         "quickstart",
         "distribution",
         "container-inspection",
+        "helm",
     ):
         source = root / "artifacts" / name
         if source.is_dir():

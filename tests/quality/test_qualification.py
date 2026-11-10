@@ -84,7 +84,7 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     second = catalog.cluster_stages(
         tmp_path, Path("/owned/kind"), Path("/owned/kubectl"), Path("/owned/app.whl"), 2
     )
-    assert len(first) == len(second) == 22
+    assert len(first) == len(second) == 24
     acquisition = first[0]
     assert acquisition.name == "kind-1-diagnostic-tools"
     assert acquisition.command[4:] == (
@@ -163,9 +163,12 @@ def test_kind_catalog_has_every_actual_workflow_rehearsal_and_no_ambient_tools(t
     assert curated.cleanup_timeout == catalog.OWNED_KIND_CLEANUP_SECONDS
     assert "scripts/curated_kind.py" in catalog.type_command(ROOT)
     assert "scripts/verify_curated_resources_kind.py" in catalog.type_command(ROOT)
-    for stage in first[1:]:
+    for stage in first:
         module = stage.command[4]
         assert module in body
+        if "--kind" not in stage.command:
+            assert module in {"scripts.diagnostics_tools", "scripts.helm_tools"}
+            continue
         assert stage.command[stage.command.index("--kind") + 1] == "/owned/kind"
         if "--kubectl" in stage.command:
             assert stage.command[stage.command.index("--kubectl") + 1] == "/owned/kubectl"
@@ -833,7 +836,11 @@ def test_kind_cleanup_budget_covers_the_existing_finally_contract(tmp_path):
     diagnostics = next(stage for stage in stages if stage.name == "kind-1-diagnostics")
     assert diagnostics.cleanup_timeout == 264
     assert catalog.DIAGNOSTIC_CONTAINER_CLEANUP_SECONDS == 45
-    assert all(stage.cleanup_timeout == 219 for stage in stages[1:] if stage is not diagnostics)
+    assert all(
+        stage.cleanup_timeout == 219
+        for stage in stages
+        if "--kind" in stage.command and stage is not diagnostics
+    )
     assert catalog.OWNED_KIND_CLEANUP_SECONDS == 2 * 2 * 30 + 90 + 2 * 2 + 5
     assert catalog.Stage("ordinary", ()).cleanup_timeout == 30
 

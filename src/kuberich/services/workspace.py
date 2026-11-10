@@ -18,6 +18,7 @@ from kuberich.domain.cluster_diagnostics import (
     DiagnosticStatus,
 )
 from kuberich.domain.connections import ConnectionProblem, ConnectionState, namespace_name
+from kuberich.domain.helm import HelmList, HelmProblem, HelmRequest, HelmScope, HelmSnapshot
 from kuberich.domain.history import HistorySnapshot
 from kuberich.domain.log_reads import LogReadState
 from kuberich.domain.metrics import MetricsSnapshot
@@ -48,6 +49,8 @@ from kuberich.services.access import AccessPolicy
 from kuberich.services.authorization_workspace import AuthorizationWorkspace
 from kuberich.services.cluster_diagnostics import DiagnosticService
 from kuberich.services.diagnostic_workspace import DiagnosticWorkspace
+from kuberich.services.helm import HelmService
+from kuberich.services.helm_workspace import HelmWorkspace
 from kuberich.services.log_reads import LogReadLease
 from kuberich.services.metrics import MetricsPoller, supports_metrics
 from kuberich.services.pulse import PulseService
@@ -58,6 +61,8 @@ from kuberich.services.watches import ListWatch
 
 MAX_SUBSCRIPTIONS = 8
 MAX_LOG_READS = 8
+
+type HelmFactory = Callable[[KubernetesSession, Callable[[HelmRequest], bool]], HelmService]
 
 
 class DiagnosticPopeye(Protocol):
@@ -88,6 +93,7 @@ class WorkspaceOwnership:
     relationships_count: int = 0
     authorization_count: int = 0
     diagnostics_count: int = 0
+    helm_count: int = 0
 
 
 class ViewSubscription(AsyncIterator[ViewObservation]):
@@ -140,6 +146,7 @@ class _Selection:
     diagnostic_producer: Literal["native", "popeye"] = "native"
     diagnostic_cancel: bool = False
     diagnostic_client: KubernetesSession | None = None
+    helm: HelmRequest | None = None
 
 
 def _cancel_once(task: asyncio.Task[None] | None) -> None:
@@ -172,6 +179,7 @@ class WorkspaceService:
         diagnostic_policy: AccessPolicy | None = None,
         diagnostic_now: Callable[[], datetime] | None = None,
         diagnostic_popeye: DiagnosticPopeye | None = None,
+        helm_factory: HelmFactory | None = None,
     ) -> None:
         self.sessions = sessions
         self.store = ViewStore()
@@ -191,6 +199,9 @@ class WorkspaceService:
         self._relationships: asyncio.Task[None] | None = None
         self._authorization = AuthorizationWorkspace()
         self._diagnostics = DiagnosticWorkspace()
+        self._helm = HelmWorkspace()
+        self._helm_factory = helm_factory
+        self._helm_service: HelmService | None = None
         self._diagnostic_policy = (
             diagnostic_policy if diagnostic_policy is not None else AccessPolicy(True)
         )
@@ -220,6 +231,7 @@ class WorkspaceService:
             relationships_count=int(self._relationships is not None),
             authorization_count=int(self._authorization.task is not None),
             diagnostics_count=int(self._diagnostics.task is not None),
+            helm_count=int(self._helm.task is not None) + int(self._helm_service is not None),
         )
 
     def _require_open(self) -> None:
@@ -289,6 +301,7 @@ class WorkspaceService:
         _cancel_once(self._operation)
         self._authorization.cancel()
         _cancel_once(self._diagnostics.task)
+        _cancel_once(self._helm.task)
         self._publish()
         if self.task is None or self.task.done():
             self.task = asyncio.create_task(self._drive(), name="kuberich-workspace")
@@ -303,6 +316,8 @@ class WorkspaceService:
     ) -> asyncio.Task[None]:
         self._require_open()
         validate_argument(context)
+        helm = self.helm_request
+        self._invalidate_helm()
         self._diagnostics.invalidate()
         self._diagnostic_cancelling = None
         authorization = self.authorization_request
@@ -333,6 +348,7 @@ class WorkspaceService:
                 pulse=self.pulse_selected,
                 relationships=self._relationship_request,
                 authorization=self.authorization_request,
+                helm=helm,
             )
         )
 
@@ -350,6 +366,11 @@ class WorkspaceService:
 
     def select_namespace(self, namespace: str | None) -> asyncio.Task[None]:
         context = self._current_context()
+        helm = self.helm_request
+        if helm is not None:
+            return self.select_helm(
+                replace(helm.scope, namespace=namespace), header=NamespaceChoice(namespace)
+            )
         if self._diagnostic_scope() is not None:
             identity = self.store.observation.connection.identity
             assert identity is not None
@@ -407,6 +428,7 @@ class WorkspaceService:
         """Prepare an ordinary view before connecting, with no transport effects."""
         self._require_open()
         self.selection = resource
+        self._invalidate_helm()
         self._authorization.invalidate()
         self._diagnostics.invalidate()
         self._diagnostic_cancelling = None
@@ -417,6 +439,7 @@ class WorkspaceService:
     def select_pulse(self) -> asyncio.Task[None]:
         """Select a native overview, including before the first connection is ready."""
         self._require_open()
+        self._invalidate_helm()
         self.pulse_selected = True
         self._authorization.invalidate()
         self._diagnostics.invalidate()
@@ -441,6 +464,130 @@ class WorkspaceService:
                 namespace=connection.namespace,
                 pulse=True,
             )
+        )
+
+    @property
+    def helm_request(self) -> HelmRequest | None:
+        return self._helm.request
+
+    @property
+    def helm_service(self) -> HelmService | None:
+        service, request = self._helm_service, self.helm_request
+        return (
+            service
+            if service is not None
+            and request is not None
+            and self._helm_current(service.client, self.store.observation.revision, request)
+            else None
+        )
+
+    def _invalidate_helm(self) -> None:
+        self._helm.invalidate()
+        if self._helm_service is not None:
+            self._helm_service.invalidate()
+
+    def select_helm(
+        self, scope: HelmScope, *, header: NamespaceChoice | None = None
+    ) -> asyncio.Task[None]:
+        context = self._current_context()
+        connection = self.store.observation.connection
+        namespace = connection.namespace if header is None else header.namespace
+        if scope.session != connection.identity or scope.namespace != namespace:
+            raise AppError("Helm scope must match the current session and header namespace.")
+        self._invalidate_helm()
+        request = self._helm.prepare(scope)
+        self._authorization.invalidate()
+        self._diagnostics.invalidate()
+        self._diagnostic_cancelling = None
+        self.pulse_selected = False
+        self._relationship_request = None
+        self._relationship_service = None
+        revision = self.store.begin(context, replace(connection, namespace=namespace))
+        self.store.bind_helm(revision, request)
+        if self._helm.snapshot is not None:
+            self.store.apply_helm(revision, replace(self._helm.snapshot, collecting=True))
+        return self._schedule(
+            _Selection(
+                revision,
+                context,
+                self.selection,
+                change_namespace=header is not None
+                or namespace != self.sessions.observation.namespace,
+                namespace=namespace,
+                helm=request,
+            )
+        )
+
+    def refresh_helm(self) -> asyncio.Task[None]:
+        request = self.helm_request
+        if request is None:
+            raise AppError("Open Helm releases before refreshing them.")
+        return self.select_helm(request.scope)
+
+    def _helm_current(self, client: KubernetesSession, revision: int, request: HelmRequest) -> bool:
+        view = self.store.observation
+        return (
+            not self._closed
+            and self.sessions.client is client
+            and self.sessions.observation.identity == request.scope.session
+            and self.sessions.observation.state in USABLE_CONNECTIONS
+            and view.revision == revision
+            and self._helm.current(request)
+            and view.helm is not None
+            and view.helm.request == request
+            and view.connection.namespace == request.scope.namespace
+        )
+
+    def _start_helm(self, selection: _Selection, client: KubernetesSession) -> None:
+        request = selection.helm
+        identity = self.sessions.observation.identity
+        assert request is not None and identity is not None
+        scope = replace(
+            request.scope, session=identity, namespace=self.sessions.observation.namespace
+        )
+        if request != self._helm.request or request.scope != scope:
+            request = self._helm.prepare(scope)
+            self.store.bind_helm(selection.revision, request)
+
+        def current(candidate: HelmRequest) -> bool:
+            return self._helm_current(client, selection.revision, candidate)
+
+        def publish(snapshot: HelmSnapshot) -> None:
+            if current(snapshot.request) and self.store.apply_helm(selection.revision, snapshot):
+                self._publish()
+
+        factory = self._helm_factory
+        service = None if factory is None else factory(client, current)
+        self._helm_service = service
+
+        async def collect(captured: HelmRequest) -> HelmList:
+            try:
+                if service is None:
+                    raise HelmProblem("unavailable", "Helm integration is not configured.")
+                return await service.list(captured)
+            except (asyncio.CancelledError, AppError):
+                raise
+            except Exception as error:
+                if current(captured):
+                    previous = self._helm.snapshot
+                    assert previous is not None
+                    self.store.apply_helm(
+                        selection.revision,
+                        replace(
+                            previous,
+                            collecting=False,
+                            problem=HelmProblem("unavailable", "Helm collection failed; refresh."),
+                        ),
+                    )
+                    self._helm.invalidate()
+                    self._unexpected(selection.revision, error)
+                raise
+
+        self._helm.start(request, collect, publish)
+        task = self._helm.task
+        assert task is not None
+        task.add_done_callback(
+            lambda completed: None if completed.cancelled() else completed.exception()
         )
 
     @property
@@ -486,6 +633,7 @@ class WorkspaceService:
         if scope.root is None and scope.namespace != namespace:
             raise AppError("Diagnostic overview scope must match the selected header namespace.")
         connection = replace(connection, namespace=namespace)
+        self._invalidate_helm()
         self._diagnostic_cancelling = None
         request = self._diagnostics.prepare(scope, producer)
         self._authorization.invalidate()
@@ -761,6 +909,7 @@ class WorkspaceService:
         if scope is not None:
             connection = replace(connection, namespace=scope.namespace)
         assert connection.identity is not None
+        self._invalidate_helm()
         request = self._authorization.prepare(connection.identity, intent)
         self._diagnostics.invalidate()
         self._diagnostic_cancelling = None
@@ -817,6 +966,7 @@ class WorkspaceService:
         if root.session != connection.identity:
             raise AppError("The relationship root belongs to an obsolete connection.")
         self._authorization.invalidate()
+        self._invalidate_helm()
         self._diagnostics.invalidate()
         self._diagnostic_cancelling = None
         self._relationship_revision += 1
@@ -888,6 +1038,8 @@ class WorkspaceService:
 
     def refresh_discovery(self) -> asyncio.Task[None]:
         context = self._current_context()
+        if self.helm_request is not None:
+            return self.refresh_helm()
         self._discovery = None
         self._relationship_service = None
         if self._diagnostic_scope() is not None:
@@ -921,6 +1073,10 @@ class WorkspaceService:
         )
 
     async def _stop_watch(self) -> None:
+        await self._helm.stop()
+        service, self._helm_service = self._helm_service, None
+        if service is not None:
+            await service.close()
         await self._diagnostics.stop()
         await self._authorization.stop()
         relationships = self._relationships
@@ -1017,6 +1173,9 @@ class WorkspaceService:
                 return
             client = self.sessions.client
             assert client is not None and observation.identity is not None
+            if selection.helm is not None:
+                self._start_helm(selection, client)
+                return
             reader = ResourceReader(
                 client,
                 tables=selection.resource.server_columns or selection.resource.query.compact,
@@ -1251,6 +1410,7 @@ class WorkspaceService:
     async def close(self) -> None:
         if self._closing is None:
             self._closed = True
+            self._invalidate_helm()
             for lease in tuple(self._log_reads):
                 lease.release()
             self._authorization.invalidate()

@@ -1274,21 +1274,44 @@
       ],
       "source": "internal/dao/helm_chart.go",
       "status": "planned",
-      "difference": "Optional external Helm adapter; no Go SDK inside Python.",
-      "public_summary": "Helm release browsing, status, notes, values, manifests and history are planned.",
-      "public_status": "planned"
+      "difference": "M06 development source adds a native Helm release workspace using an optional external CLI, initially pinned to 3.22.1 and 4.3.1 with Secret or ConfigMap storage. Metadata identity, bounded reads, default document redaction and deliberate disclosure are implemented; cumulative phase qualification remains separate. Published 0.4.0 predates this feature.",
+      "public_summary": "Development source for 0.5 adds Helm release browsing, status, notes, supplied/computed values, manifests and revision history with an optional supported CLI. Published 0.4.0 does not include this workspace.",
+      "public_status": "partial",
+      "partial_evidence": [
+        "docs/workloads.md",
+        "tests/unit/test_helm.py",
+        "tests/unit/test_helm_cli.py",
+        "tests/unit/test_helm_documents.py",
+        "tests/contract/test_helm.py",
+        "tests/contract/test_helm_process.py",
+        "tests/contract/test_helm_storage.py",
+        "tests/contract/test_helm_workspace_integration.py",
+        "tests/ui/test_helm.py",
+        "tests/ui/test_helm_inspection.py",
+        "tests/terminal/test_helm.py",
+        "scripts/verify_helm_kind.py",
+        "docs/internal/acceptance/helm-releases.md"
+      ]
     },
     {
       "id": "HELM02",
       "capability": "Helm rollback and uninstall with history options",
       "tasks": [
-        "M06"
+        "M06",
+        "M09"
       ],
       "source": "internal/dao/helm_history.go",
       "status": "planned",
-      "difference": "",
-      "public_summary": "Helm rollback and uninstall workflows are planned.",
-      "public_status": "planned"
+      "difference": "M06 development source adds reviewed prior-revision rollback with read-only enforcement, fresh actual storage identity and one-use approvals; Helm offers no atomic identity condition and partial/uncertain effects remain explicit. Cumulative phase qualification remains separate. M09 owns the still-planned install, upgrade and uninstall lifecycle.",
+      "public_summary": "Development source for 0.5 adds reviewed Helm rollback; installation, upgrade and uninstall remain planned. Published 0.4.0 predates Helm management.",
+      "public_status": "partial",
+      "partial_evidence": [
+        "docs/workloads.md",
+        "tests/contract/test_helm.py",
+        "tests/ui/test_helm_inspection.py",
+        "scripts/verify_helm_kind.py",
+        "docs/internal/acceptance/helm-releases.md"
+      ]
     },
     {
       "id": "EXT01",

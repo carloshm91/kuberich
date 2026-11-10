@@ -47,6 +47,7 @@ KIND_SCENARIOS = (
     ("container-inspection", "verify_container_inspection_kind", False),
     ("metric-history", "verify_history_kind", True),
     ("curated-resources", "verify_curated_resources_kind", False),
+    ("helm", "verify_helm_kind", False),
 )
 
 
@@ -167,6 +168,7 @@ def cluster_stages(
     output: Path, kind: Path, kubectl: Path, wheel: Path, repetition: int
 ) -> list[Stage]:
     diagnostic_tools = output / "diagnostic-tools"
+    helm_tools = output / "helm-tools"
     stages = [
         Stage(
             f"kind-{repetition}-diagnostic-tools",
@@ -178,6 +180,18 @@ def cluster_stages(
                 "scripts.diagnostics_tools",
                 "--directory",
                 str(diagnostic_tools),
+            ),
+        ),
+        Stage(
+            f"kind-{repetition}-helm-tools",
+            (
+                "uv",
+                "run",
+                "python",
+                "-m",
+                "scripts.helm_tools",
+                "--directory",
+                str(helm_tools),
             ),
         ),
         *[
@@ -202,6 +216,18 @@ def cluster_stages(
                         if name == "diagnostics"
                         else ()
                     ),
+                    *(
+                        (
+                            "--helm3",
+                            str(helm_tools / "3.22.1" / "helm"),
+                            "--helm4",
+                            str(helm_tools / "4.3.1" / "helm"),
+                            "--docker",
+                            "/usr/bin/docker",
+                        )
+                        if name == "helm"
+                        else ()
+                    ),
                     "--evidence",
                     str(
                         output / f"kind-{repetition}-{name}" / "evidence.json"
@@ -214,6 +240,7 @@ def cluster_stages(
                             "container-inspection",
                             "metric-history",
                             "curated-resources",
+                            "helm",
                         }
                         else output / f"kind-{repetition}-{name}.json"
                     ),

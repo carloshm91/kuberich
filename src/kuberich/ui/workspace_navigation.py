@@ -15,7 +15,13 @@ from kuberich.domain.cluster_diagnostics import DiagnosticBookmark
 from kuberich.domain.curated_navigation import AllResources, ResolvedCollectionBookmark
 from kuberich.domain.custom import CustomLayout
 from kuberich.domain.events import EventGroupMembers, EventOptions, event_descriptor_supported
-from kuberich.domain.navigation import NamespaceChoice, NavigationHistory, NavigationState, Viewport
+from kuberich.domain.navigation import (
+    HelmBookmark,
+    NamespaceChoice,
+    NavigationHistory,
+    NavigationState,
+    Viewport,
+)
 from kuberich.domain.pods import PodColumn
 from kuberich.domain.registry import RESOURCE_ALIASES, resource_selection
 from kuberich.domain.relationships import (
@@ -58,6 +64,7 @@ from kuberich.ui.cluster_diagnostics import ClusterDiagnosticsTable
 from kuberich.ui.commands import CommandInput
 from kuberich.ui.contexts import ContextTable
 from kuberich.ui.events import EventsTable
+from kuberich.ui.helm import HelmReleaseTable
 from kuberich.ui.namespaces import NamespaceTable
 from kuberich.ui.pods import PodTable
 from kuberich.ui.root_views import RootViews
@@ -68,6 +75,7 @@ if TYPE_CHECKING:
     from kuberich.services.curated_navigation import CuratedOrigin, ResolvedCuratedDestination
     from kuberich.ui.authorization_navigation import AuthorizationNavigation
     from kuberich.ui.diagnostic_navigation import DiagnosticNavigation
+    from kuberich.ui.helm_navigation import HelmNavigation
 
 
 @dataclass(frozen=True)
@@ -121,6 +129,7 @@ class WorkspaceNavigation:
         self._pending_relationships: NavigationState | None = None
         self.authorization: AuthorizationNavigation | None = None
         self.diagnostics: DiagnosticNavigation | None = None
+        self.helm: HelmNavigation | None = None
 
     @property
     def resource_name(self) -> str:
@@ -148,6 +157,8 @@ class WorkspaceNavigation:
         self.status(message)
 
     def resolve_pending(self) -> None:
+        if self.helm is not None:
+            self.helm.resolve_pending()
         if self.diagnostics is not None:
             self.diagnostics.resolve_pending()
         if self.authorization is not None:
@@ -198,7 +209,7 @@ class WorkspaceNavigation:
         if (
             not isinstance(initial, (ScopedCommand, ResourceCommand, GenericResourceCommand))
             and initial is not Command.NAMESPACES
-        ):
+        ) or (isinstance(initial, ScopedCommand) and initial.command is Command.HELM):
             apply(initial)
 
     def connect(
@@ -273,6 +284,13 @@ class WorkspaceNavigation:
                 self.diagnostics.context_changing(value, explicit=True)
                 self.filter_input.value = ""
                 self.connect(value, remember=False)
+                return
+            if (
+                diagnostic_parent is not None
+                and diagnostic_parent.helm is not None
+                and self.helm is not None
+            ):
+                self.helm.restore(replace(diagnostic_parent, context=value))
                 return
             self.workspace.prepare_resource(ResourceSelection("pods"))
             self.display("pods")
@@ -654,6 +672,8 @@ class WorkspaceNavigation:
                 self.authorization.begin_namespace_picker()
             if self.diagnostics is not None:
                 self.diagnostics.begin_namespace_picker()
+            if self.helm is not None:
+                self.helm.begin_namespace_picker()
             self.select_resource("namespaces", restore=self._namespace_state)
 
     def display(
@@ -677,6 +697,8 @@ class WorkspaceNavigation:
             if resource == "authorization"
             else ViewRoute.diagnostics()
             if resource == "diagnostics"
+            else ViewRoute.helm()
+            if resource == "helm"
             else ViewRoute.namespaces()
             if resource == "namespaces"
             else ViewRoute.events(selection or ResourceSelection("events"))
@@ -698,6 +720,8 @@ class WorkspaceNavigation:
             if not event_descriptor_supported(descriptor):
                 route = ViewRoute(ViewKind.STANDARD, route.selection)
         self.views.select(route)
+        if self.helm is not None:
+            self.helm.departing(route.kind)
         if self.authorization is not None:
             self.authorization.departing(route.kind)
         if self.diagnostics is not None:
@@ -710,7 +734,17 @@ class WorkspaceNavigation:
         namespaces = route.kind is ViewKind.NAMESPACES
         self.host.query_one("#all-namespaces").display = namespaces
         self.header.shortcuts = (
-            (("Enter", "Evidence"), ("o", "Open object"), ("/", "Filter"), ("Esc", "Previous"))
+            (
+                ("Enter", "Inspect release"),
+                ("F4", "Refresh"),
+                ("n / :ns", "Namespaces"),
+                ("s/S", "Sort"),
+                ("/", "Filter"),
+                (":", "Command"),
+                ("Esc", "Previous"),
+            )
+            if resource == "helm"
+            else (("Enter", "Evidence"), ("o", "Open object"), ("/", "Filter"), ("Esc", "Previous"))
             if resource == "diagnostics"
             else (
                 ("Enter", "Follow evidence"),
@@ -736,7 +770,7 @@ class WorkspaceNavigation:
                 ("/", "Filter"),
                 ("Esc", "Previous"),
             )
-            if resource in {"pulse", "relationships", "authorization", "diagnostics"}
+            if resource in {"pulse", "relationships", "authorization", "diagnostics", "helm"}
             else CTX_SHORTCUTS
             if resource == "contexts"
             else NS_SHORTCUTS
@@ -840,6 +874,8 @@ class WorkspaceNavigation:
             try:
                 choice = NamespaceChoice(None if value == "*" else value)
                 current = self.capture()
+                if self.helm is not None and self.helm.namespace_selected(choice, current):
+                    return
                 if self.diagnostics is not None and self.diagnostics.namespace_selected(
                     choice, current
                 ):
@@ -981,6 +1017,9 @@ class WorkspaceNavigation:
             self.status(self._column_notice)
 
     def refresh_discovery(self) -> None:
+        if self.helm is not None and self.helm.active:
+            self.helm.refresh()
+            return
         if self.diagnostics is not None and self.diagnostics.active:
             self.diagnostics.refresh()
             return
@@ -1051,6 +1090,7 @@ class WorkspaceNavigation:
             "relationships",
             "authorization",
             "diagnostics",
+            "helm",
         }:
             self.notice(
                 "Server selectors apply to Kubernetes resources; open a resource view first."
@@ -1103,13 +1143,25 @@ class WorkspaceNavigation:
             self.views.table.sort_column
             if isinstance(
                 self.views.table,
-                (StandardTable, NamespaceTable, ClusterDiagnosticsTable, EventsTable),
+                (
+                    StandardTable,
+                    NamespaceTable,
+                    ClusterDiagnosticsTable,
+                    EventsTable,
+                    HelmReleaseTable,
+                ),
             )
             else self.views.tables.pods.sort_column,
             self.views.table.descending
             if isinstance(
                 self.views.table,
-                (StandardTable, NamespaceTable, ClusterDiagnosticsTable, EventsTable),
+                (
+                    StandardTable,
+                    NamespaceTable,
+                    ClusterDiagnosticsTable,
+                    EventsTable,
+                    HelmReleaseTable,
+                ),
             )
             else self.views.tables.pods.descending,
             viewport.selected,
@@ -1152,6 +1204,15 @@ class WorkspaceNavigation:
             else None,
             self.views.curated,
             self.views.event_options,
+            HelmBookmark(
+                helm_request.scope.namespace,
+                selected.key
+                if (selected := self.views.tables.helm.selected_release()) is not None
+                else None,
+            )
+            if self.resource_name == "helm"
+            and (helm_request := self.workspace.helm_request) is not None
+            else None,
         )
 
     def remember(self) -> None:
@@ -1171,6 +1232,9 @@ class WorkspaceNavigation:
         self.restore(state)
 
     def restore(self, state: NavigationState) -> None:
+        if state.helm is not None and self.helm is not None:
+            self.helm.restore(state)
+            return
         if state.diagnostics is not None and self.diagnostics is not None:
             self.diagnostics.restore(state)
             return
@@ -1300,6 +1364,11 @@ class WorkspaceNavigation:
             and self._restore_state[0] == view.revision
             and (
                 view.snapshot is not None
+                or (
+                    self.views.route.kind is ViewKind.HELM
+                    and self.helm is not None
+                    and self.helm.restore_ready(view)
+                )
                 or self.views.route.kind is ViewKind.CONTEXTS
                 or (self.views.route.kind is ViewKind.PULSE and view.pulse is not None)
                 or (
@@ -1319,11 +1388,17 @@ class WorkspaceNavigation:
             )
         ):
             state = self._restore_state[1]
-            if isinstance(self.views.table, (PodTable, StandardTable, NamespaceTable, EventsTable)):
+            if isinstance(
+                self.views.table,
+                (PodTable, StandardTable, NamespaceTable, EventsTable, HelmReleaseTable),
+            ):
                 if self.resource_name == "pods":
                     self.views.tables.pods.restore_sort(PodColumn(state.column), state.descending)
                 elif (
-                    isinstance(self.views.table, (StandardTable, NamespaceTable, EventsTable))
+                    isinstance(
+                        self.views.table,
+                        (StandardTable, NamespaceTable, EventsTable, HelmReleaseTable),
+                    )
                     and not self.views.tables.custom.display
                 ):
                     self.views.table.restore_sort(state.column, state.descending)
@@ -1376,7 +1451,8 @@ class WorkspaceNavigation:
             else "Pulse"
             if self.views.drilldown is not None
             else "Previous view"
-            if self.resource_name in {"pulse", "relationships", "authorization", "diagnostics"}
+            if self.resource_name
+            in {"pulse", "relationships", "authorization", "diagnostics", "helm"}
             or self.views.expected_uid is not None
             or self.views.curated is not None
             or self.views.route.kind is ViewKind.EVENTS
@@ -1386,7 +1462,7 @@ class WorkspaceNavigation:
 
     def back(self) -> None:
         if (
-            self.resource_name in {"pulse", "relationships", "authorization", "diagnostics"}
+            self.resource_name in {"pulse", "relationships", "authorization", "diagnostics", "helm"}
             or self.views.drilldown is not None
             or self.views.expected_uid is not None
             or self.views.curated is not None

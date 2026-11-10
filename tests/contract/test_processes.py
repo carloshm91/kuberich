@@ -244,13 +244,18 @@ async def test_natural_parent_exit_cleans_descendants_holding_output_pipes(tmp_p
         value
         for value in ProcessPurpose
         if value
-        not in {ProcessPurpose.AUTHENTICATE, ProcessPurpose.DOWNLOAD, ProcessPurpose.CLIPBOARD}
+        not in {
+            ProcessPurpose.AUTHENTICATE,
+            ProcessPurpose.DOWNLOAD,
+            ProcessPurpose.CLIPBOARD,
+            ProcessPurpose.HELM_READ,
+        }
     ],
 )
 async def test_read_only_blocks_every_effectful_process_before_executable_resolution(
     tmp_path, monkeypatch, mode, purpose
 ):
-    def forbidden(*args):
+    def forbidden(*args, **kwargs):
         raise AssertionError("Policy must run before executable lookup")
 
     monkeypatch.setattr(shutil, "which", forbidden)
@@ -267,7 +272,9 @@ async def test_read_only_blocks_every_effectful_process_before_executable_resolu
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("purpose", [ProcessPurpose.AUTHENTICATE, ProcessPurpose.DOWNLOAD])
+@pytest.mark.parametrize(
+    "purpose", [ProcessPurpose.AUTHENTICATE, ProcessPurpose.DOWNLOAD, ProcessPurpose.HELM_READ]
+)
 async def test_explicit_read_processes_are_allowed_in_read_only_and_output_is_captured(
     tmp_path, purpose
 ):
@@ -277,8 +284,10 @@ async def test_explicit_read_processes_are_allowed_in_read_only_and_output_is_ca
         )
         assert (
             result.status is ProcessStatus.SUCCEEDED
+            and result.returncode == 0
             and result.stdout.strip() == b"synthetic-private-output"
         )
+        assert result.stderr == b"" and runner.active_count == 0
 
 
 @pytest.mark.asyncio
