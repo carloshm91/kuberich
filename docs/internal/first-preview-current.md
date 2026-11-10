@@ -48,6 +48,16 @@ providers or protected delivery. HTTP/1.1/single-backend and final name/listener
 races remain explicit in [benchmark acceptance](acceptance/http-benchmarks.md).
 Published packages remain 0.4.0; no artifact or hosting publication occurs.
 
+The fourth ordinary attempt subsequently passes all 11,325 applicable Fast
+cases and both Linux native targets. Its macOS native checks stop before load
+because strict POSIX mode hides two Darwin constants in the owned C fixture.
+An Apple-only namespace declaration preserves the actual no-follow/loopback
+guards; 44 compiled-bridge/adapter cases pass locally, while actual macOS
+verification remains pending. Source checks also catch benchmark deep-link
+mapping and document-enrollment expectations; the corrected guide/site cohort
+passes 202 cases. The fixture changes a captured kind/native-runtime input, so
+earlier receipts remain historical and fresh complete hosted evidence is required.
+
 ## Ephemeral debugging verified candidate — 2026-11-10 UTC
 
 A03 #78 adds `:debug` for a captured Pod: explicit image/target/nonprivileged

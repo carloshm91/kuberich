@@ -300,3 +300,41 @@ The navigation test adds benchmarks to its expected-denial set. All 292 related
 launch/navigation cases pass with four workers in 2.89 seconds. No runtime,
 process bound or proof input changes. These corrections do not relabel the
 failed complete selection or replace the required fresh hosted matrix.
+
+## Retained first full platform-matrix failures
+
+The fourth ordinary attempt, run `42920484598` on actual checkout
+`00150af69193fa38a689308c98974707939a8fd3`, passes Fast tests: 11,325 cases
+pass and the one owned-macOS clipboard case skips on Linux, in 529.62 seconds.
+Both Linux native targets pass their normal archive/runtime and owned-cluster
+checks. These are ordinary PR observations, not full release qualification.
+
+Both macOS native targets fail before benchmark load when the owned C bridge
+does not compile: strict POSIX mode hides Darwin's real `O_NOFOLLOW` and
+`INADDR_LOOPBACK` definitions. The original compiler output and failed archives
+remain retained. Apple's pinned [feature namespace](https://github.com/apple-oss-distributions/xnu/blob/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/bsd/sys/cdefs.h),
+[file flags](https://github.com/apple-oss-distributions/xnu/blob/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/bsd/sys/fcntl.h)
+and [network constants](https://github.com/apple-oss-distributions/xnu/blob/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/bsd/netinet/in.h)
+confirm that `_DARWIN_C_SOURCE` exposes those names alongside the selected
+POSIX level. The fixture now enables that namespace only on Apple platforms.
+It retains the real flags, loopback address and strict compiler warnings.
+
+All 44 real compiled-bridge and native-adapter regression cases pass locally
+in 4.06 seconds. The local Linux preprocessed translation unit is byte-identical
+before and after the conditional change. Neither observation qualifies Darwin
+compilation or runtime; both actual macOS lanes remain required.
+
+Source parts also detect two documentation integration gaps: the composed
+benchmark guide has an empty deep-link map, and historical-enrollment tests
+still expect 377 records before its three new documents. The corrected
+navigation maps all six actual headings without adding a user page. Updated
+enrollment assertions retain the exact protected-main 377-record prefix,
+every older origin/hash check and the three explicit null-baseline additions.
+The original route and census failures reproduce; all 202 affected guide/site
+cases then pass in 88.72 seconds. Original failed source reports stay failed.
+
+Application bytes and all 458 native-build inputs remain unchanged. The C
+fixture is one of the 331 owned-kind inputs, and native runtime separately
+binds its source hash. Earlier kind/native-runtime receipts therefore remain
+historical for that fixture. Fresh complete hosted kind, native and platform
+evidence must bind the corrected inputs before protected delivery.

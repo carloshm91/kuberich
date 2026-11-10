@@ -1,5 +1,9 @@
 /* Owned loopback-only native benchmark bridge; never an ambient kubectl. */
 #define _POSIX_C_SOURCE 200809L
+#if defined(__APPLE__) && !defined(_DARWIN_C_SOURCE)
+/* Darwin keeps the real no-follow and loopback constants in its BSD namespace. */
+#define _DARWIN_C_SOURCE 1
+#endif
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
