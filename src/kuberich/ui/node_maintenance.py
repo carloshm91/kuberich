@@ -257,7 +257,7 @@ class NodeMaintenanceScreen(ModalScreen[None]):
         if pod is None:
             self.detail.update(
                 "The current complete reviewed Node inventory is empty."
-                if self.review is not None and not self.review.pods
+                if self.review is not None and not self.review.pods and not self.review.blockers
                 else ""
             )
             return

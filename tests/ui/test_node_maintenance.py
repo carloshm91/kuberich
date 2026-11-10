@@ -14,7 +14,11 @@ from kuberich.services.commands import ResourceCommand
 from kuberich.ui.app import KubeRichApp
 from kuberich.ui.node_maintenance import NodeMaintenanceScreen
 from tests.support.connections import catalog_fixture
-from tests.support.node_maintenance_terminal import maintenance_api, pod_manifest
+from tests.support.node_maintenance_terminal import (
+    MaintenanceHandler,
+    maintenance_api,
+    pod_manifest,
+)
 from tests.support.workspace import wait_for
 
 
@@ -418,6 +422,48 @@ async def test_empty_inventory_and_overlapping_stale_pdb_evidence_remain_explici
         await wait_for(lambda: screen.finished)
         assert api.node["spec"]["unschedulable"]
         assert not any(method == "POST" for method, *_ in api.requests)
+
+
+@pytest.mark.asyncio
+async def test_denied_pdb_rereview_clears_old_facts_without_claiming_empty_inventory(
+    tmp_path, monkeypatch
+):
+    original_get = MaintenanceHandler.do_GET
+    deny_pdb = [False]
+    denied_reads = []
+
+    def get_with_pdb_denial(handler):
+        path = handler.path.split("?", 1)[0]
+        if deny_pdb[0] and path.endswith("/poddisruptionbudgets"):
+            denied_reads.append(path)
+            handler.respond(status=403)
+            return
+        original_get(handler)
+
+    monkeypatch.setattr(MaintenanceHandler, "do_GET", get_with_pdb_denial)
+    async with maintenance_app(tmp_path) as (app, api), app.run_test() as pilot:
+        await wait_for(
+            lambda: app.standard_table.row_count == 1 and app.state.status is ViewStatus.LIVE
+        )
+        screen = await review(app)
+        assert "workload-uid" in str(screen.detail.content)
+        assert "pdb-uid" in str(screen.detail.content)
+        previous = screen.review
+        deny_pdb[0] = True
+        screen.review_button.press()
+        await wait_for(
+            lambda: screen.review is not None and screen.review is not previous and not screen.busy
+        )
+        assert denied_reads == ["/apis/policy/v1/namespaces/team/poddisruptionbudgets"]
+        assert app.screen is screen and screen.review is not None
+        assert screen.review.pods == () and screen.review.blockers
+        assert screen.confirm_button.disabled and screen.table.row_count == 0
+        details = str(screen.detail.content)
+        assert "workload-uid" not in details and "pdb-uid" not in details
+        assert "inventory is empty" not in details
+        screen.confirm_button.press()
+        await pilot.pause()
+        assert not any(method in {"POST", "PATCH"} for method, *_ in api.requests)
 
 
 @pytest.mark.asyncio
